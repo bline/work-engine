@@ -295,3 +295,151 @@ fn the_command_line_reports_a_repeated_key_with_exit_1() {
         vec![("schema".to_string(), "estimate_set_id".to_string())]
     );
 }
+
+// ---------------------------------------------------------------------------
+// F4: numbers too large for their type are a schema report at their path, not exit 2
+// ---------------------------------------------------------------------------
+
+#[test]
+fn an_out_of_range_number_is_a_schema_error_at_its_own_path() {
+    let text = pretty(&dummy_set());
+    let huge_int = "9".repeat(400);
+    let literals = [
+        huge_int.as_str(),
+        "1e400",
+        "-1e400",
+        "1E+999",
+        "123456789e400",
+    ];
+    // (text in the fixture, its replacement with the literal at `{}`, the path expected)
+    let sites: [(&str, &str, &str); 5] = [
+        (
+            "\"quantity\": 8\n",
+            "\"quantity\": {}\n",
+            "estimates.0.value.quantity",
+        ),
+        (
+            "\"quantity\": 10",
+            "\"quantity\": {}",
+            "estimates.0.baseline.quantity",
+        ),
+        (
+            "\"exponent\": 0",
+            "\"exponent\": {}",
+            "estimates.0.measure.scale.exponent",
+        ),
+        (
+            "\"quantity\": 12",
+            "\"quantity\": {}",
+            "estimates.0.interval.high.quantity",
+        ),
+        (
+            "\"estimate_set_id\": \"set-1\"",
+            "\"estimate_set_id\": {}",
+            "estimate_set_id",
+        ),
+    ];
+    for (from, template, at) in sites {
+        assert_eq!(text.matches(from).count(), 1, "fixture needs one {from:?}");
+        for literal in literals {
+            let bytes = text
+                .replacen(from, &template.replace("{}", literal), 1)
+                .into_bytes();
+            assert_eq!(
+                pairs(&bytes),
+                vec![("schema".to_string(), at.to_string())],
+                "{at} = {literal}"
+            );
+        }
+    }
+}
+
+#[test]
+fn an_out_of_range_number_exits_1_on_the_command_line() {
+    let dir = fresh_dir("lex-cli-range");
+    let text = pretty(&dummy_set());
+    for (label, literal) in [("int", "9".repeat(400)), ("exp", "1e400".to_string())] {
+        let path = dir.join(format!("{label}.json"));
+        let bytes = text.replacen(
+            "\"quantity\": 8\n",
+            &format!("\"quantity\": {literal}\n"),
+            1,
+        );
+        std::fs::write(&path, bytes).unwrap();
+        let run = cli(&["check", "--kind", "estimate-set", &s(&path)]);
+        assert_eq!(run.code, 1, "{label}: {}", run.stderr);
+        assert_eq!(
+            run.pairs(),
+            vec![(
+                "schema".to_string(),
+                "estimates.0.value.quantity".to_string()
+            )],
+            "{label}"
+        );
+    }
+}
+
+#[test]
+fn the_edges_of_the_range_keep_their_existing_outcomes() {
+    let text = pretty(&dummy_set());
+    let schema_errors = |literal: &str| {
+        pairs(
+            text.replacen(
+                "\"quantity\": 8\n",
+                &format!("\"quantity\": {literal}\n"),
+                1,
+            )
+            .as_bytes(),
+        )
+        .into_iter()
+        .filter(|(c, _)| c == "schema")
+        .collect::<Vec<_>>()
+    };
+    // In range for i64: not a schema problem (the value rules may still speak).
+    assert_eq!(schema_errors("9223372036854775807"), vec![]);
+    assert_eq!(schema_errors("-9223372036854775808"), vec![]);
+    // Not an i64 but still a finite float or a larger integer: a schema error, as before.
+    for literal in ["9223372036854775808", "1e300", "1e-400", "1.5", "-0"] {
+        assert!(!schema_errors(literal).is_empty(), "{literal}");
+    }
+}
+
+#[test]
+fn an_out_of_range_number_in_a_packet_or_projection_is_a_schema_error_at_the_pointer() {
+    let packet = "{\"schema_version\": 1, \"proposal_id\": \"alpha.beta\", \"cost\": 1e400}";
+    let set = bound_raw("lex-up-range-packet", packet, &good_projection());
+    let found = check_estimate_set_bytes(&serde_json::to_vec(&set).unwrap())
+        .unwrap()
+        .errors;
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(
+        (found[0].code.as_str(), found[0].at.as_str()),
+        ("schema", "proposal.packet")
+    );
+    assert!(found[0].message.contains("`cost`"), "{}", found[0].message);
+    let projection = good_projection().replacen(
+        "\"schema_version\":1",
+        "\"schema_version\":1,\"n\":[0,1e400]",
+        1,
+    );
+    let set = bound_raw("lex-up-range-projection", &good_packet(), &projection);
+    let found = check_estimate_set_bytes(&serde_json::to_vec(&set).unwrap())
+        .unwrap()
+        .errors;
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(
+        (found[0].code.as_str(), found[0].at.as_str()),
+        ("schema", "claim_projection")
+    );
+    assert!(found[0].message.contains("`n.1`"), "{}", found[0].message);
+}
+
+#[test]
+fn serde_json_still_words_the_error_the_scan_recognises() {
+    // `scan` identifies the condition by serde_json's message prefix; this fails if a version
+    // bump rewords it, instead of letting exit 2 return silently.
+    let e = serde_json::from_str::<Value>("1e400").unwrap_err();
+    assert!(e.to_string().starts_with("number out of range"), "{e}");
+    let e = serde_json::from_str::<Value>(&"9".repeat(400)).unwrap_err();
+    assert!(e.to_string().starts_with("number out of range"), "{e}");
+}
