@@ -90,10 +90,19 @@ reject-after evidence in the run record. n = 2 builders, 5 findings.
   they are the two values from the review — and ran `node` myself: it prints the
   same two strings. The Rust test over all 25,027 cases passes in my re-run.
 - **Both numstats**, recomputed with `git diff --numstat` from base.
-- **R2-M-002 compliance.** `git diff --name-only 624ec60e 2161afd7` over
-  `model.rs`, `validate.rs`, `digest.rs`, `evaluate.rs` is empty. The coordinator
-  narrowed fix-b's scope after the report and the narrowing held: none of the
-  four files in R2's read sets was touched.
+- **R2-M-002 compliance, with the evidence stated for what it covers.**
+  Corrected after outside review: an empty endpoint `git diff` bounds only net
+  change between two revisions, so it cannot establish that the four files
+  "was touched" by nothing. What is established: the branch holds exactly two
+  commits and neither commit's diff includes `model.rs`, `validate.rs`,
+  `digest.rs` or `evaluate.rs`; the worktree is clean at head `2161afd7`; and
+  across fix-b's whole transcript 8 tool calls mention any of the four
+  filenames, of which 2 are write-capable and both target `check.rs` and the
+  result file. So **no committed or recorded write to the four files during the
+  run, and none outstanding at head.** Not established: that no transient edit
+  was made and reverted outside those records, that the coordinator's narrowing
+  message *caused* the outcome rather than coinciding with it, or anything about
+  future writes.
 - **fix-b's Rust gates cover head.** They were run at `df6f7334`, not at head.
   The only files changed between `df6f7334` and `2161afd7` are the two Python
   ones, so no Rust changed after the gates ran.
@@ -192,3 +201,25 @@ including the P1, with reproduce-before evidence and a control that still
 passes, at 0.67 Mwt each. It does not show the repairs are correct — an outside
 reader has not read them. A tier-1 reviewer was running against fix-a at the
 time of scoring; fix-b had none. Correctness is `not established`.
+
+## Correction, 2026-10-23: a scope-compliance overclaim
+
+**The wrong claim.** "The narrowing held: none of the four files in R2's read
+sets was touched", from an empty endpoint `git diff --name-only`.
+
+**The error class.** An endpoint comparison read as a statement about the whole
+interval and about intent. `git diff A B` bounds net change between A and B; it
+is silent on transient states within the interval, on causation, and on anything
+after B.
+
+**The downstream consequence.** A narrow negative was recorded as scope
+compliance and as evidence that a coordination message worked — both in this
+score and in `docs/codex-chatboard-channels.md`, where it was the worked example
+for distinguishing receipt from consequence. The underlying situation is
+unchanged: the four files carry no committed or recorded write. What changed is
+what the record claims to know.
+
+**The check that would have caught it.** Ask what the comparison's endpoints
+exclude: per-commit diffs over the chain, worktree state at head, and a
+transcript search for write-capable calls against those paths — each reported
+with its own coverage limit. All three were run for this correction.

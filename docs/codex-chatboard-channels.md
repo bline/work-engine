@@ -159,11 +159,25 @@ Receipt does not establish consequence. *"Message received"* does not establish
 
 **Where further work depends on a consequence, require evidence of that
 consequence.** An acknowledgment suffices only when its content establishes it;
-otherwise the evidence is an observable result. The case above shows both: the
-coordinator's post *claimed* the consequence — the four read-set files excluded
-— and what **established** it was `git diff --name-only` over those four paths
-between base and head coming back empty. The claim was the acknowledgment; the
-diff was the evidence.
+otherwise the evidence is an observable result — and the result must be stated
+for what it covers.
+
+The case above shows the gap and the care it needs. The coordinator's post
+*claimed* the consequence: the four read-set files excluded. An endpoint
+`git diff --name-only` over those paths coming back empty does **not** establish
+that claim. It establishes only **no net change to those files between the two
+compared revisions**. It says nothing about a transient edit later reverted, it
+does not show the scope instruction caused the outcome, and it cannot speak to
+future writes at all.
+
+What the evidence does support, with its basis named: the branch holds exactly
+two commits, and neither commit's diff includes any of the four files; the
+worktree is clean at head; and across fix-b's whole transcript, 8 tool calls
+mention any of the four filenames, of which 2 are write-capable and both target
+`check.rs` and the result file. So: **no committed or recorded write to those
+four files during the run, and none outstanding at head.** Future writes remain
+outside the evidence, and the attribution to the narrowing message is
+correlation with its timing, not a demonstrated cause.
 
 A matched subscription is therefore not evidence of delivery, and `post`
 reporting *no subscription matched* is informative but not an absence of
@@ -260,6 +274,14 @@ no code." **Class:** a capability attributed to today's tooling without
 re-checking the matcher it runs on; exact matching makes every subject a new
 topic. **Consequence:** readers would have adopted a convention that delivers no
 subscription. **Check:** `wait_board` compares `row["topic"] in selected`.
+
+**Wrong claim (rev 3).** An empty endpoint diff established that the four
+read-set files "was touched" by nothing. **Class:** an endpoint comparison read
+as a statement about the whole interval and about intent, when it bounds only
+net change between two revisions. **Consequence:** a narrow negative was
+reported as scope compliance, in this document and in the cohort score.
+**Check:** per-commit diffs, worktree state, and a transcript search for
+write-capable calls — each with what it does not cover stated.
 
 **Incomplete (rev 2).** Overlap detection was specified only at claim time, which
 is order-dependent; the motivating case is the order it misses. Replaced with an

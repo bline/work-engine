@@ -110,7 +110,7 @@
       "fix-a's full suite re-run from a clean git archive extract with a fresh CARGO_TARGET_DIR: 35 tests pass, 0 fail, matching the claimed counts; independent of the builder's reported stale-binary incident",
       "EXT-001 closure at the failing values: decoded fixture bit patterns 430c6bf526340002 and 4305edd45e85c45a to the two review values and confirmed node prints the fixture's expected strings",
       "both numstats recomputed with git diff --numstat from base",
-      "R2-M-002 compliance: git diff --name-only over model.rs, validate.rs, digest.rs and evaluate.rs between 624ec60e and 2161afd7 is empty",
+      "R2-M-002: no committed or recorded write to model.rs, validate.rs, digest.rs or evaluate.rs during the run, and none outstanding at head. Basis: the branch holds exactly two commits and neither commit's diff includes them; the worktree is clean at head 2161afd7; across fix-b's transcript 8 tool calls mention any of the four filenames, 2 of which are write-capable and both target check.rs and the result file. Corrected from an endpoint-diff claim that those files 'was touched' by nothing, which an endpoint comparison cannot establish",
       "fix-b's Rust gates cover head: the only files changed between df6f7334 and 2161afd7 are the two Python ones"
     ],
     "not_independently_reproduced": [
@@ -145,6 +145,18 @@
       "fix-a did not inspect repository docs outside its write scope for parity claims, so repository-wide freedom from the overclaimed parity language is not established",
       "scratch directories left at /home/bline/cbm-work/fix-a-mut and /home/bline/cbm-work/fix-a-target"
     ],
-    "correctness_of_repairs": "not established; no outside reader has read them. A tier-1 reviewer was running against fix-a at scoring time, fix-b had none"
+    "correctness_of_repairs": "not established; no outside reader has read them. A tier-1 reviewer was running against fix-a at scoring time, fix-b had none",
+    "correction_20261023": {
+      "wrong_claim": "the narrowing held: none of the four files in R2's read sets was touched, from an empty endpoint git diff --name-only",
+      "error_class": "an endpoint comparison read as a statement about the whole interval and about intent; git diff A B bounds net change between A and B only",
+      "downstream_consequence": "a narrow negative was recorded as scope compliance and as evidence that a coordination message worked, here and in docs/codex-chatboard-channels.md; the underlying situation is unchanged",
+      "check_that_would_have_caught_it": "ask what the endpoints exclude: per-commit diffs, worktree state at head, and a transcript search for write-capable calls, each with its coverage limit stated. All three were run for this correction",
+      "not_established": [
+        "that no transient edit was made and reverted outside those records",
+        "that the narrowing message caused rather than coincided with the outcome",
+        "anything about future writes"
+      ],
+      "found_by": "outside review of docs/codex-chatboard-channels.md"
+    }
   }
 }
