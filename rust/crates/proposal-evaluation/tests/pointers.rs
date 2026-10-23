@@ -5,7 +5,7 @@
 //! Every test writes real packet and projection files, then the set that points at them.
 
 mod support;
-use proposal_evaluation::{Failure, check_estimate_set_bytes};
+use proposal_evaluation::{Failure, check_estimate_set_bytes, sha256_hex};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 use support::*;
@@ -468,4 +468,57 @@ fn a_file_over_the_size_bound_is_unresolved_and_one_at_the_bound_is_read() {
         has(&errors, "digest_mismatch", "proposal.packet"),
         "{errors:?}"
     );
+}
+
+// ---------------------------------------------------------------------------
+// Upstream `schema_version` is the integer 1 (review finding M15): a float with the value 1
+// is another type, not version 1. `1.5` alone cannot tell `as_i64` from `as_f64`.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn an_upstream_schema_version_written_as_a_float_is_rejected() {
+    for literal in ["1.0", "1e0", "1.00", "10e-1"] {
+        let packet_text =
+            format!("{{\"schema_version\": {literal}, \"proposal_id\": \"alpha.beta\"}}\n");
+        let projection_text = serde_json::to_string(&projection()).unwrap().replacen(
+            "\"schema_version\":1",
+            &format!("\"schema_version\":{literal}"),
+            1,
+        );
+        assert!(projection_text.contains(literal), "{literal}");
+
+        // Packet: only the packet carries the float.
+        let dir = fresh_dir(&format!("ptr-float-version-packet-{literal}"));
+        let (packet_path, projection_path) = (dir.join("packet.json"), dir.join("projection.json"));
+        write(&packet_path, &packet_text);
+        let projection_sha = write_json(&projection_path, &projection());
+        let set = valid_set(
+            &s(&packet_path),
+            &sha256_hex(packet_text.as_bytes()),
+            &s(&projection_path),
+            &projection_sha,
+        );
+        let errors = found(&set);
+        assert!(
+            has(&errors, "upstream_class_mismatch", "proposal.packet"),
+            "packet {literal}: {errors:?}"
+        );
+
+        // Projection: only the projection carries the float.
+        let dir = fresh_dir(&format!("ptr-float-version-projection-{literal}"));
+        let (packet_path, projection_path) = (dir.join("packet.json"), dir.join("projection.json"));
+        let packet_sha = write_json(&packet_path, &packet());
+        write(&projection_path, &projection_text);
+        let set = valid_set(
+            &s(&packet_path),
+            &packet_sha,
+            &s(&projection_path),
+            &sha256_hex(projection_text.as_bytes()),
+        );
+        let errors = found(&set);
+        assert!(
+            has(&errors, "upstream_class_mismatch", "claim_projection"),
+            "projection {literal}: {errors:?}"
+        );
+    }
 }
