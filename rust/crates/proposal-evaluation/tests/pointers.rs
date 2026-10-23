@@ -354,3 +354,118 @@ fn not_json_is_a_failure_not_a_report() {
     assert!(matches!(error, Failure::Parse(_)), "{error:?}");
     assert_eq!(error.exit_code(), 2);
 }
+
+// ---------------------------------------------------------------------------
+// A stored path must name a regular file, read with a size bound (review finding F1).
+// ---------------------------------------------------------------------------
+
+/// Run `check` on a worker thread and fail the test, rather than hang it, after 20 seconds.
+fn found_within_timeout(set: &Value) -> Vec<(String, String)> {
+    let bytes = serde_json::to_vec(set).unwrap();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let errors = check_estimate_set_bytes(&bytes)
+            .expect("parses")
+            .errors
+            .into_iter()
+            .map(|e| (e.code, e.at))
+            .collect::<Vec<_>>();
+        let _ = tx.send(errors);
+    });
+    rx.recv_timeout(std::time::Duration::from_secs(20))
+        .expect("check did not return: a stored path was opened or read without bound")
+}
+
+fn point_packet_at(f: &mut Fixture, path: &str) {
+    f.set["proposal"]["packet"]["path"] = json!(path);
+}
+
+#[cfg(unix)]
+fn mkfifo(path: &std::path::Path) {
+    let status = std::process::Command::new("mkfifo")
+        .arg(path)
+        .status()
+        .expect("mkfifo runs");
+    assert!(status.success());
+}
+
+#[cfg(unix)]
+#[test]
+fn a_fifo_is_unresolved_and_never_blocks() {
+    let mut f = good("ptr-fifo");
+    let fifo = f.packet_path.with_file_name("fifo");
+    mkfifo(&fifo);
+    point_packet_at(&mut f, &s(&fifo));
+    let errors = found_within_timeout(&f.set);
+    assert!(
+        has(&errors, "pointer_unresolved", "proposal.packet"),
+        "{errors:?}"
+    );
+    assert_eq!(errors.len(), 1, "{errors:?}");
+}
+
+#[cfg(unix)]
+#[test]
+fn a_symlink_to_a_fifo_is_refused_like_the_fifo() {
+    let mut f = good("ptr-fifo-link");
+    let fifo = f.packet_path.with_file_name("fifo");
+    mkfifo(&fifo);
+    let link = f.packet_path.with_file_name("link-to-fifo");
+    std::os::unix::fs::symlink(&fifo, &link).unwrap();
+    point_packet_at(&mut f, &s(&link));
+    let errors = found_within_timeout(&f.set);
+    assert!(
+        has(&errors, "pointer_unresolved", "proposal.packet"),
+        "{errors:?}"
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn a_device_and_a_directory_are_unresolved() {
+    for (label, path) in [
+        ("zero", "/dev/zero".to_string()),
+        ("null", "/dev/null".to_string()),
+    ] {
+        let mut f = good(&format!("ptr-device-{label}"));
+        point_packet_at(&mut f, &path);
+        let errors = found_within_timeout(&f.set);
+        assert!(
+            has(&errors, "pointer_unresolved", "proposal.packet"),
+            "{label}: {errors:?}"
+        );
+        assert_eq!(errors.len(), 1, "{label}: {errors:?}");
+    }
+    let mut f = good("ptr-directory");
+    let dir = s(f.packet_path.parent().unwrap());
+    point_packet_at(&mut f, &dir);
+    let errors = found_within_timeout(&f.set);
+    assert!(
+        has(&errors, "pointer_unresolved", "proposal.packet"),
+        "{errors:?}"
+    );
+}
+
+#[test]
+fn a_file_over_the_size_bound_is_unresolved_and_one_at_the_bound_is_read() {
+    use proposal_evaluation::check::MAX_UPSTREAM_BYTES;
+    let mut f = good("ptr-oversize");
+    let big = f.packet_path.with_file_name("big.json");
+    let file = std::fs::File::create(&big).unwrap();
+    file.set_len(MAX_UPSTREAM_BYTES + 1).unwrap(); // sparse: no data is written
+    point_packet_at(&mut f, &s(&big));
+    let errors = found_within_timeout(&f.set);
+    assert!(
+        has(&errors, "pointer_unresolved", "proposal.packet"),
+        "{errors:?}"
+    );
+    assert_eq!(errors.len(), 1, "{errors:?}");
+    // At exactly the bound the file is read; its zero bytes then fail the digest comparison,
+    // which only happens after a successful read.
+    file.set_len(MAX_UPSTREAM_BYTES).unwrap();
+    let errors = found_within_timeout(&f.set);
+    assert!(
+        has(&errors, "digest_mismatch", "proposal.packet"),
+        "{errors:?}"
+    );
+}

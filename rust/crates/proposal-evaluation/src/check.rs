@@ -58,11 +58,55 @@ fn shape_ok(f: &FileRef) -> bool {
     is_normalised_absolute(&f.path) && is_sha256_hex(&f.sha256)
 }
 
+/// The most bytes read from a stored path. A larger file is `pointer_unresolved`: upstream
+/// packets and projections are small records, and an unbounded read would let a stored path
+/// exhaust memory.
+pub const MAX_UPSTREAM_BYTES: u64 = 32 * 1024 * 1024;
+
+/// Read `path` only if it is a regular file (symlinks are followed, as `read` does), at most
+/// [`MAX_UPSTREAM_BYTES`]. A FIFO, device or directory is refused before any read: opening a
+/// FIFO with no writer would block, and a device such as `/dev/zero` has no end.
+fn read_regular_file(path: &str) -> Result<Vec<u8>, String> {
+    use std::io::Read;
+    let refuse = |what: &str| format!("{what} (a stored path must name a regular file)");
+    let regular = |meta: &std::fs::Metadata| -> Result<(), String> {
+        if meta.is_file() {
+            Ok(())
+        } else {
+            Err(refuse("not a regular file"))
+        }
+    };
+    regular(&std::fs::metadata(path).map_err(|e| e.to_string())?)?;
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    // If the path is swapped for a FIFO between the check above and the open, do not block.
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(0o4000); // O_NONBLOCK
+    }
+    let file = options.open(path).map_err(|e| e.to_string())?;
+    let meta = file.metadata().map_err(|e| e.to_string())?;
+    regular(&meta)?;
+    let too_big = || refuse(&format!("larger than {MAX_UPSTREAM_BYTES} bytes"));
+    if meta.len() > MAX_UPSTREAM_BYTES {
+        return Err(too_big());
+    }
+    let mut bytes = Vec::new();
+    file.take(MAX_UPSTREAM_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|e| e.to_string())?;
+    if bytes.len() as u64 > MAX_UPSTREAM_BYTES {
+        return Err(too_big());
+    }
+    Ok(bytes)
+}
+
 /// Read the file at the stored path and hash it. `None` after reporting when the file cannot
 /// be read, the digest differs, or the bytes are not a JSON object (a class mismatch: nothing
 /// in them can be trusted as the expected record).
 fn resolve(f: &FileRef, at: &str, errors: &mut Vec<ErrorItem>) -> Option<Value> {
-    let bytes = match std::fs::read(&f.path) {
+    let bytes = match read_regular_file(&f.path) {
         Ok(bytes) => bytes,
         Err(e) => {
             errors.push(err(
