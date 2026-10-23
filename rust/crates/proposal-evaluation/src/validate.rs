@@ -58,7 +58,11 @@ pub fn parse_estimate_set(bytes: &[u8]) -> Result<Parsed, Failure> {
     match serde_json::from_slice::<EstimateSet>(bytes) {
         Ok(set) => Ok(Parsed::Set(Box::new(set))),
         Err(e) if e.classify() == serde_json::error::Category::Data => {
-            Ok(Parsed::Invalid(vec![err(codes::SCHEMA, "", e.to_string())]))
+            Ok(Parsed::Invalid(vec![err(
+                codes::SCHEMA,
+                crate::scan::locate_data_error(bytes, &e),
+                e.to_string(),
+            )]))
         }
         Err(e) => Err(Failure::Parse(e.to_string())),
     }

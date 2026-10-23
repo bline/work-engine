@@ -90,7 +90,7 @@ fn every_rule_code_is_reported_at_its_place() {
             "unknown key",
             Box::new(|d| d["weights"] = json!(1)),
             "schema",
-            "",
+            "weights",
         ),
         (
             "schema const",

@@ -45,10 +45,12 @@ fn every_rule_has_its_one_code_at_its_place() {
         ("version_invalid", "version", "version 0", |c| {
             c["version"] = json!(0)
         }),
-        ("schema", "", "negative version", |c| {
+        ("schema", "version", "negative version", |c| {
             c["version"] = json!(-1)
         }),
-        ("schema", "", "float version", |c| c["version"] = json!(1.5)),
+        ("schema", "version", "float version", |c| {
+            c["version"] = json!(1.5)
+        }),
         (
             "empty_string",
             "selecting_authority.decision_owner",
@@ -138,9 +140,12 @@ fn every_rule_has_its_one_code_at_its_place() {
         ("empty_string", "measures.0.scale.unit", "unit", |c| {
             c["measures"][0]["scale"]["unit"] = json!("")
         }),
-        ("schema", "", "minimum_confidence outside UD3 set", |c| {
-            c["measures"][0]["minimum_confidence"] = json!("certain")
-        }),
+        (
+            "schema",
+            "measures.0.minimum_confidence",
+            "minimum_confidence outside UD3 set",
+            |c| c["measures"][0]["minimum_confidence"] = json!("certain"),
+        ),
         (
             "empty_string",
             "excluded_concerns.0.concern",
@@ -155,16 +160,24 @@ fn every_rule_has_its_one_code_at_its_place() {
         ),
         (
             "schema",
-            "",
+            "treatment.stale",
             "treatment value outside block|drop_measure",
             |c| c["treatment"]["stale"] = json!("ignore"),
         ),
-        ("schema", "", "treatment member absent", |c| {
-            c["treatment"].as_object_mut().unwrap().remove("stale");
-        }),
-        ("schema", "", "uncertainty outside the closed set", |c| {
-            c["uncertainty"] = json!("weighted")
-        }),
+        (
+            "schema",
+            "treatment.stale",
+            "treatment member absent",
+            |c| {
+                c["treatment"].as_object_mut().unwrap().remove("stale");
+            },
+        ),
+        (
+            "schema",
+            "uncertainty",
+            "uncertainty outside the closed set",
+            |c| c["uncertainty"] = json!("weighted"),
+        ),
         ("time_format", "evidence_cutoff", "cutoff format", |c| {
             c["evidence_cutoff"] = json!("2026-10-22")
         }),

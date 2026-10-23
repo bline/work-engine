@@ -20,7 +20,7 @@ use crate::contract::{ParsedContract, parse_contract, validate_contract};
 use crate::diag::{CheckReport, ErrorItem, Failure, codes};
 use crate::digest::{is_sha256_hex, sha256_hex};
 use crate::model::*;
-use crate::scan::scan;
+use crate::scan::{locate_data_error, scan};
 use crate::validate::{check_file_ref, err, is_proposal_id, is_set_id, non_empty, time};
 use std::collections::BTreeSet;
 
@@ -126,9 +126,11 @@ fn parse_finding(bytes: &[u8]) -> Result<Result<ComparisonFinding, Vec<ErrorItem
     }
     match serde_json::from_slice::<ComparisonFinding>(bytes) {
         Ok(f) => Ok(Ok(f)),
-        Err(e) if e.classify() == serde_json::error::Category::Data => {
-            Ok(Err(vec![err(codes::SCHEMA, "", e.to_string())]))
-        }
+        Err(e) if e.classify() == serde_json::error::Category::Data => Ok(Err(vec![err(
+            codes::SCHEMA,
+            locate_data_error(bytes, &e),
+            e.to_string(),
+        )])),
         Err(e) => Err(Failure::Parse(e.to_string())),
     }
 }

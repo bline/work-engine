@@ -52,9 +52,13 @@ pub fn parse_contract(bytes: &[u8]) -> Result<ParsedContract, Failure> {
     }
     match serde_json::from_slice::<ComparisonContract>(bytes) {
         Ok(c) => Ok(ParsedContract::Contract(Box::new(c))),
-        Err(e) if e.classify() == serde_json::error::Category::Data => Ok(ParsedContract::Invalid(
-            vec![err(codes::SCHEMA, "", e.to_string())],
-        )),
+        Err(e) if e.classify() == serde_json::error::Category::Data => {
+            Ok(ParsedContract::Invalid(vec![err(
+                codes::SCHEMA,
+                crate::scan::locate_data_error(bytes, &e),
+                e.to_string(),
+            )]))
+        }
         Err(e) => Err(Failure::Parse(e.to_string())),
     }
 }
