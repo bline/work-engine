@@ -392,3 +392,173 @@ pub fn derive(
         limitations,
     })
 }
+
+// ---------------------------------------------------------------------------
+// Loading inputs from stored paths (shared by `compare` and `check --rederive`)
+// ---------------------------------------------------------------------------
+
+use crate::check::{check_contract_bytes, check_estimate_set_bytes, read_regular_file};
+use crate::contract::{ParsedContract, parse_contract};
+use crate::diag::{CheckReport, Failure};
+use crate::digest::sha256_hex;
+use crate::validate::{Parsed, parse_estimate_set};
+
+/// A contract read from `path`, whose bytes hash to `sha256`.
+#[derive(Debug, Clone)]
+pub struct LoadedContract {
+    pub path: String,
+    pub sha256: String,
+    pub contract: ComparisonContract,
+}
+
+/// The nested report of an input that failed its own check, as a binding refusal (exit 3):
+/// `input_invalid` at `at`, then each nested error with `at` prefixed.
+fn input_invalid(at: &str, what: &str, report: CheckReport) -> Failure {
+    let mut errors = vec![ErrorItem::new(
+        codes::INPUT_INVALID,
+        at,
+        format!("{what} fails its own check"),
+    )];
+    errors.extend(report.errors.into_iter().map(|e| {
+        let nested = if e.at.is_empty() {
+            at.to_string()
+        } else {
+            format!("{at}.{}", e.at)
+        };
+        ErrorItem::new(&e.code, nested, e.message)
+    }));
+    Failure::Binding {
+        message: format!("{what} is invalid"),
+        errors,
+    }
+}
+
+fn read_input(
+    path: &str,
+    expected_sha: Option<&str>,
+    at: &str,
+) -> Result<(Vec<u8>, String), Failure> {
+    let bytes = read_regular_file(path).map_err(|message| Failure::Io {
+        path: path.to_string(),
+        message,
+    })?;
+    let sha = sha256_hex(&bytes);
+    if let Some(expected) = expected_sha
+        && expected != sha
+    {
+        return Err(Failure::Binding {
+            message: format!("{at}: file at {path} no longer matches its stored sha256"),
+            errors: vec![ErrorItem::new(
+                codes::DIGEST_MISMATCH,
+                at,
+                format!("stored {expected}, found {sha}"),
+            )],
+        });
+    }
+    Ok((bytes, sha))
+}
+
+/// Read, hash (against `expected_sha` when given) and check the contract at `path`.
+pub fn load_contract(path: &str, expected_sha: Option<&str>) -> Result<LoadedContract, Failure> {
+    let (bytes, sha256) = read_input(path, expected_sha, "contract")?;
+    let report = check_contract_bytes(&bytes)?;
+    if !report.valid {
+        return Err(input_invalid("contract", "the contract", report));
+    }
+    match parse_contract(&bytes)? {
+        ParsedContract::Contract(c) => Ok(LoadedContract {
+            path: path.to_string(),
+            sha256,
+            contract: *c,
+        }),
+        ParsedContract::Invalid(_) => unreachable!("a valid report implies a typed contract"),
+    }
+}
+
+/// Read, hash and check (including its stored pointers) the estimate set at `path`.
+pub fn load_estimate_set(
+    path: &str,
+    expected_sha: Option<&str>,
+    at: &str,
+) -> Result<LoadedEstimateSet, Failure> {
+    let (bytes, sha256) = read_input(path, expected_sha, at)?;
+    let report = check_estimate_set_bytes(&bytes)?;
+    if !report.valid {
+        return Err(input_invalid(at, "the estimate set", report));
+    }
+    match parse_estimate_set(&bytes)? {
+        Parsed::Set(set) => Ok(LoadedEstimateSet {
+            path: path.to_string(),
+            sha256,
+            set: *set,
+        }),
+        Parsed::Invalid(_) => unreachable!("a valid report implies a typed set"),
+    }
+}
+
+/// This binary as a derivation tool (contract S9): the hash is of the running executable.
+pub fn current_tool() -> Result<ToolRecord, Failure> {
+    let exe = std::env::current_exe()
+        .map_err(|e| Failure::Usage(format!("cannot locate this executable: {e}")))?;
+    let bytes = std::fs::read(&exe).map_err(|e| Failure::Io {
+        path: exe.display().to_string(),
+        message: e.to_string(),
+    })?;
+    Ok(ToolRecord {
+        name: "work-engine-evaluation".to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        binary_sha256: sha256_hex(&bytes),
+    })
+}
+
+/// `compare` on stored paths: every path must be absolute and normalised (S6).
+pub fn compare_paths(
+    contract: &str,
+    estimates: &[String],
+    derived_at: &str,
+) -> Result<ComparisonFinding, Failure> {
+    let mut refused = Vec::new();
+    let all = std::iter::once(("--contract".to_string(), contract)).chain(
+        estimates
+            .iter()
+            .map(|e| ("--estimates".to_string(), e.as_str())),
+    );
+    for (flag, path) in all {
+        if !crate::validate::is_normalised_absolute(path) {
+            refused.push(ErrorItem::new(
+                codes::PATH_NOT_ABSOLUTE,
+                flag,
+                format!("{path:?} must be absolute and normalised"),
+            ));
+        }
+    }
+    if !refused.is_empty() {
+        return Err(Failure::Refused {
+            message: "a path is not absolute and normalised".to_string(),
+            errors: refused,
+        });
+    }
+    if !crate::validate::is_utc_timestamp(derived_at) {
+        return Err(Failure::Usage(format!(
+            "--derived-at {derived_at:?} is not YYYY-MM-DDTHH:MM:SSZ"
+        )));
+    }
+    let loaded = load_contract(contract, None)?;
+    let sets = estimates
+        .iter()
+        .enumerate()
+        .map(|(i, p)| load_estimate_set(p, None, &format!("estimates.{i}")))
+        .collect::<Result<Vec<_>, _>>()?;
+    derive(
+        &loaded.contract,
+        &loaded.path,
+        &loaded.sha256,
+        &sets,
+        derived_at,
+        current_tool()?,
+    )
+    .map_err(|e| Failure::Binding {
+        message: e.to_string(),
+        errors: e.errors,
+    })
+}

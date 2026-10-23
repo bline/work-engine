@@ -81,7 +81,7 @@ pub const MAX_UPSTREAM_BYTES: u64 = 32 * 1024 * 1024;
 /// Read `path` only if it is a regular file (symlinks are followed, as `read` does), at most
 /// [`MAX_UPSTREAM_BYTES`]. A FIFO, device or directory is refused before any read: opening a
 /// FIFO with no writer would block, and a device such as `/dev/zero` has no end.
-fn read_regular_file(path: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn read_regular_file(path: &str) -> Result<Vec<u8>, String> {
     use std::io::Read;
     let refuse = |what: &str| format!("{what} (a stored path must name a regular file)");
     let regular = |meta: &std::fs::Metadata| -> Result<(), String> {
