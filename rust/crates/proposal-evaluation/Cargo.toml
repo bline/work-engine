@@ -1,0 +1,23 @@
+[package]
+name = "proposal-evaluation"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+publish = false
+description = "Proposal evaluation: typed estimate-set schema and mechanical validation. Tooling never emits a readiness verdict, priority or acceptance."
+
+[lib]
+name = "proposal_evaluation"
+path = "src/lib.rs"
+
+[[bin]]
+name = "work-engine-evaluation"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+sha2 = "=0.10.9"
+thiserror = "=2.0.21"
+
+[workspace]
