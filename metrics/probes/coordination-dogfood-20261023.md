@@ -4,9 +4,15 @@
 controlled estimate of the skill's benefit — there is no control arm, so no
 figure from this may be attributed to the skill.
 
-Treatment in use: `skills/coordination-channels/SKILL.md` blob
-`7e604a4a8618d53624c8ccd7b55d9f2769bf8ae3`, loaded from the repository by
-participating roots. Scope: **root and coordinator only.** The scripted pilot
+Treatment in use: `skills/coordination-channels/SKILL.md`, loaded from the
+repository by participating roots. Two identifiers for the same content, both
+recorded so no document contradicts another: git blob
+`7e604a4a8618d53624c8ccd7b55d9f2769bf8ae3`, file sha256
+`5eda9d070c741a0dc8085b21936e8605152441bf9c3557aa71de9ba5a6fc914f` — the latter
+is what `sha256sum` returns and what sessions are asked to record.
+
+The prompt handed to participating sessions is
+`/home/bline/cbm-work/coordination-dogfood-prompt.md`. Scope: **root and coordinator only.** The scripted pilot
 (`coordination-skill-pilot-prereg-20261023.md`) stays registered, deferred and
 unrun.
 
