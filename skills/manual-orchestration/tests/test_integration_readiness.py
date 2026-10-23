@@ -16,15 +16,21 @@ ROOT = Path(__file__).parents[1]
 SCRIPT = ROOT / "scripts" / "integration_readiness.py"
 
 BINARY_TEMPLATE = """#!{python}
-import json, sys
+import hashlib, json, sys
 with open({log!r}, "a") as stream:
     stream.write(json.dumps(sys.argv[1:]) + "\\n")
 command, args = sys.argv[1], sys.argv[2:]
 out = args[args.index("--out") + 1] if "--out" in args else None
 exit_code = {plan_exit} if command == "plan" else {evaluate_exit}
 if exit_code == 0 and out and not ({skip_write} and command == "evaluate"):
+    # A real evaluation records the digest of the executable that produced it.
+    own = {tool_digest!r} or hashlib.sha256(open(sys.argv[0], "rb").read()).hexdigest()
     with open(out, "x") as stream:
-        stream.write("{{}}\\n")
+        json.dump({{"tool": {{"binary_sha256": own}}}} if command == "evaluate" else {{}}, stream)
+        stream.write("\\n")
+if command == "plan" and {swap_on_plan}:
+    with open(sys.argv[0], "a") as stream:
+        stream.write("# replaced while running plan\\n")
 sys.exit(exit_code)
 """
 
@@ -33,6 +39,9 @@ args = sys.argv[1:]
 save = args[args.index("--save") + 1]
 with open({log!r}, "a") as stream:
     stream.write(json.dumps({{"argv": args, "save_existed": os.path.exists(save)}}) + "\\n")
+if {swap_binary!r}:
+    with open({swap_binary!r}, "a") as stream:
+        stream.write("# replaced during the battery\\n")
 if {write_result}:
     with open(save, "x") as stream:
         json.dump({{"battery_sha256": {digest!r}, "failed": [], "checks": {{}}}}, stream)
@@ -48,20 +57,23 @@ class Fixture:
     """One stub binary, one stub battery and a profile/subject pair in a scratch directory."""
 
     def __init__(self, *, plan_exit=0, evaluate_exit=0, skip_write=False, battery_exit=0,
-                 write_result=True, print_digest=True) -> None:
+                 write_result=True, print_digest=True, tool_digest=None, swap_on_plan=False,
+                 swap_binary_in_battery=False) -> None:
         self.directory = Path(tempfile.mkdtemp())
         self.binary_log = self.directory / "binary.log"
         self.battery_log = self.directory / "battery.log"
         self.binary = self.directory / "work-engine-readiness"
         self.binary.write_text(BINARY_TEMPLATE.format(
             python=sys.executable, log=str(self.binary_log), plan_exit=plan_exit,
-            evaluate_exit=evaluate_exit, skip_write=skip_write))
+            evaluate_exit=evaluate_exit, skip_write=skip_write,
+            tool_digest=tool_digest, swap_on_plan=swap_on_plan))
         self.binary.chmod(self.binary.stat().st_mode | stat.S_IXUSR)
         self.digest = hashlib.sha256(self.binary.read_bytes()).hexdigest()
         self.battery = self.directory / "evidence_battery.py"
         self.battery.write_text(BATTERY_TEMPLATE.format(
             log=str(self.battery_log), write_result=write_result, print_digest=print_digest,
-            digest=DIGEST, exit_code=battery_exit))
+            digest=DIGEST, exit_code=battery_exit,
+            swap_binary=str(self.binary) if swap_binary_in_battery else ""))
         self.profiles = []
         self.subjects = []
         for name in ("a", "b"):
@@ -270,6 +282,66 @@ class ExitFiveTests(unittest.TestCase):
         fixture.binary.write_text(fixture.binary.read_text() + "# changed\n")
         self.assertEqual(fixture.run().returncode, 5)
         self.assertEqual(fixture.binary_calls(), [])
+
+    def test_binary_replaced_during_the_battery_is_not_evaluated_with(self) -> None:
+        # EXT-003: the digest is re-verified immediately before each evaluate execution.
+        fixture = Fixture(swap_binary_in_battery=True)
+        done = fixture.run()
+        self.assertEqual(done.returncode, 5)
+        self.assertIn("binary sha256 mismatch before evaluate pair 1", done.stderr)
+        self.assertEqual([call[0] for call in fixture.binary_calls()], ["plan"])
+        self.assertFalse((fixture.out_dir / "evaluation-1.json").exists())
+        self.assertEqual(done.stdout, "")
+
+    def test_binary_replaced_during_plan_runs_no_battery(self) -> None:
+        fixture = Fixture(swap_on_plan=True)
+        done = fixture.run()
+        self.assertEqual(done.returncode, 5)
+        self.assertIn("after plan", done.stderr)
+        self.assertEqual(fixture.battery_calls(), [])
+
+    def test_second_pair_is_verified_before_its_own_execution(self) -> None:
+        fixture = Fixture()
+        # The stub changes its own file after its first evaluate has run, so the second
+        # pair's pre-execution verification must refuse it.
+        text = fixture.binary.read_text().replace(
+            'sys.exit(exit_code)', 'if command == "evaluate":\n    open(sys.argv[0], "a").write("# after first evaluate\\n")\nsys.exit(exit_code)')
+        fixture.binary.write_text(text)
+        digest = hashlib.sha256(fixture.binary.read_bytes()).hexdigest()
+        done = fixture.run(pairs=2, binary_sha256=digest)
+        self.assertEqual(done.returncode, 5)
+        self.assertIn("before evaluate pair 2", done.stderr)
+        self.assertEqual([call[0] for call in fixture.binary_calls()], ["plan", "evaluate"])
+
+    def test_evaluation_recording_another_binary_fails_and_reports_what_ran(self) -> None:
+        # EXT-003: a replacement between the verification and the exec is caught from the
+        # evaluation's own record, and the summary names the digest that actually ran.
+        other = "cd" * 32
+        fixture = Fixture(tool_digest=other)
+        done = fixture.run()
+        self.assertEqual(done.returncode, 5)
+        self.assertIn(f"recorded tool.binary_sha256 {other}", done.stderr)
+        summary = json.loads(done.stdout)
+        self.assertEqual(summary["binary"]["sha256"], fixture.digest)
+        self.assertEqual(summary["binary"]["evaluated_as_sha256"], [other])
+        self.assertEqual(summary["evaluations"][0]["tool_binary_sha256"], other)
+
+    def test_evaluation_without_a_tool_digest_cannot_confirm_the_binary(self) -> None:
+        fixture = Fixture()
+        text = fixture.binary.read_text().replace('{"tool": {"binary_sha256": own}}', '{}')
+        fixture.binary.write_text(text)
+        digest = hashlib.sha256(fixture.binary.read_bytes()).hexdigest()
+        done = fixture.run(binary_sha256=digest)
+        self.assertEqual(done.returncode, 5)
+        self.assertEqual(json.loads(done.stdout)["binary"]["evaluated_as_sha256"], [None])
+
+    def test_success_reports_the_digest_the_evaluation_recorded(self) -> None:
+        fixture = Fixture()
+        done = fixture.run()
+        self.assertEqual(done.returncode, 0, done.stderr)
+        binary = json.loads(done.stdout)["binary"]
+        self.assertEqual(binary["sha256"], fixture.digest)
+        self.assertEqual(binary["evaluated_as_sha256"], [fixture.digest])
 
 
 class StaticTests(unittest.TestCase):

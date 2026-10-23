@@ -11,7 +11,13 @@ The script is the procedural binding of the decision-readiness contract
 (section 5.2, AC7). In one process it:
 
   1. verifies the binary's sha256 against --binary-sha256 and runs that binary
-     by the explicit path given, never a build;
+     by the explicit path given, never a build. The digest is verified again
+     immediately before every execution (`plan` and each `evaluate`) and after
+     `plan`, and each evaluation's own `tool.binary_sha256` (the evaluator's
+     hash of the executable it ran as) must equal the pin. The pathname is
+     still executed, so a replacement between a verification and the exec is
+     not prevented; it is detected from the evaluation's record and fails the
+     run (exit 5, with the summary still printed to show what ran);
   2. runs `plan` over all pairs into DIR/run-plan.json;
   3. runs the battery as `--plan RP --save DIR/battery-result.json --quiet`,
      where the result path must not exist beforehand;
@@ -35,7 +41,9 @@ Exit codes:
   3  `evaluate` refused the inputs (binding error) for at least one pair
   4  no observation: battery exit other than 0 or 1, no result file, or no
      parsable battery digest on its stdout
-  5  the binary's sha256 differs from --binary-sha256 (nothing is run)
+  5  the binary's sha256 differs from --binary-sha256, at the start or at a
+     later re-verification (nothing further is run), or an evaluation records
+     a `tool.binary_sha256` other than the pin
 
 Standard library only; run with `python3 -I`.
 """
@@ -112,6 +120,22 @@ def verify_inputs(arguments: argparse.Namespace) -> None:
         raise Stop(EXIT_DIGEST, f"binary sha256 mismatch: expected {expected}, found {actual}; nothing was run")
 
 
+def verify_binary(binary: Path, expected: str, when: str) -> None:
+    """Fail with EXIT_DIGEST unless the file at the pathname has the pinned digest now."""
+    actual = sha256_file(binary)
+    if actual != expected:
+        raise Stop(EXIT_DIGEST, f"binary sha256 mismatch {when}: expected {expected}, found {actual}")
+
+
+def evaluation_tool_digest(path: Path) -> str | None:
+    """The `tool.binary_sha256` an evaluation records, or None when it is absent or unreadable."""
+    try:
+        digest = json.loads(path.read_text(encoding="utf-8"))["tool"]["binary_sha256"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return digest if isinstance(digest, str) else None
+
+
 def output_paths(out_dir: Path, pair_count: int) -> dict[str, Path]:
     paths = {
         "plan": out_dir / "run-plan.json",
@@ -131,6 +155,7 @@ def write_new(path: Path, text: str) -> None:
 def main(argv: list[str]) -> int:
     arguments = parse_arguments(argv)
     verify_inputs(arguments)
+    pinned = arguments.binary_sha256.lower()
     binary = arguments.binary.resolve()
     battery = arguments.battery.resolve()
     out_dir = arguments.out_dir.resolve()
@@ -145,7 +170,9 @@ def main(argv: list[str]) -> int:
     plan_command = [str(binary), "plan", "--out", str(paths["plan"])]
     for profile, subject in zip(arguments.profile, arguments.subject):
         plan_command += ["--profile", str(profile.resolve()), "--subject", str(subject.resolve())]
+    verify_binary(binary, pinned, "before plan; nothing was run")
     planned = run(plan_command)
+    verify_binary(binary, pinned, "after plan; no battery was run")
     if planned.returncode != 0 or not paths["plan"].is_file():
         raise Stop(
             EXIT_USAGE,
@@ -186,8 +213,10 @@ def main(argv: list[str]) -> int:
     evaluated_at = arguments.evaluated_at or utc_now()
     codes: list[int] = []
     evaluations = []
+    digest_failures: list[str] = []
     for index, (profile, subject) in enumerate(zip(arguments.profile, arguments.subject), start=1):
         target = paths[f"evaluation-{index}"]
+        verify_binary(binary, pinned, f"before evaluate pair {index}; earlier outputs stay in {out_dir}")
         evaluated = run([
             str(binary), "evaluate",
             "--profile", str(profile.resolve()), "--subject", str(subject.resolve()),
@@ -199,13 +228,22 @@ def main(argv: list[str]) -> int:
         if evaluated.returncode != 0:
             sys.stderr.write(f"evaluate pair {index} exited {evaluated.returncode}\n{evaluated.stdout}{evaluated.stderr}")
         elif target.is_file():
-            evaluations.append({"pair": index, "path": str(target), "sha256": sha256_file(target)})
+            ran_as = evaluation_tool_digest(target)
+            evaluations.append({
+                "pair": index, "path": str(target), "sha256": sha256_file(target),
+                "tool_binary_sha256": ran_as,
+            })
+            if ran_as != pinned:
+                digest_failures.append(f"evaluate pair {index} recorded tool.binary_sha256 {ran_as}, pinned {pinned}")
         else:
             codes[-1] = EXIT_USAGE
             sys.stderr.write(f"evaluate pair {index} exited 0 but wrote no {target}\n")
 
     summary = {
-        "binary": {"path": str(binary), "sha256": arguments.binary_sha256.lower()},
+        "binary": {
+            "path": str(binary), "sha256": pinned,
+            "evaluated_as_sha256": [entry["tool_binary_sha256"] for entry in evaluations],
+        },
         "run_plan": observation["plan"],
         "battery_result": observation["result"],
         "observation": {"path": str(paths["observation"]), "sha256": sha256_file(paths["observation"])},
@@ -215,6 +253,9 @@ def main(argv: list[str]) -> int:
         "evaluate_exit_codes": codes,
     }
     sys.stdout.write(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    if digest_failures:
+        sys.stderr.write("binary sha256 mismatch: " + "; ".join(digest_failures) + "\n")
+        return EXIT_DIGEST
     if EXIT_BINDING in codes:
         return EXIT_BINDING
     if any(code != 0 for code in codes):
