@@ -15,9 +15,17 @@
 //! assessment`; only `check --kind evaluation --rederive` catches it, so a decision must cite a
 //! rederive result alongside the assessment check.
 //!
-//! An assessment's `evaluation.path` is a pointer for the reader and is not compared with the path
-//! passed to `check --kind assessment`; the `evaluation.sha256` digest binds the content, so a
-//! byte-identical copy at another path is accepted with the recorded path unchanged.
+//! An assessment's `evaluation.path` is the pointer a reader follows, so `check --kind assessment`
+//! reads it: the path must be readable (`evaluation_path_unresolved`) and its bytes must equal the
+//! file passed with `--evaluation` (`evaluation_path_mismatch`). The path need not be the same
+//! pathname as `--evaluation`; a byte-identical copy at the cited path is accepted, since
+//! `evaluation.sha256` binds the content. The check runs at the time of checking and cannot show
+//! the file was at that path when the assessment was written.
+//!
+//! The attributed-basis rule trusts the evaluation's status, so the evaluation's requirement
+//! classes are compared with the profile's: an evaluation that relabels a requirement's class is
+//! rejected with `evaluation_class_mismatch` by `check --kind assessment` and by `check --kind
+//! evaluation --rederive`. `check --kind evaluation` without a profile cannot make that comparison.
 //!
 //! Stated deviations from contract v3 (errata v2): E3, an attributed requirement with
 //! `predicates: []` is accepted, and duplicate keys inside a subject's maps are not rejected

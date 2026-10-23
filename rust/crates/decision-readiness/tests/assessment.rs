@@ -659,3 +659,127 @@ fn an_assessment_over_a_structurally_invalid_evaluation_is_refused_with_evaluati
     assert_eq!(run.code, 1);
     assert_eq!(run.codes(), ["verdict_inconsistent"]);
 }
+
+#[test]
+fn an_evaluation_that_relabels_an_attributed_requirement_mechanical_is_rejected() {
+    // EXT-002: the evaluation claims `class: mechanical, status: met` for a requirement the
+    // profile declares attributed, and the assessment keeps `basis: evaluation` over `met`.
+    let f = fixture("assess-class-forgery", true);
+    let profile = read_json(&f.case.profile_path());
+    let attributed: Vec<String> = profile["requirements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["class"] == "attributed")
+        .map(|r| r["id"].as_str().unwrap().to_string())
+        .collect();
+    assert!(!attributed.is_empty());
+
+    let mut forged = read_json(&f.evaluation);
+    let predicate = forged["requirements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["class"] == "mechanical")
+        .unwrap()["predicates"][0]
+        .clone();
+    for r in forged["requirements"].as_array_mut().unwrap() {
+        if attributed.contains(&r["id"].as_str().unwrap().to_string()) {
+            r["class"] = json!("mechanical");
+            r["status"] = json!("met");
+            r.as_object_mut().unwrap().remove("reason");
+            r["predicates"] = json!([predicate.clone()]);
+        }
+    }
+    let met = forged["requirements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["status"] == "met")
+        .count();
+    forged["counts"] = json!({"met": met, "unmet": 0, "indeterminate": 0});
+    let forged_path = f.case.dir.join("forged-class.evaluation.json");
+    write_json(&forged_path, &forged);
+    // Without the profile the forged evaluation is structurally consistent: the class check
+    // needs the profile, so it runs in the assessment check and with --rederive.
+    assert_eq!(
+        cli(&["check", "--kind", "evaluation", &s(&forged_path)]).code,
+        0
+    );
+
+    let mut doc = f.doc.clone();
+    doc["evaluation"] = json!({"path": s(&forged_path), "sha256": file_sha(&forged_path)});
+    for entry in doc["requirements"].as_array_mut().unwrap() {
+        if attributed.contains(&entry["id"].as_str().unwrap().to_string()) {
+            entry["evaluation_status"] = json!("met");
+            entry["assessed_status"] = json!("met");
+            entry["basis"] = json!("evaluation");
+        }
+    }
+    doc["indeterminate"] = json!([]);
+    doc["verdict"] = json!("ready");
+    let run = assess(
+        &f.case.dir,
+        "class-forgery",
+        &f.case.profile_path(),
+        &forged_path,
+        &doc,
+    );
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(
+        run.codes(),
+        vec!["evaluation_class_mismatch"; attributed.len()],
+        "{}",
+        run.stdout
+    );
+
+    // The structural evaluation check rejects it too once the profile is supplied.
+    let run = cli(&[
+        "check",
+        "--kind",
+        "evaluation",
+        &s(&forged_path),
+        "--rederive",
+        "--profile",
+        &s(&f.case.profile_path()),
+        "--subject",
+        &s(&f.case.subject_path()),
+    ]);
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert!(
+        run.codes().iter().any(|c| c == "evaluation_class_mismatch"),
+        "{}",
+        run.stdout
+    );
+
+    // Control: the genuine evaluation and honest assessment pass.
+    assert_eq!(f.run("class-control", &f.doc).code, 0);
+}
+
+#[test]
+fn the_cited_evaluation_path_must_resolve_to_the_checked_bytes() {
+    // EXT-004: `evaluation.path` is the pointer a reader follows.
+    let f = fixture("assess-path", true);
+    let with_path = |path: &str| {
+        let mut doc = f.doc.clone();
+        doc["evaluation"]["path"] = json!(path);
+        doc
+    };
+    // A path that does not exist.
+    let missing = s(&f.case.dir.join("does-not-exist.json"));
+    let run = f.run("path-missing", &with_path(&missing));
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["evaluation_path_unresolved"]);
+    // A path that resolves to a different file.
+    let other = f.case.dir.join("other.json");
+    write(&other, "{\"not\": \"the evaluation\"}\n");
+    let run = f.run("path-other", &with_path(&s(&other)));
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["evaluation_path_mismatch"]);
+    // A byte-identical copy at the cited path is accepted: the digest still binds the content.
+    let copy = f.case.dir.join("copy.json");
+    std::fs::copy(&f.evaluation, &copy).unwrap();
+    assert_eq!(f.run("path-copy", &with_path(&s(&copy))).code, 0);
+    // Control: the honest assessment cites the supplied file.
+    assert_eq!(f.run("path-control", &f.doc).code, 0);
+}

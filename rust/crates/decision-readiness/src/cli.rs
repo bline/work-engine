@@ -10,7 +10,7 @@
 
 use crate::check::{
     AssessmentContext, changed_checks, check_assessment, check_codes as cc, check_evaluation,
-    compare_evaluations, raw_purpose,
+    check_evaluation_classes, compare_evaluations, raw_purpose,
 };
 use crate::diag::{CheckReport, ErrorItem, codes};
 use crate::digest::sha256_hex;
@@ -20,7 +20,8 @@ use crate::evaluate::{
 use crate::model::*;
 use crate::plan::{PairBytes, PlanError, derive_plan, plan_to_string};
 use crate::validate::{
-    DocError, parse_document, validate_observation, validate_profile, validate_subject,
+    DocError, is_normalised_absolute, parse_document, validate_observation, validate_profile,
+    validate_subject,
 };
 use serde::Serialize;
 use serde_json::Value;
@@ -272,6 +273,13 @@ fn check_evaluation_file(
     };
     let mut report = CheckReport::new("evaluation", check_evaluation(&evaluation));
     if let (true, Some(profile), Some(subject)) = (rederive, profile, subject) {
+        // The profile is available, so the structural check also compares classes with it. A
+        // profile that does not parse is reported by the rederivation that follows.
+        if let Ok(declared) = parse_document::<Profile>(&read_file(profile)?) {
+            report
+                .errors
+                .extend(check_evaluation_classes(&evaluation, &declared));
+        }
         let (errors, notes) = rederive_evaluation(&evaluation, profile, subject)?;
         report.errors.extend(errors);
         report.notes = notes;
@@ -368,9 +376,8 @@ fn check_assessment_file(
     let evaluation: Evaluation = parse_input("--evaluation", &evaluation_bytes)?;
     let bytes = read_file(file)?;
     let mut report = match parse_document::<Assessment>(&bytes) {
-        Ok(assessment) => CheckReport::new(
-            "assessment",
-            check_assessment(
+        Ok(assessment) => {
+            let mut errors = check_assessment(
                 &assessment,
                 &AssessmentContext {
                     profile: &profile,
@@ -378,8 +385,13 @@ fn check_assessment_file(
                     evaluation: &evaluation,
                     evaluation_bytes: &evaluation_bytes,
                 },
-            ),
-        ),
+            );
+            errors.extend(check_evaluation_citation(
+                &assessment.evaluation.path,
+                &evaluation_bytes,
+            ));
+            CheckReport::new("assessment", errors)
+        }
         Err(DocError::Schema(message)) => schema_report("assessment", message),
         Err(DocError::Syntax(message)) => {
             return Err(Failure::usage(format!("assessment: {message}")));
@@ -387,6 +399,30 @@ fn check_assessment_file(
     };
     report.purpose = raw_purpose(&bytes);
     Ok(report)
+}
+
+/// The path an assessment cites for its evaluation must be readable and hold the bytes that were
+/// checked: the pointer is what a later reader follows. A byte-identical copy at the cited path
+/// satisfies it; a path that does not resolve, or resolves to different bytes, does not.
+fn check_evaluation_citation(cited: &str, supplied: &[u8]) -> Option<ErrorItem> {
+    // A path that is not normalised and absolute is already reported by the structural rules, and
+    // resolving it would depend on the working directory.
+    if !is_normalised_absolute(cited) {
+        return None;
+    }
+    match std::fs::read(cited) {
+        Err(error) => Some(ErrorItem::new(
+            cc::EVALUATION_PATH_UNRESOLVED,
+            "evaluation.path",
+            format!("cannot read the cited evaluation: {error}"),
+        )),
+        Ok(bytes) if bytes != supplied => Some(ErrorItem::new(
+            cc::EVALUATION_PATH_MISMATCH,
+            "evaluation.path",
+            "the cited file's digest differs from the supplied --evaluation",
+        )),
+        Ok(_) => None,
+    }
 }
 
 /// `check --kind profile` on file bytes.

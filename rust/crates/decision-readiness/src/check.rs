@@ -49,6 +49,13 @@ pub mod check_codes {
     pub const FRESHNESS_BASIS_MISMATCH: &str = "freshness_basis_mismatch";
     pub const CLAIM_RELIANCE_INVALID: &str = "claim_reliance_invalid";
     pub const EVALUATION_INVALID: &str = "evaluation_invalid";
+    /// An evaluation requirement's class differs from the profile's class for the same id.
+    pub const EVALUATION_CLASS_MISMATCH: &str = "evaluation_class_mismatch";
+    /// The assessment's `evaluation.path` cannot be read.
+    pub const EVALUATION_PATH_UNRESOLVED: &str = "evaluation_path_unresolved";
+    /// The file at the assessment's `evaluation.path` has a different digest from the one
+    /// supplied with `--evaluation`.
+    pub const EVALUATION_PATH_MISMATCH: &str = "evaluation_path_mismatch";
 }
 use check_codes as cc;
 
@@ -300,6 +307,32 @@ pub fn compare_evaluations(
 // check --kind assessment
 // ---------------------------------------------------------------------------
 
+/// Evaluation requirements whose class differs from the profile's class for the same id. A
+/// requirement's class decides which statuses the evaluator may derive, so an evaluation that
+/// relabels one is not evidence about that requirement. Ids the profile does not name are left to
+/// the rules that already report them.
+pub fn check_evaluation_classes(e: &Evaluation, profile: &Profile) -> Vec<ErrorItem> {
+    let mut errors = Vec::new();
+    for (i, r) in e.requirements.iter().enumerate() {
+        let Some(declared) = profile.requirements.iter().find(|p| p.id == r.id) else {
+            continue;
+        };
+        let same = matches!(
+            (declared.class, r.class),
+            (RequirementClass::Mechanical, EvaluatedClass::Mechanical)
+                | (RequirementClass::Attributed, EvaluatedClass::Attributed)
+        );
+        if !same {
+            errors.push(err(
+                cc::EVALUATION_CLASS_MISMATCH,
+                format!("requirements[{i}].class"),
+                format!("the profile declares {} as {:?}", r.id, declared.class),
+            ));
+        }
+    }
+    errors
+}
+
 fn severity(status: Status) -> u8 {
     match status {
         Status::Met => 0,
@@ -439,7 +472,9 @@ pub fn check_assessment(a: &Assessment, ctx: &AssessmentContext<'_>) -> Vec<Erro
         ));
     }
 
-    // Rule 2: coverage.
+    // Rule 2: coverage. The evaluation's classes must be the profile's before its statuses are
+    // compared below: the attributed-basis guard trusts the evaluation's status.
+    errors.extend(check_evaluation_classes(evaluation, profile));
     let evaluated: BTreeMap<&str, &EvaluatedRequirement> = evaluation
         .requirements
         .iter()
