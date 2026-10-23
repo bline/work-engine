@@ -426,3 +426,81 @@ So the per-dispatch verification amendment 5 requires must read **the worker's
 own listing**, not the filesystem — the filesystem is the wrong instrument for
 that question, and a clean filesystem check is necessary but not sufficient.
 
+
+## Amendment 6, 2026-10-23: what counts toward the 2,000-line read set
+
+Board sequence 2574 (coordinator `c1d31e88`) asks for a ruling before E2 is
+scored: do **predecessor output**, the **campaign contract**, and **DESIGN.md**
+count toward amendment 2's "read set of at least 2,000 existing lines"? E2's
+dispatch packet records its own criterion status as `not established` pending
+this, so the ruling decides whether E2 is a scored R2 slice at all.
+
+**Columns, re-counted here at E2's base `f2fe643d` rather than taken from the
+packet.**
+
+| column | lines | basis |
+|---|---|---|
+| repo | 439 | 221 + 26 + 84 + 108; `proposal-evaluation.md` counted at base |
+| `contract-v2.md` ranges | 283 | packet-stated ranges |
+| `contract-v2-errata-1.md` 1-33 | 33 | packet-stated range |
+| predecessor output (E1) | **1,672** | counted at base: `src/**` 1,473 + `tests/support/mod.rs` 199 — exact match to the coordinator's figure |
+| DESIGN.md | 817 | counted at base |
+
+### The ruling, in three parts
+
+**1. Predecessor output counts.** It exists at base, so P1-M-001 is satisfied
+and verified; the packet names it in the read set; and builder 1 recorded
+reading about **1,603 of its 1,672** lines. Amendment 2 grounds the threshold in
+the size of the read set a builder is *given*, because pre-write reading is what
+drives B1-B3. 1,672 lines of Rust cost the same context whoever wrote them.
+Provenance appears neither in the criterion nor in the mechanism it names.
+
+**2. Contract and errata count (316).** Amendment 2 derives the threshold from
+B1, whose read set it describes as "a 2,700-line Rust crate **plus contract
+sections**". Campaign-authored spec text was inside the basis that set the
+number, so excluding it here would hold R2 to a stricter rule than the baseline
+it is compared against.
+
+**3. DESIGN.md does not count (817).** It is the `AGENTS.md` doctrine read,
+present in every session in both arms, and it was **not** itemised in the basis
+from which 2,000 was derived. Adding a constant 817 to every slice while the
+threshold stays 2,000 would lower the bar by 817 rather than measure the slice.
+It remains a separate column — which is what the dispatch packet already
+instructs ("DESIGN.md as its own line").
+
+### Effect
+
+**E2 meets the criterion at 2,427** (439 + 316 + 1,672). The conclusion does not
+depend on part 2: repo plus predecessor alone is **2,111**. It depends entirely
+on part 1 — without predecessor output the maximum reachable count is 1,572
+*including* DESIGN.md and 755 under this ruling. **Part 1 is load-bearing and is
+the part to attack if this ruling is wrong.**
+
+### The cost of part 1, recorded as a covariate, not a disqualification
+
+A chained slice's read set is partly an **outcome** of the slice before it, so
+eligibility becomes endogenous to the campaign: E2 cleared the threshold because
+E1 emitted 1,672 lines. Two consequences, registered now.
+
+- **E2's B1-B3 values carry a provenance flag.** 1,672 of its ~2,427 read lines
+  are same-campaign, same-contract Rust written by a Sonnet builder, which may be
+  cheaper to read than unfamiliar repository code. Any comparison against B1's
+  pre-existing-crate baseline must state this; it is not corrected for.
+- **A slice whose read set is predominantly predecessor output is not
+  independent evidence** for H1-H3. If P1 also chains, R2's scored slices are not
+  three independent draws, and n must be stated as such rather than as 3.
+
+### Also settled, being measurable at the same time
+
+E2 added **3,598 Rust lines** (src 1,750, tests 1,848; basis
+`git diff --numstat f2fe643d..HEAD`, all files Rust), so the >= 1,000-added-lines
+criterion is met and H4 is scorable for this slice. E2 ran **three builders**
+(two handoffs) and E1 three, so the >= 3-code-slice-builders criterion is met.
+
+### A defect in this prereg's own JSON, found while ruling
+
+`requirements_for_scorability[0]` in the `.json` sibling still reads "at least
+two Rust-building slices of 2000-5000 added Rust lines each" — the criterion
+**amendment 2 replaced**. The `.md` carries the restated criterion; the `.json`
+does not, so a reader applying the JSON would use the superseded rule. It is
+marked superseded rather than rewritten, because a registration is append-only.

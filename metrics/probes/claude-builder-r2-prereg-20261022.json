@@ -438,5 +438,58 @@
       "check_that_would_have_caught_it": "search for SKILL.md across the whole agent configuration root rather than listing the directory one expects",
       "related_fact": "the listing delivered to the fix-b builder named 13 skills while the discovery surface is 71 definitions; not everything discoverable is listed, so per-dispatch verification must read the worker's own listing. A clean filesystem check is necessary but not sufficient"
     }
+  },
+  "requirements_for_scorability_note": "requirements_for_scorability[0] is SUPERSEDED by amendment_2 and the counting rule in amendment_6; it is retained unrewritten because a registration is append-only. The governing criterion is: each scored code slice gives its builders a read set of at least 2000 existing lines and adds at least 1000 lines in one language, with at least three code-slice builders in total.",
+  "amendment_6": {
+    "amended_at": "2026-10-23T13:20:00Z",
+    "question": "Do predecessor output, the campaign contract and DESIGN.md count toward amendment 2's read set of at least 2000 existing lines? Asked by coordinator c1d31e88 at chatboard sequence 2574, before E2 is scored.",
+    "counted_at_base": "f2fe643d9d29170a1421fa04ba02cc44db5ba7c9",
+    "columns": {
+      "repo": 439,
+      "contract_v2_ranges": 283,
+      "errata_1": 33,
+      "predecessor_output_e1": 1672,
+      "design_md": 817
+    },
+    "verification": "predecessor output recounted at base from the git tree: src/** 1473 + tests/support/mod.rs 199 = 1672, exact match to the coordinator's figure; DESIGN.md 817 and proposal-evaluation.md 221 also counted at base",
+    "ruling": {
+      "predecessor_output": "counts",
+      "contract_and_errata": "counts",
+      "design_md": "does not count"
+    },
+    "ruling_basis": {
+      "predecessor_output": "exists at base so P1-M-001 is satisfied; named in the packet read set; builder 1 recorded reading about 1603 of 1672. Amendment 2 grounds the threshold in the read set a builder is given, because pre-write reading drives B1-B3; provenance is in neither the criterion nor the mechanism.",
+      "contract_and_errata": "amendment 2 derives the threshold from B1, whose read set it describes as a 2700-line Rust crate plus contract sections, so campaign-authored spec text was inside the basis that set the number.",
+      "design_md": "AGENTS.md doctrine read, constant across both arms, not itemised in the basis from which 2000 was derived; adding a constant 817 while the threshold stays 2000 would lower the bar by 817. The dispatch packet already requires it as its own line."
+    },
+    "effect": {
+      "e2_read_set_total": 2427,
+      "meets_2000_criterion": true,
+      "robust_without_contract": 2111,
+      "maximum_without_predecessor_output_including_design_md": 1572,
+      "load_bearing_part": "predecessor output; without it E2 fails under every combination"
+    },
+    "covariate_registered": {
+      "name": "read_set_provenance_endogeneity",
+      "statement": "A chained slice's read set is partly an outcome of the preceding slice, so eligibility is endogenous to the campaign: E2 cleared the threshold because E1 emitted 1672 lines.",
+      "consequence_1": "E2's B1-B3 values carry a provenance flag: 1672 of about 2427 read lines are same-campaign, same-contract Rust written by a Sonnet builder, possibly cheaper to read than unfamiliar repository code. Stated, not corrected for.",
+      "consequence_2": "A slice whose read set is predominantly predecessor output is not independent evidence for H1-H3. If P1 also chains, R2's scored slices are not three independent draws and n must be stated accordingly."
+    },
+    "also_settled": {
+      "e2_added_lines_rust": {
+        "src": 1750,
+        "tests": 1848,
+        "total": 3598,
+        "basis": "git diff --numstat f2fe643d..HEAD, all files Rust"
+      },
+      "added_lines_criterion_met": true,
+      "h4_scorable_for_e2": true,
+      "builders": {
+        "e1": 3,
+        "e2": 3,
+        "criterion_at_least_3": "met"
+      }
+    },
+    "defect_found_while_ruling": "requirements_for_scorability[0] in this file still encodes the pre-amendment-2 criterion; see requirements_for_scorability_note."
   }
 }
