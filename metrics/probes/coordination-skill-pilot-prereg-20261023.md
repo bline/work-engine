@@ -217,3 +217,26 @@ figures, never as one number:
 per-trial weighted-token ceiling and a maximum emitted-action count per trial,
 both registered with the calibration result. A trial that hits a limit is
 recorded as `limit_reached`, not as a failure of coordination.
+
+## Amendment 2, 2026-10-23: the treatment text has advanced past the pinned blob
+
+**The pin above is not changed.** `7e604a4a…` (116 lines) remains this
+registration's treatment arm, and the eight fixtures stay frozen against it.
+
+What changed is the world outside this file: dogfooding produced two corrections
+to the skill, and `skills/coordination-channels/SKILL.md` is now blob
+`7ee894fa16d0fa06593386a29c4a33aeb25f67c6` (159 lines) — the resumption and
+rearm contract for `wait`, and the cost of a selector measured as a wakeup
+rather than a message. `metrics/probes/coordination-dogfood-20261023.md` holds
+the observation and both version identities.
+
+So **whoever un-defers this pilot makes an explicit choice first** and records
+it here: run the registered v1 arm as pinned, which measures the text the
+scenarios were written against, or re-pin to the then-current blob and re-check
+all eight fixtures against it. Scenario 4 is the one to re-check first: its
+premise is a subscriber that disappears, which v1 framed only as liveness being
+unreadable, and v2 now gives a concrete mechanism for — a listener that ends on
+its own timeout with no signal. A coordinator holding v2 may answer that
+scenario differently for reasons the fixture did not anticipate.
+Materializing "the current skill" without making that choice would silently
+change the arm, which is the failure this section exists to prevent.
