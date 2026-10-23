@@ -103,40 +103,51 @@ pub fn cli<S: AsRef<str>>(args: &[S]) -> Run {
 /// Like `cli`, but a child that has not exited within `limit` is killed and reported as `None`,
 /// so a regression that blocks cannot hang the test run.
 pub fn cli_with_deadline<S: AsRef<str>>(args: &[S], limit: std::time::Duration) -> Option<Run> {
+    let mut command = Command::new(BIN);
+    command.args(args.iter().map(|a| a.as_ref()));
+    run_with_deadline(command, limit)
+}
+
+/// Run `command` with a null stdin; kill it and return `None` if it has not exited within
+/// `limit`. Standard output and error are drained by their own threads while the child runs, so a
+/// child that writes more than a pipe buffer holds is not mistaken for one that is blocked. A
+/// child ended by a signal is reported with `code` = minus the signal number.
+pub fn run_with_deadline(mut command: Command, limit: std::time::Duration) -> Option<Run> {
     use std::io::Read;
+    use std::os::unix::process::ExitStatusExt;
     use std::process::Stdio;
-    let mut child = Command::new(BIN)
-        .args(args.iter().map(|a| a.as_ref()))
+    fn drain<R: Read + Send + 'static>(mut pipe: R) -> std::thread::JoinHandle<String> {
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            let _ = pipe.read_to_end(&mut bytes);
+            String::from_utf8_lossy(&bytes).into_owned()
+        })
+    }
+    let mut child = command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("run work-engine-readiness");
+        .expect("spawn child");
+    let stdout = drain(child.stdout.take().unwrap());
+    let stderr = drain(child.stderr.take().unwrap());
     let started = std::time::Instant::now();
     loop {
         if let Some(status) = child.try_wait().expect("poll child") {
-            let (mut stdout, mut stderr) = (String::new(), String::new());
-            child
-                .stdout
-                .take()
-                .unwrap()
-                .read_to_string(&mut stdout)
-                .unwrap();
-            child
-                .stderr
-                .take()
-                .unwrap()
-                .read_to_string(&mut stderr)
-                .unwrap();
             return Some(Run {
-                code: status.code().expect("exit code"),
-                stdout,
-                stderr,
+                code: status
+                    .code()
+                    .or_else(|| status.signal().map(|signal| -signal))
+                    .expect("exit code or signal"),
+                stdout: stdout.join().unwrap(),
+                stderr: stderr.join().unwrap(),
             });
         }
         if started.elapsed() >= limit {
             child.kill().expect("kill blocked child");
             child.wait().expect("collect killed child");
+            // The readers end when the pipes close; they are not joined in case a grandchild
+            // still holds a pipe open.
             return None;
         }
         std::thread::sleep(std::time::Duration::from_millis(20));
