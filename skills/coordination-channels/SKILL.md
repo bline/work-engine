@@ -5,20 +5,11 @@ description: Keep responsible actors reachable for relevant coordination, includ
 
 # Coordination channels
 
-**Load this at root or coordinator scope only — a restriction that belongs to
-the R2 measurement campaign and ends when R2 ends.**
-
-The reason, stated here so it is neither taken on faith nor outlived: R2
-compares builders against frozen baselines, and text a worker reads is part of
-what is being measured. Putting this skill into worker context would make it
-treatment-relevant and void that comparison. That means not referencing it from
-a worker packet, a shared instruction, or anything a worker inherits — and not
-placing it in a discovery directory, because workers receive a listing of
-discoverable skills. The restriction is the campaign's, under the campaign's
-authority.
-
-It is **not** a claim that workers should be uninformed. A worker is reached by
-its parent directly, which responsibility 5 covers.
+The user has confirmed rollout is unblocked. R2's historical root/coordinator-
+only restriction is not a current global loading rule. Active experiments still
+own their exposure conditions: adding this skill or its messages can change a
+measured environment, and that experiment's disposition governs the change.
+A subscription grants communication reach, not authority over another actor.
 
 This capability owns **communication responsibility only.** A message grants no
 authority, and neither does a claim or a subscription. The receiver's own
@@ -80,9 +71,12 @@ state what that result does and does not cover.
   notification. It costs nothing while blocked and several waits can coexist.
   Save `next_since` in your continuation and pass it to the next wait **with the
   same filter**; a changed filter needs an earlier cursor, because the cursor
-  advances past nonmatching topics. It exits **0** when it returns messages and
+  advances past nonmatching topics. It exits **0** when it returns board or
+  control events and
   **2** when the timeout fires (`1` on error, `130` on interrupt). Both 0 and 2
-  mean the listener has ended and nothing is listening until you arm another.
+  mean a one-shot listener has ended and nothing is listening until you arm
+  another. `--follow` instead streams JSON lines and rearms within the process
+  until its total timeout, cancellation or error.
 - **`post --author --session-id --topic --body [--ref]…`** appends a message.
 - **`read [--since] [--limit] [--active-claims]`** pages the board.
 - **`topics`** lists topics with counts and latest sequence.
@@ -143,6 +137,12 @@ together; a position without its scope cannot be replayed safely.
 
 ## Arm a listener so it cannot lapse silently
 
+`wait --follow` owns rearming within a bounded listener lifetime. The caller
+still owns collecting its stream and delivering relevant messages into the
+session; a terminal or file receiving output is not model delivery. Use it when
+the host can consume a running stream. Otherwise keep the one-shot collection
+route below. Timeout, cancellation and error end either form of listener.
+
 **A returning `wait` does not resume your reasoning.** Its output sits in a
 finished cell; on a harness that does not re-enter the turn, the cell must end
 by sending a message to **your own** session. Mark it as a wakeup in the
@@ -161,6 +161,26 @@ text; it costs one turn per quiet period.
 Either shape meets the same test: **after any outcome of `wait`, name what is
 listening.** If the answer is nothing, your subscription has lapsed, and the
 channel cannot tell you so.
+
+## Session control subscription
+
+The wait interface can also deliver local context-pressure observations on
+`control:session:<verified-id>` (with `/agent:<id>` for a Claude child).
+Enrollment binds the session, transcript, pinned telemetry binary and explicit
+planning levels. See [manual control setup](../manual-orchestration/references/context-control.md)
+for exact options, ownership, recovery and campaign exposure constraints.
+
+Control events are typed observations in `control_events`, separate from board
+messages. They are not posted to the shared board and grant no authority.
+Listening to board topics does not enroll context monitoring. At startup or
+recovery, a root/coordinator establishes its actual context binding and output
+collector, or an owned explicit-check fallback, under the manual context
+contract. A quiet listener is not proof of normal pressure or active enrollment.
+The listener suppresses unchanged pressure and carries an opaque control cursor
+across invocations. A forecast concerns approaching an empirical band, not an
+exact reset time. Use the event to inform the owning handoff decision; preserve
+explicit checks when observation or delivery is unavailable. Do not infer that
+support for control subscriptions has automatically enrolled any agent.
 
 ## Not available yet
 

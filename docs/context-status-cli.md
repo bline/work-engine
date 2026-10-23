@@ -28,9 +28,41 @@ Optional economics require **all** of `--fresh-input-tokens`, `--preparation-tok
 
 At a logical task boundary, an operator can inspect this report and, if a successor is warranted, write a durable handoff with its exact path and SHA-256. The worker reports `handoff_ready` and the artifact identity to its parent. The parent verifies that artifact and creates the successor; the successor rechecks it and explicitly takes ownership. This CLI supplies evidence for that judgment but grants no authority or automatic handoff.
 
+## Manual handoff control observations
+
+`control --session ID --rollout /absolute/FILE --trigger-tokens N
+--band-floor-tokens N` emits a compact JSON assessment for the
+[chatboard control subscription](codex-chatboard.md#session-control-subscription).
+`--host claude` uses Claude's reader and `--agent ID` binds a Claude child.
+Both session and agent identity must match the transcript. Levels are explicit
+caller-selected hypotheses, with `0 < trigger < band floor`; they do not change
+the underlying telemetry or imply a provider limit.
+
+The output has `schema: manual-context-control-v1`, `topic`, optional `event`,
+and an opaque `next_control_cursor`. Passing the previous cursor as `--cursor`
+suppresses unchanged levels while retaining epoch/model/window/quality changes.
+A normal initial reading is quiet. Errors reading the bound source produce an
+`unavailable` event; invalid arguments or incompatible cursors fail the command.
+The cursor binds host, session, agent, source path and policy. Nothing is written
+to the board, no session is started or reset, and no workflow ownership moves.
+
+`--lead-calls N` (default 3, 0 disables forecast alerts) compares headroom to
+recent positive growth across at least three same-epoch observations after the
+last record gap. Current gaps and stale file modification suppress forecasts. The estimate is
+requests to a selected empirical band, not time to a guaranteed compaction.
+The original full report remains available for investigation.
+
+Control observations distinguish historical gaps from current uncertainty. A gap
+at or after the last valid usage yields `unavailable`; later valid readings
+restore pressure alerts. Forecasting uses only the same-epoch samples after the
+last gap. Historical gap diagnostics remain visible, and the existing report
+commands retain their `latest_valid_observation_with_record_gaps` status.
+Identity mismatches yield an `unavailable` event with `unavailable_detail`; they
+require binding repair, not an assumption that waiting will resolve them.
+
 ## Claude Code sessions
 
-The `claude` and `claude-agents` subcommands give the same read-only view for Claude Code transcripts. The top-level `--help` and every Codex output are unchanged; each subcommand has its own `--help`.
+The `claude` and `claude-agents` subcommands give the same read-only view for Claude Code transcripts. Existing Codex report output is unchanged; each subcommand has its own `--help`.
 
 ```sh
 cargo run --locked -p work-engine-context-status -- claude --transcript ~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl --json

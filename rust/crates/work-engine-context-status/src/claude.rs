@@ -136,6 +136,8 @@ pub(crate) struct Report {
     recorded_effort: Option<String>,
     latest_call: Option<Call>,
     latest_call_status: &'static str,
+    #[serde(skip)]
+    pub(crate) last_record_gap_line: Option<usize>,
     context_window: &'static str,
     epoch: u64,
     recent_calls: Vec<Call>,
@@ -157,6 +159,24 @@ pub(crate) struct Report {
 pub(crate) struct Expected {
     session: Option<String>,
     agent: Option<String>,
+}
+
+pub(crate) fn control_report(
+    path: &Path,
+    session: String,
+    agent: Option<String>,
+) -> Result<Report, String> {
+    let report = read_report(
+        path,
+        &Expected {
+            session: Some(session.clone()),
+            agent: agent.clone(),
+        },
+    )?;
+    if report.session_id.as_deref() != Some(&session) || report.agent_id != agent {
+        return Err("control transcript identity is absent or does not match the binding".into());
+    }
+    Ok(report)
 }
 
 fn freshness_of(path_meta: &fs::Metadata) -> (Option<u64>, Option<u64>, &'static str) {
@@ -273,7 +293,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
     let mut line_no = 0_usize;
     let mut limitations = Vec::new();
     let mut counts = BTreeMap::new();
-    let mut gap = false;
+    let mut gap = None;
     let mut seen_ids: HashMap<String, Seen> = HashMap::new();
     let mut fork = false;
     let mut in_inherited_prefix = false;
@@ -312,7 +332,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         let record: Value = match serde_json::from_slice(&line) {
             Ok(v) => v,
             Err(_) if !complete => {
-                gap = true;
+                gap = Some(line_no);
                 note(
                     &mut limitations,
                     &mut counts,
@@ -324,7 +344,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
                 break;
             }
             Err(_) => {
-                gap = true;
+                gap = Some(line_no);
                 note(
                     &mut limitations,
                     &mut counts,
@@ -532,7 +552,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             effort = Some(bounded_string(e));
         }
         let Some((input, creation, read_tokens, output)) = counters else {
-            gap = true;
+            gap = Some(line_no);
             own.totals.calls_without_usage = own.totals.calls_without_usage.saturating_add(1);
             if let Some(id) = message_id {
                 seen_ids.insert(
@@ -568,7 +588,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             .checked_add(creation)
             .and_then(|x| x.checked_add(read_tokens))
         else {
-            gap = true;
+            gap = Some(line_no);
             note(
                 &mut limitations,
                 &mut counts,
@@ -675,7 +695,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
     });
     let latest_call_status = if latest.is_none() {
         "unavailable"
-    } else if gap {
+    } else if gap.is_some() {
         "latest_valid_observation_with_record_gaps"
     } else {
         "latest_valid_observation"
@@ -699,6 +719,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         recorded_effort: effort,
         latest_call: latest,
         latest_call_status,
+        last_record_gap_line: gap,
         context_window: "not_recorded",
         epoch,
         recent_calls: recent,

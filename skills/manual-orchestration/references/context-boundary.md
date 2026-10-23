@@ -139,6 +139,13 @@ record why.
 
 ## Telemetry rules
 
+The [session control subscription](context-control.md) can supply pressure
+observations through the board wait interface. The coordinator establishes an
+observation route at startup; this subscription and explicit checks are
+alternative mechanisms, not evidence that either is already active. It preserves these
+decision owners and the explicit checks as fallback; enrollment, output
+collection and model delivery have named owners. It does not automate handoffs.
+
 - Provision the binary once per tool version with
   `scripts/provision_context_status.sh`; it builds outside the shared Cargo
   target, pins by digest under `~/.local/state/work-engine/tools/` and records

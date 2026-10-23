@@ -9,6 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod agents;
 mod claude;
+mod control;
 
 const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_LINE_BYTES: usize = 8 * 1024 * 1024;
@@ -122,6 +123,8 @@ struct Report {
     lineage: Vec<String>,
     latest_request: Option<Usage>,
     latest_request_status: &'static str,
+    #[serde(skip)]
+    pub(crate) last_record_gap_line: Option<usize>,
     context_window_tokens: Option<u64>,
     context_window_source: &'static str,
     context_fraction_proxy: Option<f64>,
@@ -135,7 +138,7 @@ struct Report {
 }
 
 fn help() -> &'static str {
-    "Usage: work-engine-context-status --session ID [--rollout FILE | --sessions-dir DIR] [--json] [--fresh-input-tokens N --preparation-tokens N --launch-tokens N --rehydration-tokens N --reconstruction-tokens N [--fresh-cache-fraction F] [--cached-weight F] [--remaining-calls N]]\n       work-engine-context-status agents --parent-thread ID [--recursive] [--with-usage] [--sessions-dir DIR] [--json]"
+    "Usage: work-engine-context-status --session ID [--rollout FILE | --sessions-dir DIR] [--json] [--fresh-input-tokens N --preparation-tokens N --launch-tokens N --rehydration-tokens N --reconstruction-tokens N [--fresh-cache-fraction F] [--cached-weight F] [--remaining-calls N]]\n       work-engine-context-status agents --parent-thread ID [--recursive] [--with-usage] [--sessions-dir DIR] [--json]\n       work-engine-context-status control --help"
 }
 
 /// Defaults for a report read on another session's rollout, as `agents
@@ -453,7 +456,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
     let mut latest = None;
     let mut recent: VecDeque<Usage> = VecDeque::new();
     let mut epoch = 0_u64;
-    let mut gap = false;
+    let mut gap = None;
     let mut window = None;
     let mut last_valid_window = None;
     let mut model = None;
@@ -471,7 +474,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
         let record: Value = match serde_json::from_slice(&line) {
             Ok(v) => v,
             Err(_) if !complete => {
-                gap = true;
+                gap = Some(line_no);
                 note(
                     &mut limitations,
                     &mut diagnostic_counts,
@@ -491,7 +494,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
                         "malformed record in ordinal-bound fork at line {line_no}"
                     ));
                 }
-                gap = true;
+                gap = Some(line_no);
                 note(
                     &mut limitations,
                     &mut diagnostic_counts,
@@ -652,7 +655,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
         }
         let info = payload.get("info").unwrap_or(&Value::Null);
         let Some(last) = info.get("last_token_usage") else {
-            gap = true;
+            gap = Some(line_no);
             note(
                 &mut limitations,
                 &mut diagnostic_counts,
@@ -665,7 +668,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             number(last, "input_tokens"),
             number(last, "cached_input_tokens"),
         ) else {
-            gap = true;
+            gap = Some(line_no);
             note(
                 &mut limitations,
                 &mut diagnostic_counts,
@@ -675,7 +678,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             continue;
         };
         if cached > input {
-            gap = true;
+            gap = Some(line_no);
             note(
                 &mut limitations,
                 &mut diagnostic_counts,
@@ -686,7 +689,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
         }
         let new_window = number(info, "model_context_window").filter(|w| *w > 0);
         if new_window.is_none() {
-            gap = true;
+            gap = Some(line_no);
             note(
                 &mut limitations,
                 &mut diagnostic_counts,
@@ -847,7 +850,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
     }
     let latest_request_status = if latest.is_none() {
         "unavailable"
-    } else if gap {
+    } else if gap.is_some() {
         "latest_valid_observation_with_record_gaps"
     } else {
         "latest_valid_observation"
@@ -874,6 +877,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
         lineage,
         latest_request: latest,
         latest_request_status,
+        last_record_gap_line: gap,
         context_window_tokens: window,
         context_window_source: "event_msg.token_count.info.model_context_window",
         context_fraction_proxy: fraction,
@@ -960,6 +964,13 @@ fn render_text(r: &Report) {
 }
 
 fn main() {
+    if env::args().nth(1).as_deref() == Some("control") {
+        if let Err(e) = control::run(env::args().skip(2)) {
+            eprintln!("context-status control: {e}");
+            std::process::exit(1);
+        }
+        return;
+    }
     if env::args()
         .nth(1)
         .as_deref()

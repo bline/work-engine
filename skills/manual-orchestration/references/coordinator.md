@@ -2,6 +2,19 @@
 
 Own the accepted objective and its authority map, current decomposition, packet readiness, cross-slice evidence, dependent refreshes, child collection, and root integration decision. Treat a decomposition as a versioned model of the work, not an automatic validated planner. Choose coherent outcomes and dependencies from the actual task; explain uncovered or uncertain boundaries.
 
+## Establish context observation
+
+At startup and after recovery, establish how context pressure will reach the
+actor making continuation and handoff decisions. Record the actual session/source
+binding, observation route and collection owner in the assignment record or
+continuation. A board-topic listener alone does not subscribe to context stats.
+Use [session control](context-control.md) when its output can be collected in
+time; otherwise name the owner and next decision boundary for an explicit
+context check. Do not describe monitoring as active until its binding and
+collection route are verified. Missing or stale observation is unknown headroom,
+not evidence that more work will fit. This prevents a root discovering pressure
+only after it has too little context left to preserve unfinished obligations.
+
 ## Packets
 
 A useful packet conveys the exact accepted authority, source/subject identity, **applicable settled facts**, outcome, checks, limits and escalation owner. Settled facts are constraints already fixed by accepted slices, contracts or committed code - a schema's version gates, an actor's concurrency model, a published wire contract. In S4-S8 about 42% of independent findings reopened such a fact and about 36% more were arguably preventable by better contract formation. Include only the facts that apply; loading everything recreates the context cost. For an integration or replay assignment, include known predecessor attribution and likely derived dependencies such as a lockfile; mark unknown lineage for the supervisor to resolve rather than making a final patch stand for its history. Treat admission HEAD as a reference until current affected bytes are bound at execution. Give a child only its packet, its identity binding and mandatory repository context; it loads its own role reference from this skill.

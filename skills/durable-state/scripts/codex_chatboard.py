@@ -7,12 +7,14 @@ import argparse
 import ctypes
 from datetime import datetime, timedelta, timezone
 import errno
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import select
 import struct
+import subprocess
 import sys
 import time
 from typing import Any, Callable
@@ -24,6 +26,7 @@ from durable_state import DurableStateError, GitRefDurableStateStore
 BOARD_KEY = "work-engine/codex-chatboard/v1"
 NAMESPACE = "codex-chatboard"
 MAX_RETRIES = 20
+CONTROL_PREFIX = "control:session:"
 
 
 class ChatboardError(ValueError):
@@ -106,6 +109,8 @@ def post(repository: Path, *, author: str, session_id: str, topic: str,
     canonical_uuid(message_id, "message_id")
     if not all(isinstance(value, str) and value.strip() for value in (author, topic, body)):
         raise ChatboardError("author, topic, and body must be nonempty")
+    if topic.startswith(CONTROL_PREFIX):
+        raise ChatboardError("control topics are local telemetry subscriptions, not board publications")
 
     def change(board: dict[str, Any]) -> dict[str, Any]:
         existing = next((row for row in board["messages"] if row["message_id"] == message_id), None)
@@ -227,6 +232,14 @@ class RefChanges:
         self.watches: dict[int, set[str]] = {}
         self.arm()
 
+    def add_file(self, path: Path) -> None:
+        """Also observe an explicit telemetry source, including replacement."""
+        path = path.absolute()
+        for directory in reversed(path.parents):
+            component = path.relative_to(directory).parts[0]
+            self.paths.append((directory, {component}))
+        self.arm()
+
     def arm(self) -> None:
         # Watch ancestors before descendants, including when the board has
         # never been posted. Re-arm BEFORE rereading after topology changes.
@@ -240,9 +253,9 @@ class RefChanges:
                 if wd < 0:
                     error = ctypes.get_errno()
                     if error == errno.ENOENT and watches:
-                        break  # the nearest existing ancestor is already watched
+                        continue  # each source's nearest existing ancestor is watched
                     raise OSError(error, "cannot watch board ref directory")
-                watches[wd] = names
+                watches.setdefault(wd, set()).update(names)
         except BaseException:
             os.close(fd)
             raise
@@ -284,31 +297,94 @@ class RefChanges:
         self.close()
 
 
+class ContextControl:
+    """Thin adapter to the pinned Rust telemetry reader; no policy or persistence."""
+
+    def __init__(self, *, session_id: str, rollout: Path, binary: Path, sha256: str,
+                 trigger_tokens: int, band_floor_tokens: int, host: str = "codex",
+                 agent: str | None = None, lead_calls: int = 3,
+                 cursor: str | None = None) -> None:
+        self.topic = f"{CONTROL_PREFIX}{session_id}" + (f"/agent:{agent}" if agent else "")
+        self.rollout, self.binary = rollout.absolute(), binary.absolute()
+        self.digest, self.cursor = sha256.lower(), cursor
+        if len(self.digest) != 64 or any(c not in "0123456789abcdef" for c in self.digest):
+            raise ChatboardError("--context-sha256 must be a SHA-256 digest")
+        self.command = [str(self.binary), "control", "--session", session_id,
+                        "--rollout", str(self.rollout), "--host", host,
+                        "--trigger-tokens", str(trigger_tokens),
+                        "--band-floor-tokens", str(band_floor_tokens),
+                        "--lead-calls", str(lead_calls)]
+        if agent:
+            self.command += ["--agent", agent]
+
+    def read(self) -> dict[str, Any]:
+        # Check at every execution, not just enrollment. On any adapter failure,
+        # stop explicitly so the owner can fall back to the boundary check.
+        if not self.binary.is_file() or hashlib.sha256(self.binary.read_bytes()).hexdigest() != self.digest:
+            raise ChatboardError("context binary missing or digest changed; control listener stopped")
+        command = self.command + (["--cursor", self.cursor] if self.cursor else [])
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        except subprocess.TimeoutExpired as failure:
+            raise ChatboardError("context reader timed out; control listener stopped") from failure
+        if result.returncode:
+            raise ChatboardError(f"context reader failed: {result.stderr.strip()[:2000]}")
+        try:
+            value = json.loads(result.stdout)
+        except ValueError as failure:
+            raise ChatboardError("invalid context reader output") from failure
+        if (not isinstance(value, dict) or value.get("schema") != "manual-context-control-v1"
+                or "event" not in value
+                or value.get("topic") != self.topic
+                or not isinstance(value.get("next_control_cursor"), str)
+                or (value.get("event") is not None and (
+                    not isinstance(value["event"], dict)
+                    or value["event"].get("topic") != self.topic
+                    or value["event"].get("authority") != "observation_only"))):
+            raise ChatboardError("context reader returned an incompatible or mismatched binding")
+        self.cursor = value["next_control_cursor"]
+        return value
+
+
 def wait_board(repository: Path, *, since: int, limit: int = 100,
                topic: str | None = None, topics: list[str] | None = None,
-               timeout_seconds: float | None = None) -> dict[str, Any]:
+               timeout_seconds: float | None = None,
+               control: ContextControl | None = None) -> dict[str, Any]:
     if since < 0 or not 1 <= limit <= 500:
         raise ChatboardError("--since must be nonnegative and --limit must be 1..500")
     selected = [*(topics or []), *([topic] if topic is not None else [])]
     if any(not name.strip() for name in selected):
         raise ChatboardError("--topic must be nonempty")
     selected = sorted(set(selected))
+    if any(name.startswith(CONTROL_PREFIX) and (control is None or name != control.topic)
+           for name in selected):
+        raise ChatboardError("control topic requires the matching explicit session binding")
     if timeout_seconds is not None and (not math.isfinite(timeout_seconds) or timeout_seconds < 0):
         raise ChatboardError("--timeout-seconds must be finite and nonnegative")
     deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
     # Subscribe first, then read: a publication during the read remains queued.
     with RefChanges(repository) as changes:
+        if control is not None:
+            changes.add_file(control.rollout)
+            changes.add_file(control.binary)
         while True:
             board, revision = read_board(repository)
             matches = [row for row in board["messages"] if row["sequence"] > since
-                       and (not selected or row["topic"] in selected)]
+                         and not row["topic"].startswith(CONTROL_PREFIX)
+                         and (not selected or row["topic"] in selected)]
             rows = matches[:limit]
             more = len(matches) > limit
             cursor = rows[-1]["sequence"] if more else max(since, board["next_sequence"] - 1)
             result = {"status": "messages" if rows else "timeout", "revision": revision,
                       "messages": rows, "next_since": cursor, "has_more": more,
                       "topics": selected, "topic": selected[0] if len(selected) == 1 else None}
-            if rows or (deadline is not None and time.monotonic() >= deadline):
+            if control is not None:
+                observation = control.read()
+                result.update(control_events=([observation["event"]] if observation["event"] else []),
+                              control_topic=control.topic, next_control_cursor=control.cursor)
+                if result["control_events"] and not rows:
+                    result["status"] = "control"
+            if rows or result.get("control_events") or (deadline is not None and time.monotonic() >= deadline):
                 return result
             remaining = None if deadline is None else max(0, deadline - time.monotonic())
             if changes.wait(remaining):
@@ -349,6 +425,18 @@ def parser() -> argparse.ArgumentParser:
                       help="exact topic match; repeat to match any selected topic; omit for all")
     wait.add_argument("--timeout-seconds", type=float, default=None,
                       help="default: indefinite; 0 checks once; timeout exits 2")
+    wait.add_argument("--follow", action="store_true",
+                      help="stream JSON lines and rearm until the total timeout or cancellation")
+    wait.add_argument("--session-id", help="subscribe to this session's local control events")
+    wait.add_argument("--context-rollout", type=Path, help="explicit bound rollout/transcript")
+    wait.add_argument("--context-binary", type=Path, help="pinned context-status binary with control support")
+    wait.add_argument("--context-sha256")
+    wait.add_argument("--context-host", choices=["codex", "claude"], default="codex")
+    wait.add_argument("--context-agent", help="Claude child agent identity within the session")
+    wait.add_argument("--context-trigger-tokens", type=int)
+    wait.add_argument("--context-band-floor-tokens", type=int)
+    wait.add_argument("--context-lead-calls", type=int, default=3)
+    wait.add_argument("--control-cursor", help="opaque next_control_cursor from the last consumed result")
     topics = commands.add_parser("topics", help="list recorded topics with counts and latest sequence")
     topics.add_argument("--since", type=int, default=0)
     topics.add_argument("--limit", type=int, default=100)
@@ -380,10 +468,43 @@ def main() -> int:
                              active_claims=args.active_claims, observed_at=timestamp())
             print(json.dumps({"revision": revision, **view}, indent=2))
         elif args.command == "wait":
-            result = wait_board(args.repository, since=args.since, limit=args.limit,
-                                topics=args.topics, timeout_seconds=args.timeout_seconds)
-            print(json.dumps(result, indent=2))
-            return 0 if result["status"] == "messages" else 2
+            required = [args.session_id, args.context_rollout, args.context_binary,
+                        args.context_sha256, args.context_trigger_tokens, args.context_band_floor_tokens]
+            control = None
+            if any(value is not None for value in required):
+                if not all(value is not None for value in required):
+                    raise ChatboardError("control requires --session-id, --context-rollout, --context-binary, "
+                                         "--context-sha256, --context-trigger-tokens and --context-band-floor-tokens")
+                control = ContextControl(
+                    session_id=args.session_id, rollout=args.context_rollout,
+                    binary=args.context_binary, sha256=args.context_sha256,
+                    trigger_tokens=args.context_trigger_tokens, band_floor_tokens=args.context_band_floor_tokens,
+                    host=args.context_host, agent=args.context_agent, lead_calls=args.context_lead_calls,
+                    cursor=args.control_cursor)
+            elif args.control_cursor or args.context_agent or args.context_host != "codex" or args.context_lead_calls != 3:
+                raise ChatboardError("control options require a session binding")
+            started = time.monotonic()
+            remaining = args.timeout_seconds
+            while True:
+                result = wait_board(args.repository, since=args.since, limit=args.limit,
+                                    topics=args.topics, timeout_seconds=remaining, control=control)
+                print(json.dumps(result, indent=None if args.follow else 2), flush=True)
+                if result["status"] == "timeout":
+                    return 2
+                if not args.follow:
+                    return 0
+                args.since = result["next_since"]
+                if args.timeout_seconds is not None:
+                    remaining = args.timeout_seconds - (time.monotonic() - started)
+                    if remaining <= 0:
+                        # A perpetually ready source must not extend ownership
+                        # beyond the total lifetime. Preserve the last emitted
+                        # cursors; a successor can drain remaining board pages.
+                        terminal = {**result, "status": "timeout", "messages": []}
+                        if control is not None:
+                            terminal["control_events"] = []
+                        print(json.dumps(terminal), flush=True)
+                        return 2
         elif args.command == "topics":
             board, revision = read_board(args.repository)
             view = topics_view(board, since=args.since, limit=args.limit, offset=args.offset)
