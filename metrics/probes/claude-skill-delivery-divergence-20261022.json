@@ -82,5 +82,42 @@
     "downstream_consequence": "a root following it would have been forbidden the single action that protected R2's read set, and the worker restriction's rationale would have outlived R2. Nothing acted on it between commit and repair",
     "check_that_would_have_caught_it": "diff an extraction against its source's corrections list item by item, not against its summary; each regression maps to a numbered finding the design already records",
     "found_by": "outside review of the extracted skill"
+  },
+  "update_20261023_claude_side": {
+    "on": "explicit user instruction, chosen over the recommendation to wait for R2",
+    "converted": [
+      "claim-evidence",
+      "code-change-profile",
+      "evidence-battery",
+      "repo-search",
+      "slice-builder",
+      "slice-checkpoint",
+      "slice-completion-commit",
+      "slice-supervisor",
+      "strategic-planner",
+      "wind-walker"
+    ],
+    "total_symlinks_now": 11,
+    "left_alone": [
+      "codebase-memory",
+      "synced: agent-local, no repository counterpart"
+    ],
+    "verification": "diff -rq clean for 11 of 11, before and after",
+    "window": "10 swaps in one process, 118.3 microseconds total, 11.8 each, symlinks pre-staged outside the windows",
+    "method_defect_found_in_flight": {
+      "defect": "dot-prefixed staging names are discoverable; the pre-staged .{name}-new symlinks appeared in this session's own available-skills listing",
+      "risk": "a worker dispatched during the staging window would have received ten bogus skills in its listing",
+      "also_corrects": "the earlier Codex swap left its rollback directory at ~/.codex/skills/.mo-old, inside the discovery tree, which this record had described as safe retention",
+      "fix": "all rollback material moved outside any skills directory: /home/bline/cbm-work/claude-skills-preswap-20261023 and /home/bline/cbm-work/codex-skills-preswap-20261023; no dot-prefixed entry remains in either tree, verified by find",
+      "check_that_would_have_caught_it": "read the discovery surface during staging, not only after; a hidden filename is hidden from ls, not from skill discovery"
+    },
+    "r2_consequence": {
+      "all_ten_are_worker_visible": "the fix-b builder's listing named 13 skills and all ten were among them",
+      "byte_delta_today": 0,
+      "going_forward": "an edit to any of these ten skills' name or description in the repository changes the listing every worker receives, immediately and with no sync step. Under the standing rule that is treatment-relevant, not a covariate",
+      "standing_obligation": "while R2 runs, do not edit those ten skills in the repository; if one is edited, classify it before any dispatch and expect it to pause R2 or void the B1-B6 comparison",
+      "benefit": "such a change is now visible in git rather than diverging silently, the reason the prereg gives for the manual-orchestration symlink"
+    },
+    "rollback": "remove the symlink and move the retained directory back from /home/bline/cbm-work/claude-skills-preswap-20261023/<name>"
   }
 }

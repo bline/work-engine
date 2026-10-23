@@ -129,3 +129,65 @@ corrections list of its source, item by item, rather than against its summary.
 Each of the four maps to a numbered finding the design already records.
 
 **Found by** outside review of the extracted skill, not by this role.
+
+---
+
+# Update, 2026-10-23: the Claude side symlinked, on user instruction
+
+Ten `~/.claude/skills` entries that were real copies of repository skills are now
+symlinks: `claim-evidence`, `code-change-profile`, `evidence-battery`,
+`repo-search`, `slice-builder`, `slice-checkpoint`, `slice-completion-commit`,
+`slice-supervisor`, `strategic-planner`, `wind-walker`. With
+`manual-orchestration` that is **11 symlinks, all verified identical before and
+after** (`diff -rq` clean, 11 of 11). `codebase-memory` and `synced` are
+agent-local with no repository counterpart and were left alone.
+
+The user chose this over the recommendation to wait for R2; recorded as their
+decision.
+
+**Method.** Ten swaps in one process, **118.3 µs total, 11.8 µs each**, symlinks
+pre-staged outside the windows, no content I/O.
+
+## A method defect, found in flight
+
+**Dot-prefixed staging names are discoverable.** The pre-staged
+`.{name}-new` symlinks appeared in this session's own available-skills listing
+as `.claim-evidence-new`, `.slice-builder-new` and the rest — ten entries that
+should not exist. Had a worker been dispatched during the staging window, **its
+listing would have carried ten bogus skills.**
+
+**This also corrects the earlier Codex swap.** That swap left its rollback
+directory at `~/.codex/skills/.mo-old`, which this record described as safe
+retention. It was inside the discovery tree. Both are now fixed: all rollback
+material lives **outside** any skills directory, at
+`/home/bline/cbm-work/claude-skills-preswap-20261023` (2.1 M, 10 directories)
+and `/home/bline/cbm-work/codex-skills-preswap-20261023` (204 K, 1 directory).
+No dot-prefixed entry remains in either skills tree — verified by `find`.
+
+**The check that would have caught it:** read the discovery surface during
+staging, not only after. A hidden filename is hidden from `ls`, not from skill
+discovery.
+
+## The R2 consequence, which is the reason for the earlier recommendation
+
+**All ten are in the listing workers receive.** The fix-b builder's listing
+named 13 skills and all ten were among them. So this change couples
+**worker-visible text** to the repository.
+
+- **Byte delta today: zero.** All eleven verified identical, so no worker's
+  listing or content changes now.
+- **Going forward:** an edit to any of these ten skills' name or description in
+  the repository changes the listing **every worker receives**, immediately and
+  without a separate sync step. Under the R2 standing rule that is
+  **treatment-relevant**, not a covariate.
+
+**Standing obligation while R2 runs:** do not edit those ten skills in the
+repository. If one is edited, classify it under the standing rule before any
+dispatch, and expect it to pause R2 or void the B1–B6 comparison. This is the
+cost of the coupling; the benefit is that such a change is now visible in git
+rather than diverging silently, which is the reason the pre-registration gives
+for the `manual-orchestration` symlink.
+
+**Rollback** for any of the eleven: remove the symlink and move the retained
+directory back from `/home/bline/cbm-work/claude-skills-preswap-20261023/<name>`.
+
