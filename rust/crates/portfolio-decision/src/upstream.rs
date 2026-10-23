@@ -15,9 +15,9 @@ use proposal_evaluation::contract::{ParsedContract, parse_contract};
 use proposal_evaluation::diag::Failure;
 use proposal_evaluation::digest::{is_sha256_hex, sha256_hex};
 use proposal_evaluation::model::{
-    COMPARISON_SCHEMA, ComparisonFinding, ESTIMATE_SET_SCHEMA, EstimateSet,
+    COMPARISON_SCHEMA, ComparisonFinding, ESTIMATE_SET_SCHEMA, EstimateSet, FileRef,
 };
-use proposal_evaluation::validate::is_normalised_absolute;
+use proposal_evaluation::validate::{check_file_ref, is_normalised_absolute};
 use proposal_evaluation::{check_comparison_bytes, check_estimate_set_bytes};
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
@@ -60,8 +60,11 @@ pub(crate) struct Upstream {
     pub packets: BTreeMap<String, PacketView>,
 }
 
-/// Resolve `path` and hash it. `None` when the pointer's shape is wrong (the structure rules
-/// report that), the path cannot be read, or the bytes differ from `sha256`.
+/// Resolve `path` and hash it. `None` when the pointer's shape is wrong, the path cannot be read,
+/// or the bytes differ from `sha256`. A wrong shape is *not* reported here: use this only for a
+/// pointer whose shape another rule has already reported (the portfolio's own pointers are shaped
+/// by `structure`; a comparison finding's contract is shaped by the owner's check). A pointer read
+/// out of an upstream record that nothing else shapes goes through [`resolve_nested`].
 pub(crate) fn resolve(
     out: &mut Vec<ErrorItem>,
     path: &str,
@@ -92,6 +95,21 @@ pub(crate) fn resolve(
         return None;
     }
     Some(bytes)
+}
+
+/// [`resolve`] for a pointer inside an upstream record: its shape is checked and reported at `at`
+/// (`path_not_normalised`, `sha256_pattern`) before it is resolved, so no shape passes silently.
+/// The pointer arrives as `(path, sha256)` because the upstream crates each define their own
+/// `FileRef`.
+fn resolve_nested(out: &mut Vec<ErrorItem>, path: &str, sha256: &str, at: &str) -> Option<Vec<u8>> {
+    let shape = FileRef {
+        path: path.to_string(),
+        sha256: sha256.to_string(),
+    };
+    if !check_file_ref(out, &shape, at) {
+        return None;
+    }
+    resolve(out, path, sha256, at)
 }
 
 fn nested(errors: &[ErrorItem]) -> String {
@@ -513,11 +531,10 @@ fn readiness(i: usize, r: &ReadinessRef, out: &mut Vec<ErrorItem>) {
             ),
         ));
     }
-    let ev = &assessment.evaluation;
-    resolve(
+    resolve_nested(
         out,
-        &ev.path,
-        &ev.sha256,
+        &assessment.evaluation.path,
+        &assessment.evaluation.sha256,
         &format!("{at}.assessment.evaluation"),
     );
 }

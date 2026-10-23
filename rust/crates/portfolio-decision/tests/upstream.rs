@@ -274,6 +274,95 @@ fn an_assessment_whose_own_evaluation_is_missing_is_unresolved() {
     );
 }
 
+/// Rewrite the world's assessment so its own `evaluation` pointer is `evaluation`, and rebind the
+/// record to the rewritten assessment.
+fn with_assessment_evaluation(w: &World, tag: &str, evaluation: Value) -> Value {
+    let mut doc = w.doc.clone();
+    let file = w.dir.join(format!("assessment-{tag}.json"));
+    let sha = write_json(&file, &assessment_json("live", "decision-1", evaluation));
+    set(
+        &mut doc,
+        "readiness_basis.0.assessment.path",
+        json!(s(&file)),
+    );
+    set(&mut doc, "readiness_basis.0.assessment.sha256", json!(sha));
+    doc
+}
+
+#[test]
+fn an_assessments_evaluation_pointer_is_checked_like_every_other_stored_pointer() {
+    const AT: &str = "readiness_basis.0.assessment.evaluation";
+    let w = world("assessment-eval-pointer", false);
+    let good = w.sha("evaluation");
+    let good_path = s(w.path("evaluation"));
+
+    let sibling = w.dir.file_name().unwrap().to_str().unwrap().to_string();
+    let dotdot = format!("{}/../{sibling}/readiness-evaluation.json", s(&w.dir));
+    let fifo = w.dir.join("evaluation-fifo");
+    assert!(
+        std::process::Command::new("mkfifo")
+            .arg(&fifo)
+            .status()
+            .expect("mkfifo")
+            .success()
+    );
+    let gone = s(&w.dir.join("evaluation-gone.json"));
+
+    // (tag, stored pointer, code, at)
+    let cases: Vec<(&str, Value, &str, String)> = vec![
+        (
+            "relative",
+            json!({"path": "readiness-evaluation.json", "sha256": good}),
+            "path_not_normalised",
+            format!("{AT}.path"),
+        ),
+        (
+            "dotdot",
+            json!({"path": dotdot, "sha256": good}),
+            "path_not_normalised",
+            format!("{AT}.path"),
+        ),
+        (
+            "not-hex",
+            json!({"path": good_path, "sha256": "XYZ"}),
+            "sha256_pattern",
+            format!("{AT}.sha256"),
+        ),
+        (
+            "missing",
+            json!({"path": gone, "sha256": good}),
+            "pointer_unresolved",
+            AT.to_string(),
+        ),
+        (
+            "fifo",
+            json!({"path": s(&fifo), "sha256": good}),
+            "pointer_unresolved",
+            AT.to_string(),
+        ),
+        (
+            "mismatch",
+            json!({"path": good_path, "sha256": SHA_B}),
+            "digest_mismatch",
+            AT.to_string(),
+        ),
+    ];
+    let mut wrong = Vec::new();
+    for (tag, evaluation, code, at) in cases {
+        let doc = with_assessment_evaluation(&w, tag, evaluation);
+        let found = run(&doc);
+        if found != vec![(code.to_string(), at.clone())] {
+            wrong.push(format!(
+                "{tag}: expected only {code} at {at}, got {found:?}"
+            ));
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+    // The control: the same rewrite with the true pointer is valid.
+    let doc = with_assessment_evaluation(&w, "control", w.reference("evaluation"));
+    assert_eq!(run(&doc), Vec::<(String, String)>::new());
+}
+
 #[test]
 fn a_ready_assessment_beside_an_excluded_disposition_is_valid() {
     // P1-AC1: readiness informs; it does not select. The assessment's verdict is `ready`.
