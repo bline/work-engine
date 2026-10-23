@@ -86,38 +86,111 @@ fn read_file(path: &str) -> Result<Vec<u8>, Failure> {
 /// caller can use is detected without reading it whole.
 fn read_stored(path: &str, limit: Option<u64>) -> std::io::Result<Vec<u8>> {
     use std::io::Read;
-    use std::os::unix::fs::OpenOptionsExt;
-    let not_regular = || {
-        std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "not a regular file (a stored path must name a regular file)",
-        )
-    };
     // A path that is already not a regular file is refused before it is opened at all; the check
-    // on the descriptor below is the one that holds if the path is swapped in between.
+    // on the descriptor in `open_regular` is the one that holds if the path is swapped in between.
     if !std::fs::metadata(path)?.is_file() {
         return Err(not_regular());
     }
-    let file = std::fs::OpenOptions::new()
-        .read(true)
-        .custom_flags(O_NONBLOCK)
-        .open(path)?;
-    if !file.metadata()?.is_file() {
-        return Err(not_regular());
-    }
+    let file = open_regular(path)?;
     let mut bytes = Vec::new();
     file.take(limit.unwrap_or(u64::MAX))
         .read_to_end(&mut bytes)?;
     Ok(bytes)
 }
 
-/// `O_NONBLOCK` on Linux, the platform this tooling runs on: a FIFO opened with it for reading
-/// returns at once instead of waiting for a writer. Elsewhere the pathname check above is the only
-/// guard before the open.
-#[cfg(target_os = "linux")]
+fn not_regular() -> std::io::Error {
+    std::io::Error::new(
+        std::io::ErrorKind::InvalidInput,
+        "not a regular file (a stored path must name a regular file)",
+    )
+}
+
+/// Open `path` for reading without blocking and without acquiring a controlling terminal, and
+/// accept it only if the opened descriptor is a regular file. This is the step that holds when
+/// the pathname changes between a check and the open, so it does not depend on any pathname
+/// check made before it: a FIFO is opened without waiting for a writer and then refused, and a
+/// directory or device is refused after the open.
+fn open_regular(path: &str) -> std::io::Result<std::fs::File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(O_NONBLOCK | O_NOCTTY)
+        .open(path)?;
+    if !file.metadata()?.is_file() {
+        return Err(not_regular());
+    }
+    Ok(file)
+}
+
+// `O_NONBLOCK` and `O_NOCTTY` on Linux, the platform this tooling runs on. A FIFO opened with
+// `O_NONBLOCK` for reading returns at once instead of waiting for a writer; `O_NOCTTY` keeps a
+// terminal device that is swapped in from becoming the controlling terminal. The values differ by
+// architecture; they are the kernel's uapi `asm/fcntl.h` values (arch/mips, arch/sparc and
+// include/uapi/asm-generic/fcntl.h), and libc 0.2.190 lists the same numbers for each target:
+//   generic (x86, arm, aarch64, riscv, powerpc, s390x, loongarch, ...):
+//                    O_NONBLOCK 00004000 (0o4000), O_NOCTTY 00000400 (0o400)
+//   mips, mips64:    O_NONBLOCK 0x0080   (0o200),  O_NOCTTY 0x0800
+//   sparc, sparc64:  O_NONBLOCK 0x4000,            O_NOCTTY 0x8000
+// Elsewhere the pathname check in `read_stored` is the only guard before the open.
+#[cfg(all(
+    target_os = "linux",
+    any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
+    )
+))]
+const O_NONBLOCK: i32 = 0o200;
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "sparc", target_arch = "sparc64")
+))]
+const O_NONBLOCK: i32 = 0x4000;
+#[cfg(all(
+    target_os = "linux",
+    not(any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6",
+        target_arch = "sparc",
+        target_arch = "sparc64"
+    ))
+))]
 const O_NONBLOCK: i32 = 0o4000;
 #[cfg(not(target_os = "linux"))]
 const O_NONBLOCK: i32 = 0;
+
+#[cfg(all(
+    target_os = "linux",
+    any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
+    )
+))]
+const O_NOCTTY: i32 = 0x800;
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "sparc", target_arch = "sparc64")
+))]
+const O_NOCTTY: i32 = 0x8000;
+#[cfg(all(
+    target_os = "linux",
+    not(any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6",
+        target_arch = "sparc",
+        target_arch = "sparc64"
+    ))
+))]
+const O_NOCTTY: i32 = 0o400;
+#[cfg(not(target_os = "linux"))]
+const O_NOCTTY: i32 = 0;
 
 fn read_stored_file(path: &str) -> Result<Vec<u8>, Failure> {
     read_stored(path, None).map_err(|error| Failure::usage(format!("cannot read {path}: {error}")))
@@ -796,12 +869,21 @@ fn recheck(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
 
 #[cfg(test)]
 mod tests {
-    use super::read_stored;
+    use super::{open_regular, read_stored};
+    use std::path::PathBuf;
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    fn scratch(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
 
     #[test]
     fn read_stored_caps_the_bytes_read_and_refuses_a_directory() {
-        let dir = std::env::temp_dir().join(format!("read-stored-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = scratch("read-stored");
         let file = dir.join("f");
         std::fs::write(&file, b"0123456789").unwrap();
         let path = file.to_str().unwrap();
@@ -809,6 +891,50 @@ mod tests {
         assert_eq!(read_stored(path, Some(11)).unwrap(), b"0123456789");
         assert_eq!(read_stored(path, None).unwrap(), b"0123456789");
         assert!(read_stored(dir.to_str().unwrap(), None).is_err());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// `open_regular` is the step that holds when a path is swapped after the pathname check, so
+    /// it is tested on its own, without that check: a FIFO that has no writer must neither block
+    /// the open (`O_NONBLOCK`) nor be accepted (the descriptor check), and nor must a directory.
+    /// The call runs on a thread under a deadline so a regression fails the test instead of
+    /// hanging it.
+    #[test]
+    fn open_regular_refuses_a_fifo_and_a_directory_by_the_descriptor_alone() {
+        let dir = scratch("open-regular");
+        let fifo = dir.join("fifo");
+        let status = std::process::Command::new("mkfifo")
+            .arg(&fifo)
+            .status()
+            .expect("run mkfifo");
+        assert!(status.success());
+        let link = dir.join("fifo-link");
+        std::os::unix::fs::symlink(&fifo, &link).unwrap();
+        let regular = dir.join("regular");
+        std::fs::write(&regular, b"bytes").unwrap();
+
+        let deadline = Duration::from_secs(5);
+        let open = |path: PathBuf| {
+            let (sender, receiver) = mpsc::channel();
+            let shown = path.display().to_string();
+            std::thread::spawn(move || {
+                let outcome = open_regular(path.to_str().unwrap()).map(|_| ());
+                let _ = sender.send(outcome);
+            });
+            receiver
+                .recv_timeout(deadline)
+                .unwrap_or_else(|_| panic!("{shown}: open_regular blocked past {deadline:?}"))
+        };
+        for (what, path) in [
+            ("a FIFO", fifo.clone()),
+            ("a symlink to a FIFO", link),
+            ("a directory", dir.clone()),
+        ] {
+            let error = open(path).expect_err(&format!("{what} must be refused"));
+            assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput, "{what}");
+            assert!(error.to_string().contains("not a regular file"), "{what}");
+        }
+        assert!(open(regular).is_ok(), "a regular file is opened");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }
