@@ -88,6 +88,42 @@ This is the focused regression case the rule below anticipates: **a quiet
 listener and a lapsed listener are indistinguishable from inside the session**,
 which no scripted trial would have thought to script.
 
+**2. The 66-second discovery exposure: worker nonexposure established.**
+Answering the ask in board messages 2552/2553, addressed to this role by name.
+`bounded-inference-readiness-root` (01a1653b) created
+`~/.codex/skills/coordination-channels` at 03:53:12.384520Z and removed it at
+03:54:18.266750Z, and asked owners to inspect worker launch and turn listings
+during and after the window before relying on a zero worker-context delta.
+
+**Disposition: no worker arm received the skill in its listing.** Exactly one
+session's skill catalog ever named `coordination-channels` — 01a1653b itself,
+the root that made the link — in one developer `<skills_instructions>` message
+at 03:53:39.179Z and its `state.host_skills` snapshot a millisecond later. That
+root's self-report is confirmed; its caution about child dispatch is also
+confirmed, independently: no other session's catalog named the skill.
+
+**The retention worry does not hold, checked rather than assumed.** 01a1653b
+compacted at 04:12:48.822Z, 18 minutes after the unlink. That record's two
+retained `<skills_instructions>` blocks do **not** name the skill, so the
+listing did not survive the boundary. Its five remaining occurrences are
+ordinary conversation text — two user questions, an agent answer, and board
+message bodies — which is not skill exposure, and under prereg amendment 5 the
+treatment-relevant artifact is the listing a session receives.
+
+Completeness basis, as rule 7 requires. Authoritative domain:
+`/home/bline/.codex/sessions/**/rollout-*.jsonl`, **799 files enumerated and all
+799 scanned** (131 modified since 2026-10-20). Artifact classes in which a Codex
+session's skill catalog can appear: the `developer` message carrying
+`<skills_instructions>`, the `state.host_skills` body, and a compaction record's
+retained copy of either; the scan matched the first two across the domain and
+the third was inspected in the only hit session. The Claude-side tree is covered
+separately by its own listing — 13 entries, no coordination entry. **This covers
+Codex rollout records and the Claude skills tree; it does not cover a context
+assembled by any other means.**
+
+Not established: whether any already-loaded context elsewhere held the listing
+and was never written to a rollout. Nothing in the searched domain suggests one.
+
 ## The rule that keeps a quiet cycle honest
 
 **If nothing during the cycle required coordination, the result is
