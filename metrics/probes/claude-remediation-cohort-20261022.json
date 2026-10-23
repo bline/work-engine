@@ -59,6 +59,92 @@
     "fix_a_result": "not established",
     "fix_b_result": "not established",
     "p1_m_001": "pass, 15 of 15 read-set paths present at base",
-    "r2_m_002": "raised against fix-b's write scope, reported at chatboard sequence 2494, resolution pending with the coordinator"
+    "r2_m_002": "raised against fix-b's write scope, reported at chatboard sequence 2494, resolution pending with the coordinator",
+    "superseded_by": "score"
+  },
+  "score": {
+    "scored_at": "2026-10-23T01:40:00Z",
+    "findings_closed": "5 of 5, each with reproduce-before / reject-after evidence",
+    "n": {
+      "builders": 2,
+      "findings": 5
+    },
+    "slices": {
+      "fix-a": {
+        "agent": "ae2dc4bb9025146aa",
+        "head": "00a77fe31bcdac02cd90d45faf1eb507c5dbbd65",
+        "commits": 2,
+        "files_changed": 7,
+        "added": 218,
+        "deleted": 47,
+        "added_rust": 138,
+        "weighted_tokens": 1614246,
+        "peak_context": 102910,
+        "b1_first_repo_rs_write": 56680,
+        "b1_first_any_rs_write_scratchpad": 55729,
+        "handoff": "none; below the 150000 trigger"
+      },
+      "fix-b": {
+        "agent": "a2bc04f09e05a3729",
+        "head": "2161afd7d632f0e77a5ce8f4009d38d24e7e31c6",
+        "commits": 2,
+        "files_changed": 6,
+        "added": 336,
+        "deleted": 20,
+        "added_rust": 214,
+        "weighted_tokens": 1717781,
+        "peak_context": 131771,
+        "handoff": "none; below the 150000 trigger"
+      }
+    },
+    "cost": {
+      "builders_weighted_mwt": 3.332,
+      "added_rust_total": 352,
+      "mwt_per_krs": 9.5,
+      "mwt_per_krs_status": "printed only to retire it; not comparable with R1's code-slice 1.26 and 1.78, per the pre-registered limit",
+      "preferred_unit": "0.67 Mwt per finding closed, n=5",
+      "r2_planner_weighted_mwt": 1.685,
+      "r2_planner_deliverables": "none written: contract-v1.md, the three builder packets and freeze-check.json all outstanding"
+    },
+    "verified_independently_by_measurement": [
+      "fix-a's full suite re-run from a clean git archive extract with a fresh CARGO_TARGET_DIR: 35 tests pass, 0 fail, matching the claimed counts; independent of the builder's reported stale-binary incident",
+      "EXT-001 closure at the failing values: decoded fixture bit patterns 430c6bf526340002 and 4305edd45e85c45a to the two review values and confirmed node prints the fixture's expected strings",
+      "both numstats recomputed with git diff --numstat from base",
+      "R2-M-002 compliance: git diff --name-only over model.rs, validate.rs, digest.rs and evaluate.rs between 624ec60e and 2161afd7 is empty",
+      "fix-b's Rust gates cover head: the only files changed between df6f7334 and 2161afd7 are the two Python ones"
+    ],
+    "not_independently_reproduced": [
+      "fix-a's mutation runs",
+      "fix-b's before-state executions (artifacts read, not re-executed)",
+      "the 267-of-25027 before-count"
+    ],
+    "b1_caveat": "three fix-a write attempts (tool calls 16, 17, 21) were refused by the worktree isolation guard and wrote nothing; a detector keyed on command text would have scored the first code write at call 16, about 3,000 tokens early. Caught by reading each tool result as well as each command, the failure class amendment 3 corrected",
+    "b1_interpretation": "fix-a's 56,680 and P1's 81,055 both sit below R1's corrected B1 range 71,539-116,779 (n=6). This is not evidence for H1: scope is fully confounded with the treatment, n=2 across two different subjects, and neither is an R2 builder",
+    "outcome_a": {
+      "instances_from_this_cohort": 0,
+      "reason": "neither builder reached the 150,000 trigger",
+      "r2_planner": {
+        "agent": "a6d8a16f300c0a71d",
+        "model": "claude-opus-5-5",
+        "context_at_declaration": 175123,
+        "headroom_to_band_floor": 27410,
+        "declared": "handoff_ready with a handoff file",
+        "successor_launched": "not established",
+        "outcome_a_status": "incomplete: the boundary declaration is well-formed and worker-owned; a successor has not continued"
+      }
+    },
+    "confound_materialised": {
+      "what": "the R2 planner's handoff records that metrics/probes/claude-builder-r2-prereg-20261022.md changed on disk after it read it; it had read amendments 1-3 only",
+      "cause": "this measurement role committed d6ed2270 while the planner was reading",
+      "cost": "one re-read instruction passed to a successor; the planner detected the change itself, so no wrong result followed",
+      "standing_confound": "the prereg already says this role should hold commits or use a separate branch"
+    },
+    "residuals_reported_not_fixed": [
+      "EXT-002 is closed at the assessment check, not at the structural evaluation check: with no profile supplied a class-relabelled evaluation still reports valid true (fix-b/repro-after.txt). As specified by the packet, but the narrower closure should be stated wherever EXT-002 is called closed",
+      "fix-b skips the new citation check for non-absolute paths to keep an existing test passing; the skip is sound because check_file_ref already rejects such a path with invalid_absolute_path (verified by reading the rule), but it is a guard with a documented hole",
+      "fix-a did not inspect repository docs outside its write scope for parity claims, so repository-wide freedom from the overclaimed parity language is not established",
+      "scratch directories left at /home/bline/cbm-work/fix-a-mut and /home/bline/cbm-work/fix-a-target"
+    ],
+    "correctness_of_repairs": "not established; no outside reader has read them. A tier-1 reviewer was running against fix-a at scoring time, fix-b had none"
   }
 }
