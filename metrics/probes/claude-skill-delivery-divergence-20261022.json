@@ -1,0 +1,72 @@
+{
+  "schema": "claude-metrics/finding/v1",
+  "id": "skill-delivery-divergence-20261022",
+  "recorded_at": "2026-10-23T02:40:00Z",
+  "subject": "how skill text reaches an agent, not any skill's content",
+  "r2_affected": false,
+  "r2_basis": "R2 builders are Claude-side and ~/.claude/skills/manual-orchestration was already a symlink, declared in the prereg as an instrument change; no byte an R2 builder reads changed",
+  "locations": {
+    "repo_skills": 30,
+    "claude_skills": 13,
+    "codex_skills": 31
+  },
+  "worker_skill_listing": {
+    "workers_receive_it": true,
+    "evidence": "a <system-reminder> in the fix-b builder's own context",
+    "skills_listed": 13,
+    "listing_bytes_approx": 4000,
+    "cost_of_adding_one": "177 bytes of name and description in every worker's context, plus the full file if a worker invokes it",
+    "consequence": "skills/coordination-channels is deliberately not linked into either directory while R2 runs; linking would void amendment 5's zero-delta basis"
+  },
+  "divergence_inventory": {
+    "real_copies_checked": 38,
+    "diverged": 17,
+    "diverged_side": "all 17 on the Codex side; the Claude side had none, and its one symlink cannot diverge",
+    "cases_read_not_inferred": [
+      {
+        "skill": "durable-state",
+        "kind": "missing files, not a differing script",
+        "detail": "the Codex copy lacks scripts/codex_chatboard.py and its test; AGENTS.md invokes the chatboard by repository path, so the script in use is always the repository's",
+        "practical_risk": "none"
+      },
+      {
+        "skill": "role-scheduler",
+        "kind": "real divergence",
+        "detail": "references/scheduler-contract.md differs and references/historical-inspection.md is absent from the Codex copy, while AGENTS.md directs Codex agents to follow role-scheduler at startup",
+        "practical_risk": "open"
+      }
+    ],
+    "which_copy_a_codex_agent_loads": "not established"
+  },
+  "instrument_change": {
+    "path": "~/.codex/skills/manual-orchestration",
+    "before": "independent real directory, 19 files, 200K, mtime 2026-10-22 07:46",
+    "after": "symlink to /home/bline/code/work-engine/skills/manual-orchestration, matching the Claude side",
+    "verification": [
+      "identical before the swap (diff -rq clean)",
+      "identical after, through the symlink (diff -rq clean)",
+      "worker-read digests unchanged: 86ec40bc, 802ac8d8, af4d3bb9, 84cfc80b, the same digests fix-a and the R2 planner recorded"
+    ],
+    "byte_delta_in_worker_read_set": 0,
+    "direction_of_effect": "removes a confound rather than adding one, the same reasoning the prereg gives for the Claude-side symlink: the arms could previously come to read different treatment text and now cannot",
+    "effect_on_measurements_already_taken": "nil; the copies were identical at the moment of the swap",
+    "method": {
+      "single_syscall_swap_possible": false,
+      "reason": "rename(2) cannot replace a directory with a non-directory: errno 21 EISDIR, confirmed by test",
+      "window_microseconds": 40.0,
+      "window_contents": "two rename(2) calls from one process, symlink pre-staged outside the window, no content I/O",
+      "comparisons": {
+        "rm_rf_40_files_microseconds": 637.4,
+        "two_mv_processes": "adds two ~1ms process spawns inside the window"
+      },
+      "rollback": "the displaced directory retained at ~/.codex/skills/.mo-old; one unlink plus one rename, original bytes not destroyed",
+      "future_retargets": "atomic with no window: a symlink can atomically replace a symlink, confirmed by test"
+    }
+  },
+  "open_not_acted_on": [
+    "the other 16 diverged Codex copies are untouched; diverged carries no direction and a Codex copy may be the newer authoritative text, so linking could silently discard it",
+    "role-scheduler specifically, because AGENTS.md has Codex agents read it at startup and the contract text differs",
+    "which copy a Codex agent loads: needs a Codex transcript showing the resolved path, not collected by this role"
+  ],
+  "role_boundary": "this role is excluded from both arms of the prospective correspondence trial and changed the Codex arm's delivery path only on explicit user instruction, with content verified identical first"
+}
