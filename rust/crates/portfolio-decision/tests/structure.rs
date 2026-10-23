@@ -446,6 +446,59 @@ fn required_limitations() {
     assert_eq!(findings(&doc), vec![]);
 }
 
+#[test]
+fn a_required_limitation_is_matched_by_its_name_not_by_a_prefix() {
+    let required = [
+        "strategic_basis_unverified",
+        "relationship_graph_revision_unverified",
+    ];
+    for name in required {
+        for lookalike in [
+            format!("{name}_is_false_here"),
+            format!("{name}_is_false_here: the text after is ignored"),
+            format!("{name}2: a longer name"),
+            format!("x{name}: a shorter-prefixed name"),
+            format!("{name} : space before the colon"),
+        ] {
+            let mut doc = sample();
+            let limits: Vec<Value> = doc["limitations"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|l| {
+                    if l.as_str().unwrap().starts_with(name) {
+                        json!(lookalike)
+                    } else {
+                        l.clone()
+                    }
+                })
+                .collect();
+            set(&mut doc, "limitations", Value::Array(limits));
+            assert_eq!(
+                findings(&doc),
+                vec![("limitation_missing".to_string(), "limitations".to_string())],
+                "{lookalike:?} must not satisfy {name}"
+            );
+        }
+        // The bare name and the `name: text` form are both accepted.
+        let mut doc = sample();
+        let limits: Vec<Value> = doc["limitations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| {
+                if l.as_str().unwrap().starts_with(name) {
+                    json!(name)
+                } else {
+                    l.clone()
+                }
+            })
+            .collect();
+        set(&mut doc, "limitations", Value::Array(limits));
+        assert_eq!(findings(&doc), vec![], "the bare name {name}");
+    }
+}
+
 fn one_missing_free(doc: &Value) {
     assert_eq!(
         findings(doc),

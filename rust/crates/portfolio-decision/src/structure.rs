@@ -333,7 +333,13 @@ fn required_limitations(p: &PortfolioDecision, out: &mut Vec<ErrorItem>) {
     for (i, l) in p.limitations.iter().enumerate() {
         non_empty(out, l, &format!("limitations.{i}"));
     }
-    let has = |name: &str| p.limitations.iter().any(|l| l.starts_with(name));
+    // A limitation names itself before its first ':' (or is only that name); the name must equal
+    // the required one, so `strategic_basis_unverified_is_false_here` does not satisfy it.
+    let has = |name: &str| {
+        p.limitations
+            .iter()
+            .any(|l| l.split_once(':').map_or(l.as_str(), |(head, _)| head) == name)
+    };
     let mut need = vec![
         limitations::STRATEGIC_BASIS_UNVERIFIED,
         limitations::RELATIONSHIP_GRAPH_REVISION_UNVERIFIED,
@@ -349,7 +355,7 @@ fn required_limitations(p: &PortfolioDecision, out: &mut Vec<ErrorItem>) {
             out.push(err(
                 codes::LIMITATION_MISSING,
                 "limitations",
-                format!("no limitation starts with {name:?}"),
+                format!("no limitation is named {name:?} (the text before its first ':' must equal the name)"),
             ));
         }
     }
