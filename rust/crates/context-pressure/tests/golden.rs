@@ -1,4 +1,8 @@
-//! Parity with the JS reference, proven against JS-generated golden vectors.
+//! Parity with the JS reference, checked against JS-generated golden vectors. The corpus is
+//! evidence for the cases it contains and for the number-formatting differential sample
+//! (`numberCases`, checked in `src/js.rs`); it is not a proof of byte parity over all inputs.
+//! `fixture_sections_meet_minimum_sizes` guards the corpus against shrinking independently of
+//! the fixture's own header counts.
 //!
 //! `tests/golden/vectors.json` is produced by `tests/golden/generate.mjs`, which runs the JS
 //! modules over a fixed corpus and records, for every case, either the JS output or the failure
@@ -73,6 +77,7 @@ impl Mismatches {
     }
 
     fn finish(self, total: usize) {
+        assert!(total > 0, "a golden test replayed zero cases");
         if !self.0.is_empty() {
             let shown: Vec<&str> = self.0.iter().take(25).map(String::as_str).collect();
             panic!(
@@ -118,6 +123,61 @@ fn fixture_header_is_consistent() {
             .is_some_and(|v| v.starts_with('v'))
     );
     assert_eq!(header["timeZone"].as_str(), Some("UTC"));
+}
+
+/// Minimum section sizes, hard-coded from the fixture as committed (2026-10-22) and independent
+/// of the fixture's own header counts. `fixture_header_is_consistent` only compares the header
+/// with the arrays in the same file, so a regenerated fixture that lost a section and zeroed its
+/// count would pass it. A corpus may grow; it may not shrink below these without editing this
+/// table, which is a reviewable change.
+const MINIMUM_SECTION_SIZES: [(&str, usize); 10] = [
+    ("policyCases", 43),
+    ("profileCases", 19),
+    ("projectorCases", 133),
+    ("deviationCases", 5),
+    ("sweepRows", 5383),
+    ("controllerCases", 441),
+    ("pipelineCases", 2),
+    ("timestampCases", 3137),
+    ("numberCases", 25_027),
+    // Total controller steps across all scenarios, checked separately below.
+    ("controllerSteps", 1007),
+];
+
+#[test]
+fn fixture_sections_meet_minimum_sizes() {
+    let fixture = fixture();
+    for (section, minimum) in MINIMUM_SECTION_SIZES {
+        let actual = if section == "controllerSteps" {
+            cases(&fixture, "controllerCases")
+                .iter()
+                .map(|case| case["steps"].as_array().expect("steps").len())
+                .sum()
+        } else {
+            cases(&fixture, section).len()
+        };
+        assert!(
+            actual >= minimum,
+            "section {section} has {actual} cases, below the hard-coded minimum {minimum}"
+        );
+        assert!(actual > 0, "section {section} is empty");
+    }
+    // Every ordinary section is present and non-empty, whatever the table above says.
+    for section in [
+        "policyCases",
+        "profileCases",
+        "projectorCases",
+        "sweepRows",
+        "controllerCases",
+        "pipelineCases",
+        "timestampCases",
+        "numberCases",
+    ] {
+        assert!(
+            !cases(&fixture, section).is_empty(),
+            "ordinary section {section} is empty"
+        );
+    }
 }
 
 #[test]
