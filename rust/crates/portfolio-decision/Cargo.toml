@@ -1,0 +1,25 @@
+[package]
+name = "portfolio-decision"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+publish = false
+description = "Portfolio decision: closed schema and mechanical validation for the PortfolioDecision record. Tooling never mutates a proposal lifecycle, rejects a proposal or schedules work."
+
+[lib]
+name = "portfolio_decision"
+path = "src/lib.rs"
+
+[[bin]]
+name = "work-engine-portfolio"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+sha2 = "=0.10.9"
+thiserror = "=2.0.21"
+proposal-evaluation = { path = "../proposal-evaluation" }
+decision-readiness = { path = "../decision-readiness" }
+
+[workspace]
