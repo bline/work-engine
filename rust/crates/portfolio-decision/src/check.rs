@@ -3,6 +3,7 @@
 
 use crate::diag::{CheckReport, Failure};
 use crate::structure::{parse_portfolio, validate};
+use crate::upstream::resolve_all;
 
 /// The `kind` printed in a portfolio-decision report.
 pub const KIND_PORTFOLIO: &str = "portfolio-decision";
@@ -14,6 +15,7 @@ pub fn check_portfolio_bytes(bytes: &[u8]) -> Result<CheckReport, Failure> {
         Err(errors) => return Ok(CheckReport::new(KIND_PORTFOLIO, errors, Vec::new())),
         Ok(record) => record,
     };
-    let errors = validate(&record);
+    let mut errors = validate(&record);
+    errors.extend(resolve_all(&record).errors);
     Ok(CheckReport::new(KIND_PORTFOLIO, errors, Vec::new()))
 }
