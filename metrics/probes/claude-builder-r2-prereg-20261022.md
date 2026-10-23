@@ -504,3 +504,36 @@ two Rust-building slices of 2000-5000 added Rust lines each" — the criterion
 **amendment 2 replaced**. The `.md` carries the restated criterion; the `.json`
 does not, so a reader applying the JSON would use the superseded rule. It is
 marked superseded rather than rewritten, because a registration is append-only.
+
+### Amendment 6 addendum, 2026-10-23: the same ruling applied to P1
+
+Board 2642 records the counting ruling as open for **E2 and P1**; the body
+above decided E2 only. Applying the identical three parts to P1, with every
+column re-counted at P1's base `4c12f34e`:
+
+| column | lines | basis |
+|---|---|---|
+| repo | 1,190 | packet's 1,182 with `decision-readiness/src/lib.rs` re-counted at 55 after fix-c landed, per R2-M-002 |
+| `contract-v2.md` + `errata-1` | 365 | 261 + 104, packet-stated ranges |
+| predecessor output (E1+E2) | **697** | `proposal-evaluation` `model.rs` 508 + `diag.rs` 151 + `lib.rs` 21 = 680, + 17 signature lines; all three counted at base and matching |
+| DESIGN.md | 817 | excluded by part 3 |
+
+**P1 meets the criterion at 2,252.** But note the asymmetry with E2: **P1
+depends on parts 1 and 2 together.** Without predecessor output it reaches
+1,555; without the contract, 1,887. Both must count for P1 to qualify, where E2
+survived the loss of part 2 at 2,111.
+
+**The DESIGN.md route is closed, and it mattered here.** P1's `repo + DESIGN.md`
+is **2,007** — it would have cleared 2,000 by 7 lines on the one column part 3
+excludes. P1 qualifies by a different route, so the outcome is unchanged, but a
+criterion that can be met by a constant present in both arms would have been met
+here by that constant alone. That is the case part 3 was reasoning about, and it
+arrived one slice later.
+
+**The endogeneity covariate applies to P1 as well, and now bites.** P1's read
+set draws on E1+E2 output, so R2's three scored slices are **not three
+independent draws**: E2 chains on E1, P1 chains on E1+E2. Per the covariate
+registered above, n for H1-H3 is stated as **3 slices, 1 independent chain**,
+not n = 3. P1's share of predecessor output is small (697 of 2,252, 31%) against
+E2's 69%, so the provenance flag is weaker for P1 — record the share per slice
+rather than a single campaign-level caveat.

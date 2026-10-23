@@ -490,6 +490,31 @@
         "criterion_at_least_3": "met"
       }
     },
-    "defect_found_while_ruling": "requirements_for_scorability[0] in this file still encodes the pre-amendment-2 criterion; see requirements_for_scorability_note."
+    "defect_found_while_ruling": "requirements_for_scorability[0] in this file still encodes the pre-amendment-2 criterion; see requirements_for_scorability_note.",
+    "addendum_p1": {
+      "counted_at_base": "4c12f34e652d97859cfafa2f41d78042df631018",
+      "columns": {
+        "repo": 1190,
+        "contract_and_errata": 365,
+        "predecessor_output_e1_e2": 697,
+        "design_md": 817
+      },
+      "verification": "proposal-evaluation model.rs 508 + diag.rs 151 + lib.rs 21 = 680 plus 17 signature lines = 697; decision-readiness lib.rs 55 after fix-c per R2-M-002; all counted at base and matching the coordinator",
+      "total": 2252,
+      "meets_2000_criterion": true,
+      "depends_on_parts": [
+        "predecessor output",
+        "contract and errata"
+      ],
+      "without_contract": 1887,
+      "without_predecessor_output": 1555,
+      "design_md_route_closed": "repo + DESIGN.md = 2007 would have cleared 2000 by 7 lines on the one column part 3 excludes; P1 qualifies by another route so the outcome is unchanged",
+      "independence": "R2's three scored slices are 3 slices, 1 independent chain: E2 chains on E1, P1 on E1+E2. n for H1-H3 is stated as such, not as 3.",
+      "predecessor_share": {
+        "e2": "1672 of 2427, 69%",
+        "p1": "697 of 2252, 31%",
+        "record": "per slice, not one campaign-level caveat"
+      }
+    }
   }
 }
