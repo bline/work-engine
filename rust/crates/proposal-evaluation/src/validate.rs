@@ -25,6 +25,17 @@ fn err(code: &str, at: impl Into<String>, message: impl Into<String>) -> ErrorIt
 /// float where an integer is required is a `schema` error (contract S3) because the model
 /// holds no float type.
 pub fn parse_estimate_set(bytes: &[u8]) -> Result<Parsed, Failure> {
+    // Lexical problems come first: a repeated key means the document has no single meaning to
+    // check, so nothing further is read from it.
+    let findings = crate::scan::scan(bytes).map_err(|e| Failure::Parse(e.to_string()))?;
+    if !findings.is_empty() {
+        return Ok(Parsed::Invalid(
+            findings
+                .into_iter()
+                .map(|f| err(codes::SCHEMA, f.at, f.message))
+                .collect(),
+        ));
+    }
     let raw: serde_json::Value =
         serde_json::from_slice(bytes).map_err(|e| Failure::Parse(e.to_string()))?;
     match raw.get("schema") {

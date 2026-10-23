@@ -15,6 +15,7 @@
 use crate::diag::{CheckReport, ErrorItem, Failure, codes};
 use crate::digest::{is_sha256_hex, sha256_hex};
 use crate::model::{BasisRef, Estimate, EstimateSet, FileRef};
+use crate::scan::scan;
 use crate::validate::{
     Parsed, is_normalised_absolute, is_proposal_id, parse_estimate_set, validate_estimate_set,
 };
@@ -127,6 +128,25 @@ fn resolve(f: &FileRef, at: &str, errors: &mut Vec<ErrorItem>) -> Option<Value> 
                 f.path, f.sha256
             ),
         ));
+        return None;
+    }
+    // A document that repeats an object key has no single meaning: refuse it before any field
+    // is read. (A document that does not parse falls through to the class mismatch below.)
+    if let Ok(findings) = scan(&bytes)
+        && !findings.is_empty()
+    {
+        for finding in findings {
+            let place = if finding.at.is_empty() {
+                "the document".to_string()
+            } else {
+                format!("`{}`", finding.at)
+            };
+            errors.push(err(
+                codes::SCHEMA,
+                at,
+                format!("{} has {}: {}", f.path, place, finding.message),
+            ));
+        }
         return None;
     }
     match serde_json::from_slice::<Value>(&bytes) {

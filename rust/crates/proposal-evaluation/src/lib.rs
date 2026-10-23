@@ -9,6 +9,7 @@ pub mod cli;
 pub mod diag;
 pub mod digest;
 pub mod model;
+pub mod scan;
 pub mod validate;
 
 pub use check::check_estimate_set_bytes;
