@@ -10,11 +10,12 @@
 
 use crate::check::{KIND, KIND_CONTRACT, check_contract_bytes, check_estimate_set_bytes};
 use crate::compare::compare_paths;
+use crate::comparison::{KIND_COMPARISON, check_comparison_bytes};
 use crate::diag::{EXIT_INVALID, EXIT_OK, Failure};
 use serde::Serialize;
 use std::io::Write;
 
-const USAGE: &str = "usage:\n  work-engine-evaluation check --kind estimate-set FILE\n  work-engine-evaluation check --kind contract FILE\n  work-engine-evaluation compare --contract C --estimates E [--estimates E ...] --derived-at T [--out F]";
+const USAGE: &str = "usage:\n  work-engine-evaluation check --kind estimate-set FILE\n  work-engine-evaluation check --kind contract FILE\n  work-engine-evaluation check --kind comparison [--rederive] FILE\n  work-engine-evaluation compare --contract C --estimates E [--estimates E ...] --derived-at T [--out F]";
 
 /// Serialise an output document: `to_string_pretty` plus one `\n` (contract S2).
 pub fn to_output_string<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
@@ -49,8 +50,9 @@ fn dispatch(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
 }
 
 /// `--kind K FILE`: one `--kind`, one positional; any other option or repetition is refused.
-fn parse_check(args: &[String]) -> Result<(String, String), Failure> {
+fn parse_check(args: &[String]) -> Result<(String, String, bool), Failure> {
     let mut kind: Option<String> = None;
+    let mut rederive = false;
     let mut files: Vec<&String> = Vec::new();
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
@@ -63,23 +65,35 @@ fn parse_check(args: &[String]) -> Result<(String, String), Failure> {
                     return Err(Failure::Usage("--kind given more than once".to_string()));
                 }
             }
+            Some("rederive") => {
+                if std::mem::replace(&mut rederive, true) {
+                    return Err(Failure::Usage(
+                        "--rederive given more than once".to_string(),
+                    ));
+                }
+            }
             Some(name) => return Err(Failure::Usage(format!("unexpected option --{name}"))),
             None => files.push(arg),
         }
     }
     let kind = kind.ok_or_else(|| Failure::Usage("check needs --kind".to_string()))?;
     match files.as_slice() {
-        [file] => Ok((kind, (*file).clone())),
+        [file] => Ok((kind, (*file).clone(), rederive)),
         [] => Err(Failure::Usage("check needs a FILE".to_string())),
         _ => Err(Failure::Usage("check takes exactly one FILE".to_string())),
     }
 }
 
 fn check(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
-    let (kind, file) = parse_check(args)?;
-    if kind != KIND && kind != KIND_CONTRACT {
+    let (kind, file, rederive) = parse_check(args)?;
+    if kind != KIND && kind != KIND_CONTRACT && kind != KIND_COMPARISON {
         return Err(Failure::Usage(format!(
-            "unknown --kind {kind:?}; this build checks {KIND:?} and {KIND_CONTRACT:?}"
+            "unknown --kind {kind:?}; this build checks {KIND:?}, {KIND_CONTRACT:?} and {KIND_COMPARISON:?}"
+        )));
+    }
+    if rederive && kind != KIND_COMPARISON {
+        return Err(Failure::Usage(format!(
+            "--rederive applies only to --kind {KIND_COMPARISON}"
         )));
     }
     let bytes = std::fs::read(&file).map_err(|e| Failure::Io {
@@ -88,6 +102,8 @@ fn check(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
     })?;
     let report = if kind == KIND_CONTRACT {
         check_contract_bytes(&bytes)?
+    } else if kind == KIND_COMPARISON {
+        check_comparison_bytes(&bytes, rederive)?
     } else {
         check_estimate_set_bytes(&bytes)?
     };

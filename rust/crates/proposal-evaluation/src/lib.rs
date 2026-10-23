@@ -7,6 +7,7 @@
 pub mod check;
 pub mod cli;
 pub mod compare;
+pub mod comparison;
 pub mod contract;
 pub mod diag;
 pub mod digest;
@@ -15,5 +16,6 @@ pub mod scan;
 pub mod validate;
 
 pub use check::{check_contract_bytes, check_estimate_set_bytes};
+pub use comparison::check_comparison_bytes;
 pub use diag::{CheckReport, ErrorItem, Failure, codes};
 pub use digest::sha256_hex;

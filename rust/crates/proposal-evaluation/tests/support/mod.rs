@@ -252,3 +252,71 @@ pub fn cli<S: AsRef<str>>(args: &[S]) -> Run {
         stderr: String::from_utf8(output.stderr).unwrap(),
     }
 }
+
+// ---- a complete two-proposal world on disk (shared by compare_cli and comparison_check) ----
+
+pub struct World {
+    pub dir: PathBuf,
+    pub contract: PathBuf,
+    pub sets: Vec<PathBuf>,
+}
+
+/// A packet and projection for `pid`, an estimate set bound to them, and a contract naming
+/// `alpha.one` and `alpha.two`. `alpha.one` estimates a lower cost than `alpha.two`.
+pub fn proposal(dir: &std::path::Path, pid: &str, cost: i64) -> (PathBuf, String) {
+    let pdir = dir.join(pid);
+    let packet = pdir.join("packet.json");
+    let packet_sha = write_json(&packet, &json!({"schema_version": 1, "proposal_id": pid}));
+    let element = |n: u8| {
+        json!({"revision_id": format!("rev-{n}"), "revision_sha256": format!("{n:x}").repeat(64),
+               "claim": {"id": format!("claim-{n}"), "profile": "proposal-research-v1"}})
+    };
+    let projection = pdir.join("projection.json");
+    let proj_sha = write_json(
+        &projection,
+        &json!({"schema_version": 1, "context_kind": "rust_reviewer_exact_claim_projection_v1",
+                "selection_metadata": [element(1), element(2), element(3)]}),
+    );
+    let mut set = valid_set(&s(&packet), &packet_sha, &s(&projection), &proj_sha);
+    set["proposal"]["proposal_id"] = json!(pid);
+    set["estimates"][0]["value"] = json!({"quantity": cost});
+    set["estimates"][0]["interval"] =
+        json!({"low": {"quantity": cost - 1}, "high": {"quantity": cost + 1}});
+    let path = pdir.join("set.json");
+    write_json(&path, &set);
+    (path, packet_sha)
+}
+
+pub fn world(name: &str) -> World {
+    let dir = fresh_dir(name);
+    let (one, sha_one) = proposal(&dir, "alpha.one", 8);
+    let (two, sha_two) = proposal(&dir, "alpha.two", 20);
+    let mut contract = valid_contract();
+    contract["proposals"] = json!([
+        {"proposal_id": "alpha.one", "packet_sha256": sha_one},
+        {"proposal_id": "alpha.two", "packet_sha256": sha_two}
+    ]);
+    contract["measures"] = json!([
+        {"measure_id": "expected-cost", "definition": "engineering days",
+         "scale": {"kind": "quantity", "unit": "day", "exponent": 0},
+         "direction": "lower_is_better", "scope": "this proposal", "minimum_confidence": "low"},
+        {"measure_id": "regression_risk", "definition": "chance of regression",
+         "scale": {"kind": "ordinal", "levels": ["low", "medium", "high"]},
+         "direction": "lower_is_better", "scope": "this proposal", "minimum_confidence": "low"}
+    ]);
+    contract["treatment"]["contested"] = json!("drop_measure");
+    let path = dir.join("contract.json");
+    write_json(&path, &contract);
+    World {
+        dir,
+        contract: path,
+        sets: vec![one, two],
+    }
+}
+
+pub fn rewrite_contract(w: &World, edit: impl Fn(&mut Value)) {
+    let mut c: Value =
+        serde_json::from_str(&std::fs::read_to_string(&w.contract).unwrap()).unwrap();
+    edit(&mut c);
+    write_json(&w.contract, &c);
+}
