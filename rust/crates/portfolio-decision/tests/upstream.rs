@@ -12,6 +12,12 @@ fn run(doc: &Value) -> Vec<(String, String)> {
     codes_of(&report)
 }
 
+/// `run` under the read-guard deadline: a FIFO that is opened blocking fails here, not as a hang.
+fn run_bounded(what: &str, doc: &Value) -> Vec<(String, String)> {
+    let doc = doc.clone();
+    within_deadline(what, READ_DEADLINE, move || run(&doc))
+}
+
 fn has(found: &[(String, String)], code: &str, at: &str) -> bool {
     found.iter().any(|(c, a)| c == code && a == at)
 }
@@ -373,7 +379,7 @@ fn an_assessments_evaluation_pointer_is_checked_like_every_other_stored_pointer(
     let mut wrong = Vec::new();
     for (tag, evaluation, code, at) in cases {
         let doc = with_assessment_evaluation(&w, tag, evaluation);
-        let found = run(&doc);
+        let found = run_bounded(tag, &doc);
         if found != vec![(code.to_string(), at.clone())] {
             wrong.push(format!(
                 "{tag}: expected only {code} at {at}, got {found:?}"
@@ -492,7 +498,11 @@ fn a_directory_a_fifo_and_an_oversized_file_are_refused_without_hanging() {
     let w = world("not-regular", false);
     let mut doc = w.doc.clone();
     set(&mut doc, "strategic_basis.handoff", file_ref(&w.dir, SHA_A));
-    expect(&run(&doc), "pointer_unresolved", "strategic_basis.handoff");
+    expect(
+        &run_bounded("directory", &doc),
+        "pointer_unresolved",
+        "strategic_basis.handoff",
+    );
 
     let fifo = w.dir.join("fifo");
     let status = std::process::Command::new("mkfifo")
@@ -510,7 +520,7 @@ fn a_directory_a_fifo_and_an_oversized_file_are_refused_without_hanging() {
         let mut doc = w.doc.clone();
         set(&mut doc, &format!("{at}.path"), json!(s(&fifo)));
         set(&mut doc, &format!("{at}.sha256"), json!(SHA_A));
-        expect(&run(&doc), "pointer_unresolved", at);
+        expect(&run_bounded(at, &doc), "pointer_unresolved", at);
     }
 
     let big = w.dir.join("big.json");
@@ -518,5 +528,82 @@ fn a_directory_a_fifo_and_an_oversized_file_are_refused_without_hanging() {
     file.set_len(32 * 1024 * 1024 + 1).unwrap();
     let mut doc = w.doc.clone();
     set(&mut doc, "strategic_basis.handoff", file_ref(&big, SHA_A));
-    expect(&run(&doc), "pointer_unresolved", "strategic_basis.handoff");
+    expect(
+        &run_bounded("oversized file", &doc),
+        "pointer_unresolved",
+        "strategic_basis.handoff",
+    );
+}
+
+/// P3-5: only `schema_version` 1 (the v1 key set) and 2 (the v1 key set plus `supersedes`) make a
+/// bound file a proposal decision. The version is compared as the integer it is, so 0, 3, a
+/// string, a float and an absent version are each a class mismatch, whatever key set they carry.
+#[test]
+fn only_schema_versions_one_and_two_make_a_bound_file_a_decision() {
+    let w = world("decision-versions", false);
+    let at = "proposal_set.0.decision";
+    let v1 = decision_json("alpha-one", 1);
+    let v2 = decision_json("alpha-one", 2);
+
+    // Bind `file` as alpha-one's decision (it sits beside the packet, so only its class is in
+    // question) and report what the check says about that pointer.
+    let found_for = |tag: &str, file: &Value| -> Vec<(String, String)> {
+        let mut doc = w.doc.clone();
+        let path = w.path("a_decision").to_path_buf();
+        let sha = write_json(&path, file);
+        set(&mut doc, &format!("{at}.sha256"), json!(sha));
+        let found = run_bounded(tag, &doc);
+        found.into_iter().filter(|(_, a)| a == at).collect()
+    };
+    let mismatch = vec![("upstream_class_mismatch".to_string(), at.to_string())];
+
+    // Controls: both accepted versions, each with its own key set, are clean at the pointer.
+    assert_eq!(found_for("v1", &v1), Vec::new(), "version 1, v1 keys");
+    assert_eq!(found_for("v2", &v2), Vec::new(), "version 2, v2 keys");
+
+    let with_version = |base: &Value, version: Value| {
+        let mut d = base.clone();
+        d["schema_version"] = version;
+        d
+    };
+    let mut wrong = Vec::new();
+    for (tag, version) in [
+        ("zero", json!(0)),
+        ("three", json!(3)),
+        ("four", json!(4)),
+        ("negative", json!(-1)),
+        ("string-1", json!("1")),
+        ("string-2", json!("2")),
+        ("float-1", json!(1.0)),
+        ("float-2", json!(2.0)),
+        ("fraction", json!(1.5)),
+        ("bool", json!(true)),
+        ("null", Value::Null),
+        ("array", json!([1])),
+    ] {
+        for (keys, base) in [("v1 keys", &v1), ("v2 keys", &v2)] {
+            let found = found_for(tag, &with_version(base, version.clone()));
+            if found != mismatch {
+                wrong.push(format!("{tag} with {keys}: {found:?}"));
+            }
+        }
+    }
+    // An absent version, and a version that disagrees with the key set.
+    let mut absent = v1.clone();
+    absent.as_object_mut().unwrap().remove("schema_version");
+    for (tag, file) in [
+        ("absent v1 keys", absent),
+        ("version 1 with supersedes", with_version(&v2, json!(1))),
+        ("version 2 without supersedes", with_version(&v1, json!(2))),
+    ] {
+        let found = found_for(tag, &file);
+        if found != mismatch {
+            wrong.push(format!("{tag}: {found:?}"));
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "each must be one upstream_class_mismatch at {at}:\n{}",
+        wrong.join("\n")
+    );
 }

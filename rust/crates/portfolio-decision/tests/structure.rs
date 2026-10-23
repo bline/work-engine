@@ -640,3 +640,70 @@ fn nothing_in_the_record_vocabulary_can_say_reject() {
         "no code or limitation name may mention rejection"
     );
 }
+
+/// P3-3: no spelling of a rejection deserialises to a disposition. The vocabulary is closed on
+/// the way in as well as on the way out, so an `alias` on any variant (which would let
+/// `"disposition": "reject"` parse) is caught here, whichever field set the row carries.
+#[test]
+fn no_spelling_of_a_rejection_is_an_accepted_disposition() {
+    let field_sets = [
+        json!({"proposal_id": "alpha-one", "rationale": "r", "rank": 1}),
+        json!({"proposal_id": "alpha-one", "rationale": "r", "after": []}),
+        json!({"proposal_id": "alpha-one", "rationale": "r", "revisit_when": ["x"]}),
+        json!({"proposal_id": "alpha-one", "rationale": "r", "reason": "x"}),
+        json!({"proposal_id": "alpha-one", "rationale": "r", "campaign_ref": "c"}),
+    ];
+    let spellings = [
+        "reject",
+        "rejected",
+        "rejection",
+        "reject_proposal",
+        "reject_for_current_portfolio",
+        "Reject",
+        "REJECT",
+        "reject ",
+        " reject",
+        "decline",
+        "declined",
+        "deny",
+        "drop",
+        "discard",
+        "refuse",
+        "withdraw",
+        "cancel",
+        "abandon",
+        "exclude",
+        "defer_forever",
+    ];
+    let mut wrong = Vec::new();
+    for spelling in spellings {
+        for (n, fields) in field_sets.iter().enumerate() {
+            let mut row = fields.clone();
+            row["disposition"] = json!(spelling);
+            let mut doc = sample();
+            set(&mut doc, "dispositions.0", row.clone());
+            let direct = serde_json::from_value::<Disposition>(row.clone());
+            let found = findings(&doc);
+            let schema_at_row = vec![(
+                "schema".to_string(),
+                "dispositions.0.disposition".to_string(),
+            )];
+            if direct.is_ok() || found != schema_at_row {
+                wrong.push(format!(
+                    "{spelling:?} with field set {n}: deserialised {:?}, record findings {found:?}",
+                    direct.ok()
+                ));
+            }
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+    // The control: each serialised tag, with its own fields, is accepted.
+    for (tag, fields) in DISPOSITION_TAGS.iter().zip(&field_sets) {
+        let mut row = fields.clone();
+        row["disposition"] = json!(tag);
+        assert!(
+            serde_json::from_value::<Disposition>(row).is_ok(),
+            "{tag} is a disposition"
+        );
+    }
+}

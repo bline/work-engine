@@ -432,3 +432,31 @@ pub fn world(name: &str, old_beta: bool) -> World {
     w.doc = doc;
     w
 }
+
+/// Run `f` on its own thread and fail the test if it has not returned within `limit`. A guard
+/// that stops working shows up as an operation that blocks (a FIFO opened for reading waits for a
+/// writer forever); this turns that hang into a prompt, named failure. The blocked thread is
+/// abandoned: the process exits when the test binary finishes.
+pub fn within_deadline<T: Send + 'static>(
+    what: &str,
+    limit: std::time::Duration,
+    f: impl FnOnce() -> T + Send + 'static,
+) -> T {
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(f());
+    });
+    match rx.recv_timeout(limit) {
+        Ok(value) => value,
+        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+            panic!("{what}: still blocked after {limit:?} (the stored-path read guard regressed)")
+        }
+        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+            panic!("{what}: the operation panicked before returning")
+        }
+    }
+}
+
+/// How long a read-guard case may take. A refused read returns in milliseconds; this only has to
+/// be longer than a slow, loaded machine needs and far shorter than a hang.
+pub const READ_DEADLINE: std::time::Duration = std::time::Duration::from_secs(20);

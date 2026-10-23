@@ -590,3 +590,47 @@ fn every_contract_code_is_declared_and_has_a_rejecting_test_source() {
         );
     }
 }
+
+/// P3-4: `conflicts_with` (and every other graph relationship type but the three the contract
+/// names) is not an unlock relationship type, even when the packet bytes do carry the edge. The
+/// accepted three are the controls, so the test fails if the set is narrowed as well as widened.
+#[test]
+fn only_depends_on_enables_and_informs_are_unlock_relationship_types() {
+    let mut wrong = Vec::new();
+    for (kind, accepted) in [
+        ("depends_on", true),
+        ("enables", true),
+        ("informs", true),
+        ("conflicts_with", false),
+        ("related_to", false),
+        ("supersedes", false),
+        ("blocks", false),
+        ("Enables", false),
+        ("enables ", false),
+        ("", false),
+    ] {
+        let mut w = world("cross-unlock-types", false);
+        gamma_edge(&mut w, kind, "alpha-one");
+        with_unlock(
+            &mut w,
+            json!([unlock(
+                "gamma-three",
+                "alpha-one",
+                json!([edge("gamma-three", kind, "alpha-one")])
+            )]),
+        );
+        let expected = if accepted {
+            Found::new()
+        } else {
+            vec![pair(
+                "unlock_type_invalid",
+                &format!("{UNLOCK_0}.relationship_basis.0.type"),
+            )]
+        };
+        let found = run(&w.doc);
+        if found != expected {
+            wrong.push(format!("{kind:?}: expected {expected:?}, got {found:?}"));
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
