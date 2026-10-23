@@ -22,6 +22,10 @@ use crate::validate::{
 };
 use serde_json::Value;
 
+// Contract 5 names `check::check_comparison_bytes` as the path a consumer calls; the function is
+// defined with the comparison rules and also exported at the crate root.
+pub use crate::comparison::check_comparison_bytes;
+
 /// The `kind` printed in the report.
 pub const KIND: &str = "estimate-set";
 /// The projection class (`context_kind`) this checker accepts (claim-evidence `PROJECTION_CONTEXT_KIND`).
