@@ -44,6 +44,25 @@ pub mod codes {
     pub const STALE_BEFORE_AFTER_CUTOFF: &str = "stale_before_after_cutoff";
     /// Named by the builder: `measures` is empty (a contract includes at least one measure).
     pub const MEASURES_EMPTY: &str = "measures_empty";
+    // Binding refusals of `compare` (contract 3.2; exit 3, nothing written).
+    pub const ESTIMATE_SET_MISSING: &str = "estimate_set_missing";
+    pub const ESTIMATE_SET_DUPLICATE: &str = "estimate_set_duplicate";
+    pub const ESTIMATE_SET_UNEXPECTED: &str = "estimate_set_unexpected";
+    pub const BASIS_REVISION_MISMATCH: &str = "basis_revision_mismatch";
+    pub const ESTIMATE_AFTER_CUTOFF: &str = "estimate_after_cutoff";
+    /// An input failed its own `check`; the nested errors follow with their own codes.
+    pub const INPUT_INVALID: &str = "input_invalid";
+    // Comparison finding checks (contract 3.4).
+    pub const PAIR_COVERAGE: &str = "pair_coverage";
+    pub const MEASURE_COVERAGE: &str = "measure_coverage";
+    pub const OUTCOME_INCONSISTENT: &str = "outcome_inconsistent";
+    pub const FRONTIER_INCONSISTENT: &str = "frontier_inconsistent";
+    pub const REDERIVE_MISMATCH: &str = "rederive_mismatch";
+    /// Named by the builder: `conditional_on` disagrees with the `contract` block or with the
+    /// contract file at its stored path.
+    pub const CONDITIONAL_ON_MISMATCH: &str = "conditional_on_mismatch";
+    /// Note (not an error): `--rederive` found only the `tool` block different.
+    pub const NOTE_TOOL_DIFFERS: &str = "tool_differs";
 }
 
 /// One violated rule: a stable `code`, where it is (`at`, a dotted path), and a message.

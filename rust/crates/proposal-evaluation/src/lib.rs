@@ -6,6 +6,7 @@
 
 pub mod check;
 pub mod cli;
+pub mod compare;
 pub mod contract;
 pub mod diag;
 pub mod digest;

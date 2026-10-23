@@ -62,8 +62,8 @@ pub enum Direction {
     LowerIsBetter,
 }
 
-/// The estimator's own confidence (UD3).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// The estimator's own confidence (UD3). Declaration order is the order `low < medium < high`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Confidence {
     Low,
@@ -364,4 +364,145 @@ pub struct ComparisonContract {
     pub evidence_cutoff: String,
     pub stale_before: String,
     pub authority: ContractAuthority,
+}
+
+// ---------------------------------------------------------------------------
+// E2: the derived comparison finding (contract 3.3)
+// ---------------------------------------------------------------------------
+
+pub const COMPARISON_SCHEMA: &str = "proposal-evaluation-comparison-v1";
+
+/// Per-measure relation of side `a` to side `b` (contract 3.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Relation {
+    Better,
+    Worse,
+    Equal,
+    Overlap,
+    Blocked,
+}
+
+/// Pair outcome (UD2): three determinations and no outcome that names equality.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Outcome {
+    ADominatesB,
+    BDominatesA,
+    Incomparable,
+    Blocked,
+}
+
+/// Why a measure is blocked or dropped for a pair. Declaration order is the order reasons are
+/// listed in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Reason {
+    Missing,
+    Contested,
+    BelowMinimumConfidence,
+    Stale,
+    DefinitionMismatch,
+    NoComparableMeasures,
+}
+
+/// The tool that derived a record (contract S9).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ToolRecord {
+    pub name: String,
+    pub version: String,
+    pub binary_sha256: String,
+}
+
+/// The contract file a finding was derived from.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContractRef {
+    pub path: String,
+    pub sha256: String,
+    pub contract_id: String,
+    pub version: u64,
+}
+
+/// What the finding is conditional on (EI:114-118).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ConditionalOn {
+    pub contract_id: String,
+    pub contract_version: u64,
+    pub contract_sha256: String,
+    pub evidence_cutoff: String,
+}
+
+/// One estimate set used in the derivation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EstimateSetRef {
+    pub proposal_id: String,
+    pub packet_sha256: String,
+    pub path: String,
+    pub sha256: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PairMeasure {
+    pub measure_id: String,
+    pub relation: Relation,
+    pub reasons: Vec<Reason>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DroppedMeasure {
+    pub measure_id: String,
+    pub reasons: Vec<Reason>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Pair {
+    pub a: String,
+    pub b: String,
+    pub measures: Vec<PairMeasure>,
+    pub dropped_measures: Vec<DroppedMeasure>,
+    pub outcome: Outcome,
+    pub blocked_reasons: Vec<Reason>,
+}
+
+/// The partition of the contract's proposals (contract 3.2); each array is sorted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Frontier {
+    pub non_dominated: Vec<String>,
+    pub dominated: Vec<String>,
+    pub undetermined: Vec<String>,
+}
+
+/// Constant non-authority block of a finding (EV:140, EV:171); every member must be `false`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ComparisonAuthority {
+    pub priority_authorized: bool,
+    pub acceptance_authorized: bool,
+    pub implementation_authorized: bool,
+    pub readiness_judgment_issued: bool,
+}
+
+/// The derived comparison finding. It is conditional on the contract and cutoff it names and
+/// carries no priority, acceptance or readiness authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ComparisonFinding {
+    pub schema: String,
+    pub tool: ToolRecord,
+    pub derived_at: String,
+    pub contract: ContractRef,
+    pub conditional_on: ConditionalOn,
+    pub estimate_sets: Vec<EstimateSetRef>,
+    pub pairs: Vec<Pair>,
+    pub frontier: Frontier,
+    pub authority: ComparisonAuthority,
+    pub limitations: Vec<String>,
 }
