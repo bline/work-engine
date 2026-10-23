@@ -1,315 +1,404 @@
 {
- "schema": "claude-builder-r2-prereg-v1",
- "registered_at": "2026-10-22T14:10:00Z",
- "registered_before": "campaign R2 design and dispatch",
- "treatment": {
-  "commit": "cb61f807",
-  "subject": "Size manual-orchestration packets by their read set",
-  "files": [
-   "skills/manual-orchestration/references/worker.md",
-   "skills/manual-orchestration/references/coordinator.md"
+  "schema": "claude-builder-r2-prereg-v1",
+  "registered_at": "2026-10-22T14:10:00Z",
+  "registered_before": "campaign R2 design and dispatch",
+  "treatment": {
+    "commit": "cb61f807",
+    "subject": "Size manual-orchestration packets by their read set",
+    "files": [
+      "skills/manual-orchestration/references/worker.md",
+      "skills/manual-orchestration/references/coordinator.md"
+    ],
+    "reached_repo_copy_at": "2026-10-22T01:59:50Z"
+  },
+  "instrument": {
+    "resolved_defect": "R1-M-001",
+    "action": "~/.claude/skills/manual-orchestration replaced with a symlink to skills/manual-orchestration",
+    "verified": "diff -rq between the two paths reports no differences; worker.md and coordinator.md digests now agree",
+    "backup": "~/.local/state/work-engine/skill-backup-20261022/manual-orchestration-user-scope",
+    "sibling_sweep": "10 other skills present in both ~/.claude/skills and skills/ compared; all byte-identical, so manual-orchestration was the only divergence"
+  },
+  "cohort_rule": {
+    "pre_change": "builder read the reference text before 2026-10-22T01:59:50Z",
+    "post_change": "builder read it after, AND recorded the digest of what it read",
+    "note": "R1 could not apply the second clause, which is why R1-M-001 went unnoticed"
+  },
+  "frozen_baseline_r1_pre_change": {
+    "builders": [
+      {
+        "agent": "a27d1ec9c1e4acca4",
+        "role": "S1 builder",
+        "context_at_first_code_write": 113522,
+        "pre_write_read_calls": 28,
+        "context_at_first_code_write_as_registered": 88562,
+        "pre_write_read_calls_as_registered": 26,
+        "corrected_by": "amendment_3",
+        "correction_note": "88,562 was the first write of Cargo.toml (cat > ... Cargo.toml, call 24). The first write of a .rs file is at call 28."
+      },
+      {
+        "agent": "abeb3da4543a8545f",
+        "role": "S1 successor",
+        "context_at_first_code_write": 116779,
+        "pre_write_read_calls": 16,
+        "verified_by": "amendment_3 (candidate list read, not detector output)"
+      },
+      {
+        "agent": "a0e59f73949c117b9",
+        "role": "S2 builder",
+        "context_at_first_code_write": null,
+        "pre_write_read_calls": 29,
+        "verified_by": "amendment_3: no .rs or .toml write candidate anywhere in the transcript"
+      },
+      {
+        "agent": "a68b863f021a779a8",
+        "role": "S2a successor",
+        "context_at_first_code_write": 100144,
+        "pre_write_read_calls": 15,
+        "verified_by": "amendment_3 (candidate list read, not detector output)"
+      },
+      {
+        "agent": "aed2ceafc33b90035",
+        "role": "S2a-2 successor",
+        "context_at_first_code_write": 71539,
+        "pre_write_read_calls": 14,
+        "verified_by": "amendment_3 (candidate list read, not detector output)"
+      },
+      {
+        "agent": "a5d3ffe262a707e38",
+        "role": "S2b builder",
+        "context_at_first_code_write": 103954,
+        "pre_write_read_calls": 14,
+        "verified_by": "amendment_3 (candidate list read, not detector output)"
+      },
+      {
+        "agent": "a74b04b4ca3160232",
+        "role": "S2b-2 successor",
+        "context_at_first_code_write": 77556,
+        "pre_write_read_calls": 22,
+        "context_at_first_code_write_as_registered": 58097,
+        "pre_write_read_calls_as_registered": 10,
+        "corrected_by": "amendment_3",
+        "correction_note": "58,097 was a write of /tmp/x and a mutate.py under the run directory (call 15), not crate source. The first .rs write is a heredoc Python patch of tests/rederive.rs at call 38."
+      }
+    ],
+    "B1_context_at_first_code_write": {
+      "n": 6,
+      "median": 102049,
+      "mean": 97249,
+      "min": 71539,
+      "max": 116779,
+      "definition": "first write to a .rs file; a Cargo.toml write does not count",
+      "corrected_by": "amendment_3"
+    },
+    "B2_builders_writing_no_code": {
+      "count": 1,
+      "of": 7,
+      "share": 0.143,
+      "instance": {
+        "agent": "a0e59f73949c117b9",
+        "reading_at_declaration": 145858,
+        "note": "declared a handoff having written nothing"
+      }
+    },
+    "B3_handoffs_per_rust_slice": 1.5,
+    "B4_Mwt_per_krs_code_slices": {
+      "s1": 1.255,
+      "s2": 1.778,
+      "mean": 1.517
+    },
+    "B5_orchestration_share": 0.362,
+    "B6_pre_write_read_calls": {
+      "n": 6,
+      "median": 15.5,
+      "mean": 18.2,
+      "min": 14,
+      "max": 28,
+      "definition": "read-class tool calls before the first .rs write, over the six builders that wrote Rust source",
+      "note": "the as-registered n=7 pooled the non-writer's 29 and a74b04b4's wrong 10",
+      "corrected_by": "amendment_3"
+    },
+    "B1_context_at_first_code_write_as_registered": {
+      "n": 6,
+      "median": 94353,
+      "mean": 89846,
+      "min": 58097,
+      "max": 116779,
+      "superseded_by": "amendment_3"
+    },
+    "B6_pre_write_read_calls_as_registered": {
+      "n": 7,
+      "median": 15,
+      "min": 10,
+      "max": 29,
+      "superseded_by": "amendment_3"
+    }
+  },
+  "hypotheses": {
+    "H1": {
+      "claim": "context at first code write falls",
+      "supported_if": "R2 median over code-slice builders < 94353",
+      "disconfirmed_if": ">= 94353",
+      "confounded_by": "the treatment also says commit after each passing unit, which moves the first write earlier without reducing reading"
+    },
+    "H2": {
+      "claim": "no builder spends a whole context without writing code",
+      "supported_if": "0 of n",
+      "disconfirmed_if": ">=1"
+    },
+    "H3": {
+      "claim": "handoffs per Rust-building slice fall",
+      "supported_if": "< 1.5",
+      "disconfirmed_if": ">= 1.5"
+    },
+    "H4": {
+      "claim": "code-slice cost falls",
+      "supported_if": "< 1.517 Mwt/krs",
+      "disconfirmed_if": ">= 1.517"
+    },
+    "H5": {
+      "claim": "orchestration share",
+      "registered_as": "secondary; treatment does not target it; no effect is the expected result",
+      "baseline": 0.362
+    }
+  },
+  "disambiguation_rule": "A fall in H1 with pre_write_read_calls unchanged against B6 is earlier committing, not leaner reading, and must be reported as such. Only a fall in both supports the reading claim.",
+  "held_constant": {
+    "context_trigger_tokens": 150000,
+    "trigger_question": "whether 150000 is too conservative is campaign R3, not R2; the lowest auto-compaction observed on this machine is 202533 and two of four R1 handoffs fired below the trigger",
+    "models": {
+      "builder": "claude-sonnet-5-5 high",
+      "tier1": "claude-opus-5-5",
+      "tier2_final": "claude-fable-5-1"
+    },
+    "handoff_mechanism": "parent-mediated: handoff file plus handoff_ready, coordinator launches the successor on it"
+  },
+  "requirements_for_scorability": [
+    "at least two Rust-building slices of 2000-5000 added Rust lines each",
+    "every worker records the sha256 of each reference file it actually read",
+    "each packet states its read set, and the slice record states how many lines that read set comprises",
+    "context checks at each phase boundary with input_tokens, recommendation and trigger",
+    "branch, commit range and net added lines per language recorded at the end"
   ],
-  "reached_repo_copy_at": "2026-10-22T01:59:50Z"
- },
- "instrument": {
-  "resolved_defect": "R1-M-001",
-  "action": "~/.claude/skills/manual-orchestration replaced with a symlink to skills/manual-orchestration",
-  "verified": "diff -rq between the two paths reports no differences; worker.md and coordinator.md digests now agree",
-  "backup": "~/.local/state/work-engine/skill-backup-20261022/manual-orchestration-user-scope",
-  "sibling_sweep": "10 other skills present in both ~/.claude/skills and skills/ compared; all byte-identical, so manual-orchestration was the only divergence"
- },
- "cohort_rule": {
-  "pre_change": "builder read the reference text before 2026-10-22T01:59:50Z",
-  "post_change": "builder read it after, AND recorded the digest of what it read",
-  "note": "R1 could not apply the second clause, which is why R1-M-001 went unnoticed"
- },
- "frozen_baseline_r1_pre_change": {
-  "builders": [
-   {
-    "agent": "a27d1ec9c1e4acca4",
-    "role": "S1 builder",
-    "context_at_first_code_write": 113522,
-    "pre_write_read_calls": 28,
-    "context_at_first_code_write_as_registered": 88562,
-    "pre_write_read_calls_as_registered": 26,
-    "corrected_by": "amendment_3",
-    "correction_note": "88,562 was the first write of Cargo.toml (cat > ... Cargo.toml, call 24). The first write of a .rs file is at call 28."
-   },
-   {
-    "agent": "abeb3da4543a8545f",
-    "role": "S1 successor",
-    "context_at_first_code_write": 116779,
-    "pre_write_read_calls": 16,
-    "verified_by": "amendment_3 (candidate list read, not detector output)"
-   },
-   {
-    "agent": "a0e59f73949c117b9",
-    "role": "S2 builder",
-    "context_at_first_code_write": null,
-    "pre_write_read_calls": 29,
-    "verified_by": "amendment_3: no .rs or .toml write candidate anywhere in the transcript"
-   },
-   {
-    "agent": "a68b863f021a779a8",
-    "role": "S2a successor",
-    "context_at_first_code_write": 100144,
-    "pre_write_read_calls": 15,
-    "verified_by": "amendment_3 (candidate list read, not detector output)"
-   },
-   {
-    "agent": "aed2ceafc33b90035",
-    "role": "S2a-2 successor",
-    "context_at_first_code_write": 71539,
-    "pre_write_read_calls": 14,
-    "verified_by": "amendment_3 (candidate list read, not detector output)"
-   },
-   {
-    "agent": "a5d3ffe262a707e38",
-    "role": "S2b builder",
-    "context_at_first_code_write": 103954,
-    "pre_write_read_calls": 14,
-    "verified_by": "amendment_3 (candidate list read, not detector output)"
-   },
-   {
-    "agent": "a74b04b4ca3160232",
-    "role": "S2b-2 successor",
-    "context_at_first_code_write": 77556,
-    "pre_write_read_calls": 22,
-    "context_at_first_code_write_as_registered": 58097,
-    "pre_write_read_calls_as_registered": 10,
-    "corrected_by": "amendment_3",
-    "correction_note": "58,097 was a write of /tmp/x and a mutate.py under the run directory (call 15), not crate source. The first .rs write is a heredoc Python patch of tests/rederive.rs at call 38."
-   }
+  "confounds": [
+    "between-campaign: R2 builds a different subject, so pre-write reading must be normalised per 1k lines the read set comprises",
+    "small n: R1 contributes 7 pre-change builders over 2 code slices; every claim carries its n",
+    "reviewers are inside the orchestration being measured; the only outside check is a direct gate re-run",
+    "instrument change: the symlink removes a confound but is itself a difference between R1 and R2",
+    "the measurement role shares a branch with the subject; R1's integration base moved because this role committed mid-decision. For R2 hold measurement commits until integration lands, or use a separate branch",
+    "instrument change (pending): fix-b's EXT-003 repair makes R2's integration gate strictly stricter than R1's, biasing any R1-vs-R2 integration comparison against the treatment. See amendment_4.gap_1_instrument_class"
   ],
-  "B1_context_at_first_code_write": {
-   "n": 6,
-   "median": 102049,
-   "mean": 97249,
-   "min": 71539,
-   "max": 116779,
-   "definition": "first write to a .rs file; a Cargo.toml write does not count",
-   "corrected_by": "amendment_3"
-  },
-  "B2_builders_writing_no_code": {
-   "count": 1,
-   "of": 7,
-   "share": 0.143,
-   "instance": {
-    "agent": "a0e59f73949c117b9",
-    "reading_at_declaration": 145858,
-    "note": "declared a handoff having written nothing"
-   }
-  },
-  "B3_handoffs_per_rust_slice": 1.5,
-  "B4_Mwt_per_krs_code_slices": {
-   "s1": 1.255,
-   "s2": 1.778,
-   "mean": 1.517
-  },
-  "B5_orchestration_share": 0.362,
-  "B6_pre_write_read_calls": {
-   "n": 6,
-   "median": 15.5,
-   "mean": 18.2,
-   "min": 14,
-   "max": 28,
-   "definition": "read-class tool calls before the first .rs write, over the six builders that wrote Rust source",
-   "note": "the as-registered n=7 pooled the non-writer's 29 and a74b04b4's wrong 10",
-   "corrected_by": "amendment_3"
-  },
-  "B1_context_at_first_code_write_as_registered": {
-   "n": 6,
-   "median": 94353,
-   "mean": 89846,
-   "min": 58097,
-   "max": 116779,
-   "superseded_by": "amendment_3"
-  },
-  "B6_pre_write_read_calls_as_registered": {
-   "n": 7,
-   "median": 15,
-   "min": 10,
-   "max": 29,
-   "superseded_by": "amendment_3"
-  }
- },
- "hypotheses": {
-  "H1": {
-   "claim": "context at first code write falls",
-   "supported_if": "R2 median over code-slice builders < 94353",
-   "disconfirmed_if": ">= 94353",
-   "confounded_by": "the treatment also says commit after each passing unit, which moves the first write earlier without reducing reading"
-  },
-  "H2": {
-   "claim": "no builder spends a whole context without writing code",
-   "supported_if": "0 of n",
-   "disconfirmed_if": ">=1"
-  },
-  "H3": {
-   "claim": "handoffs per Rust-building slice fall",
-   "supported_if": "< 1.5",
-   "disconfirmed_if": ">= 1.5"
-  },
-  "H4": {
-   "claim": "code-slice cost falls",
-   "supported_if": "< 1.517 Mwt/krs",
-   "disconfirmed_if": ">= 1.517"
-  },
-  "H5": {
-   "claim": "orchestration share",
-   "registered_as": "secondary; treatment does not target it; no effect is the expected result",
-   "baseline": 0.362
-  }
- },
- "disambiguation_rule": "A fall in H1 with pre_write_read_calls unchanged against B6 is earlier committing, not leaner reading, and must be reported as such. Only a fall in both supports the reading claim.",
- "held_constant": {
-  "context_trigger_tokens": 150000,
-  "trigger_question": "whether 150000 is too conservative is campaign R3, not R2; the lowest auto-compaction observed on this machine is 202533 and two of four R1 handoffs fired below the trigger",
-  "models": {
-   "builder": "claude-sonnet-5-5 high",
-   "tier1": "claude-opus-5-5",
-   "tier2_final": "claude-fable-5-1"
-  },
-  "handoff_mechanism": "parent-mediated: handoff file plus handoff_ready, coordinator launches the successor on it"
- },
- "requirements_for_scorability": [
-  "at least two Rust-building slices of 2000-5000 added Rust lines each",
-  "every worker records the sha256 of each reference file it actually read",
-  "each packet states its read set, and the slice record states how many lines that read set comprises",
-  "context checks at each phase boundary with input_tokens, recommendation and trigger",
-  "branch, commit range and net added lines per language recorded at the end"
- ],
- "confounds": [
-  "between-campaign: R2 builds a different subject, so pre-write reading must be normalised per 1k lines the read set comprises",
-  "small n: R1 contributes 7 pre-change builders over 2 code slices; every claim carries its n",
-  "reviewers are inside the orchestration being measured; the only outside check is a direct gate re-run",
-  "instrument change: the symlink removes a confound but is itself a difference between R1 and R2",
-  "the measurement role shares a branch with the subject; R1's integration base moved because this role committed mid-decision. For R2 hold measurement commits until integration lands, or use a separate branch"
- ],
- "out_of_scope": [
-  "context trigger changes (R3)",
-  "comparison with pure-Codex on handoff behaviour: Codex has no context-replacement primitive, so the arms differ in capability not only instruction",
-  "Plus-unit or quota claims; weighted tokens are the only common unit"
- ],
- "amendment_1": {
-  "amended_at": "2026-10-22T14:40:00Z",
-  "trigger": "the orchestration side reported that c56ab8ec landed 26 minutes after this registration was frozen, and asked for either a classification or a revert",
-  "commit": "c56ab8ec",
-  "committed_at": "2026-10-22T14:27:44Z",
-  "subject": "Make root context transfer a user-mediated procedure",
-  "verification": {
-   "files_changed": [
-    "references/anthropic-host.md",
-    "references/context-boundary.md",
-    "references/coordinator.md"
-   ],
-   "worker_read_set": [
-    "worker.md",
-    "call-cost.md",
-    "anthropic-host.md"
-   ],
-   "read_set_basis": "the exact cat commands issued by R1 builders a27d1ec9c1e4acca4, a0e59f73949c117b9 and a68b863f021a779a8; context-boundary.md is not in the worker read set",
-   "byte_delta_in_worker_read_set": {
-    "worker.md": 0,
-    "call-cost.md": 0,
-    "anthropic-host.md": 1110
-   },
-   "byte_delta_outside_it": {
-    "context-boundary.md": 1910,
-    "coordinator.md": 245
-   },
-   "treatment_text_intact": "the cb61f807 read-set paragraphs in worker.md and coordinator.md are untouched by this commit",
-   "changed_lines_scope": "every changed line is root-scoped: one table row for root pressure, the rewritten Roots section, a Claude-specific root transfer section, and two coordinator paragraphs on root context and integration binding",
-   "worker_row_unchanged": "'A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or handoff_ready' is unchanged"
-  },
-  "classification": "root and coordinator scoped; recorded as a covariate, not a treatment change",
-  "decision": "amend, do not revert",
-  "reasoning": "The treatment under test is worker-facing read-set sizing. No line this commit changes is worker-facing in effect, and the measured worker read set grows by 1110 bytes of root-only material, roughly 280 tokens. Reverting would withdraw a root-transfer capability to protect an experiment of about n=3 builders per slice from a change that cannot touch the measured path.",
-  "bias_direction": "against H1. The worker read set is 1110 bytes larger, so context at first code write is pushed up, not down. The change cannot manufacture support for H1; if H1 is supported, it is supported against this small headwind.",
-  "residual_defect": {
-   "id": "R2-M-001",
-   "severity": "P3",
-   "what": "anthropic-host.md, a worker-read file, now carries a root-transfer section that workers cannot execute.",
-   "consequence": "about 280 tokens of every worker's startup reading is a procedure for a role it does not hold, in a skill whose own change under test tells workers to read only what their packet names.",
-   "remedy": "move the root-specific section out of the worker read set",
-   "deferred": "applying that move would change the measured text; it should wait until R2 finishes"
-  },
-  "standing_rule_for_further_skill_changes": {
-   "registered_now": "so that each future change is classified by rule rather than adjudicated after the fact",
-   "treatment_relevant": "any change to worker.md or call-cost.md, or to anything in anthropic-host.md that names read sets, packet sizing, mid-task check cadence or worker handoff declaration. Such a change pauses R2 or voids the comparison with B1-B6, and must be declared before dispatch.",
-   "covariate": "changes confined to root, coordinator or supervisor procedure. Recorded with commit, per-file byte delta inside the worker read set, and bias direction.",
-   "applies_to": "the unapplied v2 skill diff as well; classify it by this rule before applying it, and prefer holding it until R2 finishes"
-  }
- },
- "amendment_2": {
-  "amended_at": "2026-10-22T14:40:00Z",
-  "trigger": "the orchestration side reported R2's subject is a controller and projector of 369 JavaScript lines against a criterion of two Rust slices of 2000-5000 lines",
-  "finding": "369 JavaScript lines cannot test R2 as registered, and the criterion as written named the wrong quantity.",
-  "why_the_subject_fails": {
-   "H1": "the baseline 94,353 came from builders reading a 2,700-line Rust crate plus contract sections. A far smaller read set lowers context at first code write for a reason the hypothesis does not claim, so the result would be uninterpretable.",
-   "H2": "the failure mode, a builder consuming its context without writing, occurs under a large read set. With a small one, 0 of n is the expected result whatever the instruction says.",
-   "H3": "handoffs arise from context pressure; small slices do not generate it.",
-   "H4": "needs a comparable Rust denominator against B4. 369 JavaScript lines is not one."
-  },
-  "criterion_restated": {
-   "was": "at least two Rust-building slices of 2000-5000 added Rust lines each",
-   "now": "each scored code slice must give its builders a read set of at least 2000 existing lines, and add at least 1000 lines in one language; at least 3 code-slice builders in total",
-   "why": "the causal driver of B1, B2 and B3 is the size of the read set a builder is given, not the size of its output. The original criterion named the output and so would have excluded a qualifying experiment and admitted a non-qualifying one.",
-   "H4_condition": "H4 is scored only if the added lines are Rust. Otherwise H4 is recorded as not established, and H1-H3 can still be scored.",
-   "honesty_note": "this is a change to acceptance criteria made after learning that the intended subject does not fit, and before any R2 data exists. It is stated as an amendment rather than presented as the original criterion."
-  },
-  "ruling": "If the scout finds no slice meeting the restated criterion, do not bend the registration to fit the subject. Run the port as a delivery campaign, instrumented identically, recorded as an observational cohort labelled not-R2, and leave R2 frozen and pending. Several small observational campaigns can be pooled later; one bent registration cannot be unbent.",
-  "instrumentation_requested_even_if_not_scored": [
-   "per-builder context at first code write",
-   "per-builder pre-write read calls",
-   "the read set each packet names, and how many existing lines it comprises",
-   "context checks at each phase boundary",
-   "handoffs per slice, with declaration reading and turnaround"
-  ]
- },
- "amendment_3": {
-  "at": "2026-10-22T16:20:00Z",
-  "title": "Two of seven B1 values were detector false positives; B1 and B6 corrected",
-  "wrong_claim": "B1 context at first code write: median 94,353, mean 89,846, range 58,097-116,779 (n=6), and B6 median 15, range 10-29 (n=7).",
-  "error_class": "instrument defect: the first-code-write detector accepted any Bash command containing both a '>' character and the substring '.rs', so a redirect to an unrelated path (2>/dev/null, > /tmp/x, > a .md result file) in a command that merely mentioned a .rs path counted as a code write. It also counted a Cargo.toml write as a code write.",
-  "corrected_values": {
-   "B1": {
-    "median": 102049,
-    "mean": 97249,
-    "min": 71539,
-    "max": 116779,
-    "n": 6
-   },
-   "B6": {
-    "median": 15.5,
-    "mean": 18.2,
-    "min": 14,
-    "max": 28,
-    "n": 6
-   }
-  },
-  "per_builder": {
-   "a27d1ec9c1e4acca4": {
-    "as_registered": 88562,
-    "corrected": 113522,
-    "reason": "88,562 was the first write of Cargo.toml (cat > ... Cargo.toml, call 24). The first write of a .rs file is at call 28."
-   },
-   "a74b04b4ca3160232": {
-    "as_registered": 58097,
-    "corrected": 77556,
-    "reason": "58,097 was a write of /tmp/x and a mutate.py under the run directory (call 15), not crate source. The first .rs write is a heredoc Python patch of tests/rederive.rs at call 38."
-   }
-  },
-  "unchanged_and_now_verified": [
-   "abeb3da4543a8545f",
-   "a68b863f021a779a8",
-   "aed2ceafc33b90035",
-   "a5d3ffe262a707e38",
-   "a0e59f73949c117b9"
+  "out_of_scope": [
+    "context trigger changes (R3)",
+    "comparison with pure-Codex on handoff behaviour: Codex has no context-replacement primitive, so the arms differ in capability not only instruction",
+    "Plus-unit or quota claims; weighted tokens are the only common unit"
   ],
-  "downstream_consequence": "H1's bar was set 7,696 tokens below the true pre-change median, which made H1 harder to support than the data warrants. Correcting it moves the bar in the direction that favours the treatment. B2 (1 of 7) and B3-B5 are unaffected: B2's instance was re-verified as having no write candidate of any kind, and B3-B5 do not use this detector.",
-  "check_that_caught_it": "Instrumenting the P1 builder, the detector reported a first code write on a command that was a sed/cat read with 2>/dev/null in it. Re-running with a write-construct regex then disagreed with the frozen table on two builders, and each of the seven was adjudicated by listing every candidate write call and reading the matched command rather than trusting any detector.",
-  "sequence_disclosure": "This amendment was made while the P1 builder was running and after its first code write had been measured. At the time of amendment P1's first .rs write was 81,055 with 26 pre-write read calls. P1 is an observational cohort labelled not R2 and is not scored against B1 as an R2 result; the disclosure is recorded so the order of discovery is auditable.",
-  "second_defect_found_and_fixed": "The replacement detector's own git-commit test matched only the literal 'git commit' and so missed 'git -C <dir> commit'. Both detector versions are therefore unreliable on their own; the committed values come from read adjudication of every candidate."
- }
+  "amendment_1": {
+    "amended_at": "2026-10-22T14:40:00Z",
+    "trigger": "the orchestration side reported that c56ab8ec landed 26 minutes after this registration was frozen, and asked for either a classification or a revert",
+    "commit": "c56ab8ec",
+    "committed_at": "2026-10-22T14:27:44Z",
+    "subject": "Make root context transfer a user-mediated procedure",
+    "verification": {
+      "files_changed": [
+        "references/anthropic-host.md",
+        "references/context-boundary.md",
+        "references/coordinator.md"
+      ],
+      "worker_read_set": [
+        "worker.md",
+        "call-cost.md",
+        "anthropic-host.md"
+      ],
+      "read_set_basis": "the exact cat commands issued by R1 builders a27d1ec9c1e4acca4, a0e59f73949c117b9 and a68b863f021a779a8; context-boundary.md is not in the worker read set",
+      "byte_delta_in_worker_read_set": {
+        "worker.md": 0,
+        "call-cost.md": 0,
+        "anthropic-host.md": 1110
+      },
+      "byte_delta_outside_it": {
+        "context-boundary.md": 1910,
+        "coordinator.md": 245
+      },
+      "treatment_text_intact": "the cb61f807 read-set paragraphs in worker.md and coordinator.md are untouched by this commit",
+      "changed_lines_scope": "every changed line is root-scoped: one table row for root pressure, the rewritten Roots section, a Claude-specific root transfer section, and two coordinator paragraphs on root context and integration binding",
+      "worker_row_unchanged": "'A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or handoff_ready' is unchanged"
+    },
+    "classification": "root and coordinator scoped; recorded as a covariate, not a treatment change",
+    "decision": "amend, do not revert",
+    "reasoning": "The treatment under test is worker-facing read-set sizing. No line this commit changes is worker-facing in effect, and the measured worker read set grows by 1110 bytes of root-only material, roughly 280 tokens. Reverting would withdraw a root-transfer capability to protect an experiment of about n=3 builders per slice from a change that cannot touch the measured path.",
+    "bias_direction": "against H1. The worker read set is 1110 bytes larger, so context at first code write is pushed up, not down. The change cannot manufacture support for H1; if H1 is supported, it is supported against this small headwind.",
+    "residual_defect": {
+      "id": "R2-M-001",
+      "severity": "P3",
+      "what": "anthropic-host.md, a worker-read file, now carries a root-transfer section that workers cannot execute.",
+      "consequence": "about 280 tokens of every worker's startup reading is a procedure for a role it does not hold, in a skill whose own change under test tells workers to read only what their packet names.",
+      "remedy": "move the root-specific section out of the worker read set",
+      "deferred": "applying that move would change the measured text; it should wait until R2 finishes"
+    },
+    "standing_rule_for_further_skill_changes": {
+      "registered_now": "so that each future change is classified by rule rather than adjudicated after the fact",
+      "treatment_relevant": "any change to worker.md or call-cost.md, or to anything in anthropic-host.md that names read sets, packet sizing, mid-task check cadence or worker handoff declaration. Such a change pauses R2 or voids the comparison with B1-B6, and must be declared before dispatch.",
+      "covariate": "changes confined to root, coordinator or supervisor procedure. Recorded with commit, per-file byte delta inside the worker read set, and bias direction.",
+      "applies_to": "the unapplied v2 skill diff as well; classify it by this rule before applying it, and prefer holding it until R2 finishes"
+    }
+  },
+  "amendment_2": {
+    "amended_at": "2026-10-22T14:40:00Z",
+    "trigger": "the orchestration side reported R2's subject is a controller and projector of 369 JavaScript lines against a criterion of two Rust slices of 2000-5000 lines",
+    "finding": "369 JavaScript lines cannot test R2 as registered, and the criterion as written named the wrong quantity.",
+    "why_the_subject_fails": {
+      "H1": "the baseline 94,353 came from builders reading a 2,700-line Rust crate plus contract sections. A far smaller read set lowers context at first code write for a reason the hypothesis does not claim, so the result would be uninterpretable.",
+      "H2": "the failure mode, a builder consuming its context without writing, occurs under a large read set. With a small one, 0 of n is the expected result whatever the instruction says.",
+      "H3": "handoffs arise from context pressure; small slices do not generate it.",
+      "H4": "needs a comparable Rust denominator against B4. 369 JavaScript lines is not one."
+    },
+    "criterion_restated": {
+      "was": "at least two Rust-building slices of 2000-5000 added Rust lines each",
+      "now": "each scored code slice must give its builders a read set of at least 2000 existing lines, and add at least 1000 lines in one language; at least 3 code-slice builders in total",
+      "why": "the causal driver of B1, B2 and B3 is the size of the read set a builder is given, not the size of its output. The original criterion named the output and so would have excluded a qualifying experiment and admitted a non-qualifying one.",
+      "H4_condition": "H4 is scored only if the added lines are Rust. Otherwise H4 is recorded as not established, and H1-H3 can still be scored.",
+      "honesty_note": "this is a change to acceptance criteria made after learning that the intended subject does not fit, and before any R2 data exists. It is stated as an amendment rather than presented as the original criterion."
+    },
+    "ruling": "If the scout finds no slice meeting the restated criterion, do not bend the registration to fit the subject. Run the port as a delivery campaign, instrumented identically, recorded as an observational cohort labelled not-R2, and leave R2 frozen and pending. Several small observational campaigns can be pooled later; one bent registration cannot be unbent.",
+    "instrumentation_requested_even_if_not_scored": [
+      "per-builder context at first code write",
+      "per-builder pre-write read calls",
+      "the read set each packet names, and how many existing lines it comprises",
+      "context checks at each phase boundary",
+      "handoffs per slice, with declaration reading and turnaround"
+    ]
+  },
+  "amendment_3": {
+    "at": "2026-10-22T16:20:00Z",
+    "title": "Two of seven B1 values were detector false positives; B1 and B6 corrected",
+    "wrong_claim": "B1 context at first code write: median 94,353, mean 89,846, range 58,097-116,779 (n=6), and B6 median 15, range 10-29 (n=7).",
+    "error_class": "instrument defect: the first-code-write detector accepted any Bash command containing both a '>' character and the substring '.rs', so a redirect to an unrelated path (2>/dev/null, > /tmp/x, > a .md result file) in a command that merely mentioned a .rs path counted as a code write. It also counted a Cargo.toml write as a code write.",
+    "corrected_values": {
+      "B1": {
+        "median": 102049,
+        "mean": 97249,
+        "min": 71539,
+        "max": 116779,
+        "n": 6
+      },
+      "B6": {
+        "median": 15.5,
+        "mean": 18.2,
+        "min": 14,
+        "max": 28,
+        "n": 6
+      }
+    },
+    "per_builder": {
+      "a27d1ec9c1e4acca4": {
+        "as_registered": 88562,
+        "corrected": 113522,
+        "reason": "88,562 was the first write of Cargo.toml (cat > ... Cargo.toml, call 24). The first write of a .rs file is at call 28."
+      },
+      "a74b04b4ca3160232": {
+        "as_registered": 58097,
+        "corrected": 77556,
+        "reason": "58,097 was a write of /tmp/x and a mutate.py under the run directory (call 15), not crate source. The first .rs write is a heredoc Python patch of tests/rederive.rs at call 38."
+      }
+    },
+    "unchanged_and_now_verified": [
+      "abeb3da4543a8545f",
+      "a68b863f021a779a8",
+      "aed2ceafc33b90035",
+      "a5d3ffe262a707e38",
+      "a0e59f73949c117b9"
+    ],
+    "downstream_consequence": "H1's bar was set 7,696 tokens below the true pre-change median, which made H1 harder to support than the data warrants. Correcting it moves the bar in the direction that favours the treatment. B2 (1 of 7) and B3-B5 are unaffected: B2's instance was re-verified as having no write candidate of any kind, and B3-B5 do not use this detector.",
+    "check_that_caught_it": "Instrumenting the P1 builder, the detector reported a first code write on a command that was a sed/cat read with 2>/dev/null in it. Re-running with a write-construct regex then disagreed with the frozen table on two builders, and each of the seven was adjudicated by listing every candidate write call and reading the matched command rather than trusting any detector.",
+    "sequence_disclosure": "This amendment was made while the P1 builder was running and after its first code write had been measured. At the time of amendment P1's first .rs write was 81,055 with 26 pre-write read calls. P1 is an observational cohort labelled not R2 and is not scored against B1 as an R2 result; the disclosure is recorded so the order of discovery is auditable.",
+    "second_defect_found_and_fixed": "The replacement detector's own git-commit test matched only the literal 'git commit' and so missed 'git -C <dir> commit'. Both detector versions are therefore unreliable on their own; the committed values come from read adjudication of every candidate."
+  },
+  "amendment_4": {
+    "amended_at": "2026-10-23T01:20:00Z",
+    "written_before": "either remediation builder's first write",
+    "trigger": "fix-a and fix-b remediation packets frozen at base 624ec60e about 01:10Z and dispatched alongside the R2 planner, which is counting read sets at the same commit",
+    "p1_m_001_applied": {
+      "result": "pass",
+      "paths_checked": 15,
+      "paths_present_at_base": 15,
+      "base": "624ec60ed675ee53dedf31c5f4824313fdcf6a75",
+      "method": "git cat-file -e <base>:<path> and wc -l for each path named in the fix-a, fix-b and r2-plan packets"
+    },
+    "gap_1_instrument_class": {
+      "problem": "amendment 1's standing rule sorts changes into treatment-relevant (worker-read text) or covariate (root/coordinator/supervisor procedure); skills/manual-orchestration/scripts/integration_readiness.py is neither, yet it is the gate both R1 and R2 are scored through",
+      "new_class": "instrument",
+      "new_class_definition": "any change to a script or test under skills/manual-orchestration/scripts/ or skills/manual-orchestration/tests/ that gates, measures or records builder output; recorded with the commit, what the gate accepted before and after, and the direction of bias",
+      "first_entry": {
+        "status": "pending",
+        "basis": "packet frozen, builder not finished",
+        "subject": "fix-b implements EXT-003: re-verify the pinned binary digest immediately before each execution instead of once before plan",
+        "relation": "strictly stricter: rejects a superset of what the old gate rejected",
+        "bias_direction": "against the treatment (R2) in any R1-vs-R2 comparison of integration-pass rate or post-integration defects",
+        "retroactive_effect_on_r1": "none established; the finding is that the old gate could report a digest for a binary other than the one executed, not that it did. Whether it did in R1 is not established"
+      }
+    },
+    "gap_2_r2_m_002": {
+      "id": "R2-M-002",
+      "severity": "P2",
+      "owner": "coordinator",
+      "problem": "P1-M-001 checks that a read set exists at base; it does not check that a concurrently dispatched slice may change it while the packet is live",
+      "evidence_source": "~/.local/state/work-engine/r2-pressure-controller-20261022/scout2/result-v1.json candidates[0].slices[*].read_set",
+      "fix_b_write_scope": "rust/crates/decision-readiness/**",
+      "overlap": [
+        {
+          "slice": "E1",
+          "read_total": 3491,
+          "inside_write_scope": 1878,
+          "share_pct": 53.8,
+          "files": {
+            "validate.rs": 1220,
+            "model.rs": 611,
+            "digest.rs": 47
+          }
+        },
+        {
+          "slice": "E2",
+          "read_total": 2547,
+          "inside_write_scope": 2024,
+          "share_pct": 79.5,
+          "files": {
+            "evaluate.rs": 1413,
+            "model.rs": 611
+          }
+        },
+        {
+          "slice": "P1",
+          "read_total": 2461,
+          "inside_write_scope": 611,
+          "share_pct": 24.8,
+          "files": {
+            "model.rs": 611
+          }
+        }
+      ],
+      "worst_case": "E2's margin over the 2,000-line criterion is 547 lines while 79.5% of its read set is editable by a slice running concurrently from the same base",
+      "exposure_is": "scope breadth, not intent: the three findings fix-b must repair are in check.rs, cli.rs and lib.rs, none of the four overlapping files",
+      "remedy": "before dispatching any slice concurrently with a frozen read set, intersect the slice's declared write scope with that read set and either narrow the scope to the paths the work names or re-count the read set at the later HEAD",
+      "reported_to_coordinator": "chatboard sequence 2494, topic pressure-controller-r2"
+    },
+    "packet_pointer_defects_reported": [
+      "fix-a states the ryu-js =1.0.3 pin is at rust/Cargo.toml:53; it is at line 51, inside [workspace.dependencies] of a workspace that does not include context-pressure (the crate carries its own [workspace]), so `ryu-js = { workspace = true }` will not resolve and the crate needs a literal version in its own [dependencies]. Offline build is safe: ryu-js-1.0.3.crate and its extracted source are both present in the local cargo registry cache (verified)"
+    ],
+    "anchors_verified_by_reading_the_passage": {
+      "n": 6,
+      "paths": [
+        "rust/crates/context-pressure/src/js.rs:95",
+        "rust/crates/context-pressure/src/lib.rs:12",
+        "rust/crates/context-pressure/tests/golden.rs:88",
+        "rust/crates/decision-readiness/src/check.rs:529",
+        "rust/crates/decision-readiness/src/cli.rs:353",
+        "skills/manual-orchestration/scripts/integration_readiness.py:110"
+      ],
+      "result": "all resolve to the code the packets describe"
+    },
+    "not_reproduced_by_measurement": [
+      "the 237 of 999,566 sampled finite f64 incidence figure quoted in fix-a is the outside reviewer's; the EXT-001 mechanism was independently confirmed, the incidence was not"
+    ],
+    "effect_on_r2_status": "R2 stays unfrozen on the user-approved subject; added-line figures remain unverified; if fix-b lands inside the overlap the planner's freeze-check.json must be recomputed before any builder is scored against the size criterion"
+  }
 }

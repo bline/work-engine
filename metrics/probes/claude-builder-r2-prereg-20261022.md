@@ -290,3 +290,70 @@ matched only the literal string, missing `git -C <dir> commit`. Neither detector
 version is reliable alone. Every value above comes from listing all candidate
 write calls per builder and **reading the matched command**, which is what rule 5
 requires and what the original pass did not do.
+
+## Amendment 4, 2026-10-23: the standing rule does not classify the instrument, and a concurrent write scope overlaps a frozen read set
+
+**Trigger.** Two remediation packets for the outside-review findings (`$R/fix-a`,
+`$R/fix-b`, `$R = ~/.local/state/work-engine/r2-pressure-controller-20261022`)
+were frozen at base `624ec60e` at about 01:10Z and dispatched alongside the R2
+planner, which is counting read sets at the same commit. This amendment is
+written **before** either builder's first write.
+
+**P1-M-001 applied and passed.** Every read-set path named in the three packets
+exists at the required base and was counted: 15 of 15 present, n=15. This is the
+first use of the remedy registered after P1's packet named 176 lines absent at
+base.
+
+### Gap 1: the standing rule has no class for the instrument
+
+Amendment 1's rule sorts a change into *treatment-relevant* (worker-read text) or
+*covariate* (root, coordinator or supervisor **procedure**).
+`skills/manual-orchestration/scripts/integration_readiness.py` is neither. It is
+not read by workers and it is not procedure text; it is the gate that decides
+whether a slice integrates, and both R1 and R2 are scored through it.
+
+**A third class is registered: *instrument*.** Any change to a script or test
+under `skills/manual-orchestration/scripts/` or `skills/manual-orchestration/tests/`
+that gates, measures or records builder output. Recorded with the commit, what
+the gate accepted before and after, and the direction of bias.
+
+**First entry, status `pending` (packet frozen, builder not finished).** Fix-b
+implements EXT-003: re-verify the pinned binary's digest immediately before each
+execution instead of once before `plan`. R1 integrated under the one-check gate;
+R2 would integrate under the per-execution gate. The change is **strictly
+stricter** — it rejects a superset of what the old gate rejected — so any R1↔R2
+comparison of integration-pass rate or of post-integration defects is biased
+**against** R2, the treatment arm. No R1 integration is retroactively invalid:
+the finding is that the old gate *could* report a digest for a binary other than
+the one executed, not that it did. Whether it did in R1 is `not established`.
+
+### Gap 2: R2-M-002, a concurrent write scope may not intersect a frozen read set
+
+P1-M-001 checks that a read set **exists** at base. It does not check that
+something else may **change** it while the packet is live. Fix-b declares the
+write scope `rust/crates/decision-readiness/**`. R2's read sets, frozen in
+`$R/scout2/result-v1.json`, draw on four files inside that scope:
+
+| slice | read total | inside fix-b write scope | share |
+|---|---|---|---|
+| E1 | 3,491 | 1,878 (`validate.rs` 1,220, `model.rs` 611, `digest.rs` 47) | 53.8% |
+| E2 | 2,547 | 2,024 (`evaluate.rs` 1,413, `model.rs` 611) | 79.5% |
+| P1 | 2,461 | 611 (`model.rs`) | 24.8% |
+
+E2's margin over the 2,000-line criterion is 547 lines while 79.5% of its read
+set is editable by a slice running concurrently from the same base. The three
+findings fix-b must repair are in `check.rs`, `cli.rs` and `lib.rs`; none of the
+four overlapping files needs to be touched, so the exposure is scope breadth, not
+intent.
+
+**R2-M-002 (P2, coordinator).** Before dispatching any slice concurrently with a
+frozen read set, intersect the slice's declared write scope with that read set
+and either narrow the scope to the paths the work names or re-count the read set
+at the later HEAD. Reported to the coordinator at chatboard sequence 2494 with
+the remedy: narrow fix-b to `src/check.rs`, `src/cli.rs`, `src/lib.rs` and the
+test path, or land fix-b first and count at post-fix HEAD.
+
+**Effect on R2's status.** R2 stays unfrozen on the user-approved subject. The
+qualification figures above are the scout's and remain `unverified` for added
+lines; if fix-b lands inside the overlap, the planner's `freeze-check.json` must
+be recomputed before any builder is scored against the size criterion.
