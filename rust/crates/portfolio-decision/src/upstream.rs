@@ -17,6 +17,7 @@ use proposal_evaluation::digest::{is_sha256_hex, sha256_hex};
 use proposal_evaluation::model::{
     COMPARISON_SCHEMA, ComparisonFinding, ESTIMATE_SET_SCHEMA, EstimateSet, FileRef,
 };
+use proposal_evaluation::scan::scan;
 use proposal_evaluation::validate::{check_file_ref, is_normalised_absolute};
 use proposal_evaluation::{check_comparison_bytes, check_estimate_set_bytes};
 use serde_json::{Map, Value};
@@ -118,6 +119,25 @@ fn nested(errors: &[ErrorItem]) -> String {
         .map(|e| format!("{} at {}", e.code, e.at))
         .collect::<Vec<_>>()
         .join("; ")
+}
+
+/// Refuse a document whose digest-bound bytes say two things: a duplicate object key at any
+/// depth (or a number no 64-bit type holds) is reported as `schema` at `at` plus the inner path,
+/// the way E1 and E2 report it, using `proposal_evaluation`'s own scan. Returns whether the
+/// document is clean. Bytes that are not JSON at all are left to the caller's own class check.
+fn lexically_clean(out: &mut Vec<ErrorItem>, bytes: &[u8], at: &str) -> bool {
+    let Ok(findings) = scan(bytes) else {
+        return true;
+    };
+    for f in &findings {
+        let place = if f.at.is_empty() {
+            at.to_string()
+        } else {
+            format!("{at}.{}", f.at)
+        };
+        out.push(err(codes::SCHEMA, place, f.message.clone()));
+    }
+    findings.is_empty()
 }
 
 fn object(bytes: &[u8]) -> Option<Map<String, Value>> {
@@ -242,6 +262,9 @@ fn member(i: usize, m: &SetMember, up: &mut Upstream) {
 /// Class and identity of a bound packet; returns its `lifecycle_state` when the class holds.
 fn packet(i: usize, m: &SetMember, bytes: &[u8], up: &mut Upstream) -> Option<String> {
     let at = format!("proposal_set.{i}.packet");
+    if !lexically_clean(&mut up.errors, bytes, &at) {
+        return None;
+    }
     let Some(obj) = object(bytes).filter(is_packet) else {
         up.errors.push(err(
             codes::UPSTREAM_CLASS_MISMATCH,
@@ -318,6 +341,9 @@ fn decision_binding(at: &str, m: &SetMember, state: &str, out: &mut Vec<ErrorIte
 
 fn decision(at: &str, m: &SetMember, bytes: &[u8], out: &mut Vec<ErrorItem>) {
     let at = format!("{at}.decision");
+    if !lexically_clean(out, bytes, &at) {
+        return;
+    }
     let Some(obj) = object(bytes).filter(is_decision) else {
         out.push(err(
             codes::UPSTREAM_CLASS_MISMATCH,
@@ -494,6 +520,9 @@ fn readiness(i: usize, r: &ReadinessRef, out: &mut Vec<ErrorItem>) {
     let Some(bytes) = resolve(out, &a.path, &a.sha256, &format!("{at}.assessment")) else {
         return;
     };
+    if !lexically_clean(out, &bytes, &format!("{at}.assessment")) {
+        return;
+    }
     if class_of(&bytes).as_deref() != Some(ASSESSMENT_SCHEMA) {
         out.push(err(
             codes::UPSTREAM_CLASS_MISMATCH,

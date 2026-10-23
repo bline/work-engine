@@ -607,3 +607,137 @@ fn only_schema_versions_one_and_two_make_a_bound_file_a_decision() {
         wrong.join("\n")
     );
 }
+
+// Duplicate object keys in digest-bound bytes. `serde_json` keeps the last of two equal keys, so
+// a bound packet, decision or assessment could say one thing to a reader and another to the
+// checker. Each is refused as `schema` at the pointer plus the inner path, the way the
+// evaluation and readiness owners refuse their own files (review P3-3, probe s4).
+
+/// The pretty JSON text of `value` with a second copy of one key appended at the top level.
+fn with_top_level_duplicate(value: &Value, key_and_value: &str) -> String {
+    let mut text = serde_json::to_string_pretty(value).unwrap();
+    assert!(text.ends_with('}'));
+    text.pop();
+    let text = text.trim_end().to_string();
+    format!("{text},\n  {key_and_value}\n}}\n")
+}
+
+/// The pretty JSON text of `value` with `second` (a key and value) inserted after the one
+/// `needle` line, which must end in a comma and occur once.
+fn with_nested_duplicate(value: &Value, needle: &str, second: &str) -> String {
+    let text = serde_json::to_string_pretty(value).unwrap();
+    assert_eq!(text.matches(needle).count(), 1, "{needle} is unique");
+    text.replacen(needle, &format!("{needle}\n {second},"), 1) + "\n"
+}
+
+/// Rebind `pointer` (a record path such as `proposal_set.0.packet`) to `fixture` rewritten as
+/// `text`, and report the check's `(code, at)` pairs.
+fn bound_as(w: &World, fixture: &str, pointer: &str, text: &str) -> Vec<(String, String)> {
+    let mut doc = w.doc.clone();
+    let sha = write_text(w.path(fixture), text);
+    set(&mut doc, &format!("{pointer}.sha256"), json!(sha));
+    run(&doc)
+}
+
+#[test]
+fn a_packet_with_a_duplicated_lifecycle_state_is_refused_not_read_as_its_last_value() {
+    let w = world("dup-packet", false);
+    let at = "proposal_set.0.packet";
+    let packet = packet_json(
+        "alpha-one",
+        "decided",
+        json!([relationship("enables", "beta-two")]),
+    );
+    // Probe s4: a second `lifecycle_state` that would unbind the decision if the last one won.
+    let text = with_top_level_duplicate(&packet, "\"lifecycle_state\": \"formed\"");
+    let found = bound_as(&w, "a_packet", at, &text);
+    expect(&found, "schema", &format!("{at}.lifecycle_state"));
+    assert!(
+        !found.iter().any(|(c, _)| c == "decision_binding"),
+        "an ambiguous packet is refused before it is bound to a decision: {found:?}"
+    );
+
+    // Nested in the packet.
+    let text = with_nested_duplicate(
+        &packet,
+        "\"decision_owner\": \"owner\",",
+        "\"decision_owner\": \"other\"",
+    );
+    expect(
+        &bound_as(&w, "a_packet", at, &text),
+        "schema",
+        &format!("{at}.authority.decision_owner"),
+    );
+
+    // Control: the same packet with no duplicate is clean at the pointer.
+    let clean = serde_json::to_string_pretty(&packet).unwrap() + "\n";
+    let found = bound_as(&w, "a_packet", at, &clean);
+    assert!(found.iter().all(|(_, a)| !a.starts_with(at)), "{found:?}");
+}
+
+#[test]
+fn a_decision_with_a_duplicate_key_is_refused_at_the_top_level_and_nested() {
+    let w = world("dup-decision", false);
+    let at = "proposal_set.0.decision";
+    let decision = decision_json("alpha-one", 1);
+    let text = with_top_level_duplicate(&decision, "\"proposal_id\": \"beta-two\"");
+    expect(
+        &bound_as(&w, "a_decision", at, &text),
+        "schema",
+        &format!("{at}.proposal_id"),
+    );
+    let text = with_nested_duplicate(
+        &decision,
+        "\"evidence\": \"note\",",
+        "\"evidence\": \"other\"",
+    );
+    expect(
+        &bound_as(&w, "a_decision", at, &text),
+        "schema",
+        &format!("{at}.authority.evidence"),
+    );
+    // Control.
+    let clean = serde_json::to_string_pretty(&decision).unwrap() + "\n";
+    let found = bound_as(&w, "a_decision", at, &clean);
+    assert!(found.iter().all(|(_, a)| !a.starts_with(at)), "{found:?}");
+}
+
+#[test]
+fn an_assessment_with_a_duplicate_key_is_refused_at_the_top_level_and_nested() {
+    let w = world("dup-assessment", false);
+    let at = "readiness_basis.0.assessment";
+    let assessment = assessment_json("live", "decision-1", w.reference("evaluation"));
+    let text = with_top_level_duplicate(&assessment, "\"purpose\": \"fixture\"");
+    let found = bound_as(&w, "assessment", at, &text);
+    expect(&found, "schema", &format!("{at}.purpose"));
+    assert!(
+        !found.iter().any(|(c, _)| c == "assessment_not_live"),
+        "an ambiguous assessment is refused before its fields are read: {found:?}"
+    );
+    let text = with_nested_duplicate(&assessment, "\"id\": \"decision-1\",", "\"id\": \"other\"");
+    expect(
+        &bound_as(&w, "assessment", at, &text),
+        "schema",
+        &format!("{at}.decision.id"),
+    );
+    // Control.
+    let clean = serde_json::to_string_pretty(&assessment).unwrap() + "\n";
+    let found = bound_as(&w, "assessment", at, &clean);
+    assert!(found.iter().all(|(_, a)| !a.starts_with(at)), "{found:?}");
+}
+
+#[test]
+fn the_record_itself_with_a_duplicate_key_is_refused_end_to_end() {
+    let w = world("dup-record", false);
+    let text = with_top_level_duplicate(&w.doc, "\"revision\": 2");
+    let report = check_portfolio_bytes(text.as_bytes()).expect("well-formed JSON parses");
+    expect(&codes_of(&report), "schema", "revision");
+    assert!(!report.valid);
+}
+
+#[test]
+fn a_world_with_no_duplicate_keys_is_valid() {
+    // The control for the tests above: the fixture they rewrite is clean before rewriting.
+    let w = world("dup-control", false);
+    assert_eq!(run(&w.doc), Vec::new());
+}
