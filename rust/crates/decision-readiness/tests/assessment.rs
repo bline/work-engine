@@ -848,3 +848,90 @@ fn a_cited_path_that_is_not_a_plain_file_is_rejected_without_blocking() {
     std::os::unix::fs::symlink(&copy, &link).unwrap();
     assert_eq!(check("path-copy-link", &link).code, 0);
 }
+
+/// The citation is read through at most one byte more than the supplied `--evaluation` holds, so a
+/// cited file is classified without being read whole. The rule at the cap: a cited file of exactly
+/// the supplied length with the same bytes is accepted; one byte longer (the cap itself, whose
+/// extra byte is read and differs from nothing to compare) is `evaluation_path_mismatch`, as is
+/// one byte shorter; and a file far larger than the cap is `evaluation_path_mismatch` without
+/// being read, which the last case shows by running the check with a small address-space limit:
+/// reading a 4 GiB cited file whole would exhaust it and end the process by a signal.
+#[test]
+fn the_citation_read_is_capped_one_byte_past_the_supplied_length() {
+    use std::process::Command;
+    use std::time::Duration;
+    let f = fixture("assess-cap", true);
+    let deadline = Duration::from_secs(20);
+    let supplied = std::fs::read(&f.evaluation).unwrap();
+    let check = |tag: &str, cited: &Path, address_space_kib: Option<u64>| {
+        let mut doc = f.doc.clone();
+        doc["evaluation"]["path"] = json!(s(cited));
+        let path = f.case.dir.join(format!("{tag}.assessment.json"));
+        write_json(&path, &doc);
+        let args = [
+            "check".to_string(),
+            "--kind".into(),
+            "assessment".into(),
+            s(&path),
+            "--evaluation".into(),
+            s(&f.evaluation),
+            "--profile".into(),
+            s(&f.case.profile_path()),
+        ];
+        let mut command;
+        match address_space_kib {
+            None => {
+                command = Command::new(BIN);
+                command.args(&args);
+            }
+            Some(kib) => {
+                command = Command::new("sh");
+                command
+                    .arg("-c")
+                    .arg(format!("ulimit -v {kib} && exec \"$0\" \"$@\""))
+                    .arg(BIN)
+                    .args(&args);
+            }
+        }
+        run_with_deadline(command, deadline)
+            .unwrap_or_else(|| panic!("{tag}: the check did not exit within {deadline:?}"))
+    };
+    let write_variant = |name: &str, bytes: &[u8]| {
+        let path = f.case.dir.join(name);
+        std::fs::write(&path, bytes).unwrap();
+        path
+    };
+
+    // Exactly the supplied bytes: accepted. This is the control for the cases below.
+    let exact = write_variant("cap-exact.json", &supplied);
+    assert_eq!(check("cap-exact", &exact, None).code, 0);
+    // One byte longer, with the supplied bytes as its prefix: the extra byte is what differs.
+    let mut longer = supplied.clone();
+    longer.push(b' ');
+    let longer = write_variant("cap-longer.json", &longer);
+    let run = check("cap-longer", &longer, None);
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["evaluation_path_mismatch"]);
+    // One byte shorter.
+    let shorter = write_variant("cap-shorter.json", &supplied[..supplied.len() - 1]);
+    let run = check("cap-shorter", &shorter, None);
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["evaluation_path_mismatch"]);
+
+    // A sparse 4 GiB file whose first bytes are the supplied bytes. Under a 1 GiB address-space
+    // limit a whole read cannot succeed; the capped read is a mismatch.
+    let huge = write_variant("cap-huge.json", &supplied);
+    std::fs::OpenOptions::new()
+        .write(true)
+        .open(&huge)
+        .unwrap()
+        .set_len(4 << 30)
+        .unwrap();
+    let run = check("cap-huge", &huge, Some(1 << 20));
+    assert_eq!(
+        run.code, 1,
+        "a 4 GiB cited file was not rejected from the capped read: {} {}",
+        run.stdout, run.stderr
+    );
+    assert_eq!(run.codes(), ["evaluation_path_mismatch"]);
+}
