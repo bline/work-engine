@@ -9,7 +9,8 @@
 //!
 //! Parity. Inputs are the JS plain-object shapes as `serde_json::Value`; outputs serialize to
 //! the JS wire forms. Revision strings (`sha256:<hex>` over the sorted-key canonical JSON text)
-//! are hashed from the same canonical text as the JS. Failures carry the JS message and a closed
+//! are built to match the JS canonical text; that they do is established only within the
+//! evidence domain stated below. Failures carry the JS message and a closed
 //! [`ErrorKind`].
 //!
 //! Evidence domain. Byte parity is established only over two JS-generated bodies of evidence
