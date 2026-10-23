@@ -282,6 +282,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "experiment-control"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "fallible-iterator"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

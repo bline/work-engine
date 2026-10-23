@@ -28,6 +28,7 @@ members = [
   "crates/review-execution-evidence",
   "crates/slice-campaign",
   "crates/work-engine-context-status",
+  "crates/experiment-control",
   "crates/bounded-inference",
   "crates/lifecycle-semantic-replay",
 ]

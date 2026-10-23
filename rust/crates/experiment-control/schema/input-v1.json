@@ -1,0 +1,1393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input",
+  "type": "object",
+  "properties": {
+    "request": {
+      "$ref": "#/$defs/Request"
+    },
+    "state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/State"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "request"
+  ],
+  "$defs": {
+    "Action": {
+      "type": "string",
+      "enum": [
+        "read",
+        "publish",
+        "send",
+        "receive",
+        "dispatch"
+      ]
+    },
+    "Artifact": {
+      "type": "object",
+      "properties": {
+        "data_base64": {
+          "type": "string"
+        },
+        "provenance": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "data_base64",
+        "provenance",
+        "resource"
+      ]
+    },
+    "Audit": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/Identity"
+        },
+        "command": true,
+        "id": {
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "actor",
+        "observed_at",
+        "command"
+      ]
+    },
+    "Binding": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string"
+        },
+        "continuation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "exposure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Exposure"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "generation": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "handle": {
+          "type": "string"
+        },
+        "identity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "paused": {
+          "type": "boolean"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "prepared_by": {
+          "$ref": "#/$defs/Identity"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "replaces": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "spec": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/BindingStatus"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "verification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verified_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "handle",
+        "spec",
+        "phase",
+        "profile",
+        "unit",
+        "branch",
+        "continuation",
+        "status",
+        "paused",
+        "generation",
+        "prepared_by"
+      ]
+    },
+    "BindingStatus": {
+      "type": "string",
+      "enum": [
+        "prepared",
+        "bound",
+        "verified",
+        "active",
+        "retired",
+        "cancelled"
+      ]
+    },
+    "Branch": {
+      "type": "object",
+      "properties": {
+        "current": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generation": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "last_owner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_message": {
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "generation",
+        "next_message"
+      ]
+    },
+    "Command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "register"
+            },
+            "specification": {
+              "$ref": "#/$defs/Specification"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "specification"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "from_spec": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "amend"
+            },
+            "specification": {
+              "$ref": "#/$defs/Specification"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "from_spec",
+            "specification",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "branch": {
+              "type": "string"
+            },
+            "continuation": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "prepare"
+            },
+            "parent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "phase": {
+              "type": "string"
+            },
+            "profile": {
+              "type": "string"
+            },
+            "replaces": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "spec": {
+              "type": "string"
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "spec",
+            "phase",
+            "profile",
+            "unit",
+            "branch",
+            "continuation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "startup"
+            },
+            "receipt": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "receipt"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "exposure": {
+              "$ref": "#/$defs/Exposure"
+            },
+            "handle": {
+              "type": "string"
+            },
+            "identity": {
+              "$ref": "#/$defs/Identity"
+            },
+            "op": {
+              "type": "string",
+              "const": "bind"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "identity",
+            "exposure"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "verify"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "expected_generation": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "activate"
+            },
+            "settlement": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Evidence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "expected_generation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "$ref": "#/$defs/Action"
+            },
+            "generation": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "evaluate"
+            },
+            "resource": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "generation",
+            "action",
+            "resource"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "artifacts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "generation": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "deliver"
+            },
+            "receipt": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "generation",
+            "artifacts",
+            "receipt"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "artifact": {
+              "$ref": "#/$defs/Artifact"
+            },
+            "artifact_id": {
+              "type": "string"
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "generation": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0
+            },
+            "op": {
+              "type": "string",
+              "const": "import"
+            },
+            "producer": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "spec": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "spec",
+            "artifact_id",
+            "artifact",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "data_base64": {
+              "type": "string"
+            },
+            "generation": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "handle": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "send"
+            },
+            "provenance": {
+              "type": "string"
+            },
+            "resource": {
+              "type": "string"
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "generation",
+            "id",
+            "targets",
+            "resource",
+            "data_base64",
+            "provenance"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "generation": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "handle": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint",
+              "minimum": 0
+            },
+            "op": {
+              "type": "string",
+              "const": "receive"
+            },
+            "receipt": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "generation",
+            "receipt",
+            "limit"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "op": {
+              "type": "string",
+              "const": "acknowledge"
+            },
+            "receipt": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "receipt",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "disposition": {
+              "type": "string"
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "op": {
+              "type": "string",
+              "const": "dispose"
+            },
+            "receipt": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "receipt",
+            "evidence",
+            "disposition"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "pause"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "disposition": {
+              "type": "string"
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "resume"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "evidence",
+            "disposition"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "retire"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "op": {
+              "type": "string",
+              "const": "close_phase"
+            },
+            "phase": {
+              "type": "string"
+            },
+            "spec": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "spec",
+            "phase",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "op": {
+              "type": "string",
+              "const": "seal_admissions"
+            },
+            "phase": {
+              "type": "string"
+            },
+            "spec": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "spec",
+            "phase",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "identity": {
+              "$ref": "#/$defs/Identity"
+            },
+            "op": {
+              "type": "string",
+              "const": "revoke_delegate"
+            },
+            "spec": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "spec",
+            "identity",
+            "evidence"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "handle": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "status"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handle"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "inspect"
+            },
+            "spec": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "spec"
+          ]
+        }
+      ]
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "limitation": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/CoverageMode"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "limitation"
+      ]
+    },
+    "CoverageMode": {
+      "type": "string",
+      "enum": [
+        "managed",
+        "cooperative",
+        "uncontrolled"
+      ]
+    },
+    "Environment": {
+      "type": "object",
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "artifacts",
+        "limitations"
+      ]
+    },
+    "Evidence": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "reference",
+        "sha256"
+      ]
+    },
+    "Exposure": {
+      "type": "object",
+      "properties": {
+        "identity_evidence": {
+          "$ref": "#/$defs/Evidence"
+        },
+        "inherited_context": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          }
+        },
+        "observation_evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "prior_bindings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "supplied_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "identity_evidence",
+        "supplied_artifacts",
+        "observed_artifacts",
+        "prior_bindings",
+        "inherited_context"
+      ]
+    },
+    "Grant": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/Action"
+        },
+        "resource": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "resource"
+      ]
+    },
+    "Identity": {
+      "type": "object",
+      "properties": {
+        "agent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "host": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "session"
+      ]
+    },
+    "Message": {
+      "type": "object",
+      "properties": {
+        "data_base64": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "provenance": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "sender": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Identity"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "resource",
+        "data_base64",
+        "sha256",
+        "provenance"
+      ]
+    },
+    "Profile": {
+      "type": "object",
+      "properties": {
+        "allow_carryover": {
+          "type": "boolean"
+        },
+        "arm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "environment": {
+          "type": "string"
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Grant"
+          }
+        },
+        "projection": {
+          "type": "string"
+        },
+        "require_observed_exposure": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "environment",
+        "projection",
+        "grants",
+        "allow_carryover",
+        "require_observed_exposure"
+      ]
+    },
+    "Receipt": {
+      "type": "object",
+      "properties": {
+        "artifact_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "disposition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "handle": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "issued_by": {
+          "$ref": "#/$defs/Identity"
+        },
+        "kind": {
+          "$ref": "#/$defs/ReceiptKind"
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "next_message": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint",
+          "minimum": 0
+        },
+        "status": {
+          "$ref": "#/$defs/ReceiptStatus"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "local_id",
+        "handle",
+        "kind",
+        "status",
+        "issued_by",
+        "artifact_ids"
+      ]
+    },
+    "ReceiptKind": {
+      "type": "string",
+      "enum": [
+        "startup",
+        "artifact",
+        "messages"
+      ]
+    },
+    "ReceiptStatus": {
+      "type": "string",
+      "enum": [
+        "issued",
+        "collected",
+        "disposed"
+      ]
+    },
+    "Request": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/Identity"
+        },
+        "command": {
+          "$ref": "#/$defs/Command"
+        },
+        "id": {
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "actor",
+        "observed_at",
+        "command"
+      ]
+    },
+    "Specification": {
+      "type": "object",
+      "properties": {
+        "arms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Artifact"
+          }
+        },
+        "authority_reference": {
+          "type": "string"
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Coverage"
+          }
+        },
+        "delegates": {
+          "type": "object",
+          "properties": {
+            "admit": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identity"
+              }
+            },
+            "amend": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identity"
+              }
+            },
+            "close": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identity"
+              }
+            },
+            "inspect": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identity"
+              }
+            },
+            "intervene": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identity"
+              }
+            },
+            "verify": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identity"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "environments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Environment"
+          }
+        },
+        "experiment": {
+          "type": "string"
+        },
+        "inspect_after": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "owner": {
+          "$ref": "#/$defs/Identity"
+        },
+        "phases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "profiles": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Profile"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "experiment",
+        "owner",
+        "authority_reference",
+        "delegates",
+        "arms",
+        "phases",
+        "artifacts",
+        "environments",
+        "profiles",
+        "coverage",
+        "inspect_after"
+      ]
+    },
+    "State": {
+      "type": "object",
+      "properties": {
+        "audit": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Audit"
+          }
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Binding"
+          }
+        },
+        "branches": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Branch"
+          }
+        },
+        "closed_phases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "experiment": {
+          "type": "string"
+        },
+        "imports": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/$defs/Artifact"
+            }
+          }
+        },
+        "inboxes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Message"
+            }
+          }
+        },
+        "receipts": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Receipt"
+          }
+        },
+        "revoked_delegates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "schema": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "sealed_admissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "specs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Specification"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "experiment",
+        "specs",
+        "bindings",
+        "branches",
+        "closed_phases",
+        "sealed_admissions",
+        "revoked_delegates",
+        "receipts",
+        "inboxes",
+        "audit",
+        "imports"
+      ]
+    }
+  }
+}

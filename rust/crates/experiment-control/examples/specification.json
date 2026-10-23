@@ -1,0 +1,200 @@
+{
+  "experiment": "example",
+  "owner": {
+    "host": "synthetic",
+    "session": "owner",
+    "agent": null
+  },
+  "authority_reference": "synthetic owner authority; replace for an actual experiment",
+  "delegates": {},
+  "arms": [
+    "a",
+    "b"
+  ],
+  "phases": {
+    "execution": "all protected execution and pending admissions settled",
+    "scoring": "scoring recorded before unblinding"
+  },
+  "artifacts": {
+    "baseline": {
+      "sha256": "915ecc7a331d49da57e8490e7985405d62503fc37476b74c94146eb01f63eb35",
+      "data_base64": "RnJvemVuIGJhc2VsaW5lIGluc3RydWN0aW9ucy4=",
+      "provenance": "synthetic example, no production evidence",
+      "resource": "baseline"
+    },
+    "rules": {
+      "sha256": "868004226065f9e430dcc59a815aa6119889bacc1222a2e0e965eb7645f2dec9",
+      "data_base64": "T25seSB1c2UgdGhlIG1hbmFnZWQgaW5wdXRzIGF1dGhvcml6ZWQgZm9yIHlvdXIgYmluZGluZy4gT3RoZXItYXJtIGlucHV0IHdvdWxkIGludmFsaWRhdGUgdGhlIGNvbXBhcmlzb24uIEFuIGlzc3VlZCByZWNlaXB0IGRvZXMgbm90IHByb3ZlIG1vZGVsIGV4cG9zdXJlLg==",
+      "provenance": "synthetic example, no production evidence",
+      "resource": "rules"
+    },
+    "treatment": {
+      "sha256": "07f010bf4d95fdc34e261351623fbca3eec14b5e1804e61072743b7f374200ce",
+      "data_base64": "VHJlYXRtZW50LW9ubHkgY29vcmRpbmF0aW9uIGd1aWRhbmNlLg==",
+      "provenance": "synthetic example, no production evidence",
+      "resource": "treatment"
+    },
+    "result": {
+      "sha256": "335b252aea27c681c0dce8152c784f272ac2e9a0b07c4fb315ef246d3d4f1d23",
+      "data_base64": "QmxpbmRlZCBjYW5kaWRhdGUgb3V0cHV0Lg==",
+      "provenance": "synthetic example, no production evidence",
+      "resource": "blinded-output"
+    }
+  },
+  "environments": {
+    "control": {
+      "artifacts": [
+        "baseline",
+        "rules"
+      ],
+      "limitations": [
+        "Native startup and global discovery must be arranged and attested by the launcher."
+      ]
+    },
+    "treatment": {
+      "artifacts": [
+        "baseline",
+        "rules",
+        "treatment"
+      ],
+      "limitations": [
+        "Synthetic fixture; no causal claim."
+      ]
+    },
+    "review": {
+      "artifacts": [
+        "rules"
+      ],
+      "limitations": [
+        "Artifact contents may still unblind; no semantic blinding guarantee."
+      ]
+    }
+  },
+  "profiles": {
+    "control": {
+      "arm": "a",
+      "environment": "control",
+      "projection": "rules",
+      "grants": [
+        {
+          "action": "read",
+          "resource": "baseline"
+        },
+        {
+          "action": "read",
+          "resource": "continuation-a"
+        },
+        {
+          "action": "publish",
+          "resource": "continuation-a"
+        },
+        {
+          "action": "send",
+          "resource": "channel-a"
+        },
+        {
+          "action": "receive",
+          "resource": "channel-a"
+        },
+        {
+          "action": "dispatch",
+          "resource": "control"
+        }
+      ],
+      "allow_carryover": false,
+      "require_observed_exposure": true
+    },
+    "treatment": {
+      "arm": "b",
+      "environment": "treatment",
+      "projection": "rules",
+      "grants": [
+        {
+          "action": "read",
+          "resource": "baseline"
+        },
+        {
+          "action": "read",
+          "resource": "treatment"
+        },
+        {
+          "action": "read",
+          "resource": "continuation-b"
+        },
+        {
+          "action": "publish",
+          "resource": "continuation-b"
+        },
+        {
+          "action": "send",
+          "resource": "channel-b"
+        },
+        {
+          "action": "receive",
+          "resource": "channel-b"
+        }
+      ],
+      "allow_carryover": false,
+      "require_observed_exposure": true
+    },
+    "reviewer": {
+      "arm": null,
+      "environment": "review",
+      "projection": "rules",
+      "grants": [
+        {
+          "action": "read",
+          "resource": "blinded-output"
+        }
+      ],
+      "allow_carryover": false,
+      "require_observed_exposure": true
+    },
+    "observer": {
+      "arm": null,
+      "environment": "review",
+      "projection": "rules",
+      "grants": [
+        {
+          "action": "read",
+          "resource": "baseline"
+        },
+        {
+          "action": "read",
+          "resource": "treatment"
+        }
+      ],
+      "allow_carryover": false,
+      "require_observed_exposure": true
+    }
+  },
+  "coverage": {
+    "host_startup": {
+      "mode": "cooperative",
+      "limitation": "Not intercepted or independently verified by this adapter."
+    },
+    "direct_messages": {
+      "mode": "cooperative",
+      "limitation": "Not intercepted or independently verified by this adapter."
+    },
+    "filesystem_access": {
+      "mode": "cooperative",
+      "limitation": "Not intercepted or independently verified by this adapter."
+    },
+    "shared_resources": {
+      "mode": "cooperative",
+      "limitation": "Not intercepted or independently verified by this adapter."
+    },
+    "artifact_delivery": {
+      "mode": "managed",
+      "limitation": "Only CLI output under the filesystem lock; no OS sandbox or caller authentication."
+    },
+    "mailbox_delivery": {
+      "mode": "managed",
+      "limitation": "Only this experiment mailbox; global chatboard and native messaging are separate."
+    }
+  },
+  "inspect_after": [
+    "execution"
+  ]
+}
