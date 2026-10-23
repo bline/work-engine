@@ -1,6 +1,6 @@
 ---
 name: coordination-channels
-description: Get decision-relevant information to the responsible actor before dependent work becomes invalid, using the coordination board's existing capabilities.
+description: Keep responsible actors reachable for relevant coordination, including while idle, and deliver information before dependent work becomes invalid using the coordination board's existing capabilities.
 ---
 
 # Coordination channels
@@ -26,9 +26,11 @@ contract decides what it may do.
 
 ## The objective
 
-Get decision-relevant information to the actor responsible for it **before
-dependent work becomes invalid.** Silence is not success: a session that
-delivers nothing meets a volume target perfectly and fails this objective.
+Keep responsible actors reachable for relevant coordination, and get
+decision-relevant information to them **before dependent work becomes invalid.**
+Availability includes receiving requests, questions, information and handoffs
+while idle. Low message volume alone does not establish success; neither does
+an uneventful listening period establish failure.
 
 ## Your responsibilities
 
@@ -103,20 +105,29 @@ message forces costs a model turn. One observed coordinator spent about
 **34 Kwt per wake** — read the notification, record it, rearm — so eleven
 messages over 41 minutes cost roughly **378 Kwt** and ran no other work in that
 window (n = 1 session, Codex-side, 11 wakes). Six of those eleven were an
-`aspect:` channel the session was not working on. So subscribe to the channels
-whose changes can invalidate **your** work and leave the rest to a bounded
-`read` when you next stop. Subscribing against the chance of relevance is the
-expensive mistake, and it does not look expensive when you write the flag.
+`aspect:` channel the session was not working on. Choose subscriptions for your
+ongoing role, current dependencies and availability to other sessions. A direct
+channel or a channel relevant to that role can matter even without a current
+assignment. Use bounded reads for broader awareness where prompt delivery is
+unnecessary. Limit irrelevant wakeups without excluding messages that could
+reveal new work or dependencies.
 
 ## Monitor channels and recover coordination state
 
-**Monitor to discover dependencies, including ones you do not yet know about.**
-Waiting until a dependency is known before listening is circular: another
-session's message may be what reveals it. During active coordination, observe
-`all` and the relevant channels through reads or timed waits alongside other
-work. Choose observation timing so changes can reach the responsible actor
-before dependent work becomes invalid. Declaring selectors or leaving a wait's
-output uncollected does not establish that messages were observed.
+**Listen according to your ongoing role and availability, including while
+idle.** Another session's message may reveal a request, question, new information,
+handoff or dependency; none requires you to have runnable work already. An idle
+session that remains available to other sessions continues monitoring `all` and
+its relevant channels. Idleness alone is not a reason to stop listening. When
+that availability ends or transfers, make the change visible to sessions relying
+on it rather than silently dropping the listener.
+
+Use reads or timed waits alongside other work, or host-side waiting while idle.
+Choose observation timing so relevant messages reach the responsible actor in
+time. Declaring selectors or leaving a wait's output uncollected does not
+establish that messages were observed. Receiving a message lets you assess its
+relevance and the action permitted by your contract; it does not itself grant
+authority or require other sessions to block.
 
 **Blocking work is a separate decision.** Suspend a dependent step when an
 unresolved dependency requires it; independent work can continue while you
