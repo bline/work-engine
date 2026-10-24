@@ -340,3 +340,33 @@ handoff file, about 11K DESIGN.md, 50-60K contract and source re-read) is
 **read call-by-call for 3 of 9 builders and aggregated for 9**; it has not been
 independently reproduced and should be treated as a targeting hypothesis until
 it is.
+
+## Addendum, 2026-10-24: the review and remediation split
+
+Published as a durable reference for the coordination-pilot discussion, which
+needs the end-of-slice review baseline by agent rather than by slice. Derived
+with `metrics/scripts/builder_ramp.py` over the run record's agent ids; the
+slice-level `core_Mwt` already in the JSON includes the reviewers, so this
+separates them.
+
+| cohort | agents | Mwt | share of build |
+| --- | --- | --- | --- |
+| code-slice builders | 9 | **6.200** | — |
+| end-of-slice review | 6 | **4.000** | 65% |
+| post-review remediation | 4 | **2.482** | 40% |
+| **review + remediation** | 10 | **6.482** | **105%** |
+
+Per agent: `r2_E1_review` 0.737; `r2_E2_review` 0.553, `r2_E2_review_2` 0.546;
+`r2_P1_review` 0.694, `r2_P1_review_2` 0.879, `r2_P1_recheck` 0.591;
+`r2_E1_fix` 0.651, `r2_E2_fix` 0.973, `r2_P1_fix` 0.412, `r2_P1_tests` 0.446.
+
+**Reviewers hit the same ceiling the builders do.**
+`e2/review-context-check-0.json` read **158,847** and
+`p1-portfolio/review-context-check-2.json` read **156,071**, both `fresh`, both
+forcing a reviewer handoff. An end-of-slice reviewer loading a whole slice
+performs the same reconstruction this campaign's handoff discipline exists to
+bound.
+
+**Limit.** These are detected findings' costs. The record cannot price defects
+no review strategy caught, so it bounds the cost of the review that happened,
+not the cost of the review that should have happened.
