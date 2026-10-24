@@ -1,0 +1,162 @@
+{
+  "probe": "tmux-root-rotation-20261024",
+  "date": "2026-10-24",
+  "scope": "mechanism for the existing root handoff design; the handoff design itself is unchanged",
+  "validator_calibration": {
+    "corpus_documents": 38,
+    "check_outcomes": {
+      "digest_claims": {
+        "defect": 7,
+        "pass": 21,
+        "not_established": 10
+      },
+      "doctrine_elements": {
+        "advisory": 38
+      },
+      "git_refs": {
+        "pass": 13,
+        "not_established": 25
+      },
+      "path_referents": {
+        "pass": 33,
+        "defect": 5
+      },
+      "placeholders": {
+        "pass": 38
+      },
+      "readable": {
+        "pass": 38
+      }
+    },
+    "digest_claims_paired_total": 201,
+    "hex_tokens_not_paired_total": 120,
+    "absolute_path_referents_missing": {
+      "count": 7,
+      "tokens": [
+        "/run/user/1000/s10-a4-54c81360a807/selected/profile.json",
+        "/run/user/1000/s10-a5-90a3ec28783a/selected/profile.json",
+        "/run/user/1000/s10-product-8d42e6a3707b/account-selection.json",
+        "/run/user/1000/s10-product-8d42e6a3707b/domain-repair-9931bf09/run/result.json"
+      ]
+    },
+    "write_time_defects": 0,
+    "write_time_defect_basis": "every digest mismatch had target mtime > handoff mtime; every missing absolute referent was a /run/user tmpfs path cleaned after the handoff was written"
+  },
+  "coordinator_outcomes_observed": {
+    "fail_validation_prepare": {
+      "exit": 21,
+      "cases": [
+        "digest claim does not match file",
+        "absolute path referent absent"
+      ],
+      "launched": "nothing"
+    },
+    "validation_not_established_prepare": {
+      "exit": 32,
+      "cases": [
+        "digests labelled by noun, not bound to a path",
+        "validator command unusable (exit 127)"
+      ],
+      "launched": "nothing"
+    },
+    "awaiting_authority": {
+      "exit": 10,
+      "launched": "nothing"
+    },
+    "fail_startup_dialog": {
+      "exit": 27,
+      "observed_ms": [
+        1483,
+        857
+      ],
+      "predecessor": "preserved at index 0"
+    },
+    "fail_no_adoption": {
+      "exit": 34,
+      "observed_ms": [
+        4855
+      ],
+      "predecessor": "preserved at index 0"
+    },
+    "committed_rotation": {
+      "exit": 0,
+      "observed_ms_shell_stub": 1443
+    }
+  },
+  "live_model_rotations_claude": [
+    {
+      "attempt": 1,
+      "result": "stalled on per-directory trust modal",
+      "model_calls": 0
+    },
+    {
+      "attempt": 2,
+      "result": "TUI idle; --add-dir is variadic and swallowed the argv prompt",
+      "model_calls": 0
+    },
+    {
+      "attempt": 3,
+      "result": "committed",
+      "seconds": 26.9,
+      "model_calls": 4,
+      "usage": {
+        "uncached_input": 8,
+        "cache_creation": 53967,
+        "cache_read": 148402,
+        "output": 953
+      },
+      "note": "novel cwd prefix; preamble occupancy 44402 with cache_read 0"
+    },
+    {
+      "attempt": 4,
+      "result": "committed, RETIRE=successor",
+      "seconds": 26.8,
+      "model_calls": 5,
+      "usage": {
+        "uncached_input": 10,
+        "cache_creation": 23266,
+        "cache_read": 239169,
+        "output": 1058
+      },
+      "note": "same cwd within cache TTL; cache_creation 57% below attempt 3, consistent with the preamble being read rather than rebuilt (n=1 pair)"
+    }
+  ],
+  "fixed_cost_removed": {
+    "before_ms": 27000,
+    "after_ms": 1443,
+    "cause": "the dialog scan ran to completion before the adoption poll began, so 25s was charged to every rotation",
+    "caveat": "1443ms is the coordinator's own overhead with an instantly-acknowledging shell successor; a model successor is still bounded by model latency"
+  },
+  "codex_parity": {
+    "cli": "codex-cli 0.164.0",
+    "launch_verb": {
+      "form": "codex [OPTIONS] [PROMPT]",
+      "argv_prompt_auto_submits": true,
+      "established": "live, 2026-10-24T20:23:29Z"
+    },
+    "session_id_prebindable": false,
+    "session_id_discoverable_post_launch": {
+      "source": "~/.codex/thread_history_1.sqlite thread_turns.thread_id, and the rollout filename",
+      "latency_s": 1,
+      "verified_by": "started_at 20:23:29Z against launch 20:23:28Z; rollout file named with the thread id; thread_items contain the launch cwd"
+    },
+    "post_turn_reentry": {
+      "mechanism": "codex queue --thread <uuid|name> --message <text>",
+      "tested": false
+    },
+    "window_survives_failed_turn": true,
+    "window_survives_successful_turn": "not established",
+    "adoption_step_live": "not established",
+    "blocker": "ChatGPT weekly usage limit exhausted; retry at 2026-10-30T12:07 local per the CLI message",
+    "stall_classes_found": [
+      "per-directory trust modal (same hazard as Claude)",
+      "rate-limit / model-switch modal, post-launch not startup"
+    ]
+  },
+  "defects_found_in_the_mechanism_by_this_work": [
+    "stall pattern was case-sensitive and missed Codex's 'Trust this folder?'",
+    "stall scan ran only before the adoption poll, so post-launch dialogs were invisible and 25s was charged to every rotation",
+    "validator contract executed $VALIDATOR as a single program, so a validator with flags failed with exit 127",
+    "validator outcome was binary, collapsing 'defect found' with 'could not check'"
+  ]
+}
