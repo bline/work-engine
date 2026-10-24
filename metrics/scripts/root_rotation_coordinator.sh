@@ -6,8 +6,11 @@
 #   VALIDATOR            command (with flags) + <handoff> -> 0 pass | 21 defect | 32 not est.
 #                        (any other code is treated as not established, never pass)
 #   QUIESCENCE_FILE      predecessor's own assertion that it is quiescent
-#   CHILDREN_CMD         prints the number of live children (independent check)
-#   CLAIMS_CMD           prints claims still held by the predecessor session
+#   CHILDREN_CMD         prints an integer: live children (independent check).
+#                        Must exit 0; see metrics/scripts/quiescence_checks.py
+#   CLAIMS_CMD           prints claims still held by the predecessor session.
+#                        Must exit 0 -- empty output means "none held", so an
+#                        erroring check must not be read as a clear result.
 #   BOARD_CMD            chatboard script, invoked with --repository REPO
 #   REPO                 repository the board lives in
 #   PRED_SESSION         predecessor session id
@@ -53,11 +56,25 @@ quiescent() {   # predecessor assertion PLUS independent checks; unknown != clea
     log "predecessor has not asserted quiescence"; rec terminal-status "quiescence_not_established"; return 2; fi
   if [[ -z "$CHILDREN_CMD" || -z "$CLAIMS_CMD" ]]; then
     log "independent quiescence checks not configured"; rec terminal-status "quiescence_not_established"; return 2; fi
-  local kids claims
-  kids=$($CHILDREN_CMD 2>>"$STATE/supervisor.log"); claims=$($CLAIMS_CMD 2>>"$STATE/supervisor.log")
+  local kids claims krc crc
+  kids=$($CHILDREN_CMD 2>>"$STATE/supervisor.log"); krc=$?
+  claims=$($CLAIMS_CMD 2>>"$STATE/supervisor.log"); crc=$?
+  # The claims check is read by EXIT STATUS as well as output. Reading output
+  # alone fails open: a check that errors prints nothing, and empty output is
+  # how "no claims held" is spelled, so a broken check would clear the gate.
+  (( crc == 0 )) || { log "claims check failed (exit $crc); cannot establish that none are held"
+    rec terminal-status "quiescence_not_established"; return 2; }
+  (( krc == 0 )) || { log "child check failed (exit $krc)"; rec terminal-status "quiescence_not_established"; return 2; }
   [[ "$kids" =~ ^[0-9]+$ ]] || { log "child count unreadable ('$kids')"; rec terminal-status "quiescence_not_established"; return 2; }
-  if (( kids > 0 )); then log "$kids live child(ren) remain"; rec terminal-status "fail_children_live"; return 1; fi
-  if [[ -n "${claims//[[:space:]]/}" ]]; then log "predecessor still holds claims: $claims"; rec terminal-status "fail_claims_held"; return 1; fi
+  # Report EVERY failing condition, not just the first. Checking children before
+  # claims and returning early hid a held claim behind a live child, which reads
+  # as a diagnosis of the wrong problem.
+  local -a why=()
+  if (( kids > 0 )); then log "$kids live child(ren) remain"; why+=("fail_children_live"); fi
+  if [[ -n "${claims//[[:space:]]/}" ]]; then
+    log "predecessor still holds claims: $(echo "$claims" | tr '\n' ' ')"; why+=("fail_claims_held"); fi
+  if (( ${#why[@]} > 0 )); then
+    rec terminal-status "$(IFS=+; echo "${why[*]}")"; return 1; fi
   log "quiescence established: 0 live children, 0 claims held"; return 0
 }
 
