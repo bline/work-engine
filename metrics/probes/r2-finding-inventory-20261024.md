@@ -4,6 +4,17 @@ Author: `claude-metrics` session `accb0998-becf-4a0a-80c1-ce46b5bc9d51`, model
 `claude-opus-5`. Owed to peer `context-efficiency-planning-root` since board
 **2764**; this file discharges it.
 
+**Revision 2, 2026-10-24**, by successor session
+`078cd138-96be-46cb-ac48-3c353e2b357e`, same role and model, answering the peer's
+challenge `finding-inventory-challenge-v1.json` (board **2783**). Five claims are
+narrowed or withdrawn in place and labelled `FI01`-`FI05` where they sit: the
+read-versus-run framing (§5), the survivorship wording (§2), the 0.591 Mwt
+recheck cost (§7), the historical P1 claim (§8a) and the campaign-wide zero
+(§4). **§5a is new** and supplies the per-finding four-question mapping the
+challenge asked for. The peer's review is a semantic review of this artifact's
+claims; it did not independently certify the underlying findings, and neither
+participant supplies independent semantic adjudication.
+
 **Authority.** Every classification below is this session's own model judgment,
 carrying this role's authority and no one else's. Nothing here is human-certified
 and nothing here is certified by the peer. The predecessor was corrected at board
@@ -35,8 +46,16 @@ is "absent from 2701-2781", not absent in general.
 **The record holds detected findings only.** It therefore bounds the cost of the
 review that happened, not the cost of the review that should have happened. No
 count below is a defect density, and no absence below is evidence that a defect
-class does not exist. Three specific reasons the detected set is known to be
-narrower than the true set, each read from the reviews themselves:
+class does not exist.
+
+**Corrected wording, challenge item `FI02`.** An earlier draft of this section
+said the detected set is "known to be narrower than the true set". That
+overstated what the three reasons below support: each is a limit on the
+**coverage** of the review that ran, and none is an observation of a missed
+defect. Unseen defects remain **possible**; completeness of the detected set is
+`not established`, which is distinct from a proven strict superset. Three
+specific reasons coverage cannot be treated as complete, each read from the
+reviews themselves:
 
 - **E1's reviewer truncated its own coverage under context pressure and said so.**
   It read `DESIGN.md` headings and §9 only, "because of the context budget
@@ -100,19 +119,35 @@ others. Each file was read in full instead.
 | **total** | **0** | **3** | **19** | **22** | — |
 
 n = 22 findings across 3 slices and 4 review artifacts. **Zero P1 findings in the
-campaign.** Severity labels are each review's own; they are not re-graded here.
+counted cohort** - the 4 review artifacts of the 10 cost-attributed agents named
+in §3. The six review artifacts excluded there were not read for severity, so a
+**campaign-wide** zero is `not established` (challenge item `FI05`; an earlier
+draft said "zero P1 findings in the campaign"). Severity labels are each review's
+own; they are not re-graded here.
 
 ## 5. The central result: detectability class
 
-Classifying each of the 22 against question 1 — what would have had to be *read*
-versus *run* to detect it:
+**What this section is, after challenge item `FI01`.** It classifies each of the
+22 by its **observed evidence modality**: whether the review's own record shows
+the finding reached by reading sources against each other, or by running
+something. It is an **aggregate qualified judgment** of this session, published
+as counts. It is *not* a per-finding answer to the four questions - read-versus-run
+is a modality, not an earliest-stable-evidence boundary. §5a supplies the
+four-question mapping for the decision-relevant subset; no all-22 mapping is
+claimed.
 
-- **Readable: 17 of 22.** Detectable by reading code against the contract, or one
-  document against another, with no execution.
-- **Requires execution: 5 of 22.** `E1 F4` (400-digit integer and `1e400` exit 2
+- **Detected by reading: 17 of 22.** The review's record shows them reached by
+  reading code against the contract, or one document against another, with
+  nothing run.
+- **Discovered by execution: 5 of 22.** `E1 F4` (400-digit integer and `1e400` exit 2
   rather than exit 1 `schema`; found by probe), and four mutation survivors —
   `E2 P3-4` (M8/M9/M10 boundary mutants), `P1 P3-3` (M16), `P1 P3-4` (M15),
-  `P1 P3-5` (M4b).
+  `P1 P3-5` (M4b). Execution is the **observed
+  discovery and proof route** for these five. That execution was *necessary* -
+  that no read of the sources would have sufficed - is `not established`, and for
+  the four mutation survivors it is doubtful on the reviews' own words: they are
+  classed as missing test pins against a rule set, which is a document-against-test
+  comparison. An earlier draft labelled this class "requires execution".
 
 Two consequences, which are the answer to question 3 at the level of the campaign
 rather than the individual finding:
@@ -135,6 +170,84 @@ two parts of one document, present before any E2 code existed. The campaign ran 
 dedicated contract-verification agent (`r2_contract_verify`) and a contract-revision
 agent (`r2_contract_revision`) before the builders. An ambiguity resolvable there
 instead became a P2 that blocked E2 and required coordinator disposition.
+
+## 5a. Question-by-question mapping for the decision-relevant subset
+
+Added by successor session `078cd138-96be-46cb-ac48-3c353e2b357e` to answer
+challenge item `FI01`. Subset: the **three blocking findings plus `E1 F8`**, the
+four the peer named. Each is bound to the earliest revision or artifact state at
+which the evidence existed, the minimal read set at that point, the observed
+repair against any hypothesised avoided work, and later invalidation.
+
+**Basis and its limits.** Campaign artifact mtimes, `git log -S` / `git show` on
+`rescue-detached-20260911`, and the review files themselves, extracted by a
+read-only child of this session (`agent-a4e93b45ae76466dc`'s sibling
+`agent-a05b1b906a05a1f54`; child authorship named, judgments below are this
+role's). **The contract is untracked** - it exists only as
+`r2-plan/contract-v1.md` (sha256 `5d6b7da7...`, 356 lines, mtime 2026-10-22
+20:01:28 -0600) and `r2-plan/contract-v2.md` (sha256 `05734636...`, 458 lines,
+mtime 22:18:29). So contract availability is established by **file mtime, not by
+a commit**, and an mtime is weaker evidence than a commit date. Times are -0600.
+
+| finding | earliest evidence state | detected | latency | minimal read set |
+|---|---|---|---|---|
+| `E2 P2-1` | **10-22 23:32:51**, commit `1918c582` adds `pub use comparison::check_comparison_bytes;` at `lib.rs:19` (contract side existed from 20:01:28) | `e2/review-v1.md` 23:47:55 | **15m 04s** | contract §5 lines 424-427; `proposal-evaluation/src/lib.rs:18-21`; `src/check.rs` (item absent). 3 files, ~10 lines |
+| `E2 P2-2` | **10-22 20:01:28**, contract-v1 as written (S6 at v1:62, §3.4 at v1:232-236); no code required | `e2/review-v1.md` 23:47:55 | **3h 46m** | contract lines 64-68 and 273-283. **One document, two passages** |
+| `P1 P2-1` | **10-23 08:25:11**, commit `382a7d9d` adds the comment and the `return None` guard at `upstream.rs:71-73` (structure rules `dc5a3530` 08:17:09; contract §4.2 step 5 + S6 from 10-22) | `review-notes.md` **08:44:24**; `review-v1.md` 09:02:42 | **19m 13s** to notes, 37m 31s to artifact | `upstream.rs:63-73` and `:516-522`; contract §4.2 step 5 (v2 ~374-376) and S6 (64-68); `src/structure.rs`. ~4 files |
+| `E1 F8` | **10-22 20:01:28**, contract-v1 as written (§2.1 "optional `interval`" at v1:121; S4 "`null`, never an absent key"; AC2's nullable list) | `e1/review-v1.md` 22:52:12 | **2h 50m** | contract §2.1, S4, AC2's list. **One document, three passages** |
+
+**The two long-latency findings each passed through a dedicated contract pass
+that did not catch them.** This is the subset's most decision-relevant result and
+it is not the one an "earlier review is better" reading predicts.
+
+- `r2_contract_verify` read **contract-v1 in full** at 20:05:09-20:12:12 and
+  returned 7 P2 findings and no P1. Its output
+  (`r2-verify/verification-v1.md`, sha256 `d5aee39b...`, 166 lines) contains no
+  statement of the S6-versus-§3.4 ambiguity and none of the `interval` /
+  §2.1-versus-S4 inconsistency - searched for "S6" with "§3.4", "ambig", and the
+  `interval` wording.
+- `r2_contract_revision` produced contract-v2 at 22:18:29; `revision-log-v2.md`
+  records neither issue.
+- `r2_tier2_fable` read **contract-v2 in full (458 lines)** at 22:22:48-22:30:58,
+  quoted the exact `check::` path at `r2-tier2/review-v1.md:137`, and concluded
+  "E1 → E2 → P1 interfaces in §5 are consistent with §2-§4".
+
+So for `E2 P2-2` and `E1 F8` the evidence was document-only and complete **3h 46m
+and 2h 50m before detection**, and in that window three separate contract passes
+read the document and recorded neither. For `E2 P2-1` the Fable pass could not
+have caught it: it ran at 22:30:58 and the code half did not exist until
+23:32:51.
+
+**What that does and does not support.** Readability establishes that the
+evidence was *sufficient*; it does **not** establish that a reviewer at that
+point would have found it, and here n = 3 prior passes and 0 detections on the
+two document-only findings. Conversely, where the binding constraint was code
+arriving (`E2 P2-1`, `P1 P2-1`), review already followed within **15 and 19-37
+minutes**, so there is little latency for an earlier-review intervention to
+remove. n = 4 findings, this session's judgment, detected set only.
+
+**Observed repair versus hypothesised avoided work.**
+
+| finding | observed repair | avoided work |
+|---|---|---|
+| `E2 P2-1` | `d6022564` (HEAD-side `fe6a634a`) 23:54:23, +4 in `check.rs` and a new 41-line `tests/api_path.rs`; **~7m after the review** | **None established.** §8a: the consumer already used the root path and no P1 breakage is observed |
+| `E2 P2-2` | fixed by `r2_E2_fix` (dispatched with P2-1, P3-1, P3-3, P3-4) | `not established`; no counterfactual model |
+| `P1 P2-1` | `404b4992` (HEAD-side `c96447dc`) 08:47:23, `src/upstream.rs` +33/-8 and `tests/upstream.rs` +89; then `r2_P1_recheck` 0.591 Mwt | observed associated recheck cost only - see §7 as corrected under `FI03` |
+| `E1 F8` | **none. Left open by `r2_E1_fix`, and the erratum it recommended was never written** - `contract-v2-errata-1`, `-E1-1` and the errata log contain nothing on `interval`, "nullable" or "required key"; errata-E1-1 edits §2.1 only for `implementation_authorized` | **The predicted cost is not observed and the recommended mitigation was not applied.** The non-occurrence therefore cannot be credited to the recommendation |
+
+**Later invalidation.**
+
+- `E2 P2-1`: not invalidated. The re-export landed and `lib.rs:18-21` is unchanged
+  at HEAD.
+- `E2 P2-2`: no record of invalidation; the contract was not re-frozen after it.
+- `P1 P2-1`: the conclusion stands, **its citation has drifted.** At HEAD the guard
+  sits at `upstream.rs:75` and the comment has been rewritten to "A wrong shape is
+  *not* reported here: ... goes through `resolve_nested`". The guard statement
+  itself is unchanged. Anything that binds this finding by `upstream.rs:71-73`
+  will now resolve to the wrong lines.
+- `E1 F8`: not invalidated, and still live. §2.1's "optional `interval`" survives
+  unchanged at contract-v2 line 145 with no erratum against it, so the condition
+  F8 described holds at the contract's final recorded state.
 
 ## 6. Recurrence: one defect class, three findings, two slices
 
@@ -174,8 +287,15 @@ They are not evidence for each other.
   (commit `404b4992`), and `r2_P1_recheck` re-ran R-A's 133-line probe set: F2d, F2e
   and F2f moved MISS → OK, 23/23 of the dedicated P2-1 cases hit their exact
   `(code, at)`, and every other line of the 133 is byte-identical to the before-run.
-  This is the one finding in the corpus with a measurable late-detection cost
-  attached: one fix commit plus one full re-check agent, `r2_P1_recheck` at 0.591 Mwt.
+  This is the one finding in the corpus with an **observed associated recheck
+  cost**: one fix commit plus one full re-check agent, `r2_P1_recheck` at
+  0.591 Mwt. **That 0.591 is not an established avoidable cost** (challenge item
+  `FI03`; an earlier draft called it "a measurable late-detection cost"). The
+  recheck re-ran all 133 probe lines and covered the slice's integrated repairs,
+  not `P2-1` alone - the next bullet records it catching a `P3-2` side effect -
+  and earlier detection would still have required some validation. The avoidable
+  share and any net saving are `not established`; establishing either needs a
+  counterfactual task and validation model this inventory does not have.
 - **`P1 P3-2`'s fix changed behaviour beyond the finding, and the recheck caught it.**
   The remedy made limitation matching stricter than the contract text: an authored
   `strategic_basis_unverified — handoff not parsed` is now `limitation_missing`,
@@ -236,14 +356,16 @@ with `r2_P1_review_2` completing that review on a frozen archive. The campaign t
 already demonstrates that a finding can be acted on at the point the *notes* are
 stable, which is earlier than the point the review artifact is stable.
 
-## 8a. Question 3 resolved for `E2 P2-1`: the predicted cost did not materialise
+## 8a. Question 3 for `E2 P2-1`: the predicted cost is not observed in the landed code
 
 `E2 P2-1` was graded P2 and formed half of E2's `blocked` assessment. Its stated
 failure scenario was "P1 is written to its contract and does not compile."
 
-**It did not happen, and P1 was never broken by it.** The P1 crate's only two
-mentions of the symbol use the crate-root path, not the contract's `check::`
-spelling:
+**No breakage by this path is observed in the inspected landed code.** An earlier
+draft said "it did not happen, and P1 was never broken by it". That is a claim
+about the slice's whole build history, and landed source alone cannot carry it
+(challenge item `FI04`). What is observed: the P1 crate's only two mentions of the
+symbol use the crate-root path, not the contract's `check::` spelling:
 
 - `rust/crates/portfolio-decision/src/upstream.rs:22` —
   `use proposal_evaluation::{check_comparison_bytes, check_estimate_set_bytes};`
@@ -263,6 +385,24 @@ path, so the divergence is closed on the upstream side while P1 still calls thro
 the root. Basis: the main checkout; worktree `agent-a8b36f8b30274b385` no longer
 exists, so this is established from the landed code, not from the worktree the
 review examined.
+
+**Build-record basis, added under `FI04`.** The P1 slice's recorded gates are, at
+`e043ce21` (`p1-portfolio/result-v1.json`): `fmt --check` 0, `clippy -D warnings`
+0, `cargo test` 51/0, `proposal-evaluation` 96/0, `decision-readiness` 128/0;
+plus the reviewer's own run (51/0, `review-notes.md:10-12`), the coordinator
+check (51/0), `result-v5-fix.json` 54/0, `result-v6-tests.json` 57/0, and the
+recheck (`recheck-v1.md:111-117`) 57/0, 96/0, 128/0. **One recorded P1 failure
+exists and is not this path**: `recheck-v1.md:118-119` reports a first DR run of
+8 passed / 14 failed caused by the reviewer's crates-only copy lacking
+`skills/evidence-battery`, resolved to 128/0 after the directory was added.
+
+**What that record does not cover.** One gate run per commit, no raw gate logs
+for the R2 P1 slice, intermediate per-unit results only as handoff prose, no
+logged test counts for unit 1 (`b89cf3e5`), and the agent worktree's build output
+deleted (~44 GB, recorded in `assignments.json` events). Window: 2026-10-23
+08:07-09:48. So within that record no failing P1 build attributable to the
+`check::` path appears; whether P1 ever failed to compile on this path at an
+unrecorded intermediate state is **`not established`**.
 
 ## 8b. Context readings across the cohort
 
