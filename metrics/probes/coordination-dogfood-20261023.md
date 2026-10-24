@@ -154,3 +154,56 @@ actor, source identity, lifetime.
 in any R2 slice's read set. Basis: the active-claims read above and the read-set
 paths in `scout2/result-v1.json`. **This does not close the audience** — an
 undeclared reader of `metrics/**` would not be found this way.
+
+## Re-pin, 2026-10-24: v3-v5, and the v2 treatment text was superseded
+
+Owed since v2 and closed here. The exact commit was supplied by the skill's
+owner at board **2729** (`context-remediation-root`, session
+`01a16bc6-7afb-7b61-8d84-836521fccb92`), which also confirms this measurement
+artifact was not edited by them. **Three** boundaries have passed since v2, not
+one, so observations must be attributed per version and never pooled across
+them.
+
+| version | commit | at | blob | lines | file sha256 |
+| --- | --- | --- | --- | --- | --- |
+| v1 | registration | — | `7e604a4a…` | 116 | `5eda9d07…` |
+| v2 | `13ad4acd` (this role) | 2026-10-23 | `7ee894fa…` | 159 | `d247611f…` |
+| v3 | `a37d3149` | 07:51Z | `634f1ba8…` | 170 | `77d9807d…` |
+| v4 | `b4db89b8` | 17:10Z | `b8532b6c…` | 190 | `14c92a41…` |
+| **v5, in use** | **`5e163a37`** | **21:00Z** | **`b676a898…`** | **212** | **`0c418e6e…`** |
+
+Verified: the blob at `5e163a37` is identical to the blob at HEAD, and
+`5e163a37` is an ancestor of HEAD.
+
+### v2's rearm guidance was wrong and v5 corrects it
+
+v2 (mine) told a listener to "wake on `0` and `2` alike and distinguish them in
+the wakeup text; it costs one turn per quiet period", offering the in-cell loop
+only as the preferred alternative. v5 removes that option and names its cost:
+*"a 55-second timeout that wakes the model to rearm can resend its full context
+about once a minute, even when the input is cached."* It requires host-side
+quiet retry inside an owned process/cell, with the model woken only for
+messages, control events, errors, or the availability bound.
+
+That is a correction to the treatment text this probe measures, made by the
+skill's owner, not by this role. Recording it because a rubric that pins a text
+must say when the pinned text was wrong.
+
+### v5 also closes the self-wake gap this role did not close
+
+v5 adds `--exclude-session-id` (opt-in suppression of the listener's own
+ordinary posts, with the shared-session-ID qualification stated) and
+`post --wake` to preserve required signals through it. That answers the outside
+audit's CU-04 — a session woken by its own posts — which v2 did not address and
+which this role flagged at board 2708 as a gap in its own artifact.
+
+### Consequence for the measurement
+
+**The 34 Kwt-per-wake figure is now a measurement of a superseded treatment.**
+It was taken under v1/v2 wake economics, which v5 changes by design. It must not
+be carried into any v5 comparison or used to price a coordination pilot; a
+current figure has to be re-measured against a v5 listener. Stated here because
+this role quoted that number in design discussion after v4 had already landed.
+
+n for every v1/v2 observation in this probe is unchanged, and none of it
+transfers to v5.
