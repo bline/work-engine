@@ -301,3 +301,42 @@ the lowest auto-compaction observed on this machine.
 measurement in the prospective trial, and amendment 2's standing rule governs
 changes to it. Editing it from the measurement role would be a treatment change
 mid-trial. This is reported, not fixed.
+
+## Amendment 2, 2026-10-24: context never falls within a builder run
+
+Measured because I had claimed, from the four below-trigger handoffs, that they
+were "the signature of a bare threshold with no exit band" and that
+`context-pressure`'s hysteresis bands would fix them. An outside reading
+(Astra) objected that hysteresis depends on pressure falling back across a
+boundary, and that the observations establish the behaviour and not its cause.
+That objection is correct, and the measurement settles it in the stronger
+direction.
+
+Across the **9 code-slice builders and all 305 API calls, context decreased
+zero times.** Seven builders crossed 150,000; **none crossed back below it.**
+
+| builder | calls | decreases | 150K up-crossings | back-down |
+| --- | --- | --- | --- | --- |
+| all nine | 305 | **0** | 7 | **0** |
+
+A hysteresis exit threshold has nothing to act on in a strictly monotonic
+context. For this workload it is **inert, not merely unproven**: the enter/exit
+distinction can never fire. Hysteresis remains meaningful where context can
+fall — a root that compacts, or any thread with context replacement — so this
+is a scope result, not a verdict on the crate.
+
+**Consequence for R3.** Trigger *level* and trigger *mechanism* are not
+equivalent levers here. Varying flat-threshold against hysteresis on Claude
+subagent builders would compare a policy against itself. The live question is
+what the four early handoffs actually were — anticipated task growth, a
+convenient commit boundary, or conservative judgment — and that is answered by
+instrumenting the decision, not by changing the threshold shape.
+
+**The ramp decomposition is published, not asserted.**
+`metrics/scripts/builder_ramp.py` reproduces the per-call uncached/cached
+sequence and the first-`.rs`-write adjudication for any builder transcript. The
+decomposition quoted in discussion (about 15K fixed harness preamble, 3-5K
+handoff file, about 11K DESIGN.md, 50-60K contract and source re-read) is
+**read call-by-call for 3 of 9 builders and aggregated for 9**; it has not been
+independently reproduced and should be treated as a targeting hypothesis until
+it is.
