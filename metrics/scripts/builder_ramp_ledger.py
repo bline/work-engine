@@ -7,7 +7,8 @@ adjudicated first effective write, for all fifteen builders.
 `builder_ramp.scan` classifies each candidate from the write target it can
 recover. A candidate it will not interpret -- a python heredoc, an inline
 interpreter, patch, git apply -- is `needs_adjudication` and is decided here by
-a recorded human reading of the command, keyed by exact tool_use id. Candidate
+a recorded manual adjudication -- this measurement session's own reading of the
+command, a model judgment and not a human one -- keyed by exact tool_use id. Candidate
 order decides nothing: a decision is required for every unadjudicated candidate
 that precedes the selection, and the run fails if one is missing.
 """

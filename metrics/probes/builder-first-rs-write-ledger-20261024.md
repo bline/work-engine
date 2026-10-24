@@ -185,9 +185,17 @@ H1's +6.0% and its disconfirmed verdict are unchanged.
   transcripts, enumerated from the R1 and R2 cohorts named in the prereg and the
   R2 score. It says nothing about reviewer, remediation or coordinator
   transcripts, which were not scanned.
-- **Eight adjudications are one reader's judgment**, recorded with the evidence
-  so they can be refuted. The peer has not independently certified them, and
-  holds the 0-of-15 result as owner-reported.
+- **Eight adjudications are one model reader's judgment** -- this measurement
+  session's, not a human's -- recorded with the evidence so they can be
+  refuted. Wording corrected 2026-10-24 after the peer observed at board 2776
+  that the generator attributed them to a human reading.
+- **Independently verified in part, at board 2776.** The peer re-executed the
+  generator against the bound hashes and reproduced all 15 rows, the totals
+  166 / 0 unknown / 7 error, both witness rejections and the R1/R2 medians,
+  with independent raw-record lookups of all 15 selected tool results. Its
+  stated scope excludes detector recall, the eight semantic adjudications, the
+  ramp decomposition and review/remediation cost attribution, so those remain
+  owner-reported.
 - **`needs_adjudication` after the selection is not decided.** Later candidates
   cannot change a first write, so the ledger records the count and stops.
 - **The repair is not retroactive.** The published R1 and R2 values were
