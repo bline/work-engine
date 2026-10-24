@@ -1,0 +1,325 @@
+{
+ "schema": "claude-builder-campaign-score-v1",
+ "scored_at": "2026-10-24T01:46:38.429448+00:00",
+ "campaign": "r2-pressure-controller-20261022",
+ "host": "claude-code",
+ "scored_by": {
+  "session": "e702a3e4-eb8d-4690-8383-20dbf35b2850",
+  "role": "claude-metrics",
+  "arm_independence": "excluded from both arms of the prospective correspondence trial; built nothing in R2"
+ },
+ "prereg": "metrics/probes/claude-builder-r2-prereg-20261022.md (amendments 1-6)",
+ "state_dir": "~/.local/state/work-engine/r2-pressure-controller-20261022",
+ "status": "campaign ended 2026-10-23T15:50:38Z (board 2642); integrated, not pushed",
+ "orchestrators": [
+  "c1d31e88-2169-456f-8673-e29f643e9fb2",
+  "26e8ee40-b2e5-43a8-bd1b-26137f1ff289"
+ ],
+ "code_slice_builders": [
+  {
+   "agent": "a74f07e00db29f8e0",
+   "slice": "E1",
+   "context_at_first_rs_write": 107877,
+   "pre_write_read_calls": 20,
+   "weighted_Mwt": 0.943,
+   "max_context": 162617
+  },
+  {
+   "agent": "a68d60a23bab394e2",
+   "slice": "E1",
+   "context_at_first_rs_write": 93645,
+   "pre_write_read_calls": 18,
+   "weighted_Mwt": 0.539,
+   "max_context": 132936
+  },
+  {
+   "agent": "a4753525221f23204",
+   "slice": "E2",
+   "context_at_first_rs_write": 128738,
+   "pre_write_read_calls": 24,
+   "weighted_Mwt": 0.653,
+   "max_context": 156128
+  },
+  {
+   "agent": "aa3038194d5ecde25",
+   "slice": "E2",
+   "context_at_first_rs_write": 108214,
+   "pre_write_read_calls": 16,
+   "weighted_Mwt": 0.725,
+   "max_context": 155566
+  },
+  {
+   "agent": "a69f21553464cbc6e",
+   "slice": "E2",
+   "context_at_first_rs_write": 105596,
+   "pre_write_read_calls": 17,
+   "weighted_Mwt": 0.61,
+   "max_context": 150684
+  },
+  {
+   "agent": "a8b36f8b30274b385",
+   "slice": "P1",
+   "context_at_first_rs_write": 135584,
+   "pre_write_read_calls": 32,
+   "weighted_Mwt": 0.584,
+   "max_context": 149154
+  },
+  {
+   "agent": "ac604a3dcfdd0db66",
+   "slice": "P1",
+   "context_at_first_rs_write": 117615,
+   "pre_write_read_calls": 23,
+   "weighted_Mwt": 0.642,
+   "max_context": 156483
+  },
+  {
+   "agent": "a131e8667687eea02",
+   "slice": "P1",
+   "context_at_first_rs_write": 123231,
+   "pre_write_read_calls": 17,
+   "weighted_Mwt": 0.727,
+   "max_context": 167838
+  },
+  {
+   "agent": "aa725a9ba777a9a84",
+   "slice": "P1",
+   "context_at_first_rs_write": 91659,
+   "pre_write_read_calls": 17,
+   "weighted_Mwt": 0.777,
+   "max_context": 168219
+  }
+ ],
+ "hypotheses": {
+  "H1": {
+   "metric": "context at first .rs write",
+   "comparator": 102049,
+   "observed_median": 108214,
+   "mean": 112462.1,
+   "min": 91659,
+   "max": 135584,
+   "n": 9,
+   "comparator_n": 6,
+   "delta": 6165,
+   "verdict": "disconfirmed",
+   "note": "R2 median is above the pre-change median; the disambiguation rule does not engage because B6 also rose"
+  },
+  "H2": {
+   "metric": "builders writing no code",
+   "observed": "0 of 9",
+   "comparator": "1 of 7 (14.3%)",
+   "verdict": "supported",
+   "limit": "one instance in seven against zero in nine does not separate a treatment effect from variation"
+  },
+  "H3": {
+   "metric": "builder handoffs per Rust-building slice",
+   "observed": 2.0,
+   "basis": "6 builder handoffs over 3 slices",
+   "also": "2 reviewer handoffs, 8 outcome-A boundaries in total",
+   "comparator_as_registered": 1.5,
+   "comparator_corrected": 2.0,
+   "verdict": "disconfirmed",
+   "note": "equal to the corrected comparator, worse than the registered one; see defect 2",
+   "declared_below_trigger": "4 of 6 builder handoffs (149436, 148809, 141296, 145226)"
+  },
+  "H4": {
+   "metric": "Mwt per 1k Rust lines, code slices",
+   "comparator_mean": 1.517,
+   "comparator_s1": 1.255,
+   "comparator_s2": 1.778,
+   "observed_core": {
+    "E1": 0.673,
+    "E2": 0.86,
+    "P1": 1.149
+   },
+   "observed_with_remediation": {
+    "E1": 0.871,
+    "E2": 1.132,
+    "P1": 1.35
+   },
+   "mean_core": 0.894,
+   "mean_with_remediation": 1.118,
+   "verdict": "supported",
+   "attribution": "not attributable to the treatment: different subject, campaign-created crate family, one contract reused across three slices"
+  },
+  "H5": {
+   "metric": "orchestration share of campaign cost",
+   "comparator_as_registered": 0.362,
+   "comparator_r1_score_artifact": 0.339,
+   "observed_whole_window": 0.37,
+   "observed_union_of_cohort_windows": 0.311,
+   "verdict": "not established",
+   "why": "coordinator c1d31e88 also ran fix-c, fix-d, coordination-channels and a board listener inside the window; no per-call attribution separates them. The interval straddles both comparators."
+  }
+ },
+ "B6_pre_write_read_calls": {
+  "observed_median": 18,
+  "mean": 20.44,
+  "min": 16,
+  "max": 32,
+  "n": 9,
+  "comparator_rederived_same_counter": 14.0,
+  "comparator_as_registered": 15.5,
+  "direction": "rose",
+  "note": "the registered B6 is not used; see defect 4"
+ },
+ "baseline_rederived_from_r1_transcripts": [
+  {
+   "agent": "a27d1ec9c1e4acca4",
+   "context_at_first_rs_write": 114292,
+   "pre_write_read_calls": 16
+  },
+  {
+   "agent": "abeb3da4543a8545f",
+   "context_at_first_rs_write": 116779,
+   "pre_write_read_calls": 15
+  },
+  {
+   "agent": "a0e59f73949c117b9",
+   "context_at_first_rs_write": null,
+   "pre_write_read_calls": null
+  },
+  {
+   "agent": "a68b863f021a779a8",
+   "context_at_first_rs_write": 100144,
+   "pre_write_read_calls": 13
+  },
+  {
+   "agent": "aed2ceafc33b90035",
+   "context_at_first_rs_write": 71539,
+   "pre_write_read_calls": 11
+  },
+  {
+   "agent": "a5d3ffe262a707e38",
+   "context_at_first_rs_write": 103954,
+   "pre_write_read_calls": 13
+  },
+  {
+   "agent": "a74b04b4ca3160232",
+   "context_at_first_rs_write": 77556,
+   "pre_write_read_calls": 20
+  }
+ ],
+ "slices": {
+  "E1": {
+   "range": "89396aea..f2fe643d",
+   "rust_lines_gross": 3295,
+   "core_Mwt": 2.219,
+   "remediation_Mwt": 0.651
+  },
+  "E2": {
+   "range": "ab3acf34..928570a6",
+   "rust_lines_gross": 3589,
+   "core_Mwt": 3.088,
+   "remediation_Mwt": 0.973
+  },
+  "P1": {
+   "range": "c5d8d106..8db88681",
+   "rust_lines_gross": 4260,
+   "core_Mwt": 4.894,
+   "remediation_Mwt": 0.857
+  }
+ },
+ "campaign_totals": {
+  "r2_agents": 26,
+  "subagent_weighted_Mwt": 17.525,
+  "subagent_calls": 893,
+  "orchestrator_weighted_Mwt_whole_window": 10.299,
+  "orchestrator_calls_whole_window": 211,
+  "orchestrator_weighted_Mwt_cohort_windows": 7.906,
+  "orchestrator_calls_cohort_windows": 170,
+  "rust_lines_gross": 11144,
+  "Mwt_per_krs_subagents_only": 1.573,
+  "comparator_r1_Mwt_per_krs_subagents_only": 3.611,
+  "caveat": "R1's campaign figure included a slice-3 cohort producing 63 Rust lines; R2 has no such cohort, which accounts for part of the gap by construction"
+ },
+ "context_discipline": {
+  "self_checks": 37,
+  "distinct_agents": 18,
+  "trigger_tokens": 150000,
+  "readings": {
+   "n_nonzero": 36,
+   "min": 47199,
+   "median": 124294,
+   "max": 158847
+  },
+  "recommendations": {
+   "retain_ok": 33,
+   "fresh": 4
+  },
+  "at_or_over_trigger": 4,
+  "at_or_over_band_floor_202533": 0,
+  "compactions_observed": 0,
+  "compaction_completeness_basis": "26 R2 agents enumerated from assignments.json; all 26 transcripts located and searched for compactMetadata and compact_boundary, plus both coordinator session transcripts. Zero matches of either in any file. All 37 checks report epoch 0 and compaction_markers 0.",
+  "window_fraction": "not established: Claude Code transcripts record no context window"
+ },
+ "scorability": {
+  "1_read_set_added_lines_builders": "met (amendment 6: E2 2427, P1 2252, 9 code-slice builders)",
+  "2_reference_sha256_per_worker": "met (reference_sha256 in each worker result; digests unchanged at campaign end)",
+  "3_read_set_with_line_count": "met (read_set per assignment, read_set_actual per result)",
+  "4_context_checks_at_phase_boundaries": "met (37 records with input_tokens, recommendation, trigger_tokens)",
+  "5_branch_range_added_lines": "met (three integration ranges, all files .rs)"
+ },
+ "defects_found_while_scoring": [
+  {
+   "id": "R2-S-001",
+   "subject": "frozen baseline B1",
+   "claim": "amendment 3 recorded a27d1ec9c1e4acca4's first .rs write at 113,522",
+   "finding": "that call's tool_result is is_error true (harness refused it as too complex to verify against the worktree boundary); no file was written. First effective write 114,292, 16 pre-write reads.",
+   "effect": "B1 median unchanged at 102,049; mean 97,249 -> 97,377. Immaterial to every comparison in this record.",
+   "class": "a measured value taken from a call whose outcome was not read"
+  },
+  {
+   "id": "R2-S-002",
+   "subject": "frozen baseline B3",
+   "claim": "prereg: 1.5 handoffs per Rust-building slice (3 handoffs over S1 and S2)",
+   "finding": "the R1 score artifact records four outcome-A instances (s1, s2_a, s2_a2, s2_b2), all inside S1 and S2, with three s3/ files excluded by name. Correct figure 4/2 = 2.0.",
+   "effect": "material: changes H3 from 'disconfirmed and worse' to 'disconfirmed and exactly equal'",
+   "class": "a derived baseline that disagrees with the artifact it cites"
+  },
+  {
+   "id": "R2-S-003",
+   "subject": "frozen baseline B5",
+   "claim": "prereg: orchestration share 36.2%",
+   "finding": "the R1 score artifact records orchestration_share 0.339 and its prose says 33.9%. The 2.3-point gap is not reconciled.",
+   "effect": "H5 reported against both; verdict not established on other grounds too",
+   "hypothesis_not_finding": "possibly the pre-correction pass of claude_transcript_usage.py, which deduplicated on (message.id, timestamp) and overcounted"
+  },
+  {
+   "id": "R2-S-004",
+   "subject": "B6 instrument",
+   "claim": "B6 is 'read-class tool calls before the first .rs write'",
+   "finding": "'read-class' is never enumerated in the registration. Under this record's counter the pre-change median is 14.0, not the registered 15.5.",
+   "effect": "R2's B6 is compared only against the re-derived baseline. Any future B6 comparison must re-derive both sides with one counter.",
+   "counter": "Read, Grep, Glob, NotebookRead, WebFetch, WebSearch; Bash clauses beginning cat, head, tail, sed -n, less, grep, rg, find, ls, wc, awk, git show/log/diff, sha256sum, stat"
+  },
+  {
+   "id": "R2-S-005",
+   "subject": "E2 added lines",
+   "claim": "amendment 6: E2 added 3,598 Rust lines",
+   "finding": "the integration range ab3acf34..928570a6 gives 3,589. Both clear the >=1,000 criterion.",
+   "effect": "none on any verdict; the integration range is used here because scorability item 5 names the commit range"
+  },
+  {
+   "id": "R2-S-006",
+   "subject": "harness instrument artifact, both arms",
+   "finding": "the worktree-isolation guard refuses compound commands, so a builder's first write attempt can be refused and retried. One of six pre-change builders and three of nine R2 builders hit it.",
+   "effect": "attempt-to-effective gap 770 (a27d1ec9), 1,436 (a74f07e0), 1,665 (a8b36f8b), 6,807 (a4753525). Small except where the retry is not immediate.",
+   "rule_applied": "a refused write is not a write; B1 is the first write whose tool_result is not an error"
+  }
+ ],
+ "limits": [
+  "n = 3 slices, 1 independent chain. E2's read set is 69% E1 output, P1's 31% E1+E2 output (amendment 6). Eligibility is endogenous to the campaign and the slices are not independent draws for H1-H3.",
+  "Between-campaign comparison: R2's subject, crate family and contract structure differ from R1's. H4 compares two different build problems.",
+  "Reviewers are inside the orchestration being measured; unchanged from R1.",
+  "Amendments 1 and 5 register c56ab8ec and skills/coordination-channels as uncontrolled covariates.",
+  "Window fraction not established; all context levels are absolute."
+ ],
+ "method": {
+  "dedup": "assistant records deduplicated by message.id, max output_tokens, per metrics/scripts/claude_transcript_usage.py",
+  "weighted_tokens": "uncached + cached/10 + 5*output",
+  "first_write_adjudication": "all .rs-touching write candidates listed per transcript and the matched command read; no detector output taken at face value (amendment 3's discipline)",
+  "detector_validation": "re-derived all six pre-change B1 values from the R1 transcripts before measuring R2; five reproduce amendment 3 exactly, the sixth is R2-S-001",
+  "first_pass_error": "the first scoring pass did not deduplicate by message.id and inflated every cost figure by roughly 2x; corrected against claude_transcript_usage.py before any figure was recorded"
+ },
+ "quota": "this arm consumes no Codex quota; no plus-unit claim is made"
+}
