@@ -72,21 +72,41 @@
     "fail_startup_dialog": {
       "exit": 27,
       "observed_ms": [
-        1483,
-        857
+        1109
       ],
       "predecessor": "preserved at index 0"
     },
     "fail_no_adoption": {
       "exit": 34,
       "observed_ms": [
-        4855
+        6012
       ],
       "predecessor": "preserved at index 0"
     },
     "committed_rotation": {
       "exit": 0,
-      "observed_ms_shell_stub": 1443
+      "observed_ms_shell_stub": 1133,
+      "observed_ms_after_rearm": 3248
+    },
+    "fail_claims_held": {
+      "exit": 22,
+      "launched": "nothing"
+    },
+    "fail_children_live": {
+      "exit": 22,
+      "launched": "nothing"
+    },
+    "fail_children_live+fail_claims_held": {
+      "exit": 22,
+      "launched": "nothing"
+    },
+    "watch_refused_no_authority": {
+      "exit": 77,
+      "launched": "nothing"
+    },
+    "watch_expired": {
+      "exit": 78,
+      "launched": "nothing"
     }
   },
   "live_model_rotations_claude": [
@@ -170,12 +190,17 @@
     "validator outcome was binary, collapsing 'defect found' with 'could not check'"
   ],
   "quiescence_checks": {
-    "interfaces": [
-      "CHILDREN_CMD",
-      "CLAIMS_CMD"
-    ],
-    "exercised_against_real_sources": false,
-    "note": "all runs supplied stubs (echo 0, true); coordinator logic around them is tested, correct wiring to real child enumeration and board active-claims is not established"
+    "script": "metrics/scripts/quiescence_checks.py",
+    "exercised_against_real_sources": true,
+    "why_not_host_clis": {
+      "claude agents --json": "machine-wide, lists the root itself with status busy; would report live children forever",
+      "codex agents": "no machine-readable output"
+    },
+    "source": "board advisory claims; claims dict keyed by resource with session_id and expires_at; the messages list beside it is not claims",
+    "children_definition": "distinct non-predecessor sessions holding unexpired claims under a resource prefix",
+    "expiry": "board filters expired claims itself (verified); checks re-filter defensively",
+    "fail_open_hole_fixed": "coordinator read CLAIMS_CMD output but not exit status; empty output means none held, so an erroring check cleared the gate",
+    "reports_all_conditions": true
   },
   "event_driven_wake": {
     "principle": "a returning tool call wakes the model; an arriving message does not",
@@ -211,6 +236,16 @@
       },
       "codex_ttl": "not established"
     },
-    "caveat": "a session blocked in a wait is inside a tool call and cannot answer; a retired root kept for questions must hold no listener"
+    "caveat": "a session blocked in a wait is inside a tool call and cannot answer; a retired root kept for questions must hold no listener",
+    "wired": "adoption via blocking one-shot wait; non-successor message re-arms from the returned cursor (verified)"
+  },
+  "triggerable_rotation": {
+    "subcommand": "watch <handoff>",
+    "topic": "control:rotation:<role>",
+    "authority": "GATE_AUTHORITY allowlist of authors/session ids; APPROVE_TOKEN in the body; unset allowlist refuses to run (exit 77)",
+    "audit": "authorized-by and last-rejected-trigger record the message ids",
+    "watch_timeout_default_s": 3000,
+    "verified": "unauthorized author carrying the correct token ignored and recorded, watch re-armed, authorized approval then committed",
+    "doctrine_question": "whether a board message may carry root-transfer authority is the skill owner's call; board claims are stamped advisory_coordination_only"
   }
 }

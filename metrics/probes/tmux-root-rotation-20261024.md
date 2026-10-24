@@ -134,6 +134,63 @@ to `6ece2098…`, matching the pointer this role was given at startup. Either th
 handoff convention tightens to `<path> SHA256 <digest>`, or that check cannot
 gate. This is recorded, not resolved.
 
+## Quiescence: enforced, not shaped
+
+`CHILDREN_CMD` and `CLAIMS_CMD` were interfaces with stubs behind them, so the
+coordinator checked the *shape* of doctrine's step-1 and step-2 preconditions.
+[`quiescence_checks.py`](../scripts/quiescence_checks.py) supplies real ones.
+
+**Neither host CLI can give a parent-scoped child count.** `claude agents
+--json` lists machine-wide sessions *including the root itself* with status
+`busy`, so wiring it would report live children on every rotation forever;
+`codex agents` has no machine-readable output at all. What is externally visible
+and parent-scoped is the board's advisory claims, which doctrine already
+requires a root to release before transfer. The checks read `claims` (a dict
+keyed by resource, each carrying `session_id` and `expires_at`) - **not** the
+`messages` list beside it, which is not claims and is never empty. Children are
+counted as distinct non-predecessor sessions holding claims under a resource
+prefix, so an unrelated role is not counted as this root's child. The board
+filters expired claims itself (verified); the checks re-filter so a change there
+cannot silently widen what counts as held.
+
+**A fail-open hole was found while wiring them.** The coordinator read
+`CLAIMS_CMD`'s output but not its exit status, and empty output is how "no
+claims held" is spelled - so a claims check that errored *cleared the gate*.
+Both checks are now read by exit status too, and a failure records
+`quiescence_not_established`. Verified: a claims check pointed at a nonexistent
+repository yields exit 32 and launches nothing, where before it would have
+passed.
+
+Every failing condition is now reported rather than the first. Checking children
+before claims and returning early hid a held claim behind a live child, so the
+isolated claims path had never been exercised; the combined status
+`fail_children_live+fail_claims_held` is what a rotation with both now records.
+
+## Triggerable rotation
+
+`watch <handoff>` blocks on `control:rotation:<role>` and rotates on an
+authorized approval, which is what removes the manual step: the root no longer
+has to be told by hand.
+
+**Authority is explicit and fails closed.** A board message is advisory by
+construction - the board stamps its own claims `authority:
+advisory_coordination_only`, and [context-control.md](../../skills/manual-orchestration/references/context-control.md)
+holds that an observation grants no root-transfer authority. So an approval
+counts only from an author or session id named in `GATE_AUTHORITY`, its body
+must carry `APPROVE_TOKEN`, and with no allowlist `watch` **refuses to run at
+all** (`watch_refused_no_authority`): an unauthenticated trigger is worse than a
+manual rotation. The accepted message id is recorded in `authorized-by` and a
+rejected one in `last-rejected-trigger`, so the decision is auditable either way.
+
+Verified: an unauthorized author carrying the correct token was ignored and
+recorded while the watch re-armed; the authorized author's approval then
+committed the rotation. Whether a board message may carry transfer authority at
+all is a **doctrine question for the skill owner** - the mechanism's part is to
+require that it be named and to record which message was acted on.
+
+`WATCH_TIMEOUT` defaults to 3000s, which keeps one watch inside the 1-hour
+prompt-cache TTL so the wake resumes on a read prefix rather than rebuilding it.
+
 ## Codex parity
 
 Established with `codex-cli 0.164.0`.
@@ -183,9 +240,8 @@ and returns to idle.
 
 The coordinator polls the board for the successor's acknowledgment, and a root
 hands off only when told. Both become unnecessary if sessions hold a blocking
-board wait, because a post wakes them. **The wake primitive below is
-established; the replacement is not wired** - the coordinator's loop still
-polls, and this section records what to build, not what runs.
+board wait, because a post wakes them. Both are now wired: adoption arrives on
+a blocking wait, and `watch` makes a rotation triggerable.
 
 **The wait must be one-shot, not `--follow`.** `--follow` rearms inside one
 process, so the process never exits and the model never resumes - the
@@ -260,10 +316,17 @@ degraded to `not_established` and blocked the rotation instead of passing it.
 | --- | --- | --- | --- |
 | defect in handoff (bad digest; absent referent) | 21 | untouched, nothing launched | - |
 | validity not establishable | 32 | untouched, nothing launched | - |
+| predecessor still holds a claim | 22 | untouched, nothing launched | - |
+| a live child still holds a claim | 22 | untouched, nothing launched | - |
+| both of the above (`fail_children_live+fail_claims_held`) | 22 | untouched, nothing launched | - |
+| a quiescence check could not run | 32 | untouched, nothing launched | - |
 | validated and quiescent, awaiting authority | 10 | untouched, nothing launched | - |
-| successor stalled on a dialog | 27 | preserved at index 0 | 857-1,483 ms |
-| no adoption acknowledgment | 34 | preserved at index 0 | 4,855 ms (`ADOPT_TIMEOUT=5`) |
-| committed | 0 | per `RETIRE` | 1,443 ms (shell successor) |
+| `watch` with no named approver | 77 | untouched, nothing launched | - |
+| `watch` window closed unapproved | 78 | untouched, nothing launched | - |
+| successor stalled on a dialog | 27 | preserved at index 0 | 1,109 ms |
+| no adoption acknowledgment | 34 | preserved at index 0 | 6,012 ms (`ADOPT_TIMEOUT=5`) |
+| committed | 0 | per `RETIRE` | 1,133 ms (shell successor) |
+| committed after re-arming past a bystander post | 0 | per `RETIRE` | 3,248 ms |
 
 Two live Claude rotations committed, at 26.9 s and 26.8 s, both before the
 fixed-cost fix; 4 and 5 model calls. The second, in the same cwd within the
@@ -272,17 +335,6 @@ cache_read rose from 148,402 to 239,169 - consistent with the preamble being
 read rather than rebuilt, **n = 1 pair**, and not a controlled comparison.
 
 ## Limits
-
-**The quiescence check is structurally present but has never been exercised
-against real sources.** `CHILDREN_CMD` and `CLAIMS_CMD` are independent-check
-interfaces, and every run recorded here supplied stubs (`echo 0`, `true`). The
-coordinator's own logic around them is tested - an unreadable child count
-yields `quiescence_not_established` rather than a pass, a non-zero count yields
-`fail_children_live` - but that a real child enumeration and a real
-`read --active-claims` for the predecessor session are wired correctly is **not
-established**. Until they are, this mechanism does not enforce the
-doctrine's step-1 and step-2 preconditions end to end; it enforces the shape of
-them.
 
 This is a mechanism probe, not a product. The lease/generation guard that would
 close the board-cursor TOCTOU is **not built**: two supervisors racing the same

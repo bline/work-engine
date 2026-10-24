@@ -16,7 +16,11 @@
 #   PRED_SESSION         predecessor session id
 #   LAUNCH_TMPL          {SESSION} {TOPIC} {HANDOFF} {DIGEST} substituted
 #   ADOPT_TIMEOUT        seconds to wait for the successor's board acknowledgment
-#   RETIRE               kill|keep  (keep leaves the quiescent predecessor for questions)
+#   RETIRE               kill|keep|successor
+#   GATE_AUTHORITY       watch: comma-separated authors/session ids whose
+#                        approval counts. Unset = refuse to watch (fail closed)
+#   APPROVE_TOKEN        watch: token the approval body must contain
+#   WATCH_TIMEOUT        watch: bounded lifetime, default 3000s
 set -uo pipefail
 ROLE="${ROLE:?}"; SOCK="${SOCK:?}"; STATE="${STATE:?}"; VALIDATOR="${VALIDATOR:?}"
 BOARD_CMD="${BOARD_CMD:?}"; REPO="${REPO:?}"; PRED_SESSION="${PRED_SESSION:?}"
@@ -24,6 +28,9 @@ LAUNCH_TMPL="${LAUNCH_TMPL:?}"; QUIESCENCE_FILE="${QUIESCENCE_FILE:-}"
 CHILDREN_CMD="${CHILDREN_CMD:-}"; CLAIMS_CMD="${CLAIMS_CMD:-}"
 MAX_ROTATIONS="${MAX_ROTATIONS:-3}"; GATE="${GATE:-require}"
 ADOPT_TIMEOUT="${ADOPT_TIMEOUT:-180}"; RETIRE="${RETIRE:-keep}"
+# 3000s keeps one watch inside the 1h prompt-cache TTL, so the wake resumes on a
+# read prefix rather than rebuilding it. Nothing is spent while blocked.
+WATCH_TIMEOUT="${WATCH_TIMEOUT:-3000}"; APPROVE_TOKEN="${APPROVE_TOKEN:-approve-rotation}"
 # Case-insensitive: Codex renders "Trust this folder?" and Claude lower-cases
 # differently; a case-sensitive scan missed the Codex modal entirely.
 STALL_PATTERN="${STALL_PATTERN:-trust this folder|folder access|quick safety check|do you trust|usage limit|approaching rate limit|switch to gpt-|rate limit reminder}"
@@ -220,8 +227,69 @@ print(next((m["message_id"] for m in d.get("messages",[])
   return 0
 }
 
+watch() {      # block on the board until an AUTHORIZED approval arrives
+  local handoff="$1"
+  # Fail closed on authority. A board message is advisory by construction -- the
+  # board stamps its own claims authority=advisory_coordination_only, and
+  # context-control.md holds that an observation grants no root-transfer
+  # authority. So a trigger counts only from a named author or session id, and
+  # with no allowlist this refuses to watch at all: an unauthenticated trigger is
+  # worse than a manual rotation. Whether a board message may carry transfer
+  # authority is a doctrine question for the skill owner; the mechanism's part is
+  # to require it be named and to record which message was acted on.
+  [[ -n "${GATE_AUTHORITY:-}" ]] || {
+    log "REFUSING to watch: GATE_AUTHORITY names no authorized approver"
+    rec terminal-status "watch_refused_no_authority"; return 77; }
+  local topic="control:rotation:$ROLE" since deadline
+  since=$(B read --limit 1 2>/dev/null | python3 -I -c 'import sys,json
+d=json.load(sys.stdin); m=d.get("messages",[]); print(m[-1]["sequence"] if m else 0)' 2>/dev/null)
+  [[ "$since" =~ ^[0-9]+$ ]] || { log "cannot read the board cursor"; rec terminal-status "watch_board_unreadable"; return 32; }
+  deadline=$(( $(date +%s) + WATCH_TIMEOUT ))
+  log "watching $topic from sequence $since for ${WATCH_TIMEOUT}s; approvers: $GATE_AUTHORITY"
+  rec watch-state "watching topic=$topic since=$since authority=$GATE_AUTHORITY"
+  while (( $(date +%s) < deadline )); do
+    local left=$(( deadline - $(date +%s) )); (( left > 0 )) || break
+    local out="$STATE/watch-wait.json" rc
+    B wait --since "$since" --topic "$topic" --timeout-seconds "$left" \
+      >"$out" 2>>"$STATE/supervisor.log"; rc=$?
+    (( rc == 0 )) || { log "watch ended without an approval (wait exit $rc)"
+      rec terminal-status "watch_expired"; return 78; }
+    local verdict
+    verdict=$(AUTH="$GATE_AUTHORITY" TOKEN="$APPROVE_TOKEN" python3 -I -c '
+import sys, json, os
+d = json.load(open(sys.argv[1]))
+ok = {x.strip() for x in os.environ["AUTH"].split(",") if x.strip()}
+tok = os.environ["TOKEN"]
+for m in d.get("messages", []):
+    if tok not in (m.get("body") or ""):
+        continue
+    if m.get("author") in ok or m.get("session_id") in ok:
+        print("APPROVED", m.get("message_id"), m.get("author")); break
+    print("UNAUTHORIZED", m.get("message_id"), m.get("author")); break
+else:
+    print("NONE", d.get("next_since", ""), "")
+' "$out" 2>/dev/null)
+    local kind id who; read -r kind id who <<< "$verdict"
+    case "$kind" in
+      APPROVED)
+        log "approval accepted from '$who' (message $id)"
+        rec authorized-by "author=$who message_id=$id token=$APPROVE_TOKEN"
+        GATE=open; commit "$handoff"; return $?;;
+      UNAUTHORIZED)
+        log "IGNORED: approval token from unauthorized '$who' (message $id)"
+        rec last-rejected-trigger "author=$who message_id=$id";;
+      *) : ;;
+    esac
+    local nxt; nxt=$(python3 -I -c 'import sys,json;print(json.load(open(sys.argv[1])).get("next_since",""))' "$out" 2>/dev/null)
+    [[ -n "$nxt" && "$nxt" != "$since" ]] && since="$nxt" || break
+  done
+  log "watch window closed with no authorized approval"
+  rec terminal-status "watch_expired"; return 78
+}
+
 case "${1:-prepare}" in
   prepare) prepare "${2:?handoff}";;
   commit)  commit "${2:-}";;
-  *) echo "usage: $0 {prepare <handoff>|commit [handoff]}" >&2; exit 64;;
+  watch)   watch "${2:?handoff}";;
+  *) echo "usage: $0 {prepare <handoff>|commit [handoff]|watch <handoff>}" >&2; exit 64;;
 esac
