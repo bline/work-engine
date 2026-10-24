@@ -176,5 +176,41 @@
     ],
     "exercised_against_real_sources": false,
     "note": "all runs supplied stubs (echo 0, true); coordinator logic around them is tested, correct wiring to real child enumeration and board active-claims is not established"
+  },
+  "event_driven_wake": {
+    "principle": "a returning tool call wakes the model; an arriving message does not",
+    "one_shot_vs_follow": "--follow rearms so the process never exits; remediation probe measured 64.91s after a wake with zero model responses, rows delivered only on listener end",
+    "claude": {
+      "ceiling_var": "BASH_MAX_TIMEOUT_MS",
+      "default_ms": 600000,
+      "default_is_silent_clamp": true,
+      "at_clamp": "command moved to background, not killed; ran on to its own 640s timeout and exited 0",
+      "configured_ms": 3900000,
+      "source": "~/.claude/settings.json env block",
+      "verified": "child session held a 640.2s FOREGROUND bash call, result returned in-band, not backgrounded",
+      "bash_default_timeout_ms": 120000,
+      "rationale": "raising the default too would make every hung command block for the full hour"
+    },
+    "codex": {
+      "ceiling_var": "background_terminal_max_timeout",
+      "configured_ms": 3600000
+    },
+    "cost": {
+      "while_blocked": "none",
+      "at_wake": "prefix rebuild if the wait spans the prompt-cache TTL (1h for this session)",
+      "recommended_wait": "below the TTL, ~50 min, not 60",
+      "magnitude_n1_pair": {
+        "novel_prefix": {
+          "preamble_occupancy": 44402,
+          "cache_read": 0
+        },
+        "within_ttl": {
+          "cache_creation": 23266,
+          "cache_read": 239169
+        }
+      },
+      "codex_ttl": "not established"
+    },
+    "caveat": "a session blocked in a wait is inside a tool call and cannot answer; a retired root kept for questions must hold no listener"
   }
 }

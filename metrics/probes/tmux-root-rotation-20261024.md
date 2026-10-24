@@ -179,6 +179,55 @@ acknowledges correctly - not mechanism. Whether a window survives a
 *successful* turn is also still unestablished, though it survives a failed one
 and returns to idle.
 
+## Event-driven wake: one mechanism in both hosts
+
+The coordinator polls the board for the successor's acknowledgment, and a root
+hands off only when told. Both become unnecessary if sessions hold a blocking
+board wait: a post wakes them. Established 2026-10-24.
+
+**The wait must be one-shot, not `--follow`.** `--follow` rearms inside one
+process, so the process never exits and the model never resumes - the
+[remediation probe](context-control-remediation-20261024.md) measured a wake
+delivered to a running listener followed by **64.91 seconds with zero native
+model responses**, with the rows reaching the model only when the listener
+ended. What wakes a model is a returning tool call, not an arriving message.
+
+| | Claude Code 2.1.310 | Codex 0.164.0 |
+| --- | --- | --- |
+| long blocking wait | `BASH_MAX_TIMEOUT_MS` | `background_terminal_max_timeout` |
+| measured ceiling before configuring | 600,000 ms | - |
+| measured after configuring | **640.2 s foreground, returned in-band** | 3,600,000 ms set |
+| inference while blocked | none | none |
+
+`600000` is a **silent clamp**, not a rejection: a requested 700,000 ms was
+accepted, applied as 600 s, and the command was then **moved to the background
+rather than killed** - it ran on to its own 640 s timeout and exited normally.
+So an overlong foreground wait degrades into the background path (a backgrounded
+command's exit re-invokes the model) instead of failing. Raising
+`BASH_MAX_TIMEOUT_MS` to 3,900,000 in `~/.claude/settings.json` removed the
+clamp: a child session reading that file held a 640.2 s foreground wait and the
+result returned in-band. The value was read from the settings file, not the
+parent's environment. `launch_claude_successor.sh` also exports the ceiling, so
+the mechanism does not depend on a host's user settings.
+
+`BASH_DEFAULT_TIMEOUT_MS` was deliberately left at 120,000. Raising the default
+alongside the ceiling would make every hung command block for the full hour.
+
+**Pick the wait below the prompt-cache TTL, not at it.** Nothing is spent while
+blocked; the cost lands at the wake. This session's main-conversation cache TTL
+is 1 hour, so a wait that spans it resumes by rebuilding the prefix instead of
+reading it. The two live rotations bound the magnitude: a novel prefix recorded
+preamble occupancy 44,402 with `cache_read` 0, while the same prefix inside the
+TTL recorded total `cache_creation` 23,266 against `cache_read` 239,169
+(**n = 1 pair**, not a controlled comparison). A 60-minute wait sits exactly on
+that boundary; roughly 50 minutes is strictly better. Whether Codex's provider
+has the same TTL is **not established**.
+
+**A session blocked in a wait is committed, not available.** It is inside a tool
+call and cannot answer anything until the wait returns. `RETIRE=keep` exists so
+a retired predecessor can answer questions about its own record, so a retired
+root must hold no listener.
+
 ## Defects this work found in the mechanism
 
 Four, all in code written earlier in the same session:
