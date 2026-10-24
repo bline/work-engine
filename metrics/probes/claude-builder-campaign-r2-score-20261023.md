@@ -232,3 +232,72 @@ establishes; the first pass of this scoring did not, and inflated every cost
 figure by roughly 2x before it was corrected against that script. Weighted
 tokens are `uncached + cached/10 + 5 x output`. No Codex quota is consumed by
 this arm and no plus-unit claim is made.
+
+## Amendment 1, 2026-10-24: one of the 37 context checks is not a measurement
+
+Prompted by the outside audit
+[`context-control-usage-20261024.md`](context-control-usage-20261024.md)
+(Astra, uncommitted at the time of writing), finding CU-01: after a compaction
+reset, zeroed accounting fields were read as a valid `normal, input_tokens: 0`
+observation. The same failure is present in this campaign's own data, from a
+different cause, and the audit's recommended repair would not catch it.
+
+**The instance.** `p1-portfolio/context-check-tests-predispatch.json`, agent
+`ab6975a352dac866b`, checked at 15:36:46Z and observing 15:18:38Z, reports
+`input_tokens: 0`, `recorded_model: "<synthetic>"`, `recommendation: retain_ok`,
+`headroom_to_trigger: 150000`, `headroom_to_band_floor: 202533`. It is the one
+zero reading among the 37, and the reason given is "input 0 is below the
+trigger 150000".
+
+**What it should have read.** That transcript holds exactly one `<synthetic>`
+assistant record carrying a zeroed `usage` dict, at record 167 of 192. The
+parser in `skills/manual-orchestration/scripts/child_context.py` takes every
+`type == "assistant"` record with a `usage` dict and keeps the last one seen, so
+at 15:18:38Z — when record 167 was the tail — the zeroed placeholder became the
+reading. The last real call in that transcript, record 190, carries
+`2 + 3,194 + 96,785`, about **99,981 tokens**. The tool reported 0 against a true
+level near 100,000, in the reassuring direction, claiming the entire empirical
+band as headroom.
+
+**Why the guard missed it.** The tool already states the correct rule on its
+other failure path: when `context-status` fails it returns
+`recommendation: usage_unavailable` with the reason *"do not substitute parent
+counters or assume zero"*. The placeholder path never reaches it, because the
+admission test is `if not isinstance(current, int)` and **zero is an int**. A
+type check stands where a validity check was needed. The sibling instrument in
+this repo, `metrics/scripts/claude_transcript_usage.py`, excludes
+`model == "<synthetic>"` by name at line 46. Two readers of the same transcripts
+disagree about what counts as an API call, and the lax one is the one that
+issues the safety recommendation.
+
+**Scope of the repair, against the audit's.** CU-01 recommends recognising
+"reset/accounting placeholders". That is scoped to the compaction-reset shape
+and would leave this case open, since a `<synthetic>` record is not a reset
+placeholder. The defect both instances share is one level up: **the reader
+renders the absence of a measurement as a measurement of zero**, which is what
+`CLAUDE.md` rule 2 forbids by name. A repair at that level — no usable request
+record means `usage_unavailable`, never `retain_ok` — covers the reset shape,
+the `<synthetic>` shape and whatever shape is next. Excluding `<synthetic>` as
+the sibling script already does is the narrow half of it.
+
+**Incidence and effect on this score.** 1 of 37 in R2; **0 of 47** in R1, whose
+records were re-checked for the same shape while writing this. 1 of 84
+Claude-side checks across both campaigns. No figure in this record moves: the
+reading was already excluded as the single zero, and the context-discipline
+section reports 36 non-zero readings. What changes is the scorability line —
+item 4 counted 37 records as 37 measurements, and one of them is not one. **The
+item remains met at 36**, since 36 genuine checks across 18 agents still cover
+every phase boundary the registration names.
+
+**One claim re-verified rather than assumed.** The audit reports a compaction
+near 245K and two in the B2 Codex roots. Those are a different host with a
+different window and do not bear on the Claude band, but the band floor is load
+bearing in this record, so it was re-derived: **25 `compactMetadata` events now
+under `~/.claude/projects`, minimum `preTokens` still 202,533**, with no event
+since the original derivation below it. The 150,000 trigger remains 52,533 below
+the lowest auto-compaction observed on this machine.
+
+**Not repaired here.** `skills/manual-orchestration` is the instrument under
+measurement in the prospective trial, and amendment 2's standing rule governs
+changes to it. Editing it from the measurement role would be a treatment change
+mid-trial. This is reported, not fixed.

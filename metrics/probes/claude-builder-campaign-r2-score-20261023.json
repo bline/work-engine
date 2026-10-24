@@ -250,7 +250,16 @@
   "at_or_over_band_floor_202533": 0,
   "compactions_observed": 0,
   "compaction_completeness_basis": "26 R2 agents enumerated from assignments.json; all 26 transcripts located and searched for compactMetadata and compact_boundary, plus both coordinator session transcripts. Zero matches of either in any file. All 37 checks report epoch 0 and compaction_markers 0.",
-  "window_fraction": "not established: Claude Code transcripts record no context window"
+  "window_fraction": "not established: Claude Code transcripts record no context window",
+  "band_floor_reverification": {
+   "at": "2026-10-24",
+   "events": 25,
+   "preTokens_min": 202533,
+   "basis": "all compactMetadata records under ~/.claude/projects re-derived after the audit reported a compaction near 245K in the Codex B2 roots",
+   "result": "unchanged; no event below 202,533 since the original derivation. The 150,000 trigger remains 52,533 below the lowest auto-compaction observed on this machine.",
+   "note": "the audit's compactions are a different host with a different window and do not bear on the Claude band"
+  },
+  "self_checks_genuine": 36
  },
  "scorability": {
   "1_read_set_added_lines_builders": "met (amendment 6: E2 2427, P1 2252, 9 code-slice builders)",
@@ -305,6 +314,23 @@
    "finding": "the worktree-isolation guard refuses compound commands, so a builder's first write attempt can be refused and retried. One of six pre-change builders and three of nine R2 builders hit it.",
    "effect": "attempt-to-effective gap 770 (a27d1ec9), 1,436 (a74f07e0), 1,665 (a8b36f8b), 6,807 (a4753525). Small except where the retry is not immediate.",
    "rule_applied": "a refused write is not a write; B1 is the first write whose tool_result is not an error"
+  },
+  {
+   "id": "R2-S-007",
+   "subject": "context-check instrument, skills/manual-orchestration/scripts/child_context.py",
+   "found": "2026-10-24, prompted by outside audit metrics/probes/context-control-usage-20261024.md finding CU-01",
+   "claim": "37 context-check records, all carrying input_tokens, recommendation and trigger_tokens",
+   "finding": "one of the 37 is not a measurement. p1-portfolio/context-check-tests-predispatch.json reports input_tokens 0, recorded_model <synthetic>, recommendation retain_ok, full band headroom. The parser keeps the last type==assistant record with a usage dict and does not exclude model==<synthetic>; at the observation time the sole zeroed <synthetic> record (167 of 192) was the tail. The last real call in that transcript carries 2+3194+96785 = about 99,981 tokens.",
+   "mechanism": "the admission test is `if not isinstance(current, int)` and zero is an int, so the placeholder never reaches the tool's own usage_unavailable path, whose stated reason is 'do not substitute parent counters or assume zero'. A type check stands where a validity check was needed.",
+   "instrument_disagreement": "metrics/scripts/claude_transcript_usage.py excludes model==<synthetic> at line 46; child_context.py does not. The lax reader is the one issuing the safety recommendation.",
+   "relation_to_CU_01": "same output pathology, different input shape. CU-01's recommended repair is scoped to compaction reset/accounting placeholders and would not catch a <synthetic> record. The shared defect is one level up: the absence of a measurement rendered as a measurement of zero, which CLAUDE.md rule 2 forbids by name.",
+   "incidence": {
+    "r2": "1 of 37",
+    "r1": "0 of 47 (re-checked for this shape)",
+    "both": "1 of 84"
+   },
+   "effect_on_this_score": "no figure moves; the zero was already excluded and the record reports 36 non-zero readings. Scorability item 4 remains met at 36 genuine checks across 18 agents.",
+   "not_repaired": "skills/manual-orchestration is the instrument under measurement; amendment 2's standing rule governs changes to it. Editing it from the measurement role would be a treatment change mid-trial."
   }
  ],
  "limits": [
@@ -321,5 +347,11 @@
   "detector_validation": "re-derived all six pre-change B1 values from the R1 transcripts before measuring R2; five reproduce amendment 3 exactly, the sixth is R2-S-001",
   "first_pass_error": "the first scoring pass did not deduplicate by message.id and inflated every cost figure by roughly 2x; corrected against claude_transcript_usage.py before any figure was recorded"
  },
- "quota": "this arm consumes no Codex quota; no plus-unit claim is made"
+ "quota": "this arm consumes no Codex quota; no plus-unit claim is made",
+ "amendment_1": {
+  "at": "2026-10-24",
+  "subject": "one of the 37 context checks is not a measurement",
+  "defect": "R2-S-007",
+  "prompted_by": "outside audit CU-01"
+ }
 }
