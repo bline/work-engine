@@ -93,14 +93,29 @@ path, excluding snapshot copies of skill reference docs; 633 files match
 | `digest_claims` | 21 | 7 | 10 |
 | `git_refs` | 13 | 0 | 25 |
 
-**Zero of the 12 flags were defects at write time.** All 7 missing absolute
-referents are `/run/user/1000/…` tmpfs paths, valid when written and since
-cleaned. All 7 digest mismatches have a target `mtime` later than the handoff's
-own `mtime` - four are assignment records, which doctrine requires to be kept
-current, and three are `skills/coordination-channels/SKILL.md`, which changed
-after those handoffs were written. At rotation time write-time and check-time
-coincide, which is where the check earns its place; retrospectively, age
-accounts for every flag.
+**No flag was shown to be a defect, and only one was shown to be correct.**
+An earlier version of this section claimed "zero write-time defects" on the
+strength of `mtime` ordering. That was wrong: a target modified after the
+handoff was written is consistent with drift, but it does not exclude a digest
+that was already wrong *and* a file that later changed. Recovering the write-time
+state requires version history, which only repo-tracked referents have.
+
+| disposition | n | basis |
+| --- | --- | --- |
+| proven correct at write time | 1 | claimed digest equals the committed content of `skills/coordination-channels/SKILL.md` in effect at the handoff's `mtime` |
+| not provable | 2 | claimed digest matches no committed version of that file; consistent with an uncommitted working tree (82 files are modified-uncommitted in this tree), but not checkable |
+| no version history | 4 | assignment records under `~/.local/state/work-engine`; write-time state unrecoverable |
+
+The 5 missing absolute referents are all `/run/user/1000/…` tmpfs paths, valid
+when written and since cleaned - an explanation, not a proof, on the same
+footing. At rotation time write-time and check-time coincide, which is where
+these checks earn their place; retrospectively, age is consistent with every
+flag but establishes none of them as benign.
+
+What the corpus *does* establish independently of that question is the
+validator's false-positive surface, which was identified by inspection and
+removed: bare basenames read as paths, non-adjacent digests attributed to
+files, and command templates inside code spans read as unfilled fields.
 
 201 path/digest pairs were accepted and 120 hex tokens were left unpaired and
 unchecked. That split is deliberate. Pairing requires **syntactic adjacency**,
@@ -129,7 +144,8 @@ Established with `codex-cli 0.164.0`.
 | argv prompt auto-submits | yes | yes (live, 20:23:29Z) |
 | session id bindable **before** launch | `--session-id <uuid>` | **no such flag** |
 | session id discoverable after launch | - | `thread_history_1.sqlite` / rollout filename, ~1s |
-| post-turn re-entry | none established (`--wake` does not start a turn in a session without a listener) | `codex queue --thread <id> --message` (untested) |
+| post-turn re-entry from outside the session | none established (`--wake` does not start a turn in a session without a listener) | **`codex queue --thread <id> --message` delivers and starts a turn** |
+| window survives a failed turn, returns to idle | - | yes |
 | per-directory trust modal | yes | yes |
 
 The one real asymmetry is **identity ordering**. The Claude mechanism mints the
@@ -146,12 +162,22 @@ remove the asymmetry for both hosts, since the invariant that matters is that
 the handoff is on the board before the successor looks and that the successor
 proves its identity in its own acknowledgment. Not built.
 
-**The Codex adoption step is `not established` live.** The ChatGPT weekly usage
-limit is exhausted; the CLI reports a retry time of 2026-10-30 12:07. The launch
-turn failed with that limit, which is itself what established that the argv
-prompt submits and that the window survives a failed turn. Whether the window
-survives a *successful* turn, and whether `codex queue` wakes an idle root, both
-remain unestablished.
+Re-entry was established rather than assumed, and the exhausted quota is what
+made it free to test: a turn that starts and then fails still proves delivery.
+`codex queue --thread 01a16fff-3d14-7341-9f88-2bc1285cf965 --message …`, issued
+from outside the tmux window into an idle session, put the message in the pane
+as a user turn, took that thread's turn count from 1 to 2, failed on the usage
+limit, and returned the session to a ready prompt. **This is a capability the
+Claude path does not have**, and it makes the Codex ordering - launch, discover
+the thread id, post the handoff, wake - viable end to end.
+
+**What remains unestablished for Codex is the adoption turn itself.** The
+ChatGPT weekly usage limit is exhausted with a stated retry of 2026-10-30 12:07,
+so no Codex model call can complete before then. That residue is model
+behaviour - whether the successor performs the five adoption steps and
+acknowledges correctly - not mechanism. Whether a window survives a
+*successful* turn is also still unestablished, though it survives a failed one
+and returns to idle.
 
 ## Defects this work found in the mechanism
 
@@ -195,6 +221,17 @@ cache_read rose from 148,402 to 239,169 - consistent with the preamble being
 read rather than rebuilt, **n = 1 pair**, and not a controlled comparison.
 
 ## Limits
+
+**The quiescence check is structurally present but has never been exercised
+against real sources.** `CHILDREN_CMD` and `CLAIMS_CMD` are independent-check
+interfaces, and every run recorded here supplied stubs (`echo 0`, `true`). The
+coordinator's own logic around them is tested - an unreadable child count
+yields `quiescence_not_established` rather than a pass, a non-zero count yields
+`fail_children_live` - but that a real child enumeration and a real
+`read --active-claims` for the predecessor session are wired correctly is **not
+established**. Until they are, this mechanism does not enforce the
+doctrine's step-1 and step-2 preconditions end to end; it enforces the shape of
+them.
 
 This is a mechanism probe, not a product. The lease/generation guard that would
 close the board-cursor TOCTOU is **not built**: two supervisors racing the same

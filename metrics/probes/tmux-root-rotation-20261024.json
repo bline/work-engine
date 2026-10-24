@@ -39,8 +39,14 @@
         "/run/user/1000/s10-product-8d42e6a3707b/domain-repair-9931bf09/run/result.json"
       ]
     },
-    "write_time_defects": 0,
-    "write_time_defect_basis": "every digest mismatch had target mtime > handoff mtime; every missing absolute referent was a /run/user tmpfs path cleaned after the handoff was written"
+    "write_time_defects": "not established",
+    "write_time_disposition": {
+      "proven_correct_at_write_time": 1,
+      "not_provable_uncommitted_tree": 2,
+      "no_version_history": 4,
+      "shown_to_be_defects": 0,
+      "withdrawn_claim": "an earlier version recorded 'zero write-time defects' on mtime ordering alone; mtime ordering is consistent with drift but does not exclude a digest that was wrong when written"
+    }
   },
   "coordinator_outcomes_observed": {
     "fail_validation_prepare": {
@@ -141,8 +147,11 @@
       "verified_by": "started_at 20:23:29Z against launch 20:23:28Z; rollout file named with the thread id; thread_items contain the launch cwd"
     },
     "post_turn_reentry": {
-      "mechanism": "codex queue --thread <uuid|name> --message <text>",
-      "tested": false
+      "mechanism": "codex queue --thread <uuid> --message <text>",
+      "tested": true,
+      "result": "delivered from outside the tmux window into an idle session; message rendered as a user turn; thread turn count 1->2; turn failed on the usage limit; session returned to idle",
+      "thread": "01a16fff-3d14-7341-9f88-2bc1285cf965",
+      "significance": "Claude has no equivalent; --wake does not start a turn in a session without a listener"
     },
     "window_survives_failed_turn": true,
     "window_survives_successful_turn": "not established",
@@ -151,12 +160,21 @@
     "stall_classes_found": [
       "per-directory trust modal (same hazard as Claude)",
       "rate-limit / model-switch modal, post-launch not startup"
-    ]
+    ],
+    "adoption_turn_live": "not established (model behaviour, quota-blocked until 2026-10-30T12:07)"
   },
   "defects_found_in_the_mechanism_by_this_work": [
     "stall pattern was case-sensitive and missed Codex's 'Trust this folder?'",
     "stall scan ran only before the adoption poll, so post-launch dialogs were invisible and 25s was charged to every rotation",
     "validator contract executed $VALIDATOR as a single program, so a validator with flags failed with exit 127",
     "validator outcome was binary, collapsing 'defect found' with 'could not check'"
-  ]
+  ],
+  "quiescence_checks": {
+    "interfaces": [
+      "CHILDREN_CMD",
+      "CLAIMS_CMD"
+    ],
+    "exercised_against_real_sources": false,
+    "note": "all runs supplied stubs (echo 0, true); coordinator logic around them is tested, correct wiring to real child enumeration and board active-claims is not established"
+  }
 }
