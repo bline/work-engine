@@ -1,0 +1,26 @@
+{
+  "type": "event_msg",
+  "timestamp": "2026-10-24T01:43:02.784Z",
+  "payload": {
+    "type": "token_count",
+    "info": {
+      "total_token_usage": {
+        "input_tokens": 18775319,
+        "cached_input_tokens": 18516864,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 65959,
+        "reasoning_output_tokens": 21386,
+        "total_tokens": 18841278
+      },
+      "last_token_usage": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 28432
+      },
+      "model_context_window": 258400
+    }
+  }
+}

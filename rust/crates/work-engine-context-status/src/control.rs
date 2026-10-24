@@ -99,8 +99,10 @@ fn evaluate(
     .as_str()
     .unwrap_or("usage_unavailable");
     let gap_line = raw["last_record_gap_line"].as_u64().unwrap_or(0);
-    let current_valid =
-        failure.is_none() && latest["line"].as_u64().is_some_and(|line| line > gap_line);
+    let current_valid = failure.is_none()
+        && input.is_some_and(|n| n > 0)
+        && latest["line"].as_u64().is_some_and(|line| line > gap_line);
+    let input = input.filter(|_| current_valid);
     // Historical gaps remain in the reader's diagnostics, but cannot permanently
     // silence later valid observations. Forecast only from the valid suffix.
     let recent = raw[if claude {

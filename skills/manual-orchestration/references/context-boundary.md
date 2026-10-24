@@ -15,6 +15,26 @@ knows the task's size and holds the launch authority:
 | A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or `handoff_ready` |
 | Root context pressure | root | at a quiescent boundary, write a root handoff; the user starts the successor |
 
+## Capacity belongs to the next scope
+
+A decision to finish bounded work covers that work, not a later substantial
+assignment. Before admitting substantial new work into a retained context,
+the decider assesses usable current telemetry against the expected work,
+result collection, and the room needed to preserve unfinished obligations.
+Record the observation, the scope being admitted and the continuation choice
+with its reason in the existing assignment or continuation record. Unknown
+growth or unavailable telemetry remains uncertainty; it is not spare capacity.
+For a parent, the existing pre-dispatch record carries this scope and decision;
+no second record is needed.
+The choice of retention, decomposition or transfer remains judgment under the
+owning workflow, including the root's user-mediated transfer boundary.
+
+This applies to a root accepting a new implementation task as well as a parent
+dispatching remediation. Finishing an urgent bounded operation above a planning
+level can be reasonable without making the same context suitable for the next
+task. An unchanged pressure level may produce no new control event; listener
+silence therefore cannot extend an earlier capacity decision to new scope.
+
 In the 2026-10-21 case that motivated this, a parent sent `followup_task` to an
 idle child reading 190,902 of 258,400 without checking it, and the child
 compacted 26 seconds later ([timeline](../../../metrics/probes/auth-worker-dispatch-timeline-20261021.md)).

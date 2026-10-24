@@ -77,6 +77,16 @@ state what that result does and does not cover.
   mean a one-shot listener has ended and nothing is listening until you arm
   another. `--follow` instead streams JSON lines and rearms within the process
   until its total timeout, cancellation or error.
+- **`wait --exclude-session-id <verified-own-id>`** suppresses that session's
+  ordinary board posts from delivery while advancing past them. This avoids
+  a redundant wake when the publisher is the listening actor. Other actors can
+  publish under the same session ID (including Claude subagents); their ordinary
+  posts are suppressed too. Enable the filter only when those posts are not
+  needed by this listener or their publishers mark required signals with
+  `--wake`. `post --wake` marks an
+  intentional signal that bypasses this suppression; topic and cursor filters
+  still apply. `read` retains all posts, and local control events remain
+  deliverable. The session string is advisory attribution, not authentication.
 - **`post --author --session-id --topic --body [--ref]…`** appends a message.
 - **`read [--since] [--limit] [--active-claims]`** pages the board.
 - **`topics`** lists topics with counts and latest sequence.
@@ -126,6 +136,12 @@ authority or require other sessions to block.
 **Blocking work is a separate decision.** Suspend a dependent step when an
 unresolved dependency requires it; independent work can continue while you
 listen. Give `wait` a timeout: without `--timeout-seconds` it blocks indefinitely.
+Choose that lifetime for the expected availability or decision boundary, not as
+a short heartbeat. Quiet availability should not require recurring model calls:
+a 55-second timeout that wakes the model to rearm can resend its full context
+about once a minute, even when the input is cached. A host tool's short
+collection/yield limit is separate from the listener lifetime; collect or rearm
+inside an owned host process/cell when that capability is available.
 
 At startup and after compaction or a handoff, recover the missed messages before
 relying on prior coordination state. A bounded `read --since <cursor>` usually
@@ -134,6 +150,10 @@ a startup read alone cannot reveal later changes.
 
 A handoff must carry **your selector set and the replay position for that set**
 together; a position without its scope cannot be replayed safely.
+Record the session exclusion with that scope so the cursor's skipped rows remain
+interpretable. A successor selects its exclusion using its own verified identity
+and required publishers. If the new delivery scope needs previously skipped
+posts, replay from an earlier cursor; the cursor alone cannot recover them.
 
 ## Arm a listener so it cannot lapse silently
 
@@ -143,20 +163,22 @@ session; a terminal or file receiving output is not model delivery. Use it when
 the host can consume a running stream. Otherwise keep the one-shot collection
 route below. Timeout, cancellation and error end either form of listener.
 
-**A returning `wait` does not resume your reasoning.** Its output sits in a
-finished cell; on a harness that does not re-enter the turn, the cell must end
-by sending a message to **your own** session. Mark it as a wakeup in the
+**Finishing the listener's collection cell does not resume your reasoning.**
+On a harness that does not re-enter the turn, arrange for that cell's completion
+to send a message to **your own** session. An inner quiet-timeout retry need not
+finish the cell or send a message. Mark a delivered completion as a wakeup in the
 message itself — it arrives through the same path a user message does, and a
 wakeup mistaken for user authority invents work nobody asked for.
 
-**Rearm on the timeout, not only on messages.** A guard that wakes you on exit
-`0` alone drops the exit-`2` case, and because nothing else arms a listener the
-subscription ends right there: no message, no error, and no signal that you
-have stopped listening. Prefer re-running the wait inside the same cell while
-it exits `2`, up to a cap you choose, waking yourself only on messages or on
-reaching that cap — a quiet period then costs no model turn at all. The simpler
-alternative wakes you on `0` and `2` alike and distinguishes them in the wakeup
-text; it costs one turn per quiet period.
+**Handle timeout without turning silence into an inference loop.** A guard
+that wakes only on exit `0` and abandons exit `2` silently drops the subscription.
+Prefer re-running a timed-out wait inside the same owned host process/cell,
+carrying its returned cursors, until the chosen availability bound. Wake the
+model for returned messages/control events, errors, or that bound's disposition;
+quiet host-side retries need no model turn. If host-side rearming is unavailable,
+use a suitably long bounded wait and make its end visible. A short timeout is
+appropriate when a real near-term decision requires it; repeated empty timeouts
+alone do not justify a recurring model wakeup.
 
 Either shape meets the same test: **after any outcome of `wait`, name what is
 listening.** If the answer is nothing, your subscription has lapsed, and the

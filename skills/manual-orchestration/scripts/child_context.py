@@ -39,6 +39,7 @@ import sys
 from pathlib import Path
 
 REFERENCE_WINDOW = 258_400
+MAX_COUNTER = (1 << 64) - 1
 CLAUDE_TRIGGER_TOKENS = 150_000
 CLAUDE_BAND_FLOOR_TOKENS = 202_533
 DEFAULT_TRIGGER_FRACTION = 150_000 / REFERENCE_WINDOW
@@ -126,11 +127,20 @@ def assess(
         limitations=report.get("limitations") or [],
     )
     absolute = trigger_tokens is not None and band_floor_tokens is not None
-    window_ok = isinstance(window, int) and window > 0
-    if not isinstance(current, int) or not (window_ok or absolute):
+    window_ok = type(window) is int and 0 < window <= MAX_COUNTER
+    gap = report.get("last_record_gap_line")
+    line = latest.get("line")
+    historical = report.get("latest_request_status") == "historical_observation" or (
+        type(gap) is int and (type(line) is not int or line <= gap)
+    )
+    if (type(current) is not int or not 0 < current <= MAX_COUNTER
+            or historical or not (window_ok or absolute)):
+        record["latest_request_status"] = report.get("latest_request_status")
+        record["historical_input_tokens"] = current if historical else None
+        record["input_tokens"] = None
         record.update(
             status="usage_unavailable",
-            unavailable_class="absent_counters",
+            unavailable_class="historical_observation" if historical else "absent_counters",
             recommendation="usage_unavailable",
             reasons=["no valid latest input or window; unavailable is not zero"],
         )
@@ -181,33 +191,61 @@ def claude_report(path: str) -> dict:
     if not transcript.is_file():
         return {"_error": f"transcript not found: {transcript}", "_exit": 2}
     latest, lineage, agent_id, model, observed = None, [], None, None, None
+    gap, latest_line = None, None
     seen = set()
     with transcript.open(encoding="utf-8", errors="replace") as handle:
         for number, line in enumerate(handle, 1):
             try:
                 record = json.loads(line)
             except ValueError:
-                break  # never read an in-progress trailing record
+                gap = number
+                if not line.endswith("\n"):
+                    break  # never read an in-progress trailing record
+                continue
+            if not isinstance(record, dict):
+                continue
             agent_id = agent_id or record.get("agentId") or record.get("sessionId")
             if record.get("compactMetadata") or record.get("subtype") == "compact_boundary":
                 lineage.append(f"compaction marker at line {number}")
+                latest, latest_line = None, None
+                continue
             message = record.get("message")
             usage = message.get("usage") if isinstance(message, dict) else None
-            if record.get("type") != "assistant" or not isinstance(usage, dict):
+            if record.get("type") != "assistant":
                 continue
-            key = (message.get("id"), record.get("requestId"))
-            if key in seen:
+            # Same usable-request contract as the Rust Claude reader: all three
+            # input counters, nonnegative u64 values, positive checked sum, and
+            # no locally generated synthetic message. Shared fixtures exercise both.
+            if not isinstance(message, dict) or message.get("model") == "<synthetic>":
+                gap = number
                 continue
-            seen.add(key)
-            latest = sum(usage.get(k) or 0 for k in
-                         ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+            key = message.get("id")
+            if not isinstance(key, str):
+                key = None
+            if key is not None and key in seen:
+                continue
+            if key is not None:
+                seen.add(key)
+            counters = [usage.get(k) for k in (
+                "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"
+            )] if isinstance(usage, dict) else []
+            if (len(counters) != 3 or any(type(n) is not int or not 0 <= n <= MAX_COUNTER for n in counters)
+                    or not 0 < sum(counters) <= MAX_COUNTER):
+                gap = number
+                continue
+            latest, latest_line = sum(counters), number
             model, observed = message.get("model"), record.get("timestamp")
     return {
         "session_id": agent_id,
         "rollout": str(transcript),
         "observed_at": observed,
         "recorded_model": model,
-        "latest_request": {"input_tokens": latest, "epoch": len(lineage)} if latest is not None else {},
+        "latest_request": {"input_tokens": latest, "epoch": len(lineage), "line": latest_line} if latest is not None else {},
+        "latest_request_status": ("unavailable" if latest is None else
+                                  "historical_observation" if gap is not None and latest_line <= gap else
+                                  "latest_valid_observation_with_record_gaps" if gap is not None else
+                                  "latest_valid_observation"),
+        "last_record_gap_line": gap,
         "context_window_tokens": None,
         "lineage": lineage,
         "limitations": ["Claude Code transcripts record no context window; levels are absolute"],

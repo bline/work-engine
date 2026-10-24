@@ -212,10 +212,7 @@ fn missing_usage_is_unavailable_not_zero() {
     );
     let v = transcript_json(&p);
     assert_eq!(v["latest_call"]["context_tokens"], 60);
-    assert_eq!(
-        v["latest_call_status"],
-        "latest_valid_observation_with_record_gaps"
-    );
+    assert_eq!(v["latest_call_status"], "historical_observation");
     assert_eq!(v["cumulative"]["distinct_calls"], 1);
     assert_eq!(v["cumulative"]["calls_without_usage"], 1);
     assert_eq!(v["diagnostic_counts"]["missing_usage"], 1);
@@ -241,10 +238,7 @@ fn partial_trailing_line_is_disclosed_and_ignored() {
     assert_eq!(v["latest_call"]["context_tokens"], 6);
     assert_eq!(v["diagnostic_counts"]["partial_trailing_record"], 1);
     assert_eq!(v["diagnostic_counts"]["malformed_record"], 1);
-    assert_eq!(
-        v["latest_call_status"],
-        "latest_valid_observation_with_record_gaps"
-    );
+    assert_eq!(v["latest_call_status"], "historical_observation");
 }
 
 #[test]
@@ -663,4 +657,28 @@ fn transcript_errors_use_transcript_wording() {
     let err = String::from_utf8_lossy(&out.stderr);
     assert!(err.contains("transcript line exceeds 8 MiB bound"), "{err}");
     assert!(!err.contains("rollout"));
+}
+
+#[test]
+fn agent_listing_labels_historical_usage_after_synthetic_record() {
+    let root = Root::new();
+    let p = root.write(
+        &format!("a/{SID}/subagents/agent-aaa1.jsonl"),
+        &(line(assistant("before", "claude-opus-5-5", Some((5, 5, 50, 1))))
+            + &line(assistant("synthetic", "<synthetic>", Some((0, 0, 0, 0))))),
+    );
+    let v = ok_json(&[
+        "claude-agents",
+        "--session",
+        SID,
+        "--projects-dir",
+        root.0.to_str().unwrap(),
+        "--with-usage",
+        "--json",
+    ]);
+    assert_eq!(v["agents"][0]["usage"]["status"], "historical_observation");
+    let report = transcript_json(&p);
+    assert_eq!(report["latest_call_status"], "historical_observation");
+    assert_eq!(report["cumulative"]["distinct_calls"], 1);
+    assert!(report["recent_growth"].is_null());
 }

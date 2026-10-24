@@ -434,6 +434,9 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             .and_then(Value::as_str)
             .map(bounded_string);
         if model.as_deref() == Some(SYNTHETIC_MODEL) {
+            if !is_inherited {
+                gap = Some(line_no);
+            }
             note(
                 &mut limitations,
                 &mut counts,
@@ -449,14 +452,20 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             .and_then(Value::as_str)
             .map(bounded_string);
         let usage = message.get("usage").filter(|u| u.is_object());
-        let counters = usage.and_then(|u| {
-            Some((
-                u64_field(u, "input_tokens")?,
-                u64_field(u, "cache_creation_input_tokens")?,
-                u64_field(u, "cache_read_input_tokens")?,
-                u64_field(u, "output_tokens"),
-            ))
-        });
+        let counters = usage
+            .and_then(|u| {
+                Some((
+                    u64_field(u, "input_tokens")?,
+                    u64_field(u, "cache_creation_input_tokens")?,
+                    u64_field(u, "cache_read_input_tokens")?,
+                    u64_field(u, "output_tokens"),
+                ))
+            })
+            .filter(|(i, c, r, _)| {
+                i.checked_add(*c)
+                    .and_then(|n| n.checked_add(*r))
+                    .is_some_and(|n| n > 0)
+            });
         // One API response is written as several records sharing message.id.
         // It counts once: input and cache counters from its first record,
         // output as the largest recorded value, since an early record can
@@ -680,7 +689,10 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             format!("observed models truncated at {MAX_MODELS}"),
         );
     }
-    let recent: Vec<_> = recent.into_iter().collect();
+    let recent: Vec<_> = recent
+        .into_iter()
+        .filter(|u| u.line > gap.unwrap_or(0))
+        .collect();
     let recent_growth = (recent.len() >= 2).then(|| {
         let first = &recent[0];
         let end = &recent[recent.len() - 1];
@@ -695,6 +707,8 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
     });
     let latest_call_status = if latest.is_none() {
         "unavailable"
+    } else if latest.as_ref().is_some_and(|u| u.line <= gap.unwrap_or(0)) {
+        "historical_observation"
     } else if gap.is_some() {
         "latest_valid_observation_with_record_gaps"
     } else {
@@ -1095,7 +1109,9 @@ fn agent_usage(path: &Path, session: &str, agent: &str) -> AgentUsage {
         Ok(r) => {
             let observed = r.latest_call.is_some();
             AgentUsage {
-                status: if observed {
+                status: if r.latest_call_status == "historical_observation" {
+                    "historical_observation"
+                } else if observed {
                     "observed"
                 } else {
                     "absent_counters"

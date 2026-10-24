@@ -83,6 +83,16 @@ class AssessTests(unittest.TestCase):
         self.assertEqual(record["unavailable_class"], "absent_counters")
         self.assertNotIn("headroom_to_trigger", record)
 
+    def test_invalid_and_historical_counters_are_unavailable(self) -> None:
+        for current in (0, -1, True, 1.5, 18446744073709551616):
+            self.assertEqual(assess(report(current))["recommendation"], "usage_unavailable")
+        historical = report(91579)
+        historical.update(latest_request_status="historical_observation", last_record_gap_line=4)
+        historical["latest_request"]["line"] = 3
+        result = assess(historical)
+        self.assertEqual(result["recommendation"], "usage_unavailable")
+        self.assertNotIn("headroom_to_trigger", result)
+
     def test_tool_failure_is_classified(self) -> None:
         record = assess({"_error": "permission denied", "_exit": 126})
         self.assertEqual(record["unavailable_class"], "launch_or_tool_failure")
@@ -178,6 +188,28 @@ class ClaudeTranscriptTests(unittest.TestCase):
                            self.assistant("a", 10, 1_000, 20_000)])
         record = self.run_claude(path)
         self.assertEqual(record["compaction_markers"], 1)
+
+    def test_shared_usable_request_cases_and_recovery(self) -> None:
+        fixture = ROOT.parents[1] / "rust/crates/work-engine-context-status/tests/fixtures/claude-usable-requests.json"
+        for case in json.loads(fixture.read_text()):
+            with self.subTest(case=case["name"]):
+                rows = [self.assistant("before", 10, 1000, 90569),
+                        {"type": "assistant", "timestamp": "2026-10-23T15:18:38.416Z",
+                         "message": case["message"]}]
+                result = self.run_claude(self.write(rows))
+                expected = "usage_unavailable" if case["context_tokens"] is None else "retain_ok"
+                self.assertEqual(result["recommendation"], expected)
+                if expected == "usage_unavailable":
+                    self.assertNotIn("headroom_to_trigger", result)
+                rows.append(self.assistant("after", 0, 1000, 24000))
+                result = self.run_claude(self.write(rows))
+                self.assertEqual(result["recommendation"], "retain_ok")
+                self.assertEqual(result["input_tokens"], 25000)
+
+    def test_compaction_without_new_usage_invalidates_prior_reading(self) -> None:
+        result = self.run_claude(self.write([self.assistant("before", 10, 1000, 60000),
+            {"type": "system", "subtype": "compact_boundary"}]))
+        self.assertEqual(result["recommendation"], "usage_unavailable")
 
     def test_missing_transcript_is_unavailable(self) -> None:
         record = self.run_claude("/nonexistent/agent.jsonl")

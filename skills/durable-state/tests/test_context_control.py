@@ -135,6 +135,22 @@ class ControlWaitTest(unittest.TestCase):
         with self.assertRaisesRegex(BOARD.ChatboardError, "digest changed"):
             observer.read()
 
+    def test_own_post_filter_preserves_control_and_reader_errors(self):
+        self.write(160000)
+        self.post()
+        observer = self.control()
+        result = BOARD.wait_board(self.root, since=0, topic="wanted", control=observer,
+                                  exclude_session_id=SESSION, timeout_seconds=0)
+        self.assertEqual(result["status"], "control")
+        self.assertEqual(result["messages"], [])
+        self.assertEqual(result["control_events"][0]["level"], "planning")
+        self.assertEqual(result["next_since"], 1)
+        self.assertIsNotNone(result["next_control_cursor"])
+        self.binary.write_text("#!/bin/sh\nexit 99\n")
+        with self.assertRaisesRegex(BOARD.ChatboardError, "digest changed"):
+            BOARD.wait_board(self.root, since=0, control=observer,
+                             exclude_session_id=SESSION, timeout_seconds=0)
+
     def test_follow_rearms_delivers_both_sources_and_exits_at_total_timeout(self):
         self.write(160000)
         process = subprocess.Popen(self.command() + ["--follow", "--timeout-seconds", "1"],

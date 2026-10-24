@@ -677,6 +677,22 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             );
             continue;
         };
+        // Reset snapshots can carry a positive total_tokens with no request
+        // input. They are telemetry boundaries, not zero-pressure requests.
+        if input == 0 {
+            gap = Some(line_no);
+            recent.clear();
+            last_signature = None;
+            note(
+                &mut limitations,
+                &mut diagnostic_counts,
+                "zero_input_snapshot",
+                format!(
+                    "token_count line {line_no} has no request input; current context unavailable"
+                ),
+            );
+            continue;
+        }
         if cached > input {
             gap = Some(line_no);
             note(
@@ -746,9 +762,12 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             line: line_no,
             epoch,
         };
-        let repeat = last_signature
-            .as_mut()
-            .is_some_and(|previous| previous.matches_and_merges(&signature));
+        let repeat = latest
+            .as_ref()
+            .is_some_and(|u: &Usage| u.line > gap.unwrap_or(0))
+            && last_signature
+                .as_mut()
+                .is_some_and(|previous| previous.matches_and_merges(&signature));
         if !repeat {
             observed = usage.timestamp.clone().or(observed);
             latest = Some(usage.clone());
@@ -764,7 +783,11 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             "expected exactly one matching session_meta; found {meta_count}"
         ));
     }
-    let recent: Vec<_> = recent.into_iter().collect();
+    let current = latest.as_ref().filter(|u| u.line > gap.unwrap_or(0));
+    let recent: Vec<_> = recent
+        .into_iter()
+        .filter(|u| u.line > gap.unwrap_or(0))
+        .collect();
     let growth = if recent.len() >= 2 {
         let first = &recent[0];
         let end = &recent[recent.len() - 1];
@@ -779,12 +802,10 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
     } else {
         None
     };
-    let fraction = latest
-        .as_ref()
+    let fraction = current
         .zip(window)
         .map(|(u, w)| u.input_tokens as f64 / w as f64);
-    let headroom = latest
-        .as_ref()
+    let headroom = current
         .zip(window)
         .map(|(u, w)| w.saturating_sub(u.input_tokens));
     if latest.is_none() {
@@ -831,7 +852,7 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             "lineage markers truncated at 32".into(),
         );
     }
-    if a.fresh_input.is_some() && latest.is_none() {
+    if a.fresh_input.is_some() && current.is_none() {
         note(
             &mut limitations,
             &mut diagnostic_counts,
@@ -839,8 +860,8 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
             "economics unavailable without a valid measured continuing input".into(),
         );
     }
-    let econ = economics(a, latest.as_ref());
-    if a.fresh_input.is_some() && econ.is_none() && latest.is_some() {
+    let econ = economics(a, current);
+    if a.fresh_input.is_some() && econ.is_none() && current.is_some() {
         note(
             &mut limitations,
             &mut diagnostic_counts,
@@ -850,6 +871,8 @@ fn read_report(a: &Args, path: &Path) -> Result<Report, String> {
     }
     let latest_request_status = if latest.is_none() {
         "unavailable"
+    } else if current.is_none() {
+        "historical_observation"
     } else if gap.is_some() {
         "latest_valid_observation_with_record_gaps"
     } else {

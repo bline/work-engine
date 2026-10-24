@@ -104,13 +104,16 @@ def canonical_uuid(value: str, label: str) -> str:
 
 
 def post(repository: Path, *, author: str, session_id: str, topic: str,
-         body: str, references: list[str], message_id: str, observed_at: str) -> dict[str, Any]:
+         body: str, references: list[str], message_id: str, observed_at: str,
+         wake: bool = False) -> dict[str, Any]:
     canonical_uuid(session_id, "session_id")
     canonical_uuid(message_id, "message_id")
     if not all(isinstance(value, str) and value.strip() for value in (author, topic, body)):
         raise ChatboardError("author, topic, and body must be nonempty")
     if topic.startswith(CONTROL_PREFIX):
         raise ChatboardError("control topics are local telemetry subscriptions, not board publications")
+    if not isinstance(wake, bool):
+        raise ChatboardError("wake must be a boolean")
 
     def change(board: dict[str, Any]) -> dict[str, Any]:
         existing = next((row for row in board["messages"] if row["message_id"] == message_id), None)
@@ -124,6 +127,10 @@ def post(repository: Path, *, author: str, session_id: str, topic: str,
             "body": body,
             "references": references,
         }
+        # Keep ordinary rows byte-compatible with existing idempotent posts.
+        # This marker bypasses session suppression, never topic selection.
+        if wake:
+            candidate["wake"] = True
         if existing:
             if existing != candidate:
                 raise ChatboardError("message_id already exists with different content")
@@ -349,9 +356,12 @@ class ContextControl:
 def wait_board(repository: Path, *, since: int, limit: int = 100,
                topic: str | None = None, topics: list[str] | None = None,
                timeout_seconds: float | None = None,
-               control: ContextControl | None = None) -> dict[str, Any]:
+               control: ContextControl | None = None,
+               exclude_session_id: str | None = None) -> dict[str, Any]:
     if since < 0 or not 1 <= limit <= 500:
         raise ChatboardError("--since must be nonnegative and --limit must be 1..500")
+    if exclude_session_id is not None:
+        exclude_session_id = canonical_uuid(exclude_session_id, "--exclude-session-id")
     selected = [*(topics or []), *([topic] if topic is not None else [])]
     if any(not name.strip() for name in selected):
         raise ChatboardError("--topic must be nonempty")
@@ -371,12 +381,16 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
             board, revision = read_board(repository)
             matches = [row for row in board["messages"] if row["sequence"] > since
                          and not row["topic"].startswith(CONTROL_PREFIX)
+                         and (exclude_session_id is None
+                              or row.get("session_id", "").lower() != exclude_session_id
+                              or row.get("wake") is True)
                          and (not selected or row["topic"] in selected)]
             rows = matches[:limit]
             more = len(matches) > limit
             cursor = rows[-1]["sequence"] if more else max(since, board["next_sequence"] - 1)
             result = {"status": "messages" if rows else "timeout", "revision": revision,
                       "messages": rows, "next_since": cursor, "has_more": more,
+                      "exclude_session_id": exclude_session_id,
                       "topics": selected, "topic": selected[0] if len(selected) == 1 else None}
             if control is not None:
                 observation = control.read()
@@ -427,6 +441,8 @@ def parser() -> argparse.ArgumentParser:
                       help="default: indefinite; 0 checks once; timeout exits 2")
     wait.add_argument("--follow", action="store_true",
                       help="stream JSON lines and rearm until the total timeout or cancellation")
+    wait.add_argument("--exclude-session-id",
+                      help="suppress this session's ordinary board posts; explicit --wake posts still match")
     wait.add_argument("--session-id", help="subscribe to this session's local control events")
     wait.add_argument("--context-rollout", type=Path, help="explicit bound rollout/transcript")
     wait.add_argument("--context-binary", type=Path, help="pinned context-status binary with control support")
@@ -446,6 +462,8 @@ def parser() -> argparse.ArgumentParser:
         post_cmd.add_argument(f"--{name}", required=True)
     post_cmd.add_argument("--message-id", default=None)
     post_cmd.add_argument("--ref", action="append", default=[])
+    post_cmd.add_argument("--wake", action="store_true",
+                          help="mark an intentional wake signal that bypasses listener session suppression")
     claim_cmd = commands.add_parser("claim")
     for name in ("resource", "author", "session-id", "note"):
         claim_cmd.add_argument(f"--{name}", required=True)
@@ -487,7 +505,8 @@ def main() -> int:
             remaining = args.timeout_seconds
             while True:
                 result = wait_board(args.repository, since=args.since, limit=args.limit,
-                                    topics=args.topics, timeout_seconds=remaining, control=control)
+                                    topics=args.topics, timeout_seconds=remaining, control=control,
+                                    exclude_session_id=args.exclude_session_id)
                 print(json.dumps(result, indent=None if args.follow else 2), flush=True)
                 if result["status"] == "timeout":
                     return 2
@@ -514,6 +533,7 @@ def main() -> int:
                 args.repository, author=args.author, session_id=args.session_id,
                 topic=args.topic, body=args.body, references=args.ref,
                 message_id=args.message_id or str(uuid4()), observed_at=timestamp(),
+                wake=args.wake,
             ), indent=2))
         elif args.command == "claim":
             print(json.dumps(claim(

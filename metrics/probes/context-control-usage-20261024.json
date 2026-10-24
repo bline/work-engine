@@ -1,0 +1,100 @@
+{
+  "cutoff_utc": "2026-10-24T01:49:00Z",
+  "scope": "Roots launched since 2026-10-22 whose user messages explicitly reference the S10 quota-repair or B2 handoff paths; all recursive Codex descendants in 260-file metadata index. Two separately located Claude review sessions inspected. Not an all-time inventory.",
+  "method": "Per-response token_usage_record, unique response_id, attributed by thread_id (session_id is shared by Codex children). Compaction markers in recorded prefixes. Truncation markers are diagnostic candidates.",
+  "groups": {
+    "S10": {
+      "root": {
+        "sessions": 15,
+        "model_responses": 1211,
+        "input_tokens_sum": 135234064,
+        "cached_input_tokens_sum": 132563840,
+        "median_peak_input": 161254,
+        "compaction_markers": 0,
+        "truncation_marker_outputs": 65
+      },
+      "child": {
+        "sessions": 68,
+        "model_responses": 3571,
+        "input_tokens_sum": 341771472,
+        "cached_input_tokens_sum": 333738624,
+        "median_peak_input": 124708.0,
+        "compaction_markers": 0,
+        "truncation_marker_outputs": 191
+      },
+      "root_share_input_tokens": 0.28350627779716164
+    },
+    "B2": {
+      "root": {
+        "sessions": 5,
+        "model_responses": 705,
+        "input_tokens_sum": 96127409,
+        "cached_input_tokens_sum": 94349312,
+        "median_peak_input": 232767,
+        "compaction_markers": 2,
+        "truncation_marker_outputs": 48
+      },
+      "child": {
+        "sessions": 25,
+        "model_responses": 1500,
+        "input_tokens_sum": 149782012,
+        "cached_input_tokens_sum": 146525952,
+        "median_peak_input": 138921,
+        "compaction_markers": 0,
+        "truncation_marker_outputs": 80
+      },
+      "root_share_input_tokens": 0.39090575956420964
+    }
+  },
+  "evidence_root": "/home/bline/.local/state/work-engine/context-usage-audit-20261024",
+  "active_roots": [
+    "01a16b84-9bcc-7301-87fc-c1a41024c44d",
+    "01a16a7b-53af-76e3-b8c1-a7c58a4b8e98"
+  ],
+  "limitations": [
+    "Retrospective, mixed task/instruction versions; no causal treatment comparison",
+    "Running sessions observed only through cutoff",
+    "Encrypted inter-agent message contents cannot be semantically audited",
+    "Codex input-token sums include cached input and are not billed cost",
+    "Claude native processes are outside Codex lineage totals",
+    "No exhaustive audit of every accepted code result or semantic handoff obligation"
+  ],
+  "findings": [
+    {
+      "id": "CU-01",
+      "finding": "Zeroed post-compaction token_count accepted as valid normal input=0",
+      "session": "01a16a7b-53af-76e3-b8c1-a7c58a4b8e98",
+      "source_line": 933,
+      "reproduced": true
+    },
+    {
+      "id": "CU-02",
+      "finding": "Delivered pressure did not lead to a fresh capacity judgment before new implementation work",
+      "evidence_lines": [
+        394,
+        629,
+        717,
+        785,
+        790,
+        929
+      ]
+    },
+    {
+      "id": "CU-03",
+      "finding": "S10 successor uses explicit checks and old binary, not automatic control enrollment",
+      "session": "01a16b84-9bcc-7301-87fc-c1a41024c44d",
+      "evidence_lines": [
+        74,
+        84,
+        107,
+        120,
+        399
+      ]
+    },
+    {
+      "id": "CU-04",
+      "finding": "Large startup reads and self-post listener wakeups create avoidable context overhead",
+      "evidence": "See report; truncation marker counts are a diagnostic, not exact lost-token measurement"
+    }
+  ]
+}

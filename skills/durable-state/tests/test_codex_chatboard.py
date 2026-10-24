@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 from uuid import uuid4
@@ -107,12 +108,122 @@ class ChatboardWaitTest(unittest.TestCase):
     setUp = CodexChatboardTest.setUp
     tearDown = CodexChatboardTest.tearDown
 
-    def post_message(self, topic: str = "wanted", repository: Path | None = None) -> dict:
+    def post_message(self, topic: str = "wanted", repository: Path | None = None,
+                     session_id: str = SESSION_1, wake: bool = False) -> dict:
         return BOARD.post(
-            repository or self.repository, author="alpha", session_id=SESSION_1,
+            repository or self.repository, author="alpha", session_id=session_id,
             topic=topic, body="synthetic wait test", references=[],
-            message_id=str(uuid4()), observed_at=BOARD.timestamp(),
+            message_id=str(uuid4()), observed_at=BOARD.timestamp(), **({"wake": True} if wake else {}),
         )
+
+    def test_own_post_stays_quiet_then_external_post_delivers(self) -> None:
+        entered = threading.Event()
+        suppressed = threading.Event()
+        original = BOARD.RefChanges
+
+        class SignallingChanges(original):
+            def wait(inner, timeout):
+                entered.set()
+                if BOARD.read_board(self.repository)[0]["next_sequence"] == 2:
+                    suppressed.set()
+                return super().wait(timeout)
+
+        with patch.object(BOARD, "RefChanges", SignallingChanges), ThreadPoolExecutor() as pool:
+            waiting = pool.submit(BOARD.wait_board, self.repository, since=0,
+                                  topic="wanted", exclude_session_id=SESSION_1, timeout_seconds=3)
+            self.assertTrue(entered.wait(1))
+            own = self.post_message()
+            self.assertTrue(suppressed.wait(1), "own publication did not return to host wait")
+            self.assertFalse(waiting.done())
+            external = self.post_message(session_id=SESSION_2)
+            result = waiting.result(timeout=4)
+        self.assertEqual(result["messages"], [external["message"]])
+        self.assertEqual(result["next_since"], 2)
+        self.assertEqual(result["exclude_session_id"], SESSION_1)
+        self.assertEqual(BOARD.read_board(self.repository)[0]["messages"],
+                         [own["message"], external["message"]])
+
+    def test_own_wake_bypasses_session_filter_only_and_is_idempotent(self) -> None:
+        command = [sys.executable, str(SCRIPT), "--repository", str(self.repository), "post",
+                   "--author", "alpha", "--session-id", SESSION_1, "--topic", "wanted",
+                   "--body", "intentional collection wake", "--wake"]
+        published = subprocess.run(command, text=True, capture_output=True)
+        self.assertEqual(published.returncode, 0, published.stderr)
+        row = json.loads(published.stdout)["message"]
+        self.assertIs(row["wake"], True)
+        repeated = BOARD.post(self.repository, author=row["author"], session_id=row["session_id"],
+                              topic=row["topic"], body=row["body"], references=row["references"],
+                              message_id=row["message_id"], observed_at=row["observed_at"], wake=True)
+        self.assertEqual(repeated["message"], row)
+        with self.assertRaisesRegex(BOARD.ChatboardError, "different content"):
+            BOARD.post(self.repository, author=row["author"], session_id=row["session_id"],
+                       topic=row["topic"], body=row["body"], references=row["references"],
+                       message_id=row["message_id"], observed_at=row["observed_at"])
+        result = BOARD.wait_board(self.repository, since=0, topic="wanted",
+                                  exclude_session_id=SESSION_1, timeout_seconds=0)
+        self.assertEqual(result["messages"], [row])
+        for since, topic in [(1, "wanted"), (0, "other")]:
+            quiet = BOARD.wait_board(self.repository, since=since, topic=topic,
+                                     exclude_session_id=SESSION_1, timeout_seconds=0)
+            self.assertEqual(quiet["status"], "timeout")
+
+    def test_session_filter_pagination_advances_over_suppressed_rows(self) -> None:
+        for session, topic, wake in [(SESSION_1, "wanted", False), (SESSION_2, "wanted", False),
+                                    (SESSION_1, "wanted", False), (SESSION_1, "wanted", True),
+                                    (SESSION_2, "other", False), (SESSION_1, "wanted", False)]:
+            self.post_message(topic, session_id=session, wake=wake)
+        first = BOARD.wait_board(self.repository, since=0, topic="wanted", limit=1,
+                                 exclude_session_id=SESSION_1, timeout_seconds=0)
+        self.assertEqual([m["sequence"] for m in first["messages"]], [2])
+        self.assertEqual(first["next_since"], 2)
+        self.assertTrue(first["has_more"])
+        second = BOARD.wait_board(self.repository, since=first["next_since"], topic="wanted", limit=1,
+                                  exclude_session_id=SESSION_1, timeout_seconds=0)
+        self.assertEqual([m["sequence"] for m in second["messages"]], [4])
+        self.assertEqual(second["next_since"], 6)
+        self.assertFalse(second["has_more"])
+        quiet = BOARD.wait_board(self.repository, since=4, topic="wanted",
+                                 exclude_session_id=SESSION_1, timeout_seconds=0)
+        self.assertEqual(quiet["status"], "timeout")
+        self.assertEqual(quiet["next_since"], 6)
+        legacy = BOARD.wait_board(self.repository, since=0, timeout_seconds=0)
+        self.assertEqual(len(legacy["messages"]), 6)
+
+    def test_follow_suppresses_own_posts_and_retains_total_lifetime(self) -> None:
+        self.post_message(session_id=SESSION_2)
+        started = time.monotonic()
+        process = subprocess.Popen([sys.executable, str(SCRIPT), "--repository", str(self.repository),
+                                    "wait", "--since", "0", "--exclude-session-id", SESSION_1,
+                                    "--follow", "--timeout-seconds", "0.6"],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            first = json.loads(process.stdout.readline())
+            self.assertEqual(first["next_since"], 1)
+            self.post_message()
+            self.post_message(wake=True)
+            output, error = process.communicate(timeout=3)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
+        self.assertEqual(process.returncode, 2, error)
+        rows = [json.loads(line) for line in output.splitlines()]
+        self.assertEqual([row["status"] for row in rows], ["messages", "timeout"])
+        self.assertEqual([m["sequence"] for m in rows[0]["messages"]], [3])
+        self.assertEqual(rows[-1]["next_since"], 3)
+        self.assertLess(time.monotonic() - started, 2)
+
+    def test_session_filter_validation_and_storage_error_are_visible(self) -> None:
+        command = [sys.executable, str(SCRIPT), "--repository", str(self.repository),
+                   "wait", "--since", "0", "--timeout-seconds", "0", "--exclude-session-id"]
+        bad = subprocess.run(command + ["not-a-uuid"], text=True, capture_output=True)
+        self.assertEqual(bad.returncode, 1)
+        self.assertIn("UUID", bad.stderr)
+        self.post_message()
+        with patch.object(BOARD, "read_board", side_effect=BOARD.ChatboardError("bad board")):
+            with self.assertRaisesRegex(BOARD.ChatboardError, "bad board"):
+                BOARD.wait_board(self.repository, since=0, exclude_session_id=SESSION_1,
+                                 timeout_seconds=0)
 
     def wait_for_post(self, *, repository: Path | None = None, since: int = 0,
                       before_post=None) -> dict:

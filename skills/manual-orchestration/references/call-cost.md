@@ -25,6 +25,23 @@ issued 88 `sleep` and 232 `wait` calls.
 - Ending a turn is not waiting: a completed child does not reliably wake an
   ended parent. Keep the supervising turn active while collection remains.
 
+The same cost distinction applies to board/control listeners: a host process
+retrying a 55-second wait without returning to the model is not a model poll.
+Waking the model after each empty timeout to issue another wait is. Keep quiet
+rearming in the host where supported; otherwise choose a long bounded wait
+suited to the next decision. Tool collection/yield limits do not require the
+underlying listener to expire at that cadence. Preserve an owner and an actual
+delivery route; suppressing all wakeups would merely hide a lapsed listener.
+
+For a listener that observes its owner's ordinary board posts, the board's
+`--exclude-session-id` filter can avoid redundant self-delivery. It also suppresses
+other publishers sharing that session ID, including Claude subagents; use it
+only if their ordinary posts are unnecessary here or required signals carry
+`--wake`. Explicit wake signals and local control events remain eligible.
+Preserve the filter with its cursor. This is a delivery choice, not proof of
+identity or authority; see
+[coordination channels](../../coordination-channels/SKILL.md).
+
 ## Batch independent operations
 
 In the most expensive session of 2026-10-13, 93% of tool calls carried one

@@ -235,3 +235,67 @@ fn claude_valid_calls_after_missing_usage_restore_pressure() {
     assert_eq!(recovered["event"]["growth_sample_count"], 3);
     assert_eq!(recovered["event"]["last_record_gap_line"], 1);
 }
+
+#[test]
+fn actual_codex_zero_reset_is_unavailable_then_smaller_request_recovers() {
+    let f = Fixture::new();
+    let reset: Value = serde_json::from_str(include_str!("fixtures/codex-reset.json")).unwrap();
+    let valid = |n| {
+        json!({"type":"event_msg","payload":{"type":"token_count","info":{
+        "last_token_usage":{"input_tokens":n,"cached_input_tokens":0},"model_context_window":258400}}})
+    };
+    let mut rows = vec![
+        json!({"type":"session_meta","payload":{"id":ID}}),
+        valid(244784),
+        json!({"type":"compacted","payload":{}}),
+        reset,
+    ];
+    f.rows(rows.clone());
+    let unavailable = f.json(&[]);
+    assert_eq!(unavailable["event"]["level"], "unavailable");
+    assert!(unavailable["event"]["input_tokens"].is_null());
+    assert!(unavailable["event"]["estimated_calls_to_band"].is_null());
+    rows.push(valid(28432));
+    f.rows(rows);
+    let recovered = f.json(&["--cursor", cursor(&unavailable)]);
+    assert_eq!(recovered["event"]["level"], "normal");
+    assert_eq!(recovered["event"]["input_tokens"], 28432);
+    assert!(recovered["event"]["estimated_calls_to_band"].is_null());
+}
+
+#[test]
+fn claude_usable_request_conformance_and_recovery() {
+    let cases: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/claude-usable-requests.json")).unwrap();
+    for case in cases {
+        let f = Fixture::new();
+        let real = |id, n| {
+            json!({"type":"assistant","sessionId":ID,"message":{
+            "id":id,"model":"claude-opus-5-5","usage":{"input_tokens":n,
+            "cache_creation_input_tokens":0,"cache_read_input_tokens":0}}})
+        };
+        let mut rows = vec![
+            real("before", 91579),
+            json!({"type":"assistant","sessionId":ID,"message":case["message"]}),
+        ];
+        f.rows(rows.clone());
+        let v = f.json(&["--host", "claude"]);
+        let state: Value = serde_json::from_str(cursor(&v)).unwrap();
+        let expected = if case["context_tokens"].is_null() {
+            "unavailable"
+        } else {
+            "normal"
+        };
+        assert_eq!(state["level"], expected, "{}", case["name"]);
+        if expected == "unavailable" {
+            assert!(v["event"]["input_tokens"].is_null(), "{}", case["name"]);
+            assert!(v["event"]["headroom_to_band_tokens"].is_null());
+            assert!(v["event"]["estimated_calls_to_band"].is_null());
+        }
+        rows.push(real("after", 25000));
+        f.rows(rows);
+        let recovered = f.json(&["--host", "claude", "--cursor", cursor(&v)]);
+        let state: Value = serde_json::from_str(cursor(&recovered)).unwrap();
+        assert_eq!(state["level"], "normal", "{}", case["name"]);
+    }
+}

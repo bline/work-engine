@@ -35,6 +35,11 @@ Continue independent work while children run; when required results remain and n
 
 ## Your own context
 
+A root accepting substantial new work makes a scoped
+[capacity decision](context-boundary.md#capacity-belongs-to-the-next-scope),
+including the work and collection still owed. An earlier decision to finish
+bounded work does not cover the new task, even when no new pressure alert arrives.
+
 A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary, and transfer at a quiescent boundary through the user as the [roots](context-boundary.md#roots) section describes. Keep the continuation and assignment record current continuously, because a ceiling replacement keeps only what was written.
 
 ## Worktrees and Codebase Memory

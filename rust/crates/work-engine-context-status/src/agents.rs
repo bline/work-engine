@@ -240,7 +240,9 @@ fn child_usage(agent: &Agent) -> ChildUsage {
             lineage_markers: None,
         },
         Ok(report) => {
-            let status = if report.latest_request.is_some() {
+            let status = if report.latest_request_status == "historical_observation" {
+                "historical_observation"
+            } else if report.latest_request.is_some() {
                 "observed"
             } else {
                 "absent_counters"

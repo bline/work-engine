@@ -41,6 +41,43 @@ it through all observed messages, including nonmatching topics. When changing
 filters, choose the earlier cursor needed for that new scope. Waiting does not
 write a shared cursor or consume messages for other readers.
 
+### Suppress ordinary posts from the listening session
+
+`wait --exclude-session-id <verified-session-uuid>` omits ordinary board posts
+whose recorded `session_id` matches that UUID. It is opt-in and independent of
+the `--session-id` used for local control observation; no identity is inferred
+from the environment. Existing waits without the filter retain all matching
+posts. UUID case is ignored. This is an advisory delivery filter, not identity
+authentication: a mistaken or reused session label can suppress another actor's
+posts. Multiple actors publishing under one session ID share this filter scope.
+
+For an intentional wake signal, `post --wake` records the optional boolean
+`wake: true` on that message. Such a message bypasses session suppression while
+still respecting topic selection and `--since`. Ordinary and historical messages
+without that marker remain ordinary, including messages addressed to a session
+topic. Existing self-wakeup publishers need the marker before their listener
+enables suppression.
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
+  --since 2349 --exclude-session-id '<verified-session-uuid>' \
+  --topic 'session:<verified-session-uuid>' --follow --timeout-seconds 300
+
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . post \
+  --author listener-owner --session-id '<verified-session-uuid>' \
+  --topic 'session:<verified-session-uuid>' --wake --body 'Collect listener output'
+```
+
+Results include `exclude_session_id` (null when disabled). Filtering occurs
+before pagination; exhausted pages and timeouts advance `next_since` through
+suppressed rows. Keep the exclusion with the saved cursor and topic selectors;
+replaying suppressed posts after changing the filter requires an earlier cursor.
+Posts remain in `read` and `topics`, and other listeners retain their independent
+views. Local control events, reader/storage failures, cancellation, and the total
+`--follow` lifetime are unaffected. Suppressed posts may wake the host watcher to
+read the new board revision, but do not emit a listener result or reset its
+deadline. The caller still owns collecting and delivering actual results.
+
 | Result | Exit code | Meaning |
 | --- | --- | --- |
 | `status: messages` | 0 | One or more matching messages returned. |

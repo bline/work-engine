@@ -217,10 +217,7 @@ fn latest_usage_requires_its_own_valid_window() {
         assert!(v["context_fraction_proxy"].is_null());
         assert!(v["context_headroom_tokens_proxy"].is_null());
         assert_eq!(v["diagnostic_counts"]["invalid_window"], 1);
-        assert_eq!(
-            v["latest_request_status"],
-            "latest_valid_observation_with_record_gaps"
-        );
+        assert_eq!(v["latest_request_status"], "historical_observation");
     }
 }
 
@@ -559,10 +556,7 @@ fn fork_rejects_cyclic_ancestry_conflicting_roots_and_malformed_records() {
     let f = Fixture::new(&(valid + "{\"ordinal\":3"));
     let v = json(&f, &["--json"]);
     assert_eq!(v["latest_request"]["input_tokens"], 100);
-    assert_eq!(
-        v["latest_request_status"],
-        "latest_valid_observation_with_record_gaps"
-    );
+    assert_eq!(v["latest_request_status"], "historical_observation");
 }
 
 #[test]
@@ -1009,4 +1003,54 @@ fn agents_without_usage_flag_keeps_its_exact_shape() {
         row.as_object_mut().unwrap().remove("usage");
     }
     assert_eq!(stripped, plain);
+}
+
+#[test]
+fn invalid_latest_counters_leave_history_but_no_current_proxies() {
+    for invalid in [
+        usage("0", "0", "258400"),
+        usage("null", "0", "258400"),
+        usage("true", "0", "258400"),
+    ] {
+        let f = Fixture::new(&(meta(ID) + &usage("91579", "1000", "258400") + &invalid));
+        let v = json(&f, &["--json"]);
+        assert_eq!(v["latest_request"]["input_tokens"], 91579);
+        assert_eq!(v["latest_request_status"], "historical_observation");
+        assert!(v["context_fraction_proxy"].is_null());
+        assert!(v["context_headroom_tokens_proxy"].is_null());
+        assert!(v["recent_growth"].is_null());
+    }
+}
+
+#[test]
+fn duplicate_valid_snapshot_after_gap_recovers_current_reading() {
+    let f = Fixture::new(
+        &(meta(ID)
+            + &usage("91579", "1000", "258400")
+            + &usage("null", "0", "258400")
+            + &usage("91579", "1000", "258400")),
+    );
+    let v = json(&f, &["--json"]);
+    assert_eq!(
+        v["latest_request_status"],
+        "latest_valid_observation_with_record_gaps"
+    );
+    assert_eq!(v["latest_request"]["line"], 4);
+    assert!(v["context_fraction_proxy"].is_number());
+    assert!(v["recent_growth"].is_null());
+}
+
+#[test]
+fn agent_listing_labels_historical_usage_after_invalid_record() {
+    let f = Fixture::new(&meta(ID));
+    fs::write(
+        f.0.join(format!("rollout-{USAGE_CHILD}.jsonl")),
+        child_meta(USAGE_CHILD, "/root/worker")
+            + &usage("1200", "400", "2000")
+            + &usage("0", "0", "2000"),
+    )
+    .unwrap();
+    let v = agents_json(&f.0, &["--with-usage"]);
+    assert_eq!(v["agents"][0]["usage"]["status"], "historical_observation");
+    assert!(v["agents"][0]["usage"]["context_fraction_proxy"].is_null());
 }

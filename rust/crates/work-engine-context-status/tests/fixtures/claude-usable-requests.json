@@ -1,0 +1,170 @@
+[
+  {
+    "name": "valid",
+    "message": {
+      "id": "valid",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": 61010
+  },
+  {
+    "name": "cache_only",
+    "message": {
+      "id": "cache_only",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 0,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": 61000
+  },
+  {
+    "name": "synthetic",
+    "message": {
+      "id": "synthetic",
+      "model": "<synthetic>",
+      "usage": {
+        "input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 0
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "synthetic_positive",
+    "message": {
+      "id": "synthetic_positive",
+      "model": "<synthetic>",
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "absent",
+    "message": {
+      "id": "absent",
+      "model": "claude-opus-5-5",
+      "usage": null
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "empty",
+    "message": {
+      "id": "empty",
+      "model": "claude-opus-5-5",
+      "usage": {}
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "missing_cache",
+    "message": {
+      "id": "missing_cache",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 10
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "zero",
+    "message": {
+      "id": "zero",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 0
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "negative",
+    "message": {
+      "id": "negative",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": -1,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "boolean",
+    "message": {
+      "id": "boolean",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": true,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "float",
+    "message": {
+      "id": "float",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 1.5,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "unsafe",
+    "message": {
+      "id": "unsafe",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 18446744073709551616,
+        "cache_creation_input_tokens": 1000,
+        "cache_read_input_tokens": 60000,
+        "output_tokens": 9
+      }
+    },
+    "context_tokens": null
+  },
+  {
+    "name": "overflow",
+    "message": {
+      "id": "overflow",
+      "model": "claude-opus-5-5",
+      "usage": {
+        "input_tokens": 18446744073709551615,
+        "cache_creation_input_tokens": 1,
+        "cache_read_input_tokens": 0
+      }
+    },
+    "context_tokens": null
+  }
+]

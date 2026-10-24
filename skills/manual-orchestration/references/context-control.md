@@ -64,6 +64,9 @@ Continue keeping the durable continuation current. Preserve the explicit
 pre-dispatch and logical-boundary checks until the owning workflow accepts
 timely control delivery as equivalent evidence. A new assignment's expected
 growth still belongs to the dispatch decision and is not inferred by the monitor.
+An unchanged `in_band` state stays quiet; it does not renew a prior decision to
+continue for a different task. Use the scoped capacity decision in
+[context boundary](context-boundary.md#capacity-belongs-to-the-next-scope).
 
 ## Lifetime and recovery
 

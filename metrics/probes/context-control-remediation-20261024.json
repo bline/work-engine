@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "title": "Focused context-control remediation live check",
+  "date_utc": "2026-10-24",
+  "status": "completed_bounded_check",
+  "scope": "cooperative isolated live observation and decision check; no production test injection",
+  "private_evidence_root": "/home/bline/.local/state/work-engine/context-control-remediation-20261024/live/remediation-01",
+  "frozen_manifest_sha256": "3710d30d1fff3559ea1f20e23b213a4bdd07de5cbedbce6bf56340f49229e89a",
+  "preflight_sha256": "cd7efdef9513071b6770e8f522374336db13b9a8b3786443af178724ff52fd9b",
+  "private_runner_sha256": "7fa66cadad95f6c2284b7298fbf9dbfdc2f956493c6b74bb99a300e0a2852aef",
+  "private_helper_sha256": "1a97067c5a2c27042b9b943a9d09bc6717829da13f059b4483453b1796b76cef",
+  "candidate_binary_sha256": "7a0cbee1b4f8bfbf3cb0a0c1f2c7e6b7a34454ff2ea63b14ca79f97c83345c18",
+  "candidate_source_manifest": "/home/bline/.local/state/work-engine/context-control-remediation-20261024/reader/source-manifest.json",
+  "host": {
+    "requested": "Claude Code native CLI 2.1.310",
+    "observed_init_version_all_invocations": "2.1.310",
+    "requested_model": "claude-sonnet-5-5",
+    "observed_native_model_all_invocations": "claude-sonnet-5-5",
+    "effort": "medium",
+    "tools": [
+      "Bash",
+      "Read"
+    ],
+    "workspace": "isolated temporary Git board and copied pinned source",
+    "host_executable_digest_pinned": false
+  },
+  "bounds": {
+    "max_subject_invocations": 3,
+    "actual_subject_invocations": 3,
+    "max_total_subject_turns": 36,
+    "actual_result_turns": 20,
+    "max_total_list_cost_usd": 1.5,
+    "actual_reported_list_cost_usd": 0.2273908,
+    "global_deadline_seconds": 600,
+    "synthetic_trigger_tokens": 1000,
+    "synthetic_band_floor_tokens": 2000,
+    "synthetic_policy_note": "Test pressure levels, not provider limits or actual exhaustion"
+  },
+  "native_model_calls": {
+    "initial": 6,
+    "retained": 3,
+    "fresh_successor": 4,
+    "total": 13
+  },
+  "native_usage_delta_total": {
+    "input_tokens": 26,
+    "cache_creation_input_tokens": 34818,
+    "cache_read_input_tokens": 158468,
+    "output_tokens": 7222
+  },
+  "list_cost_usd_delta": {
+    "initial": 0.1389816,
+    "retained": 0.0434288,
+    "fresh_successor": 0.0449804
+  },
+  "observations": {
+    "initial_session_id": "95c3f90a-9b37-4268-b1c9-1d38970086b7",
+    "initial_control_input_tokens": 20681,
+    "initial_control_source_line": 56,
+    "initial_full_payload_in_native_tool_result": true,
+    "initial_listener_seconds": 75.223566262,
+    "initial_listener_final_status": "timeout",
+    "ordinary_own_post_sequence": 1,
+    "ordinary_own_post_delivered": false,
+    "explicit_wake_sequence": 2,
+    "explicit_wake_delivered": true,
+    "quiet_interval_after_wake_seconds": 64.910717,
+    "native_model_responses_during_quiet_interval": 0,
+    "retained_latest_context_tokens": 25928,
+    "hypothetical_new_task_tokens": 160000,
+    "collection_and_continuation_reserve_tokens": 20000,
+    "estimated_post_task_context_tokens": 205928,
+    "empirical_claude_band_floor_tokens": 202533,
+    "retained_new_task_choice": "transfer",
+    "successor_session_id": "3c1b9b0f-ab81-4f67-a3a8-fc668ff7c27a",
+    "old_cursor_rejected_exit_code": 1,
+    "successor_own_baseline_exit_code": 0,
+    "successor_own_control_input_tokens": 6616
+  },
+  "collection": {
+    "all_three_cli_processes_collected": true,
+    "initial_listener_collected": true,
+    "no_retry_or_extra_subject_invocation": true,
+    "native_transcripts_and_streams_retained": true
+  },
+  "limitations": [
+    "The helper scripted the isolated board posts and collection timing; this is a mechanics check, not unassisted performance evidence.",
+    "The model received the listener rows after its bounded Bash command ended; this does not show automatic push to an idle model.",
+    "The capacity task was hypothetical and admission-only; its 160000-token growth estimate was not validated by executing it.",
+    "Claude's native transcript records no context window. The empirical 202533-token band is historical, not a provider reset deadline.",
+    "Bash/Read restrictions and workspace instructions are cooperative; no OS sandbox or whole-session isolation claim follows.",
+    "The host executable version was observed before entry and in all init records but its executable bytes were not digest-pinned in the manifest."
+  ],
+  "integration_validation": {
+    "unique_focused_tests": 112,
+    "rust_unique": 57,
+    "rust_configurations": [
+      "debug",
+      "release"
+    ],
+    "python_reader": 21,
+    "board": 24,
+    "board_control_release_pin": 10,
+    "skill_validators": 2,
+    "archived_failure_replays": "both unavailable; Claude previous91579 historical",
+    "review": {
+      "provider": "Claude Code",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "session": "6a5c85b6-a30a-4ca3-8941-ac4ef67a6fef",
+      "initial_entry": "fresh read-only",
+      "continuations": 1,
+      "final_verdict": "accept advisory; root accepts bounded scope",
+      "subject_sha256": "a64e9a7d75a2e54a71bf361b8a770a775b683bbcaf6a8c0f2905ad58564ab7ef",
+      "cumulative_list_cost_usd": 1.9450886,
+      "limitation": "initial missing doctrine read repaired in retained continuation; no independent live scoring"
+    },
+    "post_live_delta": "four documentation files only; executable/test bytes identical; wording not live rerun",
+    "task_total_cost": "not estimated; subject/review list counters exclude Codex implementation, coordination, harness preparation"
+  }
+}
