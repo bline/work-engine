@@ -137,30 +137,47 @@ commit() {
   echo $(( $(<"$C") + 1 )) > "$C"
   log "launched successor $sid in window $wid"
 
-  # One loop, two exits. Scanning for a dialog BEFORE polling the board made the
-  # scan a fixed cost on every rotation and blinded it to dialogs that appear
-  # later -- a Codex rate-limit/model-switch modal arrives after the turn starts,
-  # not at startup. Adoption can now win immediately, and the pane is watched for
-  # the whole wait.
-  local ack="" stalled="" ticks=0 limit=$(( ADOPT_TIMEOUT * 2 ))
-  while (( ticks < limit )); do
-    if T capture-pane -p -t "$wid" 2>/dev/null | grep -qEi "$STALL_PATTERN"; then
-      stalled=1; break
-    fi
-    if (( ticks % 2 == 0 )); then
-      ack=$(B read --since "$seq" --limit 20 2>/dev/null \
-        | python3 -I -c 'import sys,json;s=json.load(sys.stdin);print(next((m["message_id"] for m in s.get("messages",[]) if m.get("session_id")=="'"$sid"'"),""))' 2>/dev/null)
-      [[ -n "${ack:-}" ]] && break
-    fi
-    sleep 0.5; ((ticks++))
+  # Adoption arrives on a BLOCKING board wait, not a poll: the board wakes us on
+  # the message instead of being asked for it every second. The wait must be
+  # one-shot -- --follow rearms inside its own process, never exits, and so never
+  # returns anything to act on.
+  #
+  # The pane still has to be watched for a startup dialog, and a blocking wait
+  # cannot also watch it, so the wait runs as a child process and only the pane
+  # is polled -- a tmux capture, with no python subprocess per tick.
+  local ack="" stalled="" since="$seq" waitout="$STATE/adoption-wait.json" wrc=0
+  while :; do
+    B wait --since "$since" --topic "$topic" --timeout-seconds "$ADOPT_TIMEOUT" \
+      >"$waitout" 2>>"$STATE/supervisor.log" &
+    local wpid=$!
+    while kill -0 "$wpid" 2>/dev/null; do
+      if T capture-pane -p -t "$wid" 2>/dev/null | grep -qEi "$STALL_PATTERN"; then
+        stalled=1; kill "$wpid" 2>/dev/null; break
+      fi
+      sleep 0.5
+    done
+    wait "$wpid"; wrc=$?
+    [[ -n "$stalled" ]] && break
+    (( wrc == 0 )) || break          # 2 = the wait's own timeout
+    # A wait returns on the first message matching the topic, which need not be
+    # the successor's. Re-arm from the returned cursor rather than accept it.
+    ack=$(python3 -I -c 'import sys,json
+d=json.load(open(sys.argv[1]))
+print(next((m["message_id"] for m in d.get("messages",[])
+            if m.get("session_id")==sys.argv[2]), ""))' "$waitout" "$sid" 2>/dev/null)
+    [[ -n "${ack:-}" ]] && break
+    local nxt; nxt=$(python3 -I -c 'import sys,json;print(json.load(open(sys.argv[1])).get("next_since",""))' "$waitout" 2>/dev/null)
+    [[ -n "$nxt" && "$nxt" != "$since" ]] || break
+    log "board woke on a non-successor message; re-arming from $nxt"
+    since="$nxt"
   done
   if [[ -n "$stalled" ]]; then
     T capture-pane -p -t "$wid" > "$STATE/stall-capture.txt" 2>/dev/null
-    log "HOLD: successor stalled on a dialog after $(( ticks / 2 ))s; see $STATE/stall-capture.txt; predecessor NOT retired"
+    log "HOLD: successor stalled on a startup dialog; see $STATE/stall-capture.txt; predecessor NOT retired"
     rec terminal-status "fail_startup_dialog"; return 27
   fi
   if [[ -z "${ack:-}" ]]; then
-    log "HOLD: no adoption acknowledgment in ${ADOPT_TIMEOUT}s; predecessor NOT retired"
+    log "HOLD: no adoption acknowledgment in ${ADOPT_TIMEOUT}s (wait exit $wrc); predecessor NOT retired"
     rec terminal-status "fail_no_adoption"; return 34
   fi
   log "adoption acknowledged by $sid (message $ack)"
