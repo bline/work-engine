@@ -39,6 +39,13 @@ $RETIRE_STEP
 
 Then report what you did in two or three lines and take no further action. You hold no assignment authority beyond these steps.
 P
+# A successor that holds a blocking board wait needs a ceiling above the
+# 600000 ms default, which is a hard clamp: a longer request is silently
+# clamped and the command is then MOVED TO THE BACKGROUND rather than killed.
+# Set it here so the mechanism does not depend on the host's settings.json.
+BASH_MAX_TIMEOUT_MS="${BASH_MAX_TIMEOUT_MS:-3900000}"
+export BASH_MAX_TIMEOUT_MS
+
 exec claude \
   --permission-mode auto \
   --disallowedTools "Edit,Write,NotebookEdit" \
