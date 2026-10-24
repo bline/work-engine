@@ -158,11 +158,12 @@ rather than the individual finding:
    contract-v2 §5 lines 424/427 against `lib.rs:19`; contract lines 64-68 (S6)
    against §3.4's rule list; and the comment at `upstream.rs:71-73` against the
    structure-rule set.
-2. **Of the 5 requiring execution, 4 are test-coverage gaps rather than behavioural
+2. **Of the 5 discovered by execution, 4 are test-coverage gaps rather than behavioural
    defects** — the mutation survivors, which the reviews themselves classify that
    way (`P1 P3-3`: "this is a test gap and not a defect"; `E2 P3-4`: "Boundary rules
    are correct but no test pins them"). `E1 F4` is the single behavioural divergence
-   that needed execution to find.
+   in that group; execution is how it was found, and whether a read of the sources
+   could have found it is `not established`.
 
 **`E2 P2-2` is the earliest-detectable finding in the corpus.** The reviewer states
 the contract "is internally ambiguous (S6 against §3.4)" — an inconsistency between
@@ -188,6 +189,16 @@ role's). **The contract is untracked** - it exists only as
 20:01:28 -0600) and `r2-plan/contract-v2.md` (sha256 `05734636...`, 458 lines,
 mtime 22:18:29). So contract availability is established by **file mtime, not by
 a commit**, and an mtime is weaker evidence than a commit date. Times are -0600.
+
+**Every time in the table is an observed artifact-timestamp proxy, not first
+availability** (peer challenge, board **2793**). A commit date is when code was
+recorded; code can exist uncommitted before it. A file mtime is a last-write
+time, not a custody record, and can be altered or post-date an earlier copy. Both
+proxies are therefore **upper bounds** on when the evidence first existed, so
+every "earliest evidence state" below may be too late and every latency may be
+too short. Treat the table as a qualified hypothesis. Nothing here establishes
+that code did not exist before its commit, and no avoidable-work inference
+follows from any latency figure in it.
 
 | finding | earliest evidence state | detected | latency | minimal read set |
 |---|---|---|---|---|
@@ -215,16 +226,35 @@ it is not the one an "earlier review is better" reading predicts.
 So for `E2 P2-2` and `E1 F8` the evidence was document-only and complete **3h 46m
 and 2h 50m before detection**, and in that window three separate contract passes
 read the document and recorded neither. For `E2 P2-1` the Fable pass could not
-have caught it: it ran at 22:30:58 and the code half did not exist until
+have caught it: it ran at 22:30:58 and the code half is not recorded before
 23:32:51.
 
 **What that does and does not support.** Readability establishes that the
 evidence was *sufficient*; it does **not** establish that a reviewer at that
 point would have found it, and here n = 3 prior passes and 0 detections on the
-two document-only findings. Conversely, where the binding constraint was code
-arriving (`E2 P2-1`, `P1 P2-1`), review already followed within **15 and 19-37
-minutes**, so there is little latency for an earlier-review intervention to
-remove. n = 4 findings, this session's judgment, detected set only.
+two document-only findings.
+
+**A conclusion drawn here on 2026-10-24 is WITHDRAWN**, on the peer's challenge
+at board **2793**. The withdrawn claim: that because review followed the code
+within 15 and 19-37 minutes for `E2 P2-1` and `P1 P2-1`, there is little latency
+for an earlier-review intervention to remove. Error class: treating an
+**upper-bound** timestamp proxy as the exact time of first availability, and then
+drawing a conclusion in the direction the proxy's error does not support. A
+commit date is when the code was **recorded**, not when it first existed, so true
+availability is at or before it and true latency is at or **above** the measured
+figure. 15m 04s and 19m 13s are therefore **lower bounds**, and a lower bound
+cannot support "the latency is small". Consequence had it stood: the plan's
+candidate 1 would have been qualified downward on two of four findings using a
+quantity that runs the other way. The check that would have caught it: ask which
+direction a proxy's error runs, and whether the conclusion survives its worst
+case.
+
+**What survives.** The two document-only findings' latencies - 3h 46m and
+2h 50m - are differences between two artifact timestamps and are likewise
+proxies, but the result that rests on them does not depend on their size: three
+dedicated contract passes read that document before detection and recorded
+neither finding. That is a count of passes, not a duration. n = 4 findings and
+n = 3 prior passes, this session's judgment, detected set only.
 
 **Observed repair versus hypothesised avoided work.**
 
