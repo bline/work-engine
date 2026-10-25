@@ -3,6 +3,9 @@
 # carries the handoff; this script validates, gates and swaps. No model calls.
 #
 #   ROLE/SOCK/STATE      tmux window name, socket, durable evidence dir
+#                        ROLE must name exactly ONE window; the gate refuses
+#                        otherwise, because tmux resolves a duplicated name to
+#                        the first match silently (measured, exit 0).
 #   VALIDATOR            command (with flags) + <handoff> -> 0 pass | 21 defect | 32 not est.
 #                        (any other code is treated as not established, never pass)
 #   QUIESCENCE_FILE      predecessor's own assertion that it is quiescent
@@ -61,6 +64,26 @@ B() { python3 "$BOARD_CMD" --repository "$REPO" "$@"; }
 log() { printf '%s [sup:%s] %s\n' "$(date -u +%FT%T.%3NZ)" "$ROLE" "$*" | tee -a "$STATE/supervisor.log" >&2; }
 rec() { printf '%s\n' "$2" > "$STATE/$1"; }
 mkdir -p "$STATE"; C="$STATE/rotation-count"; [[ -f $C ]] || echo 0 > "$C"
+
+role_unambiguous() {  # 0 = exactly one; 1 = none or several; 2 = could not read
+  local names lrc n
+  # The listing's exit status is captured BEFORE any pipe. Piping it into
+  # `wc -l` would mask a failed listing as the count 0, turning "could not
+  # read" into "wrong count" -- the same conflation this gate exists to avoid.
+  names=$(T list-windows -t roots -F '#{window_name}' 2>>"$STATE/supervisor.log"); lrc=$?
+  (( lrc == 0 )) || { log "cannot list windows (exit $lrc); the role window count is not established"
+    return 2; }
+  n=$(awk -v r="$ROLE" '$0 == r' <<< "$names" | wc -l)
+  [[ "$n" =~ ^[0-9]+$ ]] || return 2
+  # A failed retirement leaves the predecessor AND the successor both named
+  # $ROLE. Measured: with two windows of one name, `display-message -t
+  # roots:<name>` returns the FIRST silently, exit 0 -- so the coordinator
+  # cannot tell it is choosing. A second live root is exactly what this
+  # mechanism exists to prevent, so refuse rather than pick.
+  if (( n == 1 )); then return 0; fi
+  log "role window ambiguous: $n windows are named '$ROLE' (expected exactly 1)"
+  return 1
+}
 
 validate() {    # 0 pass | 21 defect found | 32 could not be established
   local handoff="$1" phase="$2" rc
@@ -126,6 +149,18 @@ quiescent() {   # predecessor assertion PLUS independent checks; unknown != clea
 
 prepare() {
   local handoff="$1" n; n=$(<"$C")
+  # Checked BEFORE anything else: every later step resolves the role by name,
+  # and tmux returns the first match of a duplicated name silently (exit 0).
+  role_unambiguous; local arc=$?
+  if (( arc != 0 )); then
+    if (( arc == 2 )); then
+      log "HOLD: could not count the $ROLE windows; nothing done"
+      rec terminal-status "role_window_not_established"; return 32
+    fi
+    log "HOLD: $ROLE does not name exactly one window; nothing done"
+    rec terminal-status "fail_role_window_ambiguous"; return 39
+  fi
+
   (( n < MAX_ROTATIONS )) || { log "CAP $n/$MAX_ROTATIONS"; rec terminal-status "fail_cap_reached"; return 20; }
   validate "$handoff" prepare || return $?
   local dig; dig=$(sha256sum "$handoff" | cut -d' ' -f1)
@@ -144,6 +179,18 @@ prepare() {
 
 commit() {
   local handoff="${1:-}"
+  # Checked BEFORE anything else: every later step resolves the role by name,
+  # and tmux returns the first match of a duplicated name silently (exit 0).
+  role_unambiguous; local arc=$?
+  if (( arc != 0 )); then
+    if (( arc == 2 )); then
+      log "HOLD: could not count the $ROLE windows; nothing done"
+      rec terminal-status "role_window_not_established"; return 32
+    fi
+    log "HOLD: $ROLE does not name exactly one window; nothing done"
+    rec terminal-status "fail_role_window_ambiguous"; return 39
+  fi
+
   [[ -n "$handoff" ]] || handoff=$(sed -n 's/^handoff=\([^ ]*\).*/\1/p' "$STATE/awaiting-authority" 2>/dev/null)
   [[ -s "${handoff:-}" ]] || { log "no handoff to commit"; return 29; }
   validate "$handoff" commit || return $?
