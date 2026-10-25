@@ -1,0 +1,55 @@
+{
+  "probe": "cli-daemon-host-20261025",
+  "date": "2026-10-25",
+  "scope": "what the claude and codex CLIs give a daemon-hosted role: launch, identity, turn delivery from outside, status, retire. Follows host_decision_20261025 in tmux-root-rotation-20261024.json.",
+  "versions": {
+    "claude": "2.1.310",
+    "codex": "0.164.0"
+  },
+  "cwd": "/home/bline/code/work-engine (trusted); every probe prompt was a no-tool reply",
+  "n": "1 per cell unless stated",
+  "claude": {
+    "untrusted_cwd": "claude --bg in an untrusted directory exits 1 in 0.61 s with 'Workspace not trusted...'; it does not stall on a modal",
+    "session_id_prebinding": "NOT available under --bg: 'warning: --bg manages the session id; ignoring --session-id'. The daemon assigns the id and prints the short form on stdout ('backgrounded · cb28f684 · <name>'); agents --json gives the full sessionId",
+    "turn_1": "argv prompt delivered and answered (HOST-PROBE-OK, claude-opus-5-5); transcript at ~/.claude/projects/<proj>/<sessionId>.jsonl; agents --json then reports state=done status=idle",
+    "resume_while_loaded": "claude --bg --resume <id> '<msg>' on a loaded idle session does NOT deliver: it starts a COPY with a new sessionId (168d03db-3ffc-43f4-b588-1895844cd4fa) under the SAME --name, exit 0, the note only on stdout. The copy carries the full history and answered the message. This is a silent fork.",
+    "stop_then_resume": "claude stop <id> then claude --bg --resume <id> '<msg>' delivers into the SAME sessionId and transcript ('woke session cb28f684 with its saved options (--name, --model)'); answered HOST-PROBE-TURN-2. Idle -> working -> done/idle in ~8 s",
+    "rm": "claude rm <id> removes the session from agents --json --all but leaves the transcript on disk",
+    "status_fields": "background rows: id, sessionId, cwd, kind=background, startedAt, name, state (working|done), status (busy|idle|absent); pid present only while loaded. No parent field."
+  },
+  "codex": {
+    "quota": "available again 2026-10-25 (exec turn completed); supersedes the 2026-10-30 retry date recorded earlier",
+    "exec_turn_1": "codex exec --json -s read-only '<prompt>' completed in 8.09 s; first event is thread.started with thread_id 01a173d2-f5aa-7193-9ef8-115c37743052, so the id is known at launch without database discovery",
+    "queue_without_live_session": "codex queue --thread <id> on a thread no process holds: exit 0, 'Queued message ...', but NO turn started (turn count stayed 1 over ~30 s). At the next exec resume the queued text was injected as a user item (rollout line 22) immediately before the new prompt (line 26), and the model answered only the new prompt. So queue is a deposit that merges into the next turn, not a wake, unless a live session holds the thread (the earlier tmux probe observed a wake into an idle TUI session).",
+    "exec_resume": "codex exec --json resume <id> '<msg>' runs a new turn on the SAME thread id (thread_turns count 1 -> 2, both completed)",
+    "daemon_hosted_thread": "not_established. The shared app-server daemon is running (codex app-server daemon version: status running, socket ~/.codex/app-server-control/app-server-control.sock) and its protocol has thread/start, turn/start, thread/loaded/list. A newline-delimited JSON-RPC initialize sent through 'codex app-server proxy' got no reply within 10 s; the control socket takes ws-style addresses (--remote unix://), so proxy likely relays websocket frames. Not pursued; no thread was started (no rollout contains the probe prompt).",
+    "status_fields": "no machine-readable session listing from the CLI (codex agents is a TUI). Turn status is readable from ~/.codex/thread_history_1.sqlite thread_turns (status inProgress|completed|failed)."
+  },
+  "design_consequences": {
+    "identity_ordering": "both hosts now share launch -> learn id -> post handoff -> deliver. The Claude advantage recorded under tmux (pre-minted id) does not exist under --bg.",
+    "delivery": "Claude: stop-then-resume of an IDLE session; never resume a loaded one (silent fork). Codex: exec resume per turn; queue only as a deposit. A role blocked in a board wait is busy, so self-wake by board wait remains the primary path for a live root.",
+    "fork_hazard": "the Claude copy-on-resume is a host-level instance of the fork case the generation guard targets: a wake that names a loaded session creates a second live instance under one role name with exit 0. The adapter must check status=idle and loaded state before resume, and must detect 'started a copy' in the output and treat it as a defect.",
+    "liveness": "Claude: agents --json state/status by sessionId. Codex: thread_turns status by thread_id; a process-level liveness for exec turns is the exec process itself."
+  },
+  "evidence_dir": "/home/bline/cbm-work/host-probe-20261025",
+  "evidence_sha256": {
+    "claude-168d03db-3ffc-43f4-b588-1895844cd4fa.jsonl": "fed02b5a9f4156872a05c1897b0071e4266506fd613ecadc432b058a0ef501e2",
+    "claude-cb28f684-2709-4a25-bb42-74b35e6fd2a1.jsonl": "41ae384667ebd59a78af03075374d9c3a5db72264f5a8aa96ec9a2aecbd1e9c2",
+    "claude-launch.out": "d75ab6acfa632a7244a04c6ce2104af817aad0c5ba105c490dfa44485d40c8ea",
+    "claude-minted.txt": "af0ce16500304e57e102193053d0dbb0bbe32f338bc763824252d20f1c51c2f1",
+    "codex-daemon-start.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "codex-exec1.err": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+    "codex-exec1.jsonl": "a5537a009d7765aaaf396f018665c2f760617adf07f78c9350e96b91cc845531",
+    "codex-exec3.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "codex-exec3.jsonl": "26c7966264e7e0a96b8c80aecaafbabdeb5f45c990fad1181aafb98d7ce76548",
+    "codex-queue.out": "08a6ab68af0a634970b86b6308198fcba95f3125b60893faf992cf612743c590",
+    "codex-rollout-01a173d2.jsonl": "9234880296b3a5ac6b0973fff7cb6db7553888327425157493d4a1dc55a00ce4",
+    "codex_daemon_probe.py": "d60bcaef075ed28090b7d82f6a4c85e3307882889771f7621c6dce24cc56e093"
+  },
+  "evidence_inline": {
+    "claude-launch.out": "warning: --bg manages the session id; ignoring --session-id (use --resume <id> to continue an existing session)\nbackgrounded · cb28f684 · host-probe-claude\n  claude agents             list sessions\n  claude attach cb28f684    open in this terminal\n  claude logs cb28f684      show recent output\n  claude stop cb28f684      stop this session\n",
+    "codex-exec1.jsonl": "{\"type\":\"thread.started\",\"thread_id\":\"01a173d2-f5aa-7193-9ef8-115c37743052\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"agent_message\",\"text\":\"HOST-PROBE-OK\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":18141,\"cached_input_tokens\":12672,\"cache_write_input_tokens\":0,\"output_tokens\":10,\"reasoning_output_tokens\":0}}\n",
+    "codex-exec3.jsonl": "{\"type\":\"thread.started\",\"thread_id\":\"01a173d2-f5aa-7193-9ef8-115c37743052\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"agent_message\",\"text\":\"HOST-PROBE-TURN-3\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":54516,\"cached_input_tokens\":48640,\"cache_write_input_tokens\":0,\"output_tokens\":23,\"reasoning_output_tokens\":0}}\n",
+    "codex-queue.out": "Queued message 01a173d3-3f0e-7b50-9290-76122183adc3 for thread 01a173d2-f5aa-7193-9ef8-115c37743052.\n"
+  }
+}
