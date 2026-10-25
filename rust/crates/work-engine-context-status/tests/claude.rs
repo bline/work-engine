@@ -80,6 +80,451 @@ fn ok_json(args: &[&str]) -> Value {
 fn transcript_json(p: &Path) -> Value {
     ok_json(&["claude", "--transcript", p.to_str().unwrap(), "--json"])
 }
+fn export_json(p: &Path) -> Value {
+    ok_json(&[
+        "claude",
+        "--transcript",
+        p.to_str().unwrap(),
+        "--export-usage",
+    ])
+}
+
+#[test]
+fn usage_export_reconciles_independent_oracle_and_streaming_updates() {
+    let root = Root::new();
+    let mut b = assistant("b", "claude-opus-5-5", Some((5, 0, 40, 0)));
+    b["message"]["usage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("output_tokens");
+    let body = [
+        line(assistant("a", "claude-opus-5-5", Some((10, 20, 30, 4)))),
+        line(assistant("a", "claude-opus-5-5", Some((10, 20, 30, 9)))),
+        line(b),
+    ]
+    .concat();
+    let path = root.write(&format!("p/{SID}.jsonl"), &body);
+    let export = export_json(&path);
+    assert_eq!(export["schema"], "claude-transcript-usage-v1");
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["calls"].as_array().unwrap().len(), 2);
+    assert_eq!(export["calls"][0]["message_id"], "a");
+    assert_eq!(export["calls"][0]["first_line"], 1);
+    assert_eq!(export["calls"][0]["output_tokens"], 9);
+    assert_eq!(
+        export["calls"][0]["output_observations"][0]["output_tokens"],
+        4
+    );
+    assert_eq!(export["calls"][0]["output_observations"][1]["line"], 2);
+    assert_eq!(
+        export["calls"][0]["output_observations"][1]["output_tokens"],
+        9
+    );
+    assert_eq!(export["calls"][1]["output_tokens"], Value::Null);
+    let totals = &export["totals"];
+    assert_eq!(totals["observed_calls"], 2);
+    assert_eq!(totals["known_input_tokens"], 15);
+    assert_eq!(totals["known_cache_creation_input_tokens"], 20);
+    assert_eq!(totals["known_cache_read_input_tokens"], 70);
+    assert_eq!(totals["known_output_tokens"], 9);
+    assert_eq!(totals["complete_output_tokens"], Value::Null);
+    assert_eq!(totals["missing_output_calls"], 1);
+    let report = transcript_json(&path);
+    assert_eq!(report["cumulative"]["distinct_calls"], 2);
+    assert_eq!(report["cumulative"]["uncached_tokens"], 35);
+    assert_eq!(report["cumulative"]["cached_tokens"], 70);
+    assert_eq!(report["cumulative"]["output_tokens"], 9);
+}
+
+#[test]
+fn usage_export_preserves_individual_counters_when_other_fields_are_missing() {
+    let root = Root::new();
+    let mut partial = assistant("partial", "claude-opus-5-5", Some((10, 0, 30, 7)));
+    partial["message"]["usage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("cache_creation_input_tokens");
+    let zero = assistant("zero", "claude-opus-5-5", Some((0, 0, 0, 0)));
+    let path = root.write(
+        &format!("p/{SID}.jsonl"),
+        &[line(partial), line(zero)].concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["calls"][0]["input_tokens"], 10);
+    assert_eq!(
+        export["calls"][0]["cache_creation_input_tokens"],
+        Value::Null
+    );
+    assert_eq!(export["calls"][0]["cache_read_input_tokens"], 30);
+    assert_eq!(export["calls"][0]["output_tokens"], 7);
+    assert_eq!(export["calls"][1]["input_tokens"], 0);
+    assert_eq!(export["calls"][1]["output_tokens"], 0);
+    assert_eq!(export["totals"]["known_input_tokens"], 10);
+    assert_eq!(export["totals"]["complete_input_tokens"], 10);
+    assert_eq!(export["totals"]["known_cache_creation_input_tokens"], 0);
+    assert_eq!(
+        export["totals"]["complete_cache_creation_input_tokens"],
+        Value::Null
+    );
+    assert_eq!(export["totals"]["known_cache_read_input_tokens"], 30);
+    assert_eq!(export["totals"]["known_output_tokens"], 7);
+    assert_eq!(export["totals"]["complete_output_tokens"], 7);
+    assert_eq!(export["totals"]["report_eligible_calls"], 0);
+    assert_eq!(transcript_json(&path)["cumulative"]["distinct_calls"], 0);
+}
+
+#[test]
+fn usage_export_identity_is_disjoint_and_rejects_truncated_ids() {
+    let root = Root::new();
+    let mut unnamed = assistant("unused", "claude-opus-5-5", Some((1, 0, 0, 1)));
+    unnamed["message"].as_object_mut().unwrap().remove("id");
+    let named = assistant("line:1", "claude-opus-5-5", Some((2, 0, 0, 2)));
+    let path = root.write(
+        &format!("p/{SID}.jsonl"),
+        &[line(unnamed), line(named)].concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["totals"]["observed_calls"], 2);
+    assert_eq!(export["calls"][0]["identity"], "unverified_line");
+    assert_eq!(export["calls"][0]["message_id"], Value::Null);
+    assert_eq!(export["calls"][1]["identity"], "message_id");
+    assert_eq!(export["calls"][1]["message_id"], "line:1");
+    let prefix = "x".repeat(256);
+    let long = root.write(
+        &format!("q/{SID}.jsonl"),
+        &[
+            line(assistant(
+                &(prefix.clone() + "a"),
+                "claude-opus-5-5",
+                Some((1, 0, 0, 1)),
+            )),
+            line(assistant(
+                &(prefix + "b"),
+                "claude-opus-5-5",
+                Some((2, 0, 0, 2)),
+            )),
+        ]
+        .concat(),
+    );
+    let out = run(&[
+        "claude",
+        "--transcript",
+        long.to_str().unwrap(),
+        "--export-usage",
+    ]);
+    assert!(!out.status.success());
+    assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("message.id exceeds 256"));
+}
+
+#[test]
+fn usage_export_excludes_fork_copy_and_synthetic_with_source_lines() {
+    let root = Root::new();
+    let mut own = assistant("own", "claude-opus-5-5", Some((1, 2, 3, 4)));
+    own["agentId"] = json!("f0f0");
+    let mut synthetic = assistant("synthetic", "<synthetic>", Some((8, 9, 10, 11)));
+    synthetic["agentId"] = json!("f0f0");
+    let path = root.write(
+        &format!("p/{SID}/subagents/agent-f0f0.jsonl"),
+        &[
+            line(fork_ref("f0f0")),
+            line(inherited_call("f0f0")),
+            line(own),
+            line(synthetic),
+        ]
+        .concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["totals"]["observed_calls"], 1);
+    assert_eq!(export["totals"]["known_input_tokens"], 1);
+    assert_eq!(export["exclusion_counts"]["inherited_fork_copy"], 1);
+    assert_eq!(export["exclusion_counts"]["synthetic_record"], 1);
+    assert_eq!(export["exclusions"][0]["line"], 2);
+    assert_eq!(export["exclusions"][1]["line"], 4);
+}
+
+#[test]
+fn usage_export_complete_conflicts_gaps_and_identity_are_explicit() {
+    let root = Root::new();
+    let valid = assistant("a", "claude-opus-5-5", Some((1, 2, 3, 0)));
+    let path = root.write(&format!("p/{SID}.jsonl"), &line(valid.clone()));
+    let export = export_json(&path);
+    assert_eq!(export["status"], "complete");
+    assert_eq!(export["totals"]["complete_output_tokens"], 0);
+    assert_eq!(export["session_identity_observed"], true);
+
+    let conflict = root.write(
+        &format!("q/{SID}.jsonl"),
+        &[
+            line(valid.clone()),
+            line(assistant("a", "claude-opus-5-5", Some((9, 2, 3, 8)))),
+        ]
+        .concat(),
+    );
+    let export = export_json(&conflict);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["calls"][0]["input_tokens"], 1);
+    assert_eq!(export["calls"][0]["output_tokens"], 0);
+    assert_eq!(export["calls"][0]["conflicting_usage_lines"][0], 2);
+
+    let malformed = root.write(
+        &format!("r/{SID}.jsonl"),
+        &(line(valid.clone()) + "{invalid}\n"),
+    );
+    let export = export_json(&malformed);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["diagnostic_counts"]["malformed_record"], 1);
+
+    let mut unbound = valid;
+    unbound.as_object_mut().unwrap().remove("sessionId");
+    let unbound_path = root.write("s/transcript.jsonl", &line(unbound));
+    let export = export_json(&unbound_path);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["session_identity_observed"], false);
+
+    let out = run(&[
+        "claude",
+        "--transcript",
+        path.to_str().unwrap(),
+        "--json",
+        "--export-usage",
+    ]);
+    assert!(!out.status.success());
+    assert!(out.stdout.is_empty());
+}
+
+#[test]
+fn usage_export_rejects_blank_ids_and_does_not_claim_blank_model() {
+    let root = Root::new();
+    let blank = assistant("", "claude-test", Some((1, 0, 0, 1)));
+    let path = root.write(
+        &format!("p/{SID}.jsonl"),
+        &[line(blank.clone()), line(blank)].concat(),
+    );
+    let out = run(&[
+        "claude",
+        "--transcript",
+        path.to_str().unwrap(),
+        "--export-usage",
+    ]);
+    assert!(!out.status.success());
+    assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("blank message.id at line 1"));
+    // Ordinary report compatibility remains its own accounting contract.
+    assert_eq!(transcript_json(&path)["cumulative"]["distinct_calls"], 1);
+
+    let model = root.write(
+        &format!("q/{SID}.jsonl"),
+        &line(assistant("a", "", Some((10, 20, 30, 4)))),
+    );
+    let export = export_json(&model);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["calls"][0]["model"], Value::Null);
+    assert_eq!(export["totals"]["known_output_tokens"], 4);
+}
+
+#[test]
+fn usage_export_late_fork_reference_discloses_uncertain_own_attribution() {
+    let root = Root::new();
+    let reference = json!({"type": "fork-context-ref", "sessionId": SID,
+        "parentSessionId": OTHER_SID});
+    let mut copied = assistant("inherited", "claude-test", Some((100, 100, 100, 100)));
+    copied["parentUuid"] = Value::Null;
+    let own = assistant("own", "claude-test", Some((10, 20, 30, 4)));
+    let path = root.write(
+        &format!("p/{SID}.jsonl"),
+        &[line(user()), line(reference), line(copied), line(own)].concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["diagnostic_counts"]["fork_reference_not_first"], 1);
+    assert_eq!(export["calls"].as_array().unwrap().len(), 2);
+    assert_eq!(export["totals"]["known_input_tokens"], 110);
+    assert_eq!(export["totals"]["known_output_tokens"], 104);
+    assert_eq!(transcript_json(&path)["cumulative"]["distinct_calls"], 2);
+}
+
+#[test]
+fn usage_export_marks_schema_filtered_records_incomplete() {
+    let root = Root::new();
+    let valid = assistant("first", "claude-test", Some((1, 0, 0, 1)));
+    let mut missing_type = assistant("second", "claude-test", Some((2, 0, 0, 2)));
+    missing_type.as_object_mut().unwrap().remove("type");
+    let mut compact_assistant = assistant("second", "claude-test", Some((2, 0, 0, 2)));
+    compact_assistant["compactMetadata"] = json!({"trigger": "auto"});
+    let mut missing_type_compaction = assistant("second", "claude-test", Some((2, 0, 0, 2)));
+    missing_type_compaction
+        .as_object_mut()
+        .unwrap()
+        .remove("type");
+    missing_type_compaction["compactMetadata"] = json!({"trigger": "auto"});
+    let mut system_compaction_usage = assistant("second", "claude-test", Some((2, 0, 0, 2)));
+    system_compaction_usage["type"] = json!("system");
+    system_compaction_usage["subtype"] = json!("compact_boundary");
+    for (suffix, skipped, reason) in [
+        ("null", Value::Null, "non_object_record_skipped"),
+        (
+            "array",
+            json!([assistant("second", "claude-test", Some((2, 0, 0, 2)))]),
+            "non_object_record_skipped",
+        ),
+        (
+            "missing_type",
+            missing_type,
+            "assistant_shaped_record_skipped",
+        ),
+        (
+            "compact_assistant",
+            compact_assistant,
+            "assistant_compaction_record_skipped",
+        ),
+        (
+            "missing_type_compaction",
+            missing_type_compaction,
+            "assistant_shaped_record_skipped",
+        ),
+        (
+            "system_compaction_usage",
+            system_compaction_usage,
+            "assistant_shaped_record_skipped",
+        ),
+    ] {
+        let path = root.write(
+            &format!("{suffix}/{SID}.jsonl"),
+            &[line(valid.clone()), line(skipped)].concat(),
+        );
+        let export = export_json(&path);
+        assert_eq!(export["status"], "incomplete", "{suffix}");
+        assert_eq!(export["diagnostic_counts"][reason], 1, "{suffix}");
+        assert_eq!(export["uncertain_records"][0]["line"], 2, "{suffix}");
+        assert_eq!(export["totals"]["known_input_tokens"], 1, "{suffix}");
+        assert_eq!(
+            transcript_json(&path)["cumulative"]["distinct_calls"],
+            1,
+            "{suffix}"
+        );
+    }
+}
+
+#[test]
+fn usage_export_discloses_model_conflict_and_rejects_truncated_model() {
+    let root = Root::new();
+    let path = root.write(
+        &format!("p/{SID}.jsonl"),
+        &[
+            line(assistant("same", "claude-test", Some((10, 20, 30, 4)))),
+            line(assistant("same", "other-model", Some((10, 20, 30, 9)))),
+        ]
+        .concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["calls"][0]["model"], "claude-test");
+    assert_eq!(export["calls"][0]["output_tokens"], 9);
+    assert_eq!(export["calls"][0]["conflicting_model_lines"][0], 2);
+    assert_eq!(
+        export["calls"][0]["disputed_observations"][0]["model"],
+        "other-model"
+    );
+    assert_eq!(export["totals"]["complete_output_tokens"], Value::Null);
+    assert_eq!(transcript_json(&path)["cumulative"]["output_tokens"], 9);
+
+    let model = format!("{}actual-model", " ".repeat(256));
+    let long = root.write(
+        &format!("q/{SID}.jsonl"),
+        &line(assistant("a", &model, Some((1, 0, 0, 1)))),
+    );
+    let out = run(&[
+        "claude",
+        "--transcript",
+        long.to_str().unwrap(),
+        "--export-usage",
+    ]);
+    assert!(!out.status.success());
+    assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("message.model exceeds 256"));
+}
+
+#[test]
+fn usage_export_retains_disputed_counter_and_output_observations() {
+    let root = Root::new();
+    let first = assistant("a", "claude-test", Some((10, 20, 30, 4)));
+    let mut second = assistant("a", "claude-test", Some((10, 20, 30, 9)));
+    second["message"]["usage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("cache_creation_input_tokens");
+    let path = root.write(
+        &format!("p/{SID}.jsonl"),
+        &[line(first), line(second)].concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["status"], "incomplete");
+    assert_eq!(export["calls"][0]["output_tokens"], 4);
+    assert_eq!(
+        export["calls"][0]["disputed_observations"][0]["output_tokens"],
+        9
+    );
+    assert_eq!(export["calls"][0]["disputed_observations"][0]["line"], 2);
+    assert_eq!(export["totals"]["known_output_tokens"], 4);
+    assert_eq!(export["totals"]["complete_output_tokens"], Value::Null);
+    assert_eq!(export["totals"]["complete_input_tokens"], Value::Null);
+
+    let mut partial_first = assistant("a", "claude-test", Some((10, 0, 30, 4)));
+    partial_first["message"]["usage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("cache_creation_input_tokens");
+    let mut partial_second = assistant("a", "claude-test", Some((99, 0, 30, 9)));
+    partial_second["message"]["usage"]
+        .as_object_mut()
+        .unwrap()
+        .remove("cache_creation_input_tokens");
+    let partial = root.write(
+        &format!("q/{SID}.jsonl"),
+        &[line(partial_first), line(partial_second)].concat(),
+    );
+    let export = export_json(&partial);
+    assert_eq!(
+        export["calls"][0]["disputed_observations"][0]["input_tokens"],
+        99
+    );
+    assert_eq!(export["totals"]["known_input_tokens"], 10);
+    assert_eq!(export["totals"]["complete_input_tokens"], Value::Null);
+    assert_eq!(export["totals"]["complete_output_tokens"], Value::Null);
+}
+
+#[test]
+fn usage_export_excludes_inherited_id_repeated_after_own_call() {
+    let root = Root::new();
+    let mut own = assistant("own", "claude-test", Some((5, 0, 0, 2)));
+    own["agentId"] = json!("f0f0");
+    own["parentUuid"] = json!("fork-own");
+    let mut copied = assistant("copied", "claude-test", Some((8, 0, 0, 1)));
+    copied["agentId"] = json!("f0f0");
+    copied["parentUuid"] = Value::Null;
+    let mut repeat = copied.clone();
+    repeat["message"]["usage"]["output_tokens"] = json!(3);
+    let path = root.write(
+        &format!("p/{SID}/subagents/agent-f0f0.jsonl"),
+        &[
+            line(fork_ref("f0f0")),
+            line(copied),
+            line(own),
+            line(repeat),
+        ]
+        .concat(),
+    );
+    let export = export_json(&path);
+    assert_eq!(export["status"], "complete");
+    assert_eq!(export["totals"]["observed_calls"], 1);
+    assert_eq!(export["calls"][0]["message_id"], "own");
+    assert_eq!(export["exclusion_counts"]["inherited_fork_copy"], 1);
+    assert_eq!(export["exclusion_counts"]["inherited_message_id_repeat"], 1);
+    assert_eq!(export["exclusions"][1]["line"], 4);
+    assert_eq!(transcript_json(&path)["cumulative"]["distinct_calls"], 1);
+}
 
 #[test]
 fn deduplicates_message_id_and_sums_context() {

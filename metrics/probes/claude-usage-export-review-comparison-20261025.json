@@ -1,0 +1,2475 @@
+{
+  "schema": "claude-usage-export-review-comparison-v1",
+  "decision": "Select hybrid final implementation for this feature, authorized by user after quality comparison.",
+  "selected_checkpoint": "68f075e03940aaea8a0c7f6a83e9d6949e6e8cec",
+  "implementation_files": [
+    {
+      "path": "docs/context-status-cli.md",
+      "sha256": "41b65ef60b9ef9a7c2a9d4e89b76d094ea092a8c93cea661a689f57fbba91b64"
+    },
+    {
+      "path": "rust/crates/work-engine-context-status/src/claude.rs",
+      "sha256": "f518be32168ffb65f0d2ae5686d37b60cea38ec2820a792a06fef37bce6300ee"
+    },
+    {
+      "path": "rust/crates/work-engine-context-status/tests/claude.rs",
+      "sha256": "f65ca1c87a878e4c9863415ee5d0732bb8909b2496fadb6c435f665d5da9aef7"
+    }
+  ],
+  "comparison": {
+    "schema": "usage-export-three-arm-comparison-v1",
+    "status": "complete",
+    "acceptance": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/root-acceptance-v1.json",
+    "protocol": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/coordinator/protocol-v1.json",
+    "prior_comparison": "/home/bline/.local/state/work-engine/claude-usage-export-end-only-20261024/comparison-result-v1.json",
+    "arms": {
+      "incremental": {
+        "final_commit": "03b5b58d339a02fdd7ea525ff760cc8cfdd3f3a3",
+        "tests": 68,
+        "worker_usage": {
+          "input_tokens": 14457119,
+          "cached_input_tokens": 14123904,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 79740,
+          "reasoning_output_tokens": 18639,
+          "total_tokens": 14536859
+        },
+        "acceptance_scope": "Historical prior-arm acceptance; not re-reviewed against new hybrid-specific probes."
+      },
+      "end_only": {
+        "final_commit": "40e01d9d052245e3d8885fdb6572387df31a1aca",
+        "tests": 67,
+        "worker_usage": {
+          "input_tokens": 13927097,
+          "cached_input_tokens": 13614464,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 75436,
+          "reasoning_output_tokens": 17200,
+          "total_tokens": 14002533
+        },
+        "acceptance_scope": "Historical prior-arm acceptance; not re-reviewed against new hybrid-specific probes."
+      },
+      "hybrid": {
+        "final_commit": "68f075e03940aaea8a0c7f6a83e9d6949e6e8cec",
+        "incremental_commit": "86cb7d805ae383e5183a7fa5c380b0b4a00c5513",
+        "tests": 68,
+        "worker_usage": {
+          "input_tokens": 18214518,
+          "cached_input_tokens": 17570944,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 110638,
+          "reasoning_output_tokens": 22457,
+          "total_tokens": 18325156
+        },
+        "acceptance_scope": "Incremental acceptance then fresh final review, known-case crosscheck and all resulting remediation."
+      }
+    },
+    "raw_measurement": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/measurement-v1.json",
+    "measure_script": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/coordinator/measure.py",
+    "hybrid_vs_historical_worker_input": {
+      "incremental": {
+        "hybrid_additional_input": 3757399,
+        "hybrid_more_input_percent": 25.98995692018582
+      },
+      "end_only": {
+        "hybrid_additional_input": 4287421,
+        "hybrid_more_input_percent": 30.784742864934444
+      }
+    },
+    "hybrid_root_coordination": {
+      "input_tokens": 16488018,
+      "cached_input_tokens": 16220672,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 47489,
+      "reasoning_output_tokens": 12514,
+      "total_tokens": 16535507
+    },
+    "hybrid_whole_arm": {
+      "input_tokens": 34702536,
+      "cached_input_tokens": 33791616,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 158127,
+      "reasoning_output_tokens": 34971,
+      "total_tokens": 34860663
+    },
+    "marginal_final_stage": {
+      "baseline": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/coordinator/before-fresh-final-review-usage.json",
+      "builder_additional": {
+        "input_tokens": 6265255,
+        "cached_input_tokens": 6211712,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 20163,
+        "reasoning_output_tokens": 3927,
+        "total_tokens": 6285418
+      },
+      "root_additional": {
+        "input_tokens": 9452332,
+        "cached_input_tokens": 9420672,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 26506,
+        "reasoning_output_tokens": 7939,
+        "total_tokens": 9478838
+      },
+      "fresh_final_reviewer": {
+        "input_tokens": 3378421,
+        "cached_input_tokens": 3268736,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 34118,
+        "reasoning_output_tokens": 9158,
+        "total_tokens": 3412539
+      },
+      "failed_final_reviewer_launches": {
+        "input_tokens": 150768,
+        "cached_input_tokens": 132096,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2207,
+        "reasoning_output_tokens": 256,
+        "total_tokens": 152975
+      },
+      "meaning": "Actual added stage costs for fresh review, any repair, crosschecks and closure. No counterfactual saved-work estimate."
+    },
+    "outcomes": {
+      "incremental_design_findings": [
+        "HYB-D1",
+        "HYB-D2"
+      ],
+      "incremental_implementation_findings": [
+        "HYB-I1",
+        "HYB-I2"
+      ],
+      "fresh_final_findings": [
+        "HFCR-001",
+        "HFCR-002",
+        "HFCR-003"
+      ],
+      "postinitial_known_crosscheck_findings": [
+        "HXC-001",
+        "HXC-002"
+      ],
+      "overlap": "Frozen nonobject case overlaps HFCR-001 and is not counted again.",
+      "remaining_blockers": 0,
+      "postimplementation_repair_rounds": 3,
+      "final_stage_repair_rounds": 2,
+      "fresh_final_attempts": 2,
+      "substantive_fresh_final_reviews": 1,
+      "failed_startup_attempts": 1,
+      "quota_failed_builder_turns": 1,
+      "child_compactions": 0,
+      "child_model_replacements": 0,
+      "all_child_results_collected": true
+    },
+    "interpretation": [
+      "Fresh final review added three separately reported findings after incremental acceptance; this establishes added detection on this candidate, not highest achievable quality.",
+      "Frozen external counterexamples still found two additional gaps after fresh final review; neither review arrangement proved complete recall.",
+      "Hybrid used more recorded builder/reviewer input than either earlier arm after repairs; this run did not show a token-cost win.",
+      "The additional final stage includes reviewer work, failed startup, builder repairs driven by both fresh findings and external crosschecks; cannot assign all of its repair cost uniquely to fresh review.",
+      "Do not infer a general review policy winner from one stochastic run per route or compare test counts as quality scores."
+    ],
+    "limits": [
+      "Earlier two endpoints retained unchanged and not re-scored on all newly discovered hybrid-specific cases; no equal residual-defect-rate or highest-quality ranking established.",
+      "Root knew prior outcomes; controls frozen before hybrid launch only, not a preregistered three-arm experiment.",
+      "Original first arm shared dirty workspace; later arms isolated. Root context histories differ.",
+      "Failed blind-entry attempt exposed prior findings through mandatory board read; stopped before substantive review, cost included. Replacement used clean clone with no prior board refs, separate episode, same model. No capability-enforced independence claim.",
+      "Usage-limit interruption and overnight idle gap make raw elapsed unsuitable as active-work latency; no provider/account settings changed.",
+      "Input includes cached tokens; output includes reasoning subset. No dollar/quota estimate.",
+      "Root snapshot excludes its final measurement/report response calls; all completed child terminal counters are included."
+    ],
+    "collection": {
+      "outstanding_processes": [],
+      "claims": "released",
+      "board_listener": false,
+      "terminal_board_sequence": 2898
+    },
+    "measurement_sha256": "7802f430dd87c2a35d7df624cf643feeb9f37b53033971b808cd3bde44bd2993",
+    "root_cutoff": "2026-10-25T07:07:39.913Z"
+  },
+  "quality": {
+    "kind": "retrospective frozen-endpoint quality comparison",
+    "conclusion": "Hybrid has strongest observed final-artifact quality on these common known cases; both earlier final endpoints retain the same three demonstrated defect families. No general causal superiority of the review route established.",
+    "subjects": [
+      {
+        "name": "incremental",
+        "commit": "03b5b58d339a02fdd7ea525ff760cc8cfdd3f3a3",
+        "snapshot_sha256": "fa5c1e988769650288a491ae61a9bddc3a9a8d0ddfa6dcaca9fd970236d37923",
+        "repository": "/home/bline/cbm-work/usage-export-remediated-end-20261024-01a16c02",
+        "binary": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/binaries/incremental",
+        "binary_sha256": "0b522df1c941b061b65053994646b231d6c4f10bfd413a150c6024f233e9465b",
+        "flags": [
+          "--export-usage",
+          "--json"
+        ],
+        "build_command": [
+          "cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "/home/bline/cbm-work/usage-export-remediated-end-20261024-01a16c02/rust/Cargo.toml",
+          "--target-dir",
+          "/home/bline/.local/state/work-engine/claude-usage-export-pilot-20261024/clean-v3-target",
+          "-p",
+          "work-engine-context-status"
+        ],
+        "clean": true
+      },
+      {
+        "name": "end_only",
+        "commit": "40e01d9d052245e3d8885fdb6572387df31a1aca",
+        "snapshot_sha256": "c99421b9ef53c24901307d5dff9bbb7302347b672130eba5286d57d934875012",
+        "repository": "/home/bline/cbm-work/usage-export-end-only-final-20261024-01a16c02",
+        "binary": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/binaries/end_only",
+        "binary_sha256": "90c548aaeba65c1b959be8752bf3dfa11bb41c396a5e5109752521e33dfaec38",
+        "flags": [
+          "--usage-export"
+        ],
+        "build_command": [
+          "cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "/home/bline/cbm-work/usage-export-end-only-final-20261024-01a16c02/rust/Cargo.toml",
+          "--target-dir",
+          "/home/bline/.local/state/work-engine/claude-usage-export-end-only-20261024/target",
+          "-p",
+          "work-engine-context-status"
+        ],
+        "clean": true
+      },
+      {
+        "name": "hybrid",
+        "commit": "68f075e03940aaea8a0c7f6a83e9d6949e6e8cec",
+        "snapshot_sha256": "bc841e7380fe3058cc382233601a6f8874decbf99880eabbc8d1ad5377931529",
+        "repository": "/home/bline/cbm-work/usage-export-hybrid-final-review-20261025-01a16c02",
+        "binary": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/binaries/hybrid",
+        "binary_sha256": "06d917c898d277454b496205e153ffc28dab51258deefe3baaffc5d94acbd28c",
+        "flags": [
+          "--export-usage"
+        ],
+        "build_command": [
+          "cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "/home/bline/cbm-work/usage-export-hybrid-final-review-20261025-01a16c02/rust/Cargo.toml",
+          "--target-dir",
+          "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/clean-final-target",
+          "-p",
+          "work-engine-context-status"
+        ],
+        "clean": true
+      }
+    ],
+    "method": {
+      "fixture_count": 34,
+      "binary_invocations": 102,
+      "fixtures": "cases-v1.json",
+      "fixtures_sha256": "43bf8861a993b62262fcc7185a948ccd5c99c10654bb0ac1f1bbd08d9d300a46",
+      "adjudication": "adjudication-v1.json",
+      "adjudication_sha256": "d03fb0dfa28c09b04582d0afe4f50ffbe05078648a2f7ba7b98c1aabe11e1932",
+      "build": "Offline locked rebuild from each clean frozen endpoint; binary copies hashed; Git archives SHA256-bound; endpoints verified clean again after execution.",
+      "oracle": "Coordinator-authored executable contract-level checks, schema-aware. Three expectation interpretation amendments disclosed in adjudication. No fresh model reviewer launched."
+    },
+    "quality_dimensions": [
+      {
+        "dimension": "Basic arithmetic, streaming output, missingness",
+        "result": "All three preserve tested exact oracle15/20/70/knownoutput9 with incomplete output and correct valid control10/20/30/4."
+      },
+      {
+        "dimension": "Duplicate repair and fork inheritance",
+        "result": "All three retain later output9 as accepted or disputed evidence and mark uncertainty; tested inherited identities excluded, including later repeats."
+      },
+      {
+        "dimension": "Schema-uncertain assistant-shaped usage",
+        "cases": [
+          "missing_type",
+          "unknown_type",
+          "assistant_with_compact_metadata"
+        ],
+        "incremental": "Silently drops second usage record and labels first-only ledger accounting_complete.",
+        "end_only": "Silently drops second usage record and labels first-only ledger complete.",
+        "hybrid": "Reports incomplete and records uncertain source line."
+      },
+      {
+        "dimension": "Conflicting model attribution",
+        "cases": [
+          "same_id_model_conflict"
+        ],
+        "incremental": "Complete; later output9 attributed to first model and other-model observation lost.",
+        "end_only": "Same residual failure.",
+        "hybrid": "Incomplete; conflict line and other-model counters preserved; complete totals null."
+      },
+      {
+        "dimension": "Lossy model attribution",
+        "cases": [
+          "truncated_blank_model"
+        ],
+        "incremental": "Truncates model to256spaces and labels accounting_complete.",
+        "end_only": "Same residual failure with complete status.",
+        "hybrid": "Explicit bounded refusal; no ledger emitted."
+      },
+      {
+        "dimension": "Identity hardening",
+        "cases": [
+          "id_blank"
+        ],
+        "result": "Earlier endpoints accept whitespace-only IDs, hybrid rejects. Separate hardening observation: earlier documented policy says nonempty exact IDs, so this is not included in confirmed residual-defect count."
+      },
+      {
+        "dimension": "Privacy and bounds",
+        "result": "No secret body sentinel exported in any of102observations. All refuse tested total overflow and session mismatch without ledger. This is not an exhaustive privacy or bounds audit."
+      },
+      {
+        "dimension": "Consumer ergonomics",
+        "result": "End-only and hybrid sum individually known counters; incremental retains them in rows but uses its documented eligible subset for aggregate sums. Hybrid can retain numeric complete_* row-subset sums despite top-level incomplete for skipped records or late fork ambiguity; consumers must honor top-level status. No new defect inferred solely from cross-schema field differences."
+      }
+    ],
+    "counts": {
+      "incremental": {
+        "residual_failure_witnesses": 5,
+        "families": 3
+      },
+      "end_only": {
+        "residual_failure_witnesses": 5,
+        "families": 3
+      },
+      "hybrid": {
+        "residual_failure_witnesses": 0,
+        "families": 0
+      }
+    },
+    "limits": [
+      "Known-case selection includes probes used to repair hybrid; this demonstrates repair coverage, not unseen-case generalization.",
+      "One task and one implementation per route; reviewer effort, total budget and later knowledge differ. Cannot isolate effect of review timing or establish statistical superiority.",
+      "No claim of zero remaining bugs; maintainability, architecture, performance and production prevalence not compared.",
+      "No fresh paid reviews or remediation cycles launched. Historical acceptance and cost artifacts remain unchanged; findings are retrospective residual behavior.",
+      "No aggregate pass percentage: correlated variants, explicit refusals and hardening differences are distinct outcomes."
+    ],
+    "next_inference": "Evidence favors the hybrid endpoint for this feature and supports the value of a fresh final review after incremental review. Testing the route requires unseen cases, matched effort and repeated tasks.",
+    "processes_remaining": [],
+    "endpoint_worktrees_clean": true
+  },
+  "case_evidence": [
+    {
+      "name": "assistant_with_compact_metadata",
+      "fixture_sha256": "8101431a68c52989156cc6d3b126c868a6acb9ac73fd1f4f019c23f577c0b139",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 5, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 40, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}, \"compactMetadata\": {\"trigger\": \"auto\"}}\n",
+      "initial_expected": "Assistant-shaped usage cannot silently disappear into complete ledger",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "assistant_with_compact_metadata",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": false
+          },
+          "note": "Assistant-shaped usage on line2 silently excluded; only first call10/20/30/4 remains with complete status.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/assistant_with_compact_metadata.json",
+          "evidence_sha256": "8abb99c2f3ac8ccdd2f702a3461e148c65b27e86031d91d1ab63b5246365dd51",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "assistant_with_compact_metadata",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": false
+          },
+          "note": "Assistant-shaped usage on line2 silently excluded; only first call10/20/30/4 remains with complete status.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/assistant_with_compact_metadata.json",
+          "evidence_sha256": "f4e0f3040d214d0cda14f4fb7aa018e46d382241c7cc107969ee50fa5a993390",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "assistant_with_compact_metadata",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/assistant_with_compact_metadata.json",
+          "evidence_sha256": "9e7f85cd3919b6fc40e49346cbd153e8ceac969ff17cc3dbe7844822b1a35a7e",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "nonobject_number",
+      "fixture_sha256": "f412c9c5363c0dc4c4bf0c737a2d72f75bb2f4a9edabc682d0b08ee655d232d2",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n123\n",
+      "initial_expected": "Uninterpretable record means incomplete or explicit refusal",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "nonobject_number",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/nonobject_number.json",
+          "evidence_sha256": "125d3831aca9d0e7468a1c2db2ea52937b7ad6610f1ac18d8a09a8e1f7901b3f",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "nonobject_number",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/nonobject_number.json",
+          "evidence_sha256": "484d4040f8a762a615022d1abaf3b28f5f283b5e346efb092b26eb58407be372",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "nonobject_number",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/nonobject_number.json",
+          "evidence_sha256": "81465e952ebb7274ecb1f5d9435dff1982efeb440ce44d9d45b6711a969ffbc6",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "context_overflow",
+      "fixture_sha256": "642a71c6c5a0329b67d1cc68602c125b2b5cafee7054bce2a2dae100b147d437",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 18446744073709551615, \"cache_creation_input_tokens\": 1, \"cache_read_input_tokens\": 0, \"output_tokens\": 0}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Checked overflow; no wrapped arithmetic or complete misleading export",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "context_overflow",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "no_wrap": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/context_overflow.json",
+          "evidence_sha256": "0edca0dfd869f32da45abaca29ccb17a877121aab43efef207730c07446f34b7",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "context_overflow",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "no_wrap": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/context_overflow.json",
+          "evidence_sha256": "9308b640a2da47aac446efdcd63a7130004b17b13f85af1f5b13f7aa38a17137",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "context_overflow",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "no_wrap": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/context_overflow.json",
+          "evidence_sha256": "6d78c58b27c6d96ebb8ce8945526ff451f99a39b3a6571d125506362b3018b20",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "same_id_model_missing",
+      "fixture_sha256": "dcd22136d6070539abcbbf8c77eb671732216f36f662a21b8394a820bbb0d495",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": null, \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Missing later model must not silently establish complete model attribution",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "same_id_model_missing",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true,
+            "known_first_model": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/same_id_model_missing.json",
+          "evidence_sha256": "a45c3f78886955fd0002a9b42369c05e933cef28ca496bd123f40c7c33985a02",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "same_id_model_missing",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true,
+            "known_first_model": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/same_id_model_missing.json",
+          "evidence_sha256": "6b30c97a428113b7e758ab0984771d193b132b634a01e5506471b78a680084a2",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "same_id_model_missing",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true,
+            "known_first_model": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/same_id_model_missing.json",
+          "evidence_sha256": "956ca54ae72249e46f7208089a104926222f76a5ebdc92107a6a36270dc015b0",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "same_id_model_conflict",
+      "fixture_sha256": "258c01ff7df037d0f39db36548f8f59387a8937ffdfe48257e74baddacbe59ee",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"other-model\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Conflicting models must be explicit; no complete unqualified attribution",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "same_id_model_conflict",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "model_conflict_explicit": false
+          },
+          "note": "Output9 from second model attributed to first model; conflicting model disappears and ledger claims complete.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/same_id_model_conflict.json",
+          "evidence_sha256": "81f311062e908fcf9fee04628a25432d85e979860a3c7949b8456827cb38ae5b",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "same_id_model_conflict",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "model_conflict_explicit": false
+          },
+          "note": "Output9 from second model attributed to first model; conflicting model disappears and ledger claims complete.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/same_id_model_conflict.json",
+          "evidence_sha256": "6e766337998ddfd18df771f5969b0221456cacdc1a76abdeb31b6fdb794023a8",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "same_id_model_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "model_conflict_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/same_id_model_conflict.json",
+          "evidence_sha256": "e350fe6c81e189b372480608592d96a5045127bf878432c1a10af3b7f7e951a8",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "max_context",
+      "fixture_sha256": "dc0ea8f93875e4a44855633cf5d134d6a91343f41666aec55ca783c51a089237",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 18446744073709551615, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 0}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Exact u64 maximum or explicit bounded refusal",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "max_context",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/max_context.json",
+          "evidence_sha256": "ac4e26e0f3981c573d24fdc403dc6863271f269b8b0921d2c1237b94ce1fa79a",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "max_context",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/max_context.json",
+          "evidence_sha256": "b6aa2a7e1fb09345a9a818d3fe6ae2d0e78110381074842aea38c10eb887254b",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "max_context",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/max_context.json",
+          "evidence_sha256": "f5c58eb4b0ff4497de8d24bbbd0f9d6c0f5fbd296ffa4bed5b72d769cf7b64d3",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "oracle",
+      "fixture_sha256": "8371bceedcabe64f87f62191d7b335a808706535b3f8bb0971f4ed074d96c3cc",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 5, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 40}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Two calls; input15 creation20 read70 knownoutput9; missing output not complete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "oracle",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/oracle.json",
+          "evidence_sha256": "8ce4468b1c291ad5fa7ea1cf48ff5960ee6556fb7d05d9db6f2d8bb87074cf63",
+          "row_count": 2
+        },
+        {
+          "arm": "end_only",
+          "case": "oracle",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/oracle.json",
+          "evidence_sha256": "cc972b5b2090fcba8694610849146fc7e36765861ae8192ff697be3e8aa8a6ce",
+          "row_count": 2
+        },
+        {
+          "arm": "hybrid",
+          "case": "oracle",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/oracle.json",
+          "evidence_sha256": "8a9b3c5e3af2466310d6c3435041e2db631306dd398962cb7921be701fa6d29c",
+          "row_count": 2
+        }
+      ]
+    },
+    {
+      "name": "truncated_blank_model",
+      "fixture_sha256": "ca433b63a915e0de51ddbd241223cec1aad33dd670d46c5f5e89a2f286fd3af9",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"                                                                                                                                                                                                                                                                actual-model\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "No blank or lossy model presented as complete attribution",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "truncated_blank_model",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "lossy_model_not_complete": false
+          },
+          "note": "Meaningful model suffix truncated away, leaving256spaces while claiming complete.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/truncated_blank_model.json",
+          "evidence_sha256": "e32b0a6b1c7186e980489416292bafa4703ceb0525fe230610f0a0bcdcb8f9b7",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "truncated_blank_model",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "lossy_model_not_complete": false
+          },
+          "note": "Meaningful model suffix truncated away, leaving256spaces while claiming complete.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/truncated_blank_model.json",
+          "evidence_sha256": "a7e6da68b1e33ea2efbd2e818499534a1950514c9ab1a53fd2479abb508dfb16",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "truncated_blank_model",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/truncated_blank_model.json",
+          "evidence_sha256": "616d54724667b8f7e1b370e0f28e83735fc884f92edc69680e0b020d8c5e5015",
+          "row_count": null
+        }
+      ]
+    },
+    {
+      "name": "float_counter",
+      "fixture_sha256": "14580ec07cce27f51ee59b305b8298572469c652c7e898811b39bf0eeb815ac5",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20.5, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Counter unknown, other observed counters retained in rows, incomplete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "float_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/float_counter.json",
+          "evidence_sha256": "2e450b9750c74cac0dd98a96b50b2dbb48d7c44ca66b82c8d3c14c0f2c9c0c37",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "float_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/float_counter.json",
+          "evidence_sha256": "4d38842725665db653f28d9cdec4943a92d3c942cfd6dafa73f009f58eab98d6",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "float_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/float_counter.json",
+          "evidence_sha256": "11d5cc08f8a2a0b97451ad6f889553b78173ca0fe65afb9cf2a614d37973ccd2",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "missing_type",
+      "fixture_sha256": "051491249dbb8d01c08596b4ba3a627eea68b5a1e13fb2cfeab0df599be5f283",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 5, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 40, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Assistant-shaped usage cannot silently disappear into complete ledger",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "missing_type",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": false
+          },
+          "note": "Assistant-shaped usage on line2 silently excluded; only first call10/20/30/4 remains with complete status.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/missing_type.json",
+          "evidence_sha256": "513b50e0339c016771cb6d14ebdafc37348d9f97686fea9185b4d15b11026b9b",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "missing_type",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": false
+          },
+          "note": "Assistant-shaped usage on line2 silently excluded; only first call10/20/30/4 remains with complete status.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/missing_type.json",
+          "evidence_sha256": "e73c57aa06a4dcb42ee2ba9448e0c47939ae10f3611a3ec4b40db72d0d425cfe",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "missing_type",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/missing_type.json",
+          "evidence_sha256": "9888e41441019edab2a9ad227b927ec384958192f33f3dd323c7df2eaed4384a",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "negative_counter",
+      "fixture_sha256": "931a43a1df4ce278d0806171b4cab3a678303a8c959c477db42455c18bd261a1",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": -1, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Counter unknown, other observed counters retained in rows, incomplete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "negative_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/negative_counter.json",
+          "evidence_sha256": "ca80f5fc0db3e1939dc954f48d339c8b10298d202fb7674665af3e58dee6d57b",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "negative_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/negative_counter.json",
+          "evidence_sha256": "6d4f534caec228cddc666731a0d95c51416a07db2b7e94f8f8894cf2a550d99e",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "negative_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/negative_counter.json",
+          "evidence_sha256": "f93078cff077b8e18dbfd24722e7fe42e975a30dc3b77503e8f979193ed812df",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "id_blank",
+      "fixture_sha256": "85e974819477802edf79f5ab60ffe6dffc9cb101b6bcf581dad31c9804f031dc",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \" \", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Blank identity unverified, incomplete or explicit refusal",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "id_blank",
+          "disposition": "hardening_difference",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true
+          },
+          "note": "Whitespace-only ID accepted under nonempty-ID policy; hybrid refuses. Recorded separately from confirmed loss cases because byte-exact nonempty IDs are the earlier documented policy.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/id_blank.json",
+          "evidence_sha256": "9e4ade2f26d81619fed0f9fe4b460e3a4df2d9764d70e8e088a32844c0af5dad",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "id_blank",
+          "disposition": "hardening_difference",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true
+          },
+          "note": "Whitespace-only ID accepted under nonempty-ID policy; hybrid refuses. Recorded separately from confirmed loss cases because byte-exact nonempty IDs are the earlier documented policy.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/id_blank.json",
+          "evidence_sha256": "b2569fa905f4db995c21e444e72e5eca25497143bd001cd0e242f18e20f8b786",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "id_blank",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/id_blank.json",
+          "evidence_sha256": "675c84eefe475a6aecb800834b2f42f3f8fce6ef87623919423b1395ce0e9337",
+          "row_count": null
+        }
+      ]
+    },
+    {
+      "name": "nonobject_array",
+      "fixture_sha256": "01e7be3cf01a28e5f7be7c1861df2e9a1132d21ccb0feb73ecfa95e0e07317fa",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n[{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 5, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 40, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}]\n",
+      "initial_expected": "Uninterpretable record means incomplete or explicit refusal",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "nonobject_array",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/nonobject_array.json",
+          "evidence_sha256": "4b82a8c548e9b8e55dba2e6b711475fad00ccd92216f5b5a5b46b3188592dff0",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "nonobject_array",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/nonobject_array.json",
+          "evidence_sha256": "6a19e352ecc4ebcd3b15c2944d32b5cb5b3d07394586ddf662e0fd3990a62774",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "nonobject_array",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/nonobject_array.json",
+          "evidence_sha256": "942dd471c704642a25a181d58e36dac9437498ed3eb7fe8912f2316b2eb42cf7",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "id_long",
+      "fixture_sha256": "0e6d7dcd9937a7e2765f75a1e2d2964f393fcbe6ec6c44e75ea5299ed1a29fcb",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "No lossy identity represented as complete verified logical call",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "id_long",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "unverified_identity_not_complete": true,
+            "separate_source_rows": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/id_long.json",
+          "evidence_sha256": "afc43f3e5044461cbd256646f089c26a07cefa125b29183267061a71e6b43008",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "id_long",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/id_long.json",
+          "evidence_sha256": "c1338fd4a9e9dbad6a785c109dae4927c121b980029d21125478c3614ee41eed",
+          "row_count": null
+        },
+        {
+          "arm": "hybrid",
+          "case": "id_long",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/id_long.json",
+          "evidence_sha256": "3ee3ca39baec3d899075d796e30836096d89e16ff0dcb1a247460351f3ba518c",
+          "row_count": null
+        }
+      ]
+    },
+    {
+      "name": "zero_context",
+      "fixture_sha256": "f68edb1a81a42a63fc81e894c1058d522aab4d9ab8f3cff756c13bb715c7dbc3",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 0, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 0}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Known zeros not missing or excluded silently",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "zero_context",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "zero_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/zero_context.json",
+          "evidence_sha256": "34a3bc071c412d7a83673756df7e97877dc0abd486568290d2a47ee8b1f22069",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "zero_context",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "zero_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/zero_context.json",
+          "evidence_sha256": "ddce948426823805c9d800f5623eaead76e7ff1c2099197a1dd980564b5398e4",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "zero_context",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "zero_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/zero_context.json",
+          "evidence_sha256": "f639e9e6eb8d9a3bcf92074a262e7c179955497e7f79f3d096953acc7282f5ea",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "input_conflict",
+      "fixture_sha256": "036b92c4d230827643701a8319f37dc9289bfb60d3b81f5849aa47e999f4531a",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 11, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Input conflict explicit; output9 remains attributable evidence; disputed totals not complete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "input_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true,
+            "conflict_visible": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/input_conflict.json",
+          "evidence_sha256": "c19bf3f1ebd6ab55c9a744807a756073e9818d43731f9bc167cf9fddcbb714cc",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "input_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true,
+            "conflict_visible": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/input_conflict.json",
+          "evidence_sha256": "6a493a622d07796a8d3ab1aa77c4713e55b72d122b3e542146194ad0f1664bc1",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "input_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true,
+            "conflict_visible": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/input_conflict.json",
+          "evidence_sha256": "c065737a1c7c69d9ceef9186c10767cfafa70be9b51428f610d1fd7b030bc22c",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "fork",
+      "fixture_sha256": "72d68e91df47ea535f0e02b1eac72f4831e867cd564f05a28208bda1344ada0e",
+      "fixture_jsonl": "{\"type\": \"fork-context-ref\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"parentSessionId\": \"aaaaaaaa-34d1-4900-bbe0-15042efb0e2c\"}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"parent\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 100, \"cache_creation_input_tokens\": 100, \"cache_read_input_tokens\": 100, \"output_tokens\": 10}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}, \"parentUuid\": null}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"own\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 1, \"cache_creation_input_tokens\": 2, \"cache_read_input_tokens\": 3, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}, \"parentUuid\": \"own-parent\"}\n",
+      "initial_expected": "Inherited excluded; own1/2/3/4",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "fork",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/fork.json",
+          "evidence_sha256": "ee4bf4ddc8b80125c2fa734d513e53cf3d78ed4ff2e03d1c1d95e337cb00d1fd",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "fork",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/fork.json",
+          "evidence_sha256": "ec702e6a9c12e70118beaa88e26c90654829e91795f154b3e9dd94e02165db9a",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "fork",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/fork.json",
+          "evidence_sha256": "8944e5661fca5cb4400cb5722d9d2825ad2c6a102c222bddd8ddd6ae7cc2029e",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "output_missing_then_zero",
+      "fixture_sha256": "7961f3735a07e14f4850ab369082f4132608722d152860d562062482a63d45a1",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": null}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 0}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Retain observed zero and provenance; unknown not fabricated zero",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "output_missing_then_zero",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/output_missing_then_zero.json",
+          "evidence_sha256": "61d5504018067d3082a1bb9cef6b1672be444744f0804c9e0a7cc1262edb17c9",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "output_missing_then_zero",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/output_missing_then_zero.json",
+          "evidence_sha256": "fa360bb14b5bcb8e535f21dfb1da3da8fbe729fc59845a39f35c97fa9e5026ba",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "output_missing_then_zero",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/output_missing_then_zero.json",
+          "evidence_sha256": "a9949b774c56846278a84e778dc10519968926c9ea00c381a2512f4371ee005e",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "synthetic",
+      "fixture_sha256": "67bb889545a8a3ebe9089af65a7815a00f68e9e027acb82980cf94685a659302",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"s\", \"model\": \"<synthetic>\", \"usage\": {\"input_tokens\": 99, \"cache_creation_input_tokens\": 99, \"cache_read_input_tokens\": 99, \"output_tokens\": 99}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Synthetic excluded; actual call10/20/30/4",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "synthetic",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/synthetic.json",
+          "evidence_sha256": "cbe782fda5996afa7710c4843fa60fcabe1fff787cf1e53b9e77a23de1ffcb23",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "synthetic",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/synthetic.json",
+          "evidence_sha256": "29c54d83b9dae6a455484cdf39f10ba3dac23fb62f769c7b52d6274dfa7b09a8",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "synthetic",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/synthetic.json",
+          "evidence_sha256": "f3640828afa72a5cee970ea710f2109840547b916867cc26074353321b807da7",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "identity_conflict",
+      "fixture_sha256": "13ada810c99d612f266f2095ded3381ffaf11f5a34b4be4ca1e575f0d31733b1",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"aaaaaaaa-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Explicit identity refusal; no accepted ledger",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "identity_conflict",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/identity_conflict.json",
+          "evidence_sha256": "552804fe81066cb156ae8ebd837f51ffde946734d4834bd49c0ec94d72112d99",
+          "row_count": null
+        },
+        {
+          "arm": "end_only",
+          "case": "identity_conflict",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/identity_conflict.json",
+          "evidence_sha256": "56185dae4e07985dcb888ff43c175d3fc5ce410df8a8fb94456e904f05d8e691",
+          "row_count": null
+        },
+        {
+          "arm": "hybrid",
+          "case": "identity_conflict",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/identity_conflict.json",
+          "evidence_sha256": "9731ce9ee23acdafa6e16755c633262323c515254a3ba657d6507fa9eaa792bf",
+          "row_count": null
+        }
+      ]
+    },
+    {
+      "name": "complete",
+      "fixture_sha256": "9211f9fffca000f745567b6c6592eb1fa9f5a5f94e50e872fbc8779c50583d1d",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "One call 10/20/30/4; complete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "complete",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/complete.json",
+          "evidence_sha256": "5c714f0eedd14f549d67aebf659e17ba6c373f8bdd9731dd777dd521cf1c341c",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "complete",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/complete.json",
+          "evidence_sha256": "191287d85da94c2b3353acd79c496d5603f7f65cb5fb0632cd4872f59fc662a0",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "complete",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/complete.json",
+          "evidence_sha256": "9d39a9dee9a01e685641b981c83fe46c16853000fc1ec918d40b314c6c24e5e1",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "nonobject_null",
+      "fixture_sha256": "7fd3b5b096321c19b679b2f28b186f3c9b4ad4e4e2db790227a02889f17f5e48",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\nnull\n",
+      "initial_expected": "Uninterpretable record means incomplete or explicit refusal",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "nonobject_null",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/nonobject_null.json",
+          "evidence_sha256": "dcb2f021938bb7c83154e85cc5953df03f13fffd1c5ee9cc1486f3d650fc160a",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "nonobject_null",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/nonobject_null.json",
+          "evidence_sha256": "31f76449899a089bc335dd4f540d01a2d30a92b7cfd60859bd66d8a73a139e0c",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "nonobject_null",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/nonobject_null.json",
+          "evidence_sha256": "45d2d34b45c83ac583e070faa3474f5e026ec6ea7cb0464a9ffe3c6a8f9d3ac4",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "sum_overflow",
+      "fixture_sha256": "98ee95e62940573e7db1412b1d56960ba61432ba25d4e437d2057cb5b5a5ea04",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 18446744073709551615, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 0}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 1, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 0}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Checked overflow; no wrapped arithmetic or complete misleading export",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "sum_overflow",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/sum_overflow.json",
+          "evidence_sha256": "d641f744b7608abe04f4248cd0f13ea84d9c35c5fc062bd1a41073da1003f425",
+          "row_count": null
+        },
+        {
+          "arm": "end_only",
+          "case": "sum_overflow",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/sum_overflow.json",
+          "evidence_sha256": "5f82f45c0739391029b909c5a6fa2e4a3efd8a58107f3bb93f1726e847ca9330",
+          "row_count": null
+        },
+        {
+          "arm": "hybrid",
+          "case": "sum_overflow",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/sum_overflow.json",
+          "evidence_sha256": "ab1897eceb0b0fd5f27f7e904040b1069e363f9677f1b1c2904ffd6b85dc658a",
+          "row_count": null
+        }
+      ]
+    },
+    {
+      "name": "output_decrease",
+      "fixture_sha256": "43cf48badc12dba7cfa912cc55bae1273d457eec24a3d7f39fc3c4a68340ddac",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Deterministic streaming output9 maximum; provenance of4 and9",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "output_decrease",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/output_decrease.json",
+          "evidence_sha256": "b24f336653120cd758f6169f36db57f223ceb5fdf54be6cf01be96fb20cabc3c",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "output_decrease",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/output_decrease.json",
+          "evidence_sha256": "fe6af128598940e8e4a52316dff58612aadae660b7356d8da7020edbafbff621",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "output_decrease",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "streaming_value": true,
+            "one_call": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/output_decrease.json",
+          "evidence_sha256": "7fc045ab87650d67d33c0251511f8efa6761fc501cd73b2ea9b560f6bc0da4d2",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "string_counter",
+      "fixture_sha256": "e57cca08a29c575b668e7d08a04941b1ff4b56bdaa77aed6cf1c323782d5e7f2",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": \"20\", \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Counter unknown, other observed counters retained in rows, incomplete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "string_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/string_counter.json",
+          "evidence_sha256": "1a7808fd2d663259c1aa04f64b94ebaa24fabfcd6fb094f666974befc9fb091e",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "string_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/string_counter.json",
+          "evidence_sha256": "93d947a8a8354d1c3a35d53af446a0920e9bee743e00ed4ad6c47f8aa8e75aff",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "string_counter",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/string_counter.json",
+          "evidence_sha256": "a270bd7103a2d91d7c7772781e1effa9c5282b8c7d99b8e7adacfbca71ceeb10",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "unknown_type",
+      "fixture_sha256": "b9657cea1d51af96eeddb80e2a98fe3b738c5f09e03c506e7a81938bbacf33ba",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n{\"type\": \"new-assistant-format\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-25T00:00:00Z\", \"message\": {\"role\": \"assistant\", \"id\": \"b\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 5, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 40, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"SECRET-PROMPT\"}, {\"type\": \"tool_use\", \"input\": {\"secret\": \"SECRET-TOOL\"}}]}}\n",
+      "initial_expected": "Assistant-shaped usage cannot silently disappear into complete ledger",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "unknown_type",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": false
+          },
+          "note": "Assistant-shaped usage on line2 silently excluded; only first call10/20/30/4 remains with complete status.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/unknown_type.json",
+          "evidence_sha256": "06dd42e79acd9a5406e3c95ed8da9ae009c34fdbb3ecc6d08f0ba38ad8fdc78e",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "unknown_type",
+          "disposition": "residual_quality_gap",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": false
+          },
+          "note": "Assistant-shaped usage on line2 silently excluded; only first call10/20/30/4 remains with complete status.",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/unknown_type.json",
+          "evidence_sha256": "820104ff5384f007f45368f95371db56e0788ed3d8c555a0b3d291ea60dec439",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "unknown_type",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/unknown_type.json",
+          "evidence_sha256": "43f56101b54af311e0f64991968f7ba32ecf575a7a0e3fdc26df49d87756393c",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "late_fork",
+      "fixture_sha256": "958f2eecfd89cf45bedde7fb8d19d289e9f6732f9ce0e55653495f8215227232",
+      "fixture_jsonl": "{\"type\": \"user\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\"}\n{\"type\": \"fork-context-ref\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"parentSessionId\": \"22222222-2222-2222-2222-222222222222\"}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": null, \"message\": {\"id\": \"inherited\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 100, \"cache_creation_input_tokens\": 100, \"cache_read_input_tokens\": 100, \"output_tokens\": 100}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"id\": \"a\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n",
+      "initial_expected": "Unresolved inheritance cannot be complete own-call ledger",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "late_fork",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/late_fork.json",
+          "evidence_sha256": "605c888532886c8294c9bdecfca3327dcf7a3ea24a4009cf86861304eb3be4ae",
+          "row_count": 2
+        },
+        {
+          "arm": "end_only",
+          "case": "late_fork",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/late_fork.json",
+          "evidence_sha256": "df739da4fd066ac93852648be4c8c63b5961de3fbe34c4249870cda6540407d9",
+          "row_count": 2
+        },
+        {
+          "arm": "hybrid",
+          "case": "late_fork",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "uncertainty_explicit": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/late_fork.json",
+          "evidence_sha256": "1875ff48a7885e8928e0e57fdf5ad9820e85fef709743d4d5610b635910527a6",
+          "row_count": 2
+        }
+      ]
+    },
+    {
+      "name": "inherited_id_after_prefix",
+      "fixture_sha256": "e05001ed9c4606964fbc7cfa8a42e7062d541d5ea67f01a853303ed0139a8f99",
+      "fixture_jsonl": "{\"type\": \"fork-context-ref\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"parentSessionId\": \"22222222-2222-2222-2222-222222222222\"}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": null, \"message\": {\"id\": \"inherited\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 100, \"cache_creation_input_tokens\": 100, \"cache_read_input_tokens\": 100, \"output_tokens\": 100}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n{\"type\": \"user\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\"}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": null, \"message\": {\"id\": \"inherited\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 100, \"cache_creation_input_tokens\": 100, \"cache_read_input_tokens\": 100, \"output_tokens\": 100}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n",
+      "initial_expected": "Repeated inherited identity not counted as own; zeroown usage",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "inherited_id_after_prefix",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/inherited_id_after_prefix.json",
+          "evidence_sha256": "0da48848ff48d0d3655458cd914fdf79640c96959703c2421a9a461b39318303",
+          "row_count": 0
+        },
+        {
+          "arm": "end_only",
+          "case": "inherited_id_after_prefix",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/inherited_id_after_prefix.json",
+          "evidence_sha256": "378e343658de9b434b2eaa41e8c04411dc58ef9b8ead7b0b78fcbfe986fa4f65",
+          "row_count": 0
+        },
+        {
+          "arm": "hybrid",
+          "case": "inherited_id_after_prefix",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "exact_known_totals": true,
+            "row_count": true,
+            "completeness": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/inherited_id_after_prefix.json",
+          "evidence_sha256": "f360ee924059388a8263e47ba8af35d1b2ed896f988a605908a46fbf8ab06c73",
+          "row_count": 0
+        }
+      ]
+    },
+    {
+      "name": "empty_ids",
+      "fixture_sha256": "52dace1edbb544c969dd8c6e03a49a5c131b2fbdfec8279b1c22ca4fda538ca5",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"id\": \"\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 1, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 1}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"id\": \"\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 1, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 1}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n",
+      "initial_expected": "Two unverified source records; no verified merged logical call",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "empty_ids",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "unverified_identity_not_complete": true,
+            "separate_source_rows": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/empty_ids.json",
+          "evidence_sha256": "1321e4fea80d1238a16a32b0836a185056b3a7127a6e645bc5f1f86bf9959940",
+          "row_count": 2
+        },
+        {
+          "arm": "end_only",
+          "case": "empty_ids",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/empty_ids.json",
+          "evidence_sha256": "c256597b32b9ed38c655dc0daddb43543cba09f22c56505e4a75b07ad132d5a2",
+          "row_count": null
+        },
+        {
+          "arm": "hybrid",
+          "case": "empty_ids",
+          "disposition": "explicit_refusal",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "no_partial_ledger": true,
+            "explicit_error": true,
+            "allowed_refusal": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/empty_ids.json",
+          "evidence_sha256": "e19cd68c692f4497c2b85963ad199b5dc614605f20019f8b93aa5f653634e84e",
+          "row_count": null
+        }
+      ]
+    },
+    {
+      "name": "missing_and_literal_ids",
+      "fixture_sha256": "94c802866c52a2d8f55eff9951dc97b6db9cc3103a986360f149bad1736055ec",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"id\": \"line:1\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n",
+      "initial_expected": "Missing-ID surrogate and literal line:1 providerID do not merge; incomplete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "missing_and_literal_ids",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "unverified_identity_not_complete": true,
+            "separate_source_rows": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/missing_and_literal_ids.json",
+          "evidence_sha256": "81e9b55901a3f46a5828b3e2258790d63d07cf59829c4b856a81ab487a8394d2",
+          "row_count": 2
+        },
+        {
+          "arm": "end_only",
+          "case": "missing_and_literal_ids",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "unverified_identity_not_complete": true,
+            "separate_source_rows": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/missing_and_literal_ids.json",
+          "evidence_sha256": "537fdb646404b86d1bff0b17fb7170018e42d0d4d655bbc9cda370e5a7fddf4b",
+          "row_count": 2
+        },
+        {
+          "arm": "hybrid",
+          "case": "missing_and_literal_ids",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "unverified_identity_not_complete": true,
+            "separate_source_rows": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/missing_and_literal_ids.json",
+          "evidence_sha256": "b99525e575691c6ff09c491660d8cef4e94384f32921e4cd2b6deb1ccd72700e",
+          "row_count": 2
+        }
+      ]
+    },
+    {
+      "name": "partial_and_zero",
+      "fixture_sha256": "cc2e09fee589c12e647350dc88ed66879942b7dadddb623c0a0ad93d029b6061",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"id\": \"partial\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 10, \"cache_read_input_tokens\": 30, \"output_tokens\": 7}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n{\"type\": \"assistant\", \"sessionId\": \"11111111-1111-1111-1111-111111111111\", \"timestamp\": \"2026-10-24T00:00:00Z\", \"parentUuid\": \"parent\", \"message\": {\"id\": \"zero\", \"model\": \"claude-test\", \"usage\": {\"input_tokens\": 0, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"output_tokens\": 0}, \"content\": \"PRIVATE_REVIEW_SECRET_BODY\", \"tool_input\": \"PRIVATE_REVIEW_SECRET_TOOL\"}}\n",
+      "initial_expected": "Retain known10/read30/output7 in row; zero row retained; incomplete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "partial_and_zero",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true,
+            "zero_row_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/partial_and_zero.json",
+          "evidence_sha256": "f88cd715605a8c283da704f4e921f78b0ce7d6cbbf5fd72089a270a3544ba420",
+          "row_count": 2
+        },
+        {
+          "arm": "end_only",
+          "case": "partial_and_zero",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true,
+            "zero_row_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/partial_and_zero.json",
+          "evidence_sha256": "4b65a5e61cd266d619d2d5929e40e7c0b7b44f65c87556de7b371a45aa4d9c16",
+          "row_count": 2
+        },
+        {
+          "arm": "hybrid",
+          "case": "partial_and_zero",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true,
+            "zero_row_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/partial_and_zero.json",
+          "evidence_sha256": "9b692dc1654ae65778421a4281767afb472b7b6a69d54c30365c88b442903f89",
+          "row_count": 2
+        }
+      ]
+    },
+    {
+      "name": "partial_input_component",
+      "fixture_sha256": "5ee968ff6e9dadd09257c86184bd6958ba171046f7438b7ee95bb0483a942b73",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-24T06:00:00Z\", \"message\": {\"id\": \"call-a\", \"model\": \"claude-opus-5-5\", \"usage\": {\"input_tokens\": 10, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"PRIVATE-REVIEW-PROMPT-SECRET\"}]}}\n",
+      "initial_expected": "Retain input10/read30/output4 in row; absent creation unknown",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "partial_input_component",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/partial_input_component.json",
+          "evidence_sha256": "43c69ecc3251af1dcf6c0c20ab9139e751ec06700e5aa67c79c2ca20e9430f99",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "partial_input_component",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/partial_input_component.json",
+          "evidence_sha256": "a38cefc7f408b86d5a4c6d86c1669d4cba067e7dfedf389de6f71d3f541e965a",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "partial_input_component",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "partial": true,
+            "known_row_values_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/partial_input_component.json",
+          "evidence_sha256": "0fb167246ebac3ed4de3c6d6ce83aea48dd4ef4a118a6bab7c93ba3d78f9fc88",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "duplicate_missing_input",
+      "fixture_sha256": "1fd9c39a40651a66d024796580b912f27b66ac80ae5e09932d9651b9cf014524",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-24T06:00:00Z\", \"message\": {\"id\": \"call-a\", \"model\": \"claude-opus-5-5\", \"usage\": {\"input_tokens\": 10, \"cache_creation_input_tokens\": 20, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"PRIVATE-REVIEW-PROMPT-SECRET\"}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-24T06:00:01Z\", \"message\": {\"id\": \"call-a\", \"model\": \"claude-opus-5-5\", \"usage\": {\"input_tokens\": 10, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"PRIVATE-REVIEW-PROMPT-SECRET\"}]}}\n",
+      "initial_expected": "Later output9 retained as evidence; uncertain duplicate not complete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "duplicate_missing_input",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/duplicate_missing_input.json",
+          "evidence_sha256": "3ec56fa26c6e820dd29c8043876a3120a09397f524f8c9e024747db7507f20fe",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "duplicate_missing_input",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/duplicate_missing_input.json",
+          "evidence_sha256": "039c3b10d9442213a165ec44624cc2c5fcbae22e8ad1f69b2568bf1e97775978",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "duplicate_missing_input",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/duplicate_missing_input.json",
+          "evidence_sha256": "75a7ff03f2b7703fb918cf71840280bd24cc6d3af617736e1c3becbc1053c7e7",
+          "row_count": 1
+        }
+      ]
+    },
+    {
+      "name": "both_partial_conflict",
+      "fixture_sha256": "afa25003e63e9b66cba1c2b5498a5d1abf7f3d5ccb14f66a21042932b05c0df8",
+      "fixture_jsonl": "{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-24T06:00:00Z\", \"message\": {\"id\": \"call-a\", \"model\": \"claude-opus-5-5\", \"usage\": {\"input_tokens\": 10, \"cache_read_input_tokens\": 30, \"output_tokens\": 4}, \"content\": [{\"type\": \"text\", \"text\": \"PRIVATE-REVIEW-PROMPT-SECRET\"}]}}\n{\"type\": \"assistant\", \"sessionId\": \"bf60b4c1-34d1-4900-bbe0-15042efb0e2c\", \"timestamp\": \"2026-10-24T06:00:00Z\", \"message\": {\"id\": \"call-a\", \"model\": \"claude-opus-5-5\", \"usage\": {\"input_tokens\": 99, \"cache_read_input_tokens\": 30, \"output_tokens\": 9}, \"content\": [{\"type\": \"text\", \"text\": \"PRIVATE-REVIEW-PROMPT-SECRET\"}]}}\n",
+      "initial_expected": "Conflicting10 vs99 detected despite missing creation; output9 retained; incomplete",
+      "outcomes": [
+        {
+          "arm": "incremental",
+          "case": "both_partial_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true,
+            "conflict_visible": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/incremental/both_partial_conflict.json",
+          "evidence_sha256": "e04328963570e2a3c02b87e09e839dc9947e82a4ec01b00839e977c9a7d08a25",
+          "row_count": 1
+        },
+        {
+          "arm": "end_only",
+          "case": "both_partial_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true,
+            "conflict_visible": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/end_only/both_partial_conflict.json",
+          "evidence_sha256": "0aaa88c444fb0db790836c418fe6eb896493eb06c7297bccfc9b043dc36b1953",
+          "row_count": 1
+        },
+        {
+          "arm": "hybrid",
+          "case": "both_partial_conflict",
+          "disposition": "meets_bounded_check",
+          "checks": {
+            "fixture_bound": true,
+            "binary_bound": true,
+            "no_body_export": true,
+            "json_success": true,
+            "not_complete": true,
+            "later_output_evidence_retained": true,
+            "conflict_visible": true
+          },
+          "note": "",
+          "evidence": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/observations/hybrid/both_partial_conflict.json",
+          "evidence_sha256": "8c8bed6196d484e083632a3a098aff66a7cfdf7e8d7c45e5751cb43510d1694c",
+          "row_count": 1
+        }
+      ]
+    }
+  ],
+  "adjudication_amendments": [
+    {
+      "case": "same_id_model_missing",
+      "original": "Missing later model must not silently establish complete model attribution",
+      "effective": "Missing duplicate model does not contradict a known same-ID first model; no new conflict inferred.",
+      "basis": "Final hybrid documentation explicitly permits absent duplicate model; no contrary observation in fixture."
+    },
+    {
+      "case": "output_decrease",
+      "original": "Provenance of4 and9",
+      "effective": "Provenance of accepted maximum9 required; lower repeat4 may be omitted.",
+      "basis": "All final schemas document first output and subsequent increases, not every repeated observation."
+    },
+    {
+      "case": "id_blank",
+      "original": "Blank identity unverified, incomplete or refusal",
+      "effective": "Whitespace-only IDs recorded as hardening difference, not scored confirmed defect under earlier byte-exact nonempty-ID policy.",
+      "basis": "Earlier documentation distinguishes empty and overlimit IDs but does not trim opaque IDs."
+    }
+  ],
+  "raw_artifact_references": [
+    {
+      "path": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/root-acceptance-v1.json",
+      "sha256": "011628e2ea25c4da63b05d9c8663eccd6404b92379ee294c9e7d064c2d5a006e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/measurement-v1.json",
+      "sha256": "7802f430dd87c2a35d7df624cf643feeb9f37b53033971b808cd3bde44bd2993"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/comparison-result-v1.json",
+      "sha256": "d52f05a9d09c1339039e12396e795fa4f4c1201ebca945542d6185a50835aaad"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/quality-comparison-v1.json",
+      "sha256": "213c4ea8647ade912395dc8bb66401cdf84c682c9d1ef775ca4c5f6a63b93da3"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/adjudication-v1.json",
+      "sha256": "d03fb0dfa28c09b04582d0afe4f50ffbe05078648a2f7ba7b98c1aabe11e1932"
+    }
+  ],
+  "publication": {
+    "validated_parent": "f88b192c1743e52bc087f1d7371e97f1cbbc6293",
+    "scope": [
+      "docs/context-status-cli.md",
+      "rust/crates/work-engine-context-status/src/claude.rs",
+      "rust/crates/work-engine-context-status/tests/claude.rs",
+      "metrics/probes/claude-usage-export-review-comparison-20261025.json"
+    ],
+    "validation": [
+      {
+        "name": "tests",
+        "command": [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "--target-dir",
+          "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/clean-final-target",
+          "-p",
+          "work-engine-context-status"
+        ],
+        "exit_code": 0,
+        "log": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/publication/tests.log",
+        "sha256": "5eb2547f15762901d06d14dd7aa95bc5b74a0a12baeea28c7dfcdfc7ff547362"
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "--target-dir",
+          "/home/bline/.local/state/work-engine/claude-usage-export-hybrid-20261024/clean-final-target",
+          "-p",
+          "work-engine-context-status",
+          "--all-targets",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "log": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/publication/clippy.log",
+        "sha256": "f8cc9a55946b6355aa85d2edd26c6c030d0b71b653e1d39e6b41a8f74cc33030"
+      },
+      {
+        "name": "format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "-p",
+          "work-engine-context-status",
+          "--check"
+        ],
+        "exit_code": 0,
+        "log": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/publication/format.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "diff-check",
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "log": "/home/bline/.local/state/work-engine/usage-export-quality-audit-20261025/publication/diff-check.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "note": "Earlier comparison interpretation remains historical; subsequent quality section supplies the common-case replay. Raw evidence remains local with hashes; synthetic fixtures and adjudicated outcomes embedded here. No transcript bodies or account data included."
+  }
+}

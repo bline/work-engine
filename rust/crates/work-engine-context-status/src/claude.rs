@@ -7,7 +7,7 @@
 
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::env;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
@@ -27,7 +27,7 @@ const SYNTHETIC_MODEL: &str = "<synthetic>";
 const WEIGHTING: &str = "uncached (input + cache_creation) + cache_read/10 + 5 x output; the 2026-10 baseline unit, not a price";
 
 fn report_help() -> &'static str {
-    "Usage: work-engine-context-status claude (--transcript FILE | --session ID [--agent ID] [--projects-dir DIR]) [--json]"
+    "Usage: work-engine-context-status claude (--transcript FILE | --session ID [--agent ID] [--projects-dir DIR]) [--json | --export-usage]"
 }
 fn agents_help() -> &'static str {
     "Usage: work-engine-context-status claude-agents --session ID [--projects-dir DIR] [--with-usage] [--json]"
@@ -233,6 +233,415 @@ struct Seen {
     inherited: bool,
 }
 
+const MAX_EXPORT_ITEMS: usize = 100_000;
+
+#[derive(Serialize)]
+struct OutputObservation {
+    line: usize,
+    timestamp: Option<String>,
+    output_tokens: u64,
+}
+
+#[derive(Serialize)]
+struct DisputedObservation {
+    line: usize,
+    timestamp: Option<String>,
+    model: Option<String>,
+    input_tokens: Option<u64>,
+    cache_creation_input_tokens: Option<u64>,
+    cache_read_input_tokens: Option<u64>,
+    output_tokens: Option<u64>,
+    reason: &'static str,
+}
+
+#[derive(Serialize)]
+struct ExportUncertainty {
+    line: usize,
+    reason: &'static str,
+}
+
+#[derive(Serialize)]
+struct ExportCall {
+    message_id: Option<String>,
+    identity: &'static str,
+    first_line: usize,
+    timestamp: Option<String>,
+    model: Option<String>,
+    input_tokens: Option<u64>,
+    cache_creation_input_tokens: Option<u64>,
+    cache_read_input_tokens: Option<u64>,
+    output_tokens: Option<u64>,
+    output_observations: Vec<OutputObservation>,
+    conflicting_usage_lines: Vec<usize>,
+    conflicting_model_lines: Vec<usize>,
+    disputed_observations: Vec<DisputedObservation>,
+}
+
+#[derive(Serialize)]
+struct ExportExclusion {
+    line: usize,
+    reason: &'static str,
+}
+
+#[derive(Serialize)]
+struct ExportTotals {
+    observed_calls: u64,
+    known_input_tokens: u64,
+    complete_input_tokens: Option<u64>,
+    missing_input_calls: u64,
+    known_cache_creation_input_tokens: u64,
+    complete_cache_creation_input_tokens: Option<u64>,
+    missing_cache_creation_calls: u64,
+    known_cache_read_input_tokens: u64,
+    complete_cache_read_input_tokens: Option<u64>,
+    missing_cache_read_calls: u64,
+    known_output_tokens: u64,
+    complete_output_tokens: Option<u64>,
+    missing_output_calls: u64,
+    report_eligible_calls: u64,
+}
+
+#[derive(Serialize)]
+struct UsageExport {
+    schema: &'static str,
+    status: &'static str,
+    host: &'static str,
+    session_id: Option<String>,
+    agent_id: Option<String>,
+    transcript: String,
+    session_identity_observed: bool,
+    agent_identity_observed: bool,
+    calls: Vec<ExportCall>,
+    totals: ExportTotals,
+    exclusions: Vec<ExportExclusion>,
+    exclusion_counts: BTreeMap<&'static str, u64>,
+    uncertain_records: Vec<ExportUncertainty>,
+    diagnostic_counts: BTreeMap<&'static str, u64>,
+    limitations: Vec<String>,
+}
+
+#[derive(Default)]
+struct ExportCollector {
+    calls: Vec<ExportCall>,
+    ids: HashMap<String, usize>,
+    inherited_ids: HashSet<String>,
+    exclusions: Vec<ExportExclusion>,
+    exclusion_counts: BTreeMap<&'static str, u64>,
+    uncertain_records: Vec<ExportUncertainty>,
+    uncertain_counts: BTreeMap<&'static str, u64>,
+    session_identity_observed: bool,
+    agent_identity_observed: bool,
+    item_count: usize,
+}
+
+impl ExportCollector {
+    fn add_item(&mut self) -> Result<(), String> {
+        self.item_count += 1;
+        if self.item_count > MAX_EXPORT_ITEMS {
+            return Err(format!("usage export exceeds {MAX_EXPORT_ITEMS} items"));
+        }
+        Ok(())
+    }
+
+    fn exclude(&mut self, line: usize, reason: &'static str) -> Result<(), String> {
+        self.add_item()?;
+        self.exclusions.push(ExportExclusion { line, reason });
+        *self.exclusion_counts.entry(reason).or_default() += 1;
+        Ok(())
+    }
+
+    fn uncertain(&mut self, line: usize, reason: &'static str) -> Result<(), String> {
+        self.add_item()?;
+        self.uncertain_records
+            .push(ExportUncertainty { line, reason });
+        *self.uncertain_counts.entry(reason).or_default() += 1;
+        Ok(())
+    }
+
+    fn observe(&mut self, record: &Value, line: usize, inherited: bool) -> Result<(), String> {
+        if inherited {
+            if let Some(id) = record
+                .get("message")
+                .and_then(|m| m.get("id"))
+                .and_then(Value::as_str)
+            {
+                self.inherited_ids.insert(id.to_owned());
+            }
+            return self.exclude(line, "inherited_fork_copy");
+        }
+        let message = record.get("message").unwrap_or(&Value::Null);
+        if message.get("model").and_then(Value::as_str) == Some(SYNTHETIC_MODEL) {
+            return self.exclude(line, "synthetic_record");
+        }
+        let raw_id = message.get("id").and_then(Value::as_str);
+        if raw_id.is_some_and(|id| id.trim().is_empty()) {
+            return Err(format!(
+                "blank message.id at line {line}; usage export cannot establish call identity"
+            ));
+        }
+        if raw_id.is_some_and(|id| id.chars().count() > 256) {
+            return Err(format!("message.id exceeds 256 characters at line {line}"));
+        }
+        let id = raw_id.map(str::to_owned);
+        if id
+            .as_ref()
+            .is_some_and(|id| self.inherited_ids.contains(id))
+        {
+            return self.exclude(line, "inherited_message_id_repeat");
+        }
+        let usage = message.get("usage").unwrap_or(&Value::Null);
+        let fields = (
+            u64_field(usage, "input_tokens"),
+            u64_field(usage, "cache_creation_input_tokens"),
+            u64_field(usage, "cache_read_input_tokens"),
+        );
+        let output = u64_field(usage, "output_tokens");
+        let timestamp = record
+            .get("timestamp")
+            .and_then(Value::as_str)
+            .map(bounded_string);
+        let raw_model = message.get("model").and_then(Value::as_str);
+        if raw_model.is_some_and(|model| model.chars().count() > 256) {
+            return Err(format!(
+                "message.model exceeds 256 characters at line {line}"
+            ));
+        }
+        let model = raw_model
+            .filter(|model| !model.trim().is_empty())
+            .map(str::to_owned);
+        if let Some(index) = id.as_ref().and_then(|id| self.ids.get(id)).copied() {
+            let row = &mut self.calls[index];
+            let counters_conflict = fields
+                != (
+                    row.input_tokens,
+                    row.cache_creation_input_tokens,
+                    row.cache_read_input_tokens,
+                );
+            let model_conflict = model
+                .as_ref()
+                .is_some_and(|m| row.model.as_ref().is_some_and(|first| first != m));
+            if counters_conflict || model_conflict {
+                self.add_item()?;
+                let row = &mut self.calls[index];
+                if counters_conflict {
+                    row.conflicting_usage_lines.push(line);
+                }
+                if model_conflict {
+                    row.conflicting_model_lines.push(line);
+                }
+                row.disputed_observations.push(DisputedObservation {
+                    line,
+                    timestamp: timestamp.clone(),
+                    model: model.clone(),
+                    input_tokens: fields.0,
+                    cache_creation_input_tokens: fields.1,
+                    cache_read_input_tokens: fields.2,
+                    output_tokens: output,
+                    reason: if counters_conflict {
+                        "conflicting_input_counters"
+                    } else {
+                        "conflicting_model"
+                    },
+                });
+            }
+            if !counters_conflict
+                && let Some(value) =
+                    output.filter(|value| Some(*value) > self.calls[index].output_tokens)
+            {
+                self.add_item()?;
+                let row = &mut self.calls[index];
+                row.output_tokens = Some(value);
+                row.output_observations.push(OutputObservation {
+                    line,
+                    timestamp,
+                    output_tokens: value,
+                });
+            }
+            return Ok(());
+        }
+        self.add_item()?;
+        let observation = output.map(|value| OutputObservation {
+            line,
+            timestamp: timestamp.clone(),
+            output_tokens: value,
+        });
+        if let Some(id) = &id {
+            self.ids.insert(id.clone(), self.calls.len());
+        }
+        self.calls.push(ExportCall {
+            identity: if id.is_some() {
+                "message_id"
+            } else {
+                "unverified_line"
+            },
+            message_id: id,
+            first_line: line,
+            timestamp,
+            model,
+            input_tokens: fields.0,
+            cache_creation_input_tokens: fields.1,
+            cache_read_input_tokens: fields.2,
+            output_tokens: output,
+            output_observations: observation.into_iter().collect(),
+            conflicting_usage_lines: Vec::new(),
+            conflicting_model_lines: Vec::new(),
+            disputed_observations: Vec::new(),
+        });
+        Ok(())
+    }
+
+    fn finish(self, report: &Report) -> Result<UsageExport, String> {
+        let mut totals = ExportTotals {
+            observed_calls: self.calls.len() as u64,
+            known_input_tokens: 0,
+            complete_input_tokens: Some(0),
+            missing_input_calls: 0,
+            known_cache_creation_input_tokens: 0,
+            complete_cache_creation_input_tokens: Some(0),
+            missing_cache_creation_calls: 0,
+            known_cache_read_input_tokens: 0,
+            complete_cache_read_input_tokens: Some(0),
+            missing_cache_read_calls: 0,
+            known_output_tokens: 0,
+            complete_output_tokens: Some(0),
+            missing_output_calls: 0,
+            report_eligible_calls: 0,
+        };
+        let mut eligible_uncached = 0_u64;
+        let mut eligible_read = 0_u64;
+        let mut eligible_output = 0_u64;
+        let mut incomplete = !self.session_identity_observed
+            || (report.agent_id.is_some() && !self.agent_identity_observed);
+        for row in &self.calls {
+            sum_counter(
+                row.input_tokens,
+                &mut totals.known_input_tokens,
+                &mut totals.complete_input_tokens,
+                &mut totals.missing_input_calls,
+            )?;
+            sum_counter(
+                row.cache_creation_input_tokens,
+                &mut totals.known_cache_creation_input_tokens,
+                &mut totals.complete_cache_creation_input_tokens,
+                &mut totals.missing_cache_creation_calls,
+            )?;
+            sum_counter(
+                row.cache_read_input_tokens,
+                &mut totals.known_cache_read_input_tokens,
+                &mut totals.complete_cache_read_input_tokens,
+                &mut totals.missing_cache_read_calls,
+            )?;
+            sum_counter(
+                row.output_tokens,
+                &mut totals.known_output_tokens,
+                &mut totals.complete_output_tokens,
+                &mut totals.missing_output_calls,
+            )?;
+            if row.identity != "message_id"
+                || row.model.is_none()
+                || !row.conflicting_usage_lines.is_empty()
+                || !row.conflicting_model_lines.is_empty()
+            {
+                incomplete = true;
+            }
+            if let (Some(i), Some(c), Some(r)) = (
+                row.input_tokens,
+                row.cache_creation_input_tokens,
+                row.cache_read_input_tokens,
+            ) && i
+                .checked_add(c)
+                .and_then(|n| n.checked_add(r))
+                .is_some_and(|n| n > 0)
+            {
+                totals.report_eligible_calls += 1;
+                eligible_uncached = eligible_uncached
+                    .checked_add(i)
+                    .and_then(|n| n.checked_add(c))
+                    .ok_or("usage export total overflow")?;
+                eligible_read = eligible_read
+                    .checked_add(r)
+                    .ok_or("usage export total overflow")?;
+                eligible_output = eligible_output
+                    .checked_add(row.output_tokens.unwrap_or(0))
+                    .ok_or("usage export total overflow")?;
+            } else {
+                incomplete = true;
+            }
+        }
+        incomplete |= totals.missing_input_calls > 0
+            || totals.missing_cache_creation_calls > 0
+            || totals.missing_cache_read_calls > 0
+            || totals.missing_output_calls > 0;
+        incomplete |= report.diagnostic_counts.contains_key("malformed_record")
+            || report
+                .diagnostic_counts
+                .contains_key("partial_trailing_record")
+            || report
+                .diagnostic_counts
+                .contains_key("fork_reference_not_first");
+        incomplete |= !self.uncertain_records.is_empty();
+        if self
+            .calls
+            .iter()
+            .any(|row| !row.disputed_observations.is_empty())
+        {
+            totals.complete_input_tokens = None;
+            totals.complete_cache_creation_input_tokens = None;
+            totals.complete_cache_read_input_tokens = None;
+            totals.complete_output_tokens = None;
+        }
+        if totals.report_eligible_calls != report.cumulative.distinct_calls
+            || eligible_uncached != report.cumulative.uncached_tokens
+            || eligible_read != report.cumulative.cached_tokens
+            || eligible_output != report.cumulative.output_tokens
+        {
+            return Err("usage export disagrees with report-eligible cumulative counters".into());
+        }
+        let mut diagnostic_counts = report.diagnostic_counts.clone();
+        for (reason, count) in self.uncertain_counts {
+            *diagnostic_counts.entry(reason).or_default() += count;
+        }
+        Ok(UsageExport {
+            schema: "claude-transcript-usage-v1",
+            status: if incomplete { "incomplete" } else { "complete" },
+            host: "claude-code",
+            session_id: report.session_id.clone(),
+            agent_id: report.agent_id.clone(),
+            transcript: report.transcript.clone(),
+            session_identity_observed: self.session_identity_observed,
+            agent_identity_observed: self.agent_identity_observed,
+            calls: self.calls,
+            totals,
+            exclusions: self.exclusions,
+            exclusion_counts: self.exclusion_counts,
+            uncertain_records: self.uncertain_records,
+            diagnostic_counts,
+            limitations: report.limitations.clone(),
+        })
+    }
+}
+
+fn sum_counter(
+    value: Option<u64>,
+    known: &mut u64,
+    complete: &mut Option<u64>,
+    missing: &mut u64,
+) -> Result<(), String> {
+    match value {
+        Some(n) => {
+            *known = known.checked_add(n).ok_or("usage export total overflow")?;
+            if let Some(total) = complete.as_mut() {
+                *total = total.checked_add(n).ok_or("usage export total overflow")?;
+            }
+        }
+        None => {
+            *missing += 1;
+            *complete = None;
+        }
+    }
+    Ok(())
+}
+
 /// Running totals for one accounting scope (own calls or inherited calls).
 struct Account {
     totals: Cumulative,
@@ -280,6 +689,14 @@ impl Account {
 }
 
 pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, String> {
+    read_report_inner(path, expected, None)
+}
+
+fn read_report_inner(
+    path: &Path,
+    expected: &Expected,
+    mut export: Option<&mut ExportCollector>,
+) -> Result<Report, String> {
     let metadata = fs::metadata(path).map_err(|e| format!("cannot stat transcript: {e}"))?;
     if !metadata.is_file() || metadata.len() > MAX_FILE_BYTES {
         return Err("transcript is not a regular file or exceeds 256 MiB".into());
@@ -357,15 +774,35 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             }
         };
         if !record.is_object() {
+            if let Some(collector) = export.as_deref_mut() {
+                collector.uncertain(line_no, "non_object_record_skipped")?;
+            }
             continue;
         }
         bind_identity(&record, "sessionId", &mut session, line_no)?;
         bind_identity(&record, "agentId", &mut agent, line_no)?;
+        if let Some(collector) = export.as_deref_mut() {
+            collector.session_identity_observed |= record.get("sessionId").is_some();
+            collector.agent_identity_observed |= record.get("agentId").is_some();
+        }
         let timestamp = record
             .get("timestamp")
             .and_then(Value::as_str)
             .map(bounded_string);
         let ty = record.get("type").and_then(Value::as_str);
+        let assistant_shaped = record.get("message").is_some_and(|m| {
+            m.is_object()
+                && (m.get("role").and_then(Value::as_str) == Some("assistant")
+                    || m.get("usage").is_some()
+                    || m.get("id").is_some()
+                    || m.get("model").is_some())
+        });
+        if ty != Some("assistant")
+            && assistant_shaped
+            && let Some(collector) = export.as_deref_mut()
+        {
+            collector.uncertain(line_no, "assistant_shaped_record_skipped")?;
+        }
         if ty == Some("fork-context-ref") {
             if line_no == 1 {
                 fork = true;
@@ -406,6 +843,11 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         if record.get("compactMetadata").is_some_and(Value::is_object)
             || record.get("subtype").and_then(Value::as_str) == Some("compact_boundary")
         {
+            if ty == Some("assistant")
+                && let Some(collector) = export.as_deref_mut()
+            {
+                collector.uncertain(line_no, "assistant_compaction_record_skipped")?;
+            }
             let cm = record.get("compactMetadata").unwrap_or(&Value::Null);
             epoch = epoch.saturating_add(1);
             recent.clear();
@@ -427,6 +869,9 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         }
         if ty != Some("assistant") {
             continue;
+        }
+        if let Some(collector) = export.as_deref_mut() {
+            collector.observe(&record, line_no, is_inherited)?;
         }
         let message = record.get("message").unwrap_or(&Value::Null);
         let model = message
@@ -959,16 +1404,21 @@ pub(crate) fn run_report<I: IntoIterator<Item = String>>(args: I) -> Result<(), 
     let mut agent = None;
     let mut projects_dir = None;
     let mut json = false;
+    let mut export_usage = false;
     let mut it = args.into_iter();
     while let Some(flag) = it.next() {
         match flag.as_str() {
             "--json" => json = true,
+            "--export-usage" => export_usage = true,
             "--transcript" => transcript = Some(PathBuf::from(next_value(&mut it, &flag)?)),
             "--session" => session = Some(next_value(&mut it, &flag)?),
             "--agent" => agent = Some(next_value(&mut it, &flag)?),
             "--projects-dir" => projects_dir = Some(PathBuf::from(next_value(&mut it, &flag)?)),
             _ => return Err(format!("unknown claude option {flag}")),
         }
+    }
+    if json && export_usage {
+        return Err("choose --json or --export-usage".into());
     }
     let (path, expected) = match (transcript, session) {
         (Some(_), Some(_)) => return Err("choose --transcript or --session".into()),
@@ -998,14 +1448,24 @@ pub(crate) fn run_report<I: IntoIterator<Item = String>>(args: I) -> Result<(), 
             )
         }
     };
-    let report = read_report(&path, &expected)?;
-    if json {
+    if export_usage {
+        let mut collector = ExportCollector::default();
+        let report = read_report_inner(&path, &expected, Some(&mut collector))?;
+        let ledger = collector.finish(&report)?;
         println!(
             "{}",
-            serde_json::to_string_pretty(&report).map_err(|_| "cannot serialize report")?
+            serde_json::to_string_pretty(&ledger).map_err(|_| "cannot serialize usage export")?
         );
     } else {
-        render_report(&report);
+        let report = read_report(&path, &expected)?;
+        if json {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&report).map_err(|_| "cannot serialize report")?
+            );
+        } else {
+            render_report(&report);
+        }
     }
     Ok(())
 }
