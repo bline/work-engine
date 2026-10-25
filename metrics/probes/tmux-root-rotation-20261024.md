@@ -295,10 +295,18 @@ Four, all in code written earlier in the same session:
    been misdiagnosed as "no adoption" after the full 180s timeout.
 2. The dialog scan ran **to completion before** the adoption poll, so it was
    blind to dialogs appearing after startup - including Codex's rate-limit /
-   model-switch modal - and charged 25s to every rotation. Merging the two loops
-   took the coordinator's own overhead from ~27,000 ms to 1,443 ms with an
-   instantly-acknowledging shell successor; a model successor is still bounded
-   by model latency.
+   model-switch modal - and charged a fixed ~25s to every rotation. Merging the
+   two loops removes that fixed cost. With an instantly-acknowledging shell
+   successor the coordinator's own overhead after the fix is 1,443 ms.
+
+   **Correction, 2026-10-24.** An earlier version of this record paired
+   "~27,000 ms" with "1,443 ms" as a before/after measurement. They are not the
+   same workload. 1,443 ms was measured with a shell successor; ~27,000 ms was
+   *derived* from the live model rotations (26.8-26.9 s, 4-5 model calls) by
+   subtracting an estimated 25 s of scan, and was never measured. What is
+   established is that a fixed ~25 s scan ran on every rotation and no longer
+   does. The post-fix cost of a **live model** rotation is `not established`:
+   it has not been re-measured since the fix.
 3. The validator contract executed `"$VALIDATOR"` as a single program, so a
    validator carrying its own flags failed with exit 127. It now word-splits,
    because a real validator needs `--repo` and `--require`.

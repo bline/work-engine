@@ -148,10 +148,13 @@
     }
   ],
   "fixed_cost_removed": {
-    "before_ms": 27000,
-    "after_ms": 1443,
-    "cause": "the dialog scan ran to completion before the adoption poll began, so 25s was charged to every rotation",
-    "caveat": "1443ms is the coordinator's own overhead with an instantly-acknowledging shell successor; a model successor is still bounded by model latency"
+    "cause": "the dialog scan ran to completion before the adoption poll began, so a fixed 25s was charged to every rotation",
+    "established": "a fixed ~25s scan ran on every rotation before the fix and no longer does",
+    "after_ms_shell_successor": 1443,
+    "before_ms_shell_successor": "not established",
+    "before_ms_live_model_rotation": 26800,
+    "after_ms_live_model_rotation": "not established",
+    "correction_20261024": "an earlier version of this record carried before_ms 27000 and after_ms 1443 as a before/after pair. They are NOT the same workload: 1443 was measured with an instantly-acknowledging shell successor, while 27000 was DERIVED from the live model rotations (26.8-26.9s, 4-5 model calls) by subtracting an estimated 25s of scan -- it was never measured. The fixed-scan removal is established; the post-fix cost of a live model rotation is not, having not been re-measured."
   },
   "codex_parity": {
     "cli": "codex-cli 0.164.0",
@@ -200,7 +203,18 @@
     "children_definition": "distinct non-predecessor sessions holding unexpired claims under a resource prefix",
     "expiry": "board filters expired claims itself (verified); checks re-filter defensively",
     "fail_open_hole_fixed": "coordinator read CLAIMS_CMD output but not exit status; empty output means none held, so an erroring check cleared the gate",
-    "reports_all_conditions": true
+    "reports_all_conditions": true,
+    "standing_of_the_board_check": "claim-backed and CONDITIONAL on complete child registration: it establishes 'no unexpired claim is held', not 'no child is running'. A child that never registered, released early, or let its claim lapse is invisible to it.",
+    "second_independent_check": {
+      "mode": "descendants",
+      "source": "the OS process tree; needs no registration at all",
+      "semantics": "an UPPER BOUND on live child sessions -- one child can show as several processes, because a Codex launch is `node /usr/bin/codex` plus the vendored native binary it execs, and bash briefly forks a subshell carrying its parent's argv. The gate is == 0, so over-counting only blocks a rotation.",
+      "fail_open_found_and_removed": "an earlier version collapsed a matching parent/child pair sharing a CLI name into 'one session' to avoid double-counting the Codex pair. A claude root that spawned a claude child is exactly that shape, so a live child would have been counted as zero -- the one direction a quiescence gate must not have. Removed in favour of the upper bound.",
+      "unlocatable_root": "exit 32 (not established): 'I could not find the root' is not 'the root has no children'",
+      "validated_against_a_real_root": "the live idle Claude root in the rootlive3 server returns 0; its only child process is an MCP server, which correctly does not match the session pattern, so the check does not block live rotations",
+      "what_still_evades_both": "a detached child (setsid/nohup) or a turn queued into a session hosted elsewhere"
+    },
+    "coverage_claim": "neither check is a completeness basis on its own; a child must evade BOTH to pass unseen"
   },
   "event_driven_wake": {
     "principle": "a returning tool call wakes the model; an arriving message does not",
@@ -246,6 +260,9 @@
     "audit": "authorized-by and last-rejected-trigger record the message ids",
     "watch_timeout_default_s": 3000,
     "verified": "unauthorized author carrying the correct token ignored and recorded, watch re-armed, authorized approval then committed",
-    "doctrine_question": "whether a board message may carry root-transfer authority is the skill owner's call; board claims are stamped advisory_coordination_only"
+    "doctrine_question": "whether a board message may carry root-transfer authority is the skill owner's call; board claims are stamped advisory_coordination_only",
+    "artifact_binding": "the approval body must carry the handoff's sha256. Author + token alone approves 'a rotation', not 'this handoff', so a stale or replayed approval would commit whatever the watch was started with. Three outcomes are distinguished and recorded: APPROVED, UNAUTHORIZED (named approver missing), UNBOUND (digest missing or for another artifact).",
+    "binding_limits": "binds to CONTENT, not to a generation: two rotations of a byte-identical handoff share a digest. The board identifies authors; it does not authenticate them, so the allowlist is identification only. A lease/generation guard for the board-cursor TOCTOU is still NOT built.",
+    "verified_binding": "approval with token but no digest -> ignored and recorded as unbound; approval citing another digest -> ignored; unauthorized author carrying BOTH a valid token and the correct digest -> ignored and recorded; correctly bound approval from a named approver -> committed"
   }
 }
