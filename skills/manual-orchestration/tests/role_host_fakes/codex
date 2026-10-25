@@ -39,7 +39,6 @@ def main(argv):
     con.commit()
     pf = Path(tempfile.mkstemp(prefix="fake-codex-prompt-")[1]); pf.write_text(prompt)
     env = dict(os.environ, CODEX_THREAD_ID=tid)
-    env.pop("CLAUDE_CODE_SESSION_ID", None)
     if os.environ.get("FAKE_TURN") == "hang":
         time.sleep(600)
     subprocess.run([sys.executable, str(HERE / "fake_successor.py"), str(pf)], env=env)

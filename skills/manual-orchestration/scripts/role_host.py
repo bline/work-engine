@@ -60,10 +60,24 @@ class HostError(Exception):
         self.code, self.status, self.detail = code, status, detail
 
 
+# Variables that name or authenticate the CALLING session. A launched session
+# must never inherit them: a Codex successor started from a Claude session
+# inherited CLAUDE_CODE_SESSION_ID, `whoami` reported the caller's id, and the
+# successor waited on the caller's topic for its whole adoption window
+# (observed 2026-10-25). The messaging token is also a credential.
+CALLER_IDENTITY = ("CLAUDE_CODE_SESSION_ID", "CLAUDE_PID", "CLAUDE_CODE_MESSAGING_SOCKET",
+                   "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_SESSION_ATTENDED",
+                   "CLAUDE_CODE_CHILD_SESSION", "CLAUDECODE", "CODEX_THREAD_ID")
+
+
+def child_env():
+    return {k: v for k, v in os.environ.items() if k not in CALLER_IDENTITY}
+
+
 def _run(argv, *, cwd=None, timeout=60):
     try:
         return subprocess.run(argv, cwd=cwd, capture_output=True, text=True,
-                              timeout=timeout, stdin=subprocess.DEVNULL)
+                              timeout=timeout, stdin=subprocess.DEVNULL, env=child_env())
     except (OSError, subprocess.TimeoutExpired) as e:
         raise HostError(NOT_ESTABLISHED, "host_cli_failed", f"{argv[0]}: {e}")
 
@@ -278,7 +292,7 @@ class Codex:
     def _spawn(self, argv, cwd, out_path, ledger_state):
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w") as out, open(str(out_path) + ".err", "w") as err:
-            p = subprocess.Popen(argv, cwd=cwd, stdout=out, stderr=err, stdin=subprocess.DEVNULL,
+            p = subprocess.Popen(argv, cwd=cwd, stdout=out, stderr=err, stdin=subprocess.DEVNULL, env=child_env(),
                                  start_new_session=True)
         return p
 
@@ -396,11 +410,16 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     try:
         if a.cmd == "whoami":
-            for var, h in (("CLAUDE_CODE_SESSION_ID", "claude"), ("CODEX_THREAD_ID", "codex")):
-                v = os.environ.get(var, "")
-                if UUID.match(v):
-                    print(json.dumps({"host": h, "session_id": v, "source": var})); return OK
-            raise HostError(NOT_ESTABLISHED, "identity_not_established", "no host session id in environment")
+            found = [(h, os.environ[var], var) for var, h in
+                     (("CLAUDE_CODE_SESSION_ID", "claude"), ("CODEX_THREAD_ID", "codex"))
+                     if UUID.match(os.environ.get(var, ""))]
+            # Both set means one was inherited from whoever launched this
+            # session, and nothing here can tell which. Refuse rather than pick.
+            if len(found) != 1:
+                raise HostError(NOT_ESTABLISHED, "identity_not_established",
+                                f"{len(found)} host session ids in environment: {[f[2] for f in found]}")
+            h, v, var = found[0]
+            print(json.dumps({"host": h, "session_id": v, "source": var})); return OK
         ledger = Ledger(a.state)
         if a.cmd == "children":
             res = children(a.parent, ledger)

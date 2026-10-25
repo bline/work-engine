@@ -44,6 +44,11 @@ class Base(unittest.TestCase):
                         CODEX_HOME=str(self.codex_home))
         for k in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "FAKE_SUCCESSOR", "FAKE_TURN"):
             self.env.pop(k, None)
+        # The gate is normally run from inside a host session, so the caller's
+        # identity is in the environment. The fakes pass it through, as real
+        # processes do; a successor must still learn its OWN id.
+        self.caller = str(uuid.uuid4())
+        self.env["CLAUDE_CODE_SESSION_ID"] = self.caller
         self.handoff = self.tmp / "handoff.md"
         self.handoff.write_text("# handoff\n\nContinue the role.\n")
         self.quiescent = self.tmp / "quiescent"
@@ -282,11 +287,15 @@ class HostAdapter(Base):
         self.assertEqual(len(json.loads(out)["children"]), 1)
 
     def test_whoami(self):
-        sid = str(uuid.uuid4())
-        rc, out, _ = self.host("whoami", env={"CLAUDE_CODE_SESSION_ID": sid})
-        self.assertEqual((rc, json.loads(out)["session_id"]), (0, sid))
+        rc, out, _ = self.host("whoami")
+        self.assertEqual((rc, json.loads(out)["session_id"]), (0, self.caller))
+        del self.env["CLAUDE_CODE_SESSION_ID"]
         rc, _, _ = self.host("whoami")
         self.assertEqual(rc, 32)
+
+    def test_whoami_refuses_two_host_ids(self):
+        rc, _, err = self.host("whoami", env={"CODEX_THREAD_ID": str(uuid.uuid4())})
+        self.assertEqual(rc, 32, err)
 
 
 if __name__ == "__main__":

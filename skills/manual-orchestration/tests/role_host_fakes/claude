@@ -29,7 +29,6 @@ def start_turn(sid, prompt):
     locked(mark)
     pf = Path(tempfile.mkstemp(prefix="fake-prompt-")[1]); pf.write_text(prompt)
     env = dict(os.environ, CLAUDE_CODE_SESSION_ID=sid)
-    env.pop("CODEX_THREAD_ID", None)
     script = (f"import subprocess,sys,json,fcntl;"
               f"r=subprocess.run([sys.executable,{str(HERE / 'fake_successor.py')!r},{str(pf)!r}]).returncode;"
               f"exec(open({str(HERE / 'claude')!r}).read().split(chr(10)+'# END-TURN'+chr(10))[-1])")
