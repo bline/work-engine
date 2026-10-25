@@ -281,12 +281,14 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
                 raise ChatboardError(f"{name} {value} names no message on the board")
             targets[name] = target
         if (kind == "reply" and isinstance(data, dict)
-                and data.get("disposition") in ("answered", "declined")
-                and targets["in_reply_to"].get("kind") != "request"):
-            raise ChatboardError(
-                f"in_reply_to {in_reply_to}: an {data['disposition']} reply closes a request, so it must name a "
-                f"message of kind `request` (message {in_reply_to} has kind "
-                f"{targets['in_reply_to'].get('kind', 'note')!r})")
+                and data.get("disposition") in ("answered", "declined")):
+            if in_reply_to is None:
+                raise ChatboardError("in_reply_to: an answered/declined reply closes a request and must name it")
+            if targets["in_reply_to"].get("kind") != "request":
+                raise ChatboardError(
+                    f"in_reply_to {in_reply_to}: an {data['disposition']} reply closes a request, so it must name "
+                    f"a message of kind `request` (message {in_reply_to} has kind "
+                    f"{targets['in_reply_to'].get('kind', 'note')!r})")
         board["messages"].append(candidate)
         board["next_sequence"] += 1
         return candidate
@@ -320,7 +322,10 @@ def adopt(repository: Path, *, author: str, session_id: str, body: str, role: st
           claims_reclaimed: list[str] | None = None, channels: list[str] | None = None,
           registry: dict[str, Any] | None = None) -> dict[str, Any]:
     """Write the one `adoption` row; same mutate() path and replay rule as post."""
-    canonical_uuid(session_id, "session_id")
+    if canonical_uuid(session_id, "session_id") != session_id:
+        raise ChatboardError("session_id must be a canonical lowercase UUID: adoption writes topic "
+                             "`session:<session_id>`, which the gate matches exactly "
+                             "(uppercase is rejected, not normalised)")
     try:
         parsed = UUID(predecessor_session)
     except (ValueError, AttributeError, TypeError) as failure:
@@ -712,9 +717,12 @@ def read_json_file(path: Path | None, label: str) -> Any:
     if path is None:
         return None
     try:
-        return json.loads(path.read_text())
+        value = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError) as failure:
         raise ChatboardError(f"{label} {path} must be readable JSON: {failure}") from failure
+    if not isinstance(value, dict):
+        raise ChatboardError(f"{label} must contain a JSON object")
+    return value
 
 
 def preview_kind_help(argv: list[str]) -> None:

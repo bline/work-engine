@@ -157,7 +157,10 @@ It accepts `--author --session-id --body --role --predecessor-session`, a
 the row is always on `session:<own session id>` and is addressed
 `to: ["role:<role>"]`. With a path, the file's sha256 must equal a given digest,
 or becomes the digest. `--predecessor-session` must be a canonical lowercase
-UUID different from `--session-id` (compared ignoring case). The file check is
+UUID different from `--session-id`. `--session-id` must itself be a canonical
+lowercase UUID, because the topic `session:<id>` is matched exactly; uppercase is
+rejected, not normalised, and `to` session addresses are lowercase-only for the
+same reason. The file check is
 byte identity at post time, not a check of the handoff's contents; consumers
 verify the digest against their own copy. `adopt` authenticates no one: the
 session id is caller-supplied and only its syntax is checked.

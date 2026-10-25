@@ -7,7 +7,7 @@
     "to_forms": ["role:<name>", "session:<uuid>"],
     "to_patterns": [
       "^role:[a-z0-9][a-z0-9._-]{0,63}$",
-      "^session:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "^session:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     ],
     "effects_keys": ["shared_writes", "external_actions"]
   },

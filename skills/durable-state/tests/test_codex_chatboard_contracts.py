@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import importlib.util
 import json
@@ -24,6 +25,7 @@ assert SPEC and SPEC.loader
 BOARD = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BOARD)
 
+LETTERS = "abcdef01-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 SESSION_1 = "11111111-1111-4111-8111-111111111111"
 SESSION_2 = "22222222-2222-4222-8222-222222222222"
 HEX = "a" * 64
@@ -240,6 +242,11 @@ class EnvelopeTest(RepoCase):
             self.assertIn("to", str(caught.exception))
             for pattern in grammar["to_patterns"]:
                 self.assertIn(pattern, str(caught.exception))
+        upper = f"session:{LETTERS.upper()}"
+        with self.assertRaises(BOARD.ChatboardError) as caught:
+            BOARD.validate_envelope(self.registry, to=[upper])
+        self.assertIn("to", str(caught.exception))
+        self.assertIn(grammar["to_patterns"][1], str(caught.exception))
         BOARD.validate_envelope(self.registry, role="s10-root")
         BOARD.validate_envelope(self.registry, role="claude-root", to=["role:claude-metrics", f"session:{SESSION_1}"])
 
@@ -302,6 +309,32 @@ class CrossMessageTest(RepoCase):
                 self.assertIn(field, str(caught.exception))
                 self.assertEqual(self.board()[1], before)
             self.assertEqual(self.post(**{field: 1})["message"][field], 1)
+
+    def test_forward_reference_rule_on_a_board_whose_next_sequence_is_stale(self) -> None:
+        # The existence check would accept a row at sequence >= next_sequence; only the
+        # forward-reference rule rejects it.
+        self.post()  # sequence 1, next_sequence 2
+
+        def stale(board) -> None:
+            board["messages"].append({**board["messages"][0], "message_id": mid(900), "sequence": board["next_sequence"]})
+
+        self.raw_rewrite(stale)
+        stale_sequence = self.board()[0]["next_sequence"]
+        for field in ("in_reply_to", "supersedes"):
+            _, before = self.board()
+            with self.assertRaises(BOARD.ChatboardError) as caught:
+                self.post(**{field: stale_sequence})
+            self.assertIn(field, str(caught.exception))
+            self.assertIn("must name an existing earlier message", str(caught.exception))
+            self.assertEqual(self.board()[1], before)
+
+    def test_closing_reply_without_in_reply_to_is_a_chatboard_error_even_if_registry_omits_it(self) -> None:
+        registry = copy.deepcopy(self.registry)
+        registry["kinds"]["reply"]["required"] = ["data.disposition"]
+        for disposition in ("answered", "declined"):
+            with self.assertRaises(BOARD.ChatboardError) as caught:
+                self.post(kind="reply", data={"disposition": disposition}, registry=registry)
+            self.assertIn("in_reply_to", str(caught.exception))
 
     def test_closing_reply_must_name_a_request(self) -> None:
         self.post()  # 1: legacy row without kind
@@ -495,9 +528,32 @@ class AdoptTest(RepoCase):
         for bad in (letters.upper(), "not-a-uuid", letters.replace("-", ""), SESSION_1):
             with self.assertRaises(BOARD.ChatboardError):
                 self.adopt(predecessor_session=bad)
-        with self.assertRaises(BOARD.ChatboardError):
+        with self.assertRaises(BOARD.ChatboardError) as caught:
             self.adopt(session_id=letters.upper(), predecessor_session=letters)
+        self.assertIn("session_id", str(caught.exception))
+        self.assertIn("lowercase", str(caught.exception))
+        self.assertEqual(self.board()[1], before)
         self.adopt(predecessor_session=letters)
+
+    def test_adopt_topic_is_lowercase_session_address(self) -> None:
+        row = self.adopt()["message"]
+        self.assertEqual(row["topic"], f"session:{SESSION_1}")
+        result = self.run_cli("adopt", "--author", "succ", "--session-id", LETTERS.upper(), "--body", "b",
+                              "--role", "claude-root", "--predecessor-session", SESSION_2,
+                              "--handoff-sha256", HEX)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("session_id", result.stderr)
+
+    def test_json_null_data_and_effects_files_are_rejected(self) -> None:
+        null_file = Path(self.temporary.name) / "null.json"
+        null_file.write_text("null")
+        _, before = self.board()
+        for flag in ("--data-file", "--effects-file"):
+            result = self.run_cli("post", "--author", "a", "--session-id", SESSION_1, "--topic", "t",
+                                  "--body", "b", "--kind", "note", flag, str(null_file))
+            self.assertNotEqual(result.returncode, 0, flag)
+            self.assertIn(f"{flag} must contain a JSON object", result.stderr)
+        self.assertEqual(self.board()[1], before)
 
     def test_replay_of_identical_adopt_succeeds(self) -> None:
         first = self.adopt(message_id=mid(3))
@@ -634,9 +690,10 @@ class ParityTest(RepoCase):
         self.assertEqual(found["availability"], self.registry["kinds"]["availability"]["enums"]["data.state"])
         match = re.search(r"carries `handoff` \(`path`, `sha256`\)", text)
         self.assertTrue(match, "availability handoff (path, sha256) not extracted")
-        optional = self.registry["kinds"]["availability"]["optional_data"]
-        self.assertIn("handoff.path", optional)
-        self.assertIn("handoff.sha256", optional)
+        drafted = {f"handoff.{leaf}" for leaf in re.findall(r"`(\w+)`", match.group(0))[1:]}
+        self.assertEqual(drafted, {"handoff.path", "handoff.sha256"})
+        nested = {item for item in self.registry["kinds"]["availability"]["optional_data"] if "." in item}
+        self.assertEqual(nested, drafted, "nested optional data; registry value is the source")
 
     def test_draft_envelope_table(self) -> None:
         rows = table_rows(section(DRAFT.read_text(), "## Envelope", "### Effects"))
@@ -652,6 +709,13 @@ class ParityTest(RepoCase):
             self.assertIn(name, registry_fields, f"draft envelope field {name} missing from registry")
         forms = backticked(documented["to"][2])
         self.assertEqual([f for f in forms if ":" in f], self.registry["envelope"]["to_forms"])
+        patterns = self.registry["envelope"]["to_patterns"]
+        self.assertEqual(len(self.registry["envelope"]["to_forms"]), len(patterns))
+        for form, pattern in zip(self.registry["envelope"]["to_forms"], patterns):
+            self.assertTrue(pattern.startswith("^" + form.split(":")[0] + ":"), (form, pattern))
+        session_pattern = next(p for p in patterns if p.startswith("^session:"))
+        self.assertIsNone(re.match(session_pattern, f"session:{LETTERS.upper()}"))
+        self.assertIsNotNone(re.match(session_pattern, f"session:{LETTERS}"))
         if "contract_version" in documented:
             self.assertIn("integer", documented["contract_version"][1])
 
