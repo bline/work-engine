@@ -338,6 +338,7 @@ degraded to `not_established` and blocked the rotation instead of passing it.
 | board post failed | 33 | `fail_board_post` | untouched | no |
 | no adoption acknowledgment | 34 | `fail_no_adoption` | untouched; orphan retired | yes |
 | a report posted instead of an adoption | 34 | `fail_no_adoption` | untouched; orphan retired | yes |
+| a typed adoption naming another predecessor | 34 | `fail_no_adoption` | untouched; orphan retired | yes |
 | swap failed | 35 | `fail_swap` | untouched | no |
 | predecessor window state unknown | 36 | `fail_window_state_unknown` | untouched | no |
 | predecessor still holds a claim | 22 | `fail_claims_held` | untouched | yes |

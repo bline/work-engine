@@ -1,0 +1,391 @@
+{
+  "artifact_type": "work_engine_chatboard_s1_gate_compatibility_note",
+  "schema_version": 1,
+  "status": "complete",
+  "issued_at_stage": "S1 acceptance (written after S1 landed; overdue deliverable)",
+  "reissue": "This note is reissued at S2 acceptance with the post-S2 adapter digest and the matches/matched_by result key (plan l.692-695).",
+  "written_by": {
+    "role": "worker (fresh), manual-orchestration",
+    "agent_id": "a651c23ffcb82d272",
+    "parent": "Claude root b84ae972-beed-41c3-b9b5-cca8ddcdc270",
+    "packet": "/home/bline/.local/state/work-engine/chatboard-contracts-plan-20261024/s1-compat-note-packet-v1.md",
+    "packet_sha256": "689e8fd570c50501a06ca89b1ee08084c4314219f9fed47fcabf5f8fe62ac940",
+    "observed_model": "claude-opus-5-5",
+    "date": "2026-10-25"
+  },
+  "subject": {
+    "head": "7a7796002e95ce3874a3b27b3f951b6f5a6f9c28",
+    "head_source": "git rev-parse HEAD at start and again after the behavioural checks (same value both times; equals the packet's expected value)",
+    "adapter": {
+      "path": "skills/durable-state/scripts/codex_chatboard.py",
+      "sha256": "234856c55a84616bafbdeb63f13da6bae8eeb92c36a0d56aec74957eafd5b93c",
+      "lines": 837,
+      "source": "sha256sum; wc -l"
+    },
+    "registry": {
+      "path": "skills/durable-state/contracts/codex-chatboard-kinds.v1.json",
+      "sha256": "779cb9958dc12646fd9e451bf97d2fbe5d5770e81b8a6626b83088ea39d371f9",
+      "lines": 72,
+      "source": "sha256sum; wc -l"
+    },
+    "plan": {
+      "path": "planning/chatboard-message-contracts-implementation-plan.md",
+      "sha256": "d14a0084ec4aa323b965a09b74d144b9c22be9cdd6c5a682f06796d6c5556bb8",
+      "passage_relied_on": "l.682-757 (S5)"
+    },
+    "note_on_working_tree": "Both files are clean in the working tree (git status --short empty) and `git show HEAD:<path> | sha256sum` gives the same digests, so they are the HEAD-committed blobs."
+  },
+  "registry_version": {
+    "artifact_type": "work_engine_codex_chatboard_kinds_v1",
+    "version": 1,
+    "source": "registry l.2-3"
+  },
+  "contract_version_field": {
+    "when_written": "Only on typed rows: when kind is not None, contract_version is set to the registry's version and written onto the row. Rows with envelope fields but no kind (e.g. --role only) and untyped rows carry no contract_version.",
+    "type": "integer (load_registry refuses a registry whose version is not an int)",
+    "value_at_this_registry": 1,
+    "source": "adapter l.237-242, l.264-265 (_post); l.118-121 (load_registry int check); behavioural: cases A1, P2 (contract_version 1 present), P3, P4 (absent)"
+  },
+  "adoption_kind": {
+    "registry_entry": {
+      "consumer": "the predecessor's gate; role resolution; peers re-addressing",
+      "writer": "adopt",
+      "required": [
+        "role",
+        "data.predecessor_session",
+        "data.handoff_sha256"
+      ],
+      "enums": {},
+      "patterns": {
+        "data.handoff_sha256": "^[0-9a-f]{64}$"
+      },
+      "optional_data": [
+        "claims_reclaimed",
+        "channels"
+      ],
+      "source": "registry l.57-64"
+    },
+    "registry_generic_checks": {
+      "required": "each required path must be present and non-empty (None, empty string/list/dict, or whitespace-only string count as missing)",
+      "patterns": "a present value must be a string fully matching the pattern",
+      "source": "adapter l.146-160 (_lookup, _present), l.208-219 (validate_envelope)"
+    },
+    "adapter_hard_coded_checks_in_adopt": [
+      {
+        "check": "session_id must be a canonical lowercase UUID; uppercase is rejected, not normalised",
+        "source": "adapter l.325-328; behavioural A8b"
+      },
+      {
+        "check": "predecessor_session must parse as a UUID and equal its canonical lowercase string form; uppercase or non-canonical forms (e.g. braces) rejected, not normalised",
+        "source": "adapter l.329-335; behavioural A7, A8c"
+      },
+      {
+        "check": "predecessor_session must differ from session_id",
+        "source": "adapter l.336-337; behavioural A9"
+      },
+      {
+        "check": "handoff_sha256, when given, must be 64 lowercase hex",
+        "source": "adapter l.338-339; behavioural A10"
+      },
+      {
+        "check": "handoff_path, when given, must be readable; its sha256 is computed; if handoff_sha256 is also given they must be equal; the computed digest is what is stored",
+        "source": "adapter l.340-347; behavioural A4, A5, A12"
+      },
+      {
+        "check": "one of handoff_sha256 or handoff_path is required",
+        "source": "adapter l.348-349; behavioural A6"
+      },
+      {
+        "check": "registry must register `adoption`",
+        "source": "adapter l.355-357"
+      },
+      {
+        "check": "role validated against envelope.role_pattern via validate_envelope",
+        "source": "adapter l.171-173 called from _post l.238-240; behavioural A11"
+      }
+    ],
+    "data_object_written": "{predecessor_session, handoff_sha256} always; claims_reclaimed and channels only when non-empty lists were given",
+    "data_source": "adapter l.350-354; behavioural A1 (both optional lists), A3 (neither)"
+  },
+  "envelope_grammars": {
+    "fields": [
+      "kind",
+      "role",
+      "to",
+      "in_reply_to",
+      "supersedes",
+      "effects",
+      "data",
+      "contract_version"
+    ],
+    "fields_source": "registry l.5",
+    "role_pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+    "role_source": "registry l.6; enforced adapter l.171-173",
+    "to_forms": [
+      "role:<name>",
+      "session:<uuid>"
+    ],
+    "to_patterns": [
+      "^role:[a-z0-9][a-z0-9._-]{0,63}$",
+      "^session:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    ],
+    "to_source": "registry l.7-11; enforced adapter l.174-182 (to must be a non-empty list; every address must fully match one pattern)",
+    "lowercase_canonical_session_form": "The session: address pattern admits only lowercase hex in 8-4-4-4-12 form; uppercase is refused, not normalised (behavioural P5b; role:Root refused, P5c). Note: the generic post path checks session_id with canonical_uuid, which compares against value.lower(), so `post` accepts and stores an uppercase session_id (behavioural P6, adapter l.99-106, l.227); only `adopt` requires the lowercase form (l.325-328)."
+  },
+  "adopt_command_surface": {
+    "decision": "D11 (c): adopt exists, and post rejects kind: adoption (plan l.133)",
+    "parser_source": "adapter l.697-704",
+    "required_flags": [
+      "--author",
+      "--session-id",
+      "--body",
+      "--role",
+      "--predecessor-session"
+    ],
+    "optional_flags": {
+      "--message-id": "default: a fresh uuid4 (adapter l.810)",
+      "--handoff-sha256": "64 lowercase hex",
+      "--handoff-path": "Path; file bytes are hashed",
+      "--claims-reclaimed": "repeatable (append)",
+      "--channels": "repeatable (append)"
+    },
+    "global_flag": "--repository (default: current directory), adapter l.647",
+    "no_flags_for": [
+      "--topic",
+      "--to",
+      "--kind",
+      "--wake",
+      "--ref",
+      "--data-file",
+      "--effects-file",
+      "--reply-to",
+      "--supersedes"
+    ],
+    "help_text_source": "command `codex_chatboard.py --repository <disposable> adopt --help` (exit 0); output lists exactly the flags above plus -h",
+    "fixed_topic": "session:<session_id> (adapter l.358; behavioural A1/A3/A5 topic = session:<own id>)",
+    "automatic_to": "[\"role:<role>\"] (adapter l.360; behavioural A1)",
+    "predecessor_session_form": "stored exactly as given, which must already be lowercase canonical (adapter l.333-335, l.350); string equality against PRED_SESSION is therefore sufficient for the gate, provided PRED_SESSION is itself lowercase canonical (the gate's own form is not established here)",
+    "references": "always [] (adapter l.359)",
+    "wake": "hard-coded False; no --wake flag; the row carries no wake key (adapter l.359; behavioural A1 has no wake field)",
+    "handoff_path_vs_sha256": {
+      "path_only": "digest computed from the file bytes and stored (A1)",
+      "sha256_only": "stored after the format check; no file is consulted (A3)",
+      "both_equal": "accepted (A5)",
+      "both_unequal": "refused, error names the computed digest (A4)",
+      "neither": "refused (A6)",
+      "x6_relevance": "only a --handoff-path run counts toward X6 closure (plan l.735-738)"
+    },
+    "result_shape": "stdout JSON {\"revision\": <board blob revision>, \"message\": <row>}; row keys in order: message_id, sequence, observed_at, author, session_id, topic, body, references, kind, role, to, data, contract_version (adapter l.297, l.246-265; behavioural A1)",
+    "exit_codes": {
+      "0": "row written (A1, A3, A5)",
+      "1": "ChatboardError / DurableStateError / OSError / OverflowError, message on stderr as `error: ...` (adapter l.830-832; A2, A4, A6-A12, A14)",
+      "2": "argparse usage error, e.g. missing required flag (A13)",
+      "source": "adapter l.740-743, l.830-833"
+    },
+    "replay_observation": "adopt uses the same mutate()/replay rule as post: an existing message_id with identical content returns the existing row, with different content is refused (adapter l.245-269). From the CLI, observed_at is always a fresh timestamp (adapter l.810) and there is no flag to supply it, so re-running the same adopt command with the same --message-id was refused with `message_id already exists with different content` (A2, exit 1), even though every flag was identical. A gate or launcher that retries adopt with a fixed --message-id should expect exit 1 on the retry, not an idempotent success. Whether this is intended is not established."
+  },
+  "post_refuses_adoption": {
+    "behaviour": "post --kind adoption is refused before any write: `kind adoption is written only by the `adopt` subcommand, not `post`` (exit 1)",
+    "mechanism": "registry lookup of the kind's writer attribute (default 'post'), not a hard-coded exception",
+    "source": "adapter l.307-312; registry l.59; behavioural P1",
+    "gate_recognition": "The gate still recognises an adoption row by its fields (kind, topic, data.handoff_sha256, data.predecessor_session; plan l.739-746), not by which command wrote it. The row records no writer/command field (behavioural A1).",
+    "narrow_permission_command": "`adopt` is the narrow command a host permission rule could allow for point 2 without allowing the broad `post`. This campaign writes no permission rule and does not claim one exists."
+  },
+  "d10_delivery_by_to": {
+    "status": "pending S2 (not in this adapter)",
+    "current_wait_behaviour_observed": "wait --topic session:<id> matched by exact topic only at this HEAD; the result has no matches/matched_by key (behavioural W1; keys: status, revision, messages, next_since, has_more, exclude_session_id, topics, topic). Exit 2 on timeout (W2; adapter l.774-775).",
+    "reissue_contents": "post-S2 adapter digest and the matches/matched_by result key",
+    "s2_s5_integration_condition": "Under D10, wait --topic session:X can return a row addressed to session:X on another topic. The gate must not rely on the S2 wait until its adoption recognition checks that the row's actual topic is session:<successor>, not only recipient plus digest. The gate's test on S2's integration fixture must show such a row is not accepted; that test is the gate owner's to write and run, and until it passes the gate keeps the HEAD wait behaviour (plan l.696-710)."
+  },
+  "three_questions": {
+    "1_schema_validity": "Answered by this note: the checks above are what a row must pass.",
+    "2_host_permission": "Whether the successor's host lets it run the board write at all (tool permission or sandbox). The gate owner's to establish; not implied by schema validity.",
+    "3_authority_to_transfer_responsibility": "User-open Q1. A schema-valid adoption establishes neither 2 nor 3, and the schema does not resolve Q1 (plan l.711-722; l.47-48).",
+    "authentication": "adopt authenticates no one: session_id is caller-supplied (plan l.133)."
+  },
+  "x6_closure_criterion": {
+    "status": "open",
+    "criterion": "X6 closes only when adopt succeeds through a real Claude successor launched by the gate's launcher, under the intended permission configuration (whose grant needs the user's authorization, pending), with the host's actual rule-matching on the adopt command line tested in that run, and with --handoff-path passed; --handoff-sha256 alone does not count. A shell-stub test does not close it. The run and its record belong to the gate owner (S5).",
+    "source": "plan l.723-738"
+  },
+  "behavioural_verification": {
+    "board": "disposable: fresh `git init` repository /home/bline/cbm-work/s1-compat-note/board-repo with one empty commit; every command passed --repository to it. The live repository board was not written.",
+    "invocation": "python3 /home/bline/code/work-engine/skills/durable-state/scripts/codex_chatboard.py --repository /home/bline/cbm-work/s1-compat-note/board-repo <subcommand> ...",
+    "handoff_fixture": {
+      "path": "/home/bline/cbm-work/s1-compat-note/handoff.md",
+      "content": "handoff bytes\\n",
+      "sha256": "0d9daf626547da537cfaf3a08106ff053a5492d993eb628d146e64479cdab9d8"
+    },
+    "uuids": {
+      "SID": "11111111-2222-4333-8444-555555555555",
+      "SID2": "cccccccc-dddd-4eee-8fff-abcdefabcdef",
+      "PRED": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+    },
+    "cases": [
+      {
+        "id": "help",
+        "cmd": "adopt --help",
+        "exit": 0,
+        "result": "flags as listed in adopt_command_surface"
+      },
+      {
+        "id": "kinds",
+        "cmd": "kinds adoption",
+        "exit": 0,
+        "result": "adoption | writer=adopt | required: role, data.predecessor_session, data.handoff_sha256 | enums: - | optional data: claims_reclaimed, channels"
+      },
+      {
+        "id": "A1",
+        "cmd": "adopt --author t --session-id SID --body adopted --role root --predecessor-session PRED --handoff-path handoff.md --message-id 00000000-0000-4000-8000-000000000001 --claims-reclaimed res-a --channels topic-x",
+        "exit": 0,
+        "result": "seq 1, topic session:SID, to [role:root], data {predecessor_session PRED, handoff_sha256 0d9daf62..., claims_reclaimed [res-a], channels [topic-x]}, contract_version 1, no wake key"
+      },
+      {
+        "id": "A2",
+        "cmd": "A1 repeated verbatim",
+        "exit": 1,
+        "result": "error: message_id already exists with different content"
+      },
+      {
+        "id": "A3",
+        "cmd": "adopt ... --handoff-sha256 0d9daf62... (no path)",
+        "exit": 0,
+        "result": "seq 2; data has only predecessor_session and handoff_sha256"
+      },
+      {
+        "id": "A4",
+        "cmd": "adopt ... --handoff-path handoff.md --handoff-sha256 f*64",
+        "exit": 1,
+        "result": "error: handoff_sha256 does not equal the sha256 of ... (0d9daf62...)"
+      },
+      {
+        "id": "A5",
+        "cmd": "adopt ... --handoff-path handoff.md --handoff-sha256 0d9daf62...",
+        "exit": 0,
+        "result": "seq 3"
+      },
+      {
+        "id": "A6",
+        "cmd": "adopt ... (neither handoff flag)",
+        "exit": 1,
+        "result": "error: handoff_sha256 or handoff_path is required"
+      },
+      {
+        "id": "A7",
+        "cmd": "adopt ... --predecessor-session AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE",
+        "exit": 1,
+        "result": "error: predecessor_session must be a canonical lowercase UUID (uppercase or non-canonical forms are rejected, not normalised)"
+      },
+      {
+        "id": "A8b",
+        "cmd": "adopt --session-id CCCCCCCC-DDDD-4EEE-8FFF-ABCDEFABCDEF ...",
+        "exit": 1,
+        "result": "error: session_id must be a canonical lowercase UUID ... (uppercase is rejected, not normalised)"
+      },
+      {
+        "id": "A8c",
+        "cmd": "adopt --session-id SID2 --predecessor-session {PRED}",
+        "exit": 1,
+        "result": "same predecessor_session error as A7"
+      },
+      {
+        "id": "A9",
+        "cmd": "adopt --session-id SID --predecessor-session SID",
+        "exit": 1,
+        "result": "error: predecessor_session must differ from the poster's session_id"
+      },
+      {
+        "id": "A10",
+        "cmd": "adopt ... --handoff-sha256 <uppercase digest>",
+        "exit": 1,
+        "result": "error: handoff_sha256 must be 64 lowercase hex characters"
+      },
+      {
+        "id": "A11",
+        "cmd": "adopt ... --role Root",
+        "exit": 1,
+        "result": "error: role 'Root' must match ^[a-z0-9][a-z0-9._-]{0,63}$"
+      },
+      {
+        "id": "A12",
+        "cmd": "adopt ... --handoff-path <nonexistent>",
+        "exit": 1,
+        "result": "error: handoff_path cannot be read: [Errno 2] ..."
+      },
+      {
+        "id": "A13",
+        "cmd": "adopt ... (no --role)",
+        "exit": 2,
+        "result": "argparse: the following arguments are required: --role"
+      },
+      {
+        "id": "A14",
+        "cmd": "adopt with A1's message-id, different body",
+        "exit": 1,
+        "result": "error: message_id already exists with different content"
+      },
+      {
+        "id": "P1",
+        "cmd": "post --topic session:SID --kind adoption --role root --data-file {predecessor_session, handoff_sha256}",
+        "exit": 1,
+        "result": "error: kind adoption is written only by the `adopt` subcommand, not `post`"
+      },
+      {
+        "id": "P2",
+        "cmd": "post --kind note --topic misc",
+        "exit": 0,
+        "result": "row has kind note, contract_version 1"
+      },
+      {
+        "id": "P3",
+        "cmd": "post --topic misc (untyped)",
+        "exit": 0,
+        "result": "no envelope keys, no contract_version"
+      },
+      {
+        "id": "P4",
+        "cmd": "post --role root (no kind)",
+        "exit": 0,
+        "result": "role present, no contract_version"
+      },
+      {
+        "id": "P5b",
+        "cmd": "post --to session:CCCCCCCC-DDDD-4EEE-8FFF-ABCDEFABCDEF",
+        "exit": 1,
+        "result": "error: to address ... must match one of: <to_patterns>"
+      },
+      {
+        "id": "P5c",
+        "cmd": "post --to role:Root",
+        "exit": 1,
+        "result": "same to-pattern error"
+      },
+      {
+        "id": "P6",
+        "cmd": "post --session-id CCCCCCCC-DDDD-4EEE-8FFF-ABCDEFABCDEF --topic misc",
+        "exit": 0,
+        "result": "stored session_id in uppercase"
+      },
+      {
+        "id": "W1",
+        "cmd": "wait --since 0 --topic session:SID --timeout-seconds 0",
+        "exit": 0,
+        "result": "status messages; the 4 adoption rows (seq 1-4); no matches/matched_by key"
+      },
+      {
+        "id": "W2",
+        "cmd": "wait --since 100 --topic session:SID --timeout-seconds 0",
+        "exit": 2,
+        "result": "status timeout"
+      }
+    ],
+    "voided_cases": "Original A8 and P5 used SID, which has no hex letters, so uppercasing it was a no-op and they tested nothing; they were rerun as A8b and P5b with SID2. Their outputs (exit 0) are not evidence about case handling.",
+    "process_disposition": "no processes left running; disposable board left in place under /home/bline/cbm-work/s1-compat-note/"
+  },
+  "not_established": [
+    "the gate's own PRED_SESSION form (lowercase or not); string equality with adopt's stored value holds only if it is lowercase canonical",
+    "whether the CLI replay refusal on a verbatim re-run (A2) is intended",
+    "host permission behaviour for adopt (question 2) and any permission rule; none exists by this campaign's action",
+    "S2 behaviour (D10, matches/matched_by): pending S2"
+  ]
+}

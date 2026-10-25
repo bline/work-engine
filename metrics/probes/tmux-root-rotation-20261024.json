@@ -378,6 +378,22 @@
         "evidence": "adding --allowedTools to the launcher was denied as Auto-Mode Bypass, whose class covers using flags or config so the permission system allows arbitrary execution. Passing --settings from the launcher would be the same pattern.",
         "reading": "the host enforces, at the process level, the principle the doctrine states: a root cannot grant its successor authority it does not itself hold. The authorization must come from the user, outside the mechanism. This is correct behaviour, not an obstacle to engineer around, and it is the same separation as 'transport permission is not transfer authority'."
       }
-    }
+    },
+    "superseded_note": "this run exercised the PROSE acknowledgement via `post`. The launcher now calls `adopt`, so a re-run tests a different command and a different permission shape. The failure recorded here stands as evidence about auto mode and about stub-versus-real asymmetry, not about the current launcher."
+  },
+  "typed_adoption_20261025": {
+    "dependency_resolved": "the chatboard campaign's S1 landed `adopt` (79d2afdf, tier-1 findings 7a779600), so the robust adoption form became available. This role was the beneficiary and was waiting on it.",
+    "gate_now_reads": "kind == 'adoption'; data.handoff_sha256 == the posted digest; data.predecessor_session == PRED_SESSION, with the gate normalising its OWN value to lowercase first because `adopt` stores only the canonical form. An uppercase PRED_SESSION would otherwise never have matched.",
+    "what_it_replaces": "a substring test over the body (marker phrase + digest). Shown satisfiable by a message meaning the opposite; the marker was itself a second prose string with the same weakness. ADOPT_MARKER retired.",
+    "verified_against_the_adapter_not_inferred": {
+      "row_shape_observed": "a real adoption row written to a scratch board: kind at top level, role, to [role:<role>] set automatically, data.predecessor_session, data.handoff_sha256, topic fixed to session:<own id>, contract_version 1",
+      "post_cannot_forge_one": "`post --kind adoption` refused by the kind registry, exit 1, nothing appended",
+      "adopt_rechecks_the_digest": "`adopt` with a wrong --handoff-sha256 refused against the file, exit 1, nothing appended"
+    },
+    "transition_decision": "prose adoption is NOT kept as a fallback. The coordinator and launcher ship together so no rotation sees a mixed state, and a fallback would re-enable a test already known to be satisfiable by the wrong message. This answers the question the campaign's plan left open on this side.",
+    "stub_asymmetry_closed": "the test stub now calls `adopt` as well, so it holds no CAPABILITY the real successor lacks. That asymmetry caused both false greens of 2026-10-24: a stub citing a digest the real launcher omitted, and a stub posting with no classifier in the path. What remains asymmetric is PERMISSION only.",
+    "new_case": "a valid typed adoption naming a DIFFERENT predecessor is refused (fail_no_adoption, predecessor untouched, orphan retired) -- reachable only by the predecessor_session check",
+    "suites": "coordinator 11/11, watch 10/10, orphan 12/12, descendants 7/7, verdict parser pass",
+    "x6_still_open": "X6 closes only on a live successor run under the intended permission configuration. The narrow grant is now `adopt` alone, which cannot reach post, claim or release. The grant is the user's and is NOT given. The live run is also the only test of whether an allow rule resolves ahead of the classifier for that command, which is documented but unverified."
   }
 }
