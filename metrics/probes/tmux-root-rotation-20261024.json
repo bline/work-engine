@@ -366,6 +366,18 @@
       "better_boundary": "make adoption a dedicated board operation with its own arguments and validation, so the authorized thing is 'acknowledge THIS handoff' rather than 'run the board CLI'. This converges with the `adoption` kind in docs/codex-chatboard-contracts.md, which was already the robust fix for adoption being matched by substring. One contract answers both the permission boundary and the prose-matching weakness.",
       "ownership": "skills/durable-state/scripts/codex_chatboard.py is outside this role's writable path (metrics/ only), so this role can specify the operation but not implement it.",
       "invariant_to_preserve": "transport permission is not transfer authority. Being allowed to POST an acknowledgement must not, by itself, establish authority to complete a rotation -- the gate's own checks remain the thing that decides. This matches board invariant 1 (a message grants no authority)."
+    },
+    "authorization_semantics_verified": {
+      "checked": "2026-10-24 against code.claude.com docs and the installed build 2.1.310; not verified by a live auto-mode run",
+      "allow_resolves_before_the_classifier": "yes, with documented exceptions that do NOT include External System Writes. So the withdrawn rule would likely have been honoured -- and would have removed the classifier from the path for everything it matched. Being effective is what made it dangerous.",
+      "broad_rule_suspension_does_not_apply": "auto mode drops broad allow rules, and the docs cite wildcarded interpreters -- but the documented example wildcards the INTERPRETER NAME (Bash(python*)). A literal python3 with a fixed script path likely survives. The suggestion that my rule would be suspended is not supported by the cited text. not_established either way without a live test.",
+      "autoMode_allow_is_not_equivalent": "it does NOT pre-approve: it is prose the classifier reads as an exception, so the classifier still decides and may still deny. It keeps the gate but is non-deterministic.",
+      "project_local_cannot_reach_the_successor": "confirmed: a child whose cwd is outside a project does not read that project's .claude/ settings. Matches what was measured here.",
+      "narrowest_expressible_rule": "Bash rules are literal prefix + one trailing wildcard. There is no negation and no argument parsing, so 'this subcommand, not claim or release' is expressible only by pinning the subcommand in the literal prefix. The trailing * still admits a free-text body and extra arguments, and the match depends on argument ORDER.",
+      "the_mechanism_cannot_authorize_its_own_successor": {
+        "evidence": "adding --allowedTools to the launcher was denied as Auto-Mode Bypass, whose class covers using flags or config so the permission system allows arbitrary execution. Passing --settings from the launcher would be the same pattern.",
+        "reading": "the host enforces, at the process level, the principle the doctrine states: a root cannot grant its successor authority it does not itself hold. The authorization must come from the user, outside the mechanism. This is correct behaviour, not an obstacle to engineer around, and it is the same separation as 'transport permission is not transfer authority'."
+      }
     }
   }
 }
