@@ -22,6 +22,8 @@
 #   LAUNCH_TMPL          {SESSION} {TOPIC} {HANDOFF} {DIGEST} substituted
 #   ADOPT_TIMEOUT        seconds to wait for the successor's board acknowledgment
 #   RETIRE               kill|keep|successor
+#   ADOPT_MARKER         phrase the successor must post to assert adoption;
+#                        required together with the handoff digest
 #   ORPHAN               kill|keep: disposition of a successor that never
 #                        adopted. Default kill -- it owns nothing, and left
 #                        alive it is a second candidate root the descendant
@@ -44,6 +46,9 @@ ADOPT_TIMEOUT="${ADOPT_TIMEOUT:-180}"; RETIRE="${RETIRE:-keep}"
 # What to do with a successor that never adopted: retire it (default) or keep
 # it for inspection. Keeping leaves a second candidate root alive.
 ORPHAN="${ORPHAN:-kill}"
+# The phrase a successor must post to assert adoption. Paired with the handoff
+# digest, so a report ABOUT the handoff is not mistaken for adoption of it.
+ADOPT_MARKER="${ADOPT_MARKER:-Adoption acknowledged}"
 # 3000s keeps one watch inside the 1h prompt-cache TTL, so the wake resumes on a
 # read prefix rather than rebuilding it. Nothing is spent while blocked.
 WATCH_TIMEOUT="${WATCH_TIMEOUT:-3000}"; APPROVE_TOKEN="${APPROVE_TOKEN:-approve-rotation}"
@@ -164,7 +169,7 @@ commit() {
   local sid topic; sid=$(cat /proc/sys/kernel/random/uuid); topic="session:$sid"
   local seq
   seq=$(B post --author "supervisor:$ROLE" --session-id "$PRED_SESSION" --topic "$topic" \
-        --body "Root handoff. Verify sha256 $dig, reconcile active claims, then acknowledge adoption on $topic." \
+        --body "Root handoff. Verify sha256 $dig, reconcile active claims, then post \"$ADOPT_MARKER\" citing sha256 $dig on $topic. If the digest does NOT match, do not post here at all." \
         --ref "$handoff" 2>>"$STATE/supervisor.log" \
         | python3 -I -c 'import sys,json; print(json.load(sys.stdin)["message"]["sequence"])' 2>/dev/null)
   [[ -n "${seq:-}" ]] || { log "HOLD: board post failed; nothing launched"; rec terminal-status "fail_board_post"; return 33; }
@@ -218,10 +223,21 @@ commit() {
     (( wrc == 0 )) || break          # 2 = the wait's own timeout
     # A wait returns on the first message matching the topic, which need not be
     # the successor's. Re-arm from the returned cursor rather than accept it.
+    # Adoption must be ASSERTED, not merely posted. Treating any message from
+    # the successor's session as adoption meant a successor reporting a digest
+    # MISMATCH -- which its own instructions tell it to do -- retired the
+    # predecessor. Require the acknowledgement marker and the digest together.
+    # This is still prose matching. The robust form is a typed `adoption`
+    # message carrying data.handoff_sha256, specified in
+    # docs/codex-chatboard-contracts.md; adopt that when the envelope lands.
     ack=$(python3 -I -c 'import sys,json
 d=json.load(open(sys.argv[1]))
-print(next((m["message_id"] for m in d.get("messages",[])
-            if m.get("session_id")==sys.argv[2]), ""))' "$waitout" "$sid" 2>/dev/null)
+sid, dig, marker = sys.argv[2], sys.argv[3], sys.argv[4]
+print(next((m["message_id"] for m in d.get("messages", [])
+            if m.get("session_id") == sid
+            and marker in (m.get("body") or "")
+            and dig in (m.get("body") or "")), ""))' \
+       "$waitout" "$sid" "$dig" "$ADOPT_MARKER" 2>/dev/null)
     [[ -n "${ack:-}" ]] && break
     local nxt; nxt=$(python3 -I -c 'import sys,json;print(json.load(open(sys.argv[1])).get("next_since",""))' "$waitout" 2>/dev/null)
     [[ -n "$nxt" && "$nxt" != "$since" ]] || break

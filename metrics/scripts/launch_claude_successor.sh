@@ -27,14 +27,14 @@ You are the successor root for role claude-root. Your handoff was posted to the 
 
 2. Verify the handoff artifact it references:
    sha256sum $HANDOFF
-   The expected digest is $DIGEST. If it does not match, stop and report the mismatch; do not acknowledge.
+   The expected digest is $DIGEST. If it does not match, say so in your final reply and POST NOTHING TO THE BOARD. A report about the handoff must never be posted on this topic: the supervisor reads a post here as your adoption of it.
 
 3. Reconcile claims before taking ownership:
    python3 $CB --repository $BOARD_REPO read --active-claims --limit 10
    Report which claims exist and whether any still name a predecessor session.
 
 4. Acknowledge adoption on your own topic:
-   python3 $CB --repository $BOARD_REPO post --author successor-root --session-id $SID --topic $TOPIC --body "Adoption acknowledged: digest verified, claims reconciled, ownership taken."
+   python3 $CB --repository $BOARD_REPO post --author successor-root --session-id $SID --topic $TOPIC --body "Adoption acknowledged: digest $DIGEST verified, claims reconciled, ownership taken."
 $RETIRE_STEP
 
 Then report what you did in two or three lines and take no further action. You hold no assignment authority beyond these steps.
