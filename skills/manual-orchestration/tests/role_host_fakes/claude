@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""Fake `claude` with the background-session behaviour measured on 2.1.310.
+
+State lives in $FAKE_CLAUDE_STATE (JSON). Faithful to the probe: --bg ignores
+--session-id, resuming a LOADED session starts a copy under the same name and
+exits 0, stop keeps the conversation, a stopped session lists only with --all.
+"""
+import fcntl, json, os, subprocess, sys, tempfile, time, uuid
+from pathlib import Path
+
+STATE = Path(os.environ["FAKE_CLAUDE_STATE"])
+HERE = Path(__file__).resolve().parent
+
+
+def locked(fn):
+    STATE.touch()
+    with open(STATE, "r+") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        raw = fh.read()
+        db = json.loads(raw) if raw.strip() else {"sessions": {}}
+        out = fn(db)
+        fh.seek(0); fh.truncate(); fh.write(json.dumps(db))
+        return out
+
+
+def start_turn(sid, prompt):
+    def mark(db):
+        db["sessions"][sid].update(state="working", status="busy", loaded=True)
+    locked(mark)
+    pf = Path(tempfile.mkstemp(prefix="fake-prompt-")[1]); pf.write_text(prompt)
+    env = dict(os.environ, CLAUDE_CODE_SESSION_ID=sid)
+    env.pop("CODEX_THREAD_ID", None)
+    script = (f"import subprocess,sys,json,fcntl;"
+              f"r=subprocess.run([sys.executable,{str(HERE / 'fake_successor.py')!r},{str(pf)!r}]).returncode;"
+              f"exec(open({str(HERE / 'claude')!r}).read().split(chr(10)+'# END-TURN'+chr(10))[-1])")
+    if os.environ.get("FAKE_TURN") == "hang":
+        script = "import time; time.sleep(600)"
+    subprocess.Popen([sys.executable, "-c", script, sid], env=env, start_new_session=True,
+                     stdout=subprocess.DEVNULL, stderr=open(str(pf) + ".err", "w"))
+
+
+def short(sid):
+    return sid[:8]
+
+
+def by_short(db, s):
+    hits = [k for k in db["sessions"] if k.startswith(s)]
+    return hits[0] if len(hits) == 1 else None
+
+
+def main(argv):
+    if argv[:2] == ["agents", "--json"]:
+        everything = "--all" in argv
+        db = locked(lambda db: db)
+        rows = []
+        for sid, s in db["sessions"].items():
+            if s.get("removed") or (not s["loaded"] and not everything):
+                continue
+            rows.append({"id": short(sid), "sessionId": sid, "cwd": s["cwd"], "kind": s.get("kind", "background"),
+                         "name": s["name"], "state": s["state"] if s["loaded"] else "done",
+                         **({"status": s["status"], "pid": s.get("pid", 1)} if s["loaded"] else {})})
+        print(json.dumps(rows)); return 0
+    if argv[:1] in (["stop"], ["kill"]):
+        def stop(db):
+            sid = by_short(db, argv[1])
+            if not sid:
+                return None
+            db["sessions"][sid].update(loaded=False, state="done", status=None)
+            return sid
+        if not locked(stop):
+            print(f"no session {argv[1]}", file=sys.stderr); return 1
+        print(f"stopped {argv[1]}"); return 0
+    if "--bg" in argv:
+        args = [a for a in argv if a != "--bg"]
+        prompt = args[-1]
+        if "--resume" in args:
+            sid = args[args.index("--resume") + 1]
+            def resume(db):
+                s = db["sessions"].get(sid)
+                if s is None:
+                    return ("missing", None)
+                if s["loaded"]:
+                    copy = str(uuid.uuid4())
+                    db["sessions"][copy] = dict(s, loaded=True, state="working", status="busy")
+                    return ("copy", copy)
+                return ("woke", sid)
+            what, target = locked(resume)
+            if what == "missing":
+                print(f"No conversation found with session ID: {sid}", file=sys.stderr); return 1
+            if what == "copy":
+                print(f"note: session {short(sid)} is already running in the background, so this started a "
+                      f"copy as {short(target)}. `claude attach {short(sid)}` opens the original.")
+            else:
+                print(f"note: woke session {short(sid)} with its saved options (--name, --model).")
+            start_turn(target, prompt)
+            print(f"backgrounded · {short(target)}"); return 0
+        if "--session-id" in args:
+            print("warning: --bg manages the session id; ignoring --session-id "
+                  "(use --resume <id> to continue an existing session)", file=sys.stderr)
+        name = args[args.index("--name") + 1] if "--name" in args else "unnamed"
+        sid = str(uuid.uuid4())
+        def create(db):
+            db["sessions"][sid] = {"name": name, "cwd": os.getcwd(), "loaded": True, "state": "working",
+                                   "status": "busy", "pid": os.getpid()}
+        locked(create)
+        start_turn(sid, prompt)
+        print(f"backgrounded · {short(sid)} · {name}"); return 0
+    print(f"fake claude: unsupported {argv}", file=sys.stderr); return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
+
+# END-TURN
+import os as _o, sys as _s, json as _j, fcntl as _f
+from pathlib import Path as _P
+_st = _P(_o.environ["FAKE_CLAUDE_STATE"])
+with open(_st, "r+") as _fh:
+    _f.flock(_fh, _f.LOCK_EX)
+    _db = _j.loads(_fh.read())
+    _db["sessions"][_s.argv[1]].update(state="done", status="idle")
+    _fh.seek(0); _fh.truncate(); _fh.write(_j.dumps(_db))

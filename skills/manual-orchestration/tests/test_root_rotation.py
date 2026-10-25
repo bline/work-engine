@@ -1,0 +1,293 @@
+"""Rotation gate and role host against a REAL board and fake host CLIs.
+
+The board is the real chatboard adapter on a scratch git repository. The fake
+`claude`/`codex` reproduce the host behaviour measured in
+metrics/probes/cli-daemon-host-20261025.json, and the fake successor follows
+the gate's own successor prompt, so a test cannot pass on a capability the
+real successor lacks.
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+import uuid
+from pathlib import Path
+
+ROOT = Path(__file__).parents[1]
+REPO_ROOT = ROOT.parents[1]
+FAKES = Path(__file__).parent / "role_host_fakes"
+GATE = ROOT / "scripts" / "root_rotation.py"
+HOST = ROOT / "scripts" / "role_host.py"
+BOARD = REPO_ROOT / "skills" / "durable-state" / "scripts" / "codex_chatboard.py"
+PASS = f"{sys.executable} -c 'import sys; sys.exit(0)'"
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="rotation-test-"))
+        self.repo = self.tmp / "repo"
+        self.repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
+        self.state = self.tmp / "gate"
+        self.host_state = self.tmp / "host"
+        self.codex_home = self.tmp / "codex-home"
+        self.codex_home.mkdir()
+        self.env = dict(os.environ,
+                        PATH=f"{FAKES}:{os.environ['PATH']}",
+                        FAKE_CLAUDE_STATE=str(self.tmp / "claude-state.json"),
+                        CODEX_HOME=str(self.codex_home))
+        for k in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "FAKE_SUCCESSOR", "FAKE_TURN"):
+            self.env.pop(k, None)
+        self.handoff = self.tmp / "handoff.md"
+        self.handoff.write_text("# handoff\n\nContinue the role.\n")
+        self.quiescent = self.tmp / "quiescent"
+        self.quiescent.write_text("no children, no claims\n")
+        self.pred = str(uuid.uuid4())
+        self.pred_proc = subprocess.Popen(["sleep", "300"])
+        self.add_claude_session(self.pred, "operator-shell", kind="interactive", pid=self.pred_proc.pid,
+                                status="busy", state="working")
+        self.procs = [self.pred_proc]
+
+    def tearDown(self):
+        for p in self.procs:
+            p.kill()
+            p.wait()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def add_claude_session(self, sid, name, kind="background", pid=1, status="idle", state="done", loaded=True):
+        path = Path(self.env["FAKE_CLAUDE_STATE"])
+        db = json.loads(path.read_text()) if path.exists() else {"sessions": {}}
+        db["sessions"][sid] = {"name": name, "cwd": str(self.repo), "kind": kind, "pid": pid,
+                               "status": status, "state": state, "loaded": loaded}
+        path.write_text(json.dumps(db))
+
+    def claude_sessions(self):
+        return json.loads(Path(self.env["FAKE_CLAUDE_STATE"]).read_text())["sessions"]
+
+    def gate(self, op, *extra, successor="claude", pred_host="claude", env=None, handoff=True):
+        argv = [sys.executable, str(GATE), op] + ([str(self.handoff)] if handoff else []) + [
+            "--role", "test-root", "--state", str(self.state), "--repo", str(self.repo),
+            "--host-state", str(self.host_state), "--pred-host", pred_host,
+            "--pred-session", self.pred, "--successor-host", successor,
+            "--validator", PASS, "--quiescence-file", str(self.quiescent),
+            "--adopt-timeout", "60", "--after-adopt", "stop", *extra]
+        r = subprocess.run(argv, env={**self.env, **(env or {})}, capture_output=True, text=True, timeout=180)
+        return r.returncode, (self.state / "terminal-status").read_text().strip() \
+            if (self.state / "terminal-status").exists() else "", r.stderr
+
+    def host(self, *args, env=None):
+        r = subprocess.run([sys.executable, str(HOST), "--state", str(self.host_state), *args],
+                           env={**self.env, **(env or {})}, capture_output=True, text=True, timeout=120)
+        return r.returncode, r.stdout, r.stderr
+
+    def board_rows(self, **filters):
+        r = subprocess.run([sys.executable, str(BOARD), "--repository", str(self.repo), "read", "--limit", "50"],
+                           capture_output=True, text=True, check=True)
+        rows = json.loads(r.stdout)["messages"]
+        return [m for m in rows if all(m.get(k) == v for k, v in filters.items())]
+
+    def wait_for(self, pred, timeout=30):
+        end = time.time() + timeout
+        while time.time() < end:
+            if pred():
+                return True
+            time.sleep(0.2)
+        return False
+
+
+class GateInputs(Base):
+    def test_awaiting_authority_launches_nothing(self):
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (10, "awaiting_authority"))
+        self.assertEqual(len(self.claude_sessions()), 1)
+
+    def test_noncanonical_predecessor_refused(self):
+        self.pred = self.pred.upper()
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (24, "fail_predecessor_session_form"))
+
+    def test_missing_assertion_is_not_established(self):
+        self.quiescent.unlink()
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (32, "quiescence_not_established"))
+
+    def test_validator_unusable_exit_is_not_a_pass(self):
+        rc, status, _ = self.gate("prepare", "--validator", f"{sys.executable} -c 'import sys; sys.exit(3)'")
+        self.assertEqual((rc, status), (32, "validation_not_established_prepare"))
+
+    def test_role_name_already_loaded_is_ambiguous(self):
+        self.add_claude_session(str(uuid.uuid4()), "test-root")
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (39, "fail_role_ambiguous"))
+
+    def test_mutated_handoff_refused_at_commit(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        self.handoff.write_text("# handoff\n\nchanged\n")
+        rc, status, _ = self.gate("commit")
+        self.assertEqual((rc, status), (30, "fail_handoff_mutated"))
+
+    def test_descendant_session_process_blocks(self):
+        self.pred_proc.kill(); self.pred_proc.wait()
+        self.pred_proc = subprocess.Popen(["bash", "-c", "(exec -a codex sleep 300) & wait"])
+        self.procs.append(self.pred_proc)
+        self.add_claude_session(self.pred, "operator-shell", kind="interactive", pid=self.pred_proc.pid,
+                                status="busy", state="working")
+        time.sleep(0.3)
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (22, "fail_descendants_live"))
+
+    def test_loaded_ledger_child_blocks(self):
+        prompt = self.tmp / "p.txt"; prompt.write_text("work")
+        rc, out, err = self.host("launch", "claude", "--cwd", str(self.repo), "--name", "child",
+                                 "--prompt-file", str(prompt), "--parent", self.pred,
+                                 env={"FAKE_SUCCESSOR": "silent"})
+        self.assertEqual(rc, 0, err)
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (22, "fail_children_live"))
+
+
+class GateCommit(Base):
+    def commit(self, successor="claude", **env):
+        self.assertEqual(self.gate("prepare", successor=successor)[0], 10)
+        return self.gate("commit", successor=successor, env=env)
+
+    def test_claude_successor_adopts_and_commits(self):
+        rc, status, err = self.commit()
+        self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
+        sid = (self.state / "adoption").read_text().split()[0].split("=")[1]
+        rows = self.board_rows(kind="adoption", session_id=sid)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["topic"], f"session:{sid}")
+        self.assertEqual(rows[0]["data"]["predecessor_session"], self.pred)
+
+    def test_codex_successor_adopts_and_commits(self):
+        rc, status, err = self.commit(successor="codex")
+        self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
+
+    def test_adoption_on_another_topic_is_not_accepted(self):
+        # S2<->S5 integration condition: a row addressed `to` the successor on
+        # another topic must not be read as its adoption.
+        rc, status, err = self.commit(FAKE_SUCCESSOR="wrong_topic")
+        self.assertEqual((rc, status), (34, "fail_no_adoption"), err)
+        self.assertIn("ignored adoption-shaped row", err)
+        self.assertEqual(len(self.board_rows(kind="adoption", topic="aspect:handoff")), 1)
+
+    def test_adoption_naming_another_predecessor_is_not_accepted(self):
+        rc, status, _ = self.commit(FAKE_SUCCESSOR="wrong_pred")
+        self.assertEqual((rc, status), (34, "fail_no_adoption"))
+
+    def test_successor_that_ends_without_adopting_fails_early_and_is_stopped(self):
+        t0 = time.time()
+        rc, status, _ = self.commit(FAKE_SUCCESSOR="silent")
+        self.assertEqual((rc, status), (34, "fail_no_adoption"))
+        self.assertLess(time.time() - t0, 50, "should not wait for the full adoption timeout")
+        orphan = (self.state / "orphan-successor").read_text()
+        self.assertIn("disposition=stop", orphan)
+        loaded = [s for s in self.claude_sessions().values() if s["name"] == "test-root" and s["loaded"]]
+        self.assertEqual(loaded, [])
+
+    def test_retire_stop_on_interactive_predecessor_is_reported_not_committed_clean(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        self.add_claude_session(self.pred, "operator-shell", kind="interactive", pid=self.pred_proc.pid,
+                                status="idle", state="done")
+        rc, status, _ = self.gate("commit", "--retire", "stop")
+        self.assertEqual((rc, status), (38, "committed_rotation_1_predecessor_not_retired"))
+
+    def test_retire_stop_on_background_predecessor(self):
+        self.add_claude_session(self.pred, "operator-shell", kind="background", pid=self.pred_proc.pid,
+                                status="idle", state="done")
+        self.assertEqual(self.gate("prepare")[0], 10)
+        rc, status, err = self.gate("commit", "--retire", "stop")
+        self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
+        self.assertFalse(self.claude_sessions()[self.pred]["loaded"])
+
+    def test_cap(self):
+        (self.state).mkdir(parents=True, exist_ok=True)
+        (self.state / "rotation-count").write_text("3\n")
+        rc, status, _ = self.gate("prepare")
+        self.assertEqual((rc, status), (20, "fail_cap_reached"))
+
+
+class HostAdapter(Base):
+    def launch(self, host="claude", **env):
+        prompt = self.tmp / "p.txt"; prompt.write_text("work")
+        rc, out, err = self.host("launch", host, "--cwd", str(self.repo), "--name", "worker",
+                                 "--prompt-file", str(prompt), env={"FAKE_SUCCESSOR": "silent", **env})
+        self.assertEqual(rc, 0, err)
+        return json.loads(out)["session_id"]
+
+    def test_claude_deliver_to_idle_loaded_stops_then_resumes_same_id(self):
+        sid = self.launch()
+        self.assertTrue(self.wait_for(lambda: self.claude_sessions()[sid]["status"] == "idle"))
+        msg = self.tmp / "m.txt"; msg.write_text("next")
+        rc, out, err = self.host("deliver", "claude", sid, "--cwd", str(self.repo), "--message-file", str(msg),
+                                 env={"FAKE_SUCCESSOR": "silent"})
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(len(self.claude_sessions()), 2, "no copy may be created")
+
+    def test_claude_copy_is_detected_contained_and_reported(self):
+        sid = self.launch()
+        self.assertTrue(self.wait_for(lambda: self.claude_sessions()[sid]["status"] == "idle"))
+        # Simulate a race: the session is loaded when the resume lands. Calling
+        # the host directly with --resume reproduces the copy path.
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import role_host
+        os.environ.update(FAKE_CLAUDE_STATE=self.env["FAKE_CLAUDE_STATE"], PATH=self.env["PATH"],
+                          FAKE_SUCCESSOR="silent")
+        h = role_host.Claude(str(FAKES / "claude"))
+        r = subprocess.run([str(FAKES / "claude"), "--bg", "--resume", sid, "x"], env=self.env,
+                           capture_output=True, text=True)
+        with self.assertRaises(role_host.HostError) as cm:
+            h._contain_copy(r.stdout, role_host.Ledger(self.host_state), sid)
+        self.assertEqual((cm.exception.code, cm.exception.status), (21, "fork_detected"))
+        copies = [k for k, s in self.claude_sessions().items() if k not in (sid, self.pred)]
+        self.assertEqual(len(copies), 1)
+        self.assertFalse(self.claude_sessions()[copies[0]]["loaded"], "the copy must be stopped")
+
+    def test_claude_deliver_refused_while_running(self):
+        sid = self.launch(FAKE_TURN="hang")
+        msg = self.tmp / "m.txt"; msg.write_text("next")
+        rc, _, err = self.host("deliver", "claude", sid, "--cwd", str(self.repo), "--message-file", str(msg))
+        self.assertEqual(rc, 40, err)
+
+    def test_codex_deliver_resumes_same_thread(self):
+        sid = self.launch("codex")
+        self.assertTrue(self.wait_for(lambda: json.loads(self.host("status", "codex", sid)[1])["state"] == "idle"))
+        msg = self.tmp / "m.txt"; msg.write_text("next")
+        rc, out, err = self.host("deliver", "codex", sid, "--cwd", str(self.repo), "--message-file", str(msg),
+                                 env={"FAKE_SUCCESSOR": "silent"})
+        self.assertEqual(rc, 0, err)
+
+    def test_codex_resume_that_starts_another_thread_is_a_defect(self):
+        sid = self.launch("codex")
+        self.assertTrue(self.wait_for(lambda: json.loads(self.host("status", "codex", sid)[1])["state"] == "idle"))
+        msg = self.tmp / "m.txt"; msg.write_text("next")
+        rc, _, err = self.host("deliver", "codex", sid, "--cwd", str(self.repo), "--message-file", str(msg),
+                               env={"FAKE_SUCCESSOR": "silent", "FAKE_CODEX_MISMATCH": "1"})
+        self.assertEqual(rc, 21, err)
+
+    def test_children_lists_only_ledger_children_of_that_parent(self):
+        prompt = self.tmp / "p.txt"; prompt.write_text("work")
+        for parent in (self.pred, str(uuid.uuid4())):
+            self.host("launch", "claude", "--cwd", str(self.repo), "--name", "c", "--prompt-file", str(prompt),
+                      "--parent", parent, env={"FAKE_SUCCESSOR": "silent"})
+        rc, out, _ = self.host("children", self.pred)
+        self.assertEqual(rc, 0)
+        self.assertEqual(len(json.loads(out)["children"]), 1)
+
+    def test_whoami(self):
+        sid = str(uuid.uuid4())
+        rc, out, _ = self.host("whoami", env={"CLAUDE_CODE_SESSION_ID": sid})
+        self.assertEqual((rc, json.loads(out)["session_id"]), (0, sid))
+        rc, _, _ = self.host("whoami")
+        self.assertEqual(rc, 32)
+
+
+if __name__ == "__main__":
+    unittest.main()

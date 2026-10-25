@@ -115,11 +115,13 @@ safely, and record why.
 
 ## Roots
 
-A root cannot launch its own replacement: it has no parent, and nothing it can
-call starts a new top-level session. **The user is the root's parent for
-transfer.** The root prepares everything; the user performs the one step it
-cannot. Merely spawning a child, writing a packet or compacting does not
-transfer the root.
+A root cannot authorize its own replacement: it has no parent. **The user is
+the root's parent for transfer.** The root prepares everything and the user
+authorizes the transfer. The launch itself can now be mechanical: `claude --bg`
+and `codex exec` start top-level sessions, and
+[`scripts/root_rotation.py`](../scripts/root_rotation.py) launches the
+successor only after an authorized commit. Merely spawning a child, writing a
+packet or compacting does not transfer the root.
 
 Record the root's reading at each dispatch and integration boundary, and keep
 the assignment record and continuation current continuously. Plan a transfer
@@ -142,15 +144,34 @@ routes belong to the predecessor's session. So before transferring:
    path and digest, every child handoff the successor must dispatch from,
    claims held, the destination ref and HEAD, and the next actions. Record its
    sha256.
-4. Give the user the exact successor instruction: start a new session in the
-   repository and paste a prompt naming the root handoff path and sha256, the
-   skill to load as coordinator, and the first actions (verify the digest,
-   read the assignment record, re-claim board resources under the new session
-   id, post a transition message).
-5. The successor verifies the digest, acknowledges ownership in the assignment
-   record, and only then dispatches. The predecessor takes no further
-   coordination action; the user stops using it except to answer questions
-   about its own record.
+4. Launch the successor by one of two routes:
+   - **Gate.** Write a quiescence assertion and run
+     `root_rotation.py prepare <handoff>`. It validates the handoff, checks
+     quiescence independently (board claims, children launched through
+     [`scripts/role_host.py`](../scripts/role_host.py), session processes
+     beneath the root) and stops at `awaiting_authority` with no successor.
+     After the user authorizes, run `root_rotation.py commit --detach` and end
+     the turn. The gate launches the successor, posts the handoff to its own
+     board topic, waits for its typed `adopt`, and retires the predecessor
+     with `--retire stop`, or keeps it with the default `keep`. `watch`
+     accepts the authorization as a board message, but only from a named
+     approver and only when it cites the handoff's sha256.
+   - **Manual.** Give the user the exact successor instruction: start a new
+     session in the repository and paste a prompt naming the root handoff
+     path and sha256, the skill to load as coordinator, and the first actions
+     (verify the digest, read the assignment record, re-claim board resources
+     under the new session id, adopt on the board).
+5. The successor verifies the digest, acknowledges ownership with the board's
+   `adopt` command and in the assignment record, and only then dispatches.
+   The predecessor takes no further coordination action; the user stops using
+   it except to answer questions about its own record.
+
+Launch children the successor must be able to see through `role_host.py
+launch --parent <root session>`. Its ledger is what makes them parent-scoped,
+since neither host CLI records a parent. Deliver to a retained Claude session
+only through `role_host.py deliver`: `claude --bg --resume` on a session that is
+still loaded starts a copy under the same name instead of delivering, which
+leaves two live instances of one role.
 
 Release the predecessor's board claims at step 3 and have the successor
 re-claim them at step 4, so a claim never names a session that no longer
