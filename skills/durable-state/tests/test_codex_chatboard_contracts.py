@@ -620,6 +620,246 @@ class KindsViewTest(RepoCase):
         self.assertTrue(lines[1].startswith("usage:"))
 
 
+BASE_COMMIT = "7a7796002e95ce3874a3b27b3f951b6f5a6f9c28"
+BASE_ADAPTER_PATH = "skills/durable-state/scripts/codex_chatboard.py"
+# The S2<->S5 adoption fixture (plan S2 Checks, D10): an adoption row addressed to
+# the successor by `to` whose topic is not the successor's session topic.
+ADOPTION_SUCCESSOR = "33333333-3333-4333-8333-333333333333"
+
+
+class ReadFilterTest(RepoCase):
+    def seed(self) -> None:
+        self.post(topic="t", body="legacy")                                   # 1: no kind
+        self.post(topic="t", body="s", kind="status", role="alpha-role", data={"subject": "s"})      # 2
+        self.post(topic="t", body="n", kind="note", role="beta-role")         # 3
+        self.post(topic="t", body="s2", kind="status", role="beta-role", data={"subject": "s"})      # 4
+        for i in range(5):
+            self.post(topic="t", body=f"filler {i}")                          # 5..9
+
+    def view(self, **kw):
+        board, _ = self.board()
+        args = dict(since=None, limit=100, active_claims=False, observed_at="2026-10-25T00:00:00Z")
+        args.update(kw)
+        return [row["sequence"] for row in BOARD.read_view(board, **args)["messages"]]
+
+    def test_kind_and_role_filters_apply_before_limit_and_tail_slice(self) -> None:
+        self.seed()
+        # The two status rows are older than the newest 3 rows of any kind.
+        self.assertEqual(self.view(limit=3, kinds=["status"]), [2, 4])
+        self.assertEqual(self.view(limit=1, kinds=["status"]), [4])
+        self.assertEqual(self.view(limit=1, since=0, kinds=["status"]), [2])
+        self.assertEqual(self.view(limit=100, roles=["beta-role"]), [3, 4])
+        self.assertEqual(self.view(limit=1, roles=["beta-role"]), [4])
+        self.assertEqual(self.view(kinds=["status"], roles=["beta-role"]), [4])
+        self.assertEqual(self.view(kinds=["status", "request"]), [2, 4])
+
+    def test_note_matches_rows_without_kind(self) -> None:
+        self.seed()
+        self.assertEqual(self.view(kinds=["note"]), [1, 3, 5, 6, 7, 8, 9])
+
+    def test_stored_unknown_kind_is_filterable_as_recorded(self) -> None:
+        self.seed()
+        self.raw_rewrite(lambda board: board["messages"][1].update(kind="future-kind"))
+        self.assertEqual(self.view(kinds=["future-kind"]), [2])
+
+    def test_cli_flags_and_default_output(self) -> None:
+        self.seed()
+        out = self.run_cli("read", "--kind", "status", "--role", "beta-role", "--limit", "5")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual([m["sequence"] for m in json.loads(out.stdout)["messages"]], [4])
+        out = self.run_cli("read", "--format", "compact", "--active-claims")
+        self.assertEqual(out.returncode, 1)
+        self.assertIn("--active-claims", out.stderr)
+
+
+class CompactReadTest(RepoCase):
+    def test_golden(self) -> None:
+        self.post(topic="legacy-topic", author="old", body="a legacy\nmultiline   body")        # 1
+        self.post(topic="aspect:x", author="alpha", kind="request", role="s10-root",
+                  to=["role:a", "session:" + SESSION_2], body="x" * 100,
+                  data={"ask": "a"}, effects={"shared_writes": [], "external_actions": []})      # 2
+        self.post(topic="aspect:x", author="beta", kind="reply", role="peer", in_reply_to=2,
+                  supersedes=1, body="y" * 80, data={"disposition": "deferred"})             # 3
+        self.raw_rewrite(lambda board: board["messages"][0].update(kind="future-kind"))
+        out = self.run_cli("read", "--format", "compact")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        expected = "\n".join([
+            "1\tfuture-kind\t-\t-\t-\told\tlegacy-topic\ta legacy multiline body",
+            f"2\trequest\ts10-root\trole:a,session:{SESSION_2}\t-\talpha\taspect:x\t" + "x" * 77 + "...",
+            "3\treply\tpeer\t-\treply:2,supersedes:1\tbeta\taspect:x\t" + "y" * 80,
+        ]) + "\n"
+        self.assertEqual(out.stdout, expected)
+
+    def test_untyped_row_reads_as_note_and_malformed_to_is_dash(self) -> None:
+        self.post(body="plain")
+        self.raw_rewrite(lambda board: board["messages"][0].update(to="role:a"))
+        line = self.run_cli("read", "--format", "compact").stdout
+        self.assertEqual(line.split("\t")[:4], ["1", "note", "-", "-"])
+
+
+class WaitDeliveryByToTest(RepoCase):
+    def wait(self, *topics: str, since: int = 0, limit: int = 100, **kw):
+        return BOARD.wait_board(self.repository, since=since, limit=limit, topics=list(topics),
+                                timeout_seconds=0, **kw)
+
+    def test_role_and_session_addresses_wake_each_addressee_once(self) -> None:
+        self.post(topic="aspect:x", to=["role:a", "role:b"], kind="note", role="p")
+        self.post(topic="aspect:y", to=[f"session:{SESSION_2}"])
+        a = self.wait("role:a")
+        self.assertEqual([m["sequence"] for m in a["messages"]], [1])
+        self.assertEqual(a["matches"], [{"sequence": 1, "matched_by": ["to"]}])
+        self.assertEqual([m["sequence"] for m in self.wait("role:b")["messages"]], [1])
+        self.assertEqual(self.wait("role:c")["messages"], [])
+        self.assertNotIn("matches", self.wait("role:c"))
+        s = self.wait(f"session:{SESSION_2}")
+        self.assertEqual([m["sequence"] for m in s["messages"]], [2])
+        self.assertEqual(s["matches"], [{"sequence": 2, "matched_by": ["to"]}])
+
+    def test_returned_row_is_byte_unchanged(self) -> None:
+        self.post(topic="aspect:x", to=["role:a"])
+        board, _ = self.board()
+        self.assertEqual(self.wait("role:a")["messages"], board["messages"])
+
+    def test_topic_only_match_has_no_matches_key(self) -> None:
+        self.post(topic="aspect:x")
+        self.post(topic="aspect:x", to=["role:z"])
+        result = self.wait("aspect:x")
+        self.assertEqual(len(result["messages"]), 2)
+        self.assertNotIn("matches", result)
+
+    def test_mixed_result_reports_each_rows_path(self) -> None:
+        self.post(topic="role:a")                          # 1 topic only
+        self.post(topic="aspect:x", to=["role:a"])         # 2 to only
+        self.post(topic="role:a", to=["role:a"])           # 3 both
+        self.post(topic="aspect:x")                        # 4 neither
+        result = self.wait("role:a")
+        self.assertEqual([m["sequence"] for m in result["messages"]], [1, 2, 3])
+        self.assertEqual(result["matches"], [{"sequence": 1, "matched_by": ["topic"]},
+                                             {"sequence": 2, "matched_by": ["to"]},
+                                             {"sequence": 3, "matched_by": ["topic", "to"]}])
+
+    def test_row_matching_by_topic_and_to_is_delivered_once(self) -> None:
+        self.post(topic="role:a", to=["role:a"])
+        result = self.wait("role:a")
+        self.assertEqual(len(result["messages"]), 1)
+        self.assertEqual(result["matches"], [{"sequence": 1, "matched_by": ["topic", "to"]}])
+
+    def test_duplicate_to_address_and_duplicate_topic_filter_deliver_once(self) -> None:
+        self.post(topic="aspect:x", to=["role:a", "role:a"])
+        result = self.wait("role:a", "role:a")
+        self.assertEqual(len(result["messages"]), 1)
+        self.assertEqual(result["matches"], [{"sequence": 1, "matched_by": ["to"]}])
+        result = self.wait("role:a", "aspect:x")
+        self.assertEqual(result["matches"], [{"sequence": 1, "matched_by": ["topic", "to"]}])
+
+    def test_malformed_stored_to_does_not_match(self) -> None:
+        self.post(topic="aspect:x")
+        for bad in ("role:a", 5, [1, "role:a"], {"role:a": 1}, None):
+            with self.subTest(bad=bad):
+                self.raw_rewrite(lambda board: board["messages"][0].update(to=bad))
+                self.assertEqual(self.wait("role:a")["messages"], [])
+
+    def test_no_topic_selected_matches_all_without_matches_key(self) -> None:
+        self.post(topic="aspect:x", to=["role:a"])
+        self.post(topic="aspect:y")
+        result = self.wait()
+        self.assertEqual(len(result["messages"]), 2)
+        self.assertNotIn("matches", result)
+
+    def test_filter_before_limit_and_cursor_hold_for_to_matches(self) -> None:
+        self.post(topic="aspect:x", to=["role:a"])   # 1
+        self.post(topic="aspect:x", to=["role:a"])   # 2
+        for _ in range(4):
+            self.post(topic="aspect:other")          # 3..6
+        self.post(topic="aspect:x", to=["role:a"])   # 7
+        first = self.wait("role:a", limit=2)
+        self.assertEqual([m["sequence"] for m in first["messages"]], [1, 2])
+        self.assertTrue(first["has_more"])
+        self.assertEqual(first["next_since"], 2)
+        self.assertEqual(len(first["matches"]), 2)
+        second = self.wait("role:a", since=first["next_since"], limit=2)
+        self.assertEqual([m["sequence"] for m in second["messages"]], [7])
+        self.assertFalse(second["has_more"])
+        self.assertEqual(second["next_since"], 7)
+        self.assertEqual(second["matches"], [{"sequence": 7, "matched_by": ["to"]}])
+
+    def test_control_topic_only_wait_gets_no_to_matches(self) -> None:
+        # to-patterns allow only role:/session: addresses, so a to address can
+        # never equal a control: topic; a waiter selecting only its control
+        # topic gets no `to` matches and control rows stay excluded as at HEAD.
+        topic = f"control:session:{SESSION_2}"
+        for pattern in self.registry["envelope"]["to_patterns"]:
+            self.assertIsNone(re.match(pattern, topic))
+        self.post(topic="aspect:x", to=["role:a"])
+        self.post(topic="aspect:x", to=["role:a", "role:b"])
+        with self.assertRaisesRegex(BOARD.ChatboardError, "session binding"):
+            self.wait(topic)  # unbound control topic is still refused
+
+        class StubControl:  # no telemetry: only the board side of the wait is under test
+            def __init__(self, path: Path) -> None:
+                self.topic, self.rollout, self.binary, self.cursor = topic, path, path, None
+
+            def read(self) -> dict:
+                return {"event": None}
+
+        stub_file = Path(self.temporary.name) / "stub"
+        stub_file.write_text("x")
+        result = self.wait(topic, control=StubControl(stub_file))
+        self.assertEqual(result["messages"], [])
+        self.assertNotIn("matches", result)
+        self.assertEqual(result["next_since"], 2)
+        # tests/test_context_control.py l.114-115 pins the same result with the real reader.
+
+    def test_adoption_fixture_s2_s5(self) -> None:
+        """S2<->S5 adoption fixture: an adoption row addressed by `to` to the successor
+        on a topic that is not the successor's session topic reaches a waiter on
+        session:<successor> with matched_by ["to"]."""
+        handoff = "b" * 64
+        # `post` refuses kind adoption (its writer is `adopt`), so store the row shape directly.
+        self.post(topic="aspect:handoff")
+        self.raw_rewrite(lambda board: board["messages"][0].update(
+            kind="adoption", role="s10-root", to=[f"session:{ADOPTION_SUCCESSOR}"],
+            data={"handoff_sha256": handoff, "predecessor_session": SESSION_2}))
+        result = self.wait(f"session:{ADOPTION_SUCCESSOR}")
+        self.assertEqual(len(result["messages"]), 1)
+        row = result["messages"][0]
+        self.assertNotEqual(row["topic"], f"session:{ADOPTION_SUCCESSOR}")
+        self.assertEqual(row["kind"], "adoption")
+        self.assertEqual(row["data"], {"handoff_sha256": handoff, "predecessor_session": SESSION_2})
+        self.assertEqual(result["matches"], [{"sequence": 1, "matched_by": ["to"]}])
+
+
+class BaseByteIdentityTest(RepoCase):
+    """Default `read` and a topic-only `wait` equal the base adapter's output on one board."""
+
+    def base_script(self) -> Path:
+        directory = Path(self.temporary.name) / "base"
+        directory.mkdir()
+        source = subprocess.run(["git", "show", f"{BASE_COMMIT}:{BASE_ADAPTER_PATH}"],
+                                capture_output=True, check=True, cwd=Path(__file__).parent).stdout
+        (directory / "codex_chatboard.py").write_bytes(source)
+        shutil.copy(SCRIPT.parent / "durable_state.py", directory / "durable_state.py")
+        return directory / "codex_chatboard.py"
+
+    def test_read_and_topic_only_wait_match_base(self) -> None:
+        base = self.base_script()
+        self.post(topic="aspect:x", body="one")
+        self.post(topic="role:a", body="two", wake=True)
+        self.post(topic="aspect:x", kind="request", role="r", to=["role:q"], body="three",
+                  data={"ask": "a"}, effects={"shared_writes": [], "external_actions": []})
+        for args in (("read",), ("read", "--since", "1", "--limit", "1")):
+            now, then = self.run_cli(*args), self.run_cli(*args, script=base)
+            self.assertEqual(now.stdout, then.stdout, args)
+            self.assertEqual(now.returncode, then.returncode)
+        for args in (("wait", "--since", "0", "--timeout-seconds", "0", "--topic", "aspect:x"),
+                     ("wait", "--since", "0", "--timeout-seconds", "0"),
+                     ("wait", "--since", "0", "--timeout-seconds", "0", "--topic", "role:a")):
+            now, then = self.run_cli(*args), self.run_cli(*args, script=base)
+            self.assertEqual(now.stdout, then.stdout, args)
+            self.assertEqual(now.returncode, then.returncode)
+            self.assertNotIn('"matches"', now.stdout)
+
+
 def backticked(text: str) -> list[str]:
     return re.findall(r"`([^`]+)`", text)
 
@@ -718,6 +958,19 @@ class ParityTest(RepoCase):
         self.assertIsNotNone(re.match(session_pattern, f"session:{LETTERS}"))
         if "contract_version" in documented:
             self.assertIn("integer", documented["contract_version"][1])
+
+    def test_operator_reference_states_role_pattern_and_effects_keys(self) -> None:
+        ticks = backticked(re.sub(r"```.*?```", "", OPERATOR_DOC.read_text(), flags=re.S))
+        envelope = self.registry["envelope"]
+        self.assertTrue(envelope["role_pattern"] in ticks, "role_pattern not stated in backticks")
+        for key in envelope["effects_keys"]:
+            self.assertTrue(key in ticks, f"{key} not stated in backticks")
+
+    def test_operator_reference_documents_read_filters_and_delivery_by_to(self) -> None:
+        text = OPERATOR_DOC.read_text()
+        for needle in ("--kind", "--role", "--format compact", "matched_by", "delivery is not authorization"):
+            self.assertIn(needle, text)
+        self.assertNotIn("`wait` does not read `to`", text)
 
     def test_operator_reference_writers(self) -> None:
         text = OPERATOR_DOC.read_text()

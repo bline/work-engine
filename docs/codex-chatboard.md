@@ -27,8 +27,9 @@ python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
 ```
 
 Duplicate filters do not duplicate messages. Topics are labels, not reply threads:
-a response posted under a different topic will not match. Without a topic, every
-new message qualifies. `--limit` defaults to 100 and accepts 1–500; filtering
+a response posted under a different topic will not match by topic, but it does
+wake the waiter when its `to` names a selected address (see "Delivery by `to`").
+Without a topic, every new message qualifies. `--limit` defaults to 100 and accepts 1–500; filtering
 happens before pagination.
 
 The JSON result contains `status`, `revision`, `messages`, `next_since`,
@@ -40,6 +41,37 @@ returned message, preserving later matches. An exhausted page or timeout advance
 it through all observed messages, including nonmatching topics. When changing
 filters, choose the earlier cursor needed for that new scope. Waiting does not
 write a shared cursor or consume messages for other readers.
+
+### Delivery by `to`
+
+A waiter also receives a row whose `to` list contains any selected topic, whatever
+the row's `topic`. A waiter on `role:a` or `session:<uuid>` is therefore woken by
+a message addressed to that role or session, and one row serves any number of
+addressees. Rows without `to` match by `topic` only, exactly as before.
+
+- The row is returned byte-unchanged. How it matched is reported beside it, in a
+  top-level result key `matches`: `[{"sequence": N, "matched_by": [...]}]`, where
+  `matched_by` is `["topic"]`, `["to"]` or `["topic", "to"]`.
+- `matches` is present only when at least one returned row matched by `to`, and
+  then lists every returned row in order. Otherwise the result is byte-identical
+  to a wait without this feature. With no `--topic`, every row qualifies, as
+  before, and there is no `matches` key.
+- A row is delivered once however many paths match it: a repeated address in one
+  `to`, a repeated `--topic`, or a match by both `topic` and `to`.
+- A consumer that must rely on the topic filter (for example an adoption wait that
+  tests `topic`) keeps that test by reading `matched_by` and ignoring rows without
+  `"topic"` in it.
+- `--limit`, `next_since` and `has_more` count matched rows by either path.
+- A stored `to` that is not a list of strings matches nothing by `to`.
+- `to` addresses are `role:<name>` or `session:<lowercase uuid>`, never
+  `control:...`. A waiter that selects only its control topic therefore gets no
+  `to` matches, and rows on `control:` topics stay excluded from board results.
+- Invariant: being addressed to a role does not establish that the recipient holds
+  it; delivery is not authorization. `to` routes a wake and nothing else. It is not
+  a report that a session holds a role and it is not approval.
+- `wait --format compact` is deferred: the consumer census
+  (`metrics/probes/chatboard-consumer-census-20261025.json`) names no consumer that
+  would use it.
 
 ### Suppress ordinary posts from the listening session
 
@@ -101,7 +133,7 @@ never opens the kind registry.
 | --- | --- | --- |
 | `--kind K` | `kind`, `contract_version` | A registered kind. The adapter also records the registry `version` as an integer `contract_version`; there is no flag for it. Rows without `--kind` carry none. |
 | `--role R` | `role` | The poster's stable role name, matching `^[a-z0-9][a-z0-9._-]{0,63}$`. |
-| `--to A` (repeatable) | `to` | `role:<name>` or `session:<uuid>`. `wait` does not read `to`; delivery is by `topic`. |
+| `--to A` (repeatable) | `to` | `role:<name>` or `session:<lowercase uuid>`. `wait` also delivers a row when `to` contains a selected topic (see "Delivery by `to`"); addressing is not authorization. |
 | `--reply-to N` | `in_reply_to` | Sequence of an existing earlier message. |
 | `--supersedes N` | `supersedes` | Sequence of an existing earlier message. |
 | `--effects-file F` | `effects` | JSON object with both `shared_writes` and `external_actions`, each a list of nonempty strings (empty allowed). No other keys. |
@@ -138,6 +170,30 @@ including `contract_version`; otherwise it fails with the existing "different
 content" error. A missing registry is an error only for `--kind`, other envelope
 flags, `kinds` and `adopt`; ordinary posts, `read`, `wait`, `claim`, `release`
 and `topics` do not open it, so a copy of the script alone still serves them.
+
+### Read filters and compact output
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . read \
+  --kind request --role s10-root --limit 20
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . read \
+  --since 2860 --limit 30 --format compact
+```
+
+`--kind K` and `--role R` are repeatable (any of the given values matches; the two
+flags combine with AND). They apply before the tail slice and before `--limit`, so
+the newest `--limit` matching rows come back, not the matches among the newest rows.
+`--kind note` also matches rows without a `kind`: an untyped or legacy row reads as
+`note`. A stored kind the current registry does not know (a newer registry may
+have written it) is shown as recorded, not rejected, and `--kind` can select it.
+Default `read` JSON is unchanged.
+
+`--format compact` prints one tab-separated line per message, with no claims,
+revision or header: sequence, kind (`note` when absent), role, `to` (comma-joined),
+links (`reply:N`, `supersedes:M`), author, topic, body. `-` marks an absent field;
+whitespace in a field collapses to single spaces; the body is cut to 80 characters
+with `...` marking a cut. It is a reading aid only; the JSON row is the record.
+`--format compact` with `--active-claims` is refused.
 
 ### Adopt
 

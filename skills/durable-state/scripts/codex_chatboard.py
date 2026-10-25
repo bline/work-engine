@@ -407,20 +407,65 @@ def release(repository: Path, *, resource: str, session_id: str, claim_id: str) 
     return {"revision": revision, **value}
 
 
+def row_kind(row: dict[str, Any]) -> Any:
+    """A row without `kind` is a legacy or untyped message and reads as `note`.
+
+    A stored kind that the current registry does not know is returned as
+    recorded: readers display it, they do not reject it (D5).
+    """
+    return row.get("kind", "note")
+
+
 def read_view(board: dict[str, Any], *, since: int | None, limit: int,
-              active_claims: bool, observed_at: str) -> dict[str, Any]:
+              active_claims: bool, observed_at: str,
+              kinds: list[str] | None = None, roles: list[str] | None = None) -> dict[str, Any]:
+    # Filters apply before the tail slice and before `limit`: a startup read
+    # needs the latest matching coordination, not the latest rows of any kind.
+    candidates = board["messages"]
+    if kinds:
+        candidates = [row for row in candidates if row_kind(row) in kinds]
+    if roles:
+        candidates = [row for row in candidates if row.get("role") in roles]
     # Without --since, a startup read needs the latest coordination, not the
     # oldest retained messages. With --since, page forward from that sequence.
     if since is None:
-        rows = board["messages"][-limit:]
+        rows = candidates[-limit:]
     else:
-        rows = [row for row in board["messages"] if row["sequence"] > since][:limit]
+        rows = [row for row in candidates if row["sequence"] > since][:limit]
     claims = board["claims"]
     if active_claims:
         now = parse_time(observed_at)
         claims = {resource: value for resource, value in claims.items()
                   if parse_time(value["expires_at"]) > now}
     return {"messages": rows, "claims": claims}
+
+
+COMPACT_BODY_WIDTH = 80
+
+
+def compact_line(row: dict[str, Any]) -> str:
+    """One tab-separated line per message; the full row stays available in JSON.
+
+    Fields: sequence, kind (`note` when absent), role, `to` (comma-joined),
+    links (`reply:N`, `supersedes:M`, comma-joined), author, topic, body cut to
+    COMPACT_BODY_WIDTH characters (`...` marks a cut). `-` marks an absent
+    field. Whitespace inside a field is collapsed so a field cannot add a tab
+    or a line.
+    """
+    def clean(value: Any) -> str:
+        text = " ".join(str(value).split())
+        return text or "-"
+
+    to = row.get("to")
+    to_text = ",".join(to) if isinstance(to, list) and all(isinstance(a, str) for a in to) and to else "-"
+    links = [f"{label}:{row[key]}" for label, key in (("reply", "in_reply_to"), ("supersedes", "supersedes"))
+             if key in row]
+    body = " ".join(str(row.get("body", "")).split())
+    if len(body) > COMPACT_BODY_WIDTH:
+        body = body[:COMPACT_BODY_WIDTH - 3] + "..."
+    return "\t".join([str(row["sequence"]), clean(row_kind(row)), clean(row.get("role", "")),
+                      clean(to_text), ",".join(links) or "-", clean(row.get("author", "")),
+                      clean(row.get("topic", "")), body or "-"])
 
 
 class RefChanges:
@@ -571,6 +616,18 @@ class ContextControl:
         return value
 
 
+def addressed_to(row: dict[str, Any], selected: list[str]) -> bool:
+    """True when a stored `to` list contains a selected address.
+
+    Rows written outside `post` validation can carry any `to`; anything that
+    is not a list of strings does not match. Matching is by row, so a repeated
+    address in one `to` cannot deliver the row twice.
+    """
+    to = row.get("to")
+    return isinstance(to, list) and all(isinstance(address, str) for address in to) \
+        and any(address in selected for address in to)
+
+
 def wait_board(repository: Path, *, since: int, limit: int = 100,
                topic: str | None = None, topics: list[str] | None = None,
                timeout_seconds: float | None = None,
@@ -597,12 +654,25 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
             changes.add_file(control.binary)
         while True:
             board, revision = read_board(repository)
-            matches = [row for row in board["messages"] if row["sequence"] > since
-                         and not row["topic"].startswith(CONTROL_PREFIX)
-                         and (exclude_session_id is None
-                              or row.get("session_id", "").lower() != exclude_session_id
-                              or row.get("wake") is True)
-                         and (not selected or row["topic"] in selected)]
+            # D10: a row is delivered once however many paths match it, and it
+            # is returned byte-unchanged; how it matched is reported outside it.
+            by_path: dict[int, list[str]] = {}
+            for row in board["messages"]:
+                if (row["sequence"] > since
+                        and not row["topic"].startswith(CONTROL_PREFIX)
+                        and (exclude_session_id is None
+                             or row.get("session_id", "").lower() != exclude_session_id
+                             or row.get("wake") is True)):
+                    paths = []
+                    if selected:
+                        if row["topic"] in selected:
+                            paths.append("topic")
+                        if addressed_to(row, selected):
+                            paths.append("to")
+                        if not paths:
+                            continue
+                    by_path[row["sequence"]] = paths
+            matches = [row for row in board["messages"] if row["sequence"] in by_path]
             rows = matches[:limit]
             more = len(matches) > limit
             cursor = rows[-1]["sequence"] if more else max(since, board["next_sequence"] - 1)
@@ -610,6 +680,9 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
                       "messages": rows, "next_since": cursor, "has_more": more,
                       "exclude_session_id": exclude_session_id,
                       "topics": selected, "topic": selected[0] if len(selected) == 1 else None}
+            if any("to" in by_path[row["sequence"]] for row in rows):
+                result["matches"] = [{"sequence": row["sequence"], "matched_by": by_path[row["sequence"]]}
+                                     for row in rows]
             if control is not None:
                 observation = control.read()
                 result.update(control_events=([observation["event"]] if observation["event"] else []),
@@ -650,6 +723,12 @@ def parser() -> argparse.ArgumentParser:
     read.add_argument("--since", type=int, default=None)
     read.add_argument("--limit", type=int, default=100)
     read.add_argument("--active-claims", action="store_true")
+    read.add_argument("--kind", action="append", dest="kinds", default=[],
+                      help="only messages of this kind (repeatable); `note` also matches rows without a kind")
+    read.add_argument("--role", action="append", dest="roles", default=[],
+                      help="only messages posted under this role (repeatable)")
+    read.add_argument("--format", choices=["json", "compact"], default="json",
+                      help="compact prints one tab-separated line per message and omits claims and revision")
     wait = commands.add_parser("wait", help="block for new messages without periodic polling")
     wait.add_argument("--since", type=int, required=True)
     wait.add_argument("--limit", type=int, default=100)
@@ -745,9 +824,16 @@ def main() -> int:
             if (args.since is not None and args.since < 0) or not 1 <= args.limit <= 500:
                 raise ChatboardError("--since must be nonnegative and --limit must be 1..500")
             board, revision = read_board(args.repository)
+            if args.format == "compact" and args.active_claims:
+                raise ChatboardError("--format compact prints messages only; drop --active-claims")
             view = read_view(board, since=args.since, limit=args.limit,
-                             active_claims=args.active_claims, observed_at=timestamp())
-            print(json.dumps({"revision": revision, **view}, indent=2))
+                             active_claims=args.active_claims, observed_at=timestamp(),
+                             kinds=args.kinds, roles=args.roles)
+            if args.format == "compact":
+                for row in view["messages"]:
+                    print(compact_line(row))
+            else:
+                print(json.dumps({"revision": revision, **view}, indent=2))
         elif args.command == "wait":
             required = [args.session_id, args.context_rollout, args.context_binary,
                         args.context_sha256, args.context_trigger_tokens, args.context_band_floor_tokens]
