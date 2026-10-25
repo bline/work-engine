@@ -23,7 +23,12 @@
 #   REPO                 repository the board lives in
 #   PRED_SESSION         predecessor session id
 #   LAUNCH_TMPL          {SESSION} {TOPIC} {HANDOFF} {DIGEST} {ROLE}
-#                        {PRED_SESSION} {PRED_WID} {SOCK} substituted
+#                        {PRED_SESSION} {PRED_WID} {SOCK} substituted.
+#                        {PRED_WID} and {SOCK} are substituted as EMPTY unless
+#                        RETIRE=successor, so a template MUST quote them --
+#                        '{PRED_WID}' '{SOCK}' -- or the empty words vanish and
+#                        every following argument shifts left (observed: a
+#                        241s fail_no_adoption traced to an unquoted pair).
 #   ADOPT_TIMEOUT        seconds to wait for the successor's board acknowledgment
 #   RETIRE               kill|keep|successor
 #   ORPHAN               kill|keep: disposition of a successor that never

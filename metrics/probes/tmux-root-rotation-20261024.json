@@ -395,5 +395,54 @@
     "new_case": "a valid typed adoption naming a DIFFERENT predecessor is refused (fail_no_adoption, predecessor untouched, orphan retired) -- reachable only by the predecessor_session check",
     "suites": "coordinator 11/11, watch 10/10, orphan 12/12, descendants 7/7, verdict parser pass",
     "x6_still_open": "X6 closes only on a live successor run under the intended permission configuration. The narrow grant is now `adopt` alone, which cannot reach post, claim or release. The grant is the user's and is NOT given. The live run is also the only test of whether an allow rule resolves ahead of the classifier for that command, which is documented but unverified."
+  },
+  "live_rotations_typed_adoption_20261025": {
+    "result": "TWO live rotations committed with real Claude successors writing typed adoption rows",
+    "rotation_1": {
+      "exit": 0,
+      "status": "committed_rotation_1",
+      "elapsed_ms": 14716,
+      "model_calls": 3,
+      "successor": "8f88d82f-f7cc-4b2e-915a-6d5e721bc736",
+      "predecessor_disposition": "retired",
+      "usage": {
+        "input": 6,
+        "cache_creation": 22688,
+        "cache_read": 132409,
+        "output": 999
+      }
+    },
+    "rotation_2": {
+      "exit": 0,
+      "status": "committed_rotation_2",
+      "elapsed_ms": 18736,
+      "model_calls": 4,
+      "successor": "4e0de2b4-1038-4e56-9239-7ff740a2fc9d",
+      "note": "same state dir, so rotation-count 1->2 exercised; the new root chained as the next predecessor and passed quiescence and window-id checks",
+      "usage": {
+        "input": 8,
+        "cache_creation": 22757,
+        "cache_read": 183794,
+        "output": 990
+      }
+    },
+    "adoption_row_accepted": "kind adoption, role claude-root, to [role:claude-root], topic session:<own id>, data.handoff_sha256 and data.predecessor_session both matching, contract_version 1. The typed-field gate accepted both.",
+    "comparison_to_the_withdrawn_number": {
+      "before": "26.9s and 26.8s, 4 and 5 model calls, prose acknowledgement via post, BEFORE the fixed-scan fix",
+      "after": "14.7s and 18.7s, 3 and 4 model calls, typed acknowledgement via adopt",
+      "standing": "both arms are LIVE model successors, so this is finally a live-to-live pair rather than the live-versus-stub comparison withdrawn in be2bc276. It still does not ISOLATE the fixed-scan fix: the acknowledgement command changed from post to adopt in the same interval, and n=2 per arm."
+    },
+    "permission_question_still_not_established": {
+      "observed": "both successors ran `adopt` and neither was denied; zero tool results contained a denial",
+      "but": "the allow rule names --repository /home/bline/code/work-engine while both successors ran against the scratch board, a different string, so the rule should not have matched their command at all",
+      "decisive_timeline": "this role ran `adopt` successfully against the scratch board at 07:03:06Z, and the permission rule was not added until 07:24:30Z -- 21 minutes LATER. So the rule is not what permitted these calls.",
+      "conclusion": "the auto-mode classifier appears to permit `adopt` unaided, and the granted rule has no demonstrated effect. Whether an allow rule resolves ahead of the classifier remains not established, and X6's permission criterion is NOT closed by these runs. A standing permission with no demonstrated need is liability, so removing it and re-testing is the disciplined next step -- the user's call, since the grant was theirs.",
+      "untested": "whether the classifier would treat a write to the real shared board differently from a scratch board"
+    },
+    "defect_found_in_this_role's_own_contract": {
+      "symptom": "a 241s fail_no_adoption on a first attempt",
+      "cause": "ROLE and PRED_SESSION had been appended at argv 10 and 11, AFTER the optional PRED_WID and SOCK, to preserve older callers' positions. Under RETIRE=keep the coordinator substitutes those two as EMPTY strings, and an unquoted empty word vanishes from the command: every later argument shifted left, ROLE landed in the PRED_WID slot, and adopt ran with an empty --predecessor-session (argparse exit 2).",
+      "fixed": "required arguments now precede optional ones (ROLE 8, PRED_SESSION 9, PRED_WID 10, SOCK 11); the launcher refuses an empty PRED_SESSION with exit 2 instead of emitting an adopt call that cannot succeed; and the placeholder contract now states that the optional pair MUST be quoted in a template."
+    }
   }
 }

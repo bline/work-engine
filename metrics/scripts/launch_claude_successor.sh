@@ -5,10 +5,27 @@
 # positional prompt. Keep the prompt immediately after a single-value flag.
 set -uo pipefail
 SID="$1"; TOPIC="$2"; HANDOFF="$3"; DIGEST="$4"
-BOARD_REPO="$5"; CB="$6"; STATE="$7"; PRED_WID="${8:-}"; SOCK="${9:-}"
-# ROLE and PRED_SESSION are appended (10, 11) so the existing positions keep
-# their meaning for callers written against the older contract.
-ROLE="${10:-claude-root}"; PRED_SESSION="${11:-}"
+BOARD_REPO="$5"; CB="$6"; STATE="$7"
+# REQUIRED before OPTIONAL. These two were first appended at 10 and 11, after
+# the optional pair, to preserve older positions -- which created the defect
+# below: under RETIRE=keep the coordinator substitutes {PRED_WID} and {SOCK}
+# as EMPTY strings, and an unquoted empty word vanishes from the command, so
+# every later argument shifted left. ROLE landed in the PRED_WID slot and the
+# predecessor uuid in the SOCK slot, PRED_SESSION came through empty, and
+# `adopt --predecessor-session` exited 2 on a missing value -- surfacing as a
+# 241s fail_no_adoption. Observed 2026-10-25.
+ROLE="${8:-claude-root}"; PRED_SESSION="${9:-}"
+PRED_WID="${10:-}"; SOCK="${11:-}"
+
+# Fail loudly rather than emitting an adopt call that cannot succeed: an empty
+# predecessor session is a caller error, and discovering it through a model
+# session and an adoption timeout wastes both.
+if [[ -z "$PRED_SESSION" ]]; then
+  echo "launch_claude_successor: PRED_SESSION (arg 9) is empty; adopt would be refused." >&2
+  echo "Check the LAUNCH_TMPL argument order, and QUOTE optional placeholders:" >&2
+  echo "  ... {ROLE} {PRED_SESSION} '{PRED_WID}' '{SOCK}'" >&2
+  exit 2
+fi
 
 RETIRE_STEP=""
 if [[ -n "$PRED_WID" && -n "$SOCK" ]]; then
