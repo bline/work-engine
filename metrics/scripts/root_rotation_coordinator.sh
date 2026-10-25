@@ -348,33 +348,52 @@ d=json.load(sys.stdin); m=d.get("messages",[]); print(m[-1]["sequence"] if m els
     (( rc == 0 )) || { log "watch ended without an approval (wait exit $rc)"
       rec terminal-status "watch_expired"; return 78; }
     local verdict
+    # EVERY message in the batch is examined before the cursor moves. Stopping
+    # at the first token-bearing message dropped a valid approval that arrived
+    # behind a rejected one in the same wake -- and since the cursor then
+    # advanced past the whole batch, the approval was never seen again. That
+    # let any party who can post suppress an approval by posting a rejectable
+    # message alongside it.
     verdict=$(AUTH="$GATE_AUTHORITY" TOKEN="$APPROVE_TOKEN" DIG="$want_dig" python3 -I -c '
 import sys, json, os
 d = json.load(open(sys.argv[1]))
 ok = {x.strip() for x in os.environ["AUTH"].split(",") if x.strip()}
 tok, dig = os.environ["TOKEN"], os.environ["DIG"]
+approved, rejects = None, []
 for m in d.get("messages", []):
     body = m.get("body") or ""
     if tok not in body:
         continue
-    # Checked in order: does it approve THIS artifact, and is the approver named?
+    ident = (m.get("message_id"), m.get("author"))
     if dig not in body:
-        print("UNBOUND", m.get("message_id"), m.get("author")); break
+        rejects.append(("UNBOUND",) + ident); continue
     if m.get("author") in ok or m.get("session_id") in ok:
-        print("APPROVED", m.get("message_id"), m.get("author")); break
-    print("UNAUTHORIZED", m.get("message_id"), m.get("author")); break
+        if approved is None:
+            approved = ident
+        continue
+    rejects.append(("UNAUTHORIZED",) + ident)
+with open(sys.argv[2], "w") as fh:
+    for r in rejects:
+        fh.write(" ".join(str(x) for x in r) + "\n")
+if approved:
+    print("APPROVED", approved[0], approved[1])
+elif rejects:
+    print(rejects[0][0], rejects[0][1], rejects[0][2])
 else:
     print("NONE", d.get("next_since", ""), "")
-' "$out" 2>/dev/null)
+' "$out" "$STATE/watch-rejects" 2>/dev/null)
     local kind id who; read -r kind id who <<< "$verdict"
     case "$kind" in
       APPROVED)
         log "approval accepted from '$who' (message $id) citing sha256 ${want_dig:0:12}"
         rec authorized-by "author=$who message_id=$id token=$APPROVE_TOKEN digest=$want_dig rotation=$(<"$C")"
+        [[ -s "$STATE/watch-rejects" ]] && { log "$(wc -l < "$STATE/watch-rejects") rejected trigger(s) in the same batch"
+          cat "$STATE/watch-rejects" >> "$STATE/rejected-triggers"; }
         GATE=open; EXPECT_DIG="$want_dig" commit "$handoff"; return $?;;
       UNAUTHORIZED)
         log "IGNORED: approval token from unauthorized '$who' (message $id)"
-        rec last-rejected-trigger "unauthorized author=$who message_id=$id";;
+        rec last-rejected-trigger "unauthorized author=$who message_id=$id"
+        cat "$STATE/watch-rejects" >> "$STATE/rejected-triggers" 2>/dev/null;;
       UNBOUND)
         log "IGNORED: approval from '''$who''' (message $id) cites no sha256 for this handoff"
         rec last-rejected-trigger "unbound author=$who message_id=$id expected_digest=$want_dig";;
