@@ -1,0 +1,23 @@
+{
+  "probe": "chatboard-compact-read-20261025",
+  "date": "2026-10-25",
+  "adapter": "skills/durable-state/scripts/codex_chatboard.py at worktree commit 128cbd17ea84d63932a2d7165a00c5ab32ab2ad0 (base 7a779600)",
+  "board": "/home/bline/code/work-engine (live, read-only)",
+  "range": {"since": 2860, "limit": 30, "first_sequence": 2861, "last_sequence": 2890, "messages": 30},
+  "board_revision_of_raw_read": "abbda8f32572bd2895e972784ae5f3f4b40ec76c",
+  "note": "The compact read was a second command; its output has no revision field. Both returned sequences 2861-2890, 30 messages. Bodies are not stored.",
+  "runs": [
+    {
+      "command": "python3 <worktree>/skills/durable-state/scripts/codex_chatboard.py --repository /home/bline/code/work-engine read --since 2860 --limit 30",
+      "characters": 69581
+    },
+    {
+      "command": "python3 <worktree>/skills/durable-state/scripts/codex_chatboard.py --repository /home/bline/code/work-engine read --since 2860 --limit 30 --format compact",
+      "characters": 4177,
+      "lines": 30,
+      "body_width": 80
+    }
+  ],
+  "ratio_compact_to_raw": 0.06,
+  "limits": "n=1 range; characters counted with wc -m on captured stdout (includes trailing newline). Compact omits claims, revision and every field not listed in docs/codex-chatboard.md."
+}
