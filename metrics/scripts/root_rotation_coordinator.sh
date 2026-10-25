@@ -11,6 +11,11 @@
 #   CLAIMS_CMD           prints claims still held by the predecessor session.
 #                        Must exit 0 -- empty output means "none held", so an
 #                        erroring check must not be read as a clear result.
+#   DESCENDANTS_CMD      prints an integer: session processes beneath the root,
+#                        read from the OS process tree. {PANE_PID} is
+#                        substituted. Independent of board registration, so a
+#                        child that never claimed is still visible; the count is
+#                        an upper bound and the gate is == 0.
 #   BOARD_CMD            chatboard script, invoked with --repository REPO
 #   REPO                 repository the board lives in
 #   PRED_SESSION         predecessor session id
@@ -19,13 +24,17 @@
 #   RETIRE               kill|keep|successor
 #   GATE_AUTHORITY       watch: comma-separated authors/session ids whose
 #                        approval counts. Unset = refuse to watch (fail closed)
-#   APPROVE_TOKEN        watch: token the approval body must contain
+#   APPROVE_TOKEN        watch: token the approval body must contain. The body
+#                        must ALSO carry the handoff's sha256, so an approval
+#                        binds to the artifact it approved rather than to
+#                        whatever the watch happens to be holding.
 #   WATCH_TIMEOUT        watch: bounded lifetime, default 3000s
 set -uo pipefail
 ROLE="${ROLE:?}"; SOCK="${SOCK:?}"; STATE="${STATE:?}"; VALIDATOR="${VALIDATOR:?}"
 BOARD_CMD="${BOARD_CMD:?}"; REPO="${REPO:?}"; PRED_SESSION="${PRED_SESSION:?}"
 LAUNCH_TMPL="${LAUNCH_TMPL:?}"; QUIESCENCE_FILE="${QUIESCENCE_FILE:-}"
 CHILDREN_CMD="${CHILDREN_CMD:-}"; CLAIMS_CMD="${CLAIMS_CMD:-}"
+DESCENDANTS_CMD="${DESCENDANTS_CMD:-}"
 MAX_ROTATIONS="${MAX_ROTATIONS:-3}"; GATE="${GATE:-require}"
 ADOPT_TIMEOUT="${ADOPT_TIMEOUT:-180}"; RETIRE="${RETIRE:-keep}"
 # 3000s keeps one watch inside the 1h prompt-cache TTL, so the wake resumes on a
@@ -61,11 +70,21 @@ validate() {    # 0 pass | 21 defect found | 32 could not be established
 quiescent() {   # predecessor assertion PLUS independent checks; unknown != clear
   if [[ -z "$QUIESCENCE_FILE" || ! -s "$QUIESCENCE_FILE" ]]; then
     log "predecessor has not asserted quiescence"; rec terminal-status "quiescence_not_established"; return 2; fi
-  if [[ -z "$CHILDREN_CMD" || -z "$CLAIMS_CMD" ]]; then
+  if [[ -z "$CHILDREN_CMD" || -z "$CLAIMS_CMD" || -z "$DESCENDANTS_CMD" ]]; then
     log "independent quiescence checks not configured"; rec terminal-status "quiescence_not_established"; return 2; fi
   local kids claims krc crc
   kids=$($CHILDREN_CMD 2>>"$STATE/supervisor.log"); krc=$?
   claims=$($CLAIMS_CMD 2>>"$STATE/supervisor.log"); crc=$?
+  # The board checks above establish "no unexpired claim is held", which is only
+  # as good as the registration discipline. This one reads the OS process tree,
+  # so a child that never registered is still seen: a child must evade BOTH.
+  local pane_pid desc drc
+  pane_pid=$(T display-message -p -t "roots:$ROLE" '#{pane_pid}' 2>>"$STATE/supervisor.log")
+  if [[ ! "$pane_pid" =~ ^[0-9]+$ ]]; then
+    log "cannot resolve the predecessor's pane pid; the descendant check cannot run"
+    rec terminal-status "quiescence_not_established"; return 2; fi
+  local -a dargv; read -r -a dargv <<< "${DESCENDANTS_CMD//\{PANE_PID\}/$pane_pid}"
+  desc=$("${dargv[@]}" 2>>"$STATE/supervisor.log"); drc=$?
   # The claims check is read by EXIT STATUS as well as output. Reading output
   # alone fails open: a check that errors prints nothing, and empty output is
   # how "no claims held" is spelled, so a broken check would clear the gate.
@@ -73,16 +92,24 @@ quiescent() {   # predecessor assertion PLUS independent checks; unknown != clea
     rec terminal-status "quiescence_not_established"; return 2; }
   (( krc == 0 )) || { log "child check failed (exit $krc)"; rec terminal-status "quiescence_not_established"; return 2; }
   [[ "$kids" =~ ^[0-9]+$ ]] || { log "child count unreadable ('$kids')"; rec terminal-status "quiescence_not_established"; return 2; }
+  (( drc == 0 )) || { log "descendant check failed (exit $drc); cannot establish that no child runs"
+    rec terminal-status "quiescence_not_established"; return 2; }
+  [[ "$desc" =~ ^[0-9]+$ ]] || { log "descendant count unreadable ('$desc')"
+    rec terminal-status "quiescence_not_established"; return 2; }
   # Report EVERY failing condition, not just the first. Checking children before
   # claims and returning early hid a held claim behind a live child, which reads
   # as a diagnosis of the wrong problem.
   local -a why=()
   if (( kids > 0 )); then log "$kids live child(ren) remain"; why+=("fail_children_live"); fi
+  if (( desc > 0 )); then
+    log "$desc session process(es) remain under the root (upper bound on children)"
+    why+=("fail_descendants_live"); fi
   if [[ -n "${claims//[[:space:]]/}" ]]; then
     log "predecessor still holds claims: $(echo "$claims" | tr '\n' ' ')"; why+=("fail_claims_held"); fi
   if (( ${#why[@]} > 0 )); then
     rec terminal-status "$(IFS=+; echo "${why[*]}")"; return 1; fi
-  log "quiescence established: 0 live children, 0 claims held"; return 0
+  log "quiescence established: 0 claimed children, 0 claims held, 0 descendant session processes"
+  return 0
 }
 
 prepare() {
@@ -240,13 +267,20 @@ watch() {      # block on the board until an AUTHORIZED approval arrives
   [[ -n "${GATE_AUTHORITY:-}" ]] || {
     log "REFUSING to watch: GATE_AUTHORITY names no authorized approver"
     rec terminal-status "watch_refused_no_authority"; return 77; }
+  # Bind the approval to the ARTIFACT. Author + token alone approves "a
+  # rotation", not "this handoff": a stale or replayed approval would commit
+  # whatever this watch was started with. Requiring the digest in the body makes
+  # the approval content-addressed. NOTE this binds to content, not to a
+  # generation: two rotations of a byte-identical handoff share a digest, and
+  # the board identifies authors without authenticating them.
+  local want_dig; want_dig=$(sha256sum "$handoff" | cut -d' ' -f1)
   local topic="control:rotation:$ROLE" since deadline
   since=$(B read --limit 1 2>/dev/null | python3 -I -c 'import sys,json
 d=json.load(sys.stdin); m=d.get("messages",[]); print(m[-1]["sequence"] if m else 0)' 2>/dev/null)
   [[ "$since" =~ ^[0-9]+$ ]] || { log "cannot read the board cursor"; rec terminal-status "watch_board_unreadable"; return 32; }
   deadline=$(( $(date +%s) + WATCH_TIMEOUT ))
-  log "watching $topic from sequence $since for ${WATCH_TIMEOUT}s; approvers: $GATE_AUTHORITY"
-  rec watch-state "watching topic=$topic since=$since authority=$GATE_AUTHORITY"
+  log "watching $topic from sequence $since for ${WATCH_TIMEOUT}s; approvers: $GATE_AUTHORITY; must cite sha256 ${want_dig:0:12}"
+  rec watch-state "watching topic=$topic since=$since authority=$GATE_AUTHORITY digest=$want_dig"
   while (( $(date +%s) < deadline )); do
     local left=$(( deadline - $(date +%s) )); (( left > 0 )) || break
     local out="$STATE/watch-wait.json" rc
@@ -255,14 +289,18 @@ d=json.load(sys.stdin); m=d.get("messages",[]); print(m[-1]["sequence"] if m els
     (( rc == 0 )) || { log "watch ended without an approval (wait exit $rc)"
       rec terminal-status "watch_expired"; return 78; }
     local verdict
-    verdict=$(AUTH="$GATE_AUTHORITY" TOKEN="$APPROVE_TOKEN" python3 -I -c '
+    verdict=$(AUTH="$GATE_AUTHORITY" TOKEN="$APPROVE_TOKEN" DIG="$want_dig" python3 -I -c '
 import sys, json, os
 d = json.load(open(sys.argv[1]))
 ok = {x.strip() for x in os.environ["AUTH"].split(",") if x.strip()}
-tok = os.environ["TOKEN"]
+tok, dig = os.environ["TOKEN"], os.environ["DIG"]
 for m in d.get("messages", []):
-    if tok not in (m.get("body") or ""):
+    body = m.get("body") or ""
+    if tok not in body:
         continue
+    # Checked in order: does it approve THIS artifact, and is the approver named?
+    if dig not in body:
+        print("UNBOUND", m.get("message_id"), m.get("author")); break
     if m.get("author") in ok or m.get("session_id") in ok:
         print("APPROVED", m.get("message_id"), m.get("author")); break
     print("UNAUTHORIZED", m.get("message_id"), m.get("author")); break
@@ -272,12 +310,15 @@ else:
     local kind id who; read -r kind id who <<< "$verdict"
     case "$kind" in
       APPROVED)
-        log "approval accepted from '$who' (message $id)"
-        rec authorized-by "author=$who message_id=$id token=$APPROVE_TOKEN"
+        log "approval accepted from '$who' (message $id) citing sha256 ${want_dig:0:12}"
+        rec authorized-by "author=$who message_id=$id token=$APPROVE_TOKEN digest=$want_dig rotation=$(<"$C")"
         GATE=open; commit "$handoff"; return $?;;
       UNAUTHORIZED)
         log "IGNORED: approval token from unauthorized '$who' (message $id)"
-        rec last-rejected-trigger "author=$who message_id=$id";;
+        rec last-rejected-trigger "unauthorized author=$who message_id=$id";;
+      UNBOUND)
+        log "IGNORED: approval from '''$who''' (message $id) cites no sha256 for this handoff"
+        rec last-rejected-trigger "unbound author=$who message_id=$id expected_digest=$want_dig";;
       *) : ;;
     esac
     local nxt; nxt=$(python3 -I -c 'import sys,json;print(json.load(open(sys.argv[1])).get("next_since",""))' "$out" 2>/dev/null)
