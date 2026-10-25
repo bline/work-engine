@@ -621,11 +621,12 @@ def addressed_to(row: dict[str, Any], selected: list[str]) -> bool:
 
     Rows written outside `post` validation can carry any `to`; anything that
     is not a list of strings does not match. Matching is by row, so a repeated
-    address in one `to` cannot deliver the row twice.
+    address in one `to` cannot deliver the row twice. Control addresses never
+    match: a `control:` topic is reachable only through the explicit binding.
     """
     to = row.get("to")
     return isinstance(to, list) and all(isinstance(address, str) for address in to) \
-        and any(address in selected for address in to)
+        and any(address in selected and not address.startswith(CONTROL_PREFIX) for address in to)
 
 
 def wait_board(repository: Path, *, since: int, limit: int = 100,

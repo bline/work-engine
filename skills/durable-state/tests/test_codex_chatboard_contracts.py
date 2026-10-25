@@ -680,6 +680,7 @@ class CompactReadTest(RepoCase):
                   data={"ask": "a"}, effects={"shared_writes": [], "external_actions": []})      # 2
         self.post(topic="aspect:x", author="beta", kind="reply", role="peer", in_reply_to=2,
                   supersedes=1, body="y" * 80, data={"disposition": "deferred"})             # 3
+        self.post(topic="plain", author="old2", body="p")                                # 4 no kind
         self.raw_rewrite(lambda board: board["messages"][0].update(kind="future-kind"))
         out = self.run_cli("read", "--format", "compact")
         self.assertEqual(out.returncode, 0, out.stderr)
@@ -687,6 +688,7 @@ class CompactReadTest(RepoCase):
             "1\tfuture-kind\t-\t-\t-\told\tlegacy-topic\ta legacy multiline body",
             f"2\trequest\ts10-root\trole:a,session:{SESSION_2}\t-\talpha\taspect:x\t" + "x" * 77 + "...",
             "3\treply\tpeer\t-\treply:2,supersedes:1\tbeta\taspect:x\t" + "y" * 80,
+            "4\tnote\t-\t-\t-\told2\tplain\tp",
         ]) + "\n"
         self.assertEqual(out.stdout, expected)
 
@@ -783,6 +785,26 @@ class WaitDeliveryByToTest(RepoCase):
         self.assertEqual(second["next_since"], 7)
         self.assertEqual(second["matches"], [{"sequence": 7, "matched_by": ["to"]}])
 
+    def test_exclude_session_id_applies_to_rows_matching_by_to(self) -> None:
+        self.post(topic="aspect:x", to=["role:a"], session_id=SESSION_1)              # 1 excluded
+        self.post(topic="aspect:x", to=["role:a"], session_id=SESSION_2)              # 2
+        self.post(topic="aspect:x", to=["role:a"], session_id=SESSION_1, wake=True)   # 3 wake overrides
+        result = self.wait("role:a", exclude_session_id=SESSION_1)
+        self.assertEqual([m["sequence"] for m in result["messages"]], [2, 3])
+        self.assertEqual(result["matches"], [{"sequence": 2, "matched_by": ["to"]},
+                                             {"sequence": 3, "matched_by": ["to"]}])
+
+    def test_matches_presence_is_decided_over_returned_rows_only(self) -> None:
+        self.post(topic="role:a")                          # 1 topic only
+        self.post(topic="aspect:x", to=["role:a"])         # 2 to match beyond the limit
+        first = self.wait("role:a", limit=1)
+        self.assertEqual([m["sequence"] for m in first["messages"]], [1])
+        self.assertTrue(first["has_more"])
+        self.assertNotIn("matches", first)
+        second = self.wait("role:a", since=1, limit=1)
+        self.assertEqual([m["sequence"] for m in second["messages"]], [2])
+        self.assertEqual(second["matches"], [{"sequence": 2, "matched_by": ["to"]}])
+
     def test_control_topic_only_wait_gets_no_to_matches(self) -> None:
         # to-patterns allow only role:/session: addresses, so a to address can
         # never equal a control: topic; a waiter selecting only its control
@@ -808,6 +830,17 @@ class WaitDeliveryByToTest(RepoCase):
         self.assertEqual(result["messages"], [])
         self.assertNotIn("matches", result)
         self.assertEqual(result["next_since"], 2)
+        # Raw rows (post refuses control topics and control addresses) must stay excluded.
+        self.post(topic="aspect:x", to=["role:a"])                                    # 3 -> control topic
+        self.post(topic="aspect:x", to=["role:a"])                                    # 4 -> control address
+        def raw(board) -> None:
+            board["messages"][2]["topic"] = topic
+            board["messages"][3]["to"] = [topic]
+        self.raw_rewrite(raw)
+        self.assertEqual([m["sequence"] for m in self.wait("role:a")["messages"]], [1, 2])
+        result = self.wait(topic, control=StubControl(stub_file))
+        self.assertEqual(result["messages"], [])
+        self.assertNotIn("matches", result)
         # tests/test_context_control.py l.114-115 pins the same result with the real reader.
 
     def test_adoption_fixture_s2_s5(self) -> None:

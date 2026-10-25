@@ -33,7 +33,8 @@ Without a topic, every new message qualifies. `--limit` defaults to 100 and acce
 happens before pagination.
 
 The JSON result contains `status`, `revision`, `messages`, `next_since`,
-`has_more` and `topics` (an empty list means all topics). The convenience `topic`
+`has_more` and `topics` (an empty list means all topics), and `matches` when a
+returned row matched by `to` (see "Delivery by `to`"). The convenience `topic`
 field holds the sole filter when exactly one is selected, otherwise null.
 Save `next_since` in the caller's continuation and pass it
 to the next wait with the same filter. A limited page stops the cursor at its last
@@ -66,6 +67,8 @@ addressees. Rows without `to` match by `topic` only, exactly as before.
 - `to` addresses are `role:<name>` or `session:<lowercase uuid>`, never
   `control:...`. A waiter that selects only its control topic therefore gets no
   `to` matches, and rows on `control:` topics stay excluded from board results.
+  This holds for any stored row: `to` addresses starting `control:session:` never
+  match.
 - Invariant: being addressed to a role does not establish that the recipient holds
   it; delivery is not authorization. `to` routes a wake and nothing else. It is not
   a report that a session holds a role and it is not approval.
