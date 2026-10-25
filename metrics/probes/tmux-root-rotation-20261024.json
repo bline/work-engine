@@ -294,7 +294,27 @@
     "tmux_empty_target_measured": {
       "method": "private socket, three disposable windows, 2026-10-24",
       "result": "rename-window -t \"\" renamed the server's CURRENT window and kill-window -t \"\" killed it, BOTH returning exit 0. An empty window id is therefore not an inert target: it destroys an arbitrary window and reports success. This had been suspected but unconfirmed in review.",
-      "consequence": "the coordinator now validates the window id against ^@[0-9]+$ before launch and again before any destructive command"
+      "consequence": "the coordinator now validates the window id against ^@[0-9]+$ before launch and again before any destructive command",
+      "correction": "An earlier phrasing of this finding, 'it destroys an arbitrary window and reports success', was imprecise about WHICH window. Measured at the coordinator level by fault injection (below), the victim is whichever window is current after the swap -- in the tested layout the freshly adopted successor, not an unrelated bystander."
+    },
+    "empty_target_at_the_coordinator_level": {
+      "method": "fault injection: a tmux shim failing only `display-message ... '#{window_id}'`, so the predecessor lookup returns empty while everything else works. Baseline 5faf8cb1 vs ea227a9f. A decoy window `bystander` was created and left as the ACTIVE window. n=1; which window is active was not varied.",
+      "first_attempt_was_invalid": "the shim initially failed ANY argv containing '#{window_id}', which includes the successor launch `new-window -P -F '#{window_id}'`, so the pre-fix arm stopped at fail_launch without reaching a destructive command. The shim was less faithful than the code it tested; narrowed and re-run.",
+      "pre_fix_observed": {
+        "exit": 0,
+        "terminal_status": "committed_rotation_1",
+        "log": "predecessor window  index 1 -- the empty id resolved to the CURRENT window",
+        "sequence": "the successor launched as @2 and adopted; `swap-window -s @2 -t \"\"` swapped it with the bystander, moving the bystander to index 2; `kill-window -t \"\"` then killed the current window, which was @2 -- the freshly adopted successor. The log recorded `retired predecessor window ` with an empty id.",
+        "windows_before": "0:claude-root/@0 1:bystander/@1",
+        "windows_after": "0:claude-root/@0 2:bystander/@1",
+        "net_effect": "the ADOPTED SUCCESSOR was destroyed, the predecessor kept running under the role name, and the status recorded a clean commit. Nothing was rotated. The bystander was not destroyed, only renumbered."
+      },
+      "current_observed": {
+        "exit": 31,
+        "terminal_status": "fail_predecessor_window_unresolved",
+        "windows_after": "0:claude-root/@0 1:bystander/@1 -- identical to before; nothing launched, nothing touched"
+      },
+      "standing": "the hazard IS reachable in the coordinator: it is a closed hole, not defence in depth. The worst outcome is not a lost bystander but a false 'rotated' status over a dead successor and a surviving predecessor."
     }
   }
 }
