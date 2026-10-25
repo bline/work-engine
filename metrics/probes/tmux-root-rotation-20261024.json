@@ -214,7 +214,13 @@
       "validated_against_a_real_root": "the live idle Claude root in the rootlive3 server returns 0; its only child process is an MCP server, which correctly does not match the session pattern, so the check does not block live rotations",
       "what_still_evades_both": "a detached child (setsid/nohup) or a turn queued into a session hosted elsewhere"
     },
-    "coverage_claim": "neither check is a completeness basis on its own; a child must evade BOTH to pass unseen"
+    "coverage_claim": "neither check is a completeness basis on its own; a child must evade BOTH to pass unseen",
+    "registration_is_not_merely_incomplete": {
+      "observed_2026-10-24": "the live board returns 0 active claims; 56 claims are stored and expired ones are never removed",
+      "consequence": "the board-backed children check returns 0 on every rotation, so in current practice it has no discriminating power at all. Its standing is weaker than 'conditional on complete registration': no session is registering. Quiescence therefore rests on the descendant check, which needs no registration.",
+      "source": "an independent review of board usage, confirmed here by querying the live board directly",
+      "implication": "the claims check should be treated as a second signal that is currently silent, not as evidence of quiescence. It is kept because it is the only check that can see a child on another host."
+    }
   },
   "event_driven_wake": {
     "principle": "a returning tool call wakes the model; an arriving message does not",
