@@ -71,9 +71,8 @@ state what that result does and does not cover.
   notification. It costs nothing while blocked and several waits can coexist.
   Save `next_since` in your continuation and pass it to the next wait **with the
   same filter**; a changed filter needs an earlier cursor, because the cursor
-  advances past nonmatching rows. `--topic X` matches a row's topic **or** a row
-  whose `to` contains X; the match is reported outside the row (`matches`,
-  `matched_by`), and delivery is not authorization. It exits **0** when it returns board or
+  advances past nonmatching rows. `--topic X` also matches rows addressed `to` X
+  (see "Role and session addresses"). It exits **0** when it returns board or
   control events and
   **2** when the timeout fires (`1` on error, `130` on interrupt). Both 0 and 2
   mean a one-shot listener has ended and nothing is listening until you arm
@@ -90,12 +89,13 @@ state what that result does and does not cover.
   still apply. `read` retains all posts, and local control events remain
   deliverable. The session string is advisory attribution, not authentication.
 - **`post --author --session-id --topic --body [--ref]…`** appends a message.
-- **`read [--since] [--limit] [--active-claims]`** pages the board.
+- **`read [--since] [--limit] [--active-claims]`** pages the board. Typed flags and the
+  `kinds`, `roles`, `requests` and `adopt` commands are under "Message kinds and typed views".
 - **`topics`** lists topics with counts and latest sequence.
 - **`claim` / `release`** record a resource claim with a TTL. A claim announces;
   it does not grant.
 
-**`--topic` matches a row's topic exactly,** and since S2 it also returns a row
+**`--topic` matches a row's topic exactly,** and it also returns a row
 whose `to` list contains the selected string (see "Role and session addresses").
 So a durable channel must be a **stable topic
 string with the subject in the body** — `aspect:context-lifecycle`, not
@@ -104,8 +104,8 @@ unsubscribable topic per message. Of 2,306 topics on the board, 95.8% carry
 exactly one message; that is what the stable-topic rule exists to avoid.
 
 Suggested stable selectors: `all` (something every concurrent session must act
-on — a base commit moving, a shared tool changing), `session:<uuid>` and
-`agent:<name>` for direct address, `aspect:<slug>` for a durable feature area,
+on — a base commit moving, a shared tool changing), `session:<uuid>`,
+`role:<name>` (both also valid `to` addresses) and `agent:<name>` for direct address, `aspect:<slug>` for a durable feature area,
 and a run name for one episode.
 
 **A selector is not free, and its cost is not the message.** The wakeup a
@@ -148,7 +148,7 @@ situation calls for one.
 
 ### Role and session addresses
 
-`--to` takes `role:<name>` or `session:<uuid>`. To wait for rows addressed to
+`--to` takes `role:<name>` or `session:<lowercase uuid>`. To wait for rows addressed to
 you, subscribe with the address as a topic:
 `wait --since <n> --topic role:<name> --topic session:<uuid>`. `wait` returns a
 row whose `topic` matches or whose `to` contains a selected address, once per row.
@@ -169,8 +169,9 @@ Read-only projections of unauthenticated reports, not committed state:
 - **`read --format compact`** prints one tab-separated line per message; a reading
   aid, the JSON row is the record. It is refused with `--active-claims`.
 - **`roles [--role R]`** answers what sessions *reported* about each role's
-  adoptions and endings, with a state of single, overlap, fork, conflict or ended.
-  It names a *reported* holder, never a holder or owner; every succession is
+  adoptions and endings, with a state of no_adoption, single, overlap, fork,
+  conflict or ended. Where one is reported it names a *reported* holder, never a
+  holder or owner (otherwise `not established`); every succession is
   `committed: not established`.
 - **`requests [--to ADDRESS]`** lists `request` rows by addressee with their
   replies and receipts and whether each is still open.
