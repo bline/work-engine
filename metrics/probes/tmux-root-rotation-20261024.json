@@ -329,5 +329,34 @@
     "observed_in_test": 17,
     "reachable_by_code_reading_only": "fail_launch (incidental), nothing-to-commit, fail_handoff_mutated, adoption_not_established, role_window_not_established, watch_board_error, fail_board_post, fail_swap, fail_window_state_unknown",
     "standing": "an untested outcome is not established by observation, not known-good; the table marks each one"
+  },
+  "live_rotation_against_final_code_20261024": {
+    "result": "FAILED at adoption; the gate behaved correctly",
+    "coordinator": {
+      "exit": 34,
+      "terminal_status": "fail_no_adoption",
+      "elapsed_ms": 241396,
+      "note": "the 240s adoption wait plus ~1.4s of coordinator work"
+    },
+    "gates_before_launch": "validator pass (twice); quiescence 0 claimed children, 0 claims held, 0 descendant processes",
+    "successor": {
+      "session": "0e033fa5-2c50-4e7a-820b-de29360308d4",
+      "model": "claude-opus-5-5",
+      "model_calls": 4,
+      "usage": {
+        "input": 8,
+        "cache_creation": 21741,
+        "cache_read": 182147,
+        "output": 1107
+      },
+      "note": "the launcher pins no model, so the host default was used"
+    },
+    "what_the_successor_did": "followed its argv steps correctly: read the board, ran sha256sum, matched the digest, read the claims and found none, and constructed a post containing BOTH required strings.",
+    "cause_of_failure": "the Claude Code auto-mode classifier DENIED the board write: '[External System Writes]'. The successor attempted it twice and stopped. No message reached the board.",
+    "consequence_for_the_design": "--permission-mode auto structurally prevents a real Claude successor from acknowledging adoption, because the acknowledgement IS a board write. A successor that cannot post cannot adopt, so the mechanism does not complete at all under that mode. Every prior green result used a shell stub, which posts with no classifier in the path -- the stub was not representative of the thing it stood for.",
+    "adoption_test_status": "the marker+digest adoption test is NOT exercised: no post reached the board, so neither required string could be checked. not_established, not passed.",
+    "what_the_gate_got_right": "refused at the timeout, recorded fail_no_adoption, retired the orphan successor (window @1, disposition kill), left the predecessor running and untouched. Final map: 0 claude-root @0. This is the fail-closed path observed under a REAL failure rather than an injected one.",
+    "blocked_on": "a permission decision that belongs to the user. Adding --allowedTools to the launcher was itself denied as '[Auto-Mode Bypass]', correctly: it would broaden a child session's permissions from inside the mechanism. Not retried and not worked around.",
+    "process_hygiene": "uid process count 311 before and 311 after; rootp2 server killed; rootlive3 untouched"
   }
 }
