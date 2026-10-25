@@ -893,6 +893,318 @@ class BaseByteIdentityTest(RepoCase):
             self.assertNotIn('"matches"', now.stdout)
 
 
+def sid(letter: str) -> str:
+    return f"{ord(letter):08x}-0000-4000-8000-{ord(letter):012x}"
+
+
+def all_keys(value) -> list[str]:
+    if isinstance(value, dict):
+        return [k for k in value] + [k for v in value.values() for k in all_keys(v)]
+    if isinstance(value, list):
+        return [k for v in value for k in all_keys(v)]
+    return []
+
+
+class RolesViewTest(RepoCase):
+    ROLE = "claude-root"
+
+    def adopt(self, session: str, predecessor: str, role: str | None = None) -> None:
+        self.counter += 1
+        BOARD.adopt(self.repository, author="x", session_id=sid(session), body="adopted",
+                    role=role or self.ROLE, predecessor_session=sid(predecessor),
+                    message_id=mid(self.counter), observed_at="2026-10-25T00:00:00Z", handoff_sha256=HEX)
+
+    def availability(self, session: str, state: str, role: str | None = None) -> None:
+        self.post(kind="availability", session_id=sid(session), role=role or self.ROLE, data={"state": state})
+
+    def ending(self, session: str, role: str | None = None) -> None:
+        self.availability(session, "ending", role)
+
+    def entry(self, role: str | None = None) -> dict:
+        view = BOARD.roles_view(self.board()[0])
+        found = [e for e in view["roles"] if e["role"] == (role or self.ROLE)]
+        self.assertEqual(len(found), 1)
+        return found[0]
+
+    def holder(self, session: str, sequence: int) -> dict:
+        return {"session": sid(session), "adoption_sequence": sequence}
+
+    def test_single_reported_holder_after_clean_succession(self) -> None:
+        self.ending("A")  # 1
+        self.adopt("B", "A")  # 2
+        entry = self.entry()
+        self.assertEqual(entry["state"], "single")
+        self.assertEqual(entry["reported_holder"], self.holder("B", 2))
+        self.assertEqual(entry["relations"], [])
+        self.assertEqual(entry["successions"], [{
+            "adoption_sequence": 2, "predecessor_session": sid("A"), "successor_session": sid("B"),
+            "predecessor_ending_sequence": 1, "successor_ending_sequence": "not reported",
+            "committed": "not established"}])
+
+    def test_ending_posted_after_the_adoption_also_counts_as_reported(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.assertEqual(self.entry()["state"], "overlap")
+        self.ending("A")  # 2
+        entry = self.entry()
+        self.assertEqual(entry["state"], "single")
+        self.assertEqual(entry["successions"][0]["predecessor_ending_sequence"], 2)
+        self.assertEqual(entry["successions"][0]["committed"], "not established")
+
+    def test_overlap_is_not_conflict(self) -> None:
+        self.adopt("B", "A")  # predecessor A has not reported ending
+        entry = self.entry()
+        self.assertEqual(entry["state"], "overlap")
+        self.assertEqual(entry["reported_holder"], self.holder("B", 1))
+        self.assertEqual([r["relation"] for r in entry["relations"]], ["overlap"])
+        self.assertEqual(entry["relations"][0]["predecessor_session"], sid("A"))
+        self.assertEqual(entry["successions"][0]["predecessor_ending_sequence"], "not reported")
+        self.assertEqual(entry["successions"][0]["committed"], "not established")
+
+    def test_three_unended_chain_is_overlap_with_latest_session_reported(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.adopt("C", "B")  # 2
+        entry = self.entry()
+        self.assertEqual(entry["state"], "overlap")
+        self.assertEqual(entry["reported_holder"], self.holder("C", 2))
+        self.assertEqual({r["relation"] for r in entry["relations"]}, {"overlap"})
+        self.assertEqual([s["committed"] for s in entry["successions"]], ["not established"] * 2)
+
+    def test_fork_is_neither_overlap_nor_conflict(self) -> None:
+        self.ending("A")  # 1
+        self.adopt("B", "A")  # 2
+        self.adopt("C", "A")  # 3
+        entry = self.entry()
+        self.assertEqual(entry["state"], "fork")
+        self.assertEqual(entry["reported_holder"], "not established")
+        self.assertEqual(entry["candidates"], [self.holder("B", 2), self.holder("C", 3)])
+        self.assertEqual([r["relation"] for r in entry["relations"]], ["fork"])
+        self.assertEqual(entry["relations"][0]["at_session"], sid("A"))
+
+    def test_mixed_overlap_and_fork_lists_every_relation(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.adopt("C", "B")  # 2
+        self.adopt("D", "B")  # 3
+        entry = self.entry()
+        self.assertEqual(entry["state"], "fork")
+        self.assertEqual(entry["reported_holder"], "not established")
+        forks = [r for r in entry["relations"] if r["relation"] == "fork"]
+        overlaps = [r for r in entry["relations"] if r["relation"] == "overlap"]
+        self.assertEqual(len(forks), 1)
+        self.assertEqual(forks[0]["at_session"], sid("B"))
+        self.assertEqual({r["successor_adoption_sequence"] for r in overlaps}, {1, 2, 3})
+        self.assertEqual({r["relation"] for r in entry["relations"]}, {"fork", "overlap"})
+
+    def test_fork_through_an_ended_adoption(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.ending("B")  # 2: B's adoption is ended but stays a link
+        self.adopt("C", "B")  # 3
+        self.adopt("D", "A")  # 4
+        entry = self.entry()
+        self.assertEqual(entry["state"], "fork")
+        self.assertEqual(entry["reported_holder"], "not established")
+        self.assertEqual([c["session"] for c in entry["candidates"]], [sid("C"), sid("D")])
+        forks = [r for r in entry["relations"] if r["relation"] == "fork"]
+        self.assertEqual(len(forks), 1)
+        self.assertEqual(forks[0]["at_session"], sid("A"))
+        paths = {m["session"]: m["path"] for m in forks[0]["adoptions"]}
+        self.assertEqual(paths[sid("C")], [sid("C"), sid("B"), sid("A")])
+        self.assertEqual(paths[sid("D")], [sid("D"), sid("A")])
+        self.assertNotIn("conflict", {r["relation"] for r in entry["relations"]})
+
+    def test_conflict_when_chains_share_no_session(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.adopt("D", "C")  # 2
+        entry = self.entry()
+        self.assertEqual(entry["state"], "conflict")
+        self.assertEqual(entry["reported_holder"], "not established")
+        self.assertEqual([c["session"] for c in entry["candidates"]], [sid("B"), sid("D")])
+        self.assertIn("conflict", {r["relation"] for r in entry["relations"]})
+
+    def test_conflict_outranks_fork_and_overlap(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.adopt("C", "A")  # 2: fork with B
+        self.adopt("E", "D")  # 3: conflict with both
+        entry = self.entry()
+        self.assertEqual(entry["state"], "conflict")
+        self.assertEqual({r["relation"] for r in entry["relations"]}, {"overlap", "fork", "conflict"})
+
+    def test_ending_without_successor_and_all_ended(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.ending("B")  # 2
+        entry = self.entry()
+        self.assertEqual(entry["state"], "ended")
+        self.assertEqual(entry["reported_holder"], "not established")
+        self.assertEqual(entry["last_ending_sequence"], 2)
+        self.assertEqual(entry["reporting_sessions"], [sid("B")])
+        self.assertEqual(entry["successions"][0]["successor_ending_sequence"], 2)
+
+    def test_availability_without_adoption_has_no_reported_holder(self) -> None:
+        self.availability("A", "available")
+        self.post(session_id=sid("B"), role=self.ROLE)  # an untyped row with the role
+        entry = self.entry()
+        self.assertEqual(entry["state"], "no_adoption")
+        self.assertEqual(entry["reported_holder"], "not established")
+        self.assertEqual(entry["reporting_sessions"], [sid("A"), sid("B")])
+        self.assertEqual(entry["successions"], [])
+
+    def test_row_addressed_to_the_role_is_not_a_reported_holder(self) -> None:
+        self.post(session_id=sid("Z"), kind="request", to=[f"role:{self.ROLE}"], data={"ask": "q"})
+        view = BOARD.roles_view(self.board()[0])
+        self.assertEqual(view["roles"], [])
+        self.post(session_id=sid("Y"), kind="status", role="other", to=[f"role:{self.ROLE}"],
+                  data={"subject": "s"})
+        self.assertEqual([e["role"] for e in BOARD.roles_view(self.board()[0])["roles"]], ["other"])
+        self.assertEqual(BOARD.roles_view(self.board()[0], roles=[self.ROLE])["roles"], [])
+
+    def test_no_output_key_is_holder_or_owner_and_header_states_projection(self) -> None:
+        self.adopt("B", "A")
+        self.adopt("C", "A")
+        self.adopt("E", "D")
+        self.ending("B")
+        self.availability("Q", "available", role="solo")
+        view = BOARD.roles_view(self.board()[0])
+        keys = set(all_keys(view))
+        self.assertFalse(keys & {"holder", "owner"}, keys)
+        self.assertIn("reported_holder", keys)
+        self.assertIn("unauthenticated", view["projection"])
+        self.assertIn("not committed ownership", view["projection"])
+
+    def test_malformed_stored_rows_never_raise_and_do_not_count(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.post(session_id=sid("C"), role=self.ROLE)  # 2
+        self.post(session_id=sid("D"), role=self.ROLE)  # 3
+        self.post(session_id=sid("E"), role=self.ROLE)  # 4
+
+        def corrupt(board) -> None:
+            board["messages"][1].update(kind="adoption", data="not-a-dict")
+            board["messages"][2].update(kind="adoption", data={"predecessor_session": 7})
+            board["messages"][3].update(kind="availability", data={"state": ["ending"]})
+            board["messages"].append({"sequence": "9", "role": self.ROLE, "kind": "adoption"})
+            board["messages"].append("junk")
+
+        self.raw_rewrite(corrupt)
+        entry = self.entry()
+        self.assertEqual(entry["state"], "overlap")
+        self.assertEqual(len(entry["successions"]), 1)
+        BOARD.requests_view(self.board()[0])
+
+    def test_cli_roles_is_read_only_and_filters(self) -> None:
+        self.adopt("B", "A")
+        self.adopt("C", "A", role="other")
+        revision, text = self.board()[1], json.dumps(self.board()[0], sort_keys=True)
+        full = self.run_cli("roles")
+        self.assertEqual(full.returncode, 0, full.stderr)
+        payload = json.loads(full.stdout)
+        self.assertEqual(payload["revision"], revision)
+        self.assertEqual([e["role"] for e in payload["roles"]], ["claude-root", "other"])
+        one = json.loads(self.run_cli("roles", "--role", "other").stdout)
+        self.assertEqual([e["role"] for e in one["roles"]], ["other"])
+        self.assertEqual(self.board()[1], revision)
+        self.assertEqual(json.dumps(self.board()[0], sort_keys=True), text)
+
+
+class RequestsViewTest(RepoCase):
+    def request(self, to=("role:p",)) -> int:
+        return self.post(kind="request", to=list(to), data={"ask": "q"})["message"]["sequence"]
+
+    def reply(self, target: int, disposition: str) -> None:
+        self.post(kind="reply", in_reply_to=target, data={"disposition": disposition})
+
+    def groups(self, **kw) -> dict:
+        view = BOARD.requests_view(self.board()[0], **kw)
+        return {g["to"]: {r["sequence"]: r for r in g["requests"]} for g in view["addressees"]}
+
+    def test_open_answered_declined_deferred_partial(self) -> None:
+        opened, answered, declined, deferred, partial = (self.request() for _ in range(5))
+        self.reply(answered, "answered")
+        self.reply(declined, "declined")
+        self.reply(deferred, "deferred")
+        self.reply(partial, "partial")
+        found = self.groups()["role:p"]
+        self.assertEqual({s: r["status"] for s, r in found.items()},
+                         {opened: "open", answered: "answered", declined: "declined",
+                          deferred: "open", partial: "open"})
+        self.assertEqual(found[deferred]["replies"][0]["disposition"], "deferred")
+        self.assertEqual(found[partial]["replies"][0]["disposition"], "partial")
+        self.assertIsNone(found[opened]["closed_by_sequence"])
+        self.assertEqual(found[answered]["closed_by_sequence"], found[answered]["replies"][0]["sequence"])
+        view = BOARD.requests_view(self.board()[0])
+        self.assertEqual(view["addressees"][0]["open_count"], 3)
+        self.assertEqual(view["unattached_replies"], [])
+
+    def test_receipt_does_not_close_and_is_attached(self) -> None:
+        number = self.request()
+        self.post(kind="receipt", in_reply_to=number)
+        item = self.groups()["role:p"][number]
+        self.assertEqual(item["status"], "open")
+        self.assertEqual(len(item["receipts"]), 1)
+
+    def test_grouped_by_addressee_and_filtered_by_to(self) -> None:
+        first = self.request(("role:p", f"session:{SESSION_2}"))
+        second = self.request(("role:q",))
+        groups = self.groups()
+        self.assertEqual(sorted(groups), ["role:p", "role:q", f"session:{SESSION_2}"])
+        self.assertEqual(list(groups["role:q"]), [second])
+        self.assertEqual(list(self.groups(to="role:p")), ["role:p"])
+        self.assertEqual(list(self.groups(to="role:p")["role:p"]), [first])
+        self.assertEqual(BOARD.requests_view(self.board()[0], to="role:none")["addressees"], [])
+
+    def test_stored_closing_reply_naming_a_non_request_closes_nothing(self) -> None:
+        self.post()  # 1: legacy row
+        self.post(kind="status", data={"subject": "s"})  # 2
+        number = self.request()  # 3
+        self.post(kind="note")  # 4
+        for target, disposition in ((1, "answered"), (2, "declined"), (4, "answered")):
+            self.post(kind="reply", in_reply_to=target, data={"disposition": "deferred"})
+        stored = [len(self.board()[0]["messages"]) - i for i in (2, 1, 0)]
+
+        def make_closing(board) -> None:
+            for row, disposition in zip((board["messages"][i - 1] for i in stored), ("answered", "declined", "answered")):
+                row["data"]["disposition"] = disposition
+            board["messages"].append({"sequence": 99, "kind": "reply", "in_reply_to": 500,
+                                      "data": {"disposition": "answered"}})
+            board["messages"].append({"sequence": 100, "kind": "reply", "in_reply_to": 101,
+                                      "data": {"disposition": "answered"}})
+
+        self.raw_rewrite(make_closing)
+        view = BOARD.requests_view(self.board()[0])
+        self.assertEqual(self.groups()["role:p"][number]["status"], "open")
+        unattached = {u["sequence"]: u for u in view["unattached_replies"]}
+        self.assertEqual(sorted(unattached), sorted(stored + [99, 100]))
+        self.assertEqual({u["target_kind"] for u in view["unattached_replies"]},
+                         {"note", "status", "missing"})
+        self.assertEqual(unattached[99]["target_kind"], "missing")
+        self.assertEqual(view["addressees"][0]["open_count"], 1)
+
+    def test_closing_reply_is_per_request_and_first_close_wins(self) -> None:
+        number = self.request()
+        self.reply(number, "declined")
+        self.reply(number, "answered")
+        item = self.groups()["role:p"][number]
+        self.assertEqual(item["status"], "declined")
+        self.assertEqual(len(item["replies"]), 2)
+
+    def test_request_without_to_is_listed_as_not_established(self) -> None:
+        self.post(kind="request", to=["role:p"], data={"ask": "q"})
+        self.raw_rewrite(lambda board: board["messages"][0].update(to="oops"))
+        self.assertEqual(list(self.groups()), ["not established"])
+
+    def test_cli_requests_is_read_only(self) -> None:
+        number = self.request()
+        self.request(("role:q",))
+        self.reply(number, "answered")
+        revision, text = self.board()[1], json.dumps(self.board()[0], sort_keys=True)
+        result = self.run_cli("requests")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["revision"], revision)
+        self.assertEqual(payload["total_requests"], 2)
+        only = json.loads(self.run_cli("requests", "--to", "role:q").stdout)
+        self.assertEqual([g["to"] for g in only["addressees"]], ["role:q"])
+        self.assertEqual(self.board()[1], revision)
+        self.assertEqual(json.dumps(self.board()[0], sort_keys=True), text)
+
+
 def backticked(text: str) -> list[str]:
     return re.findall(r"`([^`]+)`", text)
 

@@ -716,6 +716,248 @@ def topics_view(board: dict[str, Any], *, since: int, limit: int, offset: int) -
             "next_offset": offset + len(page) if more else None, "has_more": more}
 
 
+
+PROJECTION_NOTE = ("projection of unauthenticated board reports; it is not committed ownership and "
+                   "not the rotation gate's acceptance of any transition")
+NOT_ESTABLISHED = "not established"
+NOT_REPORTED = "not reported"
+
+
+def _is_sequence(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _snapshot_rows(board: dict[str, Any]) -> list[dict[str, Any]]:
+    """Stored rows a view can use: dicts with an integer sequence, in sequence order."""
+    messages = board.get("messages")
+    if not isinstance(messages, list):
+        return []
+    rows = [row for row in messages if isinstance(row, dict) and _is_sequence(row.get("sequence"))]
+    return sorted(rows, key=lambda row: row["sequence"])
+
+
+def _registry_path(registry: dict[str, Any], kind: str, section: str, leaf: str) -> tuple[str, Any]:
+    """Find the registry path ending in `.leaf` under `kinds.<kind>.<section>`.
+
+    `required` and `enums` hold envelope-rooted paths (`data.disposition`), so the
+    result is applied to a stored row with `_lookup`. `optional_data` entries are
+    rooted at `data` and are not read here. Returns the path and its enum values
+    (None for a `required` entry).
+    """
+    try:
+        spec = registry["kinds"][kind][section]
+    except (KeyError, TypeError) as failure:
+        raise ChatboardError(f"kind registry has no {kind}.{section}") from failure
+    for path in spec:
+        if isinstance(path, str) and path.startswith("data.") and path.split(".")[-1] == leaf:
+            return path, spec[path] if isinstance(spec, dict) else None
+    raise ChatboardError(f"kind registry {kind}.{section} names no data field `{leaf}`")
+
+
+def roles_view(board: dict[str, Any], *, roles: list[str] | None = None,
+               registry: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Per-role projection of adoption and `ending` reports; never a holder or an owner.
+
+    A pure function of the snapshot. An adoption is unended until an `availability`
+    row with `data.state` `ending` from the same session and role follows it. Every
+    succession entry carries `committed: not established`: no board row shows that
+    a rotation committed (D9).
+    """
+    registry = registry if registry is not None else load_registry()
+    predecessor_path, _ = _registry_path(registry, "adoption", "required", "predecessor_session")
+    state_path, states = _registry_path(registry, "availability", "enums", "state")
+    if not isinstance(states, list) or "ending" not in states:
+        raise ChatboardError("kind registry availability does not enumerate `ending`")
+    by_role: dict[str, list[dict[str, Any]]] = {}
+    for row in _snapshot_rows(board):
+        role = row.get("role")
+        if _is_text(role) and (not roles or role in roles):
+            by_role.setdefault(role, []).append(row)
+    entries = [_role_entry(role, by_role[role], predecessor_path, state_path) for role in sorted(by_role)]
+    return {"projection": PROJECTION_NOTE, "roles": entries, "total_roles": len(entries)}
+
+
+def _role_entry(role: str, rows: list[dict[str, Any]], predecessor_path: str, state_path: str) -> dict[str, Any]:
+    adoptions: list[dict[str, Any]] = []
+    endings: dict[str, list[int]] = {}
+    reporting: set[str] = set()
+    for row in rows:
+        session = row.get("session_id")
+        if not _is_text(session):
+            continue
+        reporting.add(session)
+        kind = row_kind(row)
+        if kind == "adoption":
+            predecessor = _lookup(row, predecessor_path)
+            if _is_text(predecessor):
+                adoptions.append({"sequence": row["sequence"], "session": session, "predecessor": predecessor})
+        elif kind == "availability" and _lookup(row, state_path) == "ending":
+            endings.setdefault(session, []).append(row["sequence"])
+
+    def ended_at(adoption: dict[str, Any]) -> int | None:
+        later = [seq for seq in endings.get(adoption["session"], []) if seq > adoption["sequence"]]
+        return min(later) if later else None
+
+    def earlier_adoption(session: str, before: int) -> dict[str, Any] | None:
+        found = [a for a in adoptions if a["session"] == session and a["sequence"] < before]
+        return max(found, key=lambda a: a["sequence"]) if found else None
+
+    def predecessor_ending(adoption: dict[str, Any]) -> int | None:
+        link = earlier_adoption(adoption["predecessor"], adoption["sequence"])
+        floor = link["sequence"] if link else 0
+        later = [seq for seq in endings.get(adoption["predecessor"], []) if seq > floor]
+        return min(later) if later else None
+
+    def chain(adoption: dict[str, Any]) -> list[dict[str, Any]]:
+        # Traverses ended adoptions: an ended adoption leaves the unended set but stays a link.
+        links = [adoption]
+        while True:
+            nxt = earlier_adoption(links[-1]["predecessor"], links[-1]["sequence"])
+            if nxt is None:
+                return links
+            links.append(nxt)
+
+    def sessions_of(links: list[dict[str, Any]]) -> list[str]:
+        return [links[0]["session"]] + [link["predecessor"] for link in links]
+
+    unended = sorted((a for a in adoptions if ended_at(a) is None), key=lambda a: a["sequence"])
+    unended_sequences = {a["sequence"] for a in unended}
+    relations: list[dict[str, Any]] = []
+    for later in unended:
+        links = chain(later)
+        ancestors = [link for link in links[1:] if link["sequence"] in unended_sequences]
+        for earlier in ancestors:
+            path = sessions_of(links[:links.index(earlier) + 1])
+            relations.append({"relation": "overlap", "successor_session": later["session"],
+                              "successor_adoption_sequence": later["sequence"],
+                              "predecessor_session": later["predecessor"],
+                              "earlier_session": earlier["session"],
+                              "earlier_adoption_sequence": earlier["sequence"], "path": path})
+        if not ancestors and predecessor_ending(later) is None:
+            relations.append({"relation": "overlap", "successor_session": later["session"],
+                              "successor_adoption_sequence": later["sequence"],
+                              "predecessor_session": later["predecessor"],
+                              "earlier_session": later["predecessor"], "earlier_adoption_sequence": None,
+                              "path": [later["session"], later["predecessor"]]})
+    for index, first in enumerate(unended):
+        for second in unended[index + 1:]:
+            first_links, second_links = chain(first), chain(second)
+            if second["sequence"] in {a["sequence"] for a in first_links} \
+                    or first["sequence"] in {a["sequence"] for a in second_links}:
+                continue  # one chain: reported as overlap above
+            first_path, second_path = sessions_of(first_links), sessions_of(second_links)
+            common = next((s for s in first_path if s in second_path), None)
+            members = [{"adoption_sequence": first["sequence"], "session": first["session"]},
+                       {"adoption_sequence": second["sequence"], "session": second["session"]}]
+            if common is None:
+                relations.append({"relation": "conflict", "adoptions": members})
+            else:
+                members[0]["path"] = first_path[:first_path.index(common) + 1]
+                members[1]["path"] = second_path[:second_path.index(common) + 1]
+                relations.append({"relation": "fork", "at_session": common, "adoptions": members})
+    present = {relation["relation"] for relation in relations}
+    if "conflict" in present:
+        state = "conflict"
+    elif "fork" in present:
+        state = "fork"
+    elif "overlap" in present:
+        state = "overlap"
+    elif unended:
+        state = "single"
+    else:
+        state = "ended" if adoptions else "no_adoption"
+    entry: dict[str, Any] = {"role": role, "state": state}
+    if state in ("single", "overlap"):
+        latest = unended[-1]
+        entry["reported_holder"] = {"session": latest["session"], "adoption_sequence": latest["sequence"]}
+    else:
+        entry["reported_holder"] = NOT_ESTABLISHED
+    if state in ("fork", "conflict"):
+        entry["candidates"] = [{"session": a["session"], "adoption_sequence": a["sequence"]} for a in unended]
+    if state in ("no_adoption", "ended"):
+        entry["reporting_sessions"] = sorted(reporting)
+    if state == "ended":
+        entry["last_ending_sequence"] = max(seq for seq in (ended_at(a) for a in adoptions) if seq is not None)
+
+    def or_not_reported(value: int | None) -> Any:
+        return value if value is not None else NOT_REPORTED
+
+    entry["successions"] = [
+        {"adoption_sequence": a["sequence"], "predecessor_session": a["predecessor"],
+         "successor_session": a["session"],
+         "predecessor_ending_sequence": or_not_reported(predecessor_ending(a)),
+         "successor_ending_sequence": or_not_reported(ended_at(a)),
+         "committed": NOT_ESTABLISHED}
+        for a in sorted(adoptions, key=lambda a: a["sequence"])]
+    entry["relations"] = relations
+    return entry
+
+
+def requests_view(board: dict[str, Any], *, to: str | None = None,
+                  registry: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Requests by addressee. A request is open until a closing reply names it.
+
+    A closing reply (`answered` or `declined`) closes only a stored `request` row
+    with a lower sequence; one whose target is anything else is listed under
+    `unattached_replies` and closes nothing (X3). `deferred` and `partial` replies
+    and receipts are attached but never close. `to` filters requests only;
+    unattached replies are always listed.
+    """
+    registry = registry if registry is not None else load_registry()
+    disposition_path, dispositions = _registry_path(registry, "reply", "enums", "disposition")
+    closing = {value for value in ("answered", "declined") if isinstance(dispositions, list) and value in dispositions}
+    rows = _snapshot_rows(board)
+    by_sequence = {row["sequence"]: row for row in rows}
+    closed_by: dict[int, dict[str, Any]] = {}
+    replies: dict[int, list[dict[str, Any]]] = {}
+    receipts: dict[int, list[dict[str, Any]]] = {}
+    unattached: list[dict[str, Any]] = []
+    for row in rows:
+        kind = row_kind(row)
+        target = row.get("in_reply_to")
+        attached = _is_sequence(target) and target < row["sequence"] \
+            and target in by_sequence and row_kind(by_sequence[target]) == "request"
+        if kind == "reply":
+            disposition = _lookup(row, disposition_path)
+            if disposition in closing and not attached:
+                target_row = by_sequence.get(target) if _is_sequence(target) else None
+                unattached.append({"sequence": row["sequence"],
+                                   "in_reply_to": target if _is_sequence(target) else None,
+                                   "disposition": disposition,
+                                   "target_kind": row_kind(target_row) if target_row is not None else "missing"})
+            elif attached:
+                replies.setdefault(target, []).append(
+                    {"sequence": row["sequence"],
+                     "disposition": disposition if _is_text(disposition) else NOT_ESTABLISHED,
+                     "session_id": row.get("session_id")})
+                if disposition in closing and target not in closed_by:
+                    closed_by[target] = {"sequence": row["sequence"], "disposition": disposition}
+        elif kind == "receipt" and attached:
+            receipts.setdefault(target, []).append({"sequence": row["sequence"], "session_id": row.get("session_id")})
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        if row_kind(row) != "request":
+            continue
+        addresses = row.get("to")
+        valid = [a for a in addresses if _is_text(a)] if isinstance(addresses, list) else []
+        close = closed_by.get(row["sequence"])
+        item = {"sequence": row["sequence"], "author": row.get("author"), "session_id": row.get("session_id"),
+                "topic": row.get("topic"), "status": close["disposition"] if close else "open",
+                "closed_by_sequence": close["sequence"] if close else None,
+                "replies": replies.get(row["sequence"], []), "receipts": receipts.get(row["sequence"], [])}
+        for name in sorted(set(valid)) or [NOT_ESTABLISHED]:
+            if to is None or name == to:
+                groups.setdefault(name, []).append(item)
+    addressees = [{"to": name, "open_count": sum(1 for r in groups[name] if r["status"] == "open"),
+                   "requests": groups[name]} for name in sorted(groups)]
+    return {"projection": PROJECTION_NOTE, "addressees": addressees, "unattached_replies": unattached,
+            "total_requests": len({r["sequence"] for g in groups.values() for r in g})}
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     root.add_argument("--repository", type=Path, default=Path.cwd())
@@ -755,6 +997,11 @@ def parser() -> argparse.ArgumentParser:
     topics.add_argument("--since", type=int, default=0)
     topics.add_argument("--limit", type=int, default=100)
     topics.add_argument("--offset", type=int, default=0)
+    roles_cmd = commands.add_parser("roles", help="project adoption and ending reports per role (reported, not committed)")
+    roles_cmd.add_argument("--role", action="append", dest="roles", default=[],
+                           help="limit to this role (repeatable)")
+    requests_cmd = commands.add_parser("requests", help="list requests by addressee with replies and receipts")
+    requests_cmd.add_argument("--to", help="limit to requests addressed to this role:<name> or session:<uuid>")
     post_cmd = commands.add_parser("post")
     for name in ("author", "session-id", "topic", "body"):
         post_cmd.add_argument(f"--{name}", required=True)
@@ -878,6 +1125,12 @@ def main() -> int:
             board, revision = read_board(args.repository)
             view = topics_view(board, since=args.since, limit=args.limit, offset=args.offset)
             print(json.dumps({"revision": revision, **view}, indent=2))
+        elif args.command == "roles":
+            board, revision = read_board(args.repository)
+            print(json.dumps({"revision": revision, **roles_view(board, roles=args.roles)}, indent=2))
+        elif args.command == "requests":
+            board, revision = read_board(args.repository)
+            print(json.dumps({"revision": revision, **requests_view(board, to=args.to)}, indent=2))
         elif args.command == "post":
             print(json.dumps(post(
                 args.repository, author=args.author, session_id=args.session_id,
