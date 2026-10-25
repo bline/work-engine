@@ -1,0 +1,76 @@
+{
+  "probe": "daemon-root-rotation-production-20261025",
+  "date": "2026-10-25",
+  "recorded_by": "claude-metrics successor c37984b7-8fc3-4962-8324-e4877af63a6d (the session this rotation launched)",
+  "gate": {
+    "skills/manual-orchestration/scripts/root_rotation.py": "2708c7bcaf4d5e02a629329a6141ab0015cfb9dbfa724f41e6c9b685ddba9d89",
+    "skills/manual-orchestration/scripts/role_host.py": "84c9fbd23ac7fbf6197442a3b849f8378ecc4c33948b149615cf64fb39029293",
+    "head_at_commit": "1707c696823b0581411843b0e8a6b10cd9943d0d"
+  },
+  "setup": "production board (repository /home/bline/code/work-engine); role claude-metrics; predecessor ce95dbf3 interactive Claude (pid 4171004); successor host claude via --bg; --after-adopt continue; --retire keep; --detach; real handoff_validator. Commit run by the predecessor after user authorization via commit-command.sh in the state dir.",
+  "state_dir": "/home/bline/.local/state/work-engine/claude-metrics-rotation",
+  "handoff": {
+    "path": "/home/bline/.local/state/work-engine/claude-metrics-handoff-20261024/handoff-v6.md",
+    "sha256": "fd7e5ddca3c2c2e1244e9cc86d96968bf96723a1e5116b2ea163ae55b50b3587",
+    "validator": "pass at prepare and at commit; 7/7 digest claims verified; doctrine element next_actions advisory not_established"
+  },
+  "timeline_utc": {
+    "prepare_1": "17:55:49.904 fail_descendants_live (1 session process beneath predecessor pid); refused",
+    "prepare_2": "18:19:37.768 awaiting_authority (0 ledger children, 0 claims, 0 descendants)",
+    "commit_validator_pass": "20:18:29.224",
+    "successor_launched": "20:18:30.638",
+    "handoff_posted": "20:18:30.991 (sequence 2975)",
+    "adoption_observed_on_board": "20:18:49.971 (sequence 2976)",
+    "gate_acknowledged_adoption": "20:18:50.359",
+    "ending_posted": "20:18:50.439 (sequence 2977)",
+    "terminal": "20:18:50.742 committed_rotation_1"
+  },
+  "result": {
+    "terminal_status": "committed_rotation_1",
+    "exit": "not established (gate ran --detach; terminal-status file and log read, process exit code not captured)",
+    "commit_wall_time_s": 21.518,
+    "launch_to_adoption_ack_s": 19.721,
+    "awaiting_authority_s": 7131.456,
+    "adoption_sequence": 2976,
+    "adoption_message_id": "b4d36a68-1549-4a00-a35c-bb5eb0e9a77c",
+    "ending_sequence": 2977,
+    "predecessor_disposition": "kept; claude agents --json at ~20:22Z: ce95dbf3 kind interactive, status idle",
+    "successor_steps": "whoami (CLAUDE_CODE_SESSION_ID) -> wait --since 2974 on session:<own id> -> sha256sum (match) -> read --active-claims (1 claim, session 01a173a5, none naming ce95dbf3) -> adopt with --handoff-path; no error tool results, no permission denial",
+    "continue_after_adopt": "successor read handoff-v6, verified its 7 digests (all match), and continued with its first actions (this record)"
+  },
+  "roles_view_claude_metrics": {
+    "revision": "2c7071e08e80a38fd3af1e245b4d76becb7f60de",
+    "state": "single",
+    "reported_holder": {"session": "c37984b7-8fc3-4962-8324-e4877af63a6d", "adoption_sequence": 2976},
+    "successions": [
+      {"adoption_sequence": 2941, "predecessor": "018ae509", "successor": "ce95dbf3", "predecessor_ending": "not reported", "successor_ending": 2977},
+      {"adoption_sequence": 2976, "predecessor": "ce95dbf3", "successor": "c37984b7", "predecessor_ending": 2977, "successor_ending": "not reported"}
+    ],
+    "committed": "not established (the view is a projection of unauthenticated reports by design)"
+  },
+  "observations": [
+    "The ending post (ba22a105) made the roles view read single, not overlap as on the X6 scratch board.",
+    "The first prepare refused fail_descendants_live; the second, 24 min later, established quiescence. Which process was beneath the predecessor at 17:55Z is not established from the log.",
+    "The 2941 succession shows predecessor_ending 'not reported' because that rotation (tmux era) predates the ending post.",
+    "HEAD moved from the handoff's 9ec25a65 to 1707c696 (one test-only commit) between writing and commit; the quiescence assertion names it, and the validator's git_refs check passed."
+  ],
+  "not_established": [
+    "watch-triggered commit live",
+    "gate process exit code (detached)",
+    "quiescence of children not launched through role_host.py --parent (rests on the predecessor's assertion)",
+    "managed settings permission rules"
+  ],
+  "evidence_dir": "/home/bline/cbm-work/prod-rotation-20261025",
+  "evidence_sha256": {
+    "gate/supervisor.log": "2cf16c8ea5503753ae56f46a3a159379f1acfc3ab0ccc742ecdaf8b29e58dcdf",
+    "gate/detached.log": "f71b422a3436e19bc0101ba392b82f38780ed5263053b9000aec1339251f1acc",
+    "gate/validator.log": "f1f6c79c1d4737735a06d35c793876c9d98a2cd5d9d316ac1b5ffa3204e747b5",
+    "gate/successor-identity": "32eb30fd86219351097b0475bab308575e83d8a1a3fe8de57181f992505e3488",
+    "gate/terminal-status": "bcb0f775261592ecc48d92e045a19953895eb07e402944eabbbbfc1f3a17ec6a",
+    "gate/ending-data.json": "006ce8c21a35f9b797b0febb7e1d2de0e62134822b733dc5cf009d940d64e19a",
+    "gate/commit-command.sh": "4833c41a26188148f284ad42375473b593103563f54e6b3a4ba82524ff01d791",
+    "gate/quiescence-assertion.txt": "304289484951df06f4a2476a65bd1e0699e6fa0fe192040a16b8f6ca79b61acf",
+    "gate/successor-prompt.txt": "a7928738162daed2a3d042ea615338cbc866a4b2fb71f56a185265d7c2bfa40b",
+    "handoff-v6.md": "fd7e5ddca3c2c2e1244e9cc86d96968bf96723a1e5116b2ea163ae55b50b3587"
+  }
+}
