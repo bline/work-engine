@@ -22,6 +22,10 @@
 #   LAUNCH_TMPL          {SESSION} {TOPIC} {HANDOFF} {DIGEST} substituted
 #   ADOPT_TIMEOUT        seconds to wait for the successor's board acknowledgment
 #   RETIRE               kill|keep|successor
+#   ORPHAN               kill|keep: disposition of a successor that never
+#                        adopted. Default kill -- it owns nothing, and left
+#                        alive it is a second candidate root the descendant
+#                        check cannot see (it is a sibling window).
 #   GATE_AUTHORITY       watch: comma-separated authors/session ids whose
 #                        approval counts. Unset = refuse to watch (fail closed)
 #   APPROVE_TOKEN        watch: token the approval body must contain. The body
@@ -37,6 +41,9 @@ CHILDREN_CMD="${CHILDREN_CMD:-}"; CLAIMS_CMD="${CLAIMS_CMD:-}"
 DESCENDANTS_CMD="${DESCENDANTS_CMD:-}"
 MAX_ROTATIONS="${MAX_ROTATIONS:-3}"; GATE="${GATE:-require}"
 ADOPT_TIMEOUT="${ADOPT_TIMEOUT:-180}"; RETIRE="${RETIRE:-keep}"
+# What to do with a successor that never adopted: retire it (default) or keep
+# it for inspection. Keeping leaves a second candidate root alive.
+ORPHAN="${ORPHAN:-kill}"
 # 3000s keeps one watch inside the 1h prompt-cache TTL, so the wake resumes on a
 # read prefix rather than rebuilding it. Nothing is spent while blocked.
 WATCH_TIMEOUT="${WATCH_TIMEOUT:-3000}"; APPROVE_TOKEN="${APPROVE_TOKEN:-approve-rotation}"
@@ -122,6 +129,9 @@ prepare() {
   rec validation-record "handoff=$handoff sha256=$dig validated_at=$(date -u +%FT%T%Z)"
   if [[ "$GATE" == require ]]; then
     rec awaiting-authority "handoff=$handoff sha256=$dig"
+    # STATE persists across rotations, so leaving terminal-status untouched
+    # leaves the PREVIOUS run's verdict standing beside this one's gate hold.
+    rec terminal-status "awaiting_authority"
     log "GATE: validated and quiescent; awaiting authority. NO successor exists."; return 10
   fi
   commit "$handoff"
@@ -132,10 +142,23 @@ commit() {
   [[ -n "$handoff" ]] || handoff=$(sed -n 's/^handoff=\([^ ]*\).*/\1/p' "$STATE/awaiting-authority" 2>/dev/null)
   [[ -s "${handoff:-}" ]] || { log "no handoff to commit"; return 29; }
   validate "$handoff" commit || return $?
-  local dig want; dig=$(sha256sum "$handoff" | cut -d' ' -f1)
-  want=$(sed -n 's/.*sha256=\([0-9a-f]*\).*/\1/p' "$STATE/validation-record")
-  [[ -z "$want" || "$dig" == "$want" ]] || { log "HOLD: bytes changed since validation"; rec terminal-status "fail_handoff_mutated"; return 30; }
+  local dig want; dig=$(sha256sum "$handoff" 2>/dev/null | cut -d' ' -f1)
+  [[ "$dig" =~ ^[0-9a-f]{64}$ ]] || { log "HOLD: cannot digest '$handoff'"
+    rec terminal-status "validation_not_established_commit"; return 32; }
+  # EXPECT_DIG is set by watch(), which has its own binding digest and never
+  # runs prepare. Falling back to "no record means unchanged" turned "could not
+  # check" into a pass, so the bytes could change between approval and launch.
+  want="${EXPECT_DIG:-}"
+  [[ -n "$want" ]] || want=$(sed -n 's/.*sha256=\([0-9a-f]*\).*/\1/p' "$STATE/validation-record" 2>/dev/null)
+  [[ -n "$want" ]] || { log "HOLD: no validated digest to compare against; cannot establish the bytes are unchanged"
+    rec terminal-status "validation_not_established_commit"; return 32; }
+  [[ "$dig" == "$want" ]] || { log "HOLD: bytes changed since validation"; rec terminal-status "fail_handoff_mutated"; return 30; }
   quiescent || return $(( $? == 2 ? 32 : 22 ))
+  # The cap is enforced HERE as well as in prepare: commit is what increments
+  # the count, and watch() reaches commit without ever running prepare, so a
+  # cap checked only in prepare does not bind the automated path.
+  local n; n=$(<"$C")
+  (( n < MAX_ROTATIONS )) || { log "CAP $n/$MAX_ROTATIONS"; rec terminal-status "fail_cap_reached"; return 20; }
 
   # Successor identity is chosen BEFORE launch, so the handoff can be waiting.
   local sid topic; sid=$(cat /proc/sys/kernel/random/uuid); topic="session:$sid"
@@ -205,13 +228,32 @@ print(next((m["message_id"] for m in d.get("messages",[])
     log "board woke on a non-successor message; re-arming from $nxt"
     since="$nxt"
   done
+  # A successor that never adopted owns nothing, but left running it becomes a
+  # second candidate root: the next rotation launches another one beside it, and
+  # it is a sibling window, so the descendant check cannot see it. Name it in
+  # STATE either way -- an orphan only in the log is not an orphan anyone can
+  # find -- and retire it unless asked to preserve it for inspection.
+  abandon() {
+    local reason="$1"
+    rec orphan-successor "window=$wid session=$sid topic=$topic reason=$reason disposition=${ORPHAN}"
+    if [[ "$ORPHAN" == keep ]]; then
+      log "unadopted successor $wid KEPT for inspection; it is not the role window"
+    elif T kill-window -t "$wid" 2>>"$STATE/supervisor.log"; then
+      log "unadopted successor window $wid retired ($reason)"
+    else
+      log "WARNING: could not retire unadopted successor window $wid; it is still running"
+      rec orphan-successor "window=$wid session=$sid topic=$topic reason=$reason disposition=kill_failed"
+    fi
+  }
   if [[ -n "$stalled" ]]; then
     T capture-pane -p -t "$wid" > "$STATE/stall-capture.txt" 2>/dev/null
     log "HOLD: successor stalled on a startup dialog; see $STATE/stall-capture.txt; predecessor NOT retired"
+    abandon startup_dialog
     rec terminal-status "fail_startup_dialog"; return 27
   fi
   if [[ -z "${ack:-}" ]]; then
     log "HOLD: no adoption acknowledgment in ${ADOPT_TIMEOUT}s (wait exit $wrc); predecessor NOT retired"
+    abandon no_adoption
     rec terminal-status "fail_no_adoption"; return 34
   fi
   log "adoption acknowledged by $sid (message $ack)"
@@ -221,9 +263,20 @@ print(next((m["message_id"] for m in d.get("messages",[])
     # own last action. The supervisor verifies the outcome and positions the role.
     local k=0 gone=no
     while (( k < 60 )); do
-      T list-windows -t roots -F '#{window_id}' | grep -qx "$pred_wid" || { gone=yes; break; }
+      local wins; wins=$(T list-windows -t roots -F '#{window_id}' 2>>"$STATE/supervisor.log"); local lrc=$?
+      if (( lrc != 0 )); then
+        # A failed listing is not evidence of retirement. Stop claiming either way.
+        log "cannot list windows (exit $lrc); retirement by the successor is not established"
+        gone=unknown; break
+      fi
+      grep -qx "$pred_wid" <<< "$wins" || { gone=yes; break; }
       sleep 1; ((k++))
     done
+    if [[ "$gone" == unknown ]]; then
+      rec predecessor-retired-by "not_established"
+      log "HOLD: cannot establish the predecessor's window state; nothing swapped or killed"
+      rec terminal-status "fail_window_state_unknown"; return 36
+    fi
     if [[ "$gone" == yes ]]; then
       log "successor retired predecessor window $pred_wid"
       rec predecessor-retired-by "successor"
@@ -273,7 +326,13 @@ watch() {      # block on the board until an AUTHORIZED approval arrives
   # the approval content-addressed. NOTE this binds to content, not to a
   # generation: two rotations of a byte-identical handoff share a digest, and
   # the board identifies authors without authenticating them.
-  local want_dig; want_dig=$(sha256sum "$handoff" | cut -d' ' -f1)
+  local want_dig; want_dig=$(sha256sum "$handoff" 2>/dev/null | cut -d' ' -f1)
+  # An EMPTY digest is a wildcard, not a binding: the body test is a substring
+  # test and "" is a substring of every message, so an unreadable handoff would
+  # approve every token-bearing post from a named approver. Refuse to watch.
+  [[ "$want_dig" =~ ^[0-9a-f]{64}$ ]] || {
+    log "REFUSING to watch: cannot compute a sha256 for '$handoff'"
+    rec terminal-status "watch_refused_no_digest"; return 79; }
   local topic="control:rotation:$ROLE" since deadline
   since=$(B read --limit 1 2>/dev/null | python3 -I -c 'import sys,json
 d=json.load(sys.stdin); m=d.get("messages",[]); print(m[-1]["sequence"] if m else 0)' 2>/dev/null)
@@ -312,7 +371,7 @@ else:
       APPROVED)
         log "approval accepted from '$who' (message $id) citing sha256 ${want_dig:0:12}"
         rec authorized-by "author=$who message_id=$id token=$APPROVE_TOKEN digest=$want_dig rotation=$(<"$C")"
-        GATE=open; commit "$handoff"; return $?;;
+        GATE=open; EXPECT_DIG="$want_dig" commit "$handoff"; return $?;;
       UNAUTHORIZED)
         log "IGNORED: approval token from unauthorized '$who' (message $id)"
         rec last-rejected-trigger "unauthorized author=$who message_id=$id";;

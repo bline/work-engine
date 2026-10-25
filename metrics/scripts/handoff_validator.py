@@ -162,12 +162,21 @@ def main():
             mismatch.append({"line": ln, "token": tok, "claimed": dig, "actual": h})
     r["digest_claims_paired"] = len(pairs)
     r["digest_tokens_unpaired"] = unpaired
+    # A pair whose file could not be opened contributes NO evidence either way.
+    # Counting it towards a pass let a handoff whose every referent was
+    # unreadable exit 0, which is "could not check" reported as "checked".
+    verified = len(pairs) - len(unverifiable)
+    r["digest_claims_verified"] = verified
     if mismatch:
         r["checks"]["digest_claims"] = "defect"
         r["defects"].append(f"{len(mismatch)} of {len(pairs)} paired digest claims do not match the file")
         r["digest_mismatches"] = mismatch
-    elif pairs:
+    elif verified > 0:
         r["checks"]["digest_claims"] = "pass"
+    elif pairs:
+        r["checks"]["digest_claims"] = "not_established"
+        r["not_established"].append(
+            f"all {len(pairs)} paired digest claims were unverifiable; none was checked")
     else:
         r["checks"]["digest_claims"] = "not_established"
         r["not_established"].append("no path/digest pair could be extracted")
@@ -228,6 +237,16 @@ def main():
 
     gating = [c for c in (x.strip() for x in a.require.split(",")) if c]
     r["gating_checks"] = gating
+    # A --require name that matches no check silently removes it from the gate,
+    # so a typo turns a gating check into no check at all and the handoff
+    # passes. An unknown name is a configuration error, not a waiver.
+    unknown = [k for k in gating if k not in r["checks"]]
+    if unknown:
+        r["not_established"].append(
+            f"--require names no such check: {', '.join(unknown)}; "
+            f"known checks are {', '.join(sorted(r['checks']))}")
+        r["gating_names_unknown"] = unknown
+        emit(r, a, 32); return
     r["non_gating_outcomes"] = {k: v for k, v in r["checks"].items() if k not in gating}
     # A defect anywhere is still a defect, gating or not; the gating set only
     # decides whether an unrunnable check blocks.
