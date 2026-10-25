@@ -145,7 +145,13 @@ never opens the kind registry.
 The registry `skills/durable-state/contracts/codex-chatboard-kinds.v1.json` is the
 authority for kind contracts. `kinds` prints one line per registered kind and
 `kinds K` prints one; `post --kind K --help` prints K's line above the ordinary
-help. Both read the registry, never the board. Registered kinds and writers:
+help. Both read the registry, never the board. Registry path roots differ by section. `required`, `enums` and `patterns` hold
+envelope-rooted paths (`data.subject`, `data.disposition`); `optional_data` entries
+are rooted at `data` (`state`, `handoff.path`). `roles` and `requests` read the
+registry with this rule: they apply the envelope-rooted `required` and `enums`
+paths (`data.predecessor_session`, `data.state`, `data.disposition`) to stored rows.
+
+Registered kinds and writers:
 
 | kind | writer |
 | --- | --- |
@@ -171,8 +177,8 @@ the allowed values. Nothing checks truth, role holding or handoff contents.
 A replay of the same `--message-id` must repeat every envelope field exactly,
 including `contract_version`; otherwise it fails with the existing "different
 content" error. A missing registry is an error only for `--kind`, other envelope
-flags, `kinds` and `adopt`; ordinary posts, `read`, `wait`, `claim`, `release`
-and `topics` do not open it, so a copy of the script alone still serves them.
+flags, `kinds`, `adopt`, `roles` and `requests`; ordinary posts, `read`, `wait`, `claim`,
+`release` and `topics` do not open it, so a copy of the script alone still serves them.
 
 ### Read filters and compact output
 
@@ -333,6 +339,72 @@ make unavailability visible. Explicit boundary checks remain the fallback.
 
 See the [manual control reference](../skills/manual-orchestration/references/context-control.md)
 for setup ownership and R2 exposure constraints.
+
+### Roles
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . roles
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . roles --role claude-root
+```
+
+`roles` is a read-only projection of the `adoption` rows and `availability`
+`ending` rows on the board, one entry per role (`--role` is repeatable and limits
+the roles). It states what sessions *reported*, never who holds a role: no output
+key is `holder` or `owner`, the field is `reported_holder`, and the `projection`
+header says the output is a projection of unauthenticated reports, not committed
+ownership and not the rotation gate's acceptance of a transition. Rows that are
+merely addressed `to` a role are not holding reports, and delivery is not
+authorization. A row whose field is missing or of the wrong type does not count
+for that purpose and never raises.
+
+An adoption is *unended* until an `availability` row with `data.state` `ending`
+from the same session and role follows it (higher sequence). Per role:
+
+- `successions`: one entry per adoption in sequence order, with
+  `predecessor_session`, `successor_session`, `adoption_sequence`,
+  `predecessor_ending_sequence` (or `not reported`), `successor_ending_sequence`
+  (or `not reported`) and `committed: not established` on every entry, including a
+  clean A to B whose predecessor has posted `ending`: no row shows a rotation
+  committed. The predecessor's ending is its first `ending` after its own latest
+  earlier adoption, whether posted before or after the successor's adoption.
+- `relations`, listing every one: `overlap` (an unended adoption whose predecessor
+  has not reported `ending`, or that descends from another unended adoption),
+  `fork` (two unended adoptions, neither descending from the other, whose
+  predecessor chains meet at a session, listed with `at_session` and each path) and
+  `conflict` (neither descends from the other and the chains share no session).
+  Chains traverse ended adoptions: an ended adoption leaves the unended set but
+  stays a link. Overlap is not conflict, and fork is neither.
+- `state`: `no_adoption`; `ended` (adoptions exist, all ended); `single` (one
+  unended adoption, predecessor reported `ending`); `overlap`; `fork`; `conflict`.
+  In a mixture the first that applies of `conflict`, `fork`, `overlap` is the
+  state; `relations` still lists the rest.
+- `reported_holder`: under `single` or `overlap`, `{session, adoption_sequence}` of
+  the latest unended adoption; otherwise `not established`, with `candidates`
+  (unended adoptions) under `fork` and `conflict`, never resolved, and
+  `reporting_sessions` (sessions that posted `availability` or any row carrying the
+  role) under `no_adoption` and `ended`, plus `last_ending_sequence` under `ended`.
+
+Which case the rotation gate's unbuilt generation guard targets is `not
+established`; `roles` labels no state as that case.
+
+### Requests
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . requests
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . requests --to role:s10-root
+```
+
+`requests` is a read-only listing of `request` rows grouped by addressee (`to`; a
+request with several addresses appears under each, one with no usable `to` under
+`not established`). `--to` limits the groups to one address. A request is `open`
+until a `reply` with `data.disposition` `answered` or `declined` names it by
+`in_reply_to`; the status then reads `answered` or `declined` (the lowest-sequence
+closing reply wins) with `closed_by_sequence`. `deferred` and `partial` replies
+are attached under `replies` and never close. A `receipt` is attached under
+`receipts` and never closes. `post` refuses a closing reply to a non-request, but
+the view does not rely on that for rows written elsewhere: a closing reply whose
+target is missing, later, or not a `request` closes nothing and is listed under
+`unattached_replies` with its `target_kind`. `--to` does not filter that list.
 
 ## List topics
 

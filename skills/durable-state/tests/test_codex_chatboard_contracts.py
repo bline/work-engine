@@ -1225,6 +1225,12 @@ def section(text: str, start: str, end: str) -> str:
 class ParityTest(RepoCase):
     """docs -> registry. Registry is the expected value; each document is checked against it.
 
+    Registry path roots (S1 tier-2 P3-1): `required`, `enums` and `patterns` hold
+    envelope-rooted paths (`data.subject`, `data.disposition`); `optional_data`
+    entries are rooted at `data` (`state`, `handoff.path`). The operator reference
+    states that rule and test_operator_reference_states_registry_path_roots
+    asserts it.
+
     Included (closed list): the draft's Kinds table (kind, consumer, required,
     optional data), the enumerations in its field notes (reply.disposition,
     availability.state), availability.ending -> handoff (path, sha256), the
@@ -1316,6 +1322,24 @@ class ParityTest(RepoCase):
         for needle in ("--kind", "--role", "--format compact", "matched_by", "delivery is not authorization"):
             self.assertIn(needle, text)
         self.assertNotIn("`wait` does not read `to`", text)
+
+    def test_operator_reference_states_registry_path_roots(self) -> None:
+        text = " ".join(OPERATOR_DOC.read_text().split())
+        rule = ("`required`, `enums` and `patterns` hold envelope-rooted paths (`data.subject`, "
+                "`data.disposition`); `optional_data` entries are rooted at `data` (`state`, `handoff.path`)")
+        self.assertIn(rule, text)
+        for kind, spec in self.registry["kinds"].items():
+            for path in spec["required"] + list(spec["enums"]) + list(spec.get("patterns", {})):
+                self.assertTrue(path in ("role", "to", "in_reply_to", "supersedes") or path.startswith("data."),
+                                f"{kind}: {path} is not envelope-rooted")
+            for path in spec["optional_data"]:
+                self.assertFalse(path.startswith("data."), f"{kind}: optional_data {path} is not data-rooted")
+
+    def test_operator_reference_documents_roles_and_requests(self) -> None:
+        text = OPERATOR_DOC.read_text()
+        for needle in ("### Roles", "### Requests", "reported_holder", "committed: not established",
+                       "unauthenticated reports", "unattached_replies"):
+            self.assertIn(needle, text)
 
     def test_operator_reference_writers(self) -> None:
         text = OPERATOR_DOC.read_text()
