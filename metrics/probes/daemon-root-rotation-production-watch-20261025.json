@@ -1,0 +1,83 @@
+{
+  "probe": "daemon-root-rotation-production-watch-20261025",
+  "date": "2026-10-25",
+  "recorded_by": "claude-metrics successor b40bb0b6-43a9-4707-9dc1-cd19700aecf9 (the session this rotation launched)",
+  "gate": {
+    "skills/manual-orchestration/scripts/root_rotation.py": "2708c7bcaf4d5e02a629329a6141ab0015cfb9dbfa724f41e6c9b685ddba9d89",
+    "skills/manual-orchestration/scripts/role_host.py": "84c9fbd23ac7fbf6197442a3b849f8378ecc4c33948b149615cf64fb39029293",
+    "head_at_commit": "1707c696823b0581411843b0e8a6b10cd9943d0d"
+  },
+  "setup": "production board (repository /home/bline/code/work-engine); role claude-metrics; predecessor c37984b7; successor host claude via --bg; watch path on topic control:rotation:claude-metrics with approvers ['user:bline'] and required digest 7eb1be48...; --retire stop. User authorized the run in chat 2026-10-25; the predecessor posted the approval as author user:bline under its own session id (the board does not authenticate authors).",
+  "state_dir": "/home/bline/.local/state/work-engine/claude-metrics-rotation",
+  "state_dir_copy": {
+    "path": "~/cbm-work/prod-watch-20261025",
+    "contents": "state/ (copy of the gate state dir after terminal status), agents-all.json, ps-385677.txt, roles-claude-metrics.json, SHA256SUMS (22 files)",
+    "files_absent_in_state_dir": ["last-rejected-trigger (no trigger was rejected)"]
+  },
+  "handoff": {
+    "path": "/home/bline/.local/state/work-engine/claude-metrics-handoff-20261024/handoff-v7.md",
+    "sha256": "7eb1be48a5dab8750a892611b8ab1f94c10339fe938e3054ddbb71d95310b4d5",
+    "validator": "pass at commit; 9 path referents checked; not_established: 1 relative referent (this record's path, which did not exist yet) resolves under no known base"
+  },
+  "timeline_utc": {
+    "predecessor_interactive_process_started": "22:33:39 (pid 385677, `claude --resume c37984b7-...`, pts/4; from ps lstart)",
+    "watch_started": "22:55:33.974 (since 3008)",
+    "approval_posted": "22:55:46.978 (sequence 3009, message 0e5cd256-4d12-4b2f-a3e3-d461cf70cd4d, author user:bline, session c37984b7)",
+    "approval_accepted": "22:55:47.994",
+    "commit_validator_pass": "22:55:48.739",
+    "quiescence_established": "22:55:49.633 (0 ledger children loaded, 0 claims held, 0 descendants of pid 385677)",
+    "successor_launched": "22:55:51.186",
+    "handoff_posted": "board observed_at 22:55:51.367; gate log 22:55:51.957 (sequence 3010)",
+    "adoption_observed_on_board": "22:56:21.221 (sequence 3011)",
+    "gate_acknowledged_adoption": "22:56:21.572",
+    "ending_posted": "board observed_at 22:56:21.626; gate log 22:56:21.925 (sequence 3012)",
+    "terminal": "22:56:31.291 committed_rotation_2_predecessor_not_retired"
+  },
+  "result": {
+    "terminal_status": "committed_rotation_2_predecessor_not_retired",
+    "exit": "not established as a captured code; status maps to exit 38 per root_rotation.py docstring",
+    "authorized_by": "message_id=0e5cd256-4d12-4b2f-a3e3-d461cf70cd4d author=user:bline digest=7eb1be48... rotation=1 (the gate's watch-approval counter, distinct from rotation-count=2)",
+    "watch_to_approval_accept_s": 14.020,
+    "approval_accept_to_terminal_s": 43.297,
+    "launch_to_adoption_ack_s": 30.386,
+    "ending_to_terminal_s": 9.366,
+    "ending_to_terminal_note": "consistent with the retire loop polling every 2 s while the predecessor's status was running; inferred from code, the wait is not logged",
+    "adoption_sequence": 3011,
+    "adoption_message_id": "9b652ebf-801d-497b-b02c-8d38c3caf5c1",
+    "ending_sequence": 3012,
+    "predecessor_disposition": "retire_failed retire_not_established: an interactive session cannot be stopped from here; its user closes it",
+    "successor_steps": "whoami (CLAUDE_CODE_SESSION_ID) -> wait --since 3009 on session:<own id> (message 3010) -> sha256sum (match) -> read --active-claims (4 claims, sessions 01a173a5, 01a1751d, 01a1751f, 01a17538; none naming c37984b7) -> adopt with --handoff-path (sequence 3011); no error tool results, no permission denial",
+    "continue_after_adopt": "successor read handoff-v7 and handoff-v6 Authority/Settled facts, verified all 7 v7 digests (all match), and continued with its first actions (this record)"
+  },
+  "predecessor_after_rotation": {
+    "source": "claude agents --json --all, read ~23:00Z (copy in agents-all.json)",
+    "rows_for_session_c37984b7": [
+      {"id": "c37984b7", "kind": "background", "state": "done", "cwd": "/home/bline/code/work-engine"},
+      {"pid": 385677, "kind": "interactive", "status": "idle", "cwd": "/home/bline/code/work-engine/.claude/worktrees/claude-metrics-prod-rotation"}
+    ],
+    "stopped": false,
+    "reading": "The background instance of c37984b7 had already ended (state done). The session was continuing in an interactive `claude --resume` process on pts/4 started 22:33:39Z, and the gate measured quiescence against that pid, so the predecessor that ran this rotation was the interactive process. role_host.Claude.retire refuses any interactive session by design, so the gate failed closed with status 38. Who started the --resume process is not established from these artifacts; a terminal (pts/4) suggests the user."
+  },
+  "roles_view_claude_metrics": {
+    "state": "single",
+    "reported_holder": {"session": "b40bb0b6-43a9-4707-9dc1-cd19700aecf9", "adoption_sequence": 3011},
+    "successions": [
+      {"adoption_sequence": 2941, "predecessor": "018ae509", "successor": "ce95dbf3", "predecessor_ending": "not reported", "successor_ending": 2977},
+      {"adoption_sequence": 2976, "predecessor": "ce95dbf3", "successor": "c37984b7", "predecessor_ending": 2977, "successor_ending": 3012},
+      {"adoption_sequence": 3011, "predecessor": "c37984b7", "successor": "b40bb0b6", "predecessor_ending": 3012, "successor_ending": "not reported"}
+    ],
+    "committed": "not established (the view is a projection of unauthenticated reports by design)"
+  },
+  "observations": [
+    "First production run of the watch path: a listed author citing the full digest was accepted 1.0 s after posting, and the rotation committed with a single-holder roles view.",
+    "Prediction failure: handoff v7 settled fact 11 and the run's --retire stop assumed the predecessor was a `claude --bg` root that the gate would stop once idle. At rotation time the predecessor was an interactive resumed process, so retire was refused. The gate's behavior was correct; the premise was wrong.",
+    "Consequence for the next rotation: the interactive process 385677 still carries session c37984b7 under display name claude-metrics. Per v7 fact 11, a loaded same-name session may make the next rotation refuse fail_role_ambiguous; that must be checked again before the next rotation (the gate's role match was not tested against this state).",
+    "The check that would have predicted this: read `claude agents --json --all` for the predecessor session before choosing --retire stop, and confirm its kind."
+  ],
+  "not_established": [
+    "Gate process exit code (detached).",
+    "Who launched the interactive --resume process 385677.",
+    "Whether the next rotation's role check treats the idle interactive c37984b7 row as ambiguous.",
+    "--retire stop against a background Claude predecessor on the production board: still untested, because this run's predecessor was interactive."
+  ]
+}
