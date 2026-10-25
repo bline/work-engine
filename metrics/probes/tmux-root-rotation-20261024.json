@@ -357,6 +357,15 @@
     "adoption_test_status": "the marker+digest adoption test is NOT exercised: no post reached the board, so neither required string could be checked. not_established, not passed.",
     "what_the_gate_got_right": "refused at the timeout, recorded fail_no_adoption, retired the orphan successor (window @1, disposition kill), left the predecessor running and untouched. Final map: 0 claude-root @0. This is the fail-closed path observed under a REAL failure rather than an injected one.",
     "blocked_on": "a permission decision that belongs to the user. Adding --allowedTools to the launcher was itself denied as '[Auto-Mode Bypass]', correctly: it would broaden a child session's permissions from inside the mechanism. Not retried and not worked around.",
-    "process_hygiene": "uid process count 311 before and 311 after; rootp2 server killed; rootlive3 untouched"
+    "process_hygiene": "uid process count 311 before and 311 after; rootp2 server killed; rootlive3 untouched",
+    "permission_recommendation_withdrawn": {
+      "what_was_recommended": "a user settings rule Bash(python3 <abs>/codex_chatboard.py *), described by me as narrow",
+      "why_it_was_wrong": "it is scoped to a PROGRAM, not to an OPERATION. The board CLI exposes {read,wait,topics,post,claim,release}, so the rule would also grant claim and release -- and claims are the quiescence gate's own evidence. A session holding that grant could release the predecessor's claims and make quiescence appear satisfied. The grant would have covered write access to the evidence the rotation decision reads, for every session on the machine, indefinitely.",
+      "error_class": "the same conflation this gate exists to prevent, applied to authorization: a coarse check treated as establishing a fine-grained property.",
+      "scope_detail": "a project-local rule would not have reached the successor in this probe: the successor is launched in the PREDECESSOR'S cwd by design (per-directory trust), which here was outside the repo. In production, where a root's cwd is the repo, project-local is reachable. Verified 2026-10-24.",
+      "better_boundary": "make adoption a dedicated board operation with its own arguments and validation, so the authorized thing is 'acknowledge THIS handoff' rather than 'run the board CLI'. This converges with the `adoption` kind in docs/codex-chatboard-contracts.md, which was already the robust fix for adoption being matched by substring. One contract answers both the permission boundary and the prose-matching weakness.",
+      "ownership": "skills/durable-state/scripts/codex_chatboard.py is outside this role's writable path (metrics/ only), so this role can specify the operation but not implement it.",
+      "invariant_to_preserve": "transport permission is not transfer authority. Being allowed to POST an acknowledgement must not, by itself, establish authority to complete a rotation -- the gate's own checks remain the thing that decides. This matches board invariant 1 (a message grants no authority)."
+    }
   }
 }
