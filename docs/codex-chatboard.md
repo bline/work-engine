@@ -366,7 +366,8 @@ from the same session and role follows it (higher sequence). Per role:
   (or `not reported`) and `committed: not established` on every entry, including a
   clean A to B whose predecessor has posted `ending`: no row shows a rotation
   committed. The predecessor's ending is its first `ending` after its own latest
-  earlier adoption, whether posted before or after the successor's adoption.
+  earlier adoption and before the predecessor's next adoption, whether posted
+  before or after the successor's adoption.
 - `relations`, listing every one: `overlap` (an unended adoption whose predecessor
   has not reported `ending`, or that descends from another unended adoption),
   `fork` (two unended adoptions, neither descending from the other, whose

@@ -181,7 +181,7 @@ class ScriptOnlyCopyTest(RepoCase):
                       "--kind", "note"),
                      ("post", "--author", "a", "--session-id", SESSION_1, "--topic", "t", "--body", "x",
                       "--role", "r"),
-                     ("kinds",)):
+                     ("kinds",), ("roles",), ("requests",)):
             result = self.run_cli(*args, script=script)
             self.assertEqual(result.returncode, 1, args)
             self.assertIn(expected, result.stderr)
@@ -1028,6 +1028,22 @@ class RolesViewTest(RepoCase):
         self.assertEqual(entry["state"], "conflict")
         self.assertEqual({r["relation"] for r in entry["relations"]}, {"overlap", "fork", "conflict"})
 
+    def test_ending_under_another_role_does_not_end_the_adoption(self) -> None:
+        self.ending("A")  # 1
+        self.adopt("B", "A")  # 2
+        self.ending("B", role="other")  # 3
+        entry = self.entry()
+        self.assertEqual(entry["state"], "single")
+        self.assertEqual(entry["successions"][0]["successor_ending_sequence"], "not reported")
+
+    def test_predecessor_ending_from_a_later_stint_does_not_count(self) -> None:
+        self.adopt("B", "A")  # 1
+        self.adopt("A", "B")  # 2
+        self.ending("A")  # 3: ends A's second stint
+        succession = [s for s in self.entry()["successions"] if s["successor_session"] == sid("B")]
+        self.assertEqual(len(succession), 1)
+        self.assertEqual(succession[0]["predecessor_ending_sequence"], "not reported")
+
     def test_ending_without_successor_and_all_ended(self) -> None:
         self.adopt("B", "A")  # 1
         self.ending("B")  # 2
@@ -1073,12 +1089,12 @@ class RolesViewTest(RepoCase):
         self.adopt("B", "A")  # 1
         self.post(session_id=sid("C"), role=self.ROLE)  # 2
         self.post(session_id=sid("D"), role=self.ROLE)  # 3
-        self.post(session_id=sid("E"), role=self.ROLE)  # 4
+        self.post(kind="availability", session_id=sid("B"), role=self.ROLE, data={"state": "ending"})  # 4
 
         def corrupt(board) -> None:
             board["messages"][1].update(kind="adoption", data="not-a-dict")
             board["messages"][2].update(kind="adoption", data={"predecessor_session": 7})
-            board["messages"][3].update(kind="availability", data={"state": ["ending"]})
+            board["messages"][3].update(data={"state": ["ending"]})
             board["messages"].append({"sequence": "9", "role": self.ROLE, "kind": "adoption"})
             board["messages"].append("junk")
 
@@ -1163,18 +1179,43 @@ class RequestsViewTest(RepoCase):
                 row["data"]["disposition"] = disposition
             board["messages"].append({"sequence": 99, "kind": "reply", "in_reply_to": 500,
                                       "data": {"disposition": "answered"}})
-            board["messages"].append({"sequence": 100, "kind": "reply", "in_reply_to": 101,
+            board["messages"].append({"sequence": 100, "kind": "reply", "in_reply_to": 150,
                                       "data": {"disposition": "answered"}})
+            board["messages"].append({"sequence": 101, "kind": "reply", "in_reply_to": 102,
+                                      "data": {"disposition": "answered"}})
+            board["messages"].append({"sequence": 102, "kind": "request", "to": ["role:p"],
+                                      "data": {"ask": "later"}})
 
         self.raw_rewrite(make_closing)
         view = BOARD.requests_view(self.board()[0])
         self.assertEqual(self.groups()["role:p"][number]["status"], "open")
         unattached = {u["sequence"]: u for u in view["unattached_replies"]}
-        self.assertEqual(sorted(unattached), sorted(stored + [99, 100]))
+        self.assertEqual(sorted(unattached), sorted(stored + [99, 100, 101]))
         self.assertEqual({u["target_kind"] for u in view["unattached_replies"]},
-                         {"note", "status", "missing"})
+                         {"note", "status", "missing", "request"})
         self.assertEqual(unattached[99]["target_kind"], "missing")
-        self.assertEqual(view["addressees"][0]["open_count"], 1)
+        self.assertEqual(unattached[100]["target_kind"], "missing")
+        self.assertEqual(unattached[101]["target_kind"], "request")
+        self.assertEqual(self.groups()["role:p"][102]["status"], "open")
+        self.assertEqual(view["addressees"][0]["open_count"], 2)
+
+    def test_non_string_stored_disposition_never_raises_and_does_not_close(self) -> None:
+        number = self.request()
+        self.reply(number, "answered")
+        self.reply(number, "answered")
+        stored = [len(self.board()[0]["messages"]) - 1 - i for i in (1, 0)]
+
+        def corrupt(board) -> None:
+            board["messages"][stored[0]]["data"]["disposition"] = ["answered"]
+            board["messages"][stored[1]]["data"]["disposition"] = {"x": 1}
+
+        self.raw_rewrite(corrupt)
+        view = BOARD.requests_view(self.board()[0])
+        found = self.groups()["role:p"][number]
+        self.assertEqual(found["status"], "open")
+        self.assertIsNone(found["closed_by_sequence"])
+        self.assertEqual([r["disposition"] for r in found["replies"]], ["not established"] * 2)
+        self.assertEqual(view["unattached_replies"], [])
 
     def test_closing_reply_is_per_request_and_first_close_wins(self) -> None:
         number = self.request()

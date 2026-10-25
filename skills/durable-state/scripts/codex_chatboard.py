@@ -809,7 +809,11 @@ def _role_entry(role: str, rows: list[dict[str, Any]], predecessor_path: str, st
     def predecessor_ending(adoption: dict[str, Any]) -> int | None:
         link = earlier_adoption(adoption["predecessor"], adoption["sequence"])
         floor = link["sequence"] if link else 0
-        later = [seq for seq in endings.get(adoption["predecessor"], []) if seq > floor]
+        # Bounded above by the predecessor's next adoption: a later stint's ending is not this one's.
+        ceiling = min((a["sequence"] for a in adoptions
+                       if a["session"] == adoption["predecessor"] and a["sequence"] > floor), default=None)
+        later = [seq for seq in endings.get(adoption["predecessor"], [])
+                 if seq > floor and (ceiling is None or seq < ceiling)]
         return min(later) if later else None
 
     def chain(adoption: dict[str, Any]) -> list[dict[str, Any]]:
@@ -923,7 +927,8 @@ def requests_view(board: dict[str, Any], *, to: str | None = None,
             and target in by_sequence and row_kind(by_sequence[target]) == "request"
         if kind == "reply":
             disposition = _lookup(row, disposition_path)
-            if disposition in closing and not attached:
+            is_closing = isinstance(disposition, str) and disposition in closing
+            if is_closing and not attached:
                 target_row = by_sequence.get(target) if _is_sequence(target) else None
                 unattached.append({"sequence": row["sequence"],
                                    "in_reply_to": target if _is_sequence(target) else None,
@@ -934,7 +939,7 @@ def requests_view(board: dict[str, Any], *, to: str | None = None,
                     {"sequence": row["sequence"],
                      "disposition": disposition if _is_text(disposition) else NOT_ESTABLISHED,
                      "session_id": row.get("session_id")})
-                if disposition in closing and target not in closed_by:
+                if is_closing and target not in closed_by:
                     closed_by[target] = {"sequence": row["sequence"], "disposition": disposition}
         elif kind == "receipt" and attached:
             receipts.setdefault(target, []).append({"sequence": row["sequence"], "session_id": row.get("session_id")})
