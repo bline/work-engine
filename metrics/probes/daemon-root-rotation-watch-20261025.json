@@ -1,0 +1,56 @@
+{
+  "probe": "daemon-root-rotation-watch-20261025",
+  "date": "2026-10-25",
+  "recorded_by": "claude-metrics c37984b7-8fc3-4962-8324-e4877af63a6d",
+  "question": "Does the gate's watch path accept a board-message approval live, reject an unlisted author, and commit a rotation from it?",
+  "gate": {
+    "skills/manual-orchestration/scripts/root_rotation.py": "2708c7bcaf4d5e02a629329a6141ab0015cfb9dbfa724f41e6c9b685ddba9d89",
+    "skills/manual-orchestration/scripts/role_host.py": "84c9fbd23ac7fbf6197442a3b849f8378ecc4c33948b149615cf64fb39029293",
+    "head": "1707c696823b0581411843b0e8a6b10cd9943d0d"
+  },
+  "setup": "scratch board /home/bline/cbm-work/watch-20261025/board, a cp -a copy of the X6 scratch board (cursor 5 at start; never the production board); role watch-probe-root; placeholder predecessor 9de4a982-0449-4e2e-923a-469d736b467a (no process); successor host claude, cwd /home/bline/code/work-engine; --gate-authority user:bline; --watch-timeout 900; --after-adopt stop; --retire keep; --detach; real handoff_validator; separate host ledger.",
+  "authority": {
+    "approval": "the user approved in chat ('please post it, I approve'); the claude-metrics session posted the approval message on their behalf",
+    "authenticated": "no. The board does not authenticate authors; the gate matched the author string user:bline. The approval's session_id is the posting session c37984b7, so the board itself shows which session posted it."
+  },
+  "board_messages": [
+    {"sequence": 6, "author": "claude-metrics", "session_id": "c37984b7", "body_has_token": true, "body_has_digest": true, "purpose": "negative control: unlisted author", "gate": "rejected: last-rejected-trigger = unauthorized message_id=0334ea0e-9a43-4a34-99cf-9fc09db23713 author=claude-metrics; watch continued"},
+    {"sequence": 7, "author": "user:bline", "session_id": "c37984b7", "message_id": "65a08c08-fb88-4d4c-bebe-6e7df8a6ab4c", "observed_at": "2026-10-25T22:44:57.660Z", "gate": "accepted at 22:44:57.694Z"},
+    {"sequence": 8, "purpose": "handoff post to session:8dffc360"},
+    {"sequence": 9, "purpose": "adoption by 8dffc360"},
+    {"sequence": 10, "purpose": "predecessor ending"}
+  ],
+  "result": {
+    "terminal_status": "committed_rotation_1",
+    "exit": "not established (detached)",
+    "successor": "claude 8dffc360-649a-469d-9f4c-5d7fd112853b",
+    "approval_post_to_accept_s": 0.033,
+    "accept_to_committed_s": 29.184,
+    "roles_view": "single; holder 8dffc360 at adoption 9; predecessor ending 10",
+    "successor_disposition": "adopted and went idle (after-adopt stop); retired afterwards with role_host retire -> stopped; claude agents shows state done, not loaded"
+  },
+  "findings": [
+    "watch met its intended behaviour live (n=1): unlisted author rejected without ending the watch; listed author with the full digest accepted; commit then ran the same path as a direct commit (validator, quiescence, launch, handoff, adoption, ending).",
+    "board post requires --session-id to be a UUID ('error: session_id must be a UUID'), so the gate's session_id branch of --gate-authority can only match UUIDs; a non-UUID approver name such as user:bline matches through author only."
+  ],
+  "not_established": [
+    "watch on the production board",
+    "an approval posted by a session other than the role's own coordinating session",
+    "unbound-trigger rejection (token without digest) live; covered by tests in 1707c696 only",
+    "watch_expired live"
+  ],
+  "evidence_dir": "/home/bline/cbm-work/watch-20261025",
+  "evidence_sha256": {
+    "gate/detached.log": "3c82ae7373429f83be65f02c63647ee3f4f86d4e518620b3109be19a8eb48569",
+    "gate/authorized-by": "e1fda25bb2fb82651b1cb33a0e59a708210bcd62f35661bc109e0483888ee80c",
+    "gate/last-rejected-trigger": "09d2f82d46c91b8770e2cf5543c810c61eed07b5ab408706c161159cf8f64f58",
+    "gate/watch-state": "bde6451d96b87b2741e30ba3d4deb69659d99f6149297fb0a95673e2f5f54187",
+    "gate/successor-identity": "f48d412cb51684f9dffb1635dc149e438e16f1a4a58c77d8248b53f1c9d160bc",
+    "gate/terminal-status": "bcb0f775261592ecc48d92e045a19953895eb07e402944eabbbbfc1f3a17ec6a",
+    "gate/validator.log": "31b134b3982d9a2676b661811aaeb685b10132bb0aaeffaf7fb79aca81b6d16a",
+    "gate/successor-prompt.txt": "7741e0719ac00996a8b74d0c1421f9dc3c7bf5e286cfaf4b3b95ce04553bed79",
+    "handoff.md": "d6dd4eff9d57bffc39e120a318d55c846686a34d67d43dc9b7f5cd8666b8ba31",
+    "quiescent": "af2604e044286216d03331b06cf2da2901d5eefbbf502fcaae60a6875453bba1",
+    "host/ledger.jsonl": "812685095b1b63e310f2b926956d064d036993380659553ccaa30ef6082f155a"
+  }
+}
