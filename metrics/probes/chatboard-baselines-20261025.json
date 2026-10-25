@@ -1,0 +1,261 @@
+{
+ "artifact_type": "chatboard_baselines_v1",
+ "baselines": [
+  {
+   "definition": "Transcripts with >=1 real (non --help) `post` invocation, and of those the ones with a --help invocation of any subcommand earlier in transcript order (line, idx). Variant counts a `post --help` as a post.",
+   "draft_figure": "103/104 Codex posters ran --help first",
+   "id": "posters_help_first.codex",
+   "label": "recomputed",
+   "recomputed": {
+    "posters": 104,
+    "ran_help_before_first_post": 103,
+    "variant_help_posts_count_as_posts": {
+     "posters": 111,
+     "ran_help_before_first_post": 58
+    }
+   },
+   "status": "draft figure compared"
+  },
+  {
+   "definition": "Board invocations with a --help/-h first argument (events); variant counts distinct tool calls.",
+   "draft_figure": 301,
+   "id": "help_calls.codex",
+   "label": "recomputed",
+   "recomputed": {
+    "distinct_tool_calls": 250,
+    "events": 301
+   },
+   "status": "draft figure compared"
+  },
+  {
+   "definition": "Transcripts with >=1 real (non --help) `post` invocation, and of those the ones with a --help invocation of any subcommand earlier in transcript order (line, idx). Variant counts a `post --help` as a post.",
+   "draft_figure": null,
+   "id": "posters_help_first.claude",
+   "label": "recomputed",
+   "recomputed": {
+    "posters": 11,
+    "ran_help_before_first_post": 7,
+    "variant_help_posts_count_as_posts": {
+     "posters": 11,
+     "ran_help_before_first_post": 4
+    }
+   },
+   "status": "no draft figure"
+  },
+  {
+   "definition": "Board invocations with a --help/-h first argument (events); variant counts distinct tool calls.",
+   "draft_figure": null,
+   "id": "help_calls.claude",
+   "label": "recomputed",
+   "recomputed": {
+    "distinct_tool_calls": 33,
+    "events": 37
+   },
+   "status": "no draft figure"
+  },
+  {
+   "definition": "Codex tool calls whose board invocations are all read/wait, none piped to python/jq, none a --help/-h invocation, with a recorded result, AND call_class == single_board_read (chatboard_board_use.call_class): exactly one tool invocation in the call, whose one shell command (shlex-tokenised; no ; && || | & < > ( ) token, no unquoted newline, so no heredoc, chain, cmds=[...] array or loop) is the board read, with the script only passing the result to text() unmodified (no JSON.parse/.map/.slice/... : that makes it a projection, class post_processed). Reported: median output_chars and count with a truncation marker (markers in chatboard_board_use.py). Calls the parser cannot decide (cmd not a plain literal, unrecognised wrapper, non-exec_command tool) are class unclassified:<reason>, excluded from the primary figure and counted in `unclassified_in_single_tool_call`. Variants: single_tool_call = exactly one tool invocation (call_tools == 1, the previous primary; its shell command may still chain others, 50 of its calls do and 2 post-process); all_batched_calls = any number of tool invocations per call, help calls included (result text may belong to co-batched commands, so it does NOT measure board reads); single_board_invocation = all_batched_calls restricted to one board invocation, help excluded. Whether the draft used the primary definition is not established.",
+   "draft_figure": "median 6,295 chars; 28/133 truncated",
+   "id": "codex_raw_read_calls",
+   "label": "recomputed",
+   "recomputed": {
+    "calls": 51,
+    "median_output_chars": 3773,
+    "truncated": 9,
+    "truncated_of": 51
+   },
+   "status": "draft figure compared",
+   "unclassified_in_single_tool_call": {
+    "unclassified:not_exec_command": 1,
+    "unclassified:unreadable_string": 1,
+    "unclassified:wrapper_shape": 1
+   },
+   "variants": {
+    "all_batched_calls": {
+     "calls": 764,
+     "median_output_chars": 14863.5,
+     "truncated": 280,
+     "truncated_of": 764
+    },
+    "single_board_invocation": {
+     "calls": 749,
+     "median_output_chars": 15136,
+     "truncated": 279,
+     "truncated_of": 749
+    },
+    "single_tool_call": {
+     "calls": 106,
+     "median_output_chars": 5893.0,
+     "truncated": 20,
+     "truncated_of": 106
+    }
+   }
+  },
+  {
+   "definition": "Same primary definition as codex_raw_read_calls over Claude transcripts: tool_use Bash whose input.command is one simple codex_chatboard.py command (same shlex rule, no JS wrapper). Non-Bash tools are unclassified. No draft figure.",
+   "draft_figure": null,
+   "id": "claude_raw_read_calls",
+   "label": "recomputed",
+   "recomputed": {
+    "calls": 3,
+    "median_output_chars": 414,
+    "truncated": 0,
+    "truncated_of": 3
+   },
+   "status": "no draft figure",
+   "unclassified_in_single_tool_call": {
+    "unclassified:shlex_error": 3
+   },
+   "variants": {
+    "all_batched_calls": {
+     "calls": 76,
+     "median_output_chars": 2151.5,
+     "truncated": 1,
+     "truncated_of": 76
+    },
+    "single_tool_call": {
+     "calls": 70,
+     "median_output_chars": 1995.5,
+     "truncated": 1,
+     "truncated_of": 70
+    }
+   }
+  },
+  {
+   "definition": "chatboard_reader_parsers.py (original regexes): read/wait invocations and those piped to python/jq.",
+   "draft_figure": "13/826",
+   "id": "reader_parsers.codex",
+   "label": "recomputed (original regexes, frozen inputs)",
+   "recomputed": {
+    "piped_to_formatter": 13,
+    "read_wait": 826,
+    "searches_body_text": 0
+   },
+   "status": "draft figure compared"
+  },
+  {
+   "definition": "chatboard_reader_parsers.py (original regexes): read/wait invocations and those piped to python/jq.",
+   "draft_figure": "87/178 (grown inputs gave 88/179)",
+   "id": "reader_parsers.claude",
+   "label": "recomputed (original regexes, frozen inputs)",
+   "recomputed": {
+    "piped_to_formatter": 90,
+    "read_wait": 181,
+    "searches_body_text": 4
+   },
+   "status": "draft figure compared"
+  },
+  {
+   "definition": "Board messages whose body matches RE_NO_EFFECT: \\bno (?:new )?(?:authority|effects?|shared writes?|external actions?|live (?:action|provider|calls?|writes?))\\b|\\bgrants? (?:no|nothing)\\b|\\bnot an? (?:authority|grant)\\b|\\bno-(?:authority|effect)\\b (case-insensitive). Known misses (reviewer sample, n = 5): seq 1270, 1259, 398 (effect declarations the pattern does not cover).",
+   "draft_figure": "88 posts (draft l.35)",
+   "id": "no_effect_posts",
+   "label": "recomputed",
+   "of_messages": 2881,
+   "recomputed": 55,
+   "status": "draft figure compared",
+   "variants": {
+    "sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 53
+    }
+   }
+  },
+  {
+   "definition": "Board messages whose body matches /ENDS availability/ (flags I).",
+   "draft_figure": "24 (draft l.32-34)",
+   "id": "succession_ends_availability",
+   "label": "recomputed",
+   "of_messages": 2881,
+   "recomputed": 26,
+   "status": "draft figure compared",
+   "variants": {
+    "case_sensitive": {
+     "of_messages": 2881,
+     "value": 19
+    },
+    "case_sensitive_sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 19
+    },
+    "sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 24
+    }
+   }
+  },
+  {
+   "definition": "Board messages whose body matches /handoff[^\\n]{0,120}?\\b[0-9a-f]{12,64}\\b/ (flags I). Rule: word-bounded hex run of 12-64 characters within 120 characters after 'handoff'; the count is sensitive to this rule (see variants; the loose 8-64 variant also admits short and unbounded hashes).",
+   "draft_figure": "48 (draft l.32-34)",
+   "id": "succession_handoff_hash",
+   "label": "recomputed",
+   "of_messages": 2881,
+   "recomputed": 32,
+   "status": "draft figure compared",
+   "variants": {
+    "loose_hex_8_64_no_leading_word_boundary": {
+     "of_messages": 2881,
+     "value": 135
+    },
+    "loose_hex_8_64_no_leading_word_boundary_sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 129
+    },
+    "sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 32
+    }
+   }
+  },
+  {
+   "definition": "Board messages whose body matches /\\bclaims?\\b[^\\n]{0,60}\\b(?:released|reclaimed|reclaim)\\b|\\b(?:released|reclaimed|releases)\\b[^\\n]{0,40}\\bclaims?\\b/ (flags I). Known miss (reviewer sample, n = 5): seq 1270 'Releasing planning claim'.",
+   "draft_figure": "69 (draft l.32-34)",
+   "id": "succession_claims_released",
+   "label": "recomputed",
+   "of_messages": 2881,
+   "recomputed": 134,
+   "status": "draft figure compared",
+   "variants": {
+    "sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 131
+    }
+   }
+  },
+  {
+   "definition": "Distinct `author` strings over frozen board messages.",
+   "draft_figure": "335 over 2,871 messages (draft l.29)",
+   "id": "distinct_authors",
+   "label": "recomputed",
+   "of_messages": 2881,
+   "recomputed": 341,
+   "status": "draft figure compared",
+   "variants": {
+    "sequence_le_2871": {
+     "of_messages": 2871,
+     "value": 335
+    }
+   }
+  },
+  {
+   "definition": "See chatboard_contract_uptake.resolvable(): messages with in_reply_to/supersedes naming an existing earlier sequence, over the frozen board.",
+   "draft_figure": "0 (draft l.243)",
+   "id": "resolvable_references",
+   "label": "recomputed",
+   "recomputed": {
+    "messages_with_references_entry_that_is_a_sequence_number": 0,
+    "messages_with_resolvable_in_reply_to_or_supersedes": 0,
+    "prose_reply_or_correction_candidates_by_RE_REPLY_PROSE": 23
+   },
+   "status": "draft figure compared",
+   "variants": {
+    "sequence_le_2871": {
+     "messages_with_references_entry_that_is_a_sequence_number": 0,
+     "messages_with_resolvable_in_reply_to_or_supersedes": 0,
+     "prose_reply_or_correction_candidates_by_RE_REPLY_PROSE": 23
+    }
+   }
+  }
+ ],
+ "board_live_adapter_crosscheck_matches_frozen": true,
+ "freeze_sha256": "4912fecf9dc73b9b215b1097159b9baf5dfe56a72532d472ecb1dd68db28d675"
+}

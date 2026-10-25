@@ -1,0 +1,1793 @@
+{
+ "artifact_type": "chatboard_baseline_inputs_v1",
+ "board": {
+  "count": 2881,
+  "digest_rule": "sha256 of json.dumps(messages with sequence<=max_sequence, sort_keys=True, ensure_ascii=False)",
+  "max_sequence": 2881,
+  "read_through": "GitRefDurableStateStore.read_revision(work-engine/codex-chatboard/v1, store_revision) + codex_chatboard.decode (git ref store, namespace codex-chatboard); live adapter read is a cross-check only",
+  "sha256": "14f5f98d40de706b8a3617a8b42bb57db2472e9b1bc5d13f284f0adbc9327bcf",
+  "store_revision": "cf1e9b6ec961a132cdc221863bc4ae115c69e74f"
+ },
+ "copied_scripts": [
+  {
+   "lines": 120,
+   "name": "extract_board_use.py",
+   "sha256": "cc602321705d42c85696cdbc2675d1513ac58cbbd45db1e357291a5b71b43d39",
+   "source": "/home/bline/.local/state/work-engine/chatboard-contracts-plan-20261024/evidence/extract_board_use.py"
+  },
+  {
+   "lines": 34,
+   "name": "reader_parsers.py",
+   "sha256": "f6ee651e4c6be3eac5f06668652bd94900a8664bf31512a9650fb7c9a0afc9a1",
+   "source": "/home/bline/.local/state/work-engine/chatboard-contracts-plan-20261024/evidence/reader_parsers.py"
+  }
+ ],
+ "frozen_by": "chatboard_baselines.py freeze",
+ "line_rule": "a file's frozen prefix is its first `lines` newline-terminated lines; `sha256`/`bytes` describe that prefix",
+ "listing_files": [
+  {
+   "lines": 29,
+   "name": "claude-logs.txt",
+   "sha256": "0694effaaa27fbcf05066abe34f545922b33f4c7158fdb410fccc24422c7a4d5"
+  },
+  {
+   "lines": 188,
+   "name": "codex-logs.txt",
+   "sha256": "006a10fa5ad878740646d65e3eca008c184d4ba9b654b9e660f6b5a18692861a"
+  }
+ ],
+ "original_event_files": [
+  {
+   "lines": 405,
+   "name": "claude-events.jsonl",
+   "sha256": "6800f2d046c19e80b076f4e4c29248415be6f87dcdf3fdb4af9462b34ffecdb9"
+  },
+  {
+   "lines": 1860,
+   "name": "codex-events.jsonl",
+   "sha256": "af30cf8fc876ebb2b187cbcdf6bcb6d33228ef9e7517d7079a2c16bf152da8cb"
+  }
+ ],
+ "plan": {
+  "path": "planning/chatboard-message-contracts-implementation-plan.md",
+  "sha256": "d14a0084ec4aa323b965a09b74d144b9c22be9cdd6c5a682f06796d6c5556bb8"
+ },
+ "transcripts": [
+  {
+   "bytes": 2017769,
+   "file_bytes_at_freeze": 2017769,
+   "host": "claude",
+   "lines": 684,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/078cd138-96be-46cb-ac48-3c353e2b357e.jsonl",
+   "sha256": "1ac1f8f6bfc2de4a78d6d19addeb58d96abab20f1e354fae625f611331e349ed"
+  },
+  {
+   "bytes": 2130126,
+   "file_bytes_at_freeze": 2130126,
+   "host": "claude",
+   "lines": 540,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/120c2949-b2f9-4e61-bb1e-5ef2e66842b6.jsonl",
+   "sha256": "0caac24c4799d29b30c1a616060896b1485fc72714bc57871f5740b0ad3820d8"
+  },
+  {
+   "bytes": 746452,
+   "file_bytes_at_freeze": 746452,
+   "host": "claude",
+   "lines": 154,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/1a4acf58-3700-4e16-9935-8628e6021746.jsonl",
+   "sha256": "49d5e54c23c316adf7c7f9358b74a7b6eb2a9dbeebfcb053142389cbe19c8664"
+  },
+  {
+   "bytes": 1218251,
+   "file_bytes_at_freeze": 1218251,
+   "host": "claude",
+   "lines": 397,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/26e8ee40-b2e5-43a8-bd1b-26137f1ff289.jsonl",
+   "sha256": "08c26bc629a08199c9ed9e053133400ad8975be1fbf653803d02a8d3e87f83a7"
+  },
+  {
+   "bytes": 10438416,
+   "file_bytes_at_freeze": 10438416,
+   "host": "claude",
+   "lines": 3882,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/32858989-08d1-4a5d-93ca-85968445e794.jsonl",
+   "sha256": "60a0b6d14e9f59d3114fba14f62e27400138b3c95421f64b4e59a21f41eeb7dd"
+  },
+  {
+   "bytes": 829729,
+   "file_bytes_at_freeze": 829729,
+   "host": "claude",
+   "lines": 141,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/32858989-08d1-4a5d-93ca-85968445e794/subagents/agent-a967b3a3b9f6322ae.jsonl",
+   "sha256": "5c287e50f123296e0730615ea909023d1db255a93e4141188d9c8fa93b5d0bc4"
+  },
+  {
+   "bytes": 2545130,
+   "file_bytes_at_freeze": 2545130,
+   "host": "claude",
+   "lines": 836,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/41739770-99bf-47b3-a517-4261eb33d3b5.jsonl",
+   "sha256": "963a6da851e931e70091335b16232b47a1bfc8a242b5ea0b761c5c6ce359d1c4"
+  },
+  {
+   "bytes": 1838418,
+   "file_bytes_at_freeze": 1838418,
+   "host": "claude",
+   "lines": 606,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/4d444dde-c8e9-4b1d-9344-d32d3ddc7d25.jsonl",
+   "sha256": "5005dbb54e2ace0f79a08ebeb45ff317bb5a1944b67e0e531e52d16f2e299fa2"
+  },
+  {
+   "bytes": 3582155,
+   "file_bytes_at_freeze": 3582155,
+   "host": "claude",
+   "lines": 1367,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/4e3477dc-bc5e-4e1e-b702-896ab757211b.jsonl",
+   "sha256": "6f34d05951ee23d4e9a63e7f95906b15e6e78682ff5dd2a63e2742d17ebb2cb5"
+  },
+  {
+   "bytes": 1188974,
+   "file_bytes_at_freeze": 1188974,
+   "host": "claude",
+   "lines": 282,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/6a5c85b6-a30a-4ca3-8941-ac4ef67a6fef.jsonl",
+   "sha256": "13665d2aa08317ad02102e8c1ec4fa12432a9655a012616354da66ca1675c173"
+  },
+  {
+   "bytes": 14953848,
+   "file_bytes_at_freeze": 14953848,
+   "host": "claude",
+   "lines": 5867,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/8123ecac-f04c-4c1a-b4b3-475301f2b8c3.jsonl",
+   "sha256": "f3d7688fbb242a1df40081611aec77abc186466afab6b48e46f055543276bbe9"
+  },
+  {
+   "bytes": 1893670,
+   "file_bytes_at_freeze": 1893670,
+   "host": "claude",
+   "lines": 499,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/accb0998-becf-4a0a-80c1-ce46b5bc9d51.jsonl",
+   "sha256": "a9fe22a49a5299172e4203e3264f10ddd947991d578786dccb18b47d4d9cb311"
+  },
+  {
+   "bytes": 853725,
+   "file_bytes_at_freeze": 853725,
+   "host": "claude",
+   "lines": 225,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/accb0998-becf-4a0a-80c1-ce46b5bc9d51/subagents/agent-a4e93b45ae76466dc.jsonl",
+   "sha256": "eff068db0a391f426e1ef13b8833b82880b83f9d3679623b01525e82c73aa4f4"
+  },
+  {
+   "bytes": 7297048,
+   "file_bytes_at_freeze": 7297048,
+   "host": "claude",
+   "lines": 2990,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/bf60b4c1-34d1-4900-bbe0-15042efb0e2c.jsonl",
+   "sha256": "c1b89d850d0496ad246d6e193971adb702e92c499d4735ec78d23ae0fbe0cf23"
+  },
+  {
+   "bytes": 7054271,
+   "file_bytes_at_freeze": 7054271,
+   "host": "claude",
+   "lines": 3385,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2.jsonl",
+   "sha256": "b86eca871dbadd40fc1ac9b3ebeec5badc54e388d1e5855da48c3745aa4c5785"
+  },
+  {
+   "bytes": 1070211,
+   "file_bytes_at_freeze": 1070211,
+   "host": "claude",
+   "lines": 310,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-a05898f306b03921e.jsonl",
+   "sha256": "c6a06c277cc836512e1ff7a0fb668c07e8722ba9c6dde69f81133a4ed5c76d36"
+  },
+  {
+   "bytes": 1494214,
+   "file_bytes_at_freeze": 1494214,
+   "host": "claude",
+   "lines": 292,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-a4753525221f23204.jsonl",
+   "sha256": "69d7f528f5e6bbfba8e1d8085744ffc6d8d93c4226ed39ed7c055db0b745e05c"
+  },
+  {
+   "bytes": 1514510,
+   "file_bytes_at_freeze": 1514510,
+   "host": "claude",
+   "lines": 359,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-a6d8a16f300c0a71d.jsonl",
+   "sha256": "fa139e827ffd2ac3e2598b28ce65119e5f9c4c01dc1f23af167db5690e9ac5e8"
+  },
+  {
+   "bytes": 1551003,
+   "file_bytes_at_freeze": 1551003,
+   "host": "claude",
+   "lines": 388,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-a74f07e00db29f8e0.jsonl",
+   "sha256": "ce267b0865f4f5c0d6751c48ee5c834da83f5f58e055168225d79c20706c7ca6"
+  },
+  {
+   "bytes": 1336814,
+   "file_bytes_at_freeze": 1336814,
+   "host": "claude",
+   "lines": 277,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-a8b36f8b30274b385.jsonl",
+   "sha256": "bff53b766e07047025bb5e6a0a2d7c6093475c8ff5be1fc3a5d9f03604426197"
+  },
+  {
+   "bytes": 1340979,
+   "file_bytes_at_freeze": 1340979,
+   "host": "claude",
+   "lines": 267,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-aa725a9ba777a9a84.jsonl",
+   "sha256": "cc5af4036270b5cf23e7c038602957804e0fe4762d36a7965e265bad7b893d9b"
+  },
+  {
+   "bytes": 1198144,
+   "file_bytes_at_freeze": 1198144,
+   "host": "claude",
+   "lines": 229,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-aadb6580f07cb9ec0.jsonl",
+   "sha256": "1a2ec05e56650de60cd8fd84316a9bfd18a44bfa42b72e948fb49c7c32375667"
+  },
+  {
+   "bytes": 857512,
+   "file_bytes_at_freeze": 857512,
+   "host": "claude",
+   "lines": 204,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-acb31e14270ea4721.jsonl",
+   "sha256": "812155c286a403fc6790f0ce20a443519bdeff49c79ba2db86a1ebba86cdcf8a"
+  },
+  {
+   "bytes": 1121891,
+   "file_bytes_at_freeze": 1121891,
+   "host": "claude",
+   "lines": 281,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-acff6f62c6078c24b.jsonl",
+   "sha256": "756be29853d22755ae18a5835a6ddd77f1e0ff137fcc24214ba0051725e03001"
+  },
+  {
+   "bytes": 1633142,
+   "file_bytes_at_freeze": 1633142,
+   "host": "claude",
+   "lines": 427,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-ad67ff1b4318eee35.jsonl",
+   "sha256": "8dc5fdf77ca852f679ad55dcfa0dbbae64a9b76722ed78d1c2a9fb785e8f4e0f"
+  },
+  {
+   "bytes": 1347606,
+   "file_bytes_at_freeze": 1347606,
+   "host": "claude",
+   "lines": 464,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/c1d31e88-2169-456f-8673-e29f643e9fb2/subagents/agent-ae2dc4bb9025146aa.jsonl",
+   "sha256": "fac145928517b900b8780ce614a9ef84950d3d5031b804749ba957835d0fadb5"
+  },
+  {
+   "bytes": 876913,
+   "file_bytes_at_freeze": 876913,
+   "host": "claude",
+   "lines": 203,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/dc07c299-eb6c-4cc8-a66c-5ccf16a39e06.jsonl",
+   "sha256": "777f2455134bb8b9c3baeeb75a2767deee7e3059a3c531bf364db2acb2f96415"
+  },
+  {
+   "bytes": 178758123,
+   "file_bytes_at_freeze": 178758123,
+   "host": "claude",
+   "lines": 29241,
+   "path": "/home/bline/.claude/projects/-home-bline-code-work-engine/e702a3e4-eb8d-4690-8383-20dbf35b2850.jsonl",
+   "sha256": "3d33f1b4f361138896c75b8161c4471e3e5aea4a278f4b1cd5646c2b45e733ae"
+  },
+  {
+   "bytes": 321879,
+   "file_bytes_at_freeze": 321879,
+   "host": "claude",
+   "lines": 103,
+   "path": "/home/bline/.claude/projects/-home-bline--local-state-work-engine-context-control-remediation-20261024-live-remediation-01-workspace/95c3f90a-9b37-4268-b1c9-1d38970086b7.jsonl",
+   "sha256": "44ae4566e110585fa9d5e25ca730ecaf5b050c4c457f5cda0b507c702ec55c31"
+  },
+  {
+   "bytes": 14265966,
+   "file_bytes_at_freeze": 14265966,
+   "host": "codex",
+   "lines": 6626,
+   "path": "/home/bline/.codex/sessions/2026/10/20/rollout-2026-10-20T17-09-05-01a15b93-56c2-74f1-8c97-e471f81bc6e2.jsonl",
+   "sha256": "a7d7235f4122d12fe98b60632835473d2178f419a91608dd2b8a6de50f0c6993"
+  },
+  {
+   "bytes": 9011749,
+   "file_bytes_at_freeze": 9011749,
+   "host": "codex",
+   "lines": 6913,
+   "path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T08-56-41-01a15ef6-e6e1-7fb0-a6de-ec4868d3f075.jsonl",
+   "sha256": "3e7df9f105f0343d7eae12b7eca5eb8a5c354e30735eb1919f151433d85bc486"
+  },
+  {
+   "bytes": 12082481,
+   "file_bytes_at_freeze": 12082481,
+   "host": "codex",
+   "lines": 3755,
+   "path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T09-09-32-01a15f02-a935-7683-a849-9e919aecfe3c.jsonl",
+   "sha256": "ae0f88ee656d9c0f58926b04718232ec3012356dfbabc7a63dc33cce8bae5c7f"
+  },
+  {
+   "bytes": 1917802,
+   "file_bytes_at_freeze": 1917802,
+   "host": "codex",
+   "lines": 676,
+   "path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T16-00-34-01a1607a-f7fb-7971-a1be-ea34a32d6006.jsonl",
+   "sha256": "39503e8bcccf42b8fc0fa8b5b9b27d57825d96ccf6fb408dc4d8c93df4ee3f82"
+  },
+  {
+   "bytes": 3878405,
+   "file_bytes_at_freeze": 3878405,
+   "host": "codex",
+   "lines": 1682,
+   "path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T16-02-20-01a1607c-9904-7b90-b5db-d5b3db552a1e.jsonl",
+   "sha256": "6a59ba3c4878a23639633ba15b6a12cfb31db4cff10322965b8a0362e76064c3"
+  },
+  {
+   "bytes": 1432145,
+   "file_bytes_at_freeze": 1432145,
+   "host": "codex",
+   "lines": 254,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-08-41-01a164cd-093b-7c92-9060-7389e7a31a15.jsonl",
+   "sha256": "a7a2d475eb8f56d5acd33879dbcaedcc091a8c6a29f8157c805152f1e898b268"
+  },
+  {
+   "bytes": 3641324,
+   "file_bytes_at_freeze": 3641324,
+   "host": "codex",
+   "lines": 1830,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-08-59-01a164cd-51ea-7b83-8b51-7849b060770f.jsonl",
+   "sha256": "0c011ac26189408bebcdad569af23ed8b89a7d969cc8ff083b3cdcae3632ac81"
+  },
+  {
+   "bytes": 870084,
+   "file_bytes_at_freeze": 870084,
+   "host": "codex",
+   "lines": 213,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-10-27-01a164ce-a976-7720-9831-92d8c40382a0.jsonl",
+   "sha256": "42c38facdb3415a8b9d7bcb07182ed7d957ca0aa6f58375b25bfd9054b38d582"
+  },
+  {
+   "bytes": 1219310,
+   "file_bytes_at_freeze": 1219310,
+   "host": "codex",
+   "lines": 262,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-10-32-01a164ce-bb69-7460-ae76-5367fa4e92bf.jsonl",
+   "sha256": "e17e1165f939d578863f2af436cb09e563e3912493d17db85693b00c3ac94130"
+  },
+  {
+   "bytes": 1696360,
+   "file_bytes_at_freeze": 1696360,
+   "host": "codex",
+   "lines": 465,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-16-23-01a164d4-15e9-73a1-aade-b73cafb90cc4.jsonl",
+   "sha256": "8d722eadf0be5280e9592e3c5088ec58a5df3a6861685caa95205c2e1d2f631a"
+  },
+  {
+   "bytes": 910504,
+   "file_bytes_at_freeze": 910504,
+   "host": "codex",
+   "lines": 249,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-19-39-01a164d7-1448-7c73-8ec3-693b9c8b0ec1.jsonl",
+   "sha256": "b514024d46119aa8f200cc80b5358ddca787d77456abaccfedeaa2b80090d842"
+  },
+  {
+   "bytes": 1914304,
+   "file_bytes_at_freeze": 1914304,
+   "host": "codex",
+   "lines": 617,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-33-08-01a164e3-6abc-7c02-aae2-39db1add08e9.jsonl",
+   "sha256": "10fa94611893b4035a8fed530d45fa3c66c16a50f10a44cd44cd9b07a3fe409c"
+  },
+  {
+   "bytes": 2044385,
+   "file_bytes_at_freeze": 2044385,
+   "host": "codex",
+   "lines": 296,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T12-43-46-01a164ed-27b2-72d0-9189-e4529c69f43b.jsonl",
+   "sha256": "765f26003e086b5b0b1493b080aab2a1bfd2c8034adb6753a18d4dcdaadc0a60"
+  },
+  {
+   "bytes": 1728529,
+   "file_bytes_at_freeze": 1728529,
+   "host": "codex",
+   "lines": 619,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-05-49-01a16538-4895-76c3-8c13-27ba3ca0115b.jsonl",
+   "sha256": "d7bd9a1b47b858e00fc691105a465c1e26ff390d09a6b9055dc2d8a42c1118f4"
+  },
+  {
+   "bytes": 1226048,
+   "file_bytes_at_freeze": 1226048,
+   "host": "codex",
+   "lines": 633,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-08-04-01a1653a-5806-7121-907f-068e5de02f37.jsonl",
+   "sha256": "69ba8e3825210a16f6ce1eb59e96c2eaee81e16eaf06cbba2d51498892587661"
+  },
+  {
+   "bytes": 1730407,
+   "file_bytes_at_freeze": 1730407,
+   "host": "codex",
+   "lines": 866,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-08-48-01a1653b-0329-7772-b1c7-d28aaf9f39e3.jsonl",
+   "sha256": "0926ae5a576c42a0b536da5dcd1d312ec0623ab9061a7a2e3f1c5491e106b969"
+  },
+  {
+   "bytes": 4772679,
+   "file_bytes_at_freeze": 4772679,
+   "host": "codex",
+   "lines": 1678,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-09-07-01a1653b-4e1e-7581-8557-e16c21cb85bb.jsonl",
+   "sha256": "46fe4430ab652208819413994e91d722f328c20903c985bc1d52b795ccd43516"
+  },
+  {
+   "bytes": 1645782,
+   "file_bytes_at_freeze": 1645782,
+   "host": "codex",
+   "lines": 573,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-12-10-01a1653e-1801-7c33-927e-d20a328cb219.jsonl",
+   "sha256": "14b3eaff6f0c9b77ee1b4c5aed435c8f5acc0f74d8c73e80a0490886c379194e"
+  },
+  {
+   "bytes": 1038482,
+   "file_bytes_at_freeze": 1038482,
+   "host": "codex",
+   "lines": 287,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-12-40-01a1653e-8b97-7852-be33-508ba5d1fac1.jsonl",
+   "sha256": "81db591d1f27b44e416d2f58861bf652ebb0e5565e0b420c60b963d984555869"
+  },
+  {
+   "bytes": 1489312,
+   "file_bytes_at_freeze": 1489312,
+   "host": "codex",
+   "lines": 609,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-14-52-01a16540-90ca-7f82-b38f-2ffe5cddbfed.jsonl",
+   "sha256": "bd52a8f228f62d83171a2dda2fb33ebc623b98493f862537ad6c26f881c74628"
+  },
+  {
+   "bytes": 1535926,
+   "file_bytes_at_freeze": 1535926,
+   "host": "codex",
+   "lines": 335,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-23-14-01a16548-37ad-7c52-9d01-4bf6a0aae82a.jsonl",
+   "sha256": "712a9061ee829c3e48784a31f9113ddded28a007a2317e5a9d8b159a39657e6e"
+  },
+  {
+   "bytes": 951027,
+   "file_bytes_at_freeze": 951027,
+   "host": "codex",
+   "lines": 315,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-23-31-01a16548-7b5c-7f21-bb37-798525ffe8d8.jsonl",
+   "sha256": "574f4d967530a4fe2e8b2edb23c298e432c003f020710654b19144b0d6a4eaa9"
+  },
+  {
+   "bytes": 1704476,
+   "file_bytes_at_freeze": 1704476,
+   "host": "codex",
+   "lines": 660,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-31-49-01a16550-1544-7d33-bf26-56a03787785f.jsonl",
+   "sha256": "a58da28f852f43d659c023ba360acfbf18a1341dee21537c4f8296a800dfd2ca"
+  },
+  {
+   "bytes": 1065139,
+   "file_bytes_at_freeze": 1065139,
+   "host": "codex",
+   "lines": 289,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-32-14-01a16550-77fd-7ef2-bb3a-c705f95ae601.jsonl",
+   "sha256": "1f6c5d1e7c1389bdc1b3ca2c84846eaf1db9e9bf0c86419c5bf66c1c3cb47e74"
+  },
+  {
+   "bytes": 1413805,
+   "file_bytes_at_freeze": 1413805,
+   "host": "codex",
+   "lines": 501,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-35-20-01a16553-4c8e-7b62-a692-7b343264c548.jsonl",
+   "sha256": "bb6607ac2ae876681fc66f0468f9b49058e4af8ff47aeedc2e788c742eef5159"
+  },
+  {
+   "bytes": 1977674,
+   "file_bytes_at_freeze": 1977674,
+   "host": "codex",
+   "lines": 293,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-35-59-01a16553-e693-79d2-92b6-8461bbf1142f.jsonl",
+   "sha256": "c2a01d7e9735f5bd1c24efdea966329d4275838659f66c513cbee516f5504e49"
+  },
+  {
+   "bytes": 1037759,
+   "file_bytes_at_freeze": 1037759,
+   "host": "codex",
+   "lines": 168,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-50-51-01a16561-811d-7fc3-8680-71243f2702f8.jsonl",
+   "sha256": "1c413df47548d755d08ce4b352387fd1498e6d08b959eee77c0046c70bfe13cd"
+  },
+  {
+   "bytes": 3178816,
+   "file_bytes_at_freeze": 3178816,
+   "host": "codex",
+   "lines": 484,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-52-11-01a16562-b87a-76a1-a66d-b008f381e171.jsonl",
+   "sha256": "3fab65b6ec8260164cae05f11fb5f28aeb2d2ae3f35e2787e9aeb45660c7d25a"
+  },
+  {
+   "bytes": 1922450,
+   "file_bytes_at_freeze": 1922450,
+   "host": "codex",
+   "lines": 731,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-56-07-01a16566-549e-71f3-934a-f89da0dc52a3.jsonl",
+   "sha256": "ac9b2798f8e03bdd2139013b43db6063282ffb269032a3adddce5227da20e2f3"
+  },
+  {
+   "bytes": 1125956,
+   "file_bytes_at_freeze": 1125956,
+   "host": "codex",
+   "lines": 249,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T14-56-33-01a16566-bb0e-7271-98df-bf0bd248185a.jsonl",
+   "sha256": "806b214313541596d8918fe429ed5eed4c50774939e3cb013e54e4f09d8ce77f"
+  },
+  {
+   "bytes": 1525882,
+   "file_bytes_at_freeze": 1525882,
+   "host": "codex",
+   "lines": 305,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T15-02-40-01a1656c-521f-7501-8993-a435c22e458c.jsonl",
+   "sha256": "650c6c4ba0c85c963a73020547698259e216e999888052b87db6f097d088ed2d"
+  },
+  {
+   "bytes": 740769,
+   "file_bytes_at_freeze": 740769,
+   "host": "codex",
+   "lines": 131,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T15-20-25-01a1657c-943b-7e42-8d79-2841b7ebd134.jsonl",
+   "sha256": "a2036ff9ebc9eab349ffea2a18b036b951907189c80960484fe6447825ecdc7f"
+  },
+  {
+   "bytes": 1631865,
+   "file_bytes_at_freeze": 1631865,
+   "host": "codex",
+   "lines": 487,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T16-54-49-01a165d3-0203-7521-9924-fd0cbb6c60a6.jsonl",
+   "sha256": "acb6c4628db203ce4d084f09daa7ad44e92ed459b238ee9700a19e5378d303cb"
+  },
+  {
+   "bytes": 1648945,
+   "file_bytes_at_freeze": 1648945,
+   "host": "codex",
+   "lines": 676,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T16-57-06-01a165d5-16eb-7a32-9796-d831f3dc4ced.jsonl",
+   "sha256": "9bbe3acac1d8f85bc1e14da57d11f078c3ac67270916549a122b0b47d9960b72"
+  },
+  {
+   "bytes": 1308106,
+   "file_bytes_at_freeze": 1308106,
+   "host": "codex",
+   "lines": 380,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T16-57-29-01a165d5-6fcb-7810-984f-3102f4edd773.jsonl",
+   "sha256": "10ad5be72fa51c1813fd4b6e2af090a1263adc59a0b4675d6e456a9c48e56975"
+  },
+  {
+   "bytes": 1554071,
+   "file_bytes_at_freeze": 1554071,
+   "host": "codex",
+   "lines": 259,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T16-58-08-01a165d6-0a98-7393-8903-3684c5116e4d.jsonl",
+   "sha256": "f67b3361e1d11102de177f41e42f0b11262bcee5d24ec239f1829d7f02921bc8"
+  },
+  {
+   "bytes": 1423448,
+   "file_bytes_at_freeze": 1423448,
+   "host": "codex",
+   "lines": 324,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T17-01-26-01a165d9-0fcd-7f20-b33e-1a3e17840b89.jsonl",
+   "sha256": "465888e069ff369ebf9e66c3dc4aa5e36546ab4ba6d7165aa25e554e790179d4"
+  },
+  {
+   "bytes": 1292729,
+   "file_bytes_at_freeze": 1292729,
+   "host": "codex",
+   "lines": 238,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T17-10-15-01a165e1-20cd-75e3-95a7-6024063cfd91.jsonl",
+   "sha256": "8d6361698a2562dd49a8ff630e9dc5ba7773beca3412b673fcf9e6efd52ad81d"
+  },
+  {
+   "bytes": 906888,
+   "file_bytes_at_freeze": 906888,
+   "host": "codex",
+   "lines": 326,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T17-20-53-01a165ea-dc47-7b53-9051-123d6ffb7f5e.jsonl",
+   "sha256": "14c84fbe83e46d44cacc2410d8de8739b37b07d005cfc4cb1c44d79dbc2d84fb"
+  },
+  {
+   "bytes": 688882,
+   "file_bytes_at_freeze": 688882,
+   "host": "codex",
+   "lines": 112,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T17-23-27-01a165ed-37c0-7f20-9d09-620cc13c81b8.jsonl",
+   "sha256": "622df8b587006b7c937ba1eeeefd6cd4a33e8bd84cdf2c02d39b245baf2fd20c"
+  },
+  {
+   "bytes": 1685928,
+   "file_bytes_at_freeze": 1685928,
+   "host": "codex",
+   "lines": 439,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-12-35-01a16651-233b-7110-9024-27339531a83b.jsonl",
+   "sha256": "7e45a7980b24f9ac09c6ba97bc782e4325d9f4fb8ba23e2c50089d5ee25b90b5"
+  },
+  {
+   "bytes": 2027756,
+   "file_bytes_at_freeze": 2027756,
+   "host": "codex",
+   "lines": 672,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-15-01-01a16653-5dd2-7d83-89d3-b08f421612a6.jsonl",
+   "sha256": "8ff6ea4fbd24ea1202f6b99e0522afcbd5919b606ff7aefb023f83fa0b99ae38"
+  },
+  {
+   "bytes": 1115175,
+   "file_bytes_at_freeze": 1115175,
+   "host": "codex",
+   "lines": 334,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-17-26-01a16655-93bf-7be1-8318-7b96f1bbe666.jsonl",
+   "sha256": "90ffb42b20fd5d289b0ed1eb09655f22032fd3f07824742b69cce615a22f67cd"
+  },
+  {
+   "bytes": 909382,
+   "file_bytes_at_freeze": 909382,
+   "host": "codex",
+   "lines": 144,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-22-47-01a1665a-782c-7e73-a609-6b553b9f328e.jsonl",
+   "sha256": "2b3b9aeeb6d9851490b689fdc8f75fb1d95520c732400d654bc3182ebdd52009"
+  },
+  {
+   "bytes": 2332681,
+   "file_bytes_at_freeze": 2332681,
+   "host": "codex",
+   "lines": 1048,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-30-43-01a16661-bc5e-7a03-942d-352c4fcb4ec5.jsonl",
+   "sha256": "ddbc45a8aa0d7e4b1f8aa435a0bd945cc80b3c2a407ba061d612b5cbc11970dc"
+  },
+  {
+   "bytes": 2051470,
+   "file_bytes_at_freeze": 2051470,
+   "host": "codex",
+   "lines": 783,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-31-16-01a16662-3b5d-7de0-b66e-a81a606bf2bb.jsonl",
+   "sha256": "d5445dad8b012a405a0978a922e5e368ad9d6ebd68c538c89412c9e5daadbd14"
+  },
+  {
+   "bytes": 840207,
+   "file_bytes_at_freeze": 840207,
+   "host": "codex",
+   "lines": 167,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-43-01-01a1666c-ffb1-7963-be9a-d0dc22261a6d.jsonl",
+   "sha256": "15d411cd75382aea718eadfb9706bf9525a36b3580b36d3a87e6ded3797ccd6e"
+  },
+  {
+   "bytes": 10882585,
+   "file_bytes_at_freeze": 10882585,
+   "host": "codex",
+   "lines": 2700,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-45-28-01a1666f-3b70-7ae3-8f44-79d2a79e88ec.jsonl",
+   "sha256": "8c22792d8a3d80655da153d896b67a8224aaac299c506743f3c2f2a0163026ec"
+  },
+  {
+   "bytes": 1045921,
+   "file_bytes_at_freeze": 1045921,
+   "host": "codex",
+   "lines": 287,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-48-23-01a16671-e748-7613-9522-2439e518e198.jsonl",
+   "sha256": "93cee3cca1be20507fb695ad9c8f5968637bc550f4823fabc65188ec9da45eb0"
+  },
+  {
+   "bytes": 888510,
+   "file_bytes_at_freeze": 888510,
+   "host": "codex",
+   "lines": 174,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T19-52-59-01a16676-1dc3-7921-966b-0c4b5136005b.jsonl",
+   "sha256": "c9edc16101e10cb4172b89789b84f448c621454d35774066b83f7a8e1cbecace"
+  },
+  {
+   "bytes": 2145464,
+   "file_bytes_at_freeze": 2145464,
+   "host": "codex",
+   "lines": 697,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-03-51-01a16680-1187-79c3-b689-14ec64330e20.jsonl",
+   "sha256": "82ddaf532bd935ef9f9803e368f8c9f14e69d96698f90e735135975d96b65310"
+  },
+  {
+   "bytes": 1745151,
+   "file_bytes_at_freeze": 1745151,
+   "host": "codex",
+   "lines": 713,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-06-04-01a16682-17fc-7ce0-909d-c11a4c1f338d.jsonl",
+   "sha256": "c2b78d18d50d4ad89ddbe9dfe732e140502b9e684311926278c9bf8177f750a5"
+  },
+  {
+   "bytes": 1428424,
+   "file_bytes_at_freeze": 1428424,
+   "host": "codex",
+   "lines": 477,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-07-57-01a16683-d0c4-75d1-8f7f-604270b959dd.jsonl",
+   "sha256": "e660e3d8b0783440af51c1e82e3aa029eb523417aa1b05cb2b0e5bbe14bb1ae2"
+  },
+  {
+   "bytes": 1247054,
+   "file_bytes_at_freeze": 1247054,
+   "host": "codex",
+   "lines": 321,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-13-59-01a16689-5925-79b2-9a68-483c915c0751.jsonl",
+   "sha256": "7c7796fef65f6bda6744cf809c7eb1975adea8907ad62c554568cb94c28b3b7b"
+  },
+  {
+   "bytes": 1013184,
+   "file_bytes_at_freeze": 1013184,
+   "host": "codex",
+   "lines": 410,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-34-46-01a1669c-5eb9-7682-bd42-abe2d0860e09.jsonl",
+   "sha256": "d50079b214cc60c56d649d421bf33989b0d6dbdde1caec8b34b5db837281e780"
+  },
+  {
+   "bytes": 1220181,
+   "file_bytes_at_freeze": 1220181,
+   "host": "codex",
+   "lines": 313,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-35-19-01a1669c-dfd0-7bb2-a017-f32534638757.jsonl",
+   "sha256": "13c2e107c3ec2ab1dd36ce01d8d71979ad36c14c6512cdb35692de92f7770a36"
+  },
+  {
+   "bytes": 1251351,
+   "file_bytes_at_freeze": 1251351,
+   "host": "codex",
+   "lines": 226,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T20-46-19-01a166a6-f1f3-7241-a6a2-d10c6ff2244d.jsonl",
+   "sha256": "2c83fdc132c807f08c2bc1bd84c6d3e44487584e78bd6e78915c491e20cde1ee"
+  },
+  {
+   "bytes": 842516,
+   "file_bytes_at_freeze": 842516,
+   "host": "codex",
+   "lines": 206,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T21-33-07-01a166d1-cb8d-77d1-8220-a659c807e899.jsonl",
+   "sha256": "35547c7cb3b2af7aa98486d1913149d728a16cf185feed7890e9b202aabfd7a4"
+  },
+  {
+   "bytes": 2176076,
+   "file_bytes_at_freeze": 2176076,
+   "host": "codex",
+   "lines": 752,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T21-46-09-01a166dd-b8f4-7820-b279-67c072e99c52.jsonl",
+   "sha256": "0d98b9ded5b35c9012a8b6952699ce119445d13004af4d9d0750e5d8ef65e051"
+  },
+  {
+   "bytes": 2210820,
+   "file_bytes_at_freeze": 2210820,
+   "host": "codex",
+   "lines": 1023,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T21-49-18-01a166e0-9de4-7b02-a076-9af9fe1fdcac.jsonl",
+   "sha256": "fcd2b90bfe03b7dc72f92323a130e9cb69a5670751647d41eb1d721e53d5263e"
+  },
+  {
+   "bytes": 1117921,
+   "file_bytes_at_freeze": 1117921,
+   "host": "codex",
+   "lines": 241,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T21-54-39-01a166e5-82a3-7f82-9fc9-e4dcdc2ccfe1.jsonl",
+   "sha256": "d8db5ffb48909a9c4404d0224eb0e8c7c3f210d018c6f5f865e7ec836ab6bb50"
+  },
+  {
+   "bytes": 1742102,
+   "file_bytes_at_freeze": 1742102,
+   "host": "codex",
+   "lines": 718,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-21-59-01a166fe-8828-7b92-a376-37823a314f4b.jsonl",
+   "sha256": "eee5d7692c8e186fd13e5f0fc9539491fe3397dfb3b6a571fb959e44d1ec980b"
+  },
+  {
+   "bytes": 790420,
+   "file_bytes_at_freeze": 790420,
+   "host": "codex",
+   "lines": 181,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-27-37-01a16703-b170-7170-87ef-850088d02a64.jsonl",
+   "sha256": "898d315d1743d9cbd5c699cb3f74ce67b54e2c76b9358e0e4ad4e86e8619f7a1"
+  },
+  {
+   "bytes": 1693384,
+   "file_bytes_at_freeze": 1693384,
+   "host": "codex",
+   "lines": 557,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-27-45-01a16703-ce5e-7752-86e8-5f47bca89c2b.jsonl",
+   "sha256": "ade0b1fd954ce74b359e0c75f13ee1ce60ccdaab4fbd8c4589177bc989ef01dd"
+  },
+  {
+   "bytes": 1866004,
+   "file_bytes_at_freeze": 1866004,
+   "host": "codex",
+   "lines": 728,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-30-55-01a16706-b702-7e62-8afb-0123e91a6679.jsonl",
+   "sha256": "94fdf3620414d22558b5e9fed3f7711cc1d16a6a63489e8e7832380e2936802c"
+  },
+  {
+   "bytes": 933720,
+   "file_bytes_at_freeze": 933720,
+   "host": "codex",
+   "lines": 205,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-39-11-01a1670e-475d-75a2-bf70-74d6117df128.jsonl",
+   "sha256": "50669ac54d5198fd9b3ba8644d3ed758be61140162fbbe7c7885b8a632eb2165"
+  },
+  {
+   "bytes": 1304462,
+   "file_bytes_at_freeze": 1304462,
+   "host": "codex",
+   "lines": 227,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-43-50-01a16712-89b5-7c93-a89d-a675507188f9.jsonl",
+   "sha256": "1392358f2c7f90195712bb70d9b62c4f04c491ae62d79fef6136ad15b84dfe1f"
+  },
+  {
+   "bytes": 1990730,
+   "file_bytes_at_freeze": 1990730,
+   "host": "codex",
+   "lines": 946,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T22-56-53-01a1671e-7a6b-7880-99cd-beafc278c1f8.jsonl",
+   "sha256": "fd941ff8928fdb1dadb3bbf8fa8a6c290c840cb8760bdb28e349ea0ac2154afa"
+  },
+  {
+   "bytes": 1749981,
+   "file_bytes_at_freeze": 1749981,
+   "host": "codex",
+   "lines": 558,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-07-12-01a16727-eecb-7f41-8ea2-412fa522b6a1.jsonl",
+   "sha256": "ddf2bba96998eb7d0774b0cbb5ad54d7ad5033761e67bc9aebe9b9cac61a708e"
+  },
+  {
+   "bytes": 2219010,
+   "file_bytes_at_freeze": 2219010,
+   "host": "codex",
+   "lines": 1124,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-09-51-01a1672a-5916-7662-a15b-4b96479c5e91.jsonl",
+   "sha256": "a20d74ccb221ce472e90167d954217a5b9976e386a9ea59cae11abb2dabe64bb"
+  },
+  {
+   "bytes": 1260388,
+   "file_bytes_at_freeze": 1260388,
+   "host": "codex",
+   "lines": 510,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-11-14-01a1672b-9ec8-7791-a189-80400dc14fd6.jsonl",
+   "sha256": "5f72f781b098f2654ee8d14448e5a2579ce7068ed043c94ec8364bfd9de52fb1"
+  },
+  {
+   "bytes": 1688749,
+   "file_bytes_at_freeze": 1688749,
+   "host": "codex",
+   "lines": 666,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-15-48-01a1672f-cf43-76e1-b1b6-ee2f453ccc06.jsonl",
+   "sha256": "c1c52ffa5153cf3014595e0aac4885b0af4890aed9070f40bd0e0fa9fc4d88f2"
+  },
+  {
+   "bytes": 872073,
+   "file_bytes_at_freeze": 872073,
+   "host": "codex",
+   "lines": 213,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-19-45-01a16733-6b13-7791-b752-b9c4eca970c6.jsonl",
+   "sha256": "35ec66b8c9e50bec16645cd0bc4732e206f5fdbea070c3a5ccab0cdfe262edee"
+  },
+  {
+   "bytes": 1240301,
+   "file_bytes_at_freeze": 1240301,
+   "host": "codex",
+   "lines": 202,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-28-29-01a1673b-6c25-7461-88a8-e707b6891fe7.jsonl",
+   "sha256": "2dee916b0013c8ee54e5749f5784e12d0bd0496f20aba5d3ea46b3821ab07fe1"
+  },
+  {
+   "bytes": 569455,
+   "file_bytes_at_freeze": 569455,
+   "host": "codex",
+   "lines": 94,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-36-42-01a16742-f043-78a0-a130-eb6b26a395e5.jsonl",
+   "sha256": "648ed9c172dcbe8b4726bbd0281cde6d29f62535be476be9ae5e65ee4b6c60d5"
+  },
+  {
+   "bytes": 760776,
+   "file_bytes_at_freeze": 760776,
+   "host": "codex",
+   "lines": 152,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-39-45-01a16745-bb9e-7b91-9380-48361fbcca84.jsonl",
+   "sha256": "2da5e0e970a456502d63ca58c36b7251eadb8558a7dc9e2619002842955c2ef4"
+  },
+  {
+   "bytes": 1575358,
+   "file_bytes_at_freeze": 1575358,
+   "host": "codex",
+   "lines": 391,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-42-00-01a16747-cb1d-72d3-8929-a4f4c452dfb8.jsonl",
+   "sha256": "2eefdee91a0f05a57d9b3977c2c22373b329b269e89e2a17ba5fad69367b5495"
+  },
+  {
+   "bytes": 1426463,
+   "file_bytes_at_freeze": 1426463,
+   "host": "codex",
+   "lines": 529,
+   "path": "/home/bline/.codex/sessions/2026/10/22/rollout-2026-10-22T23-43-46-01a16749-6765-79d3-8ec3-d4f24cfbfb86.jsonl",
+   "sha256": "86c58bad32d66bcccbb2ddf0f479118e42a26d0b4b1022178500d43ddc29c0fb"
+  },
+  {
+   "bytes": 1597161,
+   "file_bytes_at_freeze": 1597161,
+   "host": "codex",
+   "lines": 293,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T00-03-07-01a1675b-1edb-7120-b445-9bc2d5cfa668.jsonl",
+   "sha256": "11678829f22de7ce10e02a01a5f6e6fd6bade95e031ee7939dc8871d4b4f3155"
+  },
+  {
+   "bytes": 2418540,
+   "file_bytes_at_freeze": 2418540,
+   "host": "codex",
+   "lines": 739,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-38-45-01a168c5-5558-7eb0-94f1-87e8edd2fd54.jsonl",
+   "sha256": "61dfdda0b4f4d600040d00f3443cdb0d089a97ad9d26c89c2643381b788cd759"
+  },
+  {
+   "bytes": 1869870,
+   "file_bytes_at_freeze": 1869870,
+   "host": "codex",
+   "lines": 573,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-39-28-01a168c5-fee3-7e10-ab1d-944609de9701.jsonl",
+   "sha256": "c7dba8a82d39cdeeaa96089581f1ed0ce5b9efc1eb5ce35de60a32184ec3b160"
+  },
+  {
+   "bytes": 1051378,
+   "file_bytes_at_freeze": 1051378,
+   "host": "codex",
+   "lines": 234,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-42-12-01a168c8-804a-7ef1-9c79-c2a8d6bb90b2.jsonl",
+   "sha256": "d20c82ece4b6a64dbce6caeee8776608225b88cb7f15e79db5bcd97c84d1cddd"
+  },
+  {
+   "bytes": 1615866,
+   "file_bytes_at_freeze": 1615866,
+   "host": "codex",
+   "lines": 714,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-51-05-01a168d0-a1ae-79e3-a570-c68f86733eb5.jsonl",
+   "sha256": "23ea2c1d0fe74d0ca8ac762a6ce6b89d08d8e00159523559fbd0f1d1d553a664"
+  },
+  {
+   "bytes": 1945356,
+   "file_bytes_at_freeze": 1945356,
+   "host": "codex",
+   "lines": 455,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-52-24-01a168d1-d4e0-75f2-97eb-999b9ea0ced5.jsonl",
+   "sha256": "8de170d779ec605c8ef88995ba78ffde410739d82a045f722a1d512c4fe3e10b"
+  },
+  {
+   "bytes": 638739,
+   "file_bytes_at_freeze": 638739,
+   "host": "codex",
+   "lines": 191,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-53-36-01a168d2-efab-7d41-9778-3e3c0be69576.jsonl",
+   "sha256": "7d19c59a74501a92e2394b692ad35150cfab21b7b3fb4164541b6d1bfd5fa266"
+  },
+  {
+   "bytes": 874202,
+   "file_bytes_at_freeze": 874202,
+   "host": "codex",
+   "lines": 140,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T06-57-59-01a168d6-f05a-7192-8713-b16ea2e78948.jsonl",
+   "sha256": "642fd7e07119dcf6bb892e0620dbccfdf9cc1becb2acaa76d82b367365417b5d"
+  },
+  {
+   "bytes": 1163521,
+   "file_bytes_at_freeze": 1163521,
+   "host": "codex",
+   "lines": 201,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T07-10-46-01a168e2-a6d5-7d23-ae17-52f84c1863b3.jsonl",
+   "sha256": "70b02d79cb8c1b9e2712cb9d77e16db2dc57f9d3d60c922ceeae5e8fda718311"
+  },
+  {
+   "bytes": 2590204,
+   "file_bytes_at_freeze": 2590204,
+   "host": "codex",
+   "lines": 1132,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T07-48-18-01a16905-01f0-70b2-9396-4672b3f8bd34.jsonl",
+   "sha256": "f3b13d32a00dce9e7e5b3fc13526bdec8ed518350a6bec194380c7fc0560bac2"
+  },
+  {
+   "bytes": 2089584,
+   "file_bytes_at_freeze": 2089584,
+   "host": "codex",
+   "lines": 881,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T07-50-26-01a16906-f4c8-7432-a8fe-2a4a9b52456f.jsonl",
+   "sha256": "80bd2802ebf21010a183020a2d0b4c2529b11946287dcaf25db4f84f6bc2a608"
+  },
+  {
+   "bytes": 1843876,
+   "file_bytes_at_freeze": 1843876,
+   "host": "codex",
+   "lines": 788,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T07-53-57-01a1690a-2f13-7dd1-bba2-7d7826f54a66.jsonl",
+   "sha256": "20b02ebaafddfa931d796bb13516adfdce2e528dc9f290456c58711d5a5df1dd"
+  },
+  {
+   "bytes": 1901409,
+   "file_bytes_at_freeze": 1901409,
+   "host": "codex",
+   "lines": 775,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T07-56-17-01a1690c-5170-7370-95d2-59504abded4b.jsonl",
+   "sha256": "75840a4f011252327763f286fb3099530571900148decc27c5c22744f8f467c6"
+  },
+  {
+   "bytes": 1537561,
+   "file_bytes_at_freeze": 1537561,
+   "host": "codex",
+   "lines": 312,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T08-06-20-01a16915-849b-7ee2-b0a2-7d6ab1d6d159.jsonl",
+   "sha256": "e014670bc60d03baedd6521b89eaa3deae76bc29e4a269aedd914709d8e64525"
+  },
+  {
+   "bytes": 1422703,
+   "file_bytes_at_freeze": 1422703,
+   "host": "codex",
+   "lines": 375,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T08-13-01-01a1691b-a33f-7041-8672-d90be7e8e128.jsonl",
+   "sha256": "7b6c983252308efb22c6b19ae2499f86c196cd632555053970e6f75b972b3f32"
+  },
+  {
+   "bytes": 1819031,
+   "file_bytes_at_freeze": 1819031,
+   "host": "codex",
+   "lines": 717,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T08-39-47-01a16934-2551-7a60-8d5b-31caa27d6a80.jsonl",
+   "sha256": "526e70d2fbd378abac35fd5cf7396c3948f5405e9f401f0079c256c83480dfd1"
+  },
+  {
+   "bytes": 1325911,
+   "file_bytes_at_freeze": 1325911,
+   "host": "codex",
+   "lines": 560,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T08-42-05-01a16936-4049-74c3-9e89-da0b4f3dd479.jsonl",
+   "sha256": "807b0860135230054368b5de02ac2c6e71012724afb7ca48e2a7cfc9a9e383c6"
+  },
+  {
+   "bytes": 1576806,
+   "file_bytes_at_freeze": 1576806,
+   "host": "codex",
+   "lines": 342,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T08-48-02-01a1693b-b0d8-7b12-8617-efc831d5d2e4.jsonl",
+   "sha256": "7e32804a7b6057cfdfdfeaa1a80c91e3c5c7f5dae443ba943365cea805146b33"
+  },
+  {
+   "bytes": 1784970,
+   "file_bytes_at_freeze": 1784970,
+   "host": "codex",
+   "lines": 566,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T09-37-46-01a16969-3a7e-7892-adc1-56d4e5626cd1.jsonl",
+   "sha256": "4953832e13e07b0c9ba77816f84378e07170014aea979eea06fd354f72db454a"
+  },
+  {
+   "bytes": 1494164,
+   "file_bytes_at_freeze": 1494164,
+   "host": "codex",
+   "lines": 382,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T09-39-48-01a1696b-18ec-7ff1-a016-ad925c33a9bc.jsonl",
+   "sha256": "0fa6273728ae54be7f613aa97a6ec60df043e3ca6deab94acbb82c57b5e9fa05"
+  },
+  {
+   "bytes": 1353666,
+   "file_bytes_at_freeze": 1353666,
+   "host": "codex",
+   "lines": 638,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T09-41-08-01a1696c-50a9-7bb3-842e-5f7a1f970fce.jsonl",
+   "sha256": "3696a4450c7ebdba03f14020f629aa5ca7c06b39733fb50c86a5c411a6f8a018"
+  },
+  {
+   "bytes": 1466818,
+   "file_bytes_at_freeze": 1466818,
+   "host": "codex",
+   "lines": 506,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T09-41-57-01a1696d-0f40-7111-a0c4-9012b4288e32.jsonl",
+   "sha256": "4e6904fa92c4ad73cd50b56f7c4d23ba0fb18ab3984c3049b038d04b75208044"
+  },
+  {
+   "bytes": 703326,
+   "file_bytes_at_freeze": 703326,
+   "host": "codex",
+   "lines": 202,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T09-42-47-01a1696d-d376-7491-802d-f03a5dd75012.jsonl",
+   "sha256": "7accb1a5e45d62bdfb383370ba140a01912f82883df6e27b2d6ec2901eae4aac"
+  },
+  {
+   "bytes": 1939575,
+   "file_bytes_at_freeze": 1939575,
+   "host": "codex",
+   "lines": 355,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T09-57-29-01a1697b-4a06-7840-9d0e-972a07571bf4.jsonl",
+   "sha256": "0311c7b647370fcf6adff14bce24963960cbc6981b18563dd5835a5619528d53"
+  },
+  {
+   "bytes": 2255150,
+   "file_bytes_at_freeze": 2255150,
+   "host": "codex",
+   "lines": 1161,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T10-09-41-01a16986-7420-7f22-8c4d-0b9f3b9bd640.jsonl",
+   "sha256": "2e980bd6326284e86cf124aaec438af45f723abc7a5943b6cfe158d35fa8aa3a"
+  },
+  {
+   "bytes": 889435,
+   "file_bytes_at_freeze": 889435,
+   "host": "codex",
+   "lines": 336,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T10-31-55-01a1699a-cd26-74c0-9544-43b32046fd19.jsonl",
+   "sha256": "bab2bc38196ed1495b1c1e462e8d99d077d17793aff900069b9470db464ca5e2"
+  },
+  {
+   "bytes": 2037676,
+   "file_bytes_at_freeze": 2037676,
+   "host": "codex",
+   "lines": 747,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-07-18-01a169f2-206c-78d3-8551-e52169699b10.jsonl",
+   "sha256": "b826a2dbebabc96f3da0f8765efbf5062c43e2705445e5d8ffa8b8b58673d926"
+  },
+  {
+   "bytes": 1769436,
+   "file_bytes_at_freeze": 1769436,
+   "host": "codex",
+   "lines": 689,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-10-12-01a169f4-c951-70c1-a53d-c19e67ceaf60.jsonl",
+   "sha256": "e5ffacf6042e63694a28311a6f550ccad46c3fa689d352bb97664b87fd917cd3"
+  },
+  {
+   "bytes": 2880235,
+   "file_bytes_at_freeze": 2880235,
+   "host": "codex",
+   "lines": 964,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-10-14-01a169f4-d348-7922-b644-789a85da0aa6.jsonl",
+   "sha256": "83520d4ec7284997fd994e6fee3163e614ed53b2eca7117b7115994360b71ba3"
+  },
+  {
+   "bytes": 991483,
+   "file_bytes_at_freeze": 991483,
+   "host": "codex",
+   "lines": 331,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-10-18-01a169f4-e097-7d20-813a-0f3c14e9f2fe.jsonl",
+   "sha256": "6594552a5ece56e6c22e534bd93a2900d07350ffaeb5db80d2b43e91ada2b33d"
+  },
+  {
+   "bytes": 1647118,
+   "file_bytes_at_freeze": 1647118,
+   "host": "codex",
+   "lines": 360,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-13-58-01a169f8-3b4e-77e3-bb27-acce119c6c66.jsonl",
+   "sha256": "9849d7c436270bb159e0c022e6fc91202dd870d8942b7f8dbdd5976d1cc0d027"
+  },
+  {
+   "bytes": 1462138,
+   "file_bytes_at_freeze": 1462138,
+   "host": "codex",
+   "lines": 488,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-36-24-01a16a0c-c772-7472-82f9-4b506c9414cc.jsonl",
+   "sha256": "6557cde30ddface8d860ac3b4ef93a061e2d6d77c7783dd7941ced3c6ef7ec0e"
+  },
+  {
+   "bytes": 930771,
+   "file_bytes_at_freeze": 930771,
+   "host": "codex",
+   "lines": 176,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T12-48-55-01a16a18-3c38-7cf3-8fd3-9ce6e3708029.jsonl",
+   "sha256": "20952d3784b7a45b8972e274c8d051511c9528dab82825ee8dfe57629f718f8f"
+  },
+  {
+   "bytes": 2013560,
+   "file_bytes_at_freeze": 2013560,
+   "host": "codex",
+   "lines": 760,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-04-51-01a16a5d-c272-77d2-87fb-612af381b671.jsonl",
+   "sha256": "da227658b19fd5d627579efb08eaf53b508ff43e8bea7eb2fc1f5dafc94900ca"
+  },
+  {
+   "bytes": 2028733,
+   "file_bytes_at_freeze": 2028733,
+   "host": "codex",
+   "lines": 751,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-06-26-01a16a5f-34e0-7f03-bfe6-84f3ad5470b8.jsonl",
+   "sha256": "fe047f63c3e4eff57b23ad30dde5066cd29900731d4dda2fbd74cd9469552bd0"
+  },
+  {
+   "bytes": 1589791,
+   "file_bytes_at_freeze": 1589791,
+   "host": "codex",
+   "lines": 437,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-09-51-01a16a62-5459-7ab1-9a8d-8ec3944bd66f.jsonl",
+   "sha256": "9b4e21c0680e66a9ae55b9d54d88adfba7fde6b2d3f5571f7fba5158f9d3ae07"
+  },
+  {
+   "bytes": 1383105,
+   "file_bytes_at_freeze": 1383105,
+   "host": "codex",
+   "lines": 464,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-23-28-01a16a6e-cc47-7970-aab2-a661439e9ed2.jsonl",
+   "sha256": "4f178ed6cc9d4fb47df718dd2b66b6866ae43e25bf2c72f4d7db0bef15a19855"
+  },
+  {
+   "bytes": 915691,
+   "file_bytes_at_freeze": 915691,
+   "host": "codex",
+   "lines": 152,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-35-03-01a16a79-64e6-7383-9255-64e004d9ff3d.jsonl",
+   "sha256": "c9ae5c23d3e097c99749fddf988980d9c984682290f5ba80a1cc14f3d325e07b"
+  },
+  {
+   "bytes": 7884579,
+   "file_bytes_at_freeze": 7884579,
+   "host": "codex",
+   "lines": 2433,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-37-09-01a16a7b-53af-76e3-b8c1-a7c58a4b8e98.jsonl",
+   "sha256": "1f9fede76f16fc80f1f0817f2bdc3a25d843681b0b9ce54309408086883a8abf"
+  },
+  {
+   "bytes": 1723104,
+   "file_bytes_at_freeze": 1723104,
+   "host": "codex",
+   "lines": 606,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-43-27-01a16a81-16ae-77c2-9bfd-06b2ba207d00.jsonl",
+   "sha256": "cb68ddee17fe622839b905cfbc7430837cee71c9dc8876cfb63875ca8ec0095a"
+  },
+  {
+   "bytes": 1521264,
+   "file_bytes_at_freeze": 1521264,
+   "host": "codex",
+   "lines": 595,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-45-16-01a16a82-bf6c-7d71-b4ad-e9088147d7c0.jsonl",
+   "sha256": "fc930ff5e87ceb0f091b35d3496efaa55c9387c26904ff8d2a3f0bfc393c7856"
+  },
+  {
+   "bytes": 1414964,
+   "file_bytes_at_freeze": 1414964,
+   "host": "codex",
+   "lines": 354,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T14-50-27-01a16a87-7ec8-7fd2-96f6-890c3a332ee3.jsonl",
+   "sha256": "cfe1bf9490383a24bf5bd5d2757305908a1d803ce643f0aa25e649d0da8bf4d3"
+  },
+  {
+   "bytes": 2005688,
+   "file_bytes_at_freeze": 2005688,
+   "host": "codex",
+   "lines": 906,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T17-06-44-01a16b04-448b-7af3-99b7-c5876fdbc828.jsonl",
+   "sha256": "e5bf8247700861043f1e77a3b39953aa8df6be1ca3fedeb8ddf270c8f1dd5cf0"
+  },
+  {
+   "bytes": 2111698,
+   "file_bytes_at_freeze": 2111698,
+   "host": "codex",
+   "lines": 666,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T17-08-46-01a16b06-2318-7c41-9e3a-e60a18566ebb.jsonl",
+   "sha256": "dbd9b57f7e5c9faedb50ea3e3fed36a9a24272765bdfad2789a82e53086a96d9"
+  },
+  {
+   "bytes": 1574574,
+   "file_bytes_at_freeze": 1574574,
+   "host": "codex",
+   "lines": 409,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T17-14-00-01a16b0a-ebf9-7362-b1f0-9881f27ea3f0.jsonl",
+   "sha256": "259c9c9b4e47e2541fdd686d8b1e1408dab56b1a1beb0a6ffbdfee8ff0e67242"
+  },
+  {
+   "bytes": 1395847,
+   "file_bytes_at_freeze": 1395847,
+   "host": "codex",
+   "lines": 336,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T17-32-59-01a16b1c-4fba-74e0-ace7-917ba3f3ece0.jsonl",
+   "sha256": "663a4e7b8dac744d29c7a7e15e8794d6e60648253526e498755175bedb6b5395"
+  },
+  {
+   "bytes": 900512,
+   "file_bytes_at_freeze": 900512,
+   "host": "codex",
+   "lines": 216,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T17-38-56-01a16b21-c058-7902-9c23-7c06a383c099.jsonl",
+   "sha256": "9aabbee08b6a1783d1c21ebe8eb29f5174f1341930efb265e32d83d81606aaf7"
+  },
+  {
+   "bytes": 1983587,
+   "file_bytes_at_freeze": 1983587,
+   "host": "codex",
+   "lines": 768,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T19-26-56-01a16b84-9bcc-7301-87fc-c1a41024c44d.jsonl",
+   "sha256": "19ac8e15730b081071bfb8e629acfa5c6a323708dee1022eae598b56f75a10a9"
+  },
+  {
+   "bytes": 1789250,
+   "file_bytes_at_freeze": 1789250,
+   "host": "codex",
+   "lines": 661,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T19-28-41-01a16b86-3a44-74c1-9441-532b932bc8da.jsonl",
+   "sha256": "7e34c72e0efaf56baa7bfc28e841049209461e7cd6bbd42eabb153679e65a460"
+  },
+  {
+   "bytes": 1689766,
+   "file_bytes_at_freeze": 1689766,
+   "host": "codex",
+   "lines": 455,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T19-31-05-01a16b88-6d3e-7e62-8439-1829c9b8cb30.jsonl",
+   "sha256": "f9de8ffb78f253cbf6b04a90c85db3fd2e91f863ff59e969d1087a1dcd5b258f"
+  },
+  {
+   "bytes": 1003820,
+   "file_bytes_at_freeze": 1003820,
+   "host": "codex",
+   "lines": 279,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T19-51-12-01a16b9a-d842-7c11-ab55-223b3aceeea2.jsonl",
+   "sha256": "251530048411b67d80443a321a53d0eb9686a4a0d8b57175b437196960b6496f"
+  },
+  {
+   "bytes": 1782587,
+   "file_bytes_at_freeze": 1782587,
+   "host": "codex",
+   "lines": 604,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-15-30-01a16bb1-1284-7622-bb9e-56e84feb40a2.jsonl",
+   "sha256": "5ffbd4cd21df61ed163fa38d5ddb2eda17ab2b7d947ae5a6709d27d10ada0402"
+  },
+  {
+   "bytes": 1750566,
+   "file_bytes_at_freeze": 1750566,
+   "host": "codex",
+   "lines": 705,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-17-27-01a16bb2-e22e-79d1-a2e6-3f256d2a100f.jsonl",
+   "sha256": "b4ab8576b221551ba0059fe95748a02eeaa89da69cb9d355b60eedba951da285"
+  },
+  {
+   "bytes": 1443122,
+   "file_bytes_at_freeze": 1443122,
+   "host": "codex",
+   "lines": 351,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-21-13-01a16bb6-5225-7dd1-9212-b9565d442c88.jsonl",
+   "sha256": "c0f8d706dc2bac6a3dbee34ba5a6b8815c4b50f6ad363c3cea330b6a0ff88d73"
+  },
+  {
+   "bytes": 2992400,
+   "file_bytes_at_freeze": 2992400,
+   "host": "codex",
+   "lines": 913,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-38-53-01a16bc6-7afb-7b61-8d84-836521fccb92.jsonl",
+   "sha256": "d4df838a13e3bd4c255d3efcfc6ddded55404ecd1695b55c84d7352a5e8f4257"
+  },
+  {
+   "bytes": 1132716,
+   "file_bytes_at_freeze": 1132716,
+   "host": "codex",
+   "lines": 267,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-41-06-01a16bc8-887f-7dc1-bf15-e2799250e62f.jsonl",
+   "sha256": "69ef8da156fcdaf63b8e079d4e07781f36a2e116fe2ca389c5374fbba8d8f1ff"
+  },
+  {
+   "bytes": 830372,
+   "file_bytes_at_freeze": 830372,
+   "host": "codex",
+   "lines": 164,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-41-23-01a16bc8-cb3d-7992-a9e2-28b668f653ed.jsonl",
+   "sha256": "9ef9d9ad6ea444e919f72988a175235c8ff6b616eec34c7ce6b80ac5d25ac635"
+  },
+  {
+   "bytes": 1312969,
+   "file_bytes_at_freeze": 1312969,
+   "host": "codex",
+   "lines": 424,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-44-45-01a16bcb-dee5-7323-96ed-edd9a772b416.jsonl",
+   "sha256": "b506f63130ae6a63e7d2392eabe5b73185344e8c4f2dca7cfa9e7fba67c29b0e"
+  },
+  {
+   "bytes": 1801103,
+   "file_bytes_at_freeze": 1801103,
+   "host": "codex",
+   "lines": 507,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-52-19-01a16bd2-ca08-7843-9235-5338a5e477e8.jsonl",
+   "sha256": "afa66751835ff302ee669dd03ce99765ab07ffe32990fcfb77976bc61c4c3ece"
+  },
+  {
+   "bytes": 1150592,
+   "file_bytes_at_freeze": 1150592,
+   "host": "codex",
+   "lines": 324,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-54-30-01a16bd4-cde4-72d1-91f4-06ad29094504.jsonl",
+   "sha256": "4083db6737cc002869a7fb5e7f8f2364f2837383685425c21f2b54e8dd052dbe"
+  },
+  {
+   "bytes": 1303562,
+   "file_bytes_at_freeze": 1303562,
+   "host": "codex",
+   "lines": 290,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T20-58-42-01a16bd8-a5f9-7bd0-9786-1694c218c396.jsonl",
+   "sha256": "55151566cb21de4fba14fd895d455e9c2d77751b1bd8609aced4ea5bf501680c"
+  },
+  {
+   "bytes": 2097918,
+   "file_bytes_at_freeze": 2097918,
+   "host": "codex",
+   "lines": 610,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-10-40-01a16be3-93c8-7ce2-bb75-76fd95342cc5.jsonl",
+   "sha256": "048ed0676a5ac1e5c322d10b52092d41abee9e7fd609edf92fa9fad5dcd6c98f"
+  },
+  {
+   "bytes": 938961,
+   "file_bytes_at_freeze": 938961,
+   "host": "codex",
+   "lines": 194,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-12-05-01a16be4-e592-7ce0-ba49-37b99c51cb93.jsonl",
+   "sha256": "a8ea3488f4cdc60ef0aa6e4ef8cc01daeaa29c8d5c4db2343fd5432581bff86b"
+  },
+  {
+   "bytes": 1776223,
+   "file_bytes_at_freeze": 1776223,
+   "host": "codex",
+   "lines": 529,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-18-32-01a16bea-c767-7030-945b-5a9be5050119.jsonl",
+   "sha256": "4ef03ede6b077d68143c7d1cc93130e194803ce79398f599a957c3ab41127c9c"
+  },
+  {
+   "bytes": 1472841,
+   "file_bytes_at_freeze": 1472841,
+   "host": "codex",
+   "lines": 362,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-20-58-01a16bed-06b8-76b0-8b1b-daef9f4ef0bc.jsonl",
+   "sha256": "f596e9646c19d27bb7f91e1d782bd6ee58473dcdc68b0dcddd2f8202241e3d24"
+  },
+  {
+   "bytes": 1571663,
+   "file_bytes_at_freeze": 1571663,
+   "host": "codex",
+   "lines": 291,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-24-12-01a16bef-fc4d-7870-a993-25828325e2f9.jsonl",
+   "sha256": "1e20640b13e65398633b927e87d06232945f83263fd4d5d5216b13e08b5f17f0"
+  },
+  {
+   "bytes": 997799,
+   "file_bytes_at_freeze": 997799,
+   "host": "codex",
+   "lines": 225,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-38-00-01a16bfc-9ff5-71e1-a693-16bf6c01e4f4.jsonl",
+   "sha256": "ce16abb878525cb10c8125991d269ea970bed87872baac4b02d783679fc6fcf6"
+  },
+  {
+   "bytes": 7968459,
+   "file_bytes_at_freeze": 7968459,
+   "host": "codex",
+   "lines": 2864,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-44-14-01a16c02-4eda-77c1-a1a2-fb2e7534dadf.jsonl",
+   "sha256": "2daaac4c09c2eec42d74fa75e2b68d18e92d2ddeacbb82f1714d5906b003778a"
+  },
+  {
+   "bytes": 1875584,
+   "file_bytes_at_freeze": 1875584,
+   "host": "codex",
+   "lines": 558,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-49-03-01a16c06-ba19-72b1-98b3-161621a1f534.jsonl",
+   "sha256": "63802fa35d61f2f362c395c908a3e075b328a49bbcb59762532f58af99e6b80d"
+  },
+  {
+   "bytes": 1602216,
+   "file_bytes_at_freeze": 1602216,
+   "host": "codex",
+   "lines": 493,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-50-55-01a16c08-72a7-7850-839d-9ef8656fc6de.jsonl",
+   "sha256": "c8d9247ff946855fcf7ba44b60f0f8cd138d9813b14698de78addb6805fb038e"
+  },
+  {
+   "bytes": 1752593,
+   "file_bytes_at_freeze": 1752593,
+   "host": "codex",
+   "lines": 354,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T21-53-26-01a16c0a-bf9e-7881-b3fa-b8f94c9927fe.jsonl",
+   "sha256": "cb755e686c502f912146f3f67c9e091423ac78cf0b949f406f39a3c728421303"
+  },
+  {
+   "bytes": 1342485,
+   "file_bytes_at_freeze": 1342485,
+   "host": "codex",
+   "lines": 471,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-07-36-01a16c17-b78c-71b2-95ce-6e5e29fd5c29.jsonl",
+   "sha256": "477beaa37abffa1630366b33c3741b455bc2c37805a3cef38df26f128698647c"
+  },
+  {
+   "bytes": 1872689,
+   "file_bytes_at_freeze": 1872689,
+   "host": "codex",
+   "lines": 625,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-25-15-01a16c27-de05-7be3-b305-60c252e98aa5.jsonl",
+   "sha256": "b76f7f1b8aa0d293397d1e676c6e5c62921ec402a7e5c6d5ead7f553d91b1a06"
+  },
+  {
+   "bytes": 2011842,
+   "file_bytes_at_freeze": 2011842,
+   "host": "codex",
+   "lines": 581,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-26-44-01a16c29-3bf3-7cc3-ab3a-c50e5ebdceb2.jsonl",
+   "sha256": "2c8cba4667f3755844e21e92dcbff58a22155a653f164005f74d22ed6d53f993"
+  },
+  {
+   "bytes": 1622538,
+   "file_bytes_at_freeze": 1622538,
+   "host": "codex",
+   "lines": 456,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-27-29-01a16c29-ec84-73a2-ba43-5f958ef137ce.jsonl",
+   "sha256": "cf3dcf81b9f998f4451c46feb591e1f52f4b90b37186a4d9ec2b3d4c28153c95"
+  },
+  {
+   "bytes": 1959655,
+   "file_bytes_at_freeze": 1959655,
+   "host": "codex",
+   "lines": 784,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-29-06-01a16c2b-69e3-7f63-96de-83c70dd792ab.jsonl",
+   "sha256": "bf846802994794ff965ecdb6b6afe2c3e3ee931d1f468b3342e5865932f82640"
+  },
+  {
+   "bytes": 1647276,
+   "file_bytes_at_freeze": 1647276,
+   "host": "codex",
+   "lines": 301,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-30-34-01a16c2c-bf70-7fd1-b89e-e7d72b55b1ac.jsonl",
+   "sha256": "b3c373c2ef20f92cb3ace37c8ca87a0543fa84c9d897aacabbba8e186244d44f"
+  },
+  {
+   "bytes": 1592242,
+   "file_bytes_at_freeze": 1592242,
+   "host": "codex",
+   "lines": 500,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-48-59-01a16c3d-9df3-7470-8ecd-4b37cace4ca0.jsonl",
+   "sha256": "cb26073f5e1f31c6ec601dc6f4577ed0793a76f7af833f065837d464613a33f7"
+  },
+  {
+   "bytes": 1145716,
+   "file_bytes_at_freeze": 1145716,
+   "host": "codex",
+   "lines": 199,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-53-35-01a16c41-d290-7560-9011-7620e6658e14.jsonl",
+   "sha256": "9c23049100e5219b7fbb2adbcf1f361bd7f8490a9b72054661eb0318b4c44467"
+  },
+  {
+   "bytes": 1871835,
+   "file_bytes_at_freeze": 1871835,
+   "host": "codex",
+   "lines": 525,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-57-51-01a16c45-ba34-7b80-a811-a9ec4b421351.jsonl",
+   "sha256": "52db2bed43980a9ed340f9d7b8af22e5954de1f89a23770938bf281bddbe52ec"
+  },
+  {
+   "bytes": 2509111,
+   "file_bytes_at_freeze": 2509111,
+   "host": "codex",
+   "lines": 1409,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T22-59-20-01a16c47-1695-7043-a531-3011a3c6e82b.jsonl",
+   "sha256": "a8ee7da4efb40fa0e498fe54b3317cb620c2aac7043dbf68f6c72f23320c0756"
+  },
+  {
+   "bytes": 1793884,
+   "file_bytes_at_freeze": 1793884,
+   "host": "codex",
+   "lines": 394,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-17-30-01a16c57-b8f4-7700-a2a1-5f9565bd409b.jsonl",
+   "sha256": "59b05bf86209aed57ccec8564048a637ffa45b3c61fc9fccc628dccf5fa494bb"
+  },
+  {
+   "bytes": 1125759,
+   "file_bytes_at_freeze": 1125759,
+   "host": "codex",
+   "lines": 178,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-23-23-01a16c5d-1cb4-7601-b771-c80e6ac5fa9f.jsonl",
+   "sha256": "60faab2031f231908df6e3f2e027fe206776c412a67d07e6ddc275fc5de9782e"
+  },
+  {
+   "bytes": 1248226,
+   "file_bytes_at_freeze": 1248226,
+   "host": "codex",
+   "lines": 269,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-29-25-01a16c62-a05e-74f1-ad81-5643419afff5.jsonl",
+   "sha256": "6abf57fcddea28f5df7461839a4356469bc83fa2bd7365b1341d8907c394d12f"
+  },
+  {
+   "bytes": 2222553,
+   "file_bytes_at_freeze": 2222553,
+   "host": "codex",
+   "lines": 624,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-41-28-01a16c6d-a812-7442-8c6e-f704d37f5c39.jsonl",
+   "sha256": "c6ce9a0a1a4fa0960d1252fb1e9c435f57c922479a3d106a90dba0b1652ac7d9"
+  },
+  {
+   "bytes": 1238626,
+   "file_bytes_at_freeze": 1238626,
+   "host": "codex",
+   "lines": 278,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-43-32-01a16c6f-8eb3-7831-ae6b-48eacec1db8d.jsonl",
+   "sha256": "848bdd3f48ba2752e5fd5714fb9ac751e867b70650115542491c06a30a3c89c4"
+  },
+  {
+   "bytes": 1275138,
+   "file_bytes_at_freeze": 1275138,
+   "host": "codex",
+   "lines": 202,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-45-39-01a16c71-7e6b-7432-bd3b-6430b9c5881a.jsonl",
+   "sha256": "7a621092c1cec917d95cc1a2bcfb99db85deea49e61f42e6f87d5b2b1fce732b"
+  },
+  {
+   "bytes": 1926781,
+   "file_bytes_at_freeze": 1926781,
+   "host": "codex",
+   "lines": 696,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-47-13-01a16c72-ec9b-7992-b8db-931057d9d7b3.jsonl",
+   "sha256": "228a3c7f615d1950a61262b1d2b49290542d9491c79e9a98f77428d663f3a9ea"
+  },
+  {
+   "bytes": 1765600,
+   "file_bytes_at_freeze": 1765600,
+   "host": "codex",
+   "lines": 662,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-48-46-01a16c74-5726-73c3-b6f6-717d222ad940.jsonl",
+   "sha256": "f2efe9fdfddaf1a81f3213e3f3fdb611a71f3ef06e25748dbee5fe6e8a03b224"
+  },
+  {
+   "bytes": 1506954,
+   "file_bytes_at_freeze": 1506954,
+   "host": "codex",
+   "lines": 398,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-48-53-01a16c74-744d-7360-af55-99030324e784.jsonl",
+   "sha256": "7efaf9a19047d622b9a192842b784a6b26ae91768ca71f9d89e3fcea36986b69"
+  },
+  {
+   "bytes": 2044338,
+   "file_bytes_at_freeze": 2044338,
+   "host": "codex",
+   "lines": 459,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-51-02-01a16c76-6ba4-7b72-83ed-cd6a91003c87.jsonl",
+   "sha256": "8ee4fcdadfe53d0f3d3563173925328e65be57c9892a1faabf86183b1ed6d55b"
+  },
+  {
+   "bytes": 1294249,
+   "file_bytes_at_freeze": 1294249,
+   "host": "codex",
+   "lines": 291,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-56-34-01a16c7b-7aa4-7ea3-8eda-85f6daf42cfa.jsonl",
+   "sha256": "a66764a934d12f9a0790242ada2331a904d07ae2b2c4cd2cb5c90d52f38e6796"
+  },
+  {
+   "bytes": 1076246,
+   "file_bytes_at_freeze": 1076246,
+   "host": "codex",
+   "lines": 195,
+   "path": "/home/bline/.codex/sessions/2026/10/23/rollout-2026-10-23T23-57-25-01a16c7c-4399-7a71-851d-803f8ada3a87.jsonl",
+   "sha256": "b9d470e961c07d1f00b55acb7dc1d4282a2fc303b0dbb0429e3aebd254e2c5b0"
+  },
+  {
+   "bytes": 1887666,
+   "file_bytes_at_freeze": 1887666,
+   "host": "codex",
+   "lines": 558,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-14-37-01a16c8b-ffef-7aa1-bc09-941a16a213b5.jsonl",
+   "sha256": "1dcb6a094b22693b9990ce66554393682e2ee43859c128674422be0bc67fdd3a"
+  },
+  {
+   "bytes": 1371661,
+   "file_bytes_at_freeze": 1371661,
+   "host": "codex",
+   "lines": 295,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-16-12-01a16c8d-748b-7992-b6cf-558a3e2aeeaf.jsonl",
+   "sha256": "96dc7470752ce1519ff5cf0b1d5940387834f9c6db07564cc98c39541667ab8d"
+  },
+  {
+   "bytes": 1694755,
+   "file_bytes_at_freeze": 1694755,
+   "host": "codex",
+   "lines": 366,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-19-08-01a16c90-26dd-7772-a88d-c1ec9e828b4f.jsonl",
+   "sha256": "f09c0a867ed3929b3fc85871359345732aaca2de9d2c4d6fc29d8ff1ecffa665"
+  },
+  {
+   "bytes": 1800728,
+   "file_bytes_at_freeze": 1800728,
+   "host": "codex",
+   "lines": 549,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-20-23-01a16c91-4a75-7aa3-8fbd-f5a730e0169b.jsonl",
+   "sha256": "500c222df86d79fd51ed4810574b31c1f7642adc9bbdca08bbc7f60168641572"
+  },
+  {
+   "bytes": 1502083,
+   "file_bytes_at_freeze": 1502083,
+   "host": "codex",
+   "lines": 362,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-21-40-01a16c92-7566-7442-854c-78f25ca03e6c.jsonl",
+   "sha256": "5facdaa86a637bd12dcc33c1ab9380b5de459d18b42d860c21e31d6e6512576e"
+  },
+  {
+   "bytes": 1799214,
+   "file_bytes_at_freeze": 1799214,
+   "host": "codex",
+   "lines": 378,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-30-03-01a16c9a-24c7-7672-abfe-78d841b9c91f.jsonl",
+   "sha256": "03148898bb497106d2fb0c608c9d890c29dedeaf15aaf0b7daf679e4f6825048"
+  },
+  {
+   "bytes": 1780577,
+   "file_bytes_at_freeze": 1780577,
+   "host": "codex",
+   "lines": 801,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-30-06-01a16c9a-3111-7782-be7e-bec391573b52.jsonl",
+   "sha256": "85f318285c3a6526ab20b6d8b1c07917dec6942fcab114fd3e828052a492f219"
+  },
+  {
+   "bytes": 1935398,
+   "file_bytes_at_freeze": 1935398,
+   "host": "codex",
+   "lines": 660,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-30-42-01a16c9a-bb58-7700-88d5-a82c2af4201e.jsonl",
+   "sha256": "048903aa09df1aacc195b20440efcf28520522e309b6d2ad18c538e6ab5ac14a"
+  },
+  {
+   "bytes": 1725204,
+   "file_bytes_at_freeze": 1725204,
+   "host": "codex",
+   "lines": 309,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-35-32-01a16c9f-2a8e-71d3-a11b-651cd27347dd.jsonl",
+   "sha256": "71f138076052d3949fa0bacfff49185cc33b680fb4e55fbe9338455e76cb3048"
+  },
+  {
+   "bytes": 964908,
+   "file_bytes_at_freeze": 964908,
+   "host": "codex",
+   "lines": 163,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T00-42-32-01a16ca5-91f6-71d1-889f-0a403e3b1ca9.jsonl",
+   "sha256": "d73e6bd9049c042e5c98d84227db4bcf3f3acfd65a1a7c6123568786edb6ae08"
+  },
+  {
+   "bytes": 2128837,
+   "file_bytes_at_freeze": 2128837,
+   "host": "codex",
+   "lines": 651,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T01-00-07-01a16cb5-a815-7d50-b0d7-2dad890ac46b.jsonl",
+   "sha256": "18f8b4bedfb0c5e0566a292c644edf190796c9e78b98b07f2db9d0ed125ccb92"
+  },
+  {
+   "bytes": 1621333,
+   "file_bytes_at_freeze": 1621333,
+   "host": "codex",
+   "lines": 565,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T01-03-16-01a16cb8-8ee7-74a1-95b3-5fe2d6306ecb.jsonl",
+   "sha256": "7cc6f00fd87ee10e91911540747ade1fa65f212db9515e6c064988a56284a8ec"
+  },
+  {
+   "bytes": 1802650,
+   "file_bytes_at_freeze": 1802650,
+   "host": "codex",
+   "lines": 337,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T01-08-23-01a16cbd-3cd3-71f2-ba22-fe32afd7a998.jsonl",
+   "sha256": "5b6be52408b6ebe4e41766c2230c4e20b6e4110a0ebf4c7a81c01482595d4fd1"
+  },
+  {
+   "bytes": 1124952,
+   "file_bytes_at_freeze": 1124952,
+   "host": "codex",
+   "lines": 418,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T01-18-06-01a16cc6-2202-7a41-90dd-4bab5b93c3fc.jsonl",
+   "sha256": "f96d777bbb6d288c87269217e416c0ff285fece2127c942364d6ca9626d628dc"
+  },
+  {
+   "bytes": 1839071,
+   "file_bytes_at_freeze": 1839071,
+   "host": "codex",
+   "lines": 264,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T01-18-14-01a16cc6-3f91-74a0-a007-98aa68666baf.jsonl",
+   "sha256": "b85faf355825a69b8a2d4f3310b445761153193db29f3dca53adaa3b55637767"
+  },
+  {
+   "bytes": 1283710,
+   "file_bytes_at_freeze": 1283710,
+   "host": "codex",
+   "lines": 214,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T01-20-41-01a16cc8-7f91-7a50-b464-6f4f29f8a52b.jsonl",
+   "sha256": "7dd298e127366b640d21160f66abe8a4cc866a5aa642cae304f809e266ceef6a"
+  },
+  {
+   "bytes": 145850,
+   "file_bytes_at_freeze": 145850,
+   "host": "codex",
+   "lines": 15,
+   "path": "/home/bline/.codex/sessions/2026/10/24/rollout-2026-10-24T14-23-29-01a16f95-2cb6-7121-ada5-cc7e2ba25d53.jsonl",
+   "sha256": "498e1230d84fc31cacda31797e61f97e5558179b4a1ede5e17e1b0194c2e9e07"
+  }
+ ]
+}
