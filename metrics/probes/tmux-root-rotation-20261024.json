@@ -488,5 +488,23 @@
     },
     "also_observed": "a resume mints a NEW session id: this session posted to the board as 32858989-... while running as 018ae509-.... A gate configured with PRED_SESSION from before a resume would compare against a stale id and no adoption row would ever match.",
     "what_would_work": "a root launched directly into a tmux window, which is the shape every probe used"
+  },
+  "daemon_hosted_roles_20261025": {
+    "proposal": "host roles as named daemon background sessions instead of tmux windows (user, 2026-10-25)",
+    "primitives_confirmed": {
+      "create": "claude --bg --name <role>  (prints the id)",
+      "identity": "sessionId (uuid) and a short id; --name is a DISPLAY name set at launch only",
+      "inventory": "claude agents --json -> rows with pid, id, sessionId, cwd, kind, startedAt, name, status, state",
+      "lifecycle": "stop|kill <id> (conversation kept), rm <id>, respawn [id], attach <id|name>, logs <id|name>"
+    },
+    "what_it_removes": "the entire tmux layer and with it: swap-window/rename-window failure modes, the empty-target hazard (-t \"\" acting on the current window with exit 0), role-window-name ambiguity, and pane-descent child counting -- including the fail-open recorded in coverage_gap_daemon_hosted_roles_20261025, which cannot arise when there is no pane to descend from.",
+    "what_it_does_NOT_solve": "parent-scoped child counting. `agents --json` carries NO parent field, and cwd is over-inclusive: measured now, 5 sessions share this repository, 4 excluding self, 2 busy. A cwd-scoped zero gate would refuse every rotation while any peer root works in the repo. Authority and the approval path are unchanged. Name uniqueness during the overlap needs the same discipline tmux role names needed.",
+    "correction_to_a_recorded_reason": {
+      "recorded": "quiescence_checks.py and this record state that `claude agents --json` was rejected because it 'lists machine-wide sessions including the root itself (status busy), so using it would report live children forever'",
+      "status": "right conclusion, wrong reason",
+      "why": "self-exclusion is trivial -- rows carry sessionId -- and `--cwd` scopes the listing, so neither stated obstacle holds. The conclusion survives for a different reason: there is no parent field, and peer roots share the cwd, so no filter expresses 'children of THIS root'.",
+      "error_class": "a correct rejection supported by an obstacle that is not the real one; the same shape as the correction-that-misnamed-its-own-error on 2026-10-25"
+    },
+    "standing": "a design direction, not built; quiescence remains the weak point under either host"
   }
 }
