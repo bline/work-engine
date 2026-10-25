@@ -1,0 +1,72 @@
+{
+  "artifact_type": "work_engine_codex_chatboard_kinds_v1",
+  "version": 1,
+  "envelope": {
+    "fields": ["kind", "role", "to", "in_reply_to", "supersedes", "effects", "data", "contract_version"],
+    "role_pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+    "to_forms": ["role:<name>", "session:<uuid>"],
+    "to_patterns": [
+      "^role:[a-z0-9][a-z0-9._-]{0,63}$",
+      "^session:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    ],
+    "effects_keys": ["shared_writes", "external_actions"]
+  },
+  "kinds": {
+    "note": {
+      "consumer": "anyone",
+      "required": [],
+      "enums": {},
+      "optional_data": []
+    },
+    "status": {
+      "consumer": "successors and readers reconstructing a run",
+      "required": ["data.subject"],
+      "enums": {},
+      "optional_data": ["state"]
+    },
+    "request": {
+      "consumer": "the addressee; an open-requests view",
+      "required": ["to", "data.ask"],
+      "enums": {},
+      "optional_data": ["reply_topic", "needed_by"]
+    },
+    "reply": {
+      "consumer": "the requester",
+      "required": ["in_reply_to", "data.disposition"],
+      "enums": {"data.disposition": ["answered", "declined", "deferred", "partial"]},
+      "optional_data": []
+    },
+    "receipt": {
+      "consumer": "the sender, tracking delivery",
+      "required": ["in_reply_to"],
+      "enums": {},
+      "optional_data": []
+    },
+    "notice": {
+      "consumer": "every session the change can invalidate",
+      "required": ["data.changed", "data.action"],
+      "enums": {},
+      "optional_data": ["affects"]
+    },
+    "availability": {
+      "consumer": "the successor; the rotation gate; role resolution",
+      "required": ["role", "data.state"],
+      "enums": {"data.state": ["available", "ending"]},
+      "optional_data": ["handoff", "handoff.path", "handoff.sha256", "claims_released", "live_children"]
+    },
+    "adoption": {
+      "consumer": "the predecessor's gate; role resolution; peers re-addressing",
+      "writer": "adopt",
+      "required": ["role", "data.predecessor_session", "data.handoff_sha256"],
+      "enums": {},
+      "patterns": {"data.handoff_sha256": "^[0-9a-f]{64}$"},
+      "optional_data": ["claims_reclaimed", "channels"]
+    },
+    "correction": {
+      "consumer": "readers of the superseded message",
+      "required": ["supersedes", "data.wrong_claim", "data.error_class", "data.consequence", "data.check"],
+      "enums": {},
+      "optional_data": []
+    }
+  }
+}

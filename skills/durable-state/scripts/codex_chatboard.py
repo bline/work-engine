@@ -12,6 +12,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import select
 import struct
 import subprocess
@@ -27,6 +28,8 @@ BOARD_KEY = "work-engine/codex-chatboard/v1"
 NAMESPACE = "codex-chatboard"
 MAX_RETRIES = 20
 CONTROL_PREFIX = "control:session:"
+REGISTRY_PATH = Path(__file__).resolve().parent.parent / "contracts" / "codex-chatboard-kinds.v1.json"
+REGISTRY_TYPE = "work_engine_codex_chatboard_kinds_v1"
 
 
 class ChatboardError(ValueError):
@@ -103,9 +106,124 @@ def canonical_uuid(value: str, label: str) -> str:
     return str(parsed)
 
 
-def post(repository: Path, *, author: str, session_id: str, topic: str,
-         body: str, references: list[str], message_id: str, observed_at: str,
-         wake: bool = False) -> dict[str, Any]:
+def load_registry(path: Path | None = None) -> dict[str, Any]:
+    """Open the kind registry. Called only by paths that need it (lazy rule)."""
+    target = Path(path) if path is not None else REGISTRY_PATH
+    try:
+        value = json.loads(target.read_text())
+    except OSError as failure:
+        raise ChatboardError(f"kind registry not found or unreadable at {target}: {failure}") from failure
+    except json.JSONDecodeError as failure:
+        raise ChatboardError(f"kind registry at {target} is invalid JSON") from failure
+    if (not isinstance(value, dict) or value.get("artifact_type") != REGISTRY_TYPE
+            or not isinstance(value.get("version"), int)
+            or not isinstance(value.get("kinds"), dict) or not isinstance(value.get("envelope"), dict)):
+        raise ChatboardError(f"kind registry at {target} has an unsupported contract")
+    return value
+
+
+def kind_line(registry: dict[str, Any], name: str) -> str:
+    spec = registry["kinds"][name]
+    enums = "; ".join(f"{path}={'|'.join(values)}" for path, values in spec.get("enums", {}).items())
+    return (f"{name} | writer={spec.get('writer', 'post')} | required: {', '.join(spec.get('required', [])) or '-'}"
+            f" | enums: {enums or '-'} | optional data: {', '.join(spec.get('optional_data', [])) or '-'}")
+
+
+def kinds_view(registry: dict[str, Any], kind: str | None = None) -> list[str]:
+    if kind is None:
+        return [kind_line(registry, name) for name in registry["kinds"]]
+    require_kind(registry, kind)
+    return [kind_line(registry, kind)]
+
+
+def require_kind(registry: dict[str, Any], kind: Any) -> None:
+    if not isinstance(kind, str) or kind not in registry["kinds"]:
+        raise ChatboardError(
+            f"kind {kind!r} is not registered; registered kinds: {', '.join(registry['kinds'])} "
+            "(use `note` for an untyped message)")
+
+
+def _lookup(envelope: dict[str, Any], path: str) -> Any:
+    value: Any = envelope
+    for part in path.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return None
+        value = value[part]
+    return value
+
+
+def _present(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, (str, list, dict)) and len(value) == 0:
+        return False
+    return not (isinstance(value, str) and not value.strip())
+
+
+def validate_envelope(registry: dict[str, Any], *, kind: str | None = None, role: str | None = None,
+                      to: list[str] | None = None, in_reply_to: int | None = None,
+                      supersedes: int | None = None, effects: dict[str, Any] | None = None,
+                      data: dict[str, Any] | None = None) -> None:
+    """Pure single-message envelope checks; raises ChatboardError naming the field."""
+    grammar = registry["envelope"]
+    if kind is not None:
+        require_kind(registry, kind)
+    if role is not None:
+        if not isinstance(role, str) or not re.fullmatch(grammar["role_pattern"], role):
+            raise ChatboardError(f"role {role!r} must match {grammar['role_pattern']}")
+    if to is not None:
+        if not isinstance(to, list) or not to:
+            raise ChatboardError(f"to must be a nonempty list of addresses ({', '.join(grammar['to_forms'])}); "
+                                 f"patterns: {' or '.join(grammar['to_patterns'])}")
+        for address in to:
+            if not isinstance(address, str) or not any(re.fullmatch(pattern, address)
+                                                       for pattern in grammar["to_patterns"]):
+                raise ChatboardError(f"to address {address!r} must match one of: "
+                                     f"{' or '.join(grammar['to_patterns'])}")
+    for name, value in (("in_reply_to", in_reply_to), ("supersedes", supersedes)):
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 1):
+            raise ChatboardError(f"{name} must be a positive message sequence number")
+    if effects is not None:
+        keys = grammar["effects_keys"]
+        if not isinstance(effects, dict):
+            raise ChatboardError(f"effects must be an object with exactly the keys {' and '.join(keys)}")
+        for key in effects:
+            if key not in keys:
+                raise ChatboardError(f"effects.{key} is not allowed; the only keys are {' and '.join(keys)}")
+        for key in keys:
+            items = effects.get(key)
+            if key not in effects:
+                raise ChatboardError(f"effects.{key} is missing; both {' and '.join(keys)} are required "
+                                     "(an empty list states none)")
+            if (not isinstance(items, list)
+                    or not all(isinstance(item, str) and item.strip() for item in items)):
+                raise ChatboardError(f"effects.{key} must be a list of nonempty strings "
+                                     f"(effects keys: {' and '.join(keys)})")
+    if data is not None and not isinstance(data, dict):
+        raise ChatboardError("data must be an object")
+    if kind is None:
+        return
+    envelope = {"kind": kind, "role": role, "to": to, "in_reply_to": in_reply_to,
+                "supersedes": supersedes, "effects": effects, "data": data}
+    spec = registry["kinds"][kind]
+    for path in spec.get("required", []):
+        if not _present(_lookup(envelope, path)):
+            raise ChatboardError(f"kind {kind}: required field {path} is missing")
+    for path, allowed in spec.get("enums", {}).items():
+        value = _lookup(envelope, path)
+        if value is not None and value not in allowed:
+            raise ChatboardError(f"kind {kind}: {path} must be one of {', '.join(allowed)} (got {value!r})")
+    for path, pattern in spec.get("patterns", {}).items():
+        value = _lookup(envelope, path)
+        if value is not None and not (isinstance(value, str) and re.fullmatch(pattern, value)):
+            raise ChatboardError(f"kind {kind}: {path} must match {pattern} (got {value!r})")
+
+
+def _post(repository: Path, *, author: str, session_id: str, topic: str,
+          body: str, references: list[str], message_id: str, observed_at: str,
+          wake: bool, registry: dict[str, Any] | None, kind: str | None, role: str | None,
+          to: list[str] | None, in_reply_to: int | None, supersedes: int | None,
+          effects: dict[str, Any] | None, data: dict[str, Any] | None) -> dict[str, Any]:
     canonical_uuid(session_id, "session_id")
     canonical_uuid(message_id, "message_id")
     if not all(isinstance(value, str) and value.strip() for value in (author, topic, body)):
@@ -114,6 +232,14 @@ def post(repository: Path, *, author: str, session_id: str, topic: str,
         raise ChatboardError("control topics are local telemetry subscriptions, not board publications")
     if not isinstance(wake, bool):
         raise ChatboardError("wake must be a boolean")
+    envelope = {"kind": kind, "role": role, "to": to, "in_reply_to": in_reply_to,
+                "supersedes": supersedes, "effects": effects, "data": data}
+    contract_version = None
+    if any(value is not None for value in envelope.values()):
+        registry = registry if registry is not None else load_registry()
+        validate_envelope(registry, **envelope)
+        if kind is not None:
+            contract_version = registry["version"]
 
     def change(board: dict[str, Any]) -> dict[str, Any]:
         existing = next((row for row in board["messages"] if row["message_id"] == message_id), None)
@@ -131,16 +257,103 @@ def post(repository: Path, *, author: str, session_id: str, topic: str,
         # This marker bypasses session suppression, never topic selection.
         if wake:
             candidate["wake"] = True
+        # Envelope keys, like wake, are present only when given.
+        for key, value in envelope.items():
+            if value is not None:
+                candidate[key] = value
+        if contract_version is not None:
+            candidate["contract_version"] = contract_version
         if existing:
             if existing != candidate:
                 raise ChatboardError("message_id already exists with different content")
             return existing
+        # Cross-message checks run per CAS attempt against the snapshot that
+        # would be published, using the candidate's own sequence.
+        targets: dict[str, dict[str, Any]] = {}
+        for name, value in (("in_reply_to", in_reply_to), ("supersedes", supersedes)):
+            if value is None:
+                continue
+            if value >= candidate["sequence"]:
+                raise ChatboardError(f"{name} {value} must name an existing earlier message "
+                                     f"(this message would be sequence {candidate['sequence']})")
+            target = next((row for row in board["messages"] if row["sequence"] == value), None)
+            if target is None:
+                raise ChatboardError(f"{name} {value} names no message on the board")
+            targets[name] = target
+        if (kind == "reply" and isinstance(data, dict)
+                and data.get("disposition") in ("answered", "declined")
+                and targets["in_reply_to"].get("kind") != "request"):
+            raise ChatboardError(
+                f"in_reply_to {in_reply_to}: an {data['disposition']} reply closes a request, so it must name a "
+                f"message of kind `request` (message {in_reply_to} has kind "
+                f"{targets['in_reply_to'].get('kind', 'note')!r})")
         board["messages"].append(candidate)
         board["next_sequence"] += 1
         return candidate
 
     _, message, revision = mutate(repository, change)
     return {"revision": revision, "message": message}
+
+
+def post(repository: Path, *, author: str, session_id: str, topic: str,
+         body: str, references: list[str], message_id: str, observed_at: str,
+         wake: bool = False, kind: str | None = None, role: str | None = None,
+         to: list[str] | None = None, in_reply_to: int | None = None,
+         supersedes: int | None = None, effects: dict[str, Any] | None = None,
+         data: dict[str, Any] | None = None,
+         registry: dict[str, Any] | None = None) -> dict[str, Any]:
+    if kind is not None:
+        registry = registry if registry is not None else load_registry()
+        require_kind(registry, kind)
+        writer = registry["kinds"][kind].get("writer", "post")
+        if writer != "post":
+            raise ChatboardError(f"kind {kind} is written only by the `{writer}` subcommand, not `post`")
+    return _post(repository, author=author, session_id=session_id, topic=topic, body=body,
+                 references=references, message_id=message_id, observed_at=observed_at, wake=wake,
+                 registry=registry, kind=kind, role=role, to=to, in_reply_to=in_reply_to,
+                 supersedes=supersedes, effects=effects, data=data)
+
+
+def adopt(repository: Path, *, author: str, session_id: str, body: str, role: str,
+          predecessor_session: str, message_id: str, observed_at: str,
+          handoff_sha256: str | None = None, handoff_path: Path | None = None,
+          claims_reclaimed: list[str] | None = None, channels: list[str] | None = None,
+          registry: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Write the one `adoption` row; same mutate() path and replay rule as post."""
+    canonical_uuid(session_id, "session_id")
+    try:
+        parsed = UUID(predecessor_session)
+    except (ValueError, AttributeError, TypeError) as failure:
+        raise ChatboardError("predecessor_session must be a canonical lowercase UUID") from failure
+    if str(parsed) != predecessor_session:
+        raise ChatboardError("predecessor_session must be a canonical lowercase UUID "
+                             "(uppercase or non-canonical forms are rejected, not normalised)")
+    if predecessor_session == session_id.lower():
+        raise ChatboardError("predecessor_session must differ from the poster's session_id")
+    if handoff_sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", handoff_sha256):
+        raise ChatboardError("handoff_sha256 must be 64 lowercase hex characters")
+    if handoff_path is not None:
+        try:
+            actual = hashlib.sha256(Path(handoff_path).read_bytes()).hexdigest()
+        except OSError as failure:
+            raise ChatboardError(f"handoff_path cannot be read: {failure}") from failure
+        if handoff_sha256 is not None and handoff_sha256 != actual:
+            raise ChatboardError(f"handoff_sha256 does not equal the sha256 of {handoff_path} ({actual})")
+        handoff_sha256 = actual
+    if handoff_sha256 is None:
+        raise ChatboardError("handoff_sha256 or handoff_path is required")
+    data: dict[str, Any] = {"predecessor_session": predecessor_session, "handoff_sha256": handoff_sha256}
+    if claims_reclaimed:
+        data["claims_reclaimed"] = list(claims_reclaimed)
+    if channels:
+        data["channels"] = list(channels)
+    registry = registry if registry is not None else load_registry()
+    if "adoption" not in registry["kinds"]:
+        raise ChatboardError("kind registry does not register `adoption`")
+    return _post(repository, author=author, session_id=session_id, topic=f"session:{session_id}",
+                 body=body, references=[], message_id=message_id, observed_at=observed_at, wake=False,
+                 registry=registry, kind="adoption", role=role, to=[f"role:{role}"] if isinstance(role, str) else None,
+                 in_reply_to=None, supersedes=None, effects=None, data=data)
 
 
 def claim(repository: Path, *, resource: str, author: str, session_id: str,
@@ -464,6 +677,26 @@ def parser() -> argparse.ArgumentParser:
     post_cmd.add_argument("--ref", action="append", default=[])
     post_cmd.add_argument("--wake", action="store_true",
                           help="mark an intentional wake signal that bypasses listener session suppression")
+    post_cmd.add_argument("--kind", help="registered message kind (see the `kinds` subcommand)")
+    post_cmd.add_argument("--role", help="the poster's stable role name")
+    post_cmd.add_argument("--to", action="append", default=None,
+                          help="addressee role:<name> or session:<uuid>; repeatable")
+    post_cmd.add_argument("--reply-to", type=int, default=None, dest="in_reply_to",
+                          help="sequence of the message this answers")
+    post_cmd.add_argument("--supersedes", type=int, default=None,
+                          help="sequence of the message this corrects or replaces")
+    post_cmd.add_argument("--effects-file", type=Path, help="JSON file: {shared_writes, external_actions}")
+    post_cmd.add_argument("--data-file", type=Path, help="JSON file: kind-specific data object")
+    kinds_cmd = commands.add_parser("kinds", help="print the registered kinds, one line each; reads no board")
+    kinds_cmd.add_argument("kind", nargs="?", default=None)
+    adopt_cmd = commands.add_parser("adopt", help="record a root adoption on session:<own session id>")
+    for name in ("author", "session-id", "body", "role", "predecessor-session"):
+        adopt_cmd.add_argument(f"--{name}", required=True)
+    adopt_cmd.add_argument("--message-id", default=None)
+    adopt_cmd.add_argument("--handoff-sha256")
+    adopt_cmd.add_argument("--handoff-path", type=Path)
+    adopt_cmd.add_argument("--claims-reclaimed", action="append", default=None)
+    adopt_cmd.add_argument("--channels", action="append", default=None)
     claim_cmd = commands.add_parser("claim")
     for name in ("resource", "author", "session-id", "note"):
         claim_cmd.add_argument(f"--{name}", required=True)
@@ -475,7 +708,29 @@ def parser() -> argparse.ArgumentParser:
     return root
 
 
+def read_json_file(path: Path | None, label: str) -> Any:
+    if path is None:
+        return None
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as failure:
+        raise ChatboardError(f"{label} {path} must be readable JSON: {failure}") from failure
+
+
+def preview_kind_help(argv: list[str]) -> None:
+    """`post --kind K --help` prints K's registry line above the ordinary help."""
+    if "post" not in argv or not ({"--help", "-h"} & set(argv)) or "--kind" not in argv:
+        return
+    index = argv.index("--kind")
+    if index + 1 < len(argv):
+        try:
+            print(kinds_view(load_registry(), argv[index + 1])[0])
+        except ChatboardError as failure:
+            print(f"kind: {failure}", file=sys.stderr)
+
+
 def main() -> int:
+    preview_kind_help(sys.argv[1:])
     args = parser().parse_args()
     try:
         if args.command == "read":
@@ -533,7 +788,20 @@ def main() -> int:
                 args.repository, author=args.author, session_id=args.session_id,
                 topic=args.topic, body=args.body, references=args.ref,
                 message_id=args.message_id or str(uuid4()), observed_at=timestamp(),
-                wake=args.wake,
+                wake=args.wake, kind=args.kind, role=args.role, to=args.to,
+                in_reply_to=args.in_reply_to, supersedes=args.supersedes,
+                effects=read_json_file(args.effects_file, "--effects-file"),
+                data=read_json_file(args.data_file, "--data-file"),
+            ), indent=2))
+        elif args.command == "kinds":
+            print("\n".join(kinds_view(load_registry(), args.kind)))
+        elif args.command == "adopt":
+            print(json.dumps(adopt(
+                args.repository, author=args.author, session_id=args.session_id, body=args.body,
+                role=args.role, predecessor_session=args.predecessor_session,
+                message_id=args.message_id or str(uuid4()), observed_at=timestamp(),
+                handoff_sha256=args.handoff_sha256, handoff_path=args.handoff_path,
+                claims_reclaimed=args.claims_reclaimed, channels=args.channels,
             ), indent=2))
         elif args.command == "claim":
             print(json.dumps(claim(

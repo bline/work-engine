@@ -91,6 +91,77 @@ wake the host watcher, but it returns to waiting unless a matching message is
 present. Expiry by passage of time produces no filesystem event. Use `read
 --active-claims` when claim state is needed.
 
+## Typed messages
+
+`post` accepts an optional envelope. Each flag adds its key to the row only when
+given; a post with no envelope flag writes the same row bytes as before and
+never opens the kind registry.
+
+| Flag | Row key | Meaning |
+| --- | --- | --- |
+| `--kind K` | `kind`, `contract_version` | A registered kind. The adapter also records the registry `version` as an integer `contract_version`; there is no flag for it. Rows without `--kind` carry none. |
+| `--role R` | `role` | The poster's stable role name, matching `^[a-z0-9][a-z0-9._-]{0,63}$`. |
+| `--to A` (repeatable) | `to` | `role:<name>` or `session:<uuid>`. `wait` does not read `to`; delivery is by `topic`. |
+| `--reply-to N` | `in_reply_to` | Sequence of an existing earlier message. |
+| `--supersedes N` | `supersedes` | Sequence of an existing earlier message. |
+| `--effects-file F` | `effects` | JSON object with both `shared_writes` and `external_actions`, each a list of nonempty strings (empty allowed). No other keys. |
+| `--data-file F` | `data` | JSON object of kind-specific fields. Names beyond the registered ones are accepted unchecked. |
+
+The registry `skills/durable-state/contracts/codex-chatboard-kinds.v1.json` is the
+authority for kind contracts. `kinds` prints one line per registered kind and
+`kinds K` prints one; `post --kind K --help` prints K's line above the ordinary
+help. Both read the registry, never the board. Registered kinds and writers:
+
+| kind | writer |
+| --- | --- |
+| `note` | `post` |
+| `status` | `post` |
+| `request` | `post` |
+| `reply` | `post` |
+| `receipt` | `post` |
+| `notice` | `post` |
+| `availability` | `post` |
+| `adoption` | `adopt` |
+| `correction` | `post` |
+
+Checks before the board is touched: a registered kind (an unregistered one is
+rejected, naming the registered kinds and `note`), required fields and enums,
+`role` and `to` grammar, the `effects` shape, and `adoption.data.handoff_sha256`
+being 64 lowercase hex. Inside the board update, re-run on each compare-and-swap
+retry: `in_reply_to` and `supersedes` must name an existing message with a lower
+sequence than the new one, and a `reply` whose `data.disposition` is `answered`
+or `declined` must reply to a `request`. Every rejection names the field path and
+the allowed values. Nothing checks truth, role holding or handoff contents.
+
+A replay of the same `--message-id` must repeat every envelope field exactly,
+including `contract_version`; otherwise it fails with the existing "different
+content" error. A missing registry is an error only for `--kind`, other envelope
+flags, `kinds` and `adopt`; ordinary posts, `read`, `wait`, `claim`, `release`
+and `topics` do not open it, so a copy of the script alone still serves them.
+
+### Adopt
+
+`post --kind adoption` is refused (the registry names `adopt` as its only
+writer). `adopt` writes one `adoption` row:
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . adopt \
+  --author successor --session-id '<own-session-uuid>' --role claude-root \
+  --predecessor-session '<predecessor-uuid>' --handoff-path /path/to/handoff.md \
+  --body 'Adopted the root role'
+```
+
+It accepts `--author --session-id --body --role --predecessor-session`, a
+`--handoff-sha256` and/or `--handoff-path`, optional repeatable
+`--claims-reclaimed` and `--channels`, and `--message-id`. It has no `--topic`:
+the row is always on `session:<own session id>` and is addressed
+`to: ["role:<role>"]`. With a path, the file's sha256 must equal a given digest,
+or becomes the digest. `--predecessor-session` must be a canonical lowercase
+UUID different from `--session-id` (compared ignoring case). The file check is
+byte identity at post time, not a check of the handoff's contents; consumers
+verify the digest against their own copy. `adopt` authenticates no one: the
+session id is caller-supplied and only its syntax is checked.
+
 ## Notification boundary
 
 The current implementation supports Linux inotify and Git's `files` ref backend
