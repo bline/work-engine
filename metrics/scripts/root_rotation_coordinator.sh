@@ -66,6 +66,24 @@ log() { printf '%s [sup:%s] %s\n' "$(date -u +%FT%T.%3NZ)" "$ROLE" "$*" | tee -a
 rec() { printf '%s\n' "$2" > "$STATE/$1"; }
 mkdir -p "$STATE"; C="$STATE/rotation-count"; [[ -f $C ]] || echo 0 > "$C"
 
+# `adopt` REJECTS a non-canonical predecessor_session or role rather than
+# normalising them (S1 compatibility note fcf448b1; adapter l.329-335 and
+# l.171-173). Unvalidated, the successor's adopt call fails, no row is ever
+# written, and the gate learns of it only at ADOPT_TIMEOUT -- then records
+# fail_no_adoption, asserting something about the successor that is not true.
+# Checked once at startup because it is a property of the INPUTS, not of a
+# phase: a bad value also makes an "awaiting authority" hold wrong, since the
+# approval it waits for could never be adopted. The gate validates rather than
+# normalises, matching the adapter's own stance.
+if [[ ! "$PRED_SESSION" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+  log "REFUSING: PRED_SESSION '$PRED_SESSION' is not a lowercase canonical uuid; adopt would refuse it"
+  rec terminal-status "fail_predecessor_session_form"; exit 24
+fi
+if [[ ! "$ROLE" =~ ^[a-z0-9][a-z0-9._-]{0,63}$ ]]; then
+  log "REFUSING: ROLE '$ROLE' does not match the board role grammar; adopt would refuse it"
+  rec terminal-status "fail_role_grammar"; exit 25
+fi
+
 role_unambiguous() {  # 0 = exactly one; 1 = none or several; 2 = could not read
   local names lrc n
   # The listing's exit status is captured BEFORE any pipe. Piping it into
@@ -297,17 +315,18 @@ commit() {
     # session:<own id>; contract_version 1.
     ack=$(python3 -I -c 'import sys,json
 d = json.load(open(sys.argv[1]))
-sid, dig, pred = sys.argv[2], sys.argv[3], sys.argv[4].lower()
+sid, dig, pred = sys.argv[2], sys.argv[3], sys.argv[4]
 out = ""
 for m in d.get("messages", []):
     if m.get("kind") != "adoption" or m.get("session_id") != sid:
         continue
     data = m.get("data") or {}
-    # `adopt` stores the lowercase canonical session form, so the gate
-    # normalises its OWN value before requiring exact equality.
+    # `adopt` stores predecessor_session exactly as given and refuses any
+    # non-canonical form, so exact equality is the right test; PRED_SESSION
+    # was validated against the same grammar before launch.
     if data.get("handoff_sha256") != dig:
         continue
-    if (data.get("predecessor_session") or "").lower() != pred:
+    if data.get("predecessor_session") != pred:
         continue
     out = m.get("message_id") or ""
     break
