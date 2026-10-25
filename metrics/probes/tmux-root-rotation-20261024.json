@@ -270,5 +270,31 @@
     "artifact_binding": "the approval body must carry the handoff's sha256. Author + token alone approves 'a rotation', not 'this handoff', so a stale or replayed approval would commit whatever the watch was started with. Three outcomes are distinguished and recorded: APPROVED, UNAUTHORIZED (named approver missing), UNBOUND (digest missing or for another artifact).",
     "binding_limits": "binds to CONTENT, not to a generation: two rotations of a byte-identical handoff share a digest. The board identifies authors; it does not authenticate them, so the allowlist is identification only. A lease/generation guard for the board-cursor TOCTOU is still NOT built.",
     "verified_binding": "approval with token but no digest -> ignored and recorded as unbound; approval citing another digest -> ignored; unauthorized author carrying BOTH a valid token and the correct digest -> ignored and recorded; correctly bound approval from a named approver -> committed"
+  },
+  "independent_review_20261024": {
+    "reviewer": "fable, fresh context, read-only; given the code and the contracts, not the author's view of the risk",
+    "findings": 16,
+    "fixed": [
+      "empty digest voided the approval binding (an empty string is a substring of every body)",
+      "missing validation-record read as 'bytes unchanged'",
+      "rotation cap enforced only in prepare, while commit is what increments it",
+      "adoption was any post from the successor's session, so a refusal to adopt retired the predecessor",
+      "validator counted an unverifiable digest pair towards a pass",
+      "an unknown --require name silently dropped that check from the gate",
+      "a failed window listing was recorded as a retirement that happened",
+      "an unadopted successor was left running and named only in the log",
+      "the gate-hold state inherited the previous rotation's terminal-status",
+      "the first token-bearing post ended the batch scan, so an approval behind a rejected message was lost"
+    ],
+    "known_unfixed": {
+      "leading_zero_counts": "the ^[0-9]+$ guard admits 08/09, which bash arithmetic rejects as octal; the branch is then skipped and the count reads as not-greater-than-zero. Needs a check that emits leading zeros; neither shipped check does. NOT fixed.",
+      "advisory_only_flag": "--advisory-only makes every validator outcome exit 0, and the coordinator cannot detect it. By design for corpus surveys; a configuration hazard, recorded not fixed.",
+      "board_post_parse": "a board post that lands while its sequence parse fails records fail_board_post and launches nothing, leaving a handoff post for a successor that never existed. NOT fixed."
+    },
+    "tmux_empty_target_measured": {
+      "method": "private socket, three disposable windows, 2026-10-24",
+      "result": "rename-window -t \"\" renamed the server's CURRENT window and kill-window -t \"\" killed it, BOTH returning exit 0. An empty window id is therefore not an inert target: it destroys an arbitrary window and reports success. This had been suspected but unconfirmed in review.",
+      "consequence": "the coordinator now validates the window id against ^@[0-9]+$ before launch and again before any destructive command"
+    }
   }
 }
