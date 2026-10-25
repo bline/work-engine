@@ -329,5 +329,50 @@ class HostAdapter(Base):
         self.assertEqual(rc, 32, err)
 
 
+class GateWatch(Base):
+    def post(self, author, body):
+        subprocess.run([sys.executable, str(BOARD), "--repository", str(self.repo), "post", "--author", author,
+                        "--session-id", str(uuid.uuid4()), "--topic", "control:rotation:test-root", "--body", body],
+                       capture_output=True, text=True, check=True)
+
+    def watch(self, *extra, approver="the-user"):
+        argv = [sys.executable, str(GATE), "watch", str(self.handoff), "--role", "test-root",
+                "--state", str(self.state), "--repo", str(self.repo), "--host-state", str(self.host_state),
+                "--pred-host", "claude", "--pred-session", self.pred, "--successor-host", "claude",
+                "--validator", PASS, "--quiescence-file", str(self.quiescent), "--adopt-timeout", "60",
+                "--after-adopt", "stop", "--watch-timeout", "20", *extra]
+        if approver:
+            argv += ["--gate-authority", approver]
+        return subprocess.Popen(argv, env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    def status(self):
+        return (self.state / "terminal-status").read_text().strip()
+
+    def test_refuses_without_named_approver(self):
+        p = self.watch(approver=None)
+        self.assertEqual(p.wait(30), 77)
+        self.assertEqual(self.status(), "watch_refused_no_authority")
+
+    def test_unbound_and_unauthorized_approvals_are_ignored_and_window_expires(self):
+        p = self.watch()
+        self.assertTrue(self.wait_for(lambda: (self.state / "watch-state").exists()))
+        dig = __import__("hashlib").sha256(self.handoff.read_bytes()).hexdigest()
+        self.post("the-user", "approve-rotation")                 # no digest
+        self.post("someone-else", f"approve-rotation {dig}")       # not an approver
+        self.assertEqual(p.wait(60), 78)
+        self.assertEqual(self.status(), "watch_expired")
+        self.assertEqual(len([s for s in self.claude_sessions().values() if s["name"] == "test-root"]), 0)
+
+    def test_authorized_approval_behind_a_rejected_one_commits(self):
+        p = self.watch()
+        self.assertTrue(self.wait_for(lambda: (self.state / "watch-state").exists()))
+        dig = __import__("hashlib").sha256(self.handoff.read_bytes()).hexdigest()
+        self.post("someone-else", f"approve-rotation {dig}")
+        self.post("the-user", f"approve-rotation {dig}")
+        rc = p.wait(120)
+        self.assertEqual((rc, self.status()), (0, "committed_rotation_1"), p.stderr.read()[-800:])
+        self.assertIn("author=the-user", (self.state / "authorized-by").read_text())
+
+
 if __name__ == "__main__":
     unittest.main()
