@@ -22,11 +22,10 @@
 #   BOARD_CMD            chatboard script, invoked with --repository REPO
 #   REPO                 repository the board lives in
 #   PRED_SESSION         predecessor session id
-#   LAUNCH_TMPL          {SESSION} {TOPIC} {HANDOFF} {DIGEST} substituted
+#   LAUNCH_TMPL          {SESSION} {TOPIC} {HANDOFF} {DIGEST} {ROLE}
+#                        {PRED_SESSION} {PRED_WID} {SOCK} substituted
 #   ADOPT_TIMEOUT        seconds to wait for the successor's board acknowledgment
 #   RETIRE               kill|keep|successor
-#   ADOPT_MARKER         phrase the successor must post to assert adoption;
-#                        required together with the handoff digest
 #   ORPHAN               kill|keep: disposition of a successor that never
 #                        adopted. Default kill -- it owns nothing, and left
 #                        alive it is a second candidate root the descendant
@@ -49,9 +48,11 @@ ADOPT_TIMEOUT="${ADOPT_TIMEOUT:-180}"; RETIRE="${RETIRE:-keep}"
 # What to do with a successor that never adopted: retire it (default) or keep
 # it for inspection. Keeping leaves a second candidate root alive.
 ORPHAN="${ORPHAN:-kill}"
-# The phrase a successor must post to assert adoption. Paired with the handoff
-# digest, so a report ABOUT the handoff is not mistaken for adoption of it.
-ADOPT_MARKER="${ADOPT_MARKER:-Adoption acknowledged}"
+# ADOPT_MARKER is RETIRED: adoption is now read from typed fields, so no
+# phrase in the body carries weight. Prose adoption is NOT accepted during a
+# transition, because the coordinator and the launcher ship together -- there
+# is no mixed state within a rotation, and a fallback would only re-enable a
+# test already shown to be satisfiable by a message meaning the opposite.
 # 3000s keeps one watch inside the 1h prompt-cache TTL, so the wake resumes on a
 # read prefix rather than rebuilding it. Nothing is spent while blocked.
 WATCH_TIMEOUT="${WATCH_TIMEOUT:-3000}"; APPROVE_TOKEN="${APPROVE_TOKEN:-approve-rotation}"
@@ -217,7 +218,7 @@ commit() {
   local sid topic; sid=$(cat /proc/sys/kernel/random/uuid); topic="session:$sid"
   local seq
   seq=$(B post --author "supervisor:$ROLE" --session-id "$PRED_SESSION" --topic "$topic" \
-        --body "Root handoff. Verify sha256 $dig, reconcile active claims, then post \"$ADOPT_MARKER\" citing sha256 $dig on $topic. If the digest does NOT match, do not post here at all." \
+        --body "Root handoff. Verify sha256 $dig, reconcile active claims, then acknowledge with `adopt` citing sha256 $dig. If the digest does NOT match, post nothing at all." \
         --ref "$handoff" 2>>"$STATE/supervisor.log" \
         | python3 -I -c 'import sys,json; print(json.load(sys.stdin)["message"]["sequence"])' 2>/dev/null)
   [[ -n "${seq:-}" ]] || { log "HOLD: board post failed; nothing launched"; rec terminal-status "fail_board_post"; return 33; }
@@ -251,8 +252,10 @@ commit() {
     rec terminal-status "fail_predecessor_window_unresolved"; return 31; }
   if [[ "$RETIRE" == successor ]]; then
     cmd=${cmd//\{PRED_WID\}/$pred_wid}; cmd=${cmd//\{SOCK\}/$SOCK}
+    cmd=${cmd//\{ROLE\}/$ROLE}; cmd=${cmd//\{PRED_SESSION\}/$PRED_SESSION}
   else
     cmd=${cmd//\{PRED_WID\}/}; cmd=${cmd//\{SOCK\}/}
+    cmd=${cmd//\{ROLE\}/$ROLE}; cmd=${cmd//\{PRED_SESSION\}/$PRED_SESSION}
   fi
   wid=$(T new-window -P -F '#{window_id}' -d -n "${ROLE}-next" -c "$pred_cwd" "$cmd" 2>>"$STATE/supervisor.log")
   [[ -n "${wid:-}" ]] || { log "HOLD: launch failed; predecessor untouched"; rec terminal-status "fail_launch"; return 23; }
@@ -283,21 +286,32 @@ commit() {
     (( wrc == 0 )) || break          # 2 = the wait's own timeout
     # A wait returns on the first message matching the topic, which need not be
     # the successor's. Re-arm from the returned cursor rather than accept it.
-    # Adoption must be ASSERTED, not merely posted. Treating any message from
-    # the successor's session as adoption meant a successor reporting a digest
-    # MISMATCH -- which its own instructions tell it to do -- retired the
-    # predecessor. Require the acknowledgement marker and the digest together.
-    # This is still prose matching. The robust form is a typed `adoption`
-    # message carrying data.handoff_sha256, specified in
-    # docs/codex-chatboard-contracts.md; adopt that when the envelope lands.
+    # Adoption is read from TYPED FIELDS, not from prose. The previous test
+    # required a marker phrase and the digest as substrings of the body, which
+    # a message meaning the opposite could satisfy ("not acknowledging:
+    # expected sha256 <dig>"). A typed row cannot be written by `post` at all
+    # -- the kind registry refuses it -- and `adopt` re-checks the digest
+    # against the file, so the row is evidence rather than wording.
+    # Observed row shape (scratch board, 2026-10-25): kind "adoption" at top
+    # level; data.predecessor_session and data.handoff_sha256; topic fixed to
+    # session:<own id>; contract_version 1.
     ack=$(python3 -I -c 'import sys,json
-d=json.load(open(sys.argv[1]))
-sid, dig, marker = sys.argv[2], sys.argv[3], sys.argv[4]
-print(next((m["message_id"] for m in d.get("messages", [])
-            if m.get("session_id") == sid
-            and marker in (m.get("body") or "")
-            and dig in (m.get("body") or "")), ""))' \
-       "$waitout" "$sid" "$dig" "$ADOPT_MARKER" 2>/dev/null)
+d = json.load(open(sys.argv[1]))
+sid, dig, pred = sys.argv[2], sys.argv[3], sys.argv[4].lower()
+out = ""
+for m in d.get("messages", []):
+    if m.get("kind") != "adoption" or m.get("session_id") != sid:
+        continue
+    data = m.get("data") or {}
+    # `adopt` stores the lowercase canonical session form, so the gate
+    # normalises its OWN value before requiring exact equality.
+    if data.get("handoff_sha256") != dig:
+        continue
+    if (data.get("predecessor_session") or "").lower() != pred:
+        continue
+    out = m.get("message_id") or ""
+    break
+print(out)' "$waitout" "$sid" "$dig" "$PRED_SESSION" 2>/dev/null)
     [[ -n "${ack:-}" ]] && break
     local nxt; nxt=$(python3 -I -c 'import sys,json;print(json.load(open(sys.argv[1])).get("next_since",""))' "$waitout" 2>/dev/null)
     [[ -n "$nxt" && "$nxt" != "$since" ]] || break
