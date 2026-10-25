@@ -106,7 +106,8 @@ state requires version history, which only repo-tracked referents have.
 | not provable | 2 | claimed digest matches no committed version of that file; consistent with an uncommitted working tree (82 files are modified-uncommitted in this tree), but not checkable |
 | no version history | 4 | assignment records under `~/.local/state/work-engine`; write-time state unrecoverable |
 
-The 5 missing absolute referents are all `/run/user/1000/…` tmpfs paths, valid
+The missing absolute referents (7 tokens across 5 documents, 4 enumerated in
+the evidence file) are `/run/user/1000/…` tmpfs paths, valid
 when written and since cleaned - an explanation, not a proof, on the same
 footing. At rotation time write-time and check-time coincide, which is where
 these checks earn their place; retrospectively, age is consistent with every
@@ -139,6 +140,20 @@ gate. This is recorded, not resolved.
 `CHILDREN_CMD` and `CLAIMS_CMD` were interfaces with stubs behind them, so the
 coordinator checked the *shape* of doctrine's step-1 and step-2 preconditions.
 [`quiescence_checks.py`](../scripts/quiescence_checks.py) supplies real ones.
+
+Three checks feed the gate, not two. `DESCENDANTS_CMD` reads the **OS process
+tree** and needs no registration at all, so a child that never claimed is still
+seen; it is an upper bound, and the gate is `== 0`. A child must evade both the
+board and the process tree to pass unseen.
+
+**Correction, 2026-10-25.** This record previously stated that the board
+returned 0 active claims, that the claims check therefore "returns 0 on every
+rotation and has no discriminating power", and that "no session is registering".
+A read of the same board on 2026-10-25 returns **five** active claims held by
+five distinct sessions. The original observation was true at that instant; the
+generalisation over time was drawn from a single read (n = 1) and is
+**falsified**. The board check does carry signal, and the claim that quiescence
+rests on the descendant check alone is withdrawn with it.
 
 **Neither host CLI can give a parent-scoped child count.** `claude agents
 --json` lists machine-wide sessions *including the root itself* with status
@@ -177,8 +192,11 @@ construction - the board stamps its own claims `authority:
 advisory_coordination_only`, and [context-control.md](../../skills/manual-orchestration/references/context-control.md)
 holds that an observation grants no root-transfer authority. So an approval
 counts only from an author or session id named in `GATE_AUTHORITY`, its body
-must carry `APPROVE_TOKEN`, and with no allowlist `watch` **refuses to run at
-all** (`watch_refused_no_authority`): an unauthenticated trigger is worse than a
+must carry `APPROVE_TOKEN` **and the handoff's sha256** - author and token alone
+approve "a rotation", not *this* handoff, so a stale or replayed message would
+commit whatever the watch was holding. A token-bearing message that cites no
+digest, or another artifact's, is recorded as `UNBOUND` and ignored. With no
+allowlist `watch` **refuses to run at all** (`watch_refused_no_authority`): an unauthenticated trigger is worse than a
 manual rotation. The accepted message id is recorded in `authorized-by` and a
 rejected one in `last-rejected-trigger`, so the decision is auditable either way.
 
@@ -254,8 +272,8 @@ ended. What wakes a model is a returning tool call, not an arriving message.
 | --- | --- | --- |
 | long blocking wait | `BASH_MAX_TIMEOUT_MS` | `background_terminal_max_timeout` |
 | measured ceiling before configuring | 600,000 ms | - |
-| measured after configuring | **640.2 s foreground, returned in-band** | 3,600,000 ms set |
-| inference while blocked | none | none |
+| after configuring | **640.2 s foreground, returned in-band** (measured) | 3,600,000 ms set (configured, not exercised) |
+| inference while blocked | none observed over the 640.2 s wait | `not established` (no wait was run) |
 
 `600000` is a **silent clamp**, not a rejection: a requested 700,000 ms was
 accepted, applied as 600 s, and the command was then **moved to the background
@@ -288,6 +306,11 @@ root must hold no listener.
 
 ## Defects this work found in the mechanism
 
+The four below are those found *before* the independent review. That review
+found sixteen more, of which ten were fixed and three are recorded unfixed; a
+further defect in the launch contract was found on 2026-10-25. See the evidence
+file. This section is not a total.
+
 Four, all in code written earlier in the same session:
 
 1. The stall pattern was **case-sensitive** and missed Codex's "Trust this
@@ -297,16 +320,27 @@ Four, all in code written earlier in the same session:
    blind to dialogs appearing after startup - including Codex's rate-limit /
    model-switch modal - and charged a fixed ~25s to every rotation. Merging the
    two loops removes that fixed cost. With an instantly-acknowledging shell
-   successor the coordinator's own overhead after the fix is 1,443 ms.
+   successor the coordinator's own overhead after the fix is 1,443 ms. Three
+   shell-stub figures exist (1,133 ms plain, 1,443 ms, 3,248 ms after re-arming
+   past a bystander); they are not one measurement repeated.
 
    **Correction, 2026-10-24.** An earlier version of this record paired
    "~27,000 ms" with "1,443 ms" as a before/after measurement. They are not the
-   same workload. 1,443 ms was measured with a shell successor; ~27,000 ms was
-   *derived* from the live model rotations (26.8-26.9 s, 4-5 model calls) by
-   subtracting an estimated 25 s of scan, and was never measured. What is
-   established is that a fixed ~25 s scan ran on every rotation and no longer
-   does. The post-fix cost of a **live model** rotation is `not established`:
-   it has not been re-measured since the fix.
+   same workload: 1,443 ms was measured with a shell successor, ~27,000 ms with
+   a live model successor before the fix.
+
+   **Correction to that correction, 2026-10-25.** The withdrawal said ~27,000 ms
+   was "derived by subtracting an estimated 25 s of scan, and never measured".
+   That is arithmetically impossible - 26.8 s less 25 s is about 1.8 s, not
+   27 s - and it misnames the error. The figure *was* measured; what was derived
+   was its decomposition into "25 s of scan plus ~2 s of work". The verdict
+   stands and the error class does not.
+
+   The post-fix cost of a live model rotation is no longer `not established`:
+   two typed-adoption rotations ran at **14,716 ms and 18,736 ms** on 2026-10-25
+   (n = 2). Both arms are now live model successors, so it is a live-to-live
+   pair - but the acknowledgement changed from `post` to `adopt` in the same
+   interval, so it still does not isolate the fixed-scan fix.
 3. The validator contract executed `"$VALIDATOR"` as a single program, so a
    validator carrying its own flags failed with exit 127. It now word-splits,
    because a real validator needs `--repo` and `--require`.
@@ -351,12 +385,32 @@ degraded to `not_established` and blocked the rotation instead of passing it.
 | watch: no approver named | 77 | `watch_refused_no_authority` | untouched | yes |
 | watch: window closed unapproved | 78 | `watch_expired` | untouched | yes |
 | watch: handoff has no computable digest | 79 | `watch_refused_no_digest` | untouched | yes |
+| PRED_SESSION is not a canonical uuid | 24 | `fail_predecessor_session_form` | untouched, nothing launched | yes |
+| ROLE breaks the board's role grammar | 25 | `fail_role_grammar` | untouched, nothing launched | yes |
+| watch: board cursor unreadable at start | 32 | `watch_board_unreadable` | untouched | no |
+| wrong subcommand | 64 | - | untouched | no |
 
-Every outcome above refuses rather than proceeds, except the two commits.
+Every outcome above refuses rather than proceeds, except the two commits. The
+table is the authority for coverage: 33 rows, 22 marked tested, 10 not, 1
+incidental. Four rows were added on 2026-10-25 after a review found the table
+listed fewer statuses than the coordinator emits.
 Rows marked "no" under *tested* are reachable by code reading only; they are
 `not established` by observation, not known-good.
 
-Two live Claude rotations committed, at 26.9 s and 26.8 s, both before the
+**Corrected 2026-10-25 (n was under-reported).** The supervisor logs record
+**four** committed live rotations on 2026-10-24, not two: `state-live3`
+(17:57:16Z), `state-live4` (18:00:57Z, `predecessor-retired-by=successor`),
+`state-live5` (18:01:42Z, `predecessor-retired-by=not_established`) and
+`state-val-rot` (20:18:31Z). Two earlier attempts ended `fail_no_adoption`.
+`state-val-rot` ran between the pre-fix copy and the fixed file, so which code
+it ran is `not established`; live3-5 precede the fix.
+
+`state-live5` is evidence this record failed to report: the successor did **not**
+retire the predecessor within 60 s and the supervisor correctly declined to
+substitute for it. The table above describes that path as a design intention; it
+was in fact observed.
+
+Two of those four committed at 26.9 s and 26.8 s, both before the
 fixed-cost fix; 4 and 5 model calls. The second, in the same cwd within the
 cache TTL, recorded cache_creation 23,266 against the first's 53,967 while
 cache_read rose from 148,402 to 239,169 - consistent with the preamble being
