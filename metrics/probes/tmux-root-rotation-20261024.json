@@ -474,5 +474,19 @@
     "unreported_observation": "state-live5 exercised the RETIRE=successor path where the successor did NOT retire the predecessor within 60s, and the supervisor correctly declined to substitute for it (predecessor-retired-by=not_established). The record describes that path only as a design intention; it was actually observed and should have been reported as evidence.",
     "consequence_for_other_claims": "the 'n = 1 pair' cache comparison was drawn from a set in which more pairs existed; and the 26.9/26.8 figures cannot be mapped unambiguously onto the four logged rotations.",
     "which_ran_pre_fix": "live3, live4 and live5 precede the fix. state-val-rot ran at 20:18Z, between the pre-fix copy saved at 20:16Z and the fixed file at 20:25Z, so which code it ran is NOT established."
+  },
+  "coverage_gap_daemon_hosted_roots_20261025": {
+    "found_by": "attempting to apply the mechanism to the session that built it",
+    "observation": "this Claude session runs as `claude --session-id <id>` under `claude bg-pty-host` under `claude daemon run`, parented to systemd. The tmux window the user sees runs a separate `claude --resume` CLIENT (pane_pid 3682603 -> pid 3682694). No ancestor of the working process is a tmux pane pid, verified three ways: TMUX unset, ancestry walk reaching systemd, and no pane pid among the ancestors.",
+    "consequence_for_the_mechanism": "the gate manages a role as a tmux WINDOW and retires it by swapping and killing that window. For a daemon-hosted session that retires the client, not the root. The design's assumption -- that the root process lives in the role window -- holds for a directly launched root (as every probe used) and NOT for a resumed or daemon-hosted one.",
+    "consequence_for_the_DESCENDANT_CHECK": {
+      "severity": "FAIL-OPEN; this is the part that matters",
+      "detail": "quiescence_checks.py descendants counts session processes beneath the ROLE WINDOW'S pane. A daemon-hosted root's children are spawned under the daemon, not under the pane, so they are NOT descendants of the pane and the check cannot see them. It would report 0 while children run.",
+      "direction": "under-counting, which is the unrecoverable direction: the gate would read quiescent and rotate away from live work. This is the same failure class as the collapsing rule removed on 2026-10-24, arriving by a different route.",
+      "scope_of_the_earlier_validation": "the check was validated against a live idle root in rootlive3, which was launched DIRECTLY in its window, so its children were pane descendants. That validation does not extend to daemon-hosted roots, and the record should not be read as if it did.",
+      "not_yet_fixed": "detecting the daemon-hosted shape, or locating the root by session id rather than by pane descent, is not implemented. Recorded, not fixed."
+    },
+    "also_observed": "a resume mints a NEW session id: this session posted to the board as 32858989-... while running as 018ae509-.... A gate configured with PRED_SESSION from before a resume would compare against a stale id and no adoption row would ever match.",
+    "what_would_work": "a root launched directly into a tmux window, which is the shape every probe used"
   }
 }
