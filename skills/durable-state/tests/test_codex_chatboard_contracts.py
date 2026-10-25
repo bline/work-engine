@@ -698,6 +698,14 @@ class CompactReadTest(RepoCase):
         line = self.run_cli("read", "--format", "compact").stdout
         self.assertEqual(line.split("\t")[:4], ["1", "note", "-", "-"])
 
+    def test_stored_null_kind_reads_as_note(self) -> None:
+        self.post(body="plain")
+        self.raw_rewrite(lambda board: board["messages"][0].__setitem__("kind", None))
+        line = self.run_cli("read", "--format", "compact").stdout
+        self.assertEqual(line.split("\t")[1], "note")
+        filtered = self.run_cli("read", "--format", "compact", "--kind", "note").stdout
+        self.assertEqual(filtered.split("\t")[0], "1")
+
 
 class WaitDeliveryByToTest(RepoCase):
     def wait(self, *topics: str, since: int = 0, limit: int = 100, **kw):
@@ -957,6 +965,7 @@ class RolesViewTest(RepoCase):
         self.assertEqual(entry["reported_holder"], self.holder("B", 1))
         self.assertEqual([r["relation"] for r in entry["relations"]], ["overlap"])
         self.assertEqual(entry["relations"][0]["predecessor_session"], sid("A"))
+        self.assertEqual(entry["relations"][0]["earlier_adoption_sequence"], "not reported")
         self.assertEqual(entry["successions"][0]["predecessor_ending_sequence"], "not reported")
         self.assertEqual(entry["successions"][0]["committed"], "not established")
 
@@ -1369,12 +1378,25 @@ class ParityTest(RepoCase):
         rule = ("`required`, `enums` and `patterns` hold envelope-rooted paths (`data.subject`, "
                 "`data.disposition`); `optional_data` entries are rooted at `data` (`state`, `handoff.path`)")
         self.assertIn(rule, text)
+        roots = self.registry["envelope"]["path_roots"]
+        self.assertEqual(roots, {"required": "envelope", "enums": "envelope", "patterns": "envelope",
+                                 "optional_data": "data"})
+        for section_name in ("required", "enums", "patterns"):
+            self.assertIn(f"`{section_name}`", rule.split(";")[0])
+        self.assertIn("`optional_data` entries are rooted at `data`", rule)
         for kind, spec in self.registry["kinds"].items():
             for path in spec["required"] + list(spec["enums"]) + list(spec.get("patterns", {})):
                 self.assertTrue(path in ("role", "to", "in_reply_to", "supersedes") or path.startswith("data."),
                                 f"{kind}: {path} is not envelope-rooted")
             for path in spec["optional_data"]:
                 self.assertFalse(path.startswith("data."), f"{kind}: optional_data {path} is not data-rooted")
+
+    def test_adapter_registry_path_follows_envelope_root(self) -> None:
+        path, values = BOARD._registry_path(self.registry, "reply", "enums", "disposition")
+        self.assertEqual(self.registry["envelope"]["path_roots"]["enums"], "envelope")
+        self.assertEqual(path, "data.disposition")
+        self.assertIn(path, self.registry["kinds"]["reply"]["enums"])
+        self.assertEqual(values, self.registry["kinds"]["reply"]["enums"][path])
 
     def test_operator_reference_documents_roles_and_requests(self) -> None:
         text = OPERATOR_DOC.read_text()

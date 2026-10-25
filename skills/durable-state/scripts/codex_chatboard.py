@@ -286,7 +286,7 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
                 raise ChatboardError("in_reply_to: an answered/declined reply closes a request and must name it")
             if targets["in_reply_to"].get("kind") != "request":
                 raise ChatboardError(
-                    f"in_reply_to {in_reply_to}: an {data['disposition']} reply closes a request, so it must name "
+                    f"in_reply_to {in_reply_to}: a reply with disposition {data['disposition']!r} closes a request, so it must name "
                     f"a message of kind `request` (message {in_reply_to} has kind "
                     f"{targets['in_reply_to'].get('kind', 'note')!r})")
         board["messages"].append(candidate)
@@ -413,7 +413,8 @@ def row_kind(row: dict[str, Any]) -> Any:
     A stored kind that the current registry does not know is returned as
     recorded: readers display it, they do not reject it (D5).
     """
-    return row.get("kind", "note")
+    kind = row.get("kind")
+    return kind if isinstance(kind, str) else "note"
 
 
 def read_view(board: dict[str, Any], *, since: int | None, limit: int,
@@ -845,7 +846,7 @@ def _role_entry(role: str, rows: list[dict[str, Any]], predecessor_path: str, st
             relations.append({"relation": "overlap", "successor_session": later["session"],
                               "successor_adoption_sequence": later["sequence"],
                               "predecessor_session": later["predecessor"],
-                              "earlier_session": later["predecessor"], "earlier_adoption_sequence": None,
+                              "earlier_session": later["predecessor"], "earlier_adoption_sequence": NOT_REPORTED,
                               "path": [later["session"], later["predecessor"]]})
     for index, first in enumerate(unended):
         for second in unended[index + 1:]:

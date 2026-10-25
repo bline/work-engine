@@ -375,6 +375,8 @@ from the same session and role follows it (higher sequence). Per role:
   `conflict` (neither descends from the other and the chains share no session).
   Chains traverse ended adoptions: an ended adoption leaves the unended set but
   stays a link. Overlap is not conflict, and fork is neither.
+  An `overlap` entry's `earlier_adoption_sequence` is `not reported` when the earlier
+  session has no adoption on the board; `roles` emits no JSON `null` for an absent sequence.
 - `state`: `no_adoption`; `ended` (adoptions exist, all ended); `single` (one
   unended adoption, predecessor reported `ending`); `overlap`; `fork`; `conflict`.
   In a mixture the first that applies of `conflict`, `fork`, `overlap` is the
@@ -406,6 +408,9 @@ are attached under `replies` and never close. A `receipt` is attached under
 the view does not rely on that for rows written elsewhere: a closing reply whose
 target is missing, later, or not a `request` closes nothing and is listed under
 `unattached_replies` with its `target_kind`. `--to` does not filter that list.
+`total_requests` counts the requests shown (after `--to`). In this view an absent
+sequence is JSON `null` (for example `closed_by_sequence` on an open request); the
+`roles` view instead reports an absent sequence as `not reported`.
 
 ## List topics
 
