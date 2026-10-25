@@ -1,0 +1,421 @@
+{
+  "artifact_type": "work_engine_chatboard_s1_gate_compatibility_note",
+  "schema_version": 1,
+  "status": "complete",
+  "issued_at_stage": "S2 acceptance (candidate; S2 not yet integrated)",
+  "written_by": {
+    "role": "worker (fresh), manual-orchestration",
+    "agent_id": "aa3bf5f9b9b086701",
+    "parent": "Claude root cdcf9f6a-5ab9-492b-b08c-3078ddb957ed",
+    "packet": "/home/bline/.local/state/work-engine/chatboard-contracts-plan-20261024/s2-compat-note-packet-v1.md",
+    "packet_sha256": "ad78046d74a13406dd6ec06e4d3a20b8db049e5bc02d242a425ce4fbb7538f87",
+    "observed_model": "claude-sonnet-5-5",
+    "identity_binding": "received from coordinator (session cdcf9f6a, agent aa3bf5f9b9b086701, transcript path, pinned context-status binary sha256 7a0cbee1...); acknowledged in the worker report",
+    "date": "2026-10-25"
+  },
+  "subject": {
+    "worktree": "/home/bline/code/work-engine/.claude/worktrees/agent-af874a95656df746b",
+    "head": "845afa80 (commits 128cbd17, 39aa65a2, 845afa80 on base 7a779600)",
+    "head_source": "git log --oneline -4 in the worktree; git status --short empty at start",
+    "adapter": {
+      "path": "skills/durable-state/scripts/codex_chatboard.py (in the worktree)",
+      "sha256": "9e5c2d7eac5024aecf1eb21ca95e9163b1e34710cdcf151721067514b791b981",
+      "lines": 924,
+      "source": "sha256sum; wc -l; equals the packet's digest"
+    },
+    "registry": {
+      "path": "skills/durable-state/contracts/codex-chatboard-kinds.v1.json",
+      "sha256": "779cb9958dc12646fd9e451bf97d2fbe5d5770e81b8a6626b83088ea39d371f9",
+      "lines": 72,
+      "changed_since_S1": false,
+      "source": "sha256sum; cmp against git show 7a779600:<path> (identical); git diff --stat 7a779600 HEAD lists no registry file"
+    },
+    "files_changed_by_S2": "docs/codex-chatboard.md, metrics/probes/chatboard-compact-read-20261025.json, skills/durable-state/scripts/codex_chatboard.py, skills/durable-state/tests/test_codex_chatboard_contracts.py (git diff --stat 7a779600 HEAD)",
+    "doc": "docs/codex-chatboard.md in the worktree, section 'Delivery by `to`' l.46-76; 'Read filters and compact output' l.177-199",
+    "plan": {
+      "path": "planning/chatboard-message-contracts-implementation-plan.md",
+      "sha256": "d14a0084ec4aa323b965a09b74d144b9c22be9cdd6c5a682f06796d6c5556bb8",
+      "passage_relied_on": "l.682-757 (S5); sha256sum equals the S1 note's digest"
+    }
+  },
+  "registry_version": {
+    "artifact_type": "work_engine_codex_chatboard_kinds_v1",
+    "version": 1,
+    "source": "registry l.2-3"
+  },
+  "contract_version_field": {
+    "when_written": "Only on typed rows: when kind is not None, contract_version is set to the registry's version and written onto the row. Rows with envelope fields but no kind (e.g. --role only) and untyped rows carry no contract_version.",
+    "type": "integer (load_registry refuses a registry whose version is not an int)",
+    "value_at_this_registry": 1,
+    "source": "adapter l.237-242, l.264-265 (_post); l.118-121 (load_registry int check); behavioural: cases A1, P2 (contract_version 1 present), P3, P4 (absent)"
+  },
+  "adoption_kind": {
+    "registry_entry": {
+      "consumer": "the predecessor's gate; role resolution; peers re-addressing",
+      "writer": "adopt",
+      "required": [
+        "role",
+        "data.predecessor_session",
+        "data.handoff_sha256"
+      ],
+      "enums": {},
+      "patterns": {
+        "data.handoff_sha256": "^[0-9a-f]{64}$"
+      },
+      "optional_data": [
+        "claims_reclaimed",
+        "channels"
+      ],
+      "source": "registry l.57-64"
+    },
+    "registry_generic_checks": {
+      "required": "each required path must be present and non-empty (None, empty string/list/dict, or whitespace-only string count as missing)",
+      "patterns": "a present value must be a string fully matching the pattern",
+      "source": "adapter l.146-160 (_lookup, _present), l.208-219 (validate_envelope)"
+    },
+    "adapter_hard_coded_checks_in_adopt": [
+      {
+        "check": "session_id must be a canonical lowercase UUID; uppercase is rejected, not normalised",
+        "source": "adapter l.325-328; behavioural A8b"
+      },
+      {
+        "check": "predecessor_session must parse as a UUID and equal its canonical lowercase string form; uppercase or non-canonical forms (e.g. braces) rejected, not normalised",
+        "source": "adapter l.329-335; behavioural A7, A8c"
+      },
+      {
+        "check": "predecessor_session must differ from session_id",
+        "source": "adapter l.336-337; behavioural A9"
+      },
+      {
+        "check": "handoff_sha256, when given, must be 64 lowercase hex",
+        "source": "adapter l.338-339; behavioural A10"
+      },
+      {
+        "check": "handoff_path, when given, must be readable; its sha256 is computed; if handoff_sha256 is also given they must be equal; the computed digest is what is stored",
+        "source": "adapter l.340-347; behavioural A4, A5, A12"
+      },
+      {
+        "check": "one of handoff_sha256 or handoff_path is required",
+        "source": "adapter l.348-349; behavioural A6"
+      },
+      {
+        "check": "registry must register `adoption`",
+        "source": "adapter l.355-357"
+      },
+      {
+        "check": "role validated against envelope.role_pattern via validate_envelope",
+        "source": "adapter l.171-173 called from _post l.238-240; behavioural A11"
+      }
+    ],
+    "data_object_written": "{predecessor_session, handoff_sha256} always; claims_reclaimed and channels only when non-empty lists were given",
+    "data_source": "adapter l.350-354; behavioural A1 (both optional lists), A3 (neither)"
+  },
+  "envelope_grammars": {
+    "fields": [
+      "kind",
+      "role",
+      "to",
+      "in_reply_to",
+      "supersedes",
+      "effects",
+      "data",
+      "contract_version"
+    ],
+    "fields_source": "registry l.5",
+    "role_pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+    "role_source": "registry l.6; enforced adapter l.171-173",
+    "to_forms": [
+      "role:<name>",
+      "session:<uuid>"
+    ],
+    "to_patterns": [
+      "^role:[a-z0-9][a-z0-9._-]{0,63}$",
+      "^session:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    ],
+    "to_source": "registry l.7-11; enforced adapter l.174-182 (to must be a non-empty list; every address must fully match one pattern)",
+    "lowercase_canonical_session_form": "The session: address pattern admits only lowercase hex in 8-4-4-4-12 form; uppercase is refused, not normalised (behavioural P5b; role:Root refused, P5c). Note: the generic post path checks session_id with canonical_uuid, which compares against value.lower(), so `post` accepts and stores an uppercase session_id (behavioural P6, adapter l.99-106, l.227); only `adopt` requires the lowercase form (l.325-328). Re-observed on the S2 adapter: P5b refused; P6 post with an uppercase session_id exit 0 and stored it uppercase; A8b adopt refused."
+  },
+  "adopt_command_surface": {
+    "decision": "D11 (c): adopt exists, and post rejects kind: adoption (plan l.133)",
+    "parser_source": "adapter l.777-785 (S1 note: l.697-704)",
+    "required_flags": [
+      "--author",
+      "--session-id",
+      "--body",
+      "--role",
+      "--predecessor-session"
+    ],
+    "optional_flags": {
+      "--message-id": "default: a fresh uuid4 (adapter l.897)",
+      "--handoff-sha256": "64 lowercase hex",
+      "--handoff-path": "Path; file bytes are hashed",
+      "--claims-reclaimed": "repeatable (append)",
+      "--channels": "repeatable (append)"
+    },
+    "global_flag": "--repository (default: current directory), adapter l.721",
+    "no_flags_for": [
+      "--topic",
+      "--to",
+      "--kind",
+      "--wake",
+      "--ref",
+      "--data-file",
+      "--effects-file",
+      "--reply-to",
+      "--supersedes"
+    ],
+    "help_text_source": "command `codex_chatboard.py --repository <disposable> adopt --help` run on the S2 adapter (exit 0); flags identical to S1",
+    "fixed_topic": "session:<session_id> (adapter l.358; behavioural A1/A3/A5 topic = session:<own id>)",
+    "automatic_to": "[\"role:<role>\"] (adapter l.360; behavioural A1)",
+    "predecessor_session_form": "stored exactly as given, which must already be lowercase canonical (adapter l.333-335, l.350); string equality against PRED_SESSION is therefore sufficient for the gate, provided PRED_SESSION is itself lowercase canonical (the gate's own form is not established here)",
+    "references": "always [] (adapter l.359)",
+    "wake": "hard-coded False; no --wake flag; the row carries no wake key (adapter l.359; behavioural A1 has no wake field)",
+    "handoff_path_vs_sha256": {
+      "path_only": "digest computed from the file bytes and stored (A1)",
+      "sha256_only": "stored after the format check; no file is consulted (A3)",
+      "both_equal": "accepted (A5)",
+      "both_unequal": "refused, error names the computed digest (A4)",
+      "neither": "refused (A6)",
+      "x6_relevance": "only a --handoff-path run counts toward X6 closure (plan l.735-738)"
+    },
+    "result_shape": "stdout JSON {\"revision\": <board blob revision>, \"message\": <row>}; row keys in order: message_id, sequence, observed_at, author, session_id, topic, body, references, kind, role, to, data, contract_version (adapter l.297, l.246-265; behavioural A1)",
+    "exit_codes": {
+      "0": "row written (A1)",
+      "1": "ChatboardError / DurableStateError / OSError / OverflowError, message on stderr as `error: ...` (adapter l.917-919; A2, A4, A6-A12, A14)",
+      "2": "argparse usage error, e.g. missing required flag (A13)",
+      "source": "adapter l.917-919 (exit 1), argparse (exit 2), l.920 (0); behavioural A2, A8b, A7, help"
+    },
+    "replay_observation": "adopt uses the same mutate()/replay rule as post: an existing message_id with identical content returns the existing row, with different content is refused (adapter l.245-269). From the CLI, observed_at is always a fresh timestamp (adapter l.897) and there is no flag to supply it, so re-running the same adopt command with the same --message-id was refused with `message_id already exists with different content` (A2, exit 1; re-observed on the S2 adapter), even though every flag was identical. A gate or launcher that retries adopt with a fixed --message-id should expect exit 1 on the retry, not an idempotent success. Whether this is intended is not established."
+  },
+  "post_refuses_adoption": {
+    "behaviour": "post --kind adoption is refused before any write: `kind adoption is written only by the `adopt` subcommand, not `post`` (exit 1)",
+    "mechanism": "registry lookup of the kind's writer attribute (default 'post'), not a hard-coded exception",
+    "source": "adapter l.307-312; registry l.59; behavioural P1",
+    "gate_recognition": "The gate still recognises an adoption row by its fields (kind, topic, data.handoff_sha256, data.predecessor_session; plan l.739-746), not by which command wrote it. The row records no writer/command field (behavioural A1).",
+    "narrow_permission_command": "`adopt` is the narrow command a host permission rule could allow for point 2 without allowing the broad `post`. This campaign writes no permission rule and does not claim one exists."
+  },
+  "d10_delivery_by_to": {
+    "status": "implemented in the S2 candidate (not yet integrated)",
+    "source": "adapter addressed_to l.619-629, wait_board l.632-690 (by_path l.660-676, matches key l.684-686); docs/codex-chatboard.md 'Delivery by `to`' l.46-76; behavioural W_to, W_topic, W_both, W_excl, W_ctl",
+    "rule": "wait --topic session:X can return rows addressed `to` session:X on other topics (W_to: a row on topic aspect:h with to [session:SID2] returned to a waiter on session:SID2).",
+    "matches_key": "Top-level result key `matches`: [{sequence, matched_by}], matched_by one of [\"topic\"], [\"to\"], [\"topic\",\"to\"]. Present only when at least one returned row matched by `to`, and then lists every returned row in order (adapter l.684-686; W_both lists the topic-matched row 1 and the to-matched row 3; W_to lists row 3 only).",
+    "pages_without_to_match": "No `matches` key; W_topic (topic-only match) has the S1 key set (status, revision, messages, next_since, has_more, exclude_session_id, topics, topic). Byte-identity to the base adapter is the S2 test BaseByteIdentityTest.test_read_and_topic_only_wait_match_base (test file l.865+, exists; this note ran WaitDeliveryByToTest only: 13 tests OK). This note's worker ran WaitDeliveryByToTest only; the full common check (92 tests OK, no skips, including BaseByteIdentityTest) was run at 845afa80 by the coordinator in the S2 worktree and by the tier-1 reviewer in a git clone (s2-confirm-findings.md). Byte-identity beyond what BaseByteIdentityTest covers is not established.",
+    "row_unchanged": "Rows are returned byte-unchanged; matching is reported only in `matches` (adapter l.658-659 D10 comment; returned rows taken from the stored list at l.676-677; test WaitDeliveryByToTest.test_returned_row_is_byte_unchanged at tests/test_codex_chatboard_contracts.py l.720).",
+    "exclusions_before_matching": "control: topics and exclude_session_id (unless wake is true) are applied before either path is tried (adapter l.661-665). W_excl: exclude_session_id equal to the poster's session removed the to-addressed row (status timeout, exit 2).",
+    "control_prefix_ignored": "addressed_to ignores any `to` address starting `control:session:` (adapter l.619-629, CONTROL_PREFIX l.30). post itself refuses a control: address in `to` (Pctl), so such a row exists only if stored directly. A wait on a control topic without the explicit binding is refused (W_ctl exit 1: `control topic requires the matching explicit session binding`). Control-address non-matching on a stored row was established from the code and the test test_control_topic_only_wait_gets_no_to_matches (test file l.808), not by a stored-row run of this worker.",
+    "matched_by_use_for_gate": "matched_by lets the gate keep its adoption test topic-only: ignore any row whose matched_by lacks \"topic\" (doc l.62-64).",
+    "other_semantics": "A stored `to` that is not a list of strings matches nothing by `to`; a row is delivered once however many paths match; --limit/next_since/has_more count matched rows (doc l.55-66)."
+  },
+  "three_questions": {
+    "1_schema_validity": "Answered by this note: the checks above are what a row must pass.",
+    "2_host_permission": "Whether the successor's host lets it run the board write at all (tool permission or sandbox). The gate owner's to establish; not implied by schema validity.",
+    "3_authority_to_transfer_responsibility": "User-open Q1. A schema-valid adoption establishes neither 2 nor 3, and the schema does not resolve Q1 (plan l.711-722; l.47-48).",
+    "authentication": "adopt authenticates no one: session_id is caller-supplied (plan l.133).",
+    "rechecked": "against plan l.711-735 at sha256 d14a0084...; text unchanged from S1"
+  },
+  "x6_closure_criterion": {
+    "status": "open",
+    "criterion": "X6 closes only when adopt succeeds through a real Claude successor launched by the gate's launcher, under the intended permission configuration (whose grant needs the user's authorization, pending), with the host's actual rule-matching on the adopt command line tested in that run, and with --handoff-path passed; --handoff-sha256 alone does not count. A shell-stub test does not close it. The run and its record belong to the gate owner (S5).",
+    "source": "plan l.723-738",
+    "rechecked": "against plan l.723-738; unchanged, still open"
+  },
+  "behavioural_verification": {
+    "board": "disposable: fresh `git init` repository /home/bline/cbm-work/s2-compat-note/board-repo with one empty commit; every command passed --repository to it; the live board was not written.",
+    "invocation": "python3 /home/bline/code/work-engine/.claude/worktrees/agent-af874a95656df746b/skills/durable-state/scripts/codex_chatboard.py --repository /home/bline/cbm-work/s2-compat-note/board-repo <subcommand> ... (the worktree adapter, sha256 9e5c2d7e...)",
+    "script_and_output": "/home/bline/cbm-work/s2-compat-note/run.sh and out.txt (full outputs; a first run with `python3 -I` failed on the sibling import durable_state and was discarded and rerun on a fresh board)",
+    "handoff_fixture": {
+      "path": "/home/bline/cbm-work/s2-compat-note/handoff.md",
+      "content": "handoff bytes\\n",
+      "sha256": "0d9daf626547da537cfaf3a08106ff053a5492d993eb628d146e64479cdab9d8"
+    },
+    "uuids": {
+      "SID": "11111111-2222-4333-8444-555555555555",
+      "SID2": "cccccccc-dddd-4eee-8fff-abcdefabcdef",
+      "PRED": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+    },
+    "cases": [
+      {
+        "id": "help",
+        "cmd": "adopt --help",
+        "exit": 0,
+        "result": "same flags as S1"
+      },
+      {
+        "id": "A1",
+        "cmd": "adopt --author t --session-id SID --body adopted --role root --predecessor-session PRED --handoff-path handoff.md --message-id 00000000-0000-4000-8000-000000000001 --claims-reclaimed res-a --channels topic-x",
+        "exit": 0,
+        "result": "seq 1, topic session:SID, to [role:root], data with both optional lists, contract_version 1, no wake"
+      },
+      {
+        "id": "A2",
+        "cmd": "A1 repeated verbatim",
+        "exit": 1,
+        "result": "error: message_id already exists with different content"
+      },
+      {
+        "id": "A8b",
+        "cmd": "adopt --session-id <uppercase SID2> ...",
+        "exit": 1,
+        "result": "error: session_id must be a canonical lowercase UUID ... (uppercase is rejected, not normalised)"
+      },
+      {
+        "id": "P6",
+        "cmd": "post --session-id <uppercase SID2> --topic misc",
+        "exit": 0,
+        "result": "seq 2, session_id stored uppercase"
+      },
+      {
+        "id": "P1",
+        "cmd": "post --kind adoption ...",
+        "exit": 1,
+        "result": "error: kind adoption is written only by the `adopt` subcommand, not `post`"
+      },
+      {
+        "id": "A7",
+        "cmd": "adopt ... --predecessor-session <uppercase PRED>",
+        "exit": 1,
+        "result": "predecessor_session must be a canonical lowercase UUID"
+      },
+      {
+        "id": "P5b",
+        "cmd": "post --to session:<uppercase>",
+        "exit": 1,
+        "result": "to address ... must match one of the patterns"
+      },
+      {
+        "id": "Pc",
+        "cmd": "post --topic aspect:h --to session:SID2 --kind note --role root --body routed",
+        "exit": 0,
+        "result": "seq 3, topic aspect:h, to [session:SID2]"
+      },
+      {
+        "id": "Pctl",
+        "cmd": "post --to control:session:SID2",
+        "exit": 1,
+        "result": "to address ... must match one of the patterns (control: refused)"
+      },
+      {
+        "id": "W_to",
+        "cmd": "wait --since 0 --topic session:SID2 --timeout-seconds 0",
+        "exit": 0,
+        "result": "row 3 returned although its topic is aspect:h; matches [{3,[to]}]"
+      },
+      {
+        "id": "W_topic",
+        "cmd": "wait --since 0 --topic session:SID --timeout-seconds 0",
+        "exit": 0,
+        "result": "row 1 (adoption); no matches key"
+      },
+      {
+        "id": "W_both",
+        "cmd": "wait --since 0 --topic session:SID --topic session:SID2",
+        "exit": 0,
+        "result": "rows 1 and 3; matches lists both: seq 1 matched_by [topic], seq 3 matched_by [to]"
+      },
+      {
+        "id": "W_excl",
+        "cmd": "wait --since 0 --topic session:SID2 --exclude-session-id SID --timeout-seconds 0",
+        "exit": 2,
+        "result": "status timeout, no messages (exclusion before to-matching)"
+      },
+      {
+        "id": "W_ctl",
+        "cmd": "wait --since 0 --topic control:session:SID2",
+        "exit": 1,
+        "result": "error: control topic requires the matching explicit session binding"
+      },
+      {
+        "id": "R_kind",
+        "cmd": "read --kind adoption --format compact",
+        "exit": 0,
+        "result": "1 line"
+      },
+      {
+        "id": "R_role",
+        "cmd": "read --role root --format compact",
+        "exit": 0,
+        "result": "seq 1, 3"
+      },
+      {
+        "id": "R_note",
+        "cmd": "read --kind note --format compact",
+        "exit": 0,
+        "result": "seq 2 (untyped), 3"
+      },
+      {
+        "id": "R_cmp_claims",
+        "cmd": "read --format compact --active-claims",
+        "exit": 1,
+        "result": "error: --format compact prints messages only; drop --active-claims"
+      }
+    ],
+    "process_disposition": "no processes left running; disposable board left in place under /home/bline/cbm-work/s2-compat-note/"
+  },
+  "not_established": [
+    "the gate's own PRED_SESSION form (lowercase or not); string equality with adopt's stored value holds only if it is lowercase canonical",
+    "whether the CLI replay refusal on a verbatim adopt re-run (A2) is intended",
+    "host permission behaviour for adopt (question 2) and any permission rule; none exists by this campaign's action",
+    "whether the gate's adoption recognition rejects the S2<->S5 fixture row shape: the gate owner's test, not run; the integration condition is unmet",
+    "stored-row behaviour for `to` addresses with the control: prefix, run directly: established from code and the S2 test only",
+    "S2 integration status: the subject is a worktree candidate, not integrated; digests above describe the worktree, not main"
+  ],
+  "supersedes": {
+    "path": "/home/bline/code/work-engine/metrics/probes/chatboard-s1-gate-compatibility-20261025.json",
+    "sha256": "fcf448b12eff36552c24b9bfab87a9da81ab2e27c2860362e2dca2c7816149c1",
+    "covered_adapter_sha256": "234856c55a84616bafbdeb63f13da6bae8eeb92c36a0d56aec74957eafd5b93c"
+  },
+  "section_changes_vs_S1": {
+    "registry_version": "unchanged (registry file byte-identical)",
+    "contract_version_field": "unchanged; adapter _post l.237-242, l.264-265, load_registry l.118-121 re-read at the same lines; behavioural A1/Pc show contract_version 1 on typed rows",
+    "adoption_kind": "unchanged; every S1 adapter line citation (l.146-160, l.208-219, l.325-361) re-read in the S2 adapter at the same line numbers; diff of S2 vs 7a779600 touches no line in l.1-406",
+    "envelope_grammars": "unchanged; role/to patterns from the unchanged registry; behavioural P5b (uppercase session: refused) re-run. Control addresses (control:...) are still refused as `to` by post (Pctl)",
+    "adopt_command_surface": "unchanged in behaviour; parser moved from adapter l.697-704 to l.777-785, adopt message-id default and observed_at l.897 (adopt call l.893-900), error handler l.917-919 (exit 1), argparse exit 2 unchanged. adopt --help re-run: same flags",
+    "post_refuses_adoption": "unchanged (P1 re-run, same error; adapter l.310-312)",
+    "d10_delivery_by_to": "CHANGED: was pending S2; now implemented in the candidate (see section)",
+    "read_surface": "NEW: read --kind/--role, read --format compact",
+    "three_questions": "unchanged text; rechecked against plan l.711-735",
+    "x6_closure_criterion": "unchanged; rechecked against plan l.723-738"
+  },
+  "s2_s5_integration_condition": {
+    "status": "UNMET until the gate owner's test passes",
+    "source": "plan l.696-710 (user decision 2026-10-25)",
+    "condition": "The gate must not rely on the S2 `wait` until its adoption recognition checks that the row's actual `topic` is `session:<successor>`, not only a recipient match plus digest.",
+    "fixture": {
+      "file": "/home/bline/code/work-engine/.claude/worktrees/agent-af874a95656df746b/skills/durable-state/tests/test_codex_chatboard_contracts.py",
+      "test": "WaitDeliveryByToTest.test_adoption_fixture_s2_s5",
+      "lines": "l.846-862",
+      "raw_rewrite_defined": "l.99",
+      "run": "python3 -m unittest test_codex_chatboard_contracts.WaitDeliveryByToTest from the tests directory: 13 tests OK (this worker, 2026-10-25)"
+    },
+    "row_shape_is_directly_stored": "The fixture posts a note on topic aspect:handoff and then rewrites it via raw_rewrite (l.853-855) to kind adoption, role s10-root, to [session:<ADOPTION_SUCCESSOR>], data {handoff_sha256, predecessor_session}. It is a directly stored row shape. Real `adopt` always writes topic=session:<own id> and to=[role:<role>] (adapter l.358, l.360), so it cannot produce this shape. The fixture asserts the row's topic is not session:<successor> and result matches == [{sequence 1, matched_by [\"to\"]}] (l.857-862).",
+    "gate_test": "The gate's test on this shape must show the row is NOT accepted. That test is the gate owner's; this worker did not write or run it. Until it passes the condition is unmet and the gate keeps the HEAD wait behaviour."
+  },
+  "new_read_surface": {
+    "source": "adapter parser l.727-732; read_view l.419-443; row_kind l.410; compact_line l.446-469; main l.828-837; doc l.177-199",
+    "flags": {
+      "--kind K": "repeatable; `note` also matches rows with no kind; unknown stored kinds are shown as recorded",
+      "--role R": "repeatable; kind and role combine with AND",
+      "--format compact|json": "default json is unchanged; compact prints one tab-separated line per message: sequence, kind, role, to, links, author, topic, body (80 chars, `...` marks a cut); `-` for absent; no claims or revision",
+      "--format compact with --active-claims": "refused (exit 1)"
+    },
+    "filters_before_limit": "filters apply before the tail slice and before --limit (read_view l.419-436)",
+    "behavioural": "R_kind (--kind adoption --format compact): 1 line, seq 1; R_role (--role root): seq 1 and 3; R_note (--kind note): seq 2 and 3 (seq 2 is an untyped row); R_cmp_claims exit 1 with `--format compact prints messages only; drop --active-claims`. Compact line sample: `1\\tadoption\\troot\\trole:root\\t-\\tt\\tsession:1111...\\tadopted`.",
+    "wait_compact": "wait --format compact is deferred (doc l.75-77); not available."
+  },
+  "known_findings_reported_to_gate": [
+    {
+      "finding": "fixed-id adopt retry exits 1",
+      "status": "re-verified on the S2 adapter, disposable board: A2 (A1 repeated verbatim with the same --message-id) exit 1, `error: message_id already exists with different content`; observed_at is stamped per call (adapter l.897, no flag). Intended behaviour: not established."
+    },
+    {
+      "finding": "adopt rejects uppercase ids while post accepts an uppercase session_id",
+      "status": "re-verified: A8b adopt refused (exit 1); P6 post accepted and stored `CCCCCCCC-...` uppercase (exit 0)."
+    }
+  ],
+  "revision": {
+    "revision": 2,
+    "by": "coordinator cdcf9f6a",
+    "basis": "tier-1 review s2-confirm-findings.md sha256 6380b23ada4bdd27: P3-1, P3-2 citation fixes, P3-3 byte-identity basis; reviewer's l.896 corrected to l.897 (l.896 is the role= line)",
+    "previous_sha256": "b8d3ce716f58cf2c963364b9db71f45a70903112214808e7e79e524eea1fabe7"
+  }
+}
