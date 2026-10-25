@@ -1,0 +1,991 @@
+{
+  "schema": "chatboard-consumer-census-v1",
+  "head": "9d8b41d85fbcadf7afa64a17e9d185cac14e2779",
+  "adapter_sha256": "a740a0649141709ed3d9fde4036fdbcad362e4dc7d59cf92f8266e1eefe79648",
+  "plan_sha256": "d14a0084ec4aa323b965a09b74d144b9c22be9cdd6c5a682f06796d6c5556bb8",
+  "worker": {
+    "agent_id": "ac395809111c01646",
+    "coordinator": "b4f1fa72-c7a6-42e1-a9c6-26ecb207b003",
+    "context_at_class3": 138542
+  },
+  "classes": {
+    "1": {
+      "domain": [
+        "git grep (tracked files, working tree)",
+        "~/.codex/AGENTS.md",
+        "~/.codex/skills/",
+        "~/.claude/skills",
+        "~/.claude/agents"
+      ],
+      "commands": [
+        "git grep -n 'codex_chatboard'",
+        "git grep --untracked, observed 2026-10-25 after the census was first written: 63 lines (13 in the census itself); extra files recorded as consumers or non_consumers (P2-4)",
+        "/usr/bin/grep -rn codex_chatboard <installed dirs>",
+        "git grep -nE 'board\\.py' (renamed copies)"
+      ],
+      "complete": true,
+      "hit_count": 43,
+      "expected_total": "43 lines in 17 files; installed dirs 0 (1543 files)",
+      "basis": "every tracked and untracked repo file plus the installed skill/agent dirs. Non-consumer records: planning/chatboard-message-contracts-implementation-plan.md; docs/codex-chatboard-contracts.md; metrics/probes/tmux-root-rotation-20261024.json; metrics/probes/claude-skill-delivery-divergence-20261022.{md,json}; metrics/efficiency-ledger.md; app-server/migrations/skills/portfolio-inventory-v1.json; skills/durable-state/scripts/codex_chatboard.py (the adapter itself). Untracked: chatboard_baselines.py and chatboard_contract_uptake.py recorded as consumers; chatboard_reader_parsers.py, chatboard_board_use.py and chatboard-baseline-inputs-20261025.json in non_consumers. Variable-invoked repo scripts (launch_claude_successor.sh, quiescence_checks.py) escaped the codex_chatboard grep and were found through the --repository grep"
+    },
+    "2": {
+      "domain": [
+        "repo",
+        "~/cbm-work/tmux-handoff-20261024/bin/ (22 entries at dispatch, scanned fully)"
+      ],
+      "commands": [
+        "git grep -n 'BOARD_CMD\\|CHATBOARD'",
+        "git grep 'B (post|wait|read|...)'",
+        "grep -nE 'BOARD_CMD|CHATBOARD|codex_chatboard|board\\.py|\\bCB\\b|messages|next_since' over every file in the bin/ dir",
+        "git grep -n -e '--repository' (repo scripts invoking the adapter by variable)"
+      ],
+      "complete": false,
+      "hit_count": 12,
+      "expected_total": "12 lines: 3 root_rotation_coordinator.sh, 8 MECH-CODEX-CHATBOARD (4 docs/, 4 app-server/tests/fixtures/compiler-c2/ copies; non-consumers), 1 plan",
+      "basis": "repo: BOARD_CMD is set only by the caller of root_rotation_coordinator.sh. Added domain: ~/cbm-work/tmux-handoff-20261024/bin/ (plan l.339 'launcher l.36-37'): five BOARD_CMD setters (regression.sh:37,70; watch_test.sh:33,51; orphan_test.sh:28; faultinject_test.sh:45; p2_rotate.sh:14), each setting CB to the repo adapter, plus launch-claude-successor.sh, stub-successor*.sh, longwait_probe.py, rootsup2.sh (pre-repo coordinator copy), verdict_test.sh; the remaining entries (build_fakes.sh, dbg_tree.sh, desc_test.sh, demo-validator.sh, stage.sh, t6.sh, stub-board-head.sh, rootsup.sh, handoff_validator.py, rootsup2.sh.bak, shim/) reference no board invocation by this grep (rootsup.sh only BOARD_HEAD_CMD, a head-sequence printer; .bak not classified as a distinct consumer). Callers in the state dir: 0 scripts reference root_rotation_coordinator (class-5 grep). Other ~/cbm-work directories not scanned: see residuals",
+      "completeness_note": "partial (coordinator, revision 2): the plan's class-2 grep covers BOARD_CMD/CHATBOARD only. Callers using other variable names ($CB in metrics/scripts/launch_claude_successor.sh:37 and quiescence_checks.py:40) were found only by a --repository grep, which is not a full audit of variable-invoked callers. Compatibility for variable-invoked callers outside the recorded entries is not established."
+    },
+    "3": {
+      "domain": [
+        "repo"
+      ],
+      "commands": [
+        "plan l.236 regex via git grep -nE"
+      ],
+      "complete": true,
+      "hit_count": 1724,
+      "expected_total": "1724 lines in 313 files",
+      "basis": "a hit can parse board output only if its file obtains that output. 16 of 313 files mention chatboard and were read; the other 297 neither invoke the adapter (classes 1-2, renamed board.py copies) nor import chatboard-adapter.mjs (one importer: capability-host-runtime.mjs). Residual: a reader fed through a file written by some other process is covered only where its writer was found. The 16 files read: 14 recorded in consumers, 2 in non_consumers (capability-contract.mjs, slice-campaign-native-review-vertical.test.mjs)"
+    },
+    "4": {
+      "domain": [
+        "repo incl. rust/ and app-server/"
+      ],
+      "commands": [
+        "git grep -n 'codex-chatboard/v1\\|work_engine_codex_chatboard_v1\\|codex-chatboard'"
+      ],
+      "complete": true,
+      "hit_count": 41,
+      "expected_total": "hits are doc links except the adapter (l.26-60), test_codex_chatboard.py:375 (ref dir) and test_experiment_control.py:89 (store absence)",
+      "basis": "rust/ and app-server/: 0 payload readers. Whether a writer other than the adapter has stored to: not established beyond the repo"
+    },
+    "5": {
+      "domain": [
+        "~/.local/state/work-engine/**/*.{md,txt} mentioning codex_chatboard",
+        "~/.local/state/work-engine/**/*.{sh,py} referencing codex_chatboard|board.py|BOARD_CMD|root_rotation_coordinator"
+      ],
+      "commands": [
+        "grep -rlE --include ... codex_chatboard",
+        "grep -ohE 'codex_chatboard\\.py[^`]{0,200}' clustered",
+        "sha256sum of copies"
+      ],
+      "complete": true,
+      "hit_count": {
+        "docs": 302,
+        "scripts": 389,
+        "adapter_copies": 192
+      },
+      "expected_total": "docs 302 (301 at dispatch); scripts 389 = 189 codex_chatboard.py + 3 board.py + 186 test_codex_chatboard.py + 3 test_context_control.py + 8 one-off",
+      "basis": "full pass over the named domain. Out of domain, found through one hit: ~/cbm-work holds snapshot copies (s2-review-pilot, claude-rp2-pilot-g2, usage-export-*, audit/runs) that were listed but not classified, and rearm.sh, which was read",
+      "doc_patterns": [
+        {
+          "pattern": "read [--limit N] [--active-claims]",
+          "files": 261,
+          "example": "chatboard-contracts-plan-20261024/root-handoff-v3.md",
+          "disposition": "unaffected: reads only existing keys",
+          "note": "model-read startup reads; 3 scripts parse claims only (s9-c0 publish/prepare, s8-a09 reconcile: historical one-shots)"
+        },
+        {
+          "pattern": "wait --topic ... (model-read)",
+          "files": 10,
+          "example": "claude-metrics-handoff-20261024/handoff-v1.md",
+          "disposition": "not established",
+          "note": "8 are doc snapshots or frozen plan copies (historical); 2 live handoffs (root-handoff-v3: no topic; claude-metrics handoff-v1)"
+        },
+        {
+          "pattern": "topics",
+          "files": 8,
+          "example": "docs snapshot copies",
+          "disposition": "unaffected: reads only existing keys"
+        },
+        {
+          "pattern": "post",
+          "files": 4,
+          "example": "docs snapshot copies",
+          "disposition": "unaffected: reads only existing keys"
+        },
+        {
+          "pattern": "programmatic JSON parse inside docs (jq/json.load)",
+          "files": 0
+        },
+        {
+          "pattern": "messages/message field text",
+          "files": 9,
+          "note": "plan drafts and reviewer findings only (historical)"
+        }
+      ],
+      "historical_one_shot_scripts": [
+        "s9-c0-publication-20261016/{publish,publish-v2,prepare}.py: read -> claims[...] only",
+        "s8-a09-current-runtime-20261015/main-reconciliation/reconcile.py: read -> claims only",
+        "bounded-inference-b2-auth-release-20261023/successor-preparation/wait-control.py: wait -> output to file, unparsed",
+        "chatboard-contracts-plan-20261024/evidence/{extract_board_use,reader_parsers}.py: parse transcripts, not board output"
+      ]
+    }
+  },
+  "consumers": [
+    {
+      "path": "metrics/scripts/root_rotation_coordinator.sh",
+      "line": 219,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "post"
+      ],
+      "fields_read": [
+        "message.sequence"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "post result: reads only message.sequence"
+    },
+    {
+      "path": "metrics/scripts/root_rotation_coordinator.sh",
+      "line": 272,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [
+        "messages[].session_id",
+        "messages[].body",
+        "messages[].message_id",
+        "next_since"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "reason": "adoption wait on session:$sid; l.293-299 match session_id+marker+digest only and take the topic filter as given; under D10 a to-addressed row on another topic is returned and would be accepted. S5 owns"
+    },
+    {
+      "path": "metrics/scripts/root_rotation_coordinator.sh",
+      "line": 446,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [
+        "messages[-1].sequence"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "cursor from newest row's sequence"
+    },
+    {
+      "path": "metrics/scripts/root_rotation_coordinator.sh",
+      "line": 455,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [
+        "messages[].body",
+        "messages[].author",
+        "messages[].session_id",
+        "messages[].message_id"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "reason": "approval watch on control:rotation:$ROLE scans every returned row as being on that topic. D10 as written covers waiters on role:/session: topics only, so the change does not reach this wait unless S2 widens the predicate; the plan rule still marks it affected"
+    },
+    {
+      "path": "app-server/src/services/operational-coordination/chatboard-adapter.mjs",
+      "line": 20,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "read",
+        "claim",
+        "post",
+        "release"
+      ],
+      "fields_read": [
+        "revision",
+        "messages",
+        "claims",
+        "message.message_id",
+        "message.session_id",
+        "claim.*",
+        "resource",
+        "released"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "validates shape and identity of existing keys, then returns a frozen clone; no wait; post input schema has no envelope fields"
+    },
+    {
+      "path": "app-server/src/services/operational-coordination/chatboard-adapter.mjs",
+      "line": 63,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [
+        "messages[].sequence",
+        "message_id",
+        "author",
+        "session_id",
+        "topic",
+        "body",
+        "references",
+        "revision",
+        "claims"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "post-replay recovery compares only these 6 row fields, not the whole row; it can only see rows it posted itself, and those never carry envelope fields. S1 note: unlike adapter post() idempotency, this check would not compare envelope fields"
+    },
+    {
+      "path": "app-server/src/services/slice-campaign/capability-host-runtime.mjs",
+      "line": 193,
+      "class": [
+        3
+      ],
+      "subcommands": [
+        "read",
+        "claim",
+        "post",
+        "release"
+      ],
+      "fields_read": [
+        "(pass-through result)"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "forwards the adapter result to model tools; output is validated only as a record"
+    },
+    {
+      "path": "app-server/tests/supervisor-operational-coordination-integration.test.mjs",
+      "line": 31,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "read",
+        "claim",
+        "post",
+        "release"
+      ],
+      "fields_read": [
+        "messages[0].message_id",
+        "claims"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "affected",
+      "reason": "copies only codex_chatboard.py and durable_state.py into a temp repo, without contracts/. Its operations pass no new flags, so it is affected only if S1's lazy registry rule (plan l.307-310) fails; covered by S1's registry-absent byte-compat check"
+    },
+    {
+      "path": "app-server/tests/services/operational-coordination/chatboard-adapter.test.mjs",
+      "line": 16,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "read",
+        "claim",
+        "post",
+        "release"
+      ],
+      "fields_read": [
+        "revision",
+        "messages",
+        "claim",
+        "message"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "mocked runFile; never runs the real adapter"
+    },
+    {
+      "path": "skills/durable-state/tests/test_codex_chatboard.py",
+      "line": 17,
+      "class": [
+        1,
+        3,
+        4
+      ],
+      "subcommands": [
+        "post",
+        "read",
+        "wait",
+        "topics",
+        "claim",
+        "release"
+      ],
+      "fields_read": [
+        "whole rows",
+        "messages",
+        "next_since",
+        "has_more",
+        "topics",
+        "revision"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "reason": "the adapter's own suite: topic-exclusion asserts at l.165-168, l.272-288 and l.343-360. Fixtures carry no to, so D10 leaves these outcomes as they are; S1/S2 own changes. l.375 touches the ref directory directly"
+    },
+    {
+      "path": "skills/durable-state/tests/test_context_control.py",
+      "line": 17,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "wait",
+        "post"
+      ],
+      "fields_read": [
+        "messages",
+        "next_since",
+        "control_events",
+        "status"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "reason": "l.114-115 assert that a control-topic-only wait returns no board rows. Fixtures carry no to; whether D10 applies to control: topics is for S2 to state"
+    },
+    {
+      "path": "skills/durable-state/tests/test_experiment_control.py",
+      "line": 89,
+      "class": [
+        4
+      ],
+      "subcommands": [
+        "(store read)"
+      ],
+      "fields_read": [
+        "board presence only"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "asserts that no codex-chatboard board exists in the experiment repo"
+    },
+    {
+      "path": "experiments/agent-experiment-control/live/context_probe.py",
+      "line": 19,
+      "class": [
+        1
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "PREMISE CORRECTION (plan l.230): copies a frozen out-of-repo snapshot (sha256 f35cac7b..., not the adapter) from experiment-control-live-20261023/context-enrollment-01/source, not the repo adapter. Its workspace already exists and l.10 mkdir(exist_ok=False) refuses a re-run. The script parses no board output (the stream goes to a file)"
+    },
+    {
+      "path": "~/.local/state/work-engine/context-control-remediation-20261024/live/run.py",
+      "line": 77,
+      "class": [
+        5
+      ],
+      "subcommands": [
+        "wait",
+        "post"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "affected",
+      "reason": "live re-runnable: copies the repo adapter into a new workspace as tools/board.py without contracts/. Affected only if S1's lazy registry rule fails. Two existing copies equal the adapter digest"
+    },
+    {
+      "path": "~/.local/state/work-engine/context-control-remediation-20261024/live/phase_helper.py",
+      "line": 54,
+      "class": [
+        5,
+        3
+      ],
+      "subcommands": [
+        "wait",
+        "post"
+      ],
+      "fields_read": [
+        "message.sequence",
+        "message.observed_at",
+        "(rows stored whole)"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "post result: existing keys; wait rows recorded verbatim, no topic test; disposable board with to-less posts"
+    },
+    {
+      "path": "~/cbm-work/claude-metrics-20261024/rearm.sh",
+      "line": 8,
+      "class": [
+        5,
+        3
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [
+        "next_since",
+        "next_control_cursor"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "out of domain: found through handoff-v2 l.131. Rearms from the cursors only; rows go to a model"
+    },
+    {
+      "path": "~/.local/state/work-engine/claude-metrics-handoff-20261024/handoff-v1.md",
+      "line": 103,
+      "class": [
+        5
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [
+        "(model-read)"
+      ],
+      "relies_on_topic_in_selected": "not established",
+      "disposition": "not established",
+      "reason": "handoff wait on session:/aspect:/all topics read by a model; whether the reader assumes topic membership is not established"
+    },
+    {
+      "path": "docs/codex-chatboard.md",
+      "line": 29,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "wait",
+        "post",
+        "topics"
+      ],
+      "fields_read": [
+        "documents result keys"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "reason": "operator reference: 'a response posted under a different topic will not match' (l.29-30) becomes false under D10 for to-rows; already in S1-S3 write scope"
+    },
+    {
+      "path": "skills/coordination-channels/SKILL.md",
+      "line": 68,
+      "class": [
+        1
+      ],
+      "subcommands": [
+        "wait",
+        "post",
+        "read",
+        "topics",
+        "claim",
+        "release"
+      ],
+      "fields_read": [
+        "next_since",
+        "exit codes"
+      ],
+      "relies_on_topic_in_selected": "not established",
+      "disposition": "not established",
+      "reason": "agent guidance read by models; topic-filter reliance is model behaviour, not established. Model reliance stays not established; the documentation claim is recorded separately at l.73-74/l.96"
+    },
+    {
+      "path": "skills/coordination-channels/SKILL.md",
+      "line": 73,
+      "lines": [
+        73,
+        74,
+        96
+      ],
+      "class": [
+        1
+      ],
+      "subcommands": [
+        "wait",
+        "topics"
+      ],
+      "fields_read": [
+        "documents result keys"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "owner_gap": "no slice write scope covers it; skill edit is a user boundary",
+      "reason": "documentation claim: l.73-74 'the cursor advances past nonmatching topics' and l.96 '--topic matches exactly' become incomplete under D10 (a); same kind of statement as docs/codex-chatboard.md:29-30. Plan gives SKILL.md only to S4 for one table of kinds (plan l.670), so S2 must revise it or widen S4's scope"
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-control.md",
+      "line": 35,
+      "class": [
+        1
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [
+        "(model-read)"
+      ],
+      "relies_on_topic_in_selected": true,
+      "disposition": "affected",
+      "reason": "control-only subscription relies on selecting only the control topic to exclude board rows (l.35-36), so relies_on_topic_in_selected is true and the plan rule makes it affected even if it reads only existing keys. Note: whether D10 applies to control: topics is not stated; S2 must state it, and the entry stays affected either way until then"
+    },
+    {
+      "path": "AGENTS.md",
+      "line": 71,
+      "class": [
+        1
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [
+        "(model-read)"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "startup read --limit 20 --active-claims; not a wait"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/regression.sh",
+      "line": 37,
+      "class": [
+        2
+      ],
+      "subcommands": [],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "BOARD_CMD setter at l.37,70: sets BOARD_CMD=$CB with CB = repo skills/durable-state/scripts/codex_chatboard.py (the repo adapter), then runs the coordinator; the harness itself reads no board output. Regression harness for the affected waits S5 owns",
+      "setter_lines": [
+        37,
+        70
+      ]
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/watch_test.sh",
+      "line": 33,
+      "class": [
+        2
+      ],
+      "subcommands": [],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "BOARD_CMD setter at l.33,51: sets BOARD_CMD=$CB with CB = repo skills/durable-state/scripts/codex_chatboard.py (the repo adapter), then runs the coordinator; the harness itself reads no board output. Regression harness for the affected waits S5 owns",
+      "setter_lines": [
+        33,
+        51
+      ]
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/orphan_test.sh",
+      "line": 28,
+      "class": [
+        2
+      ],
+      "subcommands": [],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "BOARD_CMD setter at l.28: sets BOARD_CMD=$CB with CB = repo skills/durable-state/scripts/codex_chatboard.py (the repo adapter), then runs the coordinator; the harness itself reads no board output. Regression harness for the affected waits S5 owns",
+      "setter_lines": [
+        28
+      ]
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/faultinject_test.sh",
+      "line": 45,
+      "class": [
+        2
+      ],
+      "subcommands": [],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "BOARD_CMD setter at l.45: sets BOARD_CMD=$CB with CB = repo skills/durable-state/scripts/codex_chatboard.py (the repo adapter), then runs the coordinator; the harness itself reads no board output. Regression harness for the affected waits S5 owns",
+      "setter_lines": [
+        45
+      ]
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/p2_rotate.sh",
+      "line": 14,
+      "class": [
+        2
+      ],
+      "subcommands": [],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "BOARD_CMD setter at l.14: sets BOARD_CMD=$CB with CB = repo skills/durable-state/scripts/codex_chatboard.py (the repo adapter), then runs the coordinator; the harness itself reads no board output. Regression harness for the affected waits S5 owns",
+      "setter_lines": [
+        14
+      ]
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/watch_test.sh",
+      "line": 17,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "post"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "post() helper posts on control:rotation:claude-root with plain post, no --kind; output discarded. Fixture for the l.455 approval watch (affected, S5)"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/launch-claude-successor.sh",
+      "line": 14,
+      "class": [
+        2
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "prompt text for a model: read --limit 5/10 and read --active-claims (l.14, 25, 33); no keys parsed"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/launch-claude-successor.sh",
+      "line": 37,
+      "class": [
+        1
+      ],
+      "subcommands": [
+        "post"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "affected",
+      "reason": "prompt text tells the successor to post its adoption acknowledgement with plain `post` (no --kind) on $TOPIC. Under D11(c) `post` now refuses kind: adoption, but a plain post without --kind is still accepted, so this still works unchanged; it is affected because S1's `adopt` is the intended replacement and S5/gate semantics (adoption wait on session:$sid) depend on what this posts. Not broken by S1 by itself"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/stub-successor.sh",
+      "line": 10,
+      "class": [
+        2
+      ],
+      "subcommands": [
+        "post"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "report-mode post (no --kind), output discarded"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/stub-successor.sh",
+      "line": 15,
+      "class": [
+        2
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "read --active-claims, output discarded"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/stub-successor.sh",
+      "line": 16,
+      "class": [
+        2
+      ],
+      "subcommands": [
+        "post"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "affected",
+      "reason": "stand-in successor adoption acknowledgement with plain `post` (no --kind), same as launch-claude-successor.sh:37; accepted unchanged under D11(c), replaced by `adopt` if S5 migrates the harness"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/stub-successor-noise.sh",
+      "line": 6,
+      "class": [
+        2
+      ],
+      "subcommands": [
+        "post",
+        "wait"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "bystander post (l.6) and wait on no-such-topic (l.9), output discarded; l.12 adoption post is plain post without --kind (as stub-successor.sh:16)"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/longwait_probe.py",
+      "line": 8,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "wait"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "wait --topic rotation:never-posted; only the exit code is read"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/rootsup2.sh",
+      "line": 92,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "post"
+      ],
+      "fields_read": [
+        "message.sequence"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "pre-repo copy of the coordinator: handoff post plain, reads message.sequence only (cf. root_rotation_coordinator.sh:219)"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/rootsup2.sh",
+      "line": 134,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [
+        "messages[].message_id",
+        "messages[].session_id"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "read --since, matches the first row with session_id == successor sid; no topic test. Pre-repo copy; the repo coordinator wait at l.272 is the affected analogue"
+    },
+    {
+      "path": "~/cbm-work/tmux-handoff-20261024/bin/verdict_test.sh",
+      "line": 13,
+      "class": [
+        3
+      ],
+      "subcommands": [],
+      "fields_read": [
+        "messages",
+        "next_since"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "hand-written fixture JSON, no board invoked"
+    },
+    {
+      "path": "metrics/scripts/launch_claude_successor.sh",
+      "line": 37,
+      "class": [
+        2
+      ],
+      "subcommands": [
+        "read",
+        "post"
+      ],
+      "fields_read": [],
+      "relies_on_topic_in_selected": false,
+      "disposition": "affected",
+      "reason": "tracked repo script missed by the class 1/2 greps (it invokes the adapter as $CB, so neither pattern matches). Prompt posts adoption with plain `post` (no --kind) on $TOPIC at l.37; read at l.14, 25, 33. Accepted unchanged under D11(c); affected because S1's `adopt` replaces this prompt text. Found while scanning for P2-3"
+    },
+    {
+      "path": "metrics/scripts/quiescence_checks.py",
+      "line": 40,
+      "class": [
+        2,
+        3
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [
+        "claims"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "tracked repo script invoked with --board-cmd, missed by class 1/2 greps; reads only the claims dict (l.45-49) after read --active-claims --limit 1"
+    },
+    {
+      "path": "metrics/scripts/chatboard_baselines.py",
+      "line": 50,
+      "class": [
+        1,
+        3
+      ],
+      "subcommands": [
+        "read"
+      ],
+      "fields_read": [
+        "messages",
+        "whole rows (digest over sequence <= max_sequence)"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "untracked at census time. invokes the adapter read (l.54-55) and parses [\"messages\"] (l.59); digests whole rows over the frozen prefix sequence <= max_sequence, so new keys on later rows do not change the frozen digest. The whole-row hash matters to S1 only if keys were ever added to already-stored rows"
+    },
+    {
+      "path": "metrics/scripts/chatboard_contract_uptake.py",
+      "line": 25,
+      "class": [
+        3
+      ],
+      "subcommands": [
+        "(via chatboard_baselines)"
+      ],
+      "fields_read": [
+        "(via chatboard_baselines, chatboard_board_use)"
+      ],
+      "relies_on_topic_in_selected": false,
+      "disposition": "unaffected: reads only existing keys",
+      "reason": "untracked at census time. imports chatboard_baselines and chatboard_board_use; reads the frozen prefix and, with --after-sequence, the live board through chatboard_baselines; no direct adapter call found by grep (read by header and grep only, not whole)"
+    }
+  ],
+  "out_of_repo_copies": [
+    {
+      "path": "~/.local/state/work-engine/ ... (118 copies; 32 under app-server-migration-934d50f/, the rest across other top directories, e.g. legacy-wind-walker 6; example: app-server-migration-934d50f/reviewer-runtime/review-subject-workspaces/fdab6284.../skills/durable-state/scripts/codex_chatboard.py)",
+      "sha256": "8cd5d219f8390fd8de8f2c44d9afdbac3b1d156b5f8bfb19d6563837608d36bb",
+      "matches_adapter": false,
+      "count": 118,
+      "full_list_note": "full list: ~/cbm-work/s0-c5-scripts.sha"
+    },
+    {
+      "path": "~/.local/state/work-engine/ ... (63 copies spread across s9-*/s10-* and other directories; example: chatboard-wait-20261021/before/...)",
+      "sha256": "c5e4394f4b7eb8b919a3ad2442fc57ffbd0ddd7b6e877e464bbbba25f1961764",
+      "matches_adapter": false,
+      "count": 63,
+      "full_list_note": "full list: ~/cbm-work/s0-c5-scripts.sha"
+    },
+    {
+      "path": "~/.local/state/work-engine/context-control-remediation-20261024/{live/*/workspace/tools/board.py, review/subject*} (6)",
+      "sha256": "a740a0649141709ed3d9fde4036fdbcad362e4dc7d59cf92f8266e1eefe79648",
+      "matches_adapter": true,
+      "count": 6,
+      "full_list_note": "full list: ~/cbm-work/s0-c5-scripts.sha"
+    },
+    {
+      "path": "~/.local/state/work-engine/readiness-r1-20261021/s3/... and experiment-control-live-20261023 (3)",
+      "sha256": "4a53eebe0357eddf4aa3e664bc5caf1f8a09d83478c2b38fcf422d66ca532c78",
+      "matches_adapter": false,
+      "count": 3,
+      "full_list_note": "full list: ~/cbm-work/s0-c5-scripts.sha"
+    },
+    {
+      "path": "~/.local/state/work-engine/experiment-control-live-20261023/context-enrollment-01/{source/...,workspace/tools/board.py} (2; context_probe.py source)",
+      "sha256": "f35cac7bc21d32ce201cfbf10c0ca7de2a76418d5fd3d98a7450fd4efb97abcb",
+      "matches_adapter": false,
+      "count": 2,
+      "full_list_note": "full list: ~/cbm-work/s0-c5-scripts.sha"
+    }
+  ],
+  "summary": {
+    "consumers": 42,
+    "affected": 12,
+    "not_established": 2,
+    "unaffected": 28,
+    "copies_total": 192,
+    "copies_matching_adapter": 6,
+    "s1_design_notes": [
+      "no consumer was found that rejects an unknown key inside message; app-server validates message as a record only",
+      "script-only copies with no contracts/ (supervisor integration test, context-control run.py) depend on the lazy registry rule",
+      "chatboard-adapter.mjs replay recovery compares 6 fields, not the whole row: a later envelope-capable app-server post would need to compare envelope fields too",
+      "plan l.230 premise is stale: context_probe.py copies a frozen non-adapter snapshot and cannot re-run",
+      "D10/S2: whether the to-match applies to control: topics is not stated; the gate's l.455 watch and context-control's control-only subscription depend on the answer",
+      "write-scope gap: skills/coordination-channels/SKILL.md l.73-74/l.96 document topic-only matching and no slice covers editing it; skill edit is a user boundary (P2-2)",
+      "adoption posts in launch_claude_successor.sh:37, launch-claude-successor.sh:37 and stub-successor*.sh use plain post without --kind: still accepted under D11(c), but D11(c) refuses kind: adoption on post, so `adopt` must replace these"
+    ]
+  },
+  "non_consumers": [
+    {
+      "path": "metrics/scripts/chatboard_reader_parsers.py",
+      "class": [
+        1
+      ],
+      "reason": "parses transcripts (regex SUB at l.40 over command text), not board output; grep-matched passages read, not the whole file"
+    },
+    {
+      "path": "metrics/scripts/chatboard_board_use.py",
+      "class": [
+        1
+      ],
+      "reason": "parses transcripts (regex SUB at l.32 over command text), not board output; grep-matched passages read, not the whole file"
+    },
+    {
+      "path": "metrics/probes/chatboard-baseline-inputs-20261025.json",
+      "class": [
+        1
+      ],
+      "reason": "data file naming the adapter path; not a reader"
+    },
+    {
+      "path": "app-server/src/services/slice-campaign/capability-contract.mjs",
+      "line": "13-14",
+      "class": [
+        3
+      ],
+      "reason": "tool description string, parses no board output"
+    },
+    {
+      "path": "app-server/tests/slice-campaign-native-review-vertical.test.mjs",
+      "line": 947,
+      "class": [
+        3
+      ],
+      "reason": "source: \"chatboard:444\" fixture string, parses no board output"
+    }
+  ],
+  "out_of_repo_copies_list": {
+    "path": "~/cbm-work/s0-c5-scripts.sha",
+    "sha256": "5f79f59a553167ef9372ab9acb5b9e18a407f643c36eed9f95d079de54f0b85b",
+    "note": "labels above are an example path plus counts; this file is the full list"
+  },
+  "residuals": [
+    {
+      "domain": "~/cbm-work (other than tmux-handoff-20261024/bin/ and claude-metrics-20261024/rearm.sh)",
+      "reason": "outside the coordinator-named class-5 domain; not scanned",
+      "observed": "48 adapter-named copies (find -name codex_chatboard.py -o -name board.py), 119 *.sh/*.py files referencing codex_chatboard|BOARD_CMD|board.py (re-counted 2026-10-25, unverified grep; reviewer reported 71 with a different file set, so the two counts are not reconciled)",
+      "compatibility": "not established",
+      "inspected_part": "see class 2 (tmux-handoff-20261024/bin/)"
+    }
+  ],
+  "revision": 2,
+  "review": "/home/bline/.local/state/work-engine/chatboard-contracts-plan-20261024/s0-review-findings.md",
+  "worker2": {
+    "agent_id": "a4ebfd5de802d2ca6",
+    "coordinator": "b4f1fa72-c7a6-42e1-a9c6-26ecb207b003"
+  }
+}
