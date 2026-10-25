@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -146,6 +147,27 @@ class GateInputs(Base):
         time.sleep(0.3)
         rc, status, _ = self.gate("prepare")
         self.assertEqual((rc, status), (22, "fail_descendants_live"))
+
+    def test_gate_run_by_the_predecessor_does_not_count_its_own_shell(self):
+        # The gate's calling shell carries "--pred-host claude" in its argv and
+        # sits beneath the predecessor's process. It is not a child. A real
+        # session process beside it still is.
+        reg = self.tmp / "register.py"
+        reg.write_text("import json,sys\np=sys.argv[1]; d=json.load(open(p))\n"
+                       "d['sessions'][sys.argv[2]]['pid']=int(sys.argv[3]); json.dump(d, open(p,'w'))\n")
+        register = shlex.join([sys.executable, str(reg), self.env["FAKE_CLAUDE_STATE"], self.pred]) + " $$"
+        gate = shlex.join([sys.executable, str(GATE), "prepare", str(self.handoff), "--role", "test-root",
+                           "--state", str(self.state), "--repo", str(self.repo), "--host-state", str(self.host_state),
+                           "--pred-host", "claude", "--pred-session", self.pred, "--successor-host", "claude",
+                           "--validator", PASS, "--quiescence-file", str(self.quiescent)])
+        for extra, want in (("", 10), ("(exec -a claude sleep 30) & sleep 0.3; ", 22)):
+            shutil.rmtree(self.state, ignore_errors=True)
+            # The predecessor runs the gate through a tool shell of its own, as a
+            # host does: predecessor -> shell (argv names claude) -> gate.
+            tool_shell = shlex.join(["bash", "-c", gate + " ; exit $?"])
+            r = subprocess.run(["bash", "-c", f"{register}; {extra}{tool_shell}; rc=$?; kill %1 2>/dev/null; exit $rc"],
+                               env=self.env, capture_output=True, text=True, timeout=120)
+            self.assertEqual(r.returncode, want, r.stderr[-600:])
 
     def test_loaded_ledger_child_blocks(self):
         prompt = self.tmp / "p.txt"; prompt.write_text("work")

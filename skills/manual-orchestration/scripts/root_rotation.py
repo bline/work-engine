@@ -191,8 +191,19 @@ class Gate:
                 if k not in seen:
                     seen.add(k)
                     stack.append(k)
-        me = os.getpid()
-        return sum(1 for p in seen if p != me and SESSION_PROC.search(args.get(p, "")))
+        # The gate is normally run BY the predecessor, so the processes between
+        # the predecessor and this gate (its shell, any wrapper) are beneath it
+        # and their command lines name a host ("--pred-host claude"). They are
+        # this gate's ancestors, not children; excluding exactly that chain
+        # keeps every other process beneath the predecessor counted.
+        parent = {c: p for p, cs in kids.items() for c in cs}
+        chain, cur = set(), os.getpid()
+        while cur in parent and cur != pid:
+            chain.add(cur)
+            cur = parent[cur]
+        if cur != pid:
+            chain = {os.getpid()}  # the gate is not beneath the predecessor
+        return sum(1 for p in seen if p not in chain and SESSION_PROC.search(args.get(p, "")))
 
     def quiescent(self):
         qf = self.a.quiescence_file
