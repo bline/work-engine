@@ -1,0 +1,65 @@
+{
+  "probe": "daemon-root-rotation-x6-20261025",
+  "date": "2026-10-25",
+  "gate": {
+    "skills/manual-orchestration/scripts/root_rotation.py": "4f9589f3f455d8f9220620397baec74c897198eb0a9eaa4d24c6ae9fe789fe3d",
+    "skills/manual-orchestration/scripts/role_host.py": "84c9fbd23ac7fbf6197442a3b849f8378ecc4c33948b149615cf64fb39029293",
+    "commits": [
+      "c2183409",
+      "90d54f08"
+    ]
+  },
+  "setup": "scratch board /home/bline/cbm-work/x6-20261025/board (never the production board); successor cwd /home/bline/code/work-engine; real handoff_validator; role x6-probe-root; --after-adopt stop. Rotation 1's predecessor is a placeholder uuid (no process); rotation 2's predecessor is rotation 1's real Claude successor.",
+  "permission_configuration": {
+    "claude": "auto mode (successor transcript permissionMode=auto); no allow/deny/ask rule naming the board or adopt in ~/.claude/settings.json or .claude/settings.local.json (the two of four checked locations that exist); managed settings not checked",
+    "codex": "user config approval_policy=never, sandbox_mode=danger-full-access; no extra launch flags"
+  },
+  "rotations": [
+    {
+      "n": 1,
+      "pred": "placeholder 3b2e9e31-cd11-4470-9c99-4a379e2088cb (claude)",
+      "successor": "claude 041aa8f1-dff9-402d-a9d0-9626bafd46cc (claude-opus-5-5)",
+      "result": "exit 0 committed_rotation_1, 25.7 s commit wall time, retire keep",
+      "successor_steps": "whoami (CLAUDE_CODE_SESSION_ID) -> wait on session:<own id> -> sha256sum -> read claims -> adopt with --handoff-path; 0 error tool results, no permission denial"
+    },
+    {
+      "n": "2a",
+      "pred": "claude 041aa8f1 (loaded, idle)",
+      "successor": "codex 01a173f7-4ab7-7721-9818-e3b7675e57bb",
+      "result": "exit 34 fail_no_adoption after 300 s; orphan stopped",
+      "cause": "DEFECT in role_host: the Codex process inherited CLAUDE_CODE_SESSION_ID from the Claude session that ran the gate; whoami checked it first and returned the caller's id ce95dbf3, so the successor waited on the caller's topic. The fakes removed the other host's variable, so the tests could not see it. Fixed in 90d54f08 (scrub caller identity; whoami refuses two ids); the regression test fails with the scrub disabled.",
+      "gate_behaviour": "correct: refused to accept anything, reported fail_no_adoption, stopped the orphan"
+    },
+    {
+      "n": "2b",
+      "pred": "claude 041aa8f1",
+      "successor": "codex 01a17403-311d-7b30-a452-b61b7ed93339",
+      "result": "exit 0 committed_rotation_2, 24.6 s, --retire stop: predecessor stopped (agents --all: done, not loaded)",
+      "successor_steps": "whoami (CODEX_THREAD_ID, so Codex does set it) -> wait -> sha256sum -> claims -> adopt with --handoff-path"
+    }
+  ],
+  "also_observed": [
+    "prepare before rotation 2 refused fail_role_ambiguous (exit 39) while rotation 1's successor was loaded under the role name and was not named as predecessor -- the intended refusal",
+    "roles view on the scratch board: holder 01a17403, chain placeholder -> 041aa8f1 -> 01a17403, state overlap because no ending report exists for a retired predecessor (the gate retires but posts no ending)"
+  ],
+  "x6": {
+    "claude": "criterion met (n=1): adopt succeeded through a real Claude successor launched by the gate's launcher, intended configuration auto mode with no extra rule, --handoff-path passed. Caveat: scratch board outside the successor cwd, not the production board.",
+    "codex": "criterion met (n=1) on the same terms, with the user's Codex configuration."
+  },
+  "not_established": [
+    "production-board rotation",
+    "a rotation of a real working root that continues after adoption (--after-adopt continue)",
+    "watch-triggered commit live",
+    "ending report for a retired predecessor (not built)"
+  ],
+  "evidence_dir": "/home/bline/cbm-work/x6-20261025",
+  "evidence_sha256": {
+    "claude-successor-041aa8f1.jsonl": "299dd6fa5ccb223349e490634528d93a039a720fdb035fcbaf120163bc2e4098",
+    "codex-rollout-01a173f7.jsonl": "98c34877b0c3ec5709edbc737e8669119cbbf47066a61ec3b9aad83c6da8aebc",
+    "codex-rollout-01a17403.jsonl": "5c20422da1a547ccae48541099d8f24690a5d1b506b9cf5f86184e2e206ceede",
+    "handoff.md": "067cd047f972f7c370a0703ad36982e11eb504393a65146dd0248cc7aa9da322",
+    "gate-claude/supervisor.log": "e20022c9a545bc7932b4a7147b30402ec9cfb280f911d6edd51a3c270738a247",
+    "gate-codex/supervisor.log": "3178cd5ff1075302ff324babb2ff68b35dc8d1f98eb2f035e6cd7e2129df6569",
+    "host/ledger.jsonl": "9537bf183f582c95d75d83e978b7a8e3a88e903ff4ae95681a9d1b7f931ef6db"
+  }
+}
