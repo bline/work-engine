@@ -327,7 +327,32 @@ class Gate:
         self.log(f"adoption acknowledged by {sid} (message {ack})")
         self.rec("adoption", f"session={sid} message_id={ack}")
         self.rm_awaiting()
+        self.post_ending(handoff, dig)
         return self.retire_predecessor(sid)
+
+    def post_ending(self, handoff, dig):
+        # The roles view ends an adoption only on an `availability` row with
+        # state `ending` from the SAME session and role. Without it every
+        # rotation reads as `overlap` forever. Posted after adoption, so a
+        # failed rotation never reports the predecessor as ending. The facts
+        # are the ones quiescence just established, not the predecessor's word.
+        data = self.state / "ending-data.json"
+        data.write_text(json.dumps({"state": "ending", "handoff": {"path": handoff, "sha256": dig},
+                                    "claims_released": [], "live_children": 0}))
+        rc, doc, err = self.board("post", "--kind", "availability", "--role", self.a.role,
+                                  "--author", f"supervisor:{self.a.role}", "--session-id", self.a.pred_session,
+                                  "--topic", f"session:{self.a.pred_session}", "--data-file", str(data),
+                                  "--body", f"Ending: role {self.a.role} handed off; successor adopted "
+                                            f"handoff sha256 {dig}.")
+        seq = ((doc or {}).get("message") or {}).get("sequence")
+        if rc != 0 or not seq:
+            # The transfer already happened; a missing report must not undo it,
+            # but it must not be silent either.
+            self.rec("ending-report", f"not_posted exit={rc} {err[:200]}")
+            self.log(f"WARNING: ending report not posted (exit {rc}); roles will read overlap")
+            return
+        self.rec("ending-report", f"sequence={seq}")
+        self.log(f"posted predecessor ending at sequence {seq}")
 
     def matching_adoption(self, doc, sid, topic, dig):
         for m in (doc or {}).get("messages", []):

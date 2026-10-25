@@ -152,7 +152,8 @@ routes belong to the predecessor's session. So before transferring:
      beneath the root) and stops at `awaiting_authority` with no successor.
      After the user authorizes, run `root_rotation.py commit --detach` and end
      the turn. The gate launches the successor, posts the handoff to its own
-     board topic, waits for its typed `adopt`, and retires the predecessor
+     board topic, waits for its typed `adopt`, posts the predecessor's
+     `availability: ending`, and retires the predecessor
      with `--retire stop`, or keeps it with the default `keep`. `watch`
      accepts the authorization as a board message, but only from a named
      approver and only when it cites the handoff's sha256.

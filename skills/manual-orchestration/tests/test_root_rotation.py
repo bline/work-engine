@@ -170,6 +170,14 @@ class GateCommit(Base):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["topic"], f"session:{sid}")
         self.assertEqual(rows[0]["data"]["predecessor_session"], self.pred)
+        ending = self.board_rows(kind="availability", session_id=self.pred, role="test-root")
+        self.assertEqual(len(ending), 1)
+        self.assertEqual(ending[0]["data"]["state"], "ending")
+        r = subprocess.run([sys.executable, str(BOARD), "--repository", str(self.repo), "roles"],
+                           capture_output=True, text=True, check=True)
+        role = [x for x in json.loads(r.stdout)["roles"] if x["role"] == "test-root"][0]
+        self.assertEqual(role["state"], "single", role)
+        self.assertEqual(role["reported_holder"]["session"], sid)
 
     def test_codex_successor_adopts_and_commits(self):
         rc, status, err = self.commit(successor="codex")
@@ -186,6 +194,7 @@ class GateCommit(Base):
     def test_adoption_naming_another_predecessor_is_not_accepted(self):
         rc, status, _ = self.commit(FAKE_SUCCESSOR="wrong_pred")
         self.assertEqual((rc, status), (34, "fail_no_adoption"))
+        self.assertEqual(self.board_rows(kind="availability"), [], "a failed rotation reports no ending")
 
     def test_successor_that_ends_without_adopting_fails_early_and_is_stopped(self):
         t0 = time.time()
