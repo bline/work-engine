@@ -320,21 +320,40 @@ degraded to `not_established` and blocked the rotation instead of passing it.
 
 ## Observed outcomes
 
-| outcome | exit | predecessor | elapsed |
-| --- | --- | --- | --- |
-| defect in handoff (bad digest; absent referent) | 21 | untouched, nothing launched | - |
-| validity not establishable | 32 | untouched, nothing launched | - |
-| predecessor still holds a claim | 22 | untouched, nothing launched | - |
-| a live child still holds a claim | 22 | untouched, nothing launched | - |
-| both of the above (`fail_children_live+fail_claims_held`) | 22 | untouched, nothing launched | - |
-| a quiescence check could not run | 32 | untouched, nothing launched | - |
-| validated and quiescent, awaiting authority | 10 | untouched, nothing launched | - |
-| `watch` with no named approver | 77 | untouched, nothing launched | - |
-| `watch` window closed unapproved | 78 | untouched, nothing launched | - |
-| successor stalled on a dialog | 27 | preserved at index 0 | 1,109 ms |
-| no adoption acknowledgment | 34 | preserved at index 0 | 6,012 ms (`ADOPT_TIMEOUT=5`) |
-| committed | 0 | per `RETIRE` | 1,133 ms (shell successor) |
-| committed after re-arming past a bystander post | 0 | per `RETIRE` | 3,248 ms |
+| outcome | exit | status recorded | predecessor | tested |
+| --- | --- | --- | --- | --- |
+| validated and quiescent, awaiting authority | 10 | `awaiting_authority` | untouched | yes |
+| rotation cap reached | 20 | `fail_cap_reached` | untouched | yes, both entry points |
+| defect in the handoff | 21 | `fail_validation_<phase>` | untouched | yes |
+| successor window could not be created | 23 | `fail_launch` | untouched | incidentally |
+| successor stalled on a startup dialog | 27 | `fail_startup_dialog` | untouched; orphan retired | yes |
+| nothing to commit | 29 | - | untouched | no |
+| handoff bytes changed after validation | 30 | `fail_handoff_mutated` | untouched | no |
+| predecessor window id unresolvable | 31 | `fail_predecessor_window_unresolved` | untouched | yes, fault injection |
+| validity could not be established | 32 | `validation_not_established_<phase>` | untouched | yes |
+| quiescence could not be established | 32 | `quiescence_not_established` | untouched | yes |
+| adoption could not be established (board error) | 32 | `adoption_not_established` | untouched | no |
+| role window count unreadable | 32 | `role_window_not_established` | untouched | no |
+| board could not be read while watching | 32 | `watch_board_error` | untouched | no |
+| board post failed | 33 | `fail_board_post` | untouched | no |
+| no adoption acknowledgment | 34 | `fail_no_adoption` | untouched; orphan retired | yes |
+| a report posted instead of an adoption | 34 | `fail_no_adoption` | untouched; orphan retired | yes |
+| swap failed | 35 | `fail_swap` | untouched | no |
+| predecessor window state unknown | 36 | `fail_window_state_unknown` | untouched | no |
+| predecessor still holds a claim | 22 | `fail_claims_held` | untouched | yes |
+| a live child still holds a claim | 22 | `fail_children_live` | untouched | yes |
+| a session process survives under the root | 22 | `fail_descendants_live` | untouched | yes |
+| several conditions at once | 22 | joined by `+` | untouched | yes |
+| **committed** | 0 | `committed_rotation_N` | per `RETIRE` | yes |
+| committed, but retirement FAILED | 38 | `committed_rotation_N_predecessor_not_retired` | still running | yes, fault injection |
+| the role names more than one window | 39 | `fail_role_window_ambiguous` | untouched | yes |
+| watch: no approver named | 77 | `watch_refused_no_authority` | untouched | yes |
+| watch: window closed unapproved | 78 | `watch_expired` | untouched | yes |
+| watch: handoff has no computable digest | 79 | `watch_refused_no_digest` | untouched | yes |
+
+Every outcome above refuses rather than proceeds, except the two commits.
+Rows marked "no" under *tested* are reachable by code reading only; they are
+`not established` by observation, not known-good.
 
 Two live Claude rotations committed, at 26.9 s and 26.8 s, both before the
 fixed-cost fix; 4 and 5 model calls. The second, in the same cwd within the

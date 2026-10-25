@@ -315,6 +315,19 @@
         "windows_after": "0:claude-root/@0 1:bystander/@1 -- identical to before; nothing launched, nothing touched"
       },
       "standing": "the hazard IS reachable in the coordinator: it is a closed hole, not defence in depth. The worst outcome is not a lost bystander but a false 'rotated' status over a dead successor and a surviving predecessor."
+    },
+    "role_window_ambiguity": {
+      "found_via": "the fault-injection tests: a failed retirement leaves the predecessor and successor BOTH named <role>",
+      "measured": "with two windows of one name, `display-message -t roots:<name>` returns the FIRST match silently with exit 0; selecting the other does not change the answer. Private socket, 2026-10-24.",
+      "consequence_before_fix": "every later step resolves the role by name, so the coordinator could not tell it was choosing between two live roots -- the condition the mechanism exists to prevent, reached by a different road than the two-supervisor race.",
+      "fixed": "exactly one window must answer to the role, checked first at both entry points (39 ambiguous / 32 unreadable)",
+      "note": "the retirement fix makes the RECORD truthful without repairing the STATE: both arms of the fault injection left two windows named <role>. This check is what stops that state being acted on."
     }
+  },
+  "outcome_table_coverage": {
+    "total_outcomes": 29,
+    "observed_in_test": 17,
+    "reachable_by_code_reading_only": "fail_launch (incidental), nothing-to-commit, fail_handoff_mutated, adoption_not_established, role_window_not_established, watch_board_error, fail_board_post, fail_swap, fail_window_state_unknown",
+    "standing": "an untested outcome is not established by observation, not known-good; the table marks each one"
   }
 }
