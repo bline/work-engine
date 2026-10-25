@@ -506,5 +506,18 @@
       "error_class": "a correct rejection supported by an obstacle that is not the real one; the same shape as the correction-that-misnamed-its-own-error on 2026-10-25"
     },
     "standing": "a design direction, not built; quiescence remains the weak point under either host"
+  },
+  "host_decision_20261025": {
+    "decision": "roles are hosted as Claude/Codex CLI daemon sessions; tmux is retired as the role host",
+    "decided_by": "user, 2026-10-25",
+    "user_stated_reason": "an agent running inside the codex/claude daemons has no access to tmux, and no solution to that exists; the daemon CLI is closer to what is available than adding tmux over a CLI that cannot control it",
+    "corroborating_observation": {
+      "n": 1,
+      "observed": "session ce95dbf3-c364-4184-bab5-26cb07beaef9 is pane-hosted: ancestry claude -> bash -> tmux server; `claude agents --json` lists it kind=interactive",
+      "reading": "consistent with settled fact 7 (fresh launch pane-hosted, --resume daemon-hosted): a tmux-hosted role keeps tmux access only until its first resume, so tmux cannot be the host for a role that is ever resumed"
+    },
+    "supersedes": "daemon_hosted_roles_20261025.standing ('a design direction, not built') as to direction; it is still not built",
+    "unchanged": "quiescence remains the weak point: agents --json has no parent field and cwd is over-inclusive (see daemon_hosted_roles_20261025.what_it_does_NOT_solve); authority and the approval path are unchanged",
+    "consequence_for_the_tmux_mechanism": "the tmux coordinator stays as recorded evidence; its outcome table and live rotations describe the tmux host only and do not transfer to the daemon host without re-test"
   }
 }

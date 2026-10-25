@@ -17,6 +17,16 @@ call happens before the gate.
 - handoff validator: [`metrics/scripts/handoff_validator.py`](../scripts/handoff_validator.py)
 - evidence: [`tmux-root-rotation-20261024.json`](tmux-root-rotation-20261024.json)
 
+**Host decision, 2026-10-25: tmux is retired as the role host.** The user
+decided that roles are hosted as Claude/Codex CLI daemon sessions, because an
+agent running inside the daemon has no access to tmux and no solution to that
+exists. This is consistent with what was observed here: a fresh launch is
+pane-hosted and a `--resume` is daemon-hosted, so a tmux-hosted role loses tmux
+the first time it is resumed (n = 1 ancestry trace, evidence
+`host_decision_20261025`). Everything below describes the tmux host. Its
+outcome table and live rotations do not transfer to the daemon host without
+re-test, and quiescence remains unsolved under either host.
+
 All probes ran on private tmux sockets (`-L`); the user's `default` server was
 never touched, and every board post went to a scratch repository, never the
 production board.
