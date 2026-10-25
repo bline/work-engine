@@ -165,6 +165,7 @@ commit() {
   local n; n=$(<"$C")
   (( n < MAX_ROTATIONS )) || { log "CAP $n/$MAX_ROTATIONS"; rec terminal-status "fail_cap_reached"; return 20; }
 
+  local retire_failed=no
   # Successor identity is chosen BEFORE launch, so the handoff can be waiting.
   local sid topic; sid=$(cat /proc/sys/kernel/random/uuid); topic="session:$sid"
   local seq
@@ -179,7 +180,14 @@ commit() {
   # Capture the predecessor's window ID before anything moves: names travel
   # with windows through swap-window, so only IDs are stable identities.
   local pred_wid pred_cwd
-  pred_wid=$(T display-message -p -t "roots:$ROLE" '#{window_id}')
+  pred_wid=$(T display-message -p -t "roots:$ROLE" '#{window_id}' 2>>"$STATE/supervisor.log")
+  # An EMPTY target is not a no-op. Measured on a private socket: with -t ""
+  # tmux resolves to the server's CURRENT window, so rename-window renamed and
+  # kill-window killed an unrelated window, BOTH returning exit 0. An
+  # unvalidated id here would destroy an arbitrary window and report success.
+  [[ "$pred_wid" =~ ^@[0-9]+$ ]] || {
+    log "HOLD: cannot resolve the predecessor window id (got '$pred_wid'); nothing launched"
+    rec terminal-status "fail_predecessor_window_unresolved"; return 31; }
   # Launch in the PREDECESSOR'S cwd: directory trust is per-directory, so a
   # successor started elsewhere stalls on a modal that looks alive (observed).
   pred_cwd=$(T display-message -p -t "$pred_wid" '#{pane_current_path}')
@@ -189,6 +197,11 @@ commit() {
   local cmd wid
   cmd=${LAUNCH_TMPL//\{SESSION\}/$sid}; cmd=${cmd//\{TOPIC\}/$topic}
   cmd=${cmd//\{HANDOFF\}/$handoff}; cmd=${cmd//\{DIGEST\}/$dig}
+  # Re-checked here because every command below this point is destructive and
+  # the value has travelled through a launch and an adoption wait.
+  [[ "$pred_wid" =~ ^@[0-9]+$ ]] || {
+    log "HOLD: predecessor window id went unusable ('$pred_wid'); nothing swapped or killed"
+    rec terminal-status "fail_predecessor_window_unresolved"; return 31; }
   if [[ "$RETIRE" == successor ]]; then
     cmd=${cmd//\{PRED_WID\}/$pred_wid}; cmd=${cmd//\{SOCK\}/$SOCK}
   else
@@ -268,12 +281,23 @@ print(next((m["message_id"] for m in d.get("messages", [])
     rec terminal-status "fail_startup_dialog"; return 27
   fi
   if [[ -z "${ack:-}" ]]; then
-    log "HOLD: no adoption acknowledgment in ${ADOPT_TIMEOUT}s (wait exit $wrc); predecessor NOT retired"
-    abandon no_adoption
-    rec terminal-status "fail_no_adoption"; return 34
+    # The board exits 2 on its OWN timeout and non-2 on an error. Recording both
+    # as "no adoption" states a fact about the successor that was never observed.
+    if (( wrc == 2 )); then
+      log "HOLD: no adoption acknowledgment in ${ADOPT_TIMEOUT}s; predecessor NOT retired"
+      abandon no_adoption; rec terminal-status "fail_no_adoption"; return 34
+    fi
+    log "HOLD: could not read the board for an acknowledgment (wait exit $wrc); adoption NOT established"
+    abandon adoption_not_established
+    rec terminal-status "adoption_not_established"; return 32
   fi
   log "adoption acknowledged by $sid (message $ack)"
 
+  # Re-checked here because every command below this point is destructive and
+  # the value has travelled through a launch and an adoption wait.
+  [[ "$pred_wid" =~ ^@[0-9]+$ ]] || {
+    log "HOLD: predecessor window id went unusable ('$pred_wid'); nothing swapped or killed"
+    rec terminal-status "fail_predecessor_window_unresolved"; return 31; }
   if [[ "$RETIRE" == successor ]]; then
     # The successor was handed its predecessor's window id and retires it as its
     # own last action. The supervisor verifies the outcome and positions the role.
@@ -302,7 +326,8 @@ print(next((m["message_id"] for m in d.get("messages", [])
       log "successor did NOT retire $pred_wid within 60s; supervisor is not substituting for it"
       rec predecessor-retired-by "not_established"
       T swap-window -s "$wid" -t "$pred_wid" || { log "HOLD: swap failed"; rec terminal-status "fail_swap"; return 35; }
-      T rename-window -t "$pred_wid" "${ROLE}-retired"
+      T rename-window -t "$pred_wid" "${ROLE}-retired" \
+        || { log "WARNING: could not rename predecessor $pred_wid"; retire_failed=yes; }
     fi
     T rename-window -t "$wid" "$ROLE"
     log "successor window $wid now occupies the $ROLE position"
@@ -311,15 +336,36 @@ print(next((m["message_id"] for m in d.get("messages", [])
     T rename-window -t "$wid" "$ROLE"
     log "successor window $wid now occupies the $ROLE position"
     if [[ "$RETIRE" == kill ]]; then
-      T kill-window -t "$pred_wid" && log "retired predecessor window $pred_wid"
+      if T kill-window -t "$pred_wid" 2>>"$STATE/supervisor.log"; then
+        log "retired predecessor window $pred_wid"
+      else
+        log "WARNING: could not kill predecessor $pred_wid; it is STILL RUNNING beside the successor"
+        retire_failed=yes
+      fi
     else
-      T rename-window -t "$pred_wid" "${ROLE}-retired" && log "predecessor $pred_wid kept as ${ROLE}-retired for questions only"
+      if T rename-window -t "$pred_wid" "${ROLE}-retired" 2>>"$STATE/supervisor.log"; then
+        log "predecessor $pred_wid kept as ${ROLE}-retired for questions only"
+      else
+        log "WARNING: could not rename predecessor $pred_wid; two windows may now answer to $ROLE"
+        retire_failed=yes
+      fi
     fi
   fi
   local map; map=$(T list-windows -t roots -F '#{window_index}:#{window_name}:#{window_id}' | tr '\n' ' ')
   log "post-swap map: $map"
   rec window-map "$map"
-  rm -f "$STATE/awaiting-authority"; rec terminal-status "committed_rotation_$(<"$C")"
+  rm -f "$STATE/awaiting-authority"
+  # The swap succeeded, so the successor holds the role -- but a retirement that
+  # silently failed used to be recorded as a clean commit, leaving the
+  # predecessor alive under a status saying it was retired.
+  if [[ "${retire_failed:-no}" == yes ]]; then
+    rec predecessor-disposition "retire_failed"
+    rec terminal-status "committed_rotation_$(<"$C")_predecessor_not_retired"
+    log "HOLD: rotation committed but the predecessor was NOT retired; both are running"
+    return 38
+  fi
+  rec predecessor-disposition "retired"
+  rec terminal-status "committed_rotation_$(<"$C")"
   return 0
 }
 
@@ -361,8 +407,13 @@ d=json.load(sys.stdin); m=d.get("messages",[]); print(m[-1]["sequence"] if m els
     local out="$STATE/watch-wait.json" rc
     B wait --since "$since" --topic "$topic" --timeout-seconds "$left" \
       >"$out" 2>>"$STATE/supervisor.log"; rc=$?
-    (( rc == 0 )) || { log "watch ended without an approval (wait exit $rc)"
-      rec terminal-status "watch_expired"; return 78; }
+    (( rc == 0 )) || {
+      if (( rc == 2 )); then
+        log "watch window closed with no approval (board timeout)"
+        rec terminal-status "watch_expired"; return 78
+      fi
+      log "watch ended because the board could not be read (wait exit $rc)"
+      rec terminal-status "watch_board_error"; return 32; }
     local verdict
     # EVERY message in the batch is examined before the cursor moves. Stopping
     # at the first token-bearing message dropped a valid approval that arrived
