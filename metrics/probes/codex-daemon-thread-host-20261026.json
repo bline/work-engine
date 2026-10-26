@@ -66,5 +66,21 @@
       "sequence": "launch -> running (active) -> retire without --force refused 40 -> retire --force turn_interrupted -> stopped -> deliver same thread -> running -> idle after the turn completed"
     },
     "attach_test_thread": "01a17638-ebd3-75d0-ac5e-ae1fcc13813c (name attach-test, sleep 900, launched 2026-10-26T03:20Z) for the user to try `codex resume` mid-turn"
+  },
+  "exec_root_release_20261026": {
+    "thread": "01a175b2-466e-7951-812c-cdeaa4006ac8 (b3-api-root, exec pid 602392)",
+    "method": "user-suggested: a board message on the root's own topic (sequence 3071, message e5e4fd97-d45f-4b22-a44b-6d6d74c07582, author user:bline posted by claude-metrics b40bb0b6, 03:39:28Z) asking it to end its turn; the root was in its board wait",
+    "result": "root collected its wait processes, cleared owned_processes, saved continuation.json (status turn_ending_for_user_terminal_resume_active_child_preserved), turn.completed; exec exited 03:40:09Z (41 s after the post). No process then held its rollout; role_host status: stopped, last_turn completed.",
+    "turn_usage": {
+      "input_tokens": 7659149,
+      "cached_input_tokens": 7481216,
+      "output_tokens": 36093
+    },
+    "children_left_running": "01a17620 under exec pid 680144 (also holds 01a17628); unaffected by design",
+    "user_resume": "not yet observed in this record"
+  },
+  "notloaded_status_fix": {
+    "observation": "thread/read on a real but unloaded thread succeeds with status notLoaded (an unknown id errors 'thread not loaded'); thread/turns/list then reported the last turn interrupted for 01a17620 while exec pid 680144 was still running it; thread_history_1.sqlite showed inProgress.",
+    "fix": "commit 12e936af: notLoaded threads are read from the on-disk history only."
   }
 }
