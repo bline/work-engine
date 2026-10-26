@@ -181,7 +181,11 @@ fn runtime_pins() -> Vec<FilePin> {
 }
 impl Fixture {
     pub fn new(delay: u64, mode: &str) -> Self {
-        let scratch = Path::new("/home/bline/code/.work-engine-tmp/h1-fixtures");
+        let selected = std::env::var_os("RP0_HOST_TEST_TMPDIR");
+        let scratch = selected
+            .as_deref()
+            .map(Path::new)
+            .unwrap_or(Path::new("/home/bline/code/.work-engine-tmp/h1-fixtures"));
         fs::create_dir_all(scratch).unwrap();
         let temp = tempfile::tempdir_in(scratch).unwrap();
         let base = temp.path();

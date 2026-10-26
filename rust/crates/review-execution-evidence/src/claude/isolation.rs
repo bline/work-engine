@@ -79,6 +79,8 @@ struct FrozenBoundaryManifest {
     cbm_sha256: String,
     launcher_sha256: String,
     client_sha256: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    fallback_accounted: Option<bool>,
 }
 
 pub struct HostileProbeResult {
@@ -287,6 +289,7 @@ pub struct CandidateBoundary {
     private_root: PathBuf,
     index: CandidateIndex,
     manifest_sha256: Option<String>,
+    manifest_schema: u32,
     resource_policy: super::session::ResourcePolicy,
 }
 
@@ -422,6 +425,7 @@ impl CandidateBoundary {
             .arg("--ro-bind")
             .arg(self.private_root.join("session/mcp.json"))
             .arg("/cbm/mcp.json");
+        mount_coverage_ledger(&mut command, &self.private_root);
         command.arg("--dir").arg("/claude");
         command
             .arg("--ro-bind")
@@ -566,6 +570,8 @@ impl CandidateBoundary {
         let config = b"{\"ui_enabled\":false,\"ui_port\":9749}\n";
         write_private(&private_root.join("build-cache/config.json"), config)?;
         for setting in ["auto_index", "auto_watch", "watcher_enabled"] {
+            #[cfg(feature = "test-support")]
+            eprintln!("RP0_PREPARE_STAGE=config:{setting}");
             let mut command = base_command(
                 &profile,
                 &candidate,
@@ -604,6 +610,8 @@ impl CandidateBoundary {
             "--persistence",
             "false",
         ]);
+        #[cfg(feature = "test-support")]
+        eprintln!("RP0_PREPARE_STAGE=index_repository");
         let output = bounded_output(build, Duration::from_secs(180))?;
         if !output.status.success() {
             return Err(Rp0Error::IndexUnavailable);
@@ -661,6 +669,8 @@ impl CandidateBoundary {
             "--format",
             "json",
         ]);
+        #[cfg(feature = "test-support")]
+        eprintln!("RP0_PREPARE_STAGE=index_status");
         let output = bounded_output(readback, Duration::from_secs(30))?;
         if !output.status.success() {
             return Err(Rp0Error::IncompleteStore);
@@ -693,8 +703,10 @@ impl CandidateBoundary {
             return Err(Rp0Error::IncompleteStore);
         }
         let mut coverage_batches = Vec::new();
-        let mut coverage_complete = true;
-        for paths in candidate_relative_paths(&candidate)?.chunks(20) {
+        let selected_paths = candidate_relative_paths(&candidate)?;
+        #[cfg(feature = "test-support")]
+        eprintln!("RP0_PREPARE_STAGE=coverage:paths={}", selected_paths.len());
+        for paths in selected_paths.chunks(20) {
             let paths_json =
                 serde_json::to_string(paths).map_err(|_| Rp0Error::IndexUnavailable)?;
             let mut check = base_command(
@@ -742,15 +754,22 @@ impl CandidateBoundary {
                 .get("paths")
                 .and_then(Value::as_array)
                 .ok_or(Rp0Error::IndexUnavailable)?;
-            coverage_complete &= records.iter().all(|entry| {
-                entry.get("status").and_then(Value::as_str) == Some("no_recorded_issue")
-                    && entry.get("content_verified").and_then(Value::as_bool) == Some(true)
-            });
+            if records.len() != paths.len() {
+                return Err(Rp0Error::IncompleteStore);
+            }
             coverage_batches.push(batch);
         }
-        let coverage_manifest = json!({"project": project, "candidate_tree_sha256":candidate_tree_sha256,
-            "store_sha256":store_sha256,"coverage_complete":coverage_complete,
-            "batches":coverage_batches});
+        let coverage_manifest = build_coverage_ledger(
+            &candidate,
+            project,
+            &candidate_tree_sha256,
+            &store_sha256,
+            &indexed_at,
+            coverage_batches,
+        )?;
+        let coverage_complete = coverage_manifest["coverage_complete"]
+            .as_bool()
+            .ok_or(Rp0Error::IncompleteStore)?;
         let coverage_bytes =
             serde_json::to_vec(&coverage_manifest).map_err(|_| Rp0Error::IndexUnavailable)?;
         write_private(&private_root.join("session/coverage.json"), &coverage_bytes)?;
@@ -772,6 +791,7 @@ impl CandidateBoundary {
             candidate,
             private_root,
             manifest_sha256: None,
+            manifest_schema: 2,
             resource_policy: super::session::ResourcePolicy::Strict64MiB,
             index: CandidateIndex {
                 project: project.to_owned(),
@@ -799,11 +819,11 @@ impl CandidateBoundary {
                 .join("review-cache")
                 .join(format!("{}.db", self.index.project)),
         )?;
-        if !self.index.coverage_complete {
+        if self.manifest_schema != 2 {
             return Err(Rp0Error::IncompleteStore);
         }
         let manifest = FrozenBoundaryManifest {
-            schema_version: 1,
+            schema_version: 2,
             candidate: self.candidate.clone(),
             private_root: self.private_root.clone(),
             index: self.index.clone(),
@@ -813,6 +833,7 @@ impl CandidateBoundary {
             cbm_sha256: self.profile.cbm.sha256().into(),
             launcher_sha256: self.profile.cbm_launcher.sha256().into(),
             client_sha256: self.profile.cbm_client.sha256().into(),
+            fallback_accounted: Some(true),
         };
         let bytes = serde_json::to_vec(&manifest).map_err(|_| Rp0Error::IndexUnavailable)?;
         let path = self.private_root.join("boundary-manifest.json");
@@ -870,7 +891,7 @@ impl CandidateBoundary {
         }
         let manifest: FrozenBoundaryManifest =
             serde_json::from_slice(&raw).map_err(|_| Rp0Error::IndexUnavailable)?;
-        if manifest.schema_version != 1
+        if !matches!(manifest.schema_version, 1 | 2)
             || !manifest.build_complete
             || !manifest.watcher_disabled
             || manifest.candidate != candidate
@@ -879,7 +900,9 @@ impl CandidateBoundary {
             || manifest.cbm_sha256 != profile.cbm.sha256()
             || manifest.launcher_sha256 != profile.cbm_launcher.sha256()
             || manifest.client_sha256 != profile.cbm_client.sha256()
-            || !manifest.index.coverage_complete
+            || (manifest.schema_version == 1
+                && (!manifest.index.coverage_complete || manifest.fallback_accounted.is_some()))
+            || (manifest.schema_version == 2 && manifest.fallback_accounted != Some(true))
         {
             return Err(Rp0Error::IndexUnavailable);
         }
@@ -889,6 +912,7 @@ impl CandidateBoundary {
             private_root: private_root.into(),
             index: manifest.index,
             manifest_sha256: Some(expected_manifest_sha256.into()),
+            manifest_schema: manifest.schema_version,
             resource_policy: super::session::ResourcePolicy::Strict64MiB,
         };
         boundary.verify_frozen()?;
@@ -903,6 +927,19 @@ impl CandidateBoundary {
 
     pub fn index(&self) -> &CandidateIndex {
         &self.index
+    }
+
+    pub fn manifest_schema(&self) -> u32 {
+        self.manifest_schema
+    }
+
+    pub(crate) fn coverage_admitted(&self) -> bool {
+        self.manifest_sha256.is_some()
+            && match self.manifest_schema {
+                1 => self.index.coverage_complete,
+                2 => true, // verify_frozen checks the complete v2 ledger.
+                _ => false,
+            }
     }
 
     pub(crate) fn candidate_path(&self) -> &Path {
@@ -942,6 +979,7 @@ impl CandidateBoundary {
         });
         let mut command =
             reviewer_command(&self.profile, &self.candidate, &self.private_root, true)?;
+        command.arg("--unshare-net");
         command
             .arg("--bind")
             .arg(self.private_root.join("session"))
@@ -955,6 +993,7 @@ impl CandidateBoundary {
             .arg(self.private_root.join("scratch"))
             .arg("/scratch");
         command.arg("--dir").arg("/cbm");
+        mount_coverage_ledger(&mut command, &self.private_root);
         command
             .arg("--ro-bind")
             .arg(self.private_root.join("proxy"))
@@ -976,6 +1015,15 @@ impl CandidateBoundary {
         let server_result = server.join().map_err(|_| Rp0Error::IsolationFailed)?;
         let _ = fs::remove_file(&listener_path);
         let output = output?;
+        #[cfg(feature = "test-support")]
+        if !output.status.success() || server_result.is_err() {
+            eprintln!(
+                "RP0_PROBE_DIAGNOSTIC status={:?} server={:?} stderr={}",
+                output.status.code(),
+                server_result.as_ref().err(),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
         let cbm_observation = server_result?;
         self.verify_frozen()?;
         Ok(HostileProbeResult {
@@ -1010,6 +1058,11 @@ impl CandidateBoundary {
         if sha256(&fs::read(self.private_root.join("session/coverage.json"))?)
             != self.index.coverage_sha256
         {
+            return Err(Rp0Error::IncompleteStore);
+        }
+        if self.manifest_schema == 2 {
+            verify_coverage_ledger(&self.candidate, &self.private_root, &self.index)?;
+        } else if self.manifest_schema != 1 || !self.index.coverage_complete {
             return Err(Rp0Error::IncompleteStore);
         }
         if sha256(&fs::read(
@@ -1239,6 +1292,13 @@ fn reviewer_command(
     ]);
     let _ = private_root;
     Ok(command)
+}
+
+fn mount_coverage_ledger(command: &mut Command, private_root: &Path) {
+    command
+        .arg("--ro-bind")
+        .arg(private_root.join("session/coverage.json"))
+        .arg("/cbm/coverage.json");
 }
 
 const MAX_MCP_LINE: usize = 64 * 1024;
@@ -1785,6 +1845,219 @@ pub(crate) fn tree_digest(root: &Path) -> Result<String, Rp0Error> {
 }
 
 fn candidate_relative_paths(root: &Path) -> Result<Vec<String>, Rp0Error> {
+    Ok(candidate_all_relative_paths(root)?
+        .into_iter()
+        .filter(|path| {
+            Path::new(path)
+                .extension()
+                .is_none_or(|extension| extension != "bin")
+        })
+        .collect())
+}
+
+fn verify_coverage_ledger(
+    candidate: &Path,
+    private_root: &Path,
+    index: &CandidateIndex,
+) -> Result<(), Rp0Error> {
+    let path = private_root.join("session/coverage.json");
+    let metadata = fs::symlink_metadata(&path)?;
+    if !metadata.file_type().is_file()
+        || metadata.permissions().mode() & 0o077 != 0
+        || metadata.len() > 16 * 1024 * 1024
+    {
+        return Err(Rp0Error::IncompleteStore);
+    }
+    let raw = fs::read(path)?;
+    if sha256(&raw) != index.coverage_sha256 {
+        return Err(Rp0Error::IncompleteStore);
+    }
+    let actual: Value = serde_json::from_slice(&raw).map_err(|_| Rp0Error::IncompleteStore)?;
+    let batches = actual
+        .get("batches")
+        .and_then(Value::as_array)
+        .ok_or(Rp0Error::IncompleteStore)?
+        .clone();
+    let expected = build_coverage_ledger(
+        candidate,
+        &index.project,
+        &index.candidate_tree_sha256,
+        &index.store_sha256,
+        &index.indexed_at,
+        batches,
+    )?;
+    if actual != expected
+        || actual.get("coverage_complete").and_then(Value::as_bool) != Some(index.coverage_complete)
+    {
+        return Err(Rp0Error::IncompleteStore);
+    }
+    Ok(())
+}
+
+/// A coverage disposition is about retrieval limits, never about candidate
+/// identity or whether the reviewer subsequently inspected source.
+fn build_coverage_ledger(
+    root: &Path,
+    project: &str,
+    candidate_tree_sha256: &str,
+    store_sha256: &str,
+    indexed_at: &str,
+    batches: Vec<Value>,
+) -> Result<Value, Rp0Error> {
+    let queried = candidate_relative_paths(root)?;
+    if batches.len() != queried.len().div_ceil(20) {
+        return Err(Rp0Error::IncompleteStore);
+    }
+    let mut source_hashes = Vec::with_capacity(queried.len());
+    let mut fallback = Vec::new();
+    let mut coverage_complete = true;
+    let mut store_generation: Option<&str> = None;
+    for (expected_paths, batch) in queried.chunks(20).zip(&batches) {
+        let metadata = batch.get("metadata").ok_or(Rp0Error::IncompleteStore)?;
+        let generation = metadata
+            .get("store_generation")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .ok_or(Rp0Error::IncompleteStore)?;
+        if let Some(previous) = store_generation {
+            if previous != generation {
+                return Err(Rp0Error::IncompleteStore);
+            }
+        } else {
+            store_generation = Some(generation);
+        }
+        if batch.get("project").and_then(Value::as_str) != Some(project)
+            || batch.get("indexed_at").and_then(Value::as_str) != Some(indexed_at)
+            || batch.get("path_total").and_then(Value::as_u64) != Some(expected_paths.len() as u64)
+            || batch.get("path_returned").and_then(Value::as_u64)
+                != Some(expected_paths.len() as u64)
+            || batch.get("path_has_more").and_then(Value::as_bool) != Some(false)
+            || batch.get("has_more").and_then(Value::as_bool) != Some(false)
+            || metadata.get("generation_matches").and_then(Value::as_bool) != Some(true)
+            || metadata
+                .get("hash_records_complete")
+                .and_then(Value::as_bool)
+                != Some(true)
+            || metadata.get("recording_status").and_then(Value::as_str) != Some("complete")
+            || metadata.get("generation").and_then(Value::as_str) != Some(indexed_at)
+        {
+            return Err(Rp0Error::IncompleteStore);
+        }
+        let records = batch
+            .get("paths")
+            .and_then(Value::as_array)
+            .ok_or(Rp0Error::IncompleteStore)?;
+        if records.len() != expected_paths.len() {
+            return Err(Rp0Error::IncompleteStore);
+        }
+        for (path, record) in expected_paths.iter().zip(records) {
+            if record.get("requested_path").and_then(Value::as_str) != Some(path)
+                || record.get("path").and_then(Value::as_str) != Some(path)
+            {
+                return Err(Rp0Error::IncompleteStore);
+            }
+            let status = record
+                .get("status")
+                .and_then(Value::as_str)
+                .ok_or(Rp0Error::IncompleteStore)?;
+            let freshness = record
+                .get("freshness")
+                .and_then(Value::as_str)
+                .ok_or(Rp0Error::IncompleteStore)?;
+            let verified = record
+                .get("content_verified")
+                .and_then(Value::as_bool)
+                .ok_or(Rp0Error::IncompleteStore)?;
+            if !matches!(
+                status,
+                "no_recorded_issue" | "partial" | "excluded" | "unusable" | "skipped" | "unknown"
+            ) || !matches!(
+                freshness,
+                "metadata_match"
+                    | "metadata_changed"
+                    | "not_tracked"
+                    | "metadata_stale"
+                    | "unknown"
+            ) {
+                return Err(Rp0Error::IncompleteStore);
+            }
+            let raw_coverage = record
+                .get("coverage")
+                .and_then(Value::as_array)
+                .ok_or(Rp0Error::IncompleteStore)?;
+            let bytes = fs::read(root.join(path))?;
+            let source_sha256 = sha256(&bytes);
+            let line_count = (bytes.iter().filter(|byte| **byte == b'\n').count()
+                + usize::from(bytes.last().is_some_and(|byte| *byte != b'\n')))
+            .max(1) as u64;
+            let mut ranges = Vec::new();
+            for gap in raw_coverage {
+                if gap
+                    .get("kind")
+                    .and_then(Value::as_str)
+                    .is_none_or(str::is_empty)
+                    || gap.get("match").and_then(Value::as_str) != Some("exact")
+                    || gap.get("path").and_then(Value::as_str) != Some(path)
+                {
+                    return Err(Rp0Error::IncompleteStore);
+                }
+                if let Some(raw_ranges) = gap.get("ranges") {
+                    for range in raw_ranges.as_array().ok_or(Rp0Error::IncompleteStore)? {
+                        let start = range
+                            .get("start")
+                            .and_then(Value::as_u64)
+                            .ok_or(Rp0Error::IncompleteStore)?;
+                        let end = range
+                            .get("end")
+                            .and_then(Value::as_u64)
+                            .ok_or(Rp0Error::IncompleteStore)?;
+                        if start == 0 || end < start || end > line_count {
+                            return Err(Rp0Error::IncompleteStore);
+                        }
+                        ranges.push(json!({"start":start,"end":end}));
+                    }
+                }
+            }
+            source_hashes.push(json!({"path":path,"source_sha256":source_sha256.clone()}));
+            let clean = status == "no_recorded_issue"
+                && freshness == "metadata_match"
+                && verified
+                && raw_coverage.is_empty();
+            coverage_complete &= clean;
+            if !clean {
+                fallback.push(json!({
+                    "path":path,"source_sha256":source_sha256,
+                    "status":status,"freshness":freshness,"content_verified":verified,
+                    "reported_coverage":raw_coverage,
+                    "scope":if ranges.is_empty() { json!({"whole_file":true}) }
+                        else { json!({"ranges":ranges}) },
+                    "disposition":"direct_source_required"
+                }));
+            }
+        }
+    }
+    let mut opaque = Vec::new();
+    for path in candidate_all_relative_paths(root)? {
+        if Path::new(&path)
+            .extension()
+            .is_some_and(|extension| extension == "bin")
+        {
+            opaque.push(
+                json!({"path":path,"source_sha256":sha256(&fs::read(root.join(&path))?),
+                "reason":"opaque_binary_not_queried"}),
+            );
+        }
+    }
+    Ok(json!({
+        "schema_version":2,"project":project,"candidate_tree_sha256":candidate_tree_sha256,
+        "store_sha256":store_sha256,"indexed_at":indexed_at,
+        "coverage_complete":coverage_complete,"fallback_accounted":true,
+        "queried_path_count":queried.len(),"source_hashes":source_hashes,
+        "fallback":fallback,"opaque_files":opaque,"batches":batches,
+    }))
+}
+
+fn candidate_all_relative_paths(root: &Path) -> Result<Vec<String>, Rp0Error> {
     let mut paths = Vec::new();
     let mut stack = vec![root.to_owned()];
     while let Some(directory) = stack.pop() {
@@ -1798,11 +2071,6 @@ fn candidate_relative_paths(root: &Path) -> Result<Vec<String>, Rp0Error> {
             if kind.is_dir() {
                 stack.push(path);
             } else if kind.is_file() {
-                // CBM explicitly excludes opaque binary assets. Their bytes
-                // remain in tree_digest; coverage asserts only indexed input.
-                if path.extension().is_some_and(|extension| extension == "bin") {
-                    continue;
-                }
                 let relative = path
                     .strip_prefix(root)
                     .map_err(|_| Rp0Error::CandidateDrift)?;

@@ -267,7 +267,7 @@ impl QualifiedScope {
                 || index.store_sha256() != selection.cbm_store_sha256
                 || index.coverage_sha256() != selection.cbm_coverage_sha256
                 || index.indexed_at() != selection.cbm_generation
-                || !index.coverage_complete()
+                || !boundary.coverage_admitted()
             {
                 return Err(EvidenceReadError::Conflicting(
                     "Claude CBM/candidate binding mismatch",

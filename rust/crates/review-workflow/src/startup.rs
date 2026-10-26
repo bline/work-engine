@@ -229,6 +229,22 @@ fn qualified_prompt_template_from_parts(
     .into_bytes()
 }
 
+/// The selected compiler role owns this text. Startup checks its effective
+/// projection before a schema-2 boundary may qualify; RP0 never injects it
+/// after compilation or grants an additional reviewer tool.
+pub const RP0_COVERAGE_GUIDANCE_V2: &str = "RP0 coverage ledger: read `/cbm/coverage.json` for the selected candidate before relying on graph results. For each material graph claim, record project and generation, bounded query and pagination, exact symbol/path, and coverage for each relied-on path. If the ledger or query reports unverified, partial, skipped, excluded, stale or unknown coverage, read the corresponding exact source at `/repo/candidate/<path>` for every reported gap range, or the whole file where no usable range exists; cite the direct source and record the graph limitation. A ledger disposition only identifies work required. It does not prove that you inspected source or that graph coverage is complete. If required evidence cannot be obtained, report the result incomplete.";
+
+fn selected_role_has_coverage_guidance(template: &[u8], selected_role: &str) -> Result<bool> {
+    let prompt: Value = serde_json::from_slice(template)?;
+    Ok(prompt
+        .get("compilerProjection")
+        .and_then(|projection| projection.get("roles"))
+        .and_then(|roles| roles.get(selected_role))
+        .and_then(|role| role.get("developerInstructions"))
+        .and_then(Value::as_str)
+        .is_some_and(|instructions| instructions.contains(RP0_COVERAGE_GUIDANCE_V2)))
+}
+
 /// Descriptive deterministic bytes; constructing them cannot install an
 /// acceptance pin or issue an Applied entry.
 pub fn qualified_prompt_template_for_document(document: &StartupDocument) -> Result<Vec<u8>> {
@@ -320,6 +336,11 @@ impl QualifiedRuntime {
         )
         .and_then(|boundary| boundary.with_resource_policy(&inputs.resource_policy))
         .map_err(|e| refuse("startup", e.to_string()))?;
+        if boundary.manifest_schema() == 2
+            && !selected_role_has_coverage_guidance(&prompt_template, &d.compiler.role)?
+        {
+            return Err(refuse("startup", "schema-2 coverage guidance absent"));
+        }
         let catalog = inputs.catalog.read(64 * 1024)?;
         let claude = program(&d.peer.executable)?;
         let guard = program(&inputs.guard)?;

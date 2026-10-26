@@ -6,7 +6,7 @@ use review_execution_evidence::claude::{
     CandidateBoundary, CredentialSource, PinnedProgram, TrustedClaudeProfile, TrustedRp0Profile,
 };
 use review_workflow::startup::{
-    FilePin, OFFLINE_PROFILE, QualifiedInputs, QualifiedStartupDocument,
+    FilePin, OFFLINE_PROFILE, QualifiedInputs, QualifiedStartupDocument, RP0_COVERAGE_GUIDANCE_V2,
 };
 use serde_json::{Value, json};
 use slice_campaign::{OfflineAcceptancePin, contract::validate_selection, verify_existing_subject};
@@ -226,6 +226,13 @@ fn offline_fixture() -> (Fixture, PathBuf) {
         "offline-prompt.json",
         &json!({"mode":"held_success","result":result}),
     );
+    let mut compiler_document: Value =
+        serde_json::from_slice(&fs::read(&f.document.compiler.document.path).unwrap()).unwrap();
+    compiler_document["roles"]["reviewer"]["developer_instructions"] =
+        json!(RP0_COVERAGE_GUIDANCE_V2);
+    let mut guided_document = data(base, "manifest-rp0-v2.json", &compiler_document);
+    own(&mut guided_document);
+    f.document.compiler.document = guided_document;
     let accepted = json!({"schemaVersion":1,"decision":"accepted","reference":"rp2-offline-held",
         "revision":"1","identity":f.document.identity,"obligationId":f.document.obligation_id,
         "candidateTree":verified.reference.tree,
@@ -348,6 +355,32 @@ fn qualified_startup_result(fixture: &Fixture) -> std::process::Output {
         .arg(&fixture.startup)
         .output()
         .unwrap()
+}
+
+#[test]
+fn schema_two_qualified_startup_requires_actual_selected_role_guidance() {
+    let (fixture, witness) = offline_fixture();
+    let mut envelope: QualifiedStartupDocument =
+        serde_json::from_slice(&fs::read(&fixture.startup).unwrap()).unwrap();
+    let old_template =
+        review_workflow::startup::qualified_prompt_template_for_document(&envelope.base).unwrap();
+    assert!(String::from_utf8_lossy(&old_template).contains(RP0_COVERAGE_GUIDANCE_V2));
+    let mut compiler_document: Value =
+        serde_json::from_slice(&fs::read(&envelope.base.compiler.document.path).unwrap()).unwrap();
+    compiler_document["roles"]["reviewer"]["developer_instructions"] =
+        json!("Review the candidate without a coverage locator.");
+    let mut altered = data(
+        fixture.temp.path(),
+        "manifest-rp0-unguided.json",
+        &compiler_document,
+    );
+    own(&mut altered);
+    envelope.base.compiler.document = altered;
+    write_qualified_startup(&fixture, &envelope);
+    let refused = qualified_startup_result(&fixture);
+    assert!(!refused.status.success());
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("schema-2 coverage guidance absent"));
+    assert!(!witness.exists());
 }
 
 #[test]
