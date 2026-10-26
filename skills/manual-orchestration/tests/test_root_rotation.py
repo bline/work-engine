@@ -379,6 +379,20 @@ class HostAdapter(Base):
         self.assertEqual((rc, json.loads(out)["retired"]), (0, "idle_released"), err)
         self.assertEqual(self.gate("prepare")[:2], (10, "awaiting_authority"))
 
+    def test_codex_unloaded_thread_trusts_disk_history_not_the_daemon(self):
+        import sqlite3
+        busy, done = str(uuid.uuid4()), str(uuid.uuid4())
+        con = sqlite3.connect(self.codex_home / "thread_history_1.sqlite")
+        con.execute("create table thread_turns (thread_id text, turn_id text, rollout_ordinal integer, status text)")
+        con.executemany("insert into thread_turns values (?,?,?,?)",
+                        [(busy, "t1", 1, "inProgress"), (done, "t1", 1, "completed")])
+        con.commit(); con.close()
+        env = {"FAKE_DISK_THREADS": f"{busy},{done}"}
+        rc, out, err = self.host("status", "codex", busy, env=env)
+        self.assertEqual((rc, json.loads(out)["state"], json.loads(out)["kind"]), (0, "running", "unknown_holder"), err)
+        rc, out, err = self.host("status", "codex", done, env=env)
+        self.assertEqual((rc, json.loads(out)["state"]), (0, "stopped"), err)
+
     def test_codex_unknown_thread_is_absent(self):
         self.assertEqual(self.codex_status(str(uuid.uuid4()))["state"], "absent")
 

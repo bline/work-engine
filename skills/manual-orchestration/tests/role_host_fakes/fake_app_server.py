@@ -71,6 +71,14 @@ def handle(method, params):
                     "reasoningEffort": None}
         tid = params.get("threadId")
         t = THREADS.get(tid)
+        # Threads on disk but not loaded here (FAKE_DISK_THREADS in the mode
+        # file): read as notLoaded, and their last turn reads as interrupted
+        # whatever another writer is doing, as the real daemon reports.
+        if t is None and tid in mode().get("FAKE_DISK_THREADS", "").split(","):
+            if method == "thread/read":
+                return {"thread": {"id": tid, "name": None, "status": {"type": "notLoaded"}}}
+            if method == "thread/turns/list":
+                return {"data": [{"id": "disk-turn", "status": "interrupted"}]}
         if t is None:
             raise LookupError(f"thread not loaded: {tid}")
         if method == "thread/name/set":

@@ -371,6 +371,12 @@ class Codex:
                 if "not loaded" not in e.detail and "not found" not in e.detail:
                     raise HostError(NOT_ESTABLISHED, "status_not_established", e.detail)
                 thread = None
+            # A thread on disk but not loaded reads as notLoaded, and the
+            # daemon then reports its last turn as interrupted even while an
+            # exec process is still running it (observed 2026-10-26 for
+            # 01a17620). Only the on-disk history is trusted for these.
+            if thread is not None and (thread.get("status") or {}).get("type") == "notLoaded":
+                thread = None
             if thread is None:
                 # Not loaded on the daemon. Another writer (an exec process, or a
                 # TUI on its own local runtime) may still hold it.
