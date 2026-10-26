@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Root rotation gate over CLI-hosted roles (Claude `--bg` or Codex `exec`).
+"""Root rotation gate over CLI-hosted roles (Claude `--bg` or a Codex app-server thread).
 
 The root prepares its handoff; this gate validates it, establishes quiescence,
 stops at the authority gate, and on an authorized commit launches the
@@ -117,7 +117,8 @@ class Gate:
         # The display name is not an identity: two loaded Claude sessions may
         # share one. A second loaded session already named as the role is the
         # state a failed retirement or a host-level copy leaves behind. Codex
-        # threads carry no display name, so there is nothing to check there.
+        # role threads are now named (thread/name/set), but the daemon lists
+        # loaded threads by id only; checking names there is not built yet.
         if "claude" not in (self.a.pred_host, self.a.successor_host):
             return
         try:

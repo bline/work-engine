@@ -19,16 +19,23 @@ claude
            therefore stop-then-resume of an idle session, and any "started a
            copy" output is a fork, which is contained and reported.
   retire   `claude stop <short>` keeps the conversation.
-codex
-  launch   `codex exec --json "<prompt>"`; the first event is thread.started
-           with the thread id. The process lives for one turn.
-  status   the exec process this ledger launched, then thread_turns in
+codex (probe metrics/probes/codex-daemon-thread-host-20261026.json, n = 1)
+  host     the shared local app-server daemon (unix socket, JSON-RPC over
+           WebSocket). `codex resume` goes through the same daemon, and the
+           daemon rejoins a running thread for a second client (observed for
+           a protocol client; a terminal joining mid-turn is not established).
+  launch   thread/start (cwd, model, sandbox, approvalPolicy never, -c config),
+           thread/name/set to the role name, turn/start with the prompt; then
+           disconnect. The turn keeps running on the daemon.
+  status   thread/read status plus the latest turn. A turn just started can be
+           invisible to both for a moment, so the ledger's turn id counts as
+           running until a read shows it. Unloaded threads fall back to
            $CODEX_HOME/thread_history_1.sqlite.
-  deliver  `codex exec --json resume <id> "<msg>"` continues the same thread.
-           `codex queue` without a live session only deposits text that merges
-           into the next turn, so it is never used as delivery here.
-  retire   an exec-hosted thread has no process between turns; a thread held
-           by an interactive TUI cannot be seen or stopped from here.
+  deliver  thread/resume (identity check) then turn/start on an idle thread.
+  retire   turn/interrupt a running turn (with --force); an idle thread is
+           released by a ledger row, since the daemon has no unload request.
+  legacy   ledger rows from earlier `codex exec` launches carry a pid; a live
+           pid still reads as running, and retire --force terminates it.
 
 Children: every launch with --parent appends to a ledger, so a root's
 cross-CLI children are parent-scoped by construction. Children started any
@@ -47,7 +54,11 @@ import sqlite3
 import subprocess
 import sys
 import time
+import tomllib
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import codex_app  # noqa: E402
 
 OK, DEFECT, NOT_ESTABLISHED, BUSY, USAGE = 0, 21, 32, 40, 64
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -237,27 +248,84 @@ class Claude:
 # ----------------------------------------------------------------- codex ----
 
 class Codex:
+    """Codex roles are threads on the shared local app-server daemon.
+
+    A thread started there is one the daemon serves to `codex resume <id>`, with
+    no separate process owning its writer. `codex exec`
+    launches are no longer made: an exec process owns its thread's writer for the
+    whole turn, a root's turn is unbounded, and the daemon then refuses every
+    other client (probe metrics/probes/codex-daemon-thread-host-20261026.json).
+    Ledger rows written by earlier exec launches carry a pid and are still read.
+    """
     name = "codex"
+    # exec-style flags accepted as host args, mapped onto thread/start.
+    VALUE_FLAGS = {"-m": "model", "--model": "model", "-s": "sandbox", "--sandbox": "sandbox",
+                   "-a": "approvalPolicy", "--ask-for-approval": "approvalPolicy",
+                   "-c": "config", "--config": "config"}
+    PENDING_TURN_GRACE = 30  # seconds a just-started turn may be invisible to reads
 
     def __init__(self, exe="codex", codex_home=None):
         self.exe = exe
         self.home = Path(codex_home or os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+        self.sock = codex_app.default_socket(self.home)
 
-    def _turn_status(self, sid):
-        db = self.home / "thread_history_1.sqlite"
-        if not db.exists():
-            raise HostError(NOT_ESTABLISHED, "status_not_established", f"{db} missing")
+    # ---- transport ----
+    def _conn(self):
         try:
-            con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=5)
-            try:
-                row = con.execute("select status, count(*) over () from thread_turns where thread_id=? "
-                                  "order by rollout_ordinal desc limit 1", (sid,)).fetchone()
-            finally:
-                con.close()
-        except sqlite3.Error as e:
-            raise HostError(NOT_ESTABLISHED, "status_not_established", f"thread history: {e}")
-        return (row[0], row[1]) if row else (None, 0)
+            return codex_app.Connection(self.sock, client_name="role-host")
+        except codex_app.AppServerError as e:
+            raise HostError(NOT_ESTABLISHED, "app_server_unreachable", e.detail)
 
+    def _call(self, conn, method, params):
+        try:
+            return conn.call(method, params)
+        except codex_app.AppServerError as e:
+            raise HostError(NOT_ESTABLISHED, "app_server_error", e.detail)
+
+    @classmethod
+    def thread_options(cls, host_args) -> tuple[dict, str | None]:
+        """Map exec-style host args onto thread/start params and a turn effort."""
+        params, config, effort = {"approvalPolicy": "never"}, {}, None
+        args = list(host_args)
+        while args:
+            flag = args.pop(0)
+            if flag == "--dangerously-bypass-approvals-and-sandbox":
+                params.update(sandbox="danger-full-access", approvalPolicy="never")
+                continue
+            if flag in ("--json", "--skip-git-repo-check"):
+                continue
+            key, _, inline = flag.partition("=")
+            if key not in cls.VALUE_FLAGS:
+                raise HostError(USAGE, "usage", f"codex host arg {flag!r} has no app-server mapping")
+            if inline:
+                value = inline
+            elif args:
+                value = args.pop(0)
+            else:
+                raise HostError(USAGE, "usage", f"codex host arg {flag!r} needs a value")
+            field = cls.VALUE_FLAGS[key]
+            if field != "config":
+                params[field] = value
+                continue
+            k, eq, raw = value.partition("=")
+            if not eq:
+                raise HostError(USAGE, "usage", f"-c {value!r} is not key=value")
+            try:  # the CLI parses the value as TOML and falls back to the raw string
+                v = tomllib.loads(f"v = {raw}")["v"]
+            except tomllib.TOMLDecodeError:
+                v = raw
+            config[k.strip()] = v
+            if k.strip() == "model_reasoning_effort":
+                effort = str(v)
+        if config:
+            params["config"] = config
+        return params, effort
+
+    @staticmethod
+    def _text(message):
+        return [{"type": "text", "text": message}]
+
+    # ---- legacy exec rows ----
     @staticmethod
     def _alive(pid):
         if not pid:
@@ -274,55 +342,91 @@ class Codex:
         except OSError:
             return False
 
-    def status(self, sid, ledger=None) -> dict:
-        last = ledger.latest(sid) if ledger else None
-        pid = (last or {}).get("pid")
-        if self._alive(pid):
-            return {"state": "running", "kind": "exec", "pid": pid}
-        status, turns = self._turn_status(sid)
-        if status is None:
-            return {"state": "absent", "kind": None, "turns": 0}
-        if status == "inProgress":
-            # In progress with no live process this ledger owns: either another
-            # client (a TUI) holds it, or a turn died. Neither is idle.
-            return {"state": "running", "kind": "unknown_holder", "turns": turns}
-        return {"state": "idle", "kind": "exec" if last else "unknown_holder",
-                "turns": turns, "last_turn": status}
-
-    def _spawn(self, argv, cwd, out_path, ledger_state):
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w") as out, open(str(out_path) + ".err", "w") as err:
-            p = subprocess.Popen(argv, cwd=cwd, stdout=out, stderr=err, stdin=subprocess.DEVNULL, env=child_env(),
-                                 start_new_session=True)
-        return p
-
-    def _thread_started(self, path, proc, timeout):
-        deadline = time.time() + timeout
-        while time.time() < deadline:
+    def _history_status(self, sid):
+        """Latest turn status from the on-disk thread history, for unloaded threads."""
+        db = self.home / "thread_history_1.sqlite"
+        if not db.exists():
+            return None
+        try:
+            con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=5)
             try:
-                for line in Path(path).read_text().splitlines():
-                    try:
-                        ev = json.loads(line)
-                    except ValueError:
-                        continue
-                    if ev.get("type") == "thread.started":
-                        return ev.get("thread_id")
-            except OSError:
-                pass
-            if proc.poll() is not None:
-                break
-            time.sleep(0.2)
-        return None
+                row = con.execute("select status from thread_turns where thread_id=? "
+                                  "order by rollout_ordinal desc limit 1", (sid,)).fetchone()
+            finally:
+                con.close()
+        except sqlite3.Error as e:
+            raise HostError(NOT_ESTABLISHED, "status_not_established", f"thread history: {e}")
+        return row[0] if row else None
+
+    # ---- lifecycle ----
+    def status(self, sid, ledger=None) -> dict:
+        rows = [r for r in ledger.rows() if r.get("session_id") == sid] if ledger else []
+        last = rows[-1] if rows else None
+        if self._alive((last or {}).get("pid")):
+            return {"state": "running", "kind": "exec", "pid": last["pid"]}
+        with self._conn() as c:
+            try:
+                thread = c.call("thread/read", {"threadId": sid})["thread"]
+            except codex_app.AppServerError as e:
+                if "not loaded" not in e.detail and "not found" not in e.detail:
+                    raise HostError(NOT_ESTABLISHED, "status_not_established", e.detail)
+                thread = None
+            if thread is None:
+                # Not loaded on the daemon. Another writer (an exec process, or a
+                # TUI on its own local runtime) may still hold it.
+                hist = self._history_status(sid)
+                if hist is None:
+                    return {"state": "absent", "kind": None}
+                if hist == "inProgress":
+                    return {"state": "running", "kind": "unknown_holder"}
+                return {"state": "stopped", "kind": "app_server", "last_turn": hist}
+            turns = self._call(c, "thread/turns/list", {"threadId": sid, "limit": 1}).get("data", [])
+        st = thread.get("status") or {}
+        latest = turns[0] if turns else {}
+        out = {"kind": "app_server", "thread_status": st.get("type"), "last_turn": latest.get("status"),
+               "name": thread.get("name")}
+        if st.get("type") == "systemError":
+            raise HostError(NOT_ESTABLISHED, "status_not_established", f"thread {sid} is in systemError")
+        if st.get("type") == "active" or latest.get("status") == "inProgress":
+            return {"state": "running", "active_flags": st.get("activeFlags", []), **out}
+        # A turn this ledger just started can be invisible to reads for a moment
+        # (measured: thread/read idle and the turn absent 20 ms after turn/start).
+        started = [r for r in rows if r.get("turn_id")]
+        if started:
+            pending = started[-1]
+            seen = latest.get("id") == pending["turn_id"] or self._turn_known(sid, pending["turn_id"])
+            if not seen and time.time() - pending.get("at_epoch", 0) < self.PENDING_TURN_GRACE:
+                return {"state": "running", "pending_turn": pending["turn_id"], **out}
+        if last and last.get("event") == "retire":
+            return {"state": "stopped", **out}
+        return {"state": "idle", **out}
+
+    def _turn_known(self, sid, turn_id):
+        with self._conn() as c:
+            data = self._call(c, "thread/turns/list", {"threadId": sid, "limit": 20}).get("data", [])
+        return any(t.get("id") == turn_id for t in data)
+
+    def _start_turn(self, c, sid, message, effort):
+        params = {"threadId": sid, "input": self._text(message)}
+        if effort:
+            params["effort"] = effort
+        turn = self._call(c, "turn/start", params).get("turn") or {}
+        if not turn.get("id"):
+            raise HostError(NOT_ESTABLISHED, "turn_not_established", f"turn/start on {sid} returned no turn id")
+        return turn["id"]
 
     def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, start_timeout=60) -> dict:
-        out = ledger.path.parent / "codex" / f"launch-{int(time.time() * 1000)}.jsonl"
-        p = self._spawn([self.exe, "exec", "--json", *host_args, prompt], cwd, out, ledger)
-        sid = self._thread_started(out, p, start_timeout)
-        if not sid or not UUID.match(sid):
-            raise HostError(NOT_ESTABLISHED, "identity_not_established",
-                            f"no thread.started within {start_timeout}s (exit {p.poll()}); see {out}")
-        row = {"host": self.name, "event": "launch", "session_id": sid, "name": name, "cwd": str(cwd),
-               "parent_session_id": parent, "pid": p.pid, "events": str(out)}
+        params, effort = self.thread_options(host_args)
+        with self._conn() as c:
+            res = self._call(c, "thread/start", {"cwd": str(Path(cwd).resolve()), **params})
+            sid = (res.get("thread") or {}).get("id", "")
+            if not UUID.match(sid):
+                raise HostError(NOT_ESTABLISHED, "identity_not_established", f"thread/start returned id {sid!r}")
+            self._call(c, "thread/name/set", {"threadId": sid, "name": name})
+            turn = self._start_turn(c, sid, prompt, effort)
+        row = {"host": self.name, "transport": "app_server", "event": "launch", "session_id": sid,
+               "name": name, "cwd": str(cwd), "parent_session_id": parent, "turn_id": turn,
+               "at_epoch": time.time(), "model": res.get("model"), "effort": effort or res.get("reasoningEffort")}
         ledger.append(row)
         return row
 
@@ -332,33 +436,48 @@ class Codex:
             raise HostError(BUSY, "refused_busy", f"{sid} has a turn in progress ({st['kind']})")
         if st["state"] == "absent":
             raise HostError(NOT_ESTABLISHED, "deliver_failed", f"thread {sid} is unknown to this host")
-        out = ledger.path.parent / "codex" / f"deliver-{int(time.time() * 1000)}.jsonl"
-        p = self._spawn([self.exe, "exec", "--json", *host_args, "resume", sid, message], cwd, out, ledger)
-        got = self._thread_started(out, p, start_timeout)
-        if got != sid:
-            if self._alive(p.pid):
-                os.killpg(p.pid, signal.SIGTERM)
-            raise HostError(DEFECT if got else NOT_ESTABLISHED,
-                            "identity_mismatch" if got else "deliver_not_established",
-                            f"resume of {sid} started {got or 'nothing'}; see {out}")
-        ledger.append({"host": self.name, "event": "deliver", "session_id": sid, "pid": p.pid,
-                       "events": str(out)})
-        return {"session_id": sid, "delivered": True}
+        _, effort = self.thread_options(host_args)
+        launched = next((r for r in ledger.rows() if r.get("session_id") == sid and r.get("event") == "launch"), {})
+        with self._conn() as c:
+            got = (self._call(c, "thread/resume", {"threadId": sid}).get("thread") or {}).get("id")
+            if got != sid:
+                raise HostError(DEFECT if got else NOT_ESTABLISHED,
+                                "identity_mismatch" if got else "deliver_not_established",
+                                f"resume of {sid} returned {got or 'no thread'}")
+            turn = self._start_turn(c, sid, message, effort or launched.get("effort"))
+        ledger.append({"host": self.name, "transport": "app_server", "event": "deliver", "session_id": sid,
+                       "turn_id": turn, "at_epoch": time.time()})
+        return {"session_id": sid, "delivered": True, "turn_id": turn}
 
     def retire(self, sid, *, ledger, force=False) -> dict:
         st = self.status(sid, ledger)
+        if st["state"] in ("absent", "stopped"):
+            return {"session_id": sid, "retired": "already_not_loaded", "state": st["state"]}
         if st["state"] == "running":
-            if st["kind"] != "exec" or not force:
+            if not force:
                 raise HostError(BUSY, "refused_busy", f"{sid} has a turn in progress ({st['kind']})")
-            os.killpg(st["pid"], signal.SIGTERM)
-            ledger.append({"host": self.name, "event": "retire", "session_id": sid, "killed_pid": st["pid"]})
-            return {"session_id": sid, "retired": "turn_terminated"}
-        if st["kind"] == "unknown_holder":
-            # This tool did not launch it; a TUI may hold it and nothing here sees that.
-            raise HostError(NOT_ESTABLISHED, "retire_not_established",
-                            "thread not launched by this ledger; an interactive holder cannot be seen")
+            if st["kind"] == "exec":
+                os.killpg(st["pid"], signal.SIGTERM)
+                ledger.append({"host": self.name, "event": "retire", "session_id": sid, "killed_pid": st["pid"]})
+                return {"session_id": sid, "retired": "turn_terminated"}
+            if st["kind"] == "unknown_holder":
+                raise HostError(NOT_ESTABLISHED, "retire_not_established",
+                                "the thread is held outside the app-server daemon; its holder must end it")
+            turn_id = st.get("pending_turn")
+            with self._conn() as c:
+                if not turn_id:
+                    data = self._call(c, "thread/turns/list", {"threadId": sid, "limit": 1}).get("data", [])
+                    turn_id = data[0]["id"] if data and data[0].get("status") == "inProgress" else None
+                if not turn_id:
+                    raise HostError(NOT_ESTABLISHED, "retire_not_established", f"no in-progress turn id for {sid}")
+                self._call(c, "turn/interrupt", {"threadId": sid, "turnId": turn_id})
+            ledger.append({"host": self.name, "event": "retire", "session_id": sid, "interrupted_turn": turn_id})
+            return {"session_id": sid, "retired": "turn_interrupted"}
+        # Idle: the daemon keeps the thread loaded and has no unload request. The
+        # ledger row is what makes status report it stopped from now on; a later
+        # deliver gives it work again.
         ledger.append({"host": self.name, "event": "retire", "session_id": sid})
-        return {"session_id": sid, "retired": "no_live_process"}
+        return {"session_id": sid, "retired": "idle_released"}
 
 
 HOSTS = {"claude": Claude, "codex": Codex}

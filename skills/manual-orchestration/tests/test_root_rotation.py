@@ -1,8 +1,10 @@
 """Rotation gate and role host against a REAL board and fake host CLIs.
 
-The board is the real chatboard adapter on a scratch git repository. The fake
-`claude`/`codex` reproduce the host behaviour measured in
-metrics/probes/cli-daemon-host-20261025.json, and the fake successor follows
+The board is the real chatboard adapter on a scratch repository. The fake
+`claude` CLI reproduces the host behaviour measured in
+metrics/probes/cli-daemon-host-20261025.json, the fake Codex app-server daemon
+the behaviour in metrics/probes/codex-daemon-thread-host-20261026.json, and the
+fake successor follows
 the gate's own successor prompt, so a test cannot pass on a capability the
 real successor lacks.
 """
@@ -29,6 +31,10 @@ BOARD = REPO_ROOT / "skills" / "durable-state" / "scripts" / "codex_chatboard.py
 PASS = f"{sys.executable} -c 'import sys; sys.exit(0)'"
 
 
+def role_host_rows(state):
+    return [json.loads(l) for l in (Path(state) / "ledger.jsonl").read_text().splitlines()]
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="rotation-test-"))
@@ -42,7 +48,9 @@ class Base(unittest.TestCase):
         self.env = dict(os.environ,
                         PATH=f"{FAKES}:{os.environ['PATH']}",
                         FAKE_CLAUDE_STATE=str(self.tmp / "claude-state.json"),
-                        CODEX_HOME=str(self.codex_home))
+                        CODEX_HOME=str(self.codex_home),
+                        ROLE_HOST_CODEX_SOCKET=str(self.tmp / "daemon.sock"),
+                        FAKE_DAEMON_MODE=str(self.tmp / "daemon-mode.json"))
         for k in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "FAKE_SUCCESSOR", "FAKE_TURN"):
             self.env.pop(k, None)
         # The gate is normally run from inside a host session, so the caller's
@@ -59,6 +67,16 @@ class Base(unittest.TestCase):
         self.add_claude_session(self.pred, "operator-shell", kind="interactive", pid=self.pred_proc.pid,
                                 status="busy", state="working")
         self.procs = [self.pred_proc]
+        # The shared Codex daemon runs independently of any caller session.
+        daemon_env = {k: v for k, v in self.env.items() if k != "CLAUDE_CODE_SESSION_ID"}
+        self.daemon = subprocess.Popen([sys.executable, str(FAKES / "fake_app_server.py"),
+                                        self.env["ROLE_HOST_CODEX_SOCKET"]], env=daemon_env)
+        self.procs.append(self.daemon)
+        assert self.wait_for(lambda: Path(self.env["ROLE_HOST_CODEX_SOCKET"]).exists(), 10)
+
+    def daemon_mode(self, env):
+        mode = {k: v for k, v in (env or {}).items() if k.startswith("FAKE_") and k != "FAKE_CLAUDE_STATE"}
+        Path(self.env["FAKE_DAEMON_MODE"]).write_text(json.dumps(mode))
 
     def tearDown(self):
         for p in self.procs:
@@ -83,11 +101,13 @@ class Base(unittest.TestCase):
             "--pred-session", self.pred, "--successor-host", successor,
             "--validator", PASS, "--quiescence-file", str(self.quiescent),
             "--adopt-timeout", "60", "--after-adopt", "stop", *extra]
+        self.daemon_mode(env)
         r = subprocess.run(argv, env={**self.env, **(env or {})}, capture_output=True, text=True, timeout=180)
         return r.returncode, (self.state / "terminal-status").read_text().strip() \
             if (self.state / "terminal-status").exists() else "", r.stderr
 
     def host(self, *args, env=None):
+        self.daemon_mode(env)
         r = subprocess.run([sys.executable, str(HOST), "--state", str(self.host_state), *args],
                            env={**self.env, **(env or {})}, capture_output=True, text=True, timeout=120)
         return r.returncode, r.stdout, r.stderr
@@ -292,21 +312,90 @@ class HostAdapter(Base):
         rc, _, err = self.host("deliver", "claude", sid, "--cwd", str(self.repo), "--message-file", str(msg))
         self.assertEqual(rc, 40, err)
 
+    def codex_status(self, sid):
+        rc, out, err = self.host("status", "codex", sid)
+        self.assertEqual(rc, 0, err)
+        return json.loads(out)
+
+    def test_codex_launch_is_a_named_daemon_thread_with_no_host_process(self):
+        sid = self.launch("codex")
+        row = [r for r in role_host_rows(self.host_state) if r["session_id"] == sid][0]
+        self.assertEqual((row["transport"], row.get("pid")), ("app_server", None))
+        self.assertEqual(self.codex_status(sid).get("name"), "worker")
+
+    def test_codex_just_started_turn_reads_as_running(self):
+        # The daemon hides a new turn from reads for a moment; status must not
+        # call the thread idle in that window.
+        sid = self.launch("codex", FAKE_TURN="hang")
+        st = self.codex_status(sid)
+        self.assertEqual(st["state"], "running", st)
+        self.assertIn("pending_turn", st)
+        time.sleep(0.7)
+        st = self.codex_status(sid)
+        self.assertEqual((st["state"], st["last_turn"]), ("running", "inProgress"), st)
+
     def test_codex_deliver_resumes_same_thread(self):
         sid = self.launch("codex")
-        self.assertTrue(self.wait_for(lambda: json.loads(self.host("status", "codex", sid)[1])["state"] == "idle"))
+        self.assertTrue(self.wait_for(lambda: self.codex_status(sid)["state"] == "idle"))
         msg = self.tmp / "m.txt"; msg.write_text("next")
         rc, out, err = self.host("deliver", "codex", sid, "--cwd", str(self.repo), "--message-file", str(msg),
                                  env={"FAKE_SUCCESSOR": "silent"})
         self.assertEqual(rc, 0, err)
+        self.assertEqual(json.loads(out)["session_id"], sid)
 
-    def test_codex_resume_that_starts_another_thread_is_a_defect(self):
+    def test_codex_deliver_refused_while_running(self):
+        sid = self.launch("codex", FAKE_TURN="hang")
+        msg = self.tmp / "m.txt"; msg.write_text("next")
+        rc, _, err = self.host("deliver", "codex", sid, "--cwd", str(self.repo), "--message-file", str(msg))
+        self.assertEqual(rc, 40, err)
+
+    def test_codex_resume_that_returns_another_thread_is_a_defect(self):
         sid = self.launch("codex")
-        self.assertTrue(self.wait_for(lambda: json.loads(self.host("status", "codex", sid)[1])["state"] == "idle"))
+        self.assertTrue(self.wait_for(lambda: self.codex_status(sid)["state"] == "idle"))
         msg = self.tmp / "m.txt"; msg.write_text("next")
         rc, _, err = self.host("deliver", "codex", sid, "--cwd", str(self.repo), "--message-file", str(msg),
                                env={"FAKE_SUCCESSOR": "silent", "FAKE_CODEX_MISMATCH": "1"})
         self.assertEqual(rc, 21, err)
+
+    def test_codex_retire_running_needs_force_and_interrupts(self):
+        sid = self.launch("codex", FAKE_TURN="hang")
+        self.assertEqual(self.host("retire", "codex", sid)[0], 40)
+        rc, out, err = self.host("retire", "codex", sid, "--force")
+        self.assertEqual((rc, json.loads(out)["retired"]), (0, "turn_interrupted"), err)
+        self.assertTrue(self.wait_for(lambda: self.codex_status(sid)["last_turn"] == "interrupted"))
+        self.assertEqual(self.codex_status(sid)["state"], "stopped")
+
+    def test_codex_retired_idle_child_no_longer_blocks_quiescence(self):
+        prompt = self.tmp / "p.txt"; prompt.write_text("work")
+        rc, out, err = self.host("launch", "codex", "--cwd", str(self.repo), "--name", "child",
+                                 "--prompt-file", str(prompt), "--parent", self.pred,
+                                 env={"FAKE_SUCCESSOR": "silent"})
+        self.assertEqual(rc, 0, err)
+        sid = json.loads(out)["session_id"]
+        self.assertTrue(self.wait_for(lambda: self.codex_status(sid)["state"] == "idle"))
+        self.assertEqual(self.gate("prepare")[:2], (22, "fail_children_live"))
+        shutil.rmtree(self.state, ignore_errors=True)
+        rc, out, err = self.host("retire", "codex", sid)
+        self.assertEqual((rc, json.loads(out)["retired"]), (0, "idle_released"), err)
+        self.assertEqual(self.gate("prepare")[:2], (10, "awaiting_authority"))
+
+    def test_codex_unknown_thread_is_absent(self):
+        self.assertEqual(self.codex_status(str(uuid.uuid4()))["state"], "absent")
+
+    def test_codex_unmapped_host_arg_is_refused(self):
+        prompt = self.tmp / "p.txt"; prompt.write_text("work")
+        rc, _, err = self.host("launch", "codex", "--cwd", str(self.repo), "--name", "w", "--prompt-file",
+                               str(prompt), "--host-arg=--oss")
+        self.assertEqual(rc, 64, err)
+
+    def test_codex_host_args_map_onto_thread_start(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import role_host
+        params, effort = role_host.Codex.thread_options(
+            ["--model", "gpt-6-astra", "-c", 'model_reasoning_effort="high"', "-c", "x.y=3", "-s", "read-only"])
+        self.assertEqual(params, {"approvalPolicy": "never", "model": "gpt-6-astra", "sandbox": "read-only",
+                                  "config": {"model_reasoning_effort": "high", "x.y": 3}})
+        self.assertEqual(effort, "high")
 
     def test_children_lists_only_ledger_children_of_that_parent(self):
         prompt = self.tmp / "p.txt"; prompt.write_text("work")

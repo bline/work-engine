@@ -118,7 +118,9 @@ safely, and record why.
 A root cannot authorize its own replacement: it has no parent. **The user is
 the root's parent for transfer.** The root prepares everything and the user
 authorizes the transfer. The launch itself can now be mechanical: `claude --bg`
-and `codex exec` start top-level sessions, and
+starts a top-level session, a Codex root starts as a thread on the shared
+app-server daemon (never `codex exec`, whose process locks the thread against
+the user's terminal for the whole turn), and
 [`scripts/root_rotation.py`](../scripts/root_rotation.py) launches the
 successor only after an authorized commit. Merely spawning a child, writing a
 packet or compacting does not transfer the root.

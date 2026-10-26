@@ -48,5 +48,23 @@
     "probe.jsonl": "423b6e30c6c455641688603430bc43b4a37f32f12e4be18efeea626d228b0c27",
     "daemon_probe.py": "fc5fa8a19fd85f85eb5c769b8b6f9c82d91c4f01d5e3819baac72f7965932f5c",
     "daemon-log-01a175b2.txt": "879ea1c3e2966ebc21ea164caa5fba3d7d526c86436f6246a2acb000ec9d65f0"
+  },
+  "lifecycle_probe": {
+    "client": "skills/manual-orchestration/scripts/codex_app.py (standard library WebSocket JSON-RPC)",
+    "thread": "01a1762a-79d0-7203-8ac9-529dfeccabc9",
+    "established": [
+      "turn/interrupt ends a running turn: thread status active -> idle, turn status interrupted.",
+      "A turn's shell has CODEX_THREAD_ID set to the thread id and PWD set to the thread cwd, so role_host whoami works inside daemon threads.",
+      "turn/start succeeds on a connection that never called thread/resume, and the turn completes after that connection closes.",
+      "thread/read on an unknown id fails with JSON-RPC -32600 'thread not loaded: <id>'.",
+      "Race: 20 ms after turn/start, thread/read reported idle and thread/turns/list did not yet include the new turn."
+    ],
+    "correction": "An intermediate reading during this probe took the race above for an interrupted turn 3; turn 3 had completed normally. Error class: reading state inside the visibility window. The fix in role_host counts the ledger's last turn id as running until a read shows it (test test_codex_just_started_turn_reads_as_running fails with that rule disabled).",
+    "role_host_live": {
+      "state_dir": "~/cbm-work/codex-daemon-probe-20261026/role-host-live (run.txt)",
+      "thread": "01a17637-e388-72c1-8b76-d427b566bfca",
+      "sequence": "launch -> running (active) -> retire without --force refused 40 -> retire --force turn_interrupted -> stopped -> deliver same thread -> running -> idle after the turn completed"
+    },
+    "attach_test_thread": "01a17638-ebd3-75d0-ac5e-ae1fcc13813c (name attach-test, sleep 900, launched 2026-10-26T03:20Z) for the user to try `codex resume` mid-turn"
   }
 }
