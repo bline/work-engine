@@ -1,0 +1,52 @@
+{
+  "probe": "codex-daemon-thread-host-20261026",
+  "date": "2026-10-26",
+  "recorded_by": "claude-metrics b40bb0b6-43a9-4707-9dc1-cd19700aecf9",
+  "question": "A Codex root launched by the gate as `codex exec --json` holds its thread for the whole turn, and a root's turn can be unbounded, so the user cannot attach. Can a role instead run as a thread on the shared local app-server daemon that a later client (the user's TUI) can rejoin mid-turn?",
+  "codex_version": "codex-cli 0.164.0; daemon pid 8557 `codex app-server --listen unix://` (release 0.164.0), control socket ~/.codex/app-server-control/app-server-control.sock",
+  "observed_defect": {
+    "session": "01a175b2-466e-7951-812c-cdeaa4006ac8 (role b3-api-root, launched by the gate 2026-10-26T00:53Z, committed_rotation_1)",
+    "holder": "pid 602392 `codex exec --json --model gpt-6-astra ...` (parent systemd --user), still in its first turn ~2 h after launch; last events: role_scheduler agenda, then `role_scheduler.py wait --help`",
+    "user_symptom": "TUI resume reports the conversation is open in another app and opens read-only",
+    "daemon_log": "2026-10-26T02:47:42.108Z ERROR codex_core::session::session: failed to initialize thread persistence: thread-store conflict: thread 01a175b2-... already has an active writer",
+    "reading": "the user's TUI resumes through the shared daemon; the exec process owns the thread's writer, so the daemon refuses. role_host's Codex host fact 'The process lives for one turn' is true but assumes a bounded turn; --after-adopt continue gives a root an unbounded one."
+  },
+  "transport_facts": [
+    "The control socket speaks WebSocket (HTTP 101 on upgrade); plain JSON lines through `codex app-server proxy` got no reply to initialize within 30 s.",
+    "Protocol (generate-json-schema): thread/start, turn/start, thread/resume, thread/loaded/list, thread/unsubscribe, turn/steer (requires expectedTurnId), turn/interrupt.",
+    "ThreadResumeParams doc: 'If thread_id identifies a running thread, app-server rejoins that thread.'"
+  ],
+  "method": "Client A: initialize, thread/start (cwd scratch, approvalPolicy never, sandbox read-only), turn/start effort low with prompt 'Run `sleep 75` exactly once, then reply done.'; A disconnects. After 5 s, client B: initialize, thread/loaded/list, thread/resume by id, reads events until turn/completed, then thread/turns/list.",
+  "result": {
+    "thread": "01a17623-9d99-7bd3-a59a-21c0eb726fe3",
+    "timeline_s_from_start": {
+      "turn_started_seen_by_A": 1.1,
+      "A_disconnected": 3.4,
+      "B_resume_ok": 8.4,
+      "first_agent_message_seen_by_B": 11.4,
+      "sleep_started": 11.8,
+      "sleep_completed_exit_0": 86.7,
+      "final_message_done": 105.3,
+      "turn_completed_status_completed": 105.3
+    },
+    "note_on_method": "A's disconnect trigger matched the word 'sleep' in the user message, so A left before the model's first output, not during the command. The entire turn therefore ran with A gone, and B received every subsequent event live.",
+    "established": [
+      "A daemon-hosted turn continues after its launching client disconnects (n = 1).",
+      "A second client can thread/resume a running thread and receives its live events (n = 1).",
+      "No exec process holds the thread, so the exec writer-lock conflict does not arise for this host shape."
+    ]
+  },
+  "not_established": [
+    "That the interactive TUI (`codex resume <id>` or `codex agents`) joins a daemon thread mid-turn and can type into it; needs the user at a terminal.",
+    "Behaviour with two clients attached at once (e.g. TUI plus a supervising script) and whose approvals apply.",
+    "Survival across daemon restart or `daemon update` (its help says update 'may interrupt running work').",
+    "Whether model/effort/sandbox/developer instructions set on thread/start match what the gate's `codex exec` flags set today.",
+    "Effect on role_host status/deliver/retire, which today read the exec pid and thread_history_1.sqlite."
+  ],
+  "artifacts": {
+    "dir": "~/cbm-work/codex-daemon-probe-20261026",
+    "probe.jsonl": "423b6e30c6c455641688603430bc43b4a37f32f12e4be18efeea626d228b0c27",
+    "daemon_probe.py": "fc5fa8a19fd85f85eb5c769b8b6f9c82d91c4f01d5e3819baac72f7965932f5c",
+    "daemon-log-01a175b2.txt": "879ea1c3e2966ebc21ea164caa5fba3d7d526c86436f6246a2acb000ec9d65f0"
+  }
+}
