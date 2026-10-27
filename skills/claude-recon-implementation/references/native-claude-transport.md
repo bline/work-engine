@@ -134,3 +134,167 @@ A retained review has a stronger identity contract:
 The local session ID preserves a Claude Code transcript reference. It does not
 prove identical inference service, upstream provider, cache behavior, or
 gateway processing.
+
+## Exact-model guard (opt-in)
+
+`--exact-model-guard` runs the same native `claude` through the `anthropic`
+transport while the launcher reads its `stream-json` output as it is produced.
+It exists for work that must run on one raw model identifier and must treat a
+safety refusal or a model switch as a terminal result, not a retry trigger.
+Without the flag, nothing in this section applies and the launcher, receipt and
+buffering are unchanged.
+
+```bash
+python3 skills/claude-recon-implementation/scripts/claude_transport.py \
+  --transport anthropic --continuity retained --exact-model-guard \
+  --receipt '<transport-receipt.json>' \
+  --stdin-file '<prompt.txt>' --stdin-sha256 '<prompt-file-sha256>' \
+  -- claude -p --session-id '<uuid>' --model claude-sonnet-5-5 --effort high \
+     --output-format stream-json --verbose
+```
+
+### Preconditions
+
+The guard refuses to start the child, writes a receipt with outcome
+`unavailable` and exits 43, when any of these is false:
+
+- `--transport anthropic` (no gateway or paid fallback);
+- exactly one `--model`, a raw identifier such as `claude-sonnet-5-5`. Aliases
+  (`sonnet`, `default`) and bracketed variants cannot be compared with an
+  assistant message's `model` and are rejected;
+- `--output-format stream-json` with `--verbose`;
+- no `--fallback-model`;
+- any caller `--settings` is one readable JSON object that does not set
+  `switchModelsOnFlag` to anything but `false` or `availableModels` to anything
+  but the singleton model.
+
+### Scoped settings
+
+The launcher merges the caller's `--settings` (file or inline JSON; none is
+fine) with `{"switchModelsOnFlag": false, "availableModels": ["<model>"]}` and
+passes one effective file with `--settings`, so user and project settings files
+are not modified and the caller's other keys, permissions included, are kept.
+Per [model configuration](https://code.claude.com/docs/en/model-config), the
+first is meant to make a flagged request in non-interactive mode end with a
+refusal rather than switching models, and a fallback target outside
+`availableModels` is meant not to be used; the singleton is meant to constrain
+native subagents too. The launcher does not observe Claude Code enforce either
+key. The file is deleted afterwards. The receipt binds `source_sha256` (caller
+settings), `effective_sha256` and `effective_sha256_after_run`; a difference
+between the last two makes the run `incomplete_evidence`. Those digests bind
+the one settings file this launcher supplied at the flag layer. They do not
+attest the merged policy Claude Code actually applied: managed settings take
+precedence over flag settings and `availableModels` merges across scopes, so a
+managed or user layer can widen or override what the file says. Settings narrow
+selection; they are not evidence of which model answered.
+
+### What counts as evidence
+
+| Stream record | Role |
+| --- | --- |
+| `assistant` message `model`, whether or not the record carries a `parent_tool_use_id` | Observation. Must equal the requested model byte for byte. |
+| any record with `parent_tool_use_id` (for example `tool_progress`) | Counted neutrally in `observations.parent_tool_use_records`; the id is recorded on a finding as `parent_tool_use_id`. The marker is not evidence of a subagent and never a model observation unless the record is an `assistant` or `message_start` message. |
+| `stream_event` `message_start` `model` (with `--include-partial-messages`) | Observation, available earlier than the final message. |
+| `assistant` with `model` `<synthetic>` | Harness-authored notice (for example an API error). Counted with its `error` category (`observations.synthetic_assistant_messages`, `synthetic_error_categories`); never an observation and never a mismatch. It does not change the verdict by itself: a stream with exact observations, a notice and a successful result is `verified_exact` (exit 0). A notice with no exact observation is `incomplete_evidence`. The verdict speaks to the models of the messages observed, not to the turn's content being complete, so a consumer that treats a notice as a recovery decision reads the counts. |
+| `system` `init` `model`, `result` `modelUsage` keys | Metadata only. On `--resume`, `modelUsage` is cumulative conversation history, so other models there do not describe this execution. |
+
+Refusal signals: `stop_reason: "refusal"` on an assistant message, a
+`message_delta`, or the result; `terminal_reason` containing `refusal`; and any
+`system` subtype containing `fallback` or `refusal` (`model_refusal_fallback`).
+The shapes of these signals were supplied by the assignment, and the
+`<synthetic>` notice shape (`error` category, `stop_reason: stop_sequence`) comes
+from one reported session's stream; the model-configuration and headless pages do
+not document them, so a different spelling in a later Claude
+Code release would go undetected by the signal checks (the model comparison is
+unaffected).
+
+### Outcomes and exit codes
+
+`model_guard.outcome` is one of:
+
+| outcome | meaning | launcher exit |
+| --- | --- | --- |
+| `verified_exact` | at least one observation, every observation exact, no signal, one well-formed result, stream drained and delivered, settings unchanged. Synthetic notices may be present (see the evidence table) | 0 when the native result is also a success |
+| `violation` | a mismatching observation, refusal or fallback signal; `violation` holds its kind, line, byte offset, line digest, message id and raw (bounded) model string, never message text | 41 |
+| `incomplete_evidence` | evidence cannot be read as complete: malformed, oversize or envelope-malformed line, missing model, no observation, no result, malformed or duplicate result, assistant/stream/result activity after the result, undrained or undelivered stream, modified settings, timeout, cancellation, a launcher failure (including a receipt that cannot be written); `reason` names it | 42, 124 (timeout), 128+signal (cancelled), or the native status if it failed by itself |
+| `unavailable` | a precondition failed or the command did not start | 43 |
+
+The native process status and the result event are reported separately
+(`native.returncode`, `native.result_status`, `native.stopped_by_launcher`). A
+zero exit never converts a finding into success, and an exact-model run whose
+result has `is_error: true` or a non-`success` subtype is `failed` (exit 44)
+even when the process exited 0. `receipt.result` is `success` only for exit 0.
+`acceptance` is `not_invalidated_by_model_guard` only then.
+
+A refusal or fallback is a legitimate terminal outcome. The launcher never
+replays or switches model after one; `--allow-paid-failover` has no effect here.
+
+### Process and stream control
+
+The child starts in its own session and the launcher owns it from the moment it
+exists: a failure while publishing the in-flight receipt, starting threads or
+finalizing stops and collects the child before the launcher gives up. If the
+receipt target cannot be written the run is not accepted: the child is stopped,
+the launcher says so on stderr and exits 42 (a violation keeps 41). A final
+receipt that cannot be written never leaves exit 0 and is a launcher failure: the
+owned tree is stopped and collected even though the native process had already
+exited, and the receipt is tried once more recording that cause.
+
+The launcher is a Linux child subreaper, so descendants orphaned by `setsid` or
+double fork reparent to it and stay discoverable. On a finding,
+`--guard-timeout-seconds` or SIGINT/SIGTERM/SIGHUP to the launcher, it sends
+SIGTERM, waits `--guard-stop-grace-seconds` (default 5), then SIGKILL to the
+session and every descendant found. Cancellation and the deadline stay live
+while the output drains (up to 5 seconds after the child exits) and while the
+backlog is delivered; a signal received, or a deadline reached, at any point
+before the final receipt write returns (a deadline crossed inside the write
+rewrites the receipt as timed out) makes the run cancelled (exit 128+signal) or
+timed out (124) and invalidates acceptance, even if the native process had
+exited cleanly with every byte delivered. A timeout or cancellation stops
+descendants, including one holding the output pipes open. A clean exit that left background processes reports them
+without killing them.
+
+`termination.process_collection` reports `none_remaining`,
+`survivors_remaining`, `leftover_processes` or `not_established` (the subreaper
+could not be set, as off Linux). Discovery is a `/proc` scan by session and
+ancestry; it is best effort and describes only what the scans saw. It does not
+reach a process that left the ancestry through something outside the launcher's
+control (a service manager, `systemd-run`, a container runtime or another PID
+namespace), a process created after the last scan, or a PID reused during the
+stop; `tool_effects_before_stop` stays `not_established`.
+
+Stdout and stderr are drained by separate threads, hashed, and passed through to
+the launcher's own stdout and stderr as they arrive, so a stdin payload or
+output of any size cannot deadlock the child. Judgment happens before
+forwarding, and forwarding runs on its own thread with a bounded backlog
+(`--guard-forward-backlog-bytes`, default 64 MiB). A consumer that stalls or
+closes its pipe therefore never delays a stop or the final receipt. Each
+stream's `delivery` account is frozen once, at the end, and reconciles:
+`captured_bytes = delivered_bytes + undelivered_bytes`, and
+`undelivered_bytes = dropped_bytes + pending_bytes + in_flight_bytes`
+(`dropped`: refused over the backlog cap or after the consumer closed;
+`pending`: queued, never written; `in_flight`: inside a write that had not
+returned, of which a prefix may already sit in the pipe). `delivered_bytes`
+means accepted by the launcher's own fd, not read by the consumer. Any
+undelivered byte makes the run `incomplete_evidence` (`output_not_delivered`).
+The stream the caller redirected is the attributable artifact; the receipt holds
+its SHA-256 and `captured_bytes`. A receipt with `result: pending` and
+`reason: in_flight` is written as soon as the child has a pid, naming it, so an
+interrupted launcher leaves an explicit non-success record.
+
+### Limits
+
+- Detection reads a record after the child has emitted it. The guard stops the
+  tree and invalidates acceptance, but it does not show that no tool call ran
+  before detection or between detection and the stop; `lines_after_first_finding`
+  and `tool_effects_before_stop: not_established` record that. After a violation
+  reconcile the workspace and treat effects as present but unattributed.
+- A message can be judged only if it appears in the stream. Lines over 16 MiB are
+  not parsed and are `incomplete_evidence`.
+- `identity.session_identity` reports whether observed `session_id` values match
+  the requested one; a difference (possible on `--resume`) is reported, not
+  judged.
+- The synthetic tests (fake children emitting stream-json) cover the launcher.
+  No real refusal, fallback or model switch was provoked, so enforcement of the
+  scoped settings by Claude Code itself is not tested here; the observation checks
+  are the independent control.
