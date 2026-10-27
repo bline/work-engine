@@ -72,10 +72,8 @@
     "coordination-channels": {
       "kind": "workflow",
       "state": "active",
-      "install": [
-        "claude",
-        "codex"
-      ]
+      "install": [],
+      "not_installed_reason": "Loaded on demand by coordinating sessions: manual-orchestration's coordinator reference points to it. Installing it would list coordinator guidance to every worker (user decision 2026-10-27)."
     },
     "durable-state": {
       "kind": "tool",

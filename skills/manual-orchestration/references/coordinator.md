@@ -33,6 +33,8 @@ Keep a durable, compact assignment record as the deterministic source for owners
 
 Continue independent work while children run; when required results remain and none remains, wait on the event rather than polling ([call cost](call-cost.md)). Completion wakes collection; it does not certify success. On a result, check the artifact and process dispositions, obtain required supervisor/reviewer decisions, and ask whether any changed fact invalidates other packets, evidence or acceptance claims. Preserve old evidence as historical; retain current claims only with a reason they still apply. New hashes cannot repair a wrong subject or missing semantic obligation. Issue revised packets when necessary. Before an absence claim, establish what artifact classes could contain the item and why the checked scope covers them; inspect a judgment's referenced inputs before inferring that an item omitted from its summary was never considered. Do not infer that outside-packet findings are absent because none were reported. Confirm no child or process ownership is stranded before replacing a context or declaring a group complete.
 
+**Other sessions.** Concurrent sessions share this repository but not your context, so a change they never hear about can invalidate their work, and theirs yours. When your work depends on or affects other sessions, load [coordination channels](../../coordination-channels/SKILL.md): it owns claiming, notifying, listening and handing off through the coordination board.
+
 ## Your own context
 
 A root accepting substantial new work makes a scoped
