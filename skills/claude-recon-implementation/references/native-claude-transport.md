@@ -140,9 +140,10 @@ gateway processing.
 `--exact-model-guard` runs the same native `claude` through the `anthropic`
 transport while the launcher reads its `stream-json` output as it is produced.
 It exists for work that must run on one raw model identifier and must treat a
-safety refusal or a model switch as a terminal result, not a retry trigger.
+safety refusal or a model switch as terminal for that invocation, not a retry trigger.
 Without the flag, nothing in this section applies and the launcher, receipt and
-buffering are unchanged.
+buffering are unchanged. The Claude builder skill enables it on every turn to
+preserve the caller's model selection.
 
 ```bash
 python3 skills/claude-recon-implementation/scripts/claude_transport.py \
@@ -226,8 +227,12 @@ result has `is_error: true` or a non-`success` subtype is `failed` (exit 44)
 even when the process exited 0. `receipt.result` is `success` only for exit 0.
 `acceptance` is `not_invalidated_by_model_guard` only then.
 
-A refusal or fallback is a legitimate terminal outcome. The launcher never
+A refusal or fallback is a terminal outcome for the invocation. The launcher never
 replays or switches model after one; `--allow-paid-failover` has no effect here.
+This ends the invocation, not necessarily its enclosing engineering objective.
+For builder work, the caller owns any authorized successor decision and the
+[failed-turn handoff](../../claude-builder/references/native-session.md#continuing-after-a-failed-turn);
+the failed receipt remains failed even if a later builder succeeds.
 
 ### Process and stream control
 

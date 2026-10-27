@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude Builder"
+  short_description: "Retained Claude implementation with Astra review"
+  default_prompt: "Use $claude-builder to delegate this engineering task to a retained Claude Code session and collect an Astra review."
