@@ -1,0 +1,65 @@
+{
+ "schema": "price-table-addendum/v1",
+ "created_at": "2026-10-27T14:49:57.906128+00:00",
+ "purpose": "Adds Claude Haiku 5.5 (E1a prerequisite, plan \u00a76 E1a) and Claude Fable 5.1 (support-work accounting only) to the frozen price table without changing F1 (metrics/scripts/usage_ledger.py, sha256 b6180b04...a169). F1 leaves these models unpriced; experiment measurements apply this addendum on top of F1 rows and label the result.",
+ "source": {
+  "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+  "fetched": "2026-10-27 (WebFetch markdown conversion)",
+  "page_dated": "not established: the page shows no last-updated date",
+  "copy": "/home/bline/cbm-work/prices/platform-pricing-20261027.md",
+  "copy_sha256": "f71573e3b8280316d567a310cdc9a469c6c56a3a0c13d9156446e4af340be39e"
+ },
+ "verbatim_rows": {
+  "line_17": "| Claude Fable 5.1 | $10 / MTok | $12.50 / MTok | $20 / MTok | $0.25 / MTok<sup>1</sup> | $50 / MTok |",
+  "line_21": "| Claude Opus 5.5 | $4 / MTok | $5 / MTok | $8 / MTok | $0.20 / MTok<sup>2</sup> | $20 / MTok |",
+  "line_29": "| Claude Sonnet 5.5 | $2 / MTok | $2.50 / MTok | $4 / MTok | $0.10 / MTok<sup>2</sup> | $10 / MTok |",
+  "line_34": "| Claude Haiku 5.5 (for prompts up to 100,000 tokens) | $0.10 / MTok | $0.125 / MTok | $0.20 / MTok | $0.01 / MTok | $0.50 / MTok |",
+  "line_35": "| Claude Haiku 5.5 (for prompts over 100,000 tokens) | $0.50 / MTok | $0.625 / MTok | $1 / MTok | $0.05 / MTok | $2.50 / MTok |",
+  "footnote_2": "*<sup>2 Cache hits and refreshes on Claude Opus 5.5 and Claude Sonnet 5.5 are priced at 0.05x the base input price.</sup>*",
+  "long_context_rule": "Claude Haiku 5.5 is priced by prompt length: a request whose prompt is over 100,000 tokens pays higher prices. A request's prompt length counts all of its input tokens, including cache reads and cache writes. Each request is priced on its own: a request over the threshold pays the higher prices even when part of its prompt is a cache hit, and earlier requests keep the prices they were billed at. The [model pricing](https://platform.claude.com/docs/en/about-claude/pricing#model-pricing) and [batch processing pricing](https://platform.claude.com/docs/en/about-claude/pricing#batch-processing) sections list both sets of prices."
+ },
+ "units": "USD per million tokens",
+ "models": {
+  "claude-haiku-5-5": {
+   "model_id_verified": "claude -p --model claude-haiku-5-5 on 2026-10-27: init model and message.model both claude-haiku-5-5; Claude Code 2.1.311",
+   "tiers": [
+    {
+     "applies_when": "prompt_tokens <= 100000",
+     "input": 0.1,
+     "cache_write_5m": 0.125,
+     "cache_write_1h": 0.2,
+     "cache_read": 0.01,
+     "output": 0.5
+    },
+    {
+     "applies_when": "prompt_tokens > 100000",
+     "input": 0.5,
+     "cache_write_5m": 0.625,
+     "cache_write_1h": 1.0,
+     "cache_read": 0.05,
+     "output": 2.5
+    }
+   ],
+   "prompt_tokens": "input_tokens + cache_creation_input_tokens + cache_read_input_tokens of the request; each request priced on its own, all its tokens at the tier's prices",
+   "cross_check": "CLI costUSD for the 2026-10-27 probe (input 2, cache_write_1h 25490, output 4) = 0.0051002; tier-1 rates give 2*0.10e-6 + 25490*0.20e-6 + 4*0.50e-6 = 0.0051002 (exact)"
+  },
+  "claude-fable-5-1": {
+   "use": "support-work accounting only (Fable is not an arm in Phase 1)",
+   "tiers": [
+    {
+     "applies_when": "all",
+     "input": 10,
+     "cache_write_5m": 12.5,
+     "cache_write_1h": 20,
+     "cache_read": 0.25,
+     "output": 50
+    }
+   ]
+  }
+ },
+ "cross_check_existing_frozen_rates": {
+  "claude-sonnet-5-5": "page: 2 / 2.50 / 4 / 0.10 (0.05x base, footnote 2) / 10 = F1 NATIVE_RATES exactly",
+  "claude-opus-5-5": "page: 4 / 5 / 8 / 0.20 / 20 = F1 NATIVE_RATES exactly",
+  "note": "the claude-api skill's cached model table (2026-10-06) lists Sonnet 5.5 cache reads at $0.20; the live page says $0.10. The live page governs."
+ }
+}

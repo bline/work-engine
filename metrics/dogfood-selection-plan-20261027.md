@@ -205,11 +205,34 @@ Restrictions for the first 10:
 - **Confirm that every source document was archived** (`overhead.json`
   `sources`) before copying the records to the data repository.
 
+Limitations the pilot report must state:
+- **Selection time is the coordinator's own account.** `--selected-at` is supplied
+  by the coordinator, so it doesn't independently prove when selection happened.
+- **Exact recompute needs the original paths.** The source documents are archived
+  by hash, but `taskprofile compute` reads them from their original paths. If an
+  original disappears, the archive can still be checked against its hash, but an
+  exact recompute needs that file restored to its path first.
+
 After the 10, the owner reviews the profiles and the discrepancies. Possible
 outcomes: make collection permanent, revise the schema, or stop.
 
 ## Before activation
 
+0. **Approved 2026-10-27** (owner, after ChatGPT's review of v0.2.1), in this
+   order:
+   1. Install the pinned tool and run `check-tool`.
+      **Done 2026-10-27:** installed at
+      `~/.local/state/work-engine/tools/agent-routing-lab/1faaf78af460afee1126731816e0dc10553d9822/`
+      from GitHub. `check-tool` passes on the default path, and a smoke profile in
+      a scratch run directory verified.
+   2. Complete the separately governed Sol 6.1 supervisor qualification and
+      transition.
+   3. Apply Appendix A to the coordinator guidance in its own commit.
+   4. Run the 10 eligible dispatches under the existing assignment policy, then
+      review the observations before expanding collection.
+
+   Not part of this plan: adaptive routing, more benchmark runs, task-aware
+   selection.
 1. The extractor's canonical home is
    [agent-routing-lab](https://github.com/bline/agent-routing-lab) (Apache-2.0),
    as `taskprofile`. Work Engine pins tag `v0.2.1`, commit
