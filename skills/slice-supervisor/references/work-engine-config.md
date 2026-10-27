@@ -14,8 +14,8 @@ work_source:
 
 builder:
   skill: "slice-builder"
-  model: "gpt-6-sol"
-  reasoning_effort: "high"
+  model: "gpt-6.1-terra"
+  reasoning_effort: "medium"
   context:
     repository_evidence:
       skill: "repo-search"
@@ -83,8 +83,8 @@ capabilities:
 Defaults provide an adaptive engineering workflow while explicit full-gate campaigns remain unchanged:
 
 - `builder.skill`: `slice-builder`
-- `builder.model`: `gpt-6-sol`
-- `builder.reasoning_effort`: `high`
+- `builder.model`: `gpt-6.1-terra`
+- `builder.reasoning_effort`: `medium`
 - `builder.context.repository_evidence.skill`: `repo-search`
 - `builder.context.repository_evidence.provider`: `codex-codebase-memory`
 - `builder.context.independent_review.skill`: `claude-recon-implementation`
@@ -137,7 +137,7 @@ that value authoritatively; the model does not transcribe it.
   "source": "inline_user_config",
   "objective": "Advance the Site2JSON roadmap",
   "work_source": {"kind": "file", "value": "docs/roadmap.md"},
-  "builder": {"skill": "slice-builder", "model": "gpt-6-sol", "reasoning_effort": "high", "context": {"repository_evidence": {"skill": "repo-search", "provider": "codex-codebase-memory"}, "independent_review": {"skill": "claude-recon-implementation", "provider": "claude"}}},
+  "builder": {"skill": "slice-builder", "model": "gpt-6.1-terra", "reasoning_effort": "medium", "context": {"repository_evidence": {"skill": "repo-search", "provider": "codex-codebase-memory"}, "independent_review": {"skill": "claude-recon-implementation", "provider": "claude"}}},
   "validation": {"profile": "engineering-proportional", "requirements": ["semantic_proof", "risk_proportional_checks", "workspace_integrity"]},
   "metrics": {"path": "docs/ai-workflow-metrics.jsonl"},
   "limits": {},
@@ -163,7 +163,7 @@ Cleanup changes context, not machinery:
 version: 2
 objective: "Restore structural coherence"
 work_source: {kind: file, value: "docs/cleanup.md"}
-builder: {skill: slice-builder, model: gpt-6-sol, reasoning_effort: high}
+builder: {skill: slice-builder, model: gpt-6.1-terra, reasoning_effort: medium}
 validation: {profile: engineering-full, requirements: [focused_checks, full_suite, adversarial_review]}
 ```
 

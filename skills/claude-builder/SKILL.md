@@ -44,14 +44,11 @@ collection without introducing another runtime or handoff schema.
 
 ## Model choice
 
-Start new assignments with native `--model claude-sonnet-5-5 --effort high`
-unless the task selects otherwise. This is the user's experimental starting
-choice, not a measured quality or cost guarantee; `medium` remains selectable.
-The caller may select
-`claude-opus-5-5` when unresolved reasoning or task complexity warrants it;
-effort is independently selectable. The builder can recommend a change, and
-the caller records the choice and reason in the assignment before dispatch.
-An explicit task/campaign model constraint takes precedence over this default.
+Select the model and effort from [model selection](../../docs/model-selection.md):
+it names the Claude-host builder defaults and when Opus is warranted. An explicit
+task or campaign model constraint takes precedence. The builder can recommend a
+change, and the caller records the choice and reason in the assignment before
+dispatch.
 
 Use the exact configured model identifier. Verify availability through the
 installed runtime and preserve requested versus observed identity. A moving
@@ -63,8 +60,8 @@ does not choose a replacement. A provider classifier flag alone establishes
 neither that the task is prohibited nor that a successor is prohibited. Assess
 the actual requested work under the applicable rules. For otherwise authorized
 work, the caller may select a successor under existing user and model guidance.
-The user's `gpt-6-sol`/`medium` choice permits that successor after a Claude
-refusal without another per-refusal approval. Reconcile the failed turn and
+The successor named in [model selection](../../docs/model-selection.md) is
+permitted after a Claude refusal without another per-refusal approval. Reconcile the failed turn and
 record the provider/model transition; do not require a separate assurance of
 benign intent solely because the previous provider refused. Read
 [continuing after a failed turn](references/native-session.md#continuing-after-a-failed-turn)
@@ -102,8 +99,8 @@ the same mutable scope.
 
 ## Review and completion
 
-Pair this builder with a separate `gpt-6-astra` reviewer, normally `xhigh` under
-the repository's review guidance. Read
+Pair this builder with a separate `gpt-6-astra` reviewer, at the effort
+[model selection](../../docs/model-selection.md) names for adversarial review. Read
 [Astra review](references/astra-review.md) for the caller's launch, isolation,
 retained remediation, and evidence boundaries. The caller owns this Codex tool
 boundary; Claude can request review but need not possess Codex's spawn tools.

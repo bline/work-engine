@@ -7,15 +7,15 @@ import { parse } from "yaml";
 import { loadChromeVisionConfig, resolveChromeVisionConfig } from "../../chrome-vision/src/config.mjs";
 
 const allowed = new Set(["version","objective","work_source","builder","validation","metrics","limits","approval","notifications","stop_on","capabilities","slice_completion_commit","amendments"]);
-const currentBuilderModels = new Set(["gpt-6-sol", "gpt-6-astra"]);
+const currentBuilderModels = new Set(["gpt-6.1-terra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra"]);
 const currentReasoningEfforts = new Set(["low", "medium", "high", "xhigh", "max", "ultra"]);
 const providerResolver = path.resolve(import.meta.dirname, "../../slice-builder/scripts/resolve_provider.py");
 const defaults = {
   work_source: null,
   builder: {
     skill: "slice-builder",
-    model: "gpt-6-sol",
-    reasoning_effort: "high",
+    model: "gpt-6.1-terra", // docs/model-selection.md
+    reasoning_effort: "medium",
     context: {
       repository_evidence: { skill: "repo-search", provider: "codex-codebase-memory" },
       independent_review: { skill: "claude-recon-implementation", provider: "claude" },

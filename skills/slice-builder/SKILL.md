@@ -43,7 +43,7 @@ Spawn with:
 - the configured `builder.model` and `builder.reasoning_effort`;
 - a task name unique to the run and slice.
 
-When omitted, the work-engine defaults are `gpt-6-sol` and `high`. These are current selection defaults, not evidence that a runtime used that model or effort. Preserve requested and observed identities separately, and do not substitute a model after a capacity failure without the owning authority.
+When omitted, the work-engine defaults are the builder default in [model selection](../../docs/model-selection.md): `gpt-6.1-terra` at `medium` as of 2026-10-27. These are current selection defaults, not evidence that a runtime used that model or effort. Preserve requested and observed identities separately, and do not substitute a model after a capacity failure without the owning authority.
 
 Give the builder only:
 
@@ -321,7 +321,7 @@ Escalation requires at least one concrete signal:
 
 Do not escalate for infrastructure failure, quota exhaustion, a missing user decision, ordinary check failure, elapsed time, or token use alone. Handle those through retry, stop, or intervention.
 
-Escalate one level at a time: `low → medium → high`. Stop for human judgment before `xhigh` unless configuration or the user explicitly authorizes it. Record replaced workers, efforts, evidence, and reasons. Never run old and replacement builders concurrently on the same mutable workspace.
+Escalate effort and model as [model selection](../../docs/model-selection.md#escalation) describes. Record replaced workers, efforts, evidence, and reasons. Never run old and replacement builders concurrently on the same mutable workspace.
 
 ## Enforce the boundary
 

@@ -145,8 +145,8 @@ assignment's authority. A fixed model qualification or campaign provider
 constraint still belongs to its acceptance owner: replacement cannot satisfy
 the original model-specific claim or silently amend it. Use existing selection
 authority when granted; obtain a changed decision only when the owning contract
-requires one. For otherwise authorized builder work, the user's selection of
-`gpt-6-sol` at `medium` effort permits it as a successor after Claude refusal;
+requires one. For otherwise authorized builder work, the successor named in
+[model selection](../../../docs/model-selection.md) is permitted after a Claude refusal;
 no per-refusal approval is needed. Record the selected model and effort without
 attributing its work to the failed model qualification.
 

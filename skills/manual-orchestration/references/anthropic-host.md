@@ -16,15 +16,10 @@ is Claude Code.
 
 ## Models and review tiers
 
-Defaults for this repository, each with its evidence:
-
-| role | model, effort | basis |
-| --- | --- | --- |
-| builder with a fully specified packet | `sonnet`, high | Matched Opus on gates and defect incidence at 38% of the cost and half the time (`metrics/probes/claude-s2-builder-20261020-protocol.md:467-560`, n=1). Both carried the same defect class past every gate, so review is still required. |
-| planner, verifier, tier-1 reviewer, assessor | `opus`, high | Where errors propagate; no matched Sonnet review comparison yet. |
-| tier-2 reviewer | `fable`, fresh context | Scarce: one contract review cost 2% of the weekly Fable quota (~362K weighted, n=1). Use only for a shared contract, final acceptance of a workstream, or an unresolved P1 between builder and tier 1. Give it a small input (contract, diff, tier-1 findings, with paths) and never a retained follow-up. |
-
-Search `metrics/probes` for newer evidence before overriding these.
+Model, effort and review-tier choices for this host live in
+[model selection](../../../docs/model-selection.md) (the Claude-host rows). Pass the
+choice through `Agent` `model` as above. That parameter takes an alias, so record
+the observed exact identifier from `message.model`.
 
 ## Context check
 

@@ -1,8 +1,8 @@
 # Astra review of a Claude builder
 
 The Codex caller launches and collects a separate `gpt-6-astra` reviewer with
-`fork_turns: "none"` and the selected effort (`xhigh` is the repository starting
-guidance). This is the review pairing selected for this skill; an explicit
+`fork_turns: "none"` and the effort from
+[model selection](../../../docs/model-selection.md). This is the review pairing selected for this skill; an explicit
 owning task contract may select otherwise. The reviewer has a fresh entry and
 does not inherit the caller's or Claude builder's conversation.
 

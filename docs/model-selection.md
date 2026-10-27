@@ -165,25 +165,29 @@ guide states the intended choice and the copy is stale.
 
 | Location | What it encodes | State on 2026-10-27 |
 | --- | --- | --- |
-| `skills/slice-builder/scripts/resolve_provider.py`: CLI defaults (`--builder-model`, `--builder-reasoning-effort`) and the `CURRENT_CODEX_MODELS` allowlist | campaign builder default; which builder and reviewer models are accepted | still `gpt-6-sol` / `high`, and the allowlist lacks `gpt-6.1-terra` and `gpt-6.1-sol`; alignment pending |
-| `skills/slice-supervisor/scripts/campaign-preflight.mjs`: `defaults.builder` and the `currentBuilderModels` allowlist | campaign builder default; preflight rejects a builder model not on its list | still `gpt-6-sol` / `high`, and Terra is rejected today; alignment pending |
-| `skills/slice-supervisor/references/work-engine-config.md` | documented campaign defaults | still `gpt-6-sol` / `high`; alignment pending |
-| `skills/slice-builder/SKILL.md` | default statement and effort ladder | pending a pointer to this guide |
-| `skills/claude-builder/SKILL.md` and `references/astra-review.md`, `references/native-session.md` | Claude builder, successor and reviewer choices | pending a pointer to this guide |
-| `skills/manual-orchestration/references/anthropic-host.md` | Claude-host role table | pending a pointer to this guide; the host mapping (`Agent` `model`, observed `message.model`) stays there |
+| `skills/slice-builder/scripts/resolve_provider.py`: CLI defaults (`--builder-model`, `--builder-reasoning-effort`) and the `CURRENT_CODEX_MODELS` allowlist | campaign builder default; which builder and reviewer models are accepted | aligned: `gpt-6.1-terra` / `medium`; the allowlist is `gpt-6.1-terra`, `gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra` |
+| `skills/slice-supervisor/scripts/campaign-preflight.mjs`: `defaults.builder` and the `currentBuilderModels` allowlist | campaign builder default; preflight rejects a builder model not on its list | aligned: `gpt-6.1-terra` / `medium`; same allowlist |
+| `skills/slice-supervisor/references/work-engine-config.md` | documented campaign defaults | aligned: `gpt-6.1-terra` / `medium` |
+| `skills/slice-builder/SKILL.md` | default statement and effort ladder | points to this guide |
+| `skills/claude-builder/SKILL.md` and `references/astra-review.md`, `references/native-session.md` | Claude builder, successor and reviewer choices | point to this guide |
+| `skills/manual-orchestration/references/anthropic-host.md` | Claude-host role table | points to this guide; the host mapping (`Agent` `model`, observed `message.model`) stays there |
 | `resolve_builder_context()` signature default in `resolve_provider.py` | internal default for callers that omit the model | stays `gpt-6-sol` / `high` on purpose: production paths pass the model explicitly, and tests use the default to build same-model review cases |
 | `skills/slice-supervisor/scripts/append_metrics.py`, `.get("model", "gpt-6-sol")` and `.get("reasoning_effort", "high")` | how a receipt with no recorded builder model is read | stays as is on purpose: receipts written without an explicit model ran under the earlier default |
 | `~/.codex/config.toml`, `~/.claude/settings.json` | session defaults | see above |
 
-"Pending" means those files have other sessions' uncommitted changes. The
-alignment and pointer edits are prepared as one patch,
-`~/cbm-work/model-selection-consolidation/skills-model-selection-pointers.patch`
-(9 files). It applies cleanly to the working tree of 2026-10-27, and on a patched
-copy the slice-builder and campaign-preflight tests give the same results as
-unpatched. Once applied, campaigns that omit `builder.model` run on
+The alignment and pointer edits were applied on 2026-10-27, and the
+slice-builder, slice-supervisor, campaign-preflight and manual-orchestration
+suites pass on that tree.
+
+Of the 9 slice-supervisor campaign files, 2 omit `builder.model` and so run on
 `gpt-6.1-terra`: `campaigns/git-backed-slice-checkpoints.yaml` and the
-superseded `app-server/skills-migration-campaign.yaml`. The other campaign files
-name `gpt-5.6-sol` explicitly.
+superseded `app-server/skills-migration-campaign.yaml`. The other 7 name
+`gpt-5.6-sol`, which the allowlists no longer include, so preflight rejects them
+("builder.model must be a supported current model"; checked on
+`campaigns/roadmap.yaml`). Each needs an explicit current model, or the
+`builder.model` key removed to take the default, before it runs.
+`campaigns/comparative-repository-analysis.yaml` is a comparative-analysis
+configuration with no builder.
 
 ## Decisions
 

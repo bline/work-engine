@@ -32,7 +32,7 @@ REVIEW_PROVIDER_ADAPTERS = {
 ADVERSARIAL_REVIEW_PROVIDER = "codex"
 ADVERSARIAL_REVIEW_SKILL = "codex-adversarial-review"
 ADVERSARIAL_REVIEW_ISOLATION = "fresh_process"
-CURRENT_CODEX_MODELS = {"gpt-6-sol", "gpt-6-astra"}
+CURRENT_CODEX_MODELS = {"gpt-6.1-terra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra"}
 CURRENT_REASONING_EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
 HISTORICAL_CODEX_MODEL = "gpt-5.6-sol"
 SAME_MODEL_EVIDENCE_CLASS = "accepted_same_model_review"
@@ -250,8 +250,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config-version", type=int)
     parser.add_argument("--context-json", required=True)
-    parser.add_argument("--builder-model", default="gpt-6-sol")
-    parser.add_argument("--builder-reasoning-effort", default="high")
+    parser.add_argument("--builder-model", default="gpt-6.1-terra")  # docs/model-selection.md
+    parser.add_argument("--builder-reasoning-effort", default="medium")
     args = parser.parse_args()
     try:
         context = json.loads(args.context_json)
