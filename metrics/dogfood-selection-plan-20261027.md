@@ -2,8 +2,10 @@
 
 Status: **approved 2026-10-27; not yet active.** Collection starts after the
 steps in [Before activation](#before-activation); the tool install is done. The
-guidance text in Appendix A has not been applied to `skills/`: production loads
-skills from the live tree, so editing them activates the change.
+guidance text in Appendix A has not been applied to `skills/`. Since 2026-10-27
+agents read skills from a deployed release (`skills/skill-release`), so the
+guidance takes effect when its commit is released and deployed, not when
+`skills/` is edited.
 
 ## Why
 
@@ -128,7 +130,7 @@ Tests: `metrics/scripts/tests/test_task_profile_record.py`, 18 cases.
   carries identity, input snapshot, declarations, computed features, coverage
   and provenance. `provenance.declared_by` must give the coordinator's role,
   model, effort, harness and version, plus the guidance version (the sha256 of
-  the coordinator guidance file used).
+  the coordinator guidance file as installed from the deployed skill release).
 - **Assignment observation** (`assignment.json`), kept separate from the profile
   so the selected configuration never becomes part of the task's description:
 
@@ -227,7 +229,8 @@ outcomes: make collection permanent, revise the schema, or stop.
       a scratch run directory verified.
    2. Complete the separately governed Sol 6.1 supervisor qualification and
       transition.
-   3. Apply Appendix A to the coordinator guidance in its own commit.
+   3. Apply Appendix A to the coordinator guidance in its own commit, then
+      release and deploy that commit (`skill_release.py plan`, then deploy).
    4. Run the 10 eligible dispatches under the existing assignment policy, then
       review the observations before expanding collection.
 
@@ -260,7 +263,8 @@ outcomes: make collection permanent, revise the schema, or stop.
    under `observations/work-engine/<task_revision>/`, copied from the run
    directory.
 4. Owner approval of this plan and of Appendix A: given 2026-10-27 (step 0).
-   Apply Appendix A in one commit, so the guidance version recorded in each profile is a single hash.
+   Apply Appendix A in one commit and deploy it as one release, so the guidance
+   version recorded in each profile is a single hash.
    Appendix A's script path changes to the installed `taskprofile` command.
 
 ## Out of scope for phase 0
