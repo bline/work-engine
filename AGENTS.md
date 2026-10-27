@@ -26,6 +26,12 @@ direction for new first-party implementation and proposed shared-code boundaries
 Use it when choosing implementation language or reusable package placement;
 existing components and their authority remain until accepted replacement.
 
+## Where files go
+
+Readers judge a file's standing from where it sits. Put a new file where
+[repository layout](docs/repository-layout.md) says, and follow its rules when
+moving or citing one.
+
 ## Coordinating sub-agents
 
 Outside a configured Slice Builder campaign, a Codex or Claude Code session
