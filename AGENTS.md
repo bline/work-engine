@@ -12,6 +12,20 @@ decision turns on that rationale. Context loaded at startup is re-sent with ever
 later model call, so startup context should be the binding doctrine plus what the
 task needs ([PHILOSOPHY.md §17](PHILOSOPHY.md#17-the-role-of-the-design-document)).
 
+## Model-selection guidance
+
+[Model selection](docs/model-selection.md) provides current defaults and their
+tradeoffs when choosing an engineering model. It is decision guidance, not an
+override of explicit user choices or campaign/provider contracts; consult it
+when that choice is in scope, rather than inferring a selection from inheritance.
+
+## Rust development direction
+
+[Rust development](docs/rust-development.md) records the user's Rust-first
+direction for new first-party implementation and proposed shared-code boundaries.
+Use it when choosing implementation language or reusable package placement;
+existing components and their authority remain until accepted replacement.
+
 ## Coordinating sub-agents
 
 Outside a configured Slice Builder campaign, a Codex or Claude Code session
