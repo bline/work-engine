@@ -1,9 +1,9 @@
 # Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)
 
-Status: **draft for owner review. Not active.** Nothing here changes dispatch until
-the owner approves it. The guidance text in Appendix A has not been applied to
-`skills/`: production loads skills from the live tree, so editing them would
-activate the change.
+Status: **approved 2026-10-27; not yet active.** Collection starts after the
+steps in [Before activation](#before-activation); the tool install is done. The
+guidance text in Appendix A has not been applied to `skills/`: production loads
+skills from the live tree, so editing them activates the change.
 
 ## Why
 
@@ -259,8 +259,8 @@ outcomes: make collection permanent, revise the schema, or stop.
    [agent-routing-data](https://github.com/bline/agent-routing-data) repository
    under `observations/work-engine/<task_revision>/`, copied from the run
    directory.
-4. Owner approval of this plan and of Appendix A. Then apply Appendix A in one
-   commit, so the guidance version recorded in each profile is a single hash.
+4. Owner approval of this plan and of Appendix A: given 2026-10-27 (step 0).
+   Apply Appendix A in one commit, so the guidance version recorded in each profile is a single hash.
    Appendix A's script path changes to the installed `taskprofile` command.
 
 ## Out of scope for phase 0
