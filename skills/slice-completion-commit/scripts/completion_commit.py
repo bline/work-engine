@@ -551,7 +551,7 @@ def index_entries(repository: Path, env=None) -> dict[str, dict[str, str]]:
     return entries
 
 
-def working_entry(repository: Path, name: str) -> dict[str, Any]:
+def working_entry(repository: Path, name: str, *, nested_repository: bool = False) -> dict[str, Any]:
     path = repository / safe_path(name)
     for parent in path.parents:
         if parent == repository:
@@ -561,21 +561,75 @@ def working_entry(repository: Path, name: str) -> dict[str, Any]:
     try:
         info = path.lstat()
     except FileNotFoundError:
+        if nested_repository:
+            fail("nested repository boundary is missing")
         return {"kind": "missing"}
     mode = stat.S_IMODE(info.st_mode)
+    if nested_repository and not stat.S_ISDIR(info.st_mode):
+        fail("nested repository boundary is no longer a directory")
     if stat.S_ISLNK(info.st_mode):
         return {"kind": "symlink", "mode": mode, "target": os.readlink(path)}
     if stat.S_ISREG(info.st_mode):
         return {"kind": "file", "mode": mode, "sha256": sha256(path.read_bytes())}
+    if nested_repository:
+        # Git reports an untracked nested repository as one slash-terminated
+        # path. Bind its boundary without descending into its own worktree or
+        # following its .git pointer into a separate Git directory.
+        marker = path / ".git"
+        try:
+            marker_info = marker.lstat()
+        except FileNotFoundError:
+            fail("nested repository boundary has no .git marker")
+        marker_entry: dict[str, Any] = {
+            "mode": stat.S_IMODE(marker_info.st_mode),
+            "dev": marker_info.st_dev, "ino": marker_info.st_ino,
+        }
+        if stat.S_ISDIR(marker_info.st_mode):
+            marker_entry["kind"] = "directory"
+        elif stat.S_ISREG(marker_info.st_mode):
+            descriptor = os.open(marker, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            try:
+                opened = os.fstat(descriptor)
+                if (not stat.S_ISREG(opened.st_mode) or opened.st_dev != marker_info.st_dev
+                        or opened.st_ino != marker_info.st_ino):
+                    fail("nested repository .git marker changed during observation")
+                with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                    marker_digest = sha256(stream.read())
+            finally:
+                os.close(descriptor)
+            marker_entry.update(kind="file", sha256=marker_digest)
+        else:
+            fail("nested repository .git marker must be a regular file or directory")
+        after_root, after_marker = path.lstat(), marker.lstat()
+        if ((after_root.st_dev, after_root.st_ino) != (info.st_dev, info.st_ino)
+                or (after_marker.st_dev, after_marker.st_ino) != (marker_info.st_dev, marker_info.st_ino)):
+            fail("nested repository boundary changed during observation")
+        return {"kind": "nested_repository", "mode": mode,
+                "dev": info.st_dev, "ino": info.st_ino, "git_marker": marker_entry}
     fail("unsupported working path type or directory/file collision")
 
 
 def preservation_snapshot(repository: Path, approved_paths: list[str]) -> dict[str, Any]:
     entries = index_entries(repository)
     names = set(entries) | set(tree_entries(repository, "HEAD")) | set(approved_paths)
-    names.update(x.decode() for x in git_bytes(repository, ["ls-files", "--others", "--exclude-standard", "-z"]).split(b"\0") if x)
+    nested = set()
+    for raw in git_bytes(repository, ["ls-files", "--others", "--exclude-standard", "-z"]).split(b"\0"):
+        if not raw:
+            continue
+        name = raw.decode()
+        if name.endswith("/"):
+            nested.add(safe_path(name[:-1]))
+        else:
+            names.add(safe_path(name))
+    for boundary in nested:
+        if any(name == boundary or name.startswith(boundary + "/") for name in names):
+            fail("nested repository boundary overlaps an approved or tracked path")
+        if any(other != boundary and (other.startswith(boundary + "/") or boundary.startswith(other + "/"))
+               for other in nested):
+            fail("nested repository boundaries overlap")
     return {"schema_version": 1, "worktree": str(repository), "index_entries": entries,
-            "working": {name: working_entry(repository, name) for name in sorted(names)}}
+            "working": {name: working_entry(repository, name, nested_repository=name in nested)
+                        for name in sorted(names | nested)}}
 
 
 def read_reference(ref: dict[str, str], repository: Path) -> Any:

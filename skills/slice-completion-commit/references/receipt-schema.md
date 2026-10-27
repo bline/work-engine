@@ -49,8 +49,16 @@ Requests may add exactly one closed `preservation` block:
 - `manifest`: external `{path,sha256}` for a schema1 preservation snapshot
   containing worktree, ordinary index_entries (mode/OID/tag), and nonignored
   tracked/untracked working paths (kind/mode/byte digest or symlink target,
-  including missing paths). The read-only `preservation_snapshot` helper
-  prepares this projection, not approval;
+  including missing paths). An untracked nested Git repository, which Git
+  reports as a slash-terminated directory, appears once under its normalized
+  root path with `kind: nested_repository`, root mode/device/inode, and a
+  `git_marker` entry for its `.git` file or directory. That marker binds
+  mode/device/inode and, for a file, its byte digest. This is an opaque
+  boundary claim: nested working files, index and Git metadata contents are
+  outside this snapshot, are never imported, and are not claimed unchanged.
+  A nested boundary overlapping an approved or tracked path refuses. The
+  read-only `preservation_snapshot` helper prepares this projection, not
+  approval;
 - `attempt_directory`: canonical external directory that does not yet exist.
 
 Authority references cannot live in the attempt directory. This block cannot
@@ -59,7 +67,10 @@ Approved-path partial staging conflicts refuse; unrelated partial staging
 survives. Unmerged/split/sparse/extended-flag indexes, approved symlink/submodule
 paths, directory/file collisions and content normalization refuse rather than
 silently change meaning. Ignored payload is neither imported nor measured;
-the restricted write footprint does not touch it.
+the restricted write footprint does not touch it. Nested Git boundaries are
+also excluded from that write footprint. A missing, symlinked, or otherwise
+unsupported `.git` marker refuses instead of turning an ordinary directory
+into an opaque preservation claim.
 
 Preservation receipts use schema2: all receipt1 fields plus `request_binding`
 and `evidence`. Every state binds the whole validated request as

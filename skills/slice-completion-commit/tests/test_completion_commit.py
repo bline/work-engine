@@ -618,7 +618,97 @@ def preservation_terminal_inputs():
     return semantic, ASSEMBLER_TESTS.ingress(), preflight, handoff
 
 
+def nested_repository_fixture(directory, repository, request):
+    embedded = repository / ".claude/worktrees/embedded"
+    embedded.mkdir(parents=True)
+    run(embedded, "init", "-q", "-b", "main")
+    run(embedded, "config", "user.name", "Nested User")
+    run(embedded, "config", "user.email", "nested@example.com")
+    (embedded / "owned.txt").write_text("embedded content\n")
+    run(embedded, "add", "owned.txt")
+    run(embedded, "commit", "-qm", "embedded baseline")
+    (embedded / "untracked.txt").write_text("embedded user state\n")
+
+    source = Path(directory) / "linked-source"
+    source.mkdir()
+    run(source, "init", "-q", "-b", "main")
+    run(source, "config", "user.name", "Nested User")
+    run(source, "config", "user.email", "nested@example.com")
+    (source / "owned.txt").write_text("linked content\n")
+    run(source, "add", "owned.txt")
+    run(source, "commit", "-qm", "linked baseline")
+    linked = repository / ".claude/worktrees/linked"
+    run(source, "worktree", "add", "-q", "--detach", str(linked))
+    (linked / "untracked.txt").write_text("linked user state\n")
+
+    ref = request["preservation"]["manifest"]
+    path = Path(ref["path"])
+    path.write_bytes(ADAPTER.request_canonical(ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])))
+    ref["sha256"] = ADAPTER.sha256(path.read_bytes())
+    return embedded, linked
+
+
 class PreservationCommitTest(unittest.TestCase):
+    def test_unrelated_nested_repositories_survive_publication_and_readback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted = preservation_fixture(directory)
+            embedded, linked = nested_repository_fixture(directory, repository, request)
+            before = ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])
+            roots = {".claude/worktrees/embedded": embedded, ".claude/worktrees/linked": linked}
+            self.assertEqual({"directory", "file"},
+                             {before["working"][name]["git_marker"]["kind"] for name in roots})
+            self.assertTrue(all(before["working"][name]["kind"] == "nested_repository" for name in roots))
+            nested_state = {name: (run(path, "rev-parse", "HEAD"), run(path, "status", "--porcelain"),
+                                   ADAPTER.index_path(path).read_bytes()) for name, path in roots.items()}
+            original_index = ADAPTER.index_path(repository).read_bytes()
+            result = ADAPTER.decide(request, "create")
+            self.assertEqual("created", result["state"], result)
+            self.assertEqual("verified", result["evidence"]["preservation"])
+            self.assertEqual(before["working"], ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])["working"])
+            self.assertNotEqual(original_index, ADAPTER.index_path(repository).read_bytes())
+            self.assertEqual(result, ADAPTER.validate_receipt(result))
+            self.assertEqual(result, ADAPTER.reconcile_created(request))
+            self.assertEqual(before["working"], ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])["working"])
+            for name, path in roots.items():
+                self.assertEqual(nested_state[name], (run(path, "rev-parse", "HEAD"),
+                                                      run(path, "status", "--porcelain"),
+                                                      ADAPTER.index_path(path).read_bytes()))
+            tree = run(repository, "ls-tree", "-r", "--name-only", "HEAD")
+            self.assertFalse(any(path.startswith(".claude/worktrees/") for path in tree.splitlines()))
+
+    def test_nested_repository_overlap_and_boundary_mutation_refuse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted = preservation_fixture(directory)
+            _embedded, linked = nested_repository_fixture(directory, repository, request)
+            with self.assertRaisesRegex(ValueError, "overlaps"):
+                ADAPTER.preservation_snapshot(repository, [".claude/worktrees/linked/owned.txt"])
+            original_index = ADAPTER.index_path(repository).read_bytes()
+            marker = linked / ".git"
+            def replace_marker(phase):
+                if phase == "prepared":
+                    replacement = linked / ".git-replacement"
+                    replacement.write_bytes(marker.read_bytes())
+                    replacement.replace(marker)
+            with mock.patch.object(ADAPTER, "phase_boundary", side_effect=replace_marker):
+                result = ADAPTER.decide(request, "create")
+            self.assertEqual("refused", result["state"], result)
+            self.assertIn("source/index/configuration changed", result["reason"])
+            self.assertEqual(request["expected_head_oid"], run(repository, "rev-parse", "HEAD"))
+            self.assertEqual(original_index, ADAPTER.index_path(repository).read_bytes())
+
+    def test_nested_repository_marker_must_be_supported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository, _head = CompletionCommitTest().repository(directory)
+            nested = repository / "nested"
+            nested.mkdir()
+            with self.assertRaisesRegex(ValueError, "unsupported working path type"):
+                ADAPTER.working_entry(repository, "nested")
+            with self.assertRaisesRegex(ValueError, "no .git marker"):
+                ADAPTER.working_entry(repository, "nested", nested_repository=True)
+            (nested / ".git").symlink_to(repository / ".git", target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "regular file or directory"):
+                ADAPTER.working_entry(repository, "nested", nested_repository=True)
+
     def test_update_ref_effect_before_unsuccessful_completion_is_created(self):
         for outcome in ("nonzero", "os_error", "value_error"):
             with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
