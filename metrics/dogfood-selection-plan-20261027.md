@@ -67,8 +67,8 @@ written after the assignment is kept, but marked
 ## Records
 
 There are three records, joined by `task_revision`. Its ID is the task ID plus
-16 hex characters hashed from the frozen packet documents; `taskprofile.py`
-computes it. Each record is written once. A correction is a new file that names
+16 hex characters hashed from the schema, task ID, stage, target role, frozen
+packet documents and snapshot identity; `taskprofile` computes it (v0.2.0). Each record is written once. A correction is a new file that names
 the one it supersedes.
 
 Layout under the run directory:
@@ -80,20 +80,34 @@ task-profiles/<task_revision>/
   validation.json            validate --production result; failures are recorded, never blocking
   assignment.json            the assignment observation (retained continuations add assignment-02.json, ...)
   overhead.json              instrumentation cost and the tool pin
-  SHA256SUMS
+  attribution-<assignment>.json   models actually used, from the usage ledger
+  SHA256SUMS                 append-only index
 ```
 
 `metrics/scripts/task_profile_record.py` writes these records, never overwriting
 them:
 - `profile` writes the sidecar, profile, validation and overhead records.
-- `assign` writes the assignment observation, and checks that the dispatched
-  packet contains none of the profile's identifiers.
-- `verify` re-checks the hashes and recomputes each profile.
+- `assign` writes the assignment observation. It requires the child's session or
+  thread ID, and checks that the dispatched packet contains none of the profile's
+  identifiers.
+- `attribute` resolves the models and efforts the child sessions actually ran,
+  from the usage ledger, and flags any substitution.
+- `verify` checks that the hash list exists, that every file is listed and
+  matches, and that each record's `prior_files` hashes still match. It then
+  recomputes each profile with the tool for that record's own pin. Exit 0 means
+  fully verified, 2 means hashes pass but no recompute was done, 1 means a
+  problem.
 
-A dry run on the S10 packet in a scratch run directory (2026-10-27) produced a
-valid production profile, passed the check on a clean dispatch packet, caught a
-packet with the revision ID inserted, refused a second write, and recomputed the
-profile byte for byte.
+Integrity covers accidental change, not an adversary. The hash list is
+append-only, and every record after the first also stores the hashes of the
+files written before it. The data repository's git history is the
+tamper-evident copy.
+
+Tests: `metrics/scripts/tests/test_task_profile_record.py`, 11 cases. They cover
+the full cycle, model substitution, an unknown child, and builder and reviewer
+revisions. They also cover each integrity failure that v0.1.0 missed: a missing
+hash list, an unlisted file, an edit hidden by a rewritten hash list, a skipped
+recompute, an invalid revision ID, and a leak into the dispatch packet.
 
 - **Profile** (`profile-stageB.json`): the task-profile v0 output, which
   carries identity, input snapshot, declarations, computed features, coverage
@@ -110,7 +124,8 @@ profile byte for byte.
   | `profile_frozen_before_assignment` | true, or false with a reason |
   | `role` | builder or reviewer |
   | `requested` | model, effort, harness |
-  | `observed` | the runtime's reported identity, or `unknown` |
+  | `reported` | model and effort as the coordinator reports them, marked `source: coordinator` |
+  | `child_sessions` | the child's Claude session or Codex thread IDs; attribution uses these |
   | `assigned_at` | timestamp |
   | `run` | run registry name |
   | `retained_continuation` | true when it continues an existing assignment on the same revision |
@@ -171,8 +186,10 @@ outcomes: make collection permanent, revise the schema, or stop.
 
 1. The extractor's canonical home is
    [agent-routing-lab](https://github.com/bline/agent-routing-lab) (Apache-2.0),
-   as `taskprofile`. Work Engine pins tag `v0.1.0`, commit
-   `54f9b35b5e2af9b80873205ff61e7636f0017d49`, and does not keep its own copy.
+   as `taskprofile`. Work Engine pins tag `v0.2.0`, commit
+   `534cd79d6c3e489bacfce2ad684187f7d3e8af85`, and does not keep its own copy.
+   v0.1.0 (`54f9b35b`) is superseded: its task-revision ID ignored role and
+   snapshot.
    - The pin lives in `task_profile_record.py`.
    - Install the release into
      `~/.local/state/work-engine/tools/agent-routing-lab/<commit>/` with
@@ -184,7 +201,7 @@ outcomes: make collection permanent, revise the schema, or stop.
    - Tags are immutable. A change to a feature definition or extractor behaviour is
      a new version and a new pin.
    - The prototype with Work Engine fixtures stays in `~/cbm-work/task-profile-v0`.
-2. Done in agent-routing-lab v0.1.0: `validate --production` requires the
+2. Done in agent-routing-lab v0.1.0 and v0.2.0: `validate --production` requires the
    provenance fields above, and `taskprofile manifest` writes a hashed manifest
    for dirty-tree baselines.
 3. Records go to the private
@@ -217,7 +234,9 @@ paragraph that begins "Before dispatch, compare the packet":
 >    `python3 -I metrics/scripts/task_profile_record.py profile --run-dir <run> --sidecar <file> --repo <repo> --declare-started-at <time>`.
 >    A validation failure is recorded and does not block dispatch.
 > 4. After dispatch, run `task_profile_record.py assign` with the requested and
->    observed configuration and the dispatched packet.
+>    reported configuration, the dispatched packet and the child's session or
+>    thread ID. After the child finishes, run `task_profile_record.py attribute`
+>    against the usage ledger.
 >
 > Never put the sidecar or profile in a child's packet or prompt.
 
