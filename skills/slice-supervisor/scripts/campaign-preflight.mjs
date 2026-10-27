@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -126,7 +128,9 @@ export async function preflightCampaign(campaignPath, { cwd = process.cwd() } = 
   return { campaignPath: resolvedCampaignPath, engineConfig, campaignSource, resolvedCapabilities: { chrome_vision: resolved.config } };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+// Compare real paths: Node resolves symlinks for import.meta.url but not argv[1], so a
+// lexical comparison silently skips main when run through a skill-directory symlink.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const campaignPath = process.argv[2];
   if (!campaignPath) throw new Error("Usage: campaign-preflight <campaign.yaml>");
   process.stdout.write(`${JSON.stringify(await preflightCampaign(campaignPath))}\n`);

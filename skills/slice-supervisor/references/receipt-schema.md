@@ -79,10 +79,11 @@ not persist expanded `resolvedCapabilities` or reinterpret arbitrary
 `tool_runtime` entries. The assembler fails closed when authoritative ingress
 is already present or campaign-source identity is malformed, passes its result
 through the existing audit-receipt validator, does not append the receipt, and
-does not change the harvester's identity rules. Use:
+does not change the harvester's identity rules. Use (`<skill-dir>` is the
+slice-supervisor skill's directory):
 
 ```bash
-python3 skills/slice-supervisor/scripts/assemble_receipt.py \
+python3 <skill-dir>/scripts/assemble_receipt.py \
   --semantic-receipt-json '<schema-v5-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
   --campaign-preflight-json '<successful-named-campaign-preflight-result>'
@@ -93,7 +94,7 @@ one process so the authoritative projection cannot be skipped and no mutable
 intermediate receipt is introduced:
 
 ```bash
-python3 skills/slice-supervisor/scripts/finalize_receipt.py \
+python3 <skill-dir>/scripts/finalize_receipt.py \
   --path '<configured-metrics-path>' \
   --semantic-receipt-json '<schema-v5-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
@@ -140,7 +141,7 @@ reads permit its absence.
 Inter-slice recovery uses:
 
 ```bash
-python3 skills/slice-supervisor/scripts/resume_campaign.py \
+python3 <skill-dir>/scripts/resume_campaign.py \
   --path '<configured-metrics-path>' \
   --campaign-preflight-json '<fresh-successful-preflight-result>' \
   --run-id '<stable-run-id>'

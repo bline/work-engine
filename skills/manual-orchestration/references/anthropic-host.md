@@ -23,8 +23,10 @@ the observed exact identifier from `message.model`.
 
 ## Context check
 
+`<skill-dir>` is the manual-orchestration skill's directory.
+
 ```
-python3 -I skills/manual-orchestration/scripts/child_context.py \
+python3 -I <skill-dir>/scripts/child_context.py \
   claude --transcript <subagents dir>/agent-<id>.jsonl \
   [--next-task-tokens <estimate>] --out <assignment dir>/context-check-N.json
 ```

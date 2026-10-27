@@ -164,13 +164,13 @@ enumeration or unvalidated claim files for the bounded projection.
 When active-slice recovery is configured and this builder launches the
 reviewer, assign the provider's resumable runtime reference before the initial
 review call and publish it through the active-slice mechanism as
-`actor_binding.runtime_session_id` with `skills/slice-supervisor/scripts/manage_active_slice.py
-bind-actor`, passing the exact current durable revision as `--expected-revision`
+`actor_binding.runtime_session_id` with `<skill-dir>/../slice-supervisor/scripts/manage_active_slice.py
+bind-actor` (`<skill-dir>` is this skill's directory), passing the exact current durable revision as `--expected-revision`
 and a stable unique `--event-id`. This CAS route prevents a stale writer or a
 conflicting replay from silently binding the wrong reviewer session; omitting
 it can make later recovery resume a lost or different reviewer continuation.
 After builder or supervisor context
-replacement, recover the binding with `skills/slice-supervisor/scripts/resume_active_slice.py` before issuing
+replacement, recover the binding with `<skill-dir>/../slice-supervisor/scripts/resume_active_slice.py` before issuing
 the next reviewer call; resume that exact session rather than reconstructing
 the review. If the binding cannot be recovered or the provider session is no
 longer available, preserve the pending obligation and applicable findings,
@@ -230,7 +230,7 @@ uncertain, preserve or publish that uncertainty and require recovery from the
 durable projection instead of inferring success from runtime state.
 
 Use the stable identity supplied by the supervisor and recover its current
-`durable_revision` with `skills/slice-supervisor/scripts/resume_active_slice.py`
+`durable_revision` with `<skill-dir>/../slice-supervisor/scripts/resume_active_slice.py`
 immediately before publication. Then invoke the CAS boundary directly:
 
 Active-slice recovery and publication are owned only by the slice-supervisor
@@ -239,7 +239,7 @@ scripts. Do not look for copies under slice-builder or another skill. Pass
 and `plan_version`; camelCase keys and inferred alternate shapes are invalid.
 
 ```bash
-python3 skills/slice-supervisor/scripts/manage_active_slice.py \
+python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py \
   --repository <repository> publish-phase \
   --identity-json '<run/slice/attempt/plan identity>' \
   --expected-revision '<recovered durable_revision>' \

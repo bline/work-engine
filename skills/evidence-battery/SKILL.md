@@ -15,12 +15,12 @@ declares exactly one kind — `sha256` over a path list, `aggregate` for a singl
 digest over a path set, `git` for a read-only subcommand, `json` for a document
 with selected keys, or `grep` for a bounded regex sweep. The whole battery runs
 in one process and returns one object: each check's result, the ids that failed,
-and a `battery_sha256` over all of it.
+and a `battery_sha256` over all of it. `<skill-dir>` is this skill's directory.
 
 ```
-python3 -I skills/evidence-battery/scripts/evidence_battery.py \
+python3 -I <skill-dir>/scripts/evidence_battery.py \
   --plan battery.json --save first.json --quiet
-python3 -I skills/evidence-battery/scripts/evidence_battery.py \
+python3 -I <skill-dir>/scripts/evidence_battery.py \
   --plan battery.json --compare first.json
 ```
 

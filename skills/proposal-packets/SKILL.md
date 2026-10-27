@@ -17,10 +17,11 @@ semantic disposition; this capability only records and checks it. It does not
 own proposal meaning, portfolio decisions, roadmap mutation, implementation
 authorization, interactive formation, or runtime campaign state.
 
-Validate every proposal packet in this repository with:
+From the repository root, where `<skill-dir>` is this skill's directory, validate
+every proposal packet with:
 
 ```bash
-python3 skills/proposal-packets/scripts/proposal_packets.py validate --repository . proposals
+python3 <skill-dir>/scripts/proposal_packets.py validate --repository . proposals
 ```
 
 Discovery is bounded by the packet root (`proposals/`, the default with
@@ -45,7 +46,7 @@ delegated decision owner; never promote validation success into acceptance.
 Apply an authority-authored decision record with:
 
 ```bash
-python3 skills/proposal-packets/scripts/proposal_packets.py transition \
+python3 <skill-dir>/scripts/proposal_packets.py transition \
   <packet.json> <decision-input.json> --repository <packet-root>
 ```
 

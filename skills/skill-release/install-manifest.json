@@ -1,0 +1,47 @@
+{
+  "schema": "work-engine.skill-install-manifest.v1",
+  "targets": {
+    "claude": [
+      "claim-evidence",
+      "code-change-profile",
+      "evidence-battery",
+      "manual-orchestration",
+      "repo-search",
+      "slice-builder",
+      "slice-checkpoint",
+      "slice-completion-commit",
+      "slice-supervisor",
+      "strategic-planner",
+      "wind-walker"
+    ],
+    "codex": [
+      "agent-environment-graph",
+      "agent-instruction-review",
+      "chrome-vision",
+      "claim-evidence",
+      "claude-builder",
+      "claude-recon-implementation",
+      "code-change-profile",
+      "codex-adversarial-review",
+      "comparative-repository-analysis",
+      "durable-state",
+      "idea-intake",
+      "independent-review-state",
+      "linguistic-register-pilot",
+      "manual-orchestration",
+      "proposal-former",
+      "proposal-packets",
+      "repo-search",
+      "review-bench",
+      "role-scheduler",
+      "slice-builder",
+      "slice-checkpoint",
+      "slice-completion-commit",
+      "slice-supervisor",
+      "strategic-planner",
+      "ui-design-principles",
+      "wind-walker",
+      "work-engine-mcp"
+    ]
+  }
+}

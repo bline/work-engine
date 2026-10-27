@@ -164,3 +164,13 @@ builder:
     await assert.rejects(run(process.execPath, [preflightCli, `${name}.yaml`], { cwd: root }));
   }
 });
+
+test("campaign preflight runs when invoked through a symlinked skill directory", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "preflight-symlink-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.symlink(path.join(repository, "skills/slice-supervisor"), path.join(root, "slice-supervisor"));
+  await fs.writeFile(path.join(root, "campaign.yaml"), "version: 2\nobjective: test\n");
+  const linked = path.join(root, "slice-supervisor/scripts/campaign-preflight.mjs");
+  const output = await run(process.execPath, [linked, "campaign.yaml"], { cwd: root });
+  assert.equal(JSON.parse(output).engineConfig.objective, "test");
+});

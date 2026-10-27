@@ -63,10 +63,11 @@ pilot.
 
 ## Pre-dispatch check (parent)
 
-Before sending a retained child a substantial new task:
+Before sending a retained child a substantial new task (`<skill-dir>` is the
+manual-orchestration skill's directory):
 
 ```
-python3 -I skills/manual-orchestration/scripts/child_context.py \
+python3 -I <skill-dir>/scripts/child_context.py \
   --binary <pinned path> --sha256 <digest> \
   check --session <child id> --rollout <child rollout> \
   [--next-task-tokens <estimate>] --out <assignment dir>/context-check-N.json

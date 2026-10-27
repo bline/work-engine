@@ -21,10 +21,10 @@ observed. A requested OpenRouter model is not evidence of its upstream route.
 ## Launcher
 
 Use the deterministic launcher rather than reconstructing environment changes
-at each call:
+at each call (`<skill-dir>` is the claude-recon-implementation skill's directory):
 
 ```bash
-python3 skills/claude-recon-implementation/scripts/claude_transport.py \
+python3 <skill-dir>/scripts/claude_transport.py \
   --transport auto \
   --continuity disposable \
   --allow-paid-failover \
@@ -85,7 +85,7 @@ Produce that artifact with the read-only collector:
 ```bash
 OPENROUTER_MANAGEMENT_KEY='<management credential>' \
 OPENROUTER_API_KEY_HASH='<non-secret inference-key hash>' \
-python3 skills/claude-recon-implementation/scripts/openrouter_routing_attestation.py \
+python3 <skill-dir>/scripts/openrouter_routing_attestation.py \
   --guardrail-id '<guardrail UUID>' \
   --model 'anthropic/claude-sonnet-5-20260630' \
   --output '<routing-attestation.json>'
@@ -146,7 +146,7 @@ buffering are unchanged. The Claude builder skill enables it on every turn to
 preserve the caller's model selection.
 
 ```bash
-python3 skills/claude-recon-implementation/scripts/claude_transport.py \
+python3 <skill-dir>/scripts/claude_transport.py \
   --transport anthropic --continuity retained --exact-model-guard \
   --receipt '<transport-receipt.json>' \
   --stdin-file '<prompt.txt>' --stdin-sha256 '<prompt-file-sha256>' \

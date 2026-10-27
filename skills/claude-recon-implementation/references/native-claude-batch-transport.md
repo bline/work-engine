@@ -61,11 +61,13 @@ First produce a fresh routing attestation as described in
 [native-claude-transport.md](native-claude-transport.md). Then provide a random,
 per-run loopback token and start the proxy:
 
+`<skill-dir>` is the claude-recon-implementation skill's directory.
+
 ```bash
 CLAUDE_BATCH_PROXY_TOKEN='<random local bearer token>' \
 OPENROUTER_API_KEY='<inference credential>' \
 OPENROUTER_API_KEY_HASH='<non-secret key hash>' \
-python3 skills/claude-recon-implementation/scripts/claude_batch_loopback_proxy.py \
+python3 <skill-dir>/scripts/claude_batch_loopback_proxy.py \
   --port 0 \
   --batch-model 'anthropic/claude-sonnet-5-20260630' \
   --guardrail-model 'anthropic/claude-sonnet-5-20260630' \

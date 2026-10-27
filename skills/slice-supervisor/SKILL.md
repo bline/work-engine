@@ -38,10 +38,11 @@ At every phase boundary, ask whether the current route remains the simplest cred
 
 ## Resolve the campaign contract
 
-For a named campaign file, execute preflight before launching a builder:
+For a named campaign file, execute preflight before launching a builder. Commands
+run from the repository root; `<skill-dir>` is this skill's directory:
 
 ```bash
-node skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>
+node <skill-dir>/scripts/campaign-preflight.mjs <campaign.yaml>
 ```
 
 Consume the returned `engineConfig` as the durable effective configuration and
@@ -165,10 +166,10 @@ When `approval.uninterrupted_after_plan` is true, execution and gate may share o
 Model and provider sessions are runtime bindings, not durable owners of an
 active slice attempt. Before a configured planning or review obligation crosses
 a provider boundary, publish its attempt, phase, and pending obligation with
-`skills/slice-supervisor/scripts/manage_active_slice.py begin`. When that capability is temporarily
-unavailable, preserve the same obligation with `skills/slice-supervisor/scripts/manage_active_slice.py
+`<skill-dir>/scripts/manage_active_slice.py begin`. When that capability is temporarily
+unavailable, preserve the same obligation with `<skill-dir>/scripts/manage_active_slice.py
 wait` and the expected durable revision. Reconstruct that same attempt after
-context or session replacement with `skills/slice-supervisor/scripts/resume_active_slice.py`; continue
+context or session replacement with `<skill-dir>/scripts/resume_active_slice.py`; continue
 only the recovered pending phase.
 
 When recovered evidence establishes that an admitted attempt cannot continue
@@ -188,7 +189,7 @@ and reconcile their relationship before continuing.
 
 When the pending obligation is conclusively discharged, or the attempt reaches
 an authoritative terminal outcome already decided by its owner, record
-lifecycle closure with `skills/slice-supervisor/scripts/manage_active_slice.py retire`. Terminal
+lifecycle closure with `<skill-dir>/scripts/manage_active_slice.py retire`. Terminal
 outcomes include, without being limited to, accepted, stopped, and failed. The
 CLI records decisions already made by the model-driven supervisor; it does not
 decide discharge, acceptance, stopping, failure, provider choice, retry,
@@ -206,13 +207,13 @@ semantics remain unchanged.
 Implementation and gate completion can cross a builder return or mailbox
 boundary before the enclosing slice is terminal. Before that transient channel
 can become the only copy, require the builder-side workflow to publish the
-compact phase consequence with `skills/slice-supervisor/scripts/manage_active_slice.py publish-phase`.
+compact phase consequence with `<skill-dir>/scripts/manage_active_slice.py publish-phase`.
 Bind established consequences to integrity-identified implementation, artifact,
 or gate evidence. If interruption prevents completion from being established,
 publish an explicit uncertain consequence when recovery can do so safely; never
 infer completion from runtime liveness or remembered delivery.
 
-`skills/slice-supervisor/scripts/resume_active_slice.py` returns the supervisor's compact recovery
+`<skill-dir>/scripts/resume_active_slice.py` returns the supervisor's compact recovery
 projection: stable attempt identity, current phase, accepted boundary, pending
 obligation, latest phase consequence, authoritative references, lifecycle
 state, and durable provenance. Its `runtime_binding` is explicitly nonsemantic.
@@ -222,7 +223,7 @@ semantic consequence and its integrity-bound references.
 
 For a review provider that supports resumable sessions, assign the reviewer
 runtime session ID before the initial provider call and publish it in
-`actor_binding.runtime_session_id` through `skills/slice-supervisor/scripts/manage_active_slice.py
+`actor_binding.runtime_session_id` through `<skill-dir>/scripts/manage_active_slice.py
 bind-actor`, with the current durable revision as `--expected-revision` and a
 stable unique `--event-id`. The compare-and-swap and replay identity prevent a
 stale transition from replacing the intended reviewer binding; skipping this
@@ -230,7 +231,7 @@ route can make recovery lose the session or resume the wrong reviewer
 continuation. Require the builder to use that exact
 binding for the fresh-entry review and every ordinary remediation continuation.
 After supervisor-context replacement, recover the binding with
-`skills/slice-supervisor/scripts/resume_active_slice.py` and resume the provider session instead of recreating
+`<skill-dir>/scripts/resume_active_slice.py` and resume the provider session instead of recreating
 the review research. The reviewer remains a runtime binding, not the durable
 owner: if it is unavailable or model judgment requires a fresh perspective,
 record replacement provenance and the reset reason while preserving the same
@@ -310,7 +311,7 @@ telemetry provenance. Finalize the named-campaign receipt through the composed
 production command so authoritative assembly cannot be omitted:
 
 ```bash
-python3 skills/slice-supervisor/scripts/finalize_receipt.py \
+python3 <skill-dir>/scripts/finalize_receipt.py \
   --path <configured-metrics-path> \
   --semantic-receipt-json '<schema-v5-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
@@ -337,7 +338,7 @@ non-null, append exactly one already-authoritative terminal audit receipt per
 slice using:
 
 ```bash
-python3 skills/slice-supervisor/scripts/append_metrics.py \
+python3 <skill-dir>/scripts/append_metrics.py \
   --path <configured-metrics-path> --record-json '<audit-receipt>'
 ```
 
@@ -383,7 +384,7 @@ on a roadmap known to be unreliable.
 After an interruption between terminal slices, recover one named run with:
 
 ```bash
-python3 skills/slice-supervisor/scripts/resume_campaign.py \
+python3 <skill-dir>/scripts/resume_campaign.py \
   --path <configured-metrics-path> \
   --campaign-preflight-json '<fresh-successful-preflight-result>' \
   --run-id '<stable-run-id>'

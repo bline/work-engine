@@ -37,10 +37,11 @@ The semantic payload must use the review-bench v2 classification fields:
 `verdict`, `findings`, `verified_claims`, and `observations`. This preserves
 defects separately from acceptance evidence and non-defect notes.
 
-Initialize the ten-pair campaign once:
+Initialize the ten-pair campaign once (`<skill-dir>` is the claude-recon-implementation
+skill's directory):
 
 ```bash
-python3 skills/claude-recon-implementation/scripts/paired_review_evidence.py init \
+python3 <skill-dir>/scripts/paired_review_evidence.py init \
   --campaign-root '<campaign-root>' \
   --campaign-id '<campaign-id>' \
   --target-pairs 10 \
@@ -50,7 +51,7 @@ python3 skills/claude-recon-implementation/scripts/paired_review_evidence.py ini
 Run each review through the paired front controller:
 
 ```bash
-python3 skills/claude-recon-implementation/scripts/claude_paired_review.py run \
+python3 <skill-dir>/scripts/claude_paired_review.py run \
   --campaign-root '<campaign-root>' \
   --pair-id 'pair-01' \
   --ordinal 1 \
@@ -185,7 +186,7 @@ directory before producing `pair-receipt.json`.
 After all ten pairs, audit completeness before adjudication:
 
 ```bash
-python3 skills/claude-recon-implementation/scripts/paired_review_evidence.py audit \
+python3 <skill-dir>/scripts/paired_review_evidence.py audit \
   --campaign-root '<campaign-root>'
 ```
 
@@ -198,7 +199,7 @@ similarity and do not silently discard failed or missing shadows.
 After the audit succeeds, produce the descriptive comparison:
 
 ```bash
-python3 skills/claude-recon-implementation/scripts/paired_review_evidence.py compare \
+python3 <skill-dir>/scripts/paired_review_evidence.py compare \
   --campaign-root '<campaign-root>'
 ```
 

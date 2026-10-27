@@ -17,10 +17,11 @@ the immutable base/result trees and patch digest before deriving observations.
 It never reconstructs task scope from the current branch, index, or worktree.
 
 The versioned contract is documented in
-[`references/profile-contract.md`](references/profile-contract.md). Run:
+[`references/profile-contract.md`](references/profile-contract.md). Run from the repository root, where `<skill-dir>` is
+this skill's directory:
 
 ```bash
-python3 skills/code-change-profile/scripts/code_change_profile.py \
+python3 <skill-dir>/scripts/code_change_profile.py \
   profile --receipt <full-lifecycle-receipt.json>
 ```
 

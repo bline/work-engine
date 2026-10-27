@@ -9,21 +9,21 @@ Use the repository's invariant catalog and role-environment projection as the
 canonical inputs. Rendered graphs and semantic-judgment artifacts are views and
 run evidence; neither is a competing source of truth.
 
-Run all commands from the repository root. The deterministic boundary is:
+Run all commands from the repository root; `<skill-dir>` is this skill's directory. The deterministic boundary is:
 
 ```bash
-python3 skills/agent-environment-graph/scripts/agent_environment_graph.py validate \
+python3 <skill-dir>/scripts/agent_environment_graph.py validate \
   --invariants docs/workflow-invariants.md \
   --environments docs/agent-environments.yaml
-python3 skills/agent-environment-graph/scripts/agent_environment_graph.py analyze \
+python3 <skill-dir>/scripts/agent_environment_graph.py analyze \
   --invariants docs/workflow-invariants.md \
   --environments docs/agent-environments.yaml
-python3 skills/agent-environment-graph/scripts/agent_environment_graph.py render \
+python3 <skill-dir>/scripts/agent_environment_graph.py render \
   --invariants docs/workflow-invariants.md \
   --environments docs/agent-environments.yaml \
   --output docs/agent-environment-graphs.md \
   --role-output-dir docs/agent-environment-views
-python3 skills/agent-environment-graph/scripts/agent_environment_graph.py check \
+python3 <skill-dir>/scripts/agent_environment_graph.py check \
   --invariants docs/workflow-invariants.md \
   --environments docs/agent-environments.yaml \
   --rendered docs/agent-environment-graphs.md \
