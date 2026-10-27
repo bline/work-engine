@@ -56,7 +56,7 @@ stop_on:
 
 capabilities:
   chrome_vision:
-    config: ../config/chrome-vision.yaml
+    config: chrome-vision.yaml
 ```
 
 ## Field contract
@@ -144,7 +144,7 @@ that value authoritatively; the model does not transcribe it.
   "approval": {"plan": "procedural_when_safe", "uninterrupted_after_plan": false},
   "notifications": {"intervention": true, "completion": false},
   "stop_on": ["objective_complete", "human_judgment", "unresolved_architecture", "quota_exhaustion", "validation_nonconvergence"],
-  "capabilities": {"chrome_vision": {"source": "file", "authoredReference": "../config/chrome-vision.yaml", "resolvedPath": "/repo/work-engine/config/chrome-vision.yaml", "pathBase": "/repo/work-engine/config", "sha256": "<lowercase sha256>", "schemaVersion": 1}},
+  "capabilities": {"chrome_vision": {"source": "file", "authoredReference": "chrome-vision.yaml", "resolvedPath": "/repo/work-engine/campaigns/chrome-vision.yaml", "pathBase": "/repo/work-engine/campaigns", "sha256": "<lowercase sha256>", "schemaVersion": 1}},
   "explicit_fields": ["objective", "work_source"],
   "defaulted_fields": ["builder", "validation", "metrics", "limits", "approval", "notifications", "stop_on"],
   "amendments": []
