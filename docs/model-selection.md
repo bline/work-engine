@@ -41,7 +41,7 @@ always helps.
 | Successor after a Claude builder refusal | the default builder above | as above | The refusal is recorded; the successor gets a fresh packet. |
 | Architecture, ownership contracts, and planning with unresolved design questions | `gpt-6-astra` | `xhigh` | Spend reasoning where mistakes propagate. On the Claude host: `claude-opus-5-5` at `high`. |
 | Supervisor / coordinator | mixed today: `gpt-6-astra` (mostly `high`) and `gpt-6-sol` (`medium`) | as recorded | By call count in the frozen usage ledger (roles inferred from thread names): Sol medium 2,361, Astra high 1,403, Astra medium 316, Astra xhigh 260. **Changes at the next Codex reset (2026-11-02):** `gpt-6.1-sol` at `xhigh`, after supervisor decision replay (O2) and as a monitored pilot with rollback triggers ([dogfood plan](../metrics/dogfood-selection-plan-20261027.md), [experiment plan](../metrics/experiment-plan-20261026.md) §6 E5). On the Claude host: `claude-opus-5-5`. |
-| Adversarial review, where an OpenAI reviewer is permitted | separate `gpt-6-astra` | `xhigh` | Challenge the composed result from a separately established context. Partitioned Sol review is planned as experiment O1. |
+| Adversarial review, where an OpenAI reviewer is permitted | separate `gpt-6-astra` | `high`; `xhigh` when the subject is architecture, an ownership contract, or planning with unresolved design questions | Challenge the composed result from a separately established context. No measured review comparison of `high` and `xhigh` exists; on supervisor calls `xhigh` used about 14% more weighted tokens per call ([experiment plan §1](../metrics/experiment-plan-20261026.md)). Partitioned Sol review is planned as experiment O1. |
 | Tier-1 reviewer, verifier or assessor on the Claude host | `claude-opus-5-5` | `high` | No matched Sonnet review comparison yet. |
 | Tier-2 reviewer on the Claude host | `claude-fable-5-1`, fresh context | default | **Scarce.** One contract review cost 2% of the weekly Fable meter (n = 1), and Fable also draws the main Claude meter at Fable prices. Use it only for a shared contract, the final acceptance of a workstream, or an unresolved P1 between builder and tier-1 reviewer. Give it a small input (contract, diff, tier-1 findings, with paths), and never a retained follow-up. |
 | Reconnaissance, routine documentation, straightforward edits | the default builder | `medium` or `high` | Match effort to the remaining uncertainty and consequence. |
@@ -184,7 +184,7 @@ None of the 9 slice-supervisor campaign files sets `builder.model` or
 7 of them named `gpt-5.6-sol` at `low` until 2026-10-27, when that model left the
 allowlists; each records the removal as an amendment. The 4 with a Codex
 adversarial reviewer (`agent-instruction-review`, `code-change-characterization-baseline`,
-`raw-idea-intake`, `review-remediation`) now name `gpt-6-astra` at `xhigh` with
+`raw-idea-intake`, `review-remediation`) now name `gpt-6-astra` at `high` with
 the different-model evidence class. Their earlier amendments, which record the
 owner's approval of a Sol low reviewer, are unchanged.
 `campaigns/comparative-repository-analysis.yaml` is a comparative-analysis
@@ -199,3 +199,4 @@ configuration with no builder.
 | 2026-10-27 | `gpt-6.1-sol` at `medium` for hazard-class builder work until Terra is measured there | recommendation; owner may change |
 | 2026-10-27 | Campaign builder defaults align to this guide | owner |
 | 2026-10-27 | Supervisor moves to `gpt-6.1-sol` at `xhigh` at the next Codex reset, after O2 and as a monitored pilot | owner |
+| 2026-10-27 | Adversarial review: `gpt-6-astra` at `high`, `xhigh` for architecture, ownership-contract or open-design subjects | owner |

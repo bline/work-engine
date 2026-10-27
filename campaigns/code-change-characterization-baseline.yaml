@@ -18,7 +18,7 @@ builder:
       provider: "codex"
       skill: "codex-adversarial-review"
       model: "gpt-6-astra"
-      reasoning_effort: "xhigh"
+      reasoning_effort: "high"
       evidence_class: "accepted_same_provider_different_model_review"
       isolation: "fresh_process"
 limits:
@@ -67,3 +67,24 @@ amendments:
         isolation: "fresh_process"
     reason: "gpt-5.6-sol is no longer a supported builder or reviewer model, so preflight rejected this campaign. builder.model and builder.reasoning_effort are removed so the campaign builder default applies: gpt-6.1-terra at medium on this date (docs/model-selection.md). The reviewer becomes gpt-6-astra at xhigh, the guide's OpenAI adversarial reviewer; the evidence class becomes different-model because builder and reviewer models now differ."
     human_approval: "\"Align them to the guide\" (2026-10-27, on model choices encoded in skills); \"yeah, let's remove gpt-5.6-sol; please push\" (2026-10-27)"
+  - timestamp: "2026-10-27T16:12:35-06:00"
+    changed_fields:
+      - "builder.context.adversarial_review"
+    prior_values:
+      builder.context.adversarial_review:
+        provider: "codex"
+        skill: "codex-adversarial-review"
+        model: "gpt-6-astra"
+        reasoning_effort: "xhigh"
+        evidence_class: "accepted_same_provider_different_model_review"
+        isolation: "fresh_process"
+    new_values:
+      builder.context.adversarial_review:
+        provider: "codex"
+        skill: "codex-adversarial-review"
+        model: "gpt-6-astra"
+        reasoning_effort: "high"
+        evidence_class: "accepted_same_provider_different_model_review"
+        isolation: "fresh_process"
+    reason: "docs/model-selection.md now sets the OpenAI adversarial reviewer to gpt-6-astra at high, with xhigh only for architecture, ownership-contract or open-design subjects; this campaign's reviewer follows the high default, and reviewing such a subject at xhigh needs its own amendment."
+    human_approval: "\"ok, let's change that at model guidance level\" (2026-10-27)"
