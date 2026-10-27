@@ -187,6 +187,75 @@ class RecorderTests(unittest.TestCase):
                      "--dispatched-packet", leak, "--child-session", "s")
         self.assertFalse(json.loads(r.stdout)["profile_absent_from_dispatch"])
 
+    # ---- second source review (recorder) ----
+    def run_profile(self, sidecar=None, tool_dir=None):
+        return self.cli("profile", "--run-dir", self.run_dir, "--sidecar", sidecar or self.sidecar, "--repo", self.repo,
+                        "--declare-started-at", "2026-01-01T00:00:00+00:00", "--tool-dir", tool_dir or self.tool_dir, check=False)
+
+    def test_missing_tool_is_recorded_not_blocking(self):
+        r = self.run_profile(tool_dir=os.path.join(self.tmp.name, "no-tool"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        out = json.loads(r.stdout)
+        self.assertEqual((out["failure"], out["dispatch"]), ("tool", "may continue"))
+        with open(os.path.join(out["record_dir"], "profile-failed.json")) as fh:
+            self.assertEqual(json.load(fh)["stage"], "tool")
+
+    def test_invalid_sidecar_is_recorded_not_blocking(self):
+        bad = os.path.join(self.tmp.name, "bad.json")
+        write(bad, "{not json")
+        r = self.run_profile(sidecar=bad)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["failure"], "read-sidecar")
+
+    def test_duplicate_profile_exits_3(self):
+        self.profile()
+        r = self.run_profile()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("already profiled", r.stdout)
+
+    def test_verify_with_no_records_exits_3(self):
+        os.makedirs(os.path.join(self.run_dir, "task-profiles"), exist_ok=True)
+        r = self.verify()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("no task-profile records", r.stdout)
+
+    def test_timestamps_and_selection_order(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        with open(os.path.join(d, "overhead.json")) as fh:
+            frozen = json.load(fh)["frozen_at"]
+        self.assertRegex(frozen, r"\.\d{6}\+00:00$", "microsecond timestamps")
+        self.assign(out["task_revision"], "s1", "--selected-at", "2000-01-01T00:00:00+00:00")
+        self.assign(out["task_revision"], "s1", "--selected-at", "2999-01-01T00:00:00+00:00", "--retained")
+        with open(os.path.join(d, "assignment.json")) as fh:
+            first = json.load(fh)
+        with open(os.path.join(d, "assignment-02.json")) as fh:
+            second = json.load(fh)
+        self.assertFalse(first["profile_frozen_before_selection"])
+        self.assertTrue(second["profile_frozen_before_selection"])
+        self.assertTrue(first["profile_frozen_before_assignment_record"])
+
+    def test_attribution_window(self):
+        out = self.profile()
+        self.assign(out["task_revision"], "sess-w")
+        self.ledger_rows([{"provider": "anthropic", "session": "sess-w", "model": "old-model", "effort": "low", "ts": "2026-01-01T00:00:00Z"},
+                          {"provider": "anthropic", "session": "sess-w", "model": "model-b", "effort": "medium", "ts": "2026-01-02T00:00:00Z"}])
+        att = json.loads(self.cli("attribute", "--run-dir", self.run_dir, "--task-revision", out["task_revision"], "--ledger", self.ledger,
+                                  "--since", "2026-01-01T12:00:00+00:00").stdout)
+        self.assertEqual(att["models_seen"], ["model-b"])
+
+    def test_sources_archived_and_checked(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        with open(os.path.join(d, "overhead.json")) as fh:
+            sources = json.load(fh)["sources"]
+        self.assertTrue(sources and all(v["archived"] for v in sources.values()))
+        name = next(iter(sources))
+        write(os.path.join(d, "sources", name), "tampered\n")
+        r = self.verify()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("does not match its hash", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

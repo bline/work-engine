@@ -30,15 +30,24 @@ Usage
   task_profile_record.py assign    --run-dir R --task-revision ID --role builder|reviewer
                                    --requested-model M --requested-effort E --harness H --run NAME
                                    --dispatched-packet PATH --child-session ID [--child-session ID ...]
-                                   [--reported-model M] [--reported-effort E] [--retained]
+                                   [--reported-model M] [--reported-effort E] [--selected-at ISO8601] [--retained]
   task_profile_record.py attribute --run-dir R --task-revision ID --ledger DIR [--assignment NAME]
+                                   [--since ISO8601] [--until ISO8601]
   task_profile_record.py verify    --run-dir R [--repo REPO] [--no-recompute] [--tools-root DIR]
 
 --child-session takes the child's Claude session id or Codex thread id; pass "unknown" only when
-the runtime gave none, and attribution will then be unresolvable. A profiling failure never
-blocks dispatch: `profile` exits 0 after recording the failure. verify exits 0 only when every
-record is fully verified, 2 when hashes pass but a recompute was skipped or unavailable, 1 on
-any problem.
+the runtime gave none, and attribution will then be unresolvable.
+
+Profiling never blocks dispatch. `profile` exits 0 after writing either a profile or a failure
+record (missing tool, unreadable or invalid sidecar, compute error, invalid revision), and 3 when
+the revision already has a profile; in every case the dispatch may continue. `verify` exits 0
+when every record is fully verified, 2 when hashes pass but a recompute was skipped or
+unavailable, 1 on any problem, and 3 when there are no records.
+
+Ordering: `profile_frozen_before_assignment_record` compares the freeze time with when the
+assignment record was written. Pass --selected-at (when the model was actually chosen) to also
+record `profile_frozen_before_selection`. Attribution counts every ledger call of the child
+sessions unless --since/--until bound it; a retained or reused thread needs a window.
 """
 import argparse
 import collections
@@ -51,15 +60,19 @@ import re
 import subprocess
 import sys
 
-PIN = {"repository": "https://github.com/bline/agent-routing-lab", "tag": "v0.2.0",
-       "commit": "534cd79d6c3e489bacfce2ad684187f7d3e8af85"}
+PIN = {"repository": "https://github.com/bline/agent-routing-lab", "tag": "v0.2.1",
+       "commit": "1faaf78af460afee1126731816e0dc10553d9822"}
 TOOLS_ROOT = os.path.expanduser("~/.local/state/work-engine/tools/agent-routing-lab")
 REVISION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}@[0-9a-f]{16}\Z")
 SUMS = "SHA256SUMS"
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="microseconds")
+
+
+def parse_ts(text):
+    return dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
 
 
 def sha256(path):
@@ -137,50 +150,103 @@ def record_dir(run_dir, rev):
     return os.path.join(run_dir, "task-profiles", rev)
 
 
+def write_overhead_and_sums(a, d, validation, unknown, frozen_at, sources=None):
+    try:
+        wall = round((parse_ts(frozen_at) - parse_ts(a.declare_started_at)).total_seconds(), 3)
+    except ValueError:
+        wall = None
+    write_once(os.path.join(d, "overhead.json"), {
+        "declare_started_at": a.declare_started_at, "frozen_at": frozen_at, "declare_wall_seconds": wall,
+        "coordinator_call_ids": a.call_id or [], "tool": {**PIN, "tool_dir": a.tool_dir},
+        "validation_errors": len(validation["errors"]), "unknown_declared_fields": unknown,
+        "sources": sources or {}, "prior_files": prior_files(d)})
+    append_sums(d)
+
+
+def record_failure(a, raw, stage, detail):
+    """An instrumentation failure: recorded, never blocking."""
+    frozen_at = now()
+    task_id = "unknown"
+    try:
+        task_id = re.sub(r"[^A-Za-z0-9._-]", "-", str(json.loads(raw)["identity"]["task_id"]))[:100] or "unknown"
+    except Exception:
+        pass
+    key = hashlib.sha256((raw or b"") + stage.encode() + detail.encode()).hexdigest()[:16]
+    d = os.path.join(a.run_dir, "task-profiles", f"{task_id}@{key}")
+    if os.path.exists(d):
+        print(json.dumps({"record_dir": d, "failure": stage, "note": "this failure is already recorded", "dispatch": "may continue"}, indent=1))
+        sys.exit(3)
+    os.makedirs(d)
+    if raw is not None:
+        write_once(os.path.join(d, "sidecar-stageB.json"), raw.decode("utf-8", errors="replace"))
+    write_once(os.path.join(d, "profile-failed.json"), {"stage": stage, "detail": detail[-4000:]})
+    validation = {"valid": False, "errors": [f"{stage} failed"]}
+    write_once(os.path.join(d, "validation.json"), validation)
+    write_overhead_and_sums(a, d, validation, None, frozen_at)
+    print(json.dumps({"task_revision": None, "record_dir": d, "valid": False, "failure": stage, "dispatch": "may continue"}, indent=1))
+
+
+def archive_sources(prof, d):
+    """Copy the packet and authority documents into sources/<sha256>, so the bytes stay recoverable."""
+    wanted = {doc["sha256"]: doc["path"] for doc in prof["provenance"]["source_documents"]}
+    refs = prof["input_snapshot"]["authority_refs"]
+    if refs["status"] == "declared":
+        wanted.update({r["sha256"]: r["path"] for r in refs["value"]})
+    out, src_dir = {}, os.path.join(d, "sources")
+    for digest, path in sorted(wanted.items()):
+        if os.path.isfile(path) and sha256(path) == digest:
+            os.makedirs(src_dir, exist_ok=True)
+            with open(path, "rb") as fh, open(os.path.join(src_dir, digest), "xb") as dst:
+                dst.write(fh.read())
+            out[digest] = {"path": path, "archived": True}
+        else:
+            out[digest] = {"path": path, "archived": False, "reason": "missing or hash differs"}
+    return out
+
+
 def cmd_profile(a):
-    exe = tool(a.tool_dir, PIN["commit"])
-    raw = open(a.sidecar, "rb").read()
+    try:
+        with open(a.sidecar, "rb") as fh:
+            raw = fh.read()
+        json.loads(raw)
+    except (OSError, ValueError) as e:
+        return record_failure(a, raw if "raw" in locals() else None, "read-sidecar", str(e))
+    try:
+        exe = tool(a.tool_dir, PIN["commit"])
+    except SystemExit as e:
+        return record_failure(a, raw, "tool", str(e))
     staging = os.path.join(a.run_dir, "task-profiles", ".staging")
     os.makedirs(staging, exist_ok=True)
     out = os.path.join(staging, f"profile-{os.getpid()}.json")
     comp = subprocess.run([exe, "compute", a.sidecar, "--repo", a.repo, "-o", out], capture_output=True, text=True)
-    frozen_at = now()
-    if comp.returncode != 0:
-        task_id = re.sub(r"[^A-Za-z0-9._-]", "-", str(json.loads(raw).get("identity", {}).get("task_id", "unknown")))[:100] or "unknown"
-        d = os.path.join(a.run_dir, "task-profiles", f"{task_id}@{hashlib.sha256(raw).hexdigest()[:16]}")
-        os.makedirs(d, exist_ok=False)
-        write_once(os.path.join(d, "sidecar-stageB.json"), raw.decode())
-        write_once(os.path.join(d, "profile-failed.json"), {"stage": "compute", "returncode": comp.returncode,
-                                                            "stderr": comp.stderr[-4000:]})
-        validation, unknown, rev = {"valid": False, "errors": ["compute failed"]}, None, os.path.basename(d)
-    else:
+    try:
+        if comp.returncode != 0:
+            return record_failure(a, raw, "compute", comp.stderr)
         prof = read_json(out)
         rev = prof["computed"]["task_revision"]["id"]
-        d = record_dir(a.run_dir, rev)
+        if not isinstance(rev, str) or not REVISION.match(rev):
+            return record_failure(a, raw, "revision", f"invalid task revision id {rev!r}")
+        d = os.path.join(a.run_dir, "task-profiles", rev)
         if os.path.exists(d):
-            os.remove(out)
-            raise SystemExit(f"{d} exists: this task revision already has a profile")
+            print(json.dumps({"task_revision": rev, "record_dir": d, "note": "already profiled", "dispatch": "may continue"}, indent=1))
+            sys.exit(3)
         os.makedirs(d)
-        write_once(os.path.join(d, "sidecar-stageB.json"), raw.decode())
+        frozen_at = now()
+        write_once(os.path.join(d, "sidecar-stageB.json"), raw.decode("utf-8", errors="replace"))
         os.replace(out, os.path.join(d, "profile-stageB.json"))
         val = subprocess.run([exe, "validate", os.path.join(d, "profile-stageB.json"), "--production"], capture_output=True, text=True)
-        errors = [] if val.returncode == 0 else [ln for ln in val.stdout.splitlines() if ln.strip()]
-        validation = {"valid": val.returncode == 0, "errors": errors}
+        validation = {"valid": val.returncode == 0, "errors": [] if val.returncode == 0 else [ln for ln in val.stdout.splitlines() if ln.strip()]}
+        write_once(os.path.join(d, "validation.json"), validation)
         unknown = sum(1 for c in prof["coverage"] if c["status"] == "unknown" and c["field"].startswith("declared."))
-    try:
-        os.rmdir(staging)
-    except OSError:
-        pass  # another profile is staging concurrently
-    write_once(os.path.join(d, "validation.json"), validation)
-    started = dt.datetime.fromisoformat(a.declare_started_at.replace("Z", "+00:00"))
-    write_once(os.path.join(d, "overhead.json"), {
-        "declare_started_at": a.declare_started_at, "frozen_at": frozen_at,
-        "declare_wall_seconds": round((dt.datetime.fromisoformat(frozen_at) - started).total_seconds(), 1),
-        "coordinator_call_ids": a.call_id or [], "tool": {**PIN, "tool_dir": a.tool_dir},
-        "validation_errors": len(validation["errors"]), "unknown_declared_fields": unknown,
-        "prior_files": prior_files(d)})
-    append_sums(d)
-    print(json.dumps({"task_revision": rev, "record_dir": d, "valid": validation["valid"]}, indent=1))
+        write_overhead_and_sums(a, d, validation, unknown, frozen_at, archive_sources(prof, d))
+        print(json.dumps({"task_revision": rev, "record_dir": d, "valid": validation["valid"]}, indent=1))
+    finally:
+        if os.path.exists(out):
+            os.remove(out)
+        try:
+            os.rmdir(staging)
+        except OSError:
+            pass  # another profile is staging concurrently
 
 
 def cmd_assign(a):
@@ -201,7 +267,9 @@ def cmd_assign(a):
     children = [c for c in a.child_session if c != "unknown"]
     write_once(os.path.join(d, name), {
         "task_revision": a.task_revision, "profile_file": os.path.basename(prof), "profile_sha256": sha256(prof),
-        "profile_frozen_before_assignment": frozen_at < assigned_at,
+        "profile_frozen_before_assignment_record": parse_ts(frozen_at) < parse_ts(assigned_at),
+        "selected_at": a.selected_at,
+        "profile_frozen_before_selection": (parse_ts(frozen_at) < parse_ts(a.selected_at)) if a.selected_at else None,
         "frozen_at": frozen_at, "assigned_at": assigned_at, "role": a.role, "run": a.run,
         "requested": {"model": a.requested_model, "effort": a.requested_effort, "harness": a.harness},
         "reported": {"model": a.reported_model or "unknown", "effort": a.reported_effort or "unknown", "source": "coordinator"},
@@ -226,12 +294,17 @@ def cmd_attribute(a):
     children = set(asg["child_sessions"])
     calls = collections.defaultdict(lambda: collections.Counter())
     span = {}
+    since = parse_ts(a.since) if a.since else None
+    until = parse_ts(a.until) if a.until else None
     if children:
         with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
             for line in fh:
                 r = json.loads(line)
                 cid = r.get("thread") if r.get("provider") == "codex" else r.get("session")
                 if cid in children:
+                    ts = parse_ts(r["ts"])
+                    if (since and ts < since) or (until and ts >= until):
+                        continue
                     calls[cid][(r.get("model"), r.get("effort"))] += 1
                     lo, hi = span.get(cid, (r["ts"], r["ts"]))
                     span[cid] = (min(lo, r["ts"]), max(hi, r["ts"]))
@@ -248,6 +321,7 @@ def cmd_attribute(a):
     write_once(out, {
         "assignment": os.path.basename(path), "assignment_sha256": sha256(path), "status": status,
         "ledger": os.path.abspath(a.ledger), "ledger_calls_sha256": sha256(os.path.join(a.ledger, "calls.jsonl")),
+        "window": {"since": a.since, "until": a.until, "bounded": bool(a.since or a.until)},
         "per_session": {cid: {"calls": [{"model": m, "effort": e, "n": n} for (m, e), n in sorted(c.items(), key=str)],
                               "first_ts": span[cid][0], "last_ts": span[cid][1]} for cid, c in sorted(calls.items())},
         "models_seen": seen, "efforts_seen": efforts,
@@ -260,7 +334,11 @@ def cmd_attribute(a):
 
 def cmd_verify(a):
     worst = 0  # 0 fully verified, 2 recompute not done, 1 problem
-    for d in sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*@*"))):
+    dirs = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*@*")))
+    if not dirs:
+        print(f"no task-profile records under {a.run_dir}")
+        sys.exit(3)
+    for d in dirs:
         problems, notes = [], []
         have = listed(d)
         files = record_files(d)
@@ -284,6 +362,14 @@ def cmd_verify(a):
                     pf = os.path.join(d, rec.get("profile_file", "profile-stageB.json"))
                     if not os.path.exists(pf) or sha256(pf) != rec["profile_sha256"]:
                         problems.append(f"{n}: profile hash differs")
+        src_dir = os.path.join(d, "sources")
+        for name in sorted(os.listdir(src_dir)) if os.path.isdir(src_dir) else []:
+            if sha256(os.path.join(src_dir, name)) != name:
+                problems.append(f"archived source sources/{name} does not match its hash")
+        if os.path.exists(os.path.join(d, "overhead.json")):
+            for digest, info in (read_json(os.path.join(d, "overhead.json")).get("sources") or {}).items():
+                if info.get("archived") and not os.path.isfile(os.path.join(src_dir, digest)):
+                    problems.append(f"archived source {digest[:12]} is missing")
         prof = os.path.join(d, "profile-stageB.json")
         if os.path.exists(prof):
             if a.no_recompute or not a.repo:
@@ -334,12 +420,15 @@ def main():
     s.add_argument("--run", required=True)
     s.add_argument("--dispatched-packet", required=True)
     s.add_argument("--child-session", action="append", required=True)
+    s.add_argument("--selected-at")
     s.add_argument("--retained", action="store_true")
     t = sub.add_parser("attribute")
     t.add_argument("--run-dir", required=True)
     t.add_argument("--task-revision", required=True)
     t.add_argument("--ledger", required=True)
     t.add_argument("--assignment")
+    t.add_argument("--since")
+    t.add_argument("--until")
     v = sub.add_parser("verify")
     v.add_argument("--run-dir", required=True)
     v.add_argument("--repo")

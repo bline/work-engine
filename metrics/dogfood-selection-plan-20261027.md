@@ -68,7 +68,7 @@ written after the assignment is kept, but marked
 
 There are three records, joined by `task_revision`. Its ID is the task ID plus
 16 hex characters hashed from the schema, task ID, stage, target role, frozen
-packet documents and snapshot identity; `taskprofile` computes it (v0.2.0). Each record is written once. A correction is a new file that names
+packet documents and snapshot identity; `taskprofile` computes it (v0.2.0 and later). Each record is written once. A correction is a new file that names
 the one it supersedes.
 
 Layout under the run directory:
@@ -81,33 +81,48 @@ task-profiles/<task_revision>/
   assignment.json            the assignment observation (retained continuations add assignment-02.json, ...)
   overhead.json              instrumentation cost and the tool pin
   attribution-<assignment>.json   models actually used, from the usage ledger
+  sources/<sha256>           copies of the packet and authority documents, named by their hash
   SHA256SUMS                 append-only index
 ```
 
 `metrics/scripts/task_profile_record.py` writes these records, never overwriting
 them:
-- `profile` writes the sidecar, profile, validation and overhead records.
+- `profile` writes the sidecar, profile, validation and overhead records, and
+  archives the source documents. It never blocks a dispatch:
+  - a missing tool, an unreadable or invalid sidecar, a compute error or an
+    invalid revision ID writes a failure record and exits 0;
+  - a revision that already has a profile exits 3 ("already profiled").
 - `assign` writes the assignment observation. It requires the child's session or
   thread ID, and checks that the dispatched packet contains none of the profile's
   identifiers.
 - `attribute` resolves the models and efforts the child sessions actually ran,
-  from the usage ledger, and flags any substitution.
+  from the usage ledger, and flags any substitution. `--since` and `--until`
+  bound it to an assignment's time window, which a retained or reused thread
+  needs. Without them, every call of the session counts.
 - `verify` checks that the hash list exists, that every file is listed and
   matches, and that each record's `prior_files` hashes still match. It then
-  recomputes each profile with the tool for that record's own pin. Exit 0 means
-  fully verified, 2 means hashes pass but no recompute was done, 1 means a
-  problem.
+  recomputes each profile with the tool for that record's own pin, and checks
+  each archived source against its hash. Exit 0 means fully verified, 2 means
+  hashes pass but no recompute was done, 1 means a problem, and 3 means there
+  are no records.
 
 Integrity covers accidental change, not an adversary. The hash list is
 append-only, and every record after the first also stores the hashes of the
 files written before it. The data repository's git history is the
 tamper-evident copy.
 
-Tests: `metrics/scripts/tests/test_task_profile_record.py`, 11 cases. They cover
-the full cycle, model substitution, an unknown child, and builder and reviewer
-revisions. They also cover each integrity failure that v0.1.0 missed: a missing
-hash list, an unlisted file, an edit hidden by a rewritten hash list, a skipped
-recompute, an invalid revision ID, and a leak into the dispatch packet.
+Tests: `metrics/scripts/tests/test_task_profile_record.py`, 18 cases.
+- **Normal operation:** the full cycle, model substitution, an unknown child, and
+  separate builder and reviewer revisions.
+- **Integrity failures v0.1.0 missed:** a missing hash list, an unlisted file, an
+  edit hidden by a rewritten hash list, a skipped recompute, an invalid revision
+  ID, and a leak into the dispatch packet.
+- **Second-review findings:**
+  - a missing tool and an invalid sidecar each recorded as failures, not blocking;
+  - a duplicate profile, and `verify` with no records, each exiting 3;
+  - microsecond timestamps and selection order;
+  - the attribution window;
+  - a tampered archived source.
 
 - **Profile** (`profile-stageB.json`): the task-profile v0 output, which
   carries identity, input snapshot, declarations, computed features, coverage
@@ -121,7 +136,8 @@ recompute, an invalid revision ID, and a leak into the dispatch packet.
   |---|---|
   | `task_revision` | join key |
   | `profile_sha256` | hash of the profile, or of the failure record |
-  | `profile_frozen_before_assignment` | true, or false with a reason |
+  | `profile_frozen_before_assignment_record` | freeze time earlier than the time the assignment record was written |
+  | `selected_at`, `profile_frozen_before_selection` | when the model was actually chosen (coordinator-supplied), and whether the profile was frozen before it; `null` if not supplied |
   | `role` | builder or reviewer |
   | `requested` | model, effort, harness |
   | `reported` | model and effort as the coordinator reports them, marked `source: coordinator` |
@@ -173,11 +189,21 @@ records only a new assignment observation.
 | Criterion | Check |
 |---|---|
 | Every eligible dispatch has a profile record | 10 of 10 have `profile-stageB.json` or `profile-failed.json` |
-| No profile was frozen after its assignment | `profile_frozen_before_assignment` true in 10 of 10, or reasons recorded |
+| No profile was frozen after its selection | `profile_frozen_before_selection` true in 10 of 10 (`--selected-at` supplied every time), or reasons recorded |
 | Profiling changed nothing | No dispatched packet or prompt contains the sidecar or profile (search the packet and prompt text for the `task_revision` and field names); assignments follow the active model selection |
 | Snapshots verify | Re-running `compute` on each sidecar later gives identical bytes; snapshot is a git commit or a verified manifest, otherwise reported as unknown |
 | Declarations vary | Report, per field, how often it is declared and how many distinct values occur. No pass threshold is set in advance; the review decides whether a field is useful |
 | Overhead measured | Median and maximum declaration wall time, coordinator tokens and API-equivalent cost per profile, and validation failure rate |
+
+Restrictions for the first 10:
+- **Git-commit snapshots only.** Manifest snapshots wait until manifest capture has
+  been reviewed further.
+- **Audit each dispatched prompt by hand,** in full. The automatic leak check only
+  searches the packet for the profile's identifiers, not the assembled prompt.
+- **Supply `--selected-at` on every assignment,** and give `attribute` the
+  assignment's time window whenever the child thread is retained or reused.
+- **Confirm that every source document was archived** (`overhead.json`
+  `sources`) before copying the records to the data repository.
 
 After the 10, the owner reviews the profiles and the discrepancies. Possible
 outcomes: make collection permanent, revise the schema, or stop.
@@ -186,8 +212,10 @@ outcomes: make collection permanent, revise the schema, or stop.
 
 1. The extractor's canonical home is
    [agent-routing-lab](https://github.com/bline/agent-routing-lab) (Apache-2.0),
-   as `taskprofile`. Work Engine pins tag `v0.2.0`, commit
-   `534cd79d6c3e489bacfce2ad684187f7d3e8af85`, and does not keep its own copy.
+   as `taskprofile`. Work Engine pins tag `v0.2.1`, commit
+   `1faaf78af460afee1126731816e0dc10553d9822`, and does not keep its own copy.
+   v0.2.0 (`534cd79d`) is superseded: an unrecognised field status escaped
+   validation, and two snapshots could be declared at once.
    v0.1.0 (`54f9b35b`) is superseded: its task-revision ID ignored role and
    snapshot.
    - The pin lives in `task_profile_record.py`.
@@ -201,7 +229,7 @@ outcomes: make collection permanent, revise the schema, or stop.
    - Tags are immutable. A change to a feature definition or extractor behaviour is
      a new version and a new pin.
    - The prototype with Work Engine fixtures stays in `~/cbm-work/task-profile-v0`.
-2. Done in agent-routing-lab v0.1.0 and v0.2.0: `validate --production` requires the
+2. Done in agent-routing-lab v0.1.0 to v0.2.1: `validate --production` requires the
    provenance fields above, and `taskprofile manifest` writes a hashed manifest
    for dirty-tree baselines.
 3. Records go to the private
@@ -234,8 +262,8 @@ paragraph that begins "Before dispatch, compare the packet":
 >    `python3 -I metrics/scripts/task_profile_record.py profile --run-dir <run> --sidecar <file> --repo <repo> --declare-started-at <time>`.
 >    A validation failure is recorded and does not block dispatch.
 > 4. After dispatch, run `task_profile_record.py assign` with the requested and
->    reported configuration, the dispatched packet and the child's session or
->    thread ID. After the child finishes, run `task_profile_record.py attribute`
+>    reported configuration, the time you chose the model (`--selected-at`), the
+>    dispatched packet and the child's session or thread ID. After the child finishes, run `task_profile_record.py attribute`
 >    against the usage ledger.
 >
 > Never put the sidecar or profile in a child's packet or prompt.
