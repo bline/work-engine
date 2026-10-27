@@ -179,13 +179,14 @@ The alignment and pointer edits were applied on 2026-10-27, and the
 slice-builder, slice-supervisor, campaign-preflight and manual-orchestration
 suites pass on that tree.
 
-Of the 9 slice-supervisor campaign files, 2 omit `builder.model` and so run on
-`gpt-6.1-terra`: `campaigns/git-backed-slice-checkpoints.yaml` and the
-superseded `app-server/skills-migration-campaign.yaml`. The other 7 name
-`gpt-5.6-sol`, which the allowlists no longer include, so preflight rejects them
-("builder.model must be a supported current model"; checked on
-`campaigns/roadmap.yaml`). Each needs an explicit current model, or the
-`builder.model` key removed to take the default, before it runs.
+None of the 9 slice-supervisor campaign files sets `builder.model` or
+`builder.reasoning_effort`, so all take the default above; all 9 pass preflight.
+7 of them named `gpt-5.6-sol` at `low` until 2026-10-27, when that model left the
+allowlists; each records the removal as an amendment. The 4 with a Codex
+adversarial reviewer (`agent-instruction-review`, `code-change-characterization-baseline`,
+`raw-idea-intake`, `review-remediation`) now name `gpt-6-astra` at `xhigh` with
+the different-model evidence class. Their earlier amendments, which record the
+owner's approval of a Sol low reviewer, are unchanged.
 `campaigns/comparative-repository-analysis.yaml` is a comparative-analysis
 configuration with no builder.
 

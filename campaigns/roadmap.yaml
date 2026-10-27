@@ -7,8 +7,6 @@ work_source:
 
 builder:
   skill: "slice-builder"
-  model: "gpt-5.6-sol"
-  reasoning_effort: "low"
   context:
     repository_evidence:
       skill: "repo-search"
@@ -47,3 +45,15 @@ metrics:
 capabilities:
   chrome_vision:
     config: ../config/chrome-vision.yaml
+
+amendments:
+  - timestamp: "2026-10-27T15:38:49-06:00"
+    changed_fields:
+      - "builder.model"
+      - "builder.reasoning_effort"
+    prior_values:
+      builder.model: "gpt-5.6-sol"
+      builder.reasoning_effort: "low"
+    new_values: {}
+    reason: "gpt-5.6-sol is no longer a supported builder or reviewer model, so preflight rejected this campaign. builder.model and builder.reasoning_effort are removed so the campaign builder default applies: gpt-6.1-terra at medium on this date (docs/model-selection.md)."
+    human_approval: "\"Align them to the guide\" (2026-10-27, on model choices encoded in skills); \"yeah, let's remove gpt-5.6-sol; please push\" (2026-10-27)"
