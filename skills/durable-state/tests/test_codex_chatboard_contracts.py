@@ -920,7 +920,8 @@ class RolesViewTest(RepoCase):
         self.counter += 1
         BOARD.adopt(self.repository, author="x", session_id=sid(session), body="adopted",
                     role=role or self.ROLE, predecessor_session=sid(predecessor),
-                    message_id=mid(self.counter), observed_at="2026-10-25T00:00:00Z", handoff_sha256=HEX)
+                    message_id=mid(self.counter), observed_at="2026-10-25T00:00:00Z",
+                    handoff_sha256=hashlib.sha256(mid(self.counter).encode()).hexdigest())
 
     def availability(self, session: str, state: str, role: str | None = None) -> None:
         self.post(kind="availability", session_id=sid(session), role=role or self.ROLE, data={"state": state})

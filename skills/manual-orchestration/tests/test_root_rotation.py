@@ -128,6 +128,22 @@ class Base(unittest.TestCase):
 
 
 class GateInputs(Base):
+    def test_obsolete_preparation_cannot_launch(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        newer = self.tmp / "newer.md"
+        newer.write_text("Sol authorized; repairs partly complete")
+        subprocess.run([sys.executable, str(BOARD), "--repository", str(self.repo),
+            "handoff-publish", "--author", "test", "--session-id", self.pred,
+            "--role", "test-root", "--title", "Repairs", "--handoff-path", str(newer)],
+            check=True, capture_output=True)
+        rc, status, _ = self.gate("commit")
+        self.assertEqual((rc, status), (21, "fail_obsolete_handoff"))
+        self.assertEqual(len(self.claude_sessions()), 1)
+
+    def test_claude_archive_rejected_before_launch(self):
+        self.assertEqual(self.gate("prepare", "--retire", "archive")[:2], (64, "unsupported_retirement"))
+        self.assertEqual(len(self.claude_sessions()), 1)
+
     def test_awaiting_authority_launches_nothing(self):
         rc, status, _ = self.gate("prepare")
         self.assertEqual((rc, status), (10, "awaiting_authority"))
@@ -200,6 +216,15 @@ class GateInputs(Base):
 
 
 class GateCommit(Base):
+    def test_readable_title_and_handoff_path_with_spaces(self):
+        self.handoff = self.tmp / "S10 repair handoff.md"
+        self.handoff.write_text("Current assignment and continuation")
+        self.assertEqual(self.gate("prepare", "--title", "S10 repair task")[0], 10)
+        rc, status, err = self.gate("commit", "--title", "S10 repair task", handoff=False)
+        self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
+        sid = (self.state / "adoption").read_text().split()[0].split("=")[1]
+        self.assertTrue(self.claude_sessions()[sid]["name"].startswith("S10 repair task | continuation "))
+
     def commit(self, successor="claude", **env):
         self.assertEqual(self.gate("prepare", successor=successor)[0], 10)
         return self.gate("commit", successor=successor, env=env)
@@ -224,6 +249,10 @@ class GateCommit(Base):
     def test_codex_successor_adopts_and_commits(self):
         rc, status, err = self.commit(successor="codex")
         self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
+        sid = (self.state / "adoption").read_text().split()[0].split("=")[1]
+        rc, out, err = self.host("status", "codex", sid)
+        self.assertEqual(rc, 0, err)
+        self.assertIn("test-root | current", json.loads(out)["name"])
 
     def test_adoption_on_another_topic_is_not_accepted(self):
         # S2<->S5 integration condition: a row addressed `to` the successor on
@@ -245,7 +274,7 @@ class GateCommit(Base):
         self.assertLess(time.time() - t0, 50, "should not wait for the full adoption timeout")
         orphan = (self.state / "orphan-successor").read_text()
         self.assertIn("disposition=stop", orphan)
-        loaded = [s for s in self.claude_sessions().values() if s["name"] == "test-root" and s["loaded"]]
+        loaded = [s for s in self.claude_sessions().values() if s["name"].startswith("test-root | continuation ") and s["loaded"]]
         self.assertEqual(loaded, [])
 
     def test_retire_stop_on_interactive_predecessor_is_reported_not_committed_clean(self):
@@ -270,7 +299,105 @@ class GateCommit(Base):
         self.assertEqual((rc, status), (20, "fail_cap_reached"))
 
 
+class GateDetached(Base):
+    def detached(self, *extra):
+        argv = [sys.executable, str(GATE), "commit", "--detach",
+                "--role", "test-root", "--state", str(self.state), "--repo", str(self.repo),
+                "--host-state", str(self.host_state), "--pred-host", "claude",
+                "--pred-session", self.pred, "--successor-host", "claude",
+                "--validator", PASS, "--quiescence-file", str(self.quiescent),
+                "--adopt-timeout", "30", "--after-adopt", "stop", *extra]
+        r = subprocess.run(argv, env=self.env, capture_output=True, text=True, timeout=45)
+        self.assertTrue(r.stdout, r.stderr)
+        result = json.loads(r.stdout)
+        # Detached gates are deliberately not children of the test process.
+        # Collect their terminal record, and stop them on an assertion failure.
+        def stop_if_live():
+            try:
+                os.kill(result["pid"], 15)
+            except ProcessLookupError:
+                pass
+        self.addCleanup(stop_if_live)
+        return r.returncode, result
+
+    def terminal(self, result):
+        path = Path(result["result_file"])
+        self.assertTrue(self.wait_for(lambda: path.exists() and "exit_code" in json.loads(path.read_text()), 40))
+        return json.loads(path.read_text())
+
+    def test_returns_destination_before_predecessor_retirement(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        old = str(uuid.uuid4())
+        (self.state / "successor-identity").write_text(f"host=claude session={old}")
+        rc, result = self.detached("--retire", "stop")
+        self.assertEqual(rc, 0, result)
+        sid = result["successor"]["session_id"]
+        self.assertNotEqual(sid, old)
+        self.assertEqual(result["successor"]["resume_command"], f"claude --resume {sid}")
+        self.assertIn(sid, self.claude_sessions())
+        self.assertNotIn("exit_code", result, "busy predecessor must not prevent ID delivery")
+        self.add_claude_session(self.pred, "operator-shell", kind="background", pid=self.pred_proc.pid,
+                                status="idle", state="done")
+        done = self.terminal(result)
+        self.assertEqual(done["exit_code"], 0, done)
+        self.assertTrue(done["adoption_verified"])
+        self.assertEqual(done["successor"], result["successor"])
+
+    def test_prelaunch_failure_never_reports_old_identity(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        (self.state / "transfer-result.json").write_text(json.dumps({
+            "status": "committed_rotation_1", "successor": {"session_id": str(uuid.uuid4())}}))
+        self.handoff.write_text("changed")
+        rc, result = self.detached()
+        self.assertEqual(rc, 30, result)
+        self.assertIsNone(result["successor"])
+        self.assertFalse(result["adoption_verified"])
+
+    def test_timeout_supplies_collectable_result_without_claiming_launch(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        slow = f"{sys.executable} -c 'import time; time.sleep(1)'"
+        rc, result = self.detached("--detach-wait-seconds", "0", "--validator", slow)
+        self.assertEqual(rc, 0, result)
+        self.assertEqual(result["status"], "launch_pending")
+        self.assertIsNone(result["successor"])
+        done = self.terminal(result)
+        self.assertTrue(done["adoption_verified"], done)
+        self.assertIn(done["successor"]["session_id"], self.claude_sessions())
+
+    def test_failed_adoption_is_not_reported_as_completed_transfer(self):
+        self.assertEqual(self.gate("prepare")[0], 10)
+        self.env["FAKE_SUCCESSOR"] = "silent"
+        _, result = self.detached()
+        done = self.terminal(result)
+        self.assertEqual(done["exit_code"], 34, done)
+        self.assertFalse(done["adoption_verified"])
+        self.assertIsNotNone(done["successor"])
+
+
 class HostAdapter(Base):
+    def test_codex_rename_and_archive_do_not_start_turns(self):
+        sid = self.launch("codex")
+        self.assertTrue(self.wait_for(lambda: self.codex_status(sid)["state"] == "idle"))
+        self.assertEqual(self.host("retire", "codex", sid)[0], 0)
+        self.assertEqual(self.host("rename", "codex", sid, "--name", "S10 | superseded")[0], 0)
+        self.assertEqual(self.codex_status(sid)["state"], "stopped")
+        self.assertEqual(self.codex_status(sid)["name"], "S10 | superseded")
+        self.assertEqual(self.host("archive", "codex", sid, "--descendants-collected")[0], 0)
+        rc, out, err = self.host("unarchive", "codex", sid)
+        self.assertEqual(rc, 0, err)
+        self.assertFalse(json.loads(out)["resumed"])
+        turns = [r for r in role_host_rows(self.host_state) if r.get("turn_id")]
+        self.assertEqual(len(turns), 1)
+
+    def test_codex_archive_refuses_running_turn(self):
+        sid = self.launch("codex", FAKE_TURN="hang")
+        self.assertEqual(self.host("archive", "codex", sid, "--descendants-collected")[0], 40)
+
+    def test_claude_unsupported_archive_does_not_remove_session(self):
+        sid = self.launch()
+        self.assertEqual(self.host("archive", "claude", sid, "--descendants-collected")[0], 64)
+        self.assertIn(sid, self.claude_sessions())
+
     def launch(self, host="claude", **env):
         prompt = self.tmp / "p.txt"; prompt.write_text("work")
         rc, out, err = self.host("launch", host, "--cwd", str(self.repo), "--name", "worker",

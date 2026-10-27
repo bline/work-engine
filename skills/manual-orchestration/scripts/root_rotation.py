@@ -37,6 +37,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import role_host  # noqa: E402
@@ -59,6 +60,7 @@ class Gate:
         self.state = Path(a.state)
         self.state.mkdir(parents=True, exist_ok=True)
         self.ledger = role_host.Ledger(Path(a.host_state))
+        self.transfer = {"successor": None, "adoption_verified": False}
         self.count_file = self.state / "rotation-count"
         if not self.count_file.exists():
             self.count_file.write_text("0\n")
@@ -72,6 +74,14 @@ class Gate:
 
     def rec(self, name, value):
         (self.state / name).write_text(value + "\n")
+
+    def transfer_report(self, status, **updates):
+        self.transfer.update(status=status, **updates)
+        path = Path(self.a.result_file) if self.a.result_file else self.state / "transfer-result.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(self.transfer, indent=2) + "\n")
+        temporary.replace(path)
 
     def read_rec(self, name):
         p = self.state / name
@@ -105,6 +115,8 @@ class Gate:
 
     # ------------------------------------------------------------ checks --
     def check_inputs(self):
+        if self.a.retire == "archive" and self.a.pred_host != "codex":
+            raise Stop(64, "unsupported_retirement", "Claude archive is not established; use stop or keep")
         # adopt REJECTS non-canonical values rather than normalising them, so a
         # bad value surfaces only at the adoption timeout unless refused here.
         if not UUID.match(self.a.pred_session):
@@ -126,7 +138,9 @@ class Gate:
         except role_host.HostError as e:
             raise Stop(32, "role_not_established", f"cannot list Claude sessions: {e.detail}")
         others = [r.get("sessionId") for r in rows
-                  if r.get("name") == self.a.role and r.get("sessionId") != self.a.pred_session]
+                  if (r.get("name") == self.a.role or
+                      (r.get("name") or "").startswith(f"{self.a.title or self.a.role} | continuation "))
+                  and r.get("sessionId") != self.a.pred_session]
         if others:
             raise Stop(39, "fail_role_ambiguous",
                        f"{len(others)} other loaded session(s) are named {self.a.role}: {others}")
@@ -145,6 +159,26 @@ class Gate:
         if rc == 21:
             raise Stop(21, f"fail_validation_{phase}", "validator found a defect in the handoff")
         raise Stop(32, f"validation_not_established_{phase}", f"validator exit {rc} is not a pass")
+
+    def handoff_available(self, handoff):
+        rc, doc, err = self.board("handoff-status", "--role", self.a.role,
+                                  "--handoff-path", str(handoff))
+        self.rec("handoff-status.json", json.dumps(doc, indent=2))
+        if rc == 21:
+            raise Stop(21, "fail_obsolete_handoff", json.dumps(doc))
+        if rc != 0 or (doc or {}).get("state") != "available":
+            raise Stop(32, "handoff_freshness_not_established", err or json.dumps(doc))
+
+    def publish_handoff(self, handoff):
+        extra = [arg for digest in self.a.replaces_handoff_sha256
+                 for arg in ("--replaces-handoff-sha256", digest)]
+        rc, doc, err = self.board("handoff-publish", "--author", "root-rotation",
+                                  "--session-id", self.a.pred_session, "--role", self.a.role,
+                                  "--title", self.a.title or self.a.role,
+                                  "--handoff-path", str(handoff), *extra)
+        if rc != 0:
+            raise Stop(32, "handoff_publication_not_established", err)
+        self.rec("handoff-publication.json", json.dumps(doc, indent=2))
 
     def _claims(self):
         rc, doc, err = self.board("read", "--active-claims", "--limit", "1")
@@ -248,6 +282,7 @@ class Gate:
         self.validate(handoff, "prepare")
         dig = sha256(handoff)
         self.quiescent()
+        self.publish_handoff(handoff)
         self.rec("validation-record", f"handoff={handoff} sha256={dig} validated_at={now()}")
         if self.a.gate == "require":
             self.rec("awaiting-authority", f"handoff={handoff} sha256={dig}")
@@ -256,6 +291,7 @@ class Gate:
 
     def successor_prompt(self, handoff, dig, cursor):
         rh, cb, repo = HERE / "role_host.py", self.a.board_cmd, self.a.repo
+        rh, cb, repo, handoff = (shlex.quote(str(p)) for p in (rh, cb, repo, handoff))
         tail = ("Then read the handoff file in full and continue as this role, starting from its "
                 "first actions for the successor." if self.a.after_adopt == "continue" else
                 "Then report what you did in two or three lines and take no further action.")
@@ -269,9 +305,14 @@ class Gate:
    python3 {cb} --repository {repo} wait --since {cursor} --topic session:SID --timeout-seconds 300
    The message on topic session:SID references {handoff}.
 
-3. Verify it:
+3. Verify its bytes and recorded continuation status:
    sha256sum {handoff}
    The expected digest is {dig}. If it does not match, say so and POST NOTHING TO THE BOARD.
+   python3 {cb} --repository {repo} handoff-status --role {self.a.role} --handoff-sha256 {dig} --session-id SID
+   A nonzero exit means do not adopt or dispatch. Read the returned continuation references;
+   publication and matching hashes do not grant transfer authority.
+   Read the handoff and its assignment before adoption so you can reconcile
+   the actual scope, user decisions, and unresolved obligations.
 
 4. Reconcile claims before taking ownership:
    python3 {cb} --repository {repo} read --active-claims --limit 10
@@ -281,6 +322,10 @@ class Gate:
    python3 {cb} --repository {repo} adopt --author successor-root --session-id SID --role {self.a.role} --predecessor-session {self.a.pred_session} --handoff-sha256 {dig} --handoff-path {handoff} --body "Adoption acknowledged: digest verified, claims reconciled."
    It re-checks the digest against the file. If it fails, say so and do not retry with `post`.
 
+6. Identify yourself by full session ID in your first user-facing update after
+   adoption, so the user can find the continuation. Board acknowledgement alone
+   does not deliver the destination to the user.
+
 {tail} You hold no authority beyond the role the handoff describes.
 """
 
@@ -288,7 +333,7 @@ class Gate:
         self.check_inputs()
         self.check_role_unambiguous()
         if not handoff:
-            m = re.search(r"handoff=(\S+)", self.read_rec("awaiting-authority"))
+            m = re.search(r"handoff=(.+) sha256=[0-9a-f]{64}$", self.read_rec("awaiting-authority"))
             handoff = m.group(1) if m else None
         if not handoff or not Path(handoff).is_file():
             raise Stop(29, "nothing_to_commit", "no handoff to commit")
@@ -301,6 +346,7 @@ class Gate:
             raise Stop(32, "validation_not_established_commit", "no validated digest to compare against")
         if dig != want:
             raise Stop(30, "fail_handoff_mutated", "handoff bytes changed since validation")
+        self.handoff_available(handoff)
         self.quiescent()
         if self.count() >= self.a.max_rotations:
             raise Stop(20, "fail_cap_reached", f"cap {self.count()}/{self.a.max_rotations}")
@@ -310,7 +356,8 @@ class Gate:
         prompt = self.successor_prompt(handoff, dig, cursor)
         (self.state / "successor-prompt.txt").write_text(prompt)
         try:
-            row = succ.launch(cwd=self.a.cwd, name=self.a.role, prompt=prompt,
+            name = f"{self.a.title or self.a.role} | continuation {dig[:8]}"
+            row = succ.launch(cwd=self.a.cwd, name=name, prompt=prompt,
                               host_args=self.a.host_arg, ledger=self.ledger)
         except role_host.HostError as e:
             if e.status == "fork_detected":
@@ -322,6 +369,10 @@ class Gate:
         self.rec("successor-identity", f"host={self.a.successor_host} session={sid} topic={topic} "
                                        f"digest={dig} cursor={cursor}")
         self.log(f"launched {self.a.successor_host} successor {sid}")
+        resume = ["codex", "resume", sid] if self.a.successor_host == "codex" else ["claude", "--resume", sid]
+        self.transfer_report("successor_launched", successor={
+            "host": self.a.successor_host, "session_id": sid,
+            "resume_command": shlex.join(resume)})
 
         rc, doc, err = self.board("post", "--author", f"supervisor:{self.a.role}",
                                   "--session-id", self.a.pred_session, "--topic", topic,
@@ -338,8 +389,25 @@ class Gate:
         ack = self.await_adoption(succ, sid, topic, dig, cursor)
         self.log(f"adoption acknowledged by {sid} (message {ack})")
         self.rec("adoption", f"session={sid} message_id={ack}")
+        self.transfer_report("adoption_verified", adoption_verified=True, adoption_message_id=ack)
         self.rm_awaiting()
         self.post_ending(handoff, dig)
+        # Display state follows verified adoption, never just a launch attempt.
+        # Failure here does not undo ownership or justify launching another root.
+        display_errors = []
+        for host_name, thread, label in (
+            (self.a.successor_host, sid, f"{self.a.title or self.a.role} | current | {sid[:8]}"),
+            (self.a.pred_host, self.a.pred_session,
+             f"{self.a.title or self.a.role} | superseded by {sid[:8]}"),
+        ):
+            if host_name == "codex":
+                try:
+                    role_host.host(host_name).rename(thread, name=label, ledger=self.ledger)
+                except role_host.HostError as e:
+                    display_errors.append({"session_id": thread, "status": e.status, "detail": e.detail})
+        self.rec("session-display.json", json.dumps({"errors": display_errors}, indent=2))
+        if display_errors:
+            self.log(f"rotation adopted; display update incomplete: {display_errors}")
         return self.retire_predecessor(sid)
 
     def post_ending(self, handoff, dig):
@@ -446,7 +514,12 @@ class Gate:
                 if time.time() > deadline:
                     raise role_host.HostError(40, "refused_busy", "predecessor still running")
                 time.sleep(2)
-            res = pred.retire(self.a.pred_session, ledger=self.ledger)
+            if self.a.retire == "archive":
+                if self.a.pred_host != "codex":
+                    raise role_host.HostError(64, "unsupported_control", "Claude archive is not established; use stop or keep")
+                res = pred.archive(self.a.pred_session, ledger=self.ledger)
+            else:
+                res = pred.retire(self.a.pred_session, ledger=self.ledger)
             self.rec("predecessor-disposition", f"retired {res['retired']}")
             return Stop(0, f"committed_rotation_{n}", f"committed; predecessor {res['retired']}")
         except role_host.HostError as e:
@@ -466,6 +539,11 @@ class Gate:
             want = sha256(handoff)
         except OSError:
             raise Stop(79, "watch_refused_no_digest", f"cannot digest {handoff}")
+        self.check_inputs()
+        self.check_role_unambiguous()
+        self.validate(handoff, "prepare")
+        self.quiescent()
+        self.publish_handoff(handoff)
         topic = f"control:rotation:{self.a.role}"
         since = self.cursor()
         deadline = time.time() + self.a.watch_timeout
@@ -521,6 +599,9 @@ def parser():
     ap.add_argument("op", choices=["prepare", "commit", "watch"])
     ap.add_argument("handoff", nargs="?")
     ap.add_argument("--role", required=True)
+    ap.add_argument("--title", help="human-readable task name, shared across continuations")
+    ap.add_argument("--replaces-handoff-sha256", action="append", default=[],
+                    help="explicit older handoff replaced by this preparation; incoming adoptions are linked automatically")
     ap.add_argument("--state", required=True, help="durable evidence directory for this role")
     ap.add_argument("--repo", default=repo_default, help="repository holding the board")
     ap.add_argument("--board-cmd", default=str(HERE.parents[1] / "durable-state/scripts/codex_chatboard.py"))
@@ -537,7 +618,8 @@ def parser():
     ap.add_argument("--max-rotations", type=int, default=3)
     ap.add_argument("--gate", choices=["require", "open"], default="require")
     ap.add_argument("--adopt-timeout", type=int, default=300)
-    ap.add_argument("--retire", choices=["keep", "stop"], default="keep")
+    ap.add_argument("--retire", choices=["keep", "stop", "archive"], default="keep",
+                    help="archive uses Codex recoverable archival, including spawned descendants; preserves no old rollout paths")
     ap.add_argument("--pred-idle-timeout", type=int, default=600)
     ap.add_argument("--orphan", choices=["stop", "keep"], default="stop")
     ap.add_argument("--after-adopt", choices=["continue", "stop"], default="continue")
@@ -546,14 +628,19 @@ def parser():
     ap.add_argument("--watch-timeout", type=int, default=3000)
     ap.add_argument("--expect-digest", default="", help=argparse.SUPPRESS)
     ap.add_argument("--detach", action="store_true",
-                    help="run commit/watch in a new session and return at once, so the predecessor can "
-                         "end its turn and be retired without killing the gate")
+                    help="run commit/watch independently; briefly wait for successor identity, never predecessor retirement")
+    ap.add_argument("--detach-wait-seconds", type=float, default=30,
+                    help="wait up to 0..60 seconds for launch identity (default 30); pending reports retain a result path")
+    ap.add_argument("--result-file", help=argparse.SUPPRESS)
     return ap
 
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     a = parser().parse_args(argv)
+    if not 0 <= a.detach_wait_seconds <= 60:
+        print("--detach-wait-seconds must be between 0 and 60", file=sys.stderr)
+        return 64
     a.cwd = a.cwd or a.repo
     if a.handoff:
         a.handoff = str(Path(a.handoff).resolve())
@@ -562,11 +649,27 @@ def main(argv=None):
         return 64
     gate = Gate(a)
     if a.detach and a.op in ("commit", "watch"):
+        # A fresh path prevents an old successful rotation from supplying the
+        # identity for this invocation after a restart or failed launch.
+        report = (gate.state / "transfers" / f"{uuid4()}.json").resolve()
         child = [sys.executable, str(Path(__file__).resolve())] + [x for x in argv if x != "--detach"]
+        child += ["--result-file", str(report)]
         with open(gate.state / "detached.log", "a") as fh:
             p = subprocess.Popen(child, stdout=fh, stderr=fh, stdin=subprocess.DEVNULL, start_new_session=True)
         gate.rec("detached-pid", str(p.pid))
-        print(json.dumps({"status": f"{a.op}_detached", "pid": p.pid, "state": str(gate.state)}))
+        deadline = time.monotonic() + a.detach_wait_seconds
+        while not report.exists() and p.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.1)
+        result = {"status": "launch_pending", "successor": None, "adoption_verified": False}
+        if report.exists():
+            result = json.loads(report.read_text())
+        elif p.poll() is not None:
+            result.update(status="detached_process_exited", exit_code=p.returncode if p.returncode > 0 else 32,
+                          process_exit_code=p.returncode,
+                          detail="No launch result recorded; inspect detached.log")
+        print(json.dumps({"pid": p.pid, "state": str(gate.state), "result_file": str(report), **result}))
+        if result.get("exit_code"):
+            return result["exit_code"]
         return 0
     os.environ.setdefault("BASH_MAX_TIMEOUT_MS", "3900000")
     try:
@@ -579,6 +682,8 @@ def main(argv=None):
     except Stop as s:
         result = s
     gate.rec("terminal-status", result.status)
+    if a.op in ("commit", "watch"):
+        gate.transfer_report(result.status, exit_code=result.code, detail=result.msg)
     gate.log(f"{result.status}: {result.msg}")
     return result.code
 

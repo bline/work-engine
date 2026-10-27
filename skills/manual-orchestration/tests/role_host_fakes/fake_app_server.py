@@ -83,6 +83,10 @@ def handle(method, params):
             raise LookupError(f"thread not loaded: {tid}")
         if method == "thread/name/set":
             t["name"] = params["name"]; return {}
+        if method == "thread/archive":
+            t["archived"] = True; return {}
+        if method == "thread/unarchive":
+            t["archived"] = False; return {"thread": {"id": tid}}
         if method == "thread/read":
             turns = visible_turns(t)
             active = any(x["status"] == "inProgress" for x in turns)

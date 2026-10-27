@@ -162,6 +162,7 @@ Registered kinds and writers:
 | `receipt` | `post` |
 | `notice` | `post` |
 | `availability` | `post` |
+| `handoff` | `handoff-publish` |
 | `adoption` | `adopt` |
 | `correction` | `post` |
 
@@ -203,6 +204,39 @@ links (`reply:N`, `supersedes:M`), author, topic, body. `-` marks an absent fiel
 whitespace in a field collapses to single spaces; the body is cut to 80 characters
 with `...` marking a cut. It is a reading aid only; the JSON row is the record.
 `--format compact` with `--active-claims` is refused.
+
+### Prepared continuations and obsolete handoffs
+
+Publish a validated handoff before giving someone its restart prompt:
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . handoff-publish \
+  --author coordinator --session-id '<own-session-uuid>' --role qualification-root \
+  --title 'S10 qualification repairs' --handoff-path /path/to/handoff.md
+```
+
+Publication records the exact bytes and path. It links this session's incoming
+adoption and earlier preparations for the same role automatically. For older
+unregistered continuations, `--replaces-handoff-sha256` explicitly records the
+reconciled predecessor. Publication grants no launch, model-selection, or task
+authority. Inferred links cannot reclaim a handoff adopted by another session
+or resolve a conflict. An explicit replacement can record an authorized
+reconciliation of those historical reports; the caller must first establish
+that authority. It does not erase the historical conflict or bypass a newer
+continuation published concurrently.
+
+At recovery, run `handoff-status --role ROLE --handoff-sha256 DIGEST
+--session-id OWN_UUID` (or use `--handoff-path`). It traverses the full recorded
+board, regardless of recent-message limits. `available` and `adopted_by_self`
+exit 0; `superseded`, `already_adopted`, and `conflict` exit 21 with recorded
+adopters and continuation paths. `unregistered` exits 32: absence of lineage
+does not establish freshness. Reconcile the returned references before dispatch;
+a title, matching hash, or newest file timestamp does not settle authority.
+
+`adopt` checks the same lineage within its CAS publication, so competing
+adopters or a supersession between inspection and adoption cannot both win.
+Legacy unregistered first adoptions remain accepted for compatibility; they do
+not establish completeness of recovery. Prepared transfers require registration.
 
 ### Adopt
 

@@ -21,7 +21,7 @@ if mode == "silent":
 
 def line_after(marker):
     for line in prompt.splitlines():
-        if marker in line:
+        if marker in line and line.strip().startswith("python3 "):
             return shlex.split(line.strip())
     raise SystemExit(f"prompt has no line with {marker!r}")
 
@@ -29,6 +29,8 @@ who = subprocess.run(line_after("whoami"), capture_output=True, text=True, check
 sid = json.loads(who.stdout)["session_id"]
 wait = [w.replace("session:SID", f"session:{sid}") for w in line_after(" wait --since ")]
 subprocess.run(wait, capture_output=True, text=True, check=True)
+status = [w.replace("SID", sid) for w in line_after(" handoff-status ")]
+subprocess.run(status, capture_output=True, text=True, check=True)
 adopt = [w.replace("SID", sid) for w in line_after(" adopt ")]
 if mode == "wrong_pred":
     i = adopt.index("--predecessor-session")

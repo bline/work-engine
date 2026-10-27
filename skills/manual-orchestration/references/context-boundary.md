@@ -148,26 +148,64 @@ routes belong to the predecessor's session. So before transferring:
    sha256.
 4. Launch the successor by one of two routes:
    - **Gate.** Write a quiescence assertion and run
-     `root_rotation.py prepare <handoff>`. It validates the handoff, checks
+     `root_rotation.py prepare <handoff> --title 'Readable task name'`. It validates the handoff, checks
      quiescence independently (board claims, children launched through
      [`scripts/role_host.py`](../scripts/role_host.py), session processes
-     beneath the root) and stops at `awaiting_authority` with no successor.
-     After the user authorizes, run `root_rotation.py commit --detach` and end
-     the turn. The gate launches the successor, posts the handoff to its own
+     beneath the root), publishes its continuation lineage on the board, and
+     stops at `awaiting_authority` with no successor. Commit rechecks lineage;
+     a superseded or consumed handoff cannot launch another successor.
+     After the user authorizes, run `root_rotation.py commit --detach`. It waits
+     briefly for launch identity, without waiting for predecessor retirement.
+     Give the user the returned full successor ID and resume command before
+     ending the turn, identifying whether adoption is still pending or verified.
+     The gate launches the successor, posts the handoff to its own
      board topic, waits for its typed `adopt`, posts the predecessor's
      `availability: ending`, and retires the predecessor
-     with `--retire stop`, or keeps it with the default `keep`. `watch`
+     with `--retire stop`, archives a collected Codex predecessor with
+     `--retire archive`, or keeps it with the default `keep`. `watch`
      accepts the authorization as a board message, but only from a named
      approver and only when it cites the handoff's sha256.
-   - **Manual.** Give the user the exact successor instruction: start a new
+   - **Manual.** Publish the validated handoff with the board's
+     [`handoff-publish`](../../../docs/codex-chatboard.md#prepared-continuations-and-obsolete-handoffs)
+     under this role and session. Give the user the exact successor instruction: start a new
      session in the repository and paste a prompt naming the root handoff
      path and sha256, the skill to load as coordinator, and the first actions
-     (verify the digest, read the assignment record, re-claim board resources
-     under the new session id, adopt on the board).
-5. The successor verifies the digest, acknowledges ownership with the board's
+     (verify the digest and run `handoff-status` for this role and digest,
+     read the assignment record, adopt on the board, then re-claim board
+     resources under the new session id).
+5. The successor verifies the digest and recorded continuation status before
+   taking ownership. An obsolete handoff redirects recovery to the returned
+   references; conflicting or unregistered lineage needs reconciliation with
+   the durable assignment and user decisions. A hash alone establishes bytes.
+   The successor acknowledges ownership with the board's
    `adopt` command and in the assignment record, and only then dispatches.
    The predecessor takes no further coordination action; the user stops using
    it except to answer questions about its own record.
+
+Use the same readable task title across continuations, with a short session or
+handoff identifier. After adoption the gate labels Codex sessions `current` and
+`superseded by <id>`. Names aid discovery; the board and exact session IDs bind
+recovery. Display-update failures are recorded without undoing adoption.
+
+The user needs the destination to follow a transfer; an ID in a log or a board
+message alone does not deliver it. The predecessor owns reporting the launch
+destination. If the detached response is `launch_pending`, report that truthfully
+with its exact `result_file` and name a collector/delivery route for the eventual
+ID; do not claim the transfer complete or leave collection implicit. The
+file is evidence, not a user notification. Without a verified delivery route,
+the predecessor continues collecting the launch result before ending its turn.
+The per-invocation file distinguishes launch, verified adoption, and terminal failure,
+and cannot reuse a previous transfer's ID. A successor also identifies itself
+in its first user-facing update after adoption. Waiting for predecessor retirement
+before revealing the ID would deadlock a predecessor that must end its turn first.
+
+Codex `role_host.py rename codex ID --name NAME` updates display metadata without
+a model turn. `archive codex ID --descendants-collected` and `unarchive codex ID`
+manage recoverable history. Collect descendants/results first: server archival
+also attempts spawned descendants, and may move rollout files. Resolve or
+preserve evidence referenced by their old paths before choosing archival.
+Unarchiving restores history without resuming work or restoring role authority.
+Do not infer completed work or cleanup permission from a cryptic title or age.
 
 Launch children the successor must be able to see through `role_host.py
 launch --parent <root session>`. Its ledger is what makes them parent-scoped,

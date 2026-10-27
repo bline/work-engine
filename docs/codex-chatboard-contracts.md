@@ -151,6 +151,7 @@ rejected at post, so a misspelling cannot create an unvalidated protocol.
 | `receipt` | the sender, tracking delivery | `in_reply_to` | — |
 | `notice` | every session the change can invalidate | `data.changed`, `data.action` | `affects` |
 | `availability` | the successor; the rotation gate; role resolution | `role`, `data.state` | `handoff`, `claims_released`, `live_children` |
+| `handoff` | root recovery and transfer gates; session discovery | `role`, `data.handoff_path`, `data.handoff_sha256`, `data.title` | `replaces_handoff_sha256` |
 | `adoption` | the predecessor's gate; role resolution; peers re-addressing | `role`, `data.predecessor_session`, `data.handoff_sha256` | `claims_reclaimed`, `channels` |
 | `correction` | readers of the superseded message | `supersedes`, `data.wrong_claim`, `data.error_class`, `data.consequence`, `data.check` | — |
 

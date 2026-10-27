@@ -223,7 +223,8 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
           body: str, references: list[str], message_id: str, observed_at: str,
           wake: bool, registry: dict[str, Any] | None, kind: str | None, role: str | None,
           to: list[str] | None, in_reply_to: int | None, supersedes: int | None,
-          effects: dict[str, Any] | None, data: dict[str, Any] | None) -> dict[str, Any]:
+          effects: dict[str, Any] | None, data: dict[str, Any] | None,
+          before_append: Callable[[dict[str, Any]], None] | None = None) -> dict[str, Any]:
     canonical_uuid(session_id, "session_id")
     canonical_uuid(message_id, "message_id")
     if not all(isinstance(value, str) and value.strip() for value in (author, topic, body)):
@@ -267,6 +268,17 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
             if existing != candidate:
                 raise ChatboardError("message_id already exists with different content")
             return existing
+        if before_append is not None:
+            before_append(board)
+        if kind == "adoption":
+            view = handoff_view(board, role=role, digest=data["handoff_sha256"], session_id=session_id)
+            if view["state"] in ("superseded", "already_adopted", "conflict"):
+                raise ChatboardError("handoff cannot be adopted: " + json.dumps(view))
+            publishers = {r["session_id"] for r in board["messages"]
+                          if r.get("kind") == "handoff" and r.get("role") == role
+                          and r.get("data", {}).get("handoff_sha256") == data["handoff_sha256"]}
+            if publishers and publishers != {data["predecessor_session"]}:
+                raise ChatboardError("handoff predecessor does not match its publication")
         # Cross-message checks run per CAS attempt against the snapshot that
         # would be published, using the candidate's own sequence.
         targets: dict[str, dict[str, Any]] = {}
@@ -356,9 +368,97 @@ def adopt(repository: Path, *, author: str, session_id: str, body: str, role: st
     if "adoption" not in registry["kinds"]:
         raise ChatboardError("kind registry does not register `adoption`")
     return _post(repository, author=author, session_id=session_id, topic=f"session:{session_id}",
-                 body=body, references=[], message_id=message_id, observed_at=observed_at, wake=False,
+                 body=body, references=[str(Path(handoff_path).resolve())] if handoff_path else [],
+                 message_id=message_id, observed_at=observed_at, wake=False,
                  registry=registry, kind="adoption", role=role, to=[f"role:{role}"] if isinstance(role, str) else None,
                  in_reply_to=None, supersedes=None, effects=None, data=data)
+
+
+def handoff_view(board: dict[str, Any], *, role: str, digest: str,
+                 session_id: str | None = None) -> dict[str, Any]:
+    """Recorded lineage, never a timestamp guess or a grant of authority."""
+    rows = [r for r in board["messages"] if r.get("role") == role]
+    reports = [r for r in rows if r.get("kind") == "handoff"]
+    edges: dict[str, set[str]] = {}
+    for row in reports:
+        for old in row["data"].get("replaces_handoff_sha256", []):
+            edges.setdefault(old, set()).add(row["data"]["handoff_sha256"])
+    visited, leaves, pending = set(), set(), [digest]
+    while pending:
+        item = pending.pop()
+        if item in visited:
+            continue
+        visited.add(item)
+        if edges.get(item):
+            pending.extend(edges[item])
+        else:
+            leaves.add(item)
+    candidates = [r for r in reports if r["data"]["handoff_sha256"] in leaves]
+    adoptions = [r for r in rows if r.get("kind") == "adoption"
+                 and r.get("data", {}).get("handoff_sha256") == digest]
+    holders = {r["session_id"] for r in adoptions}
+    if not leaves or len(leaves) > 1 or len(holders) > 1:
+        state = "conflict"
+    elif digest not in leaves:
+        state = "superseded"
+    elif holders:
+        state = "adopted_by_self" if holders == {session_id} else "already_adopted"
+    else:
+        state = "available" if candidates else "unregistered"
+    return {"role": role, "handoff_sha256": digest, "state": state,
+            "adoptions": [{"sequence": r["sequence"], "session_id": r["session_id"],
+                           "references": r.get("references", [])} for r in adoptions],
+            "continuations": [{"sequence": r["sequence"], "session_id": r["session_id"],
+                               **r["data"]} for r in candidates],
+            "limits": "Full recorded board lineage only; unregistered does not establish freshness. "
+                      "Reports identify continuation evidence, not launch or task authority."}
+
+
+def publish_handoff(repository: Path, *, author: str, session_id: str, role: str,
+                    handoff_path: Path, title: str, replaces: list[str],
+                    message_id: str, observed_at: str) -> dict[str, Any]:
+    path = handoff_path.resolve()
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    board, revision = read_board(repository)
+    # Preparing an outgoing continuation replaces this actor's recorded incoming
+    # handoff and its earlier preparations. Bind that set before CAS retry, so a
+    # competing publication cannot be silently absorbed as another predecessor.
+    owned = [r for r in board["messages"] if r.get("role") == role
+             and r.get("session_id") == session_id and r.get("kind") in ("adoption", "handoff")]
+    inferred = {r["data"]["handoff_sha256"] for r in owned}
+    replaced = set(replaces) | (inferred - {digest})
+    for old in replaced:
+        if not re.fullmatch(r"[0-9a-f]{64}", old) or old == digest:
+            raise ChatboardError("replacement must name a distinct lowercase SHA-256")
+    data = {"handoff_path": str(path), "handoff_sha256": digest, "title": title,
+            "replaces_handoff_sha256": sorted(replaced)}
+    existing = [r for r in owned if r.get("kind") == "handoff" and r.get("data") == data]
+    if existing:
+        view = handoff_view(board, role=role, digest=digest)
+        if view["state"] != "available":
+            raise ChatboardError("handoff is no longer available: " + json.dumps(view))
+        return {"revision": revision, "message": existing[-1]}
+
+    def check(current: dict[str, Any]) -> None:
+        view = handoff_view(current, role=role, digest=digest)
+        if view["state"] != "unregistered":
+            raise ChatboardError("handoff already recorded: " + json.dumps(view))
+        for old in replaced:
+            status = handoff_view(current, role=role, digest=old, session_id=session_id)
+            if status["state"] == "already_adopted" and old not in replaces:
+                raise ChatboardError("replacement belongs to its recorded adopter: " + json.dumps(status))
+            tips = {r["handoff_sha256"] for r in status["continuations"]}
+            if ((status["state"] == "conflict" and old not in replaces)
+                    or not (tips - {old}) <= replaced):
+                raise ChatboardError("replacement lineage changed: " + json.dumps(status))
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            raise ChatboardError("handoff changed during publication")
+
+    return _post(repository, author=author, session_id=session_id, topic=f"handoff:{role}",
+                 body=f"Prepared continuation: {title}", references=[str(path)],
+                 message_id=message_id, observed_at=observed_at, wake=False,
+                 registry=load_registry(), kind="handoff", role=role, to=[f"role:{role}"],
+                 in_reply_to=None, supersedes=None, effects=None, data=data, before_append=check)
 
 
 def claim(repository: Path, *, resource: str, author: str, session_id: str,
@@ -1008,6 +1108,18 @@ def parser() -> argparse.ArgumentParser:
                            help="limit to this role (repeatable)")
     requests_cmd = commands.add_parser("requests", help="list requests by addressee with replies and receipts")
     requests_cmd.add_argument("--to", help="limit to requests addressed to this role:<name> or session:<uuid>")
+    handoff_cmd = commands.add_parser("handoff-publish", help="publish a prepared continuation, without launch authority")
+    for name in ("author", "session-id", "role", "title"):
+        handoff_cmd.add_argument(f"--{name}", required=True)
+    handoff_cmd.add_argument("--handoff-path", type=Path, required=True)
+    handoff_cmd.add_argument("--replaces-handoff-sha256", action="append", default=[])
+    handoff_cmd.add_argument("--message-id")
+    handoff_status = commands.add_parser("handoff-status", help="check full recorded lineage before recovering a handoff")
+    handoff_status.add_argument("--role", required=True)
+    identity = handoff_status.add_mutually_exclusive_group(required=True)
+    identity.add_argument("--handoff-path", type=Path)
+    identity.add_argument("--handoff-sha256")
+    handoff_status.add_argument("--session-id", help="the recovering actor, for same-session re-entry")
     post_cmd = commands.add_parser("post")
     for name in ("author", "session-id", "topic", "body"):
         post_cmd.add_argument(f"--{name}", required=True)
@@ -1137,6 +1249,21 @@ def main() -> int:
         elif args.command == "requests":
             board, revision = read_board(args.repository)
             print(json.dumps({"revision": revision, **requests_view(board, to=args.to)}, indent=2))
+        elif args.command == "handoff-publish":
+            print(json.dumps(publish_handoff(
+                args.repository, author=args.author, session_id=args.session_id, role=args.role,
+                title=args.title, handoff_path=args.handoff_path,
+                replaces=args.replaces_handoff_sha256, message_id=args.message_id or str(uuid4()),
+                observed_at=timestamp()), indent=2))
+        elif args.command == "handoff-status":
+            digest = (hashlib.sha256(args.handoff_path.read_bytes()).hexdigest()
+                      if args.handoff_path else args.handoff_sha256)
+            if not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise ChatboardError("handoff digest must be lowercase SHA-256")
+            board, revision = read_board(args.repository)
+            view = handoff_view(board, role=args.role, digest=digest, session_id=args.session_id)
+            print(json.dumps({"revision": revision, **view}, indent=2))
+            return 21 if view["state"] in ("superseded", "already_adopted", "conflict") else 32 if view["state"] == "unregistered" else 0
         elif args.command == "post":
             print(json.dumps(post(
                 args.repository, author=args.author, session_id=args.session_id,

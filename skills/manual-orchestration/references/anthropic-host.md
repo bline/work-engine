@@ -85,13 +85,37 @@ specifics:
 ```
 Act as coordinator under $manual-orchestration (read skills/manual-orchestration/SKILL.md
 and references/coordinator.md by repository path). Continue from the root handoff
-<path>, sha256 <digest>: verify the digest, read it and the assignment record it names,
-acknowledge ownership in that record under this session's id, re-claim <resources> on the
-coordination board, post a transition message, then take the next actions it lists.
+<path>, sha256 <digest>, role <role>: verify the digest and run the board's
+handoff-status for this role and digest with your own session ID. If superseded,
+already adopted, conflicting, or unregistered, reconcile its returned continuation
+references and durable authority before adopting or dispatching. Otherwise read
+it and the assignment record it names. Use the board's adopt command with your
+own session ID, role <role>, predecessor <predecessor-session-id>, and this path
+and digest. If adoption succeeds, acknowledge ownership in the assignment record,
+re-claim <resources>, post a transition message, then take the next actions it lists.
 ```
 
 - Bind the successor's identity by reading its own transcript path
   (`~/.claude/projects/<project>/<new session id>.jsonl`) and record it.
+
+### Finding and retiring native sessions
+
+Claude Code 2.1.310 supports `--name 'Readable task name | continuation ID'`,
+`--resume ID_OR_NAME`, and `agents --json` (`--all` includes completed background
+sessions; `--cwd` filters by directory). Use the exact verified ID when resuming;
+names need not be unique. A reboot does not make the old assignment current.
+The board's published handoff lineage supplies the continuation reference.
+
+`stop ID` stops a background session and retains its conversation. The host
+adapter uses this for retirement; interactive sessions are not thereby proven
+stopped. `/rename <name>` renames the current conversation and is also documented
+for `-p`; use an explicit name to avoid generating one from history. External
+renaming of an existing session through the adapter has not been probed.
+`rm` can remove a worktree as well as a background-session listing, so it is not
+mapped to recoverable archival. These controls were checked with installed
+CLI help and the [CLI reference](https://code.claude.com/docs/en/cli-reference);
+the [commands reference](https://code.claude.com/docs/en/commands) covers `/rename`.
+they do not establish model identity, task completion, or transfer authority.
 
 ## What does not carry over
 

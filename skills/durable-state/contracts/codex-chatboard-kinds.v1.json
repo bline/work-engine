@@ -55,6 +55,14 @@
       "enums": {"data.state": ["available", "ending"]},
       "optional_data": ["handoff", "handoff.path", "handoff.sha256", "claims_released", "live_children"]
     },
+    "handoff": {
+      "consumer": "root recovery and transfer gates; session discovery",
+      "writer": "handoff-publish",
+      "required": ["role", "data.handoff_path", "data.handoff_sha256", "data.title"],
+      "enums": {},
+      "patterns": {"data.handoff_sha256": "^[0-9a-f]{64}$"},
+      "optional_data": ["replaces_handoff_sha256"]
+    },
     "adoption": {
       "consumer": "the predecessor's gate; role resolution; peers re-addressing",
       "writer": "adopt",

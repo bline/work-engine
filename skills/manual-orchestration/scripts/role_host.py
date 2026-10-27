@@ -361,7 +361,8 @@ class Codex:
     # ---- lifecycle ----
     def status(self, sid, ledger=None) -> dict:
         rows = [r for r in ledger.rows() if r.get("session_id") == sid] if ledger else []
-        last = rows[-1] if rows else None
+        lifecycle = [r for r in rows if r.get("event") not in ("rename", "unarchive")]
+        last = lifecycle[-1] if lifecycle else None
         if self._alive((last or {}).get("pid")):
             return {"state": "running", "kind": "exec", "pid": last["pid"]}
         with self._conn() as c:
@@ -485,6 +486,35 @@ class Codex:
         ledger.append({"host": self.name, "event": "retire", "session_id": sid})
         return {"session_id": sid, "retired": "idle_released"}
 
+    def rename(self, sid, *, name, ledger) -> dict:
+        if not isinstance(name, str) or not name.strip():
+            raise HostError(USAGE, "usage", "session name must be nonempty")
+        with self._conn() as c:
+            self._call(c, "thread/name/set", {"threadId": sid, "name": name})
+        ledger.append({"host": self.name, "event": "rename", "session_id": sid, "name": name})
+        return {"session_id": sid, "name": name}
+
+    def archive(self, sid, *, ledger) -> dict:
+        # The server also archives spawned descendants. The caller must collect
+        # those first; archiving is not process collection or task completion.
+        st = self.status(sid, ledger)
+        if st["state"] == "running":
+            raise HostError(BUSY, "refused_busy", f"{sid} has a turn in progress")
+        if st["state"] == "absent":
+            raise HostError(NOT_ESTABLISHED, "archive_not_established", f"unknown thread {sid}")
+        with self._conn() as c:
+            self._call(c, "thread/archive", {"threadId": sid})
+        ledger.append({"host": self.name, "event": "retire", "session_id": sid, "archived": True})
+        return {"session_id": sid, "retired": "archived", "descendant_archival": "server_best_effort"}
+
+    def unarchive(self, sid, *, ledger) -> dict:
+        with self._conn() as c:
+            got = (self._call(c, "thread/unarchive", {"threadId": sid}).get("thread") or {}).get("id")
+        if got != sid:
+            raise HostError(DEFECT, "identity_mismatch", f"unarchive of {sid} returned {got}")
+        ledger.append({"host": self.name, "event": "unarchive", "session_id": sid})
+        return {"session_id": sid, "unarchived": True, "resumed": False}
+
 
 HOSTS = {"claude": Claude, "codex": Codex}
 
@@ -526,6 +556,14 @@ def main(argv=None) -> int:
         s = sub.add_parser(verb); s.add_argument("host"); s.add_argument("session_id")
         if verb == "retire":
             s.add_argument("--force", action="store_true")
+    rename = sub.add_parser("rename", help="rename a Codex thread without starting a turn")
+    rename.add_argument("host"); rename.add_argument("session_id"); rename.add_argument("--name", required=True)
+    for verb in ("archive", "unarchive"):
+        s = sub.add_parser(verb, help="Codex history management; no model turn")
+        s.add_argument("host"); s.add_argument("session_id")
+        if verb == "archive":
+            s.add_argument("--descendants-collected", action="store_true", required=True,
+                           help="caller attests all spawned descendants/results have been collected")
     de = sub.add_parser("deliver")
     de.add_argument("host"); de.add_argument("session_id"); de.add_argument("--cwd", required=True)
     de.add_argument("--message-file", required=True, type=Path)
@@ -561,6 +599,12 @@ def main(argv=None) -> int:
             elif a.cmd == "deliver":
                 kw = {"host_args": a.host_arg} if a.host == "codex" else {}
                 res = h.deliver(sid, message=a.message_file.read_text(), cwd=a.cwd, ledger=ledger, **kw)
+            elif a.cmd in ("rename", "archive", "unarchive"):
+                if a.host != "codex":
+                    raise HostError(USAGE, "unsupported_control", "Claude supports --name, current-session /rename, and stop; "
+                                    "external rename/archive is not established by this adapter. rm may remove a worktree.")
+                kw = {"name": a.name} if a.cmd == "rename" else {}
+                res = getattr(h, a.cmd)(sid, ledger=ledger, **kw)
             else:
                 res = h.retire(sid, ledger=ledger, force=a.force)
         print(json.dumps(res, sort_keys=True))
