@@ -1,0 +1,1041 @@
+{
+ "actors": [
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 115,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 11654784,
+     "input_tokens": 11908062,
+     "output_tokens": 50037,
+     "reasoning_output_tokens": 8555,
+     "total_tokens": 11958099
+    },
+    "usd": 3.3378828
+   },
+   "label": "historical.sol:builder:/root/hybrid_builder:01a16cc6",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 115,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 11654784,
+     "input_tokens": 11908062,
+     "output_tokens": 50037,
+     "reasoning_output_tokens": 8555,
+     "total_tokens": 11958099
+    },
+    "usd": 3.3378828
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 30,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 2515328,
+     "input_tokens": 2777267,
+     "output_tokens": 24276,
+     "reasoning_output_tokens": 4488,
+     "total_tokens": 2801543
+    },
+    "usd": 6.348518
+   },
+   "label": "historical.sol:incremental_reviewer:/root/hybrid_incremental_reviewer:01a16cc8",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 30,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 2515328,
+     "input_tokens": 2777267,
+     "output_tokens": 24276,
+     "reasoning_output_tokens": 4488,
+     "total_tokens": 2801543
+    },
+    "usd": 6.348518
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 5,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 132096,
+     "input_tokens": 150768,
+     "output_tokens": 2207,
+     "reasoning_output_tokens": 256,
+     "total_tokens": 152975
+    },
+    "usd": 0.429166
+   },
+   "label": "historical.sol:final_reviewer_failed:/root/hybrid_final_reviewer:01a171c7",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 5,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 132096,
+     "input_tokens": 150768,
+     "output_tokens": 2207,
+     "reasoning_output_tokens": 256,
+     "total_tokens": 152975
+    },
+    "usd": 0.429166
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 34,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3268736,
+     "input_tokens": 3378421,
+     "output_tokens": 34118,
+     "reasoning_output_tokens": 9158,
+     "total_tokens": 3412539
+    },
+    "usd": 6.071486
+   },
+   "label": "historical.sol:final_reviewer:/root/hybrid_final_reviewer_clean:01a171c9",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 34,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3268736,
+     "input_tokens": 3378421,
+     "output_tokens": 34118,
+     "reasoning_output_tokens": 9158,
+     "total_tokens": 3412539
+    },
+    "usd": 6.071486
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 90,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 16220672,
+     "input_tokens": 16488018,
+     "output_tokens": 47489,
+     "reasoning_output_tokens": 12514,
+     "total_tokens": 16535507
+    },
+    "usd": 21.268582
+   },
+   "label": "historical.sol:historical_root_coordination:None:01a16c02",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 90,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 16220672,
+     "input_tokens": 16488018,
+     "output_tokens": 47489,
+     "reasoning_output_tokens": 12514,
+     "total_tokens": 16535507
+    },
+    "usd": 21.268582
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 82,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 6720512,
+     "input_tokens": 6836723,
+     "output_tokens": 28330,
+     "reasoning_output_tokens": 2857,
+     "total_tokens": 6865053
+    },
+    "usd": 9.299122
+   },
+   "label": "historical.terra:supervisor:/root/terra_trial_supervisor:01a17a29",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 82,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 6720512,
+     "input_tokens": 6836723,
+     "output_tokens": 28330,
+     "reasoning_output_tokens": 2857,
+     "total_tokens": 6865053
+    },
+    "usd": 9.299122
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 61,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 5302784,
+     "input_tokens": 5442187,
+     "output_tokens": 30764,
+     "reasoning_output_tokens": 1821,
+     "total_tokens": 5472951
+    },
+    "usd": 0.5583622
+   },
+   "label": "historical.terra:builder:/root/terra_trial_supervisor/terra_builder:01a17a2a",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 61,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 5302784,
+     "input_tokens": 5442187,
+     "output_tokens": 30764,
+     "reasoning_output_tokens": 1821,
+     "total_tokens": 5472951
+    },
+    "usd": 0.5583622
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 33,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3085696,
+     "input_tokens": 3203756,
+     "output_tokens": 36697,
+     "reasoning_output_tokens": 8470,
+     "total_tokens": 3240453
+    },
+    "usd": 6.101146
+   },
+   "label": "historical.terra:reviewer:/root/terra_trial_supervisor/incremental_reviewer:01a17a2c",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 33,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3085696,
+     "input_tokens": 3203756,
+     "output_tokens": 36697,
+     "reasoning_output_tokens": 8470,
+     "total_tokens": 3240453
+    },
+    "usd": 6.101146
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 25,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 1989120,
+     "input_tokens": 2076068,
+     "output_tokens": 23758,
+     "reasoning_output_tokens": 6499,
+     "total_tokens": 2099826
+    },
+    "usd": 4.0465
+   },
+   "label": "historical.terra:reviewer:/root/terra_trial_supervisor/final_reviewer:01a17a41",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 25,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 1989120,
+     "input_tokens": 2076068,
+     "output_tokens": 23758,
+     "reasoning_output_tokens": 6499,
+     "total_tokens": 2099826
+    },
+    "usd": 4.0465
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 32,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 4539520,
+     "input_tokens": 4693617,
+     "output_tokens": 20353,
+     "reasoning_output_tokens": 4225,
+     "total_tokens": 4713970
+    },
+    "usd": 7.09814
+   },
+   "label": "historical.terra:historical_root_coordination:None:01a16c02",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 32,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 4539520,
+     "input_tokens": 4693617,
+     "output_tokens": 20353,
+     "reasoning_output_tokens": 4225,
+     "total_tokens": 4713970
+    },
+    "usd": 7.09814
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 101,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 10982016,
+     "input_tokens": 11125735,
+     "output_tokens": 44209,
+     "reasoning_output_tokens": 8893,
+     "total_tokens": 11169944
+    },
+    "usd": 14.629655999999999
+   },
+   "label": "arms.sonnet:supervisor:/root/sonnet_builder_supervisor:01a17ab1",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 101,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 10982016,
+     "input_tokens": 11125735,
+     "output_tokens": 44209,
+     "reasoning_output_tokens": 8893,
+     "total_tokens": 11169944
+    },
+    "usd": 14.629655999999999
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 30,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3072128,
+     "input_tokens": 3215079,
+     "output_tokens": 30877,
+     "reasoning_output_tokens": 8163,
+     "total_tokens": 3245956
+    },
+    "usd": 6.045488
+   },
+   "label": "arms.sonnet:reviewer:/root/sonnet_builder_supervisor/incremental_review:01a17ab8",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 30,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3072128,
+     "input_tokens": 3215079,
+     "output_tokens": 30877,
+     "reasoning_output_tokens": 8163,
+     "total_tokens": 3245956
+    },
+    "usd": 6.045488
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 30,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 2681216,
+     "input_tokens": 2880589,
+     "output_tokens": 25091,
+     "reasoning_output_tokens": 5123,
+     "total_tokens": 2905680
+    },
+    "usd": 5.929496
+   },
+   "label": "arms.sonnet:reviewer:/root/sonnet_builder_supervisor/final_review:01a17ad6",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 30,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 2681216,
+     "input_tokens": 2880589,
+     "output_tokens": 25091,
+     "reasoning_output_tokens": 5123,
+     "total_tokens": 2905680
+    },
+    "usd": 5.929496
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 42,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3862784,
+     "input_tokens": 3971103,
+     "output_tokens": 17756,
+     "reasoning_output_tokens": 1442,
+     "total_tokens": 3988859
+    },
+    "usd": 5.833774
+   },
+   "label": "arms.sonnet:supervisor:/root/sonnet_completion_supervisor:01a17ae7",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 42,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3862784,
+     "input_tokens": 3971103,
+     "output_tokens": 17756,
+     "reasoning_output_tokens": 1442,
+     "total_tokens": 3988859
+    },
+    "usd": 5.833774
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 106,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 12426624,
+     "input_tokens": 12565039,
+     "output_tokens": 50808,
+     "reasoning_output_tokens": 9838,
+     "total_tokens": 12615847
+    },
+    "usd": 16.351174
+   },
+   "label": "arms.opus:supervisor:/root/opus_builder_supervisor:01a17afc",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 106,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 12426624,
+     "input_tokens": 12565039,
+     "output_tokens": 50808,
+     "reasoning_output_tokens": 9838,
+     "total_tokens": 12615847
+    },
+    "usd": 16.351174
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 35,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3266176,
+     "input_tokens": 3380721,
+     "output_tokens": 30301,
+     "reasoning_output_tokens": 7460,
+     "total_tokens": 3411022
+    },
+    "usd": 5.926676
+   },
+   "label": "arms.opus:reviewer:/root/opus_builder_supervisor/incremental_review:01a17b03",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 35,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3266176,
+     "input_tokens": 3380721,
+     "output_tokens": 30301,
+     "reasoning_output_tokens": 7460,
+     "total_tokens": 3411022
+    },
+    "usd": 5.926676
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 42,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 4519040,
+     "input_tokens": 4652351,
+     "output_tokens": 38768,
+     "reasoning_output_tokens": 9182,
+     "total_tokens": 4691119
+    },
+    "usd": 7.7905500000000005
+   },
+   "label": "arms.opus:reviewer:/root/opus_builder_supervisor/final_review:01a17b46",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 42,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 4519040,
+     "input_tokens": 4652351,
+     "output_tokens": 38768,
+     "reasoning_output_tokens": 9182,
+     "total_tokens": 4691119
+    },
+    "usd": 7.7905500000000005
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 54,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 5609344,
+     "input_tokens": 5744302,
+     "output_tokens": 22714,
+     "reasoning_output_tokens": 1680,
+     "total_tokens": 5767016
+    },
+    "usd": 8.094624
+   },
+   "label": "arms.opus:supervisor:/root/opus_completion_supervisor:01a17b5d",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 54,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 5609344,
+     "input_tokens": 5744302,
+     "output_tokens": 22714,
+     "reasoning_output_tokens": 1680,
+     "total_tokens": 5767016
+    },
+    "usd": 8.094624
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 121,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 17217536,
+     "input_tokens": 17441799,
+     "output_tokens": 46149,
+     "reasoning_output_tokens": 9139,
+     "total_tokens": 17487948
+    },
+    "usd": 21.767616
+   },
+   "label": "common_overhead:root_coordination:None:01a16c02",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 121,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 17217536,
+     "input_tokens": 17441799,
+     "output_tokens": 46149,
+     "reasoning_output_tokens": 9139,
+     "total_tokens": 17487948
+    },
+    "usd": 21.767616
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 35,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3185536,
+     "input_tokens": 3527034,
+     "output_tokens": 21787,
+     "reasoning_output_tokens": 2380,
+     "total_tokens": 3548821
+    },
+    "usd": 7.689865999999999
+   },
+   "label": "common_overhead:auditor:/root/anthropic_quality_auditor:01a17adf",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 35,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 3185536,
+     "input_tokens": 3527034,
+     "output_tokens": 21787,
+     "reasoning_output_tokens": 2380,
+     "total_tokens": 3548821
+    },
+    "usd": 7.689865999999999
+   }
+  },
+  {
+   "delta": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 29,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 2421120,
+     "input_tokens": 2588951,
+     "output_tokens": 34195,
+     "reasoning_output_tokens": 7010,
+     "total_tokens": 2623146
+    },
+    "usd": 5.80918
+   },
+   "label": "common_overhead:accountant:/root/builder_cost_accountant:01a17ae9",
+   "match": true,
+   "provider": "codex",
+   "recomputed": {
+    "calls": 29,
+    "usage": {
+     "cache_write_input_tokens": 0,
+     "cached_input_tokens": 2421120,
+     "input_tokens": 2588951,
+     "output_tokens": 34195,
+     "reasoning_output_tokens": 7010,
+     "total_tokens": 2623146
+    },
+    "usd": 5.80918
+   }
+  },
+  {
+   "delta": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "calls": 0,
+    "ephemeral_1h_input_tokens": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "usd": -0.0
+   },
+   "expected": {
+    "calls": 97,
+    "usage": {
+     "cache_creation_input_tokens": 367211,
+     "cache_read_input_tokens": 11365385,
+     "ephemeral_1h_input_tokens": 367211,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 196,
+     "output_tokens": 141043
+    },
+    "usd": 4.0162045000000015
+   },
+   "label": "arms.sonnet:native_builder:without_subagents",
+   "match": true,
+   "provider": "anthropic",
+   "recomputed": {
+    "calls": 97,
+    "usage": {
+     "cache_creation_input_tokens": 367211,
+     "cache_read_input_tokens": 11365385,
+     "ephemeral_1h_input_tokens": 367211,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 196,
+     "output_tokens": 141043
+    },
+    "usd_high": 4.016204500000001,
+    "usd_low": 4.016204500000001
+   }
+  },
+  {
+   "delta": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "calls": 0,
+    "ephemeral_1h_input_tokens": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "usd": -0.0
+   },
+   "expected": {
+    "calls": 97,
+    "usage": {
+     "cache_creation_input_tokens": 367211,
+     "cache_read_input_tokens": 11365385,
+     "ephemeral_1h_input_tokens": 367211,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 196,
+     "output_tokens": 141043
+    },
+    "usd": 4.0162045000000015
+   },
+   "label": "arms.sonnet:native_builder:with_subagents",
+   "match": true,
+   "provider": "anthropic",
+   "recomputed": {
+    "calls": 97,
+    "usage": {
+     "cache_creation_input_tokens": 367211,
+     "cache_read_input_tokens": 11365385,
+     "ephemeral_1h_input_tokens": 367211,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 196,
+     "output_tokens": 141043
+    },
+    "usd_high": 4.016204500000001,
+    "usd_low": 4.016204500000001
+   }
+  },
+  {
+   "delta": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "calls": 0,
+    "ephemeral_1h_input_tokens": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 94,
+    "usage": {
+     "cache_creation_input_tokens": 338796,
+     "cache_read_input_tokens": 10769801,
+     "ephemeral_1h_input_tokens": 338796,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 194,
+     "output_tokens": 116197
+    },
+    "usd": 7.1890442
+   },
+   "label": "arms.opus:native_builder:without_subagents",
+   "match": true,
+   "provider": "anthropic",
+   "recomputed": {
+    "calls": 94,
+    "usage": {
+     "cache_creation_input_tokens": 338796,
+     "cache_read_input_tokens": 10769801,
+     "ephemeral_1h_input_tokens": 338796,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 194,
+     "output_tokens": 116197
+    },
+    "usd_high": 7.1890442000000006,
+    "usd_low": 7.1890442000000006
+   }
+  },
+  {
+   "delta": {
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "calls": 0,
+    "ephemeral_1h_input_tokens": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "usd": 0.0
+   },
+   "expected": {
+    "calls": 94,
+    "usage": {
+     "cache_creation_input_tokens": 338796,
+     "cache_read_input_tokens": 10769801,
+     "ephemeral_1h_input_tokens": 338796,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 194,
+     "output_tokens": 116197
+    },
+    "usd": 7.1890442
+   },
+   "label": "arms.opus:native_builder:with_subagents",
+   "match": true,
+   "provider": "anthropic",
+   "recomputed": {
+    "calls": 94,
+    "usage": {
+     "cache_creation_input_tokens": 338796,
+     "cache_read_input_tokens": 10769801,
+     "ephemeral_1h_input_tokens": 338796,
+     "ephemeral_5m_input_tokens": 0,
+     "input_tokens": 194,
+     "output_tokens": 116197
+    },
+    "usd_high": 7.1890442000000006,
+    "usd_low": 7.1890442000000006
+   }
+  }
+ ],
+ "groups": [
+  {
+   "arm": "sonnet",
+   "expected_calls": 97,
+   "expected_usd": 4.0162045000000015,
+   "group": "builder_only"
+  },
+  {
+   "arm": "sonnet",
+   "expected_calls": 157,
+   "expected_usd": 15.991188500000002,
+   "group": "builder_plus_reviewers"
+  },
+  {
+   "arm": "sonnet",
+   "expected_calls": 143,
+   "expected_usd": 20.46343,
+   "group": "coordination"
+  },
+  {
+   "arm": "sonnet",
+   "expected_calls": 300,
+   "expected_usd": 36.4546185,
+   "group": "attributable_total_excludes_common"
+  },
+  {
+   "arm": "opus",
+   "expected_calls": 94,
+   "expected_usd": 7.1890442,
+   "group": "builder_only"
+  },
+  {
+   "arm": "opus",
+   "expected_calls": 171,
+   "expected_usd": 20.9062702,
+   "group": "builder_plus_reviewers"
+  },
+  {
+   "arm": "opus",
+   "expected_calls": 160,
+   "expected_usd": 24.445798,
+   "group": "coordination"
+  },
+  {
+   "arm": "opus",
+   "expected_calls": 331,
+   "expected_usd": 45.3520682,
+   "group": "attributable_total_excludes_common"
+  }
+ ],
+ "measurement": "/home/bline/.local/state/work-engine/anthropic-builder-baselines-20261027/measurement/final-refresh-v2.json",
+ "status": "pass",
+ "summary": {
+  "actors": 25,
+  "differing": 0,
+  "matched": 25,
+  "not_established": 0
+ }
+}

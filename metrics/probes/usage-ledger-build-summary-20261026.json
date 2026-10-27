@@ -1,0 +1,119 @@
+{
+ "by_provider_model": {
+  "anthropic|claude-fable-5-1": {
+   "calls": 137,
+   "unpriced_calls": 137,
+   "usd": 0.0,
+   "weighted": 4357308.300000001
+  },
+  "anthropic|claude-haiku-5-5": {
+   "calls": 265,
+   "unpriced_calls": 265,
+   "usd": 0.0,
+   "weighted": 14660020.8
+  },
+  "anthropic|claude-opus-4-8": {
+   "calls": 51,
+   "unpriced_calls": 51,
+   "usd": 0.0,
+   "weighted": 1952327.4999999998
+  },
+  "anthropic|claude-opus-5": {
+   "calls": 3508,
+   "unpriced_calls": 3508,
+   "usd": 0.0,
+   "weighted": 113528693.19999999
+  },
+  "anthropic|claude-opus-5-5": {
+   "calls": 7002,
+   "unpriced_calls": 0,
+   "usd": 603.0039775999993,
+   "weighted": 178029906.30000016
+  },
+  "anthropic|claude-sonnet-5-5": {
+   "calls": 3602,
+   "unpriced_calls": 0,
+   "usd": 136.46260909999995,
+   "weighted": 79213282.59999998
+  },
+  "codex|gpt-5.6-sol": {
+   "calls": 2481,
+   "unpriced_calls": 2481,
+   "usd": 0.0,
+   "weighted": 44486543.599999934
+  },
+  "codex|gpt-6-astra": {
+   "calls": 37058,
+   "unpriced_calls": 0,
+   "usd": 6489.714592000025,
+   "weighted": 648971459.1999968
+  },
+  "codex|gpt-6-luna": {
+   "calls": 214,
+   "unpriced_calls": 214,
+   "usd": 0.0,
+   "weighted": 3198605.3999999994
+  },
+  "codex|gpt-6-sol": {
+   "calls": 56130,
+   "unpriced_calls": 0,
+   "usd": 1753.6528755999905,
+   "weighted": 876826437.8
+  },
+  "codex|gpt-6.1-sol": {
+   "calls": 171,
+   "unpriced_calls": 0,
+   "usd": 4.260300400000001,
+   "weighted": 3025145.3999999994
+  },
+  "codex|gpt-6.1-terra": {
+   "calls": 61,
+   "unpriced_calls": 0,
+   "usd": 0.5583622,
+   "weighted": 823501.4000000003
+  }
+ },
+ "calls": 110680,
+ "coverage": {
+  "claude_files": 313,
+  "codex_files": 650
+ },
+ "fallback_calls": 1,
+ "issues": {
+  "conflicting_native_counter": 12,
+  "malformed_line": 3
+ },
+ "level1": {
+  "claude_sessions": {
+   "classes": {
+    "counter_exceeds_transcript": 50,
+    "exact": 148,
+    "mixed": 9,
+    "model_absent_from_transcript": 33,
+    "transcript_exceeds_counter": 1
+   },
+   "cli_cost_usd_by_class": {
+    "counter_exceeds_transcript": 435.96,
+    "exact": 340.32,
+    "mixed": 454.18,
+    "model_absent_from_transcript": 1.19,
+    "transcript_exceeds_counter": 0.1
+   },
+   "compared": 241,
+   "differing": 93,
+   "exact": 148,
+   "with_starting_offset": 0
+  },
+  "codex_threads": {
+   "compared": 642,
+   "differing": 0,
+   "exact": 642,
+   "with_starting_offset": 2
+  }
+ },
+ "pricing": "frozen Standard API scenario; not a bill or quota",
+ "quota_readings": 98885,
+ "since": "2026-10-01T00:00:00Z",
+ "unknown_model_calls": 0,
+ "until": "2026-10-27T04:30:00Z"
+}
