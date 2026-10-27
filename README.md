@@ -129,6 +129,9 @@ the contract the supervising agent follows.
 | `PHILOSOPHY.md` | Why that doctrine exists; explicitly non-normative |
 | `ARCHITECTURE.md` | Current whole-system map, with an explicit maturity class per subsystem |
 | `roadmap.md` | Product direction, remaining work, and completion evidence |
+| [`docs/repository-layout.md`](docs/repository-layout.md) | Where a file belongs and why: categories by lifetime and authority, and rules for moving or citing files |
+| [`design/`](design/README.md) | Current design: what the system is meant to be. Most of the corpus still lives under `app-server/docs/` and `ideas/` until it moves |
+| [`records/`](records/README.md) | Dated campaign records, kept as written. The Rust campaign records still live at `docs/rust-*.md` until they move |
 | `skills/` | Role and capability packages: contracts, adapters, schemas, tests |
 | `app-server/` | App Server runtime: role hosting, services, protocol, isolated workspaces |
 | `rust/` | Rust workspace (`rust/crates/`): context lifecycle, claim/evidence, review episodes, task and review hosts, skill compiler, terminal UI |
