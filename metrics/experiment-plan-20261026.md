@@ -126,8 +126,9 @@ has never been measured.
    - in a clone that holds only the baseline commit: a single-ref export, no later
      refs or reflog;
    - under an explicit allowlist of readable paths, tools and network endpoints;
-   - with user-level memory, skills and project instructions either excluded or
-     pinned and recorded;
+   - with instructions loaded only from the frozen environment manifest (see
+     *Environment for experiment arms* below), never through the
+     `~/.claude/skills` symlinks into the live working tree;
    - with an environment manifest written before launch. Exact `claude -p` flags
      and sandbox settings are verified and fixed in each pre-registration.
 
@@ -145,6 +146,66 @@ has never been measured.
    Inconclusive is expected to be common and is a legitimate result.
 8. **State n with every result.** Results go in a `probes/` result file and a row
    in `efficiency-ledger.md`.
+
+### Environment for experiment arms (added 2026-10-27)
+
+- **Production-equivalent harness.** Arms run under the harness production uses:
+  - skills such as `manual-orchestration`, `claude-builder` and
+    `coordination-channels`;
+  - `AGENTS.md` and `CLAUDE.md`;
+  - chatboard coordination;
+  - context-pressure enrollment through `wait` control subscriptions;
+  - the handoff policy and its band levels;
+  - the same CLI hosts.
+
+  Reason: most of what is being reduced lives in that machinery. Coordination was
+  53.9–60.5% of each four-builder arm, and the Opus arm needed a successor builder.
+  A bare harness would measure a different system.
+- **Frozen per comparison.** An environment manifest
+  (`metrics/probes/<experiment>-environment.json`) records:
+  - the repository commit;
+  - path and sha256 of every instruction file the arms can load (skills,
+    `AGENTS.md`, `CLAUDE.md`, referenced docs). These come from the commit, or,
+    where production depends on uncommitted files, from a hashed snapshot of them.
+    Example: `skills/claude-builder/SKILL.md` was untracked on 2026-10-27.
+  - the pinned context-status binary hash;
+  - Claude Code and Codex CLI versions;
+  - band and planning levels;
+  - models and efforts.
+
+  Arms load instructions from the materialized manifest. An arm whose environment
+  does not match the manifest at launch is invalid.
+- **Re-pin between comparisons, never inside one.** The environment changed three
+  times in four days: pressure subscriptions 10-23, the chatboard contract and wait
+  delivery 10-25, daemon-hosted Codex roles 10-26. When production moves on:
+  - re-pin before the next comparison;
+  - repeat the E1a variation check before comparing new arms with old ones;
+  - every result carries its manifest id, and results from different manifests are
+    not compared directly.
+- **Separate board per experiment.** The chatboard lives in git refs of
+  `--repository`, which defaults to the current directory
+  (`skills/durable-state/scripts/codex_chatboard.py:1069`). Each experiment uses
+  its own **clone**, never a git worktree: a worktree shares the main repository's
+  refs and therefore the production board. The coordinator and the arms point at
+  that clone, so arms cannot read each other's posts and the production board stays
+  clean.
+- **Pressure is an outcome.** Arms are enrolled as production enrolls them, and the
+  results record pressure events, handoffs, context at handoff, and successor cost.
+  The pressure policy is held constant within model comparisons. Testing the policy
+  itself, for example the M22 handoff threshold, is a separate experiment.
+
+| Experiment | Environment |
+|---|---|
+| E3 decision replay | Offline; pressure does not arise |
+| E2 reviews | Single runs, usually below the bands; any pressure event is recorded |
+| E1 builders | Production builder harness; pressure delivered to the coordinator; handoffs allowed under the frozen policy |
+| E5 / O4 end-to-end | Full production setup under a pinned manifest |
+
+- **History.** Past runs used whatever environment existed at the time. F2 records
+  each run's observed environment: Codex CLI version and repository commit at thread
+  start, and Claude Code versions. Instruction-file versions were not recorded for
+  past runs and are `not established`. Historical figures are context, not
+  controls.
 
 ## 3. Spending controls
 
@@ -195,7 +256,7 @@ work under §3.
 | ID | Deliverable | Done when |
 |---|---|---|
 | F1 | `metrics/scripts/usage_ledger.py`: one row per model call for both providers. Detail below the table. | **Reconciliation shown** at three levels: raw provider counters against reconstructed call totals per session; sessions against the four-builder `measurement/final-refresh-v2.json` per-actor totals; and today's window totals. Coverage gaps listed. |
-| F2 | Run registry linking run directory → threads and sessions → outcome (acceptance, findings, repairs, tests). Seeded with: four-builder baselines, Terra trial, usage-export hybrid/end-only/incremental, manual-decomposition S10, Claude R1/R2, bounded-inference B0–B3, rp1–rp3. | Every seeded run has reconciled cost rows from F1 and a sourced outcome, or `not established`. |
+| F2 | Run registry linking run directory → threads and sessions → outcome (acceptance, findings, repairs, tests), plus each run's observed environment (Codex CLI version, repository commit at thread start, Claude Code versions). Seeded with: four-builder baselines, Terra trial, usage-export hybrid/end-only/incremental, manual-decomposition S10, Claude R1/R2, bounded-inference B0–B3, rp1–rp3. | Every seeded run has reconciled cost rows from F1 and a sourced outcome, or `not established`. |
 | F3 | One command that scores any commit against the 34-case battery, generalised from `usage-export-quality-audit-20261025/{run_audit.py,adjudicate.py}` and the per-arm `audit/adjudicate_*.py`. Built by a session that runs no arms. | Reproduces the published initial and final scores for all four builders. |
 | F4 | Repair `skills/code-change-profile`: its pinned `checkpoint.py` hash predates `fca03fe5` (found by reading; not yet run). Add Rust file and item-level counts. | Profiles the four builders' final commits. |
 
@@ -204,6 +265,19 @@ work under §3.
 Interactive Claude sessions are reported two ways (transcript and CLI counter) and
 budgeted against the larger. The difference is not treated as established
 expenditure.
+
+**F2 status:** accepted 2026-10-27; see
+[`probes/run-registry-f2-20261027.md`](probes/run-registry-f2-20261027.md). Shared
+and candidate amounts are listed per run and never summed across runs. S10's total
+cost remains `not established`.
+
+**F3 status:** accepted 2026-10-27; see
+[`probes/battery-scorer-f3-20261027.md`](probes/battery-scorer-f3-20261027.md). The
+scorer and its sealed rules stay outside the repository at
+`~/cbm-work/f3-battery-scorer/`, and arms are denied read access there. Headline
+tier: `final`. The anchor battery records no contract-versus-regression category,
+so that split is `not established` for the anchor; counts by fixture-provenance
+group are reported instead.
 
 F1 details:
 - **Codex:**
@@ -236,7 +310,9 @@ differences can show.
   - a neutral packet can be written from the accepted plan or contract without
     leaking the solution or its review findings;
   - the outcome can be scored from outside: CLI output, file or wire format, or an
-    interface the packet specifies.
+    interface the packet specifies. Since the E1a decision (§6), every T0 packet
+    states the interface its battery exercises, and contract cases are written
+    against that stated interface.
 - **Difficulty features,** deterministic where possible:
   1. *Scale:* lines, files, crates (F4).
   2. *Integration depth:* existing symbols modified against added, fan-in of the
@@ -307,6 +383,31 @@ first and are **not** comparable.
 **E1a. Pilot estimate of run-to-run variation (anchor: usage-export).**
 - **Arms:** Sonnet 5.5 medium ×3, Haiku 5.5 high ×1, Opus 5.5 medium ×1, on
   baseline `1e21e71c` with the frozen neutral packet, scored by F3.
+- **Fixed interface (owner decision, 2026-10-27).** The frozen packet states the
+  export interface; the implementation stays open.
+  - **Reference:** Terra's final commit `88b035f2` in
+    `~/cbm-work/usage-export-terra-20261026-01a16c02`. It is stated as the export
+    flag, invocation, output schema and exit behaviour, taken from Terra's own
+    documentation and its observed output on the contract's public oracle seed.
+    Terra was built by a Codex model, so no E1a arm model is given its own earlier
+    design.
+  - **Why:** the battery's frozen rules recognise only six output schemas. A build
+    that invents a seventh scores 34 × `indeterminate` until someone writes new
+    rules, and that would add a per-run judgment to the variation E1a measures.
+    With the interface fixed, every run is scored by Terra's frozen rules and no new
+    rules are written.
+  - **Who writes the interface section:** the coordinator, who has not read the
+    battery. The F3 builder then checks, without disclosing case content, that the
+    Terra schema detection and rules depend only on interface elements the section
+    states.
+  - **Scoring:** F3 at the `final` tier.
+    - Indeterminate cases are never counted as pass or fail.
+    - A run whose output is not recognised as the Terra schema is reported as
+      *interface non-conformant*: a behavioural result, not a pass, with its cases
+      unscored.
+  - **Limitation:** Terra's final schema is a reviewed and repaired design, so the
+    interface carries some review-derived shape. E1a first-artifact counts were
+    already not comparable with the historical initial counts.
 - **Prerequisite:** before any Haiku run is priced, verify the exact Haiku 5.5
   model identifier and a dated, authoritative price source, and add both to the
   frozen price table. The F1 ledger currently leaves Haiku unpriced.
@@ -463,6 +564,15 @@ owner confirmation:
 | Fable review arm | Deferred until the core E2 comparisons are complete |
 | E4 | Conditional, deferred |
 | Production supervisor replacement | Requires a real-slice validation (E5/O4) after E3/O2 |
+
+Decided by the owner on 2026-10-27:
+
+| Decision | Outcome |
+|---|---|
+| F1 usage ledger | Accepted and frozen |
+| F2 run registry | Accepted |
+| F3 battery scorer | Accepted. Headline tier `final`, as proposed in its record |
+| E1a scoring | Fixed interface in the packet (option A), reference Terra `88b035f2` (§6 E1a); the alternative, per-artifact projection rules written for each run, was not chosen |
 
 ## 10. Review disposition (ChatGPT review of v1, 2026-10-26)
 

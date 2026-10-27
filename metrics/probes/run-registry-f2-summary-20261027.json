@@ -1,0 +1,38 @@
+{
+ "agent_paths_shared_by_threads": 3,
+ "attribution_totals": {
+  "attributed": 202,
+  "candidate": 256,
+  "inferred": 4,
+  "shared": 52,
+  "windowed": 10,
+  "windowed_shared": 9
+ },
+ "claude_sessions": 200,
+ "claude_subagents": 120,
+ "codex_threads": 1116,
+ "entities_claimed_by_multiple_runs": 25,
+ "ledger": "/home/bline/cbm-work/usage-ledger/f1-frozen-20261027T0430Z",
+ "runs": 41,
+ "runs_with_mixed_environment": 21,
+ "runs_without_outcome": [
+  "bounded-inference-b0-20261021",
+  "bounded-inference-planning-20261021",
+  "rp0-sc3d-implementation-20261013",
+  "rp0-sc3d-session-handoff-20261015-dzfgohtb",
+  "rp1-astra-plan-review-20261016",
+  "rp1-plan-20261015"
+ ],
+ "sessions_continued": 3,
+ "sessions_multi_dir": 0,
+ "sessions_with_fallback": 1,
+ "sessions_with_model_change": 2,
+ "threads_forked": 80,
+ "threads_parent_agreement": {
+  "agree": 793,
+  "no_parent": 323
+ },
+ "threads_with_inherited_counter": 2,
+ "threads_with_model_change": 7,
+ "threads_with_resume_gap": 60
+}
