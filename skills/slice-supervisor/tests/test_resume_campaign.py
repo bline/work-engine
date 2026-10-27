@@ -137,5 +137,26 @@ class ResumeCampaignTest(unittest.TestCase):
                         RESUME.resume(path, second[2], "test-run")
 
 
+class PreservationResumeTest(unittest.TestCase):
+    def test_created_uncertainty_survives_terminal_and_fresh_resume(self):
+        fixture = load_module("resume_preservation_fixture", ROOT.parent / "slice-completion-commit/tests/test_completion_commit.py")
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, accepted = fixture.preservation_fixture(directory)
+            def interruption(_oid):
+                raise ValueError("synthetic interrupted index transition")
+            created = fixture.ADAPTER.decide(request, "create", after_publish=interruption)
+            self.assertEqual("created", created["state"])
+            self.assertEqual("unestablished", created["evidence"]["index_transition"])
+            index = fixture.ADAPTER.index_path(repository).read_bytes()
+            destination = Path(directory) / "terminal.jsonl"
+            inputs = fixture.preservation_terminal_inputs()
+            FINALIZER.finalize(destination, *inputs, accepted, created)
+            fresh = load_module("fresh_preservation_resume", ROOT / "scripts/resume_campaign.py")
+            resumed = fresh.resume(destination, inputs[2], "test-run")
+            self.assertEqual(created, resumed["slice_completion_commit"])
+            self.assertEqual(index, fixture.ADAPTER.index_path(repository).read_bytes())
+            self.assertEqual(accepted["checkpoint_commit_oid"], resumed["baseline_checkpoint"]["checkpoint_commit_oid"])
+
+
 if __name__ == "__main__":
     unittest.main()

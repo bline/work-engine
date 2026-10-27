@@ -130,5 +130,25 @@ class FinalizeReceiptTest(unittest.TestCase):
         )
 
 
+class PreservationFinalizeTest(unittest.TestCase):
+    def test_actual_git_and_evidence_readback_precedes_append(self):
+        fixture = load_module("finalizer_preservation_fixture", ROOT.parent / "slice-completion-commit/tests/test_completion_commit.py")
+        with tempfile.TemporaryDirectory() as directory:
+            _repository, request, accepted = fixture.preservation_fixture(directory)
+            created = fixture.ADAPTER.decide(request, "create")
+            self.assertEqual("created", created["state"], created)
+            destination = Path(directory) / "terminal.jsonl"
+            inputs = fixture.preservation_terminal_inputs()
+            post = Path(created["evidence"]["post"]["path"])
+            original = post.read_bytes()
+            post.write_bytes(b"{}")
+            with self.assertRaisesRegex(ValueError, "digest"):
+                FINALIZER.finalize(destination, *inputs, accepted, created)
+            self.assertFalse(destination.exists())
+            post.write_bytes(original)
+            result = FINALIZER.finalize(destination, *inputs, accepted, created)
+            self.assertEqual(created, result["producer_metrics"]["slice_completion_commit"])
+
+
 if __name__ == "__main__":
     unittest.main()

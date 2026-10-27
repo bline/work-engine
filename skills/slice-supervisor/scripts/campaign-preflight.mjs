@@ -2,16 +2,20 @@
 import fs from "node:fs/promises";
 import crypto from "node:crypto";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { parse } from "yaml";
 import { loadChromeVisionConfig, resolveChromeVisionConfig } from "../../chrome-vision/src/config.mjs";
 
 const allowed = new Set(["version","objective","work_source","builder","validation","metrics","limits","approval","notifications","stop_on","capabilities","slice_completion_commit","amendments"]);
+const currentBuilderModels = new Set(["gpt-6-sol", "gpt-6-astra"]);
+const currentReasoningEfforts = new Set(["low", "medium", "high", "xhigh", "max", "ultra"]);
+const providerResolver = path.resolve(import.meta.dirname, "../../slice-builder/scripts/resolve_provider.py");
 const defaults = {
   work_source: null,
   builder: {
     skill: "slice-builder",
-    model: "gpt-5.6-sol",
-    reasoning_effort: "low",
+    model: "gpt-6-sol",
+    reasoning_effort: "high",
     context: {
       repository_evidence: { skill: "repo-search", provider: "codex-codebase-memory" },
       independent_review: { skill: "claude-recon-implementation", provider: "claude" },
@@ -60,11 +64,25 @@ export async function preflightCampaign(campaignPath, { cwd = process.cwd() } = 
   const authoredFields = Object.keys(campaign).filter(key => allowed.has(key));
   const engineConfig = mergeDefaults(defaults, campaign);
   const authoredContext = campaign.builder?.context;
-  if (authoredContext?.independent_review && authoredContext?.adversarial_review) {
+  if (!engineConfig.builder || typeof engineConfig.builder !== "object" || Array.isArray(engineConfig.builder) || !engineConfig.builder.context || typeof engineConfig.builder.context !== "object" || Array.isArray(engineConfig.builder.context)) {
+    throw new Error("builder and builder.context must be mappings");
+  }
+  if (authoredContext && Object.hasOwn(authoredContext, "independent_review") && Object.hasOwn(authoredContext, "adversarial_review")) {
     throw new Error("builder.context must configure exactly one review role, not both independent_review and adversarial_review");
   }
-  if (authoredContext?.adversarial_review) {
+  if (authoredContext && Object.hasOwn(authoredContext, "adversarial_review")) {
     delete engineConfig.builder.context.independent_review;
+  }
+  if (!currentBuilderModels.has(engineConfig.builder.model)) {
+    throw new Error("builder.model must be a supported current model");
+  }
+  if (!currentReasoningEfforts.has(engineConfig.builder.reasoning_effort)) {
+    throw new Error("builder.reasoning_effort must be supported by the current builder model");
+  }
+  try {
+    execFileSync("python3", [providerResolver, "--config-version", "2", "--context-json", JSON.stringify(engineConfig.builder.context), "--builder-model", engineConfig.builder.model, "--builder-reasoning-effort", engineConfig.builder.reasoning_effort], { encoding: "utf8" });
+  } catch (error) {
+    throw new Error(`builder.context is invalid: ${error.stderr?.toString().trim() || error.message}`);
   }
   if (!engineConfig.slice_completion_commit || !["enabled", "disabled"].includes(engineConfig.slice_completion_commit.prompt) || Object.keys(engineConfig.slice_completion_commit).some(key => key !== "prompt")) {
     throw new Error("slice_completion_commit must contain only prompt: enabled or disabled");

@@ -246,11 +246,16 @@ remain distinct. An accepted receipt requires `decided`. Selected specialist
 calls count under the configured review provider; specialist identity never
 replaces provider identity.
 
-An `accepted_same_model_review` identity requires fresh-process isolation,
-`builder_context_inherited: false`, `model_relationship: same_model`, and
-`independence_claimed: false`. It must not be represented as cross-provider,
-cross-model, statistically independent, or independent reasoning, and cannot
-satisfy a configured requirement explicitly demanding independent review.
+An `accepted_same_model_review` identity requires matching observed builder
+and reviewer models and `model_relationship: same_model`.
+`accepted_same_provider_different_model_review` requires distinct observed
+Codex models and `model_relationship: different_model`. Both require
+fresh-process isolation, `builder_context_inherited: false`, and
+`independence_claimed: false`. Configured and observed model and effort are
+separate provenance; mismatches invalidate the role identity. Neither class
+establishes cross-provider, statistical, or reasoning independence or satisfies
+a configured requirement explicitly demanding independent review. Historical
+old-model receipts remain readable; current writes reject that selection.
 
 Capability classes describe how evidence was obtained, not which product
 supplied it. Provider and model identity remain separate provenance. A fallback
@@ -296,3 +301,20 @@ Measurements are numbers or null, never estimates disguised as facts. Preserve c
 Do not include raw transcripts, prompts, chain-of-thought, source excerpts, diffs, patches, raw validation output, detailed debug logs, or secrets. Receipts are operational records, not execution archives.
 
 Compare anomalies only against recent comparable accepted records. A value above roughly twice a recent median is a review signal, not proof of failure. Do not manufacture a baseline when history is sparse.
+
+## Preservation-aware completion evidence
+
+The optional completion projection also accepts adapter receipt schema2 for
+explicit `preserve_unrelated_v1` requests. The
+[slice-completion adapter contract](../../slice-completion-commit/references/receipt-schema.md)
+owns its pure shape/proposal/request-binding validation; the supervisor retains
+terminal run/slice and accepted-checkpoint joins. Finalization still invokes
+strong Git/evidence readback before append. Do not replace that with shape-only
+validation or infer human approval from the adapter's actor-recorded evidence.
+
+A created commit may have failed or unestablished index/preservation
+postconditions after branch CAS. Preserve those outcomes and the reason in
+terminal history and resume; do not relabel them as verified completion or
+automatically repair user state. Historical receipt1 records retain only their
+original evidence meanings. This addition does not change model/effort,
+provider-role, review-selection or other terminal receipt contracts.

@@ -26,6 +26,13 @@ if not RESOLVER_SPEC or not RESOLVER_SPEC.loader:
 PROVIDER_RESOLVER = importlib.util.module_from_spec(RESOLVER_SPEC)
 RESOLVER_SPEC.loader.exec_module(PROVIDER_RESOLVER)
 
+COMPLETION_PATH = Path(__file__).parents[2] / "slice-completion-commit/scripts/completion_commit.py"
+COMPLETION_SPEC = importlib.util.spec_from_file_location("metrics_completion_contract", COMPLETION_PATH)
+if not COMPLETION_SPEC or not COMPLETION_SPEC.loader:
+    raise RuntimeError(f"cannot load completion contract: {COMPLETION_PATH}")
+COMPLETION_ADAPTER = importlib.util.module_from_spec(COMPLETION_SPEC)
+COMPLETION_SPEC.loader.exec_module(COMPLETION_ADAPTER)
+
 
 CURRENT_SCHEMA_VERSION = 5
 SUPPORTED_SCHEMA_VERSIONS = frozenset(range(1, CURRENT_SCHEMA_VERSION + 1))
@@ -207,63 +214,17 @@ def validate_checkpoint_projection(value: Any, record: dict[str, Any]) -> None:
 
 
 def validate_completion_commit_projection(value: Any, record: dict[str, Any], checkpoint: Any) -> None:
-    if not isinstance(value, dict):
-        fail("producer_metrics.slice_completion_commit must be an object")
-    require_exact_keys(value, COMPLETION_COMMIT_FIELDS, "producer_metrics.slice_completion_commit")
-    if value["schema_version"] != 1 or value["state"] not in {"pending", "declined", "created", "refused"}:
-        fail("slice completion commit must use schema version 1 and a valid state")
+    # The Git adapter owns supported shapes; this owner retains terminal joins.
+    COMPLETION_ADAPTER.validate_receipt_shape(value)
     if record["status"] != "accepted":
         fail("slice completion commit requires an accepted terminal receipt")
     if value["run_id"] != record["run_id"] or value["slice_number"] != record["slice_number"]:
         fail("slice completion commit identity must match the terminal receipt")
     proposal = value["proposal"]
-    if not isinstance(proposal, dict):
-        fail("slice completion commit proposal must be an object")
-    if proposal.get("schema_version") == 1:
-        require_exact_keys(
-            proposal, COMPLETION_PROPOSAL_COMMON_FIELDS | {"origin"},
-            "historical slice completion commit proposal",
-        )
-        if proposal["origin"] != "completing_builder":
-            fail("historical slice completion proposal requires completing_builder origin")
-    elif proposal.get("schema_version") == 2:
-        require_exact_keys(
-            proposal, COMPLETION_PROPOSAL_COMMON_FIELDS | {"provenance"},
-            "slice completion commit proposal",
-        )
-        validate_completion_provenance(proposal["provenance"])
-    else:
-        fail("slice completion proposal must use supported schema version 1 or 2")
-    if checkpoint is None or proposal["checkpoint_commit_oid"] != checkpoint["checkpoint_commit_oid"] or proposal["checkpoint_tree_oid"] != checkpoint["checkpoint_tree_oid"] or proposal["task_patch_digest"] != checkpoint["task_patch_digest"]:
+    if checkpoint is None or any(proposal[key] != checkpoint[key] for key in (
+        "checkpoint_commit_oid", "checkpoint_tree_oid", "task_patch_digest"
+    )):
         fail("slice completion proposal must bind the accepted checkpoint")
-    if hashlib.sha256(json.dumps(proposal, sort_keys=True, separators=(",", ":")).encode()).hexdigest() != value["proposal_digest"]:
-        fail("slice completion proposal digest does not match")
-    for field in ("subject", "checkpoint_commit_oid", "checkpoint_tree_oid", "task_patch_digest"):
-        if not isinstance(proposal[field], str) or not proposal[field].strip():
-            fail(f"slice completion proposal.{field} must be nonempty")
-    if "\n" in proposal["subject"] or not isinstance(proposal["body"], str):
-        fail("slice completion proposal message is invalid")
-    if not isinstance(proposal["paths"], list) or not proposal["paths"] or not all(
-        isinstance(path, str) and path and not path.startswith("/") for path in proposal["paths"]
-    ) or len(set(proposal["paths"])) != len(proposal["paths"]):
-        fail("slice completion proposal paths must be a unique nonempty array")
-    for field in ("repository", "expected_branch", "expected_head_oid", "proposal_digest"):
-        if not isinstance(value[field], str) or not value[field].strip():
-            fail(f"slice completion commit.{field} must be nonempty")
-    for field in ("expected_head_oid",):
-        oid = value[field]
-        if len(oid) not in {40, 64} or any(character not in "0123456789abcdef" for character in oid):
-            fail(f"slice completion commit.{field} must be a Git object id")
-    if value["state"] == "created":
-        if not isinstance(value["commit_oid"], str) or not value["commit_oid"] or not isinstance(value["reason"], (str, type(None))):
-            fail("created completion commit requires commit_oid and an optional reason")
-        if len(value["commit_oid"]) not in {40, 64} or any(character not in "0123456789abcdef" for character in value["commit_oid"]):
-            fail("created completion commit.commit_oid must be a Git object id")
-    elif value["state"] == "pending":
-        if value["commit_oid"] is not None or value["reason"] is not None:
-            fail("pending completion commit cannot have commit_oid or reason")
-    elif value["commit_oid"] is not None or not isinstance(value["reason"], str) or not value["reason"]:
-        fail("declined/refused completion commit requires a reason and no commit_oid")
 
 
 def validate_completion_provenance(value: Any) -> None:
@@ -386,7 +347,13 @@ def validate_engine_record(record: dict[str, Any]) -> None:
 
     if not isinstance(config["builder"].get("skill"), str) or not config["builder"]["skill"].strip():
         fail("engine_config.builder.skill must be a nonempty string")
-    validate_builder_context(config["version"], config["builder"].get("context", {}))
+    builder_model = config["builder"].get("model", "gpt-6-sol")
+    if not isinstance(builder_model, str) or not builder_model.strip():
+        fail("engine_config.builder.model must be a nonempty string")
+    validate_builder_context(
+        config["version"], config["builder"].get("context", {}), builder_model,
+        config["builder"].get("reasoning_effort", "high"),
+    )
     if not isinstance(config["validation"].get("profile"), str) or not config["validation"]["profile"].strip():
         fail("engine_config.validation.profile must be a nonempty string")
     requirements = config["validation"].get("requirements")
@@ -395,7 +362,10 @@ def validate_engine_record(record: dict[str, Any]) -> None:
     if len(set(requirements)) != len(requirements):
         fail("engine_config.validation.requirements must not contain duplicates")
     resolved_context = PROVIDER_RESOLVER.resolve_builder_context(
-        config["version"], config["builder"].get("context", {})
+        config["version"], config["builder"].get("context", {}),
+        builder_model=builder_model,
+        builder_reasoning_effort=config["builder"].get("reasoning_effort", "high"),
+        allow_historical=True,
     )
     if "adversarial_review" in resolved_context and any(
         requirement in {"independent_review", "independent_adversarial_review"}
@@ -552,11 +522,16 @@ def validate_unavailable_metrics(record: dict[str, Any]) -> set[str]:
     return set(fields)
 
 
-def validate_builder_context(version: int, context: Any) -> None:
+def validate_builder_context(
+    version: int, context: Any, builder_model: str, builder_reasoning_effort: str
+) -> None:
     if not isinstance(context, dict):
         fail("engine_config.builder.context must be an object")
     try:
-        PROVIDER_RESOLVER.resolve_builder_context(version, context)
+        PROVIDER_RESOLVER.resolve_builder_context(
+            version, context, builder_model=builder_model,
+            builder_reasoning_effort=builder_reasoning_effort, allow_historical=True,
+        )
     except PROVIDER_RESOLVER.ProviderResolutionError as error:
         fail(str(error))
 
@@ -714,9 +689,17 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
     configured_roles = None
     if config_version in {1, 2}:
         try:
+            configured_builder_model = record["engine_config"]["builder"].get(
+                "model", "gpt-6-sol"
+            )
             configured_roles = PROVIDER_RESOLVER.resolve_builder_context(
                 config_version,
                 record["engine_config"]["builder"].get("context", {}),
+                builder_model=configured_builder_model,
+                builder_reasoning_effort=record["engine_config"]["builder"].get(
+                    "reasoning_effort", "high"
+                ),
+                allow_historical=True,
             )
         except PROVIDER_RESOLVER.ProviderResolutionError as error:
             fail(f"worker_metrics role identity is invalid: {error}")
@@ -754,8 +737,18 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         if field == "adversarial_review_identity":
             if identity["builder_context_inherited"] is not False:
                 fail("worker_metrics.adversarial_review_identity.builder_context_inherited must be false")
-            if identity["model_relationship"] != "same_model":
-                fail("worker_metrics.adversarial_review_identity.model_relationship must be same_model")
+            observed_builder_model = metrics.get("builder_model")
+            if observed_builder_model is not None and observed_builder_model != configured_builder_model:
+                fail("worker_metrics.builder_model must match configured builder.model")
+            relationship_model = observed_builder_model or configured_builder_model
+            expected_relationship = (
+                "same_model" if identity["model"] == relationship_model else "different_model"
+            )
+            if identity["model_relationship"] != expected_relationship:
+                fail(
+                    "worker_metrics.adversarial_review_identity.model_relationship "
+                    f"must be {expected_relationship}"
+                )
             if identity["independence_claimed"] is not False:
                 fail("worker_metrics.adversarial_review_identity.independence_claimed must be false")
     if present_identities == identity_fields:
@@ -786,7 +779,13 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
                         for key in configured_roles[review_role]
                     },
                 }
-                actual_roles = PROVIDER_RESOLVER.resolve_builder_context(2, actual_context)
+                actual_roles = PROVIDER_RESOLVER.resolve_builder_context(
+                    2, actual_context, builder_model=configured_builder_model,
+                    builder_reasoning_effort=record["engine_config"]["builder"].get(
+                        "reasoning_effort", "high"
+                    ),
+                    allow_historical=True,
+                )
                 for role in ("repository_evidence", review_role):
                     if actual_roles[role] != configured_roles[role]:
                         fail(f"actual {role} identity must match configured role")
@@ -1032,6 +1031,29 @@ def validate_current_write(record: dict[str, Any]) -> dict[str, Any]:
     validate(record)
     if record["schema_version"] != CURRENT_SCHEMA_VERSION:
         fail(f"new durable receipts require schema_version {CURRENT_SCHEMA_VERSION}")
+    builder = record["engine_config"]["builder"]
+    builder_model = builder.get("model", "gpt-6-sol")
+    if builder_model not in PROVIDER_RESOLVER.CURRENT_CODEX_MODELS:
+        fail("new durable receipts require a supported current builder model")
+    builder_effort = builder.get("reasoning_effort", "high")
+    if (
+        not isinstance(builder_effort, str)
+        or builder_effort not in PROVIDER_RESOLVER.CURRENT_REASONING_EFFORTS
+    ):
+        fail("new durable receipts require a supported current builder reasoning effort")
+    try:
+        resolved = PROVIDER_RESOLVER.resolve_builder_context(
+            record["engine_config"]["version"], builder.get("context", {}),
+            builder_model=builder_model,
+            builder_reasoning_effort=builder_effort,
+        )
+    except PROVIDER_RESOLVER.ProviderResolutionError as error:
+        fail(f"new durable receipt review selection is invalid: {error}")
+    if "adversarial_review" in resolved:
+        role_metrics = record["worker_metrics"].get("provider_role_metrics", {})
+        review_attempts = role_metrics.get("adversarial_review", {}).get("attempts", 0)
+        if review_attempts and not record["worker_metrics"].get("builder_model"):
+            fail("reviewed current receipts require observed worker_metrics.builder_model")
     continuation = record.get("continuation_context")
     resumable = (
         record["status"] == "accepted"

@@ -141,14 +141,18 @@ Every selected specialist invocation contributes to `review_gate_calls` and to
 the configured review provider's role metrics. Specialist skill identity is
 recorded inside `review_selection`; it does not replace the configured provider
 adapter identity. A provider session that applies `agent-instruction-review`
-therefore remains a Claude independent-review or Codex accepted-same-model call
+therefore remains a Claude independent-review or Codex adversarial-review call
 as configured, while its diagnostic result remains owned by the specialist.
 
-For accepted same-model review, use the `adversarial_review` role and preserve
+For accepted Codex review, use the `adversarial_review` role and preserve
 configured and observed model, reasoning effort, fresh-process isolation,
-`builder_context_inherited: false`, `model_relationship: same_model`, and
-`independence_claimed: false`. It does not satisfy an explicitly independent
-review requirement.
+`builder_context_inherited: false`, and `independence_claimed: false`. When
+builder and reviewer models match, record `accepted_same_model_review` and
+`model_relationship: same_model`; when they differ under the same Codex
+provider, record `accepted_same_provider_different_model_review` and
+`model_relationship: different_model`. Neither class satisfies an explicitly
+independent-review requirement. An unavailable effective model identity is
+unknown, not proof of the requested identity.
 Actual role identities must match the normalized effective configuration. A
 provider change requires a recorded configuration amendment; direct-source or
 coverage fallback within a provider is represented by evidence modes and

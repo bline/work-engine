@@ -51,7 +51,7 @@ class ResolveProviderTest(unittest.TestCase):
             review = {
                 "provider": "codex",
                 "skill": "codex-adversarial-review",
-                "model": "gpt-5.6-sol",
+                "model": "gpt-6-sol",
                 "reasoning_effort": reasoning_effort,
                 "evidence_class": "accepted_same_model_review",
                 "isolation": "fresh_process",
@@ -63,19 +63,56 @@ class ResolveProviderTest(unittest.TestCase):
                 self.assertEqual(resolved["adversarial_review"], review)
                 self.assertNotIn("independent_review", resolved)
 
+    def test_v2_accepts_same_provider_different_model_review(self) -> None:
+        review = {
+            "provider": "codex",
+            "skill": "codex-adversarial-review",
+            "model": "gpt-6-astra",
+            "reasoning_effort": "xhigh",
+            "evidence_class": "accepted_same_provider_different_model_review",
+            "isolation": "fresh_process",
+        }
+        resolved = RESOLVER.resolve_builder_context(
+            2, {"adversarial_review": review},
+            builder_model="gpt-6-sol", builder_reasoning_effort="high",
+        )
+        self.assertEqual(resolved["adversarial_review"], review)
+
+    def test_historical_same_model_receipt_is_explicit_read_compatibility(self) -> None:
+        review = {
+            "provider": "codex",
+            "skill": "codex-adversarial-review",
+            "model": "gpt-5.6-sol",
+            "reasoning_effort": "medium",
+            "evidence_class": "accepted_same_model_review",
+            "isolation": "fresh_process",
+        }
+        context = {"adversarial_review": review}
+        with self.assertRaises(RESOLVER.ProviderResolutionError):
+            RESOLVER.resolve_builder_context(2, context, builder_model="gpt-5.6-sol")
+        self.assertEqual(
+            RESOLVER.resolve_builder_context(
+                2, context, builder_model="gpt-5.6-sol", allow_historical=True,
+            )["adversarial_review"], review,
+        )
+
     def test_v2_rejects_two_review_roles_or_false_same_model_provenance(self) -> None:
         valid = {
             "provider": "codex",
             "skill": "codex-adversarial-review",
-            "model": "gpt-5.6-sol",
-            "reasoning_effort": "low",
+            "model": "gpt-6-sol",
+            "reasoning_effort": "high",
             "evidence_class": "accepted_same_model_review",
             "isolation": "fresh_process",
         }
         cases = (
             {"independent_review": {}, "adversarial_review": valid},
             {"adversarial_review": {**valid, "model": "another-model"}},
+            {"adversarial_review": {**valid, "model": "gpt-6-astra"}},
+            {"adversarial_review": {**valid, "evidence_class": "accepted_same_provider_different_model_review"}},
+            {"adversarial_review": {**valid, "model": "gpt-5.6-sol"}},
             {"adversarial_review": {**valid, "reasoning_effort": ""}},
+            {"adversarial_review": {**valid, "reasoning_effort": "unsupported"}},
             {"adversarial_review": {**valid, "reasoning_effort": 3}},
             {"adversarial_review": {
                 key: value for key, value in valid.items() if key != "reasoning_effort"
@@ -87,6 +124,14 @@ class ResolveProviderTest(unittest.TestCase):
             with self.subTest(context=context):
                 with self.assertRaises(RESOLVER.ProviderResolutionError):
                     RESOLVER.resolve_builder_context(2, context)
+        with self.assertRaises(RESOLVER.ProviderResolutionError):
+            RESOLVER.resolve_builder_context(
+                2, {"adversarial_review": valid}, builder_reasoning_effort="unsupported"
+            )
+        with self.assertRaises(RESOLVER.ProviderResolutionError):
+            RESOLVER.resolve_builder_context(
+                2, {"adversarial_review": valid}, builder_model=["gpt-6-sol"]
+            )
 
     def test_v1_explicit_claude_context_keeps_combined_historical_meaning(self) -> None:
         resolved = RESOLVER.resolve_builder_context(

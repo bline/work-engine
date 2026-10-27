@@ -4,6 +4,7 @@ import importlib.util
 import copy
 import hashlib
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -40,6 +41,7 @@ LIFECYCLE = load_at("completion_vertical_lifecycle", WORK_ENGINE_ROOT / "skills/
 FINALIZER = load_at("completion_vertical_finalizer", WORK_ENGINE_ROOT / "skills/slice-supervisor/scripts/finalize_receipt.py")
 RESUME = load_at("completion_vertical_resume", WORK_ENGINE_ROOT / "skills/slice-supervisor/scripts/resume_campaign.py")
 ASSEMBLER_TESTS = load_at("completion_vertical_assembler", WORK_ENGINE_ROOT / "skills/slice-supervisor/tests/test_assemble_receipt.py")
+OFFER = load_at("preservation_vertical_offer", WORK_ENGINE_ROOT / "skills/slice-supervisor/scripts/completion_offer_lifecycle.py")
 
 
 def run(repository: Path, *args: str) -> str:
@@ -548,6 +550,330 @@ class CompletionCommitTest(unittest.TestCase):
             resumed = RESUME.resume(receipts, preflight, "test-run")
             self.assertEqual(accepted["checkpoint_commit_oid"], resumed["baseline_checkpoint"]["checkpoint_commit_oid"])
             self.assertEqual(created["commit_oid"], resumed["slice_completion_commit"]["commit_oid"])
+
+
+def preservation_request(repository, request, accepted, root):
+    """Exact approval inputs prepared before the offer; not builder authority."""
+    request = copy.deepcopy(request)
+    request.pop("operational_paths", None)
+    root = Path(root)
+    root.mkdir()
+    accepted_path = root / "accepted.json"
+    accepted_path.write_bytes(ADAPTER.request_canonical(accepted))
+    manifest = root / "preservation.json"
+    manifest.write_bytes(ADAPTER.request_canonical(ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])))
+    request["preservation"] = {
+        "mode": "preserve_unrelated_v1", "worktree": str(repository),
+        "expected_index_sha256": ADAPTER.sha256(ADAPTER.index_path(repository).read_bytes()),
+        "accepted_receipt": {"path": str(accepted_path), "sha256": ADAPTER.sha256(accepted_path.read_bytes())},
+        "manifest": {"path": str(manifest), "sha256": ADAPTER.sha256(manifest.read_bytes())},
+        "approved_delta": ADAPTER.full_delta(repository, request["expected_head_oid"], request["proposal"]["checkpoint_tree_oid"]),
+        "attempt_directory": str(root / "attempt"),
+    }
+    return request
+
+
+def preservation_fixture(directory):
+    fixture = CompletionCommitTest()
+    repository, _head = fixture.repository(directory)
+    for name in ("outside.txt", "deleted.txt", "executable.txt"):
+        (repository / name).write_text("outside baseline\n")
+    (repository / "executable.txt").chmod(0o755)
+    (repository / "link").symlink_to("outside.txt")
+    run(repository, "add", ".")
+    run(repository, "commit", "-qm", "outside baseline")
+    head = run(repository, "rev-parse", "HEAD")
+    request = fixture.request(repository, head)
+    request["run_id"] = "test-run"
+    candidate = CHECKPOINT.create_candidate({
+        "schema_version": 1, "repository": str(repository), "run_id": "test-run", "slice_number": 1,
+        "candidate_attempt": 1, "baseline_commit_oid": head, "parent_checkpoint_commit_oid": None,
+        "plan_version": "preservation-1", "scope_revision": "task", "gate_receipt_digest": "b" * 64,
+        "created_at": "2026-10-14T01:00:00Z",
+        "paths": [{"path": "task.txt", "action": "include", "attribution": "task_owned"}],
+    })
+    accepted = LIFECYCLE.accept(candidate, {k: candidate[k] for k in LIFECYCLE.BINDING_FIELDS}, "b" * 64)
+    for k in ("checkpoint_commit_oid", "checkpoint_tree_oid", "task_patch_digest"):
+        request["proposal"][k] = accepted[k]
+    (repository / "outside.txt").write_text("outside staged\n")
+    (repository / "added.txt").write_text("outside addition\n")
+    (repository / "deleted.txt").unlink()
+    run(repository, "add", "outside.txt", "added.txt", "deleted.txt")
+    (repository / "outside.txt").write_text("outside unstaged on staged\n")
+    (repository / "untracked").mkdir()
+    (repository / "untracked/nested").write_text("retain me\n")
+    request = preservation_request(repository, request, accepted, Path(directory) / "evidence")
+    return repository, request, accepted
+
+
+def preservation_terminal_inputs():
+    semantic = ASSEMBLER_TESTS.ReceiptAssemblerTest().semantic_receipt()
+    semantic.update(status="accepted", stop_reason=None, plan_acceptance="procedural_auto_approval",
+        validation_requirement_results={"focused_checks": "passed"}, placement_certificate={"owner": "completion preservation"},
+        placement_verdict="confirmed", placement_risk="high", vertical_semantic_test="preservation vertical",
+        vertical_semantic_test_passed=True, more_in_scope_work_remains=True)
+    preflight = ASSEMBLER_TESTS.preflight_result(semantic["engine_config"])
+    handoff = {k: semantic[k] for k in ("slice_title", "slice_goal", "outcome", "placement_certificate")}
+    handoff.update(durable_decisions=[], affected_boundaries=["Git publication"], unresolved_concerns=[], deferred_scope=[])
+    return semantic, ASSEMBLER_TESTS.ingress(), preflight, handoff
+
+
+class PreservationCommitTest(unittest.TestCase):
+    def test_update_ref_effect_before_unsuccessful_completion_is_created(self):
+        for outcome in ("nonzero", "os_error", "value_error"):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                repository, request, _accepted = preservation_fixture(directory)
+                original_index = ADAPTER.index_path(repository).read_bytes()
+                before = ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])
+                original_git = ADAPTER.git
+                attempts = []
+
+                def effect_then_error(repo, args, **kwargs):
+                    result = original_git(repo, args, **kwargs)
+                    if args[0] == "update-ref":
+                        attempts.append(args)
+                        self.assertEqual(0, result.returncode, result.stderr)
+                        self.assertEqual(args[2], run(repository, "rev-parse", "HEAD"))
+                        if outcome == "os_error":
+                            raise OSError("synthetic lost command completion")
+                        if outcome == "value_error":
+                            raise ValueError("synthetic lost command completion")
+                        return subprocess.CompletedProcess(result.args, 1, result.stdout, "synthetic lost command completion")
+                    return result
+
+                with mock.patch.object(ADAPTER, "git", side_effect=effect_then_error):
+                    result = ADAPTER.decide(request, "create")
+                self.assertEqual(1, len(attempts))
+                self.assertEqual("created", result["state"], result)
+                self.assertEqual(run(repository, "rev-parse", "HEAD"), result["commit_oid"])
+                self.assertEqual("unestablished", result["evidence"]["index_transition"])
+                self.assertEqual("unestablished", result["evidence"]["preservation"])
+                self.assertEqual(result, ADAPTER.validate_receipt(result))
+                self.assertEqual(original_index, ADAPTER.index_path(repository).read_bytes())
+                self.assertEqual(before, ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"]))
+                lock = Path(str(ADAPTER.index_path(repository)) + ".lock")
+                self.assertTrue(lock.exists())
+                lock_bytes = lock.read_bytes()
+                recovered = ADAPTER.reconcile_created(request)
+                self.assertEqual(result["commit_oid"], recovered["commit_oid"])
+                self.assertEqual(original_index, ADAPTER.index_path(repository).read_bytes())
+                self.assertEqual(lock_bytes, lock.read_bytes())
+
+    def test_update_ref_uncertainty_retains_prepared_artifacts_without_refusal(self):
+        for outcome in ("no_effect", "read_failure_after_effect"):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                repository, request, _accepted = preservation_fixture(directory)
+                original_index = ADAPTER.index_path(repository).read_bytes()
+                original_git = ADAPTER.git
+                attempted = False
+                attempts = []
+
+                def unknown_completion(repo, args, **kwargs):
+                    nonlocal attempted
+                    if args[0] == "update-ref":
+                        attempted = True
+                        attempts.append(args)
+                        if outcome == "read_failure_after_effect":
+                            self.assertEqual(0, original_git(repo, args, **kwargs).returncode)
+                        return subprocess.CompletedProcess(args, 1, "", "synthetic unknown completion")
+                    if attempted and outcome == "read_failure_after_effect" and args == ["rev-parse", "refs/heads/main"]:
+                        raise OSError("synthetic observation unavailable")
+                    return original_git(repo, args, **kwargs)
+
+                with mock.patch.object(ADAPTER, "git", side_effect=unknown_completion):
+                    with self.assertRaisesRegex(ValueError, "publication ambiguous"):
+                        ADAPTER.decide(request, "create")
+                self.assertEqual(1, len(attempts))
+                self.assertEqual(original_index, ADAPTER.index_path(repository).read_bytes())
+                self.assertTrue(Path(str(ADAPTER.index_path(repository)) + ".lock").exists())
+                attempt = Path(request["preservation"]["attempt_directory"])
+                for name in ("original.index", "proposed.index", "prepared.json"):
+                    self.assertTrue((attempt / name).is_file())
+                self.assertFalse((attempt / "result.json").exists())
+                expected = request["expected_head_oid"] if outcome == "no_effect" else attempts[0][2]
+                self.assertEqual(expected, run(repository, "rev-parse", "HEAD"))
+
+    def test_published_prepared_commit_rejects_noncreated_or_wrong_commit_cache(self):
+        for state in ("pending", "refused", "declined", "wrong_commit"):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as directory:
+                repository, request, _accepted = preservation_fixture(directory)
+                created = ADAPTER.decide(request, "create")
+                self.assertEqual("created", created["state"], created)
+                if state == "wrong_commit":
+                    cached = copy.deepcopy(created)
+                    cached["commit_oid"] = request["expected_head_oid"]
+                else:
+                    cached = ADAPTER.receipt(request, state, reason=None if state == "pending" else "synthetic cached nonpublication")
+                self.assertEqual(cached, ADAPTER.validate_receipt_shape(cached))
+                result_path = Path(request["preservation"]["attempt_directory"]) / "result.json"
+                result_path.write_bytes(ADAPTER.request_canonical(cached))
+                before = ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])
+                index = ADAPTER.index_path(repository).read_bytes()
+                saved_cache = result_path.read_bytes()
+                with self.assertRaisesRegex(ValueError, "contradicts observed prepared publication"):
+                    ADAPTER.reconcile_created(request)
+                self.assertEqual(created["commit_oid"], run(repository, "rev-parse", "HEAD"))
+                self.assertEqual(index, ADAPTER.index_path(repository).read_bytes())
+                self.assertEqual(before, ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"]))
+                self.assertEqual(saved_cache, result_path.read_bytes())
+
+    def test_vertical_offer_commit_finalizer_fresh_resume_preserves_user_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, accepted = preservation_fixture(directory)
+            before = ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])
+            decision = {"decision": "create", "authority": {"kind": "human", "reference": "synthetic-user-grant", "observed_at": "2026-10-14T01:00:00Z"}}
+            authorized = OFFER.resolve(OFFER.open_offer(request), decision)
+            created = ADAPTER.decide(request, "create")
+            self.assertEqual("created", created["state"], created)
+            self.assertIsNone(created["reason"], created)
+            self.assertEqual("verified", created["evidence"]["preservation"])
+            self.assertEqual(created, ADAPTER.validate_receipt(created))
+            terminal_offer = OFFER.transition(authorized, "created", result=created)
+            self.assertEqual(created, terminal_offer["result"])
+            after = ADAPTER.preservation_snapshot(repository, request["proposal"]["paths"])
+            self.assertEqual(before["working"], after["working"])
+            self.assertEqual(ADAPTER.expected_index(before["index_entries"], request["preservation"]["approved_delta"]), after["index_entries"])
+            self.assertEqual("", run(repository, "status", "--porcelain", "--", "task.txt"))
+            self.assertEqual("Test User", run(repository, "show", "-s", "--format=%an", "HEAD"))
+            semantic = ASSEMBLER_TESTS.ReceiptAssemblerTest().semantic_receipt()
+            semantic.update(status="accepted", stop_reason=None, plan_acceptance="procedural_auto_approval",
+                validation_requirement_results={"focused_checks": "passed"}, placement_certificate={"owner": "completion preservation"},
+                placement_verdict="confirmed", placement_risk="high", vertical_semantic_test="preservation vertical",
+                vertical_semantic_test_passed=True, more_in_scope_work_remains=True)
+            preflight = ASSEMBLER_TESTS.preflight_result(semantic["engine_config"])
+            handoff = {k: semantic[k] for k in ("slice_title", "slice_goal", "outcome", "placement_certificate")}
+            handoff.update(durable_decisions=[], affected_boundaries=["Git publication"], unresolved_concerns=[], deferred_scope=[])
+            metrics = Path(directory) / "terminal.jsonl"
+            FINALIZER.finalize(metrics, semantic, ASSEMBLER_TESTS.ingress(), preflight, handoff, accepted, created)
+            resumed = RESUME.resume(metrics, preflight, "test-run")
+            self.assertEqual(created, resumed["slice_completion_commit"])
+            # A new interpreter reads persisted offer state through the real owner.
+            code = "import importlib.util,json,sys; from pathlib import Path; s=importlib.util.spec_from_file_location('o',sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(json.dumps(m.load(Path(sys.argv[2]),'test-run',1)))"
+            fresh = subprocess.run([__import__("sys").executable, "-B", "-c", code, str(WORK_ENGINE_ROOT / "skills/slice-supervisor/scripts/completion_offer_lifecycle.py"), str(repository)], capture_output=True, text=True)
+            self.assertEqual(0, fresh.returncode, fresh.stderr)
+            self.assertEqual(created, json.loads(fresh.stdout)["result"])
+
+    def test_crash_windows_reconcile_exact_commit_without_replay_or_index_repair(self):
+        for cut in ("before_prepared", "prepared", "published", "index_installed", "receipt_written"):
+            with self.subTest(cut=cut), tempfile.TemporaryDirectory() as directory:
+                repository, request, _accepted = preservation_fixture(directory)
+                original = ADAPTER.index_path(repository).read_bytes()
+                def crash(phase):
+                    if phase == cut:
+                        raise SystemExit("synthetic crash: " + cut)
+                with mock.patch.object(ADAPTER, "phase_boundary", side_effect=crash):
+                    with self.assertRaises(SystemExit):
+                        ADAPTER.decide(request, "create")
+                head = run(repository, "rev-parse", "HEAD")
+                index = ADAPTER.index_path(repository).read_bytes()
+                lock = Path(str(ADAPTER.index_path(repository)) + ".lock")
+                lock_before = lock.read_bytes() if lock.exists() else None
+                recovered = ADAPTER.reconcile_created(request)
+                if cut in {"before_prepared", "prepared"}:
+                    self.assertIsNone(recovered)
+                    self.assertEqual(request["expected_head_oid"], head)
+                else:
+                    self.assertEqual(head, recovered["commit_oid"])
+                    self.assertEqual("verified" if cut == "receipt_written" else "unestablished", recovered["evidence"]["preservation"])
+                if cut == "published":
+                    self.assertEqual(original, index)
+                    self.assertTrue(lock.exists())
+                self.assertEqual(head, run(repository, "rev-parse", "HEAD"))
+                self.assertEqual(index, ADAPTER.index_path(repository).read_bytes())
+                self.assertEqual(lock_before, lock.read_bytes() if lock.exists() else None)
+
+    def test_refusals_preserve_branch_index_and_foreign_lock(self):
+        cases = ("index", "source", "manifest", "checkpoint", "delta", "partial", "lock", "signing", "pre-commit", "prepare-commit-msg", "commit-msg", "post-commit", "filter", "intent", "skip", "assume", "attempt_reuse")
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                repository, request, _accepted = preservation_fixture(directory)
+                if case == "index":
+                    run(repository, "add", "outside.txt")
+                elif case == "source":
+                    (repository / "untracked/nested").write_text("concurrent")
+                elif case in {"manifest", "checkpoint"}:
+                    key = "manifest" if case == "manifest" else "accepted_receipt"
+                    Path(request["preservation"][key]["path"]).write_text("{}")
+                elif case == "delta":
+                    request["preservation"]["approved_delta"][0]["after"]["oid"] = "a" * 40
+                elif case in {"partial", "intent", "skip", "assume"}:
+                    if case == "partial":
+                        (repository / "task.txt").write_text("other staged bytes")
+                        run(repository, "add", "task.txt")
+                        (repository / "task.txt").write_text("accepted slice\n")
+                    elif case == "intent":
+                        (repository / "intent").write_text("intent")
+                        run(repository, "add", "-N", "intent")
+                    else:
+                        run(repository, "update-index", "--skip-worktree" if case == "skip" else "--assume-unchanged", "outside.txt")
+                    request["preservation"]["expected_index_sha256"] = ADAPTER.sha256(ADAPTER.index_path(repository).read_bytes())
+                    if case == "partial":
+                        ref = request["preservation"]["manifest"]
+                        Path(ref["path"]).write_bytes(ADAPTER.request_canonical(ADAPTER.preservation_snapshot(repository, ["task.txt"])))
+                        ref["sha256"] = ADAPTER.sha256(Path(ref["path"]).read_bytes())
+                elif case == "lock":
+                    Path(str(ADAPTER.index_path(repository)) + ".lock").write_text("foreign lock")
+                elif case == "signing":
+                    run(repository, "config", "commit.gpgsign", "true")
+                elif case == "filter":
+                    (repository / ".git/info/attributes").write_text("task.txt filter=unsafe\n")
+                elif case == "attempt_reuse":
+                    Path(request["preservation"]["attempt_directory"]).mkdir()
+                else:
+                    hook = repository / ".git/hooks" / case
+                    hook.write_text("#!/bin/sh\nexit 1\n")
+                    hook.chmod(0o755)
+                original = ADAPTER.index_path(repository).read_bytes()
+                result = ADAPTER.decide(request, "create")
+                self.assertEqual("refused", result["state"], result)
+                self.assertEqual(request["expected_head_oid"], run(repository, "rev-parse", "HEAD"))
+                self.assertEqual(original, ADAPTER.index_path(repository).read_bytes())
+                if case == "lock":
+                    self.assertEqual("foreign lock", Path(str(ADAPTER.index_path(repository)) + ".lock").read_text())
+
+    def test_races_and_postpublication_uncertainty_are_not_false_refusals(self):
+        for cut in ("source", "index", "config", "attachment", "cas", "post_source"):
+            with self.subTest(cut=cut), tempfile.TemporaryDirectory() as directory:
+                repository, request, _accepted = preservation_fixture(directory)
+                initial = ADAPTER.index_path(repository).read_bytes()
+                def change(phase):
+                    if phase == ("published" if cut == "post_source" else "prepared"):
+                        if cut in {"source", "post_source"}:
+                            (repository / "outside.txt").write_text("racing writer")
+                        elif cut == "index":
+                            with ADAPTER.index_path(repository).open("ab") as stream:
+                                stream.write(b"concurrent")
+                        elif cut == "config":
+                            run(repository, "config", "user.name", "Other User")
+                        elif cut == "attachment":
+                            run(repository, "symbolic-ref", "HEAD", "refs/heads/other")
+                        else:
+                            run(repository, "update-ref", "refs/heads/main", request["proposal"]["checkpoint_commit_oid"], request["expected_head_oid"])
+                with mock.patch.object(ADAPTER, "phase_boundary", side_effect=change):
+                    result = ADAPTER.decide(request, "create")
+                self.assertEqual("created" if cut == "post_source" else "refused", result["state"])
+                if cut == "post_source":
+                    self.assertEqual("unestablished", result["evidence"]["preservation"])
+                    self.assertEqual(initial, ADAPTER.index_path(repository).read_bytes())
+                    self.assertEqual(result, ADAPTER.validate_receipt(result))
+
+    def test_readback_rejects_forgery_and_recovers_prepared_ancestor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted = preservation_fixture(directory)
+            result = ADAPTER.decide(request, "create")
+            self.assertEqual("created", result["state"], result)
+            descendant = run(repository, "commit-tree", request["proposal"]["checkpoint_tree_oid"], "-p", result["commit_oid"], "-m", "later history")
+            run(repository, "update-ref", "refs/heads/main", descendant, result["commit_oid"])
+            self.assertEqual(result, ADAPTER.reconcile_created(request))
+            for key in ("commit_oid", "proposal_digest"):
+                forged = copy.deepcopy(result)
+                forged[key] = "a" * len(forged[key])
+                with self.assertRaises(ValueError):
+                    ADAPTER.validate_receipt(forged)
+            post = Path(result["evidence"]["post"]["path"])
+            post.write_text("{}")
+            with self.assertRaisesRegex(ValueError, "digest"):
+                ADAPTER.validate_receipt(result)
 
 
 if __name__ == "__main__":

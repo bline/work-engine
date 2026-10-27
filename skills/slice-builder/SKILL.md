@@ -43,7 +43,7 @@ Spawn with:
 - the configured `builder.model` and `builder.reasoning_effort`;
 - a task name unique to the run and slice.
 
-When omitted, the work-engine defaults are `gpt-5.6-sol` and `low`. Low effort is the measured default for this workflow; a configured evidence skill bounds repository evidence and reduces the engineering problem space. Do not raise effort preemptively or because a slice is merely large, slow, or expensive.
+When omitted, the work-engine defaults are `gpt-6-sol` and `high`. These are current selection defaults, not evidence that a runtime used that model or effort. Preserve requested and observed identities separately, and do not substitute a model after a capacity failure without the owning authority.
 
 Give the builder only:
 
@@ -85,13 +85,15 @@ retrieval as review, or weaken configured acceptance requirements. Auto provider
 selection is deferred.
 
 Version 2 may instead explicitly configure `adversarial_review` through
-$codex-adversarial-review when a human has accepted same-model review. Launch it
+$codex-adversarial-review when a human has accepted Codex review. Launch it
 with `fork_turns: "none"`, its configured model and reasoning effort, and no
-builder-session history. Record it as `accepted_same_model_review`, including
-observed isolation and model relationship; never describe it as independent,
-cross-model, cross-provider, or statistically independent. Exactly one of
+builder-session history. Record matching builder and reviewer models as
+`accepted_same_model_review`; record distinct Codex models as
+`accepted_same_provider_different_model_review`. Preserve the actual model
+relationship and observed isolation. Neither class establishes independent
+reasoning, cross-provider, or statistical independence. Exactly one of
 `independent_review` and `adversarial_review` may be configured, and accepted
-same-model review cannot satisfy a requirement that explicitly demands
+Codex adversarial review cannot satisfy a requirement that explicitly demands
 independent review.
 
 Do not confuse provider selection with evidence capability. A configured Claude
@@ -133,7 +135,7 @@ Apply the corresponding lifetime rule to the configured reviewer: launch one
 fresh isolated reviewer at the start of a review obligation, then retain that
 reviewer through ordinary remediation while its context remains useful. For a
 Claude reviewer, use the configured persistent session ID and resume it. For a
-Codex same-model reviewer, retain the spawned reviewer identity and use
+Codex reviewer, retain the spawned reviewer identity and use
 `followup_task`. A continuation examines the exact delta and prior findings and
 must not be reported as another fresh review. Reset only from a recorded
 judgment that the premise, scope, architecture, independence need, or context
@@ -150,7 +152,7 @@ verify the assigned persistent session UUID and expose the same profile through
 the configured MCP adapter. In either case the reviewer begins the episode,
 publishes its attributed result, and reads it back before returning. Ordinary
 remediation uses that same identity and episode. State availability or
-persistence never upgrades accepted same-model review into independent-review
+persistence never upgrades Codex adversarial review into independent-review
 evidence.
 
 Give either reviewer the same bounded observational state needed by the review:

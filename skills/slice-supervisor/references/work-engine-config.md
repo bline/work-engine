@@ -14,8 +14,8 @@ work_source:
 
 builder:
   skill: "slice-builder"
-  model: "gpt-5.6-sol"
-  reasoning_effort: "low"
+  model: "gpt-6-sol"
+  reasoning_effort: "high"
   context:
     repository_evidence:
       skill: "repo-search"
@@ -65,7 +65,7 @@ capabilities:
   compatibility shape with its historical combined evidence/review meaning.
 - `objective`: Required nonempty statement. Preserve the user's wording.
 - `work_source`: Optional evidence/boundary source. `kind` is `file`, `inline`, or `repository_evidence`; `value` is required for `file` and `inline` and omitted for `repository_evidence`. A missing work source means the objective plus applicable repository evidence, not an inferred roadmap file.
-- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. In version 2, `context.repository_evidence` and `context.independent_review` each contain a `provider` and `skill` and resolve independently. A human-authorized campaign may configure `context.adversarial_review` instead, with provider, skill, model, reasoning effort, evidence class, and isolation. Exactly one review-execution role is allowed; accepted same-model review cannot satisfy an explicit independent-review requirement. The role supplies provider/session mechanics for supervisor-selected specialists and does not give the builder review-selection authority. Do not mix version-1 and version-2 context fields.
+- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. In version 2, `context.repository_evidence` and `context.independent_review` each contain a `provider` and `skill` and resolve independently. A human-authorized campaign may configure `context.adversarial_review` instead, with provider, skill, model, reasoning effort, evidence class, and isolation. For a `gpt-6-sol` builder and `gpt-6-astra` reviewer, set `evidence_class: accepted_same_provider_different_model_review` and reviewer `reasoning_effort: xhigh`; matching models use `accepted_same_model_review`. Preflight compares builder and reviewer models and rejects a false class. Exactly one review-execution role is allowed; Codex adversarial review cannot satisfy an explicit independent-review requirement. The role supplies provider/session mechanics for supervisor-selected specialists and does not give the builder review-selection authority. Do not mix version-1 and version-2 context fields.
 - `validation`: `profile` names a builder-supported evidence policy and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. Under `engineering-proportional`, the builder selects deterministic check breadth while the supervisor selects review perspectives and required independence from the slice's projected consequence and risk. `engineering-full` requires focused checks, applicable freshness checks, the full suite, and supervisor selection of fresh adversarial review. Explicit requirements remain binding under either profile. Do not reinterpret an unknown requirement.
 - `metrics.path`: Durable JSONL destination. An explicit `null` disables durable metrics only when the user says so; do not confuse it with a missing value.
 - `limits`: Hard limits explicitly supplied by the user, such as `slices`, `time_seconds`, `cost_usd`, `tokens`, or `repair_attempts`. An empty object means no configured hard limits. Never invent them.
@@ -83,8 +83,8 @@ capabilities:
 Defaults provide an adaptive engineering workflow while explicit full-gate campaigns remain unchanged:
 
 - `builder.skill`: `slice-builder`
-- `builder.model`: `gpt-5.6-sol`
-- `builder.reasoning_effort`: `low`
+- `builder.model`: `gpt-6-sol`
+- `builder.reasoning_effort`: `high`
 - `builder.context.repository_evidence.skill`: `repo-search`
 - `builder.context.repository_evidence.provider`: `codex-codebase-memory`
 - `builder.context.independent_review.skill`: `claude-recon-implementation`
@@ -137,7 +137,7 @@ that value authoritatively; the model does not transcribe it.
   "source": "inline_user_config",
   "objective": "Advance the Site2JSON roadmap",
   "work_source": {"kind": "file", "value": "docs/roadmap.md"},
-  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"repository_evidence": {"skill": "repo-search", "provider": "codex-codebase-memory"}, "independent_review": {"skill": "claude-recon-implementation", "provider": "claude"}}},
+  "builder": {"skill": "slice-builder", "model": "gpt-6-sol", "reasoning_effort": "high", "context": {"repository_evidence": {"skill": "repo-search", "provider": "codex-codebase-memory"}, "independent_review": {"skill": "claude-recon-implementation", "provider": "claude"}}},
   "validation": {"profile": "engineering-proportional", "requirements": ["semantic_proof", "risk_proportional_checks", "workspace_integrity"]},
   "metrics": {"path": "docs/ai-workflow-metrics.jsonl"},
   "limits": {},
@@ -163,7 +163,7 @@ Cleanup changes context, not machinery:
 version: 2
 objective: "Restore structural coherence"
 work_source: {kind: file, value: "docs/cleanup.md"}
-builder: {skill: slice-builder, model: gpt-5.6-sol, reasoning_effort: low}
+builder: {skill: slice-builder, model: gpt-6-sol, reasoning_effort: high}
 validation: {profile: engineering-full, requirements: [focused_checks, full_suite, adversarial_review]}
 ```
 

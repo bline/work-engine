@@ -145,9 +145,9 @@ class ReceiptAssemblerTest(unittest.TestCase):
         self.assertEqual(999, semantic["worker_metrics"]["builder_input_tokens"])
         self.assertNotIn("telemetry_ingress", semantic["producer_metrics"])
 
-    def test_preflight_projects_authorized_same_model_review_provenance(self) -> None:
+    def test_preflight_projects_authorized_different_model_review_provenance(self) -> None:
         semantic = self.semantic_receipt()
-        APPEND_TESTS.make_same_model_review_v2(semantic)
+        APPEND_TESTS.make_different_model_review_v2(semantic)
         authoritative_config = semantic["engine_config"].copy()
         authoritative_config["amendments"] = [
             {
@@ -155,17 +155,18 @@ class ReceiptAssemblerTest(unittest.TestCase):
                 "changed_fields": ["builder.context.adversarial_review"],
                 "prior_values": {"review": "claude"},
                 "new_values": {"review": "codex"},
-                "reason": "Claude quota unavailable; same-model review approved.",
-                "human_approval": "I approve Sol low as accepted same-model review.",
+                "reason": "Codex same-provider different-model review approved.",
+                "human_approval": "I approve Astra review of Sol implementation.",
             }
         ]
         assembled = ASSEMBLER.assemble(
             semantic, ingress(), preflight_result(authoritative_config)
         )
         review = assembled["worker_metrics"]["adversarial_review_identity"]
-        self.assertEqual(review["evidence_class"], "accepted_same_model_review")
-        self.assertEqual(review["model"], "gpt-5.6-sol")
-        self.assertEqual(review["reasoning_effort"], "low")
+        self.assertEqual(review["evidence_class"], "accepted_same_provider_different_model_review")
+        self.assertEqual(review["model"], "gpt-6-astra")
+        self.assertEqual(review["reasoning_effort"], "xhigh")
+        self.assertEqual(review["model_relationship"], "different_model")
         self.assertFalse(review["independence_claimed"])
         self.assertEqual(len(assembled["engine_config"]["amendments"]), 1)
         APPEND_METRICS.validate(assembled)

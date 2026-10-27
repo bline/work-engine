@@ -79,6 +79,8 @@ test("campaign preflight routes comparative definitions without changing kindles
   assert.equal(engineering.engineConfig.objective, "test");
   assert.equal(engineering.engineConfig.source, "engineering.yaml");
   assert.equal(engineering.engineConfig.builder.skill, "slice-builder");
+  assert.equal(engineering.engineConfig.builder.model, "gpt-6-sol");
+  assert.equal(engineering.engineConfig.builder.reasoning_effort, "high");
   assert.deepEqual(engineering.engineConfig.slice_completion_commit, { prompt: "enabled" });
   assert.deepEqual(engineering.engineConfig.explicit_fields, ["version", "objective"]);
   assert.ok(engineering.engineConfig.defaulted_fields.includes("builder"));
@@ -109,8 +111,8 @@ builder:
     adversarial_review:
       provider: codex
       skill: codex-adversarial-review
-      model: gpt-5.6-sol
-      reasoning_effort: low
+      model: gpt-6-sol
+      reasoning_effort: high
       evidence_class: accepted_same_model_review
       isolation: fresh_process
 amendments:
@@ -119,11 +121,44 @@ amendments:
     prior_values: {review: claude}
     new_values: {review: codex}
     reason: Claude quota unavailable; accepted same-model review approved.
-    human_approval: I approve Sol low as accepted same-model review.
+    human_approval: I approve Sol as accepted same-model review.
 `);
   const result = JSON.parse(await run(process.execPath, [preflightCli, "campaign.yaml"], { cwd: root }));
   assert.equal(result.engineConfig.builder.context.adversarial_review.evidence_class, "accepted_same_model_review");
   assert.equal("independent_review" in result.engineConfig.builder.context, false);
   assert.equal(result.engineConfig.amendments.length, 1);
   assert.match(result.engineConfig.amendments[0].human_approval, /I approve/);
+});
+
+test("campaign preflight validates Sol builder and Astra Codex review provenance", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "different-model-review-campaign-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const campaign = `version: 2
+objective: test
+builder:
+  model: gpt-6-sol
+  reasoning_effort: high
+  context:
+    adversarial_review:
+      provider: codex
+      skill: codex-adversarial-review
+      model: gpt-6-astra
+      reasoning_effort: xhigh
+      evidence_class: accepted_same_provider_different_model_review
+      isolation: fresh_process
+`;
+  await fs.writeFile(path.join(root, "campaign.yaml"), campaign);
+  const result = JSON.parse(await run(process.execPath, [preflightCli, "campaign.yaml"], { cwd: root }));
+  assert.equal(result.engineConfig.builder.context.adversarial_review.model, "gpt-6-astra");
+  for (const [name, invalid] of [
+    ["false-class", campaign.replace("accepted_same_provider_different_model_review", "accepted_same_model_review")],
+    ["old-builder", campaign.replace("model: gpt-6-sol", "model: gpt-5.6-sol")],
+    ["unknown-builder", campaign.replace("model: gpt-6-sol", "model: unknown-model")],
+    ["old-reviewer", campaign.replace("model: gpt-6-astra", "model: gpt-5.6-sol")],
+    ["unknown-builder-effort", campaign.replace("reasoning_effort: high", "reasoning_effort: unsupported")],
+    ["unknown-effort", campaign.replace("reasoning_effort: xhigh", "reasoning_effort: unsupported")],
+  ]) {
+    await fs.writeFile(path.join(root, `${name}.yaml`), invalid);
+    await assert.rejects(run(process.execPath, [preflightCli, `${name}.yaml`], { cwd: root }));
+  }
 });

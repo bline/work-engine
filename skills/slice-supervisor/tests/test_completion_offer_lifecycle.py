@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import copy
+import json
+import subprocess
+import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -208,6 +212,80 @@ class CompletionOfferLifecycleTest(unittest.TestCase):
                     "authority": {"kind": "agent", "reference": "guess", "observed_at": "now"},
                 })
             self.assertEqual("open", OFFER.load(repository, "test-run", 1)["state"])
+
+    def test_preservation_complete_approved_request_join_on_every_consumption_path(self):
+        for state, differing in ((s, d) for s in ("created", "refused", "declined") for d in ("manifest", "index", "mode")):
+            with self.subTest(state=state, differing=differing), tempfile.TemporaryDirectory() as directory:
+                repository, request_b, _accepted = COMPLETION_TESTS.preservation_fixture(directory)
+                request_a = copy.deepcopy(request_b)
+                original = Path(request_a["preservation"]["manifest"]["path"])
+                alternate = original.with_name("separately-approved-manifest.json")
+                alternate.write_bytes(original.read_bytes())
+                request_a["preservation"]["manifest"]["path"] = str(alternate)
+                if differing == "index":
+                    request_a = copy.deepcopy(request_b)
+                    request_a["preservation"]["expected_index_sha256"] = "f" * 64
+                elif differing == "mode":
+                    request_a = copy.deepcopy(request_b)
+                    del request_a["preservation"]
+                decision = "decline" if state == "declined" else "create"
+                opened = OFFER.open_offer(request_a)
+                authorized = (opened if state == "declined" else OFFER.resolve(opened, self.decision("create")))
+                if state == "created":
+                    result_b = OFFER.ADAPTER.decide(request_b, "create")
+                    self.assertIsNone(result_b["reason"], result_b)
+                else:
+                    result_b = OFFER.ADAPTER.receipt(request_b, state, reason="synthetic non-effect")
+                # This must be a valid B, not a malformed-receipt rejection test.
+                self.assertEqual(result_b, OFFER.ADAPTER.validate_receipt(result_b))
+                before_ref = authorized["artifact_oid"]
+                with self.assertRaisesRegex(ValueError, "complete approved offer request"):
+                    OFFER.transition(authorized, state, result=result_b, decision=self.decision(decision))
+                self.assertEqual(before_ref, OFFER.load(repository, "test-run", 1)["artifact_oid"])
+                if state == "created":
+                    with mock.patch.object(OFFER.ADAPTER, "reconcile_created", return_value=result_b):
+                        with self.assertRaisesRegex(ValueError, "complete approved offer request"):
+                            OFFER.reconcile(authorized)
+                terminal = {k: v for k, v in authorized.items() if k not in {"ref", "artifact_oid"}}
+                terminal.update(state=state, result=result_b, decision=self.decision(decision), prior_oid=before_ref)
+                persisted = OFFER.write(repository, terminal, before_ref)
+                with self.assertRaisesRegex(ValueError, "complete approved offer request"):
+                    OFFER.read_oid(repository, persisted["artifact_oid"])
+                with self.assertRaisesRegex(ValueError, "complete approved offer request"):
+                    OFFER.reconcile(persisted)
+                code = "import importlib.util,sys; from pathlib import Path; s=importlib.util.spec_from_file_location('o',sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.load(Path(sys.argv[2]),'test-run',1)"
+                fresh = subprocess.run([sys.executable, "-B", "-c", code, str(ROOT / "scripts/completion_offer_lifecycle.py"), str(repository)], capture_output=True, text=True)
+                self.assertNotEqual(0, fresh.returncode)
+                self.assertIn("complete approved offer request", fresh.stderr)
+
+    def test_preservation_binding_codec_golden_vectors_and_downgrade_refusal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted = COMPLETION_TESTS.preservation_fixture(directory)
+            request["proposal"]["body"] = "Café — exact Unicode authority"
+            reordered = dict(reversed(list(request.items())))
+            self.assertEqual(OFFER.canonical(request), OFFER.ADAPTER.request_canonical(reordered))
+            self.assertEqual(OFFER.offer_id(request), OFFER.ADAPTER.request_binding(reordered)["sha256"])
+            opened = OFFER.open_offer(request)
+            declined = OFFER.resolve(opened, self.decision("decline"))
+            self.assertEqual(declined, OFFER.validate(declined))
+            for mutation in ("missing", "codec", "digest", "field", "receipt1", "offer1"):
+                bad = copy.deepcopy(declined)
+                if mutation == "missing":
+                    del bad["result"]["request_binding"]
+                elif mutation == "codec":
+                    bad["result"]["request_binding"]["canonical_contract"] = "other-codec"
+                elif mutation == "digest":
+                    bad["result"]["request_binding"]["sha256"] = "a" * 64
+                elif mutation == "field":
+                    bad["result"]["request_binding"]["request"]["preservation"]["expected_index_sha256"] = "b" * 64
+                elif mutation == "receipt1":
+                    bad["result"]["schema_version"] = 1
+                    del bad["result"]["request_binding"], bad["result"]["evidence"]
+                else:
+                    bad["schema_version"] = 1
+                    del bad["decision"]
+                with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                    OFFER.validate(bad)
 
 
 if __name__ == "__main__":

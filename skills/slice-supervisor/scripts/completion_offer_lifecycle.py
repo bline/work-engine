@@ -93,6 +93,20 @@ def offer_id(request: dict[str, Any]) -> str:
     return hashlib.sha256(canonical(request)).hexdigest()
 
 
+def validate_result_request(request: dict[str, Any], result: dict[str, Any], identity: str) -> None:
+    """Compare approved A to effect B here, not B to its own checksum only."""
+    if "preservation" not in request and result["schema_version"] == 1:
+        return  # Historical strict receipts did not carry a complete request.
+    if result["schema_version"] != 2:
+        fail("preservation offer requires a schema2 request-bound result")
+    bound = result["request_binding"]
+    expected = canonical(ADAPTER.validate_request(request))
+    observed = canonical(ADAPTER.validate_request(bound["request"]))
+    if (expected != observed or hashlib.sha256(expected).hexdigest() != identity
+            or hashlib.sha256(observed).hexdigest() != bound["sha256"]):
+        fail("completion result does not bind the complete approved offer request")
+
+
 def validate_decision(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or set(value) != {"decision", "authority"}:
         fail("completion offer decision must contain exactly decision and authority")
@@ -124,6 +138,8 @@ def validate(value: Any) -> dict[str, Any]:
                       or not isinstance(value["ref"], str)):
         fail("loaded completion offer identity is invalid")
     request = ADAPTER.validate_request(value["request"])
+    if version == 1 and "preservation" in request:
+        fail("historical offer cannot authorize preservation mode")
     if value["offer_id"] != offer_id(request):
         fail("completion offer identity does not match its request")
     if value["prior_oid"] is not None and not isinstance(value["prior_oid"], str):
@@ -143,6 +159,7 @@ def validate(value: Any) -> dict[str, Any]:
             fail("create-authorized offer requires only its create decision and predecessor")
     elif value["state"] in {"created", "declined", "refused"}:
         result = ADAPTER.validate_receipt(value["result"])
+        validate_result_request(request, result, value["offer_id"])
         if result["state"] != value["state"]:
             fail("completion offer state must match the adapter result")
         if value["reason"] is not None or not value["prior_oid"]:

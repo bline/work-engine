@@ -174,13 +174,16 @@ def make_config_v2(record: dict[str, object]) -> None:
 
 
 def make_same_model_review_v2(
-    record: dict[str, object], reasoning_effort: str = "low"
+    record: dict[str, object], reasoning_effort: str = "high"
 ) -> None:
     make_config_v2(record)
+    record["engine_config"]["builder"].update(
+        {"model": "gpt-6-sol", "reasoning_effort": "high"}
+    )
     configured = {
         "provider": "codex",
         "skill": "codex-adversarial-review",
-        "model": "gpt-5.6-sol",
+        "model": "gpt-6-sol",
         "reasoning_effort": reasoning_effort,
         "evidence_class": "accepted_same_model_review",
         "isolation": "fresh_process",
@@ -189,6 +192,7 @@ def make_same_model_review_v2(
     del context["independent_review"]
     context["adversarial_review"] = configured
     metrics = record["worker_metrics"]
+    metrics["builder_model"] = "gpt-6-sol"
     del metrics["independent_review_identity"]
     metrics["adversarial_review_identity"] = {
         **configured,
@@ -198,6 +202,32 @@ def make_same_model_review_v2(
     }
     metrics["provider_role_metrics"]["adversarial_review"] = (
         metrics["provider_role_metrics"].pop("independent_review")
+    )
+
+
+def make_different_model_review_v2(record: dict[str, object]) -> None:
+    make_same_model_review_v2(record)
+    configured = record["engine_config"]["builder"]["context"]["adversarial_review"]
+    configured.update({
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "evidence_class": "accepted_same_provider_different_model_review",
+    })
+    identity = record["worker_metrics"]["adversarial_review_identity"]
+    identity.update({**configured, "model_relationship": "different_model"})
+
+
+def make_historical_same_model_review_v2(record: dict[str, object]) -> None:
+    make_same_model_review_v2(record)
+    record["engine_config"]["builder"].update(
+        {"model": "gpt-5.6-sol", "reasoning_effort": "low"}
+    )
+    record["engine_config"]["builder"]["context"]["adversarial_review"].update(
+        {"model": "gpt-5.6-sol", "reasoning_effort": "low"}
+    )
+    record["worker_metrics"].update({"builder_model": "gpt-5.6-sol"})
+    record["worker_metrics"]["adversarial_review_identity"].update(
+        {"model": "gpt-5.6-sol", "reasoning_effort": "low"}
     )
 
 
@@ -484,6 +514,47 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
         make_same_model_review_v2(record, reasoning_effort="medium")
         APPEND_METRICS.validate(record)
 
+    def test_different_model_review_provenance_and_actual_identity(self) -> None:
+        record = base_record(5)
+        make_different_model_review_v2(record)
+        APPEND_METRICS.validate_current_write(record)
+        for field, value in (
+            ("model_relationship", "same_model"),
+            ("evidence_class", "accepted_same_model_review"),
+            ("model", "gpt-6-sol"),
+            ("reasoning_effort", "high"),
+            ("independence_claimed", True),
+        ):
+            invalid = copy.deepcopy(record)
+            invalid["worker_metrics"]["adversarial_review_identity"][field] = value
+            with self.subTest(field=field):
+                with self.assertRaises(ValueError):
+                    APPEND_METRICS.validate_current_write(invalid)
+        invalid = copy.deepcopy(record)
+        invalid["worker_metrics"]["builder_model"] = "gpt-6-astra"
+        with self.assertRaisesRegex(ValueError, "builder_model"):
+            APPEND_METRICS.validate_current_write(invalid)
+        invalid = copy.deepcopy(record)
+        invalid["engine_config"]["validation"]["requirements"] = ["independent_review"]
+        invalid["validation_requirement_results"] = {"independent_review": "blocked"}
+        with self.assertRaisesRegex(ValueError, "cannot satisfy"):
+            APPEND_METRICS.validate_current_write(invalid)
+
+    def test_historical_old_model_reads_but_current_append_rejects(self) -> None:
+        for version in (4, 5):
+            record = base_record(version)
+            make_historical_same_model_review_v2(record)
+            with self.subTest(version=version):
+                APPEND_METRICS.validate(record)
+                with self.assertRaises(ValueError):
+                    APPEND_METRICS.validate_current_write(record)
+
+    def test_current_append_rejects_invalid_builder_effort_type(self) -> None:
+        record = base_record(5)
+        record["engine_config"]["builder"]["reasoning_effort"] = ["high"]
+        with self.assertRaisesRegex(ValueError, "reasoning effort"):
+            APPEND_METRICS.validate_current_write(record)
+
     def test_same_model_review_cannot_satisfy_independent_requirement(self) -> None:
         record = base_record(4)
         make_same_model_review_v2(record)
@@ -565,6 +636,31 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             ).hexdigest()
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "bind the accepted checkpoint"):
                 APPEND_METRICS.validate_completion_commit_projection(misbound, record, checkpoint)
+
+    def test_preservation_projection_reuses_owner_shape_and_keeps_terminal_joins(self):
+        path = Path(__file__).parents[2] / "slice-completion-commit/tests/test_completion_commit.py"
+        spec = importlib.util.spec_from_file_location("metrics_preservation_fixture", path)
+        fixture = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixture)
+        with tempfile.TemporaryDirectory() as directory:
+            _repository, request, accepted = fixture.preservation_fixture(directory)
+            result = fixture.ADAPTER.decide(request, "decline")
+            record = {"status": "accepted", "run_id": "test-run", "slice_number": 1}
+            APPEND_METRICS.validate_completion_commit_projection(result, record, accepted)
+            for mutation in ("binding", "terminal", "checkpoint", "extra", "codec"):
+                bad, outer, checkpoint = copy.deepcopy(result), dict(record), dict(accepted)
+                if mutation == "binding":
+                    bad["request_binding"]["sha256"] = "a" * 64
+                elif mutation == "terminal":
+                    outer["slice_number"] = 2
+                elif mutation == "checkpoint":
+                    checkpoint["checkpoint_tree_oid"] = "a" * 40
+                elif mutation == "extra":
+                    bad["independent_human_attestation"] = True
+                else:
+                    bad["request_binding"]["canonical_contract"] = "unknown"
+                with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                    APPEND_METRICS.validate_completion_commit_projection(bad, outer, checkpoint)
 
     def test_accepts_historical_and_current_schema_versions(self) -> None:
         for version in (1, 2, 3, 4, 5):

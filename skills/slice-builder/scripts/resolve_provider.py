@@ -31,9 +31,12 @@ REVIEW_PROVIDER_ADAPTERS = {
 }
 ADVERSARIAL_REVIEW_PROVIDER = "codex"
 ADVERSARIAL_REVIEW_SKILL = "codex-adversarial-review"
-ADVERSARIAL_REVIEW_MODEL = "gpt-5.6-sol"
-ADVERSARIAL_REVIEW_EVIDENCE_CLASS = "accepted_same_model_review"
 ADVERSARIAL_REVIEW_ISOLATION = "fresh_process"
+CURRENT_CODEX_MODELS = {"gpt-6-sol", "gpt-6-astra"}
+CURRENT_REASONING_EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
+HISTORICAL_CODEX_MODEL = "gpt-5.6-sol"
+SAME_MODEL_EVIDENCE_CLASS = "accepted_same_model_review"
+DIFFERENT_MODEL_EVIDENCE_CLASS = "accepted_same_provider_different_model_review"
 
 
 class ProviderResolutionError(ValueError):
@@ -116,7 +119,10 @@ def _resolve_v1(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
+def _resolve_v2(
+    context: dict[str, Any], *, builder_model: str,
+    builder_reasoning_effort: str, allow_historical: bool
+) -> dict[str, Any]:
     _reject_unknown(
         context,
         {"repository_evidence", "independent_review", "adversarial_review"},
@@ -156,11 +162,36 @@ def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
         "provider", "skill", "model", "reasoning_effort", "evidence_class", "isolation"
     }
     _reject_unknown(review, fields, "builder.context.adversarial_review")
+    model = review.get("model")
+    historical_same_model = (
+        allow_historical
+        and builder_model == HISTORICAL_CODEX_MODEL
+        and model == HISTORICAL_CODEX_MODEL
+    )
+    if not historical_same_model and (
+        not isinstance(builder_model, str) or builder_model not in CURRENT_CODEX_MODELS
+        or not isinstance(model, str) or model not in CURRENT_CODEX_MODELS
+    ):
+        raise ProviderResolutionError(
+            "builder.context.adversarial_review requires supported current builder "
+            "and reviewer models"
+        )
+    if (
+        not isinstance(builder_reasoning_effort, str)
+        or builder_reasoning_effort not in CURRENT_REASONING_EFFORTS
+    ):
+        raise ProviderResolutionError(
+            "builder.reasoning_effort is unsupported for the configured Codex review"
+        )
+    evidence_class = (
+        SAME_MODEL_EVIDENCE_CLASS
+        if model == builder_model else DIFFERENT_MODEL_EVIDENCE_CLASS
+    )
     expected = {
         "provider": ADVERSARIAL_REVIEW_PROVIDER,
         "skill": ADVERSARIAL_REVIEW_SKILL,
-        "model": ADVERSARIAL_REVIEW_MODEL,
-        "evidence_class": ADVERSARIAL_REVIEW_EVIDENCE_CLASS,
+        "model": model,
+        "evidence_class": evidence_class,
         "isolation": ADVERSARIAL_REVIEW_ISOLATION,
     }
     for field, expected_value in expected.items():
@@ -175,6 +206,10 @@ def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
         raise ProviderResolutionError(
             "builder.context.adversarial_review.reasoning_effort must be a nonempty string"
         )
+    if reasoning_effort not in CURRENT_REASONING_EFFORTS:
+        raise ProviderResolutionError(
+            "builder.context.adversarial_review.reasoning_effort is unsupported"
+        )
     result["adversarial_review"] = {
         **expected,
         "reasoning_effort": reasoning_effort,
@@ -182,14 +217,25 @@ def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def resolve_builder_context(version: int, context: dict[str, Any]) -> dict[str, Any]:
+def resolve_builder_context(
+    version: int,
+    context: dict[str, Any],
+    *,
+    builder_model: str = "gpt-6-sol",
+    builder_reasoning_effort: str = "high",
+    allow_historical: bool = False,
+) -> dict[str, Any]:
     context = _require_object(context, "builder.context")
     if isinstance(version, bool):
         raise ProviderResolutionError("config version must be 1 or 2")
     if version == 1:
         return _resolve_v1(context)
     if version == 2:
-        return _resolve_v2(context)
+        return _resolve_v2(
+            context, builder_model=builder_model,
+            builder_reasoning_effort=builder_reasoning_effort,
+            allow_historical=allow_historical,
+        )
     raise ProviderResolutionError("config version must be 1 or 2")
 
 
@@ -204,6 +250,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config-version", type=int)
     parser.add_argument("--context-json", required=True)
+    parser.add_argument("--builder-model", default="gpt-6-sol")
+    parser.add_argument("--builder-reasoning-effort", default="high")
     args = parser.parse_args()
     try:
         context = json.loads(args.context_json)
@@ -212,7 +260,10 @@ def main() -> int:
         result = (
             resolve_provider(context)
             if args.config_version is None
-            else resolve_builder_context(args.config_version, context)
+            else resolve_builder_context(
+                args.config_version, context, builder_model=args.builder_model,
+                builder_reasoning_effort=args.builder_reasoning_effort,
+            )
         )
     except (json.JSONDecodeError, ProviderResolutionError) as error:
         print(str(error), file=sys.stderr)

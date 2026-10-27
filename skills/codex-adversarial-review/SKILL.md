@@ -1,15 +1,17 @@
 ---
 name: codex-adversarial-review
-description: Perform a read-only, fresh-entry Codex adversarial review with retained remediation context when a campaign explicitly accepts same-model review. Do not use when model- or provider-independent review is required.
+description: Perform a read-only, fresh-entry Codex adversarial review with retained remediation context when a campaign accepts same-provider review. Do not use when model-, provider-, or reasoning-independent review is required.
 ---
 
 # Codex Adversarial Review
 
 Produce evidence and a review verdict without mutating the repository.
 
-This adapter represents `accepted_same_model_review`. It does not provide
-cross-provider, cross-model, statistically independent, or independent-reasoning
-evidence.
+This adapter represents `accepted_same_model_review` when builder and reviewer
+models match, or `accepted_same_provider_different_model_review` when they
+differ. Neither class provides cross-provider, statistically independent, or
+independent-reasoning evidence. A different-model label requires the observed
+models to differ; a same-model label requires them to match.
 
 The caller launches one reviewer in a fresh process with `fork_turns: "none"`
 and the configured model and reasoning effort at the start of the review
@@ -24,7 +26,7 @@ not replace its finding contract with the generic verdict below, merge it with
 another specialist, or infer that provider identity owns the specialist's
 judgment. In particular, `agent-instruction-review` must return its own
 revision-bound applicability and evidence-bearing findings or omission; this
-adapter contributes only the configured same-model execution provenance.
+adapter contributes only the configured Codex execution provenance.
 
 For a retained Work Engine review, authority-bound review state is the standard
 path rather than a Claude-only capability. Before spawning the reviewer, the
@@ -40,8 +42,7 @@ performs the review, records its attributed initial result, and reads the
 resulting current state before returning. It may also read bounded history.
 This authority-bound state publication is the only permitted operational
 mutation; it does not authorize repository edits or change the review evidence
-class. The profile's historical name does not make same-model review
-independent.
+class. The profile's historical name does not make Codex review independent.
 
 Provision the same bounded observational Work Engine capabilities selected for
 an equivalent Claude reviewer: exact active-slice current or retained history,
@@ -86,10 +87,11 @@ Remain read-only: do not edit files, apply patches, regenerate artifacts,
 commit, or perform external mutations. Ordinary read-only test observation is
 permitted only when the caller's gate contract authorizes it.
 
-Record an accepting result with evidence class `accepted_same_model_review`;
-the corresponding human-facing label is `accepted same-model review`. Report
-the observed model, reasoning effort, initial fresh-process isolation, absence
-of inherited builder context, continuation or replacement provenance,
-same-model relationship, and `independence_claimed: false`. Stop if the
-configured provenance cannot be observed or if an acceptance requirement
-demands independent review.
+Record an accepting result with the evidence class that matches the observed
+builder and reviewer models. The human-facing labels are `accepted same-model
+review` and `accepted same-provider different-model review`. Report the
+observed model, reasoning effort, initial fresh-process isolation, absence of
+inherited builder context, continuation or replacement provenance, the actual
+`same_model` or `different_model` relationship, and
+`independence_claimed: false`. Stop if the configured provenance cannot be
+observed or if an acceptance requirement demands independent review.
