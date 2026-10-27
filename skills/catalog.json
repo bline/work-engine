@@ -1,0 +1,238 @@
+{
+  "schema": "work-engine.skill-catalog.v1",
+  "skills": {
+    "agent-environment-graph": {
+      "kind": "tool",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+    },
+    "agent-instruction-review": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "chrome-vision": {
+      "kind": "tool",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+    },
+    "claim-evidence": {
+      "kind": "tool",
+      "state": "stable",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "claude-builder": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "claude-recon-implementation": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "code-change-profile": {
+      "kind": "tool",
+      "state": "stable",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "codex-adversarial-review": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "comparative-repository-analysis": {
+      "kind": "research",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+    },
+    "coordination-channels": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "durable-state": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "evidence-battery": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "claude"
+      ]
+    },
+    "idea-intake": {
+      "kind": "workflow",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+    },
+    "independent-review-state": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "linguistic-register-pilot": {
+      "kind": "research",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+    },
+    "manual-orchestration": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "orchestrator": {
+      "kind": "workflow",
+      "state": "dormant",
+      "install": []
+    },
+    "proposal-former": {
+      "kind": "workflow",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+    },
+    "proposal-packets": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "repo-search": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "review-bench": {
+      "kind": "research",
+      "state": "stable",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Research instrument kept installed by the user's decision on 2026-10-27."
+    },
+    "role-scheduler": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "codex"
+      ]
+    },
+    "skill-release": {
+      "kind": "tool",
+      "state": "active",
+      "install": [],
+      "not_installed_reason": "Operator tool, run by repository path when the user decides to release; installing it would list the release mechanism to every worker."
+    },
+    "slice-builder": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "slice-checkpoint": {
+      "kind": "tool",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "slice-completion-commit": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "slice-supervisor": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "strategic-planner": {
+      "kind": "workflow",
+      "state": "stable",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "ui-design-principles": {
+      "kind": "other-project",
+      "state": "dormant",
+      "install": [
+        "codex"
+      ],
+      "install_reason": "Site2JSON's design skill, kept installed by the user's decision on 2026-10-27."
+    },
+    "wind-walker": {
+      "kind": "workflow",
+      "state": "active",
+      "install": [
+        "claude",
+        "codex"
+      ]
+    },
+    "work-engine-mcp": {
+      "kind": "tool",
+      "state": "stable",
+      "install": [
+        "codex"
+      ]
+    }
+  }
+}

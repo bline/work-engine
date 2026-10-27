@@ -43,6 +43,9 @@ taken from this list):
 - The repository layout is being reorganized
   ([layout plan](repository-layout-plan.md)): current design moves to
   `design/`, Rust campaign records to `records/`.
+- `skills/planning/` was removed in layout phase 2 because it was not a skill
+  and had no consumer. `roadmap.md:964` still describes it as a compatibility
+  reference to `planning/2026-08-20-persistent-runtime-state.yaml`.
 
 ## Consequence wanted
 

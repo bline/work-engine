@@ -38,7 +38,7 @@ class SkillReleaseTest(unittest.TestCase):
         self.write("skills/alpha/scripts/run.py", "print('alpha')\n", mode=0o755)
         self.write("skills/beta/SKILL.md", skill_md("beta"))
         self.write("skills/gamma/SKILL.md", skill_md("gamma"))
-        self.manifest({"claude": ["alpha"], "codex": ["alpha", "beta"]})
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]})
         self.first = self.commit("first")
 
     def tearDown(self):
@@ -58,8 +58,17 @@ class SkillReleaseTest(unittest.TestCase):
         path.write_text(text)
         path.chmod(mode)
 
-    def manifest(self, targets):
-        self.write(release.MANIFEST_PATH, json.dumps({"schema": release.MANIFEST_SCHEMA, "targets": targets}))
+    def install(self, targets, extra=None):
+        """Write a catalog covering every skill directory; installs follow targets."""
+        skills = {}
+        for d in sorted((self.repo / "skills").iterdir()):
+            if (d / "SKILL.md").exists():
+                chosen = [t for t in ("claude", "codex") if d.name in targets.get(t, [])]
+                skills[d.name] = {"kind": "tool", "state": "active", "install": chosen}
+                if not chosen:
+                    skills[d.name]["not_installed_reason"] = "test fixture"
+        skills.update(extra or {})
+        self.write(release.CATALOG_PATH, json.dumps({"schema": release.CATALOG_SCHEMA, "skills": skills}))
 
     def commit(self, message):
         self.git("add", "-A")
@@ -138,7 +147,7 @@ class SkillReleaseTest(unittest.TestCase):
     def test_second_deploy_switches_current_keeps_old_release_and_unlinks_dropped(self):
         self.assertEqual(self.run_cli("deploy")[0], 0)
         self.write("skills/alpha/SKILL.md", skill_md("alpha", "new description"))
-        self.manifest({"claude": ["alpha"], "codex": ["alpha"]})
+        self.install({"claude": ["alpha"], "codex": ["alpha"]})
         second = self.commit("second")
         planned = self.plan()
         claude, codex = self.actions(planned, "claude"), self.actions(planned, "codex")
@@ -196,17 +205,91 @@ class SkillReleaseTest(unittest.TestCase):
         self.assertEqual(result["release_verification"], "identical")
         self.assertEqual(result["targets"]["claude"]["not_linked"], [])
 
-    def test_manifest_must_exist_and_name_real_skills(self):
-        self.manifest({"claude": ["missing"]})
-        self.commit("bad manifest")
+    def test_catalog_rules(self):
+        targets = {"claude": None, "codex": None}
+        entry = lambda **kw: {"kind": "tool", "state": "active", "install": ["claude"], **kw}
+        def problems(skills, dirs=None, others=()):
+            return " | ".join(release.catalog_problems(
+                {"schema": release.CATALOG_SCHEMA, "skills": skills},
+                set(skills) if dirs is None else dirs, set(others), targets))
+        self.assertEqual(problems({"a": entry()}), "")
+        cases = [
+            ({"a": entry()}, {"a"}, {"stub"}, "stub: directory has no SKILL.md, so it is not a skill"),
+            ({"a": entry()}, {"a", "b"}, (), "b: SKILL.md has no catalog entry"),
+            ({"a": entry(), "ghost": entry()}, {"a"}, (), "ghost: catalog entry has no skill directory"),
+            ({"a": entry(state="retired")}, None, (), "a: a retired skill is not installed"),
+            ({"a": entry(state="dormant")}, None, (), "installed while dormant, so it needs install_reason"),
+            ({"a": entry(kind="research", state="stable")}, None, (), "installed while research, so it needs install_reason"),
+            ({"a": entry(install=[])}, None, (), "active but not installed, so it needs not_installed_reason"),
+            ({"a": entry(owner="x")}, None, (), "unknown fields ['owner']"),
+            ({"a": entry(kind="library")}, None, (), "kind must be one of"),
+            ({"a": entry(state="paused")}, None, (), "state must be one of"),
+            ({"a": entry(install=["cursor"])}, None, (), "install must list unique targets"),
+            ({"a": entry(state="dormant", install_reason="  ")}, None, (), "install_reason must be non-empty text"),
+        ]
+        for skills, dirs, others, expected in cases:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, problems(skills, dirs, others))
+        self.assertEqual(problems({"a": entry(state="dormant", install_reason="kept by decision"),
+                                   "b": entry(state="dormant", install=[]),
+                                   "c": entry(install=[], not_installed_reason="operator tool")}), "")
+
+    def test_plan_and_deploy_refuse_a_catalog_that_breaks_rules(self):
+        self.write("skills/stub/notes.yaml", "x: 1\n")                      # a directory with no SKILL.md
+        self.commit("stub")
+        for command in ("plan", "deploy"):
+            code, _, err = self.run_cli(command)
+            self.assertEqual(code, 1)
+            self.assertIn("stub: directory has no SKILL.md", err)
+        self.assertFalse((self.root / "current").is_symlink())
+        self.assertFalse((self.claude / "alpha").exists())
+
+    def test_commit_without_catalog_or_manifest_is_refused(self):
+        self.git("rm", "-q", release.CATALOG_PATH)
+        self.commit("no catalog")
         code, _, err = self.run_cli("plan")
         self.assertEqual(code, 1)
-        self.assertIn("missing has no SKILL.md", err)
-        self.git("rm", "-q", release.MANIFEST_PATH)
-        self.commit("no manifest")
-        code, _, err = self.run_cli("plan")
+        self.assertIn("has neither", err)
+
+    def test_older_commits_with_the_install_manifest_still_deploy(self):
+        self.git("rm", "-q", release.CATALOG_PATH)
+        self.write(release.MANIFEST_PATH, json.dumps({"schema": release.MANIFEST_SCHEMA,
+                                                      "targets": {"claude": ["alpha"], "codex": ["beta"]}}))
+        legacy = self.commit("legacy manifest")
+        code, out, err = self.run_cli("deploy", legacy)
+        self.assertEqual(code, 0, err)
+        meta = json.loads((self.root / "releases" / legacy / "RELEASE.json").read_text())
+        self.assertEqual(meta["install_source"]["path"], release.MANIFEST_PATH)
+        self.assertEqual(meta["manifest"], {"claude": ["alpha"], "codex": ["beta"]})
+
+    def test_redeploying_the_current_release_changes_nothing(self):
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        links = {p: os.readlink(p) for d in (self.claude, self.codex) for p in d.iterdir()}
+        meta = (self.root / "releases" / self.first / "RELEASE.json").read_bytes()
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        record = json.loads(out)
+        self.assertEqual(record["changes"], {})
+        self.assertFalse(record["release_created"])
+        self.assertEqual({p: os.readlink(p) for d in (self.claude, self.codex) for p in d.iterdir()}, links)
+        self.assertEqual((self.root / "releases" / self.first / "RELEASE.json").read_bytes(), meta)
+        self.assertEqual(json.loads(meta)["install_source"]["path"], release.CATALOG_PATH)
+
+    def test_check_validates_the_working_tree_catalog(self):
+        code, out, _ = self.run_cli("check")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["install"], {"claude": ["alpha"], "codex": ["alpha", "beta"]})
+        self.write("skills/delta/SKILL.md", skill_md("delta"))
+        code, out, _ = self.run_cli("check")
         self.assertEqual(code, 1)
-        self.assertIn("has no", err)
+        self.assertIn("delta: SKILL.md has no catalog entry", json.loads(out)["problems"])
+
+    def test_repository_catalog_follows_the_rules(self):
+        repository = Path(__file__).resolve().parents[3]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = release.main(["--repository", str(repository), "check"])
+        self.assertEqual(code, 0, out.getvalue())
 
     def test_tampered_release_is_refused(self):
         self.run_cli("deploy")

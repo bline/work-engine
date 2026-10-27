@@ -28,6 +28,12 @@ import tarfile
 import tempfile
 from pathlib import Path
 
+CATALOG_PATH = "skills/catalog.json"
+CATALOG_SCHEMA = "work-engine.skill-catalog.v1"
+KINDS = ("workflow", "tool", "research", "other-project")
+STATES = ("active", "stable", "dormant", "retired")
+CATALOG_FIELDS = {"kind", "state", "install", "install_reason", "not_installed_reason"}
+# Install lists before the catalog existed (415ceda2); read only for older commits.
 MANIFEST_PATH = "skills/skill-release/install-manifest.json"
 MANIFEST_SCHEMA = "work-engine.skill-install-manifest.v1"
 RELEASE_SCHEMA = "work-engine.skill-release.v1"
@@ -153,13 +159,91 @@ def validate_manifest(manifest, targets: dict[str, Path], has_skill) -> dict[str
     return result
 
 
+def catalog_problems(catalog, skill_dirs: set[str], other_dirs: set[str], targets) -> list[str]:
+    """Rule violations in a catalog, given the skills/ directories with and without SKILL.md.
+
+    The rules keep classification and installation consistent: an uncatalogued
+    directory would ship with no stated status, and every installed description
+    costs each worker listing space, so installing one that is dormant, research
+    or another project's needs a stated reason.
+    """
+    if not isinstance(catalog, dict) or catalog.get("schema") != CATALOG_SCHEMA:
+        return [f"catalog schema must be {CATALOG_SCHEMA}"]
+    skills = catalog.get("skills")
+    if not isinstance(skills, dict):
+        return ["catalog needs a skills object"]
+    problems = [f"{name}: directory has no SKILL.md, so it is not a skill" for name in sorted(other_dirs)]
+    problems += [f"{name}: SKILL.md has no catalog entry" for name in sorted(skill_dirs - skills.keys())]
+    for name, entry in sorted(skills.items()):
+        if name not in skill_dirs:
+            problems.append(f"{name}: catalog entry has no skill directory with SKILL.md")
+        if not isinstance(entry, dict):
+            problems.append(f"{name}: entry must be an object")
+            continue
+        unknown = sorted(entry.keys() - CATALOG_FIELDS)
+        if unknown:
+            problems.append(f"{name}: unknown fields {unknown}")
+        kind, state, install = entry.get("kind"), entry.get("state"), entry.get("install")
+        if kind not in KINDS:
+            problems.append(f"{name}: kind must be one of {list(KINDS)}")
+        if state not in STATES:
+            problems.append(f"{name}: state must be one of {list(STATES)}")
+        if not isinstance(install, list) or len(set(install)) != len(install) or any(t not in targets for t in install):
+            problems.append(f"{name}: install must list unique targets from {sorted(targets)}")
+            continue
+        for field in ("install_reason", "not_installed_reason"):
+            if field in entry and not (isinstance(entry[field], str) and entry[field].strip()):
+                problems.append(f"{name}: {field} must be non-empty text")
+        if install and state == "retired":
+            problems.append(f"{name}: a retired skill is not installed")
+        if install and (state == "dormant" or kind in ("research", "other-project")) and "install_reason" not in entry:
+            problems.append(f"{name}: installed while {state if state == 'dormant' else kind}, so it needs install_reason")
+        if not install and state in ("active", "stable") and "not_installed_reason" not in entry:
+            problems.append(f"{name}: {state} but not installed, so it needs not_installed_reason")
+    return problems
+
+
+def install_lists(catalog) -> dict[str, list[str]]:
+    lists: dict[str, list[str]] = {}
+    for name, entry in sorted(catalog["skills"].items()):
+        for target in entry["install"]:
+            lists.setdefault(target, []).append(name)
+    return lists
+
+
+def skills_tree_dirs(paths) -> tuple[set[str], set[str]]:
+    """Split skills/<dir> names into those with and without a SKILL.md."""
+    paths = set(paths)
+    dirs = {p.split("/")[1] for p in paths if p.count("/") >= 2}
+    with_skill = {d for d in dirs if f"skills/{d}/SKILL.md" in paths}
+    return with_skill, dirs - with_skill
+
+
 def manifest_at(repo: Path, commit: str, targets: dict[str, Path]) -> dict[str, list[str]]:
-    try:
-        raw = git(repo, "show", f"{commit}:{MANIFEST_PATH}")
-    except ReleaseError as error:
-        raise ReleaseError(f"{commit} has no {MANIFEST_PATH}") from error
+    """Install lists for a commit: from its catalog, or from the older install manifest."""
     tree = set(tree_entries(repo, commit, "skills"))
+    if CATALOG_PATH in tree:
+        catalog = json.loads(git(repo, "show", f"{commit}:{CATALOG_PATH}"))
+        problems = catalog_problems(catalog, *skills_tree_dirs(tree), targets)
+        if problems:
+            raise ReleaseError(f"{CATALOG_PATH} at {commit[:12]} breaks catalog rules:\n  " + "\n  ".join(problems))
+        return install_lists(catalog)
+    if MANIFEST_PATH not in tree:
+        raise ReleaseError(f"{commit} has neither {CATALOG_PATH} nor {MANIFEST_PATH}")
+    raw = git(repo, "show", f"{commit}:{MANIFEST_PATH}")
     return validate_manifest(json.loads(raw), targets, lambda name: f"skills/{name}/SKILL.md" in tree)
+
+
+def check_working_tree(repo: Path, targets: dict[str, Path]) -> dict:
+    """Validate the working tree's catalog against the working tree's skill directories."""
+    path = repo / CATALOG_PATH
+    if not path.exists():
+        return {"ok": False, "problems": [f"{CATALOG_PATH} does not exist"]}
+    paths = [f"skills/{d.name}/{f.name}" for d in (repo / "skills").iterdir() if d.is_dir() for f in d.iterdir()]
+    catalog = json.loads(path.read_text())
+    problems = catalog_problems(catalog, *skills_tree_dirs(paths), targets)
+    return {"ok": not problems, "problems": problems,
+            "install": install_lists(catalog) if not problems else None}
 
 
 # --- release store ------------------------------------------------------------
@@ -255,11 +339,13 @@ def build_release(repo: Path, store: Store, commit: str, manifest: dict) -> bool
     node_modules, lock = repo / "node_modules", repo / "package-lock.json"
     if node_modules.is_dir():
         os.symlink(node_modules, staging / "node_modules")
+    source = CATALOG_PATH if (staging / CATALOG_PATH).exists() else MANIFEST_PATH
     record = {
         "schema": RELEASE_SCHEMA,
         "commit": commit,
         "skills_tree": git(repo, "rev-parse", f"{commit}:skills").strip(),
         "manifest": manifest,
+        "install_source": {"path": source, "blob": git(repo, "rev-parse", f"{commit}:{source}").strip()},
         "created_at": now(),
         "repository": str(repo),
         "node_modules": {
@@ -513,6 +599,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("ref", nargs="?", default="HEAD")
     d.add_argument("--replace-copies", action="store_true",
                    help="move real directories found in managed entries to the backup root")
+    sub.add_parser("check", help="validate the working tree's catalog; changes nothing")
     s = sub.add_parser("status", help="show the deployed release and link state")
     s.add_argument("--verify", action="store_true", help="re-hash the release against its commit")
     sub.add_parser("rollback", help="redeploy the release that preceded the current one")
@@ -534,6 +621,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "status":
             print(json.dumps(status(repo, store, targets, args.verify), indent=2))
             return 0
+        if args.command == "check":
+            result = check_working_tree(repo, targets)
+            print(json.dumps(result, indent=2))
+            return 0 if result["ok"] else 1
         with store.locked():
             if args.command == "deploy":
                 commit = resolve_commit(repo, args.ref)

@@ -15,13 +15,16 @@ entries are symlinks into a release, not into the working tree, so editing
   lists.
 - `current` in that directory is a symlink to the active release. Deploy and
   rollback replace it atomically, which switches every agent at once.
-- [`install-manifest.json`](install-manifest.json) lists which skills each
-  agent directory receives. It is read from the commit being deployed, so a
-  change to an install list is released like any other skill change.
+- [`skills/catalog.json`](../catalog.json) records each skill's kind, state
+  and install targets. It is read from the commit being deployed, so a change
+  to what is installed is released like any other skill change. Commits from
+  before the catalog are read through their older
+  `skills/skill-release/install-manifest.json`.
 
 Run from the repository root; `<skill-dir>` is this skill's directory.
 
 ```bash
+python3 <skill-dir>/scripts/skill_release.py check          # validate the working tree's catalog; changes nothing
 python3 <skill-dir>/scripts/skill_release.py plan [REF]     # what deploying REF would change; changes nothing
 python3 <skill-dir>/scripts/skill_release.py deploy [REF] [--replace-copies]
 python3 <skill-dir>/scripts/skill_release.py status [--verify]   # deployed commit, link state, undeployed changes
@@ -29,9 +32,31 @@ python3 <skill-dir>/scripts/skill_release.py rollback       # switch back to the
 python3 <skill-dir>/scripts/skill_release.py retire TARGET NAME...   # move unmanaged entries to the backup root
 ```
 
+## The catalog
+
+Each entry has a `kind` (`workflow`, `tool`, `research`, `other-project`), a
+`state` (`active`, `stable` meaning unchanged but in use, `dormant`, `retired`)
+and its `install` targets. `plan` and `deploy` refuse a commit whose catalog
+breaks these rules, and `check` applies them to the working tree:
+
+1. **Entries and skill directories correspond one to one.** A directory without
+   a `SKILL.md` is not a skill and does not belong in `skills/`. An
+   uncatalogued one would ship with no stated status.
+2. **A retired skill is not installed.** Its listing would mislead every worker.
+3. **An installed skill that is `dormant`, `research` or `other-project`
+   carries an `install_reason`.** Every installed description costs each worker
+   about 177 bytes of context, so installing one outside current use is a
+   recorded choice.
+4. **An `active` or `stable` skill with no install targets carries a
+   `not_installed_reason`**, so leaving it out is visibly deliberate.
+
+Rule 3 allows dormant installs that the layout plan's rule 2 would have
+excluded. The user chose on 2026-10-27 to keep every installed skill installed,
+and recording those as `stable` would misstate their use.
+
 ## Releasing
 
-1. Commit the skill changes. Deploy accepts only commits.
+1. Commit the skill changes, after `check` passes. Deploy accepts only commits.
 2. Run `plan` and read it with the user. `LISTING CHANGES` marks a changed
    `name` or `description`, which changes the skill list every new worker
    receives. A running experiment that fixes worker-visible text treats that
