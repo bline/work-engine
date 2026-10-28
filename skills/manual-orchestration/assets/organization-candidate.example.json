@@ -1,0 +1,100 @@
+{
+  "illustrative_only": true,
+  "organization_id": "example-reference-refresh",
+  "revision": "r2",
+  "prior_revision": {"revision": "r1", "candidate_ref": "example-run/organization-r1.json"},
+  "status": "proposed_for_review",
+  "objective_ref": "example-run/objective.md",
+  "authority_ref": "example-run/authority.md",
+  "coordinator_role_id": "coordinator",
+  "initial_approval_owner_ref": "example-run/authority.md#organization-acceptance",
+  "decision_record_ref": "example-run/assignment.json#organization-decisions",
+  "decision_status": "pending",
+  "revision_proposal": {
+    "classification": "small",
+    "basis": "Split the already authorized documentation outcome by separately owned references; no authority, provider, budget or review boundary changes.",
+    "required_organization_approval_owner": "coordinator",
+    "other_authority_checks_ref": "example-run/authority.md#dispatch-boundaries"
+  },
+  "roles": [
+    {
+      "role_id": "coordinator",
+      "role": "coordinator",
+      "reports_to": null,
+      "outcome": "Review the composed candidate and decide integration within the active authority map.",
+      "ownership": ["organization candidate and revision decisions", "final integration decision"],
+      "requested_configuration": {"model": "gpt-6.1-sol", "effort": "xhigh", "service_tier": "default"},
+      "launch_choice": "existing session",
+      "proposed_context_choice": "retain after scoped context check",
+      "current_assignment_ref": "example-run/coordinator-assignment.json",
+      "continuation_ref": "example-run/coordinator-continuation.json",
+      "discovery": {
+        "disposition": "propose_children",
+        "proposed_children": ["reference-supervisor", "independent-reviewer"],
+        "basis": "Reference ownership benefits from one branch supervisor; composed authority guidance needs separately established review.",
+        "evidence_refs": ["example-run/composition-findings.md"],
+        "uncertainties": []
+      }
+    },
+    {
+      "role_id": "reference-supervisor",
+      "role": "supervisor",
+      "reports_to": "coordinator",
+      "outcome": "Return a validated reference-refresh group result.",
+      "ownership": ["reference branch discovery", "worker dispatch and collection"],
+      "requested_configuration": {"model": "gpt-6.1-sol", "effort": "xhigh", "service_tier": "default"},
+      "launch_choice": "retain existing spawned discovery session",
+      "proposed_context_choice": "retain if authorized and scoped context check supports the implementation assignment",
+      "current_assignment_ref": "example-run/supervisor-assignment.json",
+      "continuation_ref": "example-run/supervisor-continuation.json",
+      "discovery": {
+        "disposition": "propose_children",
+        "proposed_children": ["reference-implementer"],
+        "basis": "One worker can own the reference and its role links as a coherent outcome.",
+        "evidence_refs": ["example-run/reference-findings.md"],
+        "uncertainties": [{"question": "Does the concurrent reference owner require delaying additive links?", "owner_role_id": "reference-supervisor", "effect": "Resolve before shared-file edits."}]
+      }
+    },
+    {
+      "role_id": "reference-implementer",
+      "role": "worker",
+      "reports_to": "reference-supervisor",
+      "outcome": "Implement and validate the accepted reference and conditional role links.",
+      "ownership": ["packet-scoped reference and role-link paths"],
+      "requested_configuration": {"model": "gpt-6.1-sol", "effort": "medium", "service_tier": "default"},
+      "launch_choice": "spawn_agent with fork_turns=none",
+      "proposed_context_choice": "fresh",
+      "current_assignment_ref": null,
+      "continuation_ref": null,
+      "packet_ref": "example-run/worker-packet.md",
+      "discovery": {
+        "disposition": "leaf",
+        "proposed_children": [],
+        "basis": "The branch findings establish one coherent write scope; further subdivision would split coupled instruction semantics.",
+        "evidence_refs": ["example-run/reference-findings.md"],
+        "uncertainties": []
+      }
+    },
+    {
+      "role_id": "independent-reviewer",
+      "role": "reviewer",
+      "reports_to": "coordinator",
+      "outcome": "Challenge the composed exact instruction subject under the owning review contract.",
+      "ownership": ["read-only review findings"],
+      "requested_configuration": {"model": "gpt-6-astra", "effort": "xhigh", "service_tier": "default"},
+      "launch_choice": "separate top-level Codex role_host with explicit service_tier=default",
+      "proposed_context_choice": "fresh; no discovery, designer or builder conversation",
+      "current_assignment_ref": null,
+      "continuation_ref": null,
+      "packet_ref": "example-run/reviewer-packet.md",
+      "discovery": {
+        "disposition": "leaf",
+        "proposed_children": [],
+        "basis": "One separately established review can assess the composed instruction boundary.",
+        "evidence_refs": ["example-run/review-requirement.md"],
+        "uncertainties": [{"question": "Actual reviewer model, tier and required isolation remain unestablished until launch evidence is bound.", "owner_role_id": "coordinator", "effect": "Do not consume the proposal as realization evidence."}]
+      }
+    }
+  ],
+  "realization_note": "All example-run references are illustrative, not real approvals or sessions. Current assignment records own actual runtime bindings and collection; null assignment means unlaunched. The pending external decision must bind this file's frozen path/digest, prior revision, classification/basis, decision owner and source authority before acceptance is claimed."
+}

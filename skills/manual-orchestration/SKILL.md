@@ -11,6 +11,8 @@ Use model judgment to divide an authorized objective into coherent outcomes whos
 
 ## Load by role
 
+- When forming or revising an organization, including during ongoing implementation with no new dispatch, launch or discovery assignment: [organization formation](references/organization-formation.md) - reviewable candidates, branch discovery and revision authority.
+
 - **Coordinator** (root): [coordinator](references/coordinator.md) - decomposition, packets, dispatch, collection, integration.
 - **Supervisor**: [supervisor](references/supervisor.md) - one engineering group, launch, validation, review collection.
 - **Worker or reviewer**: [worker](references/worker.md) - one coherent bounded assignment.

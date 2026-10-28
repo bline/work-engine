@@ -13,3 +13,7 @@ These are observed S10 examples, not required schemas or proof of complete decom
 | Private readiness without integration | [`D/supervisor-result-v1.json`](/home/bline/.local/state/work-engine/manual-decomposition-s10-20261020/slices/D/supervisor-result-v1.json) | Exact manifest/review/check references, three unqualified TO2 tests, 17-path prior-byte limit, root as next integration owner. |
 
 Useful optional projections across these forms: `path` plus SHA256 and producer; actual selected binary/profile/schema and source subject; property, relevant states, observations and bounded exhaustiveness basis when a semantic obligation is assessed; limitations and invalidated assumptions; failed and passed check references; requested versus observed identity; open process or child owner; next decision owner. Include a field because the claim needs it, not to fill a generic ledger. No example above establishes a complete obligation inventory or automatic planning accuracy.
+
+## Illustrative organization form
+
+The [organization candidate example](../assets/organization-candidate.example.json) is illustrative data, separate from the observed historical forms above. It pairs a reviewable proposal with existing assignment/decision records; [organization formation](organization-formation.md) explains when to use it and where approval and actual runtime bindings belong.

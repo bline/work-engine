@@ -1,0 +1,89 @@
+{
+  "kind": "external-organization-formation-source-acceptance",
+  "recorded_at": "2026-10-28T20:47:14.035434+00:00",
+  "decision": "accepted_bounded_first_pass_source",
+  "decision_owner": "coordinator",
+  "session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+  "authority": "User requested using current manual-orchestration to build a plan and start implementation; external root builder skills only.",
+  "plan": {
+    "path": "planning/external-organization-formation-implementation-plan-20261028.md",
+    "sha256": "79821c8c91af3527a934af94c560664c7fc706da90a97b6a812bee4d01b71036"
+  },
+  "source_manifest": {
+    "path": "/home/bline/.local/state/work-engine/external-organization-formation-20261028-01a18339/owned-delta-manifest-v2.json",
+    "sha256": "bc781d94f57fd0eefd16f74942bc1428570ac714ca94790b9d490b0cac3aaf51"
+  },
+  "accepted_paths": [
+    {
+      "path": "skills/manual-orchestration/references/organization-formation.md",
+      "sha256": "c7e82427a6f5839aad0c1c941e39311469a444c587daee471301ba8ec0985104"
+    },
+    {
+      "path": "skills/manual-orchestration/assets/organization-candidate.example.json",
+      "sha256": "db50285eae8da95f777d7466fbd4bce94faa33482064fd0bbc80572e42a3dc45"
+    },
+    {
+      "path": "skills/manual-orchestration/SKILL.md",
+      "sha256": "78c2af6d75e3b9bd68ab2704e0a3ec2c05b94db305a2f34fd60cf763bf82c699"
+    },
+    {
+      "path": "skills/manual-orchestration/references/coordinator.md",
+      "sha256": "0cb7a0c5ea68e66d97f6a87a967541a9db0f5fc1aecaaecc9883a084c4f6f197"
+    },
+    {
+      "path": "skills/manual-orchestration/references/supervisor.md",
+      "sha256": "ae05b902f327fb269264235ec8245725279f2ed01852cc0c8d66fc7f1124847c"
+    },
+    {
+      "path": "skills/manual-orchestration/references/worker.md",
+      "sha256": "db67bd3fc3d6246b84149ab5500b6a43fc7d6ccb21130faf764a1745df3f0d65"
+    },
+    {
+      "path": "skills/manual-orchestration/references/demonstrated-forms.md",
+      "sha256": "3bf683c847b31d455b70de56a8990e6d052495dbd717ac71a238a7c30397e5c1"
+    }
+  ],
+  "review": {
+    "reviewer_session": "01a18432-0a9c-7e63-938f-e485122a69f5",
+    "initial_response": "/home/bline/.local/state/work-engine/external-organization-formation-20261028-01a18339/reviewer-response-v1.json",
+    "final_response": "/home/bline/.local/state/work-engine/external-organization-formation-20261028-01a18339/reviewer-response-v2.json",
+    "final_response_sha256": "83b47ce139b2911a5220adff36ca94c2809470daf72d37e28ec2c215c2b6a457",
+    "finding": "ORG-F1 resolved; ongoing implementation revisions now load organization approval/collection guidance even with no new dispatch.",
+    "root_adjudication": "Accept closure on exact three loading corrections; all seven current source hashes match reviewed v2.",
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "recorded_service_tier": "default",
+    "runtime_parent": null,
+    "recorded_filesystem": "read-only",
+    "independence_claimed": false
+  },
+  "validation": {
+    "json_parse": "passed",
+    "skill_packaging": "passed",
+    "release_catalog_and_generated_synopses": "passed",
+    "local_links": "passed",
+    "whitespace": "passed",
+    "owned_delta_and_concurrent_byte_preservation": "passed",
+    "offline_decision_scenarios": "seven initial cases and ongoing-work/no-new-dispatch correction case evaluated"
+  },
+  "actual_continuity": {
+    "supervisor": "01a1841d-933c-7c52-9ebb-5c3e43f506d9 retained from reconnaissance through supervision, remediation and collection",
+    "worker": "01a18427-a3bd-7c20-aebb-57e147b5bf9f retained through bounded remediation; all results collected",
+    "current_task_org": "/home/bline/.local/state/work-engine/external-organization-formation-20261028-01a18339/current-task-organization-r1.json",
+    "qualification": "Current-task organization is retrospective/current-state as of assembly; exact JSON was not prospectively approved. Plan/model selections preceded worker launch."
+  },
+  "concurrent_work": "Pre-existing context-continuity edits and incoming coordinator profile changes preserved and excluded from task-owned delta and review acceptance.",
+  "destination_head_at_acceptance": "f08cfe5f381fca39acab736329a7920581191b43",
+  "process_and_child_disposition": "All required results collected; no owned running processes or child work. Reviewer idle/released; supervisor/worker contexts retained idle.",
+  "limitations": [
+    "Skills-and-data first pass; model judgment assembles the organization. No new executable consumer, automatic team manager, or mandatory JSON schema.",
+    "Semantic scenarios are offline evaluations; no live prospective organization-approval trial claimed.",
+    "Review does not accept unrelated concurrent context/profile changes or attest backend fulfillment."
+  ],
+  "publication": {
+    "committed": false,
+    "deployed": false
+  },
+  "remaining_required_work": [],
+  "next_owner": "human for optional source review/commit/release or a next real-task formation use"
+}
