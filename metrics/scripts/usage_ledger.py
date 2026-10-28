@@ -6,7 +6,8 @@ Usage
                                    [--streams GLOB ...] --out DIR
       Writes DIR/calls.jsonl (one row per model call), DIR/quota.jsonl (provider
       utilisation readings), DIR/level1.json (reconstructed totals against provider
-      cumulative counters), DIR/issues.jsonl and DIR/summary.json.
+      cumulative counters), DIR/issues.jsonl, DIR/summary.json and, since F1.1,
+      DIR/turns.jsonl (completed Codex turns with recorded durations).
   python3 -I usage_ledger.py reconcile-trial MEASUREMENT.json [--out FILE]
       Recomputes every actor of a four-builder-measurement-v1 file from raw sources
       with this ledger's readers and reports per-actor and per-arm differences.
@@ -39,6 +40,21 @@ anthropic-builder-baselines-20261027 (measurement/final-refresh-v2.json "pricing
 not a bill and not subscription quota. A model without a frozen rate is unpriced
 (usd null), never estimated. `weighted` is the pure-Codex baseline unit,
 uncached + cached/10 + 5*output.
+
+F1.1 (2026-10-28) adds fields and one file; every F1 field, total and file is
+unchanged.
+  Tier. Codex calls carry `service_tier`, the thread's tier at the call from the
+  latest preceding `thread_settings_applied` (Fast is `priority`, standard is
+  `default`; null when the rollout records none). `quota_multiplier` is 2.5 for
+  `priority` and 1 for `default` (Codex docs: Fast draws included usage at 2.5x
+  the standard rate); null otherwise. `usd` stays the list-price scenario.
+  Claude calls carry `service_tier` and `speed` from the message usage.
+  Time. `latency_s` is the call's record time minus the latest preceding input
+  in the same file (Codex: turn start, user message, tool output; Claude: user
+  record), `latency_basis` says how it was derived, and a call with no input since
+  the previous call has null latency. It includes queueing and is an estimate.
+  turns.jsonl holds each completed Codex turn with the `duration_ms` and
+  `time_to_first_token_ms` Codex records.
 """
 import argparse, collections, datetime as dt, glob, io, json, os, re, sqlite3, subprocess, sys
 
@@ -56,6 +72,16 @@ CODEX_GLOBS = [f'{HOME}/.codex/sessions/**/rollout-*.jsonl', f'{HOME}/.codex/ses
                f'{HOME}/.codex/archived_sessions/*.jsonl', f'{HOME}/.codex/archived_sessions/*.jsonl.zst']
 CLAUDE_GLOB = f'{HOME}/.claude/projects/**/*.jsonl'
 STATE_DB = f'{HOME}/.codex/state_5.sqlite'
+# F1.1: rollout line prefix, read without parsing large tool outputs.
+PREFIX = re.compile(r'^\{"timestamp":"([^"]+)",(?:"ordinal":\d+,)?"type":"(\w+)","payload":\{"type":"(\w+)"')
+INPUT_ITEMS = ('function_call_output', 'custom_tool_call_output')
+QUOTA_MULTIPLIER = {'default': 1.0, 'priority': 2.5}
+CLAUDE_LATENCY_START = {}   # message id -> its latency start, for later records of the same message
+
+def seconds_between(start, end):
+    if not start or not end: return None
+    s = (ts_of(end) - ts_of(start)).total_seconds()
+    return s if s >= 0 else None
 
 ISSUES = []
 def issue(kind, **kw): ISSUES.append(dict(kind=kind, **kw))
@@ -113,11 +139,33 @@ def native_weighted(u):
     return u.get('input_tokens', 0) + u.get('cache_creation_input_tokens', 0) + u.get('cache_read_input_tokens', 0) / 10 + 5 * u.get('output_tokens', 0)
 
 # ---------------------------------------------------------------- Codex
-def codex_rollout(path, seen):
-    """Return (meta, calls, quota, level1) for one rollout. `seen` maps response_id -> usage across files."""
+def codex_rollout(path, seen, turns=None):
+    """Return (meta, calls, quota, level1) for one rollout. `seen` maps response_id -> usage across files.
+    F1.1: completed turns are appended to `turns` when a list is given."""
     meta = {}; model = effort = None; calls = []; fallback = []; quota = []; last_thread = None; n_tur = 0
     fork_offset = None   # a forked thread's cumulative counter starts at its source thread's total
+    tier = None; last_input = None   # F1.1
     for n, line in enumerate(open_lines(path), 1):
+        m = PREFIX.match(line)
+        if m:
+            mts, mtyp, ptyp = m.groups()
+            if mtyp == 'response_item' and (ptyp in INPUT_ITEMS or (ptyp == 'message' and '"role":"user"' in line[:400])):
+                last_input = mts
+            elif mtyp == 'event_msg' and ptyp == 'task_started':
+                last_input = mts
+            elif mtyp == 'event_msg' and ptyp in ('thread_settings_applied', 'task_complete'):
+                try: e = json.loads(line)
+                except ValueError: e = None
+                ep = (e or {}).get('payload') or {}
+                own = not ep.get('thread_id') or not meta.get('id') or ep['thread_id'] == meta['id']
+                if ptyp == 'thread_settings_applied' and own:
+                    tier = (ep.get('thread_settings') or {}).get('service_tier')
+                elif ptyp == 'task_complete' and e and turns is not None:
+                    turns.append(dict(provider='codex', thread=meta.get('id'), turn_id=ep.get('turn_id'), completed_ts=mts,
+                                      started_at=ep.get('started_at'), completed_at=ep.get('completed_at'),
+                                      duration_ms=ep.get('duration_ms'), time_to_first_token_ms=ep.get('time_to_first_token_ms'),
+                                      service_tier=tier, model=model, effort=effort, agent_path=meta.get('agent_path'),
+                                      source=f'{path}:{n}'))
         if not any(k in line for k in ('session_meta', 'turn_context', 'token_usage_record', 'token_count')): continue
         try: d = json.loads(line)
         except ValueError:
@@ -131,6 +179,8 @@ def codex_rollout(path, seen):
             n_tur += 1
             if p.get('thread_id') and meta.get('id') and p['thread_id'] != meta['id']:
                 issue('copied_codex_usage_excluded', path=path, line=n, thread=p['thread_id']); continue
+            latency = seconds_between(last_input, ts); latency_basis = 'since_preceding_input' if latency is not None else 'no_preceding_input'
+            last_input = None
             rid = p.get('response_id'); u = {k: (p.get('usage') or {}).get(k, 0) for k in CODEX_KEYS}
             if p.get('thread_token_usage'):
                 last_thread = p['thread_token_usage']
@@ -142,7 +192,8 @@ def codex_rollout(path, seen):
                 if seen[rid] != u: issue('conflicting_repeated_response', path=path, line=n, response_id=rid)
                 continue
             seen[rid] = u
-            calls.append(dict(ts=ts, response_id=rid, usage=u, model=model, effort=effort, line=n, dedupe_basis='response_id'))
+            calls.append(dict(ts=ts, response_id=rid, usage=u, model=model, effort=effort, line=n, dedupe_basis='response_id',
+                              tier=tier, latency_s=latency, latency_basis=latency_basis))
         elif typ == 'event_msg' and p.get('type') == 'token_count':
             rl = p.get('rate_limits') or {}
             for wname in ('primary', 'secondary'):
@@ -153,7 +204,8 @@ def codex_rollout(path, seen):
                                       limit_id=rl.get('limit_id'), plan_type=rl.get('plan_type'), thread=meta.get('id'), source=path))
             lu = ((p.get('info') or {}).get('last_token_usage')) or {}
             if lu.get('input_tokens', 0) or lu.get('output_tokens', 0):
-                fallback.append(dict(ts=ts, usage={k: lu.get(k, 0) for k in CODEX_KEYS}, model=model, effort=effort, line=n))
+                fallback.append(dict(ts=ts, usage={k: lu.get(k, 0) for k in CODEX_KEYS}, model=model, effort=effort, line=n,
+                                     tier=tier, latency_s=None, latency_basis='fallback_record'))
     if n_tur == 0 and fallback:
         keyed = {}
         for c in fallback:
@@ -187,11 +239,14 @@ def codex_files(since):
             if since is None or os.path.getmtime(f) >= since.timestamp(): out.add(f)
     return sorted(out)
 
-def build_codex(since, until):
+def build_codex(since, until, turns=None):
     idx = thread_index(); seen = {}; metas = {}; rows = []; quota = []; level1 = []
     files = codex_files(since)
     for f in files:
-        meta, calls, q, l1 = codex_rollout(f, seen)
+        file_turns = []
+        meta, calls, q, l1 = codex_rollout(f, seen, file_turns)
+        if turns is not None:
+            turns += [t for t in file_turns if in_window(t['completed_ts'], since, until)]
         if meta.get('id'): metas[meta['id']] = meta
         quota += [x for x in q if in_window(x['ts'], since, until)]
         if l1: level1.append(l1)
@@ -202,7 +257,9 @@ def build_codex(since, until):
                              thread=tid, parent_thread=meta.get('parent_thread_id'), agent_path=meta.get('agent_path'),
                              originator=meta.get('originator'), model=c['model'], effort=c['effort'],
                              role_index=(idx.get(tid) or {}).get('agent_role'), role_heuristic=role_heuristic(meta.get('agent_path')),
-                             usage=u, weighted=codex_weighted(u), usd=codex_usd(u, c['model']), source=f'{f}:{c["line"]}'))
+                             usage=u, weighted=codex_weighted(u), usd=codex_usd(u, c['model']), source=f'{f}:{c["line"]}',
+                             service_tier=c.get('tier'), quota_multiplier=QUOTA_MULTIPLIER.get(c.get('tier')),
+                             latency_s=c.get('latency_s'), latency_basis=c.get('latency_basis')))
     for r in rows:   # root ancestor by recorded parent links; unknown stays null
         cur, hops = r['thread'], 0
         while cur in metas and metas[cur].get('parent_thread_id') and hops < 20:
@@ -221,7 +278,12 @@ def claude_transcript(path, msgs, cost_state, members=None):
         try: agent_type = json.load(open(path[:-6] + '.meta.json')).get('agentType')
         except (ValueError, OSError): pass
     project = path.split('/.claude/projects/')[1].split('/')[0]
+    last_user = None   # F1.1
     for n, line in enumerate(open_lines(path), 1):
+        if '"type":"user"' in line[:300]:
+            try: uo = json.loads(line)
+            except ValueError: uo = None
+            if uo and uo.get('type') == 'user' and uo.get('timestamp'): last_user = uo['timestamp']
         if '"cost-state"' in line:
             try:
                 o = json.loads(line)
@@ -241,6 +303,9 @@ def claude_transcript(path, msgs, cost_state, members=None):
             if k in (u.get('cache_creation') or {}): flat[k] = u['cache_creation'][k]
         if mid in msgs:
             row = msgs[mid]
+            if row.get('latency_s') is not None:   # F1.1: a message's records span the call; latency runs to the last one
+                later = seconds_between(CLAUDE_LATENCY_START.get(mid), o.get('timestamp'))
+                if later is not None and later > row['latency_s']: row['latency_s'] = later
             for k, v in flat.items():
                 if k == 'output_tokens': row['usage'][k] = max(row['usage'].get(k, 0), v)
                 elif k in row['usage'] and row['usage'][k] != v:
@@ -248,9 +313,14 @@ def claude_transcript(path, msgs, cost_state, members=None):
                 else: row['usage'][k] = v
             row['records'] += 1
             continue
+        latency = seconds_between(last_user, o.get('timestamp'))
+        if latency is not None: CLAUDE_LATENCY_START[mid] = last_user
+        last_user = None
         msgs[mid] = dict(provider='anthropic', ts=o.get('timestamp'), call_id=mid, dedupe_basis='message_id',
                          session=o.get('sessionId'), project=project, subagent=sub, agent=agent, agent_type=agent_type,
-                         model=model, effort=o.get('effort'), usage=flat, records=1, source=f'{path}:{n}')
+                         model=model, effort=o.get('effort'), usage=flat, records=1, source=f'{path}:{n}',
+                         service_tier=u.get('service_tier'), speed=u.get('speed'), quota_multiplier=None,
+                         latency_s=latency, latency_basis='since_preceding_user_record' if latency is not None else 'no_preceding_input')
 
 def build_claude(since, until):
     msgs = {}; cost_state = {}; members = {}
@@ -315,10 +385,10 @@ def stream_quota(globs):
 def cmd_build(a):
     since = ts_of(a.since) if a.since else None; until = ts_of(a.until) if a.until else None
     os.makedirs(a.out, exist_ok=True)
-    calls, quota, l1 = [], [], {}
+    calls, quota, l1, turns = [], [], {}, []
     cov = {}
     if not a.no_codex:
-        r, q, l, nf = build_codex(since, until); calls += r; quota += q; l1['codex_threads'] = l; cov['codex_files'] = nf
+        r, q, l, nf = build_codex(since, until, turns); calls += r; quota += q; l1['codex_threads'] = l; cov['codex_files'] = nf
     if not a.no_claude:
         r, l, nf = build_claude(since, until); calls += r; l1['claude_sessions'] = l; cov['claude_files'] = nf
     if a.streams: quota += stream_quota(a.streams)
@@ -330,6 +400,9 @@ def cmd_build(a):
     with open(os.path.join(a.out, 'issues.jsonl'), 'w') as fh:
         for r in ISSUES: fh.write(json.dumps(r, sort_keys=True) + '\n')
     json.dump(l1, open(os.path.join(a.out, 'level1.json'), 'w'), indent=1, sort_keys=True)
+    turns.sort(key=lambda t: t['completed_ts'] or '')
+    with open(os.path.join(a.out, 'turns.jsonl'), 'w') as fh:
+        for t in turns: fh.write(json.dumps(t, sort_keys=True) + '\n')
     agg = collections.defaultdict(lambda: dict(calls=0, weighted=0.0, usd=0.0, unpriced_calls=0))
     for r in calls:
         g = agg[f"{r['provider']}|{r['model']}"]; g['calls'] += 1; g['weighted'] += r['weighted']
@@ -348,9 +421,33 @@ def cmd_build(a):
                    fallback_calls=sum(r.get('dedupe_basis') == 'fallback' for r in calls),
                    unknown_model_calls=sum(r['model'] is None for r in calls),
                    level1={k: l1_summary(v) for k, v in l1.items()}, issues=collections.Counter(i['kind'] for i in ISSUES),
-                   by_provider_model=dict(sorted(agg.items())), pricing='frozen Standard API scenario; not a bill or quota')
+                   by_provider_model=dict(sorted(agg.items())), pricing='frozen Standard API scenario; not a bill or quota',
+                   f1_1=f11_summary(calls, turns))
     json.dump(summary, open(os.path.join(a.out, 'summary.json'), 'w'), indent=1, sort_keys=True)
     print(json.dumps(summary, indent=1, sort_keys=True))
+
+def f11_summary(calls, turns):
+    """F1.1 additions: per provider|model|effort|tier counts, cost with the quota multiplier, and latency."""
+    def med(xs):
+        xs = sorted(xs); n = len(xs)
+        return None if not n else (xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2)
+    cells = collections.defaultdict(lambda: dict(calls=0, usd=0.0, quota_weighted_usd=0.0, quota_unweighted_calls=0, latencies=[]))
+    for r in calls:
+        tier = r.get('service_tier') if r['provider'] == 'codex' else r.get('speed')
+        g = cells[f"{r['provider']}|{r['model']}|{r.get('effort')}|{tier}"]; g['calls'] += 1
+        if r['usd'] is not None:
+            g['usd'] += r['usd']
+            if r.get('quota_multiplier') is None: g['quota_unweighted_calls'] += 1
+            else: g['quota_weighted_usd'] += r['usd'] * r['quota_multiplier']
+        if r.get('latency_s') is not None: g['latencies'].append(r['latency_s'])
+    out = {}
+    for k, g in sorted(cells.items()):
+        lat = g.pop('latencies')
+        out[k] = dict(g, latency_n=len(lat), latency_median_s=med(lat))
+    tturns = [t for t in turns if t.get('duration_ms') is not None]
+    return dict(key='provider|model|effort|tier (Codex service_tier; Claude speed)', by_cell=out,
+                turns=len(turns), turn_duration_median_ms=med([t['duration_ms'] for t in tturns]),
+                quota_note='quota_weighted_usd = usd x quota_multiplier where the tier is known; an estimate, not a reading')
 
 def find_transcripts(sid):
     return sorted(set(glob.glob(f'{HOME}/.claude/projects/*/{sid}.jsonl') + glob.glob(f'{HOME}/.claude/projects/*/{sid}/subagents/*.jsonl')))

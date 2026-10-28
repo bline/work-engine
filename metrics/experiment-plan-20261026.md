@@ -642,6 +642,7 @@ Decided by the owner on 2026-10-27:
 |---|---|
 | F1 usage ledger | Accepted and frozen |
 | F2 run registry | Accepted |
+| F1.1 usage ledger | Approved 2026-10-28 (owner, "proceed"): adds Codex service tier, a quota multiplier and call and turn timing. Every F1 output verified unchanged ([record](probes/usage-ledger-f11-20261028.md)). It found 3,660 Fast-tier calls on 10-03 to 10-08, which F1-based quota analyses treated as standard |
 | F3 battery scorer | Accepted. Headline tier `final`, as proposed in its record |
 | E1a scoring | Fixed interface in the packet (option A), reference Terra `88b035f2` (§6 E1a); the alternative, per-artifact projection rules written for each run, was not chosen |
 | Stage A cap | Raised from 10 to 16 points; remaining support work moves to Sonnet 5.5 (§3) |
