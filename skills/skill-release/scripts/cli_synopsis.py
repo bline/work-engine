@@ -267,6 +267,11 @@ def markdown_files(root: Path) -> list[str]:
     Untracked files are left out: in a tree shared with other sessions, their drafts
     would fail the check and have their markers' scripts run. Name a file explicitly
     to check or write it before it is tracked.
+
+    Files under `reviews/` and `records/` are left out too: they are records kept as
+    written (docs/repository-layout.md), such as a frozen copy of a reviewed skill, and
+    regenerating them would change what they record. A file named explicitly is still
+    checked.
     """
     result = subprocess.run(
         ["git", "-C", str(root), "ls-files", "-z", "--cached", "--", "*.md"],
@@ -275,7 +280,8 @@ def markdown_files(root: Path) -> list[str]:
         names = [n for n in result.stdout.decode().split("\0") if n]
     else:
         names = [str(p.relative_to(root)) for p in root.rglob("*.md")]
-    return sorted(n for n in set(names) if (root / n).is_file())
+    kept_as_written = ("reviews/", "records/")
+    return sorted(n for n in set(names) if (root / n).is_file() and not n.startswith(kept_as_written))
 
 
 @dataclass

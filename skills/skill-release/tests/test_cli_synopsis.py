@@ -209,6 +209,21 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual((self.root / "plain.md").read_text(), "no markers here\n")
 
 
+    def test_records_kept_as_written_are_left_out_unless_named(self):
+        stale = block(' subs=alpha')
+        self.doc("# current\n" + stale)
+        self.put("reviews/r1/source/doc.md", "# frozen copy\n" + stale)
+        self.put("records/old.md", "# record\n" + stale)
+        code, _, err = self.run_cli("check")
+        self.assertEqual(code, 1)
+        self.assertIn("doc.md:2: stale synopsis", err)
+        self.assertNotIn("reviews/", err)
+        self.assertNotIn("records/", err)
+        code, _, err = self.run_cli("check", "reviews/r1/source/doc.md")
+        self.assertEqual(code, 1, "a file named explicitly is still checked")
+        self.assertIn("reviews/r1/source/doc.md:2: stale synopsis", err)
+
+
 class RepositoryTest(unittest.TestCase):
     def test_repository_synopses_are_current(self):
         repository = Path(__file__).resolve().parents[3]

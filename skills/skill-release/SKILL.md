@@ -73,7 +73,8 @@ command is taught. `scripts/cli_synopsis.py write [files]` regenerates them and
 `check` reports stale ones; `skill_release.py check` includes it, and a test runs
 it on this repository, so a parser change without a regenerated block fails.
 Keep blocks in `AGENTS.md` to the commands nearly every session uses: it is
-re-sent with every model call.
+re-sent with every model call. Files under `reviews/` and `records/` are records kept as written,
+so the default check skips them; name one to check it.
 
 ## Releasing
 

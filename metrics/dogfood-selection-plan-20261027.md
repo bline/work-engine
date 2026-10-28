@@ -419,7 +419,8 @@ All of these, then owner approval:
 3. The joins demonstrated on two round-1 records. **Done 2026-10-28**: the chain
    resolves ([join check](probes/dogfood-round2-join-check-20261028.md)); its gaps
    J-1 to J-3 are answered by "Review result" above and by `review` recording the
-   verdict and reviewer.
+   verdict and reviewer (`f87d8353`, reviewed ready; a rerun on the same records
+   joins cleanly).
 4. These Status lines name round 2, its run directory
    (`~/.local/state/work-engine/task-profile-pilot-2`) and its limits (20 episodes,
    2 Terra in flight, 10 Terra repair rounds).
