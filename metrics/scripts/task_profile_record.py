@@ -48,13 +48,16 @@ Usage
   task_profile_record.py pause     --run-dir R --reason TEXT
   task_profile_record.py resume    --run-dir R --owner-approval TEXT
   task_profile_record.py status    --run-dir R [--task-id T]
+  task_profile_record.py recover-screening --run-dir R
   task_profile_record.py verify    --run-dir R [--repo REPO] [--no-recompute] [--tools-root DIR]
 
 Round-2 episode records live in <run_dir>/enrollments/<task_id>/ with their own
 SHA256SUMS and prior_files. Initialize round.json before using round commands.
-Round commands print one JSON object; exit 2 is a usage refusal, 1 an integrity
+Round commands print one JSON object (verify retains text lines); exit 2 is a usage refusal, 1 an integrity
 failure, and 0 includes logged screening refusals. A run-level advisory lock
-serializes round commands; enrollment.json is also created with O_EXCL.
+serializes round commands; episode records are published without replacement by linking a complete, fsynced
+temporary file to the final name. Missing manifest entries are recovered on read
+and recorded in recovered.jsonl. Resume history acknowledges durable triggers.
 
 --child-session takes the child's Claude session id or Codex thread id; pass "unknown" only when
 the runtime gave none, and attribution will then be unresolvable.
@@ -72,6 +75,7 @@ sessions unless --since/--until bound it; a retained or reused thread needs a wi
 """
 import argparse
 import collections
+import contextlib
 import fcntl
 import datetime as dt
 import glob
@@ -81,6 +85,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 PIN = {"repository": "https://github.com/bline/agent-routing-lab", "tag": "v0.2.2",
        "commit": "373c12f301ba2d7859522e67e506940d6a424ef3"}
@@ -280,7 +285,7 @@ def cmd_profile(a):
             pass  # another profile is staging concurrently
 
 
-def cmd_assign(a):
+def assign_record(a):
     d = record_dir(a.run_dir, a.task_revision)
     if not os.path.isdir(d):
         raise SystemExit(f"no profile record for {a.task_revision} in {a.run_dir}")
@@ -318,7 +323,13 @@ def cmd_assign(a):
         "profile_absent_from_dispatch": not leaked, "leaked_tokens": leaked,
         "recorder": recorder(), "prior_files": prior_files(d)})
     append_sums(d)
-    print(json.dumps({"assignment": os.path.join(d, name), "profile_absent_from_dispatch": not leaked}, indent=1))
+    return {"assignment": os.path.join(d, name), "profile_absent_from_dispatch": not leaked}
+
+
+def cmd_assign(a):
+    if os.path.isfile(os.path.join(a.run_dir, "round.json")):
+        return run_round_command(a)
+    print(json.dumps(assign_record(a), indent=1))
 
 
 def cmd_attribute(a):
@@ -370,17 +381,20 @@ def cmd_attribute(a):
     print(json.dumps({"attribution": out, "status": status, "models_seen": seen}, indent=1))
 
 
-def cmd_verify(a):
+def verify_records(a):
     worst = 0  # 0 fully verified, 2 recompute not done, 1 problem
     dirs = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*@*")))
     episodes = enrollment_dirs(a.run_dir)
-    results = {}
     if not dirs and not episodes:
-        print(json.dumps({"status": "no task-profile records or episode records", "run_dir": a.run_dir}))
+        print(f"no task-profile records or episode records under {a.run_dir}")
         sys.exit(3)
     for d in episodes:
-        problems = integrity_problems(d)
-        results[os.path.relpath(d, a.run_dir)] = {"status": "integrity failure" if problems else "verified", "problems": problems}
+        try:
+            recover_episode(d)
+            problems = integrity_problems(d)
+        except IntegrityFailure as e:
+            problems = [str(e)]
+        print(f"{os.path.relpath(d, a.run_dir)}: " + ("; ".join(problems) if problems else "verified"))
         if problems:
             worst = 1
     for d in dirs:
@@ -436,14 +450,21 @@ def cmd_verify(a):
         state = 1 if problems else (2 if notes else 0)
         worst = 1 if 1 in (worst, state) else max(worst, state)
         label = {0: "verified", 2: "hashes ok; " + "; ".join(notes), 1: "; ".join(problems)}[state]
-        results[os.path.relpath(d, a.run_dir)] = {"status": label, "problems": problems, "notes": notes}
-    print(json.dumps({"records": results, "exit_code": worst}, sort_keys=True))
+        print(f"{os.path.basename(d)}: {label}")
     sys.exit(worst)
+
+
+def cmd_verify(a):
+    if os.path.isfile(os.path.join(a.run_dir, "round.json")):
+        with round_lock(a.run_dir):
+            verify_records(a)
+    else:
+        verify_records(a)
 
 
 TERRA = "gpt-6.1-terra"
 SOL = "gpt-6.1-sol"
-ROUND_COMMANDS = {"init-round", "enroll", "withdraw", "review", "repair", "close", "pause", "resume", "status"}
+ROUND_COMMANDS = {"init-round", "enroll", "withdraw", "review", "repair", "close", "pause", "resume", "status", "recover-screening"}
 TASK_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 
 
@@ -491,15 +512,67 @@ def integrity_problems(d):
     return problems
 
 
+def fsync_directory(d):
+    fd = os.open(d, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def atomic_publish(path, data):
+    """Publish complete bytes without replacing an existing record."""
+    d = os.path.dirname(os.fspath(path))
+    fd, tmp = tempfile.mkstemp(prefix=".record-", dir=d)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            raw = data if isinstance(data, bytes) else (json.dumps(data, indent=1, sort_keys=True) + "\n").encode()
+            fh.write(raw)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.link(tmp, path)  # Same-directory, atomic publication; EEXIST preserves the winner.
+    finally:
+        os.unlink(tmp)
+        fsync_directory(d)
+
+
+def durable_sums(d):
+    append_sums(d)
+    with open(os.path.join(d, SUMS), "rb") as fh:
+        os.fsync(fh.fileno())
+    fsync_directory(d)
+
+
+def recover_episode(d):
+    """Finish interrupted manifest publication, never bless a known hash mismatch."""
+    problems = integrity_problems(d)
+    recoverable = re.compile(r"(?:enrollment|review-first|repair-[0-9]{2,}|close|withdraw)\.json\Z")
+    fatal = [p for p in problems if not (p == f"{SUMS} missing or empty" or
+             (p.startswith("unlisted file: ") and recoverable.fullmatch(p[len("unlisted file: "):])))]
+    if fatal:
+        raise IntegrityFailure(f"{d}: " + "; ".join(fatal))
+    files = record_files(d)
+    have = listed(d)
+    missing = {n: sha256(os.path.join(d, n)) for n in files if n not in have}
+    if missing:
+        # Write the recovery intent first so even an interrupted recovery stays observable.
+        append_event(os.path.join(os.path.dirname(os.path.dirname(d)), "recovered.jsonl"),
+                     {"event": "manifest_completion", "time": now(), "episode": os.path.basename(d), "files": missing})
+        durable_sums(d)
+    if not files:
+        return  # A crash before publication may leave only an ignored temporary file.
+    remaining = integrity_problems(d)
+    if remaining:
+        raise IntegrityFailure("; ".join(remaining))
+
+
 def episode_write(d, name, data):
+    recover_episode(d)
     if os.path.exists(os.path.join(d, name)):
         raise UsageRefusal(f"{name} already exists: records are write-once")
-    problems = integrity_problems(d)
-    if problems:
-        raise IntegrityFailure("; ".join(problems))
     data = {**data, "recorder": recorder(), "prior_files": prior_files(d)}
-    write_once(os.path.join(d, name), data)
-    append_sums(d)
+    atomic_publish(os.path.join(d, name), data)
+    durable_sums(d)
     return data
 
 
@@ -508,8 +581,13 @@ def enrollment_dirs(run_dir):
 
 
 def enrollments(run_dir):
-    return [(d, read_json(os.path.join(d, "enrollment.json"))) for d in enrollment_dirs(run_dir)
-            if os.path.isfile(os.path.join(d, "enrollment.json"))]
+    out = []
+    for d in enrollment_dirs(run_dir):
+        recover_episode(d)
+        path = os.path.join(d, "enrollment.json")
+        if os.path.isfile(path):
+            out.append((d, read_json(path)))
+    return out
 
 
 def terminal(d):
@@ -520,11 +598,83 @@ def terra_repairs(run_dir):
     return sum(len(glob.glob(os.path.join(d, "repair-*.json"))) for d, e in enrollments(run_dir) if e["arm"] == TERRA)
 
 
-def screening(run_dir, data):
-    with open(os.path.join(run_dir, "screening.jsonl"), "a") as fh:
+def log_tail_problem(raw):
+    if not raw:
+        return None
+    if not raw.endswith(b"\n"):
+        return "log does not end at a line boundary"
+    try:
+        if not isinstance(json.loads(raw.splitlines()[-1]), dict):
+            return "last log line is not an object"
+    except (ValueError, UnicodeError):
+        return "last log line is malformed JSON"
+    return None
+
+
+def append_event(path, data):
+    if os.path.exists(path):
+        with open(path, "rb") as fh:
+            problem = log_tail_problem(fh.read())
+        if problem:
+            raise IntegrityFailure(f"{path}: {problem}; explicit recovery required")
+    with open(path, "a") as fh:
         fh.write(json.dumps(data, sort_keys=True) + "\n")
         fh.flush()
         os.fsync(fh.fileno())
+
+
+def screening(run_dir, data):
+    append_event(os.path.join(run_dir, "screening.jsonl"), data)
+
+
+def cmd_recover_screening(a):
+    path = os.path.join(a.run_dir, "screening.jsonl")
+    if not os.path.exists(path):
+        return {"outcome": "no_recovery_needed"}
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    if not log_tail_problem(raw):
+        return {"outcome": "no_recovery_needed"}
+    backup = os.path.join(a.run_dir, "screening-damaged-" + now().replace(":", "-") + ".jsonl")
+    atomic_publish(backup, raw)
+    # Preserve every earlier byte, including any malformed interior lines.
+    tail_end = len(raw) - 1 if raw.endswith(b"\n") else len(raw)
+    prefix = raw[:raw.rfind(b"\n", 0, tail_end) + 1]
+    with open(path, "r+b") as fh:
+        fh.truncate(len(prefix))
+        fh.flush()
+        os.fsync(fh.fileno())
+    return {"outcome": "recovered", "backup": backup, "removed_bytes": len(raw) - len(prefix)}
+
+
+def trigger_facts(run_dir, episodes=None):
+    episodes = enrollments(run_dir) if episodes is None else episodes
+    p1 = []
+    repairs = 0
+    for d, e in episodes:
+        if e["arm"] != TERRA:
+            continue
+        review = os.path.join(d, "review-first.json")
+        if os.path.exists(review) and read_json(review)["p1"] > 0:
+            p1.append(e["task_id"])
+        repairs += len(glob.glob(os.path.join(d, "repair-*.json")))
+    return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
+
+
+def enforce_triggers(run_dir, episodes=None):
+    facts = trigger_facts(run_dir, episodes)
+    covered_p1, covered_repairs = set(), -1
+    for path in glob.glob(os.path.join(run_dir, "pauses", "*.json")):
+        covered = read_json(path).get("covered_triggers", {})
+        covered_p1.update(covered.get("p1_episodes", []))
+        covered_repairs = max(covered_repairs, covered.get("terra_repair_rounds", -1))
+    new_p1 = sorted(set(facts["p1_episodes"]) - covered_p1)
+    budget = read_json(os.path.join(run_dir, "round.json"))["terra_repair_budget"]
+    over_budget = facts["terra_repair_rounds"] >= budget and facts["terra_repair_rounds"] > covered_repairs
+    if new_p1 or over_budget:
+        reason = f"Terra trigger: P1 episodes {new_p1}; repair rounds {facts['terra_repair_rounds']} (budget {budget})"
+        pause_round(run_dir, reason)
+    return facts
 
 
 def pause_round(run_dir, reason):
@@ -532,7 +682,7 @@ def pause_round(run_dir, reason):
     if os.path.exists(path):
         return {"outcome": "already_paused", "pause": read_json(path)}
     data = {"reason": reason, "paused_at": now(), "recorder": recorder()}
-    write_once(path, data)
+    atomic_publish(path, data)
     return {"outcome": "paused", "pause": data}
 
 
@@ -557,6 +707,8 @@ def cmd_enroll(a):
     screened = {"time": now(), "task_id": a.task_id, "task_revision": a.task_revision,
                 "eligible": a.eligible == "yes", "reason": a.reason}
     screening(a.run_dir, {"event": "screened", **screened})
+    episodes = enrollments(a.run_dir)
+    enforce_triggers(a.run_dir, episodes)
     path = os.path.join(d, "enrollment.json")
     out = {"task_id": a.task_id}
     if os.path.exists(path):
@@ -567,7 +719,6 @@ def cmd_enroll(a):
         out["outcome"] = "paused"
     else:
         config = read_json(os.path.join(a.run_dir, "round.json"))
-        episodes = enrollments(a.run_dir)
         open_terra = sum(e["arm"] == TERRA and not terminal(ed) for ed, e in episodes)
         if len(episodes) >= config["cap"]:
             out["outcome"] = "cap_reached"
@@ -580,27 +731,24 @@ def cmd_enroll(a):
                     "draw_source": "os.urandom(1)[0] & 1", "draw_byte": byte, "recorder": recorder()}
             os.makedirs(d, exist_ok=True)
             try:
-                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
-                with os.fdopen(fd, "w") as fh:
-                    json.dump(data, fh, indent=1, sort_keys=True)
-                    fh.write("\n")
-                    fh.flush()
-                    os.fsync(fh.fileno())
+                atomic_publish(path, data)
             except FileExistsError:
+                recover_episode(d)
                 out.update(outcome="already_enrolled", arm=read_json(path)["arm"])
             else:
-                append_sums(d)
+                durable_sums(d)
                 out.update(outcome="enrolled", arm=arm)
     screening(a.run_dir, {"event": "result", "time": now(), "task_revision": a.task_revision, **out})
     return out
 
 
-def active_episode(a):
+def active_episode(a, allow_terminal=False):
     d = episode_dir(a.run_dir, a.task_id)
     path = os.path.join(d, "enrollment.json")
     if not os.path.isfile(path):
         raise UsageRefusal("task is not enrolled")
-    if terminal(d):
+    recover_episode(d)
+    if terminal(d) and not allow_terminal:
         raise UsageRefusal("episode is already closed or withdrawn")
     return d, read_json(path)
 
@@ -626,24 +774,29 @@ def cmd_withdraw(a):
 def cmd_review(a):
     if a.outcome == "pass" and (a.p1 or a.p2):
         raise UsageRefusal("pass requires zero P1 and P2 findings")
-    d, e = active_episode(a)
+    d, _ = active_episode(a)
     data = episode_write(d, "review-first.json", {"task_id": a.task_id, "outcome": a.outcome,
                          "p1": a.p1, "p2": a.p2, "p3": a.p3, "receipt": file_evidence([a.receipt])[0], "reviewed_at": now()})
-    if e["arm"] == TERRA and a.p1:
-        pause_round(a.run_dir, f"Terra first-review P1 in episode {a.task_id}")
+    enforce_triggers(a.run_dir)
     return {"outcome": "reviewed", "record": data}
 
 
 def cmd_repair(a):
-    d, _ = active_episode(a)
-    rounds = glob.glob(os.path.join(d, "repair-*.json"))
+    d, _ = active_episode(a, allow_terminal=True)
+    receipt = file_evidence([a.review_receipt])[0]
+    rounds = sorted(glob.glob(os.path.join(d, "repair-*.json")))
+    for path in rounds:
+        record = read_json(path)
+        if record["review_receipt"]["sha256"] == receipt["sha256"]:
+            facts = enforce_triggers(a.run_dir)
+            return {"outcome": "already_repaired", "record": record, "terra_repair_rounds": facts["terra_repair_rounds"]}
+    if terminal(d):
+        raise UsageRefusal("episode is already closed or withdrawn")
     number = max([int(os.path.basename(p)[7:-5]) for p in rounds], default=0) + 1
     data = episode_write(d, f"repair-{number:02d}.json", {"task_id": a.task_id, "round": number,
-                         "review_receipt": file_evidence([a.review_receipt])[0], "resubmitted_at": now()})
-    total = terra_repairs(a.run_dir)
-    if total >= read_json(os.path.join(a.run_dir, "round.json"))["terra_repair_budget"]:
-        pause_round(a.run_dir, f"Terra repair budget reached ({total}); episode {a.task_id}")
-    return {"outcome": "repaired", "record": data, "terra_repair_rounds": total}
+                         "review_receipt": receipt, "resubmitted_at": now()})
+    facts = enforce_triggers(a.run_dir)
+    return {"outcome": "repaired", "record": data, "terra_repair_rounds": facts["terra_repair_rounds"]}
 
 
 def cmd_close(a):
@@ -667,17 +820,19 @@ def cmd_pause(a):
 def cmd_resume(a):
     if not a.owner_approval.strip():
         raise UsageRefusal("owner approval text must not be empty")
+    facts = enforce_triggers(a.run_dir)
     path = os.path.join(a.run_dir, "PAUSED")
     if not os.path.exists(path):
         raise UsageRefusal("round is not paused")
     data = {**read_json(path), "owner_approval": a.owner_approval, "resumed_at": now(),
-            "pause_sha256": sha256(path), "resume_recorder": recorder()}
+            "pause_sha256": sha256(path), "resume_recorder": recorder(), "covered_triggers": facts}
     history = os.path.join(a.run_dir, "pauses")
     os.makedirs(history, exist_ok=True)
     dest = os.path.join(history, data["resumed_at"].replace(":", "-") + ".json")
     # Persist the augmented history before removing the active flag; a failed write stays paused.
-    write_once(dest, data)
+    atomic_publish(dest, data)
     os.unlink(path)
+    fsync_directory(a.run_dir)
     return {"outcome": "resumed", "history": dest, "record": data}
 
 
@@ -687,10 +842,20 @@ def cmd_status(a):
     reviews = {arm: {"pass": 0, "fail": 0, "pending": 0} for arm in counts}
     closed = withdrawn = open_terra = 0
     log_path = os.path.join(a.run_dir, "screening.jsonl")
-    log = [json.loads(line) for line in read_text(log_path).splitlines()] if os.path.exists(log_path) else []
+    log, log_problems = [], []
+    if os.path.exists(log_path):
+        with open(log_path, "rb") as fh:
+            for number, line in enumerate(fh, 1):
+                try:
+                    entry = json.loads(line)
+                    if not isinstance(entry, dict) or not line.endswith(b"\n"):
+                        raise ValueError("not a complete object line")
+                    log.append(entry)
+                except (ValueError, UnicodeError):
+                    log_problems.append(f"screening.jsonl: malformed line {number}")
     results = collections.Counter(r["outcome"] for r in log if r.get("event") == "result")
     recorded = {r["task_id"] for r in log if r.get("event") == "result" and r.get("outcome") == "enrolled"}
-    problems = []
+    problems = list(log_problems)
     for d, e in episodes:
         arm = e["arm"]
         counts[arm] += 1
@@ -704,10 +869,13 @@ def cmd_status(a):
         problems.extend(f"{e['task_id']}: {p}" for p in integrity_problems(d))
         if os.path.exists(os.path.join(d, "close.json")) and os.path.exists(os.path.join(d, "withdraw.json")):
             problems.append(f"{e['task_id']}: both closed and withdrawn")
+        if os.path.exists(os.path.join(d, "withdraw.json")) and glob.glob(os.path.join(a.run_dir, "task-profiles", e["task_id"] + "@*", "assignment*.json")):
+            problems.append(f"{e['task_id']}: both withdrawal and assignment")
     known = {e["task_id"] for _, e in episodes}
     problems.extend(f"{t}: enrolled result has no enrollment" for t in sorted(recorded - known))
     problems.extend(f"{os.path.basename(d)}: episode directory has no enrollment" for d in enrollment_dirs(a.run_dir)
                     if not os.path.isfile(os.path.join(d, "enrollment.json")))
+    enforce_triggers(a.run_dir, episodes)
     paused = os.path.join(a.run_dir, "PAUSED")
     out = {"round": read_json(os.path.join(a.run_dir, "round.json")), "paused": os.path.exists(paused),
            "pause": read_json(paused) if os.path.exists(paused) else None,
@@ -722,14 +890,29 @@ def cmd_status(a):
     return out
 
 
+@contextlib.contextmanager
+def round_lock(run_dir):
+    with open(os.path.join(run_dir, ".round.lock"), "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
 def run_round_command(a):
     try:
         if a.cmd != "init-round" and not os.path.isfile(os.path.join(a.run_dir, "round.json")):
             raise UsageRefusal("round.json is required; run init-round first")
         os.makedirs(a.run_dir, exist_ok=True)
-        with open(os.path.join(a.run_dir, ".round.lock"), "a") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            out = globals()["cmd_" + a.cmd.replace("-", "_")](a)
+        with round_lock(a.run_dir):
+            if a.cmd == "assign":
+                task_id = a.task_revision.split("@")[0]
+                d = episode_dir(a.run_dir, task_id)
+                if os.path.isdir(d):
+                    recover_episode(d)
+                    if os.path.exists(os.path.join(d, "withdraw.json")):
+                        raise UsageRefusal("cannot assign a withdrawn task")
+                out = assign_record(a)
+            else:
+                out = globals()["cmd_" + a.cmd.replace("-", "_")](a)
         print(json.dumps(out, sort_keys=True))
     except UsageRefusal as e:
         print(json.dumps({"error": str(e), "outcome": "refused"}))
