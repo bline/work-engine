@@ -4,7 +4,8 @@ Status (2026-10-28): **no round is active; do not profile.** Round 1 (run
 directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
 2026-10-28 and was reviewed with the owner
 ([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
-coordinator guidance. Round 2, a builder comparison, awaits the owner's approval.
+coordinator guidance. Round 2, a builder comparison drafted under "Round 2"
+below, awaits the owner's approval.
 When a round starts, these lines name its run directory and cap.
 
 ## Why
@@ -230,6 +231,42 @@ Limitations the pilot report must state:
 After the 10, the owner reviews the profiles and the discrepancies. Possible
 outcomes: make collection permanent, revise the schema, or stop.
 
+## Round 2 (proposed 2026-10-28; not approved, not active)
+
+Round 1 showed the records work but taught nothing about the cheaper builder:
+none of its 5 builders was Terra. Round 2 varies the builder where either is
+acceptable, so outcomes can be compared.
+
+- **Run directory and cap:** `~/.local/state/work-engine/task-profile-pilot-2`;
+  20 flipped builder dispatches. Reviewer and unflipped dispatches are profiled as
+  in round 1 and do not count toward the cap.
+- **Eligible for the flip:** a builder dispatch the guidance would profile where,
+  after freezing the profile and before choosing, the coordinator records that
+  `gpt-6.1-terra` and `gpt-6.1-sol` at `medium` are both acceptable under the
+  model guide. Otherwise it records why not (for example a hazard class the guide
+  routes to Sol, or a Claude builder) and chooses as usual.
+- **The flip:** a `task_profile_record.py flip` subcommand, to be built and
+  tested before the round starts, takes the arm from the revision ID's sha256
+  (low bit: Terra or Sol) and writes `flip.json` once. The coordinator dispatches
+  that arm. A re-profiled task shows as a second revision of the same task ID and
+  is excluded.
+- **Unchanged:** packets, the review route (a separate `gpt-6-astra` reviewer at
+  `high`), acceptance, and the guide's escalation rules for both arms. An
+  escalation is an outcome, not a deviation.
+- **Outcomes per flipped dispatch,** from existing records: first-review findings
+  by severity, repair rounds to acceptance, builder and repair cost (usage ledger,
+  quota-weighted), wall time, accepted or abandoned. The tier comes from
+  `--harness`, since a Fast root makes its builders Fast.
+- **Stop rules,** checked after each completed flipped dispatch: any P1 finding on
+  a Terra first artifact pauses the flips; so does Terra's total repair rounds
+  exceeding Sol's by 3 or more once each arm has 4. The owner can stop it at any
+  time.
+- **Reading:** descriptive, with n per arm, for this workload only. 20 dispatches
+  cannot rank the models; they can show whether Terra's first artifacts survive
+  review here.
+- **To start:** owner approval; `flip` built and tested; these Status lines name
+  round 2, its run directory and cap.
+
 ## Before activation
 
 0. **Approved 2026-10-27** (owner, after ChatGPT's review of v0.2.1), in this
@@ -414,6 +451,22 @@ value came from (for example "packet section Acceptance" or "contract.scope").
  }
 }
 ```
+
+Field meanings (added after round 1, whose spot-check found the obligation
+fields used for other things). Declare a field only from the packet and its
+authority documents; anything else is unknown.
+- `read_set`: every document or path the packet tells the child to read, one item
+  each, not a summary.
+- `obligations.acceptance`: what must be true or delivered for the work to be
+  accepted, deliverables and evidence included.
+- `obligations.state`: runtime or shared state the change must keep consistent:
+  concurrency, locking, ownership of mutable state. Not provenance or identities.
+- `obligations.persistence`: stored data the change touches: schemas, file or
+  wire formats, migrations, on-disk records. Not result files the child writes.
+- `obligations.recovery`: required behaviour on failure: retry, rollback,
+  cancellation, restart, fail-closed.
+- `obligations.compatibility`: external interfaces or versions that must keep
+  working.
 
 Enumerations, from `taskprofile.py`:
 - `work_type`: implementation, planning, investigation, qualification, review,

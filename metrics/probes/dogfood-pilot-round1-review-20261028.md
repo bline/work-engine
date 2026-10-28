@@ -24,8 +24,8 @@ sha256 `8cab5a55…`). Reviewed with the owner on 2026-10-28; the owner chose
    pilot restrictions. 2 coordinators declared manifest snapshots: 1 record
    crashed, 1 is invalid.
 2. **`taskprofile compute` (v0.2.1) raised `KeyError: 'root'`** on a manifest
-   without `root`. Fixed in agent-routing-lab v0.2.2 (local commit `373c12f`,
-   not pushed); the pin stays v0.2.1 until it is pushed.
+   without `root`. Fixed in agent-routing-lab v0.2.2 (`373c12f3`, pushed and
+   tagged 2026-10-28); Work Engine pins it from `a1d665e8`.
 3. **Sidecars were written beside packets** in run directories children read.
 4. **An adapter was profiled as the builder.**
 5. **Declaration start and selection times were taken by hand**, late or copied.
@@ -44,8 +44,35 @@ pilot in packets or files a child reads; stamps the start with
 `task_profile_record.py` adds `start`, archives sources in failure records, and
 reports pilot mentions and the revision hash, case-insensitively.
 
+## Spot-check of two declarations (2026-10-28)
+
+`s10-config-readback-repair` (builder, declared by a `gpt-6.1-sol` xhigh
+coordinator) and `rp3-git-abbrev-standalone-review` (reviewer, declared by a
+`gpt-6.1-sol` xhigh supervisor), each read against its frozen packet (n = 2):
+- **No declared value was invented.** Every declared value traces to packet text.
+  The reviewer profile marks `parent_task_id` unknown, so coordinators do use
+  unknown; "no unknown declared fields" reflects very specific packets.
+- **Read sets are summaries.** The builder declares 2 items; its packet names at
+  least 5 to read.
+- **Obligation fields carry other things.** `state` held identities to record,
+  and `persistence` held the result files to write. The template never defined
+  them; Appendix B now does.
+- **The snapshots describe the wrong tree.** Both tasks work outside the
+  repository (a private variant; a private candidate repository), yet each git
+  snapshot measured the whole Work Engine tree (3,096 and 2,701 files) with no
+  coverage warning. The builder's coordinator noted it under `uncertainties`.
+
+**Correction to the fixes above:** making git snapshots mandatory was wrong for
+this workload; the two manifest declarations were the right instinct, badly
+formed. The guidance now declares a git commit only when the inputs are in the
+repository at that commit, and otherwise marks the snapshot unknown with that
+basis. The check that would have caught it: comparing each record's snapshot
+with its read set before setting the rule.
+
 ## Next (owner decision)
 
-Round 2 is proposed as a builder comparison: where the coordinator judges either
-acceptable, a recorded coin flip picks `gpt-6.1-terra` or `gpt-6.1-sol` at
-medium, with review and acceptance unchanged. Not approved yet.
+Round 2 is drafted in the plan (section "Round 2"): a builder comparison in
+which a recorded flip picks `gpt-6.1-terra` or `gpt-6.1-sol` at medium where the
+coordinator judges either acceptable, with review and acceptance unchanged. Not
+approved yet. Round 1's records are in agent-routing-data (local commit
+`69a8686`, not pushed).
