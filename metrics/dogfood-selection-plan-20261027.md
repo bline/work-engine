@@ -5,7 +5,10 @@ Status (2026-10-28): **round 2 is active: a builder comparison** (section
 Limits: a cap of 20 enrolled episodes, counted by `enroll` (not by
 `task-profiles/` entries); at most 2 open Terra-arm episodes; 10 Terra repair
 rounds before new enrollment pauses. Approved by the owner on 2026-10-28 ("Let's
-do it") after design, tooling and join-check reviews. Round 1 (run directory
+do it") after design, tooling and join-check reviews. **Owner clarification,
+2026-10-28:** an owner instruction to use Terra does not make a task ineligible;
+"my terra decision does not mean you can not help round 2 by using different
+builders". Where both arms are acceptable, the draw decides. Round 1 (run directory
 `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed and was reviewed
 ([review](probes/dogfood-pilot-round1-review-20261028.md)).
 
