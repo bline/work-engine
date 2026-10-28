@@ -8,6 +8,9 @@ description: Build and run evidence-calibrated comparisons of code-review provid
 Compare reviewer behavior without treating disagreement, historical provider
 claims, or aggregate call counts as ground truth.
 
+Pilot corpora, results and reports from earlier runs are in
+[`experiments/review-bench/`](../../experiments/review-bench/README.md).
+
 ## Boundaries
 
 - Bind every case and result to one snapshot digest.
