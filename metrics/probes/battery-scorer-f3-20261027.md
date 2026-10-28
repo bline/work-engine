@@ -94,3 +94,78 @@ Cost of the build: 22 Fable calls, 0.626M weighted tokens.
 E1a fixes the export interface in its packet (option A), with Terra's final commit
 `88b035f2` as the reference schema, so every run is scored by frozen rules and no
 per-run rules are written. See the plan, §6 E1a.
+
+## F3.1: fixed-interface mode for E1a (2026-10-27): accepted by the owner
+
+Built by a second independent Fable agent; it read the sealed rules, and the
+coordinator did not. Interface section the arms receive:
+`~/cbm-work/e1a/packet/interface-v1.md`. It states Terra `88b035f2`'s structure,
+and fixes reason codes only for conditions the contract names.
+
+| File | Readable by arm designers | sha256 |
+|---|---|---|
+| `battery_score.py` (changed; existing modes untouched) | yes | `51ef39399c3ddab1704b28104fbf1e22ff459902bd4ccbace79d2d36543e5f7b` |
+| `README.md` (changed) | yes | `5fe1c500a75274967c68acd3d89f445e6a4c2abe6cfe553ad2b8d727ef617a4a` |
+| `interface_e1a_v1.py` (interface-v1 as checks) | yes | `ddcb424efe75a9fb4c702fc0706c71661cd126ec46325a42c4c49a712e986338` |
+| `rules_e1a_sealed.py` | **no** | `804e8cf353e385a56fe1f27b9205ebd53ab386c15472404e8736e9cff70bb773` |
+| `NOTES-E1A-SEALED.md` | **no** | `17f6b7b639f979b070f8a41c11105246f3a1767097ba18d23371fe9482017995` |
+
+`rules_sealed.py` and `NOTES-SEALED.md` are unchanged.
+
+```bash
+python3 -I battery_score.py score --repo PATH --commit SHA --interface e1a-v1 --out FILE.json [--detail-out SEALED.json]
+python3 -I battery_score.py vocab-test --obs-dir DIR --out FILE.json [--salt S] [--seed N]
+```
+
+- **Rule adaptations:** 3 checks in 3 cases. Each check depended on a reason code
+  that interface-v1 leaves to the implementation. Each is replaced by the
+  strictest check over stated elements. This is a one-time judgment made before
+  any arm runs, recorded in the sealed notes.
+- **Non-conformance:** a case whose output does not conform is `indeterminate`
+  with disposition `interface_non_conformant`, and is never a pass or a failure.
+  The run is flagged when any case is non-conformant, the `--json` combination is
+  not rejected, or no invocation produces a conformant document.
+- **Interface corrections needed:** none. Two statements are not exercised by the
+  scorer: the `--session` form, and unchanged behaviour without `--export-usage`.
+  The contract's existing regression tests cover the latter.
+
+Validation, counts only:
+
+| Subject | Conformant | pass / fail / nonblocking / indeterminate | Who ran it |
+|---|---|---|---|
+| Terra final `88b035f2`, rebuilt | yes, 33 documents + 1 refusal | 34 / 0 / 0 / 0 | agent and coordinator |
+| Terra initial frozen binary | yes | 31 / 3 / 0 / 0 (published, original rules: 3) | agent |
+| Baseline `1e21e71c` | no, 0 documents | 0 / 0 / 0 / 34 | agent and coordinator |
+| Sonnet final, Opus final (other schemas) | no | 0 / 0 / 0 / 34 each | agent |
+| Vocabulary test: every non-fixed code renamed, extra field added, key order shuffled, on Terra final's observations | n/a | counts unchanged, 0 mismatches; the unadapted rules give 3 failures on the same input, so the test is not vacuous | agent (2 seeds); coordinator (salt `coord-check`, seed 97: 33 documents perturbed, 0 mismatches) |
+| `reproduce --mode all` (original modes) | n/a | 0 case-level mismatches in all 7 artifacts × 3 modes | agent and coordinator |
+
+Cost: 26 Fable calls, 0.61M weighted tokens, $4.59 at list price. That is above
+the 0.5M target; the agent's own report said "well under", which was wrong.
+
+## Traceability of the 34 cases under `e1a-v1` (2026-10-27, after E1a)
+
+An independent Sonnet 5.5 session checked each case, as scored under `e1a-v1`,
+against the E1a packet (counts only to the coordinator). Per-case results:
+`~/cbm-work/f3-battery-scorer/TRACE-ANCHOR-SEALED.md` (sealed, `a35ea21c…`).
+
+| Class | Cases |
+|---|---:|
+| traces to a packet clause | 12 |
+| over-constrains | 11 |
+| rests on a requirement the packet does not state | 11 |
+| untraceable | 0 |
+
+- In 11 cases the scoring rule is stricter than the case's own expectation.
+- One case has a branch gap in its scoring rule: an exit-0 document raises an
+  assertion error instead of a verdict. No arm reached it.
+- **Consequence.** Under the fixed interface, the battery's confirmed-failure
+  count is not a measure of contract compliance. On the five E1a arms, 58 of 62
+  failures fall on non-traced cases; see the
+  [E1a result](e1a-result-20261027.md#battery-traceability-post-hoc-not-pre-registered).
+- **This is finding 1 (P1-2) in measured form.** The headline-tier choice
+  (`final`, the stricter adjudicator) contributes, through the stricter-rule
+  cases.
+- **Before the anchor is used again as a contract measure,** its cases need the
+  same repair as the T0 battery: 22 cases to rewrite, remove, or report as a
+  separate historical category.

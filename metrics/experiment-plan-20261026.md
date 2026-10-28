@@ -229,7 +229,22 @@ has never been measured.
   - Experiment arms: at most 20.
 - **Staged release:**
   - Stage A: F1–F3, one validated T0 battery, the E3 pilot fixtures, E1a. At most
-    10 points in total.
+    16 points in total. The owner raised this from 10 on 2026-10-27, after Fable
+    spend was found to draw the main meter. At that point Stage A was at about 7.6
+    modelled points, all of it support work. An earlier figure of 8.3 added a count
+    of unpriced calls into the dollar total.
+  - Support work for the rest of Stage A runs on Sonnet 5.5, with Fable only where
+    its capability is needed. The owner raised the support allocation from 10 to
+    11 points on 2026-10-27, when about 9.4 was used. It was raised again to 11.6
+    later the same day for the T0 battery repair and the anchor-battery traceability
+    check. At that point support was between 9.0 and 11.0. The range exists because
+    the coordinator's E1a arm coordination cannot be separated from its own session
+    cost. The budget check uses the upper end. The owner raised it to 12.3 for an independent re-review of
+    the repaired T0 cases. At that point the upper end was 11.88. The overrun past
+    11.6 came from the coordinator's own Opus coordination, which the repair
+    estimate had left out. It is checked before each
+    launch, like the Stage A cap. The coordination of experiment arms is counted
+    as experiment cost, under §2 rule 4, not as support.
   - The owner reviews Stage A results before Stage B is released.
 - **Fable:**
   - At most 20% of the Fable weekly meter.
@@ -237,6 +252,15 @@ has never been measured.
   - Not an E2 arm until the core E2 comparisons are complete.
   - First, confirm whether Fable calls move the main `seven_day` reading. The Opus
     and Sonnet streams expose only `five_hour` and `seven_day` (24 readings).
+  - **Observed 2026-10-27 (one interval, n=1, 1% readings): they do.**
+    - Between 14:47 and 14:51Z, three Fable agents spent $7.46 at list price, and
+      the coordinator's Opus spent $2.62. No other Claude session was active.
+    - Over that interval `seven_day` went 8 → 10 and `five_hour` 1 → 13. By 14:53Z
+      the readings were `seven_day` 11, `five_hour` 18, Fable 6.
+    - Fable spend therefore counts against the main budget at Fable prices (2.5×
+      Opus), as well as against the Fable meter. Modelled consumption includes it.
+    - Independence comes from running no arms, not from the model. Support work
+      should use the cheapest model adequate to it.
 - **Codex (Phase 2):** at most 15% of a Pro week for O-arms. Claude coordinates
   Phase 2, so root and supervisor work spends no Codex quota.
 - **Hard stop, in quota points throughout:**
@@ -349,6 +373,29 @@ differences can show.
   task type predicts which model suffices. The "Plan IR model routing" lever in
   `efficiency-ledger.md` needs that evidence. It is not a fitted rule at this n.
 
+**T0 status (2026-10-27): first task R2-E2 selected and its battery built.** See
+[`probes/t0-r2-e2-battery-20261027.md`](probes/t0-r2-e2-battery-20261027.md).
+- **Validation:** all three conditions are met.
+  - The battery fails on the baseline.
+  - It passes on the accepted final.
+  - It catches the rejected candidate, through historical cases only.
+- **Independent traceability check:** 36 cases need a fix.
+  - 12 contract cases over-constrain.
+  - 19 inferred tags are wrong.
+  - 5 historical cases leave the stated interface or are left undecided by the
+    packet.
+- **Repaired the same day (owner, option A):**
+  - 1 case removed, 11 rewritten, 19 retagged, 5 moved to a separately reported
+    `historical_diagnostic` category.
+  - Revalidated: the baseline fails; the final passes all 97; the rejected
+    candidate is caught by 3 historical failures.
+  - Independent re-review: exactly the flagged cases changed, and none still
+    over-constrains.
+  - 12 cases still need a small fix before any arm is scored:
+    - 11 refusal cases should fail, not abstain, when the code is absent;
+    - 1 case can pass falsely through a bare substring match.
+- **Open for Stage B:** hazard-class spread. R2-E2 is in the anchor's family.
+
 ## 5. Retrospective analyses (observational)
 
 These run after F1 and F2. **R-b is deferred** until the measurement system is
@@ -415,6 +462,21 @@ first and are **not** comparable.
   **not** a significance threshold and says nothing about Haiku, Opus or other
   tasks.
 - **Budget:** about $20–25.
+
+**E1a status: run 2026-10-27, pilot estimate obtained.**
+- Records: [`probes/e1a-prereg.md`](probes/e1a-prereg.md) and
+  [`probes/e1a-result-20261027.md`](probes/e1a-result-20261027.md).
+- Sonnet confirmed failures were 15, 11 and 13 (range 4), so the pre-registered
+  E1b replication trigger applies.
+- The arms cost $5.22.
+- **Post-hoc traceability check of the 34-case battery** (independent):
+  - 12 cases trace to the packet; 11 over-constrain; 11 rest on requirements the
+    packet does not state.
+  - 58 of 62 confirmed failures fall on the non-traced cases.
+  - On traced cases, Sonnet failed 2, 0 and 0.
+  - The registered reading stands. E1b should re-estimate spread on its traced T0
+    batteries.
+  - The anchor battery is not a contract measure until it is repaired.
 
 **E1b. Model × task type (T0 tasks, as each battery validates).**
 - **Arms per task:** Haiku 5.5 high, Sonnet 5.5 medium, Opus 5.5 medium, one run
@@ -485,6 +547,15 @@ cost, observed quota movement, turns, wall time.
 - **Reading:** replay accuracy screens candidates. It does not qualify a model for
   production supervision; that takes E5 or O4.
 - **Budget:** about $10–20.
+
+**E3 pilot status (2026-10-27): 10 fixtures built and sealed.** See
+[`probes/e3-pilot-fixtures-20261027.md`](probes/e3-pilot-fixtures-20261027.md).
+- 7 fixtures are in classes 1–2, and 6 are critical candidates.
+- Weaknesses:
+  - 5 of the 7 scored fixtures can be answered by deferring to a reviewer finding
+    in context.
+  - The 2 historical-wrong fixtures are weak.
+  - Class 2 was adjudicated by the fixture builder, a model.
 
 ### E4. Build-side decomposition: deferred, conditional
 
@@ -573,6 +644,9 @@ Decided by the owner on 2026-10-27:
 | F2 run registry | Accepted |
 | F3 battery scorer | Accepted. Headline tier `final`, as proposed in its record |
 | E1a scoring | Fixed interface in the packet (option A), reference Terra `88b035f2` (§6 E1a); the alternative, per-artifact projection rules written for each run, was not chosen |
+| Stage A cap | Raised from 10 to 16 points; remaining support work moves to Sonnet 5.5 (§3) |
+| Support allocation | Raised from 10 to 11 points; then to 11.6 for the T0 battery repair and the anchor-battery traceability check (option A, 2026-10-27); then to 12.3 for the independent re-review of the repaired T0 cases (2026-10-27) |
+| F3.1 fixed-interface scoring | Accepted ([record](probes/battery-scorer-f3-20261027.md)) |
 
 ## 10. Review disposition (ChatGPT review of v1, 2026-10-26)
 
