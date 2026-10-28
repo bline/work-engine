@@ -86,9 +86,12 @@ unit.
 
 ## Migration in progress
 
-As of 2026-10-27, `design/` and `records/` exist but most of their content has
-not moved: current design is still under `app-server/docs/`,
-`app-server/ideas/` and `ideas/`, and the Rust campaign records are still at
-`docs/rust-*.md`. New files go to the new homes now and may link to the old
-locations. The [layout plan](../planning/repository-layout-plan.md) owns the
-remaining moves; each needs the user's go-ahead.
+As of 2026-10-27, `design/` exists but most of its content has not moved:
+current design is still under `app-server/docs/`, `app-server/ideas/` and
+`ideas/`. The Rust campaign records moved to `records/` in phase 4, except
+`docs/rust-development.md` (a durable reference) and two records that tests read
+from the live tree, `docs/rust-retained-task-host-contract.md` and
+`docs/rust-context-lifecycle-s8-implementation-plan.md`; those two move with
+that code. New files go to the new homes now and may link to the old locations.
+The [layout plan](../planning/repository-layout-plan.md) owns the remaining
+moves; each needs the user's go-ahead.

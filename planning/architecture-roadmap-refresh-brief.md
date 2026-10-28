@@ -96,7 +96,7 @@ taken from this list):
 - [`experiments/context-lifecycle-rust/DESIGN.md`](../experiments/context-lifecycle-rust/DESIGN.md)
   and [`IMPLEMENTATION_PLAN.md`](../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md).
 - [`docs/rust-development.md`](../docs/rust-development.md),
-  [`docs/rust-migration-plan.md`](../docs/rust-migration-plan.md),
+  [`records/rust-migration-plan.md`](../records/rust-migration-plan.md),
   [`docs/model-selection.md`](../docs/model-selection.md).
 - [`rust/FOUNDATION_GATE.md`](../rust/FOUNDATION_GATE.md), `rust/Cargo.toml`
   (workspace members), and

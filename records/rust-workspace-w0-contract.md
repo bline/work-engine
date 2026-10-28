@@ -347,7 +347,7 @@ implementation grant remain the user's decisions after review of this document.
 the missing Rust publication handoff and the existing Node domain consumer.
 Additional source checks covered campaign identity/candidate types, workspace
 mutation admission and promotion, shared Cargo declarations and
-[`INV-025`–`INV-029`, `INV-036`–`INV-039`](workflow-invariants.md#checkpoints-and-publication).
+[`INV-025`–`INV-029`, `INV-036`–`INV-039`](../docs/workflow-invariants.md#checkpoints-and-publication).
 The physical analysis is retained at
 `/home/bline/.local/state/work-engine/w0-20261018/physical-boundary.md`; it also
 records Git CAS, ABA and checkout limits. This design chooses the nonexpiring

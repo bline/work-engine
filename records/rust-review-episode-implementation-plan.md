@@ -25,7 +25,7 @@ review truth; it does not select reviewers, establish independence, accept a
 campaign, execute a provider or decide whether a finding is valid.
 
 The governing inputs are [DESIGN](../DESIGN.md), [PHILOSOPHY](../PHILOSOPHY.md),
-[Rust direction](rust-development.md), [migration priorities](rust-migration-plan.md)
+[Rust direction](../docs/rust-development.md), [migration priorities](rust-migration-plan.md)
 and the existing [S9 episode contract](../app-server/docs/skills-migration-plan.md#s9--provider-neutral-implementation-review-and-episode-service).
 The [lifecycle S0 integration owner](../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md#s0--shared-foundation-and-executable-slice-contracts)
 owns root workspace, lockfile, toolchain, common types/encodings and gate inventory.
@@ -215,7 +215,7 @@ One retained `gpt-6-sol` builder at `high` can own this complete lane, including
 integration/tests/remediation, after authorization. Consequential review uses a
 separate initially isolated `gpt-6-astra` reviewer at `xhigh` where the owning
 review contract permits it; this planner is not that reviewer. Follow
-[model-selection guidance](model-selection.md), including requested/observed
+[model-selection guidance](../docs/model-selection.md), including requested/observed
 identity and no inferred cross-provider independence. Core and adapter work uses
 disjoint paths from the compiler lane. For this proposed pair, R3 owns edits to
 `native-review-host.mjs` and `app-server/src/index.mjs`; compiler C3 requests any
@@ -309,9 +309,9 @@ may legitimately supersede the migration-plan input without rewriting this recor
 | Working-tree input | SHA-256 at inspection |
 | --- | --- |
 | [AGENTS.md](../AGENTS.md) | `04675bbabbf39576e4590cc8dfa2d681f7a630572ccd5f88bc62ebc422e4d9b8` |
-| [Rust direction](rust-development.md) | `aca53736538773d86ca5c0e9381752814fa1f59ff0a23dd12cff249e37c36f37` |
+| [Rust direction](../docs/rust-development.md) | `aca53736538773d86ca5c0e9381752814fa1f59ff0a23dd12cff249e37c36f37` |
 | [Migration plan](rust-migration-plan.md) | `830dd4de26a27d7f28408e44d05f6ea5f8d890f6925103b2364bf5bfdf94e102` |
-| [Model guidance](model-selection.md) | `f5c594118b0a151056cea38281b7db8f8b0904de02eea87d586d2697fdfa452c` |
+| [Model guidance](../docs/model-selection.md) | `f5c594118b0a151056cea38281b7db8f8b0904de02eea87d586d2697fdfa452c` |
 | [Lifecycle implementation plan](../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md) | `02c8ad62b958708b9d841eacfd29dda9601096f2bca9ba4cfb713d78a4d8baae` |
 
 Evidence tier: Verify (Tier 2), project `home-bline-code-work-engine`, ready index

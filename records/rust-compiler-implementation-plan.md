@@ -6,7 +6,7 @@ current consumers. It is planning evidence, not implementation acceptance,
 deployment authority or a new owner for authored instructions. Implementation
 starts only after the user accepts a bounded unit and the relevant interfaces.
 
-The [Rust direction](rust-development.md), [migration plan](rust-migration-plan.md),
+The [Rust direction](../docs/rust-development.md), [migration plan](rust-migration-plan.md),
 [design](../DESIGN.md) and [philosophy](../PHILOSOPHY.md) govern the proposal.
 Lifecycle and UI remain separately coordinated. The lifecycle integration owner
 owns S0, root manifests, lockfile, toolchain, common types and common gates;
@@ -98,7 +98,7 @@ not proof of stronger repository binding or an exhaustive security policy.
 
 ## Slices and ownership
 
-The implementation owner can use the [model guidance](model-selection.md): one
+The implementation owner can use the [model guidance](../docs/model-selection.md): one
 retained Sol/high builder for a clear slice, Astra/xhigh for unresolved boundary
 judgment, and a separate reviewer where the owning acceptance requires review.
 This document does not launch those roles or establish review independence.
@@ -329,9 +329,9 @@ snippet; Python projection semantics are attributed to source, not that edge.
 | [AGENTS](../AGENTS.md) | `04675bbabbf39576e4590cc8dfa2d681f7a630572ccd5f88bc62ebc422e4d9b8` |
 | [Design](../DESIGN.md) | `2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095` |
 | [Philosophy](../PHILOSOPHY.md) | `299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307` |
-| [Rust direction](rust-development.md) | `aca53736538773d86ca5c0e9381752814fa1f59ff0a23dd12cff249e37c36f37` |
+| [Rust direction](../docs/rust-development.md) | `aca53736538773d86ca5c0e9381752814fa1f59ff0a23dd12cff249e37c36f37` |
 | [Migration plan](rust-migration-plan.md) | `911b647cd75772ab136c8cef85e98737a0d6f42be22a71d2e539f6fce412b0fe` |
-| [Model guidance](model-selection.md) | `f5c594118b0a151056cea38281b7db8f8b0904de02eea87d586d2697fdfa452c` |
+| [Model guidance](../docs/model-selection.md) | `f5c594118b0a151056cea38281b7db8f8b0904de02eea87d586d2697fdfa452c` |
 | [Lifecycle implementation plan](../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md) | `02c8ad62b958708b9d841eacfd29dda9601096f2bca9ba4cfb713d78a4d8baae` |
 | [Skill compiler](../app-server/src/skill-compiler.mjs) | `abb2cdf31c2d6a2f4a19dfc062cbaef6b96ece6fd74721b0bf170dd5ef23cbeb` |
 | [Manifest implementation](../app-server/src/runtime-manifest.mjs) | `6cbee5e351e3193ac591c2d9501399dc9e66faa9f489ec9f80f64aa58a4cca30` |

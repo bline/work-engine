@@ -44,8 +44,8 @@ availability, dual running and a temporary Node bridge are not prerequisites.
 Ordinary runtime custody, context continuity, uncertainty and recovery contracts
 remain required. Inactivity does not settle an effect or dispose of saved state.
 
-The [host replacement plan](../../docs/rust-host-replacement-plan.md) and
-[generation plan's current disposition](../../docs/rust-generation-integration-plan.md#current-disposition)
+The [host replacement plan](../../records/rust-host-replacement-plan.md) and
+[generation plan's current disposition](../../records/rust-generation-integration-plan.md#current-disposition)
 inform the later joins. HP1 and independently owned review/claims/campaign work
 do not wait for S4. S8's actual permanent Rust consumer and S9's permanent Rust
 startup/deployment owner require an agreed handoff; the native-review host is

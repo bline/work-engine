@@ -2,7 +2,7 @@
 
 Recorded 2026-10-07 from the app-server assessment and the user's request to
 preserve the plan. Rust is the target for new first-party executable components,
-as recorded in [Rust development direction](rust-development.md). The proposed
+as recorded in [Rust development direction](../docs/rust-development.md). The proposed
 expansion covers Work Engine's app-server control plane and its legacy bridges.
 Its main value is clearer ownership, durable transitions, recovery and shared
 contracts. Performance gains remain unmeasured.
@@ -136,7 +136,7 @@ and implements the integration. S4 does not establish production connectivity or
 authorize UI commands. This preserves the lifecycle session's sequencing
 clarification and the existing S0–S10 dependency graph.
 
-Shared libraries start with the [proposed Rust workspace](rust-development.md#proposed-shared-workspace).
+Shared libraries start with the [proposed Rust workspace](../docs/rust-development.md#proposed-shared-workspace).
 The experiments and their evidence remain in place. Package count, broader
 extractions and relocation of the UI follow demonstrated consumers and their
 owners' plans; there is no additional framework-building phase before lifecycle.

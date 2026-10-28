@@ -21,7 +21,7 @@ The accepted [compiler plan](rust-compiler-implementation-plan.md),
 and [combined qualification](rust-c1-r1-validation.md) retain their original
 bytes. Their historical prepublication wording does not undo commit 8497df02.
 [Design](../DESIGN.md), [philosophy](../PHILOSOPHY.md) and
-[Rust direction](rust-development.md) govern placement and authority. Requested
+[Rust direction](../docs/rust-development.md) govern placement and authority. Requested
 planning configuration is Astra/xhigh; runtime-effective model identity was not
 independently exposed. Future implementation and ordinary remediation remain
 `gpt-6-sol`/high under the user's explicit choice.

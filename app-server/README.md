@@ -652,7 +652,7 @@ neither the wrapper nor its thread mutates roadmap or campaign authority.
 
 ## Planning documents
 
-- [`../docs/rust-migration-plan.md`](../docs/rust-migration-plan.md) records Rust
+- [`../records/rust-migration-plan.md`](../records/rust-migration-plan.md) records Rust
   migration priorities, value and complexity, consolidation boundaries, and
   parallel UI integration at lifecycle S3 and S4.
 - [`docs/control-plane-causal-observability-ui.md`](docs/control-plane-causal-observability-ui.md)

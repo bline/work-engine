@@ -10,7 +10,7 @@ excluded RP1; publication of those slices did not expand it.
 
 The [provider plan](rust-review-provider-execution-plan.md) owns the intended
 execution contract. [DESIGN.md](../DESIGN.md) owns design doctrine;
-[Rust development](rust-development.md) owns the language direction. This plan
+[Rust development](../docs/rust-development.md) owns the language direction. This plan
 specializes RP1 without authorizing RP2 host wiring, RP3 live proof, SC3-H resume,
 credential access, provider spending, deployment, or S8/S9/UI changes.
 
