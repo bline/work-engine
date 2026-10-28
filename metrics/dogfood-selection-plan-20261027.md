@@ -257,8 +257,9 @@ Definitions, fixed before the round starts:
 - **First artifact:** the builder's first result submitted for independent review.
 - **Pre-review fixes:** changes the coordinator requests before that review,
   counted separately.
-- **First-review pass:** the first independent review of the first artifact
-  returns no P1 or P2 finding.
+- **First-review pass (J-2):** the first independent review of the first
+  artifact returns the verdict `accept` with no P1 or P2 finding (see "Review
+  result" below).
 - **Repair round (R2-10):** one review-driven remediation cycle, from a review
   that requires changes to the builder's resubmission for review. Continuation
   turns within the cycle are one round, not several.
@@ -326,7 +327,9 @@ For every builder dispatch the guidance would profile, before choosing the model
   totals across arms of different sizes. The **first-review pass rate (R2-12)** is
   taken over episodes whose first review has completed, recorded when it
   completes with `task_profile_record.py review`, whether or not the episode has
-  closed. **Repair burden (R2-14)** is completed repair rounds per closed,
+  closed. Its failures are split by verdict: `changes_required` (defects) is the
+  builder comparison; `blocked_evidence` and `blocked_scope` are reported apart,
+  as packet problems (J-3). **Repair burden (R2-14)** is completed repair rounds per closed,
   dispatched episode with a known count, zeros included, reported separately for
   accepted and abandoned episodes. Open episodes' rounds to date are reported
   apart. Rounds among only the episodes that needed a repair, if reported, are
@@ -344,6 +347,19 @@ For every builder dispatch the guidance would profile, before choosing the model
   `assign --role reviewer` leak check also looks for both arms' model names.
   When the reviewer can still see the builder's identity, the coordinator records
   that the episode was unblinded, and the reading reports how many were.
+- **Review result (J-2, J-3).** The review packet of an enrolled episode asks for
+  one verdict and P-scale severities (P1 blocks acceptance, P2 must be fixed
+  before acceptance, P3 is an improvement), whatever scale the reviewer's own
+  contract also uses:
+  - `accept`: the artifact is acceptable for the reviewed scope; P3 findings only;
+  - `changes_required`: at least one P1 or P2 defect in the artifact;
+  - `blocked_evidence`: the reviewer cannot judge, because evidence the packet
+    should have supplied is missing;
+  - `blocked_scope`: the reviewer cannot judge, because the subject or packet scope
+    is wrong.
+  `review` records the verdict, the counts, the receipt and the **reviewer's
+  session or thread ID (J-1)**, so the reviewer is joined without parsing the
+  receipt. The two `blocked_` verdicts describe the packet, not the builder.
 
 ### Measurement (R2-07)
 
@@ -361,7 +377,8 @@ For every builder dispatch the guidance would profile, before choosing the model
 
 ### Records and joins (R2-03, R2-05)
 
-`review` records each episode's first-review outcome when it completes, and
+`review` records each episode's first-review verdict, counts and reviewer when it
+completes (`status` reports a reviewer with no reviewer assignment record), and
 `repair` records each completed repair round; both are append-only. `close` writes
 the terminal disposition once: counts (pre-review fixes, repair rounds,
 escalations), the review receipts' paths and hashes, the artifacts' hashes, and
@@ -375,6 +392,7 @@ demonstrated on two round-1 records.
 
 - **Cap:** 20 enrolled episodes across both arms. Screening has no cap.
 - **Reading:** per arm, n, first-review pass rate with an exact 95% interval,
+  `changes_required` and `blocked_` counts separately,
   repair burden and escalations as defined above (closed, dispatched episodes
   with known counts, zeros included), and cost; with the screening
   and exclusion counts, clustering by root and workstream, unblinded episodes, and
@@ -399,8 +417,9 @@ All of these, then owner approval:
    `profile` leaves the task unenrolled and dispatched as usual, and a failed
    `enroll` follows the failure handling above.
 3. The joins demonstrated on two round-1 records. **Done 2026-10-28**: the chain
-   resolves, and gaps J-1 to J-3 must be fixed first
-   ([join check](probes/dogfood-round2-join-check-20261028.md)).
+   resolves ([join check](probes/dogfood-round2-join-check-20261028.md)); its gaps
+   J-1 to J-3 are answered by "Review result" above and by `review` recording the
+   verdict and reviewer.
 4. These Status lines name round 2, its run directory
    (`~/.local/state/work-engine/task-profile-pilot-2`) and its limits (20 episodes,
    2 Terra in flight, 10 Terra repair rounds).
