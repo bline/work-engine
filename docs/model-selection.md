@@ -36,7 +36,7 @@ review, not for supervising, coordinating, planning or building.
 | Role | Default | Effort | Status and evidence |
 | --- | --- | --- | --- |
 | **Builder** for implementation, integration, tests and ordinary remediation under a clear contract | `gpt-6.1-terra` | `medium` | **Owner decision 2026-10-27, provisional.** Usage-export task: 3 first-version failures in the four-builder trial (n = 1), the cheapest arm; In [E1a-Terra](../metrics/probes/e1a-terra-result-20261027.md) (n = 3, $0.13–0.15 per run), 0 failures in all three runs on the 12 battery cases that trace to the packet. The full battery gives 7, 7 and 11, but most of its cases do not trace to the packet ([traceability check](../metrics/probes/e1a-result-20261027.md#battery-traceability-post-hoc-not-pre-registered)). The fixed interface derives from Terra's own earlier design. Its tests are thinner than the Claude builders' (2–4 against 10–14). |
-| **Builder** for concurrency, persistence or schema, protocol or IPC, lifecycle or recovery, cross-crate, or open design questions | `gpt-6.1-sol` | `medium` | **Recommendation 2026-10-27, owner may change.** Terra has no evidence on these task classes yet. `gpt-6.1-sol` has the same input and output prices as `gpt-6-sol` and cheaper cached input; not yet measured by us. |
+| **Builder** whose remaining assignment requires substantial unresolved reasoning about concurrency, durability, compatibility, protocols, lifecycle, recovery or ownership across components | `gpt-6.1-sol` | `medium` | **Recommendation clarified 2026-10-28, owner may change.** Select for concrete decisions and risks still owned by the builder. Evidence for Terra on complex work remains limited; a domain label alone does not establish that the assignment needs Sol. |
 | Builder on the Claude host, with a fully specified packet | `claude-sonnet-5-5` | `high` | Matched Opus on gates and defect incidence at 38% of the cost ([S2 builder probe](../metrics/probes/claude-s2-builder-20261020-protocol.md), lines 467–560, n = 1). At `medium` in [E1a](../metrics/probes/e1a-result-20261027.md) (n = 3, $0.67–0.73 per run), Sonnet failed 2, 0 and 0 of the 12 traced cases; the full battery gives 11–15. |
 | Builder on the Claude host, where unresolved reasoning or complexity warrants it | `claude-opus-5-5` | `high` | In E1a at `medium` (n = 1, $2.35), Opus failed 0 of the 12 traced cases; the full battery gives 9. |
 | Successor after a Claude builder refusal | the default builder above | as above | The refusal is recorded; the successor gets a fresh packet. |
@@ -51,6 +51,20 @@ review, not for supervising, coordinating, planning or building.
 These are project recommendations, not performance guarantees or mandatory
 phases. A small change need not visit every role. A builder can plan a
 well-bounded implementation.
+
+**Select for the work remaining after discovery and contract formation.**
+Terra at `medium` remains the default for bounded implementation with settled
+behavior and focused validation, including ordinary changes to persistence,
+schemas, protocols, lifecycle code or several packages. For example, adding a
+call to an existing API with specified failure behavior does not by itself
+require a stronger builder. Consider the actual implementation difficulty and
+consequences, not just the subsystem's name.
+
+Sol may resolve an open design question during planning while Terra implements
+the resulting clear packet. The builder does not inherit the planner's model
+selection. Choose Sol upfront when concrete remaining uncertainty or risk
+supports the lower expected cost to acceptance; a failed Terra attempt is not
+a prerequisite. Record that reason in the existing assignment.
 
 **The provisional Terra default** stays under watch in its first real slices.
 Watch, through the existing receipts and the dogfood records:
@@ -68,11 +82,15 @@ comparable slices.
 - **Effort:** escalate one level at a time, `low` → `medium` → `high`. Stop for
   human judgment before `xhigh` unless configuration or the user authorizes it.
   Record replaced workers, efforts, evidence and reasons.
-- **Builder model:** move from `gpt-6.1-terra` to the hazard-class builder when
-  any of these happens:
-  - the task turns out to belong to a hazard class above;
-  - review returns a P1 or P2 finding that reopens the design;
-  - a second repair round is needed.
+- **Builder model:** reconsider Terra when evidence exposes substantial
+  unresolved decisions still delegated to the builder, or repeated failures
+  on clear requirements support a model-capability explanation. Merely
+  touching a risk-bearing subsystem or reaching a repair-round count is
+  insufficient. Diagnose missing contract facts, validation gaps and harness
+  failures before attributing the problem to the model.
+
+  A review finding that reopens design goes to the appropriate decision owner;
+  select the builder again for the work remaining once that question is settled.
   
   Move to `gpt-6.1-sol` at `xhigh` when evidence exposes an unresolved ownership
   boundary, contradictory assumptions, or a causal explanation the investigation
@@ -210,3 +228,4 @@ configuration with no builder.
 | 2026-10-28 | The supervisor change follows O2 and a real-slice validation (O4 or E5), not the Codex reset date (superseded the same day) | owner |
 | 2026-10-28 | Supervisors and coordinators run `gpt-6.1-sol` at `xhigh`, and so do architecture and open-design planning; `gpt-6-astra` is used only for review | owner |
 | 2026-10-28 | Codex manual roots use `/fast` for supervisors and builders; Astra reviewers launch as separate top-level threads with an explicit standard-tier override. The live probe found `/fast` also persists a shared Fast default, so top-level launch alone is insufficient. Campaign supervisors keep `/fast` off pending separate reviewer launch/binding support. | owner; [observed probe](../metrics/probes/codex-manual-service-tier-20261028.json) |
+| 2026-10-28 | Clarify Terra/medium as the default for bounded implementation after discovery: select Sol for concrete residual decisions and risk, not domain labels, the planner's model, or a repair-round count alone. | guidance clarification following owner feedback |
