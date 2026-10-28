@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Deterministic validator/indexer for app-server/ideas/pending/idea-status-grammar.md.
+// Deterministic validator/indexer for design/ideas/pending/idea-status-grammar.md.
 //
 // This parses the idea_status / idea_provenance YAML blocks each pending idea document
 // carries and mechanically enforces the grammar's own derivation rules -- it does not
@@ -324,7 +324,7 @@ function printReport({ results, summary }) {
 async function main(argv) {
   const rootFlag = argv.indexOf("--root");
   const jsonFlag = argv.includes("--json");
-  const root = path.resolve(rootFlag < 0 ? path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "ideas", "pending") : argv[rootFlag + 1]);
+  const root = path.resolve(rootFlag < 0 ? path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "design", "ideas", "pending") : argv[rootFlag + 1]);
   const report = await run(root);
   if (jsonFlag) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

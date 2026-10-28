@@ -49,7 +49,7 @@ listed.
 A directory says which corpus a file belongs to. It does not accept, authorize
 or settle anything inside the file. Where a document carries its own status —
 the architecture views mix accepted, candidate and open material under
-[`status-grammar.md`](../app-server/docs/architecture/status-grammar.md) — that
+[`status-grammar.md`](../design/architecture/status-grammar.md) — that
 status stays authoritative wherever the file sits.
 
 ## Moving or citing a file
@@ -86,11 +86,17 @@ unit.
 
 ## Migration in progress
 
-As of 2026-10-27, `design/` exists but most of its content has not moved:
-current design is still under `app-server/docs/`, `app-server/ideas/` and
-`ideas/`. The Rust campaign records moved to `records/` in phase 4, except
-`docs/rust-development.md` (a durable reference) and two records that tests read
-from the live tree, `docs/rust-retained-task-host-contract.md` and
+As of 2026-10-27, phase 5 moved the design corpus into `design/`: the capstone,
+the architecture views, the pending, historical and retired ideas, and two
+research notes (87 files; the list is in [design/README.md](../design/README.md)).
+What stayed: `experiments/context-lifecycle-rust/DESIGN.md` (a digest-bound
+unit), the earlier root `ideas/` projection, the reconciliation documents under
+`app-server/docs/` and the other component documents. A few references to the
+old paths are left unresolved because their files are byte-locked or owned by
+another session; design/README.md lists them. The Rust campaign records moved to
+`records/` in phase 4, except `docs/rust-development.md` (a durable reference)
+and two records that tests read from the live tree,
+`docs/rust-retained-task-host-contract.md` and
 `docs/rust-context-lifecycle-s8-implementation-plan.md`; those two move with
 that code. New files go to the new homes now and may link to the old locations.
 The [layout plan](../planning/repository-layout-plan.md) owns the remaining

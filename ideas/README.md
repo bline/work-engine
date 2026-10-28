@@ -1,5 +1,7 @@
 # Reconciled Work Engine Ideas
 
+The current ideas pipeline is [`design/ideas/`](../design/ideas/pending/); this directory is the earlier projection, reconciled in [`app-server/docs/root-ideas-reconciliation.md`](../app-server/docs/root-ideas-reconciliation.md).
+
 ## Purpose
 
 This directory is a **clean active-idea projection** produced from the current `work-engine(10).tbz2` repository snapshot.

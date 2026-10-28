@@ -72,7 +72,7 @@ authority, evidence, limitations, disposition, and lineage.
 A judgment's dependencies on exact code, documentation, and test subjects are
 declared anchors. The judgment that declares them owns them, as part of its
 immutable record. The
-[evidence-anchor substrate](../../../app-server/docs/architecture/substrates/evidence-anchor.md)
+[evidence-anchor substrate](../../../design/architecture/substrates/evidence-anchor.md)
 observes each declared anchor against an exact repository revision, compares
 it with its bound observation, and reports `matches`, `differs`, `unknown`,
 `unsupported`, or `failed`. A difference may nominate `possibly_affected`. It

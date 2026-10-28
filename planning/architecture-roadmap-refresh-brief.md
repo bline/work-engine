@@ -91,8 +91,8 @@ taken from this list):
 
 ## Sources
 
-- [`app-server/docs/work-engine-planned-architecture.md`](../app-server/docs/work-engine-planned-architecture.md),
-  the capstone, and the views under `app-server/docs/architecture/`.
+- [`design/work-engine-planned-architecture.md`](../design/work-engine-planned-architecture.md),
+  the capstone, and the views under `design/architecture/`.
 - [`experiments/context-lifecycle-rust/DESIGN.md`](../experiments/context-lifecycle-rust/DESIGN.md)
   and [`IMPLEMENTATION_PLAN.md`](../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md).
 - [`docs/rust-development.md`](../docs/rust-development.md),

@@ -101,19 +101,19 @@ execution each depend on their own acceptance conditions.
 
 The successor roadmap includes three connected bodies of work:
 
-- [Provider/harness/operator ports](../ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
-  and [materialized runtime realization](../ideas/pending/pre-indexed-capability-resolution-and-frozen-runtime-realization.md).
-- [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md),
-  [Structural Plan IR](../ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md),
-  its [prior-art investigation](../ideas/pending/structural-plan-ir-prior-art.md),
-  [planner characterization](../ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md),
-  and [execution-profile scoring](../ideas/pending/structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md).
+- [Provider/harness/operator ports](../../design/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
+  and [materialized runtime realization](../../design/ideas/pending/pre-indexed-capability-resolution-and-frozen-runtime-realization.md).
+- [Decision-gated compilation](../../design/ideas/pending/proposal-decision-gated-implementation-compilation.md),
+  [Structural Plan IR](../../design/ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md),
+  its [prior-art investigation](../../design/ideas/pending/structural-plan-ir-prior-art.md),
+  [planner characterization](../../design/ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md),
+  and [execution-profile scoring](../../design/ideas/pending/structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md).
 - [Revisioned research and execution](revisioned-research-and-execution-architecture.md),
   initially tested through bounded recovery and research consequences.
 
-[Hierarchical orchestration](../ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md)
+[Hierarchical orchestration](../../design/ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md)
 is a candidate accelerator across these workstreams.
-[Architecture intake](../ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md)
+[Architecture intake](../../design/ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md)
 informs reconciliation of their shared semantics. Neither is silently added to
 S14's existing role-import obligations.
 
@@ -128,8 +128,8 @@ is not an assumed prerequisite; a prospective pilot can establish bounded
 evidence. Basic independent workflows do not require adaptive IR routing.
 
 The two currently uncommitted sources,
-[evidence-calibrated resolution](../ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md)
-and its [upstream amendments](../ideas/pending/evidence-calibrated-plan-resolution-upstream-amendments.md),
+[evidence-calibrated resolution](../../design/ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md)
+and its [upstream amendments](../../design/ideas/pending/evidence-calibrated-plan-resolution-upstream-amendments.md),
 are substantive inputs to that pilot and architecture reconciliation. They
 introduce dimension-specific resolution, decision-closure versus rendering
 cost, context burden, continuation/cache observations, safe composition, and

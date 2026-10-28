@@ -691,7 +691,7 @@ binary, configuration and actual supported profile in each acceptance run.
 
 Lifecycle consumes an **owned-operation contract**, not an arbitrary tool name
 or a promise that every tool shares the same semantics. This follows the
-[Service Plane idea](../../app-server/ideas/pending/service-plane-and-kernel-domain-boundary.md):
+[Service Plane idea](../../design/ideas/pending/service-plane-and-kernel-domain-boundary.md):
 generalize the surrounding contract, not the domain payload. The idea's proposed
 grammar is design input, not an accepted global schema or an implemented service
 registry. This design needs only the bounded contracts for selected operations.
@@ -719,7 +719,7 @@ admission, identity, outcome, settlement and recovery contract. If that contract
 requires a per-tool pre-entry gate and the harness cannot enforce one, the route
 is unsupported. Observing a tool afterward is not equivalent enforcement.
 
-The [runtime-ports idea](../../app-server/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
+The [runtime-ports idea](../../design/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
 separates provider-turn, harness/tool-loop and operator-projection ownership.
 The selected composition records exactly one owner for each execution responsibility.
 Work Engine must not start a second provider turn or tool loop for an operation
@@ -751,7 +751,7 @@ classification does not grant an exemption from confidentiality or cancellation
 requirements. A committed result is distinct from remote-effect settlement and
 from lifecycle completion, regardless of authorization mode.
 
-The [Authority Commit Gate draft](../../app-server/ideas/pending/authority-commit-gate-and-effect-admission.md)
+The [Authority Commit Gate draft](../../design/ideas/pending/authority-commit-gate-and-effect-admission.md)
 addresses the stronger commit-bound case across multiple authority owners. Its
 upstream invalidation semantics and complete dependency-to-writer registry remain
 blocking prerequisites, and its proposed restructure has open review findings.

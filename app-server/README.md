@@ -1,5 +1,9 @@
 # Work Engine App Server Runtime
 
+> This directory is the superseded App Server implementation. Its current design
+> (the architecture views, the capstone, the ideas and research notes) moved to
+> [`design/`](../design/README.md).
+
 This boundary is the provider-specific runtime realization for Codex App
 Server. It translates authorized Work Engine delivery intent into App Server
 protocol effects while keeping role identity, authority, and canonical workflow

@@ -105,7 +105,7 @@ placement. The proposal's meaning and protected consequences are unchanged.
 
 A claim's code and documentation dependencies are declared anchors, owned by
 the declaring claim revision. The
-[evidence-anchor substrate](../../../app-server/docs/architecture/substrates/evidence-anchor.md)
+[evidence-anchor substrate](../../../design/architecture/substrates/evidence-anchor.md)
 observes each declared anchor against a current snapshot, compares it with its
 bound observation, and derives `may_affect` nomination candidates. Claim
 maintenance alone publishes durable nominations. The exact code locator and

@@ -72,10 +72,10 @@ a fresh audit of the active repair campaign's terminal state.
 
 ## The destination and its enabling work
 
-[Provider/harness/operator separation](../ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
+[Provider/harness/operator separation](../../design/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
 describes how execution mechanisms can be independently composed while Work
 Engine retains authority. Its companion
-[runtime-realization idea](../ideas/pending/pre-indexed-capability-resolution-and-frozen-runtime-realization.md)
+[runtime-realization idea](../../design/ideas/pending/pre-indexed-capability-resolution-and-frozen-runtime-realization.md)
 owns capability observations, operator policy, admission, invalidation, and
 immutable realizations. These are one architectural family with distinct owners.
 
@@ -85,7 +85,7 @@ role reconstruction, then separately governed experiments. It remains a
 conceptual reference. Recovery coordinates do not alone establish experimental
 validity, and context-lifecycle repairs do not alone implement coordinates.
 
-[Hierarchical orchestration](../ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md)
+[Hierarchical orchestration](../../design/ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md)
 is an accelerator for coherent independent workstreams. It can reuse the
 migrated execution substrate; the full provider-neutral architecture need not
 be complete before a bounded concurrency pilot. Conversely, implementing the
@@ -125,11 +125,11 @@ claim-evidence impact/refresh vertical
 `claim-evidence`'s core substrate (identity, evidence, revision/lineage, the
 `proposal-research-v1` and `revision-bound-review-finding-v1` domain
 profiles) is already real, implemented code — see
-[`work-engine-planned-architecture.md`](work-engine-planned-architecture.md)
+[`../../design/work-engine-planned-architecture.md`](../../design/work-engine-planned-architecture.md)
 §12. What is not built is a production operation-contract surface for
 durable impact nomination and refresh-episode admission — no such
 operation(s) exist yet in `contract.mjs`, confirmed directly by
-[`evidence-anchor-observation-and-impact-nomination.md`](../ideas/pending/evidence-anchor-observation-and-impact-nomination.md)
+[`evidence-anchor-observation-and-impact-nomination.md`](../../design/ideas/pending/evidence-anchor-observation-and-impact-nomination.md)
 §6. Its own §6 distinguishes what that gap actually blocks from what does
 not need to wait for it:
 
@@ -207,14 +207,14 @@ high-leverage step, not a completed design ready to build from.
 
 **Hierarchical planning: what stood in the way, now resolved.** Unlike the
 impact/refresh vertical, this was never a small missing piece — it is a
-full idea in `app-server/ideas/pending/`, not yet formed as a proposal. It
+full idea in `design/ideas/pending/`, not yet formed as a proposal. It
 had two open seams the pre-queue synthesis found and left unresolved
 (`architecture-direction-synthesis.md` §5, items 1 and 2): whether
 executor-class routing sits inside or above realization admission, and
 whether hierarchical orchestration's "branch plan" is the same artifact as
 decision-gated compilation's sealed decision set. **Both are now closed
 (2026-09-15)**, after one reopening and correction on the first — see
-[`work-engine-planned-architecture.md`](work-engine-planned-architecture.md)
+[`../../design/work-engine-planned-architecture.md`](../../design/work-engine-planned-architecture.md)
 §13 items 12-13 for the full ruling. Routing resolved into three stages
 (contract characterization / executor-class routing-acceptance / runtime
 resolution-admission), not the two originally proposed; the branch-plan
@@ -292,13 +292,13 @@ mix incident evidence, emergency implementations, and proposed generalizations.
 
 | Source | Candidate disposition to investigate |
 | --- | --- |
-| [Context emergency and writable ingress](../ideas/pending/context-replacement-emergency-and-writable-operator-ingress.md) | Compare remaining emergency recovery, atomic ingress, and policy-conditioned tool projection against repairs actually accepted during migration; keep their separate outcomes |
-| [Generation maintenance rollover](../ideas/pending/executable-generation-maintenance-rollover.md) | Identify the remaining first-class maintenance consequence after the documented emergency helper and reload repair |
-| [Scoped workflow events](../ideas/pending/scoped-workflow-event-surface.md) | Prioritize the bounded observation surface needed to operate concurrent workflows |
-| [Incremental terminal accounting](../ideas/pending/incremental-terminal-accounting-projection.md) | Align event identity with the runtime/event boundary; reduce repeated terminal forensic work without merging accounting and transport ownership |
-| [Semantic inventory versus integrity](../ideas/pending/semantic-inventory-integrity-projection-separation.md) | Reassess after migration cutover; retain only remaining shared-artifact churn and integrity consequences |
-| [Contract kit and lifecycle duplication](../ideas/pending/contract-kit-and-lifecycle-template-duplication.md) | Separate the reported correctness inconsistency from optional utility cleanup; verify both against the exit baseline |
-| [OAuth credential broker](../ideas/pending/fenced-oauth-credential-tip-broker.md) | Determine whether the selected concurrent Claude realization still exposes the credential-refresh race; if so, safe credential ownership precedes that use |
+| [Context emergency and writable ingress](../../design/ideas/pending/context-replacement-emergency-and-writable-operator-ingress.md) | Compare remaining emergency recovery, atomic ingress, and policy-conditioned tool projection against repairs actually accepted during migration; keep their separate outcomes |
+| [Generation maintenance rollover](../../design/ideas/pending/executable-generation-maintenance-rollover.md) | Identify the remaining first-class maintenance consequence after the documented emergency helper and reload repair |
+| [Scoped workflow events](../../design/ideas/pending/scoped-workflow-event-surface.md) | Prioritize the bounded observation surface needed to operate concurrent workflows |
+| [Incremental terminal accounting](../../design/ideas/pending/incremental-terminal-accounting-projection.md) | Align event identity with the runtime/event boundary; reduce repeated terminal forensic work without merging accounting and transport ownership |
+| [Semantic inventory versus integrity](../../design/ideas/pending/semantic-inventory-integrity-projection-separation.md) | Reassess after migration cutover; retain only remaining shared-artifact churn and integrity consequences |
+| [Contract kit and lifecycle duplication](../../design/ideas/pending/contract-kit-and-lifecycle-template-duplication.md) | Separate the reported correctness inconsistency from optional utility cleanup; verify both against the exit baseline |
+| [OAuth credential broker](../../design/ideas/pending/fenced-oauth-credential-tip-broker.md) | Determine whether the selected concurrent Claude realization still exposes the credential-refresh race; if so, safe credential ownership precedes that use |
 
 The [migration plan's runtime-binding and progress residuals](skills-migration-plan.md#post-inhabitation-runtime-binding-and-progress-residuals)
 also belong in this reconciliation. A documented desired replacement command or
@@ -308,7 +308,7 @@ progress surface is not proof that the residual remains open today.
 
 **Marked complete 2026-09-14.** The exercise this section originally
 proposed (2026-09-12) has since run to completion, in two passes using the
-same [incremental architecture intake and seam reconciliation](../ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md)
+same [incremental architecture intake and seam reconciliation](../../design/ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md)
 method this section named:
 
 - **The originally-named "first bounded family"** (runtime ports,
@@ -324,7 +324,7 @@ method this section named:
   ([`root-ideas-reconciliation.md`](root-ideas-reconciliation.md)) and then
   a twelve-item, four-wave sequel queue (the "Legacy ideas" section above),
   culminating in
-  [`work-engine-planned-architecture.md`](work-engine-planned-architecture.md)
+  [`../../design/work-engine-planned-architecture.md`](../../design/work-engine-planned-architecture.md)
   — the disposition-and-dependency table this section asked for, in
   substance: §12 is the implementation-state map, §13 is the remaining
   open seams, each with source revision, current evidence, remaining gap,
@@ -338,7 +338,7 @@ The original text is preserved below for that record.
 <summary>Original 2026-09-12 text (historical; superseded by the completed exercise above)</summary>
 
 The likely reference for the operator's multi-session intake idea is
-[incremental architecture intake and seam reconciliation](../ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md).
+[incremental architecture intake and seam reconciliation](../../design/ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md).
 It proposes multiple ideas integrated within one prospective architecture and
 successive sessions anchored to accepted implemented baselines. Its initial
 design avoids overlapping dependent prospective baselines. This identification
@@ -393,7 +393,7 @@ other — it contains both an implementation-authorized mechanical residue
 so "implementation-ready" and "design-only" below are overlapping
 authorization buckets across those eleven residues, not a partition of the
 twelve queue items. The authoritative index is
-[`work-engine-planned-architecture.md`](work-engine-planned-architecture.md)
+[`../../design/work-engine-planned-architecture.md`](../../design/work-engine-planned-architecture.md)
 §12 (implementation-state map) and §13 (remaining open seams) — this section
 now only summarizes, and defers to that document on any conflict.
 
@@ -459,13 +459,13 @@ remain valuable even if a lower-cost execution strategy fails its pilot.
 
 | Source | Distinct contribution |
 | --- | --- |
-| [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md) | **Architecture partially absorbed (confirmed 2026-09-17, narrowed 2026-09-26 — see Revision 2026-09-26 below): material decision closure, reserved/delegated authority, implementation-contract workflow, and conformance are stated by `material-decision-selection.md` and `implementation-contract-compilation.md`, including this idea's own "Invariants" section restated near-verbatim.** Stage 5-6's own normative routing/strategy-selection judgment is not absorbed by either canonical view and remains a surviving architectural residue (candidate dimension: Execution Strategy Selection, not yet canonicalized); Stage 0-6's remaining experimental/validation procedure is open backlog as before. |
-| [Structural Plan IR](../ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md) | Candidate canonical representation and faithful executor-specific projections |
-| [Prior-art study](../ideas/pending/structural-plan-ir-prior-art.md) | Candidate revision/node identity, layering, lineage correspondence, and projection fidelity; not an accepted schema |
-| [Planner characterization](../ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md) | Derived description of the remaining judgment surface, with incremental characterization cost measured separately |
-| [Execution-profile scoring](../ideas/pending/structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md) | Evidence-driven strategy comparison by total accepted-work consequence; initial scores do not automatically route |
-| [Evidence-calibrated resolution](../ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md) | Dimension-specific projections, additional decision-closure cost, context burden, continuation economics, composition, and continuous learning |
-| [Upstream amendments](../ideas/pending/evidence-calibrated-plan-resolution-upstream-amendments.md) | Candidate changes across compilation, IR, runtime observations, and research coverage; not already applied to those owners |
+| [Decision-gated compilation](../../design/ideas/pending/proposal-decision-gated-implementation-compilation.md) | **Architecture partially absorbed (confirmed 2026-09-17, narrowed 2026-09-26 — see Revision 2026-09-26 below): material decision closure, reserved/delegated authority, implementation-contract workflow, and conformance are stated by `material-decision-selection.md` and `implementation-contract-compilation.md`, including this idea's own "Invariants" section restated near-verbatim.** Stage 5-6's own normative routing/strategy-selection judgment is not absorbed by either canonical view and remains a surviving architectural residue (candidate dimension: Execution Strategy Selection, not yet canonicalized); Stage 0-6's remaining experimental/validation procedure is open backlog as before. |
+| [Structural Plan IR](../../design/ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md) | Candidate canonical representation and faithful executor-specific projections |
+| [Prior-art study](../../design/ideas/pending/structural-plan-ir-prior-art.md) | Candidate revision/node identity, layering, lineage correspondence, and projection fidelity; not an accepted schema |
+| [Planner characterization](../../design/ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md) | Derived description of the remaining judgment surface, with incremental characterization cost measured separately |
+| [Execution-profile scoring](../../design/ideas/pending/structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md) | Evidence-driven strategy comparison by total accepted-work consequence; initial scores do not automatically route |
+| [Evidence-calibrated resolution](../../design/ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md) | Dimension-specific projections, additional decision-closure cost, context burden, continuation economics, composition, and continuous learning |
+| [Upstream amendments](../../design/ideas/pending/evidence-calibrated-plan-resolution-upstream-amendments.md) | Candidate changes across compilation, IR, runtime observations, and research coverage; not already applied to those owners |
 
 The last two sources were untracked working-tree documents when inspected on
 2026-09-12. Their complete text was read as substantive planning input. Their
@@ -717,7 +717,7 @@ The block above is preserved as the 2026-09-15 handoff. This revision does
 not change the priorities it sets (claim-evidence impact/refresh vertical,
 hierarchical-orchestration proposal formation) — it refines the separate Plan
 IR workstream's Stage 1, following a deterministic idea-status audit of
-`app-server/ideas/pending/` completed the same day. The three findings below
+`design/ideas/pending/` completed the same day. The three findings below
 were each established at a specific point in that audit, not at its final
 commit: decision-gated compilation's `full` supersession at `60ca23b`;
 Structural Plan IR's SS18 reconnaissance ledger at `58ded03`; and
@@ -743,7 +743,7 @@ evidence_cutoff:
   campaign_terminals: []
 continuity: retained
 verdict: revise
-current_rationale: The two named priorities (impact/refresh vertical, hierarchical-orchestration seam resolution) are unchanged and unaffected by this revision. A separate, deterministic idea-status audit of the full app-server/ideas/pending/ corpus (idea-status-grammar.md plus scripts/validate-idea-status.mjs) completed the same day and surfaced three findings specific to the Plan IR workstream named above, none of which block starting that workstream or either named priority. First, proposal-decision-gated-implementation-compilation.md's architectural_supersession is now confirmed full -- material-decision-selection.md and implementation-contract-compilation.md already state its core claims, including a near-verbatim restatement of its own "Invariants" section -- so its architectural placement is settled; only its Stage 0-6 pilot/validation track remains open backlog. Second, structural-plan-ir-for-capability-aware-multi-model-execution.md's own SS18 ("Repository Validation Before Design Commitment") turned out to be a genuine, previously-untagged 25-item repository-reconnaissance ledger -- confirmed not yet run -- that is substantively the same reconciliation Stage 1 already calls for, just not previously named as its concrete entry procedure. Third, structural-plan-ir-prior-art.md carries a confirmed-open residue item (no existing mechanism, including mechanisms/revision-cas-and-publication.md, decides who owns lineage-correspondence judgment across Plan IR revisions) that Stage 1 is guaranteed to encounter, since lineage correspondence is already named in the Plan IR source table above as that document's own contribution.
+current_rationale: The two named priorities (impact/refresh vertical, hierarchical-orchestration seam resolution) are unchanged and unaffected by this revision. A separate, deterministic idea-status audit of the full design/ideas/pending/ corpus (idea-status-grammar.md plus scripts/validate-idea-status.mjs) completed the same day and surfaced three findings specific to the Plan IR workstream named above, none of which block starting that workstream or either named priority. First, proposal-decision-gated-implementation-compilation.md's architectural_supersession is now confirmed full -- material-decision-selection.md and implementation-contract-compilation.md already state its core claims, including a near-verbatim restatement of its own "Invariants" section -- so its architectural placement is settled; only its Stage 0-6 pilot/validation track remains open backlog. Second, structural-plan-ir-for-capability-aware-multi-model-execution.md's own SS18 ("Repository Validation Before Design Commitment") turned out to be a genuine, previously-untagged 25-item repository-reconnaissance ledger -- confirmed not yet run -- that is substantively the same reconciliation Stage 1 already calls for, just not previously named as its concrete entry procedure. Third, structural-plan-ir-prior-art.md carries a confirmed-open residue item (no existing mechanism, including mechanisms/revision-cas-and-publication.md, decides who owns lineage-correspondence judgment across Plan IR revisions) that Stage 1 is guaranteed to encounter, since lineage correspondence is already named in the Plan IR source table above as that document's own contribution.
 assumptions:
   confirmed:
     - The staging table's own framing (stages express useful release consequences, not a compulsory execution procedure; exact dependencies remain to be verified) continues to hold and is exactly why these three findings refine Stage 1 rather than block or reorder the roadmap.

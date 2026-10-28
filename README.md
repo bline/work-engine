@@ -20,7 +20,7 @@ agent.
 ## What it is becoming
 
 The description above is the system that runs today. The planned architecture
-([`app-server/docs/work-engine-planned-architecture.md`](app-server/docs/work-engine-planned-architecture.md))
+([`design/work-engine-planned-architecture.md`](design/work-engine-planned-architecture.md))
 generalizes it:
 
 **Work Engine** is a governed, deliberately model-driven execution system that
@@ -130,7 +130,7 @@ the contract the supervising agent follows.
 | `ARCHITECTURE.md` | Current whole-system map, with an explicit maturity class per subsystem |
 | `roadmap.md` | Product direction, remaining work, and completion evidence |
 | [`docs/repository-layout.md`](docs/repository-layout.md) | Where a file belongs and why: categories by lifetime and authority, and rules for moving or citing files |
-| [`design/`](design/README.md) | Current design: what the system is meant to be. Most of the corpus still lives under `app-server/docs/` and `ideas/` until it moves |
+| [`design/`](design/README.md) | Current design: what the system is meant to be. The capstone, architecture views, ideas and research notes moved here from `app-server/` in phase 5 |
 | [`records/`](records/README.md) | Dated campaign records, kept as written, including the Rust campaign records moved from `docs/rust-*.md`; two Rust records that tests read stay in `docs/` for now |
 | `skills/` | Role and capability packages: contracts, adapters, schemas, tests |
 | `app-server/` | App Server runtime: role hosting, services, protocol, isolated workspaces |

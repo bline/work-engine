@@ -463,7 +463,7 @@ an answer either document has adopted.
 | Direction | Relationship |
 | --- | --- |
 | [`architecture-direction-seam-map.md`](architecture-direction-seam-map.md) | The seam-by-seam evidence this narrative synthesizes. Every relational claim above traces to a specific seam record there. |
-| [`service-plane-inventory.md`](service-plane-inventory.md), [`service-plane-and-kernel-domain-boundary.md`](../ideas/pending/service-plane-and-kernel-domain-boundary.md), [`service-plane-reconciliation.md`](service-plane-reconciliation.md) | The fixed, already-reconciled substrate §1's responsibility planes rest on. |
+| [`service-plane-inventory.md`](service-plane-inventory.md), [`service-plane-and-kernel-domain-boundary.md`](../../design/ideas/pending/service-plane-and-kernel-domain-boundary.md), [`service-plane-reconciliation.md`](service-plane-reconciliation.md) | The fixed, already-reconciled substrate §1's responsibility planes rest on. |
 | Each constituent idea document (ports, capability-resolution, Plan IR + addenda, evidence-calibrated resolution, decision-gated compilation, hierarchical orchestration, revisioned research, Candidate Trajectory family, Refactor Pressure, scoped events, terminal accounting) | Each retains its own authority, acceptance criteria, and non-goals. This document does not supersede any of them; it states how they fit together. |
 | `incremental-architecture-intake-and-seam-reconciliation.md` | The method this whole exercise (baseline → prospective → seam map → reconciliation) followed, for both the service-plane pass and this broader one. |
 
