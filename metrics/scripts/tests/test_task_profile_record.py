@@ -187,6 +187,37 @@ class RecorderTests(unittest.TestCase):
                      "--dispatched-packet", leak, "--child-session", "s")
         self.assertFalse(json.loads(r.stdout)["profile_absent_from_dispatch"])
 
+    def test_leak_check_catches_pilot_mentions(self):
+        out = self.profile()
+        mention = os.path.join(self.tmp.name, "mention.md")
+        write(mention, "Before dispatch follow the Task-Profile shadow pilot; keep profile sidecars out of prompts.\n")
+        r = self.cli("assign", "--run-dir", self.run_dir, "--task-revision", out["task_revision"], "--role", "builder",
+                     "--requested-model", "m", "--requested-effort", "e", "--harness", "h", "--run", "r",
+                     "--dispatched-packet", mention, "--child-session", "s")
+        self.assertFalse(json.loads(r.stdout)["profile_absent_from_dispatch"])
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        with open(os.path.join(d, "assignment.json")) as fh:
+            self.assertEqual(json.load(fh)["leaked_tokens"], ["sidecar", "task-profile"])
+
+    def test_start_prints_microsecond_utc(self):
+        r = self.cli("start")
+        self.assertRegex(r.stdout.strip(), r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}\+00:00$")
+
+    def test_failure_record_archives_sources(self):
+        s = json.load(open(self.make_sidecar("builder", "0" * 40)))
+        del s["declared"]["uncertainties"]   # compute refuses a missing required field, so a failure record is written
+        bad = os.path.join(self.tmp.name, "bad-stage.json")
+        with open(bad, "w") as fh:
+            json.dump(s, fh)
+        r = self.run_profile(sidecar=bad)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        d = json.loads(r.stdout)["record_dir"]
+        self.assertTrue(os.path.exists(os.path.join(d, "profile-failed.json")))
+        with open(os.path.join(d, "overhead.json")) as fh:
+            sources = json.load(fh)["sources"]
+        self.assertTrue(sources and all(v["archived"] for v in sources.values()), sources)
+        self.assertNotEqual(self.verify().returncode, 1, "archived sources must verify")
+
     # ---- second source review (recorder) ----
     def run_profile(self, sidecar=None, tool_dir=None):
         return self.cli("profile", "--run-dir", self.run_dir, "--sidecar", sidecar or self.sidecar, "--repo", self.repo,

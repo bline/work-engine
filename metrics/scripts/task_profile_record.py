@@ -28,6 +28,7 @@ Install a pinned tool once per commit (outside this script):
       "git+https://github.com/bline/agent-routing-lab@<commit>"
 
 Usage
+  task_profile_record.py start      prints the current time; run it before writing the sidecar
   task_profile_record.py check-tool [--tool-dir DIR]
   task_profile_record.py profile   --run-dir R --sidecar S --repo REPO --declare-started-at ISO8601
                                    [--call-id ID ...] [--tool-dir DIR]
@@ -191,7 +192,11 @@ def record_failure(a, raw, stage, detail):
     write_once(os.path.join(d, "profile-failed.json"), {"stage": stage, "detail": detail[-4000:]})
     validation = {"valid": False, "errors": [f"{stage} failed"]}
     write_once(os.path.join(d, "validation.json"), validation)
-    write_overhead_and_sums(a, d, validation, None, frozen_at)
+    try:   # keep the packet bytes recoverable when the sidecar at least parses
+        sources = archive_sources(json.loads(raw), d)
+    except Exception:
+        sources = None
+    write_overhead_and_sums(a, d, validation, None, frozen_at, sources)
     print(json.dumps({"task_revision": None, "record_dir": d, "valid": False, "failure": stage, "dispatch": "may continue"}, indent=1))
 
 
@@ -271,8 +276,10 @@ def cmd_assign(a):
     assigned_at = now()
     frozen_at = read_json(os.path.join(d, "overhead.json"))["frozen_at"]
     packet = read_text(a.dispatched_packet)
-    tokens = [a.task_revision, "task-profile/v0", "sidecar-stageB", "profile-stageB"]
-    leaked = sorted({t for t in tokens if t in packet})
+    # The revision, its hash and any mention of the pilot; case-insensitive. Reported, never blocking.
+    tokens = [a.task_revision, a.task_revision.split("@")[-1], "task-profile", "sidecar", "profile-stageB",
+              "task_profile_record", "dogfood-selection-plan"]
+    leaked = sorted({t for t in tokens if t.lower() in packet.lower()})
     children = [c for c in a.child_session if c != "unknown"]
     write_once(os.path.join(d, name), {
         "task_revision": a.task_revision, "profile_file": os.path.basename(prof), "profile_sha256": sha256(prof),
@@ -408,6 +415,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     default_tool = os.path.join(TOOLS_ROOT, PIN["commit"])
+    sub.add_parser("start", help="print the current time (UTC, microseconds); pass it as --declare-started-at")
     c = sub.add_parser("check-tool")
     c.add_argument("--tool-dir", default=default_tool)
     p = sub.add_parser("profile")
@@ -444,7 +452,9 @@ def main():
     v.add_argument("--no-recompute", action="store_true")
     v.add_argument("--tools-root", default=TOOLS_ROOT)
     a = ap.parse_args()
-    if a.cmd == "check-tool":
+    if a.cmd == "start":
+        print(now())
+    elif a.cmd == "check-tool":
         print(f"ok: {tool(a.tool_dir, PIN['commit'])} at {PIN['commit']}")
     else:
         {"profile": cmd_profile, "assign": cmd_assign, "attribute": cmd_attribute, "verify": cmd_verify}[a.cmd](a)

@@ -1,11 +1,11 @@
 # Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)
 
-Status: **approved 2026-10-27. Appendix A is applied in
-`skills/manual-orchestration/references/coordinator.md`, with the six changes
-listed under it.** Collection starts with the first deployed skill release that
-carries it (`skill_release.py status` names the deployed commit), not with the
-commit: agents read skills from deployed releases (`skills/skill-release`).
-Collection stops at 10 records for the owner's review.
+Status (2026-10-28): **no round is active; do not profile.** Round 1 (run
+directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
+2026-10-28 and was reviewed with the owner
+([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
+coordinator guidance. Round 2, a builder comparison, awaits the owner's approval.
+When a round starts, these lines name its run directory and cap.
 
 ## Why
 
@@ -73,9 +73,10 @@ There are three records, joined by `task_revision`. Its ID is the task ID plus
 packet documents and snapshot identity; `taskprofile` computes it (v0.2.0 and later). Each record is written once. A correction is a new file that names
 the one it supersedes.
 
-All pilot records go in one run directory,
-`~/.local/state/work-engine/task-profile-pilot`, so the count of 10 can be checked
-across sessions. Layout under the run directory:
+Each round's records go in the one run directory its Status lines name, so the
+cap can be checked across sessions; sidecars go in that directory's `sidecars/`
+folder, never beside a packet. Round 1 used
+`~/.local/state/work-engine/task-profile-pilot`. Layout under the run directory:
 
 ```
 task-profiles/<task_revision>/
@@ -115,7 +116,10 @@ append-only, and every record after the first also stores the hashes of the
 files written before it. The data repository's git history is the
 tamper-evident copy.
 
-Tests: `metrics/scripts/tests/test_task_profile_record.py`, 19 cases.
+Tests: `metrics/scripts/tests/test_task_profile_record.py`, 22 cases. They skip
+unless the agent-routing-lab checkout (`AGENT_ROUTING_LAB`, default
+`~/code/agent-routing-lab`) is at the pinned commit; check that the run reports
+no skips.
 - **Normal operation:** the full cycle, model substitution, an unknown child, and
   separate builder and reviewer revisions.
 - **Integrity failures v0.1.0 missed:** a missing hash list, an unlisted file, an
@@ -333,6 +337,23 @@ paragraph that begins "Before dispatch, compare the packet":
    `supervisor.md` now points to the task-profile step, and a supervisor declares
    itself as `supervisor`. In this plan, "coordinator" means whoever dispatches
    the builder or reviewer.
+
+**Changed after round 1 (2026-10-28, owner: "proceed with fixes";
+[review](probes/dogfood-pilot-round1-review-20261028.md)):**
+7. **Rounds.** The guidance profiles only while the Status lines name an active
+   round, its run directory and cap, so later rounds change this plan, not the
+   guidance.
+8. **The model doing the work.** An adapter or launcher is not profiled; the
+   dispatch of the model it starts is, once.
+9. **Hygiene.** Sidecars go in `<run>/sidecars/`; packets and files a child is
+   told to read never mention the pilot, a profile or a revision ID.
+10. **Git snapshots only**, the restriction the first text omitted.
+11. **Times.** `task_profile_record.py start` stamps the declaration start, and
+    `--selected-at` is taken to the microsecond, never copied.
+12. **Harness format** `<cli>/<version>;tier=<tier>`.
+
+`task_profile_record.py` also archives sources in failure records and reports
+pilot mentions and the revision hash, case-insensitively.
 
 Both commands' usage lines are generated blocks (`cli_synopsis.py`), so a
 changed argument fails `skill_release.py check`.
