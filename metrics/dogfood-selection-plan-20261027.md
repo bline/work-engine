@@ -398,7 +398,9 @@ All of these, then owner approval:
    counting is by enrolled episodes, not `task-profiles/` entries; a failed
    `profile` leaves the task unenrolled and dispatched as usual, and a failed
    `enroll` follows the failure handling above.
-3. The joins demonstrated on two round-1 records.
+3. The joins demonstrated on two round-1 records. **Done 2026-10-28**: the chain
+   resolves, and gaps J-1 to J-3 must be fixed first
+   ([join check](probes/dogfood-round2-join-check-20261028.md)).
 4. These Status lines name round 2, its run directory
    (`~/.local/state/work-engine/task-profile-pilot-2`) and its limits (20 episodes,
    2 Terra in flight, 10 Terra repair rounds).
