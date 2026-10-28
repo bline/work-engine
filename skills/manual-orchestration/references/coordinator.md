@@ -23,6 +23,29 @@ A useful packet conveys the exact accepted authority, source/subject identity, *
 
 Before dispatch, compare the packet to the owning contract and current candidate. If the run is meant to be compared with another, freeze the subject, controls and scoring before either arm launches ([measurement](measurement.md#accounting-rules)); a run already started cannot be relabelled prospective.
 
+**Task profile (shadow pilot).** For a builder or reviewer dispatch in production work with a write scope or review subject. Experiment arms, scouts, recon without a write scope and administrative operations are not profiled. The plan is `metrics/dogfood-selection-plan-20261027.md`. Every pilot record goes in one run directory, `~/.local/state/work-engine/task-profile-pilot` (`<run>` below). Once `<run>/task-profiles/` holds 10 entries, stop profiling and tell the owner; the owner's review decides what follows.
+1. Freeze the packet.
+2. Note the time, then write a stage B sidecar from the packet and its authoritative sources, using the template in the plan's Appendix B. Name no model, effort or builder in it. Record unknown fields as unknown; never guess to fill a field. Its `guidance_sha256` is the `sha256sum` of `<skill-dir>/references/coordinator.md`, where `<skill-dir>` is this skill's directory.
+3. Before choosing the model, run `python3 -I metrics/scripts/task_profile_record.py profile --run-dir <run> --sidecar <file> --repo <repo> --declare-started-at <time>` from the repository root. A validation failure is recorded and does not block dispatch.
+4. After dispatch, run `task_profile_record.py assign` with the requested and reported configuration, the time you chose the model (`--selected-at`), the dispatched packet and the child's session or thread ID. After the child finishes, build a usage ledger covering its run (`usage_ledger.py build`, `--since` the dispatch time, `--out` a directory outside `<run>`) and run `task_profile_record.py attribute` with it as `--ledger`.
+
+<!-- cli-synopsis script=metrics/scripts/task_profile_record.py subs="profile assign attribute" display="python3 -I metrics/scripts/task_profile_record.py" -->
+```text
+python3 -I metrics/scripts/task_profile_record.py profile --run-dir RUN_DIR --sidecar SIDECAR --repo REPO --declare-started-at DECLARE_STARTED_AT [--call-id CALL_ID] [--tool-dir TOOL_DIR]
+python3 -I metrics/scripts/task_profile_record.py assign --run-dir RUN_DIR --task-revision TASK_REVISION --role {builder,reviewer} --requested-model REQUESTED_MODEL --requested-effort REQUESTED_EFFORT --harness HARNESS [--reported-model REPORTED_MODEL] [--reported-effort REPORTED_EFFORT] --run RUN --dispatched-packet DISPATCHED_PACKET --child-session CHILD_SESSION [--selected-at SELECTED_AT] [--retained]
+python3 -I metrics/scripts/task_profile_record.py attribute --run-dir RUN_DIR --task-revision TASK_REVISION --ledger LEDGER [--assignment ASSIGNMENT] [--since SINCE] [--until UNTIL]
+# other subcommands (put --help after one for its usage): check-tool, verify
+```
+<!-- /cli-synopsis -->
+<!-- cli-synopsis script=metrics/scripts/usage_ledger.py subs="build" display="python3 -I metrics/scripts/usage_ledger.py" -->
+```text
+python3 -I metrics/scripts/usage_ledger.py build [--since SINCE] [--until UNTIL] --out OUT [--no-codex] [--no-claude] [--streams [STREAMS ...]]
+# other subcommands (put --help after one for its usage): reconcile-trial, windows
+```
+<!-- /cli-synopsis -->
+
+Never put the sidecar or profile in a child's packet or prompt.
+
 ## Dispatch and the retained-or-fresh choice
 
 Before dispatch, designate who collects each result and who resumes the parent. End your turn only when no required collection or integration remains, or a **verified** external mechanism owns resumption; human visibility is not automatic wakeup. If neither waiting nor external resumption is available, surface the blocked handoff rather than assuming completion will restart you. Use `spawn_agent` with `fork_turns="none"` for a new context and `followup_task` only for an intended retained continuation; a message to an idle agent is not a launch. **Before any substantial `followup_task`, run the pre-dispatch check** in [context boundary](context-boundary.md) and record retain or fresh with its reason. Request the model and effort from the active user selection ([model selection](../../../docs/model-selection.md)); record requested and observed identity separately.

@@ -1,11 +1,11 @@
 # Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)
 
-Status: **approved 2026-10-27; not yet active.** Collection starts after the
-steps in [Before activation](#before-activation); the tool install is done. The
-guidance text in Appendix A has not been applied to `skills/`. Since 2026-10-27
-agents read skills from a deployed release (`skills/skill-release`), so the
-guidance takes effect when its commit is released and deployed, not when
-`skills/` is edited.
+Status: **approved 2026-10-27. Appendix A is applied in
+`skills/manual-orchestration/references/coordinator.md`, with the six changes
+listed under it.** Collection starts with the first deployed skill release that
+carries it (`skill_release.py status` names the deployed commit), not with the
+commit: agents read skills from deployed releases (`skills/skill-release`).
+Collection stops at 10 records for the owner's review.
 
 ## Why
 
@@ -40,7 +40,7 @@ not published, because the underlying trial data carries no reuse license
 | Record a stage B profile for each eligible dispatch before the builder or reviewer is selected | Enter the builder's or reviewer's prompt, packet or context |
 | Record who declared it (coordinator model, effort, harness, guidance and schema versions) | Change the plan, its requirements, the model, the effort, the review route or acceptance |
 | Record validation failures and unknown fields | Block or delay a dispatch because a field is unknown or validation failed |
-| Run the existing script `taskprofile.py` (no model call of its own) | Add any model call. The coordinator writes the declaration in its own turn |
+| Run `task_profile_record.py`, which calls the pinned `taskprofile` (no model call of its own) | Add any model call. The coordinator writes the declaration in its own turn |
 
 Model and effort keep coming from the active user selection
 ([model selection](../docs/model-selection.md)), as
@@ -54,9 +54,9 @@ gate" applies here as well.
    final. Record their sha256.
 2. **Declare.** The coordinator writes the stage B sidecar (Appendix B) from the
    frozen packet and its sources. It names no builder, reviewer, model or effort.
-3. **Compute and freeze.** Run `taskprofile.py compute` then `validate`. Write the
-   profile once. On failure, write a failure record with the errors, then go on
-   to step 4.
+3. **Compute and freeze.** `task_profile_record.py profile` runs the pinned
+   `taskprofile compute`, then `validate`. Write the profile once. On failure,
+   write a failure record with the errors, then go on to step 4.
 4. **Select.** Choose the builder or reviewer exactly as today.
 5. **Dispatch and record the assignment** (below), referencing the profile.
 
@@ -73,7 +73,9 @@ There are three records, joined by `task_revision`. Its ID is the task ID plus
 packet documents and snapshot identity; `taskprofile` computes it (v0.2.0 and later). Each record is written once. A correction is a new file that names
 the one it supersedes.
 
-Layout under the run directory:
+All pilot records go in one run directory,
+`~/.local/state/work-engine/task-profile-pilot`, so the count of 10 can be checked
+across sessions. Layout under the run directory:
 
 ```
 task-profiles/<task_revision>/
@@ -113,7 +115,7 @@ append-only, and every record after the first also stores the hashes of the
 files written before it. The data repository's git history is the
 tamper-evident copy.
 
-Tests: `metrics/scripts/tests/test_task_profile_record.py`, 18 cases.
+Tests: `metrics/scripts/tests/test_task_profile_record.py`, 19 cases.
 - **Normal operation:** the full cycle, model substitution, an unknown child, and
   separate builder and reviewer revisions.
 - **Integrity failures v0.1.0 missed:** a missing hash list, an unlisted file, an
@@ -147,13 +149,16 @@ Tests: `metrics/scripts/tests/test_task_profile_record.py`, 18 cases.
   | `assigned_at` | timestamp |
   | `run` | run registry name |
   | `retained_continuation` | true when it continues an existing assignment on the same revision |
+  | `recorder` | path and sha256 of the record script that wrote it |
 
 - **Overhead** (`overhead.json`):
   - start and freeze timestamps for the declaration;
   - coordinator call IDs in that interval, so the usage ledger can price them;
   - validation errors;
   - the count of unknown declared fields;
-  - any re-declaration.
+  - any re-declaration;
+  - the record script's path and sha256 (`recorder`), since coordinators run it
+    from their checkout rather than from a release.
 
   Timestamps live here, not in the profile, so the profile stays reproducible.
 
@@ -176,12 +181,15 @@ records only a new assignment observation.
 
 ## Measurement environment
 
-- **The supervisor change at the next Codex reset is an environment change.** The
-  Astra to `gpt-6.1-sol` xhigh switch (window reset 11-01 per the experiment plan)
-  changes who writes declarations. Profiles carry the coordinator's identity.
-  Recommendation: run the pilot entirely after the switch, so all 10 share one
-  coordinator. The switch has its own gates (supervisor decision replay O2, then
-  a monitored pilot) and doesn't wait for this plan.
+- **The supervisor change is an environment change.** The Astra to
+  `gpt-6.1-sol` xhigh switch changes who writes declarations. Profiles carry the
+  coordinator's identity. This plan first recommended running the pilot entirely
+  after the switch, so all 10 share one coordinator. **The owner decided on
+  2026-10-28 to start before it** ("proceed"): the Codex reset came that day, the
+  switch now waits for O2 and a real-slice validation (O4 or E5), and Terra's
+  first production builds would otherwise go unrecorded. A switch during the
+  pilot is reported as an environment change, using `declared_by`. The switch
+  has its own gates and doesn't wait for this plan.
 - **Introducing the sidecar is an environment change too,** under the experiment
   plan's re-pin rule. Asking for declarations may itself change how plans are
   written. Records from before and after are not compared directly.
@@ -228,7 +236,9 @@ outcomes: make collection permanent, revise the schema, or stop.
       from GitHub. `check-tool` passes on the default path, and a smoke profile in
       a scratch run directory verified.
    2. Complete the separately governed Sol 6.1 supervisor qualification and
-      transition.
+      transition. **Reordered by the owner on 2026-10-28:** step 3 goes first,
+      and the transition happens whenever its own gates pass (see
+      [Measurement environment](#measurement-environment)).
    3. Apply Appendix A to the coordinator guidance in its own commit, then
       release and deploy that commit (`skill_release.py plan`, then deploy).
    4. Run the 10 eligible dispatches under the existing assignment policy, then
@@ -265,7 +275,8 @@ outcomes: make collection permanent, revise the schema, or stop.
 4. Owner approval of this plan and of Appendix A: given 2026-10-27 (step 0).
    Apply Appendix A in one commit and deploy it as one release, so the guidance
    version recorded in each profile is a single hash.
-   Appendix A's script path changes to the installed `taskprofile` command.
+   Appendix A calls `task_profile_record.py`, which runs the pinned installed
+   `taskprofile`.
 
 ## Out of scope for phase 0
 
@@ -273,7 +284,7 @@ Adaptive or randomized assignment, a separate profiler call (kept for later
 agreement audits), CatBoost or any router, retrospective extraction from old
 packets, and publishing data.
 
-## Appendix A: proposed coordinator guidance (not applied)
+## Appendix A: coordinator guidance as approved 2026-10-27
 
 To insert in `skills/manual-orchestration/references/coordinator.md`, after the
 paragraph that begins "Before dispatch, compare the packet":
@@ -294,6 +305,41 @@ paragraph that begins "Before dispatch, compare the packet":
 >    against the usage ledger.
 >
 > Never put the sidecar or profile in a child's packet or prompt.
+
+**Changes made when applying it** (approved by the owner on 2026-10-28, "proceed"):
+1. **Scope.** "In production work", and the exclusions named: experiment arms,
+   scouts, recon without a write scope, administrative operations. The approved
+   text said only "with a write scope or review subject", which admits experiment
+   arms; [Eligible dispatches](#eligible-dispatches) excludes them.
+2. **Template reference.** The link `../../../metrics/...` became the repository
+   path `metrics/dogfood-selection-plan-20261027.md`, Appendix B. A deployed
+   release holds only `skills/`, so the relative link resolves to nothing from
+   the installed copy.
+3. **Guidance version.** The sidecar's `guidance_sha256` is the sha256 of
+   `<skill-dir>/references/coordinator.md`, the installed copy, as
+   [Records](#records) requires. The approved text did not say where it comes from.
+4. **One run directory and a stop.** All records go in
+   `~/.local/state/work-engine/task-profile-pilot`, and coordinators stop at 10
+   entries and tell the owner. The approved text gave no run directory and no stop,
+   so the 10 could not be counted across sessions and collection would continue
+   past the pilot.
+5. **Usage ledger.** The approved text said "against the usage ledger" without
+   naming one. `usage_ledger.py build` makes a ledger for a time window, so step 4
+   names that command and keeps its output outside the run directory, which is
+   copied to the data repository.
+
+6. **Supervisors.** In runs with supervisors, the supervisor launches the
+   builders and reviewers, and it reads `supervisor.md`, not `coordinator.md`.
+   `supervisor.md` now points to the task-profile step, and a supervisor declares
+   itself as `supervisor`. In this plan, "coordinator" means whoever dispatches
+   the builder or reviewer.
+
+Both commands' usage lines are generated blocks (`cli_synopsis.py`), so a
+changed argument fails `skill_release.py check`.
+
+`task_profile_record.py` now also records its own path and sha256 in every
+record (`recorder`): coordinators run it from their checkout, so a change to it
+during the pilot would otherwise go unrecorded.
 
 ## Appendix B: stage B sidecar template
 

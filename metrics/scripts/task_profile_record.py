@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Shadow-mode task-profile records for Work Engine dispatches
-(metrics/dogfood-selection-plan-20261027.md). NOT ACTIVE: nothing in skills/ calls this yet.
+(metrics/dogfood-selection-plan-20261027.md). Called by the coordinator guidance
+(skills/manual-orchestration/references/coordinator.md) during the shadow pilot.
 
 Uses the pinned agent-routing-lab release (`taskprofile`) and writes, never overwriting:
 
@@ -12,6 +13,9 @@ Uses the pinned agent-routing-lab release (`taskprofile`) and writes, never over
     assignment.json             first assignment; retained continuations add assignment-02.json, ...
     attribution-<assignment>.json  models actually used, resolved from the usage ledger
     SHA256SUMS                  append-only index; a listed file that changes is an integrity failure
+
+Every overhead, assignment and attribution record stores `recorder`, this script's path and
+sha256: coordinators run it from their checkout, not from a release.
 
 Every record after the first also stores `prior_files`: the sha256 of each file that existed
 when it was written. The run directory is then copied into the data repository, whose git
@@ -78,6 +82,11 @@ def parse_ts(text):
 def sha256(path):
     with open(path, "rb") as fh:
         return hashlib.sha256(fh.read()).hexdigest()
+
+
+def recorder():
+    path = os.path.realpath(__file__)
+    return {"path": path, "sha256": sha256(path)}
 
 
 def read_json(path):
@@ -159,7 +168,7 @@ def write_overhead_and_sums(a, d, validation, unknown, frozen_at, sources=None):
         "declare_started_at": a.declare_started_at, "frozen_at": frozen_at, "declare_wall_seconds": wall,
         "coordinator_call_ids": a.call_id or [], "tool": {**PIN, "tool_dir": a.tool_dir},
         "validation_errors": len(validation["errors"]), "unknown_declared_fields": unknown,
-        "sources": sources or {}, "prior_files": prior_files(d)})
+        "sources": sources or {}, "recorder": recorder(), "prior_files": prior_files(d)})
     append_sums(d)
 
 
@@ -278,7 +287,7 @@ def cmd_assign(a):
         "retained_continuation": bool(existing),
         "dispatched_packet": {"path": os.path.abspath(a.dispatched_packet), "sha256": sha256(a.dispatched_packet)},
         "profile_absent_from_dispatch": not leaked, "leaked_tokens": leaked,
-        "prior_files": prior_files(d)})
+        "recorder": recorder(), "prior_files": prior_files(d)})
     append_sums(d)
     print(json.dumps({"assignment": os.path.join(d, name), "profile_absent_from_dispatch": not leaked}, indent=1))
 
@@ -327,7 +336,7 @@ def cmd_attribute(a):
         "models_seen": seen, "efforts_seen": efforts,
         "model_matches_request": (seen == [req["model"]]) if calls else None,
         "effort_matches_request": (efforts == [req["effort"]]) if efforts else None,
-        "prior_files": prior_files(d)})
+        "recorder": recorder(), "prior_files": prior_files(d)})
     append_sums(d)
     print(json.dumps({"attribution": out, "status": status, "models_seen": seen}, indent=1))
 

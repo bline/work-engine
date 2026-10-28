@@ -4,6 +4,8 @@ Own a bounded group from packet receipt through worker collection, final evidenc
 
 ## Launch
 
+Before launching a builder or reviewer, record its task profile as **Task profile (shadow pilot)** in [coordinator](coordinator.md#packets) describes; declare yourself as `supervisor`.
+
 Assign one coherent outcome to a worker with explicit file/process ownership and the current packet revision. Tell it to load this skill as worker: invoke `$manual-orchestration`, or read `skills/manual-orchestration/SKILL.md` when the skill is not installed. After launch, verify its session and send its identity binding as [SKILL.md](../SKILL.md#launching-a-child) describes. Compare the requested model and effort with the launch configuration promptly; a mismatch needs an explicit disposition before that worker does engineering, and its consumed work remains part of accounting. When a child session identity matters for handoff, review continuity or measurement, bind it to actual runtime lineage; an inherited shell thread ID may name the parent. Distinguish launch configuration and recorded turn context from backend identity if the latter is not exposed.
 
 ## Next task, remediation and handoff

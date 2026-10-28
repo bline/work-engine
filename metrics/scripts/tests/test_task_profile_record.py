@@ -256,6 +256,20 @@ class RecorderTests(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("does not match its hash", r.stdout)
 
+    def test_records_name_their_recorder(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        self.assign(out["task_revision"])
+        self.ledger_rows([{"provider": "anthropic", "session": "sess-1", "model": "model-b", "effort": "medium", "ts": "2026-01-01T00:01:00Z"}])
+        self.cli("attribute", "--run-dir", self.run_dir, "--task-revision", out["task_revision"], "--ledger", self.ledger)
+        script = os.path.realpath(SCRIPT)
+        expected = {"path": script, "sha256": rec.sha256(script)}
+        for name in ("overhead.json", "assignment.json", "attribution-assignment.json"):
+            with open(os.path.join(d, name)) as fh:
+                self.assertEqual(json.load(fh)["recorder"], expected, name)
+        r = self.verify()
+        self.assertEqual(r.returncode, 0, r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
