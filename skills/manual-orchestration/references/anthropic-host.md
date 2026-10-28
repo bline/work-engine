@@ -9,9 +9,9 @@ is Claude Code.
 | --- | --- | --- |
 | `spawn_agent`, `fork_turns="none"` | `Agent` tool with a non-fork `subagent_type` (`general-purpose`, or a narrower type when it fits) | A `fork` inherits your whole context; it is a retained context, not a fresh one. |
 | `followup_task` | `SendMessage` to the agent's ID | **Any** message to a finished agent resumes it with its full transcript. Every `SendMessage` that carries work is a retained dispatch and needs the pre-dispatch check. |
-| `wait_agent` | nothing: the harness notifies on completion | Do not read or tail a running agent's output file, sleep, or list agents to check progress. Do independent work or end the turn's tool use until notified. |
+| `wait_agent` | nothing: the harness notifies on completion. The child's result arrives separately, as a framed hand-back message (`SubagentHandback`); the completion notice carries no result text | Do not read or tail a running agent's output file, sleep, or list agents to check progress. Do independent work or end the turn's tool use until notified. |
 | requested model and effort | `Agent` `model` (`opus`, `sonnet`, `haiku`, `fable`) | Set `effort` only when the user or an owning instruction asks. Observed model is `message.model` in the transcript. |
-| rollout, `session_meta` lineage | `~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl` and `agent-<id>.meta.json` | The ID is returned by the spawn call; `meta.json` records description and tool-use ID. |
+| rollout, `session_meta` lineage | `~/.claude/projects/<project>/<root session>/subagents/agent-<id>.jsonl` and `agent-<id>.meta.json` | The ID is returned by the spawn call. `meta.json` records the description, tool-use ID, `agentType`, `parentAgentId`, `spawnDepth`, `requestShape`, and the requested `model` and `effort`. A nested child's files sit in the **root** session's `subagents/`, with `parentAgentId` naming its parent. The spawn result also names a `tasks/<id>.output` file; it is the full transcript, so do not read it. |
 | shared worktree | `Agent` `isolation: "worktree"` | Use it when parallel builders could touch the same files; the worktree is removed if unchanged. **Check the base at entry:** two harness worktrees on 2026-10-22 started at `a69efc44`, 278 commits behind HEAD. The packet names the required base; the worker runs `git rev-parse HEAD` and `git status --short`, resets its own clean branch to the base if they differ, records it, and stops if the tree is dirty. |
 
 ## Models and review tiers
@@ -119,8 +119,12 @@ they do not establish model identity, task completion, or transfer authority.
 - The Codex `--session` and `agents` modes read rollouts only; use the `claude`
   and `claude-agents` modes, or `child_context.py claude`, for transcripts.
 - Whether a subagent can itself launch agents depends on the tools its type
-  is granted; a supervisor layer needs a type that includes `Agent`. Confirm
-  before assigning a supervisor role; otherwise the coordinator supervises.
+  is granted; a supervisor layer needs a type that includes `Agent`. A
+  `general-purpose` supervisor launched a worker on 2026-10-27 (`spawnDepth`
+  2; n = 1). For another type, confirm before assigning a supervisor role,
+  for example by making the launch the supervisor's first action, with an
+  instruction to stop and report if it is refused. Otherwise the coordinator
+  supervises.
 - The identity binding is the agent ID and transcript path from the spawn
   result, sent after launch by `SendMessage` as in [SKILL.md](../SKILL.md#launching-a-child).
 - Repository instructions still apply: Claude subagents read `CLAUDE.md` and
