@@ -5,7 +5,8 @@ directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
 2026-10-28 and was reviewed with the owner
 ([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
 coordinator guidance. Round 2, a builder comparison (revision 4 under "Round 2"
-below, design review passed), awaits its tools and the owner's approval.
+below; design and tooling reviewed), awaits the join demonstration and the
+owner's approval.
 When a round starts, these lines name its run directory and cap.
 
 ## Why
@@ -388,8 +389,11 @@ All of these, then owner approval:
    `status` built and tested, with the random draw, the screening log, exclusive
    and idempotent enrollment (including a failure after the record is written and
    two concurrent calls), the pause flag, the in-flight check and the live
-   rework budget.
-2. The coordinator guidance updated for round 2 and released: screening,
+   rework budget. **Done 2026-10-28** (`5987a47c` to `57066b1a`, 79 tests; code
+   review ready to integrate:
+   [record](probes/dogfood-round2-tooling-review-astra-20261028.md)). Episode
+   records are self-verifying (`content_sha256`).
+2. **Done 2026-10-28** (released with this change). The coordinator guidance updated for round 2 and released: screening,
    enrollment and the drawn arm replace "choose as today" for enrolled tasks;
    counting is by enrolled episodes, not `task-profiles/` entries; a failed
    `profile` leaves the task unenrolled and dispatched as usual, and a failed
