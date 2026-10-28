@@ -38,7 +38,23 @@ Usage
                                    [--reported-model M] [--reported-effort E] [--selected-at ISO8601] [--retained]
   task_profile_record.py attribute --run-dir R --task-revision ID --ledger DIR [--assignment NAME]
                                    [--since ISO8601] [--until ISO8601]
+  task_profile_record.py init-round --run-dir R --cap N --terra-in-flight N --terra-repair-budget N
+  task_profile_record.py enroll    --run-dir R --task-id T --task-revision REV --eligible yes|no --reason TEXT
+  task_profile_record.py withdraw  --run-dir R --task-id T --reason TEXT
+  task_profile_record.py review    --run-dir R --task-id T --outcome pass|fail --p1 N --p2 N --p3 N --receipt PATH
+  task_profile_record.py repair    --run-dir R --task-id T --review-receipt PATH
+  task_profile_record.py close     --run-dir R --task-id T --disposition accepted|abandoned --reason TEXT
+                                   --pre-review-fixes N --escalations N [--review-receipt PATH ...] [--artifact PATH ...]
+  task_profile_record.py pause     --run-dir R --reason TEXT
+  task_profile_record.py resume    --run-dir R --owner-approval TEXT
+  task_profile_record.py status    --run-dir R [--task-id T]
   task_profile_record.py verify    --run-dir R [--repo REPO] [--no-recompute] [--tools-root DIR]
+
+Round-2 episode records live in <run_dir>/enrollments/<task_id>/ with their own
+SHA256SUMS and prior_files. Initialize round.json before using round commands.
+Round commands print one JSON object; exit 2 is a usage refusal, 1 an integrity
+failure, and 0 includes logged screening refusals. A run-level advisory lock
+serializes round commands; enrollment.json is also created with O_EXCL.
 
 --child-session takes the child's Claude session id or Codex thread id; pass "unknown" only when
 the runtime gave none, and attribution will then be unresolvable.
@@ -56,6 +72,7 @@ sessions unless --since/--until bound it; a retained or reused thread needs a wi
 """
 import argparse
 import collections
+import fcntl
 import datetime as dt
 import glob
 import hashlib
@@ -279,7 +296,12 @@ def cmd_assign(a):
     # The revision, its hash and any mention of the pilot; case-insensitive. Reported, never blocking.
     tokens = [a.task_revision, a.task_revision.split("@")[-1], "task-profile", "sidecar", "profile-stageB",
               "task_profile_record", "dogfood-selection-plan"]
-    leaked = sorted({t for t in tokens if t.lower() in packet.lower()})
+    leaked = {t for t in tokens if t.lower() in packet.lower()}
+    if a.role == "reviewer":
+        leaked.update(t for t in ("gpt-6.1-terra", "gpt-6.1-sol", "Sol 6.1") if t.lower() in packet.lower())
+        if re.search(r"\bTerra\b", packet, re.IGNORECASE):
+            leaked.add("Terra")
+    leaked = sorted(leaked)
     children = [c for c in a.child_session if c != "unknown"]
     write_once(os.path.join(d, name), {
         "task_revision": a.task_revision, "profile_file": os.path.basename(prof), "profile_sha256": sha256(prof),
@@ -351,9 +373,16 @@ def cmd_attribute(a):
 def cmd_verify(a):
     worst = 0  # 0 fully verified, 2 recompute not done, 1 problem
     dirs = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*@*")))
-    if not dirs:
-        print(f"no task-profile records under {a.run_dir}")
+    episodes = enrollment_dirs(a.run_dir)
+    results = {}
+    if not dirs and not episodes:
+        print(json.dumps({"status": "no task-profile records or episode records", "run_dir": a.run_dir}))
         sys.exit(3)
+    for d in episodes:
+        problems = integrity_problems(d)
+        results[os.path.relpath(d, a.run_dir)] = {"status": "integrity failure" if problems else "verified", "problems": problems}
+        if problems:
+            worst = 1
     for d in dirs:
         problems, notes = [], []
         have = listed(d)
@@ -407,8 +436,307 @@ def cmd_verify(a):
         state = 1 if problems else (2 if notes else 0)
         worst = 1 if 1 in (worst, state) else max(worst, state)
         label = {0: "verified", 2: "hashes ok; " + "; ".join(notes), 1: "; ".join(problems)}[state]
-        print(f"{os.path.basename(d)}: {label}")
+        results[os.path.relpath(d, a.run_dir)] = {"status": label, "problems": problems, "notes": notes}
+    print(json.dumps({"records": results, "exit_code": worst}, sort_keys=True))
     sys.exit(worst)
+
+
+TERRA = "gpt-6.1-terra"
+SOL = "gpt-6.1-sol"
+ROUND_COMMANDS = {"init-round", "enroll", "withdraw", "review", "repair", "close", "pause", "resume", "status"}
+TASK_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
+
+
+class UsageRefusal(Exception):
+    pass
+
+
+class IntegrityFailure(Exception):
+    pass
+
+
+def nonnegative(text):
+    value = int(text)
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be nonnegative")
+    return value
+
+
+def episode_dir(run_dir, task_id):
+    if not TASK_ID.fullmatch(task_id):
+        raise UsageRefusal("invalid task ID")
+    return os.path.join(run_dir, "enrollments", task_id)
+
+
+def integrity_problems(d):
+    """Check an episode's complete hash list and its backward record links."""
+    problems = []
+    try:
+        have = listed(d)
+        files = record_files(d)
+        if not have:
+            problems.append(f"{SUMS} missing or empty")
+        problems += [f"unlisted file: {n}" for n in files if n not in have]
+        problems += [f"listed but missing: {n}" for n in have if n not in files]
+        problems += [f"hash mismatch: {n}" for n in files if n in have and sha256(os.path.join(d, n)) != have[n]]
+        for n in files:
+            if not n.endswith(".json"):
+                continue
+            data = read_json(os.path.join(d, n))
+            for pn, digest in data.get("prior_files", {}).items():
+                if pn not in files or sha256(os.path.join(d, pn)) != digest:
+                    problems.append(f"{n} recorded {pn} with a different hash")
+    except (OSError, ValueError, TypeError, AttributeError) as e:
+        problems.append(f"unreadable integrity record: {e}")
+    return problems
+
+
+def episode_write(d, name, data):
+    if os.path.exists(os.path.join(d, name)):
+        raise UsageRefusal(f"{name} already exists: records are write-once")
+    problems = integrity_problems(d)
+    if problems:
+        raise IntegrityFailure("; ".join(problems))
+    data = {**data, "recorder": recorder(), "prior_files": prior_files(d)}
+    write_once(os.path.join(d, name), data)
+    append_sums(d)
+    return data
+
+
+def enrollment_dirs(run_dir):
+    return sorted(d for d in glob.glob(os.path.join(run_dir, "enrollments", "*")) if os.path.isdir(d))
+
+
+def enrollments(run_dir):
+    return [(d, read_json(os.path.join(d, "enrollment.json"))) for d in enrollment_dirs(run_dir)
+            if os.path.isfile(os.path.join(d, "enrollment.json"))]
+
+
+def terminal(d):
+    return any(os.path.exists(os.path.join(d, n)) for n in ("close.json", "withdraw.json"))
+
+
+def terra_repairs(run_dir):
+    return sum(len(glob.glob(os.path.join(d, "repair-*.json"))) for d, e in enrollments(run_dir) if e["arm"] == TERRA)
+
+
+def screening(run_dir, data):
+    with open(os.path.join(run_dir, "screening.jsonl"), "a") as fh:
+        fh.write(json.dumps(data, sort_keys=True) + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+
+
+def pause_round(run_dir, reason):
+    path = os.path.join(run_dir, "PAUSED")
+    if os.path.exists(path):
+        return {"outcome": "already_paused", "pause": read_json(path)}
+    data = {"reason": reason, "paused_at": now(), "recorder": recorder()}
+    write_once(path, data)
+    return {"outcome": "paused", "pause": data}
+
+
+def cmd_init_round(a):
+    path = os.path.join(a.run_dir, "round.json")
+    if os.path.exists(path):
+        raise UsageRefusal("round.json already exists")
+    data = {"cap": a.cap, "terra_in_flight": a.terra_in_flight, "terra_repair_budget": a.terra_repair_budget,
+            "initialized_at": now(), "recorder": recorder()}
+    write_once(path, data)
+    return {"outcome": "initialized", "round": data}
+
+
+def cmd_enroll(a):
+    d = episode_dir(a.run_dir, a.task_id)
+    try:
+        record_dir(a.run_dir, a.task_revision)
+    except SystemExit as e:
+        raise UsageRefusal(str(e)) from e
+    if a.task_revision.split("@")[0] != a.task_id:
+        raise UsageRefusal("task revision belongs to a different task")
+    screened = {"time": now(), "task_id": a.task_id, "task_revision": a.task_revision,
+                "eligible": a.eligible == "yes", "reason": a.reason}
+    screening(a.run_dir, {"event": "screened", **screened})
+    path = os.path.join(d, "enrollment.json")
+    out = {"task_id": a.task_id}
+    if os.path.exists(path):
+        out.update(outcome="already_enrolled", arm=read_json(path)["arm"])
+    elif not screened["eligible"]:
+        out["outcome"] = "not_eligible"
+    elif os.path.exists(os.path.join(a.run_dir, "PAUSED")):
+        out["outcome"] = "paused"
+    else:
+        config = read_json(os.path.join(a.run_dir, "round.json"))
+        episodes = enrollments(a.run_dir)
+        open_terra = sum(e["arm"] == TERRA and not terminal(ed) for ed, e in episodes)
+        if len(episodes) >= config["cap"]:
+            out["outcome"] = "cap_reached"
+        elif open_terra >= config["terra_in_flight"]:
+            out["outcome"] = "in_flight_limit"
+        else:
+            byte = os.urandom(1)[0]
+            arm = TERRA if byte & 1 else SOL
+            data = {**screened, "screened_at": screened["time"], "enrolled_at": now(), "arm": arm,
+                    "draw_source": "os.urandom(1)[0] & 1", "draw_byte": byte, "recorder": recorder()}
+            os.makedirs(d, exist_ok=True)
+            try:
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+                with os.fdopen(fd, "w") as fh:
+                    json.dump(data, fh, indent=1, sort_keys=True)
+                    fh.write("\n")
+                    fh.flush()
+                    os.fsync(fh.fileno())
+            except FileExistsError:
+                out.update(outcome="already_enrolled", arm=read_json(path)["arm"])
+            else:
+                append_sums(d)
+                out.update(outcome="enrolled", arm=arm)
+    screening(a.run_dir, {"event": "result", "time": now(), "task_revision": a.task_revision, **out})
+    return out
+
+
+def active_episode(a):
+    d = episode_dir(a.run_dir, a.task_id)
+    path = os.path.join(d, "enrollment.json")
+    if not os.path.isfile(path):
+        raise UsageRefusal("task is not enrolled")
+    if terminal(d):
+        raise UsageRefusal("episode is already closed or withdrawn")
+    return d, read_json(path)
+
+
+def assignments(run_dir, task_id):
+    paths = glob.glob(os.path.join(run_dir, "task-profiles", task_id + "@*", "assignment*.json"))
+    return [{"path": os.path.abspath(p), "sha256": sha256(p), "assigned_at": read_json(p)["assigned_at"]}
+            for p in sorted(paths)]
+
+
+def file_evidence(paths):
+    return [{"path": os.path.abspath(p), "sha256": sha256(p)} for p in paths]
+
+
+def cmd_withdraw(a):
+    d, _ = active_episode(a)
+    if glob.glob(os.path.join(a.run_dir, "task-profiles", a.task_id + "@*", "assignment*.json")):
+        raise UsageRefusal("cannot withdraw after dispatch")
+    data = episode_write(d, "withdraw.json", {"task_id": a.task_id, "reason": a.reason, "withdrawn_at": now()})
+    return {"outcome": "withdrawn", "record": data}
+
+
+def cmd_review(a):
+    if a.outcome == "pass" and (a.p1 or a.p2):
+        raise UsageRefusal("pass requires zero P1 and P2 findings")
+    d, e = active_episode(a)
+    data = episode_write(d, "review-first.json", {"task_id": a.task_id, "outcome": a.outcome,
+                         "p1": a.p1, "p2": a.p2, "p3": a.p3, "receipt": file_evidence([a.receipt])[0], "reviewed_at": now()})
+    if e["arm"] == TERRA and a.p1:
+        pause_round(a.run_dir, f"Terra first-review P1 in episode {a.task_id}")
+    return {"outcome": "reviewed", "record": data}
+
+
+def cmd_repair(a):
+    d, _ = active_episode(a)
+    rounds = glob.glob(os.path.join(d, "repair-*.json"))
+    number = max([int(os.path.basename(p)[7:-5]) for p in rounds], default=0) + 1
+    data = episode_write(d, f"repair-{number:02d}.json", {"task_id": a.task_id, "round": number,
+                         "review_receipt": file_evidence([a.review_receipt])[0], "resubmitted_at": now()})
+    total = terra_repairs(a.run_dir)
+    if total >= read_json(os.path.join(a.run_dir, "round.json"))["terra_repair_budget"]:
+        pause_round(a.run_dir, f"Terra repair budget reached ({total}); episode {a.task_id}")
+    return {"outcome": "repaired", "record": data, "terra_repair_rounds": total}
+
+
+def cmd_close(a):
+    d, _ = active_episode(a)
+    windows = assignments(a.run_dir, a.task_id)
+    first = min((w["assigned_at"] for w in windows), key=parse_ts, default=None)
+    closed = now()
+    data = episode_write(d, "close.json", {"task_id": a.task_id, "disposition": a.disposition,
+                         "reason": a.reason, "pre_review_fixes": a.pre_review_fixes, "escalations": a.escalations,
+                         "repair_rounds": len(glob.glob(os.path.join(d, "repair-*.json"))),
+                         "review_receipts": file_evidence(a.review_receipt or []), "artifacts": file_evidence(a.artifact or []),
+                         "assignments": windows, "first_dispatch_at": first, "closed_at": closed,
+                         "elapsed_seconds": (parse_ts(closed) - parse_ts(first)).total_seconds() if first else None})
+    return {"outcome": "closed", "record": data}
+
+
+def cmd_pause(a):
+    return pause_round(a.run_dir, a.reason)
+
+
+def cmd_resume(a):
+    if not a.owner_approval.strip():
+        raise UsageRefusal("owner approval text must not be empty")
+    path = os.path.join(a.run_dir, "PAUSED")
+    if not os.path.exists(path):
+        raise UsageRefusal("round is not paused")
+    data = {**read_json(path), "owner_approval": a.owner_approval, "resumed_at": now(),
+            "pause_sha256": sha256(path), "resume_recorder": recorder()}
+    history = os.path.join(a.run_dir, "pauses")
+    os.makedirs(history, exist_ok=True)
+    dest = os.path.join(history, data["resumed_at"].replace(":", "-") + ".json")
+    # Persist the augmented history before removing the active flag; a failed write stays paused.
+    write_once(dest, data)
+    os.unlink(path)
+    return {"outcome": "resumed", "history": dest, "record": data}
+
+
+def cmd_status(a):
+    episodes = enrollments(a.run_dir)
+    counts = {arm: 0 for arm in (TERRA, SOL)}
+    reviews = {arm: {"pass": 0, "fail": 0, "pending": 0} for arm in counts}
+    closed = withdrawn = open_terra = 0
+    log_path = os.path.join(a.run_dir, "screening.jsonl")
+    log = [json.loads(line) for line in read_text(log_path).splitlines()] if os.path.exists(log_path) else []
+    results = collections.Counter(r["outcome"] for r in log if r.get("event") == "result")
+    recorded = {r["task_id"] for r in log if r.get("event") == "result" and r.get("outcome") == "enrolled"}
+    problems = []
+    for d, e in episodes:
+        arm = e["arm"]
+        counts[arm] += 1
+        closed += os.path.exists(os.path.join(d, "close.json"))
+        withdrawn += os.path.exists(os.path.join(d, "withdraw.json"))
+        open_terra += arm == TERRA and not terminal(d)
+        review = os.path.join(d, "review-first.json")
+        reviews[arm][read_json(review)["outcome"] if os.path.exists(review) else "pending"] += 1
+        if e["task_id"] not in recorded:
+            problems.append(f"{e['task_id']}: enrollment has no enrolled result line")
+        problems.extend(f"{e['task_id']}: {p}" for p in integrity_problems(d))
+        if os.path.exists(os.path.join(d, "close.json")) and os.path.exists(os.path.join(d, "withdraw.json")):
+            problems.append(f"{e['task_id']}: both closed and withdrawn")
+    known = {e["task_id"] for _, e in episodes}
+    problems.extend(f"{t}: enrolled result has no enrollment" for t in sorted(recorded - known))
+    problems.extend(f"{os.path.basename(d)}: episode directory has no enrollment" for d in enrollment_dirs(a.run_dir)
+                    if not os.path.isfile(os.path.join(d, "enrollment.json")))
+    paused = os.path.join(a.run_dir, "PAUSED")
+    out = {"round": read_json(os.path.join(a.run_dir, "round.json")), "paused": os.path.exists(paused),
+           "pause": read_json(paused) if os.path.exists(paused) else None,
+           "enrollments": {"total": len(episodes), "per_arm": counts}, "closed": closed, "withdrawn": withdrawn,
+           "open": len(episodes) - closed - withdrawn, "open_terra": open_terra, "terra_repair_rounds": terra_repairs(a.run_dir),
+           "first_reviews": reviews, "screening": {"screened": sum(r.get("event") == "screened" for r in log),
+                                                 "outcomes": dict(results)}, "inconsistencies": problems}
+    if a.task_id:
+        d = episode_dir(a.run_dir, a.task_id)
+        out["episode"] = ({n: read_json(os.path.join(d, n)) for n in record_files(d) if n.endswith(".json")}
+                          if os.path.isfile(os.path.join(d, "enrollment.json")) else "no record")
+    return out
+
+
+def run_round_command(a):
+    try:
+        if a.cmd != "init-round" and not os.path.isfile(os.path.join(a.run_dir, "round.json")):
+            raise UsageRefusal("round.json is required; run init-round first")
+        os.makedirs(a.run_dir, exist_ok=True)
+        with open(os.path.join(a.run_dir, ".round.lock"), "a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            out = globals()["cmd_" + a.cmd.replace("-", "_")](a)
+        print(json.dumps(out, sort_keys=True))
+    except UsageRefusal as e:
+        print(json.dumps({"error": str(e), "outcome": "refused"}))
+        raise SystemExit(2)
+    except (IntegrityFailure, OSError, ValueError, KeyError, TypeError) as e:
+        print(json.dumps({"error": str(e), "outcome": "integrity_failure"}))
+        raise SystemExit(1)
 
 
 def main():
@@ -451,8 +779,38 @@ def main():
     v.add_argument("--repo")
     v.add_argument("--no-recompute", action="store_true")
     v.add_argument("--tools-root", default=TOOLS_ROOT)
+    for name in sorted(ROUND_COMMANDS):
+        r = sub.add_parser(name)
+        r.add_argument("--run-dir", required=True)
+        if name in {"enroll", "withdraw", "review", "repair", "close", "status"}:
+            r.add_argument("--task-id", required=name != "status")
+        if name in {"enroll", "withdraw", "close", "pause"}:
+            r.add_argument("--reason", required=True)
+        if name == "init-round":
+            for flag in ("--cap", "--terra-in-flight", "--terra-repair-budget"):
+                r.add_argument(flag, type=nonnegative, required=True)
+        elif name == "enroll":
+            r.add_argument("--task-revision", required=True)
+            r.add_argument("--eligible", choices=("yes", "no"), required=True)
+        elif name == "review":
+            r.add_argument("--outcome", choices=("pass", "fail"), required=True)
+            for flag in ("--p1", "--p2", "--p3"):
+                r.add_argument(flag, type=nonnegative, required=True)
+            r.add_argument("--receipt", required=True)
+        elif name == "repair":
+            r.add_argument("--review-receipt", required=True)
+        elif name == "close":
+            r.add_argument("--disposition", choices=("accepted", "abandoned"), required=True)
+            r.add_argument("--pre-review-fixes", type=nonnegative, required=True)
+            r.add_argument("--escalations", type=nonnegative, required=True)
+            r.add_argument("--review-receipt", action="append")
+            r.add_argument("--artifact", action="append")
+        elif name == "resume":
+            r.add_argument("--owner-approval", required=True)
     a = ap.parse_args()
-    if a.cmd == "start":
+    if a.cmd in ROUND_COMMANDS:
+        run_round_command(a)
+    elif a.cmd == "start":
         print(now())
     elif a.cmd == "check-tool":
         print(f"ok: {tool(a.tool_dir, PIN['commit'])} at {PIN['commit']}")
