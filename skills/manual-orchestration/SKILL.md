@@ -16,6 +16,7 @@ Use model judgment to divide an authorized objective into coherent outcomes whos
 - **Worker or reviewer**: [worker](references/worker.md) - one coherent bounded assignment.
 - **Every role**: [call cost](references/call-cost.md) - waiting, batching, request sizing.
 - **Coordinator and supervisor**: [context boundary](references/context-boundary.md) - retained or fresh before dispatch, transfer, roots. Workers carry their own mid-task check.
+- **On Codex**, with any role: [Codex host](references/codex-host.md) - supervisor/builder children, separate top-level reviewers, service tier and identity binding.
 - **On Claude Code** (Anthropic models), with any role: [anthropic host](references/anthropic-host.md) - tool mapping, transcript-based context check.
 - After a run: [measurement](references/measurement.md). For a concrete artifact example: [demonstrated forms](references/demonstrated-forms.md).
 
@@ -25,7 +26,7 @@ Repository instructions and owning contracts still govern each role.
 
 At launch, give the child its packet and tell it to load this skill for its role: invoke `$manual-orchestration`, or read `skills/manual-orchestration/SKILL.md` in the repository when the skill is not installed. It loads its own references; do not paste this skill or other guidance documents into its brief.
 
-After launch, verify the child's actual session ID and rollout from recorded lineage (`<pinned context-status binary> agents --parent-thread <your id> --json`), then send its identity binding: session ID, rollout, parent/collection owner, continuation path, and the pinned context-status binary path and SHA-256. An ID cannot be verified before the session exists, and a role name or inherited `CODEX_THREAD_ID` can name another session. The child acknowledges the binding at its next boundary and records it in its continuation. For a retained child, deliver the binding explicitly once and expect it in the continuation thereafter.
+After launch, verify the role's actual session ID and rollout from recorded lineage, using the host reference's lookup for its launch mechanism, then send its identity binding: session ID, rollout, parent/collection owner, continuation path, and the pinned context-status binary path and SHA-256. An ID cannot be verified before the session exists, and a role name or inherited `CODEX_THREAD_ID` can name another session. The role acknowledges the binding at its next boundary and records it in its continuation. For a retained role, deliver the binding explicitly once and expect it in the continuation thereafter.
 
 ## Invariants
 

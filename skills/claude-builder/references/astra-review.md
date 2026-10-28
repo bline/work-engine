@@ -1,8 +1,11 @@
 # Astra review of a Claude builder
 
-The Codex caller launches and collects a separate `gpt-6-astra` reviewer with
-`fork_turns: "none"` and the effort from
-[model selection](../../../docs/model-selection.md). This is the review pairing selected for this skill; an explicit
+The Codex caller launches and collects a separate top-level `gpt-6-astra`
+reviewer through [manual orchestration's Codex host](../../manual-orchestration/references/codex-host.md),
+with the effort from [model selection](../../../docs/model-selection.md).
+This keeps the reviewer outside the caller's child tree and explicitly selects
+the standard tier even when `/fast` changed shared configuration.
+This is the review pairing selected for this skill; an explicit
 owning task contract may select otherwise. The reviewer has a fresh entry and
 does not inherit the caller's or Claude builder's conversation.
 
@@ -30,7 +33,8 @@ Claude performs valid in-scope repairs and reruns affected checks.
 
 Retain the Astra session through remediation. After the orchestration context
 check, send the exact new subject/delta, prior finding IDs, repair summary and
-new gate evidence with `followup_task` to the same reviewer. Record resolved,
+new gate evidence with `role_host.py deliver` to the same top-level reviewer.
+Record resolved,
 open, or uncertain findings. A changed subject invalidates a prior acceptance
 unless its continued applicability is established. Replacement follows the
 owning handoff/review-state contract and preserves prior findings and lineage.

@@ -1,6 +1,6 @@
 # Model selection for engineering work
 
-Current guidance: 2026-10-27. This is the single place for model and effort
+Current guidance: 2026-10-28. This is the single place for model and effort
 choices. It replaces the 2026-10-20 version, which covered only `gpt-6-astra`
 and `gpt-6-sol`, and the role choices that skills stated for themselves (see
 [Where choices are encoded](#where-choices-are-encoded)).
@@ -102,6 +102,13 @@ those are `gpt-6.1-sol` at `xhigh` in `~/.codex/config.toml`, and Opus at `xhigh
 in `~/.claude/settings.json`. Those defaults suit roots and coordinators.
 Delegated assignments always select model and effort explicitly, from this guide.
 
+For Codex manual orchestration, use `/fast` for the root's
+supervisor/builder tree and separate top-level Astra reviewers at the standard
+tier, explicitly set with `service_tier="default"` on reviewer launch
+([Codex host](../skills/manual-orchestration/references/codex-host.md)); the
+probed `/fast` toggle also changed shared configuration. Keep `/fast` off in
+campaign supervisors until their review launch and binding support this separation.
+
 ## Make selection and execution distinguishable
 
 - **Select explicitly.** Inherited defaults can silently select a different model
@@ -202,3 +209,4 @@ configuration with no builder.
 | 2026-10-27 | Adversarial review: `gpt-6-astra` at `high`, `xhigh` for architecture, ownership-contract or open-design subjects | owner |
 | 2026-10-28 | The supervisor change follows O2 and a real-slice validation (O4 or E5), not the Codex reset date (superseded the same day) | owner |
 | 2026-10-28 | Supervisors and coordinators run `gpt-6.1-sol` at `xhigh`, and so do architecture and open-design planning; `gpt-6-astra` is used only for review | owner |
+| 2026-10-28 | Codex manual roots use `/fast` for supervisors and builders; Astra reviewers launch as separate top-level threads with an explicit standard-tier override. The live probe found `/fast` also persists a shared Fast default, so top-level launch alone is insufficient. Campaign supervisors keep `/fast` off pending separate reviewer launch/binding support. | owner; [observed probe](../metrics/probes/codex-manual-service-tier-20261028.json) |
