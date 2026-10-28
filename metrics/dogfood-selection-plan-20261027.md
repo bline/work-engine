@@ -252,8 +252,12 @@ outcomes: make collection permanent, revise the schema, or stop.
    selection.
 1. The extractor's canonical home is
    [agent-routing-lab](https://github.com/bline/agent-routing-lab) (Apache-2.0),
-   as `taskprofile`. Work Engine pins tag `v0.2.1`, commit
-   `1faaf78af460afee1126731816e0dc10553d9822`, and does not keep its own copy.
+   as `taskprofile`. Work Engine pins tag `v0.2.2`, commit
+   `373c12f301ba2d7859522e67e506940d6a424ef3` (from 2026-10-28; round 1 ran on
+   v0.2.1, `1faaf78a`, whose install stays for `verify`), and does not keep its own copy.
+   v0.2.2 records a malformed manifest as a resolution failure instead of crashing.
+   Installed 2026-10-28; `check-tool` passes, and re-profiling a round-1 sidecar
+   with it reproduced that record's revision ID and validated.
    v0.2.0 (`534cd79d`) is superseded: an unrecognised field status escaped
    validation, and two snapshots could be declared at once.
    v0.1.0 (`54f9b35b`) is superseded: its task-revision ID ignored role and

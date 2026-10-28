@@ -65,8 +65,8 @@ import re
 import subprocess
 import sys
 
-PIN = {"repository": "https://github.com/bline/agent-routing-lab", "tag": "v0.2.1",
-       "commit": "1faaf78af460afee1126731816e0dc10553d9822"}
+PIN = {"repository": "https://github.com/bline/agent-routing-lab", "tag": "v0.2.2",
+       "commit": "373c12f301ba2d7859522e67e506940d6a424ef3"}
 TOOLS_ROOT = os.path.expanduser("~/.local/state/work-engine/tools/agent-routing-lab")
 REVISION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}@[0-9a-f]{16}\Z")
 SUMS = "SHA256SUMS"
