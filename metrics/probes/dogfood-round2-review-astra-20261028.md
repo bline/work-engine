@@ -96,3 +96,69 @@ Twenty dispatches can support a descriptive report about the **coordinator-selec
 - I did not inspect sealed materials, `~/cbm-work/routing-data-audit/`, raw round-1 records, private run registries, usage ledgers or deployed skill copies. Round-1 observations above are attributed to its supplied review.
 - Specification-absence claims are bounded to the full plan and the coordinator, Codex-host and measurement references. I also inspected the record script and searched those sources for allocation, eligibility, masking, repair, continuation, pause, cap and escalation provisions. These are not repository-wide absence claims.
 - Graph coverage reported no recorded gaps for relied-on repository files; exact source reads and commit-byte comparisons supplied the substantive evidence. Clean graph coverage is not proof of completeness.
+---
+
+## Follow-up review of revision 2 (same session, 2026-10-28 19:37–19:41Z)
+
+Subject: revision 2, plan sha256 `0ea91c7f05ab5f21b0dc2688c07f0f34bcb6f3f9b70d2ad23b7c0a45fedacd6f` at commit `f91fb226`. `codex exec resume` of thread `01a183f1-da34`, `gpt-6-astra` at `high`, standard tier; 6 calls, $1.10 at the frozen API rates. Verdict: **not ready** (R2-09 is P1). The final message follows unchanged.
+
+Verified: both the working file and commit `f91fb2265f6d823ee9ea738aa2ed3e04222cd11b` have SHA-256 `0ea91c7f05ab5f21b0dc2688c07f0f34bcb6f3f9b70d2ad23b7c0a45fedacd6f`. The six original context files are unchanged.
+
+**1. Disposition of previous findings**
+
+“Resolved” below means resolved in the proposed design; implementation and activation remain unverified.
+
+| ID | Disposition | Evidence and remaining issue |
+|---|---|---|
+| **R2-01** | **Partly resolved** | [Lines 280–288](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:280) replace predictable hashing with a random draw after recorded screening, preserve existing assignments and retain withdrawals. However, the blanket enrollment-failure rule can discard an assignment already recorded; see **R2-09**. |
+| **R2-02** | **Partly resolved** | [Lines 292–305](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:292) establish shared pause state, immediate P1 handling, owner-controlled resumption, bounded Terra concurrency and continued ownership of existing work. The repair-budget trigger still lacks a specified source of current, open-episode repair counts; see **R2-11**. |
+| **R2-03** | **Partly resolved** | [Lines 247–264](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:247) establish episode-level attribution, explicit outcomes and separate pre-review fixes. [Lines 336–342](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:336) require evidence joins and preservation of missing outcomes. Repair-round semantics and the first-review denominator remain problematic; see **R2-10** and **R2-12**. |
+| **R2-04** | **Resolved** | [Lines 299–309](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:299) replace unequal-arm cumulative comparison with an absolute rework threshold and descriptive rates. The threshold’s implementation contract has the separate issue in **R2-11**. |
+| **R2-05** | **Partly resolved** | [Lines 356–368](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:356) explicitly require tested commands, released guidance, episode-based counting and demonstrated joins before approval. The proposed failure fallback is unsafe for partially completed enrollment; see **R2-09**. |
+| **R2-06** | **Resolved** | [Lines 273–278](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:273) require review-contract compatibility; [lines 313–314](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:313) preserve review escalation. A newly introduced builder-escalation misstatement is covered by **R2-10**. |
+| **R2-07** | **Resolved** | [Lines 324–330](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:324) require observed tier, explicitly estimated/modelled costs, review costs and disclosure of missing components. The newly specified wall-time method has a separate defect; see **R2-13**. |
+| **R2-08** | **Resolved** | [Lines 315–320](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:315) withhold unnecessary builder identity, extend the packet check and require disclosure of unblinding. Actual exposure control remains an execution check. |
+
+**2. New findings**
+
+**R2-09 — P1: An enrollment command failure is incorrectly treated as proof that enrollment did not occur.**
+
+- **Evidence:** [Lines 281–286](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:281) draw and record the assignment. But [lines 362–364](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:362) say that if `enroll` fails, the task is recorded as “not enrolled” and dispatched as usual.
+- **Consequence — inference:** A failure after recording the arm—for example, while returning the result—can cause an enrolled task to be relabelled unassigned and dispatched under discretionary selection. That breaks original-arm attribution and can miscount the cap and in-flight population. A command failure does not establish which durable effects occurred.
+- **Recommendation:** Distinguish confirmed pre-enrollment failure from committed enrollment and uncertain completion. Reconcile uncertain results through the stable task identity; preserve any recorded arm and never redraw or erase it. Specify recovery tests at these failure boundaries, including concurrent retries. Ordinary production may continue under authorized recovery, but the experimental history must remain truthful.
+
+**R2-10 — P2: “Repair round” counts interaction turns, and the escalation wording delays the guide’s required switch.**
+
+- **Evidence:** [Lines 258–261](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:258) define a repair round as “each builder turn” and describe escalation “after a second repair round.” The unchanged [model guide lines 71–75](/home/bline/code/work-engine/docs/model-selection.md:71) requires switching when “a second repair round is needed.”
+- **Consequence — inference:** One remediation cycle split across continuations can count as several repairs, making the metric sensitive to orchestration rather than defects. The “after” wording also permits Terra to perform a second repair that the guide assigns to Sol.
+- **Recommendation:** Define a repair round around a review-driven remediation cycle and its resubmission, grouping continuation turns within that cycle. Escalate when the second round becomes necessary, before executing it. Preserve all other guide triggers, including newly discovered hazard-class work.
+
+**R2-11 — P2: The rework threshold depends on live counts, but the specified durable count is written only at closure.**
+
+- **Evidence:** [Lines 296–300](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:296) require action when ten repair rounds have been used and name `close` and `enroll` as the checking commands. [Lines 336–338](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:336) specify writing repair counts in the terminal `close` record. Within the reviewed plan, no update or authoritative read of open-episode repair progress is specified.
+- **Consequence — inference:** The threshold can be crossed by ongoing work while subsequent admissions see only closed-episode totals. Limiting Terra to two open episodes does not establish a current cumulative repair count.
+- **Recommendation:** Define how completed repair cycles become available to the shared budget while episodes remain open, and who triggers the pause. Ensure admission checks use that current state. Explicitly describe ten rounds as a **new-enrollment pause threshold**, since already admitted work is allowed to continue beyond it.
+
+**R2-12 — P2: “First-review passes per closed episode” conflates review results with withdrawal and closure timing.**
+
+- **Evidence:** [Lines 263–264](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:263) include withdrawal before dispatch as a terminal disposition. [Lines 306–308](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:306) specify first-review passes per closed episode.
+- **Consequence — inference:** One reviewed pass and one pre-dispatch withdrawal produce a 50% figure although the only completed first review passed. Conversely, an open episode with a known first-review failure is omitted until closure. Thus the reported rate can change because of administration or repair duration rather than first-artifact quality.
+- **Recommendation:** Report first-review outcomes when that review completes, independently of episode closure. Separate the pass rate among reviewed episodes from any enrollment-level success measure. Report withdrawn, never-reviewed and pending episodes explicitly; keep all enrollments in the overall accounting.
+
+**R2-13 — P2: Completed-turn durations do not establish episode wall time.**
+
+- **Evidence:** [Lines 331–332](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:331) derive “wall time” from ledger turn durations. The ledger describes these as durations of completed Codex turns ([usage_ledger.py lines 52–57](/home/bline/code/work-engine/metrics/scripts/usage_ledger.py:52)).
+- **Consequence — inference:** Summing turn durations omits gaps between turns and can double-count overlapping work. Qualifying the number for waiting and concurrency does not make it elapsed time from dispatch to disposition.
+- **Recommendation:** Define episode wall time using explicit start and terminal timestamps. Report accumulated turn duration separately. Keep elapsed-to-date measurements for pending episodes distinct from completed-episode durations.
+
+**3. Verdict: not ready.**
+
+Revision 2 resolves the main conceptual problems with predictable allocation, unequal-arm stop comparisons, review compatibility and model masking. **R2-09 still blocks approval**; the P2 findings should be corrected before the round starts. The listed implementation, release and join demonstrations remain legitimate activation prerequisites, not evidence that they have already passed.
+
+**4. Not checked**
+
+- No files were changed, agents launched, providers called, tests executed, or commits/pushes performed.
+- I did not inspect sealed material, the excluded routing-data directory, private episode records, deployed guidance or actual enrollment behavior.
+- The open-progress specification absence in R2-11 is bounded to the complete revised plan, its diff and retained unchanged context. I searched the plan for enrollment, failure, repair, closure, pause, concurrency and measurement provisions; it is not a repository-wide absence claim.
+- I checked the ledger’s tier and duration representation, not its runtime completeness. Graph coverage reported no recorded gaps for the inspected paths; that does not establish implementation correctness.
+- This was a retained follow-up review, not a new independent review episode.

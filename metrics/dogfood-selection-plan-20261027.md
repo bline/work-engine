@@ -4,8 +4,8 @@ Status (2026-10-28): **no round is active; do not profile.** Round 1 (run
 directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
 2026-10-28 and was reviewed with the owner
 ([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
-coordinator guidance. Round 2, a builder comparison (revision 2 under "Round 2"
-below, after an Astra review), awaits review and the owner's approval.
+coordinator guidance. Round 2, a builder comparison (revision 3 under "Round 2"
+below, after two Astra reviews), awaits review and the owner's approval.
 When a round starts, these lines name its run directory and cap.
 
 ## Why
@@ -231,11 +231,11 @@ Limitations the pilot report must state:
 After the 10, the owner reviews the profiles and the discrepancies. Possible
 outcomes: make collection permanent, revise the schema, or stop.
 
-## Round 2 (revision 2, 2026-10-28; not approved, not active)
+## Round 2 (revision 3, 2026-10-28; not approved, not active)
 
-Revision 1 was reviewed by `gpt-6-astra` at `high` and found not ready
+Revisions 1 and 2 were reviewed by `gpt-6-astra` at `high` and found not ready
 ([review](probes/dogfood-round2-review-astra-20261028.md)). This revision answers
-each finding; the finding IDs (R2-01 to R2-08) are marked where they apply.
+each finding; the finding IDs (R2-01 to R2-13) are marked where they apply.
 
 **Question.** On this project's own work, in the subset where either builder is
 acceptable, do `gpt-6.1-terra` builds at `medium` pass review and need repairs at
@@ -255,11 +255,14 @@ Definitions, fixed before the round starts:
   counted separately.
 - **First-review pass:** the first independent review of the first artifact
   returns no P1 or P2 finding.
-- **Repair round:** each builder turn after a review that requires changes,
-  until acceptance.
-- **Escalation:** a model change the guide requires (Terra to Sol after a
-  second repair round or a design-reopening P1 or P2). The episode keeps its arm;
-  the escalation is an outcome.
+- **Repair round (R2-10):** one review-driven remediation cycle, from a review
+  that requires changes to the builder's resubmission for review. Continuation
+  turns within the cycle are one round, not several.
+- **Escalation (R2-10):** a model change the guide requires, made when its
+  trigger arises, before the triggered work starts: a Terra build moves to Sol as
+  soon as a second repair round becomes necessary, or a P1 or P2 reopens the
+  design, or the task turns out to be hazard-class. The episode keeps its arm; the
+  escalation is an outcome.
 - **Terminal disposition:** accepted, abandoned (with the reason), or withdrawn
   before dispatch (with the reason).
 
@@ -284,6 +287,13 @@ For every builder dispatch the guidance would profile, before choosing the model
    reason, arm, draw source). The draw does not depend on task content, so the
    arm cannot be known or steered before screening. Enrolling a task ID that is
    already enrolled returns its existing arm and draws nothing.
+   - **Failure handling (R2-09).** The enrollment record is created exclusively,
+     one per task ID, before the arm is printed; a concurrent second call reads
+     the first call's record. If `enroll` fails or its result is unclear, run it
+     again for the same task ID: if a record exists, it returns that arm, and the
+     task is enrolled. Only when `status --task-id` confirms no record exists is
+     the task "not enrolled (instrumentation failure)" and dispatched as usual. A
+     recorded arm is never redrawn, erased or relabelled.
 4. Dispatch the drawn arm and run `assign` as before. If the task is withdrawn
    before dispatch, `withdraw` records why; it stays in the analysis.
 
@@ -296,17 +306,25 @@ For every builder dispatch the guidance would profile, before choosing the model
 - **Triggers, acted on when known, not when an episode completes:**
   - a P1 finding on any Terra-arm artifact, first or repaired: whoever receives
     the review runs `pause` at once;
-  - the production rework budget: once Terra-arm episodes have used 10 repair
-    rounds in total, `close` and `enroll` pause the round.
+  - the production rework budget, a **new-enrollment pause threshold** (R2-11):
+    each completed repair round is recorded when its resubmission happens, with
+    `task_profile_record.py repair`, so open episodes count. When the recorded
+    Terra-arm rounds, open and closed, reach 10, `repair` writes the pause flag
+    and `enroll` refuses new enrollment. Episodes already admitted continue past
+    it.
 - **In-flight limit.** At most 2 Terra-arm episodes may be open at once. The
   check runs before the draw and blocks the whole round, both arms, so it cannot
   bias which tasks get which arm.
 - **Work in flight continues** under the normal review, repair and escalation
   rules. A pause stops new enrollment only.
-- **Comparison is reported, not a stop rule.** Per-arm rates (first-review
-  passes per closed episode, repair rounds per closed episode) are reported at
-  each owner check-in; the owner may stop the round on them. No rule compares
-  totals across arms of different sizes.
+- **Comparison is reported, not a stop rule.** Per-arm figures are reported at
+  each owner check-in, and the owner may stop the round on them; no rule compares
+  totals across arms of different sizes. The **first-review pass rate (R2-12)** is
+  taken over episodes whose first review has completed, recorded when it
+  completes with `task_profile_record.py review`, whether or not the episode has
+  closed. Repair rounds are per episode with recorded rounds. Withdrawn,
+  never-reviewed and pending episodes are counted separately, and every
+  enrollment stays in the overall accounting.
 
 ### Review route and masking (R2-06, R2-08)
 
@@ -328,14 +346,18 @@ For every builder dispatch the guidance would profile, before choosing the model
   estimate; a quota-weighted figure is labelled modelled (the documented 2.5 for
   Fast). Each episode reports builder, repair and review cost, plus coordinator
   cost where the ledger can attribute it; missing components are listed.
-- **Wall time** comes from the ledger's turn durations, qualified for waiting and
-  concurrent work.
+- **Wall time (R2-13)** is elapsed time from the first dispatch (`assign`) to
+  the terminal disposition (`close`). Accumulated turn duration, from the
+  ledger's completed turns, is reported separately as active model time. A
+  pending episode reports elapsed-to-date, kept apart from completed episodes.
 
 ### Records and joins (R2-03, R2-05)
 
-`close` writes the terminal disposition once: counts (pre-review fixes, repair
-rounds, escalations), the review receipts' paths and hashes, the artifacts'
-hashes, and the assignment windows. The analysis includes every screened and
+`review` records each episode's first-review outcome when it completes, and
+`repair` records each completed repair round; both are append-only. `close` writes
+the terminal disposition once: counts (pre-review fixes, repair rounds,
+escalations), the review receipts' paths and hashes, the artifacts' hashes, and
+the assignment windows. The analysis includes every screened and
 enrolled task; pending and missing outcomes stay explicit, and accepted-only
 summaries are never reported alone. Before activation, the joins from profile to
 enrollment, assignments, attribution, ledger and review receipts are
@@ -354,14 +376,16 @@ demonstrated on two round-1 records.
 ### Activation (R2-05)
 
 All of these, then owner approval:
-1. `enroll`, `withdraw`, `close`, `pause`, `resume` and `status` built and
-   tested, with the random draw, the screening log, idempotent enrollment, the
-   pause flag, the in-flight check and the rework budget.
+1. `enroll`, `withdraw`, `review`, `repair`, `close`, `pause`, `resume` and
+   `status` built and tested, with the random draw, the screening log, exclusive
+   and idempotent enrollment (including a failure after the record is written and
+   two concurrent calls), the pause flag, the in-flight check and the live
+   rework budget.
 2. The coordinator guidance updated for round 2 and released: screening,
    enrollment and the drawn arm replace "choose as today" for enrolled tasks;
-   counting is by enrolled episodes, not `task-profiles/` entries; if `profile`
-   or `enroll` fails, the task is recorded as not enrolled ("instrumentation
-   failure") and dispatched as usual.
+   counting is by enrolled episodes, not `task-profiles/` entries; a failed
+   `profile` leaves the task unenrolled and dispatched as usual, and a failed
+   `enroll` follows the failure handling above.
 3. The joins demonstrated on two round-1 records.
 4. These Status lines name round 2, its run directory
    (`~/.local/state/work-engine/task-profile-pilot-2`) and its limits (20 episodes,
