@@ -50,9 +50,18 @@ breaks these rules, and `check` applies them to the working tree:
 4. **An `active` or `stable` skill with no install targets carries a
    `not_installed_reason`**, so leaving it out is visibly deliberate.
 
+An entry may also carry `release_exclude`, a list of skill-relative paths
+(such as `pilot/`) that releases leave out. Use it for data the skill's scripts
+read through the repository path rather than the skill directory: shipping it
+would copy it into every release without any agent reading it there.
+`RELEASE.json` records the exclusions and the number of files excluded, and
+verification compares a release with its commit less those paths. Each path must
+name something, and `SKILL.md` cannot be excluded.
+
 Rule 3 allows dormant installs that the layout plan's rule 2 would have
-excluded. The user chose on 2026-10-27 to keep every installed skill installed,
-and recording those as `stable` would misstate their use.
+excluded. On 2026-10-27 the user first kept every installed skill installed,
+since recording dormant ones as `stable` would misstate their use, and then
+uninstalled the five with no load recorded since 2026-10-01.
 
 ## Generated command lines
 

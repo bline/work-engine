@@ -275,6 +275,49 @@ class SkillReleaseTest(unittest.TestCase):
         self.assertEqual((self.root / "releases" / self.first / "RELEASE.json").read_bytes(), meta)
         self.assertEqual(json.loads(meta)["install_source"]["path"], release.CATALOG_PATH)
 
+    def test_release_exclude_leaves_declared_data_out_of_the_release(self):
+        self.write("skills/alpha/data/big.txt", "research data\n")
+        self.write("skills/alpha/data/nested/more.txt", "more\n")
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]},
+                     {"alpha": {"kind": "research", "state": "stable", "install": ["claude", "codex"],
+                                "install_reason": "test", "release_exclude": ["data/"]}})
+        commit = self.commit("exclude data")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        built = self.root / "releases" / commit
+        self.assertFalse((built / "skills/alpha/data").exists())
+        self.assertTrue((built / "skills/alpha/scripts/run.py").exists())
+        meta = json.loads((built / "RELEASE.json").read_text())
+        self.assertEqual(meta["release_exclude"], ["skills/alpha/data/"])
+        self.assertEqual(meta["excluded_files"], 2)
+        code, out, _ = self.run_cli("status", "--verify")
+        self.assertEqual(json.loads(out)["release_verification"], "identical")
+        planned = self.plan()                                 # excluded files are not "missing"
+        alpha = {a["name"]: a for a in planned["targets"]["claude"]["actions"]}["alpha"]
+        self.assertEqual(alpha["change"]["files"], {"differ": 0, "missing": 0, "extra": 0})
+        code, out, err = self.run_cli("deploy")              # reusing the release re-verifies it
+        self.assertEqual(code, 0, err)
+        self.assertFalse(json.loads(out)["release_created"])
+
+    def test_release_exclude_rules(self):
+        targets = {"claude": None, "codex": None}
+        base = {"kind": "tool", "state": "active", "install": ["claude"]}
+        for bad in (["../x"], ["SKILL.md"], ["/abs"], [], "data/", ["data/", "data/"]):
+            with self.subTest(bad=bad):
+                problems = release.catalog_problems({"schema": release.CATALOG_SCHEMA,
+                                                     "skills": {"a": {**base, "release_exclude": bad}}},
+                                                    {"a"}, set(), targets)
+                self.assertTrue(any("release_exclude" in p for p in problems), problems)
+        prefixes, problems = release.release_excludes(
+            {"skills": {"a": {**base, "release_exclude": ["nothing/"]}}}, lambda p: False)
+        self.assertEqual(prefixes, ["skills/a/nothing/"])
+        self.assertIn("a: release_exclude 'nothing/' names nothing", problems)
+        self.install({"claude": ["alpha"]}, {"alpha": {**base, "release_exclude": ["absent/"]}})
+        self.commit("exclude a missing path")
+        code, _, err = self.run_cli("plan")
+        self.assertEqual(code, 1)
+        self.assertIn("names nothing", err)
+
     def test_check_validates_the_working_tree_catalog(self):
         code, out, _ = self.run_cli("check")
         self.assertEqual(code, 0)

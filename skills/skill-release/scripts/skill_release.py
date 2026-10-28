@@ -33,7 +33,7 @@ CATALOG_PATH = "skills/catalog.json"
 CATALOG_SCHEMA = "work-engine.skill-catalog.v1"
 KINDS = ("workflow", "tool", "research", "other-project")
 STATES = ("active", "stable", "dormant", "retired")
-CATALOG_FIELDS = {"kind", "state", "install", "install_reason", "not_installed_reason"}
+CATALOG_FIELDS = {"kind", "state", "install", "install_reason", "not_installed_reason", "release_exclude"}
 # Install lists before the catalog existed (415ceda2); read only for older commits.
 MANIFEST_PATH = "skills/skill-release/install-manifest.json"
 MANIFEST_SCHEMA = "work-engine.skill-install-manifest.v1"
@@ -201,7 +201,35 @@ def catalog_problems(catalog, skill_dirs: set[str], other_dirs: set[str], target
             problems.append(f"{name}: installed while {state if state == 'dormant' else kind}, so it needs install_reason")
         if not install and state in ("active", "stable") and "not_installed_reason" not in entry:
             problems.append(f"{name}: {state} but not installed, so it needs not_installed_reason")
+        if "release_exclude" in entry:
+            excludes = entry["release_exclude"]
+            if (not isinstance(excludes, list) or not excludes or len(set(excludes)) != len(excludes)
+                    or any(not isinstance(x, str) or not x.strip() or x.startswith("/") or ".." in x.split("/")
+                           or x.rstrip("/") in ("", "SKILL.md") for x in excludes)):
+                problems.append(f"{name}: release_exclude must list unique skill-relative paths, not SKILL.md")
     return problems
+
+
+def release_excludes(catalog, exists) -> tuple[list[str], list[str]]:
+    """Repository-relative prefixes a release leaves out, and problems.
+
+    Data a skill's scripts read through the repository path (not the skill directory)
+    need not ship in releases. exists(prefix) tells whether the prefix names anything.
+    """
+    prefixes, problems = [], []
+    for name, entry in sorted(catalog["skills"].items()):
+        for item in entry.get("release_exclude", []):
+            prefix = f"skills/{name}/{item}"
+            if not exists(prefix):
+                problems.append(f"{name}: release_exclude {item!r} names nothing")
+            prefixes.append(prefix)
+    return prefixes, problems
+
+
+def drop_excluded(entries: dict, prefixes) -> dict:
+    def excluded(path: str) -> bool:
+        return any(path == p.rstrip("/") or path.startswith(p.rstrip("/") + "/") for p in prefixes)
+    return {k: v for k, v in entries.items() if not excluded(k)}
 
 
 def install_lists(catalog) -> dict[str, list[str]]:
@@ -220,12 +248,28 @@ def skills_tree_dirs(paths) -> tuple[set[str], set[str]]:
     return with_skill, dirs - with_skill
 
 
+def tree_has(tree, prefix: str) -> bool:
+    bare = prefix.rstrip("/")
+    return any(p == bare or p.startswith(bare + "/") for p in tree)
+
+
+def excludes_at(repo: Path, commit: str) -> list[str]:
+    """Release exclusions declared by a commit's catalog (none for older commits)."""
+    tree = set(tree_entries(repo, commit, "skills"))
+    if CATALOG_PATH not in tree:
+        return []
+    return release_excludes(json.loads(git(repo, "show", f"{commit}:{CATALOG_PATH}")),
+                            lambda p: tree_has(tree, p))[0]
+
+
 def manifest_at(repo: Path, commit: str, targets: dict[str, Path]) -> dict[str, list[str]]:
     """Install lists for a commit: from its catalog, or from the older install manifest."""
     tree = set(tree_entries(repo, commit, "skills"))
     if CATALOG_PATH in tree:
         catalog = json.loads(git(repo, "show", f"{commit}:{CATALOG_PATH}"))
         problems = catalog_problems(catalog, *skills_tree_dirs(tree), targets)
+        if not problems:
+            problems = release_excludes(catalog, lambda p: tree_has(tree, p))[1]
         if problems:
             raise ReleaseError(f"{CATALOG_PATH} at {commit[:12]} breaks catalog rules:\n  " + "\n  ".join(problems))
         return install_lists(catalog)
@@ -252,6 +296,8 @@ def check_working_tree(repo: Path, targets: dict[str, Path]) -> dict:
     paths = [f"skills/{d.name}/{f.name}" for d in (repo / "skills").iterdir() if d.is_dir() for f in d.iterdir()]
     catalog = json.loads(path.read_text())
     problems = catalog_problems(catalog, *skills_tree_dirs(paths), targets)
+    if not problems:
+        problems += release_excludes(catalog, lambda p: (repo / p).exists())[1]
     problems += synopsis_problems(repo)
     return {"ok": not problems, "problems": problems,
             "install": install_lists(catalog) if not problems else None}
@@ -323,12 +369,17 @@ def remove_tree(root: Path) -> None:
 
 
 def verify_release(repo: Path, store: Store, commit: str) -> dict[str, list[str]]:
-    return compare(tree_entries(repo, commit, "skills"),
+    excludes = store.release_record(commit).get("release_exclude", [])
+    return compare(drop_excluded(tree_entries(repo, commit, "skills"), excludes),
                    dir_entries(store.release_dir(commit) / "skills", "skills"))
 
 
-def build_release(repo: Path, store: Store, commit: str, manifest: dict) -> bool:
-    """Export commit's skills/ into releases/<commit>. Returns False if it already existed."""
+def build_release(repo: Path, store: Store, commit: str, manifest: dict, excludes=()) -> bool:
+    """Export commit's skills/ into releases/<commit>, without excluded paths.
+
+    Returns False if the release already existed.
+    """
+    excludes = list(excludes)
     final = store.release_dir(commit)
     if final.exists():
         problems = verify_release(repo, store, commit)
@@ -342,7 +393,15 @@ def build_release(repo: Path, store: Store, commit: str, manifest: dict) -> bool
     archive = git(repo, "archive", "--format=tar", commit, "skills", binary=True)
     with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         tar.extractall(staging, filter="data")
-    problems = compare(tree_entries(repo, commit, "skills"), dir_entries(staging / "skills", "skills"))
+    for prefix in excludes:
+        target = staging / prefix.rstrip("/")
+        if target.is_dir():
+            remove_tree(target)
+        elif target.exists():
+            target.unlink()
+    expected = tree_entries(repo, commit, "skills")
+    excluded_count = len(expected) - len(drop_excluded(expected, excludes))
+    problems = compare(drop_excluded(expected, excludes), dir_entries(staging / "skills", "skills"))
     if any(problems.values()):
         remove_tree(staging)
         raise ReleaseError(f"export of {commit} does not match its tree: {summary(problems)}")
@@ -357,6 +416,8 @@ def build_release(repo: Path, store: Store, commit: str, manifest: dict) -> bool
         "skills_tree": git(repo, "rev-parse", f"{commit}:skills").strip(),
         "manifest": manifest,
         "install_source": {"path": source, "blob": git(repo, "rev-parse", f"{commit}:{source}").strip()},
+        "release_exclude": excludes,
+        "excluded_files": excluded_count,
         "created_at": now(),
         "repository": str(repo),
         "node_modules": {
@@ -382,12 +443,13 @@ def entry_kind(entry: Path) -> str:
     return "file" if entry.exists() else "absent"
 
 
-def content_change(repo: Path, commit: str, name: str, entry: Path) -> dict | None:
-    """Compare what an agent reads through entry now with skills/<name> at commit."""
+def content_change(repo: Path, commit: str, name: str, entry: Path, excludes=()) -> dict | None:
+    """Compare what an agent reads through entry now with skills/<name> at commit (less exclusions)."""
     if not entry.exists() or not entry.resolve().is_dir():
         return None
     resolved = entry.resolve()
-    problems = compare(tree_entries(repo, commit, f"skills/{name}"), dir_entries(resolved, f"skills/{name}"))
+    problems = compare(drop_excluded(tree_entries(repo, commit, f"skills/{name}"), excludes),
+                       drop_excluded(dir_entries(resolved, f"skills/{name}"), excludes))
     skill_md = resolved / "SKILL.md"
     current_front = frontmatter(skill_md.read_text(errors="replace")) if skill_md.exists() else ""
     new_front = frontmatter(git(repo, "show", f"{commit}:skills/{name}/SKILL.md"))
@@ -396,9 +458,10 @@ def content_change(repo: Path, commit: str, name: str, entry: Path) -> dict | No
 
 
 def plan(repo: Path, store: Store, targets: dict[str, Path], commit: str,
-         manifest: dict[str, list[str]]) -> dict:
+         manifest: dict[str, list[str]], excludes=()) -> dict:
     result = {"commit": commit, "current": store.current_commit(),
-              "release_exists": store.release_dir(commit).exists(), "targets": {}}
+              "release_exists": store.release_dir(commit).exists(), "targets": {},
+              "release_exclude": list(excludes)}
     for target, names in manifest.items():
         directory = targets[target]
         if not directory.is_dir():
@@ -412,7 +475,7 @@ def plan(repo: Path, store: Store, targets: dict[str, Path], commit: str,
                 action = "keep" if os.readlink(entry) == store.link_target(name) else "retarget"
             actions.append({"name": name, "entry": kind, "action": action,
                             "resolves_to": str(entry.resolve()) if entry.exists() else None,
-                            "change": content_change(repo, commit, name, entry)})
+                            "change": content_change(repo, commit, name, entry, excludes)})
         others = sorted(e for e in directory.iterdir() if e.name not in names)
         actions += [{"name": e.name, "entry": "symlink", "action": "unlink",
                      "resolves_to": str(e.resolve()), "change": None} for e in others if store.owns(e)]
@@ -444,8 +507,8 @@ def stamp() -> str:
 
 
 def apply(repo: Path, store: Store, targets: dict[str, Path], backup_root: Path, commit: str,
-          manifest: dict, replace_copies: bool, action_name: str) -> dict:
-    planned = plan(repo, store, targets, commit, manifest)
+          manifest: dict, replace_copies: bool, action_name: str, excludes=()) -> dict:
+    planned = plan(repo, store, targets, commit, manifest, excludes)
     items = [(t, a) for t, v in planned["targets"].items() for a in v["actions"]]
     blocked = [f"{t}/{a['name']}" for t, a in items
                if a["action"] == "blocked" or (a["action"] == "replace-copy" and not replace_copies)]
@@ -464,7 +527,7 @@ def apply(repo: Path, store: Store, targets: dict[str, Path], backup_root: Path,
     previous = store.current_commit()
     if previous == commit:
         previous = (store.last_switch() or {}).get("previous")
-    created = build_release(repo, store, commit, manifest)
+    created = build_release(repo, store, commit, manifest, excludes)
     os.replace(store.staged_link(f"releases/{commit}"), store.current)
 
     when, changes = stamp(), {}
@@ -626,7 +689,8 @@ def main(argv: list[str] | None = None) -> int:
         backup_root = args.backup_root.expanduser().absolute()
         if args.command == "plan":
             commit = resolve_commit(repo, args.ref)
-            result = plan(repo, store, targets, commit, manifest_at(repo, commit, targets))
+            result = plan(repo, store, targets, commit, manifest_at(repo, commit, targets),
+                          excludes_at(repo, commit))
             print(json.dumps(result, indent=2) if args.json else render_plan(result))
             return 0
         if args.command == "status":
@@ -640,7 +704,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.command == "deploy":
                 commit = resolve_commit(repo, args.ref)
                 result = apply(repo, store, targets, backup_root, commit,
-                               manifest_at(repo, commit, targets), args.replace_copies, "deploy")
+                               manifest_at(repo, commit, targets), args.replace_copies, "deploy",
+                               excludes_at(repo, commit))
             elif args.command == "rollback":
                 last = store.last_switch()
                 if not last or not last.get("previous"):
@@ -650,7 +715,8 @@ def main(argv: list[str] | None = None) -> int:
                 manifest = validate_manifest(
                     {"schema": MANIFEST_SCHEMA, "targets": store.release_record(commit)["manifest"]},
                     targets, lambda n: (release / "skills" / n / "SKILL.md").exists())
-                result = apply(repo, store, targets, backup_root, commit, manifest, False, "rollback")
+                result = apply(repo, store, targets, backup_root, commit, manifest, False, "rollback",
+                               store.release_record(commit).get("release_exclude", []))
             else:
                 result = retire(store, targets, backup_root, args.target, args.names)
         print(json.dumps(result, indent=2))

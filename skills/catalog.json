@@ -4,10 +4,8 @@
     "agent-environment-graph": {
       "kind": "tool",
       "state": "dormant",
-      "install": [
-        "codex"
-      ],
-      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+      "install": [],
+      "not_installed_reason": "Uninstalled 2026-10-27 by the user: no load recorded since 2026-10-01. Kept in the repository; read it by path when needed."
     },
     "agent-instruction-review": {
       "kind": "workflow",
@@ -19,10 +17,8 @@
     "chrome-vision": {
       "kind": "tool",
       "state": "dormant",
-      "install": [
-        "codex"
-      ],
-      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+      "install": [],
+      "not_installed_reason": "Uninstalled 2026-10-27 by the user: no load recorded since 2026-10-01. Kept in the repository; read it by path when needed."
     },
     "claim-evidence": {
       "kind": "tool",
@@ -64,10 +60,8 @@
     "comparative-repository-analysis": {
       "kind": "research",
       "state": "dormant",
-      "install": [
-        "codex"
-      ],
-      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+      "install": [],
+      "not_installed_reason": "Uninstalled 2026-10-27 by the user: no load recorded since 2026-10-01. Kept in the repository; read it by path when needed."
     },
     "coordination-channels": {
       "kind": "workflow",
@@ -107,10 +101,11 @@
     "linguistic-register-pilot": {
       "kind": "research",
       "state": "dormant",
-      "install": [
-        "codex"
-      ],
-      "install_reason": "Kept installed by the user's decision on 2026-10-27, with little or no recorded use since 2026-10-01."
+      "install": [],
+      "not_installed_reason": "Uninstalled 2026-10-27 by the user: no load recorded since 2026-10-01. Kept in the repository; read it by path when needed.",
+      "release_exclude": [
+        "pilot/"
+      ]
     },
     "manual-orchestration": {
       "kind": "workflow",
@@ -213,10 +208,8 @@
     "ui-design-principles": {
       "kind": "other-project",
       "state": "dormant",
-      "install": [
-        "codex"
-      ],
-      "install_reason": "Site2JSON's design skill, kept installed by the user's decision on 2026-10-27."
+      "install": [],
+      "not_installed_reason": "Site2JSON's design skill. Uninstalled 2026-10-27 by the user: no load recorded since 2026-10-01. Kept in the repository; read it by path when needed."
     },
     "wind-walker": {
       "kind": "workflow",
