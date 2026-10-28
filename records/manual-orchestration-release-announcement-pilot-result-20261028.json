@@ -1,0 +1,152 @@
+{
+  "artifact_type": "manual-orchestration.pilot-result",
+  "recorded_at": "2026-10-28T22:26:25.928062+00:00",
+  "status": "root_accepted_source_uncommitted_undeployed",
+  "objective": "Exercise compiled organization formation and retained discovery supervision by implementing automatic deploy-only skill release announcements with a Terra builder and separate Astra reviewer.",
+  "authority": {
+    "human_implementation_decision": "planning/release-announcement-pilot-20261028/decision-r3.json",
+    "coordinator_small_revision": "planning/release-announcement-pilot-20261028/decision-r4.json",
+    "organization": "planning/release-announcement-pilot-20261028/organization-r4.json",
+    "organization_sha256": "af54df275f48a68a995bdb1ceae2dbc985301fac437d47694950b09c762aeaff",
+    "revision_effect": "Corrected stale reviewer effort prose to high; no actor, scope or authority expansion.",
+    "compatibility_correction": "Root accepted the minimal same-scope fix for pre-existing empty-catalog-release rollback validation; rollback announcements remain manual."
+  },
+  "actors": {
+    "root": {
+      "session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+      "role": "final integration and collection"
+    },
+    "supervisor": {
+      "session_id": "01a1846d-c9c5-79c0-abc6-164d22c7bfa4",
+      "requested_observed": "gpt-6.1-sol/xhigh/default",
+      "parent_collector": "01a18339-409a-7d72-be0f-4d96cd7fe4a6"
+    },
+    "builder": {
+      "session_id": "01a18483-81df-73d0-b87a-301f17141ddc",
+      "requested": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "service_tier": "default"
+      },
+      "observed": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "service_tier": "default"
+      },
+      "retained_for_repairs": true,
+      "model_escalations": 0,
+      "binding": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/worker/binding.json"
+    },
+    "reviewer": {
+      "session_id": "01a18488-5831-7bd3-93a8-7e36d80e2cb1",
+      "requested": {
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "service_tier": "default",
+        "sandbox": "read-only"
+      },
+      "observed": "gpt-6-astra/high/default; independently observed read-only grant",
+      "launch": "Separate top-level app-server thread; host parent is collection ledger only, no runtime parent.",
+      "retained_for_repairs": true,
+      "binding": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/review/binding.json"
+    }
+  },
+  "delivered_behavior": [
+    "Verified successful deploy publishes the full commit, actually affected installed skills per target and reload guidance through the existing repository board API.",
+    "--no-announce opts out; pure same-current redeploy without link changes is suppressed; other commands do not auto-publish.",
+    "Exit 2 means the deployment succeeded while notification remains unconfirmed. The output supplies a message UUID to inspect before manual recovery; notification failure preserves the deployment.",
+    "One immediate publication attempt with the existing board CAS retries; truthful tool-invocation publisher identity; no outbox, replay command or exactly-once claim."
+  ],
+  "source": {
+    "head_at_acceptance": "e1e3948ed1eb69079fd63de076442b946bd75aed",
+    "sha256": {
+      "skills/skill-release/scripts/skill_release.py": "b9cd2fdb80b88ab4941b3089b6a2b11951c4f96ac64bfd5a13394d4f3073e76e",
+      "skills/skill-release/tests/test_skill_release.py": "a97486c7fed99d53802888fdccb90304d8ca1555b097138174905866d4071a6b",
+      "skills/skill-release/SKILL.md": "7ac58ca60eba6525981133263bc37e5c37c2c9ea2e5d943fa377930196dcf139"
+    },
+    "reviewed_subject_manifest": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/subject-v3/manifest.json",
+    "reviewed_subject_manifest_sha256": "b8b274c10c81650458189bb5c6c5077d997ad9bc5f46015f2f6ce95680f1b6c9",
+    "accepted_in_place": true,
+    "source_commit_created": false,
+    "live_deployment_performed": false
+  },
+  "validation": {
+    "tests_passed": 43,
+    "command": "python3 -m unittest discover -s skills/skill-release/tests -v",
+    "checks": [
+      "release unittest suite",
+      "catalog/CLI synopsis",
+      "diff check",
+      "released-path packaging smoke in suite"
+    ],
+    "coverage": "Isolated real temporary-board roundtrip, kept-link content, additions/removals including emptied targets, uninstalled/ignored/excluded changes, executable modes, old/new exclusion effects, no-op/rollback target, opt-out/nonpublishing/failing commands, publication/ack uncertainty preserving state, canonical repository and released-symlink sibling resolution, repeated rollback into valid empty release and malformed/legacy rejection.",
+    "tests_use_temporary_release_and_board_environments": true,
+    "functional_post_to_live_board": false
+  },
+  "review": {
+    "verdict": "accept",
+    "open_findings": [],
+    "report": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/review/report-v3.json",
+    "report_sha256": "99568fc39613efa0ec21aea80b7bd0a141f604f143bc0d5f2b106e04ec68eb75",
+    "review_driven_repairs": 2,
+    "findings": {
+      "RA-001": {
+        "status": "resolved",
+        "classification": "Pre-existing installation-target reconciliation omission exposed by new actual-visibility summary. First implementation would emit an incorrect no-reload summary for this existing boundary.",
+        "evidence": "Admission install_lists omits empty targets and admission plan iterates only the new manifest. Corrected reconciliation and two isolated regressions are preserved in subject-v2."
+      },
+      "RA-002": {
+        "status": "resolved",
+        "classification": "Pre-existing catalog/legacy-manifest compatibility mismatch, not a newly introduced validator restriction.",
+        "evidence": "Admission catalog install_lists can return {}, while admission rollback calls validate_manifest requiring nonempty targets. All-targets-empty reconciliation exercised this valid state and exposed inability to roll back into it.",
+        "minimal_fix": "Only catalog-derived rollback release records may pass an empty installation object; default legacy/malformed checks stay strict. Required so an exercised valid catalog release remains reachable through existing rollback."
+      }
+    },
+    "limitations": [
+      "Same-provider/different-model review; no cross-provider independence claim.",
+      "Mandatory board read exposed implementation-role/model metadata; no author-blind claim. No inherited discovery/design/builder conversation.",
+      "Reviewer inspected supervisor executable evidence and ran effect-free in-memory probes; it did not independently rerun effectful deployment tests."
+    ]
+  },
+  "instruction_advice": {
+    "skill": "agent-instruction-review",
+    "applicability": "applicable: changed release guidance governs announcement opt-out, loaded-instruction refresh and uncertain-publication recovery.",
+    "subject": "skills/skill-release/SKILL.md",
+    "sha256": "7ac58ca60eba6525981133263bc37e5c37c2c9ea2e5d943fa377930196dcf139",
+    "inspected_material": "Changed command usage at line29 and release/rollback guidance at lines90-99; adjacent activation and authority context at lines8-24 and79-89.",
+    "findings": [],
+    "decisive_evidence": "The release skill owns its command behavior. The text distinguishes installed files from instructions already loaded, and successful deployment from uncertain notification. Both reasons are exposed where the guidance applies; opt-out and manual recovery do not expand deployment authority.",
+    "limitations": "Bounded advisory root check of the changed text, not an independent acceptance or full skill audit."
+  },
+  "organization_observation": "The retained discovery supervisor used the human-selected Terra/medium builder through two bounded corrections. The same isolated Astra reviewer retained its own review context. A small prose correction was coordinator-approved under the agreed revision policy.",
+  "measurement_limits": "Child ledger usage recovered; supervisor accounting snapshot remains partial through finalization. Shared ledger totals include concurrent sessions and are not task totals; no cost-to-acceptance inference. Explicit human Terra selection excluded this task from randomized builder comparison; no price ratio or causal cost saving is established.",
+  "provenance": {
+    "supervisor_result": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/result.json",
+    "supervisor_result_sha256": "cea57070ae0b2575d28742dde11eedf7fe7204d70971605000c22bda1d30ebe9",
+    "final_manifest": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/final-manifest.json",
+    "final_manifest_sha256": "92d73d07315c9f72339c555c440c5a0fc2cc6b7ae2eef3f1e5f656f04b857935",
+    "final_manifest_entries_verified": 148,
+    "root_context": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/root-context-at-integration.json",
+    "root_context_input_tokens": 63612,
+    "root_context_window_tokens": 475000,
+    "context_decision": "Retain for bounded acceptance and terminal collection; ample observed headroom after automatic compaction.",
+    "root_applied_settings_after_compaction": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "service_tier": "default",
+      "rollout_line": 1806,
+      "timestamp": "2026-10-28T22:23:05.905Z",
+      "event_sha256": "60ae835094626bc2c492e914c5aecbedd95e6c8b029361b02eef2d7f8bf72351"
+    }
+  },
+  "process_disposition": {
+    "worker_results_collected": true,
+    "review_turns_collected": 3,
+    "reviewer_idle_released": true,
+    "owned_processes_outstanding": [],
+    "pending_results": [],
+    "next_owner": "Root01a18339 collects exact artifacts and owns final integration/user communication; supervisor remains retained idle without new implementation authority."
+  },
+  "remaining_implementation_obligations": [],
+  "next_release_step": "A user-visible source commit and skill deployment remain separate release decisions."
+}

@@ -1,0 +1,31 @@
+{
+  "kind": "release-announcement-pilot-behavior-proposal",
+  "revision": "r1",
+  "status": "pending_human_review",
+  "decisions": [
+    {
+      "id": "B1",
+      "status": "pending_human_approval",
+      "proposed_decision": "Automatic announcements for successful deploy only; --no-announce suppresses them. Rollback keeps manual announcement for this first pass. Plan/check/status/retire never publish.",
+      "coordinator_basis": "Keep the first trial within the deploy outcome proposed to the user; do not broaden to rollback yet."
+    },
+    {
+      "id": "B2",
+      "status": "pending_human_approval",
+      "proposed_decision": "Use author skill-release and a generated per-invocation publisher UUID, explicitly labeled as an automation publisher rather than a verified Codex/Claude or human session. Return its message identity; do not infer runtime identity from environment variables.",
+      "coordinator_basis": "Truthful tool attribution without impersonating an agent. The human must approve this publisher-session meaning before implementation."
+    },
+    {
+      "id": "B3",
+      "status": "pending_human_approval",
+      "proposed_decision": "Summarize installed content/mode changes and install additions/removals per target, deduplicating skill names. Include changed bytes behind kept links and old/new exclusion effects. Suppress pure same-current/no-link-change redeploy announcements. A new release commit with unchanged installed content may announce that fact without requesting unnecessary reloads.",
+      "coordinator_basis": "Announcements must describe what active agents can actually read; install-link actions alone do not establish that."
+    },
+    {
+      "id": "B4",
+      "status": "pending_human_approval",
+      "proposed_decision": "After deployment, attempt one immediate post using a frozen message envelope for the board CAS. Report notification outcome separately. Proposed exit 0 for complete/skipped/no-op, 2 for deployed but publication unconfirmed, existing 1 for release error. Preserve deployed state; operator inspects returned message ID/board before manual recovery. No automatic retry subsystem, replay command or persistent outbox.",
+      "coordinator_basis": "An acknowledgement error cannot establish absence of a publication effect or undo a successful deployment."
+    }
+  ]
+}

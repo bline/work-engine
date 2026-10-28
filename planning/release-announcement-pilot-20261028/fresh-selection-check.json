@@ -1,0 +1,58 @@
+{
+  "kind": "fresh-formation-selection-check",
+  "guide_commit": "d16eeba55d4927922d8298cd487800faf7fd8f29",
+  "guide_path": "docs/model-selection.md",
+  "guide_sha256": "353f257dbb8aff0f9db8bf2c7526435cf67b5fc1ef553cb206ad80736d853ddc",
+  "supervisor_binding": {
+    "session_id": "01a1846d-c9c5-79c0-abc6-164d22c7bfa4",
+    "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T15-32-30-01a1846d-c9c5-79c0-abc6-164d22c7bfa4.jsonl",
+    "runtime_parent": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+    "collection_owner": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+    "requested_configuration": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    },
+    "observed_runtime_settings": {
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "service_tier": "default"
+    },
+    "context_binary": "/home/bline/.local/state/work-engine/tools/context-status/d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204/work-engine-context-status",
+    "context_binary_sha256": "d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204",
+    "continuation": "/home/bline/.local/state/work-engine/release-announcement-selection-retry-20261028-01a18339/supervisor/continuation.json"
+  },
+  "input_packet": {
+    "path": "/home/bline/.local/state/work-engine/release-announcement-selection-retry-20261028-01a18339/fresh-supervisor-packet.md",
+    "sha256": "f6b5ed69d7c754b89ce58e285e429b2bd3c005efc1c5d7578a9e1622a52b915e",
+    "desired_builder_named": false,
+    "prior_plan_artifacts_directed": false
+  },
+  "proposal": {
+    "path": "planning/release-announcement-pilot-20261028/fresh-formation-proposal.json",
+    "sha256": "a73017835d74f7ea4beb16ce984f89e93df73b4d22b614fe1ae79f290781780b"
+  },
+  "selected_builder": {
+    "model": "gpt-6.1-terra",
+    "effort": "medium",
+    "service_tier": "fast"
+  },
+  "builder_selection_reason": "Remaining work is bounded external Python tooling using an established publication CLI and existing isolated fixtures once B1-B5 are settled. No unresolved concurrency, durability, recovery or cross-component ownership design is intentionally delegated. Storage labels and the planner model do not justify Sol; a stronger builder can be reconsidered only for concrete remaining uncertainty or capability evidence.",
+  "selected_reviewer": {
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "service_tier": "default"
+  },
+  "reviewer_selection_reason": "The proposed review is of bounded implementation after policy approval, not an unresolved architectural or ownership design. Guide high is proportionate; if acceptance leaves open design in the review subject, the coordinator must settle scope or reconsider xhigh before launch.",
+  "mandatory_board_history_exposed": true,
+  "limitation": "Fresh context and source-based formation; not blind and not a causal/cost comparison, because required board reads exposed earlier selections. No runtime builder or review call occurred.",
+  "source_unchanged": {
+    "skills/skill-release/scripts/skill_release.py": true,
+    "skills/skill-release/SKILL.md": true,
+    "skills/skill-release/tests/test_skill_release.py": true
+  },
+  "implementation_started": false,
+  "builder_launched": false,
+  "reviewer_launched": false,
+  "approval_status": "Both the existing candidate and this fresh alternative remain proposals; no implementation approval inferred. The fresh alternative also proposes different rollback/no-op/exit-code policy choices, which are not silently adopted.",
+  "process_disposition": "Discovery complete, all required results collected, supervisor retained idle, no running owned processes."
+}

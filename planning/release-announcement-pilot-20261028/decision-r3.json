@@ -1,0 +1,56 @@
+{
+  "kind": "organization-and-implementation-authorization",
+  "status": "accepted",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/release-announcement-pilot-20261028/organization-r3.json",
+    "sha256": "ce7ee1022d793265c9cfe91800c5e15251786af3542f3f1fcc26b2617cfcfd73",
+    "revision": "r3",
+    "prior_revision": {
+      "revision": "r2",
+      "path": "planning/release-announcement-pilot-20261028/organization-r2.json",
+      "sha256": "5b8bf5b3f8c9613cfecab2864cfaf8e3149de86e319aef2c35d4b7ff8816de62"
+    }
+  },
+  "human_authority": {
+    "utterance": "proceed",
+    "context": "Following coordinator recommendation to move to implementation with Terra/medium under original deploy-only scope, retained discovery supervisor, isolated release/test boards and separate Astra/high/default review; rollback manual.",
+    "qualification": "Human approved the stated configuration/scope; coordinator binds exact assembled bytes. Do not claim the human recited this hash."
+  },
+  "coordinator_decision": "Accept this exact realization as a small assembly update within that human instruction; preserve all earlier candidates and no prior approval is fabricated.",
+  "behavior_ref": {
+    "path": "planning/release-announcement-pilot-20261028/behavior-r1.json",
+    "sha256": "9a56b968f5f31d5a57fad994cad15c16f009fb32f11c5eeb207faf7d0c62a15f"
+  },
+  "approved_implementation_paths": [
+    "skills/skill-release/scripts/skill_release.py",
+    "skills/skill-release/tests/test_skill_release.py",
+    "skills/skill-release/SKILL.md"
+  ],
+  "runtime_selections": {
+    "supervisor": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "service_tier": "default",
+      "session_id": "01a1846d-c9c5-79c0-abc6-164d22c7bfa4"
+    },
+    "worker": {
+      "model": "gpt-6.1-terra",
+      "effort": "medium",
+      "service_tier": "default"
+    },
+    "reviewer": {
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "launch": "separate top-level read-only"
+    }
+  },
+  "not_authorized": [
+    "live test board/release mutation",
+    "rollback announcements",
+    "board contract changes",
+    "outbox/replay/automatic recovery system",
+    "commit or deployment"
+  ],
+  "current_claim": "67a14e24-c2e4-465c-a9ed-13b212dfc163"
+}

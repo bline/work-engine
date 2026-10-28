@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import uuid
 from pathlib import Path
 
 CATALOG_PATH = "skills/catalog.json"
@@ -139,11 +140,11 @@ def now() -> str:
 
 # --- manifest -----------------------------------------------------------------
 
-def validate_manifest(manifest, targets: dict[str, Path], has_skill) -> dict[str, list[str]]:
+def validate_manifest(manifest, targets: dict[str, Path], has_skill, *, allow_empty=False) -> dict[str, list[str]]:
     if not isinstance(manifest, dict) or manifest.get("schema") != MANIFEST_SCHEMA:
         raise ReleaseError(f"install manifest schema must be {MANIFEST_SCHEMA}")
     declared = manifest.get("targets")
-    if not isinstance(declared, dict) or not declared:
+    if not isinstance(declared, dict) or (not declared and not allow_empty):
         raise ReleaseError("install manifest needs a non-empty targets object")
     result = {}
     for target, names in declared.items():
@@ -449,7 +450,7 @@ def content_change(repo: Path, commit: str, name: str, entry: Path, excludes=())
         return None
     resolved = entry.resolve()
     problems = compare(drop_excluded(tree_entries(repo, commit, f"skills/{name}"), excludes),
-                       drop_excluded(dir_entries(resolved, f"skills/{name}"), excludes))
+                       dir_entries(resolved, f"skills/{name}"))
     skill_md = resolved / "SKILL.md"
     current_front = frontmatter(skill_md.read_text(errors="replace")) if skill_md.exists() else ""
     new_front = frontmatter(git(repo, "show", f"{commit}:skills/{name}/SKILL.md"))
@@ -459,10 +460,17 @@ def content_change(repo: Path, commit: str, name: str, entry: Path, excludes=())
 
 def plan(repo: Path, store: Store, targets: dict[str, Path], commit: str,
          manifest: dict[str, list[str]], excludes=()) -> dict:
-    result = {"commit": commit, "current": store.current_commit(),
+    current = store.current_commit()
+    reconciled = dict(manifest)
+    if current:
+        for target in store.release_record(current)["manifest"]:
+            reconciled.setdefault(target, [])
+    result = {"commit": commit, "current": current,
               "release_exists": store.release_dir(commit).exists(), "targets": {},
               "release_exclude": list(excludes)}
-    for target, names in manifest.items():
+    for target, names in reconciled.items():
+        if target not in targets:
+            raise ReleaseError(f"target {target!r} from current release is not configured")
         directory = targets[target]
         if not directory.is_dir():
             raise ReleaseError(f"target directory {directory} does not exist")
@@ -517,14 +525,20 @@ def apply(repo: Path, store: Store, targets: dict[str, Path], backup_root: Path,
                            f"(review the plan, then rerun with --replace-copies): {', '.join(blocked)}")
     if any(a["action"] == "replace-copy" for _, a in items):
         backup_root.mkdir(parents=True, exist_ok=True)
-    for target in manifest:
+    for target in planned["targets"]:
         if not same_filesystem(store.root, targets[target]):
             raise ReleaseError(f"{targets[target]} is not on the release root's filesystem")
         if backup_root.exists() and not same_filesystem(backup_root, targets[target]):
             raise ReleaseError(f"backup root {backup_root} is not on {targets[target]}'s filesystem")
 
-    dots_before = dot_entries(targets, manifest)
-    previous = store.current_commit()
+    dots_before = dot_entries(targets, planned["targets"])
+    current_before = store.current_commit()
+    affected = {}
+    for target, item in items:
+        change = item["change"]
+        if item["action"] in ("link", "unlink") or change is None or any(change["files"].values()):
+            affected.setdefault(target, []).append(item["name"])
+    previous = current_before
     if previous == commit:
         previous = (store.last_switch() or {}).get("previous")
     created = build_release(repo, store, commit, manifest, excludes)
@@ -551,14 +565,49 @@ def apply(repo: Path, store: Store, targets: dict[str, Path], backup_root: Path,
             changes.setdefault(target, []).append(change)
 
     problems = verify_links(store, targets, manifest, commit)
-    if dot_entries(targets, manifest) != dots_before:
+    if dot_entries(targets, planned["targets"]) != dots_before:
         problems.append("dot-prefixed entries changed in a skill directory")
     if problems:
         raise ReleaseError("post-deploy verification failed: " + "; ".join(problems))
     record = {"action": action_name, "at": now(), "commit": commit, "previous": previous,
+              "current_before": current_before, "affected": affected,
               "release_created": created, "changes": changes}
     store.append_history(record)
     return record
+
+
+def announce(repo: Path, record: dict) -> dict:
+    """Make one board publication attempt; errors leave the deployment intact."""
+    message_id, publisher_id = str(uuid.uuid4()), str(uuid.uuid4())
+    observed_at = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+    outcome = {"status": "unconfirmed", "message_id": message_id,
+               "publisher_id": publisher_id, "observed_at": observed_at}
+    names = sorted({name for values in record["affected"].values() for name in values})
+    details = "; ".join(f"{target}: {', '.join(values)}" for target, values in record["affected"].items())
+    body = (f"Skill release {record['commit']} deployed. "
+            f"Affected installed skills: {', '.join(names) if names else 'none'}"
+            f"{f' ({details})' if details else ''}. "
+            + ("New reads follow current links; already loaded instructions need explicit re-reading."
+               if names else "Installed content is unchanged; no reload is needed for this release.")
+            + " Published by skill-release tool automation; publisher UUID is not a verified model or human session.")
+    try:
+        sibling = Path(__file__).resolve().parents[2] / "durable-state" / "scripts"
+        sys.path.insert(0, str(sibling))
+        try:
+            spec = importlib.util.spec_from_file_location("skill_release_chatboard", sibling / "codex_chatboard.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        finally:
+            sys.path.remove(str(sibling))
+        ack = module.post(repo, author="skill-release", session_id=publisher_id,
+                          topic="skill-release", body=body, references=[record["commit"]],
+                          message_id=message_id, observed_at=observed_at)
+        outcome.update(status="published", revision=ack["revision"], sequence=ack["message"]["sequence"])
+    except Exception as error:
+        outcome["error"] = str(error)
+        print(f"skill-release: announcement unconfirmed for message {message_id}: {error}. "
+              "Inspect the board for this UUID before manual recovery.", file=sys.stderr)
+    return outcome
 
 
 def verify_links(store: Store, targets: dict[str, Path], manifest: dict, commit: str) -> list[str]:
@@ -673,6 +722,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("ref", nargs="?", default="HEAD")
     d.add_argument("--replace-copies", action="store_true",
                    help="move real directories found in managed entries to the backup root")
+    d.add_argument("--no-announce", action="store_true", help="skip the coordination board announcement")
     sub.add_parser("check", help="validate the working tree's catalog and CLI synopses; changes nothing")
     s = sub.add_parser("status", help="show the deployed release and link state")
     s.add_argument("--verify", action="store_true", help="re-hash the release against its commit")
@@ -712,15 +762,24 @@ def main(argv: list[str] | None = None) -> int:
                     raise ReleaseError("no previous release to roll back to")
                 commit = last["previous"]
                 release = store.release_dir(commit)
+                release_record = store.release_record(commit)
                 manifest = validate_manifest(
-                    {"schema": MANIFEST_SCHEMA, "targets": store.release_record(commit)["manifest"]},
-                    targets, lambda n: (release / "skills" / n / "SKILL.md").exists())
+                    {"schema": MANIFEST_SCHEMA, "targets": release_record["manifest"]},
+                    targets, lambda n: (release / "skills" / n / "SKILL.md").exists(),
+                    allow_empty=release_record.get("install_source", {}).get("path") == CATALOG_PATH)
                 result = apply(repo, store, targets, backup_root, commit, manifest, False, "rollback",
-                               store.release_record(commit).get("release_exclude", []))
+                               release_record.get("release_exclude", []))
             else:
                 result = retire(store, targets, backup_root, args.target, args.names)
+        if args.command == "deploy":
+            if args.no_announce:
+                result["announcement"] = {"status": "skipped"}
+            elif result["current_before"] == result["commit"] and not result["changes"]:
+                result["announcement"] = {"status": "no-op"}
+            else:
+                result["announcement"] = announce(repo, result)
         print(json.dumps(result, indent=2))
-        return 0
+        return 2 if args.command == "deploy" and result["announcement"]["status"] == "unconfirmed" else 0
     except (ReleaseError, OSError, json.JSONDecodeError) as error:
         print(f"skill-release: {error}", file=sys.stderr)
         return 1

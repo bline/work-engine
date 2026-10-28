@@ -1,0 +1,169 @@
+{
+  "artifact_type": "release-announcement.organization-proposal",
+  "organization_id": "release-announcement.selection-retry",
+  "revision": 1,
+  "created_at": "2026-10-28T21:39:33.988741+00:00",
+  "status": "candidate_pending_human_decision",
+  "prior_revision": null,
+  "objective": "Automatic exact skill-release chatboard announcements after successful activation, with actually changed installed names, useful reload guidance, and separately observable notification failure.",
+  "guidance": {
+    "repository_head": "a7c1cf663e4e33e645ce350af0c7a814f2a75837",
+    "model_selection": {
+      "path": "docs/model-selection.md",
+      "sha256": "353f257dbb8aff0f9db8bf2c7526435cf67b5fc1ef553cb206ad80736d853ddc",
+      "blob": "7cf6065e1f29395a92e11474121c393a3425215a",
+      "working_tree_matches_committed": true
+    },
+    "manual_orchestration": {
+      "resolved_directory": "/home/bline/.local/share/work-engine/skill-releases/releases/d16eeba55d4927922d8298cd487800faf7fd8f29/skills/manual-orchestration",
+      "release_commit": "d16eeba55d4927922d8298cd487800faf7fd8f29",
+      "files_sha256": {
+        "SKILL.md": "78c2af6d75e3b9bd68ab2704e0a3ec2c05b94db305a2f34fd60cf763bf82c699",
+        "references/supervisor.md": "ae05b902f327fb269264235ec8245725279f2ed01852cc0c8d66fc7f1124847c",
+        "references/organization-formation.md": "c7e82427a6f5839aad0c1c941e39311469a444c587daee471301ba8ec0985104",
+        "references/call-cost.md": "0cf0be0864aac569c566a7f52b1703557aa4547423a78c392328402703398ac2",
+        "references/context-boundary.md": "8caf1bf3f2ee1648b0931fc32ca784680fc59ba61c6251fcd491fe6767461b54",
+        "references/codex-host.md": "e5162d2f58f26ed4fc6e2570d93510a89c7e422e36c66400d199f00a81ddf7da",
+        "references/measurement.md": "39559178713a0578281f95d81ea3833974b53317c930020fcf839f85ed5c159d"
+      },
+      "packet_pinned_older_release": "1623c99dcc9613a680383c9baf7d3b57e8cfb62d",
+      "disposition": "Current released symlink resolves to d16eeba55d4927922d8298cd487800faf7fd8f29; used that release as root directed."
+    }
+  },
+  "roles": [
+    {
+      "id": "release-announcement.coordinator",
+      "reports_to": "human",
+      "outcome": "Collect this exact candidate, present organization and B1-B5 to the human, bind the decision outside the candidate, own final integration and future commit/deploy authority.",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "service_tier": "fast"
+      },
+      "launch": "Existing root; this candidate does not launch or reconfigure it. Preserve a known explicit user override.",
+      "reason": "Coordinator guidance; future Fast request follows manual-host guidance. Current actual root tier is outside this candidate and is owned by root assignment."
+    },
+    {
+      "id": "release-announcement.supervisor",
+      "reports_to": "release-announcement.coordinator",
+      "outcome": "After acceptance, own the bounded worker outcome, validation, top-level review collection, ordinary remediation and result handback.",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "service_tier": "fast"
+      },
+      "launch": "Prefer retained discovery supervisor via followup_task only after root scoped context assessment and actual tier reconciliation. No new launch now.",
+      "retention": "Useful source and policy understanding is retained; continuation owns actual discovery identity. Root assesses capacity for the later implementation-supervision scope.",
+      "reason": "One coherent group; current guide assigns Sol/xhigh to supervisors. Future Fast is requested by current manual-host guidance; current observed discovery default tier is separately preserved, and is not claimed to be Fast."
+    },
+    {
+      "id": "release-announcement.builder",
+      "reports_to": "release-announcement.supervisor",
+      "outcome": "Implement and validate automatic activation announcements through the existing board CLI, including accurate effective changed-name derivation, distinct notification outcome and skill documentation. Own ordinary integration and review remediation.",
+      "requested": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "service_tier": "fast"
+      },
+      "launch": "Unlaunched; proposed native spawn_agent(agent_type=worker, fork_turns=none, model=gpt-6.1-terra, reasoning_effort=medium) after human decision and root tier setup/verification. Native child tier inherits the host tree; do not claim explicit per-child tier support.",
+      "ownership": [
+        "skills/skill-release/scripts/skill_release.py",
+        "skills/skill-release/tests/test_skill_release.py",
+        "skills/skill-release/SKILL.md"
+      ],
+      "reason": "Remaining work is bounded external Python tooling using an established publication CLI and existing isolated fixtures once B1-B5 are settled. No unresolved concurrency, durability, recovery or cross-component ownership design is intentionally delegated. Storage labels and the planner model do not justify Sol; a stronger builder can be reconsidered only for concrete remaining uncertainty or capability evidence.",
+      "retention": "Retain through ordinary remediation when a scoped context assessment supports it; model changes require explicit disposition."
+    },
+    {
+      "id": "release-announcement.reviewer",
+      "reports_to": "release-announcement.supervisor",
+      "outcome": "Read-only adversarial review of the exact implementation and approved behavior; challenge false deployment/publication success, changed-name omissions, exclusion handling, attribution, repository isolation and regression evidence.",
+      "requested": {
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "service_tier": "default"
+      },
+      "launch": "Unlaunched; separately established top-level Codex app-server thread using current released manual-orchestration/scripts/role_host.py launch codex, explicit -m gpt-6-astra, model_reasoning_effort=high and service_tier=default. --parent records collection ownership, not runtime ancestry.",
+      "review_claim": "Different-model, separately established read-only context; same provider, so no cross-provider independence claim. Capability and actual runtime/model/tier evidence must be bound after launch.",
+      "reason": "The proposed review is of bounded implementation after policy approval, not an unresolved architectural or ownership design. Guide high is proportionate; if acceptance leaves open design in the review subject, the coordinator must settle scope or reconsider xhigh before launch.",
+      "retention": "Retain useful reviewer through bounded remediation; supervisor owns completion collection through a verified top-level-thread route, not wait_agent alone."
+    }
+  ],
+  "shape_reason": "One builder owns the adapter, its semantics, tests and documentation together. Splitting these tightly coupled changes adds coordination without a separate independently checkable outcome. One supervisor and one separately established adversarial reviewer preserve implementation and review ownership. No discovery child is justified.",
+  "implementation_scope": {
+    "language": "Existing external Python tooling; no internal Rust product work.",
+    "write_paths": [
+      "skills/skill-release/scripts/skill_release.py",
+      "skills/skill-release/tests/test_skill_release.py",
+      "skills/skill-release/SKILL.md"
+    ],
+    "read_only_dependencies": [
+      "skills/durable-state/scripts/codex_chatboard.py",
+      "skills/durable-state/scripts/durable_state.py",
+      "docs/codex-chatboard.md"
+    ],
+    "proposed_commands": [
+      "deploy",
+      "rollback"
+    ],
+    "cli_parser_change_proposed": false,
+    "out_of_scope": [
+      "General scheduler, outbox or recovery subsystem",
+      "Exactly-once announcement guarantee",
+      "Board schema or durable-state adapter changes",
+      "Deployment atomicity redesign",
+      "Automatic daemon or agent restart",
+      "Live release/deploy/rollback, source commit, or publication during formation"
+    ],
+    "validation_owner": "Builder provides isolated executable evidence; supervisor validates owning contract and collects read-only review; coordinator owns final acceptance/integration."
+  },
+  "decision_subjects": [
+    {
+      "id": "B1",
+      "question": "Which successful commands announce?",
+      "recommendation": "Announce deploy and rollback, since both activate committed skill content through the same apply boundary. Never announce check, plan, status or retire. This includes a successful redeploy with no effective content change, explicitly labelled as such.",
+      "owner": "human, assembled by coordinator"
+    },
+    {
+      "id": "B2",
+      "question": "What counts as actually changed installed skills?",
+      "recommendation": "Report per-target added, content-changed and removed managed names, plus a sorted deduplicated affected-name list. Snapshot actual visible installed content before switching under the release lock and compare with the new effective exported directories, after their own exclusions. New availability and managed removals are explicit; uninstalled skill edits and byte-identical retargets are not content changes. Keep-link content deltas count. Apply the new exclusions only to the new export, never retroactively to the old snapshot.",
+      "owner": "human, with coordinator resolving bounded interpretation before dispatch"
+    },
+    {
+      "id": "B3",
+      "question": "How are publication failure, no-op and retry represented?",
+      "recommendation": "Only attempt publication after apply returns successfully (verification plus history append). Preserve that successful deployment on notification error. Emit the successful deployment JSON with a separate announcement result; return 0 when confirmed, 3 when deployment succeeded but publication is unconfirmed, and preserve existing deployment/usage failure statuses. Include the intended payload, precise error and manual existing-board retry guidance when unconfirmed. Each successful activation command, including no-op deploy, attempts one announcement. No automatic replay, scheduler, outbox or exactly-once claim. A manual retry may duplicate a prior unconfirmed post; do not rerun rollback merely to retry notification.",
+      "owner": "human"
+    },
+    {
+      "id": "B4",
+      "question": "Which publisher identity, repository and topic are used?",
+      "recommendation": "Publish into the canonical repository resolved from --repository, not the script checkout or release root. Use the existing ordinary post CLI from the resolved sibling released durable-state skill, author skill-release, topic all, and a fresh UUID explicitly representing this tool invocation as session_id. Do not infer a verified agent session from inherited environment. Include full release commit, action, completion time, affected names by target, release location and concise reload guidance. Preserve the publication message/revision on confirmed success. No new CLI flags or board schema.",
+      "owner": "human/coordinator; board semantic owner if its identity policy requires an agent runtime"
+    },
+    {
+      "id": "B5",
+      "question": "What isolated evidence is sufficient?",
+      "recommendation": "All deployment and board mutations occur only in temporary repositories, release directories, targets and backups; use the real existing board CLI for success tests. Cover initial install, kept links with changed content, managed removal, uninstalled edits, exclusion transitions, no-op redeploy, rollback and failure/no-publication boundaries. Inject deterministic publication failures to prove successful release state and exit 3. Include a copied/released-path smoke proving sibling-helper resolution and the exact target repository. Run the existing release suite and CLI-synopsis freshness check after authorization.",
+      "owner": "coordinator for validation admission, human for initial scope"
+    }
+  ],
+  "approval_boundary": {
+    "initial_owner": "human through coordinator",
+    "status": "pending",
+    "source": "Fresh-supervisor packet explicitly requires human review of exact initial candidate and implementation scope before source changes.",
+    "later_changes": "Coordinator classifies consequences and approves small changes; large changes require human approval. Fixed provider, tier, budget, mutation or other boundaries retain their owners.",
+    "approval_record": "Must be external to this candidate and bind its exact path and SHA-256; no approval evidence is invented here."
+  },
+  "actual_runtime_binding_owner": "continuation.json for this launched discovery role; root assignment for coordinator. Proposed worker/reviewer have no observed identity.",
+  "coordination_history_exposure": {
+    "source": "Mandatory newest-20 coordination-board startup read",
+    "prior_artifacts_opened": false,
+    "exposed_sequences": [
+      3491,
+      3493
+    ],
+    "details": "Board prose exposed prior Sol/medium and revised Terra/medium builder proposals, and the root retry claim. No prior pilot plans, candidate JSON, discovery findings, guide history, selection reassessments or root-control files were opened. This is a fresh formation check with disclosed coordination-history exposure, not a blind or causal comparison."
+  }
+}

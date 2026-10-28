@@ -5,9 +5,11 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "skill_release.py"
@@ -93,6 +95,205 @@ class SkillReleaseTest(unittest.TestCase):
         return {a["name"]: a for a in planned["targets"][target]["actions"]}
 
     # tests
+    def board(self):
+        script = SCRIPT.resolve().parents[2] / "durable-state/scripts/codex_chatboard.py"
+        result = subprocess.run(["python3", str(script), "--repository", str(self.repo), "read"],
+                                capture_output=True, text=True, check=True)
+        return json.loads(result.stdout)["messages"]
+
+    def test_announcements_follow_installed_visibility_and_noop(self):
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        first = json.loads(out)
+        self.assertEqual(first["announcement"]["status"], "published")
+        self.assertEqual(set(first["affected"]["codex"]), {"alpha", "beta"})
+        self.assertEqual(self.board()[-1]["message_id"], first["announcement"]["message_id"])
+        self.write("skills/alpha/SKILL.md", skill_md("alpha", "changed"))
+        self.write("skills/gamma/SKILL.md", skill_md("gamma", "uninstalled"))
+        second = self.commit("content")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        record = json.loads(out)
+        self.assertEqual(record["affected"], {"claude": ["alpha"], "codex": ["alpha"]})
+        self.assertEqual(record["current_before"], self.first)
+        self.assertIn(second, self.board()[-1]["body"])
+        self.assertNotIn("gamma", self.board()[-1]["body"])
+        code, out, _ = self.run_cli("deploy")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["announcement"]["status"], "no-op")
+        self.assertEqual(json.loads(out)["previous"], self.first)
+        self.assertEqual(len(self.board()), 2)
+        self.assertEqual(self.run_cli("rollback")[0], 0)
+        self.assertEqual(len(self.board()), 2)
+
+    def test_exclusions_modes_and_install_changes(self):
+        self.write("skills/alpha/data/file", "visible")
+        self.commit("data")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/alpha/scripts/run.py", "print('alpha')\n", mode=0o644)
+        self.commit("mode only")
+        self.assertEqual(json.loads(self.run_cli("deploy")[1])["affected"],
+                         {"claude": ["alpha"], "codex": ["alpha"]})
+        self.install({"claude": ["beta"], "codex": ["alpha"]},
+                     {"alpha": {"kind": "tool", "state": "active", "install": ["codex"],
+                                "release_exclude": ["data/"]}})
+        self.commit("mode exclusion and installs")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["affected"], {"claude": ["beta", "alpha"], "codex": ["alpha", "beta"]})
+        self.install({"claude": ["beta"], "codex": ["alpha"]})
+        self.commit("restore excluded content")
+        self.assertEqual(json.loads(self.run_cli("deploy")[1])["affected"], {"codex": ["alpha"]})
+
+    def test_excluded_and_ignored_edits_do_not_affect_installed_content(self):
+        self.write("skills/alpha/data/file", "excluded")
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]},
+                     {"alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                                "release_exclude": ["data/"]}})
+        self.commit("exclude")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        ignored = self.claude / "alpha" / "ignored.pyc"
+        os.chmod(ignored.parent, 0o755)
+        ignored.write_text("ignored")
+        os.chmod(ignored.parent, 0o555)
+        self.write("skills/alpha/data/file", "changed but excluded")
+        self.commit("excluded edit")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["affected"], {})
+
+    def test_unchanged_new_release_opt_out_and_nonpublishing_commands(self):
+        self.assertEqual(self.run_cli("deploy", "--no-announce")[0], 0)
+        self.write("skills/gamma/SKILL.md", skill_md("gamma", "changed"))
+        self.commit("uninstalled")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["affected"], {})
+        self.assertIn("no reload is needed", self.board()[-1]["body"])
+        for args in (("check",), ("plan",), ("status",), ("rollback",)):
+            self.assertEqual(self.run_cli(*args)[0], 0, args)
+        (self.claude / "unmanaged").mkdir()
+        self.assertEqual(self.run_cli("retire", "claude", "unmanaged")[0], 0)
+        self.assertEqual(len(self.board()), 1)
+
+    def test_publication_failure_and_ack_uncertainty_preserve_deployment(self):
+        with mock.patch.object(release.importlib.util, "spec_from_file_location", side_effect=OSError("unavailable")):
+            code, out, err = self.run_cli("deploy")
+        record = json.loads(out)
+        self.assertEqual(code, 2)
+        self.assertEqual(record["announcement"]["status"], "unconfirmed")
+        self.assertIn(record["announcement"]["message_id"], err)
+        self.assertEqual(release.Store(self.root).current_commit(), self.first)
+        self.assertTrue((self.claude / "alpha").is_symlink())
+        self.assertTrue(release.Store(self.root).last_switch())
+        self.write("skills/alpha/SKILL.md", skill_md("alpha", "second"))
+        second = self.commit("second")
+        original = release.importlib.util.module_from_spec
+        def wrap(spec):
+            module = original(spec)
+            loader = spec.loader
+            original_exec = loader.exec_module
+            def execute(mod):
+                original_exec(mod)
+                post = mod.post
+                def uncertain(*args, **kwargs):
+                    post(*args, **kwargs)
+                    raise OSError("lost acknowledgement")
+                mod.post = uncertain
+            loader.exec_module = execute
+            return module
+        with mock.patch.object(release.importlib.util, "module_from_spec", side_effect=wrap):
+            code, out, _ = self.run_cli("deploy")
+        record = json.loads(out)
+        self.assertEqual(code, 2)
+        self.assertEqual(self.board()[-1]["message_id"], record["announcement"]["message_id"])
+        self.assertEqual(release.Store(self.root).current_commit(), second)
+        self.assertEqual(release.Store(self.root).last_switch()["commit"], second)
+
+    def test_failed_apply_does_not_publish(self):
+        (self.codex / "beta").mkdir()
+        self.assertEqual(self.run_cli("deploy")[0], 1)
+        self.assertEqual(self.board(), [])
+
+    def test_last_target_skill_removed_and_rollback_restores_it(self):
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        (self.claude / "unmanaged").mkdir()
+        self.write("skills/alpha/SKILL.md", skill_md("alpha", "changed"))
+        self.install({"codex": ["alpha", "beta"]})
+        self.commit("remove last claude install")
+        planned = self.plan()
+        self.assertEqual(self.actions(planned, "claude")["alpha"]["action"], "unlink")
+        self.assertTrue((self.claude / "alpha").is_symlink())
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["affected"], {"codex": ["alpha"], "claude": ["alpha"]})
+        self.assertFalse((self.claude / "alpha").is_symlink())
+        self.assertTrue((self.claude / "unmanaged").is_dir())
+        self.assertIn("claude: alpha", self.board()[-1]["body"])
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.assertEqual(self.run_cli("rollback")[0], 0)
+        self.assertTrue((self.claude / "alpha").is_symlink())
+        self.assertEqual(release.Store(self.root).current_commit(), self.first)
+
+    def test_removing_every_install_unlinks_deleted_and_retained_skills(self):
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        shutil.rmtree(self.repo / "skills" / "beta")
+        self.install({})
+        self.commit("remove all installations and delete beta")
+        planned = self.plan()
+        self.assertEqual(self.actions(planned, "codex")["beta"]["action"], "unlink")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["affected"], {"claude": ["alpha"], "codex": ["alpha", "beta"]})
+        self.assertFalse((self.claude / "alpha").is_symlink())
+        self.assertFalse((self.codex / "beta").is_symlink())
+        self.assertIn("beta", self.board()[-1]["body"])
+        self.assertEqual(self.run_cli("rollback")[0], 0)
+        self.assertTrue((self.codex / "beta").is_symlink())
+
+    def test_rollback_into_empty_install_release(self):
+        self.install({})
+        empty = self.commit("empty installation")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.install({"claude": ["alpha"], "codex": ["beta"]})
+        self.commit("install again")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        (self.claude / "unmanaged").mkdir()
+        before = len(self.board())
+        for _ in range(2):
+            code, out, err = self.run_cli("rollback")
+            self.assertEqual(code, 0, err)
+            self.assertEqual(json.loads(out)["commit"], empty)
+            self.assertFalse((self.claude / "alpha").is_symlink())
+            self.assertFalse((self.codex / "beta").is_symlink())
+            self.assertTrue((self.claude / "unmanaged").is_dir())
+            self.assertEqual(len(self.board()), before)
+            self.assertEqual(self.run_cli("rollback")[0], 0)
+            self.assertTrue((self.claude / "alpha").is_symlink())
+        self.assertEqual(len(self.board()), before)
+
+    def test_empty_legacy_manifest_and_malformed_release_manifest_are_rejected(self):
+        targets = {"claude": self.claude, "codex": self.codex}
+        with self.assertRaises(release.ReleaseError):
+            release.validate_manifest({"schema": release.MANIFEST_SCHEMA, "targets": {}}, targets, lambda _: True)
+        for invalid in (None, [], {"claude": "alpha"}, {"unknown": []}, {"claude": ["../bad"]}):
+            with self.subTest(invalid=invalid), self.assertRaises(release.ReleaseError):
+                release.validate_manifest({"schema": release.MANIFEST_SCHEMA, "targets": invalid},
+                                          targets, lambda _: True, allow_empty=True)
+
+    def test_symlinked_released_script_finds_sibling(self):
+        released = self.temp / "released/skills"
+        shutil.copytree(SCRIPT.resolve().parents[1], released / "skill-release")
+        shutil.copytree(SCRIPT.resolve().parents[2] / "durable-state", released / "durable-state")
+        link = self.temp / "linked-skill"
+        link.symlink_to(released / "skill-release", target_is_directory=True)
+        result = subprocess.run(["python3", str(link / "scripts/skill_release.py"), "--repository", str(self.repo),
+                                 "--release-root", str(self.root), "--backup-root", str(self.backup),
+                                 "--target-dir", f"claude={self.claude}", "--target-dir", f"codex={self.codex}",
+                                 "deploy"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.board()[-1]["message_id"], json.loads(result.stdout)["announcement"]["message_id"])
+
     def test_plan_classifies_entries_and_changes_nothing(self):
         os.symlink(self.repo / "skills/alpha", self.claude / "alpha")        # dev-tree link
         stale = self.codex / "beta"

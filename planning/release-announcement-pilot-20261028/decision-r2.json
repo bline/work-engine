@@ -1,0 +1,36 @@
+{
+  "kind": "organization-approval-record",
+  "status": "pending_human_review",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/release-announcement-pilot-20261028/organization-r2.json",
+    "sha256": "5b8bf5b3f8c9613cfecab2864cfaf8e3149de86e319aef2c35d4b7ff8816de62",
+    "revision": "r2",
+    "prior_revision": {
+      "revision": "r1",
+      "path": "planning/release-announcement-pilot-20261028/organization-r1.json",
+      "sha256": "77b0911843b83bc7d88ca64cb8ae8d13ec61a0af489480b9baf5f66a1175ac25",
+      "status_at_supersession": "pending_human_review; not approved or executed"
+    }
+  },
+  "decision_owner": "human",
+  "approved_by": null,
+  "approval_evidence": null,
+  "implementation_authorization": "pending; requested review covers organization, B1-B4 and bounded packet before source changes",
+  "coordinator": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+  "supervisor_retained": "01a18454-5eb3-79d3-834a-365b7d554c20",
+  "behavior_ref": {
+    "path": "planning/release-announcement-pilot-20261028/behavior-r1.json",
+    "sha256": "9a56b968f5f31d5a57fad994cad15c16f009fb32f11c5eeb207faf7d0c62a15f"
+  },
+  "work_packet_ref": {
+    "path": "planning/release-announcement-pilot-20261028/work-packet-r2.md",
+    "sha256": "a0d21c5e3b0bb1c7484bc7e7ac2f1b4915cfbaac92df1e81b3402c666a2045ce"
+  },
+  "later_revisions": {
+    "classification_owner": "coordinator",
+    "small_approval_owner": "coordinator",
+    "large_approval_owner": "human",
+    "existing_authority_boundaries": "retained"
+  },
+  "change_basis": "Owner feedback on default builder selection; new candidate is proposed, not an approved implementation or an approval carried from r1."
+}

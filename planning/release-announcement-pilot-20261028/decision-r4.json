@@ -1,0 +1,20 @@
+{
+  "kind": "small-organization-revision-decision",
+  "status": "accepted",
+  "classification": "small",
+  "basis": "Correct stale prose to match already approved high reviewer configuration; no new role, scope, authority, model, tier, grant or cost selection.",
+  "decision_owner": "coordinator",
+  "source_human_authority": "planning/release-announcement-pilot-20261028/decision-r3.json",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/release-announcement-pilot-20261028/organization-r4.json",
+    "sha256": "af54df275f48a68a995bdb1ceae2dbc985301fac437d47694950b09c762aeaff",
+    "revision": "r4",
+    "prior_revision": {
+      "revision": "r3",
+      "path": "planning/release-announcement-pilot-20261028/organization-r3.json",
+      "sha256": "ce7ee1022d793265c9cfe91800c5e15251786af3542f3f1fcc26b2617cfcfd73"
+    }
+  },
+  "effective_selection": "Astra/high/default/read-only, separate top-level reviewer",
+  "recorded_at": "2026-10-28T21:54:30.451750+00:00"
+}

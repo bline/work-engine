@@ -1,0 +1,40 @@
+# Proposed release-announcement work packet — not dispatched
+
+Status: proposal r2. This file grants no implementation authority. The root must attach the exact human-reviewed organization/behavior decision and an explicit implementation authorization before dispatch. Organization acceptance alone is not a mutation grant.
+
+Outcome: a successful skill deployment can publish its release commit, actually affected installed skills and reload guidance to the repository chatboard. A publication problem remains separately observable from deployment truth.
+
+Use the released manual-orchestration skill identified in /home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/discovery-findings.json as a worker, and follow the accepted objective, DESIGN.md and current model guide. The worker is not alone in the repository: preserve all other sessions' work and do not revert unrelated edits. Source identity is the per-path SHA256 battery in /home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/discovery-findings.json, not merely its HEAD. Recheck affected bytes when work is admitted.
+
+Before dispatch the root/supervisor must bind the human disposition of B1-B4 in planning/release-announcement-pilot-20261028/behavior-r1.json: announcement commands/default and opt-out, truthful publisher attribution, actual-change/no-op semantics, and partial-success exit behavior. The listed recommendations are not accepted decisions. Scope remains the existing external Python release tool; no Rust runtime or product-architecture work.
+
+Write ownership: skills/skill-release/scripts/skill_release.py, skills/skill-release/tests/test_skill_release.py, and the necessary release instructions in skills/skill-release/SKILL.md. A generated existing synopsis block for this CLI may be refreshed only if one is actually affected. Read-only dependencies: skills/durable-state/scripts/codex_chatboard.py and durable_state.py. No board contract, registry or generic durable-state implementation edits are authorized by this proposal. Refer a genuine contract gap to the supervisor.
+
+The minimum coherent first pass uses the verified apply result as the deployment-success boundary and the existing board publication API as a separate immediate effect. Derive summary from installed visibility before switching: keep links can expose new content, removal-only changes matter, and newly excluded files must not disappear from the old-side comparison. Report newly installed/removed names and targets. A real commit switch with unchanged installed skills reports that fact without requesting a reload. Follow the approved no-op redeploy and rollback behavior.
+
+Use the canonical source repository selected by --repository as the board target. Resolve a sibling board adapter from the released script location, so running an installed/released tool does not silently load a working-tree adapter. Freeze the message identity and timestamp for one post and its existing board CAS retries. Use truthful publisher attribution chosen by the owner; never treat an inherited CODEX_THREAD_ID as verified runtime identity.
+
+Keep this bounded: one immediate announcement attempt, no automatic retry loop outside the board's own CAS, no replay subcommand, no daemon, no persistent outbox or exactly-once guarantee. Return the attempted message ID and a clear announcement outcome. After unconfirmed publication, the release operator inspects the board before deciding whether to post manually. Notification failure must not trigger rollback or erase the successful deployment result. A transport/acknowledgement error cannot prove no board effect occurred.
+
+Meaningful validation after authorization uses temporary Git repositories as test boards and temporary release/backup/target directories. All deployment/rollback calls in tests explicitly select those temporary paths; inherited user session IDs and live skill directories are never fixture inputs. Keep read-only commands publication-free. Use python3 -B or equivalent to avoid source bytecode writes.
+
+Required cases for the accepted behavior:
+- A successful isolated deploy writes the full commit, expected skill names and useful reload guidance to the temporary board, including a content update through a kept link and deduplication across targets.
+- Install additions/removals, removal-only content changes, and a changed exclusion are summarized correctly; excluded-only/uninstalled-only edits do not masquerade as installed changes. An unchanged installed tree at a new release commit is labeled accurately.
+- A pure no-op redeploy follows the accepted suppression rule and preserves the rollback target. A later real A→B→A switch is a new event rather than per-commit deduplication.
+- Opt-out and nonpublishing commands create no announcement. A refused/failed apply never publishes a success announcement, without claiming that every release error means no deployment effect.
+- Inject a publication failure and an acknowledgement-uncertain failure: deployed links/history remain truthful, the partial-success result/code is explicit, and no extra retry or rollback occurs.
+- Verify the selected board is the temporary source repository; running through a released script resolves the released sibling adapter. Use at least one actual temporary-board round trip rather than only mocked publication assertions.
+- If rollback is accepted in scope, it announces the restored commit/affected skills and retains existing rollback behavior; otherwise it remains clearly documented as manual publication.
+
+Run the existing skill-release unittest discovery suite and its CLI-synopsis tests, then the working-tree catalog/synopsis check as appropriate. Regenerate only affected existing command blocks. Do not modify fixtures or invoke tests until implementation authority exists; none were run during formation.
+
+Return exact changed paths and source hashes, tests and failures with logs, any pending findings, actual model/effort/tier and session/rollout binding, continuation, and owned-process disposition. Do not commit, deploy, roll back a live release, post on the live board or launch children/reviewers under this packet. The supervisor owns independent reviewer launch after a real immutable subject exists and collects required results; the root owns final integration and any separate publication decision.
+
+## Coordinator-assembled r2 scope (still pending human approval)
+
+The exact initial candidate is planning/release-announcement-pilot-20261028/organization-r2.json; decision-r2.json binds its digest and remains pending. Read behavior-r1.json for the proposed B1-B4 disposition. R1 narrows the branch recommendation to deploy-only announcements; rollback stays manual. Root selects default service tier for coordinator, retained supervisor and fresh worker, matching observed discovery and preserving that configuration through the first trial. Reviewer is fresh top-level Astra/xhigh/explicit default. Root's selected values replace the branch proposal's proposed Fast tier. No tier change is authorized or claimed during formation. At any future dispatch, reload applicable currently released skill references, bind current source and actual runtime settings, and apply the existing scoped context check. This packet remains undispatched and supplies no source mutation authority until the human approves the organization, behavior choices and implementation scope.
+
+## R2 builder selection
+
+Requested implementation worker: `gpt-6.1-terra`, effort `medium`, service tier `default`, fresh native worker session. This replaces the branch proposal and r1 Sol worker selection. Human B1-B4 choices must be settled before dispatch; the worker implements that clear packet. The retained supervisor found no concrete unresolved builder-owned decision requiring Sol. Apply the revised docs/model-selection.md to any later reconsideration; subsystem names and repair counts alone do not require escalation. No worker has been launched.

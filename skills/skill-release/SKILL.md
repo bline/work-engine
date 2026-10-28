@@ -26,7 +26,7 @@ Run from the repository root; `<skill-dir>` is this skill's directory.
 ```bash
 python3 <skill-dir>/scripts/skill_release.py check          # validate the working tree's catalog; changes nothing
 python3 <skill-dir>/scripts/skill_release.py plan [REF]     # what deploying REF would change; changes nothing
-python3 <skill-dir>/scripts/skill_release.py deploy [REF] [--replace-copies]
+python3 <skill-dir>/scripts/skill_release.py deploy [REF] [--replace-copies] [--no-announce]
 python3 <skill-dir>/scripts/skill_release.py status [--verify]   # deployed commit, link state, undeployed changes
 python3 <skill-dir>/scripts/skill_release.py rollback       # switch back to the previous release
 python3 <skill-dir>/scripts/skill_release.py retire TARGET NAME...   # move unmanaged entries to the backup root
@@ -87,8 +87,16 @@ so the default check skips them; name one to check it.
    real directory sits where a managed link belongs; the directory is moved to
    `~/cbm-work/skill-release-retired/`, outside every skill directory, never
    deleted.
-4. Post the deployed commit to the coordination board, since other sessions'
-   agents now read the new text.
+4. A successful deploy announces the full commit and affected installed skills
+   on the repository coordination board by default. New reads follow current
+   links; agents must explicitly re-read instructions already loaded. Use
+   `--no-announce` to skip publication. A pure same-current redeploy with no
+   link changes is not announced. Exit 2 means deployment succeeded but the
+   announcement is unconfirmed: inspect the returned message UUID on the board
+   before manual recovery. Publication failure does not undo deployment.
+
+Rollback does not announce automatically; post the rolled-back commit and
+affected skills to the coordination board manually when appropriate.
 
 Releases are kept after they stop being current: daemons started from a
 release keep running its files, and rollback reuses it. Never edit a release in

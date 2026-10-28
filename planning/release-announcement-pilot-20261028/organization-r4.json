@@ -1,0 +1,177 @@
+{
+  "organization_id": "release-announcement-pilot",
+  "revision": "r4",
+  "prior_revision": {
+    "revision": "r3",
+    "path": "planning/release-announcement-pilot-20261028/organization-r3.json",
+    "sha256": "ce7ee1022d793265c9cfe91800c5e15251786af3542f3f1fcc26b2617cfcfd73"
+  },
+  "status": "accepted_for_bounded_implementation",
+  "objective_ref": "planning/release-announcement-pilot-20261028/objective.md",
+  "authority_ref": "planning/release-announcement-pilot-20261028/objective.md",
+  "initial_approval_owner": "human",
+  "decision_status": "accepted",
+  "decision_record_owner": "coordinator outside candidate; must bind exact assembled path and SHA256",
+  "evidence_ref": "/home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/discovery-findings.json",
+  "behavior_choices_ref": "planning/release-announcement-pilot-20261028/behavior-r1.json",
+  "behavior_choices_status": "B1-B4 accepted within human proceed for original deploy-only scope; see decision-r3.json.",
+  "tier_note": "Coordinator assembly selects default for this first pilot, matching the actual coordinator/supervisor discovery configuration. This is an intentional narrower selection than the branch proposal Fast recommendation. Requested and observed configurations remain separate; fresh worker/reviewer are unlaunched. Reassess/verify context and settings at later dispatch.",
+  "roles": [
+    {
+      "role_id": "release-coordinator",
+      "role": "coordinator",
+      "reports_to": null,
+      "outcome": "Assemble/revision-control exact organization, obtain human decision, preserve authority and own final integration.",
+      "ownership": [
+        "candidate assembly and classification",
+        "human decision binding",
+        "supervisor collection",
+        "final integration/publication decisions"
+      ],
+      "requested_configuration": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "service_tier": "default"
+      },
+      "launch_choice": "existing root session; no new root",
+      "proposed_context_choice": "root reassesses scoped capacity before implementation",
+      "current_assignment_ref": "/home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/coordinator-binding.json",
+      "runtime_binding_ref": "/home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/coordinator-binding.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/root-state.json",
+      "discovery": {
+        "disposition": "propose_children",
+        "proposed_children": [
+          "release-supervisor"
+        ],
+        "basis": "One bounded external-tool branch; root keeps candidate/authority assembly."
+      }
+    },
+    {
+      "role_id": "release-supervisor",
+      "role": "supervisor",
+      "reports_to": "release-coordinator",
+      "outcome": "Supervise the bounded announcement worker, validation and separate reviewer after explicit implementation authorization.",
+      "ownership": [
+        "bounded discovery findings",
+        "worker dispatch and collection",
+        "reviewer host launch and collection",
+        "exact subject and validation checks",
+        "compact result to coordinator"
+      ],
+      "requested_configuration": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "service_tier": "default"
+      },
+      "launch_choice": "retain existing native discovery child after scoped context check and authorization",
+      "proposed_context_choice": "retain conditionally; findings support replacement if needed",
+      "current_assignment_ref": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/supervisor-implementation-packet.md",
+      "runtime_binding_ref": "/home/bline/.local/state/work-engine/release-announcement-selection-retry-20261028-01a18339/supervisor-binding.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/release-announcement-selection-retry-20261028-01a18339/supervisor/continuation.json",
+      "discovery": {
+        "disposition": "propose_children",
+        "proposed_children": [
+          "release-worker",
+          "release-reviewer"
+        ],
+        "basis": "One coupled write outcome and one independent challenge of composed result. No extra discovery child needed.",
+        "uncertainties": [
+          "Bind current source, active instructions and actual runtime settings before worker dispatch."
+        ]
+      }
+    },
+    {
+      "role_id": "release-worker",
+      "role": "worker",
+      "reports_to": "release-supervisor",
+      "outcome": "Implement and validate immediate release announcements under the accepted behavior disposition.",
+      "ownership": [
+        "skills/skill-release/scripts/skill_release.py",
+        "skills/skill-release/tests/test_skill_release.py",
+        "skills/skill-release/SKILL.md",
+        "conditionally only an existing synopsis block generated for this CLI if discovery finds one"
+      ],
+      "requested_configuration": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "service_tier": "default"
+      },
+      "configuration_basis": "After human B1-B4 decisions are settled, remaining work is bounded release-summary logic, one existing publication API call, explicit failure reporting and isolated tests. No concrete unresolved builder-owned decision warrants Sol.",
+      "launch_choice": "fresh native spawn_agent worker with fork_turns=none, exact gpt-6.1-terra/medium; inherit and verify the selected default-tier supervisor setting",
+      "proposed_context_choice": "fresh",
+      "current_assignment_ref": null,
+      "continuation_ref": null,
+      "packet_ref": "/home/bline/.local/state/work-engine/release-announcement-implementation-20261028-01a18339/implementation-scope.md",
+      "discovery": {
+        "disposition": "leaf",
+        "proposed_children": [],
+        "basis": "Summary capture, post-call error handling and regression tests share the same apply/main seam. Splitting these across workers would create needless shared-file integration."
+      }
+    },
+    {
+      "role_id": "release-reviewer",
+      "role": "reviewer",
+      "reports_to": "release-supervisor",
+      "outcome": "Read-only adversarial review of the exact implementation, failure semantics, actual-change summary and isolated qualification evidence.",
+      "ownership": [
+        "review findings and retained remediation assessment only"
+      ],
+      "requested_configuration": {
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "service_tier": "default"
+      },
+      "configuration_basis": "Bounded implementation review after policy choices are settled; fresh top-level/default/read-only.",
+      "launch_choice": "separate top-level Codex role_host with explicit gpt-6-astra, high effort, default tier and read-only capability configuration; --parent binds supervisor collection in host ledger only",
+      "proposed_context_choice": "fresh without discovery/designer/builder conversation; retain through bounded remediation if useful and contract-compatible",
+      "current_assignment_ref": null,
+      "continuation_ref": null,
+      "packet_ref": null,
+      "discovery": {
+        "disposition": "leaf",
+        "proposed_children": [],
+        "basis": "A single composed review covers this bounded external tool; no subject exists yet.",
+        "uncertainties": [
+          "Actual reviewer identity, tier, capability grant and independence remain unestablished until launch and independent binding."
+        ]
+      }
+    }
+  ],
+  "collection_contract": "Existing supervisor runtime parent and collector remain the current root per supervisor-binding.json. Proposed worker is a native supervisor child. Proposed reviewer is runtime-top-level with supervisor as host-ledger collection owner. Logical reporting does not alter existing runtime ancestry or route. All proposed children are unlaunched.",
+  "implementation_grant": "User proceed after recommendation Terra/medium, original deploy-only scope, retained supervisor, isolated tests and separate Astra/high/default review; exact authority bound externally.",
+  "revision_authority": {
+    "small": "coordinator approval",
+    "large": "human approval",
+    "classification_owner": "coordinator",
+    "precedence": "Existing provider/budget/mutation/review boundaries retain precedence"
+  },
+  "decision_record_ref": "planning/release-announcement-pilot-20261028/decision-r4.json",
+  "formation_guidance_release": "bec012d7452ea0a4f5164caec69ba44f3d62ec8f",
+  "active_skill_release_at_assembly": "1623c99dcc9613a680383c9baf7d3b57e8cfb62d",
+  "coordinator_assembly": {
+    "source_proposal": "/home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/organization-proposal.json",
+    "source_proposal_sha256": "9937616dd306993613145b9ba9c3d46df5794cd86674be482201efdbbaecc1fa",
+    "changes": [
+      "Select default tier for the initial pilot, carrying observed discovery settings into execution.",
+      "Narrow first-pass publication coverage to deploy only; rollback remains manual.",
+      "Bind explicit pending human behavior/organization/implementation decisions.",
+      "R2 selects gpt-6.1-terra/medium for the worker after residual-task reassessment; all role scopes, other models, tiers, behavior choices and approval boundaries stay as proposed.",
+      "R3 binds human proceed to original deploy-only B1-B4 scope, latest retained discovery supervisor, Terra/medium/default worker and Astra/high/default reviewer. No adoption of raw retry proposal rollback/no-op/exit-3 alternatives.",
+      "R4 corrects stale reviewer launch prose from xhigh to high; requested_configuration and human-authorized selection were already high. No runtime/authority/scope change."
+    ],
+    "assembled_at": "2026-10-28T21:17:54.292511+00:00",
+    "implementation_started": false,
+    "revised_at": "2026-10-28T21:54:30.451495+00:00"
+  },
+  "model_selection_guidance_ref": {
+    "path": "docs/model-selection.md",
+    "sha256": "353f257dbb8aff0f9db8bf2c7526435cf67b5fc1ef553cb206ad80736d853ddc"
+  },
+  "builder_selection_reassessment": {
+    "source": "/home/bline/.local/state/work-engine/release-announcement-formation-20261028-01a18339/builder-selection-reassessment.json",
+    "sha256": "2bb345d65dfb26da93dbdbd1b839371975e1b2eb89b19b05227bb806adff6dbf",
+    "reason": "Owner flagged overbroad model guidance; retained discovery supervisor reselected the default builder for the bounded implementation after human behavior decisions are settled.",
+    "no_concrete_sol_reason_remains": true,
+    "implementation_started": false
+  }
+}
