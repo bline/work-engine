@@ -9,6 +9,7 @@ use std::{
 };
 
 use lifecycle_runtime::{BoundedFrameReader, BoundedFrameWriter};
+use lifecycle_semantic::DirectInferencePort;
 use lifecycle_store::{GrantControlHandle, SqliteLifecycleStore};
 use lifecycle_wire::{CursorV1, WaitTargetV1, WireErrorCode, parse_strict_json};
 use serde_json::{Value, json};
@@ -46,14 +47,32 @@ pub async fn run(
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
 ) -> Result<(), ServiceError> {
-    run_inner(config, material_port, task_operation_port, None).await
+    run_inner(config, material_port, task_operation_port, None, None).await
+}
+
+/// As `run`, with the direct realization of semantic compile and verify calls
+/// selected by trusted composition.
+pub(crate) async fn run_with_direct_control(
+    config: ServiceConfig,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+    direct_control: Arc<dyn DirectInferencePort>,
+) -> Result<(), ServiceError> {
+    run_inner(
+        config,
+        Some(material_port),
+        task_operation_port,
+        None,
+        Some(direct_control),
+    )
+    .await
 }
 
 pub(crate) async fn run_with_preopened_store(
     config: ServiceConfig,
     store: SqliteLifecycleStore,
 ) -> Result<(), ServiceError> {
-    run_inner(config, None, None, Some(store)).await
+    run_inner(config, None, None, Some(store), None).await
 }
 
 pub(crate) async fn run_with_preopened_task_ports(
@@ -61,12 +80,14 @@ pub(crate) async fn run_with_preopened_task_ports(
     store: SqliteLifecycleStore,
     material_port: Arc<dyn CanonicalMaterialPort>,
     task_operation_port: Arc<dyn TaskOperationPort>,
+    direct_control: Option<Arc<dyn DirectInferencePort>>,
 ) -> Result<(), ServiceError> {
     run_inner(
         config,
         Some(material_port),
         Some(task_operation_port),
         Some(store),
+        direct_control,
     )
     .await
 }
@@ -76,7 +97,20 @@ async fn run_inner(
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
     preopened_store: Option<SqliteLifecycleStore>,
+    direct_control: Option<Arc<dyn DirectInferencePort>>,
 ) -> Result<(), ServiceError> {
+    // The direct realization drives the semantic checkpoint compile and verify
+    // calls, so it needs a configured semantic capture and its material owner.
+    if direct_control.is_some()
+        && (config.profile != "retained-repository-analysis-v1"
+            || material_port.is_none()
+            || config
+                .native
+                .as_ref()
+                .is_none_or(|native| native.semantic.is_none()))
+    {
+        return Err(ServiceError::Configuration);
+    }
     if config.max_executions == 0
         || config.max_executions > 16
         || config.max_wait_ms == 0
@@ -145,6 +179,7 @@ async fn run_inner(
         material_port,
         task_operation_port,
         preopened_store,
+        direct_control,
     )?;
     let grant_lane = grant_control.map(|control| {
         Arc::new(GrantLane {

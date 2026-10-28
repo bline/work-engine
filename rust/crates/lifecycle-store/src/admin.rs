@@ -17,7 +17,7 @@ use crate::{SqliteLifecycleStore, StoreError};
 // Offline custody capsules retain their actual schema across read-only inspection.
 // Writable migration remains owned by SqliteLifecycleStore::open_inner.
 fn supported_admin_schema(version: i64) -> bool {
-    matches!(version, 4..=7)
+    matches!(version, 4..=11)
 }
 
 type EffectRecoveryRow = (
@@ -1897,7 +1897,29 @@ fn hex_digest(value: &str) -> bool {
 }
 
 fn semantic_artifacts_from(connection: &rusqlite::Connection) -> Result<Vec<String>, StoreError> {
-    let mut statement=connection.prepare(
+    // Direct semantic tables exist from physical schema 10; an older capsule
+    // retains its actual schema and has no such artifacts.
+    let direct: bool = connection
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='direct_semantic_attempts')",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    let direct_roots = if direct {
+        "
+          UNION SELECT prepared_artifact_sha256 AS digest FROM direct_semantic_attempts
+          UNION SELECT terminal_artifact_sha256 AS digest FROM direct_semantic_attempts WHERE terminal_artifact_sha256 IS NOT NULL
+          UNION SELECT result_artifact_sha256 AS digest FROM direct_semantic_attempts WHERE result_artifact_sha256 IS NOT NULL
+          UNION SELECT candidate_artifact_sha256 AS digest FROM direct_semantic_results
+          UNION SELECT candidate_record_artifact_sha256 AS digest FROM direct_semantic_results WHERE candidate_record_artifact_sha256 IS NOT NULL
+          UNION SELECT challenge_artifact_sha256 AS digest FROM direct_semantic_results WHERE challenge_artifact_sha256 IS NOT NULL
+          UNION SELECT successor_prompt_artifact_sha256 AS digest FROM direct_semantic_results WHERE successor_prompt_artifact_sha256 IS NOT NULL
+          UNION SELECT findings_artifact_sha256 AS digest FROM direct_semantic_results"
+    } else {
+        ""
+    };
+    let mut statement=connection.prepare(&format!(
         "SELECT digest FROM (
           SELECT basis_artifact_sha256 AS digest FROM semantic_captures
           UNION SELECT result_artifact_sha256 AS digest FROM semantic_attempts WHERE result_artifact_sha256 IS NOT NULL
@@ -1906,9 +1928,9 @@ fn semantic_artifacts_from(connection: &rusqlite::Connection) -> Result<Vec<Stri
           UNION SELECT challenge_artifact_sha256 AS digest FROM semantic_results WHERE challenge_artifact_sha256 IS NOT NULL
           UNION SELECT successor_prompt_artifact_sha256 AS digest FROM semantic_results WHERE successor_prompt_artifact_sha256 IS NOT NULL
           UNION SELECT response_artifact_sha256 AS digest FROM semantic_results WHERE response_artifact_sha256 IS NOT NULL
-          UNION SELECT findings_artifact_sha256 AS digest FROM semantic_results
+          UNION SELECT findings_artifact_sha256 AS digest FROM semantic_results{direct_roots}
          ) ORDER BY digest",
-    ).map_err(|_| StoreError::Unavailable)?;
+    )).map_err(|_| StoreError::Unavailable)?;
     statement
         .query_map([], |r| r.get::<_, String>(0))
         .map_err(|_| StoreError::Unavailable)?
@@ -2367,7 +2389,12 @@ pub(crate) fn check_held_coherence(connection: &rusqlite::Connection) -> Result<
         .query_row("SELECT COUNT(*) FROM legacy_held_state", [], |r| r.get(0))
         .map_err(|_| StoreError::Unavailable)?;
     let guard_count: i64 = connection.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'held_quarantine_*'", [], |r| r.get(0)).map_err(|_| StoreError::Unavailable)?;
-    if marker_count != 1 || guard_count != 93 {
+    let physical: i64 = connection
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    // Physical schema 10/11 guard the two direct semantic tables (six triggers).
+    let expected_guards = if physical >= 10 { 99 } else { 93 };
+    if marker_count != 1 || guard_count != expected_guards {
         return Err(StoreError::Unavailable);
     }
     let (mode, handoff, rows, unknown): (String, Option<String>, i64, i64) = connection
@@ -2494,6 +2521,8 @@ pub(crate) fn check_held_coherence(connection: &rusqlite::Connection) -> Result<
         "semantic_captures",
         "semantic_material_rejections",
         "semantic_results",
+        "direct_semantic_attempts",
+        "direct_semantic_results",
         "service_closes",
         "subjects",
         "task_results",
@@ -2927,7 +2956,7 @@ fn inspect_existing_held_root(root: &Path) -> Result<HeldProjection, StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if version != 6 {
+    if crate::schema::behavior_version(version) != 6 {
         return Err(StoreError::ClaimConflict);
     }
     crate::recovery::check_coherence(&connection)?;

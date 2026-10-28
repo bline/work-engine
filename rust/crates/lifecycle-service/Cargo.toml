@@ -8,7 +8,7 @@ publish.workspace = true
 [features]
 default = []
 controlled-proof = []
-native-sim-proof = []
+native-sim-proof = ["lifecycle-codex/synthetic-access-test"]
 
 [dependencies]
 lifecycle-core = { path = "../lifecycle-core" }
@@ -31,6 +31,9 @@ tempfile = "=3.27.0"
 lifecycle-client = { path = "../lifecycle-client" }
 lifecycle-test-support = { path = "../lifecycle-test-support" }
 rusqlite = { version = "=0.37.0", features = ["bundled"] }
+bounded-inference = { path = "../bounded-inference" }
+jsonwebtoken = { version = "=10.3.0", default-features = false, features = ["rust_crypto"] }
+url = "=2.5.0"
 
 [[test]]
 name = "s4_vertical"

@@ -9,6 +9,15 @@ mod material_port;
 mod operations;
 mod projection;
 mod semantic;
+mod semantic_direct;
+#[cfg(test)]
+mod semantic_direct_tests;
+#[cfg(test)]
+mod semantic_direct_authority_tests;
+#[cfg(test)]
+mod semantic_direct_joined_tests;
+#[cfg(test)]
+mod semantic_direct_recovery_tests;
 mod semantic_control;
 mod socket;
 mod task_port;
@@ -18,6 +27,7 @@ pub use actor::task_effect_hold;
 use std::path::PathBuf;
 
 use lifecycle_core::{ContextGeneration, NativeSessionId, SnapshotId, SubjectId};
+use lifecycle_semantic::DirectInferencePort;
 use lifecycle_store::{NativeRestartEpoch, NativeRestartIntent};
 use operations::workspace_snapshot_read::TrustedSnapshot;
 use serde::{Deserialize, Serialize};
@@ -130,6 +140,9 @@ pub struct NativeConfig {
     pub root: PathBuf,
     #[serde(default)]
     pub provider_route: NativeProviderRoute,
+    /// Trusted, explicit access-only source for the experimental lease route.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chatgpt_access_source: Option<ChatgptAccessSource>,
     /// Only used by the simulator and controlled-proof fake routes. Live
     /// OpenAI always uses the compiled upstream and requires this to be empty.
     pub simulator_base_url: String,
@@ -152,12 +165,60 @@ pub struct NativeConfig {
     pub semantic_contexts: Vec<SemanticContextConfig>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChatgptAccessSource {
+    pub codex_home: PathBuf,
+    pub account_id: String,
+    /// Only `file` is supported; a stale file must not stand in for keyring.
+    pub credentials_store: ChatgptCredentialsStore,
+    /// Trusted HTTP CONNECT endpoint for HTTPS traffic on this access lease.
+    /// It is never read from the process environment.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub https_proxy: Option<String>,
+    /// One reviewed Linux mount/network isolation profile. Absent on all
+    /// historical routes; production access leases require it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub isolation: Option<ChatgptAccessIsolation>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChatgptAccessIsolation {
+    pub helper_executable: PathBuf,
+    pub helper_sha256: String,
+    pub proxy_socket: PathBuf,
+    pub proxy_policy_executable: PathBuf,
+    pub proxy_policy_sha256: String,
+    #[cfg(feature = "native-sim-proof")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub synthetic_http_socket: Option<PathBuf>,
+    #[cfg(feature = "native-sim-proof")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub synthetic_http_port: Option<u16>,
+    #[cfg(feature = "native-sim-proof")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub synthetic_http_fixture_executable: Option<PathBuf>,
+    #[cfg(feature = "native-sim-proof")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub synthetic_http_fixture_sha256: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum ChatgptCredentialsStore {
+    File,
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum NativeProviderRoute {
     #[default]
     NativeSimProofV1,
     OpenaiResponsesLiveV1,
+    OpenaiChatgptAccessLeaseV1,
+    #[cfg(feature = "native-sim-proof")]
+    OpenaiChatgptSyntheticTestV1,
     OpenaiResponsesFakeV1,
 }
 
@@ -165,10 +226,28 @@ impl NativeProviderRoute {
     pub const MODEL: &'static str = "gpt-6-sol";
     pub const LIVE_BASE_URL: &'static str = "https://api.openai.com/v1";
 
+    pub fn is_synthetic_access_test(self) -> bool {
+        #[cfg(feature = "native-sim-proof")]
+        {
+            self == Self::OpenaiChatgptSyntheticTestV1
+        }
+        #[cfg(not(feature = "native-sim-proof"))]
+        {
+            false
+        }
+    }
+
+    pub fn is_chatgpt_access(self) -> bool {
+        self == Self::OpenaiChatgptAccessLeaseV1 || self.is_synthetic_access_test()
+    }
+
     pub fn identity(self) -> &'static str {
         match self {
             Self::NativeSimProofV1 => "native-sim-proof-v1",
             Self::OpenaiResponsesLiveV1 => "openai-responses-live-v1",
+            Self::OpenaiChatgptAccessLeaseV1 => "openai-chatgpt-access-lease-v1",
+            #[cfg(feature = "native-sim-proof")]
+            Self::OpenaiChatgptSyntheticTestV1 => "openai-chatgpt-synthetic-test-v1",
             Self::OpenaiResponsesFakeV1 => "openai-responses-fake-v1",
         }
     }
@@ -177,12 +256,18 @@ impl NativeProviderRoute {
         match self {
             Self::NativeSimProofV1 => "local_probe",
             Self::OpenaiResponsesLiveV1 => "openai_responses_live",
+            Self::OpenaiChatgptAccessLeaseV1 => "openai",
+            #[cfg(feature = "native-sim-proof")]
+            Self::OpenaiChatgptSyntheticTestV1 => "lease_loopback",
             Self::OpenaiResponsesFakeV1 => "openai_responses_fake",
         }
     }
 
     pub fn requires_runtime_key(self) -> bool {
-        self != Self::NativeSimProofV1
+        matches!(
+            self,
+            Self::OpenaiResponsesLiveV1 | Self::OpenaiResponsesFakeV1
+        )
     }
 
     pub fn configured_base_url(self, simulator_base_url: &str) -> Option<String> {
@@ -199,6 +284,11 @@ impl NativeProviderRoute {
             Self::OpenaiResponsesLiveV1 if simulator_base_url.is_empty() => {
                 Some(Self::LIVE_BASE_URL.to_owned())
             }
+            Self::OpenaiChatgptAccessLeaseV1 if simulator_base_url.is_empty() => {
+                Some("https://chatgpt.com/backend-api/codex".to_owned())
+            }
+            #[cfg(feature = "native-sim-proof")]
+            Self::OpenaiChatgptSyntheticTestV1 => loopback(simulator_base_url),
             Self::OpenaiResponsesFakeV1 if cfg!(feature = "controlled-proof") => {
                 loopback(simulator_base_url)
             }
@@ -221,6 +311,40 @@ mod provider_route_tests {
             NativeProviderRoute::OpenaiResponsesLiveV1.configured_base_url(""),
             Some("https://api.openai.com/v1".into())
         );
+        assert_eq!(
+            NativeProviderRoute::OpenaiChatgptAccessLeaseV1.identity(),
+            "openai-chatgpt-access-lease-v1"
+        );
+        assert_eq!(
+            NativeProviderRoute::OpenaiChatgptAccessLeaseV1.provider_name(),
+            "openai"
+        );
+        assert!(!NativeProviderRoute::OpenaiChatgptAccessLeaseV1.requires_runtime_key());
+        assert_eq!(
+            NativeProviderRoute::OpenaiChatgptAccessLeaseV1.configured_base_url(""),
+            Some("https://chatgpt.com/backend-api/codex".into())
+        );
+        assert_eq!(
+            NativeProviderRoute::OpenaiChatgptAccessLeaseV1
+                .configured_base_url("http://127.0.0.1:1234/v1"),
+            None
+        );
+        #[cfg(feature = "native-sim-proof")]
+        {
+            assert_eq!(
+                NativeProviderRoute::OpenaiChatgptSyntheticTestV1.identity(),
+                "openai-chatgpt-synthetic-test-v1"
+            );
+            assert_eq!(
+                NativeProviderRoute::OpenaiChatgptSyntheticTestV1
+                    .configured_base_url("http://127.0.0.1:1234/v1"),
+                Some("http://127.0.0.1:1234/v1".to_owned())
+            );
+            assert_eq!(
+                NativeProviderRoute::OpenaiChatgptSyntheticTestV1.configured_base_url(""),
+                None
+            );
+        }
         for proxy in ["http://127.0.0.1:1234/v1", "https://proxy.example/v1"] {
             assert!(
                 NativeProviderRoute::OpenaiResponsesLiveV1
@@ -354,6 +478,28 @@ pub async fn run_with_task_ports(
     socket::run(config, Some(material_port), Some(task_operation_port)).await
 }
 
+/// As `run_with_task_ports`, with the compile and separate verify calls of each
+/// semantic checkpoint realized by `direct_control` instead of a native session.
+/// The port belongs to trusted startup like the other ports; configuration
+/// cannot supply one or declare its evidence class. Whether a result is
+/// eligible is decided only by an owner grant in `config.grants` (scope
+/// `semantic_direct_checkpoint_v1`, installed by the trusted issuer) and the
+/// evidence class the port itself reports, read in the store at publication.
+pub async fn run_with_direct_control(
+    config: ServiceConfig,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Arc<dyn TaskOperationPort>,
+    direct_control: Arc<dyn DirectInferencePort>,
+) -> Result<(), ServiceError> {
+    socket::run_with_direct_control(
+        config,
+        material_port,
+        Some(task_operation_port),
+        direct_control,
+    )
+    .await
+}
+
 /// An already opened lifecycle store whose writer lock remains owned by the
 /// selected host until the composed service exits.
 pub struct SelectedLifecycleStore {
@@ -478,10 +624,39 @@ impl SelectedLifecycleStore {
 /// The selected task host owns both domain ports and transfers its validated
 /// lifecycle store directly to the actor without releasing the writer lock.
 pub async fn run_with_selected_task_ports(
+    config: ServiceConfig,
+    selected: SelectedLifecycleStore,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Arc<dyn TaskOperationPort>,
+) -> Result<(), ServiceError> {
+    run_selected_task_ports(config, selected, material_port, task_operation_port, None).await
+}
+
+/// As `run_with_selected_task_ports`, with trusted-composition direct control
+/// (see `run_with_direct_control`).
+pub async fn run_with_selected_task_ports_and_direct_control(
+    config: ServiceConfig,
+    selected: SelectedLifecycleStore,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Arc<dyn TaskOperationPort>,
+    direct_control: Arc<dyn DirectInferencePort>,
+) -> Result<(), ServiceError> {
+    run_selected_task_ports(
+        config,
+        selected,
+        material_port,
+        task_operation_port,
+        Some(direct_control),
+    )
+    .await
+}
+
+async fn run_selected_task_ports(
     mut config: ServiceConfig,
     selected: SelectedLifecycleStore,
     material_port: Arc<dyn CanonicalMaterialPort>,
     task_operation_port: Arc<dyn TaskOperationPort>,
+    direct_control: Option<Arc<dyn DirectInferencePort>>,
 ) -> Result<(), ServiceError> {
     if config.profile != "retained-repository-analysis-v1"
         || selected.store.root() != config.store_root
@@ -496,6 +671,7 @@ pub async fn run_with_selected_task_ports(
         selected.store,
         material_port,
         task_operation_port,
+        direct_control,
     )
     .await
 }

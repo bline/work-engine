@@ -6,6 +6,9 @@ use thiserror::Error;
 /// Responses fixture. The protocol schema hashes below were regenerated from
 /// that exact binary and happen to match the previous 0.162.1 schemas.
 pub const PROFILE_ID: &str = "codex-0.163.0-workspace-snapshot-read-v1";
+/// Owner-selected prospective consumer rule for additive read-state presentation data.
+/// The profile digest binds this rule; producer and operation eligibility remain separate.
+pub const READ_STATE_CONSUMER_POLICY_ID: &str = "codex-0.163.0-read-state-opaque-scalars-v3";
 pub const NATIVE_BINARY_SHA256: &str =
     "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215";
 pub const NATIVE_USER_AGENT_VERSION: &str = "0.163.0";
@@ -23,8 +26,9 @@ pub fn user_agent_matches(value: &str, client_name: &str) -> bool {
 
 /// 0.163.0 emits this durable-thread presentation notification immediately
 /// before turn completion. It has no turn coordinate or effect authority.
-/// Admit only the observed schema, then let the store bind its thread ID to
-/// the owned native session. Unknown notifications still fail closed.
+/// Additive bounded scalars are opaque presentation data, not lifecycle facts.
+/// The store binds the known thread ID to the owned native session. Unknown
+/// notifications still fail closed.
 pub fn read_state_changed_matches(value: &Value) -> bool {
     let Some(frame) = value.as_object() else {
         return false;
@@ -58,13 +62,23 @@ pub fn read_state_changed_matches(value: &Value) -> bool {
     let Some(state) = params.get("readState").and_then(Value::as_object) else {
         return false;
     };
-    if state.len() > 2
-        || state
-            .keys()
-            .any(|key| !matches!(key.as_str(), "revision" | "firstUnread"))
-        || !bounded(state.get("revision"))
-    {
+    if !bounded(state.get("revision")) {
         return false;
+    }
+    let mut extensions = 0;
+    for (key, value) in state {
+        if matches!(key.as_str(), "revision" | "firstUnread") {
+            continue;
+        }
+        extensions += 1;
+        if extensions > 8 || key.is_empty() || key.len() > 64 {
+            return false;
+        }
+        match value {
+            Value::Null | Value::Bool(_) | Value::Number(_) => {}
+            Value::String(text) if text.len() <= 256 => {}
+            _ => return false,
+        }
     }
     match state.get("firstUnread") {
         None | Some(Value::Null) => true,
@@ -303,8 +317,6 @@ mod tests {
             serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"effect","turnId":"turn:1"},"revision":"revision:1"}}}),
             serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"threadStart","unexpected":true},"revision":"revision:1"}}}),
             serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"turn","turnId":"turn:1","unexpected":true},"revision":"revision:1"}}}),
-            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1","unexpected":true}}}),
-            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1","firstUnread":null,"unexpected":true}}}),
             serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}},"unexpected":true}),
             serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}},"emittedAtMs":"1792209789026"}),
             serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}},"emittedAtMs":-1}),
@@ -325,6 +337,79 @@ mod tests {
             *target = serde_json::json!("x".repeat(257));
             assert!(!read_state_changed_matches(&oversized));
         }
+    }
+
+    #[test]
+    fn read_state_opaque_scalar_extensions_are_bounded_and_have_no_rpc_authority() {
+        let mut frame = serde_json::json!({"method":"thread/readState/changed","params":{
+            "threadId":"thread:1","readState":{"revision":"revision:1","firstUnread":null}
+        }});
+        let state = frame["params"]["readState"].as_object_mut().unwrap();
+        for (key, value) in [
+            ("error", serde_json::Value::Null),
+            ("needsInput", serde_json::json!(true)),
+            ("completed", serde_json::json!(42)),
+            ("pending", serde_json::json!("x".repeat(256))),
+            ("unreadCount", serde_json::json!(0)),
+            ("status", serde_json::json!(false)),
+            ("answer", serde_json::json!("")),
+            ("settled", serde_json::json!(-1)),
+        ] {
+            state.insert(key.into(), value);
+        }
+        assert!(read_state_changed_matches(&frame));
+        let raw = serde_json::to_vec(&frame).unwrap();
+        let event = parse_event("transport:1".into(), 1, raw.clone()).unwrap();
+        assert_eq!(event.raw, raw);
+        assert!(matches!(event.kind, NativeEventKind::Notification { .. }));
+        assert!(event.terminal().unwrap().is_none());
+        assert!(event.tool_call().unwrap().is_none());
+
+        let mut max_key = frame.clone();
+        max_key["params"]["readState"]
+            .as_object_mut()
+            .unwrap()
+            .remove("error");
+        max_key["params"]["readState"]["k".repeat(64).as_str()] = serde_json::Value::Null;
+        assert!(read_state_changed_matches(&max_key));
+
+        let mut ninth = frame.clone();
+        ninth["params"]["readState"]["ninth"] = serde_json::Value::Null;
+        assert!(!read_state_changed_matches(&ninth));
+        for (key, value) in [
+            ("nested", serde_json::json!({"a":1})),
+            ("array", serde_json::json!([1])),
+            ("long", serde_json::json!("x".repeat(257))),
+        ] {
+            let mut invalid = frame.clone();
+            invalid["params"]["readState"]
+                .as_object_mut()
+                .unwrap()
+                .remove("error");
+            invalid["params"]["readState"][key] = value;
+            assert!(!read_state_changed_matches(&invalid), "{key}");
+        }
+        for bad_key in [String::new(), "x".repeat(65)] {
+            let mut invalid = frame.clone();
+            invalid["params"]["readState"]
+                .as_object_mut()
+                .unwrap()
+                .remove("error");
+            invalid["params"]["readState"][&bad_key] = serde_json::Value::Null;
+            assert!(!read_state_changed_matches(&invalid));
+        }
+        let mut request = frame.clone();
+        request["id"] = serde_json::json!(1);
+        assert!(!read_state_changed_matches(&request));
+        let event = parse_event(
+            "transport:1".into(),
+            2,
+            serde_json::to_vec(&request).unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(event.kind, NativeEventKind::ServerRequest { .. }));
+        let duplicate = br#"{"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"r1","error":null,"error":true}}}"#;
+        assert!(parse_event("transport:1".into(), 3, duplicate.to_vec()).is_err());
     }
 
     #[test]

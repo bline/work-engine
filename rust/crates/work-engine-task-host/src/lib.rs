@@ -1,9 +1,15 @@
 //! Permanent ordinary entry for retained repository-analysis tasks.
 
+#[cfg(test)]
+mod direct_host_tests;
 mod observation;
 mod selected_startup;
 
-use lifecycle_service::{GrantConfig, NativeProviderRoute, ServiceConfig};
+use bounded_inference::{Bounds, DirectAdapter, DirectProfile, PublicHostEndpoint};
+use lifecycle_semantic::DirectInferencePort;
+use lifecycle_service::{
+    CanonicalMaterialPort, GrantConfig, NativeProviderRoute, ServiceConfig, TaskOperationPort,
+};
 use lifecycle_wire::{
     CommandDtoV2, CommandOperationV2, EnqueueInputPayloadV2, RequestReplacementPayloadV1,
     parse_command_v2, parse_snapshot,
@@ -74,7 +80,207 @@ pub struct HostStartup {
     pub toolchain_sha256: String,
     pub features: Vec<String>,
     pub provider_identity: String,
+    /// Which realization drives the semantic checkpoint's compile and verify
+    /// calls. Absent means the native session; Direct is only ever selected by
+    /// this explicit owner-admitted entry and never as a fallback.
+    #[serde(default, skip_serializing_if = "ControlSelection::is_native")]
+    pub control: ControlSelection,
     pub lifecycle: ServiceConfig,
+}
+
+/// Explicit control selection. It names no evidence class and no endpoint: the
+/// Direct realization reaches the fixed public Responses origin through the
+/// bounded-inference owner, and whether its results are eligible is decided by
+/// the lifecycle store from an owner grant, not by this configuration.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ControlSelection {
+    /// A struct variant so unknown fields are refused here as everywhere else.
+    Native {},
+    Direct(DirectControlConfig),
+}
+
+impl Default for ControlSelection {
+    fn default() -> Self {
+        Self::Native {}
+    }
+}
+
+impl ControlSelection {
+    fn is_native(&self) -> bool {
+        matches!(self, Self::Native { .. })
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct DirectControlConfig {
+    /// Existing private credential store for the fixed public issuer.
+    pub credential_dir: PathBuf,
+    pub credential_host_id: String,
+    /// Private directory for the one-exchange-per-operation attempt journals.
+    pub journal_dir: PathBuf,
+    /// Existing owner-only directory where each exact prepared call is
+    /// projected to its release owner and where that owner places the
+    /// per-send action grant and `DirectSendGrant`.
+    pub release_dir: PathBuf,
+    pub model: String,
+    /// Must equal the public route's fixed bounds; any other value is refused.
+    pub bounds: DirectBoundsConfig,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct DirectBoundsConfig {
+    pub request_bytes: usize,
+    pub stream_bytes: usize,
+    pub frame_bytes: usize,
+    pub output_bytes: usize,
+    pub events: usize,
+    pub local_deadline_ms: u64,
+}
+
+impl DirectBoundsConfig {
+    fn bounds(&self) -> Bounds {
+        Bounds {
+            request_bytes: self.request_bytes,
+            stream_bytes: self.stream_bytes,
+            frame_bytes: self.frame_bytes,
+            output_bytes: self.output_bytes,
+            events: self.events,
+            local_deadline_ms: self.local_deadline_ms,
+        }
+    }
+}
+
+/// The realization trusted startup composed. Constructed only by
+/// `compose_control`; the lifecycle service receives the port from here and
+/// from no configuration field.
+enum ComposedControl {
+    Native,
+    Direct(Arc<dyn DirectInferencePort>),
+}
+
+/// Build the owner-admitted public Direct adapter. This is the only production
+/// route to a Direct port; every failure is a configuration error, never
+/// native. Each send grant must name the startup-verified source manifest
+/// digest, and the endpoint binds the pinned executable digest, which startup
+/// verified against the running executable.
+fn compose_direct(
+    config: &DirectControlConfig,
+    host_source_sha256: &str,
+    executable_sha256: &str,
+) -> Result<Arc<DirectAdapter<PublicHostEndpoint>>, HostError> {
+    if config.bounds.bounds() != PublicHostEndpoint::bounds() {
+        return Err(startup_invalid("direct control bounds differ from the public route"));
+    }
+    let endpoint = PublicHostEndpoint::open(
+        &config.credential_dir,
+        &config.credential_host_id,
+        &config.release_dir,
+        host_source_sha256,
+        executable_sha256,
+    )
+    .map_err(|_| startup_invalid("direct control credential store or release directory"))?;
+    Ok(Arc::new(DirectAdapter::new(
+        endpoint,
+        DirectProfile {
+            model: config.model.clone(),
+            bounds: PublicHostEndpoint::bounds(),
+        },
+        &config.journal_dir,
+    )))
+}
+
+fn compose_control(startup: &HostStartup) -> Result<ComposedControl, HostError> {
+    match &startup.control {
+        ControlSelection::Native {} => Ok(ComposedControl::Native),
+        ControlSelection::Direct(config) => {
+            Ok(ComposedControl::Direct(direct_port(config, startup)?))
+        }
+    }
+}
+
+/// The port a Direct selection composes. Only host tests can substitute one,
+/// and only a synthetic port registered for their own private journal
+/// directory; every other build and directory composes the public adapter.
+fn direct_port(
+    config: &DirectControlConfig,
+    startup: &HostStartup,
+) -> Result<Arc<dyn DirectInferencePort>, HostError> {
+    #[cfg(test)]
+    if let Some(port) = direct_host_tests::registered_port(&config.journal_dir) {
+        return Ok(port);
+    }
+    Ok(compose_direct(
+        config,
+        &startup.source_sha256,
+        &startup.executable_sha256,
+    )?)
+}
+
+fn validate_control(startup: &HostStartup) -> Result<(), HostError> {
+    let ControlSelection::Direct(config) = &startup.control else {
+        return Ok(());
+    };
+    let semantic = startup
+        .lifecycle
+        .native
+        .as_ref()
+        .is_some_and(|native| native.semantic.is_some());
+    if startup.lifecycle.profile != PROFILE || !semantic {
+        return Err(startup_invalid("direct control needs the task profile and a semantic capture"));
+    }
+    let plain = |path: &Path| {
+        path.is_absolute()
+            && path.as_os_str().len() <= 4096
+            && !path
+                .components()
+                .any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::CurDir))
+    };
+    let disjoint = |a: &Path, b: &Path| a != b && !a.starts_with(b) && !b.starts_with(a);
+    if !plain(&config.credential_dir)
+        || !plain(&config.journal_dir)
+        || !plain(&config.release_dir)
+        || !disjoint(&config.credential_dir, &config.journal_dir)
+        || !disjoint(&config.release_dir, &config.credential_dir)
+        || !disjoint(&config.release_dir, &config.journal_dir)
+        || config.credential_host_id.is_empty()
+        || config.model.trim().is_empty()
+        || config.model.len() > 128
+        || config.bounds.bounds().validate().is_err()
+        || config.bounds.bounds() != PublicHostEndpoint::bounds()
+    {
+        return Err(startup_invalid("direct control paths, model or bounds"));
+    }
+    // The release directory must already exist as an owner-only directory;
+    // the endpoint rechecks it on every read.
+    match fs::symlink_metadata(&config.release_dir) {
+        Ok(meta)
+            if meta.is_dir()
+                && meta.uid() == current_uid()?
+                && meta.permissions().mode() & 0o077 == 0 => {}
+        _ => return Err(startup_invalid("direct control release directory ownership/mode")),
+    }
+    // The journal directory is private to this host: an existing one must be
+    // ours at 0700, otherwise its parent must be.
+    let private = |path: &Path| -> Result<bool, HostError> {
+        match fs::symlink_metadata(path) {
+            Ok(meta) => Ok(meta.is_dir()
+                && meta.uid() == current_uid()?
+                && meta.permissions().mode() & 0o777 == 0o700),
+            Err(_) => Ok(false),
+        }
+    };
+    let journal_ok = if fs::symlink_metadata(&config.journal_dir).is_ok() {
+        private(&config.journal_dir)?
+    } else {
+        config.journal_dir.parent().map(private).transpose()?.unwrap_or(false)
+    };
+    if !journal_ok {
+        return Err(startup_invalid("direct control journal directory ownership/mode"));
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -163,8 +369,40 @@ async fn serve_composed(
     store: TaskStore,
     selected_store: Option<lifecycle_service::SelectedLifecycleStore>,
 ) -> Result<(), HostError> {
-    let selected = selected_store.is_some();
+    // Composition happens before any socket or service exists, and a Direct
+    // failure ends startup: there is no path from it to the native control.
+    let control = compose_control(&startup)?;
     let store = Arc::new(store);
+    let material: Arc<dyn CanonicalMaterialPort> = store.clone();
+    #[cfg(test)]
+    let material = direct_host_tests::registered_material(&startup.lifecycle.store_root)
+        .unwrap_or(material);
+    let ports = ServicePorts {
+        control,
+        material,
+        operations: store.clone(),
+    };
+    serve_composed_with(startup, store, selected_store, ports).await
+}
+
+/// What the lifecycle service is composed from. Production fills it in
+/// `serve_composed` from the task owner and `compose_control`. Host tests enter
+/// through `serve` itself; only a synthetic Direct port and material double
+/// registered for their private directory replace the production realizations.
+/// No configuration field reaches it.
+struct ServicePorts {
+    control: ComposedControl,
+    material: Arc<dyn CanonicalMaterialPort>,
+    operations: Arc<dyn TaskOperationPort>,
+}
+
+async fn serve_composed_with(
+    startup: HostStartup,
+    store: Arc<TaskStore>,
+    selected_store: Option<lifecycle_service::SelectedLifecycleStore>,
+    ports: ServicePorts,
+) -> Result<(), HostError> {
+    let selected = selected_store.is_some();
     let identity = host_identity(&startup)?;
     let host = Arc::new(Host {
         startup,
@@ -175,19 +413,39 @@ async fn serve_composed(
         selected,
     });
     let config = host.startup.lifecycle.clone();
-    let material = host.store.clone();
-    let operations = host.store.clone();
+    let ServicePorts {
+        control,
+        material,
+        operations,
+    } = ports;
     let mut service = tokio::spawn(async move {
-        if let Some(selected_store) = selected_store {
-            lifecycle_service::run_with_selected_task_ports(
-                config,
-                selected_store,
-                material,
-                operations,
-            )
-            .await
-        } else {
-            lifecycle_service::run_with_task_ports(config, material, operations).await
+        match (selected_store, control) {
+            (Some(selected_store), ComposedControl::Native) => {
+                lifecycle_service::run_with_selected_task_ports(
+                    config,
+                    selected_store,
+                    material,
+                    operations,
+                )
+                .await
+            }
+            (Some(selected_store), ComposedControl::Direct(port)) => {
+                lifecycle_service::run_with_selected_task_ports_and_direct_control(
+                    config,
+                    selected_store,
+                    material,
+                    operations,
+                    port,
+                )
+                .await
+            }
+            (None, ComposedControl::Native) => {
+                lifecycle_service::run_with_task_ports(config, material, operations).await
+            }
+            (None, ComposedControl::Direct(port)) => {
+                lifecycle_service::run_with_direct_control(config, material, operations, port)
+                    .await
+            }
         }
     });
     wait_for_socket(&host.startup.lifecycle.socket_path, &mut service).await?;
@@ -1035,6 +1293,7 @@ fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
             return Err(startup_invalid("runtime provider credential unavailable"));
         }
     }
+    validate_control(s)?;
     validate_compiled_features(&s.features)?;
     for digest in [
         &s.executable_sha256,
@@ -1085,6 +1344,8 @@ fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
         }
         prior = Some(entry.path);
     }
+    // A Direct selection must be composable before either store is created.
+    compose_control(s)?;
     Ok(())
 }
 fn startup_invalid(reason: &'static str) -> HostError {
@@ -1249,6 +1510,7 @@ mod tests {
             toolchain_sha256: String::new(),
             features: compiled_features(),
             provider_identity: "native-sim-proof-v1".into(),
+            control: ControlSelection::Native {},
             lifecycle,
         };
         let mode = OnceLock::new();
@@ -1639,6 +1901,7 @@ mod tests {
             toolchain_sha256: String::new(),
             features: compiled_features(),
             provider_identity: "native-sim-proof-v1".into(),
+            control: ControlSelection::Native {},
             lifecycle,
         };
         let store =

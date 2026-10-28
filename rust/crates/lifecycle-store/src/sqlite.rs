@@ -274,7 +274,7 @@ impl SqliteLifecycleStore {
             let version: i64 = inspection
                 .query_row("PRAGMA user_version", [], |r| r.get(0))
                 .map_err(|_| StoreError::Unavailable)?;
-            if !matches!(version, 6 | 7) {
+            if !matches!(version, 6..=11) {
                 return Err(StoreError::Rejected);
             }
             let integrity: String = inspection
@@ -316,7 +316,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=7).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=11).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
             if matches!(version, 4 | 5) {
@@ -373,6 +373,7 @@ impl SqliteLifecycleStore {
             5 => {}
             6 => {}
             7 => {}
+            8..=11 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -484,6 +485,34 @@ impl SqliteLifecycleStore {
                 .map_err(|_| StoreError::Unavailable)?;
             tx.pragma_update(None, "user_version", 6)
                 .map_err(|_| StoreError::Unavailable)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if version < 8 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            let predecessor: i64 = tx
+                .query_row("PRAGMA user_version", [], |r| r.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0008_isolation_diagnostic.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", if predecessor == 7 { 9 } else { 8 })
+                .map_err(|_| StoreError::Unavailable)?;
+            crate::recovery::check_coherence(&tx)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if version < 10 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            let predecessor: i64 = tx
+                .query_row("PRAGMA user_version", [], |r| r.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0009_direct_semantic.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", if predecessor == 9 { 11 } else { 10 })
+                .map_err(|_| StoreError::Unavailable)?;
+            crate::recovery::check_coherence(&tx)?;
             tx.commit().map_err(|_| StoreError::Unavailable)?;
         }
         let integrity: String = connection
@@ -1323,8 +1352,16 @@ impl SqliteLifecycleStore {
         let unresolved_attempts: i64 = tx.query_row(
             "SELECT COUNT(*) FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE e.subject_id=?1 AND (a.state='entered' OR a.settlement_kind!='established')",
             [subject.as_str()], |row| row.get(0)).map_err(|_| StoreError::Unavailable)?;
+        let direct_present = crate::recovery::direct_attempts_present(&tx)?;
+        let unresolved_attempts = if direct_present {
+            // A possibly sent or unsettled direct operation is unresolved for
+            // this subject whatever its capture's later eligibility.
+            unresolved_attempts + tx.query_row(
+                "SELECT COUNT(*) FROM direct_semantic_attempts d JOIN semantic_captures c ON c.capture_id=d.capture_id WHERE c.subject_id=?1 AND d.state IN ('intent_recorded','terminal_recorded')",
+                [subject.as_str()], |row| row.get::<_, i64>(0)).map_err(|_| StoreError::Unavailable)?
+        } else { unresolved_attempts };
         let transition = transition.map(|(transition_id, stage)| {
-            let semantic_compile_refusal = if stage == "verifying" {
+            let native_refusal: Option<String> = if stage == "verifying" {
                 tx.query_row(
                     "SELECT j.event_kind FROM journal j \
                      JOIN semantic_attempts a ON a.invocation_id=j.event_ref \
@@ -1339,6 +1376,20 @@ impl SqliteLifecycleStore {
                     params![&transition_id,subject.as_str()], |r|r.get(0),
                 ).optional().map_err(|_|StoreError::Unavailable)?
             } else { None };
+            // A refused direct compile has no native attempt or journal row;
+            // its own operation row is the evidence.
+            let direct_refusal: Option<String> = if stage == "verifying" && native_refusal.is_none() && direct_present {
+                tx.query_row(
+                    "SELECT d.refusal_code FROM direct_semantic_attempts d \
+                     JOIN semantic_captures c ON c.capture_id=d.capture_id \
+                     WHERE c.transition_id=?1 AND c.subject_id=?2 AND c.eligibility='current' \
+                     AND d.role='compile' AND d.state='refused' \
+                     ORDER BY d.created_wall_ms DESC,d.operation_id DESC LIMIT 1",
+                    params![&transition_id,subject.as_str()], |r|r.get::<_, Option<String>>(0),
+                ).optional().map_err(|_|StoreError::Unavailable)?
+                    .map(|code| crate::direct_semantic::direct_compile_refusal_reason(code.as_deref()).to_owned())
+            } else { None };
+            let semantic_compile_refusal = native_refusal.or(direct_refusal);
             Ok::<_, StoreError>(TransitionProjection {transition_id,stage,semantic_compile_refusal,
                 semantic_material_block:None, semantic_basis_issues:Vec::new()})
         }).transpose()?;
@@ -1949,6 +2000,9 @@ impl SqliteLifecycleStore {
     ) -> Result<TransitionState, StoreError> {
         self.verify_identity()?;
         let semantic_package = self.semantic_checkpoint(transition)?;
+        // Checkpoint establishment (not successor use) also accepts a direct
+        // checkpoint that the owner admitted at publication.
+        let admitted_direct = self.admitted_direct_checkpoint(transition)?;
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -1991,7 +2045,37 @@ impl SqliteLifecycleStore {
         if native_basis {
             match &fact {
                 TransitionFact::VerificationEstablished { checkpoint, .. } if semantic_required => {
-                    let package = semantic_package.as_ref().ok_or(StoreError::Rejected)?;
+                    let package = semantic_package
+                        .as_ref()
+                        .or(admitted_direct.as_ref().map(|direct| &direct.package))
+                        .ok_or(StoreError::Rejected)?;
+                    if semantic_package.is_none()
+                        && let Some(direct) = admitted_direct.as_ref()
+                    {
+                        // The owner's admission is fixed at publication, but the
+                        // checkpoint only becomes the lifecycle's here. The
+                        // admission and the control grants must still be
+                        // current for the same principal, issuer and subject
+                        // identity, and the transition must still own the
+                        // subject at the verifying stage.
+                        let current = crate::direct_semantic::direct_admission_still_current(
+                            &tx,
+                            &self.trusted_issuer,
+                            &direct.package.result_id,
+                            &direct.admission_grant_id,
+                            direct.admission_grant_revision,
+                            clock.wall.get(),
+                        )? && crate::direct_semantic::transition_controls_verification(
+                            &tx,
+                            subject.subject.as_str(),
+                            transition.as_str(),
+                            None,
+                            clock.wall.get(),
+                        )?;
+                        if !current {
+                            return Err(StoreError::Rejected);
+                        }
+                    }
                     if checkpoint.as_str() != format!("checkpoint:{}", package.candidate.sha256) {
                         return Err(StoreError::Rejected);
                     }
@@ -2047,6 +2131,16 @@ impl SqliteLifecycleStore {
                         return Err(StoreError::Rejected);
                     }
                 }
+                // An admitted direct checkpoint establishes verification only.
+                // Authorizing the switch would start a native successor that has
+                // no native checkpoint to be rehydrated from.
+                TransitionFact::SwitchAuthorized { .. }
+                    if semantic_required
+                        && semantic_package.is_none()
+                        && admitted_direct.is_some() =>
+                {
+                    return Err(StoreError::Rejected);
+                }
                 _ => {}
             }
         }
@@ -2087,7 +2181,8 @@ impl SqliteLifecycleStore {
                 // exact, silent historical epoch is no longer live allocation
                 // uncertainty. All turns and operations, including historical
                 // ones, retain their independent settlement barriers.
-                let native_unresolved_sql = if schema_version == 7 {
+                let native_unresolved_sql = if crate::schema::behavior_version(schema_version) == 7
+                {
                     "SELECT (SELECT COUNT(*) FROM native_sessions s WHERE s.subject_id=?1 AND s.allocation_state!='bound' AND NOT (
                          s.allocation_state='intent' AND s.role IN ('domain','successor') AND s.control_transition_id IS NULL
                          AND NOT EXISTS(SELECT 1 FROM native_turns t WHERE t.session_id=s.session_id)

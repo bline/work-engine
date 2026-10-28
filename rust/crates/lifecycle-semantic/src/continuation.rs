@@ -135,11 +135,40 @@ pub struct Candidate {
     pub source_basis_sha256: String,
     pub compile_invocation_id: String,
     pub compile_attempt_id: String,
-    pub compile_session_id: String,
+    /// Native compiler session. Absent for a direct-origin candidate, which has
+    /// no session; `direct` then carries the attributable operation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compile_session_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direct: Option<crate::DirectCompileProvenance>,
     pub compile_prompt_sha256: String,
     pub raw: Vec<u8>,
     pub sha256: String,
     pub plan: ContinuationPlan,
+}
+
+impl Candidate {
+    /// Identity used only to keep a verifier distinct from its compiler. A
+    /// direct operation is namespaced so it cannot equal a native session id.
+    pub fn compiler_identity(&self) -> String {
+        match (&self.compile_session_id, &self.direct) {
+            (Some(session), None) => session.clone(),
+            _ => format!("direct-operation:{}", self.compile_invocation_id),
+        }
+    }
+
+    /// Exactly one origin must be present and a direct origin must agree with
+    /// the candidate's own operation identity.
+    pub fn origin_is_coherent(&self) -> bool {
+        match (&self.compile_session_id, &self.direct) {
+            (Some(session), None) => valid_id(session),
+            (None, Some(direct)) => {
+                direct.operation_id == self.compile_invocation_id
+                    && direct.attempt_id == self.compile_attempt_id
+            }
+            _ => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -304,19 +333,12 @@ fn prompt_json<T: Serialize>(
     Ok((prompt, digest))
 }
 
-pub fn compile_request(
+pub(crate) fn compile_prompt(
     material: &SourceBasis,
-    binding: SemanticInvocationBinding,
     policy: &SemanticPolicy,
-) -> Result<CompileRequest, SemanticError> {
-    material.validate(policy)?;
-    if !material.is_eligible() || !policy.within_frozen_limits() || policy.id != material.policy_id
-    {
-        return Err(SemanticError::IneligibleMaterial);
-    }
-    binding.validate(material, SemanticPhase::Compile)?;
+) -> Result<(String, String), SemanticError> {
     let sources = prompt_sources(material)?;
-    let (prompt, prompt_sha256) = prompt_json(
+    prompt_json(
         &serde_json::json!({
             "task": "compile_attributed_continuation",
             "schema_version": material.schema_version,
@@ -330,7 +352,21 @@ pub fn compile_request(
             ]
         }),
         policy,
-    )?;
+    )
+}
+
+pub fn compile_request(
+    material: &SourceBasis,
+    binding: SemanticInvocationBinding,
+    policy: &SemanticPolicy,
+) -> Result<CompileRequest, SemanticError> {
+    material.validate(policy)?;
+    if !material.is_eligible() || !policy.within_frozen_limits() || policy.id != material.policy_id
+    {
+        return Err(SemanticError::IneligibleMaterial);
+    }
+    binding.validate(material, SemanticPhase::Compile)?;
+    let (prompt, prompt_sha256) = compile_prompt(material, policy)?;
     Ok(CompileRequest {
         binding,
         source_basis_sha256: material.sha256.clone(),
@@ -377,7 +413,8 @@ pub fn candidate_from_output(
         source_basis_sha256: material.sha256.clone(),
         compile_invocation_id: request.binding.invocation_id.clone(),
         compile_attempt_id: request.binding.attempt_id.clone(),
-        compile_session_id: request.binding.session_id.clone(),
+        compile_session_id: Some(request.binding.session_id.clone()),
+        direct: None,
         compile_prompt_sha256: request.prompt_sha256.clone(),
         sha256: sha256_hex(&raw),
         raw,
@@ -501,7 +538,8 @@ pub fn verify_candidate(
             .map_err(|_| SemanticError::InvalidOutput)?
             != candidate.plan
         || candidate.compile_invocation_id == binding.invocation_id
-        || candidate.compile_session_id == binding.session_id
+        || candidate.compiler_identity() == binding.session_id
+        || !candidate.origin_is_coherent()
         || !valid_id(&candidate.compile_invocation_id)
     {
         return Err(SemanticError::WrongBinding);
@@ -512,7 +550,7 @@ pub fn verify_candidate(
         binding,
         source_basis_sha256: material.sha256.clone(),
         compile_invocation_id: candidate.compile_invocation_id.clone(),
-        compiler_session_id: candidate.compile_session_id.clone(),
+        compiler_session_id: candidate.compiler_identity(),
         compile_prompt_sha256: candidate.compile_prompt_sha256.clone(),
         candidate_sha256: candidate.sha256.clone(),
         challenge_sha256: None,
@@ -653,7 +691,7 @@ pub fn verify_successor(
         binding,
         source_basis_sha256: material.sha256.clone(),
         compile_invocation_id: candidate.compile_invocation_id.clone(),
-        compiler_session_id: candidate.compile_session_id.clone(),
+        compiler_session_id: candidate.compiler_identity(),
         compile_prompt_sha256: candidate.compile_prompt_sha256.clone(),
         candidate_sha256: candidate.sha256.clone(),
         challenge_sha256: Some(challenge.sha256.clone()),

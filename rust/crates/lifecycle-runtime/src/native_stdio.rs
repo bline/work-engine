@@ -35,7 +35,7 @@ pub struct NativeChildExit {
 pub struct NativeStdio {
     child: Child,
     reader: BoundedFrameReader<tokio::process::ChildStdout>,
-    writer: BoundedFrameWriter<tokio::process::ChildStdin>,
+    writer: Option<BoundedFrameWriter<tokio::process::ChildStdin>>,
     pid: Option<u32>,
     max_frames: u64,
     received: u64,
@@ -72,7 +72,7 @@ impl NativeStdio {
         Ok(Self {
             child,
             reader: BoundedFrameReader::new(stdout, max_frame_bytes)?,
-            writer: BoundedFrameWriter::new(stdin, max_frame_bytes)?,
+            writer: Some(BoundedFrameWriter::new(stdin, max_frame_bytes)?),
             pid,
             max_frames,
             received: 0,
@@ -92,7 +92,11 @@ impl NativeStdio {
         if self.sent > self.max_frames {
             return Err(NativeStdioError::PipeUnavailable);
         }
-        self.writer.write_frame(bytes).await?;
+        self.writer
+            .as_mut()
+            .ok_or(NativeStdioError::PipeUnavailable)?
+            .write_frame(bytes)
+            .await?;
         Ok(self.sent)
     }
 
@@ -127,6 +131,42 @@ impl NativeStdio {
             code: status.code(),
             success: status.success(),
             forced,
+        })
+    }
+
+    pub fn close_stdin(&mut self) {
+        self.writer.take();
+    }
+
+    /// A synchronous pre-credential abort for a wrapper that has not yet
+    /// crossed the lifecycle process-registration boundary.
+    pub fn abort_before_credential(&mut self, budget: Duration) -> Result<(), NativeStdioError> {
+        if self.child.try_wait()?.is_some() {
+            return Ok(());
+        }
+        self.child.start_kill()?;
+        let deadline = std::time::Instant::now() + budget;
+        while std::time::Instant::now() < deadline {
+            if self.child.try_wait()?.is_some() {
+                return Ok(());
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        Err(NativeStdioError::CleanupTimeout)
+    }
+
+    pub async fn wait_for_wrapper(
+        &mut self,
+        budget: Duration,
+    ) -> Result<NativeChildExit, NativeStdioError> {
+        let status = tokio::time::timeout(budget, self.child.wait())
+            .await
+            .map_err(|_| NativeStdioError::CleanupTimeout)??;
+        Ok(NativeChildExit {
+            pid: self.pid,
+            code: status.code(),
+            success: status.success(),
+            forced: false,
         })
     }
 }

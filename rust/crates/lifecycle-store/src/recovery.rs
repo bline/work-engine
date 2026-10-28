@@ -19,6 +19,14 @@ pub enum RecoveryDisposition {
     EnteredUncertain,
     CompletedSettled,
     BlockedOrConflicted,
+    /// A direct operation's terminal response is durable but not yet settled
+    /// into a result. The send is not in doubt; the outcome is unconsumed.
+    TerminalObservedUnsettled,
+    /// A direct operation's terminal content was unusable and is kept as
+    /// evidence. It is never offered again.
+    Refused,
+    /// The adapter established that no byte reached the endpoint.
+    NotSent,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -134,6 +142,39 @@ impl SqliteLifecycleStore {
                 },
             });
         }
+        if direct_attempts_present(&self.connection)? {
+            let mut direct = self.connection.prepare(
+                "SELECT operation_id,attempt_id,state FROM direct_semantic_attempts ORDER BY created_wall_ms,operation_id"
+            ).map_err(|_| StoreError::Unavailable)?;
+            let direct = direct
+                .query_map([], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                })
+                .map_err(|_| StoreError::Unavailable)?;
+            for item in direct {
+                let (operation, attempt, state) = item.map_err(|_| StoreError::Unavailable)?;
+                // A direct operation has no native session, thread or
+                // incarnation; none is invented for it.
+                entries.push(RecoveryEntry {
+                    input_id: format!("direct_semantic:{operation}"),
+                    effect_id: operation,
+                    attempt_id: Some(attempt),
+                    incarnation_id: None,
+                    disposition: match state.as_str() {
+                        "intent_recorded" => RecoveryDisposition::EnteredUncertain,
+                        "terminal_recorded" => RecoveryDisposition::TerminalObservedUnsettled,
+                        "completed_settled" => RecoveryDisposition::CompletedSettled,
+                        "refused" => RecoveryDisposition::Refused,
+                        "not_sent" => RecoveryDisposition::NotSent,
+                        _ => RecoveryDisposition::BlockedOrConflicted,
+                    },
+                });
+            }
+        }
         Ok(entries)
     }
     /// Validate one coherent database view before exposing new admission.
@@ -154,7 +195,7 @@ impl SqliteLifecycleStore {
         )? + count(
             &self.connection,
             "SELECT COUNT(*) FROM native_operations WHERE state!='completed_settled'",
-        )?;
+        )? + direct_unresolved(&self.connection)?;
         let journal_cursor = count(
             &self.connection,
             "SELECT COALESCE(MAX(sequence),0) FROM journal",
@@ -190,6 +231,8 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if !matches!(version, 2..=7) {
             return Err(StoreError::Unavailable);
         }
@@ -212,7 +255,7 @@ impl SqliteLifecycleStore {
                 )?
             } else {
                 0
-            },
+            } + direct_unresolved(&inspection)?,
             journal_cursor: count(&inspection, "SELECT COALESCE(MAX(sequence),0) FROM journal")?,
         })
     }
@@ -247,6 +290,35 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
+    let _physical_version = version;
+    let version = crate::schema::behavior_version(version);
+    if matches!(_physical_version, 8..=11) {
+        let diagnostic_columns: i64 = connection.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('native_process_exits') WHERE name='isolation_diagnostic' AND type='TEXT' AND [notnull]=0",
+            [], |r| r.get(0)).map_err(|_| StoreError::Unavailable)?;
+        if diagnostic_columns != 1 {
+            return Err(StoreError::Unavailable);
+        }
+        let mut statement = connection.prepare("SELECT isolation_diagnostic,outcome_kind FROM native_process_exits WHERE isolation_diagnostic IS NOT NULL")
+            .map_err(|_| StoreError::Unavailable)?;
+        let rows = statement
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .map_err(|_| StoreError::Unavailable)?;
+        for row in rows {
+            let (wire, outcome) = row.map_err(|_| StoreError::Unavailable)?;
+            let _: lifecycle_core::IsolationDiagnostic =
+                serde_json::from_str(&wire).map_err(|_| StoreError::Unavailable)?;
+            if !matches!(
+                outcome.as_str(),
+                "transport_error_spawn_isolation"
+                    | "transport_error_spawn_transport"
+                    | "cleanup_unobserved"
+            ) {
+                return Err(StoreError::Unavailable);
+            }
+        }
+    }
+
     if !matches!(version, 2..=7) {
         return Err(StoreError::Unavailable);
     }
@@ -272,12 +344,15 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
             connection,
             "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",
         )?;
-        let expected = match version {
-            7 => 126,
-            6 => 123,
-            5 => 111,
-            _ => 102,
-        };
+        // Physical schema 10/11 add two direct semantic tables, three triggers each.
+        let direct_triggers = if _physical_version >= 10 { 6 } else { 0 };
+        let expected = direct_triggers
+            + match version {
+                7 => 126,
+                6 => 123,
+                5 => 111,
+                _ => 102,
+            };
         if revision < 0 || trigger_count != expected {
             return Err(StoreError::Unavailable);
         }
@@ -490,8 +565,46 @@ fn check_restart_epoch_coherence(connection: &Connection) -> Result<(), StoreErr
     Ok(())
 }
 
+/// Direct semantic tables exist from physical schema 10. An older store keeps
+/// its actual schema and has no direct operations.
+pub(crate) fn direct_attempts_present(connection: &Connection) -> Result<bool, StoreError> {
+    connection
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='direct_semantic_attempts')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|_| StoreError::Unavailable)
+}
+
+/// Possibly sent or terminal-but-unsettled direct operations. Refused and
+/// not-sent operations are decided; settled ones are complete.
+fn direct_unresolved(connection: &Connection) -> Result<i64, StoreError> {
+    if !direct_attempts_present(connection)? {
+        return Ok(0);
+    }
+    count(
+        connection,
+        "SELECT COUNT(*) FROM direct_semantic_attempts WHERE state IN ('intent_recorded','terminal_recorded')",
+    )
+}
+
 fn count(connection: &Connection, sql: &str) -> Result<i64, StoreError> {
     connection
         .query_row(sql, [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_connection_without_the_direct_tables_reports_no_direct_work() {
+        // Physical schemas before 10 have no direct tables; a retained older
+        // image keeps its actual schema.
+        let connection = Connection::open_in_memory().unwrap();
+        assert!(!direct_attempts_present(&connection).unwrap());
+        assert_eq!(direct_unresolved(&connection).unwrap(), 0);
+    }
 }

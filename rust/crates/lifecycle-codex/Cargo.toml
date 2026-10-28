@@ -5,7 +5,14 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
+[features]
+default = []
+synthetic-access-test = []
+
 [dependencies]
+lifecycle-core = { path = "../lifecycle-core" }
+base64.workspace = true
+libc = "0.2.190"
 lifecycle-runtime = { path = "../lifecycle-runtime" }
 lifecycle-wire = { path = "../lifecycle-wire" }
 serde.workspace = true
@@ -13,3 +20,7 @@ serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+toml = "1.1.6"
+
+[dev-dependencies]
+tempfile = "=3.27.0"

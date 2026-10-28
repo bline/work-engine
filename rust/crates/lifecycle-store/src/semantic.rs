@@ -302,6 +302,28 @@ pub struct SemanticCheckpointPackage {
     pub checked: CheckedSemanticResult,
 }
 
+/// A direct-origin checkpoint under the evidence class it was realized under.
+/// Proof-scoped: it is not an authoritative production checkpoint.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DirectProofCheckpoint {
+    pub package: SemanticCheckpointPackage,
+    pub evidence_class: String,
+    pub evidence_ref: String,
+}
+
+/// A direct-origin checkpoint whose evidence the owner-admitted profile covers,
+/// fixed at publication. Authoritative for checkpoint-establishment consumers.
+/// Native successor consumers still read `semantic_checkpoint` only: widening
+/// them is a separate owner decision about the profile's consumer.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DirectAdmittedCheckpoint {
+    pub package: SemanticCheckpointPackage,
+    pub evidence_class: String,
+    pub evidence_ref: String,
+    pub admission_grant_id: String,
+    pub admission_grant_revision: i64,
+}
+
 impl SqliteLifecycleStore {
     /// A completed native turn can be semantically unusable. Keep its native
     /// settlement intact and bind the refusal to the exact current attempt.
@@ -771,6 +793,8 @@ impl SqliteLifecycleStore {
                 [capture_id]).map_err(|_|StoreError::Unavailable)?;
             tx.execute("UPDATE semantic_results SET eligibility='stale' WHERE capture_id=?1 AND eligibility='current'",
                 [capture_id]).map_err(|_|StoreError::Unavailable)?;
+            tx.execute("UPDATE direct_semantic_results SET eligibility='stale' WHERE capture_id=?1 AND eligibility='current'",
+                [capture_id]).map_err(|_|StoreError::Unavailable)?;
             tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'semantic_capture_stale',?2,?3)",
                 params![subject,capture_id,clock.wall.get()]).map_err(|_|StoreError::Unavailable)?;
         }
@@ -931,9 +955,23 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::Rejected);
         }
-        let (subject,candidate_digest,basis_digest,status):(String,String,String,String)=self.connection.query_row(
-            "SELECT c.subject_id,r.candidate_artifact_sha256,r.basis_sha256,r.verdict FROM semantic_results r JOIN semantic_captures c ON c.capture_id=r.capture_id WHERE r.result_id=?1 AND r.eligibility='current' AND c.eligibility='current'",
-            [result_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?)),
+        // A result belongs to exactly one owner table; a direct result has no
+        // native verifier attempt.
+        let table = ["semantic_results", "direct_semantic_results"]
+            .into_iter()
+            .find(|table| {
+                self.connection
+                    .query_row(
+                        &format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE result_id=?1)"),
+                        [result_id],
+                        |r| r.get::<_, bool>(0),
+                    )
+                    .unwrap_or(false)
+            })
+            .ok_or(StoreError::Rejected)?;
+        let (subject,candidate_digest,basis_digest,status,result_transition):(String,String,String,String,String)=self.connection.query_row(
+            &format!("SELECT c.subject_id,r.candidate_artifact_sha256,r.basis_sha256,r.verdict,r.transition_id FROM {table} r JOIN semantic_captures c ON c.capture_id=r.capture_id WHERE r.result_id=?1 AND r.eligibility='current' AND c.eligibility='current'"),
+            [result_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?)),
         ).map_err(|_|StoreError::Rejected)?;
         if status != "accepted"
             || candidate_digest != candidate.sha256
@@ -958,18 +996,34 @@ impl SqliteLifecycleStore {
             clock,
         )?;
         let prompt_record = self.publish_artifact(
-            self.stage_artifact(subject, successor_prompt.as_bytes())?,
+            self.stage_artifact(subject.clone(), successor_prompt.as_bytes())?,
             clock,
         )?;
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
-        let changed=tx.execute("UPDATE semantic_results SET candidate_record_artifact_sha256=?2,challenge_artifact_sha256=?3,successor_prompt_artifact_sha256=?4 WHERE result_id=?1 AND verdict='accepted' AND eligibility='current' AND candidate_record_artifact_sha256 IS NULL AND challenge_artifact_sha256 IS NULL AND successor_prompt_artifact_sha256 IS NULL",
+        if table == "direct_semantic_results"
+            && !(crate::direct_semantic::direct_result_grants_current(
+                &tx,
+                &self.trusted_issuer,
+                result_id,
+                clock.wall.get(),
+            )? && crate::direct_semantic::transition_controls_verification(
+                &tx,
+                subject.as_str(),
+                &result_transition,
+                None,
+                clock.wall.get(),
+            )?)
+        {
+            return Err(StoreError::ClaimConflict);
+        }
+        let changed=tx.execute(&format!("UPDATE {table} SET candidate_record_artifact_sha256=?2,challenge_artifact_sha256=?3,successor_prompt_artifact_sha256=?4 WHERE result_id=?1 AND verdict='accepted' AND eligibility='current' AND candidate_record_artifact_sha256 IS NULL AND challenge_artifact_sha256 IS NULL AND successor_prompt_artifact_sha256 IS NULL"),
             params![result_id,&candidate_record.digest_hex,&challenge_record.digest_hex,&prompt_record.digest_hex])
             .map_err(|_|StoreError::Unavailable)?;
         if changed != 1 {
-            let prior:Option<(String,String,String)>=tx.query_row("SELECT candidate_record_artifact_sha256,challenge_artifact_sha256,successor_prompt_artifact_sha256 FROM semantic_results WHERE result_id=?1",
+            let prior:Option<(String,String,String)>=tx.query_row(&format!("SELECT candidate_record_artifact_sha256,challenge_artifact_sha256,successor_prompt_artifact_sha256 FROM {table} WHERE result_id=?1"),
                 [result_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).optional().map_err(|_|StoreError::Unavailable)?;
             if prior
                 != Some((
@@ -981,17 +1035,114 @@ impl SqliteLifecycleStore {
                 return Err(StoreError::ClaimConflict);
             }
         }
+        if table == "direct_semantic_results"
+            && let Some((grant, revision)) =
+                crate::direct_semantic::direct_admission_in(
+                    &tx,
+                    &self.trusted_issuer,
+                    result_id,
+                    clock.wall.get(),
+                )?
+        {
+            tx.execute(
+                "UPDATE direct_semantic_results SET admission_grant_id=?2,admission_grant_revision=?3 WHERE result_id=?1 AND admission_grant_id IS NULL",
+                params![result_id, grant, revision],
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        }
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(())
     }
 
+    /// The authoritative checkpoint every production consumer reads (successor
+    /// prompt, rehydration receipt, successor commit). Only a native-origin
+    /// checkpoint is authoritative today. A direct-origin result is published
+    /// into `direct_proof_checkpoint` instead and is invisible here until the
+    /// lifecycle owner admits an evidence class for this accessor: the trust
+    /// decision sits before authoritative visibility, not at a later gate.
     pub fn semantic_checkpoint(
         &self,
         transition: &TransitionId,
     ) -> Result<Option<SemanticCheckpointPackage>, StoreError> {
         self.verify_identity()?;
+        self.semantic_checkpoint_in(transition, "semantic_results", false)
+    }
+
+    /// Direct-origin checkpoint admitted at publication by an owner grant that
+    /// the profile covers. Unadmitted direct results are never returned here.
+    pub fn admitted_direct_checkpoint(
+        &self,
+        transition: &TransitionId,
+    ) -> Result<Option<DirectAdmittedCheckpoint>, StoreError> {
+        self.verify_identity()?;
+        let Some(package) =
+            self.semantic_checkpoint_in(transition, "direct_semantic_results", true)?
+        else {
+            return Ok(None);
+        };
+        let row: (String, String, String, i64) = self
+            .connection
+            .query_row(
+                "SELECT evidence_class,evidence_ref,admission_grant_id,admission_grant_revision FROM direct_semantic_results WHERE result_id=?1 AND admission_grant_id IS NOT NULL",
+                [&package.result_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        Ok(Some(DirectAdmittedCheckpoint {
+            package,
+            evidence_class: row.0,
+            evidence_ref: row.1,
+            admission_grant_id: row.2,
+            admission_grant_revision: row.3,
+        }))
+    }
+
+    /// Proof-scoped read of a direct-origin checkpoint. The package is the same
+    /// value, labelled with the evidence class it was realized under, and no
+    /// production consumer reads this accessor.
+    pub fn direct_proof_checkpoint(
+        &self,
+        transition: &TransitionId,
+    ) -> Result<Option<DirectProofCheckpoint>, StoreError> {
+        self.verify_identity()?;
+        let Some(package) = self.semantic_checkpoint_in(transition, "direct_semantic_results", false)?
+        else {
+            return Ok(None);
+        };
+        let (evidence_class, evidence_ref): (String, String) = self
+            .connection
+            .query_row(
+                "SELECT evidence_class,evidence_ref FROM direct_semantic_results WHERE result_id=?1",
+                [&package.result_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        Ok(Some(DirectProofCheckpoint {
+            package,
+            evidence_class,
+            evidence_ref,
+        }))
+    }
+
+    /// `table` is one of the two closed result owners, never caller input.
+    pub(crate) fn semantic_checkpoint_in(
+        &self,
+        transition: &TransitionId,
+        table: &str,
+        admitted_only: bool,
+    ) -> Result<Option<SemanticCheckpointPackage>, StoreError> {
+        if !matches!(table, "semantic_results" | "direct_semantic_results")
+            || (admitted_only && table != "direct_semantic_results")
+        {
+            return Err(StoreError::Rejected);
+        }
+        let admitted = if admitted_only {
+            " AND r.admission_grant_id IS NOT NULL"
+        } else {
+            ""
+        };
         let row:Option<(String,String,String,String,String,String)>=self.connection.query_row(
-            "SELECT r.result_id,c.basis_artifact_sha256,r.candidate_record_artifact_sha256,r.challenge_artifact_sha256,r.successor_prompt_artifact_sha256,r.findings_artifact_sha256 FROM semantic_results r JOIN semantic_captures c ON c.capture_id=r.capture_id WHERE r.transition_id=?1 AND r.verdict='accepted' AND r.eligibility='current' AND c.eligibility='current' AND r.candidate_record_artifact_sha256 IS NOT NULL AND r.challenge_artifact_sha256 IS NOT NULL AND r.successor_prompt_artifact_sha256 IS NOT NULL ORDER BY r.created_wall_ms DESC,r.rowid DESC LIMIT 1",
+            &format!("SELECT r.result_id,c.basis_artifact_sha256,r.candidate_record_artifact_sha256,r.challenge_artifact_sha256,r.successor_prompt_artifact_sha256,r.findings_artifact_sha256 FROM {table} r JOIN semantic_captures c ON c.capture_id=r.capture_id WHERE r.transition_id=?1 AND r.verdict='accepted' AND r.eligibility='current' AND c.eligibility='current' AND r.candidate_record_artifact_sha256 IS NOT NULL AND r.challenge_artifact_sha256 IS NOT NULL AND r.successor_prompt_artifact_sha256 IS NOT NULL{admitted} ORDER BY r.created_wall_ms DESC,r.rowid DESC LIMIT 1"),
             [transition.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
         ).optional().map_err(|_|StoreError::Unavailable)?;
         let Some((result_id, basis, candidate, challenge, prompt, findings)) = row else {

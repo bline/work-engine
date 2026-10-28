@@ -519,6 +519,7 @@ fn compatible_reselection(
         && old.replacement_grant_ref == startup.replacement_grant_ref
         && old.features == startup.features
         && old.provider_identity == startup.provider_identity
+        && old.control == startup.control
         && serde_json::to_value(&old.lifecycle)? == serde_json::to_value(&startup.lifecycle)?)
 }
 
@@ -568,6 +569,10 @@ fn compatible_restart(
     }
     let old: HostStartup =
         serde_json::from_slice(&prior_config).map_err(|_| HostError::Configuration)?;
+    // Control is never a restart knob: a successor keeps the exact realization.
+    if old.control != startup.control {
+        return Ok(false);
+    }
     let (Some(old_native), Some(new_native)) = (
         old.lifecycle.native.as_ref(),
         startup.lifecycle.native.as_ref(),
@@ -940,6 +945,7 @@ fn publish_receipt(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{ComposedControl, ControlSelection, compose_control, validate_control};
     use serde_json::{Value, json};
     use std::process::Command;
 
@@ -1468,6 +1474,232 @@ mod tests {
                 &prior_receipt_path
             )
             .is_err()
+        );
+    }
+    fn direct_control_json(directory: &Path) -> Value {
+        let journal = directory.join("direct-journal");
+        let release = directory.join("direct-release");
+        for dir in [&journal, &release] {
+            fs::create_dir_all(dir).unwrap();
+            fs::set_permissions(dir, fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        // The public route's fixed bounds; any other value is refused.
+        json!({"kind":"direct","credential_dir":directory.join("direct-credentials"),
+            "credential_host_id":"host_direct","journal_dir":journal,"release_dir":release,
+            "model":"model-x",
+            "bounds":{"request_bytes":65536,"stream_bytes":1048576,"frame_bytes":131072,
+                "output_bytes":16384,"events":4096,"local_deadline_ms":30000}})
+    }
+
+    fn startup_from(fixture: &Fixture, edit: impl FnOnce(&mut Value)) -> HostStartup {
+        let mut config: Value =
+            serde_json::from_slice(&fs::read(&fixture.config).unwrap()).unwrap();
+        edit(&mut config);
+        serde_json::from_value(config).unwrap()
+    }
+
+    #[test]
+    fn control_defaults_to_native_is_not_serialized_and_rejects_unknown_shapes() {
+        let fixture = Fixture::new();
+        let native = startup_from(&fixture, |_| {});
+        assert_eq!(native.control, ControlSelection::Native {});
+        assert!(serde_json::to_value(&native).unwrap().get("control").is_none());
+        assert!(matches!(
+            compose_control(&native).unwrap(),
+            ComposedControl::Native
+        ));
+        let directory = fixture.config.parent().unwrap().to_owned();
+        let direct = startup_from(&fixture, |c| c["control"] = direct_control_json(&directory));
+        assert!(matches!(direct.control, ControlSelection::Direct(_)));
+        let round: HostStartup =
+            serde_json::from_value(serde_json::to_value(&direct).unwrap()).unwrap();
+        assert_eq!(round.control, direct.control);
+        for bad in [
+            json!({"kind":"fallback"}),
+            json!({"kind":"native","evidence":"public_api"}),
+            json!("direct"),
+        ] {
+            let mut config: Value =
+                serde_json::from_slice(&fs::read(&fixture.config).unwrap()).unwrap();
+            config["control"] = bad;
+            assert!(serde_json::from_value::<HostStartup>(config).is_err());
+        }
+        let mut with_evidence = direct_control_json(&directory);
+        with_evidence["evidence_class"] = json!("public_api");
+        let mut config: Value =
+            serde_json::from_slice(&fs::read(&fixture.config).unwrap()).unwrap();
+        config["control"] = with_evidence;
+        assert!(
+            serde_json::from_value::<HostStartup>(config).is_err(),
+            "configuration cannot declare an evidence class"
+        );
+    }
+
+    #[test]
+    fn direct_control_validation_binds_profile_semantic_paths_and_bounds() {
+        let fixture = Fixture::new();
+        let directory = fixture.config.parent().unwrap().to_owned();
+        let accepted = startup_from(&fixture, |c| c["control"] = direct_control_json(&directory));
+        validate_control(&accepted).unwrap();
+        type Edit = Box<dyn Fn(&mut Value)>;
+        let cases: Vec<(&str, Edit)> = vec![
+            ("no semantic capture", Box::new(|c| c["lifecycle"]["native"]["semantic"] = Value::Null)),
+            ("other profile", Box::new(|c| c["lifecycle"]["profile"] = json!("read_only"))),
+            ("relative credentials", Box::new(|c| c["control"]["credential_dir"] = json!("creds"))),
+            ("parent traversal", Box::new(|c| c["control"]["journal_dir"] = json!("/tmp/../x"))),
+            ("empty host id", Box::new(|c| c["control"]["credential_host_id"] = json!(""))),
+            ("blank model", Box::new(|c| c["control"]["model"] = json!("  "))),
+            ("zero bound", Box::new(|c| c["control"]["bounds"]["events"] = json!(0))),
+            ("bounds differ from the public route", Box::new(|c| c["control"]["bounds"]["output_bytes"] = json!(1024))),
+            ("missing release dir", Box::new({
+                let d = directory.clone();
+                move |c| c["control"]["release_dir"] = json!(d.join("absent-release"))
+            })),
+            ("release dir not owner-only", Box::new({
+                let d = directory.clone();
+                move |c| {
+                    let shared = d.join("shared-release");
+                    fs::create_dir_all(&shared).unwrap();
+                    fs::set_permissions(&shared, fs::Permissions::from_mode(0o750)).unwrap();
+                    c["control"]["release_dir"] = json!(shared);
+                }
+            })),
+            ("release dir is the journal", Box::new(|c| c["control"]["release_dir"] = c["control"]["journal_dir"].clone())),
+            ("release dir inside credentials", Box::new({
+                let d = directory.clone();
+                move |c| c["control"]["release_dir"] = json!(d.join("direct-credentials/release"))
+            })),
+            ("journal inside credentials", Box::new({
+                let d = directory.clone();
+                move |c| c["control"]["journal_dir"] = json!(d.join("direct-credentials/journal"))
+            })),
+            ("same directory", Box::new({
+                let d = directory.clone();
+                move |c| c["control"]["journal_dir"] = json!(d.join("direct-credentials"))
+            })),
+            ("journal not private", Box::new({
+                let d = directory.clone();
+                move |c| {
+                    let loose = d.join("loose");
+                    fs::create_dir_all(&loose).unwrap();
+                    fs::set_permissions(&loose, fs::Permissions::from_mode(0o755)).unwrap();
+                    c["control"]["journal_dir"] = json!(loose);
+                }
+            })),
+        ];
+        for (name, edit) in cases {
+            let candidate = startup_from(&fixture, |c| {
+                c["control"] = direct_control_json(&directory);
+                edit(c);
+            });
+            assert!(validate_control(&candidate).is_err(), "{name}");
+        }
+        // A Direct selection without a release directory does not parse.
+        let mut config: Value =
+            serde_json::from_slice(&fs::read(&fixture.config).unwrap()).unwrap();
+        config["control"] = direct_control_json(&directory);
+        config["control"].as_object_mut().unwrap().remove("release_dir");
+        assert!(serde_json::from_value::<HostStartup>(config).is_err(), "no release dir");
+    }
+
+    #[test]
+    fn direct_composition_fails_closed_without_credentials_and_creates_nothing() {
+        let fixture = Fixture::new();
+        let directory = fixture.config.parent().unwrap().to_owned();
+        let direct = startup_from(&fixture, |c| c["control"] = direct_control_json(&directory));
+        // Composition is the only route to a Direct port, and it never falls
+        // back to native when the credential store is absent.
+        assert!(matches!(
+            compose_control(&direct),
+            Err(HostError::Configuration)
+        ));
+        assert!(!directory.join("direct-credentials").exists());
+        // The same refusal ends selected startup before either store exists.
+        let mut config: Value =
+            serde_json::from_slice(&fs::read(&fixture.config).unwrap()).unwrap();
+        config["control"] = direct_control_json(&directory);
+        write_private_json(&fixture.config, &config);
+        let mut selection: Value =
+            serde_json::from_slice(&fs::read(&fixture.selection).unwrap()).unwrap();
+        selection["config_sha256"] = json!(sha_file(&fixture.config).unwrap());
+        write_private_json(&fixture.selection, &selection);
+        assert!(prepare(&fixture.selection).is_err());
+        assert!(!fixture.task.exists() && !fixture.lifecycle_root.exists());
+        assert!(!directory.join("startup-intent.json").exists());
+        assert!(!directory.join("direct-credentials").exists());
+    }
+
+    #[test]
+    fn control_change_is_incompatible_for_reselection_and_restart() {
+        let fixture = Fixture::new();
+        let directory = fixture.config.parent().unwrap().to_owned();
+        drop(prepare(&fixture.selection).unwrap());
+        let recorded: Receipt = read_state(&directory.join("startup-receipt.json")).unwrap();
+        let next_selection_for = |version: u64, config_path: &Path| -> (PathBuf, Selection) {
+            let mut next: Value =
+                serde_json::from_slice(&fs::read(&fixture.selection).unwrap()).unwrap();
+            next["version"] = json!(version);
+            next["selection_id"] = json!(format!("selected-control-v{version}"));
+            next["predecessor_selection_path"] = json!(fixture.selection);
+            next["config_path"] = json!(config_path);
+            next["config_sha256"] = json!(sha_file(config_path).unwrap());
+            if version == 3 {
+                next["restart_declaration_path"] = json!(directory.join("declaration.json"));
+            }
+            let path = directory.join(format!("selection-v{version}.json"));
+            write_private_json(&path, &next);
+            (path.clone(), serde_json::from_slice(&fs::read(&path).unwrap()).unwrap())
+        };
+
+        // Reselection: identical config is compatible; only control differs below.
+        let same_config = directory.join("host-same.json");
+        fs::copy(&fixture.config, &same_config).unwrap();
+        let (path2, selection2) = next_selection_for(2, &same_config);
+        let same = startup_from(&fixture, |_| {});
+        assert!(compatible_reselection(&path2, &selection2, &same, &recorded, &recorded).unwrap());
+        let direct = startup_from(&fixture, |c| c["control"] = direct_control_json(&directory));
+        assert!(!compatible_reselection(&path2, &selection2, &direct, &recorded, &recorded).unwrap());
+
+        // Restart: a fresh native identity is compatible only with the same control.
+        let restarted = |control: Option<Value>| {
+            startup_from(&fixture, |c| {
+                c["lifecycle"]["native"]["session_id"] = json!("session:restarted");
+                c["lifecycle"]["native"]["root"] = json!(directory.join("native-root-next"));
+                if let Some(control) = control {
+                    c["control"] = control;
+                }
+            })
+        };
+        let (path3, selection3) = next_selection_for(3, &same_config);
+        assert!(compatible_restart(&path3, &selection3, &restarted(None), &recorded).unwrap());
+        assert!(
+            !compatible_restart(
+                &path3,
+                &selection3,
+                &restarted(Some(direct_control_json(&directory))),
+                &recorded
+            )
+            .unwrap()
+        );
+
+        // And the reverse: a predecessor that was Direct refuses a native successor.
+        let direct_config = directory.join("host-direct.json");
+        let mut config: Value =
+            serde_json::from_slice(&fs::read(&fixture.config).unwrap()).unwrap();
+        config["control"] = direct_control_json(&directory);
+        write_private_json(&direct_config, &config);
+        let (path3d, mut selection3d) = next_selection_for(3, &same_config);
+        let mut prior: Value =
+            serde_json::from_slice(&fs::read(&fixture.selection).unwrap()).unwrap();
+        prior["config_path"] = json!(direct_config);
+        prior["config_sha256"] = json!(sha_file(&direct_config).unwrap());
+        let prior_path = directory.join("selection-direct-prior.json");
+        write_private_json(&prior_path, &prior);
+        selection3d.predecessor_selection_path = Some(prior_path.clone());
+        let mut recorded_direct = recorded.clone();
+        recorded_direct.selection_sha256 = sha_file(&prior_path).unwrap();
+        assert!(
+            !compatible_restart(&path3d, &selection3d, &restarted(None), &recorded_direct).unwrap()
         );
     }
 }

@@ -226,6 +226,16 @@ pub async fn drive_transition(
             return Ok(());
         }
         let stage = TransitionStage::parse(&transition.stage).ok_or(StoreError::Unavailable)?;
+        // An admitted direct checkpoint is where a Direct consumer stops: the
+        // switch would start a native successor with no native checkpoint to
+        // rehydrate from, which the store also refuses. This reads the durable
+        // checkpoint, not this launch's selection, so a later launch stops too.
+        if matches!(stage, TransitionStage::Checkpointed)
+            && store.semantic_checkpoint(&id)?.is_none()
+            && store.admitted_direct_checkpoint(&id)?.is_some()
+        {
+            return Ok(());
+        }
         let evidence = |suffix: &str| {
             EvidenceId::parse(format!("{}:{suffix}", result.source_id))
                 .map_err(|_| StoreError::Unavailable)
@@ -383,37 +393,39 @@ pub async fn drive_transition(
                 )?;
                 return Ok(());
             }
-            let fenced =
-                runtime
-                    .material_port
-                    .with_current_fence(&package.basis.dependencies, &mut || {
-                        store
-                            .apply_transition_fact(
-                                &id,
-                                Revision::new(snapshot.revision),
-                                fact.clone(),
-                                successor_grant.as_ref(),
-                                clock_sample(),
-                            )
-                            .map_err(crate::ServiceError::Store)?;
-                        Ok(())
-                    });
-            match fenced {
-                Ok(()) => {}
-                Err(crate::ServiceError::Material(crate::MaterialPortError::Conflict)) => {
-                    store.mark_semantic_capture_stale(
-                        &package.basis.capture_id,
-                        &package.basis.sha256,
-                        clock_sample(),
-                    )?;
-                    return Ok(());
-                }
-                Err(error) => {
-                    return Err(match error {
-                        crate::ServiceError::Store(inner) => inner,
-                        _ => StoreError::ClaimConflict,
-                    });
-                }
+            if !apply_fact_under_current_fence(
+                store,
+                runtime,
+                &package.basis,
+                &id,
+                snapshot.revision,
+                &fact,
+                successor_grant.as_ref(),
+            )? {
+                return Ok(());
+            }
+            continue;
+        }
+        // An admitted direct checkpoint is consumed here and nowhere after, so
+        // its source must be current at the instant the lifecycle accepts it,
+        // not only when it was published or last offered.
+        if matches!(fact, TransitionFact::VerificationEstablished { .. })
+            && let Some(runtime) = semantic_runtime
+            && matches!(runtime.realization, crate::semantic::ControlRealization::Direct(_))
+        {
+            let admitted = store
+                .admitted_direct_checkpoint(&id)?
+                .ok_or(StoreError::Rejected)?;
+            if !apply_fact_under_current_fence(
+                store,
+                runtime,
+                &admitted.package.basis,
+                &id,
+                snapshot.revision,
+                &fact,
+                successor_grant.as_ref(),
+            )? {
+                return Ok(());
             }
             continue;
         }
@@ -426,6 +438,44 @@ pub async fn drive_transition(
         )?;
     }
     Ok(())
+}
+
+/// Apply one fact inside the material owner's current fence: the owner's lock
+/// and transaction are held while the lifecycle commits, so a source update
+/// cannot land between the last observation and the commit. On conflict the
+/// capture is retired as stale and nothing is applied (`false`).
+pub(crate) fn apply_fact_under_current_fence(
+    store: &mut SqliteLifecycleStore,
+    runtime: &crate::semantic::SemanticRuntime,
+    basis: &lifecycle_semantic::SourceBasis,
+    transition: &TransitionId,
+    expected_revision: u64,
+    fact: &TransitionFact,
+    successor_grant: Option<&GrantId>,
+) -> Result<bool, StoreError> {
+    let fenced = runtime
+        .material_port
+        .with_current_fence(&basis.dependencies, &mut || {
+            store
+                .apply_transition_fact(
+                    transition,
+                    Revision::new(expected_revision),
+                    fact.clone(),
+                    successor_grant,
+                    clock_sample(),
+                )
+                .map_err(crate::ServiceError::Store)?;
+            Ok(())
+        });
+    match fenced {
+        Ok(()) => Ok(true),
+        Err(crate::ServiceError::Material(crate::MaterialPortError::Conflict)) => {
+            store.mark_semantic_capture_stale(&basis.capture_id, &basis.sha256, clock_sample())?;
+            Ok(false)
+        }
+        Err(crate::ServiceError::Store(inner)) => Err(inner),
+        Err(_) => Err(StoreError::ClaimConflict),
+    }
 }
 
 async fn verify_external_child(

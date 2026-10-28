@@ -30,6 +30,20 @@ pub struct SemanticRuntime {
     pub uid: u32,
     pub principal: String,
     pub proof_dir: Option<PathBuf>,
+    /// Which control realization produces the compile and separate verify calls.
+    pub realization: ControlRealization,
+}
+
+/// The compile and verify calls of one checkpoint come from exactly one owner.
+/// Native keeps provider-session custody; Direct submits host-assembled
+/// tool-free requests with their own operation identity and no session.
+#[derive(Clone)]
+pub enum ControlRealization {
+    Native,
+    // Selected only by trusted composition (`run_with_direct_control`). A direct
+    // checkpoint is proof-scoped unless the owner's admission grant covers its
+    // evidence at publication; native is the default.
+    Direct(crate::semantic_direct::DirectRealization),
 }
 
 fn semantic_store_error(_: lifecycle_semantic::SemanticError) -> StoreError {
@@ -140,7 +154,40 @@ fn publish_bytes(
     Ok(store.publish_artifact(staged, clock_sample())?.digest_hex)
 }
 
+/// The production entry. A native checkpoint, or a direct checkpoint the owner
+/// admitted at publication, is returned. A direct checkpoint that no owner
+/// grant admitted stays proof-scoped and is reported as not established, so the
+/// engine cannot treat it as a verified checkpoint.
 pub async fn establish_checkpoint(
+    store: &mut SqliteLifecycleStore,
+    runtime: &SemanticRuntime,
+    subject: &SubjectId,
+    context: &ContextGeneration,
+    transition: &TransitionId,
+    semantic_revision: u64,
+) -> Result<Option<CheckpointId>, StoreError> {
+    let established = establish_checkpoint_scoped(
+        store,
+        runtime,
+        subject,
+        context,
+        transition,
+        semantic_revision,
+    )
+    .await?;
+    if established.is_some()
+        && store.semantic_checkpoint(transition)?.is_none()
+        && store.admitted_direct_checkpoint(transition)?.is_none()
+    {
+        return Ok(None);
+    }
+    Ok(established)
+}
+
+/// Establishes under whatever scope the evidence earns, including a direct
+/// proof-scoped checkpoint. Not a production entry: it exists so the proof
+/// scope can be observed and its isolation tested.
+pub(crate) async fn establish_checkpoint_scoped(
     store: &mut SqliteLifecycleStore,
     runtime: &SemanticRuntime,
     subject: &SubjectId,
@@ -151,6 +198,35 @@ pub async fn establish_checkpoint(
     if let Some(package) = store.semantic_checkpoint(transition)? {
         return Ok(Some(
             CheckpointId::parse(format!("checkpoint:{}", package.candidate.sha256))
+                .map_err(|_| StoreError::Unavailable)?,
+        ));
+    }
+    // A direct-origin checkpoint is proof-scoped and never authoritative, so it
+    // is found only through its own accessor.
+    if matches!(runtime.realization, ControlRealization::Direct(_))
+        && let Some(proof) = store.direct_proof_checkpoint(transition)?
+    {
+        // Published earlier, possibly by a previous incarnation. No native
+        // successor gate revalidates a direct checkpoint later, so the source
+        // is checked each time it is offered again.
+        let dependencies = &proof.package.basis.dependencies;
+        let observed = runtime
+            .material_port
+            .observe_dependencies(dependencies)
+            .map_err(|_| StoreError::Rejected)?;
+        if !revalidate_dependencies(dependencies, &observed)
+            .map_err(semantic_store_error)?
+            .is_empty()
+        {
+            store.mark_semantic_capture_stale(
+                &proof.package.basis.capture_id,
+                &proof.package.basis.sha256,
+                clock_sample(),
+            )?;
+            return Ok(None);
+        }
+        return Ok(Some(
+            CheckpointId::parse(format!("checkpoint:{}", proof.package.candidate.sha256))
                 .map_err(|_| StoreError::Unavailable)?,
         ));
     }
@@ -232,6 +308,12 @@ pub async fn establish_checkpoint(
     let Some(compile_pre) = compile_pre else {
         return Ok(None);
     };
+    if let ControlRealization::Direct(direct) = &runtime.realization {
+        return crate::semantic_direct::establish_direct(
+            store, runtime, direct, subject, context, &basis, &policy,
+        )
+        .await;
+    }
     let compile = semantic_control::run_control_turn(
         store,
         &runtime.native,
@@ -395,12 +477,25 @@ pub async fn establish_checkpoint(
     if checked.status != VerdictStatus::Accepted {
         return Ok(None);
     }
+    publish_accepted_checkpoint(store, runtime, &basis, &candidate, &policy, &result_id)
+}
+
+/// Shared by both realizations: derive the challenge and successor prompt from
+/// the accepted candidate and publish through the one checkpoint owner.
+pub(crate) fn publish_accepted_checkpoint(
+    store: &mut SqliteLifecycleStore,
+    runtime: &SemanticRuntime,
+    basis: &lifecycle_semantic::SourceBasis,
+    candidate: &lifecycle_semantic::Candidate,
+    policy: &lifecycle_semantic::SemanticPolicy,
+    result_id: &str,
+) -> Result<Option<CheckpointId>, StoreError> {
     let challenge = challenge_successor(
-        &basis,
-        &candidate,
+        basis,
+        candidate,
         runtime.semantic.challenge_id.clone(),
         runtime.semantic.challenge_text.clone(),
-        &policy,
+        policy,
     )
     .map_err(semantic_store_error)?;
     let successor_prompt=serde_json::to_string(&serde_json::json!({
@@ -417,8 +512,8 @@ pub async fn establish_checkpoint(
         return Err(StoreError::ClaimConflict);
     }
     store.publish_semantic_checkpoint(
-        &result_id,
-        &candidate,
+        result_id,
+        candidate,
         &challenge,
         &successor_prompt,
         clock_sample(),
@@ -544,7 +639,7 @@ pub async fn assess_successor_use(
     let exposure = verifier_exposure(
         runtime.native.provider_route,
         &verified.binding.session_id,
-        &package.candidate.compile_session_id,
+        &package.candidate.compiler_identity(),
         Some(&runtime.native.session_id),
         &verify.prompt_sha256,
         &verified.observed_provider,

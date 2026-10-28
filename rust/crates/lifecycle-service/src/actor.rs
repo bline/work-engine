@@ -18,8 +18,8 @@ use lifecycle_core::{
     WaitBudgetMs, WallTimeMs,
 };
 use lifecycle_runtime::{
-    ExecutionReservation, LifecycleExecutor, OwnedExecutor, ProviderFailure, ResultReceiver,
-    TaskResult, TaskTermination,
+    ExecutionReservation, LifecycleExecutor, NativeChildExit, OwnedExecutor, ProviderFailure,
+    ResultReceiver, TaskResult, TaskTermination,
 };
 use lifecycle_store::{
     GrantControlHandle, RecoveryDisposition, SqliteLifecycleStore, StoreError, SubjectProjection,
@@ -317,7 +317,16 @@ pub struct Actor {
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
     task_effect_hold: Option<String>,
+    /// Supplied by trusted composition, never by configuration. When present,
+    /// compile and verify calls of a semantic checkpoint go through it.
+    direct_control: Option<Arc<dyn lifecycle_semantic::DirectInferencePort>>,
+    /// Set while a prepared direct call waits for its owner release. Only the
+    /// actor's guarded re-drive reads it; it is never durable state.
+    direct_pending: crate::semantic_direct::DirectPendingSlot,
 }
+
+/// How often a transition waiting on a direct owner release is re-driven.
+const DIRECT_RELEASE_REDRIVE: std::time::Duration = std::time::Duration::from_secs(2);
 
 const TASK_EFFECT_HOLD: &str = "committed-native/owner-attribution-unresolved";
 
@@ -329,7 +338,7 @@ pub(crate) struct NativeGate {
 }
 
 impl NativeGate {
-    fn new(attribution_held: bool) -> Self {
+    pub(crate) fn new(attribution_held: bool) -> Self {
         Self {
             attribution: AtomicBool::new(attribution_held),
             shutdown: AtomicBool::new(false),
@@ -458,6 +467,63 @@ pub(crate) fn agent_message_delta_matches(
         && delta.len() <= 65_536
 }
 
+/// Pinned app-server 0.163 MCP startup status is advisory setup metadata.
+/// It never settles a turn or establishes a usable tool catalog.
+pub(crate) fn mcp_startup_status_matches(value: &Value, owned_thread: Option<&str>) -> bool {
+    let Some(envelope) = value.as_object() else {
+        return false;
+    };
+    if envelope.get("method").and_then(Value::as_str) != Some("mcpServer/startupStatus/updated")
+        || envelope
+            .keys()
+            .any(|key| !matches!(key.as_str(), "method" | "params" | "emittedAtMs"))
+        || envelope
+            .get("emittedAtMs")
+            .is_some_and(|timestamp| timestamp.as_u64().is_none())
+    {
+        return false;
+    }
+    let Some(params) = envelope.get("params").and_then(Value::as_object) else {
+        return false;
+    };
+    if params.len() != 5
+        || params.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "threadId" | "name" | "status" | "error" | "failureReason"
+            )
+        })
+    {
+        return false;
+    }
+    let thread_matches = match params.get("threadId") {
+        Some(Value::Null) => true,
+        Some(Value::String(thread)) => {
+            !thread.is_empty() && owned_thread.is_some_and(|owned| thread == owned)
+        }
+        _ => false,
+    };
+    let name_ok = params
+        .get("name")
+        .and_then(Value::as_str)
+        .is_some_and(|name| !name.is_empty() && name.len() <= 256);
+    let status = params.get("status").and_then(Value::as_str);
+    let status_ok = matches!(status, Some("starting" | "ready" | "failed" | "cancelled"));
+    let error_ok = match params.get("error") {
+        Some(Value::Null) => true,
+        Some(Value::String(error)) => status == Some("failed") && error.len() <= 4096,
+        _ => false,
+    };
+    let failure_reason_ok = match params.get("failureReason") {
+        Some(Value::Null) => true,
+        Some(Value::String(reason)) => {
+            status == Some("failed") && reason == "reauthenticationRequired"
+        }
+        _ => false,
+    };
+    thread_matches && name_ok && status_ok && error_ok && failure_reason_ok
+}
+
 struct NativeSegmentIntent {
     queue_attempt: AttemptId,
     segment_no: u64,
@@ -560,10 +626,12 @@ impl Actor {
         Ok(())
     }
 
-    async fn drive_transition(&mut self) -> Result<(), StoreError> {
-        if self.task_effect_hold.is_some() {
-            return Err(StoreError::ClaimConflict);
-        }
+    /// The semantic runtime the engine hands to `establish_checkpoint`: the one
+    /// place the control realization is selected. Direct only when trusted
+    /// composition supplied a port; otherwise native, exactly as before.
+    pub(crate) fn semantic_runtime(
+        &mut self,
+    ) -> Result<Option<crate::semantic::SemanticRuntime>, StoreError> {
         let semantic_runtime = match (
             self.material_port.as_ref(),
             self.config.native.as_ref(),
@@ -595,6 +663,16 @@ impl Actor {
                 } else {
                     native.semantic.clone().ok_or(StoreError::Rejected)?
                 };
+                let realization = match &self.direct_control {
+                    Some(port) => crate::semantic::ControlRealization::Direct(
+                        crate::semantic_direct::DirectRealization::for_semantic(
+                            port.clone(),
+                            &semantic,
+                            self.direct_pending.clone(),
+                        ),
+                    ),
+                    None => crate::semantic::ControlRealization::Native,
+                };
                 Some(crate::semantic::SemanticRuntime {
                     material_port: port.clone(),
                     native: native.clone(),
@@ -606,6 +684,7 @@ impl Actor {
                     uid: self.config.principal.uid,
                     principal: self.config.principal.principal_ref.clone(),
                     proof_dir: self.config.proof_barrier_dir.clone(),
+                    realization,
                 })
             }
             _ => None,
@@ -619,6 +698,30 @@ impl Actor {
         {
             return Err(StoreError::Rejected);
         }
+        Ok(semantic_runtime)
+    }
+
+    fn direct_release_pending(&self) -> bool {
+        self.direct_pending
+            .lock()
+            .map(|slot| slot.is_some())
+            .unwrap_or(false)
+    }
+
+    /// The marker is cleared first; a drive that still finds the release
+    /// missing sets it again, and any other outcome leaves it clear.
+    async fn redrive_direct_release(&mut self) {
+        if let Ok(mut slot) = self.direct_pending.lock() {
+            *slot = None;
+        }
+        let _ = self.drive_transition().await;
+    }
+
+    async fn drive_transition(&mut self) -> Result<(), StoreError> {
+        if self.task_effect_hold.is_some() {
+            return Err(StoreError::ClaimConflict);
+        }
+        let semantic_runtime = self.semantic_runtime()?;
         engine::drive_transition(
             &mut self.store,
             &self.config,
@@ -1016,7 +1119,20 @@ impl Actor {
             material_port,
             task_operation_port,
             task_effect_hold,
+            direct_control: None,
+            direct_pending: Default::default(),
         })
+    }
+
+    /// Trusted composition selects the direct realization for semantic
+    /// checkpoints. Eligibility is not decided here: the store admits a direct
+    /// result only under the owner's grant at publication.
+    fn with_direct_control(
+        mut self,
+        port: Option<Arc<dyn lifecycle_semantic::DirectInferencePort>>,
+    ) -> Self {
+        self.direct_control = port;
+        self
     }
 
     pub async fn serve(mut self, mut receiver: mpsc::Receiver<Request>) {
@@ -1050,8 +1166,16 @@ impl Actor {
         if self.config.profile == "controlled" && !self.entered_uncertain_on_open {
             let _ = self.schedule_once(None).await;
         }
+        let mut direct_redrive = tokio::time::interval(DIRECT_RELEASE_REDRIVE);
+        direct_redrive.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         loop {
             tokio::select! {
+                // A release arriving never sends by itself: the re-drive is an
+                // ordinary transition drive, repeating stage, hold, gate,
+                // material, capture, grant and send-boundary checks.
+                _ = direct_redrive.tick(), if self.direct_release_pending() => {
+                    self.redrive_direct_release().await;
+                }
                 maybe = receiver.recv() => {
                     match maybe {
                         Some(Request::Command { uid,bytes,reply }) => {
@@ -1341,28 +1465,18 @@ impl Actor {
             NativeMessage::Done {
                 exit,
                 outcome_kind,
+                isolation_diagnostic,
                 reply,
             } => {
-                if outcome_kind == "cleanup_unobserved" {
-                    self.native_close_unsafe = true;
-                }
-                let result = if let Some(session) = self.native_session.as_ref() {
-                    self.store.record_native_process_exit(
-                        session.id(),
-                        exit.as_ref().and_then(|e| e.pid),
-                        exit.as_ref().and_then(|e| e.code),
-                        exit.as_ref().is_none_or(|e| e.forced),
-                        outcome_kind,
-                        clock_sample(),
-                    )
-                } else {
-                    Err(StoreError::Rejected)
-                };
-                if result.is_ok() {
-                    self.native_exit_recorded = true;
-                } else {
-                    self.native_close_unsafe = true;
-                }
+                let result = record_native_done(
+                    &mut self.store,
+                    self.native_session.as_ref(),
+                    exit.as_ref(),
+                    outcome_kind,
+                    isolation_diagnostic,
+                    &mut self.native_exit_recorded,
+                    &mut self.native_close_unsafe,
+                );
                 let _ = reply.send(result);
             }
         }
@@ -1672,6 +1786,18 @@ impl Actor {
             NativeEventKind::Notification { method }
                 if method == "thread/readState/changed"
                     && lifecycle_codex::read_state_changed_matches(&event.value) =>
+            {
+                "qualified"
+            }
+            NativeEventKind::Notification { method }
+                if method == "mcpServer/startupStatus/updated"
+                    && mcp_startup_status_matches(
+                        &event.value,
+                        self.native_session
+                            .as_ref()
+                            .and_then(|session| session.thread())
+                            .map(|thread| thread.as_str()),
+                    ) =>
             {
                 "qualified"
             }
@@ -2590,6 +2716,41 @@ impl Actor {
     }
 }
 
+fn record_native_done(
+    store: &mut SqliteLifecycleStore,
+    session: Option<&NativeSessionEntry>,
+    exit: Option<&NativeChildExit>,
+    outcome_kind: &'static str,
+    isolation_diagnostic: Option<lifecycle_core::IsolationDiagnostic>,
+    exit_recorded: &mut bool,
+    close_unsafe: &mut bool,
+) -> Result<(), StoreError> {
+    // A failed isolation spawn may have created a partial child. Missing exit
+    // evidence cannot establish safe close, whatever diagnostic was retained.
+    if exit.is_none() {
+        *close_unsafe = true;
+    }
+    let result = if let Some(session) = session {
+        store.record_native_process_exit_with_diagnostic(
+            session.id(),
+            exit.and_then(|e| e.pid),
+            exit.and_then(|e| e.code),
+            exit.is_none_or(|e| e.forced),
+            outcome_kind,
+            isolation_diagnostic,
+            clock_sample(),
+        )
+    } else {
+        Err(StoreError::Rejected)
+    };
+    if result.is_ok() {
+        *exit_recorded = true;
+    } else {
+        *close_unsafe = true;
+    }
+    result
+}
+
 pub(crate) async fn proof_barrier(config: &ServiceConfig, point: &str) -> Result<(), StoreError> {
     if !cfg!(feature = "controlled-proof") {
         return Ok(());
@@ -2667,8 +2828,10 @@ pub fn start(
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
     preopened_store: Option<SqliteLifecycleStore>,
+    direct_control: Option<Arc<dyn lifecycle_semantic::DirectInferencePort>>,
 ) -> Result<(ActorSender, ShutdownGate, Option<GrantControlHandle>), ServiceError> {
-    let actor = Actor::new(config, material_port, task_operation_port, preopened_store)?;
+    let actor = Actor::new(config, material_port, task_operation_port, preopened_store)?
+        .with_direct_control(direct_control);
     let grant_control =
         if actor.config.profile == "retained-repository-analysis-v1" && !actor.recovery_only {
             Some(actor.store.grant_control_handle()?)
@@ -2688,6 +2851,193 @@ pub fn start(
 #[cfg(test)]
 mod observation_tests {
     use super::*;
+
+    #[test]
+    fn bound_session_done_without_exit_records_unsafe_close() {
+        let root = tempfile::tempdir().unwrap();
+        let subject = SubjectId::parse("subject:synthetic-done").unwrap();
+        let context = ContextGeneration::parse("context:synthetic-done").unwrap();
+        let incarnation = RuntimeIncarnation::parse("incarnation:synthetic-done").unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:synthetic-done").unwrap(),
+                ProofRunId::parse("proof:synthetic-done").unwrap(),
+                clock_sample(),
+            )
+            .unwrap();
+        let digest = "a".repeat(64);
+        let mut session = store
+            .reserve_native_session(
+                NativeSessionId::parse("session:synthetic-done").unwrap(),
+                subject.clone(),
+                context,
+                incarnation.clone(),
+                &digest,
+                &digest,
+                &digest,
+                lifecycle_core::SnapshotId::parse("snapshot:synthetic-done").unwrap(),
+                &digest,
+                false,
+                clock_sample(),
+            )
+            .unwrap();
+        store
+            .bind_native_thread(
+                &mut session,
+                ProviderThreadId::parse("thread:synthetic-done").unwrap(),
+            )
+            .unwrap();
+        let mut recorded = false;
+        let mut unsafe_close = false;
+        record_native_done(
+            &mut store,
+            Some(&session),
+            None,
+            "transport_error_spawn_isolation",
+            None,
+            &mut recorded,
+            &mut unsafe_close,
+        )
+        .unwrap();
+        assert!(recorded);
+        assert!(unsafe_close);
+        assert_eq!(
+            store
+                .native_session_recovery(session.id())
+                .unwrap()
+                .unwrap()
+                .process_outcome
+                .as_deref(),
+            Some("transport_error_spawn_isolation")
+        );
+        store
+            .record_service_close(
+                &incarnation,
+                &subject,
+                &[],
+                &[],
+                &[],
+                unsafe_close,
+                clock_sample().wall,
+            )
+            .unwrap();
+        drop(store);
+        let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+        let unsafe_recorded: bool = conn
+            .query_row(
+                "SELECT unsafe_at_close FROM service_closes WHERE incarnation_id=?1",
+                [incarnation.as_str()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(unsafe_recorded);
+    }
+
+    #[test]
+    fn isolation_diagnostic_survives_service_store_and_recovery() {
+        let root = tempfile::tempdir().unwrap();
+        let subject = SubjectId::parse("subject:synthetic-done").unwrap();
+        let context = ContextGeneration::parse("context:synthetic-done").unwrap();
+        let incarnation = RuntimeIncarnation::parse("incarnation:synthetic-done").unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:synthetic-done").unwrap(),
+                ProofRunId::parse("proof:synthetic-done").unwrap(),
+                clock_sample(),
+            )
+            .unwrap();
+        let digest = "a".repeat(64);
+        let mut session = store
+            .reserve_native_session(
+                NativeSessionId::parse("session:synthetic-done").unwrap(),
+                subject.clone(),
+                context,
+                incarnation.clone(),
+                &digest,
+                &digest,
+                &digest,
+                lifecycle_core::SnapshotId::parse("snapshot:synthetic-done").unwrap(),
+                &digest,
+                false,
+                clock_sample(),
+            )
+            .unwrap();
+        store
+            .bind_native_thread(
+                &mut session,
+                ProviderThreadId::parse("thread:synthetic-done").unwrap(),
+            )
+            .unwrap();
+        let mut recorded = false;
+        let mut unsafe_close = false;
+        let diagnostic = lifecycle_core::IsolationDiagnostic {
+            phase: lifecycle_core::IsolationPhase::AfterSpawn,
+            reason: lifecycle_core::IsolationReason::NamespaceIdentity,
+        };
+        let error = lifecycle_codex::NativeHarnessError::CleanupUnobservedIsolation(diagnostic);
+        let category = operations::launch_failure_category(&error);
+        assert_eq!(category, "cleanup_unobserved");
+        record_native_done(
+            &mut store,
+            Some(&session),
+            None,
+            category,
+            error.isolation_diagnostic(),
+            &mut recorded,
+            &mut unsafe_close,
+        )
+        .unwrap();
+        assert!(recorded);
+        assert!(unsafe_close);
+        assert_eq!(
+            store
+                .native_session_recovery(session.id())
+                .unwrap()
+                .unwrap()
+                .process_outcome
+                .as_deref(),
+            Some("cleanup_unobserved")
+        );
+        let recovery = store
+            .native_session_recovery(session.id())
+            .unwrap()
+            .unwrap();
+        assert_eq!(recovery.isolation_diagnostic, Some(diagnostic));
+        // Export only this entirely synthetic fixture for the separate strict
+        // controller projection regression. No runtime driver is imported.
+        if let Some(output) = std::env::var_os("ISOLATION_DIAGNOSTIC_FIXTURE_OUT") {
+            let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+            conn.execute("VACUUM INTO ?1", [output.to_str().unwrap()])
+                .unwrap();
+        }
+        store
+            .record_service_close(
+                &incarnation,
+                &subject,
+                &[],
+                &[],
+                &[],
+                unsafe_close,
+                clock_sample().wall,
+            )
+            .unwrap();
+        drop(store);
+        let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+        let unsafe_recorded: bool = conn
+            .query_row(
+                "SELECT unsafe_at_close FROM service_closes WHERE incarnation_id=?1",
+                [incarnation.as_str()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(unsafe_recorded);
+    }
 
     #[test]
     fn shutdown_during_owner_readback_cannot_reopen_native_gate() {
@@ -2727,6 +3077,339 @@ mod observation_tests {
         let unavailable = native_observation_reply(Err(StoreError::Unavailable), false);
         assert_eq!(unavailable["code"], "observation_unavailable");
         assert!(unavailable.get("reason").is_none());
+    }
+}
+
+#[cfg(test)]
+mod native_mcp_startup_tests {
+    use super::*;
+    use crate::PrincipalConfig;
+
+    fn advisory(status: &str) -> Value {
+        json!({"method":"mcpServer/startupStatus/updated","params":{
+            "threadId":"thread:fixture","name":"fixture-mcp","status":status,
+            "error":null,"failureReason":null},"emittedAtMs":1})
+    }
+
+    #[test]
+    fn pinned_mcp_startup_states_are_ingress_only() {
+        for state in ["starting", "ready", "failed", "cancelled"] {
+            let value = advisory(state);
+            assert!(mcp_startup_status_matches(&value, Some("thread:fixture")));
+            let event = lifecycle_codex::parse_event(
+                "transport:fixture".into(),
+                13,
+                serde_json::to_vec(&value).unwrap(),
+            )
+            .unwrap();
+            assert!(event.terminal().unwrap().is_none());
+            assert!(event.tool_call().unwrap().is_none());
+        }
+        let mut failed = advisory("failed");
+        failed["params"]["error"] = json!("decoy failure");
+        failed["params"]["failureReason"] = json!("reauthenticationRequired");
+        assert!(mcp_startup_status_matches(&failed, Some("thread:fixture")));
+        let mut global = advisory("ready");
+        global["params"]["threadId"] = Value::Null;
+        assert!(mcp_startup_status_matches(&global, None));
+    }
+
+    #[test]
+    fn mcp_startup_rejects_unknown_or_authoritative_shapes() {
+        let base = advisory("ready");
+        assert!(!mcp_startup_status_matches(&base, Some("thread:other")));
+        assert!(!mcp_startup_status_matches(&base, None));
+        for (path, value) in [
+            ("status", json!("completed")),
+            ("name", json!("")),
+            ("threadId", json!(7)),
+            ("error", json!("not a failure")),
+            ("failureReason", json!("unknown")),
+        ] {
+            let mut changed = base.clone();
+            changed["params"][path] = value;
+            assert!(!mcp_startup_status_matches(
+                &changed,
+                Some("thread:fixture")
+            ));
+        }
+        let mut extra = base.clone();
+        extra["params"]["turnId"] = json!("turn:forbidden");
+        assert!(!mcp_startup_status_matches(&extra, Some("thread:fixture")));
+        let mut wrong_method = base.clone();
+        wrong_method["method"] = json!("mcpServer/other");
+        assert!(!mcp_startup_status_matches(
+            &wrong_method,
+            Some("thread:fixture")
+        ));
+        let mut bad_envelope = base.clone();
+        bad_envelope["result"] = json!({"status":"completed"});
+        assert!(!mcp_startup_status_matches(
+            &bad_envelope,
+            Some("thread:fixture")
+        ));
+        let mut missing = base.clone();
+        missing["params"]
+            .as_object_mut()
+            .unwrap()
+            .remove("failureReason");
+        assert!(!mcp_startup_status_matches(
+            &missing,
+            Some("thread:fixture")
+        ));
+    }
+
+    #[test]
+    fn actor_retains_fake_mcp_startup_ingress_and_fences_coordinate_conflict() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("store");
+        fs::create_dir(&root).unwrap();
+        let mut actor = Actor::new(
+            ServiceConfig {
+                profile: "controlled".into(),
+                store_root: root.clone(),
+                socket_path: temp.path().join("service.sock"),
+                peer_socket_path: temp.path().join("peer.sock"),
+                verifier_executable: None,
+                verifier_ledger_path: None,
+                proof_barrier_dir: None,
+                trusted_issuer: "issuer:fixture".into(),
+                principal: PrincipalConfig {
+                    uid: 0,
+                    principal_ref: "principal:fixture".into(),
+                    producer_ref: "producer:fixture".into(),
+                },
+                subject_id: "subject:fixture".into(),
+                context_generation: "context:fixture".into(),
+                build_id: "build:fixture".into(),
+                proof_run_id: "proof:fixture".into(),
+                grants: Vec::new(),
+                max_executions: 1,
+                max_wait_ms: 1000,
+                verifier_proof_ms: None,
+                verifier_cleanup_ms: None,
+                native: None,
+                selected_restart: None,
+            },
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let digest = "a".repeat(64);
+        let mut session = actor
+            .store
+            .reserve_native_session(
+                NativeSessionId::parse("session:fixture").unwrap(),
+                SubjectId::parse("subject:fixture").unwrap(),
+                ContextGeneration::parse("context:fixture").unwrap(),
+                actor.incarnation.clone(),
+                &digest,
+                &digest,
+                &digest,
+                lifecycle_core::SnapshotId::parse("snapshot:fixture").unwrap(),
+                &digest,
+                false,
+                clock_sample(),
+            )
+            .unwrap();
+        actor
+            .store
+            .bind_native_thread(
+                &mut session,
+                ProviderThreadId::parse("thread:fixture").unwrap(),
+            )
+            .unwrap();
+        actor.native_session = Some(session);
+
+        assert!(matches!(
+            actor.store.reserve_native_session(
+                NativeSessionId::parse("session:fixture").unwrap(),
+                SubjectId::parse("subject:fixture").unwrap(),
+                ContextGeneration::parse("context:fixture").unwrap(),
+                actor.incarnation.clone(),
+                &"b".repeat(64),
+                &digest,
+                &digest,
+                lifecycle_core::SnapshotId::parse("snapshot:fixture").unwrap(),
+                &digest,
+                false,
+                clock_sample(),
+            ),
+            Err(StoreError::ClaimConflict)
+        ));
+
+        let mut owned = advisory("ready");
+        owned["params"]["status"] = json!("failed");
+        owned["params"]["error"] = json!("fixture failure");
+        owned["params"]["failureReason"] = json!("reauthenticationRequired");
+        let raw = serde_json::to_vec(&owned).unwrap();
+        let event =
+            lifecycle_codex::parse_event("transport:fixture".into(), 1, raw.clone()).unwrap();
+        actor.record_native_event(&event).unwrap();
+        actor.record_native_event(&event).unwrap();
+
+        let mut global = advisory("starting");
+        global["params"]["threadId"] = Value::Null;
+        let global_raw = serde_json::to_vec(&global).unwrap();
+        let global_event =
+            lifecycle_codex::parse_event("transport:fixture".into(), 2, global_raw.clone())
+                .unwrap();
+        actor.record_native_event(&global_event).unwrap();
+
+        let mut foreign = advisory("ready");
+        foreign["params"]["threadId"] = json!("thread:foreign");
+        let foreign_event = lifecycle_codex::parse_event(
+            "transport:fixture".into(),
+            3,
+            serde_json::to_vec(&foreign).unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(
+            actor.record_native_event(&foreign_event),
+            Err(StoreError::Rejected)
+        ));
+
+        let read_state = json!({"method":"thread/readState/changed","params":{
+        "threadId":"thread:fixture","readState":{
+            "revision":"revision:fixture","firstUnread":null,
+            "error":"failed", "needsInput":true, "unreadCount":3
+        }}});
+        let read_raw = serde_json::to_vec(&read_state).unwrap();
+        let read_event =
+            lifecycle_codex::parse_event("transport:fixture".into(), 4, read_raw.clone()).unwrap();
+        actor.record_native_event(&read_event).unwrap();
+        actor.record_native_event(&read_event).unwrap();
+        assert!(read_event.terminal().unwrap().is_none());
+        assert!(read_event.tool_call().unwrap().is_none());
+        let terminal = json!({"method":"turn/completed","params":{
+            "threadId":"thread:fixture","turn":{"id":"turn:fixture","status":"completed"}}});
+        let terminal_raw = serde_json::to_vec(&terminal).unwrap();
+        actor
+            .record_native_event(
+                &lifecycle_codex::parse_event("transport:fixture".into(), 5, terminal_raw.clone())
+                    .unwrap(),
+            )
+            .unwrap();
+        let history_raw = serde_json::to_vec(&json!({"id":6,"result":{"thread":{
+            "id":"thread:fixture","turns":[{"id":"turn:fixture","status":"completed",
+            "items":[{"type":"agentMessage","text":"later"}]}]}}}))
+        .unwrap();
+        actor
+            .record_native_event(
+                &lifecycle_codex::parse_event("transport:fixture".into(), 6, history_raw.clone())
+                    .unwrap(),
+            )
+            .unwrap();
+
+        // An old stored unsupported row remains unsupported on identical raw replay.
+        let old_raw = serde_json::to_vec(&json!({"method":"thread/readState/changed","params":{
+            "threadId":"thread:fixture","readState":{"revision":"revision:old","status":"new"}}}))
+        .unwrap();
+        let session_id = actor.native_session.as_ref().unwrap().id().clone();
+        assert_eq!(
+            actor
+                .store
+                .record_native_ingress(
+                    &session_id,
+                    "transport:fixture",
+                    7,
+                    &old_raw,
+                    "unsupported",
+                    Some("thread/readState/changed"),
+                    Some("thread:fixture"),
+                    None,
+                    None,
+                    clock_sample()
+                )
+                .unwrap(),
+            NativeIngressApply::Inserted
+        );
+        actor
+            .record_native_event(
+                &lifecycle_codex::parse_event("transport:fixture".into(), 7, old_raw.clone())
+                    .unwrap(),
+            )
+            .unwrap();
+
+        let connection = rusqlite::Connection::open(root.join("lifecycle.sqlite")).unwrap();
+        let rows: Vec<(i64, Vec<u8>, String, Option<String>)> = {
+            let mut query = connection
+                .prepare("SELECT sequence,raw,decode_status,thread_id FROM native_ingress ORDER BY sequence")
+                .unwrap();
+            query
+                .query_map([], |row| {
+                    Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+                })
+                .unwrap()
+                .map(Result::unwrap)
+                .collect()
+        };
+        assert_eq!(
+            rows,
+            vec![
+                (
+                    1,
+                    raw.clone(),
+                    "qualified".into(),
+                    Some("thread:fixture".into())
+                ),
+                (2, global_raw, "qualified".into(), None),
+                (
+                    4,
+                    read_raw.clone(),
+                    "qualified".into(),
+                    Some("thread:fixture".into())
+                ),
+                (
+                    5,
+                    terminal_raw,
+                    "qualified".into(),
+                    Some("thread:fixture".into())
+                ),
+                (6, history_raw, "qualified".into(), None),
+                (
+                    7,
+                    old_raw,
+                    "unsupported".into(),
+                    Some("thread:fixture".into())
+                ),
+            ]
+        );
+        let turns: i64 = connection
+            .query_row("SELECT COUNT(*) FROM native_turns", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(turns, 0); // The read-state extension created no work or settlement.
+        let turn_bad_rows: i64 = connection.query_row(
+            "SELECT COUNT(*) FROM native_ingress WHERE thread_id='thread:fixture' AND turn_id='turn:fixture' AND (method IN ('turn/failed','turn/interrupted') OR decode_status NOT IN ('qualified','denied_before_entry'))",
+            [], |row| row.get(0),
+        ).unwrap();
+        assert_eq!(turn_bad_rows, 0); // The historical unsupported read-state row has no turn coordinate.
+
+        let conflicting = lifecycle_codex::parse_event(
+            "transport:fixture".into(),
+            1,
+            serde_json::to_vec(&advisory("cancelled")).unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(
+            actor.record_native_event(&conflicting),
+            Err(StoreError::ClaimConflict)
+        ));
+        let retained: Vec<u8> = connection
+            .query_row(
+                "SELECT raw FROM native_ingress WHERE transport_session='transport:fixture' AND sequence=1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(retained, raw);
+        let conflicts: i64 = connection
+            .query_row("SELECT COUNT(*) FROM native_ingress_conflicts", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(conflicts, 1);
     }
 }
 
@@ -2907,7 +3590,7 @@ mod restart_epoch_tests {
         }
     }
     #[derive(Default)]
-    struct EmptyTask {
+    pub(super) struct EmptyTask {
         input: Option<TaskInputBinding>,
         effect: Option<crate::CompletedTaskEffectReadback>,
     }
@@ -3095,6 +3778,7 @@ mod restart_epoch_tests {
             executable: temp.path().join("never-executed"),
             root: prior_root,
             provider_route: NativeProviderRoute::NativeSimProofV1,
+            chatgpt_access_source: None,
             simulator_base_url: "http://127.0.0.1:12345/v1".into(),
             session_id: "session:prior".into(),
             invocation_id: "invocation:prior".into(),
@@ -3571,6 +4255,7 @@ mod restart_epoch_tests {
             executable: temp.path().join("never-executed"),
             root: native_root.clone(),
             provider_route: NativeProviderRoute::NativeSimProofV1,
+            chatgpt_access_source: None,
             simulator_base_url: "http://127.0.0.1:12345/v1".into(),
             session_id: "session:held".into(),
             invocation_id: "invocation:held".into(),
@@ -3602,6 +4287,7 @@ mod restart_epoch_tests {
             uid: fs::metadata("/proc/self").unwrap().uid(),
             principal: "principal:held".into(),
             proof_dir: None,
+            realization: crate::semantic::ControlRealization::Native,
         };
         assert!(matches!(
             establish_checkpoint(&mut store, &runtime, &subject, &context, &transition, 1).await,
@@ -3801,6 +4487,7 @@ mod restart_epoch_tests {
                 executable: temp.path().join("never-executed"),
                 root: native_root.clone(),
                 provider_route: NativeProviderRoute::NativeSimProofV1,
+                chatgpt_access_source: None,
                 simulator_base_url: "http://127.0.0.1:1/v1".into(),
                 session_id: "session:material".into(),
                 invocation_id: "invocation:material".into(),
@@ -3831,6 +4518,7 @@ mod restart_epoch_tests {
                 uid: fs::metadata("/proc/self").unwrap().uid(),
                 principal: "principal:material".into(),
                 proof_dir: None,
+                realization: crate::semantic::ControlRealization::Native,
             };
             for _ in 0..2 {
                 assert!(
@@ -4105,3 +4793,7 @@ mod restart_epoch_tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "actor_direct_tests.rs"]
+mod direct_selection_tests;

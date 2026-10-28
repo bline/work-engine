@@ -6,15 +6,19 @@
 
 mod assessment;
 mod continuation;
+mod direct_control;
 mod invocation_v2;
 mod material;
 mod policy;
+mod real_diagnostic;
 
 pub use assessment::*;
 pub use continuation::*;
+pub use direct_control::*;
 pub use invocation_v2::*;
 pub use material::*;
 pub use policy::*;
+pub use real_diagnostic::*;
 
 use sha2::{Digest as _, Sha256};
 use std::{error::Error, fmt};

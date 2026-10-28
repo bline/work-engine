@@ -295,7 +295,7 @@ pub fn synthetic_candidate(
     })
 }
 
-fn validate_direct_candidate(
+pub(crate) fn validate_direct_candidate(
     material: &SourceBasis,
     candidate: &DirectCandidate,
     policy: &SemanticPolicy,

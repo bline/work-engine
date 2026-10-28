@@ -2,9 +2,11 @@
 
 mod admin;
 mod artifact;
+mod direct_semantic;
 mod held_selection;
 mod native;
 mod recovery;
+mod schema;
 mod semantic;
 mod sqlite;
 
@@ -16,6 +18,7 @@ pub use admin::{
     SelectionEvidence, SignedDispositionRequest, StoreOwnershipProjection,
 };
 pub use artifact::{PublishedArtifact, StagedArtifact};
+pub use direct_semantic::{DirectAttemptStart, DirectCheckpointOrigin, DirectControlEntry};
 pub use native::{
     ControlSessionRequest, NativeCommittedTaskRead, NativeDeliveryBinding,
     NativeDeliveryObservation, NativeFinalMaterial, NativeIngressApply, NativeOperationClaim,
@@ -28,7 +31,7 @@ pub use native::{
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
 pub use semantic::{
     CurrentSemanticMaterialBlock, SemanticCaptureRecord, SemanticCheckpointPackage,
-    SemanticMaterialRejectionRecord, SemanticResultRecord,
+    DirectAdmittedCheckpoint, DirectProofCheckpoint, SemanticMaterialRejectionRecord, SemanticResultRecord,
 };
 pub use sqlite::{GrantControlHandle, SqliteLifecycleStore};
 

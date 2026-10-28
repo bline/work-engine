@@ -1,0 +1,16 @@
+[
+  "/usr/bin/python3",
+  "-I",
+  "-S",
+  "/private/real-policy.py",
+  "--socket",
+  "/private/proxy/s",
+  "--journal",
+  "/private/run/proxy-metadata.jsonl",
+  "--mode",
+  "real",
+  "--max-seconds",
+  "115",
+  "--tunnel-seconds",
+  "10"
+]

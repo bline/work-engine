@@ -516,6 +516,7 @@ pub struct NativeRecovery {
     pub history_transport_session: Option<String>,
     pub history_sequence: Option<u64>,
     pub process_outcome: Option<String>,
+    pub isolation_diagnostic: Option<lifecycle_core::IsolationDiagnostic>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -583,6 +584,7 @@ pub struct NativeSessionRecovery {
     pub allocation_state: String,
     pub thread_id: Option<String>,
     pub process_outcome: Option<String>,
+    pub isolation_diagnostic: Option<lifecycle_core::IsolationDiagnostic>,
 }
 
 fn to_i64_restart(value: u64) -> Result<i64, StoreError> {
@@ -756,6 +758,8 @@ fn native_session_current(
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(|_| StoreError::Unavailable)?;
+    let _physical_version = version;
+    let version = crate::schema::behavior_version(version);
     if version < 7 {
         return Ok(true);
     }
@@ -1508,10 +1512,10 @@ impl SqliteLifecycleStore {
     ) -> Result<Option<NativeSessionRecovery>, StoreError> {
         self.verify_identity()?;
         self.connection.query_row(
-            "SELECT s.subject_id,s.context_id,s.incarnation_id,s.allocation_state,s.thread_id,x.outcome_kind FROM native_sessions s LEFT JOIN native_process_exits x ON x.session_id=s.session_id WHERE s.session_id=?1",
+            "SELECT s.subject_id,s.context_id,s.incarnation_id,s.allocation_state,s.thread_id,x.outcome_kind,x.isolation_diagnostic FROM native_sessions s LEFT JOIN native_process_exits x ON x.session_id=s.session_id WHERE s.session_id=?1",
             [session_id.as_str()], |r| Ok(NativeSessionRecovery {
                 version: 1, session_id: session_id.as_str().into(), subject_id: r.get(0)?, context_id: r.get(1)?,
-                incarnation_id: r.get(2)?, allocation_state: r.get(3)?, thread_id: r.get(4)?, process_outcome: r.get(5)?,
+                incarnation_id: r.get(2)?, allocation_state: r.get(3)?, thread_id: r.get(4)?, process_outcome: r.get(5)?, isolation_diagnostic: decode_isolation_diagnostic(r, 6)?,
             })
         ).optional().map_err(|_| StoreError::Unavailable)
     }
@@ -1604,6 +1608,8 @@ impl SqliteLifecycleStore {
             .connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         let sql = if version == 7 {
             "SELECT s.thread_id FROM native_sessions s JOIN native_execution_epochs e ON e.target_session_id=s.session_id AND e.state='active' WHERE s.subject_id=?1 AND s.context_id=?2 AND s.role='successor' AND s.allocation_state='bound' AND s.thread_id IS NOT NULL"
         } else {
@@ -1667,6 +1673,8 @@ impl SqliteLifecycleStore {
         let version: i64 = tx
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if !matches!(version, 6 | 7) {
             return Err(StoreError::Rejected);
         }
@@ -1765,6 +1773,8 @@ impl SqliteLifecycleStore {
             .connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if version == 6 {
             return self.connection.query_row(
                 "SELECT subject_id,context_id,session_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role IN ('domain','successor')",
@@ -1794,6 +1804,8 @@ impl SqliteLifecycleStore {
             .connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if version == 6 {
             return Ok(None);
         }
@@ -1824,6 +1836,8 @@ impl SqliteLifecycleStore {
             .connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if !matches!(version, 6 | 7) {
             return Err(StoreError::Rejected);
         }
@@ -1880,8 +1894,16 @@ impl SqliteLifecycleStore {
         if version == 6 {
             tx.execute_batch(include_str!("../migrations/0007_native_restart_epoch.sql"))
                 .map_err(|_| StoreError::Unavailable)?;
-            tx.pragma_update(None, "user_version", 7)
-                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(
+                None,
+                "user_version",
+                match _physical_version {
+                    10 => 11,
+                    8 => 9,
+                    _ => 7,
+                },
+            )
+            .map_err(|_| StoreError::Unavailable)?;
         }
         let next = intent
             .predecessor_epoch
@@ -1931,6 +1953,8 @@ impl SqliteLifecycleStore {
         let version: i64 = tx
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if version != 7 {
             return Err(StoreError::Rejected);
         }
@@ -2103,6 +2127,8 @@ impl SqliteLifecycleStore {
         let version: i64 = tx
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         let prior_sql = if version == 7 {
             "SELECT s.session_id,s.incarnation_id,s.profile_digest,s.binary_sha256,s.protocol_digest,s.snapshot_id,s.snapshot_manifest_sha256,s.thread_id,s.allocation_state FROM native_sessions s JOIN native_execution_epochs e ON e.target_session_id=s.session_id AND e.state='active' WHERE s.subject_id=?1 AND s.context_id=?2 AND s.role IN ('domain','successor')"
         } else if version == 6 {
@@ -2571,6 +2597,8 @@ impl SqliteLifecycleStore {
             .connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
+        let _physical_version = version;
+        let version = crate::schema::behavior_version(version);
         if version == 7 {
             let current: bool=self.connection.query_row(
                 "SELECT EXISTS(SELECT 1 FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id LEFT JOIN native_execution_epochs e ON e.target_session_id=s.session_id AND e.state='active' WHERE t.invocation_id=?1 AND (s.role NOT IN ('domain','successor') OR e.target_session_id IS NOT NULL))",
@@ -3512,7 +3540,7 @@ impl SqliteLifecycleStore {
     ) -> Result<Option<NativeRecovery>, StoreError> {
         self.verify_identity()?;
         let row=self.connection.query_row(
-            "SELECT t.state,t.session_id,t.attempt_id,t.purpose,t.grant_id,t.grant_revision,t.send_intent,s.allocation_state,t.thread_id,t.turn_id,t.profile_digest,s.binary_sha256,s.protocol_digest,s.snapshot_id,s.snapshot_manifest_sha256,t.final_sha256,t.history_status,t.history_transport_session,t.history_sequence,x.outcome_kind FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id LEFT JOIN native_process_exits x ON x.session_id=s.session_id WHERE t.invocation_id=?1",
+            "SELECT t.state,t.session_id,t.attempt_id,t.purpose,t.grant_id,t.grant_revision,t.send_intent,s.allocation_state,t.thread_id,t.turn_id,t.profile_digest,s.binary_sha256,s.protocol_digest,s.snapshot_id,s.snapshot_manifest_sha256,t.final_sha256,t.history_status,t.history_transport_session,t.history_sequence,x.outcome_kind,x.isolation_diagnostic FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id LEFT JOIN native_process_exits x ON x.session_id=s.session_id WHERE t.invocation_id=?1",
             [invocation_id],|r|Ok((r.get::<_,String>(0)?,NativeRecovery{
                 class:String::new(),session_id:r.get(1)?,attempt_id:r.get(2)?,purpose:r.get(3)?,
                 grant_id:r.get(4)?,grant_revision:r.get::<_,i64>(5)? as u64,
@@ -3521,7 +3549,7 @@ impl SqliteLifecycleStore {
                 binary_sha256:r.get(11)?,protocol_digest:r.get(12)?,snapshot_id:r.get(13)?,
                 snapshot_manifest_sha256:r.get(14)?,final_sha256:r.get(15)?,history_status:r.get(16)?,
                 history_transport_session:r.get(17)?,history_sequence:r.get::<_,Option<i64>>(18)?.map(|n|n as u64),
-                process_outcome:r.get(19)?,admitted_children:0,unsettled_children:0,children:Vec::new(),
+                process_outcome:r.get(19)?,isolation_diagnostic:decode_isolation_diagnostic(r,20)?,admitted_children:0,unsettled_children:0,children:Vec::new(),
             })))
             .optional().map_err(|_| StoreError::Unavailable)?;
         let Some((state, mut recovery)) = row else {
@@ -3577,10 +3605,68 @@ impl SqliteLifecycleStore {
         outcome_kind: &str,
         clock: ClockSample,
     ) -> Result<(), StoreError> {
+        self.record_native_process_exit_with_diagnostic(
+            session,
+            pid,
+            exit_code,
+            forced,
+            outcome_kind,
+            None,
+            clock,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_native_process_exit_with_diagnostic(
+        &mut self,
+        session: &NativeSessionId,
+        pid: Option<u32>,
+        exit_code: Option<i32>,
+        forced: bool,
+        outcome_kind: &str,
+        diagnostic: Option<lifecycle_core::IsolationDiagnostic>,
+        clock: ClockSample,
+    ) -> Result<(), StoreError> {
+        if diagnostic.is_some()
+            && !matches!(
+                outcome_kind,
+                "transport_error_spawn_isolation"
+                    | "transport_error_spawn_transport"
+                    | "cleanup_unobserved"
+            )
+        {
+            return Err(StoreError::Rejected);
+        }
+        let diagnostic = diagnostic
+            .map(|d| serde_json::to_string(&d))
+            .transpose()
+            .map_err(|_| StoreError::Rejected)?;
         self.verify_identity()?;
         if !matches!(
             outcome_kind,
-            "completed" | "protocol_error" | "transport_error" | "shutdown" | "cleanup_unobserved"
+            "completed"
+                | "protocol_error"
+                | "transport_error"
+                | "shutdown"
+                | "cleanup_unobserved"
+                | "transport_error_guard_barrier"
+                | "transport_error_guard_host"
+                | "transport_error_spawn_binary"
+                | "transport_error_spawn_proxy"
+                | "transport_error_spawn_isolation"
+                | "transport_error_spawn_transport"
+                | "transport_error_spawn_credential"
+                | "transport_error_spawn_other"
+                | "transport_error_init_registration"
+                | "transport_error_init_initialize"
+                | "transport_error_init_config"
+                | "transport_error_init_auth"
+                | "transport_error_init_thread"
+                | "cleanup_unobserved_init_registration"
+                | "cleanup_unobserved_init_initialize"
+                | "cleanup_unobserved_init_config"
+                | "cleanup_unobserved_init_auth"
+                | "cleanup_unobserved_init_thread"
         ) {
             return Err(StoreError::Rejected);
         }
@@ -3588,8 +3674,8 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
-        tx.execute("INSERT INTO native_process_exits(session_id,pid,exit_code,forced,outcome_kind,observed_wall_ms) VALUES (?1,?2,?3,?4,?5,?6)",
-            params![session.as_str(),pid.map(i64::from),exit_code,forced,outcome_kind,clock.wall.get()])
+        tx.execute("INSERT INTO native_process_exits(session_id,pid,exit_code,forced,outcome_kind,observed_wall_ms,isolation_diagnostic) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![session.as_str(),pid.map(i64::from),exit_code,forced,outcome_kind,clock.wall.get(),diagnostic])
             .map_err(|_|StoreError::ClaimConflict)?;
         let subject: String = tx
             .query_row(
@@ -3602,6 +3688,23 @@ impl SqliteLifecycleStore {
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(())
     }
+}
+
+fn decode_isolation_diagnostic(
+    row: &rusqlite::Row<'_>,
+    index: usize,
+) -> rusqlite::Result<Option<lifecycle_core::IsolationDiagnostic>> {
+    let wire: Option<String> = row.get(index)?;
+    wire.map(|wire| {
+        serde_json::from_str(&wire).map_err(|error| {
+            rusqlite::Error::FromSqlConversionFailure(
+                index,
+                rusqlite::types::Type::Text,
+                Box::new(error),
+            )
+        })
+    })
+    .transpose()
 }
 
 fn native_user_message_matches(item: &serde_json::Value, prompt: &str) -> bool {
@@ -4078,6 +4181,78 @@ mod tests {
         let second_page = store.native_ingress_page("transport:test", 1, 1).unwrap();
         assert_eq!(second_page.events[0].sequence, 2);
         assert_eq!(second_page.next_after_sequence, None);
+    }
+
+    #[test]
+    fn launch_failure_category_is_durable_and_does_not_make_close_safe() {
+        let root = tempdir().unwrap();
+        let subject = SubjectId::parse("subject:launch-failure").unwrap();
+        let context = ContextGeneration::parse("context:launch-failure").unwrap();
+        let incarnation = RuntimeIncarnation::parse("incarnation:launch-failure").unwrap();
+        let session = NativeSessionId::parse("session:launch-failure").unwrap();
+        let hash = "a".repeat(64);
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:launch-failure").unwrap(),
+                ProofRunId::parse("proof:launch-failure").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        let _ = store
+            .reserve_native_session(
+                session.clone(),
+                subject.clone(),
+                context,
+                incarnation.clone(),
+                &hash,
+                &hash,
+                &hash,
+                SnapshotId::parse("snapshot:launch-failure").unwrap(),
+                &hash,
+                false,
+                clock(),
+            )
+            .unwrap();
+        store
+            .record_native_process_exit(
+                &session,
+                None,
+                None,
+                true,
+                "transport_error_spawn_isolation",
+                clock(),
+            )
+            .unwrap();
+        let recovery = store.native_session_recovery(&session).unwrap().unwrap();
+        assert_eq!(
+            recovery.process_outcome.as_deref(),
+            Some("transport_error_spawn_isolation")
+        );
+        assert_eq!(recovery.isolation_diagnostic, None);
+        drop(store);
+        {
+            let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+            // A faithful schema6 image has neither the diagnostic column nor the
+            // direct semantic tables (physical schema 10 adds them).
+            conn.execute_batch("DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; ALTER TABLE native_process_exits DROP COLUMN isolation_diagnostic; PRAGMA user_version=6;").unwrap();
+        }
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let recovered = store.native_session_recovery(&session).unwrap().unwrap();
+        assert_eq!(
+            recovered.process_outcome.as_deref(),
+            Some("transport_error_spawn_isolation")
+        );
+        assert_eq!(recovered.isolation_diagnostic, None);
+        assert!(matches!(
+            store.record_service_close(&incarnation, &subject, &[], &[], &[], false, clock().wall),
+            Err(StoreError::Rejected)
+        ));
+        store
+            .record_service_close(&incarnation, &subject, &[], &[], &[], true, clock().wall)
+            .unwrap();
     }
 
     #[test]

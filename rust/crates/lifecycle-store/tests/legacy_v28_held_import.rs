@@ -31,7 +31,7 @@ fn ordinary_schema_six_keeps_normal_admission_and_cannot_masquerade_as_held() {
     );
     let native = temp.path().join("native-capsule");
     let receipt = store.export_current(&native).unwrap();
-    assert_eq!(receipt.source_schema, 6);
+    assert_eq!(receipt.source_schema, 10);
     assert_eq!(
         SqliteLifecycleStore::read_capsule(&native).unwrap(),
         receipt

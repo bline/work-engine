@@ -73,10 +73,23 @@ pub enum StreamError {
     UnsupportedContent,
     #[error("local deadline expired; remote outcome is unknown")]
     Timeout,
+    #[error("local transport failed; remote outcome is unknown")]
+    TransportFailure,
+    #[error("HTTP response did not provide a valid stream")]
+    HttpFailure,
+    #[error("local cancellation observed; remote outcome is unknown")]
+    Cancelled,
+    #[error("bearer expired after durable intent but before network entry")]
+    ExpiredBearer,
+    #[error("provider stream echoed active credential; remote outcome is unknown")]
+    CredentialEcho,
 }
 
 /// A bounded incremental SSE observer. It has no transport or tool execution capability.
 pub struct StreamObserver {
+    selected_profile: bool,
+    siwc_profile: bool,
+    siwc_done_items: BTreeMap<usize, Value>,
     bounds: Bounds,
     pending: Vec<u8>,
     stream_bytes: usize,
@@ -84,6 +97,8 @@ pub struct StreamObserver {
     response_id: Option<String>,
     observed_model: Option<String>,
     item_indices: BTreeMap<usize, String>,
+    item_types: BTreeMap<usize, String>,
+    reasoning: BTreeMap<(usize, usize), ContentEvidence>,
     item_added: BTreeMap<usize, Vec<String>>,
     item_done: BTreeMap<usize, Vec<String>>,
     item_done_status: BTreeMap<usize, Option<String>>,
@@ -108,6 +123,9 @@ impl StreamObserver {
     pub fn new(bounds: Bounds) -> Result<Self, StreamError> {
         bounds.validate().map_err(|_| StreamError::MalformedEvent)?;
         Ok(Self {
+            selected_profile: false,
+            siwc_profile: false,
+            siwc_done_items: BTreeMap::new(),
             bounds,
             pending: Vec::new(),
             stream_bytes: 0,
@@ -115,6 +133,8 @@ impl StreamObserver {
             response_id: None,
             observed_model: None,
             item_indices: BTreeMap::new(),
+            item_types: BTreeMap::new(),
+            reasoning: BTreeMap::new(),
             item_added: BTreeMap::new(),
             item_done: BTreeMap::new(),
             item_done_status: BTreeMap::new(),
@@ -126,6 +146,24 @@ impl StreamObserver {
             done_marker: false,
             poisoned: None,
         })
+    }
+
+    /// Explicit SIWC candidate profile; the default constructor retains B1a's
+    /// text-only rejection behavior. This does not assert an observed live shape.
+    pub fn selected(bounds: Bounds) -> Result<Self, StreamError> {
+        let mut observer = Self::new(bounds)?;
+        observer.selected_profile = true;
+        Ok(observer)
+    }
+
+    /// Opt-in public SIWC stream compatibility. Metadata is uninterpreted;
+    /// sparse completed output requires independently completed item/part text.
+    pub const SIWC_PROFILE_REVISION: &'static str = "b2-public-siwc-stream-v2";
+
+    pub fn siwc(bounds: Bounds) -> Result<Self, StreamError> {
+        let mut observer = Self::selected(bounds)?;
+        observer.siwc_profile = true;
+        Ok(observer)
     }
 
     pub fn push(&mut self, bytes: &[u8]) -> Result<(), StreamError> {
@@ -213,6 +251,11 @@ impl StreamObserver {
 
     pub fn timeout_evidence(mut self) -> StreamObservation {
         self.poisoned = Some(StreamError::Timeout);
+        self.finish_evidence()
+    }
+
+    pub fn failure_evidence(mut self, error: StreamError) -> StreamObservation {
+        self.poisoned = Some(error);
         self.finish_evidence()
     }
 
@@ -307,10 +350,24 @@ impl StreamObserver {
                     self.observed_model = Some(model.to_owned());
                 }
             }
+            "response.metadata" if self.siwc_profile => {
+                self.ensure_created()?;
+                only_keys(
+                    value,
+                    &["type", "sequence_number", "response_id", "metadata"],
+                )?;
+                if required_str(value, "response_id")? != self.response_id.as_deref().unwrap() {
+                    return Err(StreamError::ConflictingIdentity);
+                }
+                if !value.get("metadata").is_some_and(Value::is_object) {
+                    return Err(StreamError::MalformedEvent);
+                }
+                // Opaque metadata has no output, usage, model or terminal authority.
+            }
             "response.output_item.added" | "response.output_item.done" => {
                 self.ensure_created()?;
                 let item = value.get("item").ok_or(StreamError::MalformedEvent)?;
-                check_item_type(item)?;
+                self.check_item_type(item)?;
                 let id = required_str(item, "id")?;
                 let index = required_index(value)?;
                 let is_done = kind == "response.output_item.done";
@@ -322,14 +379,15 @@ impl StreamObserver {
                         ItemPhase::Added
                     },
                 )?;
-                let content = snapshot_texts(item)?;
-                if content
-                    .iter()
-                    .try_fold(0usize, |sum, text| sum.checked_add(text.len()))
-                    .is_none_or(|bytes| bytes > self.bounds.output_bytes)
+                let item_type = required_str(item, "type")?;
+                if self
+                    .item_types
+                    .get(&index)
+                    .is_some_and(|kind| kind != item_type)
                 {
-                    return Err(StreamError::OutputTooLarge);
+                    return Err(StreamError::ConflictingIdentity);
                 }
+                self.item_types.insert(index, item_type.to_owned());
                 if self
                     .item_indices
                     .iter()
@@ -342,6 +400,22 @@ impl StreamObserver {
                         return Err(StreamError::ConflictingIdentity);
                     }
                 }
+                if item_type == "reasoning" {
+                    only_keys(value, &["type", "sequence_number", "output_index", "item"])?;
+                    self.reasoning_item(index, item, is_done)?;
+                    if self.siwc_profile && is_done {
+                        self.siwc_done_items.insert(index, item.clone());
+                    }
+                    return Ok(());
+                }
+                let content = snapshot_texts(item)?;
+                if content
+                    .iter()
+                    .try_fold(0usize, |sum, text| sum.checked_add(text.len()))
+                    .is_none_or(|bytes| bytes > self.bounds.output_bytes)
+                {
+                    return Err(StreamError::OutputTooLarge);
+                }
                 if is_done {
                     if self.item_done.insert(index, content.clone()).is_some() {
                         return Err(StreamError::ConflictingIdentity);
@@ -349,6 +423,9 @@ impl StreamObserver {
                     self.item_done_status
                         .insert(index, optional_str(item, "status")?.map(str::to_owned));
                     self.reconcile_snapshot(index, &content, true)?;
+                    if self.siwc_profile {
+                        self.siwc_done_items.insert(index, item.clone());
+                    }
                 } else {
                     if self.item_added.insert(index, content.clone()).is_some() {
                         return Err(StreamError::ConflictingIdentity);
@@ -361,6 +438,9 @@ impl StreamObserver {
                 let index = required_index(value)?;
                 let content_index = required_content_index(value)?;
                 self.check_item_identity(index, required_str(value, "item_id")?)?;
+                if self.item_types.get(&index).map(String::as_str) != Some("message") {
+                    return Err(StreamError::ConflictingIdentity);
+                }
                 let part = value.get("part").ok_or(StreamError::MalformedEvent)?;
                 check_part_type(part)?;
                 let text = required_text(part, "text")?;
@@ -392,6 +472,9 @@ impl StreamObserver {
                 let content_index = required_content_index(value)?;
                 let item_id = required_str(value, "item_id")?;
                 self.check_item_identity(index, item_id)?;
+                if self.item_types.get(&index).map(String::as_str) != Some("message") {
+                    return Err(StreamError::ConflictingIdentity);
+                }
                 let text = if kind.ends_with(".delta") {
                     required_str(value, "delta")?
                 } else {
@@ -433,6 +516,76 @@ impl StreamObserver {
                     semantics: UsageSemantics::Incremental,
                     counts,
                 });
+            }
+            "response.reasoning_summary_text.delta" | "response.reasoning_summary_text.done" => {
+                if !self.selected_profile {
+                    return Err(StreamError::UnsupportedContent);
+                }
+                if kind.ends_with(".delta") {
+                    only_keys(
+                        value,
+                        &[
+                            "type",
+                            "sequence_number",
+                            "output_index",
+                            "item_id",
+                            "summary_index",
+                            "delta",
+                        ],
+                    )?;
+                } else {
+                    only_keys(
+                        value,
+                        &[
+                            "type",
+                            "sequence_number",
+                            "output_index",
+                            "item_id",
+                            "summary_index",
+                            "text",
+                        ],
+                    )?;
+                }
+                self.ensure_created()?;
+                let index = required_index(value)?;
+                let summary_index = value
+                    .get("summary_index")
+                    .and_then(Value::as_u64)
+                    .and_then(|n| usize::try_from(n).ok())
+                    .ok_or(StreamError::MalformedEvent)?;
+                if summary_index >= self.bounds.events {
+                    return Err(StreamError::TooManyEvents);
+                }
+                self.check_item_identity(index, required_str(value, "item_id")?)?;
+                if self.item_types.get(&index).map(String::as_str) != Some("reasoning") {
+                    return Err(StreamError::ConflictingIdentity);
+                }
+                let text = if kind.ends_with(".delta") {
+                    required_str(value, "delta")?
+                } else {
+                    required_text(value, "text")?
+                };
+                // Summary is observed only for identity checks. It cannot become report text.
+                if text.len() > self.bounds.frame_bytes {
+                    return Err(StreamError::FrameTooLarge);
+                }
+                let evidence = self.reasoning.entry((index, summary_index)).or_default();
+                if kind.ends_with(".delta") {
+                    if evidence.done.is_some() {
+                        return Err(StreamError::ConflictingIdentity);
+                    }
+                    evidence.delta.push_str(text);
+                    if evidence.delta.len() > self.bounds.stream_bytes {
+                        return Err(StreamError::StreamTooLarge);
+                    }
+                } else {
+                    if evidence.done.is_some()
+                        || (!evidence.delta.is_empty() && evidence.delta != text)
+                    {
+                        return Err(StreamError::ConflictingIdentity);
+                    }
+                    evidence.done = Some(text.to_owned());
+                }
             }
             "response.completed" | "response.failed" | "response.incomplete" => {
                 self.ensure_created()?;
@@ -521,6 +674,77 @@ impl StreamObserver {
         }
     }
 
+    fn check_item_type(&self, item: &Value) -> Result<(), StreamError> {
+        match required_str(item, "type")? {
+            "message" => Ok(()),
+            "reasoning" if self.selected_profile => Ok(()),
+            "reasoning" => Err(StreamError::UnsupportedContent),
+            _ => Err(StreamError::UnsupportedTool),
+        }
+    }
+
+    fn reasoning_item(
+        &mut self,
+        index: usize,
+        item: &Value,
+        done: bool,
+    ) -> Result<(), StreamError> {
+        only_keys(item, &["id", "type", "status", "summary"])?;
+        if item.get("content").is_some_and(|v| !v.is_null()) {
+            return Err(StreamError::UnsupportedContent);
+        }
+        let summaries = match item.get("summary") {
+            None | Some(Value::Null) => &[][..],
+            Some(Value::Array(v)) => v.as_slice(),
+            _ => return Err(StreamError::MalformedEvent),
+        };
+        if summaries.len() > self.bounds.events {
+            return Err(StreamError::TooManyEvents);
+        }
+        let mut texts = Vec::with_capacity(summaries.len());
+        for (summary_index, part) in summaries.iter().enumerate() {
+            only_keys(part, &["type", "text"])?;
+            if required_str(part, "type")? != "summary_text" {
+                return Err(StreamError::UnsupportedContent);
+            }
+            let text = required_text(part, "text")?;
+            texts.push(text.to_owned());
+            if text.len() > self.bounds.stream_bytes {
+                return Err(StreamError::StreamTooLarge);
+            }
+            if let Some(evidence) = self.reasoning.get(&(index, summary_index)) {
+                if (done && !evidence.delta.is_empty() && evidence.delta != text)
+                    || evidence.done.as_deref().is_some_and(|seen| seen != text)
+                {
+                    return Err(StreamError::ConflictingIdentity);
+                }
+            }
+        }
+        if done {
+            if self.item_added.get(&index).is_some_and(|added| {
+                added.len() > texts.len()
+                    || added.iter().zip(&texts).any(|(a, b)| !b.starts_with(a))
+            }) {
+                return Err(StreamError::ConflictingIdentity);
+            }
+            if self
+                .reasoning
+                .keys()
+                .any(|(i, j)| *i == index && *j >= summaries.len())
+            {
+                return Err(StreamError::ConflictingIdentity);
+            }
+            if self.item_done.insert(index, texts).is_some() {
+                return Err(StreamError::ConflictingIdentity);
+            }
+            self.item_done_status
+                .insert(index, optional_str(item, "status")?.map(str::to_owned));
+        } else if self.item_added.insert(index, texts).is_some() {
+            return Err(StreamError::ConflictingIdentity);
+        }
+        Ok(())
+    }
+
     fn check_item_identity(&self, index: usize, id: &str) -> Result<(), StreamError> {
         match self.item_indices.get(&index) {
             Some(existing) if existing == id => Ok(()),
@@ -554,15 +778,65 @@ impl StreamObserver {
         Ok(())
     }
 
+    fn siwc_completed_output(&self, response: &Value) -> Result<String, StreamError> {
+        let mut items = Vec::with_capacity(self.item_indices.len());
+        let mut has_message = false;
+        for index in 0..self.item_indices.len() {
+            if !self.item_indices.contains_key(&index) || !self.item_added.contains_key(&index) {
+                return Err(StreamError::ConflictingIdentity);
+            }
+            let item = self
+                .siwc_done_items
+                .get(&index)
+                .ok_or(StreamError::ConflictingIdentity)?;
+            if optional_str(item, "status")? != Some("completed") {
+                return Err(StreamError::ConflictingTerminal);
+            }
+            if required_str(item, "type")? == "message" {
+                has_message = true;
+                let content = item
+                    .get("content")
+                    .and_then(Value::as_array)
+                    .filter(|v| !v.is_empty())
+                    .ok_or(StreamError::MalformedEvent)?;
+                for (part_index, part) in content.iter().enumerate() {
+                    let text = required_text(part, "text")?;
+                    let evidence = self
+                        .content
+                        .get(&(index, part_index))
+                        .ok_or(StreamError::ConflictingIdentity)?;
+                    if !evidence.added
+                        || evidence.done.as_deref() != Some(text)
+                        || evidence.part_done.as_deref() != Some(text)
+                    {
+                        return Err(StreamError::ConflictingIdentity);
+                    }
+                }
+            }
+            items.push(item.clone());
+        }
+        if !has_message {
+            return Err(StreamError::ConflictingIdentity);
+        }
+        // Reuse all terminal checks (role/type, identities, status, text, bounds,
+        // and complete coverage). This internal view never replaces wire evidence.
+        let mut view = response.clone();
+        view["output"] = Value::Array(items);
+        self.terminal_output(&view, true)
+    }
+
     fn terminal_output(&self, response: &Value, completed: bool) -> Result<String, StreamError> {
         let items = response
             .get("output")
             .and_then(Value::as_array)
             .ok_or(StreamError::MalformedEvent)?;
+        if self.siwc_profile && completed && items.is_empty() && !self.item_indices.is_empty() {
+            return self.siwc_completed_output(response);
+        }
         let mut result = String::new();
         let mut item_ids = std::collections::HashSet::new();
         for (index, item) in items.iter().enumerate() {
-            check_item_type(item)?;
+            self.check_item_type(item)?;
             validate_item_status(
                 item,
                 if completed {
@@ -593,6 +867,70 @@ impl StreamObserver {
                 if previous != id {
                     return Err(StreamError::ConflictingIdentity);
                 }
+            }
+            let kind = required_str(item, "type")?;
+            if self
+                .item_types
+                .get(&index)
+                .is_some_and(|prior| prior != kind)
+            {
+                return Err(StreamError::ConflictingIdentity);
+            }
+            if kind == "reasoning" {
+                only_keys(item, &["id", "type", "status", "summary"])?;
+                if !self.item_indices.contains_key(&index) {
+                    return Err(StreamError::ConflictingIdentity);
+                }
+                let summaries = match item.get("summary") {
+                    None | Some(Value::Null) => &[][..],
+                    Some(Value::Array(v)) => v.as_slice(),
+                    _ => return Err(StreamError::MalformedEvent),
+                };
+                if let Some(done) = self.item_done.get(&index) {
+                    if done.len() != summaries.len() {
+                        return Err(StreamError::ConflictingIdentity);
+                    }
+                }
+                if let Some(added) = self.item_added.get(&index) {
+                    if added.len() > summaries.len() {
+                        return Err(StreamError::ConflictingIdentity);
+                    }
+                }
+                for (summary_index, part) in summaries.iter().enumerate() {
+                    only_keys(part, &["type", "text"])?;
+                    if required_str(part, "type")? != "summary_text" {
+                        return Err(StreamError::UnsupportedContent);
+                    }
+                    let text = required_text(part, "text")?;
+                    if self
+                        .item_done
+                        .get(&index)
+                        .and_then(|v| v.get(summary_index))
+                        .is_some_and(|seen| seen != text)
+                        || self
+                            .item_added
+                            .get(&index)
+                            .and_then(|v| v.get(summary_index))
+                            .is_some_and(|seen| !text.starts_with(seen))
+                    {
+                        return Err(StreamError::ConflictingIdentity);
+                    }
+                    if let Some(evidence) = self.reasoning.get(&(index, summary_index)) {
+                        if (!evidence.delta.is_empty() && evidence.delta != text)
+                            || evidence.done.as_deref().is_some_and(|seen| seen != text)
+                        {
+                            return Err(StreamError::ConflictingIdentity);
+                        }
+                    }
+                }
+                if self
+                    .reasoning
+                    .keys()
+                    .any(|(i, j)| *i == index && *j >= summaries.len())
+                {
+                    return Err(StreamError::ConflictingIdentity);
+                }
+                continue;
             }
             if optional_str(item, "role")? != Some("assistant") {
                 return Err(StreamError::MalformedEvent);
@@ -695,6 +1033,15 @@ fn required_str<'a>(value: &'a Value, key: &str) -> Result<&'a str, StreamError>
         .ok_or(StreamError::MalformedEvent)
 }
 
+fn only_keys(value: &Value, allowed: &[&str]) -> Result<(), StreamError> {
+    let object = value.as_object().ok_or(StreamError::MalformedEvent)?;
+    if object.keys().any(|key| !allowed.contains(&key.as_str())) {
+        Err(StreamError::UnsupportedContent)
+    } else {
+        Ok(())
+    }
+}
+
 fn optional_str<'a>(value: &'a Value, key: &str) -> Result<Option<&'a str>, StreamError> {
     match value.get(key) {
         None | Some(Value::Null) => Ok(None),
@@ -795,14 +1142,6 @@ fn required_text<'a>(value: &'a Value, key: &str) -> Result<&'a str, StreamError
         .get(key)
         .and_then(Value::as_str)
         .ok_or(StreamError::MalformedEvent)
-}
-
-fn check_item_type(item: &Value) -> Result<(), StreamError> {
-    match required_str(item, "type")? {
-        "message" => Ok(()),
-        "reasoning" => Err(StreamError::UnsupportedContent),
-        _ => Err(StreamError::UnsupportedTool),
-    }
 }
 
 enum ItemPhase {

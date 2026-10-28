@@ -18,6 +18,9 @@ pub enum GrantScope {
     RequestInterruption,
     NativeTurn,
     SemanticControl,
+    /// Owner admission of the direct-control checkpoint profile (v1). It never
+    /// authorizes a control call; it only names who accepted the profile.
+    SemanticDirectCheckpoint,
     SnapshotRead,
     TaskQuestionOpen,
     TaskResultPublish,
@@ -32,6 +35,7 @@ impl GrantScope {
             Self::RequestInterruption => "request_interruption",
             Self::NativeTurn => "native_turn",
             Self::SemanticControl => "semantic_control",
+            Self::SemanticDirectCheckpoint => "semantic_direct_checkpoint_v1",
             Self::SnapshotRead => "snapshot_read",
             Self::TaskQuestionOpen => "task_question_open",
             Self::TaskResultPublish => "task_result_publish",
@@ -46,6 +50,7 @@ impl GrantScope {
             "request_interruption" => Some(Self::RequestInterruption),
             "native_turn" => Some(Self::NativeTurn),
             "semantic_control" => Some(Self::SemanticControl),
+            "semantic_direct_checkpoint_v1" => Some(Self::SemanticDirectCheckpoint),
             "snapshot_read" => Some(Self::SnapshotRead),
             "task_question_open" => Some(Self::TaskQuestionOpen),
             "task_result_publish" => Some(Self::TaskResultPublish),
