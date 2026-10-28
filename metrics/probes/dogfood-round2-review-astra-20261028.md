@@ -221,3 +221,15 @@ Hash verified against both the working file and commit `7abf0eb7…`; reviewed t
 - **R2-14: resolved.** [Lines 325–331](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:325) define repair burden over closed, dispatched episodes with known counts, including zeros, and separate accepted, abandoned and open episodes. [Lines 373–375](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:373) use the same denominator.
 - **New finding R2-15 — P3:** [Line 236](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:236) incorrectly says revisions 1–3 were “not ready.” Revision 3’s verdict was **“ready with the listed changes.”** This misstates the review history; correct that sentence. No new substantive design finding.
 - **Verdict: ready.** No P1 or P2 findings remain. Implementation validation and the plan’s activation prerequisites, including owner approval, remain outstanding.
+---
+
+## Confirmation after the review-result and guide changes (2026-10-28, same session)
+
+Subject: plan sha256 `2d682e3967ac65a80a2b364429d888172d165432772fdfad565b50a4d4fd61fc` at commit `1a1e7ae8` (standard review result for enrolled episodes; escalation R2-10 following the guide as clarified at `d16eeba5`). Verdict: **ready**, no new findings. 3 calls, $0.65 at the frozen API rates, standard tier. The final message follows unchanged.
+
+Verified: the working file and commit `1a1e7ae8…` match the supplied SHA-256. I reviewed the diff against `7abf0eb7…` and the guide at `d16eeba5`.
+
+- **R2-01 through R2-15 remain resolved at the design level.** R2-10 now correctly follows the revised guide: remaining uncertainty and evidence of capability limitations inform reconsideration; subsystem labels and repair counts alone do not trigger escalation. Original-arm attribution remains intact ([plan lines 266–274](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:266)).
+- The standardized review result strengthens outcome measurement: passing requires explicit `accept` with no P1/P2, blocked reviews remain non-passes and are reported separately, and reviewer identity is recorded directly ([lines 260–262](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:260), [331–366](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:331)).
+- **New findings:** none in the inspected changes.
+- **Verdict: ready.** This confirms the design, not implementation or deployment. I did not rerun tests or independently reproduce the join demonstration; owner approval remains required.
