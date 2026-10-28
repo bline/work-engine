@@ -4,8 +4,8 @@ Status (2026-10-28): **no round is active; do not profile.** Round 1 (run
 directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
 2026-10-28 and was reviewed with the owner
 ([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
-coordinator guidance. Round 2, a builder comparison (revision 3 under "Round 2"
-below, after two Astra reviews), awaits review and the owner's approval.
+coordinator guidance. Round 2, a builder comparison (revision 4 under "Round 2"
+below, after three Astra reviews), awaits review and the owner's approval.
 When a round starts, these lines name its run directory and cap.
 
 ## Why
@@ -231,11 +231,11 @@ Limitations the pilot report must state:
 After the 10, the owner reviews the profiles and the discrepancies. Possible
 outcomes: make collection permanent, revise the schema, or stop.
 
-## Round 2 (revision 3, 2026-10-28; not approved, not active)
+## Round 2 (revision 4, 2026-10-28; not approved, not active)
 
-Revisions 1 and 2 were reviewed by `gpt-6-astra` at `high` and found not ready
+Revisions 1 to 3 were reviewed by `gpt-6-astra` at `high` and found not ready
 ([review](probes/dogfood-round2-review-astra-20261028.md)). This revision answers
-each finding; the finding IDs (R2-01 to R2-13) are marked where they apply.
+each finding; the finding IDs (R2-01 to R2-14) are marked where they apply.
 
 **Question.** On this project's own work, in the subset where either builder is
 acceptable, do `gpt-6.1-terra` builds at `medium` pass review and need repairs at
@@ -322,9 +322,13 @@ For every builder dispatch the guidance would profile, before choosing the model
   totals across arms of different sizes. The **first-review pass rate (R2-12)** is
   taken over episodes whose first review has completed, recorded when it
   completes with `task_profile_record.py review`, whether or not the episode has
-  closed. Repair rounds are per episode with recorded rounds. Withdrawn,
-  never-reviewed and pending episodes are counted separately, and every
-  enrollment stays in the overall accounting.
+  closed. **Repair burden (R2-14)** is completed repair rounds per closed,
+  dispatched episode with a known count, zeros included, reported separately for
+  accepted and abandoned episodes. Open episodes' rounds to date are reported
+  apart. Rounds among only the episodes that needed a repair, if reported, are
+  labelled as that separate statistic. Withdrawn, never-reviewed and pending
+  episodes are counted separately, and every enrollment stays in the overall
+  accounting.
 
 ### Review route and masking (R2-06, R2-08)
 
@@ -367,7 +371,8 @@ demonstrated on two round-1 records.
 
 - **Cap:** 20 enrolled episodes across both arms. Screening has no cap.
 - **Reading:** per arm, n, first-review pass rate with an exact 95% interval,
-  repair rounds and escalations per closed episode, and cost; with the screening
+  repair burden and escalations as defined above (closed, dispatched episodes
+  with known counts, zeros included), and cost; with the screening
   and exclusion counts, clustering by root and workstream, unblinded episodes, and
   the pause history. No ranking or equivalence claim: at this size, even 0 failed
   first reviews in 10 Terra episodes leaves a one-sided 95% upper bound of about
