@@ -647,6 +647,7 @@ Decided by the owner on 2026-10-27:
 | Stage A cap | Raised from 10 to 16 points; remaining support work moves to Sonnet 5.5 (§3) |
 | Support allocation | Raised from 10 to 11 points; then to 11.6 for the T0 battery repair and the anchor-battery traceability check (option A, 2026-10-27); then to 12.3 for the independent re-review of the repaired T0 cases (2026-10-27) |
 | F3.1 fixed-interface scoring | Accepted ([record](probes/battery-scorer-f3-20261027.md)) |
+| Production supervisor and coordinator model | `gpt-6.1-sol` at `xhigh` from 2026-10-28, by owner decision; `gpt-6-astra` is used only for review. This replaces the E5/O4 gate in the proposed default above; O2 and O4 remain available as checks |
 | Stage A results | Approved on 2026-10-28 (owner: "approve state A", meaning Stage A), which meets §3's condition for releasing Stage B. The T0 R2-E2 battery still scores no arm until its 12 remaining cases are fixed (§4). The §3 caps are unchanged |
 
 ## 10. Review disposition (ChatGPT review of v1, 2026-10-26)

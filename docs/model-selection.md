@@ -30,7 +30,8 @@ owning contract leaves it open ([DESIGN.md](../DESIGN.md)).
 ## Current defaults
 
 Use exact model IDs. Effort is a starting point, not a claim that more effort
-always helps.
+always helps. **`gpt-6-astra` is the review model:** use it for adversarial
+review, not for supervising, coordinating, planning or building.
 
 | Role | Default | Effort | Status and evidence |
 | --- | --- | --- | --- |
@@ -39,8 +40,8 @@ always helps.
 | Builder on the Claude host, with a fully specified packet | `claude-sonnet-5-5` | `high` | Matched Opus on gates and defect incidence at 38% of the cost ([S2 builder probe](../metrics/probes/claude-s2-builder-20261020-protocol.md), lines 467–560, n = 1). At `medium` in [E1a](../metrics/probes/e1a-result-20261027.md) (n = 3, $0.67–0.73 per run), Sonnet failed 2, 0 and 0 of the 12 traced cases; the full battery gives 11–15. |
 | Builder on the Claude host, where unresolved reasoning or complexity warrants it | `claude-opus-5-5` | `high` | In E1a at `medium` (n = 1, $2.35), Opus failed 0 of the 12 traced cases; the full battery gives 9. |
 | Successor after a Claude builder refusal | the default builder above | as above | The refusal is recorded; the successor gets a fresh packet. |
-| Architecture, ownership contracts, and planning with unresolved design questions | `gpt-6-astra` | `xhigh` | Spend reasoning where mistakes propagate. On the Claude host: `claude-opus-5-5` at `high`. |
-| Supervisor / coordinator | mixed today: `gpt-6-astra` (mostly `high`) and `gpt-6-sol` (`medium`) | as recorded | By call count in the frozen usage ledger (roles inferred from thread names): Sol medium 2,361, Astra high 1,403, Astra medium 316, Astra xhigh 260. **Moves to `gpt-6.1-sol` at `xhigh` after supervisor decision replay (O2) and a real-slice validation (O4 or E5),** then as a monitored pilot with rollback triggers ([dogfood plan](../metrics/dogfood-selection-plan-20261027.md), [experiment plan](../metrics/experiment-plan-20261026.md) §6 E5, §7). The Codex reset it was first tied to came on 2026-10-28; the change waits for the evidence, not the date. On the Claude host: `claude-opus-5-5`. |
+| Architecture, ownership contracts, and planning with unresolved design questions | `gpt-6.1-sol` | `xhigh` | Spend reasoning where mistakes propagate; an Astra review at `xhigh` challenges the result (row below). On the Claude host: `claude-opus-5-5` at `high`. |
+| Supervisor / coordinator, including supervisors spawned as subagents | `gpt-6.1-sol` | `xhigh` | **Owner decision 2026-10-28.** `spawn_agent` gives a child its parent's model unless overridden, so a supervisor spawned from a `gpt-6.1-sol` root needs no override. Before this date supervisors were a mix (frozen usage ledger, by call count: Sol medium 2,361, Astra high 1,403, Astra medium 316, Astra xhigh 260). O2 and O4 ([experiment plan](../metrics/experiment-plan-20261026.md) §7) remain available as checks. On the Claude host: `claude-opus-5-5`. |
 | Adversarial review, where an OpenAI reviewer is permitted | separate `gpt-6-astra` | `high`; `xhigh` when the subject is architecture, an ownership contract, or planning with unresolved design questions | Challenge the composed result from a separately established context. No measured review comparison of `high` and `xhigh` exists; on supervisor calls `xhigh` used about 14% more weighted tokens per call ([experiment plan §1](../metrics/experiment-plan-20261026.md)). Partitioned Sol review is planned as experiment O1. |
 | Tier-1 reviewer, verifier or assessor on the Claude host | `claude-opus-5-5` | `high` | No matched Sonnet review comparison yet. |
 | Tier-2 reviewer on the Claude host | `claude-fable-5-1`, fresh context | default | **Scarce.** One contract review cost 2% of the weekly Fable meter (n = 1), and Fable also draws the main Claude meter at Fable prices. Use it only for a shared contract, the final acceptance of a workstream, or an unresolved P1 between builder and tier-1 reviewer. Give it a small input (contract, diff, tier-1 findings, with paths), and never a retained follow-up. |
@@ -49,8 +50,7 @@ always helps.
 
 These are project recommendations, not performance guarantees or mandatory
 phases. A small change need not visit every role. A builder can plan a
-well-bounded implementation, and Astra can implement when the hard part cannot
-be separated from architectural reasoning.
+well-bounded implementation.
 
 **The provisional Terra default** stays under watch in its first real slices.
 Watch, through the existing receipts and the dogfood records:
@@ -74,9 +74,9 @@ comparable slices.
   - review returns a P1 or P2 finding that reopens the design;
   - a second repair round is needed.
   
-  Move to Astra when evidence exposes an unresolved ownership boundary,
-  contradictory assumptions, or a causal explanation the investigation cannot
-  establish.
+  Move to `gpt-6.1-sol` at `xhigh` when evidence exposes an unresolved ownership
+  boundary, contradictory assumptions, or a causal explanation the investigation
+  cannot establish.
 - **What doesn't justify a model change:** a compiler error, a capacity error,
   or a fixed number of failed tests. A model change does not repair a harness,
   test or contract defect, and a failure count alone doesn't establish that the
@@ -198,6 +198,7 @@ configuration with no builder.
 | 2026-10-27 | `gpt-6.1-terra` at `medium` as the default builder, provisional | owner |
 | 2026-10-27 | `gpt-6.1-sol` at `medium` for hazard-class builder work until Terra is measured there | recommendation; owner may change |
 | 2026-10-27 | Campaign builder defaults align to this guide | owner |
-| 2026-10-27 | Supervisor moves to `gpt-6.1-sol` at `xhigh` at the next Codex reset, after O2 and as a monitored pilot | owner |
+| 2026-10-27 | Supervisor moves to `gpt-6.1-sol` at `xhigh` at the next Codex reset, after O2 and as a monitored pilot (superseded 2026-10-28) | owner |
 | 2026-10-27 | Adversarial review: `gpt-6-astra` at `high`, `xhigh` for architecture, ownership-contract or open-design subjects | owner |
-| 2026-10-28 | The supervisor change follows O2 and a real-slice validation (O4 or E5), not the Codex reset date | owner |
+| 2026-10-28 | The supervisor change follows O2 and a real-slice validation (O4 or E5), not the Codex reset date (superseded the same day) | owner |
+| 2026-10-28 | Supervisors and coordinators run `gpt-6.1-sol` at `xhigh`, and so do architecture and open-design planning; `gpt-6-astra` is used only for review | owner |
