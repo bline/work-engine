@@ -5,7 +5,7 @@ directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
 2026-10-28 and was reviewed with the owner
 ([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
 coordinator guidance. Round 2, a builder comparison (revision 4 under "Round 2"
-below, after three Astra reviews), awaits review and the owner's approval.
+below, design review passed), awaits its tools and the owner's approval.
 When a round starts, these lines name its run directory and cap.
 
 ## Why
@@ -233,9 +233,12 @@ outcomes: make collection permanent, revise the schema, or stop.
 
 ## Round 2 (revision 4, 2026-10-28; not approved, not active)
 
-Revisions 1 to 3 were reviewed by `gpt-6-astra` at `high` and found not ready
-([review](probes/dogfood-round2-review-astra-20261028.md)). This revision answers
-each finding; the finding IDs (R2-01 to R2-14) are marked where they apply.
+**Design review: ready** (`gpt-6-astra` at `high`, standard tier, one retained
+read-only session, 2026-10-28; [review](probes/dogfood-round2-review-astra-20261028.md)).
+Revisions 1 and 2 were found not ready, revision 3 ready with one change, and this
+revision 4 ready. The finding IDs (R2-01 to R2-15) are marked where they apply.
+The verdict covers the design only: the activation prerequisites below, including
+the owner's approval, remain.
 
 **Question.** On this project's own work, in the subset where either builder is
 acceptable, do `gpt-6.1-terra` builds at `medium` pass review and need repairs at

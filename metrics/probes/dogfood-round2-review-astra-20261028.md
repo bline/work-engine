@@ -162,3 +162,62 @@ Revision 2 resolves the main conceptual problems with predictable allocation, un
 - The open-progress specification absence in R2-11 is bounded to the complete revised plan, its diff and retained unchanged context. I searched the plan for enrollment, failure, repair, closure, pause, concurrency and measurement provisions; it is not a repository-wide absence claim.
 - I checked the ledger’s tier and duration representation, not its runtime completeness. Graph coverage reported no recorded gaps for the inspected paths; that does not establish implementation correctness.
 - This was a retained follow-up review, not a new independent review episode.
+---
+
+## Second follow-up: revision 3 (2026-10-28, same session)
+
+Subject: plan sha256 `64bdd34d3e39b5bf4a0e3a52fa5e1c8477e14a4342b3911c864f5082113d9837` at commit `0bda6968`. Verdict: **ready with the listed changes** (R2-14, P2). The final message follows unchanged.
+
+Verified: the working file and commit `0bda6968a81e3d7ca7ec518112aaffb8aad9c56f` both match SHA-256 `64bdd34d3e39b5bf4a0e3a52fa5e1c8477e14a4342b3911c864f5082113d9837`. The original context-file hashes remain unchanged.
+
+**1. Previous findings**
+
+These dispositions assess the design. They do not certify implementation or satisfy its activation prerequisites.
+
+| ID | Disposition | Evidence and what remains |
+|---|---|---|
+| **R2-01** | **Resolved** | [Lines 283–296](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:283) require recorded screening before random allocation, one enrollment per task, recovery of existing assignments and preservation of recorded arms. |
+| **R2-02** | **Resolved** | [Lines 302–319](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:302) provide immediate P1 handling, shared pause state, live repair accounting, an in-flight limit and continued ownership of admitted work. |
+| **R2-03** | **Partly resolved** | [Lines 247–267](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:247) establish stable episodes, repair-cycle definitions and original-arm attribution. [Lines 356–364](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:356) establish outcome records and joins. The repair-summary population remains inconsistent; see **R2-14**. |
+| **R2-04** | **Resolved** | [Lines 309–327](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:309) separate the absolute admission-pause threshold from comparative reporting and remove unequal-arm total comparisons. |
+| **R2-05** | **Resolved** | [Lines 378–392](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:378) require tested commands, released guidance, episode-based counting, recovery-aware enrollment handling and demonstrated joins before approval. |
+| **R2-06** | **Resolved** | [Lines 276–281](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:276) require review-contract compatibility; [lines 331–332](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:331) preserve subsequent review escalation. |
+| **R2-07** | **Resolved** | [Lines 342–348](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:342) use observed tier, label cost estimates, include review cost and disclose missing components. |
+| **R2-08** | **Resolved** | [Lines 333–338](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:333) specify reviewer masking, model-name checks and disclosure of unblinding. Actual exposure remains an execution check. |
+| **R2-09** | **Resolved** | [Lines 290–296](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:290) distinguish command failure from enrollment state, recover by stable task ID and prohibit erasing or relabelling recorded assignments. [Lines 379–383](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:379) require post-write-failure and concurrency tests. |
+| **R2-10** | **Resolved** | [Lines 258–265](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:258) count remediation cycles rather than continuation turns and require escalation before the second repair begins, including design-reopening and hazard-class triggers. |
+| **R2-11** | **Resolved** | [Lines 309–314](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:309) record repairs at resubmission, include open episodes and trigger the pause at ten recorded Terra-arm cycles. The threshold explicitly stops new enrollment while admitted work continues. |
+| **R2-12** | **Resolved** | [Lines 322–327](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:322) measure first-review outcomes upon review completion, independently of episode closure, and separately count withdrawn, never-reviewed and pending episodes. |
+| **R2-13** | **Resolved** | [Lines 349–352](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:349) distinguish dispatch-to-disposition elapsed time, accumulated turn duration and pending elapsed-to-date. |
+
+**2. New findings**
+
+**R2-14 — P2: The repair-summary denominator has two conflicting definitions.**
+
+- **Claim:** The revised reporting instructions do not identify one consistent population for repair burden.
+- **Evidence:** [Line 325](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:325) says, “Repair rounds are per episode with recorded rounds.” [Line 370](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:370) instead specifies “repair rounds and escalations per closed episode.” Open episodes now acquire repair records before closure.
+- **Consequence — inference:** Coordinators can produce different summaries from identical records. Interpreting the first formulation as requiring a repair event can exclude successful zero-repair episodes and include unfinished episodes; the second uses a different population. That can distort the comparison of how often repairs are needed.
+- **Recommendation:** Specify the same denominator in both places. For example, summarize completed repair cycles across all dispatched, closed episodes with known counts, including zero, while distinguishing accepted from abandoned outcomes. Report open-episode cumulative repairs separately, and keep withdrawals and missing counts explicit. If reporting burden conditional on needing repair, label it as a separate statistic.
+
+**3. Verdict: ready with the listed changes.**
+
+No P1 finding remains. Correct **R2-14** before the round starts. The design’s existing implementation, testing, guidance-release, join-demonstration and owner-approval prerequisites remain mandatory; this verdict does not activate the round.
+
+**4. Not checked**
+
+- No implementation, tests, live allocation, crash recovery, concurrent admission, deployed guidance or actual record joins were exercised.
+- No sealed material, excluded routing-data directory, private episode records or provider services were accessed. No files were changed or agents launched.
+- I reviewed the complete revision-3 section and its diff against revision 2, retaining the previously reviewed unchanged context. For R2-14, I searched the plan’s repair-count, closed-episode and pending-outcome provisions.
+- Graph coverage reported no recorded gaps for relied-on paths; this is not runtime verification.
+- This was a retained follow-up review, not a newly independent review.
+---
+
+## Confirmation: revision 4 (2026-10-28, same session)
+
+Subject: plan sha256 `8d16c891518a1d4b04fa8ba5f4911236e55c2e793f575f633e939cef2b22a5d0` at commit `7abf0eb7`, the R2-14 change only. Verdict: **ready**; one P3 (R2-15, a misstated review history in the plan, corrected afterwards). The second follow-up and this confirmation together: 6 calls, $1.13. All four exchanges: 25 calls, all on the standard tier, $4.08 at the frozen API rates. The final message follows unchanged.
+
+Hash verified against both the working file and commit `7abf0eb7…`; reviewed the diff against `0bda6968…`.
+
+- **R2-14: resolved.** [Lines 325–331](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:325) define repair burden over closed, dispatched episodes with known counts, including zeros, and separate accepted, abandoned and open episodes. [Lines 373–375](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:373) use the same denominator.
+- **New finding R2-15 — P3:** [Line 236](/home/bline/code/work-engine/metrics/dogfood-selection-plan-20261027.md:236) incorrectly says revisions 1–3 were “not ready.” Revision 3’s verdict was **“ready with the listed changes.”** This misstates the review history; correct that sentence. No new substantive design finding.
+- **Verdict: ready.** No P1 or P2 findings remain. Implementation validation and the plan’s activation prerequisites, including owner approval, remain outstanding.
