@@ -1,0 +1,31 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-10-28T20:31:51.462736+00:00",
+  "session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+  "rollout": "/home/bline/.claude/projects/-home-bline-code-work-engine/2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf.jsonl",
+  "next_task_tokens": 12000,
+  "next_task_basis": "parent estimate",
+  "observed_at": "2026-10-28T20:21:54.019Z",
+  "freshness": null,
+  "recorded_model": "claude-opus-5-5",
+  "recorded_effort": null,
+  "input_tokens": 152801,
+  "context_window_tokens": null,
+  "epoch": 0,
+  "compaction_markers": 0,
+  "lineage": [],
+  "limitations": [
+    "Claude Code transcripts record no context window; levels are absolute"
+  ],
+  "status": "observed",
+  "trigger_tokens": 150000,
+  "band_floor_tokens": 202533,
+  "headroom_to_trigger": -2801,
+  "headroom_to_band_floor": 49732,
+  "fraction_of_window": null,
+  "recommendation": "fresh",
+  "reasons": [
+    "input 152801 is at or above the trigger 150000"
+  ],
+  "host": "claude-code"
+}

@@ -81,6 +81,12 @@ binding. Pass both cursors when resuming the same observation scope. Changing
 board filters may require an earlier board cursor. A new session, source or
 pressure policy needs a new control baseline; an old cursor is rejected.
 
+Same-session compaction can change the context epoch while preserving the root
+ID. On recovery, verify the actual transcript binding, collection owner and
+delivery route before relying on that listener. Retain a cursor only for the
+same observation scope; a quiet or lower reading does not establish semantic
+recovery. See [same-session continuity](same-session-context.md).
+
 The control cursor records what was observed, not what was acted on. After a
 delivery interruption, replay the last consumed cursor; duplicate alerts are
 possible. The monitor reads current telemetry and cannot promise recovery of

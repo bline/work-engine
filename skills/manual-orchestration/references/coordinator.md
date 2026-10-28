@@ -76,7 +76,7 @@ A root accepting substantial new work makes a scoped
 including the work and collection still owed. An earlier decision to finish
 bounded work does not cover the new task, even when no new pressure alert arrives.
 
-A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary, and transfer at a quiescent boundary through the user as the [roots](context-boundary.md#roots) section describes. Keep the continuation and assignment record current continuously, because a ceiling replacement keeps only what was written.
+A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary, and choose a response against the next scope's needs and available capabilities. Pressure alone does not require a root transfer. For same-session replacement, use the [continuity guidance](same-session-context.md); when transferring ownership, use the user-authorized quiescent procedure under [Roots](context-boundary.md#roots). Keep the continuation and assignment record current continuously, because recovery cannot depend on meaning held only in the old context.
 
 ## Worktrees and Codebase Memory
 

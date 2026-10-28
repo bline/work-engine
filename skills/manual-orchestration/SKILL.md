@@ -18,6 +18,7 @@ Use model judgment to divide an authorized objective into coherent outcomes whos
 - **Worker or reviewer**: [worker](references/worker.md) - one coherent bounded assignment.
 - **Every role**: [call cost](references/call-cost.md) - waiting, batching, request sizing.
 - **Coordinator and supervisor**: [context boundary](references/context-boundary.md) - retained or fresh before dispatch, transfer, roots. Workers carry their own mid-task check.
+- When considering same-session context replacement: [same-session continuity](references/same-session-context.md) - authority, durable meaning, supported controls, visible resumption and recovery.
 - **On Codex**, with any role: [Codex host](references/codex-host.md) - supervisor/builder children, separate top-level reviewers, service tier and identity binding.
 - **On Claude Code** (Anthropic models), with any role: [anthropic host](references/anthropic-host.md) - tool mapping, transcript-based context check.
 - After a run: [measurement](references/measurement.md). For a concrete artifact example: [demonstrated forms](references/demonstrated-forms.md).
@@ -40,6 +41,6 @@ This is a manual coordination adapter. In a configured Slice Builder campaign, u
 
 - `scripts/provision_context_status.sh [repo]` - build and pin the context-status binary outside the shared target; prints path and SHA-256.
 - `scripts/child_context.py` - `check` one Codex session, `tree` a parent's children, or `claude` a Claude Code subagent transcript against the trigger and observed compaction band; writes a record to retain.
-- `scripts/role_host.py` - host a role or child as a Claude `--bg` or Codex app-server session: `launch` (with `--parent` to record it in the ledger), `status`, `deliver`, `retire`, `children`, `whoami`. Codex also supports `rename`, `archive`, and `unarchive` without a model turn. Detects and stops a Claude copy-on-resume fork.
+- `scripts/role_host.py` - host a role or child as a Claude `--bg` or Codex app-server session: `launch` (with `--parent` to record it in the ledger), `status`, `deliver`, `retire`, `children`, `whoami`. Codex also supports `rename`, `archive`, and `unarchive` without a model turn, plus `settings --rollout` to observe applied model/effort/tier for continuation. Detects and stops a Claude copy-on-resume fork.
 - `scripts/root_rotation.py` - root transfer gate: `prepare` publishes continuation lineage and stops at `awaiting_authority`; `commit` or `watch` checks that the handoff is still available, launches the successor, waits for its typed `adopt` and retires or keeps the predecessor. `--title` provides a readable task name. See [context boundary](references/context-boundary.md#roots).
 - `scripts/handoff_validator.py` - checks a root handoff's referents (paths, path-bound digests, labelled git refs, placeholders): 0 pass, 21 defect, 32 not established.

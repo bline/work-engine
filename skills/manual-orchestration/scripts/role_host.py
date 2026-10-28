@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 import re
@@ -83,6 +84,55 @@ CALLER_IDENTITY = ("CLAUDE_CODE_SESSION_ID", "CLAUDE_PID", "CLAUDE_CODE_MESSAGIN
 
 def child_env():
     return {k: v for k, v in os.environ.items() if k not in CALLER_IDENTITY}
+
+
+def codex_settings(sid: str, rollout: Path) -> dict:
+    """Read applied settings from this session's rollout, without shared-config inference."""
+    latest = None
+    try:
+        with rollout.open(encoding="utf-8", newline="") as fh:
+            first = json.loads(next(fh))
+            if not isinstance(first, dict) or not isinstance(first.get("payload"), dict):
+                raise ValueError("session_meta must be an object with an object payload")
+            if first.get("type") != "session_meta" or first["payload"].get("id") != sid:
+                raise HostError(DEFECT, "identity_mismatch", f"{rollout} does not begin with session_meta for {sid}")
+            recorded_version = first["payload"].get("cli_version")
+            for line_no, raw in enumerate(fh, 2):
+                event = json.loads(raw)
+                if not isinstance(event, dict):
+                    raise ValueError(f"record at line {line_no} must be an object")
+                payload = event.get("payload", {})
+                if not isinstance(payload, dict):
+                    raise ValueError(f"payload at line {line_no} must be an object")
+                if (event.get("type") == "event_msg" and payload.get("type") == "thread_settings_applied"
+                        and payload.get("thread_id") == sid):
+                    if not isinstance(payload.get("thread_settings"), dict):
+                        raise ValueError(f"thread_settings at line {line_no} must be an object")
+                    latest = (payload.get("thread_settings") or {}, {
+                        "rollout": str(rollout.resolve()), "line": line_no, "timestamp": event.get("timestamp"),
+                        "event_sha256": hashlib.sha256(raw.encode()).hexdigest()})
+    except (OSError, ValueError, UnicodeError, StopIteration) as e:
+        raise HostError(NOT_ESTABLISHED, "settings_not_established", f"{rollout}: {e}")
+    if latest is None:
+        raise HostError(NOT_ESTABLISHED, "settings_not_established", f"no matching applied-settings record for {sid}")
+    settings, source = latest
+    tier = settings.get("service_tier")
+    # Native Codex 0.164: config fast is recorded as runtime priority.
+    # Future or missing tiers have no established inverse mapping here.
+    cli_tier = {"priority": "fast", "default": "default"}.get(tier) if isinstance(tier, str) else None
+    model, effort = settings.get("model"), settings.get("reasoning_effort")
+    args = None
+    if cli_tier is not None and isinstance(model, str) and model and isinstance(effort, str) and effort:
+        args = ["-m", model, "-c", "model_reasoning_effort=" + json.dumps(effort),
+                "-c", "service_tier=" + json.dumps(cli_tier)]
+    return {"session_id": sid, "model": model, "reasoning_effort": effort, "service_tier": tier,
+            "recorded_cli_version": recorded_version,
+            "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+            "source": source, "successor_host_args": args,
+            "preservation": "launch_arguments_available" if args is not None else "not_established",
+            "limitations": ["Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+                            "Successor settings must be observed after launch and adoption; arguments are a request.",
+                            "Runtime configuration does not establish backend fulfillment or billing."]}
 
 
 def _run(argv, *, cwd=None, timeout=60):
@@ -556,6 +606,9 @@ def main(argv=None) -> int:
         s = sub.add_parser(verb); s.add_argument("host"); s.add_argument("session_id")
         if verb == "retire":
             s.add_argument("--force", action="store_true")
+    settings = sub.add_parser("settings", help="read a Codex session's applied model, effort and tier from its bound rollout")
+    settings.add_argument("host"); settings.add_argument("session_id")
+    settings.add_argument("--rollout", required=True, type=Path)
     rename = sub.add_parser("rename", help="rename a Codex thread without starting a turn")
     rename.add_argument("host"); rename.add_argument("session_id"); rename.add_argument("--name", required=True)
     for verb in ("archive", "unarchive"):
@@ -591,7 +644,11 @@ def main(argv=None) -> int:
             if sid is not None and not UUID.match(sid):
                 raise HostError(USAGE, "usage", f"session id {sid!r} is not a lowercase canonical uuid")
             h = host(a.host)
-            if a.cmd == "launch":
+            if a.cmd == "settings":
+                if a.host != "codex":
+                    raise HostError(USAGE, "unsupported_control", "applied runtime settings reader is Codex-only")
+                res = codex_settings(sid, a.rollout)
+            elif a.cmd == "launch":
                 res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
                                host_args=a.host_arg, ledger=ledger, parent=a.parent)
             elif a.cmd == "status":

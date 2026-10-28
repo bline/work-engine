@@ -1,0 +1,185 @@
+{
+  "attempts": [
+    {
+      "duration_ms": 203822,
+      "gateway": "anthropic",
+      "harness": "claude-code",
+      "observed_models": [
+        "claude-opus-5-5"
+      ],
+      "quota_signature": null,
+      "requested_model": "claude-opus-5-5",
+      "requested_upstream_provider": null,
+      "returncode": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_size_bytes": 0,
+      "stdout_sha256": "07198ea7680134e6759daf582d7ede72233d7011997f193486b4d7c508b45f19",
+      "transport": "anthropic"
+    }
+  ],
+  "claude_version": "2.1.312 (Claude Code)",
+  "failover": {
+    "allowed": false,
+    "attempted": false,
+    "continuity_claim": null,
+    "reason": null
+  },
+  "launcher": {
+    "path": "skills/claude-recon-implementation/scripts/claude_transport.py",
+    "sha256": "a6bf08e3c27b5567da0c48459539b2113566347af7c0a801fdf1b48e6623bdf7"
+  },
+  "model_guard": {
+    "acceptance": "not_invalidated_by_model_guard",
+    "delivery": {
+      "stderr": {
+        "captured_bytes": 0,
+        "complete": true,
+        "delivered_bytes": 0,
+        "dropped_bytes": 0,
+        "in_flight_bytes": 0,
+        "pending_bytes": 0,
+        "undelivered_bytes": 0
+      },
+      "stdout": {
+        "captured_bytes": 661004,
+        "complete": true,
+        "delivered_bytes": 661004,
+        "dropped_bytes": 0,
+        "in_flight_bytes": 0,
+        "pending_bytes": 0,
+        "undelivered_bytes": 0
+      }
+    },
+    "evidence_defect": null,
+    "identity": {
+      "observed_session_ids": [
+        "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf"
+      ],
+      "requested_session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+      "requested_session_mode": "resume",
+      "result_session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+      "session_identity": "matches"
+    },
+    "launcher_exit_code": 0,
+    "limits": [
+      "Detection reads stream fields after the child has emitted them; the guard stops the owned process tree but does not establish that no tool effect preceded detection.",
+      "Scoped settings narrow model selection; they are not proof of the model that served a message. Only assistant and stream_event message fields count as observations; session init and result modelUsage are recorded as metadata and, on --resume, modelUsage is cumulative history."
+    ],
+    "native": {
+      "pid": 94559,
+      "result_status": "success",
+      "returncode": 0,
+      "started": true,
+      "stopped_by_launcher": false
+    },
+    "observations": {
+      "assistant_models": {
+        "claude-opus-5-5": 32
+      },
+      "metadata_only": {
+        "init_models": [
+          "claude-opus-5-5"
+        ],
+        "model_usage_scope": "cumulative_conversation_history",
+        "result_model_usage_models": [
+          "claude-opus-5-5"
+        ],
+        "usage_models_other_than_requested": []
+      },
+      "parent_tool_use_records": 0,
+      "stream_event_models": {
+        "claude-opus-5-5": 10
+      },
+      "synthetic_assistant_messages": 0,
+      "synthetic_error_categories": {}
+    },
+    "outcome": "verified_exact",
+    "reason": null,
+    "requested_model": "claude-opus-5-5",
+    "schema_version": 1,
+    "settings": {
+      "availableModels": [
+        "claude-opus-5-5"
+      ],
+      "effective_sha256": "a9b0fb52d31fd2ecc2ab38d1daa21b715fd44361f0509aeb57d14ca6cbef4f1f",
+      "effective_sha256_after_run": "a9b0fb52d31fd2ecc2ab38d1daa21b715fd44361f0509aeb57d14ca6cbef4f1f",
+      "scope": "--settings flag layer; user and project settings are not modified",
+      "source_kind": "none",
+      "source_sha256": null,
+      "switchModelsOnFlag": false
+    },
+    "stream": {
+      "bytes": 661004,
+      "drained": true,
+      "lines": 1189,
+      "lines_after_first_finding": 0,
+      "malformed_lines": 0,
+      "oversize_lines": 0,
+      "result_event": {
+        "is_error": false,
+        "line": 1189,
+        "native_status": "success",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "terminal_reason": "completed",
+        "well_formed": true
+      },
+      "stdout_sha256": "07198ea7680134e6759daf582d7ede72233d7011997f193486b4d7c508b45f19"
+    },
+    "termination": {
+      "cause": "exited",
+      "first_finding_ms": null,
+      "launcher_error": null,
+      "owned_processes_remaining_after_exit": [],
+      "process_collection": "none_remaining",
+      "signals_received": [],
+      "stop": null,
+      "stop_started_ms": null,
+      "tree_discovery": "subreaper_ancestry_session"
+    },
+    "tool_effects_before_stop": "not_established",
+    "violation": null
+  },
+  "request": {
+    "anthropic_1p_required": false,
+    "batch_route_explicitly_allowed": false,
+    "claude_code_oauth_token_present": false,
+    "claude_config_dir": null,
+    "claude_config_dir_sha256_before": null,
+    "command_sha256": "250b3bb04e9f0f20721e4fcca499a2c0a320d32ed8a3a6d38e3bd2a86e170cb0",
+    "command_shape": [
+      "claude",
+      "-p",
+      "--resume",
+      "--model",
+      "--effort",
+      "--output-format",
+      "--verbose",
+      "--include-partial-messages",
+      "--tools",
+      "--allowedTools",
+      "--permission-mode",
+      "--strict-mcp-config",
+      "--mcp-config",
+      "--add-dir",
+      "--add-dir"
+    ],
+    "continuity": "retained",
+    "exact_model_guard": true,
+    "experimental_betas_disabled": false,
+    "openrouter_base_url": "https://openrouter.ai/api",
+    "openrouter_model": "anthropic/claude-sonnet-5-20260630",
+    "paid_failover_explicitly_allowed": false,
+    "session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+    "session_mode": "resume",
+    "stdin_sha256": "8d0533204431b6b809d2de7adddfbe067d9e9599a37693ee43cf893ce67f61c0",
+    "stdin_size_bytes": 1903,
+    "terminal_title_disabled": false,
+    "transport": "anthropic"
+  },
+  "result": "success",
+  "routing_attestation": null,
+  "schema_version": 1,
+  "selected_transport": "anthropic",
+  "upstream_provider_observed": false
+}

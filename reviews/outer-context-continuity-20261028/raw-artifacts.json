@@ -1,0 +1,38 @@
+[
+  {
+    "name": "stream-v1.jsonl",
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/raw-review/stream-v1.jsonl",
+    "sha256": "b8d063464e52c0f824894bed2b83fd51b1b8da745d220fa557b562a3597c09ef",
+    "bytes": 1118580
+  },
+  {
+    "name": "stderr-v1.log",
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/raw-review/stderr-v1.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "name": "stream-v2.jsonl",
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/raw-review/stream-v2.jsonl",
+    "sha256": "07198ea7680134e6759daf582d7ede72233d7011997f193486b4d7c508b45f19",
+    "bytes": 661004
+  },
+  {
+    "name": "stderr-v2.log",
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/raw-review/stderr-v2.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "name": "stream-v3.jsonl",
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/raw-review/stream-v3.jsonl",
+    "sha256": "f72d26de473ac8553ffd488525f7bf12b0a447dfd4217f096daa317648a9d2b2",
+    "bytes": 282888
+  },
+  {
+    "name": "stderr-v3.log",
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/raw-review/stderr-v3.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+]

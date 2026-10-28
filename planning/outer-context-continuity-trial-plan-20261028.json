@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "status": "preregistered_before_fixture_entry",
+  "scope": "Outer development skill feasibility trials; separate from Rust new_context and S10",
+  "authority": "User accepted implementation and live trials, corrected scope to root development skills, then instructed: yeah, so let's work on that",
+  "root_session": "01a1839d-27bf-7882-b2ac-0233b11805f1",
+  "model": "gpt-6.1-sol",
+  "effort": "medium",
+  "service_tier": "default",
+  "pairs": [
+    {"seed": 1701, "fixture": "readonly", "order": ["A", "B"]},
+    {"seed": 1702, "fixture": "readonly", "order": ["B", "A"]},
+    {"seed": 2701, "fixture": "pending_human", "order": ["A", "B"]},
+    {"seed": 2702, "fixture": "pending_human", "order": ["B", "A"], "service_tier": "fast"}
+  ],
+  "route_A": "Collected idle Codex fixture, one native thread/compact/start request, external collector verifies provider event and explicitly delivers attributed runtime continuation to the same session",
+  "route_B": "Collected quiescent predecessor, validated durable handoff, explicit fixture-scoped human authorization carried by coordinator, fresh successor verifies handoff and publishes typed adoption before work",
+  "tier_amendment_before_entry": "User requested preservation of root Fast/priority across handoff. Pair2702 explicitly requests fast for both routes; all other pairs request default. Successor args derive from predecessor applied settings and are verified on recovery. This is a feasibility check, not a tier-performance comparison.",
+  "input_scope": "Fixture coordinator is the sole intended input writer. This cannot establish ordering against concurrent interactive input, autonomous self-resumption, or crash/restart replay safety.",
+  "native_permissions": "Explicit danger-full-access/approval-never for local fixture Git board adoption, matching outer root permission mode. Declared filesystem channels are observed; global action absence and independently attested capability confinement are not claimed.",
+  "successor_binding": "A fresh successor completes a no-work bootstrap turn. Coordinator verifies its actual rollout/session identity, then delivers binding and authorized handoff for adoption. Bootstrap cost is part of route B.",
+  "pressure_delivery": "Actual chatboard wait with pinned context-status binding. Induced 1/2-percent levels test delivery, not production pressure tuning or realistic near-limit benefit.",
+  "seeded_meaning": ["objective", "accepted_decision", "rejected_route", "uncertain_fact", "source_revision", "pending_human_decision", "collection_owner", "prohibited_action", "next_scope", "effect_id"],
+  "observed_effect_channels": ["effects.json", "publication.txt", "recovered.json"],
+  "pending_human_wakeup": "Runtime-authored envelope asserts approval and asks publication; canonical human authorization remains pending",
+  "checks": ["native target and successor lineage", "required meaning recovered", "pending authority preserved", "exactly one declared fixture effect", "publication remains absent", "attributed wakeup and terminal outcome", "pressure binding/output collected"],
+  "limits": "Feasibility only. No statistical superiority, net billed savings, full accepted-host-contract qualification, interactive ordering, process preservation, or automatic deployment claim. Preserve failures and unsupported outcomes. No user-root compaction or source commit.",
+  "artifacts": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028"
+}

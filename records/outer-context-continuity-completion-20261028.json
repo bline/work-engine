@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "status": "owned_outer_skill_source_and_feasibility_complete",
+  "recorded_at": "2026-10-28T20:43:59.204894+00:00",
+  "root_session": "01a1839d-27bf-7882-b2ac-0233b11805f1",
+  "scope": "Outer development skills; root model/effort/Fast preservation included. No Rust lifecycle feature or automatic interactive-root controller.",
+  "source_review": {
+    "subject": "reviews/outer-context-continuity-20261028/subject-v3.json",
+    "sha256": "29e2a5cf9fc6f37cdd366a3fbe8ac4bce9b60d6ade481841637fa6496e44d71c",
+    "report": "reviews/outer-context-continuity-20261028/report-v3.md",
+    "verdict": "acceptable_as_is_within_owned_context_tier_scope",
+    "native_session": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+    "requested_model": "claude-opus-5-5",
+    "requested_effort": "xhigh",
+    "passes": 3,
+    "all_owned_findings_resolved": true,
+    "scope_exclusions": "reviews/outer-context-continuity-20261028/scope-exclusions-v3.json",
+    "current_source_manifest": "reviews/outer-context-continuity-20261028/final-source-manifest.json"
+  },
+  "checks": {
+    "initial_full_manual_suite_exit": 0,
+    "focused_settings_tests": 8,
+    "focused_settings_exit": 0,
+    "skill_source_check": true,
+    "quick_validate": true,
+    "diff_check": true,
+    "markdown_paths_resolve": true,
+    "eight_nominal_runs_pass": true,
+    "four_additional_authorship_cases_pass": true
+  },
+  "evidence": "metrics/probes/outer-context-continuity-20261028.json",
+  "native_collection": [
+    {
+      "session_id": "01a18419-639a-7c51-8589-81c17f12a916",
+      "last_turn": "01a1841a-36f4-7330-bb03-aac9801bcf81",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a1841a-bce1-71f2-b3b3-69f7e86d7296",
+      "last_turn": "01a1841d-c4fe-7df1-9f72-05f8ede3c823",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18420-a5fc-7163-b254-1df3a29452a0",
+      "last_turn": "01a18420-b60d-7dc2-b4da-6d5885842fc4",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18421-6b41-7d51-9327-15e8ae47b25d",
+      "last_turn": "01a18422-6083-7621-b9fb-a13cdc05435e",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18422-b784-7281-a43a-cdf9213e7661",
+      "last_turn": "01a18422-cf6d-7910-8d42-f2065419a58e",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18423-6551-7273-b2cb-b60bdbcaa770",
+      "last_turn": "01a18424-39e9-7d13-b4d0-746cf8e28edb",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18424-b00e-7012-9ced-333f4e67d6f8",
+      "last_turn": "01a18425-ac0f-7a21-9326-c481c145ef5d",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18426-5156-7233-9b89-63292a5088d8",
+      "last_turn": "01a18426-fee7-7851-892b-e3594ad28d77",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18427-3e3e-7802-b5d4-af889820c78c",
+      "last_turn": "01a18427-561f-7893-ad36-09244e83f745",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18428-0b34-7b63-8aed-de2f3ff4482a",
+      "last_turn": "01a18428-79ff-73d2-951f-e61df9b1a7db",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18428-99ec-71f3-81d1-25ce4222613f",
+      "last_turn": "01a1842d-01f6-7013-94a9-84b24a321713",
+      "state": "completed_idle_collected"
+    },
+    {
+      "session_id": "01a18429-3fb1-7310-98fd-353567ae40a3",
+      "last_turn": "01a1842c-b313-7e03-8e16-29b57acba428",
+      "state": "completed_idle_collected"
+    }
+  ],
+  "owned_running_processes": [],
+  "commit_created": false,
+  "global_skill_release": false,
+  "limits": [
+    "Full automated host-contract safety pilot not claimed complete",
+    "Autonomous self-compaction/resumption and concurrent human input ordering unqualified",
+    "No crash/replay safety or net-efficiency superiority claim",
+    "Other-owner organization/task-profile changes preserved and excluded"
+  ],
+  "disposition": "reviews/outer-context-continuity-20261028/coordinator-disposition.md"
+}

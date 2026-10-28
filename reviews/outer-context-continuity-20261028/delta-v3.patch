@@ -1,0 +1,86 @@
+--- skills/manual-orchestration/references/context-boundary.md@v2
++++ skills/manual-orchestration/references/context-boundary.md@v3
+@@ -199,7 +199,7 @@
+      `--retire archive`, or keeps it with the default `keep`. `watch`
+      accepts the authorization as a board message, but only from a named
+      approver and only when it cites the handoff's sha256.
+-     Supply the saved successor settings on the invocation that launches:
++     For a Codex successor, supply the saved settings on the invocation that launches:
+      `commit` or `watch`. Flags supplied only to `prepare` are not carried to a
+      later command. For example, add `--host-arg=-m --host-arg=<saved-model>`,
+      `--host-arg=-c --host-arg='model_reasoning_effort="<saved-effort>"'`, and
+@@ -207,12 +207,13 @@
+    - **Manual.** Publish the validated handoff with the board's
+      [`handoff-publish`](../../../docs/codex-chatboard.md#prepared-continuations-and-obsolete-handoffs)
+      under this role and session. Give the user the exact successor instruction: start a new
+-     session in the repository with the saved model, effort and service tier
+-     (give the exact launch settings or matching UI controls, including the
+-     intended Fast state), then paste a prompt naming the root handoff
++     session in the repository. For Codex, give the saved model, effort and
++     service tier as exact launch settings or matching UI controls, including
++     the intended Fast state. For another host, carry settings with their known
++     source and mark unobserved values unestablished. Then give a prompt naming the root handoff
+      path and sha256, the skill to load as coordinator, and the first actions
+      (verify the digest and run `handoff-status` for this role and digest,
+-     verify the successor's own applied settings, read the assignment record,
++     for Codex verify the successor's own applied settings, read the assignment record,
+      adopt on the board, then re-claim board
+      resources under the new session id).
+ 5. The successor verifies the digest and recorded continuation status before
+--- skills/manual-orchestration/references/codex-host.md@v2
++++ skills/manual-orchestration/references/codex-host.md@v3
+@@ -65,8 +65,12 @@
+ The returned `successor_host_args`
+ make that request explicit for `role_host.py launch` or the rotation gate's
+ repeated `--host-arg` options; pass them as arguments, not executable shell text.
+-For the qualified Codex 0.164.0, observed `priority` maps to config
++The [historical CLI 0.164.0 probe](../../../metrics/probes/codex-manual-service-tier-20261028.json)
++and [live fixtures reporting runtime 0.165.0](../../../metrics/probes/outer-context-continuity-20261028.json)
++support the same value mapping: observed `priority` maps to config
+ `service_tier="fast"`, and `default` maps to `service_tier="default"`.
++The installed CLI version and a daemon's recorded runtime version are separate
++observations; these cases do not qualify every version or ingress path.
+ An unknown tier or missing observation leaves preservation unestablished;
+ do not silently substitute a shared default or the reader's own settings.
+ 
+--- skills/manual-orchestration/scripts/role_host.py@v2
++++ skills/manual-orchestration/scripts/role_host.py@v3
+@@ -119,14 +119,15 @@
+     tier = settings.get("service_tier")
+     # Native Codex 0.164: config fast is recorded as runtime priority.
+     # Future or missing tiers have no established inverse mapping here.
+-    cli_tier = {"priority": "fast", "default": "default"}.get(tier)
++    cli_tier = {"priority": "fast", "default": "default"}.get(tier) if isinstance(tier, str) else None
+     model, effort = settings.get("model"), settings.get("reasoning_effort")
+     args = None
+     if cli_tier is not None and isinstance(model, str) and model and isinstance(effort, str) and effort:
+         args = ["-m", model, "-c", "model_reasoning_effort=" + json.dumps(effort),
+                 "-c", "service_tier=" + json.dumps(cli_tier)]
+     return {"session_id": sid, "model": model, "reasoning_effort": effort, "service_tier": tier,
+-            "recorded_cli_version": recorded_version, "tier_mapping_basis": "Codex 0.164.0; metrics/probes/codex-manual-service-tier-20261028.json",
++            "recorded_cli_version": recorded_version,
++            "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+             "source": source, "successor_host_args": args,
+             "preservation": "launch_arguments_available" if args is not None else "not_established",
+             "limitations": ["Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+--- skills/manual-orchestration/tests/test_codex_settings.py@v2
++++ skills/manual-orchestration/tests/test_codex_settings.py@v3
+@@ -39,11 +39,13 @@
+         self.assertEqual(effort, 'xhigh')
+ 
+     def test_unknown_tier_remains_observed_without_guessing_launch(self):
+-        self.write([{'type': 'session_meta', 'payload': {'id': SID}}, self.applied('future-tier')])
+-        got = role_host.codex_settings(SID, self.path)
+-        self.assertEqual(got['service_tier'], 'future-tier')
+-        self.assertIsNone(got['successor_host_args'])
+-        self.assertEqual(got['preservation'], 'not_established')
++        for tier in ['future-tier', [], {}, 17]:
++            with self.subTest(tier=tier):
++                self.write([{'type': 'session_meta', 'payload': {'id': SID}}, self.applied(tier)])
++                got = role_host.codex_settings(SID, self.path)
++                self.assertEqual(got['service_tier'], tier)
++                self.assertIsNone(got['successor_host_args'])
++                self.assertEqual(got['preservation'], 'not_established')
+ 
+     def test_parent_rollout_cannot_supply_child_settings(self):
+         self.write([{'type': 'session_meta', 'payload': {'id': OTHER}}, self.applied('priority', OTHER)])

@@ -1,0 +1,16 @@
+{
+  "OCT-OPUS-1": "Manual launch instructions now carry actual saved model/effort/tier and initial successor verification.",
+  "OCT-OPUS-2": "Pre-replacement observation and skill refs saved; post-boundary/recovered-turn observation required; old event means last-known only; detect/surface mismatch rather than imply prevention.",
+  "OCT-OPUS-3": "Frozen root_rotation.py confirms commit passes self.a.host_arg to launch at lines356-361; CLI parser defines repeated host-arg. Guidance now supplies explicit flags on commit/watch, not prepare-only.",
+  "OCT-OPUS-4": "Recovery skill/role references named in preparation.",
+  "OCT-OPUS-5": "Object-shape validation, UTF-8 errors and malformed evidence produce32; focused CLI/object tests added. Partial trailing record stays unavailable, not silently ignored.",
+  "OCT-OPUS-6": "Names Codex0.164.0, reports recorded cli_version and mapping evidence basis. Post-launch verification remains required.",
+  "OCT-OPUS-7": "Clarified current user selection/contract precedence and known user override; do not switch a recorded root to generic role default. Actual unresolved authority conflict remains with owner. No new permission question merely because recorded default differs from generic Fast guidance: user explicitly asked preserve this root setting.",
+  "OCT-OPUS-8": "Nonhuman wakeup language aligned; existing human assignment may authorize continuation, fresh approval not implied.",
+  "OCT-OPUS-9": "General ownership and collection wording now this session; preparation observes this session.",
+  "S1": "Detailed qualification still explicitly conditional; supervised native idle fixture route observed, automatic interactive route unqualified.",
+  "S2": "Cost comparison kept in conditional reference because it informs route judgment; not binding production sequence.",
+  "S3": "Concrete --host-arg=<element> examples added on launching gate invocation.",
+  "S4": "UTF-8 exact line ending preserved and digest basis documented.",
+  "S5": "CLI host/id/malformed inputs, missing model/effort/tier and object shapes tested."
+}

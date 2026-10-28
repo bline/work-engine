@@ -1,0 +1,79 @@
+[
+  {
+    "pass": 1,
+    "observed_models": [
+      "claude-opus-5-5"
+    ],
+    "observed_tools": [
+      "Grep",
+      "Read"
+    ],
+    "native_session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+    "exit": 0,
+    "receipt_top_keys": [
+      "attempts",
+      "claude_version",
+      "failover",
+      "launcher",
+      "model_guard",
+      "request",
+      "result",
+      "routing_attestation",
+      "schema_version",
+      "selected_transport",
+      "upstream_provider_observed"
+    ]
+  },
+  {
+    "pass": 2,
+    "observed_models": [
+      "claude-opus-5-5"
+    ],
+    "observed_tools": [
+      "Glob",
+      "Grep",
+      "Read"
+    ],
+    "native_session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+    "exit": 0,
+    "receipt_top_keys": [
+      "attempts",
+      "claude_version",
+      "failover",
+      "launcher",
+      "model_guard",
+      "request",
+      "result",
+      "routing_attestation",
+      "schema_version",
+      "selected_transport",
+      "upstream_provider_observed"
+    ]
+  },
+  {
+    "pass": 3,
+    "observed_models": [
+      "claude-opus-5-5"
+    ],
+    "observed_tools": [
+      "Glob",
+      "Grep",
+      "Read"
+    ],
+    "native_session_id": "2b99d4cf-f0a2-4478-b5f1-ae75dcd53cbf",
+    "exit": 0,
+    "receipt_top_keys": [
+      "attempts",
+      "claude_version",
+      "failover",
+      "launcher",
+      "model_guard",
+      "request",
+      "result",
+      "routing_attestation",
+      "schema_version",
+      "selected_transport",
+      "upstream_provider_observed"
+    ]
+  }
+]

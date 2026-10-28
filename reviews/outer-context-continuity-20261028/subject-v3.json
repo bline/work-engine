@@ -1,0 +1,76 @@
+{
+  "schema_version": 3,
+  "files": [
+    {
+      "path": "skills/manual-orchestration/SKILL.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/SKILL.md",
+      "sha256": "e902f205e831ec798b86705c405093a3386c18d3941e474ea53d44948ebf96aa"
+    },
+    {
+      "path": "skills/manual-orchestration/references/coordinator.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/references/coordinator.md",
+      "sha256": "7657a0e93080bc6c7af74feb7fa126fa6ed0339c950446b65afb7da7695454b4"
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-boundary.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/references/context-boundary.md",
+      "sha256": "8caf1bf3f2ee1648b0931fc32ca784680fc59ba61c6251fcd491fe6767461b54"
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-control.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/references/context-control.md",
+      "sha256": "10657c9f57943828851f7f6ae4bc057119e5c6baa335ea08ba7eb45678145f6d"
+    },
+    {
+      "path": "skills/manual-orchestration/references/same-session-context.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/references/same-session-context.md",
+      "sha256": "d3fce8f5f7ca499060b4762adf009002463eb656c6c366c093b39f0266f43979"
+    },
+    {
+      "path": "skills/manual-orchestration/references/codex-host.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/references/codex-host.md",
+      "sha256": "e5162d2f58f26ed4fc6e2570d93510a89c7e422e36c66400d199f00a81ddf7da"
+    },
+    {
+      "path": "skills/manual-orchestration/scripts/role_host.py",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/scripts/role_host.py",
+      "sha256": "790bbe2a321a9fb101c9ba7f783823a5d3c71bb39f1028d8e583b33fef9f87de"
+    },
+    {
+      "path": "skills/manual-orchestration/tests/test_codex_settings.py",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/tests/test_codex_settings.py",
+      "sha256": "88952e4543ca7bdc5eeecbc462456aff769db08dccdfdda6cd9c274ece16d94d"
+    },
+    {
+      "path": "skills/manual-orchestration/scripts/root_rotation.py",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/manual-orchestration/scripts/root_rotation.py",
+      "sha256": "4b119b92bc795d183d0410cfade78557599bbbbbebc7017f3b9882436e313740",
+      "kind": "bounded_neighbor_evidence"
+    },
+    {
+      "path": "skills/wind-walker/SKILL.md",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/skills/wind-walker/SKILL.md",
+      "sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+      "kind": "bounded_neighbor_evidence"
+    },
+    {
+      "path": "metrics/probes/codex-manual-service-tier-20261028.json",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/metrics/probes/codex-manual-service-tier-20261028.json",
+      "sha256": "056742097005f28d3eb0c906d99817e1593bdfe01c5c00e748a341c455b8fda1",
+      "kind": "bounded_neighbor_evidence"
+    },
+    {
+      "path": "metrics/probes/outer-context-continuity-20261028.json",
+      "frozen_path": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/source-v3/metrics/probes/outer-context-continuity-20261028.json",
+      "sha256": "b15e0537fe6cb4a5b466596c78b1dd92786b2aee71c705a12e56011230452da0",
+      "kind": "bounded_live_evidence"
+    }
+  ],
+  "scope_exclusions": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/scope-exclusions-v3.json",
+  "prior_subject": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/subject-v2.json",
+  "delta": "/home/bline/code/work-engine/reviews/outer-context-continuity-20261028/delta-v3.patch",
+  "live_reader_validation": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/settings-reader-v2-live-validation.json",
+  "exact_current_reader_fast_validation": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/settings-reader-v3-fast-live.json",
+  "live_feasibility_assessment": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/assessment-v2.json",
+  "authorship_probe": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/authorship-terminal.json"
+}

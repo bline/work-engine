@@ -1,0 +1,254 @@
+--- skills/manual-orchestration/SKILL.md@v1
++++ skills/manual-orchestration/SKILL.md@v2
+@@ -10,6 +10,8 @@
+ Use model judgment to divide an authorized objective into coherent outcomes whose evidence and ownership can be checked. Keep the accepted objective, authority, source identity, unresolved work and review requirements visible. Packet precision is not proof that all obligations were found; test the proposed decomposition against the owning contract and relevant boundaries before dispatch and when new facts appear. The route, slice size and order may change when evidence warrants it.
+ 
+ ## Load by role
++
++- When forming or revising an organization before implementation dispatch: [organization formation](references/organization-formation.md) - reviewable candidates, branch discovery and revision authority.
+ 
+ - **Coordinator** (root): [coordinator](references/coordinator.md) - decomposition, packets, dispatch, collection, integration.
+ - **Supervisor**: [supervisor](references/supervisor.md) - one engineering group, launch, validation, review collection.
+--- skills/manual-orchestration/references/coordinator.md@v1
++++ skills/manual-orchestration/references/coordinator.md@v2
+@@ -16,6 +16,8 @@
+ only after it has too little context left to preserve unfinished obligations.
+ 
+ ## Packets
++
++When forming or revising an organization before implementation dispatch, use [organization formation](organization-formation.md) to assemble the candidate and bind revision decisions to their authority.
+ 
+ A useful packet conveys the exact accepted authority, source/subject identity, **applicable settled facts**, outcome, checks, limits and escalation owner. Settled facts are constraints already fixed by accepted slices, contracts or committed code - a schema's version gates, an actor's concurrency model, a published wire contract. In S4-S8 about 42% of independent findings reopened such a fact and about 36% more were arguably preventable by better contract formation. Include only the facts that apply; loading everything recreates the context cost. For an integration or replay assignment, include known predecessor attribution and likely derived dependencies such as a lockfile; mark unknown lineage for the supervisor to resolve rather than making a final patch stand for its history. Treat admission HEAD as a reference until current affected bytes are bound at execution. Give a child only its packet, its identity binding and mandatory repository context; it loads its own role reference from this skill.
+ 
+--- skills/manual-orchestration/references/context-boundary.md@v1
++++ skills/manual-orchestration/references/context-boundary.md@v2
+@@ -32,9 +32,9 @@
+ an available RPC socket establishes that a background controller is supported.
+ Recovery from provider-initiated compaction still follows Wind Walker.
+ 
+-A saved wakeup is runtime-authored continuation material, not fresh human
+-authorization, even when a transport presents it as user input. New human
+-directions still govern. A compaction marker or lower input reading shows a
++A runtime- or agent-authored wakeup remains continuation material, not fresh
++human authorization, even when a transport presents it as user input. Existing
++human authority and new human directions still govern. A compaction marker or lower input reading shows a
+ context event, not that required meaning was recovered. Apply Wind Walker on
+ recovery and reconcile the durable continuation before dependent work.
+ 
+@@ -199,13 +199,21 @@
+      `--retire archive`, or keeps it with the default `keep`. `watch`
+      accepts the authorization as a board message, but only from a named
+      approver and only when it cites the handoff's sha256.
++     Supply the saved successor settings on the invocation that launches:
++     `commit` or `watch`. Flags supplied only to `prepare` are not carried to a
++     later command. For example, add `--host-arg=-m --host-arg=<saved-model>`,
++     `--host-arg=-c --host-arg='model_reasoning_effort="<saved-effort>"'`, and
++     `--host-arg=-c --host-arg='service_tier="<saved-cli-tier>"'` to that command.
+    - **Manual.** Publish the validated handoff with the board's
+      [`handoff-publish`](../../../docs/codex-chatboard.md#prepared-continuations-and-obsolete-handoffs)
+      under this role and session. Give the user the exact successor instruction: start a new
+-     session in the repository and paste a prompt naming the root handoff
++     session in the repository with the saved model, effort and service tier
++     (give the exact launch settings or matching UI controls, including the
++     intended Fast state), then paste a prompt naming the root handoff
+      path and sha256, the skill to load as coordinator, and the first actions
+      (verify the digest and run `handoff-status` for this role and digest,
+-     read the assignment record, adopt on the board, then re-claim board
++     verify the successor's own applied settings, read the assignment record,
++     adopt on the board, then re-claim board
+      resources under the new session id).
+ 5. The successor verifies the digest and recorded continuation status before
+    taking ownership. An obsolete handoff redirects recovery to the returned
+--- skills/manual-orchestration/references/same-session-context.md@v1
++++ skills/manual-orchestration/references/same-session-context.md@v2
+@@ -47,6 +47,9 @@
+ or references for the next objective, authority boundaries, accepted and
+ rejected decisions, uncertain facts, pending human interaction, outstanding
+ children/processes and their collectors, and the next authorized work.
++Include the skill and role references needed for recovery. For Codex, record
++the session's applied model, effort and tier observation before replacement, with
++its source under [the host guidance](codex-host.md#preserve-root-settings-across-continuation).
+ Preserve source revisions where continuing against a different revision could
+ change a decision. This is a semantic obligation, not a required packet schema.
+ 
+@@ -56,10 +59,11 @@
+ outcome location. A file on disk or an uncollected wait process is not delivery;
+ silence at that location means unresolved rather than successful progress.
+ 
+-A saved wakeup is continuation material. Preserve its author and delivering
++A runtime- or agent-authored wakeup is continuation material. Preserve its author and delivering
+ actor even when the transport renders it as a user message. A wakeup cannot
+ grant a pending approval, widen the task or reactivate paused work. Current
+-human direction governs the next admission to productive work.
++human direction, including the existing assignment, governs the next admission
++to productive work; no fresh approval is implied by ordinary continuation.
+ 
+ ## Recovery and continued observation
+ 
+@@ -68,8 +72,8 @@
+ Recover unresolved questions as unresolved. A compaction item, lower input
+ count or unchanged session ID establishes no semantic recovery by itself.
+ 
+-Root ownership and child/process collection responsibilities remain with this
+-root. Verify usable collection routes; report unavailable routes as unresolved
++Role ownership and child/process collection responsibilities remain with this
++session. Verify usable collection routes; report unavailable routes as unresolved
+ instead of treating their work as complete. Preserve the meaning and scope of
+ retained review evidence rather than claiming a fresh independent review.
+ 
+@@ -79,10 +83,11 @@
+ unchanged binding still needs an owned collector and timely delivery. Do not
+ silently duplicate or orphan the prior listener.
+ 
+-For Codex, also compare the recovered model, effort and service tier with the
+-saved root observation under [the host guidance](codex-host.md#preserve-root-settings-across-continuation).
+-Preserve an authorized change explicitly; do not let shared defaults silently
+-change the coordinator's configuration during compaction or transfer.
++For Codex, compare a model, effort and service tier observation tied to recovery
++with the saved observation under [the host guidance](codex-host.md#preserve-root-settings-across-continuation).
++An event at or before replacement is last-known configuration, not proof of
++post-recovery preservation. Preserve an authorized change explicitly; detect
++and surface a mismatch before configuration-dependent work.
+ 
+ Report whether replacement occurred, which session continues, whether required
+ meaning was recovered, and any unresolved operation or owner. Provider
+--- skills/manual-orchestration/references/codex-host.md@v1
++++ skills/manual-orchestration/references/codex-host.md@v2
+@@ -43,7 +43,7 @@
+ ## Preserve root settings across continuation
+ 
+ Read this root's applied model, effort and service tier from its verified
+-rollout before preparing a handoff:
++rollout before preparing a handoff or an intentional same-session replacement:
+ 
+ ```bash
+ python3 <skill-dir>/scripts/role_host.py settings codex <root-session-id> \
+@@ -51,24 +51,32 @@
+ ```
+ 
+ The reader uses the latest matching `thread_settings_applied` event and returns
+-its path, line, timestamp and event digest. Shared `config.toml`, an inherited
++its path, line, timestamp and event digest (SHA-256 of the UTF-8 line including
++its line ending). Shared `config.toml`, an inherited
+ environment variable and the tier selected for a reviewer do not establish the
+ root's setting. This is recorded runtime configuration, not backend fulfillment
+ or billing; a later UI change may not yet have an applied record.
+ 
+ Carry the observation and any explicit user override in the continuation. Keep
+ the predecessor's model, effort and tier for the successor coordinator unless
+-the user or owning contract changes them. The returned `successor_host_args`
++the user's current selection or owning contract changes them. Preserve a known
++user override; do not silently switch an observed root setting to a generic
++role default. A genuine unresolved conflict remains with its decision owner.
++The returned `successor_host_args`
+ make that request explicit for `role_host.py launch` or the rotation gate's
+ repeated `--host-arg` options; pass them as arguments, not executable shell text.
+-For the qualified Codex version, observed `priority` maps to config
++For the qualified Codex 0.164.0, observed `priority` maps to config
+ `service_tier="fast"`, and `default` maps to `service_tier="default"`.
+ An unknown tier or missing observation leaves preservation unestablished;
+ do not silently substitute a shared default or the reader's own settings.
+ 
+ Verify the successor's own applied record after launch/adoption and reconcile
+-a mismatch before accepting configuration-dependent work. Same-session
+-compaction also needs a post-recovery check rather than assumed preservation.
++a mismatch before accepting configuration-dependent work. Bind a recovery
++observation to a record after the relevant launch/replacement boundary or to
++the recovered turn. Reading the same pre-replacement event again establishes
++only the last recorded configuration, not observed preservation. If no such
++new observation exists, report preservation as unestablished. Same-session
++compaction also needs this check rather than assumed preservation.
+ Separate reviewers retain their explicitly selected tier; carrying the root's
+ Fast setting does not override the reviewer contract above.
+ 
+--- skills/manual-orchestration/scripts/role_host.py@v1
++++ skills/manual-orchestration/scripts/role_host.py@v2
+@@ -90,19 +90,28 @@
+     """Read applied settings from this session's rollout, without shared-config inference."""
+     latest = None
+     try:
+-        with rollout.open() as fh:
++        with rollout.open(encoding="utf-8", newline="") as fh:
+             first = json.loads(next(fh))
+-            if first.get("type") != "session_meta" or (first.get("payload") or {}).get("id") != sid:
++            if not isinstance(first, dict) or not isinstance(first.get("payload"), dict):
++                raise ValueError("session_meta must be an object with an object payload")
++            if first.get("type") != "session_meta" or first["payload"].get("id") != sid:
+                 raise HostError(DEFECT, "identity_mismatch", f"{rollout} does not begin with session_meta for {sid}")
++            recorded_version = first["payload"].get("cli_version")
+             for line_no, raw in enumerate(fh, 2):
+                 event = json.loads(raw)
+-                payload = event.get("payload") or {}
++                if not isinstance(event, dict):
++                    raise ValueError(f"record at line {line_no} must be an object")
++                payload = event.get("payload", {})
++                if not isinstance(payload, dict):
++                    raise ValueError(f"payload at line {line_no} must be an object")
+                 if (event.get("type") == "event_msg" and payload.get("type") == "thread_settings_applied"
+                         and payload.get("thread_id") == sid):
++                    if not isinstance(payload.get("thread_settings"), dict):
++                        raise ValueError(f"thread_settings at line {line_no} must be an object")
+                     latest = (payload.get("thread_settings") or {}, {
+                         "rollout": str(rollout.resolve()), "line": line_no, "timestamp": event.get("timestamp"),
+                         "event_sha256": hashlib.sha256(raw.encode()).hexdigest()})
+-    except (OSError, ValueError, StopIteration) as e:
++    except (OSError, ValueError, UnicodeError, StopIteration) as e:
+         raise HostError(NOT_ESTABLISHED, "settings_not_established", f"{rollout}: {e}")
+     if latest is None:
+         raise HostError(NOT_ESTABLISHED, "settings_not_established", f"no matching applied-settings record for {sid}")
+@@ -117,6 +126,7 @@
+         args = ["-m", model, "-c", "model_reasoning_effort=" + json.dumps(effort),
+                 "-c", "service_tier=" + json.dumps(cli_tier)]
+     return {"session_id": sid, "model": model, "reasoning_effort": effort, "service_tier": tier,
++            "recorded_cli_version": recorded_version, "tier_mapping_basis": "Codex 0.164.0; metrics/probes/codex-manual-service-tier-20261028.json",
+             "source": source, "successor_host_args": args,
+             "preservation": "launch_arguments_available" if args is not None else "not_established",
+             "limitations": ["Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+--- skills/manual-orchestration/tests/test_codex_settings.py@v1
++++ skills/manual-orchestration/tests/test_codex_settings.py@v2
+@@ -1,4 +1,6 @@
+ import json
++import contextlib
++import io
+ import pathlib
+ import sys
+ import tempfile
+@@ -58,6 +60,38 @@
+         with self.assertRaises(role_host.HostError):
+             role_host.codex_settings(SID, self.path)
+ 
++    def test_valid_json_with_invalid_record_shapes_is_unestablished(self):
++        meta = {'type': 'session_meta', 'payload': {'id': SID}}
++        for records in ([[]], [meta, []], [meta, {'type': 'event_msg', 'payload': []}],
++                        [meta, {'type': 'event_msg', 'payload': {'type': 'thread_settings_applied',
++                                                                'thread_id': SID, 'thread_settings': []}}]):
++            with self.subTest(records=records):
++                self.write(records)
++                with self.assertRaises(role_host.HostError) as raised:
++                    role_host.codex_settings(SID, self.path)
++                self.assertEqual(raised.exception.code, role_host.NOT_ESTABLISHED)
++
++    def test_incomplete_launch_settings_do_not_generate_partial_defaults(self):
++        for missing in ['model', 'reasoning_effort', 'service_tier']:
++            event = self.applied('default')
++            del event['payload']['thread_settings'][missing]
++            self.write([{'type': 'session_meta', 'payload': {'id': SID}}, event])
++            self.assertIsNone(role_host.codex_settings(SID, self.path)['successor_host_args'])
++
++    def test_cli_rejects_wrong_host_and_invalid_id(self):
++        for host, sid in [('claude', SID), ('codex', 'not-a-uuid')]:
++            with self.subTest(host=host, sid=sid), contextlib.redirect_stderr(io.StringIO()):
++                code = role_host.main(['--state', self.temp.name, 'settings', host, sid, '--rollout', str(self.path)])
++                self.assertEqual(code, role_host.USAGE)
++
++    def test_cli_reports_malformed_evidence_with_documented_exit(self):
++        self.write([[]])
++        errors = io.StringIO()
++        with contextlib.redirect_stderr(errors):
++            code = role_host.main(['--state', self.temp.name, 'settings', 'codex', SID, '--rollout', str(self.path)])
++        self.assertEqual(code, role_host.NOT_ESTABLISHED)
++        self.assertEqual(json.loads(errors.getvalue())['status'], 'settings_not_established')
++
+ 
+ if __name__ == '__main__':
+     unittest.main()

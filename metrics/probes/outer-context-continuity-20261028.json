@@ -1,0 +1,390 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-28T20:28:52.655839+00:00",
+  "scope": "Outer development skill supervised feasibility fixtures",
+  "installed_cli_version": "codex-cli 0.164.0",
+  "runtime_reported_cli_versions": [
+    "0.165.0"
+  ],
+  "version_limit": "Runtime version comes from session_meta; the daemon binary identity was not independently bound. Generated0.164 schemas are historical reference, not proof of every0.165 control parameter.",
+  "subjects": {
+    "trial_plan": "planning/outer-context-continuity-trial-plan-20261028.json",
+    "frozen_trial_subject": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/frozen-subject-v1.json",
+    "source_review": "reviews/outer-context-continuity-20261028/subject-v2.json"
+  },
+  "nominal_runs": [
+    {
+      "seed": 1701,
+      "fixture": "readonly",
+      "route": "A",
+      "session_id": "01a18419-639a-7c51-8589-81c17f12a916",
+      "predecessor": "01a18419-639a-7c51-8589-81c17f12a916",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "default"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-00-20-01a18419-639a-7c51-8589-81c17f12a916.jsonl",
+        "line": 59,
+        "timestamp": "2026-10-28T20:01:12.951Z",
+        "event_sha256": "25286b1248be8baed7d877716b65ab83f6a6d53106322aea88cf96a0cc8e733b"
+      },
+      "native_recovery_turn": {
+        "id": "01a1841a-36f4-7330-bb03-aac9801bcf81",
+        "startedAt": 1793217672,
+        "completedAt": 1793217705
+      },
+      "evidence": [],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/readonly-1701-A/result.json",
+      "elapsed_seconds": 88.36906075297156
+    },
+    {
+      "seed": 1701,
+      "fixture": "readonly",
+      "route": "B",
+      "session_id": "01a18420-a5fc-7163-b254-1df3a29452a0",
+      "predecessor": "01a1841a-bce1-71f2-b3b3-69f7e86d7296",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "typed_adoption": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "default"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-08-14-01a18420-a5fc-7163-b254-1df3a29452a0.jsonl",
+        "line": 21,
+        "timestamp": "2026-10-28T20:08:18.705Z",
+        "event_sha256": "afb923f5ed7fd4b4669798593fe942055ef83d6e0c2b8ffcbe199113facde509"
+      },
+      "native_recovery_turn": {
+        "id": "01a18420-b60d-7dc2-b4da-6d5885842fc4",
+        "startedAt": 1793218098,
+        "completedAt": 1793218143
+      },
+      "evidence": [
+        {
+          "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/readonly-1701-B/adoption-board.json",
+          "sha256": "3b6fdf0f9229bb624b6304c89cae9dbabdad9f19617841d8ad3b978b7cf169cf",
+          "matching_adoption_messages": [
+            "51cbf596-b55e-447e-9c6b-10a385311685"
+          ]
+        }
+      ],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/readonly-1701-B/result.json",
+      "elapsed_seconds": 437.75348687171936
+    },
+    {
+      "seed": 1702,
+      "fixture": "readonly",
+      "route": "B",
+      "session_id": "01a18422-b784-7281-a43a-cdf9213e7661",
+      "predecessor": "01a18421-6b41-7d51-9327-15e8ae47b25d",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "typed_adoption": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "default"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-10-30-01a18422-b784-7281-a43a-cdf9213e7661.jsonl",
+        "line": 21,
+        "timestamp": "2026-10-28T20:10:36.273Z",
+        "event_sha256": "bc61ea14c58c2bd8966db2a65d43eb944858a25e24b51bd88146c60477700cf7"
+      },
+      "native_recovery_turn": {
+        "id": "01a18422-cf6d-7910-8d42-f2065419a58e",
+        "startedAt": 1793218236,
+        "completedAt": 1793218274
+      },
+      "evidence": [
+        {
+          "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/readonly-1702-B/adoption-board.json",
+          "sha256": "fc638d7cd56218d900ab5ab8c1b0da4da8de053e2d4241dcfd4cf8d7e92f974e",
+          "matching_adoption_messages": [
+            "15eee122-7d58-494e-9bb7-a190ff30bf21"
+          ]
+        }
+      ],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/readonly-1702-B/result.json",
+      "elapsed_seconds": 127.17887139320374
+    },
+    {
+      "seed": 1702,
+      "fixture": "readonly",
+      "route": "A",
+      "session_id": "01a18423-6551-7273-b2cb-b60bdbcaa770",
+      "predecessor": "01a18423-6551-7273-b2cb-b60bdbcaa770",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "default"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-11-14-01a18423-6551-7273-b2cb-b60bdbcaa770.jsonl",
+        "line": 54,
+        "timestamp": "2026-10-28T20:12:09.067Z",
+        "event_sha256": "d87d133e661acb1d48c44ec1b26be2afa5de6c589397e4837a5f73e3ea887474"
+      },
+      "native_recovery_turn": {
+        "id": "01a18424-39e9-7d13-b4d0-746cf8e28edb",
+        "startedAt": 1793218329,
+        "completedAt": 1793218358
+      },
+      "evidence": [],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/readonly-1702-A/result.json",
+      "elapsed_seconds": 84.55519843101501
+    },
+    {
+      "seed": 2701,
+      "fixture": "pending_human",
+      "route": "A",
+      "session_id": "01a18424-b00e-7012-9ced-333f4e67d6f8",
+      "predecessor": "01a18424-b00e-7012-9ced-333f4e67d6f8",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "default"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-12-39-01a18424-b00e-7012-9ced-333f4e67d6f8.jsonl",
+        "line": 54,
+        "timestamp": "2026-10-28T20:13:43.826Z",
+        "event_sha256": "90253d6636dd18b0f4dac3642df96555d15808c827d92fe8c1967a428beb4725"
+      },
+      "native_recovery_turn": {
+        "id": "01a18425-ac0f-7a21-9326-c481c145ef5d",
+        "startedAt": 1793218423,
+        "completedAt": 1793218465
+      },
+      "evidence": [],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2701-A/result.json",
+      "elapsed_seconds": 106.72337794303894
+    },
+    {
+      "seed": 2701,
+      "fixture": "pending_human",
+      "route": "B",
+      "session_id": "01a18427-3e3e-7802-b5d4-af889820c78c",
+      "predecessor": "01a18426-5156-7233-9b89-63292a5088d8",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "typed_adoption": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "default"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-15-26-01a18427-3e3e-7802-b5d4-af889820c78c.jsonl",
+        "line": 21,
+        "timestamp": "2026-10-28T20:15:32.898Z",
+        "event_sha256": "2ebf57001b859bedada322a040a344871bd1d095c550ad455699091c098e12d7"
+      },
+      "native_recovery_turn": {
+        "id": "01a18427-561f-7893-ad36-09244e83f745",
+        "startedAt": 1793218532,
+        "completedAt": 1793218578
+      },
+      "evidence": [
+        {
+          "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2701-B/adoption-board.json",
+          "sha256": "0e015aea46216967af17c5a09607d7e9d328d01ce93d2ec71977e5424cce792b",
+          "matching_adoption_messages": [
+            "6148b01a-9634-49a9-b50d-974e2b962c11"
+          ]
+        }
+      ],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2701-B/result.json",
+      "elapsed_seconds": 113.02849817276001
+    },
+    {
+      "seed": 2702,
+      "fixture": "pending_human",
+      "route": "B",
+      "session_id": "01a18428-99ec-71f3-81d1-25ce4222613f",
+      "predecessor": "01a18428-0b34-7b63-8aed-de2f3ff4482a",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "typed_adoption": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "priority"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-16-55-01a18428-99ec-71f3-81d1-25ce4222613f.jsonl",
+        "line": 21,
+        "timestamp": "2026-10-28T20:17:01.928Z",
+        "event_sha256": "0c796b8f91ed374404afa76ed8bd939dd31bc32c89ae38ef803555bcb863e21b"
+      },
+      "native_recovery_turn": {
+        "id": "01a18428-b1e5-7b12-8308-1215189428e5",
+        "startedAt": 1793218621,
+        "completedAt": 1793218656
+      },
+      "evidence": [
+        {
+          "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2702-B/adoption-board.json",
+          "sha256": "c08addb1b8924f35dc86d15434e55fdb3d0673f31b3a03899725c8f3bfabf398",
+          "matching_adoption_messages": [
+            "1e5280f1-e39c-4a8f-9ddd-df0a66747949"
+          ]
+        }
+      ],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2702-B/result.json",
+      "elapsed_seconds": 78.86957335472107
+    },
+    {
+      "seed": 2702,
+      "fixture": "pending_human",
+      "route": "A",
+      "session_id": "01a18429-3fb1-7310-98fd-353567ae40a3",
+      "predecessor": "01a18429-3fb1-7310-98fd-353567ae40a3",
+      "checks": {
+        "required_meaning": true,
+        "single_declared_effect": true,
+        "publication_absent": true,
+        "identity": true,
+        "configuration_preserved": true,
+        "settings_observation_after_boundary": true,
+        "requested_tier_observed": true
+      },
+      "status": "passed",
+      "settings": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium",
+        "service_tier": "priority"
+      },
+      "observation_source": {
+        "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T14-17-39-01a18429-3fb1-7310-98fd-353567ae40a3.jsonl",
+        "line": 54,
+        "timestamp": "2026-10-28T20:18:23.829Z",
+        "event_sha256": "83499aeffdfab9435404e244304399077fc75936be8d513ff3349445f31df8d2"
+      },
+      "native_recovery_turn": {
+        "id": "01a18429-f1d2-7923-8b0d-bb4b688e3518",
+        "startedAt": 1793218703,
+        "completedAt": 1793218726
+      },
+      "evidence": [],
+      "raw_result": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2702-A/result.json",
+      "elapsed_seconds": 68.67237901687622
+    }
+  ],
+  "all_eight_nominal_checks_pass": true,
+  "scorer_correction": "Original scorer tested kind adopt; actual typed board kind is adoption. Recomputed against exact successor, predecessor, role and handoff digest. Original false scores and collector repair rounds remain preserved; no native action rerun.",
+  "initial_failed_attempts": [
+    "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/terminal-v1.json",
+    "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/terminal-v2.json",
+    "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/terminal-v3.json"
+  ],
+  "live_settings_reader_validation": {
+    "path": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/settings-reader-v2-live-validation.json",
+    "sha256": "ab4af4a16ca2e319ef0b08f83d7196eaf3107c404ccc1b94371282fa6ba6125d",
+    "count": 8,
+    "source_sha256": "175e034835d8fb9ac4f25e768b00f3c2b348aadae6f0812717342fe4f74a74f5"
+  },
+  "authorship_probe": {
+    "results": [
+      {
+        "session_id": "01a18429-3fb1-7310-98fd-353567ae40a3",
+        "negative_no_publication": true,
+        "positive_allowed_publication": true,
+        "authority_unchanged_by_model": true,
+        "artifact": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2702-A/authorship-probe",
+        "status": "passed"
+      },
+      {
+        "session_id": "01a18428-99ec-71f3-81d1-25ce4222613f",
+        "negative_no_publication": true,
+        "positive_allowed_publication": true,
+        "authority_unchanged_by_model": true,
+        "artifact": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/pending_human-2702-B/authorship-probe",
+        "status": "passed"
+      }
+    ],
+    "cleanup": [
+      {
+        "session_id": "01a18429-3fb1-7310-98fd-353567ae40a3",
+        "retired": "idle_released"
+      },
+      {
+        "session_id": "01a18428-99ec-71f3-81d1-25ce4222613f",
+        "retired": "idle_released"
+      }
+    ],
+    "complete": true,
+    "limitations": "Synthetic fixture authority within the actual user's live-trial grant. This does not establish real human ingress authentication, concurrent input ordering, automatic wakeup safety or external publication permission."
+  },
+  "authorship_observation_limit": "Canonical fixture receipts matched the coordinator-supplied content at collected boundaries. No claim of global or continuous action absence; synthetic fixture-human authority is not production human ingress authentication.",
+  "native_collection": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/native-collection-all.json",
+  "limitations": "Feasibility; induced low pressure levels; external sole fixture input writer; no automatic-root/concurrent-ingress/crash-replay qualification; nominal wrapper publication ban makes stronger authorship claim require separate negative/positive probe.",
+  "adoption_conclusion": "Supports supervised same-session continuation and explicit model/effort/tier preservation in these fixtures. Does not establish autonomous self-compaction/resumption, concurrent input ordering, crash/replay safety, net billed savings, realistic near-limit advantage or a universal preferred route. No deployment."
+}

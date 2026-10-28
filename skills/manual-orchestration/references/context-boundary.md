@@ -1,9 +1,9 @@
 # Context boundary: retained or fresh (parents and roots)
 
-A context that reaches the ceiling is emptied without asking. Recovery through
-`$wind-walker` and a durable continuation works, but whatever was not written
-down is lost, and the session pays to re-derive it. This reference is for the
-party that dispatches work or owns a long-lived context; workers have their
+A provider can compact or replace context without asking. Recovery through
+`$wind-walker` depends on durable continuation meaning; provider-retained state
+alone does not establish that required meaning survived. This reference is for
+the party that dispatches work or owns a long-lived context; workers have their
 own mid-task check in the [worker reference](worker.md#context).
 
 **Who decides.** The party that dispatches the next task decides, because it
@@ -13,7 +13,35 @@ knows the task's size and holds the launch authority:
 | --- | --- | --- |
 | A retained child is about to receive a substantial new task, including remediation after review | parent (coordinator or supervisor) | pre-dispatch check, then `followup_task` or `spawn_agent` |
 | A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or `handoff_ready` |
-| Root context pressure | root | at a quiescent boundary, write a root handoff; the user starts the successor |
+| Root context pressure | root | assess capacity for the next scope; if transferring ownership, use the user-authorized procedure under Roots |
+
+## Same-session replacement and root transfer
+
+Context lifetime and root ownership are separate decisions. Same-session
+compaction can change the working context without launching a successor or
+transferring the root. The Roots procedure below governs ownership transfer;
+context pressure alone does not require that route.
+
+Wind Walker requires continuation-critical meaning to have durable owners
+before intentional context replacement. That protects recovery; it does not
+grant permission to invoke a lifecycle control or automatically resume work.
+Those operations remain inside the current role, host and user authority.
+Preserving a session ID cannot widen authority or reactivate paused work.
+Use the conditional [same-session continuity reference](same-session-context.md)
+to assess a concrete control and resumption route. Neither this distinction nor
+an available RPC socket establishes that a background controller is supported.
+Recovery from provider-initiated compaction still follows Wind Walker.
+
+A runtime- or agent-authored wakeup remains continuation material, not fresh
+human authorization, even when a transport presents it as user input. Existing
+human authority and new human directions still govern. A compaction marker or lower input reading shows a
+context event, not that required meaning was recovered. Apply Wind Walker on
+recovery and reconcile the durable continuation before dependent work.
+
+Same-session replacement also leaves collection responsibility with this root.
+The continuation must retain owners and usable references for outstanding
+children and processes. Unavailable notification or collection routes remain
+unresolved; an unchanged root ID does not establish their availability.
 
 ## Capacity belongs to the next scope
 
@@ -127,9 +155,10 @@ successor only after an authorized commit. Merely spawning a child, writing a
 packet or compacting does not transfer the root.
 
 Record the root's reading at each dispatch and integration boundary, and keep
-the assignment record and continuation current continuously. Plan a transfer
-when the reading passes the trigger and substantial coordination remains; on
-2026-10-22 a Claude root reached about 580K while its children stayed under
+the assignment record and continuation current continuously. When transfer is
+the chosen response, plan it before substantial coordination exhausts the room
+needed to settle ownership; on 2026-10-22 a Claude root reached about 580K while
+its children stayed under
 200K, paying that context on every coordination call.
 
 **Transfer only at a quiescent boundary.** A successor root cannot reach the
@@ -146,7 +175,11 @@ routes belong to the predecessor's session. So before transferring:
    accepted decisions and open questions for the user, the assignment record
    path and digest, every child handoff the successor must dispatch from,
    claims held, the destination ref and HEAD, and the next actions. Record its
-   sha256.
+   sha256. For Codex, preserve this root's observed model, effort and service
+   tier with their source and explicit successor launch settings under
+   [the Codex host guidance](codex-host.md#preserve-root-settings-across-continuation).
+   Shared defaults or another role's tier are not evidence of this root's
+   configuration; verify what the successor actually receives.
 4. Launch the successor by one of two routes:
    - **Gate.** Write a quiescence assertion and run
      `root_rotation.py prepare <handoff> --title 'Readable task name'`. It validates the handoff, checks
@@ -166,13 +199,22 @@ routes belong to the predecessor's session. So before transferring:
      `--retire archive`, or keeps it with the default `keep`. `watch`
      accepts the authorization as a board message, but only from a named
      approver and only when it cites the handoff's sha256.
+     For a Codex successor, supply the saved settings on the invocation that launches:
+     `commit` or `watch`. Flags supplied only to `prepare` are not carried to a
+     later command. For example, add `--host-arg=-m --host-arg=<saved-model>`,
+     `--host-arg=-c --host-arg='model_reasoning_effort="<saved-effort>"'`, and
+     `--host-arg=-c --host-arg='service_tier="<saved-cli-tier>"'` to that command.
    - **Manual.** Publish the validated handoff with the board's
      [`handoff-publish`](../../../docs/codex-chatboard.md#prepared-continuations-and-obsolete-handoffs)
      under this role and session. Give the user the exact successor instruction: start a new
-     session in the repository and paste a prompt naming the root handoff
+     session in the repository. For Codex, give the saved model, effort and
+     service tier as exact launch settings or matching UI controls, including
+     the intended Fast state. For another host, carry settings with their known
+     source and mark unobserved values unestablished. Then give a prompt naming the root handoff
      path and sha256, the skill to load as coordinator, and the first actions
      (verify the digest and run `handoff-status` for this role and digest,
-     read the assignment record, adopt on the board, then re-claim board
+     for Codex verify the successor's own applied settings, read the assignment record,
+     adopt on the board, then re-claim board
      resources under the new session id).
 5. The successor verifies the digest and recorded continuation status before
    taking ownership. An obsolete handoff redirects recovery to the returned

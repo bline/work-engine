@@ -1,0 +1,24 @@
+{
+  "scope": "Only context-continuity and root settings changes are this task; no acceptance of the complete shared skill package.",
+  "owner": {
+    "author": "org-formation-root",
+    "session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+    "claim": "external-skills:organization-formation"
+  },
+  "excluded_hunks": [
+    {
+      "path": "skills/manual-orchestration/SKILL.md",
+      "identity": "Load-by-role trigger for references/organization-formation.md"
+    },
+    {
+      "path": "skills/manual-orchestration/references/coordinator.md",
+      "identity": "Organization formation conditional-reference loading paragraph"
+    }
+  ],
+  "evidence": [
+    "chatboard sequence3468 supervisor dispatch; protected context/host/pilot bytes",
+    "chatboard sequence3469 worker seven-path result, separate review",
+    "/home/bline/.local/state/work-engine/external-organization-formation-20261028-01a18339/worker-result-v1.json"
+  ],
+  "disposition": "Preserve concurrent additive hunks. Their owner retains review/acceptance. Our Opus review covers context/tier hunks only; no global package certification/release."
+}

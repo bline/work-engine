@@ -1,0 +1,277 @@
+{
+  "codex_version": "codex-cli 0.164.0",
+  "collection": "All three probe agents completed and their final results were collected. No engineering work, changes, or children were assigned.",
+  "kind": "manual_codex_service_tier_probe",
+  "limitations": [
+    "n=1 per launch route and one retained delivery; no reliability estimate.",
+    "Rollout thread_settings_applied reports runtime configuration, not backend fulfillment or billing.",
+    "No daemon restart, unloaded-thread recovery, nested supervisor, campaign launch, or additional builder model tested.",
+    "Config before/after values were observed by the caller; the shared file was not exclusively owned and these observations do not independently prove which actor wrote it."
+  ],
+  "observations": {
+    "caller_observed_config_after_user_enabled_fast": "fast",
+    "caller_observed_config_before_user_enabled_fast": "default",
+    "explicit_reviewer_default_preserved_on_launch_and_one_loaded_resume": true,
+    "fast_runtime_value": "priority",
+    "parent_flag_only_recorded_ledger_relationship": true,
+    "spawn_agent_supervisor_inherited_fast": true,
+    "standard_runtime_value": "default",
+    "top_level_without_override_selected_shared_fast_default": true
+  },
+  "recorded_at": "2026-10-28T16:04:27.757948+00:00",
+  "requested_launches": {
+    "retained_turn": {
+      "additional_overrides": [],
+      "mechanism": "role_host.py deliver codex",
+      "session_id": "01a1833f-6051-7860-9a6e-31447908eb06"
+    },
+    "spawned_supervisor": {
+      "effort": "inherited",
+      "fork_turns": "none",
+      "mechanism": "spawn_agent",
+      "model": "inherited"
+    },
+    "top_level_explicit_default": {
+      "config_override": "service_tier=\"default\"",
+      "effort": "high",
+      "mechanism": "role_host.py launch codex",
+      "model": "gpt-6-astra",
+      "parent": "01a18339-409a-7d72-be0f-4d96cd7fe4a6"
+    },
+    "top_level_no_tier_override": {
+      "effort": "high",
+      "mechanism": "role_host.py launch codex",
+      "model": "gpt-6-astra",
+      "parent": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+      "service_tier": "not supplied"
+    }
+  },
+  "result": "Supports separate top-level reviewers with an explicit default-tier launch override; top-level topology alone is insufficient when shared config is Fast.",
+  "role_host_ledger": {
+    "path": "/home/bline/.local/state/work-engine/role-host/ledger.jsonl",
+    "rows": [
+      {
+        "at": "2026-10-28T16:01:34Z",
+        "at_epoch": 1793203294.7714784,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "high",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "Manual Astra standard-tier launch probe",
+        "parent_session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+        "session_id": "01a1833e-d1f6-7763-97fd-dab4bc5b75a9",
+        "transport": "app_server",
+        "turn_id": "01a1833e-d22c-7392-b043-00c85d5ccfb7"
+      },
+      {
+        "at": "2026-10-28T16:02:11Z",
+        "at_epoch": 1793203331.2114735,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "high",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "Manual Astra explicit-default-tier launch probe",
+        "parent_session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+        "session_id": "01a1833f-6051-7860-9a6e-31447908eb06",
+        "transport": "app_server",
+        "turn_id": "01a1833f-6082-7c11-be5e-d5e62b11b0ce"
+      },
+      {
+        "at": "2026-10-28T16:02:39Z",
+        "at_epoch": 1793203359.165149,
+        "event": "deliver",
+        "host": "codex",
+        "session_id": "01a1833f-6051-7860-9a6e-31447908eb06",
+        "transport": "app_server",
+        "turn_id": "01a1833f-cdb6-7413-b5db-bc113df8c7bc"
+      }
+    ]
+  },
+  "runtime_evidence": {
+    "root": {
+      "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T09-55-29-01a18339-409a-7d72-be0f-4d96cd7fe4a6.jsonl",
+      "session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+      "session_meta": {
+        "forked_from_id": null,
+        "id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+        "ordinal": 0,
+        "raw_event_sha256": "5a2e9c0e37f33c886a06f70ff30430a8605f0ba8c2406c8b5f35468d458788d5",
+        "source": "vscode",
+        "timestamp": "2026-10-28T15:56:35.826Z"
+      },
+      "settings_events": [
+        {
+          "model": "gpt-6.1-sol",
+          "ordinal": 10,
+          "raw_event_sha256": "b91fb564d6996804deb5d777c101ad7709010b6505c7a5860dbe670fd73c7077",
+          "reasoning_effort": "xhigh",
+          "service_tier": "default",
+          "timestamp": "2026-10-28T15:56:36.447Z"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "ordinal": 126,
+          "raw_event_sha256": "1f78a702586cea43c37f859eafe0d5c6540a214635ac1102bf476eb56b2f3a1a",
+          "reasoning_effort": "xhigh",
+          "service_tier": "priority",
+          "timestamp": "2026-10-28T15:59:03.783Z"
+        }
+      ],
+      "turn_contexts": [
+        {
+          "effort": "xhigh",
+          "model": "gpt-6.1-sol",
+          "ordinal": 9,
+          "raw_event_sha256": "346affa44fd10ac0db32c5f7f8d41ee2ff7366ce318be699b08e5db172e794b4",
+          "timestamp": "2026-10-28T15:56:36.447Z",
+          "turn_id": "01a1833a-4265-7eb3-9aed-ebc101bb348f"
+        }
+      ]
+    },
+    "spawned_supervisor": {
+      "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T09-59-54-01a1833d-4b33-7d82-b9bd-786b5d8b935b.jsonl",
+      "session_id": "01a1833d-4b33-7d82-b9bd-786b5d8b935b",
+      "session_meta": {
+        "forked_from_id": null,
+        "id": "01a1833d-4b33-7d82-b9bd-786b5d8b935b",
+        "ordinal": 0,
+        "raw_event_sha256": "ac57e16033204050af84f3ef405d53574c5a558755a6fa2ad7bdfaacc1d527cf",
+        "source": {
+          "subagent": {
+            "thread_spawn": {
+              "agent_nickname": "Boyle",
+              "agent_path": "/root/supervisor_tier_probe",
+              "agent_role": null,
+              "depth": 1,
+              "parent_thread_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6"
+            }
+          }
+        },
+        "timestamp": "2026-10-28T15:59:54.715Z"
+      },
+      "settings_events": [
+        {
+          "model": "gpt-6.1-sol",
+          "ordinal": 10,
+          "raw_event_sha256": "fbd3925aaf4b5823b5b18df2f46b5f3192ce9053dd2985dcb022a75f2ddf9009",
+          "reasoning_effort": "xhigh",
+          "service_tier": "priority",
+          "timestamp": "2026-10-28T15:59:56.267Z"
+        }
+      ],
+      "turn_contexts": [
+        {
+          "effort": "xhigh",
+          "model": "gpt-6.1-sol",
+          "ordinal": 9,
+          "raw_event_sha256": "442fefdf5645491e3bd7a8f4565e97b0e256c462bd7c5fa28e8ee2c2e4d42155",
+          "timestamp": "2026-10-28T15:59:56.267Z",
+          "turn_id": "01a1833d-4b40-7f12-b406-5d7a110b4bc9"
+        }
+      ]
+    },
+    "top_level_explicit_default": {
+      "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T10-02-11-01a1833f-6051-7860-9a6e-31447908eb06.jsonl",
+      "session_id": "01a1833f-6051-7860-9a6e-31447908eb06",
+      "session_meta": {
+        "forked_from_id": null,
+        "id": "01a1833f-6051-7860-9a6e-31447908eb06",
+        "ordinal": 0,
+        "raw_event_sha256": "d637bb68321b81ca1f19506099854854b1336d0ef9b752ccae81ef7c9fbb03d1",
+        "source": "vscode",
+        "timestamp": "2026-10-28T16:02:11.197Z"
+      },
+      "settings_events": [
+        {
+          "model": "gpt-6-astra",
+          "ordinal": 1,
+          "raw_event_sha256": "a7ec03d0aee058419ecc5bef7ab4e3da9aa96e1f8e2b177ae00cdf8f8115f103",
+          "reasoning_effort": "high",
+          "service_tier": "default",
+          "timestamp": "2026-10-28T16:02:11.205Z"
+        },
+        {
+          "model": "gpt-6-astra",
+          "ordinal": 11,
+          "raw_event_sha256": "360f1594eb712433ddd46bbd97cc3f426f838175deb92625a7fb08db07218e4f",
+          "reasoning_effort": "high",
+          "service_tier": "default",
+          "timestamp": "2026-10-28T16:02:12.851Z"
+        },
+        {
+          "model": "gpt-6-astra",
+          "ordinal": 20,
+          "raw_event_sha256": "67da118e287b97fc101199ee6e2c3f1bf61f0fb5aa03a209b4d0634c4ed7012d",
+          "reasoning_effort": "high",
+          "service_tier": "default",
+          "timestamp": "2026-10-28T16:02:39.161Z"
+        }
+      ],
+      "turn_contexts": [
+        {
+          "effort": "high",
+          "model": "gpt-6-astra",
+          "ordinal": 10,
+          "raw_event_sha256": "a989628b82642e0ea7bac878e11856f0dfd05c89a7b7bf731339914a850a9793",
+          "timestamp": "2026-10-28T16:02:12.851Z",
+          "turn_id": "01a1833f-6082-7c11-be5e-d5e62b11b0ce"
+        },
+        {
+          "effort": "high",
+          "model": "gpt-6-astra",
+          "ordinal": 22,
+          "raw_event_sha256": "6a7a6319a16ef2948242d187ee2bea9d5593b598612e04c33c727d434abb4882",
+          "timestamp": "2026-10-28T16:02:39.202Z",
+          "turn_id": "01a1833f-cdb6-7413-b5db-bc113df8c7bc"
+        }
+      ]
+    },
+    "top_level_no_tier_override": {
+      "rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T10-01-34-01a1833e-d1f6-7763-97fd-dab4bc5b75a9.jsonl",
+      "session_id": "01a1833e-d1f6-7763-97fd-dab4bc5b75a9",
+      "session_meta": {
+        "forked_from_id": null,
+        "id": "01a1833e-d1f6-7763-97fd-dab4bc5b75a9",
+        "ordinal": 0,
+        "raw_event_sha256": "4d63b48c0ec9c24ee7e6c12ae3f33b50d7f3203cd98b2ead9f3ea912aae6c056",
+        "source": "vscode",
+        "timestamp": "2026-10-28T16:01:34.758Z"
+      },
+      "settings_events": [
+        {
+          "model": "gpt-6-astra",
+          "ordinal": 1,
+          "raw_event_sha256": "928cc3d7fcb925960b44b8da81b2cd8165559480c8bb897bc8bf19e8c1063de2",
+          "reasoning_effort": "high",
+          "service_tier": "priority",
+          "timestamp": "2026-10-28T16:01:34.768Z"
+        },
+        {
+          "model": "gpt-6-astra",
+          "ordinal": 11,
+          "raw_event_sha256": "994cd1a27ae4d1e9c4223c32146062a7348a51b0164ebea14ad6e894376db1e8",
+          "reasoning_effort": "high",
+          "service_tier": "priority",
+          "timestamp": "2026-10-28T16:01:36.611Z"
+        }
+      ],
+      "turn_contexts": [
+        {
+          "effort": "high",
+          "model": "gpt-6-astra",
+          "ordinal": 10,
+          "raw_event_sha256": "dba839202e616de605daa865c5ec18844247f5fa0f5fafa6ed0ed8ff74a6e921",
+          "timestamp": "2026-10-28T16:01:36.611Z",
+          "turn_id": "01a1833e-d22c-7392-b043-00c85d5ccfb7"
+        }
+      ]
+    }
+  },
+  "scope": "One fresh supervisor, two fresh top-level Astra probes, one retained turn; administrative no-op assignments only.",
+  "source": {
+    "path": "skills/manual-orchestration/scripts/role_host.py",
+    "sha256": "450ac14ea6aa46a4cfc376b5bb3b394eb0f26364970b8f8768e403c379c6ed8c"
+  }
+}

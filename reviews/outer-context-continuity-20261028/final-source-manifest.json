@@ -1,0 +1,78 @@
+[
+  {
+    "path": "skills/manual-orchestration/SKILL.md",
+    "reviewed_sha256": "e902f205e831ec798b86705c405093a3386c18d3941e474ea53d44948ebf96aa",
+    "current_sha256": "78c2af6d75e3b9bd68ab2704e0a3ec2c05b94db305a2f34fd60cf763bf82c699",
+    "reviewed_bytes_unchanged": false,
+    "exclusion": "Concurrent organization-formation loading wording; excluded under separate owner.",
+    "owned_projection_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/references/coordinator.md",
+    "reviewed_sha256": "7657a0e93080bc6c7af74feb7fa126fa6ed0339c950446b65afb7da7695454b4",
+    "current_sha256": "0cb7a0c5ea68e66d97f6a87a967541a9db0f5fc1aecaaecc9883a084c4f6f197",
+    "reviewed_bytes_unchanged": false,
+    "exclusion": "Concurrent organization-formation and task-profile/builder-comparison instructions outside the unchanged owned context section.",
+    "owned_projection_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/references/context-boundary.md",
+    "reviewed_sha256": "8caf1bf3f2ee1648b0931fc32ca784680fc59ba61c6251fcd491fe6767461b54",
+    "current_sha256": "8caf1bf3f2ee1648b0931fc32ca784680fc59ba61c6251fcd491fe6767461b54",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/references/context-control.md",
+    "reviewed_sha256": "10657c9f57943828851f7f6ae4bc057119e5c6baa335ea08ba7eb45678145f6d",
+    "current_sha256": "10657c9f57943828851f7f6ae4bc057119e5c6baa335ea08ba7eb45678145f6d",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/references/same-session-context.md",
+    "reviewed_sha256": "d3fce8f5f7ca499060b4762adf009002463eb656c6c366c093b39f0266f43979",
+    "current_sha256": "d3fce8f5f7ca499060b4762adf009002463eb656c6c366c093b39f0266f43979",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/references/codex-host.md",
+    "reviewed_sha256": "e5162d2f58f26ed4fc6e2570d93510a89c7e422e36c66400d199f00a81ddf7da",
+    "current_sha256": "e5162d2f58f26ed4fc6e2570d93510a89c7e422e36c66400d199f00a81ddf7da",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/scripts/role_host.py",
+    "reviewed_sha256": "790bbe2a321a9fb101c9ba7f783823a5d3c71bb39f1028d8e583b33fef9f87de",
+    "current_sha256": "790bbe2a321a9fb101c9ba7f783823a5d3c71bb39f1028d8e583b33fef9f87de",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/tests/test_codex_settings.py",
+    "reviewed_sha256": "88952e4543ca7bdc5eeecbc462456aff769db08dccdfdda6cd9c274ece16d94d",
+    "current_sha256": "88952e4543ca7bdc5eeecbc462456aff769db08dccdfdda6cd9c274ece16d94d",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/manual-orchestration/scripts/root_rotation.py",
+    "reviewed_sha256": "4b119b92bc795d183d0410cfade78557599bbbbbebc7017f3b9882436e313740",
+    "current_sha256": "4b119b92bc795d183d0410cfade78557599bbbbbebc7017f3b9882436e313740",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "skills/wind-walker/SKILL.md",
+    "reviewed_sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+    "current_sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "metrics/probes/codex-manual-service-tier-20261028.json",
+    "reviewed_sha256": "056742097005f28d3eb0c906d99817e1593bdfe01c5c00e748a341c455b8fda1",
+    "current_sha256": "056742097005f28d3eb0c906d99817e1593bdfe01c5c00e748a341c455b8fda1",
+    "reviewed_bytes_unchanged": true
+  },
+  {
+    "path": "metrics/probes/outer-context-continuity-20261028.json",
+    "reviewed_sha256": "b15e0537fe6cb4a5b466596c78b1dd92786b2aee71c705a12e56011230452da0",
+    "current_sha256": "b15e0537fe6cb4a5b466596c78b1dd92786b2aee71c705a12e56011230452da0",
+    "reviewed_bytes_unchanged": true
+  }
+]
