@@ -57,7 +57,10 @@ Round commands print one JSON object (verify retains text lines); exit 2 is a us
 failure, and 0 includes logged screening refusals. A run-level advisory lock
 serializes round commands; episode records are published without replacement by linking a complete, fsynced
 temporary file to the final name. Missing manifest entries are recovered on read
-and recorded in recovered.jsonl. Resume history acknowledges durable triggers.
+and reported in command output. Every episode record carries content_sha256 of
+its canonical JSON without that field; every read checks it before manifest
+re-listing. Torn manifest tails are archived without changing earlier complete
+lines. Resume history acknowledges durable triggers.
 
 --child-session takes the child's Claude session id or Codex thread id; pass "unknown" only when
 the runtime gave none, and attribution will then be unresolvable.
@@ -390,9 +393,11 @@ def verify_records(a):
         sys.exit(3)
     for d in episodes:
         try:
-            recover_episode(d)
+            report = recover_episode(d)
+            if report["relisted"] or report["damaged_copy"]:
+                print(f"{os.path.relpath(d, a.run_dir)}: re-listed {report['relisted']}; damaged copy: {report['damaged_copy']}")
             problems = integrity_problems(d)
-        except IntegrityFailure as e:
+        except (IntegrityFailure, OSError, ValueError) as e:
             problems = [str(e)]
         print(f"{os.path.relpath(d, a.run_dir)}: " + ("; ".join(problems) if problems else "verified"))
         if problems:
@@ -455,6 +460,7 @@ def verify_records(a):
 
 
 def cmd_verify(a):
+    RELISTING_REPORTS.clear()
     if os.path.isfile(os.path.join(a.run_dir, "round.json")):
         with round_lock(a.run_dir):
             verify_records(a)
@@ -466,6 +472,8 @@ TERRA = "gpt-6.1-terra"
 SOL = "gpt-6.1-sol"
 ROUND_COMMANDS = {"init-round", "enroll", "withdraw", "review", "repair", "close", "pause", "resume", "status", "recover-screening"}
 TASK_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
+EPISODE_RECORD = re.compile(r"(?:enrollment|review-first|repair-[0-9]{2,}|close|withdraw)\.json\Z")
+RELISTING_REPORTS = []  # Per-command output only; never persisted as another recovery log.
 
 
 class UsageRefusal(Exception):
@@ -489,6 +497,26 @@ def episode_dir(run_dir, task_id):
     return os.path.join(run_dir, "enrollments", task_id)
 
 
+def content_sha256(data):
+    payload = {k: v for k, v in data.items() if k != "content_sha256"}
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def seal_episode_record(data):
+    return {**data, "content_sha256": content_sha256(data)}
+
+
+def read_episode_record(path):
+    try:
+        data = read_json(path)
+        if not isinstance(data, dict) or data.get("content_sha256") != content_sha256(data):
+            raise IntegrityFailure(f"{path}: content_sha256 mismatch or missing")
+        return data
+    except (OSError, ValueError, TypeError) as e:
+        raise IntegrityFailure(f"{path}: invalid episode record: {e}") from e
+
+
 def integrity_problems(d):
     """Check an episode's complete hash list and its backward record links."""
     problems = []
@@ -503,11 +531,11 @@ def integrity_problems(d):
         for n in files:
             if not n.endswith(".json"):
                 continue
-            data = read_json(os.path.join(d, n))
+            data = read_episode_record(os.path.join(d, n))
             for pn, digest in data.get("prior_files", {}).items():
                 if pn not in files or sha256(os.path.join(d, pn)) != digest:
                     problems.append(f"{n} recorded {pn} with a different hash")
-    except (OSError, ValueError, TypeError, AttributeError) as e:
+    except (IntegrityFailure, OSError, ValueError, TypeError, AttributeError) as e:
         problems.append(f"unreadable integrity record: {e}")
     return problems
 
@@ -543,34 +571,74 @@ def durable_sums(d):
     fsync_directory(d)
 
 
+def repair_manifest_tail(d):
+    """Preserve a torn final line; complete entries remain authoritative."""
+    path = os.path.join(d, SUMS)
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    lines = raw.splitlines(keepends=True)
+    torn = bool(raw) and not raw.endswith(b"\n")
+    for index, line in enumerate(lines):
+        match = re.fullmatch(rb"([0-9a-f]{64})  ([^\r\n]+)\n?", line)
+        if match:
+            digest, name = match.group(1).decode(), match.group(2).decode("utf-8")
+            if name not in record_files(d):
+                if torn and index == len(lines) - 1:
+                    continue  # A torn append can stop inside the filename.
+                raise IntegrityFailure(f"{d}: listed but missing: {name}")
+            if sha256(os.path.join(d, name)) != digest:
+                raise IntegrityFailure(f"{d}: hash mismatch: {name}")
+        elif not (torn and index == len(lines) - 1):
+            raise IntegrityFailure(f"{path}: malformed complete line {index + 1}")
+    if not torn:
+        return None
+    backup = path + ".damaged-" + now().replace(":", "-")
+    atomic_publish(backup, raw)
+    with open(path, "r+b") as fh:
+        fh.truncate(raw.rfind(b"\n") + 1)
+        fh.flush()
+        os.fsync(fh.fileno())
+    return backup
+
+
 def recover_episode(d):
-    """Finish interrupted manifest publication, never bless a known hash mismatch."""
+    """Re-list only self-verifying records; no separate recovery log is trusted."""
+    for name in record_files(d):
+        if EPISODE_RECORD.fullmatch(name):
+            read_episode_record(os.path.join(d, name))
+    backup = repair_manifest_tail(d)
+    report = {"episode": os.path.basename(d), "relisted": [], "damaged_copy": backup}
+    if backup:
+        RELISTING_REPORTS.append(report)
     problems = integrity_problems(d)
-    recoverable = re.compile(r"(?:enrollment|review-first|repair-[0-9]{2,}|close|withdraw)\.json\Z")
     fatal = [p for p in problems if not (p == f"{SUMS} missing or empty" or
-             (p.startswith("unlisted file: ") and recoverable.fullmatch(p[len("unlisted file: "):])))]
+             (p.startswith("unlisted file: ") and (EPISODE_RECORD.fullmatch(p[len("unlisted file: "):]) or
+              p[len("unlisted file: "):].startswith(SUMS + ".damaged-"))))]
     if fatal:
         raise IntegrityFailure(f"{d}: " + "; ".join(fatal))
     files = record_files(d)
     have = listed(d)
-    missing = {n: sha256(os.path.join(d, n)) for n in files if n not in have}
+    missing = [n for n in files if n not in have]
     if missing:
-        # Write the recovery intent first so even an interrupted recovery stays observable.
-        append_event(os.path.join(os.path.dirname(os.path.dirname(d)), "recovered.jsonl"),
-                     {"event": "manifest_completion", "time": now(), "episode": os.path.basename(d), "files": missing})
+        if not backup:
+            RELISTING_REPORTS.append(report)
         durable_sums(d)
+        report["relisted"] = missing
     if not files:
-        return  # A crash before publication may leave only an ignored temporary file.
+        return report
     remaining = integrity_problems(d)
     if remaining:
         raise IntegrityFailure("; ".join(remaining))
+    return report
 
 
 def episode_write(d, name, data):
     recover_episode(d)
     if os.path.exists(os.path.join(d, name)):
         raise UsageRefusal(f"{name} already exists: records are write-once")
-    data = {**data, "recorder": recorder(), "prior_files": prior_files(d)}
+    data = seal_episode_record({**data, "recorder": recorder(), "prior_files": prior_files(d)})
     atomic_publish(os.path.join(d, name), data)
     durable_sums(d)
     return data
@@ -586,7 +654,7 @@ def enrollments(run_dir):
         recover_episode(d)
         path = os.path.join(d, "enrollment.json")
         if os.path.isfile(path):
-            out.append((d, read_json(path)))
+            out.append((d, read_episode_record(path)))
     return out
 
 
@@ -655,7 +723,7 @@ def trigger_facts(run_dir, episodes=None):
         if e["arm"] != TERRA:
             continue
         review = os.path.join(d, "review-first.json")
-        if os.path.exists(review) and read_json(review)["p1"] > 0:
+        if os.path.exists(review) and read_episode_record(review)["p1"] > 0:
             p1.append(e["task_id"])
         repairs += len(glob.glob(os.path.join(d, "repair-*.json")))
     return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
@@ -712,7 +780,7 @@ def cmd_enroll(a):
     path = os.path.join(d, "enrollment.json")
     out = {"task_id": a.task_id}
     if os.path.exists(path):
-        out.update(outcome="already_enrolled", arm=read_json(path)["arm"])
+        out.update(outcome="already_enrolled", arm=read_episode_record(path)["arm"])
     elif not screened["eligible"]:
         out["outcome"] = "not_eligible"
     elif os.path.exists(os.path.join(a.run_dir, "PAUSED")):
@@ -729,12 +797,13 @@ def cmd_enroll(a):
             arm = TERRA if byte & 1 else SOL
             data = {**screened, "screened_at": screened["time"], "enrolled_at": now(), "arm": arm,
                     "draw_source": "os.urandom(1)[0] & 1", "draw_byte": byte, "recorder": recorder()}
+            data = seal_episode_record(data)
             os.makedirs(d, exist_ok=True)
             try:
                 atomic_publish(path, data)
             except FileExistsError:
                 recover_episode(d)
-                out.update(outcome="already_enrolled", arm=read_json(path)["arm"])
+                out.update(outcome="already_enrolled", arm=read_episode_record(path)["arm"])
             else:
                 durable_sums(d)
                 out.update(outcome="enrolled", arm=arm)
@@ -750,7 +819,7 @@ def active_episode(a, allow_terminal=False):
     recover_episode(d)
     if terminal(d) and not allow_terminal:
         raise UsageRefusal("episode is already closed or withdrawn")
-    return d, read_json(path)
+    return d, read_episode_record(path)
 
 
 def assignments(run_dir, task_id):
@@ -786,7 +855,7 @@ def cmd_repair(a):
     receipt = file_evidence([a.review_receipt])[0]
     rounds = sorted(glob.glob(os.path.join(d, "repair-*.json")))
     for path in rounds:
-        record = read_json(path)
+        record = read_episode_record(path)
         if record["review_receipt"]["sha256"] == receipt["sha256"]:
             facts = enforce_triggers(a.run_dir)
             return {"outcome": "already_repaired", "record": record, "terra_repair_rounds": facts["terra_repair_rounds"]}
@@ -863,7 +932,7 @@ def cmd_status(a):
         withdrawn += os.path.exists(os.path.join(d, "withdraw.json"))
         open_terra += arm == TERRA and not terminal(d)
         review = os.path.join(d, "review-first.json")
-        reviews[arm][read_json(review)["outcome"] if os.path.exists(review) else "pending"] += 1
+        reviews[arm][read_episode_record(review)["outcome"] if os.path.exists(review) else "pending"] += 1
         if e["task_id"] not in recorded:
             problems.append(f"{e['task_id']}: enrollment has no enrolled result line")
         problems.extend(f"{e['task_id']}: {p}" for p in integrity_problems(d))
@@ -885,7 +954,7 @@ def cmd_status(a):
                                                  "outcomes": dict(results)}, "inconsistencies": problems}
     if a.task_id:
         d = episode_dir(a.run_dir, a.task_id)
-        out["episode"] = ({n: read_json(os.path.join(d, n)) for n in record_files(d) if n.endswith(".json")}
+        out["episode"] = ({n: read_episode_record(os.path.join(d, n)) for n in record_files(d) if n.endswith(".json")}
                           if os.path.isfile(os.path.join(d, "enrollment.json")) else "no record")
     return out
 
@@ -898,6 +967,7 @@ def round_lock(run_dir):
 
 
 def run_round_command(a):
+    RELISTING_REPORTS.clear()
     try:
         if a.cmd != "init-round" and not os.path.isfile(os.path.join(a.run_dir, "round.json")):
             raise UsageRefusal("round.json is required; run init-round first")
@@ -913,12 +983,14 @@ def run_round_command(a):
                 out = assign_record(a)
             else:
                 out = globals()["cmd_" + a.cmd.replace("-", "_")](a)
+        if RELISTING_REPORTS:
+            out["manifest_relistings"] = RELISTING_REPORTS
         print(json.dumps(out, sort_keys=True))
     except UsageRefusal as e:
-        print(json.dumps({"error": str(e), "outcome": "refused"}))
+        print(json.dumps({"error": str(e), "outcome": "refused", "manifest_relistings": RELISTING_REPORTS}))
         raise SystemExit(2)
     except (IntegrityFailure, OSError, ValueError, KeyError, TypeError) as e:
-        print(json.dumps({"error": str(e), "outcome": "integrity_failure"}))
+        print(json.dumps({"error": str(e), "outcome": "integrity_failure", "manifest_relistings": RELISTING_REPORTS}))
         raise SystemExit(1)
 
 

@@ -5,6 +5,7 @@ test-only instrumentation; the production recorder has no test hook.
 """
 import contextlib
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -177,6 +178,190 @@ finally: mark('done')
                 outputs.append(json.loads(stdout))
         return outputs, controls
 
+    def test_failure_edit_retry_never_certifies_changed_arm(self):
+        # C-08: initial publication and a second re-listing attempt both lose the manifest write.
+        with mock.patch.object(rec, 'append_sums', side_effect=OSError('manifest publication failed')):
+            with mock.patch.object(rec.os, 'urandom', return_value=b'\x01'):
+                self.call(*self.enroll_args(), code=1)
+            with mock.patch.object(rec.os, 'urandom') as draw:
+                self.call(*self.enroll_args(), code=1)
+                draw.assert_not_called()
+        path = self.episode() / 'enrollment.json'
+        data = rec.read_json(path)
+        original_digest = data['content_sha256']
+        data['arm'] = rec.SOL
+        path.write_text(json.dumps(data))
+        self.assertNotEqual(original_digest, rec.content_sha256(data))
+        with mock.patch.object(rec.os, 'urandom') as draw:
+            for task in ('a', 'new'):
+                out = self.call(*self.enroll_args(task), code=1)
+                self.assertNotIn('arm', out)
+                self.assertIn('content_sha256 mismatch', out['error'])
+                self.assertFalse(out['manifest_relistings'])
+            draw.assert_not_called()
+        self.assertIn('content_sha256 mismatch', self.call('verify', code=1)['text'])
+        self.assertFalse((self.episode() / rec.SUMS).exists())
+        self.assertFalse((self.run / 'recovered.jsonl').exists())
+
+    def test_torn_unused_recovery_log_cannot_block_relisting(self):
+        # C-09: no command reads or appends this obsolete artifact.
+        with mock.patch.object(rec, 'append_sums', side_effect=OSError('manifest unavailable')):
+            self.call(*self.enroll_args(), code=1)
+            self.call('status', code=1)
+        obsolete = self.run / 'recovered.jsonl'
+        damaged = b'{"event":"manifest_comple'
+        obsolete.write_bytes(damaged)
+        out = self.enroll(outcome='already_enrolled')
+        self.assertIn('enrollment.json', out['manifest_relistings'][0]['relisted'])
+        self.assertEqual(obsolete.read_bytes(), damaged)
+        self.assertIn('verified', self.call('verify')['text'])
+
+    def test_partial_checksum_appends_recover_at_digest_separator_and_filename(self):
+        # C-02: cuts throughout an actual checksum line, not only before appending.
+        for cut in (5, 64, 65, 66, 73, 81):
+            with self.subTest(cut=cut):
+                self.run = self.root / f'partial-{cut}'
+                self.call('init-round', '--cap', '20', '--terra-in-flight', '2', '--terra-repair-budget', '3')
+                def partial(d):
+                    line = (rec.sha256(Path(d) / 'enrollment.json') + '  enrollment.json\n').encode()
+                    with open(Path(d) / rec.SUMS, 'ab') as fh:
+                        fh.write(line[:cut])
+                        fh.flush()
+                        os.fsync(fh.fileno())
+                    raise OSError('injected partial SHA256SUMS append')
+                with mock.patch.object(rec, 'append_sums', side_effect=partial), mock.patch.object(rec.os, 'urandom', return_value=b'\x01'):
+                    self.call(*self.enroll_args(), code=1)
+                damaged = (self.episode() / rec.SUMS).read_bytes()
+                self.assertFalse(damaged.endswith(b'\n'))
+                original = (self.episode() / 'enrollment.json').read_bytes()
+                out = self.enroll(outcome='already_enrolled')
+                self.assertEqual(out['arm'], rec.TERRA)
+                report = out['manifest_relistings'][0]
+                backup = Path(report['damaged_copy'])
+                self.assertEqual(backup.read_bytes(), damaged)
+                self.assertTrue(backup.name.startswith('SHA256SUMS.damaged-'))
+                self.assertIn('enrollment.json', report['relisted'])
+                self.assertEqual((self.episode() / 'enrollment.json').read_bytes(), original)
+                self.assertFalse((self.run / 'recovered.jsonl').exists())
+                self.assertIn('verified', self.call('verify')['text'])
+
+    def test_torn_manifest_preserves_earlier_complete_lines_and_backup(self):
+        self.enroll()
+        sums = self.episode() / rec.SUMS
+        prefix = sums.read_bytes()
+        def partial(d):
+            record = Path(d) / 'repair-01.json'
+            fragment = (rec.sha256(record) + '  repair-01').encode()
+            with open(Path(d) / rec.SUMS, 'ab') as fh:
+                fh.write(fragment)
+                fh.flush()
+            raise OSError('checksum filename was cut short')
+        with mock.patch.object(rec, 'append_sums', side_effect=partial):
+            self.call('repair', '--task-id', 'a', '--review-receipt', self.receipt, code=1)
+        damaged = sums.read_bytes()
+        out = self.call('status')
+        report = out['manifest_relistings'][0]
+        self.assertEqual(Path(report['damaged_copy']).read_bytes(), damaged)
+        self.assertEqual(sums.read_bytes()[:len(prefix)], prefix)
+        self.assertEqual(rec.listed(str(self.episode()))['repair-01.json'], rec.sha256(self.episode() / 'repair-01.json'))
+        self.assertIn('repair-01.json', report['relisted'])
+        self.assertIn('verified', self.call('verify')['text'])
+
+    def test_verify_relisting_reports_preserved_torn_manifest(self):
+        self.enroll()
+        sums = self.episode() / rec.SUMS
+        original = sums.read_bytes() + b'abc'
+        sums.write_bytes(original)
+        text = self.call('verify')['text']
+        self.assertIn('re-listed', text)
+        self.assertIn('SHA256SUMS.damaged-', text)
+        self.assertIn('enrollments/a: verified', text)
+        backups = list(self.episode().glob('SHA256SUMS.damaged-*'))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_bytes(), original)
+        self.assertFalse((self.run / 'recovered.jsonl').exists())
+
+    def test_self_verifying_records_reject_edits_with_unchanged_manifests(self):
+        self.enroll()
+        self.review()
+        self.repair()
+        self.close()
+        self.enroll('w')
+        self.call('withdraw', '--task-id', 'w', '--reason', 'not dispatched')
+        records = list(self.episode().glob('*.json')) + list(self.episode('w').glob('*.json'))
+        self.assertEqual(len(records), 6)
+        for path in records:
+            with self.subTest(record=path.name, task=path.parent.name):
+                original = path.read_bytes()
+                data = json.loads(original)
+                digest = data.pop('content_sha256')
+                canonical = json.dumps(data, sort_keys=True, separators=(',', ':')).encode()
+                self.assertEqual(digest, hashlib.sha256(canonical).hexdigest())
+                before_sums = (path.parent / rec.SUMS).read_bytes()
+                data['content_sha256'] = digest
+                data['accidental_edit'] = True
+                path.write_text(json.dumps(data))
+                with mock.patch.object(rec.os, 'urandom') as draw:
+                    out = self.call(*self.enroll_args('blocked'), code=1)
+                    draw.assert_not_called()
+                    self.assertNotIn('arm', out)
+                self.assertIn('content_sha256 mismatch', self.call('verify', code=1)['text'])
+                self.assertEqual((path.parent / rec.SUMS).read_bytes(), before_sums)
+                path.write_bytes(original)
+
+    def test_self_hash_rejects_edit_even_if_manifest_is_rewritten(self):
+        self.enroll(byte=1)
+        path = self.episode() / 'enrollment.json'
+        data = rec.read_json(path)
+        data['arm'] = rec.SOL  # The original content_sha256 remains in the body.
+        path.write_text(json.dumps(data))
+        manifest = self.episode() / rec.SUMS
+        manifest.unlink()
+        rec.append_sums(str(self.episode()))  # Simulate a manifest claiming the edited bytes.
+        before = manifest.read_bytes()
+        with mock.patch.object(rec.os, 'urandom') as draw:
+            out = self.call(*self.enroll_args(), code=1)
+            draw.assert_not_called()
+            self.assertNotIn('arm', out)
+        self.assertIn('content_sha256 mismatch', self.call('verify', code=1)['text'])
+        self.assertEqual(manifest.read_bytes(), before)
+
+    def test_missing_content_hash_is_never_relisted(self):
+        with mock.patch.object(rec, 'append_sums', side_effect=OSError('manifest failure')):
+            self.call(*self.enroll_args(), code=1)
+        path = self.episode() / 'enrollment.json'
+        data = rec.read_json(path)
+        data.pop('content_sha256')
+        path.write_text(json.dumps(data))
+        out = self.call(*self.enroll_args(), code=1)
+        self.assertNotIn('arm', out)
+        self.assertFalse((self.episode() / rec.SUMS).exists())
+        self.call('verify', code=1)
+
+    def test_existing_manifest_hash_is_never_replaced_even_for_resealed_record(self):
+        self.enroll(byte=1)
+        path = self.episode() / 'enrollment.json'
+        manifest = self.episode() / rec.SUMS
+        original_manifest = manifest.read_bytes()
+        data = rec.read_json(path)
+        data['arm'] = rec.SOL
+        path.write_text(json.dumps(rec.seal_episode_record(data)))
+        out = self.call(*self.enroll_args(), code=1)
+        self.assertNotIn('arm', out)
+        self.assertIn('hash mismatch', out['error'])
+        self.assertEqual(manifest.read_bytes(), original_manifest)
+        self.call('verify', code=1)
+
+    def test_known_hash_mismatch_in_unterminated_entry_is_not_trimmed(self):
+        self.enroll()
+        manifest = self.episode() / rec.SUMS
+        damaged = b'0' * 64 + b'  enrollment.json'
+        manifest.write_bytes(damaged)
+        out = self.call(*self.enroll_args(), code=1)
+        self.assertIn('hash mismatch', out['error'])
+        self.assertEqual(manifest.read_bytes(), damaged)
+        self.assertFalse(list(self.episode().glob('SHA256SUMS.damaged-*')))
+
     def test_controlled_same_task_enroll_serializes_draw(self):
         outputs, controls = self.controlled_pair(self.enroll_args(), self.enroll_args())
         self.assertEqual([o['outcome'] for o in outputs], ['enrolled', 'already_enrolled'])
@@ -340,9 +525,11 @@ rec.main()
                 self.call(*self.enroll_args(), code=1)
         original = (self.episode() / 'enrollment.json').read_bytes()
         self.assertFalse((self.episode() / rec.SUMS).exists())
-        self.assertEqual(self.enroll(outcome='already_enrolled')['arm'], rec.TERRA)
+        replay = self.enroll(outcome='already_enrolled')
+        self.assertEqual(replay['arm'], rec.TERRA)
+        self.assertIn('enrollment.json', replay['manifest_relistings'][0]['relisted'])
         self.assertEqual((self.episode() / 'enrollment.json').read_bytes(), original)
-        self.assertIn('enrollment.json', (self.run / 'recovered.jsonl').read_text())
+        self.assertFalse((self.run / 'recovered.jsonl').exists())
         self.review()
         self.assertIn('verified', self.call('verify')['text'])
 
@@ -374,7 +561,7 @@ rec.main()
             for task in ('a', 'new'):
                 out = self.call(*self.enroll_args(task), code=1)
                 self.assertNotIn('arm', out)
-                self.assertIn('hash mismatch', out['error'])
+                self.assertIn('content_sha256 mismatch', out['error'])
             draw.assert_not_called()
         p.write_bytes(original)
         self.repair()
@@ -525,7 +712,7 @@ rec.main()
         def winner(source, path):
             # The candidate is complete before publication, and a winner is never replaced.
             self.assertEqual(rec.read_json(source)['arm'], rec.SOL)
-            data = {'task_id': 'a', 'arm': rec.TERRA, 'reason': 'other caller won'}
+            data = rec.seal_episode_record({'task_id': 'a', 'arm': rec.TERRA, 'reason': 'other caller won'})
             with open(path, 'x') as fh:
                 json.dump(data, fh)
             rec.append_sums(os.path.dirname(path))
@@ -698,7 +885,7 @@ rec.main()
         p = self.episode() / 'enrollment.json'
         e = rec.read_json(p)
         e['reason'] = 'edited'
-        p.write_text(json.dumps(e))
+        p.write_text(json.dumps(rec.seal_episode_record(e)))
         self.call('verify', code=1)
         # Rewriting SHA256SUMS cannot hide the hash in the later repair record.
         (self.episode() / rec.SUMS).unlink()
@@ -713,7 +900,7 @@ rec.main()
         (self.episode() / 'extra.json').unlink()
         (self.episode() / rec.SUMS).unlink()
         self.assertIn('verified', self.call('verify')['text'])
-        self.assertTrue((self.run / 'recovered.jsonl').exists())
+        self.assertFalse((self.run / 'recovered.jsonl').exists())
 
     def test_new_commands_require_round_and_round_is_write_once(self):
         original = (self.run / 'round.json').read_bytes()
