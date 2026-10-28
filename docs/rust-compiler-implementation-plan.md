@@ -254,29 +254,29 @@ legacy round-trip defect is a separately accepted compatibility correction, not
 permission to normalize old stored attachments. Bootstrap recovery and registry
 execution are tested with local fixtures and fake effects only.
 
-### C5 — Consumer cutover and explicit predecessor disposition
+### C5 — Consumer qualification and next contract disposition
 
-Depends on C2–C4 acceptance and consumer-owner approval for the chosen release.
-Compiler owner prepares the exact adapter/default-selection diff, binary closure,
-source inventory, compatibility report and rollback selection; generation/release
-owner controls activation. Cut over whole compilation operations, with one selected
-producer per result, rather than blending old/new partial outputs.
+Updated 2026-10-18 after C4 commit `58abbfd`. The user's fresh-state direction
+removes backward compatibility and import of previous work: the earlier code
+was never released and need not run again. The prior C5 migration, dual-read,
+legacy retention and Node rollback obligations are superseded; their historical
+text remains in this file at `58abbfd`. Earlier compatibility descriptions and
+validation examples do not reinstate those obligations for C5.
 
-No database import is needed for compilation. Existing IR, manifest snapshots and
-extension attachments remain historical artifacts with their original identities.
-Read old formats through their named profiles; regenerate a new artifact only
-under its consumer's authority. Retain legacy code until the controlled consumer
-corpus and release rollback are accepted; then remove superseded algorithms and
-disposition internal helper tests against public behavior. The Python AEG owner,
-extension dispatch/lifecycle, manifest delivery, and generation manager are retained
-by design, not forgotten migration work. A later Rust host can remove the Node
-bridge without changing the compiler's model or taking over those owners.
+The [bounded C5 plan](rust-compiler-c5-plan.md) defers extension runtime integration
+until a concrete workload and semantic owner require it. The Rust CLI consumes
+C4 attachment compilation/verification; the actual Rust review host consumes
+manifest projection, not extension registration/dispatch. Compiler availability
+alone does not justify a new extension runtime.
 
-Rollback selects the previous pinned executable/Node closure for subsequent
-compilations and preserves failed candidate diagnostics. It does not rewrite
-existing evidence, rehash persisted attachments or reactivate a generation by
-itself. If new artifacts are unreadable by the predecessor, cutover is not
-rollback-ready until an explicit dual-read/disposition strategy is accepted.
+The recommended successor is **W0 contract formation for one fresh Rust
+campaign-to-canonical-publication profile**. It resolves the campaign acceptance,
+exact human `create` decision, workspace effect and HP4 composition handoff before
+W1 code. Current Rust review completion is evidence publication, not Git authority.
+The plan identifies proposed inputs, outputs, owners and controlled proof cases,
+and distinguishes canonical publication in a separate worktree from the attached
+user-branch completion-commit adapter. This is a planning result, not an accepted
+runtime implementation, cutover, cleanup or publication grant.
 
 ## Validation commands and open decisions
 
