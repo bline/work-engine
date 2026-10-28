@@ -128,6 +128,10 @@ references, task-owned artifact roles, changed contract consequences, the
 uncertainty. If that projection is missing or insufficient, return it to the
 builder; do not inspect source or diffs in the supervisor.
 
+When the campaign uses Git-backed slice checkpoints, read
+[references/checkpoint-and-completion-offer.md](references/checkpoint-and-completion-offer.md)
+before requesting the review candidate.
+
 Create or identify the immutable review candidate, then select specialist
 perspectives under
 [the review-selection contract](references/review-selection.md). The supervisor
@@ -172,94 +176,11 @@ wait` and the expected durable revision. Reconstruct that same attempt after
 context or session replacement with `<skill-dir>/scripts/resume_active_slice.py`; continue
 only the recovered pending phase.
 
-Command lines (generated from `--help`):
-
-<!-- cli-synopsis script=skills/slice-supervisor/scripts/manage_active_slice.py display="python3 <skill-dir>/scripts/manage_active_slice.py" -->
-```text
-# global options, given before the subcommand: --repository REPOSITORY
-python3 <skill-dir>/scripts/manage_active_slice.py begin --identity-json IDENTITY_JSON --actor-binding-json ACTOR_BINDING_JSON --phase PHASE --obligation-json OBLIGATION_JSON [--authoritative-refs-json AUTHORITATIVE_REFS_JSON] [--accepted-boundary-json ACCEPTED_BOUNDARY_JSON]
-python3 <skill-dir>/scripts/manage_active_slice.py publish-phase --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --phase PHASE --consequence-json CONSEQUENCE_JSON
-python3 <skill-dir>/scripts/manage_active_slice.py bind-actor --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --actor-binding-json ACTOR_BINDING_JSON
-python3 <skill-dir>/scripts/manage_active_slice.py wait --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --capability CAPABILITY [--provider PROVIDER] --reason REASON
-python3 <skill-dir>/scripts/manage_active_slice.py retire --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --outcome OUTCOME --reason REASON
-```
-<!-- /cli-synopsis -->
-
-<!-- cli-synopsis script=skills/slice-supervisor/scripts/resume_active_slice.py display="python3 <skill-dir>/scripts/resume_active_slice.py" -->
-```text
-python3 <skill-dir>/scripts/resume_active_slice.py --repository REPOSITORY --identity-json IDENTITY_JSON [--capability CAPABILITY] [--recovery-event-id RECOVERY_EVENT_ID] [--revision REVISION] [--history-limit HISTORY_LIMIT] [--history-cursor HISTORY_CURSOR]
-```
-<!-- /cli-synopsis -->
-
-When recovered evidence establishes that an admitted attempt cannot continue
-but its accepted work must be replanned in the same workspace, use the
-host-owned lifecycle supersession control. Supersession preserves the stopped
-attempt's candidate, review, finding, and authority evidence in its
-attempt-local receipt while atomically transferring mutable-workspace admission
-to a distinct successor at a new accepted boundary. It is not a backward phase
-transition, named-campaign terminal-history append, review acceptance, finding
-evaluation, provider retry, or publication authority. An already-reported
-zero-finding episode may reconcile a stranded empty binding during that atomic
-transition without synthesizing a finding or reliance; other review obligations
-retain their exact state. Before continuing the successor, establish the exact
-predecessor/successor supersession relationship from the atomic response or
-recovery evidence. If the response is uncertain or lost, recover both attempts
-and reconcile their relationship before continuing.
-
-When the pending obligation is conclusively discharged, or the attempt reaches
-an authoritative terminal outcome already decided by its owner, record
-lifecycle closure with `<skill-dir>/scripts/manage_active_slice.py retire`. Terminal
-outcomes include, without being limited to, accepted, stopped, and failed. The
-CLI records decisions already made by the model-driven supervisor; it does not
-decide discharge, acceptance, stopping, failure, provider choice, retry,
-scheduling, or authority. The slice workflow alone authorizes and interprets
-transitions; the shared durable-state primitive only publishes opaque revisions
-atomically.
-
-Preserve stable run, slice, attempt, and plan identity, handled consequence IDs,
-reference-only links to stronger artifacts, and the logical actor binding.
-Provider session identity is optional provenance. Capability waiting is
-nonterminal, while retirement prevents stale input from resurrecting the
-attempt. This path is distinct from `resume_campaign.py`; terminal-history
-semantics remain unchanged.
-
-Implementation and gate completion can cross a builder return or mailbox
-boundary before the enclosing slice is terminal. Before that transient channel
-can become the only copy, require the builder-side workflow to publish the
-compact phase consequence with `<skill-dir>/scripts/manage_active_slice.py publish-phase`.
-Bind established consequences to integrity-identified implementation, artifact,
-or gate evidence. If interruption prevents completion from being established,
-publish an explicit uncertain consequence when recovery can do so safely; never
-infer completion from runtime liveness or remembered delivery.
-
-`<skill-dir>/scripts/resume_active_slice.py` returns the supervisor's compact recovery
-projection: stable attempt identity, current phase, accepted boundary, pending
-obligation, latest phase consequence, authoritative references, lifecycle
-state, and durable provenance. Its `runtime_binding` is explicitly nonsemantic.
-The projection is not a general interface to model context, transcripts, hidden
-reasoning, or worker control-plane state. Continue only from the recovered
-semantic consequence and its integrity-bound references.
-
-For a review provider that supports resumable sessions, assign the reviewer
-runtime session ID before the initial provider call and publish it in
-`actor_binding.runtime_session_id` through `<skill-dir>/scripts/manage_active_slice.py
-bind-actor`, with the current durable revision as `--expected-revision` and a
-stable unique `--event-id`. The compare-and-swap and replay identity prevent a
-stale transition from replacing the intended reviewer binding; skipping this
-route can make recovery lose the session or resume the wrong reviewer
-continuation. Require the builder to use that exact
-binding for the fresh-entry review and every ordinary remediation continuation.
-After supervisor-context replacement, recover the binding with
-`<skill-dir>/scripts/resume_active_slice.py` and resume the provider session instead of recreating
-the review research. The reviewer remains a runtime binding, not the durable
-owner: if it is unavailable or model judgment requires a fresh perspective,
-record replacement provenance and the reset reason while preserving the same
-pending obligation and applicable findings.
-
-Active-slice recovery and publication are owned only by these slice-supervisor
-scripts; do not infer a copy under another skill. Every `--identity-json` value
-must be an object with exactly `run_id`, `slice_number`, `attempt_id`, and
-`plan_version`; camelCase keys and inferred alternate shapes are invalid.
+Read [references/active-slice-recovery.md](references/active-slice-recovery.md)
+when you call `manage_active_slice.py` or `resume_active_slice.py`, recover an
+active slice after context or session replacement, supersede or retire an
+attempt, or bind a resumable reviewer session. It holds the usage lines, the
+supersession control, the compact recovery projection and the identity shape.
 
 ## Accept and record a slice
 
@@ -279,46 +200,9 @@ issues are truthfully classified. Accepted work with selection other than
 validation is invalid. Retain the handoff only for relevant future builder
 context; never use it as the durable record.
 
-When the campaign uses Git-backed slice checkpoints, request a candidate only
-after the deterministic gate is ready for review. Give the checkpoint adapter
-the declared baseline, exact attributed manifest, plan version, scope revision,
-and gate-receipt digest. The adapter owns isolated Git mechanics; the supervisor
-owns the lifecycle consequence. Pin review to the returned candidate commit,
-tree, task-patch, plan, scope, and gate identities. A material repair requires a
-new candidate and preserves the old candidate and findings.
-
-Before acceptance, validate the review result with
-`scripts/checkpoint_lifecycle.py`. Only an exact binding may create the private
-accepted lifecycle checkpoint. Pass that accepted receipt to terminal
-finalization so the durable audit receipt and next-slice recovery name the same
-identity. Stopped or failed checkpoint refs preserve recovery state but never
-advance acceptance. Checkpoint mechanics may update only private local
-`refs/work-engine/checkpoints/`; they never move the user's branch, alter the
-real index or working tree, create tags, or publish refs.
-
-After private acceptance, apply `engine_config.slice_completion_commit.prompt`.
-When disabled, suppress the offer and continue from the private checkpoint.
-When enabled, prefer sending the accepted checkpoint and exact manifest back to
-the completing builder before releasing useful context. Require its compact
-schema-version-2 proposal to bind both and truthfully name its producer and
-durable supporting evidence. If that context is unavailable, a replacement may
-reconstruct only from the accepted checkpoint plus durable attributed manifest
-and compact terminal semantic consequences. Insufficient evidence must produce
-refusal or explicit uncertainty, never an unsupported equivalence claim. The
-producer route and provider/model identity do not authorize the proposal; its
-content and immutable bindings remain decisive. Then ask the user to create or
-decline the ordinary commit. Only an explicit per-slice create decision authorizes
-`$slice-completion-commit`; an open, declined, unavailable, or refused offer
-never blocks checkpoint-based continuation. The supervisor owns one durable
-live offer outside model context, terminal audit history, and the ordinary
-worktree. The current implementation uses a private Work Engine ref as storage;
-that mechanism is an affordance rather than invariant product structure. The
-sibling adapter owns real Git preflight, mutation, and read-only reconciliation
-after uncertain publication. Because resolving a stale open offer could
-misreport an already-published commit, every terminal transition reconciles Git
-first and fails closed when publication state is ambiguous. Persist terminal
-offer transitions through the live owner, and retain the accepted private checkpoint—not current branch
-HEAD—as the authoritative next-slice baseline.
+Read [references/checkpoint-and-completion-offer.md](references/checkpoint-and-completion-offer.md)
+when the campaign uses Git-backed slice checkpoints, or when applying
+`engine_config.slice_completion_commit.prompt` after private acceptance.
 
 Do not retain raw tool output, exploration, debugging, test logs, diffs, or copied source. Ask the builder to compress an overlong receipt rather than summarizing its evidence yourself.
 
@@ -384,42 +268,14 @@ expected value, release readiness, or the wisdom of continuing the current
 campaign unchanged. Do not invoke it on a fixed slice cadence or from a numeric
 signal alone, and do not make the supervisor continuously re-plan the product.
 
-Pass the bounded strategic objective, governing roadmap and doctrine, current
-repository revision, compact terminal consequences, the prior planning handoff
-when one exists, and relevant proposal expectations. Do not pass raw builder
-transcripts, logs, source dumps, or audit bookkeeping that has no strategic
-consumer.
-
-The planner returns a compact planning handoff; it does not accept slices or
-amend the campaign. The supervisor decides the execution consequence within
-its authority. A recommendation that changes the objective, work-source
-boundary, approval, or another immutable configuration field requires the
-owning amendment or a new campaign before another builder starts. If strategic
-review is materially necessary but unavailable, stop rather than continuing
-on a roadmap known to be unreliable.
+Read [references/strategic-reconciliation.md](references/strategic-reconciliation.md)
+when you decide to invoke `$strategic-planner`: what to pass, what the planner
+returns and when to stop.
 
 ## Decide whether to continue
 
-After an interruption between terminal slices, recover one named run with:
-
-```bash
-python3 <skill-dir>/scripts/resume_campaign.py \
-  --path <configured-metrics-path> \
-  --campaign-preflight-json '<fresh-successful-preflight-result>' \
-  --run-id '<stable-run-id>'
-```
-
-Resume only when the command reports `resumable: true`. It binds both the
-effective engine configuration and campaign-source identity, reconstructs the
-compact handoff, and identifies the next sequential slice without writing or
-reserving it. When the terminal receipt carries a slice checkpoint, recovery
-also verifies the private ref and commit tree and returns it as
-`baseline_checkpoint`; that immutable identity, not current branch HEAD, is the
-next slice's repository baseline. Structured stopped, failed, accepted-complete, and historical
-continuation-unavailable results are stable non-resumable states. Command
-failure means malformed or incompatible state requiring intervention. This
-path does not recover mid-slice or partial artifacts and does not authorize an
-amendment.
+Read [references/campaign-resume.md](references/campaign-resume.md) when
+recovering a named run after an interruption between terminal slices.
 
 After every accepted receipt:
 

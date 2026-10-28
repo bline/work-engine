@@ -63,48 +63,11 @@ independent review separately through $claude-recon-implementation. Config
 version 1 retains its historical combined Claude evidence/review meaning; never
 mix or silently reinterpret the two shapes.
 
-Use $repo-search for the durable `orient`, `find`, `trace`, `impact`, and `audit`
-intents. Treat Codebase Memory as the current primary indexed-structure
-capability and use $codebase-memory to learn and apply the interface it currently
-exposes; do not copy individual operation names or today's preferred query
-sequence into this durable role contract.
-Select indexed structural evidence or targeted direct source observation for
-each claim from the objective, repository state, available capability classes,
-coverage, and observed uncertainty. Prefer indexed evidence for relationships
-the current interface can establish. Use direct source observation for literal
-content, runtime or presentation details, stale or incomplete coverage,
-unresolved graph ambiguity, or claims the current index cannot establish.
-Record the actual evidence mode and fallback reason. Current interface limits
-are observed constraints, not permanent workflow law.
-
-`claude-codebase-memory` and `claude-filesystem` remain explicitly selectable
-retrieval providers backed by $claude-recon-implementation. Provider and skill
-identity must resolve consistently. Record repository retrieval and independent
-review as separate provenance. Do not silently substitute providers, count
-retrieval as review, or weaken configured acceptance requirements. Auto provider
-selection is deferred.
-
-Version 2 may instead explicitly configure `adversarial_review` through
-$codex-adversarial-review when a human has accepted Codex review. Launch it
-with `fork_turns: "none"`, its configured model and reasoning effort, and no
-builder-session history. Record matching builder and reviewer models as
-`accepted_same_model_review`; record distinct Codex models as
-`accepted_same_provider_different_model_review`. Preserve the actual model
-relationship and observed isolation. Neither class establishes independent
-reasoning, cross-provider, or statistical independence. Exactly one of
-`independent_review` and `adversarial_review` may be configured, and accepted
-Codex adversarial review cannot satisfy a requirement that explicitly demands
-independent review.
-
-Do not confuse provider selection with evidence capability. A configured Claude
-role may expose Codebase Memory and bounded read-only filesystem tools in the
-same process. Keep indexed structure primary for repository code understanding,
-and use direct filesystem observation only for exact non-code content, reported
-coverage gaps, generated or unindexed artifacts, or required host state outside
-the index. That evidence-mode change does not rewrite provider identity or
-require a configuration amendment. Record the actual mode and transition reason;
-mere tool availability is not a fallback event. Selecting `claude-filesystem` as
-the repository provider remains a distinct explicit configuration choice.
+Read [references/evidence-providers.md](references/evidence-providers.md) when
+resolving or launching the repository-retrieval and review roles: Codebase Memory
+and `$repo-search` use, `claude-codebase-memory` and `claude-filesystem`
+providers, an explicit `adversarial_review`, evidence-mode fallback, and a
+placement or review clause that depends on an external or unindexed artifact.
 
 Require the worker to use each resolved skill faithfully for the evidence stages
 in the accepted route and every specialist later selected by the supervisor.
@@ -118,12 +81,6 @@ directly only when the same acceptance condition can still be met; an explicitly
 selected provider or independence requirement remains binding. Retrieval
 success never satisfies a required review. Ordinary test execution belongs to
 this builder, not either evidence role.
-
-When a placement or review clause predictably depends on an external or
-unindexed artifact, require the configured Claude call to provision bounded
-read-only filesystem access from its first attempt while retaining indexed
-access for repository structure. A reviewer must observe the material clause in
-its own fresh process; a retrieval packet alone does not create independence.
 
 Never describe the builder as a subtask worker. State that it owns the whole slice and must return a boundary-change request instead of silently expanding scope.
 
@@ -142,57 +99,11 @@ judgment that the premise, scope, architecture, independence need, or context
 fitness materially changed; provider or caller convenience is not a reset
 reason.
 
-Provision the same authority-bound review-episode state for either retained
-review provider. Before the initial provider boundary, bind the exact subject,
-writer generation, authority provenance, and resumable runtime reference. For
-Codex, predeclare the canonical reviewer task target, bind it as provider
-`codex`, and verify the target returned by `spawn_agent`; give that reviewer the
-authority file and repository-local review-state adapter. For Claude, bind and
-verify the assigned persistent session UUID and expose the same profile through
-the configured MCP adapter. In either case the reviewer begins the episode,
-publishes its attributed result, and reads it back before returning. Ordinary
-remediation uses that same identity and episode. State availability or
-persistence never upgrades Codex adversarial review into independent-review
-evidence.
-
-Give either reviewer the same bounded observational state needed by the review:
-exact active-slice current or retained history and validated claim-lineage
-projections when material. Provider transport may differ, but subject identity,
-freshness, limits, and authority may not. Never substitute raw private-state
-enumeration or unvalidated claim files for the bounded projection.
-
-When active-slice recovery is configured and this builder launches the
-reviewer, assign the provider's resumable runtime reference before the initial
-review call and publish it through the active-slice mechanism as
-`actor_binding.runtime_session_id` with `<skill-dir>/../slice-supervisor/scripts/manage_active_slice.py
-bind-actor` (`<skill-dir>` is this skill's directory), passing the exact current durable revision as `--expected-revision`
-and a stable unique `--event-id`. This CAS route prevents a stale writer or a
-conflicting replay from silently binding the wrong reviewer session; omitting
-it can make later recovery resume a lost or different reviewer continuation.
-After builder or supervisor context
-replacement, recover the binding with `<skill-dir>/../slice-supervisor/scripts/resume_active_slice.py` before issuing
-the next reviewer call; resume that exact session rather than reconstructing
-the review. If the binding cannot be recovered or the provider session is no
-longer available, preserve the pending obligation and applicable findings,
-record the replacement reason and provenance, and label the replacement as a
-new reviewer rather than a continuation.
-
-Command lines (generated from `--help`):
-
-<!-- cli-synopsis script=skills/slice-supervisor/scripts/manage_active_slice.py subs="bind-actor publish-phase" display="python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py" -->
-```text
-# global options, given before the subcommand: --repository REPOSITORY
-python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py bind-actor --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --actor-binding-json ACTOR_BINDING_JSON
-python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py publish-phase --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --phase PHASE --consequence-json CONSEQUENCE_JSON
-# other subcommands (put --help after one for its usage): begin, wait, retire
-```
-<!-- /cli-synopsis -->
-
-<!-- cli-synopsis script=skills/slice-supervisor/scripts/resume_active_slice.py display="python3 <skill-dir>/../slice-supervisor/scripts/resume_active_slice.py" -->
-```text
-python3 <skill-dir>/../slice-supervisor/scripts/resume_active_slice.py --repository REPOSITORY --identity-json IDENTITY_JSON [--capability CAPABILITY] [--recovery-event-id RECOVERY_EVENT_ID] [--revision REVISION] [--history-limit HISTORY_LIMIT] [--history-cursor HISTORY_CURSOR]
-```
-<!-- /cli-synopsis -->
+Read [references/retained-reviewer.md](references/retained-reviewer.md) when this
+builder launches, binds, resumes or replaces the configured reviewer, or when
+active-slice recovery is configured. It holds the review-episode state, the
+bounded observational state, the `bind-actor` route and the usage lines for
+`manage_active_slice.py` and `resume_active_slice.py`.
 
 ### Planning turn
 
@@ -246,28 +157,9 @@ is not a substitute for publication. If interruption makes completion
 uncertain, preserve or publish that uncertainty and require recovery from the
 durable projection instead of inferring success from runtime state.
 
-Use the stable identity supplied by the supervisor and recover its current
-`durable_revision` with `<skill-dir>/../slice-supervisor/scripts/resume_active_slice.py`
-immediately before publication. Then invoke the CAS boundary directly:
-
-Active-slice recovery and publication are owned only by the slice-supervisor
-scripts. Do not look for copies under slice-builder or another skill. Pass
-`--identity-json` an object with exactly `run_id`, `slice_number`, `attempt_id`,
-and `plan_version`; camelCase keys and inferred alternate shapes are invalid.
-
-```bash
-python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py \
-  --repository <repository> publish-phase \
-  --identity-json '<run/slice/attempt/plan identity>' \
-  --expected-revision '<recovered durable_revision>' \
-  --phase implementation \
-  --consequence-json '<compact integrity-bound consequence>'
-```
-
-For the final gate use the same command with `--phase gate` and the then-current
-recovered revision. A revision conflict means publication did not establish the
-consequence; recover and reconcile instead of retrying against an assumed state
-or returning the transient result as complete.
+Read [references/phase-publication.md](references/phase-publication.md) when
+publishing an implementation or gate phase consequence: the identity object, the
+revision recovery and the `publish-phase` command.
 
 ### Gate turn
 
@@ -348,23 +240,10 @@ If unrelated or unattributable workspace changes appear, stop mutation until own
 
 ## Collect the final receipt
 
-When the supervisor returns an accepted checkpoint under an enabled
-`engine_config.slice_completion_commit.prompt`, retain this builder while its
-context remains useful and ask it to compose one compact schema-version-2
-`commit_proposal`. Bind its one-line subject, body, and exact task-owned path
-set to the accepted checkpoint commit, tree, and task-patch digest. Include
-structured production provenance naming the producer and the durable evidence
-that supports the proposal; provider or model identity is descriptive, never
-authority. Return the proposal as a separate completion artifact beside the
-receipts. It conveys semantic context; it is not part of the audit receipt and
-never authorizes a Git mutation.
-
-If this context is lost or no longer trustworthy, a replacement may reconstruct
-the proposal only from the accepted checkpoint, attributed manifest, and
-durable compact semantic consequences. It records that route truthfully in the
-same open provenance structure. When those artifacts do not support an accurate
-subject or body, refuse the proposal or surface the uncertainty; do not infer
-semantic equivalence or replay a transcript merely to satisfy the schema.
+Read [references/completion-proposal.md](references/completion-proposal.md) when
+the supervisor returns an accepted checkpoint under an enabled
+`engine_config.slice_completion_commit.prompt`, or when a replacement must
+reconstruct the `commit_proposal`.
 
 Read [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md) before requesting the gate result. Return `audit_receipt` for durable validation and metrics, plus `handoff_receipt` for the next builder. Preserve audit measurements exactly and use `null` when unavailable. Record configured and actual model, effort, evidence skill, validation profile, requirement results, `workflow_route`, `route_revisions`, and evidence-based validation breadth even if no escalation occurred. Each route revision names the failed premise, stale decisions, preserved evidence, replacement route, and reason. Never copy engine, provider, model, token, cache, route mechanics, or detailed gate bookkeeping into the handoff.
 
