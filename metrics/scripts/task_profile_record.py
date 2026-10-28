@@ -41,7 +41,7 @@ Usage
   task_profile_record.py init-round --run-dir R --cap N --terra-in-flight N --terra-repair-budget N
   task_profile_record.py enroll    --run-dir R --task-id T --task-revision REV --eligible yes|no --reason TEXT
   task_profile_record.py withdraw  --run-dir R --task-id T --reason TEXT
-  task_profile_record.py review    --run-dir R --task-id T --outcome pass|fail --p1 N --p2 N --p3 N --receipt PATH
+  task_profile_record.py review    --run-dir R --task-id T --verdict accept|changes_required|blocked_evidence|blocked_scope --reviewer-session ID --p1 N --p2 N --p3 N --receipt PATH
   task_profile_record.py repair    --run-dir R --task-id T --review-receipt PATH
   task_profile_record.py close     --run-dir R --task-id T --disposition accepted|abandoned --reason TEXT
                                    --pre-review-fixes N --escalations N [--review-receipt PATH ...] [--artifact PATH ...]
@@ -841,10 +841,13 @@ def cmd_withdraw(a):
 
 
 def cmd_review(a):
-    if a.outcome == "pass" and (a.p1 or a.p2):
-        raise UsageRefusal("pass requires zero P1 and P2 findings")
+    if a.verdict == "accept" and (a.p1 or a.p2):
+        raise UsageRefusal("accept requires zero P1 and P2 findings")
+    if a.verdict == "changes_required" and not (a.p1 or a.p2):
+        raise UsageRefusal("changes_required requires a P1 or P2 finding")
     d, _ = active_episode(a)
-    data = episode_write(d, "review-first.json", {"task_id": a.task_id, "outcome": a.outcome,
+    data = episode_write(d, "review-first.json", {"task_id": a.task_id, "verdict": a.verdict,
+                         "first_review_pass": a.verdict == "accept", "reviewer_session": a.reviewer_session,
                          "p1": a.p1, "p2": a.p2, "p3": a.p3, "receipt": file_evidence([a.receipt])[0], "reviewed_at": now()})
     enforce_triggers(a.run_dir)
     return {"outcome": "reviewed", "record": data}
@@ -908,7 +911,12 @@ def cmd_resume(a):
 def cmd_status(a):
     episodes = enrollments(a.run_dir)
     counts = {arm: 0 for arm in (TERRA, SOL)}
-    reviews = {arm: {"pass": 0, "fail": 0, "pending": 0} for arm in counts}
+    reviews = {arm: {v: 0 for v in ("accept", "changes_required", "blocked_evidence", "blocked_scope", "pending")} for arm in counts}
+    reviewer_sessions = set()
+    for path in glob.glob(os.path.join(a.run_dir, "task-profiles", "*", "assignment*.json")):
+        assignment = read_json(path)
+        if assignment.get("role") == "reviewer":
+            reviewer_sessions.update(assignment.get("child_sessions", []))
     closed = withdrawn = open_terra = 0
     log_path = os.path.join(a.run_dir, "screening.jsonl")
     log, log_problems = [], []
@@ -932,7 +940,13 @@ def cmd_status(a):
         withdrawn += os.path.exists(os.path.join(d, "withdraw.json"))
         open_terra += arm == TERRA and not terminal(d)
         review = os.path.join(d, "review-first.json")
-        reviews[arm][read_episode_record(review)["outcome"] if os.path.exists(review) else "pending"] += 1
+        if os.path.exists(review):
+            review_record = read_episode_record(review)
+            reviews[arm][review_record["verdict"]] += 1
+            if review_record["reviewer_session"] not in reviewer_sessions:
+                problems.append(f"{e['task_id']}: reviewer_unlinked")
+        else:
+            reviews[arm]["pending"] += 1
         if e["task_id"] not in recorded:
             problems.append(f"{e['task_id']}: enrollment has no enrolled result line")
         problems.extend(f"{e['task_id']}: {p}" for p in integrity_problems(d))
@@ -1048,7 +1062,8 @@ def main():
             r.add_argument("--task-revision", required=True)
             r.add_argument("--eligible", choices=("yes", "no"), required=True)
         elif name == "review":
-            r.add_argument("--outcome", choices=("pass", "fail"), required=True)
+            r.add_argument("--verdict", choices=("accept", "changes_required", "blocked_evidence", "blocked_scope"), required=True)
+            r.add_argument("--reviewer-session", required=True)
             for flag in ("--p1", "--p2", "--p3"):
                 r.add_argument(flag, type=nonnegative, required=True)
             r.add_argument("--receipt", required=True)

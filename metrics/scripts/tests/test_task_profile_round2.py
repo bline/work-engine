@@ -68,8 +68,8 @@ class Round2Tests(unittest.TestCase):
     def log(self):
         return [json.loads(line) for line in (self.run / 'screening.jsonl').read_text().splitlines()]
 
-    def review(self, task='a', outcome='pass', p1=0, p2=0, p3=0, code=0):
-        return self.call('review', '--task-id', task, '--outcome', outcome, '--p1', p1, '--p2', p2, '--p3', p3,
+    def review(self, task='a', verdict='accept', p1=0, p2=0, p3=0, code=0, session='review-session'):
+        return self.call('review', '--task-id', task, '--verdict', verdict, '--reviewer-session', session, '--p1', p1, '--p2', p2, '--p3', p3,
                          '--receipt', self.receipt, code=code)
 
     def repair(self, task='a'):
@@ -401,7 +401,7 @@ finally: mark('done')
                 raise OSError('injected pause publication failure')
             return real_publish(path, data)
         with mock.patch.object(rec, 'atomic_publish', side_effect=fail_pause):
-            self.review('t', outcome='fail', p1=1, code=1)
+            self.review('t', verdict='changes_required', p1=1, code=1)
             self.assertTrue((self.episode('t') / 'review-first.json').exists())
             with mock.patch.object(rec.os, 'urandom') as draw:
                 out = self.call(*self.enroll_args('blocked'), code=1)
@@ -413,7 +413,7 @@ finally: mark('done')
         history = self.call('resume', '--owner-approval', 'owner accepts known P1')['record']
         self.assertEqual(history['covered_triggers']['p1_episodes'], ['t'])
         self.enroll('t2', byte=1)  # The acknowledged old fact does not pause again.
-        self.review('t2', outcome='fail', p1=1)
+        self.review('t2', verdict='changes_required', p1=1)
         self.assertTrue((self.run / 'PAUSED').exists())
 
     def test_failed_budget_pause_and_receipt_idempotence_across_resume(self):
@@ -456,7 +456,7 @@ finally: mark('done')
         self.assertFalse((self.episode() / 'enrollment.json').exists())
         self.enroll()
         before = (self.episode() / 'enrollment.json').read_bytes()
-        for command in [('review', '--task-id', 'a', '--outcome', 'pass', '--p1', '0', '--p2', '0', '--p3', '0', '--receipt', self.receipt),
+        for command in [('review', '--task-id', 'a', '--verdict', 'accept', '--reviewer-session', 'review-session', '--p1', '0', '--p2', '0', '--p3', '0', '--receipt', self.receipt),
                         ('repair', '--task-id', 'a', '--review-receipt', self.receipt),
                         ('close', '--task-id', 'a', '--disposition', 'accepted', '--reason', 'test', '--pre-review-fixes', '0', '--escalations', '0'),
                         ('withdraw', '--task-id', 'a', '--reason', 'test')]:
@@ -781,10 +781,10 @@ rec.main()
 
     def test_terra_p1_pauses_but_sol_p1_does_not(self):
         self.enroll('s')
-        self.review('s', outcome='fail', p1=1)
+        self.review('s', verdict='changes_required', p1=1)
         self.assertFalse((self.run / 'PAUSED').exists())
         self.enroll('t', byte=1)
-        self.review('t', outcome='fail', p1=1)
+        self.review('t', verdict='changes_required', p1=1)
         self.assertIn("['t']", rec.read_json(self.run / 'PAUSED')['reason'])
 
     def test_review_validation_and_write_once(self):
@@ -796,6 +796,38 @@ rec.main()
         self.assertEqual(result['receipt']['sha256'], rec.sha256(self.receipt))
         self.assertIn('enrollment.json', result['prior_files'])
         self.review(code=2)
+
+    def test_review_verdicts_counts_and_linkage(self):
+        cases = [('accept', 0, 0, 2), ('changes_required', 0, 1, 0),
+                 ('blocked_evidence', 1, 2, 3), ('blocked_scope', 0, 0, 0)]
+        for i, (verdict, p1, p2, p3) in enumerate(cases):
+            task = f'case{i}'
+            self.enroll(task)
+            record = self.review(task, verdict=verdict, p1=p1, p2=p2, p3=p3, session=f'reviewer{i}')['record']
+            self.assertEqual((record['verdict'], record['first_review_pass']), (verdict, verdict == 'accept'))
+            self.assertEqual((record['p1'], record['p2'], record['p3']), (p1, p2, p3))
+            self.assertEqual(record['reviewer_session'], f'reviewer{i}')
+            self.assertEqual(record['receipt'], {'path': str(self.receipt), 'sha256': rec.sha256(self.receipt)})
+        status = self.call('status')
+        self.assertEqual(status['first_reviews'][rec.SOL],
+                         {'accept': 1, 'changes_required': 1, 'blocked_evidence': 1, 'blocked_scope': 1, 'pending': 0})
+        self.assertEqual(status['first_reviews'][rec.TERRA],
+                         {'accept': 0, 'changes_required': 0, 'blocked_evidence': 0, 'blocked_scope': 0, 'pending': 0})
+        self.assertIn('case0: reviewer_unlinked', status['inconsistencies'])
+        assignment = self.run / 'task-profiles' / 'other@revision' / 'assignment-02.json'
+        assignment.parent.mkdir(parents=True)
+        assignment.write_text(json.dumps({'role': 'builder', 'child_sessions': ['reviewer0']}))
+        self.assertIn('case0: reviewer_unlinked', self.call('status')['inconsistencies'])
+        assignment.write_text(json.dumps({'role': 'reviewer', 'child_sessions': ['reviewer0']}))
+        self.assertNotIn('case0: reviewer_unlinked', self.call('status')['inconsistencies'])
+
+    def test_invalid_review_combinations_write_nothing(self):
+        self.enroll()
+        before = {p.name: p.read_bytes() for p in self.episode().iterdir()}
+        for verdict, p1, p2 in [('accept', 1, 0), ('accept', 0, 1),
+                                ('accept', 1, 1), ('changes_required', 0, 0)]:
+            self.review(verdict=verdict, p1=p1, p2=p2, code=2)
+            self.assertEqual(before, {p.name: p.read_bytes() for p in self.episode().iterdir()})
 
     def test_close_counts_repairs_and_first_dispatch_across_revisions(self):
         self.enroll()
@@ -863,7 +895,7 @@ rec.main()
         self.enroll('w')
         self.enroll('no', eligible='no', outcome='not_eligible')
         self.review('t')
-        self.review('s', outcome='fail', p2=1)
+        self.review('s', verdict='changes_required', p2=1)
         self.repair('t')
         self.close('s')
         self.call('withdraw', '--task-id', 'w', '--reason', 'withdrawn')
@@ -871,10 +903,10 @@ rec.main()
         self.assertEqual(out['enrollments'], {'total': 3, 'per_arm': {rec.TERRA: 1, rec.SOL: 2}})
         self.assertEqual((out['open'], out['closed'], out['withdrawn'], out['open_terra']), (1, 1, 1, 1))
         self.assertEqual(out['terra_repair_rounds'], 1)
-        self.assertEqual(out['first_reviews'][rec.TERRA]['pass'], 1)
-        self.assertEqual(out['first_reviews'][rec.SOL], {'pass': 0, 'fail': 1, 'pending': 1})
+        self.assertEqual(out['first_reviews'][rec.TERRA]['accept'], 1)
+        self.assertEqual(out['first_reviews'][rec.SOL], {'accept': 0, 'changes_required': 1, 'blocked_evidence': 0, 'blocked_scope': 0, 'pending': 1})
         self.assertEqual(out['screening']['outcomes'], {'enrolled': 3, 'not_eligible': 1})
-        self.assertFalse(out['inconsistencies'])
+        self.assertEqual(set(out['inconsistencies']), {'t: reviewer_unlinked', 's: reviewer_unlinked'})
         self.assertIn('repair-01.json', out['episode'])
         self.assertEqual(self.call('status', '--task-id', 'no')['episode'], 'no record')
 
@@ -911,7 +943,7 @@ rec.main()
                     ('withdraw', '--task-id', 'a', '--reason', 'test'), ('pause', '--reason', 'hold'),
                     ('resume', '--owner-approval', 'approved'), ('status',), ('recover-screening',),
                     ('repair', '--task-id', 'a', '--review-receipt', self.receipt),
-                    ('review', '--task-id', 'a', '--outcome', 'pass', '--p1', '0', '--p2', '0', '--p3', '0', '--receipt', self.receipt),
+                    ('review', '--task-id', 'a', '--verdict', 'accept', '--reviewer-session', 'review-session', '--p1', '0', '--p2', '0', '--p3', '0', '--receipt', self.receipt),
                     ('close', '--task-id', 'a', '--disposition', 'accepted', '--reason', 'test', '--pre-review-fixes', '0', '--escalations', '0')]
         with mock.patch.object(rec.os, 'urandom') as draw:
             for command in commands:
