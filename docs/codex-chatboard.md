@@ -300,12 +300,20 @@ python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
   --session-id '<verified-id>' --context-rollout /absolute/rollout.jsonl \
   --context-binary /absolute/pinned/work-engine-context-status \
   --context-sha256 '<sha256>' \
-  --context-trigger-tokens 150000 --context-band-floor-tokens 171267 \
+  --context-trigger-percent 58 --context-band-floor-percent 66 \
   --follow --timeout-seconds 300
 ```
 
-The numeric levels above illustrate the historical Codex planning hypothesis,
-not universal limits. Select them for the actual model/window and campaign.
+Percent levels are shares of the context window recorded with each reading, so
+one binding fits Sol 6's 258,400-token window and Sol 6.1's 475,000. The values
+above restate the planning hypothesis (150,000 of 258,400) and the lowest
+compaction observed on 2026-10-21 (171,267 of 258,400) as shares; they are not
+provider limits. In band, another event arrives at each further multiple of
+`--context-step-percent` of the window (default 5), so the listener does not go
+quiet for the rest of the window. `--context-trigger-tokens` and
+`--context-band-floor-tokens` remain for Claude transcripts, which record no
+window. Token levels chosen for one window misplace warnings on another: 171,267
+is 36% of a 475,000-token window.
 `--context-host claude` uses Claude's telemetry reader; a child also needs
 `--context-agent <agent-id>`, and its topic is
 `control:session:<session-id>/agent:<agent-id>`. The reader checks both identities.

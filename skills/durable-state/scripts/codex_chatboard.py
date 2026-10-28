@@ -668,11 +668,18 @@ class RefChanges:
         self.close()
 
 
+LEVELS_REQUIRED = ("control needs --context-trigger-percent with --context-band-floor-percent "
+                   "(shares of the recorded window), or --context-trigger-tokens with "
+                   "--context-band-floor-tokens (Claude, which records no window)")
+
+
 class ContextControl:
     """Thin adapter to the pinned Rust telemetry reader; no policy or persistence."""
 
     def __init__(self, *, session_id: str, rollout: Path, binary: Path, sha256: str,
-                 trigger_tokens: int, band_floor_tokens: int, host: str = "codex",
+                 trigger_percent: float | None = None, band_floor_percent: float | None = None,
+                 trigger_tokens: int | None = None, band_floor_tokens: int | None = None,
+                 step_percent: float | None = None, host: str = "codex",
                  agent: str | None = None, lead_calls: int = 3,
                  cursor: str | None = None) -> None:
         self.topic = f"{CONTROL_PREFIX}{session_id}" + (f"/agent:{agent}" if agent else "")
@@ -680,11 +687,19 @@ class ContextControl:
         self.digest, self.cursor = sha256.lower(), cursor
         if len(self.digest) != 64 or any(c not in "0123456789abcdef" for c in self.digest):
             raise ChatboardError("--context-sha256 must be a SHA-256 digest")
+        percents, tokens = (trigger_percent, band_floor_percent), (trigger_tokens, band_floor_tokens)
+        if None not in percents and tokens == (None, None):
+            levels = ["--trigger-percent", repr(float(trigger_percent)),
+                      "--band-floor-percent", repr(float(band_floor_percent))]
+        elif None not in tokens and percents == (None, None):
+            levels = ["--trigger-tokens", str(trigger_tokens), "--band-floor-tokens", str(band_floor_tokens)]
+        else:
+            raise ChatboardError(LEVELS_REQUIRED)
         self.command = [str(self.binary), "control", "--session", session_id,
-                        "--rollout", str(self.rollout), "--host", host,
-                        "--trigger-tokens", str(trigger_tokens),
-                        "--band-floor-tokens", str(band_floor_tokens),
+                        "--rollout", str(self.rollout), "--host", host, *levels,
                         "--lead-calls", str(lead_calls)]
+        if step_percent is not None:
+            self.command += ["--step-percent", repr(float(step_percent))]
         if agent:
             self.command += ["--agent", agent]
 
@@ -1095,8 +1110,13 @@ def parser() -> argparse.ArgumentParser:
     wait.add_argument("--context-sha256")
     wait.add_argument("--context-host", choices=["codex", "claude"], default="codex")
     wait.add_argument("--context-agent", help="Claude child agent identity within the session")
-    wait.add_argument("--context-trigger-tokens", type=int)
+    wait.add_argument("--context-trigger-percent", type=float,
+                      help="planning level as a percent of the window recorded with each reading")
+    wait.add_argument("--context-band-floor-percent", type=float)
+    wait.add_argument("--context-trigger-tokens", type=int, help="fixed level; for Claude, which records no window")
     wait.add_argument("--context-band-floor-tokens", type=int)
+    wait.add_argument("--context-step-percent", type=float,
+                      help="in band, report again at each further multiple of this percent of the window (default 5)")
     wait.add_argument("--context-lead-calls", type=int, default=3)
     wait.add_argument("--control-cursor", help="opaque next_control_cursor from the last consumed result")
     topics = commands.add_parser("topics", help="list recorded topics with counts and latest sequence")
@@ -1201,20 +1221,25 @@ def main() -> int:
             else:
                 print(json.dumps({"revision": revision, **view}, indent=2))
         elif args.command == "wait":
-            required = [args.session_id, args.context_rollout, args.context_binary,
-                        args.context_sha256, args.context_trigger_tokens, args.context_band_floor_tokens]
+            required = [args.session_id, args.context_rollout, args.context_binary, args.context_sha256]
+            levels = [args.context_trigger_percent, args.context_band_floor_percent,
+                      args.context_trigger_tokens, args.context_band_floor_tokens]
             control = None
-            if any(value is not None for value in required):
+            if any(value is not None for value in required + levels):
                 if not all(value is not None for value in required):
                     raise ChatboardError("control requires --session-id, --context-rollout, --context-binary, "
-                                         "--context-sha256, --context-trigger-tokens and --context-band-floor-tokens")
+                                         "--context-sha256 and its levels; " + LEVELS_REQUIRED)
                 control = ContextControl(
                     session_id=args.session_id, rollout=args.context_rollout,
                     binary=args.context_binary, sha256=args.context_sha256,
+                    trigger_percent=args.context_trigger_percent,
+                    band_floor_percent=args.context_band_floor_percent,
                     trigger_tokens=args.context_trigger_tokens, band_floor_tokens=args.context_band_floor_tokens,
+                    step_percent=args.context_step_percent,
                     host=args.context_host, agent=args.context_agent, lead_calls=args.context_lead_calls,
                     cursor=args.control_cursor)
-            elif args.control_cursor or args.context_agent or args.context_host != "codex" or args.context_lead_calls != 3:
+            elif (args.control_cursor or args.context_agent or args.context_host != "codex"
+                  or args.context_lead_calls != 3 or args.context_step_percent is not None):
                 raise ChatboardError("control options require a session binding")
             started = time.monotonic()
             remaining = args.timeout_seconds

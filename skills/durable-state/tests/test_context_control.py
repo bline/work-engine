@@ -36,25 +36,24 @@ class ControlWaitTest(unittest.TestCase):
         self.binary.chmod(0o700)
         self.digest = hashlib.sha256(self.binary.read_bytes()).hexdigest()
 
-    def usage(self, n):
+    def usage(self, n, window=258400):
         return json.dumps({"type": "event_msg", "payload": {"type": "token_count", "info": {
             "last_token_usage": {"input_tokens": n, "cached_input_tokens": 0},
-            "model_context_window": 258400}}}) + "\n"
+            "model_context_window": window}}}) + "\n"
 
-    def write(self, n):
+    def write(self, n, window=258400):
         self.rollout.write_text(json.dumps({"type": "session_meta", "payload": {"id": SESSION}})
-                                + "\n" + self.usage(n))
+                                + "\n" + self.usage(n, window))
 
-    def control(self, cursor=None):
+    def control(self, cursor=None, **levels):
+        levels = levels or {"trigger_tokens": 150000, "band_floor_tokens": 171267}
         return BOARD.ContextControl(session_id=SESSION, rollout=self.rollout, binary=self.binary,
-                                    sha256=self.digest, trigger_tokens=150000,
-                                    band_floor_tokens=171267, cursor=cursor)
+                                    sha256=self.digest, cursor=cursor, **levels)
 
-    def command(self):
+    def command(self, levels=("--context-trigger-tokens", "150000", "--context-band-floor-tokens", "171267")):
         return [sys.executable, str(SCRIPT), "--repository", str(self.root), "wait", "--since", "0",
                 "--session-id", SESSION, "--context-rollout", str(self.rollout),
-                "--context-binary", str(self.binary), "--context-sha256", self.digest,
-                "--context-trigger-tokens", "150000", "--context-band-floor-tokens", "171267"]
+                "--context-binary", str(self.binary), "--context-sha256", self.digest, *levels]
 
     def post(self, topic="wanted"):
         return BOARD.post(self.root, author="synthetic", session_id=SESSION, topic=topic,
@@ -174,6 +173,39 @@ class ControlWaitTest(unittest.TestCase):
         good = subprocess.run(self.command() + ["--timeout-seconds", "0"], text=True, capture_output=True)
         self.assertEqual(good.returncode, 0, good.stderr)
         self.assertEqual(json.loads(good.stdout)["status"], "control")
+
+    def test_percent_levels_follow_the_window_and_report_each_step_in_band(self):
+        self.write(300000, window=475000)
+        fixed = BOARD.wait_board(self.root, since=0, control=self.control(), timeout_seconds=0)
+        # 171,267 tokens is 36% of this window: the stale binding that went quiet.
+        self.assertEqual(fixed["control_events"][0]["level"], "in_band")
+        observer = self.control(trigger_percent=58, band_floor_percent=66)
+        first = BOARD.wait_board(self.root, since=0, control=observer, timeout_seconds=0)
+        self.assertEqual(first["control_events"][0]["level"], "planning")
+        self.assertEqual(first["control_events"][0]["trigger_tokens"], 275500)
+        self.write(320000, window=475000)
+        band = BOARD.wait_board(self.root, since=0, control=observer, timeout_seconds=0)
+        self.assertEqual(band["control_events"][0]["level"], "in_band")
+        self.assertEqual(band["control_events"][0]["next_step_percent"], 70.0)
+        self.write(340000, window=475000)
+        step = BOARD.wait_board(self.root, since=0, control=observer, timeout_seconds=0)
+        self.assertEqual(step["control_events"][0]["next_step_percent"], 75.0)
+
+    def test_cli_requires_one_complete_level_pair(self):
+        self.write(160000)
+        percent = ("--context-trigger-percent", "58", "--context-band-floor-percent", "66")
+        mixed = subprocess.run(self.command() + list(percent) + ["--timeout-seconds", "0"],
+                               text=True, capture_output=True)
+        self.assertEqual(mixed.returncode, 1)
+        self.assertIn("--context-trigger-percent", mixed.stderr)
+        half = subprocess.run(self.command(percent[:2]) + ["--timeout-seconds", "0"], text=True, capture_output=True)
+        self.assertEqual(half.returncode, 1)
+        good = subprocess.run(self.command(percent) + ["--context-step-percent", "10", "--timeout-seconds", "0"],
+                              text=True, capture_output=True)
+        self.assertEqual(good.returncode, 0, good.stderr)
+        self.assertEqual(json.loads(good.stdout)["control_events"][0]["step_percent"], 10.0)
+        with self.assertRaisesRegex(BOARD.ChatboardError, "either|record no window|percent"):
+            self.control(trigger_percent=58)
 
     def test_follow_total_deadline_does_not_drain_unbounded_ready_backlog(self):
         self.write(100000)

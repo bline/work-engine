@@ -28,9 +28,12 @@ and counters do not establish monitoring for the successor.
 Use the pinned context-status binary from `provision_context_status.sh`; it must
 support `control --help`. Bind the actual session ID and absolute transcript
 path. For a Claude child, also bind its agent ID within that session. Do not use
-an inherited environment variable as proof of identity. Select planning and
-band levels for the observed model/window and applicable campaign; the historical
-levels in `context-boundary.md` and `anthropic-host.md` remain hypotheses.
+an inherited environment variable as proof of identity. For Codex, give levels as
+shares of the window (`--context-trigger-percent`, `--context-band-floor-percent`)
+so they follow the model's window: token levels set for a 258,400-token window
+put a 475,000-token session in band at 36%. Claude transcripts record no window
+and take token levels. The levels in `context-boundary.md` and
+`anthropic-host.md` remain hypotheses.
 
 Start the [board wait](../../../docs/codex-chatboard.md#session-control-subscription)
 with `--session-id`, the `--context-*` binding options, relevant board topics and
@@ -64,8 +67,9 @@ Continue keeping the durable continuation current. Preserve the explicit
 pre-dispatch and logical-boundary checks until the owning workflow accepts
 timely control delivery as equivalent evidence. A new assignment's expected
 growth still belongs to the dispatch decision and is not inferred by the monitor.
-An unchanged `in_band` state stays quiet; it does not renew a prior decision to
-continue for a different task. Use the scoped capacity decision in
+In band, a new event arrives at each further step of the window
+(`--context-step-percent`, default 5). Between steps the listener is quiet, and
+that silence does not renew a prior decision to continue for a different task. Use the scoped capacity decision in
 [context boundary](context-boundary.md#capacity-belongs-to-the-next-scope).
 
 ## Lifetime and recovery

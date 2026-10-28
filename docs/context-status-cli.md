@@ -30,20 +30,32 @@ At a logical task boundary, an operator can inspect this report and, if a succes
 
 ## Manual handoff control observations
 
-`control --session ID --rollout /absolute/FILE --trigger-tokens N
---band-floor-tokens N` emits a compact JSON assessment for the
+`control --session ID --rollout /absolute/FILE --trigger-percent P
+--band-floor-percent P` emits a compact JSON assessment for the
 [chatboard control subscription](codex-chatboard.md#session-control-subscription).
 `--host claude` uses Claude's reader and `--agent ID` binds a Claude child.
 Both session and agent identity must match the transcript. Levels are explicit
 caller-selected hypotheses, with `0 < trigger < band floor`; they do not change
 the underlying telemetry or imply a provider limit.
 
+Percent levels are resolved against the window recorded with each reading, so
+they follow a model change. A reading without a window is `unavailable` under
+percent levels. Claude transcripts record no window, so a Claude binding uses
+`--trigger-tokens N --band-floor-tokens N`; the two forms cannot be mixed. In
+band, the listener also reports each further multiple of `--step-percent` of
+the window (default 5), so a binding does not go quiet for the rest of the
+window. Events carry `level_basis`, the resolved token and percent levels,
+`context_percent`, `headroom_to_window_tokens` and `next_step_percent`. Without
+a recorded window there are no steps.
+
 The output has `schema: manual-context-control-v1`, `topic`, optional `event`,
 and an opaque `next_control_cursor`. Passing the previous cursor as `--cursor`
 suppresses unchanged levels while retaining epoch/model/window/quality changes.
 A normal initial reading is quiet. Errors reading the bound source produce an
 `unavailable` event; invalid arguments or incompatible cursors fail the command.
-The cursor binds host, session, agent, source path and policy. Nothing is written
+The cursor binds host, session, agent, source path and policy, including the
+step; a cursor from the earlier listener version is rejected, and omitting it
+establishes a new baseline. Nothing is written
 to the board, no session is started or reset, and no workflow ownership moves.
 
 `--lead-calls N` (default 3, 0 disables forecast alerts) compares headroom to

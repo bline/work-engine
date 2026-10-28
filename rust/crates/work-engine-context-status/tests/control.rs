@@ -23,9 +23,12 @@ impl Fixture {
         self.0.join("rollout.jsonl")
     }
     fn write(&self, inputs: &[u64]) {
+        self.write_window(inputs, 258400);
+    }
+    fn write_window(&self, inputs: &[u64], window: u64) {
         let mut rows = vec![json!({"type":"session_meta", "payload":{"id":ID}})];
         rows.extend(inputs.iter().map(|n| json!({"type":"event_msg", "payload":{"type":"token_count", "info":{
-            "last_token_usage":{"input_tokens":n,"cached_input_tokens":0}, "model_context_window":258400}}})));
+            "last_token_usage":{"input_tokens":n,"cached_input_tokens":0}, "model_context_window":window}}})));
         self.rows(rows);
     }
     fn rows(&self, rows: Vec<Value>) {
@@ -50,14 +53,30 @@ impl Fixture {
             .unwrap()
     }
     fn json(&self, extra: &[&str]) -> Value {
-        let out = self.run(extra);
-        assert!(
-            out.status.success(),
-            "{}",
-            String::from_utf8_lossy(&out.stderr)
-        );
-        serde_json::from_slice(&out.stdout).unwrap()
+        parse(self.run(extra))
     }
+    /// Runs with only the given levels, so percent and token levels can be tested.
+    fn bare(&self, extra: &[&str]) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_work-engine-context-status"))
+            .args(["control", "--session", ID, "--rollout"])
+            .arg(self.path())
+            .args(extra)
+            .output()
+            .unwrap()
+    }
+    fn percent(&self, extra: &[&str]) -> Value {
+        let mut args = vec!["--trigger-percent", "58", "--band-floor-percent", "66"];
+        args.extend_from_slice(extra);
+        parse(self.bare(&args))
+    }
+}
+fn parse(out: Output) -> Value {
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    serde_json::from_slice(&out.stdout).unwrap()
 }
 impl Drop for Fixture {
     fn drop(&mut self) {
@@ -298,4 +317,150 @@ fn claude_usable_request_conformance_and_recovery() {
         let state: Value = serde_json::from_str(cursor(&recovered)).unwrap();
         assert_eq!(state["level"], "normal", "{}", case["name"]);
     }
+}
+
+#[test]
+fn percent_levels_follow_the_recorded_window_and_keep_reporting_in_band() {
+    // Sol 6.1 records a 475,000-token window. On 2026-10-28 a root bound with
+    // token levels from a 258,400 window reached 74% having heard nothing since
+    // in_band at 171,267 (36%).
+    let f = Fixture::new();
+    f.write_window(&[200000], 475000);
+    let normal = f.percent(&[]);
+    assert!(normal["event"].is_null());
+    f.write_window(&[280000], 475000);
+    let planning = f.percent(&["--cursor", cursor(&normal)]);
+    assert_eq!(planning["event"]["level"], "planning");
+    assert_eq!(planning["event"]["level_basis"], "window_percent");
+    assert_eq!(planning["event"]["trigger_tokens"], 275500);
+    assert_eq!(planning["event"]["band_floor_tokens"], 313500);
+    assert_eq!(planning["event"]["context_percent"], 58.9);
+    assert!(planning["event"]["next_step_percent"].is_null());
+    f.write_window(&[320000], 475000);
+    let band = f.percent(&["--cursor", cursor(&planning)]);
+    assert_eq!(band["event"]["level"], "in_band");
+    assert_eq!(band["event"]["next_step_percent"], 70.0);
+    assert_eq!(band["event"]["headroom_to_window_tokens"], 155000);
+    f.write_window(&[330000], 475000);
+    let quiet = f.percent(&["--cursor", cursor(&band)]);
+    assert!(quiet["event"].is_null(), "69.5% has not crossed 70%");
+    let mut last = quiet;
+    for (input, next) in [(333000, 75.0), (405268, 90.0), (429188, 95.0)] {
+        f.write_window(&[input], 475000);
+        let step = f.percent(&["--cursor", cursor(&last)]);
+        assert_eq!(step["event"]["level"], "in_band", "{input}");
+        assert_eq!(step["event"]["next_step_percent"], next, "{input}");
+        last = step;
+    }
+    // The same shares resolve against a smaller window.
+    let small = Fixture::new();
+    small.write_window(&[160000], 258400);
+    let v = small.percent(&[]);
+    assert_eq!(v["event"]["level"], "planning");
+    assert_eq!(v["event"]["trigger_tokens"], 149872);
+}
+
+#[test]
+fn token_levels_on_a_larger_window_still_report_each_step_in_band() {
+    let f = Fixture::new();
+    f.write_window(&[180000], 475000);
+    let band = f.json(&[]);
+    assert_eq!(band["event"]["level"], "in_band");
+    assert_eq!(band["event"]["level_basis"], "tokens");
+    assert_eq!(band["event"]["band_floor_percent"], 36.1);
+    f.write_window(&[200000], 475000);
+    let step = f.json(&["--cursor", cursor(&band)]);
+    assert_eq!(step["event"]["next_step_percent"], 45.0);
+    f.write_window(&[205000], 475000);
+    assert!(f.json(&["--cursor", cursor(&step)])["event"].is_null());
+    f.write_window(&[150000, 155000, 30000], 475000);
+    let reset = f.json(&["--cursor", cursor(&step)]);
+    assert_eq!(reset["event"]["level"], "normal");
+    assert!(reset["event"]["next_step_percent"].is_null());
+}
+
+#[test]
+fn percent_levels_without_a_recorded_window_are_unavailable() {
+    let f = Fixture::new();
+    f.rows(vec![
+        json!({"type":"session_meta", "payload":{"id":ID}}),
+        json!({"type":"event_msg", "payload":{"type":"token_count", "info":{
+            "last_token_usage":{"input_tokens":300000,"cached_input_tokens":0}}}}),
+    ]);
+    let v = f.percent(&[]);
+    assert_eq!(v["event"]["level"], "unavailable");
+    assert!(v["event"]["input_tokens"].is_null());
+    assert!(
+        v["event"]["unavailable_detail"]
+            .as_str()
+            .unwrap()
+            .contains("window")
+    );
+}
+
+#[test]
+fn level_binding_rules_and_earlier_cursor_versions_are_rejected() {
+    let f = Fixture::new();
+    f.write_window(&[300000], 475000);
+    for args in [
+        vec!["--trigger-percent", "58"],
+        vec!["--trigger-percent", "66", "--band-floor-percent", "58"],
+        vec!["--trigger-percent", "58", "--band-floor-percent", "101"],
+        vec!["--trigger-percent", "0", "--band-floor-percent", "66"],
+        vec!["--trigger-percent", "58", "--band-floor-percent", "NaN"],
+        vec![
+            "--trigger-percent",
+            "58",
+            "--band-floor-percent",
+            "66",
+            "--trigger-tokens",
+            "150000",
+            "--band-floor-tokens",
+            "171267",
+        ],
+        vec![
+            "--trigger-percent",
+            "58",
+            "--band-floor-percent",
+            "66",
+            "--step-percent",
+            "0",
+        ],
+        vec![],
+    ] {
+        assert!(!f.bare(&args).status.success(), "{args:?}");
+    }
+    let claude = f.bare(&[
+        "--host",
+        "claude",
+        "--trigger-percent",
+        "58",
+        "--band-floor-percent",
+        "66",
+    ]);
+    assert!(String::from_utf8_lossy(&claude.stderr).contains("record no context window"));
+    let v = f.percent(&[]);
+    let mut old: Value = serde_json::from_str(cursor(&v)).unwrap();
+    old["version"] = json!(1);
+    let rejected = f.bare(&[
+        "--trigger-percent",
+        "58",
+        "--band-floor-percent",
+        "66",
+        "--cursor",
+        &old.to_string(),
+    ]);
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("another listener version"));
+    // A different step is a different policy.
+    let other_step = f.bare(&[
+        "--trigger-percent",
+        "58",
+        "--band-floor-percent",
+        "66",
+        "--step-percent",
+        "10",
+        "--cursor",
+        cursor(&v),
+    ]);
+    assert!(!other_step.status.success());
 }
