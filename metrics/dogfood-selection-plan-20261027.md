@@ -1,13 +1,13 @@
 # Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)
 
-Status (2026-10-28): **no round is active; do not profile.** Round 1 (run
-directory `~/.local/state/work-engine/task-profile-pilot`, cap 10) completed on
-2026-10-28 and was reviewed with the owner
-([review](probes/dogfood-pilot-round1-review-20261028.md)); its fixes are in the
-coordinator guidance. Round 2, a builder comparison (revision 4 under "Round 2"
-below; design and tooling reviewed), awaits the join demonstration and the
-owner's approval.
-When a round starts, these lines name its run directory and cap.
+Status (2026-10-28): **round 2 is active: a builder comparison** (section
+"Round 2"). Run directory: `~/.local/state/work-engine/task-profile-pilot-2`.
+Limits: a cap of 20 enrolled episodes, counted by `enroll` (not by
+`task-profiles/` entries); at most 2 open Terra-arm episodes; 10 Terra repair
+rounds before new enrollment pauses. Approved by the owner on 2026-10-28 ("Let's
+do it") after design, tooling and join-check reviews. Round 1 (run directory
+`~/.local/state/work-engine/task-profile-pilot`, cap 10) completed and was reviewed
+([review](probes/dogfood-pilot-round1-review-20261028.md)).
 
 ## Why
 
@@ -427,7 +427,8 @@ All of these, then owner approval:
    joins cleanly).
 4. These Status lines name round 2, its run directory
    (`~/.local/state/work-engine/task-profile-pilot-2`) and its limits (20 episodes,
-   2 Terra in flight, 10 Terra repair rounds).
+   2 Terra in flight, 10 Terra repair rounds). **Done 2026-10-28** on the owner's
+   approval; `init-round` wrote the run directory's `round.json`.
 
 ## Before activation
 
