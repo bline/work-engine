@@ -233,6 +233,10 @@ outcomes: make collection permanent, revise the schema, or stop.
 
 ## Round 2 (proposed 2026-10-28; not approved, not active)
 
+**Reviewed 2026-10-28 by `gpt-6-astra` at `high`** (standard tier, fresh read-only session):
+**not ready**, two P1 and five P2 findings ([review](probes/dogfood-round2-review-astra-20261028.md)).
+This draft is superseded once revised; the revision answers each finding.
+
 Round 1 showed the records work but taught nothing about the cheaper builder:
 none of its 5 builders was Terra. Round 2 varies the builder where either is
 acceptable, so outcomes can be compared.
