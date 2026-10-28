@@ -14,14 +14,30 @@ impl CanonicalMaterialPort for TaskStore {
         transition: &TransitionId,
         capture_id: &str,
     ) -> Result<MaterialInput, MaterialPortError> {
-        let record = self
+        let mut record = self
             .observe_subject(subject.as_str())
             .map_err(|_| MaterialPortError::Unavailable)?
             .ok_or(MaterialPortError::Unavailable)?;
-        if record.sources.iter().any(|s| s.bytes.len() > 16 * 1024)
-            || record.sources.iter().map(|s| s.bytes.len()).sum::<usize>() > 64 * 1024
-        {
-            return Err(MaterialPortError::Invalid);
+        for effect in &record.completed_effects {
+            if effect.attribution.is_none() {
+                let id = format!("effect-data-{}", crate::sha256(effect.effect_id.as_bytes()));
+                if !record.sources.iter().any(|s| s.id == id) {
+                    record.sources.push(lifecycle_semantic::SourceMaterial {
+                        id: id.clone(),
+                        owner_namespace: OWNER_NAMESPACE.into(),
+                        owner_ref: record.task_id.clone(),
+                        revision: 1,
+                        dependency_key: id,
+                        current: true,
+                        dependency_required: false,
+                        kind: lifecycle_semantic::SourceKind::ExternalData,
+                        trust: lifecycle_semantic::SourceTrust::UntrustedData,
+                        availability: lifecycle_semantic::SourceAvailability::Unavailable,
+                        bytes: Vec::new(),
+                        sha256: effect.receipt_digest.clone(),
+                    });
+                }
+            }
         }
         let obligations = obligations(&record);
         Ok(MaterialInput {

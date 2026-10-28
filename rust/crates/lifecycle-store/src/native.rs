@@ -292,6 +292,26 @@ pub struct NativeDeliveryBinding {
     pub context_id: String,
 }
 
+/// A committed read joined to its exact retained delivery, across context
+/// epochs. This is read-only cross-store reconciliation material.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeCommittedTaskRead {
+    pub input_id: String,
+    pub input_text: String,
+    pub delivery_id: String,
+    pub effect_id: String,
+    pub parent_invocation_id: String,
+    pub call_id: String,
+    pub contract_id: String,
+    pub snapshot_id: String,
+    pub member_id: String,
+    pub offset: u64,
+    pub requested_length: u64,
+    pub returned_length: u64,
+    pub result_sha256: String,
+    pub operation_attempt_id: String,
+}
+
 /// One settled native turn's observed usage. `units=None` means the provider
 /// did not supply a complete, disjoint counter set; it never means zero.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1234,6 +1254,55 @@ impl SqliteLifecycleStore {
             },
         )
         .transpose()
+    }
+
+    pub fn committed_task_snapshot_reads(
+        &self,
+        subject: &SubjectId,
+    ) -> Result<Vec<NativeCommittedTaskRead>, StoreError> {
+        self.verify_identity()?;
+        let mut statement = self.connection.prepare(
+            "SELECT i.input_id,i.text,i.delivery_id,e.effect_id,
+                    o.parent_invocation_id,o.call_id,o.contract_id,o.snapshot_id,o.member_id,
+                    o.range_start,o.range_length,length(o.result),o.result_sha256,o.operation_attempt_id
+             FROM native_operations o
+             JOIN native_turns n ON n.invocation_id=o.parent_invocation_id
+             JOIN native_sessions s ON s.session_id=n.session_id
+             JOIN native_delivery_segments d ON d.invocation_id=n.invocation_id
+             JOIN attempts a ON a.attempt_id=d.queue_attempt_id
+             JOIN effects e ON e.effect_id=a.effect_id
+             JOIN inputs i ON i.input_id=e.input_id
+             WHERE s.subject_id=?1 AND s.role IN ('domain','successor')
+               AND n.purpose='domain_work' AND e.subject_id=s.subject_id
+               AND o.state='completed_settled' AND o.contract_id='workspace.snapshot.read.v1'
+             ORDER BY o.entered_wall_ms,o.operation_attempt_id"
+        ).map_err(|_| StoreError::Unavailable)?;
+        let rows = statement
+            .query_map([subject.as_str()], |r| {
+                Ok(NativeCommittedTaskRead {
+                    input_id: r.get(0)?,
+                    input_text: String::from_utf8(r.get::<_, Vec<u8>>(1)?)
+                        .map_err(|_| rusqlite::Error::InvalidQuery)?,
+                    delivery_id: r.get(2)?,
+                    effect_id: r.get(3)?,
+                    parent_invocation_id: r.get(4)?,
+                    call_id: r.get(5)?,
+                    contract_id: r.get(6)?,
+                    snapshot_id: r.get(7)?,
+                    member_id: r.get(8)?,
+                    offset: u64::try_from(r.get::<_, i64>(9)?)
+                        .map_err(|_| rusqlite::Error::InvalidQuery)?,
+                    requested_length: u64::try_from(r.get::<_, i64>(10)?)
+                        .map_err(|_| rusqlite::Error::InvalidQuery)?,
+                    returned_length: u64::try_from(r.get::<_, i64>(11)?)
+                        .map_err(|_| rusqlite::Error::InvalidQuery)?,
+                    result_sha256: r.get(12)?,
+                    operation_attempt_id: r.get(13)?,
+                })
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|_| StoreError::Unavailable)
     }
 
     /// Bind a physical native attempt to one entered FIFO delivery before
@@ -4914,6 +4983,31 @@ mod tests {
             .commit_snapshot_result(&child, b"abc", clock())
             .unwrap();
         assert_eq!(result.bytes, b"abc");
+        // The native result is durable before any task-owner callback or
+        // native turn settlement. The readback must survive a store reopen.
+        store.connection.execute_batch("\
+            INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state)
+            VALUES('input:read','subject:test',1,'delivery:read','producer:test',X'74657374','digest:test','grant:read','entered');
+            INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state)
+            VALUES('effect:read','subject:test','input:read',0,'entered');
+            INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms)
+            VALUES('attempt:read','effect:read','incarnation:test','entered',1);
+            INSERT INTO native_delivery_segments(invocation_id,queue_attempt_id,segment_no,state)
+            VALUES('invocation:test','attempt:read',0,'entered');
+        ").unwrap();
+        let native_read = store
+            .committed_task_snapshot_reads(&SubjectId::parse("subject:test").unwrap())
+            .unwrap();
+        assert_eq!(native_read.len(), 1);
+        assert_eq!(native_read[0].operation_attempt_id, "opattempt:call:test");
+        assert_eq!(native_read[0].delivery_id, "delivery:read");
+        assert_eq!(
+            (
+                native_read[0].requested_length,
+                native_read[0].returned_length
+            ),
+            (3, 3)
+        );
         let raw_rollback=br#"{"method":"item/tool/call","id":10,"params":{"threadId":"thread:test","turnId":"turn:test","callId":"call:rollback","namespace":"workspace","tool":"snapshot_read","arguments":{"snapshot_id":"snapshot:test","member_id":"m1","offset":0,"length":3}}}"#;
         store
             .record_native_ingress(
@@ -5172,6 +5266,10 @@ mod tests {
         ));
         drop(store);
         let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let reopened_reads = store
+            .committed_task_snapshot_reads(&SubjectId::parse("subject:test").unwrap())
+            .unwrap();
+        assert_eq!(reopened_reads, native_read);
         let recovery = store.native_recovery("invocation:test").unwrap().unwrap();
         assert_eq!(recovery.class, "EnteredUncertain");
         assert!(recovery.send_intent);

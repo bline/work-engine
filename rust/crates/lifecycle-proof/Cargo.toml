@@ -14,6 +14,11 @@ thiserror.workspace = true
 
 [dev-dependencies]
 tempfile = "=3.27.0"
+lifecycle-core = { path = "../lifecycle-core" }
+lifecycle-store = { path = "../lifecycle-store" }
+lifecycle-service = { path = "../lifecycle-service" }
+retained-task-workflow = { path = "../retained-task-workflow" }
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
 
 [[test]]
 name = "retained_workflow"

@@ -17,17 +17,18 @@ pub use admin::{
 };
 pub use artifact::{PublishedArtifact, StagedArtifact};
 pub use native::{
-    ControlSessionRequest, NativeDeliveryBinding, NativeDeliveryObservation, NativeFinalMaterial,
-    NativeIngressApply, NativeOperationClaim, NativeOperationEntry, NativeOperationRecovery,
-    NativeOperationResult, NativeRecovery, NativeRestartBasis, NativeRestartEpoch,
-    NativeRestartIntent, NativeResumeCandidate, NativeSessionEntry, NativeTaskOperationClaim,
-    NativeTaskOperationRequest, NativeTurnEntry, NativeTurnRequest, NativeUsageAccounting,
-    NativeUsageUnits, PendingNativeTaskOperation, SemanticControlRole, SnapshotReadRequest,
+    ControlSessionRequest, NativeCommittedTaskRead, NativeDeliveryBinding,
+    NativeDeliveryObservation, NativeFinalMaterial, NativeIngressApply, NativeOperationClaim,
+    NativeOperationEntry, NativeOperationRecovery, NativeOperationResult, NativeRecovery,
+    NativeRestartBasis, NativeRestartEpoch, NativeRestartIntent, NativeResumeCandidate,
+    NativeSessionEntry, NativeTaskOperationClaim, NativeTaskOperationRequest, NativeTurnEntry,
+    NativeTurnRequest, NativeUsageAccounting, NativeUsageUnits, PendingNativeTaskOperation,
+    SemanticControlRole, SnapshotReadRequest,
 };
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
 pub use semantic::{
-    SemanticCaptureRecord, SemanticCheckpointPackage, SemanticMaterialRejectionRecord,
-    SemanticResultRecord,
+    CurrentSemanticMaterialBlock, SemanticCaptureRecord, SemanticCheckpointPackage,
+    SemanticMaterialRejectionRecord, SemanticResultRecord,
 };
 pub use sqlite::{GrantControlHandle, SqliteLifecycleStore};
 
@@ -44,6 +45,7 @@ pub struct SubjectProjection {
     pub transition: Option<TransitionProjection>,
     pub delivery: Option<DeliveryProjection>,
     pub unresolved_attempts: u64,
+    pub task_effect_hold: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -51,6 +53,8 @@ pub struct TransitionProjection {
     pub transition_id: String,
     pub stage: String,
     pub semantic_compile_refusal: Option<String>,
+    pub semantic_material_block: Option<String>,
+    pub semantic_basis_issues: Vec<lifecycle_semantic::MaterialIssue>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

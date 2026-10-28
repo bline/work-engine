@@ -65,13 +65,21 @@ pub struct CloseEvidence {
 
 impl HostProcess {
     pub fn launch(executable: &Path, startup: &Path) -> Result<Self> {
+        Self::launch_route(executable, startup, "--startup")
+    }
+
+    pub fn launch_selected(executable: &Path, selection: &Path) -> Result<Self> {
+        Self::launch_route(executable, selection, "--selected")
+    }
+
+    fn launch_route(executable: &Path, startup: &Path, route: &str) -> Result<Self> {
         if !executable.is_absolute() || !startup.is_absolute() || !startup.is_file() {
             return Err(ProofError::Contract(
                 "installed executable and startup file must be absolute".into(),
             ));
         }
         let mut child = Command::new(executable)
-            .args(["serve", "--startup"])
+            .args(["serve", route])
             .arg(startup)
             .stdin(Stdio::null())
             .stdout(Stdio::null())

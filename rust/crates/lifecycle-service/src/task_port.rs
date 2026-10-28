@@ -78,6 +78,37 @@ pub struct CompletedTaskEffect {
     pub effect_id: String,
     pub receipt_sha256: String,
     pub expected_cursor_revision: u64,
+    pub parent_invocation_id: String,
+    pub call_id: String,
+    pub contract_id: String,
+    pub snapshot_id: String,
+    pub member_id: String,
+    pub offset: u64,
+    pub requested_length: u64,
+    pub returned_length: u64,
+    pub result_bytes: Option<Vec<u8>>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct CompletedTaskEffectReadback {
+    pub task_id: String,
+    pub logical_delivery_id: String,
+    pub effect_id: String,
+    pub receipt_sha256: String,
+    pub attribution: Option<CompletedTaskEffectAttribution>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct CompletedTaskEffectAttribution {
+    pub parent_invocation_id: String,
+    pub call_id: String,
+    pub contract_id: String,
+    pub snapshot_id: String,
+    pub member_id: String,
+    pub offset: u64,
+    pub requested_length: u64,
+    pub returned_length: u64,
+    pub result_sha256: String,
 }
 
 #[derive(Clone, Debug, Eq, Error, PartialEq)]
@@ -102,6 +133,13 @@ pub type GrantFence<'a> = dyn FnMut(&mut dyn FnMut() -> Result<(), TaskOperation
     + 'a;
 
 pub trait TaskOperationPort: Send + Sync {
+    /// Read the owner record after native commit, including an opaque legacy
+    /// row when present. The lookup has no write or replay authority.
+    fn lookup_completed_effect(
+        &self,
+        task_id: &str,
+        effect_id: &str,
+    ) -> Result<Option<CompletedTaskEffectReadback>, TaskOperationError>;
     /// Compare the exact request text with the already published canonical
     /// input. A direct service-socket caller cannot invent task meaning.
     fn validate_input(

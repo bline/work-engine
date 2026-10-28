@@ -31,6 +31,7 @@ pub enum Reply {
     SemanticCompileInvalidGoverning,
     SemanticVerify,
     SuccessorUse,
+    SuccessorUseOmitReceipt,
     SemanticSuccessorVerify,
     ToolCall {
         call_id: String,
@@ -77,6 +78,8 @@ pub struct ProviderEntry {
     pub request_sha256: String,
     pub request: Value,
     pub reply_kind: String,
+    #[serde(default)]
+    pub reply_text: Option<String>,
 }
 
 /// A finite, auth-free loopback Responses endpoint. The script controls only
@@ -222,6 +225,7 @@ fn serve(
                         }
                         Reply::SemanticVerify => "semantic_verify",
                         Reply::SuccessorUse => "successor_use",
+                        Reply::SuccessorUseOmitReceipt => "successor_use_omit_receipt",
                         Reply::SemanticSuccessorVerify => "semantic_successor_verify",
                         Reply::ToolCall { .. } => "tool_call",
                         Reply::ToolCallFromFile { .. } => "tool_call_from_file",
@@ -231,8 +235,21 @@ fn serve(
                     let entry = ProviderEntry {
                         ordinal,
                         request_sha256: format!("{:x}", Sha256::digest(normalized.as_bytes())),
-                        request,
+                        request: request.clone(),
                         reply_kind: reply_kind.into(),
+                        reply_text: match &step.reply {
+                            Reply::Text(value) => Some(value.clone()),
+                            Reply::SemanticCompile => Some(semantic_compile_output(&request)?),
+                            Reply::SemanticVerify => Some(semantic_verify_output(&request, false)?),
+                            Reply::SuccessorUse => Some(successor_use_output(&request)?),
+                            Reply::SuccessorUseOmitReceipt => {
+                                Some(successor_use_omit_receipt_output(&request)?)
+                            }
+                            Reply::SemanticSuccessorVerify => {
+                                Some(semantic_verify_output(&request, true)?)
+                            }
+                            _ => None,
+                        },
                     };
                     serde_json::to_writer(&mut *file, &entry)?;
                     file.write_all(b"\n")?;
@@ -411,7 +428,7 @@ fn semantic_compile_output(request: &Value) -> Result<String> {
     let sources = prompt["sources"]
         .as_array()
         .ok_or_else(|| ProofError::Contract("semantic sources absent".into()))?;
-    if sources.len() != 10 || prompt["schema_version"] != 1 {
+    if sources.len() != 11 || prompt["schema_version"] != 1 {
         return Err(ProofError::Contract(
             "S8 transition A source inventory changed".into(),
         ));
@@ -430,18 +447,29 @@ fn semantic_compile_output(request: &Value) -> Result<String> {
         .find(|source| {
             source["id"]
                 .as_str()
-                .is_some_and(|id| id.starts_with("effect-opattempt:"))
+                .is_some_and(|id| id.starts_with("effect-") && !id.starts_with("effect-data-"))
         })
         .ok_or_else(|| ProofError::Contract("snapshot child effect source absent".into()))?;
+    let data = sources
+        .iter()
+        .find(|source| {
+            source["id"]
+                .as_str()
+                .is_some_and(|id| id.starts_with("effect-data-"))
+        })
+        .ok_or_else(|| ProofError::Contract("snapshot result source absent".into()))?;
+    let completed = json!({"text":format!("Completed approved read; observed {} from its returned bytes.",
+        data["bytes_utf8"].as_str().unwrap_or("")),
+        "sources":[source_reference(effect),source_reference(data)]});
     if objective["bytes_utf8"]
         != "Analyze the approved repository snapshot and identify the ORION-7 marker."
         || rule["bytes_utf8"] != "Use only the approved snapshot member m1."
         || rule["trust"] != "host_governing"
         || approval["bytes_utf8"] != "Approval for repository mutation remains pending."
         || effect["kind"] != "delivery_consequence"
-        || !effect["bytes_utf8"]
-            .as_str()
-            .is_some_and(|text| text.starts_with("Completed effect opattempt:"))
+        || data["bytes_utf8"] != "ORION-7"
+        || data["trust"] != "untrusted_data"
+        || effect["trust"] != "host_canonical"
     {
         return Err(ProofError::Contract(
             "S8 transition A owner material differs from fixed facts".into(),
@@ -451,20 +479,14 @@ fn semantic_compile_output(request: &Value) -> Result<String> {
         "schema_version":1,
         "objective":source_statement(objective),
         "work_position":source_statement(question),
-        "completed":[source_statement(effect)],
+        "completed":[completed],
         "commitments":[source_statement(commitment)],
         "decisions":[{
             "statement":source_statement(decision),"current":true,
             "supersedes":[],"invalidation_condition":null
         }],
-        "uncertainties":[source_statement(uncertainty)],
-        "interactions":[{
-            "question_id":"question:s8:mutation-approval",
-            "recipient":"operator:s8:authorized",
-            "scope":"repository mutation approval",
-            "status":"pending","answer_id":null,
-            "statement":source_statement(approval)
-        }],
+        "uncertainties":[source_statement(uncertainty),source_statement(approval)],
+        "interactions":[],
         "governing":[source_statement(rule)],
         "canonical_refs":[source_statement(snapshot),source_statement(canonical)],
         "delivery_custody":[source_statement(effect)],
@@ -512,20 +534,24 @@ fn semantic_verify_output(request: &Value, successor: bool) -> Result<String> {
         .find(|source| {
             source["id"]
                 .as_str()
-                .is_some_and(|id| id.starts_with("effect-opattempt:"))
+                .is_some_and(|id| id.starts_with("effect-") && !id.starts_with("effect-data-"))
         })
         .ok_or_else(|| ProofError::Contract("snapshot child effect source absent".into()))?;
     if candidate["objective"] != source_statement(objective)
         || candidate["work_position"] != source_statement(question)
-        || candidate["completed"] != json!([source_statement(effect)])
+        || !candidate["completed"][0]["text"]
+            .as_str()
+            .is_some_and(|text| text.contains("ORION-7"))
+        || candidate["completed"][0]["sources"]
+            .as_array()
+            .is_none_or(|refs| refs.len() != 2)
         || candidate["delivery_custody"] != json!([source_statement(effect)])
         || candidate["commitments"] != json!([source_statement(commitment)])
-        || candidate["uncertainties"] != json!([source_statement(uncertainty)])
+        || candidate["uncertainties"]
+            != json!([source_statement(uncertainty), source_statement(approval)])
         || candidate["governing"] != json!([source_statement(rule)])
         || candidate["decisions"][0]["statement"] != source_statement(decision)
-        || candidate["interactions"][0]["statement"] != source_statement(approval)
-        || candidate["interactions"][0]["status"] != "pending"
-        || candidate["interactions"][0]["answer_id"] != Value::Null
+        || candidate["interactions"] != json!([])
         || candidate["next_action"]["sources"]
             != json!([source_reference(rule), source_reference(approval)])
     {
@@ -533,6 +559,7 @@ fn semantic_verify_output(request: &Value, successor: bool) -> Result<String> {
             "candidate does not retain the fixed owner facts".into(),
         ));
     }
+    let mut omitted_effect_custody = false;
     if successor {
         let response = prompt["successor_response"]
             .as_str()
@@ -544,18 +571,23 @@ fn semantic_verify_output(request: &Value, successor: bool) -> Result<String> {
             uncertainty["bytes_utf8"].as_str().unwrap(),
             approval["bytes_utf8"].as_str().unwrap(),
             effect["bytes_utf8"].as_str().unwrap(),
+            "ORION-7",
         ] {
             if !response.contains(required) {
-                return Err(ProofError::Contract(
-                    "successor omitted a fixed owner consequence".into(),
-                ));
+                if required == effect["bytes_utf8"].as_str().unwrap() {
+                    omitted_effect_custody = true;
+                } else {
+                    return Err(ProofError::Contract(
+                        "successor omitted a fixed owner consequence".into(),
+                    ));
+                }
             }
         }
     }
     let obligations = prompt["required_obligations"]
         .as_array()
         .ok_or_else(|| ProofError::Contract("verifier obligations absent".into()))?;
-    if obligations.len() != sources.len() || obligations.len() != 10 {
+    if obligations.len() != sources.len() || obligations.len() != 11 {
         return Err(ProofError::Contract(
             "verifier obligation inventory changed".into(),
         ));
@@ -576,8 +608,8 @@ fn semantic_verify_output(request: &Value, successor: bool) -> Result<String> {
             )));
         }
         findings.push(json!({
-            "obligation_id":id,"status":"satisfied","sources":exact,
-            "explanation":format!("Candidate retains current task-owner source {source_id} with its exact citation and pending authority scope.")
+            "obligation_id":id,"status":if omitted_effect_custody && source_id.starts_with("effect-") {"violated"} else {"satisfied"},"sources":exact,
+            "explanation":if omitted_effect_custody && source_id.starts_with("effect-") {"Successor omitted the completed effect custody receipt.".to_owned()} else {format!("Candidate retains current task-owner source {source_id} with its exact citation and pending authority scope.")}
         }));
     }
     Ok(serde_json::to_string(&json!({
@@ -606,20 +638,32 @@ fn successor_use_output(request: &Value) -> Result<String> {
     let decision = statement("/decisions/0/statement/text")?;
     let commitment = statement("/commitments/0/text")?;
     let uncertainty = statement("/uncertainties/0/text")?;
-    let approval = statement("/interactions/0/statement/text")?;
+    let approval = statement("/uncertainties/1/text")?;
     let effect = statement("/completed/0/text")?;
+    let effect_custody = statement("/delivery_custody/0/text")?;
     let reference = statement("/canonical_refs/1/text")?;
     if !objective.contains("ORION-7")
-        || candidate["interactions"][0]["status"] != "pending"
-        || !effect.starts_with("Completed effect opattempt:")
+        || candidate["interactions"] != json!([])
+        || !effect.contains("ORION-7")
     {
         return Err(ProofError::Contract(
             "successor candidate lacks fixed task facts".into(),
         ));
     }
     Ok(format!(
-        "The approved member m1 contains ORION-7. {rule} {reference} {effect} That read is complete and will not be repeated. {commitment} {decision} {uncertainty} {approval} My next action is to continue attributed repository analysis from the approved snapshot; repository mutation stays outside this task until an authorized answer changes the task-owner state."
+        "The approved member m1 contains ORION-7. {rule} {reference} {effect} Completed effect custody: {effect_custody} That read is complete and will not be repeated. {commitment} {decision} {uncertainty} {approval} My next action is to continue attributed repository analysis from the approved snapshot; repository mutation stays outside this task until an authorized answer changes the task-owner state."
     ))
+}
+
+fn successor_use_omit_receipt_output(request: &Value) -> Result<String> {
+    let prompt = semantic_prompt(request, "use_attributed_continuation")?;
+    let custody = prompt["candidate"]["delivery_custody"][0]["text"]
+        .as_str()
+        .ok_or_else(|| ProofError::Contract("custody absent".into()))?;
+    Ok(
+        successor_use_output(request)?
+            .replace(&format!("Completed effect custody: {custody} "), ""),
+    )
 }
 
 fn write_reply(
@@ -667,6 +711,11 @@ fn write_reply(
             "type":"message","id":format!("proof-message-{ordinal}"),
             "role":"assistant","status":"completed",
             "content":[{"type":"output_text","text":successor_use_output(request)?,"annotations":[]}]
+        }),
+        Reply::SuccessorUseOmitReceipt => json!({
+            "type":"message","id":format!("proof-message-{ordinal}"),
+            "role":"assistant","status":"completed",
+            "content":[{"type":"output_text","text":successor_use_omit_receipt_output(request)?,"annotations":[]}]
         }),
         Reply::SemanticSuccessorVerify => json!({
             "type":"message","id":format!("proof-message-{ordinal}"),

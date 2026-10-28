@@ -262,6 +262,32 @@ pub fn clock_sample() -> ClockSample {
     }
 }
 
+fn apply_current_semantic_material_block(
+    store: &SqliteLifecycleStore,
+    subject: &SubjectId,
+    transition: &TransitionId,
+    capture_id: &str,
+    semantic_revision: u64,
+    projection: &mut lifecycle_store::TransitionProjection,
+) -> Result<(), StoreError> {
+    match store.current_semantic_material_block(
+        subject,
+        transition,
+        capture_id,
+        semantic_revision,
+    )? {
+        Some(lifecycle_store::CurrentSemanticMaterialBlock::PromptTooLarge) => {
+            projection.semantic_material_block = Some("semantic_prompt_too_large".into());
+        }
+        Some(lifecycle_store::CurrentSemanticMaterialBlock::CapturedIssues(issues)) => {
+            projection.semantic_material_block = Some("semantic_source_basis_ineligible".into());
+            projection.semantic_basis_issues = issues;
+        }
+        None => {}
+    }
+    Ok(())
+}
+
 pub struct Actor {
     config: ServiceConfig,
     store: SqliteLifecycleStore,
@@ -285,11 +311,108 @@ pub struct Actor {
     native_successor_requested: Option<String>,
     native_segment_pending: Option<NativeSegmentIntent>,
     native_task: Option<tokio::task::JoinHandle<()>>,
-    native_gate: Arc<AtomicBool>,
+    native_gate: Arc<NativeGate>,
     native_exit_recorded: bool,
     native_close_unsafe: bool,
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+    task_effect_hold: Option<String>,
+}
+
+const TASK_EFFECT_HOLD: &str = "committed-native/owner-attribution-unresolved";
+
+/// Attribution can reopen after durable owner readback; shutdown cannot.
+/// Keeping the reasons independent makes a concurrent shutdown close monotonic.
+pub(crate) struct NativeGate {
+    attribution: AtomicBool,
+    shutdown: AtomicBool,
+}
+
+impl NativeGate {
+    fn new(attribution_held: bool) -> Self {
+        Self {
+            attribution: AtomicBool::new(attribution_held),
+            shutdown: AtomicBool::new(false),
+        }
+    }
+
+    pub(crate) fn load(&self, order: Ordering) -> bool {
+        self.attribution.load(order) || self.shutdown.load(order)
+    }
+
+    fn store_attribution(&self, held: bool) {
+        self.attribution.store(held, Ordering::SeqCst);
+    }
+
+    fn close_shutdown(&self) {
+        self.shutdown.store(true, Ordering::SeqCst);
+    }
+}
+
+/// Reconcile every committed task snapshot read for this subject against the
+/// retained owner's durable readback, including reads in older context epochs.
+pub fn task_effect_hold(
+    store: &SqliteLifecycleStore,
+    port: &dyn TaskOperationPort,
+    subject: &SubjectId,
+) -> Result<Option<String>, StoreError> {
+    task_effect_hold_for_reads(store.committed_task_snapshot_reads(subject)?, port, subject)
+}
+
+fn task_effect_hold_for_reads(
+    reads: Vec<lifecycle_store::NativeCommittedTaskRead>,
+    port: &dyn TaskOperationPort,
+    subject: &SubjectId,
+) -> Result<Option<String>, StoreError> {
+    for native in reads {
+        let input = match port.validate_input(&native.input_id, &native.input_text) {
+            Ok(input) if input.subject_id == subject.as_str() => input,
+            _ => {
+                return Ok(Some(format!(
+                    "{TASK_EFFECT_HOLD}:{}",
+                    native.operation_attempt_id
+                )));
+            }
+        };
+        let owner = match port.lookup_completed_effect(&input.task_id, &native.operation_attempt_id)
+        {
+            Ok(Some(owner)) => owner,
+            _ => {
+                return Ok(Some(format!(
+                    "{TASK_EFFECT_HOLD}:{}",
+                    native.operation_attempt_id
+                )));
+            }
+        };
+        if owner.task_id != input.task_id
+            || owner.logical_delivery_id != native.delivery_id
+            || owner.effect_id != native.operation_attempt_id
+            || owner.receipt_sha256 != native.result_sha256
+        {
+            return Ok(Some(format!(
+                "{TASK_EFFECT_HOLD}:{}",
+                native.operation_attempt_id
+            )));
+        }
+        if let Some(a) = owner.attribution
+            && (a.parent_invocation_id != native.parent_invocation_id
+                || a.call_id != native.call_id
+                || a.contract_id != native.contract_id
+                || a.snapshot_id != native.snapshot_id
+                || a.member_id != native.member_id
+                || a.offset != native.offset
+                || a.requested_length != native.requested_length
+                || a.returned_length != native.returned_length
+                || a.result_sha256 != native.result_sha256)
+        {
+            return Ok(Some(format!(
+                "{TASK_EFFECT_HOLD}:{}",
+                native.operation_attempt_id
+            )));
+        }
+        // A migrated v1 row proves only its old delivery/effect/digest tuple.
+    }
+    Ok(None)
 }
 
 /// The installed 0.163 app-server emits this notification between an
@@ -438,6 +561,9 @@ impl Actor {
     }
 
     async fn drive_transition(&mut self) -> Result<(), StoreError> {
+        if self.task_effect_hold.is_some() {
+            return Err(StoreError::ClaimConflict);
+        }
         let semantic_runtime = match (
             self.material_port.as_ref(),
             self.config.native.as_ref(),
@@ -751,6 +877,17 @@ impl Actor {
                 }
             }
         }
+        let task_effect_hold = if config.profile == "retained-repository-analysis-v1" {
+            task_effect_hold(
+                &store,
+                task_operation_port
+                    .as_deref()
+                    .ok_or(ServiceError::Configuration)?,
+                &subject,
+            )?
+        } else {
+            None
+        };
         let (executor, results) = OwnedExecutor::new(
             ControlledPort {
                 socket: config.peer_socket_path.clone(),
@@ -758,8 +895,9 @@ impl Actor {
             config.max_executions,
         )?;
         let (native_sender, native_messages) = mpsc::channel(32);
-        let native_gate = Arc::new(AtomicBool::new(false));
+        let native_gate = Arc::new(NativeGate::new(task_effect_hold.is_some()));
         let (native_session, native_snapshot, native_launch) = if !recovery_only
+            && task_effect_hold.is_none()
             && matches!(
                 config.profile.as_str(),
                 "native_simulated" | "retained-repository-analysis-v1"
@@ -877,6 +1015,7 @@ impl Actor {
             native_close_unsafe: recovery_only,
             material_port,
             task_operation_port,
+            task_effect_hold,
         })
     }
 
@@ -1232,6 +1371,9 @@ impl Actor {
     /// The lifecycle queue remains the sole scheduler. The native runner gets
     /// only an already-committed entry with its immutable envelope.
     async fn schedule_native_once(&mut self) -> Result<(), StoreError> {
+        if self.task_effect_hold.is_some() {
+            return Err(StoreError::ClaimConflict);
+        }
         if self.native_work_pending {
             return Ok(());
         }
@@ -1287,6 +1429,9 @@ impl Actor {
     /// Native terminal history is first settled under its own identity, then
     /// joined to the exact lifecycle attempt before any later FIFO entry.
     async fn settle_native_delivery(&mut self, final_text: &str) -> Result<(), StoreError> {
+        if self.task_effect_hold.is_some() {
+            return Err(StoreError::ClaimConflict);
+        }
         use lifecycle_core::{EffectObservation, EffectSettlement, EvidenceId, ExecutionOutcome};
         let turn = self.native_turn.as_ref().ok_or(StoreError::Rejected)?;
         let invocation_id = turn.invocation_id().to_owned();
@@ -1597,12 +1742,16 @@ impl Actor {
         event: &lifecycle_codex::NativeEvent,
         call: &lifecycle_codex::NativeToolCall,
     ) -> Result<Value, StoreError> {
+        if self.task_effect_hold.is_some() {
+            return Err(StoreError::ClaimConflict);
+        }
         if self.config.profile == "retained-repository-analysis-v1"
             && call.namespace.as_deref() == Some("task")
         {
             return self.execute_native_task_tool(event, call);
         }
         if self.native_gate.load(Ordering::SeqCst)
+            || self.task_effect_hold.is_some()
             || call.namespace.as_deref() != Some("workspace")
             || call.tool != "snapshot_read"
         {
@@ -1653,19 +1802,25 @@ impl Actor {
         )? {
             NativeOperationClaim::Entered(entry) => {
                 let bytes = workspace_snapshot_read::execute(&self.store, snapshot, &entry)?;
-                let result = self
-                    .store
-                    .commit_snapshot_result(&entry, &bytes, clock_sample())?;
-                operations::native_proof_barrier(
-                    self.config.proof_barrier_dir.as_deref(),
-                    "native_after_result_commit",
-                )?;
-                result
+                self.store
+                    .commit_snapshot_result(&entry, &bytes, clock_sample())?
             }
             NativeOperationClaim::Committed(result) => result,
             NativeOperationClaim::EnteredUncertain => return Err(StoreError::ClaimConflict),
         };
         if self.config.profile == "retained-repository-analysis-v1" {
+            // The native commit has crossed stores. Every later error leaves
+            // the delivery held until exact owner readback on observation or
+            // restart; the current callback is never replay authority.
+            self.task_effect_hold = Some(format!("{TASK_EFFECT_HOLD}:{}", result.attempt.as_str()));
+            self.native_gate.store_attribution(true);
+            if let Err(error) = operations::native_proof_barrier(
+                self.config.proof_barrier_dir.as_deref(),
+                "native_after_result_commit",
+            ) {
+                self.native_gate.store_attribution(true);
+                return Err(error);
+            }
             let binding = self
                 .store
                 .native_delivery_binding(parent.invocation_id())?
@@ -1683,14 +1838,70 @@ impl Actor {
             if cursor.task_id != input.task_id || cursor.subject_id != self.config.subject_id {
                 return Err(StoreError::ObservationMismatch);
             }
-            port.record_completed_effect(&crate::CompletedTaskEffect {
-                task_id: input.task_id,
-                logical_delivery_id: binding.delivery_id,
-                effect_id: result.attempt.as_str().to_owned(),
-                receipt_sha256: result.sha256.clone(),
-                expected_cursor_revision: cursor.cursor_revision,
-            })
-            .map_err(|_| StoreError::Unavailable)?;
+            if port
+                .record_completed_effect(&crate::CompletedTaskEffect {
+                    task_id: input.task_id,
+                    logical_delivery_id: binding.delivery_id,
+                    effect_id: result.attempt.as_str().to_owned(),
+                    receipt_sha256: result.sha256.clone(),
+                    expected_cursor_revision: cursor.cursor_revision,
+                    parent_invocation_id: parent.invocation_id().into(),
+                    call_id: result.call.as_str().into(),
+                    contract_id: "workspace.snapshot.read.v1".into(),
+                    snapshot_id: snapshot.id.as_str().into(),
+                    member_id: args.member_id.clone(),
+                    offset: args.offset,
+                    requested_length: args.length,
+                    returned_length: result.bytes.len() as u64,
+                    result_bytes: Some(result.bytes.clone()),
+                })
+                .is_err()
+            {
+                self.task_effect_hold =
+                    Some(format!("{TASK_EFFECT_HOLD}:{}", result.attempt.as_str()));
+                self.native_gate.store_attribution(true);
+                return Err(StoreError::ClaimConflict);
+            }
+            operations::optional_native_barrier(
+                self.config.proof_barrier_dir.as_deref(),
+                "snapshot_after_owner_commit",
+            )?;
+            let subject = SubjectId::parse(self.config.subject_id.clone())
+                .map_err(|_| StoreError::Rejected)?;
+            let reads = match self.store.committed_task_snapshot_reads(&subject) {
+                Ok(reads) => reads,
+                Err(error) => {
+                    self.native_gate.store_attribution(true);
+                    return Err(error);
+                }
+            };
+            if !reads
+                .iter()
+                .any(|read| read.operation_attempt_id == result.attempt.as_str())
+            {
+                self.native_gate.store_attribution(true);
+                return Err(StoreError::ClaimConflict);
+            }
+            match task_effect_hold_for_reads(reads, port.as_ref(), &subject) {
+                Ok(None) => {
+                    self.task_effect_hold = None;
+                    self.native_gate.store_attribution(false);
+                }
+                Ok(Some(reason)) => {
+                    self.task_effect_hold = Some(reason);
+                    self.native_gate.store_attribution(true);
+                    return Err(StoreError::ClaimConflict);
+                }
+                Err(error) => {
+                    self.native_gate.store_attribution(true);
+                    return Err(error);
+                }
+            }
+        } else {
+            operations::native_proof_barrier(
+                self.config.proof_barrier_dir.as_deref(),
+                "native_after_result_commit",
+            )?;
         }
         let value = if let Ok(text) = std::str::from_utf8(&result.bytes) {
             json!({"encoding":"utf8","text":text,"sha256":result.sha256,
@@ -1929,7 +2140,7 @@ impl Actor {
     }
 
     async fn shutdown(&mut self) -> Result<(), StoreError> {
-        self.native_gate.store(true, Ordering::SeqCst);
+        self.native_gate.close_shutdown();
         // The task-profile runner can be idle after a settled delivery while
         // retaining the receiver for later FIFO work. Closing its sole sender
         // wakes it so it can terminate and reap the owned native child.
@@ -2039,6 +2250,15 @@ impl Actor {
             Err(_) => return error_reply(WireErrorCode::ObservationUnavailable),
         };
         if self.recovery_only && prior.is_none() {
+            return error_reply(WireErrorCode::ObservationUnavailable);
+        }
+        if self.task_effect_hold.is_some()
+            && prior.is_none()
+            && matches!(
+                parsed.admission.request().command,
+                Command::EnqueueInput { .. } | Command::RequestReplacement
+            )
+        {
             return error_reply(WireErrorCode::ObservationUnavailable);
         }
         let replayed = prior.is_some();
@@ -2183,10 +2403,26 @@ impl Actor {
         let Ok(subject) = SubjectId::parse(subject.to_owned()) else {
             return error_reply(WireErrorCode::SemanticInvalidity);
         };
-        native_observation_reply(
+        let mut value = native_observation_reply(
             self.store.native_delivery_status(&subject),
             self.recovery_only,
-        )
+        );
+        if self.config.profile == "retained-repository-analysis-v1" {
+            let observed = self
+                .task_operation_port
+                .as_deref()
+                .ok_or(StoreError::Unavailable)
+                .and_then(|port| task_effect_hold(&self.store, port, &subject));
+            match observed {
+                Ok(Some(reason)) => value["task_effect_hold"] = json!(reason),
+                Ok(None) if self.task_effect_hold.is_some() => {
+                    value["task_effect_hold"] = json!(self.task_effect_hold)
+                }
+                Err(_) => value["task_effect_hold"] = json!(TASK_EFFECT_HOLD),
+                _ => {}
+            }
+        }
+        value
     }
 
     fn grant_control(&mut self, uid: u32, bytes: &[u8], read_only: bool) -> Value {
@@ -2298,8 +2534,59 @@ impl Actor {
                     .map_err(|_| StoreError::Rejected)
             })
             .transpose()?;
-        self.store
-            .subject_projection(&subject, delivery.as_ref(), transition.as_ref())
+        let mut projection =
+            self.store
+                .subject_projection(&subject, delivery.as_ref(), transition.as_ref())?;
+        if self.config.profile == "retained-repository-analysis-v1"
+            && let Some(current) = projection.transition.as_mut()
+            && current.stage == "verifying"
+            && let Some(native) = self.config.native.as_ref()
+        {
+            let semantic = if projection.context_id == self.config.context_generation {
+                native.semantic.as_ref()
+            } else {
+                let matches: Vec<_> = native
+                    .semantic_contexts
+                    .iter()
+                    .filter(|cycle| cycle.predecessor_context == projection.context_id)
+                    .collect();
+                if matches.len() == 1 {
+                    Some(&matches[0].semantic)
+                } else {
+                    None
+                }
+            };
+            if let Some(semantic) = semantic {
+                let transition_id = TransitionId::parse(current.transition_id.clone())
+                    .map_err(|_| StoreError::Rejected)?;
+                apply_current_semantic_material_block(
+                    &self.store,
+                    &subject,
+                    &transition_id,
+                    &semantic.capture_id,
+                    projection.semantic_revision,
+                    current,
+                )?;
+            }
+        }
+        if self.config.profile == "retained-repository-analysis-v1" {
+            let observed = self
+                .task_operation_port
+                .as_deref()
+                .ok_or(StoreError::Unavailable)
+                .and_then(|port| task_effect_hold(&self.store, port, &subject));
+            let hold = match observed {
+                Ok(Some(reason)) => Some(reason),
+                Ok(None) => self.task_effect_hold.clone(),
+                Err(_) => Some(TASK_EFFECT_HOLD.into()),
+            };
+            if let Some(reason) = hold {
+                self.task_effect_hold = Some(reason.clone());
+                self.native_gate.store_attribution(true);
+                projection.task_effect_hold = Some(reason);
+            }
+        }
+        Ok(projection)
     }
 }
 
@@ -2364,14 +2651,14 @@ pub type ActorSender = mpsc::Sender<Request>;
 pub struct ShutdownGate {
     executor: OwnedExecutor<ControlledPort>,
     verifier: Arc<engine::VerifierGate>,
-    native: Arc<AtomicBool>,
+    native: Arc<NativeGate>,
 }
 
 impl ShutdownGate {
     pub fn close_gate(&self) {
         self.executor.close_gate();
         self.verifier.close_gate();
-        self.native.store(true, Ordering::SeqCst);
+        self.native.close_shutdown();
     }
 }
 
@@ -2401,6 +2688,32 @@ pub fn start(
 #[cfg(test)]
 mod observation_tests {
     use super::*;
+
+    #[test]
+    fn shutdown_during_owner_readback_cannot_reopen_native_gate() {
+        let native = Arc::new(NativeGate::new(false));
+        native.store_attribution(true); // native commit awaits owner callback/readback
+        let (executor, _results) = OwnedExecutor::new(
+            ControlledPort {
+                socket: std::path::PathBuf::from("/tmp/s10-unused-peer"),
+            },
+            1,
+        )
+        .unwrap();
+        let shutdown = ShutdownGate {
+            executor,
+            verifier: Arc::new(engine::VerifierGate::new()),
+            native: native.clone(),
+        };
+        shutdown.close_gate(); // socket's pre-queued signal closure
+        native.store_attribution(false); // exact owner readback succeeds afterwards
+        assert!(native.load(Ordering::SeqCst));
+
+        // The same readback permits progress when shutdown has not begun.
+        let normal = NativeGate::new(true);
+        normal.store_attribution(false);
+        assert!(!normal.load(Ordering::SeqCst));
+    }
     #[test]
     fn native_capacity_is_only_reported_for_the_typed_owner_outcome() {
         use lifecycle_store::NativeDeliveryObservation as O;
@@ -2593,10 +2906,21 @@ mod restart_epoch_tests {
             commit()
         }
     }
-    struct EmptyTask;
+    #[derive(Default)]
+    struct EmptyTask {
+        input: Option<TaskInputBinding>,
+        effect: Option<crate::CompletedTaskEffectReadback>,
+    }
     impl TaskOperationPort for EmptyTask {
+        fn lookup_completed_effect(
+            &self,
+            _: &str,
+            _: &str,
+        ) -> Result<Option<crate::CompletedTaskEffectReadback>, TaskOperationError> {
+            Ok(self.effect.clone())
+        }
         fn validate_input(&self, _: &str, _: &str) -> Result<TaskInputBinding, TaskOperationError> {
-            Err(TaskOperationError::Invalid)
+            self.input.clone().ok_or(TaskOperationError::Invalid)
         }
         fn current_cursor(&self, _: &str) -> Result<TaskCursorBinding, TaskOperationError> {
             Err(TaskOperationError::Invalid)
@@ -2631,13 +2955,101 @@ mod restart_epoch_tests {
         }
     }
 
+    #[test]
+    fn committed_read_requires_exact_owner_readback_across_context_epochs() {
+        let subject = SubjectId::parse("subject:restart").unwrap();
+        let input = TaskInputBinding {
+            input_id: "input:one".into(),
+            task_id: "task:one".into(),
+            subject_id: subject.as_str().into(),
+            cursor_ref: "task:one".into(),
+            cursor_revision: 1,
+            owner_revision: 1,
+            text_sha256: "a".repeat(64),
+        };
+        let read = lifecycle_store::NativeCommittedTaskRead {
+            input_id: input.input_id.clone(),
+            input_text: "objective".into(),
+            delivery_id: "delivery:one".into(),
+            effect_id: "effect:one".into(),
+            parent_invocation_id: "invocation:old-context".into(),
+            call_id: "call:one".into(),
+            contract_id: "workspace.snapshot.read.v1".into(),
+            snapshot_id: "snapshot:one".into(),
+            member_id: "m1".into(),
+            offset: 0,
+            requested_length: 3,
+            returned_length: 3,
+            result_sha256: "b".repeat(64),
+            operation_attempt_id: "opattempt:one".into(),
+        };
+        let held = || format!("{TASK_EFFECT_HOLD}:opattempt:one");
+        assert_eq!(
+            task_effect_hold_for_reads(
+                vec![read.clone()],
+                &EmptyTask {
+                    input: Some(input.clone()),
+                    effect: None
+                },
+                &subject
+            )
+            .unwrap(),
+            Some(held())
+        );
+        let exact = crate::CompletedTaskEffectReadback {
+            task_id: input.task_id.clone(),
+            logical_delivery_id: read.delivery_id.clone(),
+            effect_id: read.operation_attempt_id.clone(),
+            receipt_sha256: read.result_sha256.clone(),
+            attribution: Some(crate::CompletedTaskEffectAttribution {
+                parent_invocation_id: read.parent_invocation_id.clone(),
+                call_id: read.call_id.clone(),
+                contract_id: read.contract_id.clone(),
+                snapshot_id: read.snapshot_id.clone(),
+                member_id: read.member_id.clone(),
+                offset: read.offset,
+                requested_length: read.requested_length,
+                returned_length: read.returned_length,
+                result_sha256: read.result_sha256.clone(),
+            }),
+        };
+        let port = EmptyTask {
+            input: Some(input.clone()),
+            effect: Some(exact.clone()),
+        };
+        assert_eq!(
+            task_effect_hold_for_reads(vec![read.clone()], &port, &subject).unwrap(),
+            None
+        );
+        let mut conflict = exact;
+        conflict.attribution.as_mut().unwrap().returned_length += 1;
+        assert_eq!(
+            task_effect_hold_for_reads(
+                vec![read.clone()],
+                &EmptyTask {
+                    input: Some(input.clone()),
+                    effect: Some(conflict)
+                },
+                &subject
+            )
+            .unwrap(),
+            Some(held())
+        );
+        let mut other_epoch = read.clone();
+        other_epoch.operation_attempt_id = "opattempt:old".into();
+        assert_eq!(
+            task_effect_hold_for_reads(vec![other_epoch, read], &port, &subject).unwrap(),
+            Some(format!("{TASK_EFFECT_HOLD}:opattempt:old"))
+        );
+    }
+
     fn private_dir(path: &Path) {
         fs::create_dir(path).unwrap();
         fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
     }
 
-    #[test]
-    fn selected_authorization_launches_one_actor_incarnation_then_observes_only() {
+    #[tokio::test]
+    async fn selected_authorization_launches_one_actor_incarnation_then_observes_only() {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("store");
         private_dir(&root);
@@ -2721,7 +3133,7 @@ mod restart_epoch_tests {
             clock_sample(),
         )
         .unwrap();
-        let _prior_allocation = store
+        let mut prior_allocation = store
             .reserve_native_session(
                 NativeSessionId::parse(native.session_id.clone()).unwrap(),
                 subject.clone(),
@@ -2736,6 +3148,108 @@ mod restart_epoch_tests {
                 clock_sample(),
             )
             .unwrap();
+        let grant = GrantId::parse("grant:prior-settle").unwrap();
+        store
+            .install_trusted_grant(TrustedGrant {
+                id: grant.clone(),
+                issuer: "issuer:restart".into(),
+                principal: "principal:restart".into(),
+                subject: subject.clone(),
+                context: context.clone(),
+                build: BuildId::parse("build:restart").unwrap(),
+                proof_run: ProofRunId::parse("proof:restart").unwrap(),
+                scope: GrantScope::parse("native_turn").unwrap(),
+                expires: AuthorityExpiresAt::new(WallTimeMs::new(
+                    clock_sample().wall.get() + 100_000,
+                )),
+                revision: Revision::new(1),
+                revoked: false,
+            })
+            .unwrap();
+        store
+            .bind_native_thread(
+                &mut prior_allocation,
+                ProviderThreadId::parse("thread:prior-settle").unwrap(),
+            )
+            .unwrap();
+        let mut prior_turn = store
+            .claim_native_turn(
+                &prior_allocation,
+                NativeTurnRequest {
+                    invocation_id: "invocation:prior-settle".into(),
+                    attempt: AttemptId::parse("attempt:prior-settle").unwrap(),
+                    grant,
+                    grant_revision: 1,
+                    purpose: lifecycle_core::NativeInvocationPurpose::DomainWork,
+                    prompt: b"prior delivery".to_vec(),
+                },
+                "principal:restart",
+                clock_sample(),
+            )
+            .unwrap();
+        let connection = rusqlite::Connection::open(root.join("lifecycle.sqlite")).unwrap();
+        connection.execute_batch("\
+            INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state)
+            VALUES('input:prior-settle','subject:restart',1,'delivery:prior-settle','producer:restart',
+                   X'7072696F722064656C6976657279','digest:prior-settle','grant:prior-settle','entered');
+            INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state)
+            VALUES('effect:prior-settle','subject:restart','input:prior-settle',0,'entered');
+            INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms)
+            VALUES('queue-attempt:prior-settle','effect:prior-settle','incarnation:prior','entered',1);
+        ").unwrap();
+        store
+            .bind_native_delivery_segment(
+                prior_turn.invocation_id(),
+                &AttemptId::parse("queue-attempt:prior-settle").unwrap(),
+                0,
+                None,
+                None,
+            )
+            .unwrap();
+        store.mark_native_send_intent(&prior_turn).unwrap();
+        store
+            .bind_native_turn(
+                &mut prior_turn,
+                ProviderTurnId::parse("turn:prior-settle").unwrap(),
+            )
+            .unwrap();
+        let final_item = json!({"type":"agentMessage","id":"final:prior-settle","text":"done"});
+        for (sequence, method, value) in [
+            (
+                1,
+                Some("turn/completed"),
+                json!({"method":"turn/completed","params":{
+                "threadId":"thread:prior-settle","turn":{"id":"turn:prior-settle","status":"completed"}}}),
+            ),
+            (
+                2,
+                Some("item/completed"),
+                json!({"method":"item/completed","params":{
+                "threadId":"thread:prior-settle","turnId":"turn:prior-settle","item":final_item.clone()}}),
+            ),
+            (
+                3,
+                None,
+                json!({"id":3,"result":{"thread":{"id":"thread:prior-settle",
+                "historyMode":"legacy","turns":[{"id":"turn:prior-settle","status":"completed",
+                "itemsView":"full","items":[final_item]}]}}}),
+            ),
+        ] {
+            store
+                .record_native_ingress(
+                    prior_allocation.id(),
+                    "transport:prior-settle",
+                    sequence,
+                    &serde_json::to_vec(&value).unwrap(),
+                    "qualified",
+                    method,
+                    method.map(|_| "thread:prior-settle"),
+                    method.map(|_| "turn:prior-settle"),
+                    None,
+                    clock_sample(),
+                )
+                .unwrap();
+        }
         let store_id = store.admin_ownership().unwrap().store_id;
         drop(store);
         native.root = next_root;
@@ -2797,10 +3311,10 @@ mod restart_epoch_tests {
         config.selected_restart = Some(SelectedRestartGrant {
             intent: selected.restart_intent.clone().unwrap(),
         });
-        let first = Actor::new(
+        let mut first = Actor::new(
             config.clone(),
             Some(Arc::new(EmptyMaterial)),
-            Some(Arc::new(EmptyTask)),
+            Some(Arc::new(EmptyTask::default())),
             Some(selected.store),
         )
         .unwrap();
@@ -2822,6 +3336,166 @@ mod restart_epoch_tests {
             ),
             (1, "session:next", "active")
         );
+        // Exercise selected-profile actor admission with an allocated native
+        // session and an attribution hold, then inspect the persistent rows.
+        first.task_effect_hold = Some("task_effect_attribution_unresolved:test".into());
+        first.native_gate.store_attribution(true);
+        let (reply, received) = oneshot::channel();
+        first
+            .handle_native_message(NativeMessage::PrepareTurn {
+                invocation_id: "invocation:held-new".into(),
+                attempt_id: "attempt:held-new".into(),
+                prompt: "must not send".into(),
+                purpose: lifecycle_core::NativeInvocationPurpose::DomainWork,
+                reply,
+            })
+            .await;
+        assert!(matches!(received.await.unwrap(), Err(StoreError::Rejected)));
+        assert!(matches!(
+            first.schedule_native_once().await,
+            Err(StoreError::ClaimConflict)
+        ));
+        let event = lifecycle_codex::parse_event(
+            "transport:held".into(),
+            1,
+            serde_json::to_vec(&json!({"method":"item/tool/call","params":{}})).unwrap(),
+        )
+        .unwrap();
+        for namespace in ["workspace", "task"] {
+            let call = lifecycle_codex::NativeToolCall {
+                rpc_id: 1,
+                thread_id: "thread:held".into(),
+                turn_id: "turn:held".into(),
+                call_id: format!("call:{namespace}"),
+                namespace: Some(namespace.into()),
+                tool: if namespace == "task" {
+                    "result_publish"
+                } else {
+                    "snapshot_read"
+                }
+                .into(),
+                arguments: json!({}),
+            };
+            assert!(matches!(
+                first.execute_native_tool(&event, &call),
+                Err(StoreError::ClaimConflict)
+            ));
+        }
+        assert!(matches!(
+            first.settle_native_delivery("must not advance").await,
+            Err(StoreError::ClaimConflict)
+        ));
+        for table in [
+            "native_turns",
+            "native_operations",
+            "native_task_operations",
+            "native_delivery_segments",
+        ] {
+            let count: i64 = connection
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(
+                count,
+                if table == "native_turns" || table == "native_delivery_segments" {
+                    1
+                } else {
+                    0
+                },
+                "{table}"
+            );
+        }
+        // Join a real prior native turn and its existing delivery segment to
+        // the held selected actor. Settlement must commit history before the
+        // delivery guard refuses to advance the retained task.
+        connection
+            .execute(
+                "UPDATE subjects SET context_id='context:later' WHERE subject_id=?1",
+                [subject.as_str()],
+            )
+            .unwrap();
+        let before: (String, i64) = connection.query_row(
+            "SELECT state,segment_no FROM native_delivery_segments WHERE invocation_id='invocation:prior-settle'",
+            [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(before, ("entered".into(), 0));
+        let queue_before: (String, String, String) = connection.query_row(
+            "SELECT i.state,e.state,a.state FROM inputs i JOIN effects e ON e.input_id=i.input_id JOIN attempts a ON a.effect_id=e.effect_id WHERE a.attempt_id='queue-attempt:prior-settle'",
+            [], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))).unwrap();
+        assert_eq!(
+            queue_before,
+            ("entered".into(), "entered".into(), "entered".into())
+        );
+        first.native_turn = Some(prior_turn);
+        let held_reason = first.task_effect_hold.clone();
+        let (reply, received) = oneshot::channel();
+        first
+            .handle_native_message(NativeMessage::Settle {
+                final_text: "done".into(),
+                history_status: "observed_complete".into(),
+                history_transport: "transport:prior-settle".into(),
+                history_sequence: 3,
+                reply,
+            })
+            .await;
+        assert!(matches!(
+            received.await.unwrap(),
+            Err(StoreError::ClaimConflict)
+        ));
+        assert_eq!(
+            first
+                .store
+                .native_recovery("invocation:prior-settle")
+                .unwrap()
+                .unwrap()
+                .class,
+            "CompletedSettled"
+        );
+        let settled: (String, String) = connection.query_row(
+            "SELECT n.state,s.context_id FROM native_turns n JOIN native_sessions s ON s.session_id=n.session_id WHERE n.invocation_id='invocation:prior-settle'",
+            [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(
+            settled,
+            ("completed_settled".into(), "context:restart".into())
+        );
+        let current_context: String = connection
+            .query_row(
+                "SELECT context_id FROM subjects WHERE subject_id=?1",
+                [subject.as_str()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(current_context, "context:later");
+        assert_eq!(first.task_effect_hold, held_reason);
+        assert!(first.native_gate.load(Ordering::SeqCst));
+        assert_eq!(
+            first.native_turn.as_ref().unwrap().invocation_id(),
+            "invocation:prior-settle"
+        );
+        let after: (String, i64) = connection.query_row(
+            "SELECT state,segment_no FROM native_delivery_segments WHERE invocation_id='invocation:prior-settle'",
+            [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(after, before);
+        let queue_after: (String, String, String) = connection.query_row(
+            "SELECT i.state,e.state,a.state FROM inputs i JOIN effects e ON e.input_id=i.input_id JOIN attempts a ON a.effect_id=e.effect_id WHERE a.attempt_id='queue-attempt:prior-settle'",
+            [], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))).unwrap();
+        assert_eq!(queue_after, queue_before);
+        for table in ["native_operations", "native_task_operations"] {
+            let count: i64 = connection
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(count, 0, "{table}");
+        }
+        assert!(!first.native_work_pending);
+        assert!(first.native_segment_pending.is_none());
+        connection
+            .execute(
+                "UPDATE subjects SET context_id='context:restart' WHERE subject_id=?1",
+                [subject.as_str()],
+            )
+            .unwrap();
         drop(first);
         let mut selected = SelectedLifecycleStore::open_for_restart(&config, &store_id).unwrap();
         assert_eq!(selected.authorize_restart(request).unwrap().state, "active");
@@ -2831,7 +3505,7 @@ mod restart_epoch_tests {
         let second = Actor::new(
             config,
             Some(Arc::new(EmptyMaterial)),
-            Some(Arc::new(EmptyTask)),
+            Some(Arc::new(EmptyTask::default())),
             Some(selected.store),
         )
         .unwrap();
@@ -2857,5 +3531,577 @@ mod restart_epoch_tests {
                 .unwrap()
                 .is_none()
         );
+    }
+
+    #[tokio::test]
+    async fn held_semantic_entries_leave_capture_checkpoint_and_control_session_absent() {
+        use crate::semantic::{SemanticRuntime, establish_checkpoint};
+        use crate::semantic_control::{ControlTurnSpec, run_control_turn};
+        use lifecycle_semantic::SemanticPhase;
+        use lifecycle_store::SemanticControlRole;
+
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("store");
+        private_dir(&root);
+        let native_root = temp.path().join("native");
+        private_dir(&native_root);
+        let mut store = SqliteLifecycleStore::open(&root, "issuer:held".into()).unwrap();
+        let subject = SubjectId::parse("subject:held").unwrap();
+        let context = ContextGeneration::parse("context:held").unwrap();
+        let transition = TransitionId::parse("transition:held").unwrap();
+        let semantic = SemanticNativeConfig {
+            capture_id: "capture:held".into(),
+            compile_session_id: "session:compile-held".into(),
+            verify_session_id: "session:verify-held".into(),
+            successor_verify_session_id: "session:successor-held".into(),
+            compile_invocation_id: "invocation:compile-held".into(),
+            compile_attempt_id: "attempt:compile-held".into(),
+            candidate_verify_invocation_id: "invocation:verify-held".into(),
+            candidate_verify_attempt_id: "attempt:verify-held".into(),
+            successor_verify_invocation_id: "invocation:successor-held".into(),
+            successor_verify_attempt_id: "attempt:successor-held".into(),
+            challenge_id: "challenge:held".into(),
+            challenge_text: "offline".into(),
+            control_grant_ref: "grant:held".into(),
+            control_grant_revision: 1,
+            successor_control_grant_ref: None,
+            successor_control_grant_revision: None,
+        };
+        let native = NativeConfig {
+            executable: temp.path().join("never-executed"),
+            root: native_root.clone(),
+            provider_route: NativeProviderRoute::NativeSimProofV1,
+            simulator_base_url: "http://127.0.0.1:12345/v1".into(),
+            session_id: "session:held".into(),
+            invocation_id: "invocation:held".into(),
+            attempt_id: "attempt:held".into(),
+            prompt: "unused".into(),
+            turn_grant_ref: "grant:held".into(),
+            turn_grant_revision: 1,
+            snapshot_grant_ref: "grant:snapshot-held".into(),
+            snapshot_grant_revision: 1,
+            same_native_session_required: false,
+            followup_turns: Vec::new(),
+            snapshot: workspace_snapshot_read::TrustedSnapshot {
+                id: "snapshot:held".into(),
+                source_revision: "source:held".into(),
+                members: Vec::new(),
+            },
+            semantic: Some(semantic.clone()),
+            semantic_contexts: Vec::new(),
+        };
+        let gate = Arc::new(NativeGate::new(true));
+        let runtime = SemanticRuntime {
+            material_port: Arc::new(EmptyMaterial),
+            native: native.clone(),
+            semantic: semantic.clone(),
+            incarnation: RuntimeIncarnation::parse("incarnation:held").unwrap(),
+            snapshot: lifecycle_core::SnapshotId::parse("snapshot:held").unwrap(),
+            snapshot_manifest_sha256: "0".into(),
+            gate: gate.clone(),
+            uid: fs::metadata("/proc/self").unwrap().uid(),
+            principal: "principal:held".into(),
+            proof_dir: None,
+        };
+        assert!(matches!(
+            establish_checkpoint(&mut store, &runtime, &subject, &context, &transition, 1).await,
+            Err(StoreError::ClaimConflict)
+        ));
+        let spec = ControlTurnSpec {
+            subject: subject.clone(),
+            context,
+            transition: transition.clone(),
+            incarnation: runtime.incarnation.clone(),
+            snapshot: runtime.snapshot.clone(),
+            snapshot_manifest_sha256: "0",
+            role: SemanticControlRole::Compile,
+            phase: SemanticPhase::Compile,
+            session_id: "session:compile-held",
+            invocation_id: "invocation:compile-held",
+            attempt_id: "attempt:compile-held",
+            prompt: "unused",
+            policy_id: "policy:held",
+            exposure_id: "exposure:held".into(),
+        };
+        assert!(matches!(
+            run_control_turn(
+                &mut store,
+                &native,
+                &semantic,
+                spec,
+                "principal:held",
+                runtime.uid,
+                None,
+                &gate
+            )
+            .await,
+            Err(StoreError::ClaimConflict)
+        ));
+        assert_eq!(store.semantic_capture_record("capture:held").unwrap(), None);
+        assert!(store.semantic_checkpoint(&transition).unwrap().is_none());
+        assert_eq!(fs::read_dir(&native_root).unwrap().count(), 0);
+        let connection = rusqlite::Connection::open(root.join("lifecycle.sqlite")).unwrap();
+        for table in [
+            "semantic_captures",
+            "semantic_results",
+            "native_sessions",
+            "native_turns",
+        ] {
+            let count: i64 = connection
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(count, 0, "{table}");
+        }
+    }
+
+    #[tokio::test]
+    async fn service_material_blocks_are_current_durable_and_send_nothing() {
+        use crate::semantic::{SemanticRuntime, establish_checkpoint};
+        use lifecycle_semantic::{
+            MaterialIssue, ObligationKind, RequiredObligation, SemanticPolicy, SourceAvailability,
+            SourceKind, SourceMaterial, SourceTrust, project_material, sha256_hex,
+        };
+
+        struct FixedMaterial(lifecycle_semantic::MaterialInput);
+        impl CanonicalMaterialPort for FixedMaterial {
+            fn project(
+                &self,
+                _: &SubjectId,
+                _: &TransitionId,
+                _: &str,
+            ) -> Result<lifecycle_semantic::MaterialInput, crate::MaterialPortError> {
+                Ok(self.0.clone())
+            }
+            fn observe_dependencies(
+                &self,
+                _: &[lifecycle_semantic::DependencyRevision],
+            ) -> Result<Vec<lifecycle_semantic::DependencyObservation>, crate::MaterialPortError>
+            {
+                Ok(Vec::new())
+            }
+            fn with_current_fence(
+                &self,
+                _: &[lifecycle_semantic::DependencyRevision],
+                commit: &mut dyn FnMut() -> Result<(), ServiceError>,
+            ) -> Result<(), ServiceError> {
+                commit()
+            }
+        }
+
+        for prompt_overflow in [false, true] {
+            let temp = tempfile::tempdir().unwrap();
+            let root = temp.path().join("store");
+            private_dir(&root);
+            let native_root = temp.path().join("native");
+            private_dir(&native_root);
+            let subject = SubjectId::parse("subject:material").unwrap();
+            let context = ContextGeneration::parse("context:material").unwrap();
+            let transition = TransitionId::parse("transition:material").unwrap();
+            let mut store = SqliteLifecycleStore::open(&root, "issuer:material".into()).unwrap();
+            store
+                .register_subject(
+                    subject.clone(),
+                    context.clone(),
+                    BuildId::parse("build:material").unwrap(),
+                    ProofRunId::parse("proof:material").unwrap(),
+                    clock_sample(),
+                )
+                .unwrap();
+            let connection = rusqlite::Connection::open(root.join("lifecycle.sqlite")).unwrap();
+            connection.execute("INSERT INTO transitions(transition_id,subject_id,predecessor_context,stage,basis_revision,created_wall_ms) VALUES(?1,?2,?3,'verifying',0,100)",
+                rusqlite::params![transition.as_str(),subject.as_str(),context.as_str()]).unwrap();
+            connection
+                .execute(
+                    "UPDATE transitions SET semantic_required=1 WHERE transition_id=?1",
+                    [transition.as_str()],
+                )
+                .unwrap();
+            connection.execute("UPDATE subjects SET owner_kind='transition',owner_ref=?1,semantic_revision=1 WHERE subject_id=?2",
+                rusqlite::params![transition.as_str(),subject.as_str()]).unwrap();
+            let bytes = vec![b'x'; 600];
+            let source = |id: &str, bytes: Vec<u8>, availability| SourceMaterial {
+                id: id.into(),
+                owner_namespace: "task".into(),
+                owner_ref: "task:material".into(),
+                revision: 1,
+                dependency_key: id.into(),
+                current: availability == SourceAvailability::Complete,
+                dependency_required: true,
+                kind: SourceKind::ExternalData,
+                trust: SourceTrust::UntrustedData,
+                sha256: sha256_hex(if availability == SourceAvailability::Complete {
+                    &bytes
+                } else {
+                    b"missing"
+                }),
+                availability,
+                bytes,
+            };
+            let sources = if prompt_overflow {
+                vec![source(
+                    "result",
+                    bytes.clone(),
+                    SourceAvailability::Complete,
+                )]
+            } else {
+                vec![
+                    source("first", bytes.clone(), SourceAvailability::Complete),
+                    source("second", bytes, SourceAvailability::Complete),
+                    source("missing", Vec::new(), SourceAvailability::Unavailable),
+                ]
+            };
+            let mut policy = SemanticPolicy::retained_repository_analysis();
+            if prompt_overflow {
+                policy.max_control_input_bytes = 1024;
+            } else {
+                policy.max_source_items = 2;
+                policy.max_source_item_bytes = 512;
+                policy.max_source_total_bytes = 1024;
+            }
+            let input = lifecycle_semantic::MaterialInput {
+                subject: subject.clone(),
+                transition: transition.clone(),
+                capture_id: "capture:material".into(),
+                obligations: vec![RequiredObligation {
+                    id: "obligation:result".into(),
+                    kind: ObligationKind::CompletedConsequence,
+                    verifier_scope: "result".into(),
+                    description: "preserve observed result".into(),
+                    sources: vec![sources.last().unwrap().reference()],
+                }],
+                sources,
+                policy,
+            };
+            let expected = if prompt_overflow {
+                Vec::new()
+            } else {
+                project_material(input.clone()).unwrap().issues
+            };
+            let semantic = SemanticNativeConfig {
+                capture_id: "capture:material".into(),
+                compile_session_id: "session:compile".into(),
+                verify_session_id: "session:verify".into(),
+                successor_verify_session_id: "session:successor".into(),
+                compile_invocation_id: "invocation:compile".into(),
+                compile_attempt_id: "attempt:compile".into(),
+                candidate_verify_invocation_id: "invocation:verify".into(),
+                candidate_verify_attempt_id: "attempt:verify".into(),
+                successor_verify_invocation_id: "invocation:successor".into(),
+                successor_verify_attempt_id: "attempt:successor".into(),
+                challenge_id: "challenge:material".into(),
+                challenge_text: "offline".into(),
+                control_grant_ref: "grant:material".into(),
+                control_grant_revision: 1,
+                successor_control_grant_ref: None,
+                successor_control_grant_revision: None,
+            };
+            let native = NativeConfig {
+                executable: temp.path().join("never-executed"),
+                root: native_root.clone(),
+                provider_route: NativeProviderRoute::NativeSimProofV1,
+                simulator_base_url: "http://127.0.0.1:1/v1".into(),
+                session_id: "session:material".into(),
+                invocation_id: "invocation:material".into(),
+                attempt_id: "attempt:material".into(),
+                prompt: "unused".into(),
+                turn_grant_ref: "grant:material".into(),
+                turn_grant_revision: 1,
+                snapshot_grant_ref: "grant:snapshot".into(),
+                snapshot_grant_revision: 1,
+                same_native_session_required: false,
+                followup_turns: Vec::new(),
+                snapshot: workspace_snapshot_read::TrustedSnapshot {
+                    id: "snapshot:material".into(),
+                    source_revision: "source:material".into(),
+                    members: Vec::new(),
+                },
+                semantic: Some(semantic.clone()),
+                semantic_contexts: Vec::new(),
+            };
+            let runtime = SemanticRuntime {
+                material_port: Arc::new(FixedMaterial(input.clone())),
+                native,
+                semantic,
+                incarnation: RuntimeIncarnation::parse("incarnation:material").unwrap(),
+                snapshot: lifecycle_core::SnapshotId::parse("snapshot:material").unwrap(),
+                snapshot_manifest_sha256: "0".into(),
+                gate: Arc::new(NativeGate::new(false)),
+                uid: fs::metadata("/proc/self").unwrap().uid(),
+                principal: "principal:material".into(),
+                proof_dir: None,
+            };
+            for _ in 0..2 {
+                assert!(
+                    establish_checkpoint(&mut store, &runtime, &subject, &context, &transition, 1)
+                        .await
+                        .unwrap()
+                        .is_none()
+                );
+            }
+            let capture = store.semantic_capture_record("capture:material").unwrap();
+            let rejection = store
+                .semantic_material_rejection("capture:material")
+                .unwrap();
+            assert_eq!(capture.is_none(), prompt_overflow);
+            assert_eq!(rejection.is_some(), prompt_overflow);
+            assert!(store.semantic_checkpoint(&transition).unwrap().is_none());
+            let count: i64 = connection
+                .query_row("SELECT COUNT(*) FROM native_sessions", [], |row| row.get(0))
+                .unwrap();
+            assert_eq!(count, 0);
+            assert_eq!(fs::read_dir(&native_root).unwrap().count(), 0);
+            drop(store);
+            let mut store = SqliteLifecycleStore::open(&root, "issuer:material".into()).unwrap();
+            let mut projection = store
+                .subject_projection(&subject, None, Some(&transition))
+                .unwrap();
+            apply_current_semantic_material_block(
+                &store,
+                &subject,
+                &transition,
+                "capture:material",
+                projection.semantic_revision,
+                projection.transition.as_mut().unwrap(),
+            )
+            .unwrap();
+            let block = projection.transition.as_ref().unwrap();
+            assert_eq!(
+                block.semantic_material_block.as_deref(),
+                Some(if prompt_overflow {
+                    "semantic_prompt_too_large"
+                } else {
+                    "semantic_source_basis_ineligible"
+                })
+            );
+            assert_eq!(block.semantic_basis_issues, expected);
+            if !prompt_overflow {
+                assert!(
+                    expected
+                        .iter()
+                        .any(|issue| matches!(issue, MaterialIssue::TooManyItems))
+                );
+                assert!(
+                    expected
+                        .iter()
+                        .any(|issue| matches!(issue, MaterialIssue::ItemTooLarge { .. }))
+                );
+                assert!(
+                    expected
+                        .iter()
+                        .any(|issue| matches!(issue, MaterialIssue::TotalTooLarge))
+                );
+                assert!(
+                    expected
+                        .iter()
+                        .any(|issue| matches!(issue, MaterialIssue::Unavailable { .. }))
+                );
+                assert!(
+                    expected.iter().any(|issue| matches!(
+                        issue,
+                        MaterialIssue::RequiredSourceUnavailable { .. }
+                    ))
+                );
+                assert!(
+                    expected
+                        .iter()
+                        .any(|issue| matches!(issue, MaterialIssue::NoCurrentRevision { .. }))
+                );
+            }
+            let snapshot = crate::projection::into_snapshot(projection, true);
+            assert!(matches!(
+                snapshot.blocking_reason,
+                lifecycle_wire::FieldV1::Known(_)
+            ));
+            connection
+                .execute(
+                    "UPDATE subjects SET semantic_revision=2 WHERE subject_id=?1",
+                    [subject.as_str()],
+                )
+                .unwrap();
+            assert!(
+                store
+                    .current_semantic_material_block(&subject, &transition, "capture:material", 2)
+                    .unwrap()
+                    .is_none()
+            );
+            assert!(
+                store
+                    .current_semantic_material_block(&subject, &transition, "capture:other", 2)
+                    .unwrap()
+                    .is_none()
+            );
+        }
+    }
+
+    #[test]
+    fn held_gate_does_not_prevent_prior_context_native_history_settlement() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("store");
+        private_dir(&root);
+        let mut store = SqliteLifecycleStore::open(&root, "issuer:prior".into()).unwrap();
+        let subject = SubjectId::parse("subject:prior").unwrap();
+        let prior = ContextGeneration::parse("context:prior").unwrap();
+        let build = BuildId::parse("build:prior").unwrap();
+        let proof = ProofRunId::parse("proof:prior").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                prior.clone(),
+                build.clone(),
+                proof.clone(),
+                clock_sample(),
+            )
+            .unwrap();
+        let grant = GrantId::parse("grant:prior").unwrap();
+        store
+            .install_trusted_grant(TrustedGrant {
+                id: grant.clone(),
+                issuer: "issuer:prior".into(),
+                principal: "principal:prior".into(),
+                subject: subject.clone(),
+                context: prior.clone(),
+                build,
+                proof_run: proof,
+                scope: GrantScope::parse("native_turn").unwrap(),
+                expires: AuthorityExpiresAt::new(WallTimeMs::new(
+                    clock_sample().wall.get() + 100_000,
+                )),
+                revision: Revision::new(1),
+                revoked: false,
+            })
+            .unwrap();
+        let hash = "a".repeat(64);
+        let session_id = NativeSessionId::parse("session:prior-held").unwrap();
+        let mut session = store
+            .reserve_native_session(
+                session_id.clone(),
+                subject.clone(),
+                prior,
+                RuntimeIncarnation::parse("incarnation:prior-held").unwrap(),
+                &hash,
+                &hash,
+                &hash,
+                lifecycle_core::SnapshotId::parse("snapshot:prior").unwrap(),
+                &hash,
+                false,
+                clock_sample(),
+            )
+            .unwrap();
+        store
+            .bind_native_thread(
+                &mut session,
+                ProviderThreadId::parse("thread:prior-held").unwrap(),
+            )
+            .unwrap();
+        let mut turn = store
+            .claim_native_turn(
+                &session,
+                NativeTurnRequest {
+                    invocation_id: "invocation:prior-held".into(),
+                    attempt: AttemptId::parse("attempt:prior-held").unwrap(),
+                    grant,
+                    grant_revision: 1,
+                    purpose: lifecycle_core::NativeInvocationPurpose::DomainWork,
+                    prompt: b"prior".to_vec(),
+                },
+                "principal:prior",
+                clock_sample(),
+            )
+            .unwrap();
+        store.mark_native_send_intent(&turn).unwrap();
+        store
+            .bind_native_turn(&mut turn, ProviderTurnId::parse("turn:prior-held").unwrap())
+            .unwrap();
+        let final_item = json!({"type":"agentMessage","id":"final:prior","text":"done"});
+        for (sequence, method, value) in [
+            (
+                1,
+                Some("turn/completed"),
+                json!({"method":"turn/completed","params":{
+                "threadId":"thread:prior-held","turn":{"id":"turn:prior-held","status":"completed"}}}),
+            ),
+            (
+                2,
+                Some("item/completed"),
+                json!({"method":"item/completed","params":{
+                "threadId":"thread:prior-held","turnId":"turn:prior-held","item":final_item.clone()}}),
+            ),
+            (
+                3,
+                None,
+                json!({"id":3,"result":{"thread":{"id":"thread:prior-held",
+                "historyMode":"legacy","turns":[{"id":"turn:prior-held","status":"completed",
+                "itemsView":"full","items":[final_item]}]}}}),
+            ),
+        ] {
+            store
+                .record_native_ingress(
+                    &session_id,
+                    "transport:prior-held",
+                    sequence,
+                    &serde_json::to_vec(&value).unwrap(),
+                    "qualified",
+                    method,
+                    method.map(|_| "thread:prior-held"),
+                    method.map(|_| "turn:prior-held"),
+                    None,
+                    clock_sample(),
+                )
+                .unwrap();
+        }
+        let connection = rusqlite::Connection::open(root.join("lifecycle.sqlite")).unwrap();
+        connection
+            .execute(
+                "UPDATE subjects SET context_id='context:later' WHERE subject_id=?1",
+                [subject.as_str()],
+            )
+            .unwrap();
+        let gate = NativeGate::new(true);
+        assert!(gate.load(Ordering::SeqCst));
+        store
+            .settle_native_turn(
+                &turn,
+                "done",
+                "observed_complete",
+                "transport:prior-held",
+                3,
+                clock_sample(),
+            )
+            .unwrap();
+        assert!(gate.load(Ordering::SeqCst));
+        assert_eq!(
+            store
+                .native_recovery("invocation:prior-held")
+                .unwrap()
+                .unwrap()
+                .class,
+            "CompletedSettled"
+        );
+        let state: (String, String) = connection.query_row(
+            "SELECT n.state,s.context_id FROM native_turns n JOIN native_sessions s ON s.session_id=n.session_id WHERE n.invocation_id='invocation:prior-held'",
+            [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(state, ("completed_settled".into(), "context:prior".into()));
+        let current: String = connection
+            .query_row(
+                "SELECT context_id FROM subjects WHERE subject_id=?1",
+                [subject.as_str()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(current, "context:later");
+        for table in [
+            "native_delivery_segments",
+            "native_operations",
+            "native_task_operations",
+        ] {
+            let count: i64 = connection
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(count, 0, "{table}");
+        }
     }
 }

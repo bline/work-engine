@@ -9,13 +9,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use claude_common::{Fixture, counts, fixture, sha};
+use claude_common::{counts, fixture, sha};
 use review_execution_custody::claude::record::QualifiedTerminal;
 use review_execution_custody::claude::{Prepared, ResourceSpawn};
 use review_execution_custody::codec::record_digest;
 use review_execution_evidence::claude::{
-    CandidateBoundary, InitialEntryPermit, PinnedProgram, QualifiedReader, QualifiedScope,
-    QualifiedWriter, TrustedClaudeProfile, TrustedRp0Profile,
+    CandidateBoundary, InitialEntryPermit, PinnedProgram, QualifiedReader, QualifiedWriter,
+    TrustedClaudeProfile, TrustedRp0Profile,
 };
 use review_execution_evidence::{
     CheckedObservation, EvidenceClass, EvidenceReadError, ExecutionEvidenceOwner,

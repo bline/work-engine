@@ -1339,7 +1339,8 @@ impl SqliteLifecycleStore {
                     params![&transition_id,subject.as_str()], |r|r.get(0),
                 ).optional().map_err(|_|StoreError::Unavailable)?
             } else { None };
-            Ok::<_, StoreError>(TransitionProjection {transition_id,stage,semantic_compile_refusal})
+            Ok::<_, StoreError>(TransitionProjection {transition_id,stage,semantic_compile_refusal,
+                semantic_material_block:None, semantic_basis_issues:Vec::new()})
         }).transpose()?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(SubjectProjection {
@@ -1355,6 +1356,7 @@ impl SqliteLifecycleStore {
             delivery,
             unresolved_attempts: u64::try_from(unresolved_attempts)
                 .map_err(|_| StoreError::Unavailable)?,
+            task_effect_hold: None,
         })
     }
 

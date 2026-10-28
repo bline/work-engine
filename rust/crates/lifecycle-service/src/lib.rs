@@ -13,6 +13,8 @@ mod semantic_control;
 mod socket;
 mod task_port;
 
+pub use actor::task_effect_hold;
+
 use std::path::PathBuf;
 
 use lifecycle_core::{ContextGeneration, NativeSessionId, SnapshotId, SubjectId};
@@ -24,9 +26,9 @@ use thiserror::Error;
 
 pub use material_port::{CanonicalMaterialPort, MaterialPortError};
 pub use task_port::{
-    CompletedTaskEffect, GrantFence, QuestionOpenPayload, ResultPublishPayload, TaskCursorBinding,
-    TaskInputBinding, TaskOperationCommit, TaskOperationError, TaskOperationPort,
-    ValidatedTaskOperationEntry,
+    CompletedTaskEffect, CompletedTaskEffectAttribution, CompletedTaskEffectReadback, GrantFence,
+    QuestionOpenPayload, ResultPublishPayload, TaskCursorBinding, TaskInputBinding,
+    TaskOperationCommit, TaskOperationError, TaskOperationPort, ValidatedTaskOperationEntry,
 };
 
 /// Rust callers may leave this absent, but only the selected-store preflight

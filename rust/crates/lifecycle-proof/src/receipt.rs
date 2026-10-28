@@ -1064,6 +1064,7 @@ mod tests {
             request_sha256: "digest".into(),
             request: json!({}),
             reply_kind: "text".into(),
+            reply_text: None,
         };
         let ledger = artifact(root, "ledger", &serde_json::to_vec(&entry).unwrap());
         let mut host = observation();

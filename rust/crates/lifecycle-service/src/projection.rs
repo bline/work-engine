@@ -10,6 +10,19 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
         .transition
         .as_ref()
         .and_then(|item| item.semantic_compile_refusal.clone());
+    let semantic_material_block = value.transition.as_ref().and_then(|item| {
+        item.semantic_material_block.as_ref().map(|reason| {
+            if item.semantic_basis_issues.is_empty() {
+                reason.clone()
+            } else {
+                format!(
+                    "{}:{}",
+                    reason,
+                    serde_json::to_string(&item.semantic_basis_issues).unwrap_or_default()
+                )
+            }
+        })
+    });
     let yielded_outcome_not_representable = value
         .delivery
         .as_ref()
@@ -86,6 +99,12 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
     if let Some(reason) = &semantic_compile_refusal {
         blocking_reasons.push(reason.clone());
     }
+    if let Some(reason) = &semantic_material_block {
+        blocking_reasons.push(reason.clone());
+    }
+    if let Some(reason) = &value.task_effect_hold {
+        blocking_reasons.push(reason.clone());
+    }
     LifecycleSnapshotV1 {
         protocol_version: 1,
         subject_id: value.subject_id.clone(),
@@ -98,7 +117,10 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
         transition,
         current_admission: admission,
         delivery,
-        runtime_availability: if value.unresolved_attempts > 0 || semantic_compile_refusal.is_some()
+        runtime_availability: if value.unresolved_attempts > 0
+            || semantic_compile_refusal.is_some()
+            || semantic_material_block.is_some()
+            || value.task_effect_hold.is_some()
         {
             RuntimeAvailabilityV1::Unknown
         } else {
@@ -189,6 +211,7 @@ mod tests {
                 observed_wall_ms: Some(123),
             }),
             unresolved_attempts: 0,
+            task_effect_hold: None,
         };
         let overlapping = into_snapshot(
             SubjectProjection {

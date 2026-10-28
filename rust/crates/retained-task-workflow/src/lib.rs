@@ -26,14 +26,60 @@ mod port;
 pub const PROFILE: &str = "retained-repository-analysis-v1";
 pub const OWNER_NAMESPACE: &str = "retained-task-workflow";
 const MAX_TEXT: usize = 8 * 1024;
+// These are the experimental inline limits for this retained S10 profile.
+const EFFECT_INLINE_BYTES: usize = 4 * 1024;
+const EFFECT_ESCAPED_BYTES: usize = 8 * 1024;
 type TaskGrantFence<'a> =
     dyn FnMut(&mut dyn FnMut() -> Result<(), TaskError>) -> Result<(), TaskError> + 'a;
 type AdmissionBuilder<'a> = dyn FnMut(&str) -> Result<AdmissionCommand, TaskError> + 'a;
 type CommandRow = (String, String, String, Vec<u8>);
+type CompletedEffectRow = (
+    String,
+    String,
+    String,
+    Option<i64>,
+    Option<i64>,
+    Option<String>,
+);
 
-// Keep the legacy six-table layout unchanged. Existing stores are checked
-// against SQLite's own representation of these declarations before any write.
+// Keep the existing six tables. Schema 2 retains each completed effect's
+// original owner receipt alongside its identity.
 const OWNER_SCHEMA_SQL: &str = "CREATE TABLE IF NOT EXISTS tasks (
+                 task_id TEXT PRIMARY KEY, subject_id TEXT NOT NULL UNIQUE,
+                 record_json BLOB NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS commands (
+                 command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                 payload_digest TEXT NOT NULL, task_id TEXT NOT NULL,
+                 commit_json BLOB NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS operations (
+                 operation_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                 payload_digest TEXT NOT NULL, entry_digest TEXT NOT NULL,
+                 commit_json BLOB NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS completed_effects (
+                 effect_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+                 delivery_id TEXT NOT NULL, receipt_digest TEXT NOT NULL, owner_revision INTEGER,
+                 cursor_revision INTEGER, record_digest TEXT
+               );
+               CREATE TABLE IF NOT EXISTS admission_commands (
+                 command_id TEXT PRIMARY KEY, request_digest TEXT NOT NULL,
+                 command_json TEXT NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS control_commands (
+                 command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                 request_sha256 TEXT NOT NULL, service_command_json TEXT NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS store_identity (
+                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+                 store_id TEXT NOT NULL UNIQUE,
+                 schema_version INTEGER NOT NULL CHECK(schema_version = 2)
+               );";
+
+// The stopped v1 migration and recognized version-0 bootstrap each validate
+// this historical layout directly; new schema edits cannot redefine it.
+const OWNER_SCHEMA_V1_SQL: &str = "CREATE TABLE IF NOT EXISTS tasks (
                  task_id TEXT PRIMARY KEY, subject_id TEXT NOT NULL UNIQUE,
                  record_json BLOB NOT NULL
                );
@@ -65,6 +111,17 @@ const OWNER_SCHEMA_SQL: &str = "CREATE TABLE IF NOT EXISTS tasks (
                  schema_version INTEGER NOT NULL CHECK(schema_version = 1)
                );";
 
+fn rebuild_completed_effects(connection: &Connection, ddl: &str) -> Result<(), TaskError> {
+    connection.execute_batch("ALTER TABLE completed_effects RENAME TO completed_effects_v1;")?;
+    connection.execute_batch(ddl)?;
+    connection.execute_batch(
+        "INSERT INTO completed_effects(effect_id,task_id,delivery_id,receipt_digest)
+        SELECT effect_id,task_id,delivery_id,receipt_digest FROM completed_effects_v1;
+        DROP TABLE completed_effects_v1;",
+    )?;
+    Ok(())
+}
+
 type SchemaObject = (String, String, String, Option<String>);
 
 fn schema_objects(connection: &Connection) -> Result<Vec<SchemaObject>, TaskError> {
@@ -89,7 +146,11 @@ fn schema_objects(connection: &Connection) -> Result<Vec<SchemaObject>, TaskErro
 
 fn validate_owner_schema(connection: &Connection, legacy: bool) -> Result<(), TaskError> {
     let expected = Connection::open_in_memory()?;
-    expected.execute_batch(OWNER_SCHEMA_SQL)?;
+    if legacy {
+        expected.execute_batch(OWNER_SCHEMA_V1_SQL)?;
+    } else {
+        expected.execute_batch(OWNER_SCHEMA_SQL)?;
+    }
     let mut expected_objects = schema_objects(&expected)?;
     if legacy {
         expected_objects.retain(|(_, _, table, _)| table != "store_identity");
@@ -97,6 +158,79 @@ fn validate_owner_schema(connection: &Connection, legacy: bool) -> Result<(), Ta
     if schema_objects(connection)? != expected_objects {
         return Err(TaskError::Invalid);
     }
+    Ok(())
+}
+
+/// Explicit stopped-store migration for a disposable v1 owner store. Host
+/// startup never invokes this function.
+pub fn migrate_v1_to_v2(path: &Path) -> Result<(), TaskError> {
+    migrate_v1_to_v2_inner(path, false)
+}
+
+fn migrate_v1_to_v2_inner(path: &Path, fail_after_ddl: bool) -> Result<(), TaskError> {
+    if !path.is_absolute() {
+        return Err(TaskError::Invalid);
+    }
+    let lock_path = path.with_extension("owner.lock");
+    let lock = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .mode(0o600)
+        .open(lock_path)
+        .map_err(|_| TaskError::Unavailable)?;
+    lock.try_lock().map_err(|_| TaskError::Busy)?;
+    let mut connection = Connection::open(path)?;
+    connection.busy_timeout(Duration::from_secs(2))?;
+    let version: i64 = connection.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+    if version != 1 {
+        return Err(TaskError::Invalid);
+    }
+    let old_expected = Connection::open_in_memory()?;
+    old_expected.execute_batch(OWNER_SCHEMA_V1_SQL)?;
+    if schema_objects(&connection)? != schema_objects(&old_expected)? {
+        return Err(TaskError::Invalid);
+    }
+    let (store_id, identity_version): (String, i64) = connection.query_row(
+        "SELECT store_id,schema_version FROM store_identity WHERE singleton=1",
+        [],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    if identity_version != 1
+        || store_id.len() != 32
+        || !store_id
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    {
+        return Err(TaskError::Invalid);
+    }
+    let v2_expected = Connection::open_in_memory()?;
+    v2_expected.execute_batch(OWNER_SCHEMA_SQL)?;
+    let identity_ddl: String = v2_expected.query_row(
+        "SELECT sql FROM sqlite_master WHERE name='store_identity'",
+        [],
+        |r| r.get(0),
+    )?;
+    let effect_ddl: String = v2_expected.query_row(
+        "SELECT sql FROM sqlite_master WHERE name='completed_effects'",
+        [],
+        |r| r.get(0),
+    )?;
+    let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    rebuild_completed_effects(&tx, &effect_ddl)?;
+    tx.execute_batch("DROP TABLE store_identity;")?;
+    tx.execute_batch(&identity_ddl)?;
+    tx.execute(
+        "INSERT INTO store_identity(singleton,store_id,schema_version) VALUES(1,?1,2)",
+        [&store_id],
+    )?;
+    tx.execute_batch("PRAGMA user_version=2;")?;
+    if fail_after_ddl {
+        return Err(TaskError::Invalid);
+    }
+    validate_owner_schema(&tx, false)?;
+    tx.commit()?;
     Ok(())
 }
 
@@ -204,6 +338,44 @@ pub struct CompletedEffect {
     pub effect_id: String,
     pub delivery_id: String,
     pub receipt_digest: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attribution: Option<CompletedSnapshotReadAttribution>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CompletedSnapshotReadAttribution {
+    pub schema: String,
+    pub parent_invocation_id: String,
+    pub call_id: String,
+    pub contract_id: String,
+    pub snapshot_id: String,
+    pub member_id: String,
+    pub offset: u64,
+    pub requested_length: u64,
+    pub returned_length: u64,
+    pub result_sha256: String,
+    pub result: CompletedSnapshotResult,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "availability", rename_all = "snake_case", deny_unknown_fields)]
+pub enum CompletedSnapshotResult {
+    InlineUtf8 {
+        text: String,
+    },
+    Unavailable {
+        reason: CompletedSnapshotUnavailable,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompletedSnapshotUnavailable {
+    MissingResult,
+    NonUtf8,
+    OverInlineLimit,
+    OverEscapedLimit,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -359,7 +531,7 @@ impl TaskStore {
         let connection = Connection::open(path)?;
         connection.busy_timeout(Duration::from_secs(2))?;
         let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if !(0..=1).contains(&version) || (fresh && version != 0) {
+        if !matches!(version, 0 | 2) || (fresh && version != 0) {
             return Err(TaskError::Invalid);
         }
         if !fresh {
@@ -368,16 +540,36 @@ impl TaskStore {
         if version == 0 {
             connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
             connection.execute_batch("BEGIN IMMEDIATE;")?;
-            let migration = connection.execute_batch(OWNER_SCHEMA_SQL).and_then(|()| {
-                connection.execute_batch(
-                    "INSERT INTO store_identity(singleton, store_id, schema_version)
-                       VALUES(1, lower(hex(randomblob(16))), 1);
-                     PRAGMA user_version=1;",
+            let effect_ddl: String = Connection::open_in_memory().and_then(|expected| {
+                expected.execute_batch(OWNER_SCHEMA_SQL)?;
+                expected.query_row(
+                    "SELECT sql FROM sqlite_master WHERE name='completed_effects'",
+                    [],
+                    |r| r.get(0),
                 )
+            })?;
+            let migration = if fresh {
+                Ok(())
+            } else {
+                rebuild_completed_effects(&connection, &effect_ddl)
+            }
+            .and_then(|()| {
+                connection
+                    .execute_batch(OWNER_SCHEMA_SQL)
+                    .map_err(TaskError::from)
+            })
+            .and_then(|()| {
+                connection
+                    .execute_batch(
+                        "INSERT INTO store_identity(singleton, store_id, schema_version)
+                       VALUES(1, lower(hex(randomblob(16))), 2);
+                     PRAGMA user_version=2;",
+                    )
+                    .map_err(TaskError::from)
             });
             if let Err(error) = migration {
                 let _ = connection.execute_batch("ROLLBACK;");
-                return Err(error.into());
+                return Err(error);
             }
             connection.execute_batch("COMMIT;")?;
         }
@@ -386,7 +578,7 @@ impl TaskStore {
             [],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        if schema_version != 1
+        if schema_version != 2
             || store_id.len() != 32
             || !store_id
                 .bytes()
@@ -394,7 +586,7 @@ impl TaskStore {
         {
             return Err(TaskError::Invalid);
         }
-        if version == 1 {
+        if version == 2 {
             // Synchronous is per connection; set it only after read-only
             // schema and identity validation above.
             connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
@@ -412,7 +604,7 @@ impl TaskStore {
     pub fn store_id(&self) -> Result<String, TaskError> {
         let connection = self.lock()?;
         let id = connection.query_row(
-            "SELECT store_id FROM store_identity WHERE singleton=1 AND schema_version=1",
+            "SELECT store_id FROM store_identity WHERE singleton=1 AND schema_version=2",
             [],
             |row| row.get(0),
         )?;
@@ -895,20 +1087,43 @@ impl TaskStore {
         {
             return Err(TaskError::Invalid);
         }
+        let attribution = effect.attribution.as_ref().ok_or(TaskError::Invalid)?;
+        validate_effect_attribution(attribution, &effect.receipt_digest)?;
         let mut connection = self.lock()?;
         let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let existing: Option<(String,String,String)> = tx.query_row("SELECT task_id,delivery_id,receipt_digest FROM completed_effects WHERE effect_id=?1", [&effect.effect_id], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?))).optional()?;
+        let existing: Option<CompletedEffectRow> = tx.query_row(
+            "SELECT task_id,delivery_id,receipt_digest,owner_revision,cursor_revision,record_digest FROM completed_effects WHERE effect_id=?1",
+            [&effect.effect_id], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?))).optional()?;
         if let Some(existing) = existing {
-            if existing
-                != (
-                    task_id.to_owned(),
-                    effect.delivery_id.clone(),
-                    effect.receipt_digest.clone(),
-                )
+            if (
+                existing.0.as_str(),
+                existing.1.as_str(),
+                existing.2.as_str(),
+            ) != (
+                task_id,
+                effect.delivery_id.as_str(),
+                effect.receipt_digest.as_str(),
+            ) {
+                return Err(TaskError::Conflict);
+            }
+            let record = read_task(&tx, task_id)?.ok_or(TaskError::Uncertain)?;
+            let recorded = record
+                .completed_effects
+                .iter()
+                .find(|item| item.effect_id == effect.effect_id)
+                .ok_or(TaskError::Uncertain)?;
+            if recorded.delivery_id != effect.delivery_id
+                || recorded.receipt_digest != effect.receipt_digest
+                || (recorded.attribution.is_some() && recorded.attribution != effect.attribution)
             {
                 return Err(TaskError::Conflict);
             }
-            return commit_of(&read_task(&tx, task_id)?.ok_or(TaskError::Uncertain)?);
+            return match stored_effect_receipt(
+                task_id, recorded, existing.3, existing.4, existing.5,
+            )? {
+                Some(receipt) => Ok(receipt),
+                None => commit_of(&record), // Migrated v1 has no historical receipt.
+            };
         }
         let mut record = read_task(&tx, task_id)?.ok_or(TaskError::Unavailable)?;
         if record.cursor_revision != expected_cursor_revision {
@@ -917,28 +1132,25 @@ impl TaskStore {
         record.completed_effects.push(effect.clone());
         record.revision += 1;
         record.cursor_revision += 1;
-        add_source(
-            &mut record,
-            &format!("effect-{}", effect.effect_id),
-            SourceKind::DeliveryConsequence,
-            &format!(
-                "Completed effect {} for delivery {} receipt {}",
-                effect.effect_id, effect.delivery_id, effect.receipt_digest
-            ),
-            true,
-        );
+        append_effect_sources(&mut record, &effect)?;
+        let receipt = commit_of(&record)?;
         write_task(&tx, &record)?;
         tx.execute(
-            "INSERT INTO completed_effects VALUES (?1,?2,?3,?4)",
+            "INSERT INTO completed_effects(effect_id,task_id,delivery_id,receipt_digest,owner_revision,cursor_revision,record_digest) VALUES (?1,?2,?3,?4,?5,?6,?7)",
             params![
                 effect.effect_id,
                 task_id,
                 effect.delivery_id,
-                effect.receipt_digest
+                effect.receipt_digest,
+                i64::try_from(receipt.owner_revision).map_err(|_| TaskError::Invalid)?,
+                i64::try_from(receipt.cursor_revision).map_err(|_| TaskError::Invalid)?,
+                receipt.digest,
             ],
         )?;
+        #[cfg(feature = "controlled-proof")]
+        self.controlled_barrier("snapshot_before_owner_commit")?;
         tx.commit()?;
-        commit_of(&record)
+        Ok(receipt)
     }
 
     pub fn lookup_completed_effect(
@@ -946,20 +1158,38 @@ impl TaskStore {
         effect_id: &str,
     ) -> Result<Option<CompletedEffect>, TaskError> {
         let connection = self.lock()?;
-        connection
-            .query_row(
-                "SELECT delivery_id,receipt_digest FROM completed_effects WHERE effect_id=?1",
-                [effect_id],
-                |r| {
-                    Ok(CompletedEffect {
-                        effect_id: effect_id.into(),
-                        delivery_id: r.get(0)?,
-                        receipt_digest: r.get(1)?,
-                    })
-                },
-            )
-            .optional()
-            .map_err(TaskError::from)
+        let row: Option<CompletedEffectRow> = connection.query_row(
+            "SELECT task_id,delivery_id,receipt_digest,owner_revision,cursor_revision,record_digest FROM completed_effects WHERE effect_id=?1",
+            [effect_id], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
+        ).optional()?;
+        let Some((
+            task_id,
+            delivery_id,
+            receipt_digest,
+            owner_revision,
+            cursor_revision,
+            record_digest,
+        )) = row
+        else {
+            return Ok(None);
+        };
+        let record = read_task(&connection, &task_id)?.ok_or(TaskError::Uncertain)?;
+        let effect = record
+            .completed_effects
+            .into_iter()
+            .find(|item| item.effect_id == effect_id)
+            .ok_or(TaskError::Uncertain)?;
+        if effect.delivery_id != delivery_id || effect.receipt_digest != receipt_digest {
+            return Err(TaskError::Conflict);
+        }
+        stored_effect_receipt(
+            &task_id,
+            &effect,
+            owner_revision,
+            cursor_revision,
+            record_digest,
+        )?;
+        Ok(Some(effect))
     }
 
     pub fn lookup_operation(
@@ -1136,7 +1366,7 @@ impl TaskStore {
         };
         #[cfg(feature = "controlled-proof")]
         if kind == "task.result.publish.v1" {
-            self.controlled_result_barrier()?;
+            self.controlled_barrier("task_result_after_owner_begin")?;
         }
         let mut tx = Some(tx);
         with_grant_fence(&mut || {
@@ -1166,16 +1396,15 @@ impl TaskStore {
     }
 
     #[cfg(feature = "controlled-proof")]
-    fn controlled_result_barrier(&self) -> Result<(), TaskError> {
-        const POINT: &str = "task_result_after_owner_begin";
+    fn controlled_barrier(&self, point: &str) -> Result<(), TaskError> {
         let Some(root) = self.proof_barrier_dir.as_deref() else {
             return Ok(());
         };
-        if !root.join(format!("{POINT}.arm")).exists() {
+        if !root.join(format!("{point}.arm")).exists() {
             return Ok(());
         }
-        let reached = root.join(format!("{POINT}.reached"));
-        let release = root.join(format!("{POINT}.release"));
+        let reached = root.join(format!("{point}.reached"));
+        let release = root.join(format!("{point}.release"));
         let mut file = std::fs::File::create(reached).map_err(|_| TaskError::Uncertain)?;
         use std::io::Write as _;
         file.write_all(b"reached\n")
@@ -1225,6 +1454,36 @@ fn commit_of(record: &TaskRecord) -> Result<TaskCommit, TaskError> {
         cursor_revision: record.cursor_revision,
         digest: json_digest(record)?,
     })
+}
+
+fn stored_effect_receipt(
+    task_id: &str,
+    effect: &CompletedEffect,
+    owner_revision: Option<i64>,
+    cursor_revision: Option<i64>,
+    record_digest: Option<String>,
+) -> Result<Option<TaskCommit>, TaskError> {
+    match (
+        effect.attribution.as_ref(),
+        owner_revision,
+        cursor_revision,
+        record_digest,
+    ) {
+        (None, None, None, None) => Ok(None),
+        (Some(attribution), Some(owner), Some(cursor), Some(digest))
+            if owner > 0 && cursor > 0 && valid_digest(&digest) =>
+        {
+            validate_effect_attribution(attribution, &effect.receipt_digest)
+                .map_err(|_| TaskError::Uncertain)?;
+            Ok(Some(TaskCommit {
+                task_id: task_id.into(),
+                owner_revision: u64::try_from(owner).map_err(|_| TaskError::Uncertain)?,
+                cursor_revision: u64::try_from(cursor).map_err(|_| TaskError::Uncertain)?,
+                digest,
+            }))
+        }
+        _ => Err(TaskError::Uncertain),
+    }
 }
 fn insert_admission(
     tx: &rusqlite::Transaction<'_>,
@@ -1349,6 +1608,108 @@ fn add_source(record: &mut TaskRecord, id: &str, kind: SourceKind, text: &str, r
         sha256: sha256(text.as_bytes()),
     });
 }
+
+fn validate_effect_attribution(
+    a: &CompletedSnapshotReadAttribution,
+    receipt_digest: &str,
+) -> Result<(), TaskError> {
+    if a.schema != "completed-snapshot-read-attribution-v2"
+        || a.contract_id != "workspace.snapshot.read.v1"
+        || !valid_id(&a.parent_invocation_id)
+        || !valid_id(&a.call_id)
+        || !valid_id(&a.snapshot_id)
+        || !valid_id(&a.member_id)
+        || a.requested_length == 0
+        || a.requested_length > 65_536
+        // The current native contract refuses a range past member end and
+        // returns exactly the requested slice. Keep both fields explicit.
+        || a.returned_length != a.requested_length
+        || a.offset.checked_add(a.requested_length).is_none()
+        || !valid_digest(&a.result_sha256)
+        || a.result_sha256 != receipt_digest
+    {
+        return Err(TaskError::Invalid);
+    }
+    match &a.result {
+        CompletedSnapshotResult::InlineUtf8 { text } => {
+            if text.len() as u64 != a.returned_length
+                || text.len() > EFFECT_INLINE_BYTES
+                || serde_json::to_vec(text)?.len() > EFFECT_ESCAPED_BYTES
+                || sha256(text.as_bytes()) != receipt_digest
+            {
+                return Err(TaskError::Invalid);
+            }
+        }
+        CompletedSnapshotResult::Unavailable { .. } => {}
+    }
+    Ok(())
+}
+
+fn append_effect_sources(
+    record: &mut TaskRecord,
+    effect: &CompletedEffect,
+) -> Result<(), TaskError> {
+    let a = effect.attribution.as_ref().ok_or(TaskError::Invalid)?;
+    let id_hash = sha256(effect.effect_id.as_bytes());
+    let occurrence_id = format!("effect-{id_hash}");
+    let data_id = format!("effect-data-{id_hash}");
+    if record
+        .sources
+        .iter()
+        .any(|s| s.id == occurrence_id || s.id == data_id)
+    {
+        return Err(TaskError::Conflict);
+    }
+    let (availability, bytes, reason) = match &a.result {
+        CompletedSnapshotResult::InlineUtf8 { text } => {
+            (SourceAvailability::Complete, text.as_bytes().to_vec(), None)
+        }
+        CompletedSnapshotResult::Unavailable { reason } => {
+            (SourceAvailability::Unavailable, Vec::new(), Some(reason))
+        }
+    };
+    let occurrence = serde_json::to_vec(&serde_json::json!({
+        "version":2, "effect_id":effect.effect_id, "delivery_id":effect.delivery_id,
+        "parent_invocation_id":a.parent_invocation_id, "call_id":a.call_id,
+        "contract_id":a.contract_id, "snapshot_id":a.snapshot_id,
+        "member_id":a.member_id, "offset":a.offset,
+        "requested_length":a.requested_length, "returned_length":a.returned_length,
+        "result_sha256":a.result_sha256, "result_source_id":data_id,
+        "result_inline":reason.is_none(), "unavailable_reason":reason,
+    }))?;
+    let make =
+        |id: String, kind, trust, availability, bytes: Vec<u8>, digest: String| SourceMaterial {
+            dependency_key: id.clone(),
+            id,
+            owner_namespace: OWNER_NAMESPACE.into(),
+            owner_ref: record.task_id.clone(),
+            revision: 1,
+            current: true,
+            dependency_required: true,
+            kind,
+            trust,
+            availability,
+            bytes,
+            sha256: digest,
+        };
+    record.sources.push(make(
+        occurrence_id,
+        SourceKind::DeliveryConsequence,
+        SourceTrust::HostCanonical,
+        SourceAvailability::Complete,
+        occurrence.clone(),
+        sha256(&occurrence),
+    ));
+    record.sources.push(make(
+        data_id,
+        SourceKind::ExternalData,
+        SourceTrust::UntrustedData,
+        availability,
+        bytes,
+        effect.receipt_digest.clone(),
+    ));
+    Ok(())
+}
 fn update_source(record: &mut TaskRecord, id: &str, text: &str) -> Result<(), TaskError> {
     let source = record
         .sources
@@ -1456,4 +1817,143 @@ pub fn obligations(record: &TaskRecord) -> Vec<RequiredObligation> {
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod schema_two_tests {
+    use super::*;
+
+    #[test]
+    fn failed_explicit_migration_rolls_back_identity_ddl_and_user_version() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("owner.sqlite");
+        let store = TaskStore::open(&path, "human-operator".into()).unwrap();
+        let id = store.store_id().unwrap();
+        store
+            .submit(&SubmitTask {
+                command_id: "rollback-command".into(),
+                task_id: "rollback-task".into(),
+                subject_id: "rollback-subject".into(),
+                kind: SubjectKind::RepositoryAnalysis,
+                objective: "Preserve the original owner record".into(),
+                engineering_question: "Does a failed migration preserve it?".into(),
+                snapshot_ref: "rollback-snapshot".into(),
+                facts: Vec::new(),
+            })
+            .unwrap();
+        drop(store);
+        let db = Connection::open(&path).unwrap();
+        let v2_ddl: String = db
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE name='store_identity'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let v1_ddl = v2_ddl.replace("schema_version = 2", "schema_version = 1");
+        db.execute_batch(
+            "BEGIN IMMEDIATE; DROP TABLE store_identity; DROP TABLE completed_effects;
+            CREATE TABLE completed_effects (
+                effect_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+                delivery_id TEXT NOT NULL, receipt_digest TEXT NOT NULL
+            );",
+        )
+        .unwrap();
+        db.execute_batch(&v1_ddl).unwrap();
+        db.execute("INSERT INTO store_identity VALUES(1,?1,1)", [&id])
+            .unwrap();
+        db.execute_batch("PRAGMA user_version=1; COMMIT;").unwrap();
+        db.execute("INSERT INTO completed_effects VALUES('legacy-effect','rollback-task','legacy-delivery','legacy-digest')",[]).unwrap();
+        let effect_ddl: String = db
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE name='completed_effects'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let effect_row: (String, String, String, String) = db
+            .query_row(
+                "SELECT effect_id,task_id,delivery_id,receipt_digest FROM completed_effects",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        let original_record: Vec<u8> = db
+            .query_row(
+                "SELECT record_json FROM tasks WHERE task_id='rollback-task'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let original_command: Vec<u8> = db
+            .query_row(
+                "SELECT commit_json FROM commands WHERE command_id='rollback-command'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        drop(db);
+        assert!(matches!(
+            migrate_v1_to_v2_inner(&path, true),
+            Err(TaskError::Invalid)
+        ));
+        let db = Connection::open(&path).unwrap();
+        let version: i64 = db
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .unwrap();
+        let (after_id, after_version): (String, i64) = db
+            .query_row(
+                "SELECT store_id,schema_version FROM store_identity WHERE singleton=1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        let after_ddl: String = db
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE name='store_identity'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            (version, after_id, after_version, after_ddl),
+            (1, id, 1, v1_ddl)
+        );
+        let after_effect_ddl: String = db
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE name='completed_effects'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let after_effect_row: (String, String, String, String) = db
+            .query_row(
+                "SELECT effect_id,task_id,delivery_id,receipt_digest FROM completed_effects",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(
+            (after_effect_ddl, after_effect_row),
+            (effect_ddl, effect_row)
+        );
+        let after_record: Vec<u8> = db
+            .query_row(
+                "SELECT record_json FROM tasks WHERE task_id='rollback-task'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let after_command: Vec<u8> = db
+            .query_row(
+                "SELECT commit_json FROM commands WHERE command_id='rollback-command'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            (after_record, after_command),
+            (original_record, original_command)
+        );
+    }
 }

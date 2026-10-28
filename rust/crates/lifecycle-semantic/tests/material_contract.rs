@@ -129,3 +129,159 @@ fn unknown_schema_or_policy_is_explicitly_ineligible() {
         Err(SemanticError::UnsupportedPolicy)
     );
 }
+
+#[test]
+fn retained_capacity_boundaries_are_typed_and_exact_prompt_overflow_is_distinct() {
+    let mut item = input("C1");
+    item.policy = SemanticPolicy::retained_repository_analysis();
+    item.sources[0].bytes = vec![b'a'; 16 * 1024];
+    item.sources[0].sha256 = sha256_hex(&item.sources[0].bytes);
+    for obligation in &mut item.obligations {
+        for reference in &mut obligation.sources {
+            if reference.id == item.sources[0].id {
+                reference.sha256 = item.sources[0].sha256.clone();
+            }
+        }
+    }
+    assert!(
+        !project_material(item.clone())
+            .unwrap()
+            .issues
+            .iter()
+            .any(|issue| matches!(issue, MaterialIssue::ItemTooLarge { .. }))
+    );
+    item.sources[0].bytes.push(b'a');
+    item.sources[0].sha256 = sha256_hex(&item.sources[0].bytes);
+    for obligation in &mut item.obligations {
+        for reference in &mut obligation.sources {
+            if reference.id == item.sources[0].id {
+                reference.sha256 = item.sources[0].sha256.clone();
+            }
+        }
+    }
+    assert!(
+        project_material(item)
+            .unwrap()
+            .issues
+            .iter()
+            .any(|issue| matches!(issue, MaterialIssue::ItemTooLarge { .. }))
+    );
+
+    let mut count = input("C1");
+    count.policy = SemanticPolicy::retained_repository_analysis();
+    let template = count.sources[0].clone();
+    while count.sources.len() < 64 {
+        let mut next = template.clone();
+        next.id = format!("extra-{}", count.sources.len());
+        next.dependency_key = next.id.clone();
+        count.sources.push(next);
+    }
+    assert!(
+        !project_material(count.clone())
+            .unwrap()
+            .issues
+            .iter()
+            .any(|issue| matches!(issue, MaterialIssue::TooManyItems))
+    );
+    let mut next = template.clone();
+    next.id = "extra-64".into();
+    next.dependency_key = next.id.clone();
+    count.sources.push(next);
+    assert!(
+        project_material(count)
+            .unwrap()
+            .issues
+            .iter()
+            .any(|issue| matches!(issue, MaterialIssue::TooManyItems))
+    );
+
+    let mut total = input("C1");
+    total.policy = SemanticPolicy::retained_repository_analysis();
+    let mut raw: usize = total.sources.iter().map(|s| s.bytes.len()).sum();
+    while raw < 64 * 1024 {
+        let length = (64 * 1024 - raw).min(16 * 1024);
+        let mut next = template.clone();
+        next.id = format!("total-{}", total.sources.len());
+        next.dependency_key = next.id.clone();
+        next.bytes = vec![b'x'; length];
+        next.sha256 = sha256_hex(&next.bytes);
+        total.sources.push(next);
+        raw += length;
+    }
+    assert!(
+        !project_material(total.clone())
+            .unwrap()
+            .issues
+            .iter()
+            .any(|issue| matches!(issue, MaterialIssue::TotalTooLarge))
+    );
+    let mut next = template.clone();
+    next.id = "total-extra".into();
+    next.dependency_key = next.id.clone();
+    next.bytes = vec![b'x'];
+    next.sha256 = sha256_hex(&next.bytes);
+    total.sources.push(next);
+    assert!(
+        project_material(total)
+            .unwrap()
+            .issues
+            .iter()
+            .any(|issue| matches!(issue, MaterialIssue::TotalTooLarge))
+    );
+
+    let mut prompt = input("C1");
+    prompt.policy = SemanticPolicy::retained_repository_analysis();
+    let basis = project_material(prompt.clone()).unwrap();
+    let exact = compile_request(
+        &basis,
+        binding(&basis, SemanticPhase::Compile),
+        &prompt.policy,
+    )
+    .unwrap();
+    let size = exact.prompt.len();
+    prompt.policy.max_control_input_bytes = size;
+    let at_limit = project_material(prompt.clone()).unwrap();
+    assert!(
+        compile_request(
+            &at_limit,
+            binding(&at_limit, SemanticPhase::Compile),
+            &prompt.policy
+        )
+        .is_ok()
+    );
+    prompt.policy.max_control_input_bytes = size - 1;
+    let over = project_material(prompt.clone()).unwrap();
+    assert_eq!(
+        compile_request(
+            &over,
+            binding(&over, SemanticPhase::Compile),
+            &prompt.policy
+        ),
+        Err(SemanticError::PromptTooLarge)
+    );
+}
+
+#[test]
+fn configured_smaller_capacity_reports_typed_issues_without_losing_material() {
+    let mut material = input("C1");
+    material.policy = SemanticPolicy::retained_repository_analysis();
+    let first_size = material.sources[0].bytes.len();
+    let other_size: usize = material
+        .sources
+        .iter()
+        .skip(1)
+        .map(|source| source.bytes.len())
+        .sum();
+    material.policy.max_source_items = material.sources.len() - 1;
+    material.policy.max_source_item_bytes = first_size - 1;
+    material.policy.max_source_total_bytes = first_size + other_size - 1;
+    let original_sources = material.sources.clone();
+    let basis = project_material(material).unwrap();
+    assert_eq!(basis.sources, original_sources);
+    assert!(basis.issues.contains(&MaterialIssue::TooManyItems));
+    assert!(basis.issues.contains(&MaterialIssue::ItemTooLarge {
+        id: original_sources[0].id.clone(),
+    }));
+    assert!(basis.issues.contains(&MaterialIssue::TotalTooLarge));
+    assert!(!basis.is_eligible());
+}

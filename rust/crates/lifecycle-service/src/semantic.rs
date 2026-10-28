@@ -1,7 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, atomic::AtomicBool},
-};
+use std::{path::PathBuf, sync::Arc, sync::atomic::Ordering};
 
 use lifecycle_core::{
     CheckpointId, ContextGeneration, Revision, RuntimeIncarnation, SnapshotId, SubjectId,
@@ -17,7 +14,7 @@ use lifecycle_store::{SemanticControlRole, SqliteLifecycleStore, StoreError};
 
 use crate::{
     CanonicalMaterialPort, NativeConfig, NativeProviderRoute, SemanticNativeConfig,
-    actor::clock_sample,
+    actor::{NativeGate, clock_sample},
     semantic_control::{self, ControlTurnSpec},
 };
 
@@ -29,7 +26,7 @@ pub struct SemanticRuntime {
     pub incarnation: RuntimeIncarnation,
     pub snapshot: SnapshotId,
     pub snapshot_manifest_sha256: String,
-    pub gate: Arc<AtomicBool>,
+    pub gate: Arc<NativeGate>,
     pub uid: u32,
     pub principal: String,
     pub proof_dir: Option<PathBuf>,
@@ -157,6 +154,9 @@ pub async fn establish_checkpoint(
                 .map_err(|_| StoreError::Unavailable)?,
         ));
     }
+    if runtime.gate.load(Ordering::SeqCst) {
+        return Err(StoreError::ClaimConflict);
+    }
     // A native compiler turn may have completed while its model-authored
     // content failed deterministic validation. Never send that attempt again.
     if store
@@ -192,6 +192,36 @@ pub async fn establish_checkpoint(
             return Ok(None);
         }
     };
+    let compile_binding = binding(
+        runtime,
+        subject,
+        transition,
+        SemanticPhase::Compile,
+        &runtime.semantic.compile_session_id,
+        &runtime.semantic.compile_invocation_id,
+        &runtime.semantic.compile_attempt_id,
+        &policy.id,
+    );
+    let compile_pre = if basis.is_eligible() {
+        match compile_request(&basis, compile_binding, &policy) {
+            Ok(request) => Some(request),
+            Err(lifecycle_semantic::SemanticError::PromptTooLarge) => {
+                store.record_semantic_material_rejection(
+                    &input,
+                    &lifecycle_semantic::SemanticError::PromptTooLarge,
+                    Revision::new(semantic_revision),
+                    clock_sample(),
+                )?;
+                return Ok(None);
+            }
+            Err(error) => return Err(semantic_store_error(error)),
+        }
+    } else {
+        None
+    };
+    if runtime.gate.load(Ordering::SeqCst) {
+        return Err(StoreError::ClaimConflict);
+    }
     store.record_semantic_capture_with_barrier(
         &basis,
         &policy,
@@ -199,24 +229,9 @@ pub async fn establish_checkpoint(
         clock_sample(),
         runtime.proof_dir.as_deref(),
     )?;
-    if !basis.is_eligible() {
+    let Some(compile_pre) = compile_pre else {
         return Ok(None);
-    }
-    let compile_pre = compile_request(
-        &basis,
-        binding(
-            runtime,
-            subject,
-            transition,
-            SemanticPhase::Compile,
-            &runtime.semantic.compile_session_id,
-            &runtime.semantic.compile_invocation_id,
-            &runtime.semantic.compile_attempt_id,
-            &policy.id,
-        ),
-        &policy,
-    )
-    .map_err(semantic_store_error)?;
+    };
     let compile = semantic_control::run_control_turn(
         store,
         &runtime.native,
@@ -397,6 +412,9 @@ pub async fn establish_checkpoint(
     })).map_err(|_|StoreError::Rejected)?;
     if successor_prompt.len() > 65_536 {
         return Err(StoreError::Rejected);
+    }
+    if runtime.gate.load(Ordering::SeqCst) {
+        return Err(StoreError::ClaimConflict);
     }
     store.publish_semantic_checkpoint(
         &result_id,

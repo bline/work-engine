@@ -157,6 +157,27 @@ pub struct SourceBasis {
 }
 
 impl SourceBasis {
+    /// Verify the persisted basis without assuming the capture's configured
+    /// capacity limits were the profile defaults. Capture admission validates
+    /// those limits before this digest is committed.
+    pub fn verify_digest(&self) -> Result<(), SemanticError> {
+        let digest = json_digest(&(
+            &self.subject,
+            &self.transition,
+            &self.capture_id,
+            self.schema_version,
+            &self.policy_id,
+            &self.sources,
+            &self.obligations,
+            &self.dependencies,
+            &self.issues,
+        ))?;
+        if digest != self.sha256 {
+            return Err(SemanticError::InvalidDigest);
+        }
+        Ok(())
+    }
+
     pub fn is_eligible(&self) -> bool {
         self.issues.is_empty()
     }

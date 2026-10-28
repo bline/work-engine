@@ -628,7 +628,12 @@ dependencies = [
 name = "lifecycle-proof"
 version = "0.1.0"
 dependencies = [
+ "lifecycle-core",
+ "lifecycle-service",
+ "lifecycle-store",
  "lifecycle-wire",
+ "retained-task-workflow",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",

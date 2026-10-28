@@ -2,11 +2,7 @@
 //! lifecycle-store entry/ingress/settlement owner as S5 domain turns.
 
 use std::{
-    collections::HashSet,
-    fs,
-    os::unix::fs::PermissionsExt,
-    path::Path,
-    sync::atomic::{AtomicBool, Ordering},
+    collections::HashSet, fs, os::unix::fs::PermissionsExt, path::Path, sync::atomic::Ordering,
     time::Duration,
 };
 
@@ -29,7 +25,7 @@ use tokio::time::timeout;
 
 use crate::{
     NativeConfig, NativeProviderRoute, SemanticNativeConfig,
-    actor::{agent_message_delta_matches, clock_sample},
+    actor::{NativeGate, agent_message_delta_matches, clock_sample},
     operations,
 };
 
@@ -66,7 +62,7 @@ struct DirectRunner<'a> {
     bound_thread: Option<String>,
     bound_turn: Option<String>,
     started_agent_messages: HashSet<(String, String, String)>,
-    gate: &'a AtomicBool,
+    gate: &'a NativeGate,
 }
 
 fn control_agent_message_item_matches(
@@ -340,8 +336,11 @@ pub async fn run_control_turn(
     principal: &str,
     uid: u32,
     proof_dir: Option<&Path>,
-    gate: &AtomicBool,
+    gate: &NativeGate,
 ) -> Result<ControlTurnResult, StoreError> {
+    if gate.load(Ordering::SeqCst) {
+        return Err(StoreError::ClaimConflict);
+    }
     let role_name = match spec.role {
         SemanticControlRole::Compile => "compile",
         SemanticControlRole::Verify => "verify",

@@ -40,6 +40,12 @@ pub struct SemanticMaterialRejectionRecord {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CurrentSemanticMaterialBlock {
+    PromptTooLarge,
+    CapturedIssues(Vec<lifecycle_semantic::MaterialIssue>),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SemanticCompileRefusalRecord {
     pub transition_id: String,
     pub capture_id: String,
@@ -47,6 +53,143 @@ pub struct SemanticCompileRefusalRecord {
     pub input_sha256: String,
     pub output_sha256: String,
     pub reason: String,
+}
+
+#[cfg(test)]
+mod current_material_block_tests {
+    use super::*;
+    use lifecycle_core::{
+        BuildId, ContextGeneration, ProofRunId, SubjectId, WaitBudgetMs, WallTimeMs,
+    };
+    use lifecycle_semantic::{
+        MaterialIssue, ObligationKind, RequiredObligation, SourceAvailability, SourceKind,
+        SourceMaterial, SourceTrust, project_material, sha256_hex,
+    };
+
+    fn clock() -> ClockSample {
+        ClockSample {
+            wall: WallTimeMs::new(100),
+            wait_budget: WaitBudgetMs::new(5),
+        }
+    }
+
+    #[test]
+    fn current_prompt_refusal_and_all_typed_captured_issues_survive_reopen_without_stale_carryover()
+    {
+        let root = tempfile::tempdir().unwrap();
+        let subject = SubjectId::parse("subject-material").unwrap();
+        let transition = TransitionId::parse("transition-material").unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                ContextGeneration::parse("context-material").unwrap(),
+                BuildId::parse("build-material").unwrap(),
+                ProofRunId::parse("proof-material").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        store.connection.execute("INSERT INTO transitions(transition_id,subject_id,predecessor_context,stage,basis_revision,created_wall_ms) VALUES(?1,?2,'context-material','verifying',0,100)",
+            params![transition.as_str(),subject.as_str()]).unwrap();
+        store.connection.execute("UPDATE subjects SET owner_kind='transition',owner_ref=?1,semantic_revision=1 WHERE subject_id=?2",
+            params![transition.as_str(),subject.as_str()]).unwrap();
+        store
+            .connection
+            .execute(
+                "UPDATE transitions SET semantic_required=1 WHERE transition_id=?1",
+                [transition.as_str()],
+            )
+            .unwrap();
+        let source = SourceMaterial {
+            id: "result".into(),
+            owner_namespace: "task".into(),
+            owner_ref: "task".into(),
+            revision: 1,
+            dependency_key: "result".into(),
+            current: true,
+            dependency_required: true,
+            kind: SourceKind::ExternalData,
+            trust: SourceTrust::UntrustedData,
+            availability: SourceAvailability::Unavailable,
+            bytes: Vec::new(),
+            sha256: sha256_hex(b"missing"),
+        };
+        let input = MaterialInput {
+            subject: subject.clone(),
+            transition: transition.clone(),
+            capture_id: "capture-prompt".into(),
+            sources: vec![source.clone()],
+            obligations: vec![RequiredObligation {
+                id: "obligation-result".into(),
+                kind: ObligationKind::CompletedConsequence,
+                verifier_scope: "result".into(),
+                description: "preserve observed result".into(),
+                sources: vec![source.reference()],
+            }],
+            policy: SemanticPolicy::retained_repository_analysis(),
+        };
+        store
+            .record_semantic_material_rejection(
+                &input,
+                &SemanticError::PromptTooLarge,
+                Revision::new(1),
+                clock(),
+            )
+            .unwrap();
+        assert_eq!(
+            store
+                .current_semantic_material_block(&subject, &transition, "capture-prompt", 1)
+                .unwrap(),
+            Some(CurrentSemanticMaterialBlock::PromptTooLarge)
+        );
+        let mut issue_input = input.clone();
+        issue_input.capture_id = "capture-issues".into();
+        let basis = project_material(issue_input.clone()).unwrap();
+        assert!(
+            basis
+                .issues
+                .iter()
+                .any(|i| matches!(i, MaterialIssue::Unavailable { .. }))
+        );
+        assert!(
+            basis
+                .issues
+                .iter()
+                .any(|i| matches!(i, MaterialIssue::RequiredSourceUnavailable { .. }))
+        );
+        store
+            .record_semantic_capture(&basis, &issue_input.policy, Revision::new(1), clock())
+            .unwrap();
+        drop(store);
+        let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert_eq!(
+            store
+                .current_semantic_material_block(&subject, &transition, "capture-issues", 1)
+                .unwrap(),
+            Some(CurrentSemanticMaterialBlock::CapturedIssues(
+                basis.issues.clone()
+            ))
+        );
+        store
+            .connection
+            .execute(
+                "UPDATE subjects SET semantic_revision=2 WHERE subject_id=?1",
+                [subject.as_str()],
+            )
+            .unwrap();
+        assert_eq!(
+            store
+                .current_semantic_material_block(&subject, &transition, "capture-issues", 1)
+                .unwrap(),
+            None
+        );
+        assert_eq!(
+            store
+                .current_semantic_material_block(&subject, &transition, "capture-prompt", 2)
+                .unwrap(),
+            None
+        );
+    }
 }
 
 struct SettledCompileRow {
@@ -353,6 +496,82 @@ impl SqliteLifecycleStore {
                 input_sha256:r.get(2)?,policy_id:r.get(3)?,schema_version:r.get::<_,i64>(4)? as u32,
                 semantic_revision:r.get::<_,i64>(5)? as u64,error_code:r.get(6)?,eligibility:r.get(7)?}))
             .optional().map_err(|_|StoreError::Unavailable)
+    }
+
+    pub fn current_semantic_material_block(
+        &self,
+        subject: &lifecycle_core::SubjectId,
+        transition: &TransitionId,
+        capture_id: &str,
+        semantic_revision: u64,
+    ) -> Result<Option<CurrentSemanticMaterialBlock>, StoreError> {
+        self.verify_identity()?;
+        let current: bool = self.connection.query_row(
+            "SELECT EXISTS(SELECT 1 FROM transitions tr JOIN subjects s ON s.subject_id=tr.subject_id
+             WHERE tr.transition_id=?1 AND tr.subject_id=?2 AND tr.stage='verifying'
+               AND s.owner_kind='transition' AND s.owner_ref=tr.transition_id
+               AND s.semantic_revision=?3)",
+            params![transition.as_str(),subject.as_str(),i64::try_from(semantic_revision).map_err(|_|StoreError::Rejected)?],
+            |r|r.get(0),
+        ).map_err(|_|StoreError::Unavailable)?;
+        if !current {
+            return Ok(None);
+        }
+        let rejection: Option<String> = self
+            .connection
+            .query_row(
+                "SELECT error_code FROM semantic_material_rejections
+             WHERE capture_id=?1 AND transition_id=?2 AND subject_id=?3
+               AND semantic_revision=?4 AND eligibility='unresolved'",
+                params![
+                    capture_id,
+                    transition.as_str(),
+                    subject.as_str(),
+                    i64::try_from(semantic_revision).map_err(|_| StoreError::Rejected)?
+                ],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        if rejection.as_deref() == Some("prompt_too_large") {
+            return Ok(Some(CurrentSemanticMaterialBlock::PromptTooLarge));
+        }
+        let row: Option<(String, String)> = self
+            .connection
+            .query_row(
+                "SELECT basis_sha256,basis_artifact_sha256 FROM semantic_captures
+             WHERE capture_id=?1 AND transition_id=?2 AND subject_id=?3
+               AND source_revision=?4 AND eligibility='unresolved'",
+                params![
+                    capture_id,
+                    transition.as_str(),
+                    subject.as_str(),
+                    i64::try_from(semantic_revision).map_err(|_| StoreError::Rejected)?
+                ],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some((basis_digest, artifact_digest)) = row else {
+            return Ok(None);
+        };
+        let bytes = self
+            .read_committed_artifact(&artifact_digest)?
+            .ok_or(StoreError::Unavailable)?;
+        let basis: SourceBasis =
+            serde_json::from_slice(&bytes).map_err(|_| StoreError::Unavailable)?;
+        if basis.subject != *subject
+            || basis.transition != *transition
+            || basis.capture_id != capture_id
+            || basis.sha256 != basis_digest
+            || basis.verify_digest().is_err()
+            || basis.issues.is_empty()
+        {
+            return Err(StoreError::ObservationMismatch);
+        }
+        Ok(Some(CurrentSemanticMaterialBlock::CapturedIssues(
+            basis.issues,
+        )))
     }
 
     pub fn require_semantic_transition(

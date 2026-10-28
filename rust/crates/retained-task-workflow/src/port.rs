@@ -1,16 +1,52 @@
 use lifecycle_service::{
-    CompletedTaskEffect, GrantFence, QuestionOpenPayload as PortQuestion,
-    ResultPublishPayload as PortResult, TaskCursorBinding, TaskInputBinding,
-    TaskOperationCommit as PortCommit, TaskOperationError as PortError, TaskOperationPort,
-    ValidatedTaskOperationEntry,
+    CompletedTaskEffect, CompletedTaskEffectAttribution, CompletedTaskEffectReadback, GrantFence,
+    QuestionOpenPayload as PortQuestion, ResultPublishPayload as PortResult, TaskCursorBinding,
+    TaskInputBinding, TaskOperationCommit as PortCommit, TaskOperationError as PortError,
+    TaskOperationPort, ValidatedTaskOperationEntry,
 };
 
 use crate::{
-    CompletedEffect, OperationCommit, OperationEntry, QuestionOpenPayload, ResultPublishPayload,
-    TaskError, TaskStore,
+    CompletedEffect, CompletedSnapshotReadAttribution, CompletedSnapshotResult,
+    CompletedSnapshotUnavailable, OperationCommit, OperationEntry, QuestionOpenPayload,
+    ResultPublishPayload, TaskError, TaskStore,
 };
 
 impl TaskOperationPort for TaskStore {
+    fn lookup_completed_effect(
+        &self,
+        task_id: &str,
+        effect_id: &str,
+    ) -> Result<Option<CompletedTaskEffectReadback>, PortError> {
+        let effect = TaskStore::lookup_completed_effect(self, effect_id).map_err(port_error)?;
+        let Some(effect) = effect else {
+            return Ok(None);
+        };
+        let record = self
+            .observe(task_id)
+            .map_err(port_error)?
+            .ok_or(PortError::Uncertain)?;
+        if !record.completed_effects.contains(&effect) {
+            return Err(PortError::Invalid);
+        }
+        let attribution = effect.attribution.map(|a| CompletedTaskEffectAttribution {
+            parent_invocation_id: a.parent_invocation_id,
+            call_id: a.call_id,
+            contract_id: a.contract_id,
+            snapshot_id: a.snapshot_id,
+            member_id: a.member_id,
+            offset: a.offset,
+            requested_length: a.requested_length,
+            returned_length: a.returned_length,
+            result_sha256: a.result_sha256,
+        });
+        Ok(Some(CompletedTaskEffectReadback {
+            task_id: task_id.into(),
+            logical_delivery_id: effect.delivery_id,
+            effect_id: effect.effect_id,
+            receipt_sha256: effect.receipt_digest,
+            attribution,
+        }))
+    }
     fn current_cursor(&self, task_id: &str) -> Result<TaskCursorBinding, PortError> {
         let record = self
             .observe(task_id)
@@ -28,6 +64,14 @@ impl TaskOperationPort for TaskStore {
         })
     }
     fn record_completed_effect(&self, effect: &CompletedTaskEffect) -> Result<(), PortError> {
+        // Classification may deliberately discard oversized or non-UTF-8 bytes.
+        // Check the committed callback bytes before that loss of information.
+        if let Some(bytes) = effect.result_bytes.as_deref()
+            && (bytes.len() as u64 != effect.returned_length
+                || crate::sha256(bytes) != effect.receipt_sha256)
+        {
+            return Err(PortError::Invalid);
+        }
         TaskStore::record_completed_effect(
             self,
             &effect.task_id,
@@ -35,6 +79,19 @@ impl TaskOperationPort for TaskStore {
                 effect_id: effect.effect_id.clone(),
                 delivery_id: effect.logical_delivery_id.clone(),
                 receipt_digest: effect.receipt_sha256.clone(),
+                attribution: Some(CompletedSnapshotReadAttribution {
+                    schema: "completed-snapshot-read-attribution-v2".into(),
+                    parent_invocation_id: effect.parent_invocation_id.clone(),
+                    call_id: effect.call_id.clone(),
+                    contract_id: effect.contract_id.clone(),
+                    snapshot_id: effect.snapshot_id.clone(),
+                    member_id: effect.member_id.clone(),
+                    offset: effect.offset,
+                    requested_length: effect.requested_length,
+                    returned_length: effect.returned_length,
+                    result_sha256: effect.receipt_sha256.clone(),
+                    result: classify_result(effect.result_bytes.as_deref())?,
+                }),
             },
             effect.expected_cursor_revision,
         )
@@ -106,6 +163,34 @@ impl TaskOperationPort for TaskStore {
             .map(|value| value.map(port_commit))
             .map_err(port_error)
     }
+}
+
+fn classify_result(bytes: Option<&[u8]>) -> Result<CompletedSnapshotResult, PortError> {
+    let Some(bytes) = bytes else {
+        return Ok(CompletedSnapshotResult::Unavailable {
+            reason: CompletedSnapshotUnavailable::MissingResult,
+        });
+    };
+    let Ok(text) = std::str::from_utf8(bytes) else {
+        return Ok(CompletedSnapshotResult::Unavailable {
+            reason: CompletedSnapshotUnavailable::NonUtf8,
+        });
+    };
+    if bytes.len() > 4 * 1024 {
+        return Ok(CompletedSnapshotResult::Unavailable {
+            reason: CompletedSnapshotUnavailable::OverInlineLimit,
+        });
+    }
+    if serde_json::to_vec(text)
+        .map_err(|_| PortError::Invalid)?
+        .len()
+        > 8 * 1024
+    {
+        return Ok(CompletedSnapshotResult::Unavailable {
+            reason: CompletedSnapshotUnavailable::OverEscapedLimit,
+        });
+    }
+    Ok(CompletedSnapshotResult::InlineUtf8 { text: text.into() })
 }
 
 fn local_entry(value: &ValidatedTaskOperationEntry) -> OperationEntry {
