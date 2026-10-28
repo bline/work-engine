@@ -263,11 +263,15 @@ Definitions, fixed before the round starts:
 - **Repair round (R2-10):** one review-driven remediation cycle, from a review
   that requires changes to the builder's resubmission for review. Continuation
   turns within the cycle are one round, not several.
-- **Escalation (R2-10):** a model change the guide requires, made when its
-  trigger arises, before the triggered work starts: a Terra build moves to Sol as
-  soon as a second repair round becomes necessary, or a P1 or P2 reopens the
-  design, or the task turns out to be hazard-class. The episode keeps its arm; the
-  escalation is an outcome.
+- **Escalation (R2-10):** a builder change made under the model guide's current
+  escalation rule, when its trigger arises and before the triggered work starts.
+  Under the guide as clarified on 2026-10-28 (`d16eeba5`): when evidence exposes
+  substantial unresolved decisions still delegated to the builder, or repeated
+  failures on clear requirements support a model-capability explanation; a
+  repair-round count or a risk-bearing subsystem alone is not a trigger. A
+  finding that reopens design goes to its decision owner, and the builder is
+  selected again for the remaining work. The episode keeps its arm; the
+  escalation and its stated reason are outcomes.
 - **Terminal disposition:** accepted, abandoned (with the reason), or withdrawn
   before dispatch (with the reason).
 
