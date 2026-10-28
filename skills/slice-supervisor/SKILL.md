@@ -172,6 +172,25 @@ wait` and the expected durable revision. Reconstruct that same attempt after
 context or session replacement with `<skill-dir>/scripts/resume_active_slice.py`; continue
 only the recovered pending phase.
 
+Command lines (generated from `--help`):
+
+<!-- cli-synopsis script=skills/slice-supervisor/scripts/manage_active_slice.py display="python3 <skill-dir>/scripts/manage_active_slice.py" -->
+```text
+# global options, given before the subcommand: --repository REPOSITORY
+python3 <skill-dir>/scripts/manage_active_slice.py begin --identity-json IDENTITY_JSON --actor-binding-json ACTOR_BINDING_JSON --phase PHASE --obligation-json OBLIGATION_JSON [--authoritative-refs-json AUTHORITATIVE_REFS_JSON] [--accepted-boundary-json ACCEPTED_BOUNDARY_JSON]
+python3 <skill-dir>/scripts/manage_active_slice.py publish-phase --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --phase PHASE --consequence-json CONSEQUENCE_JSON
+python3 <skill-dir>/scripts/manage_active_slice.py bind-actor --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --actor-binding-json ACTOR_BINDING_JSON
+python3 <skill-dir>/scripts/manage_active_slice.py wait --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --capability CAPABILITY [--provider PROVIDER] --reason REASON
+python3 <skill-dir>/scripts/manage_active_slice.py retire --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --outcome OUTCOME --reason REASON
+```
+<!-- /cli-synopsis -->
+
+<!-- cli-synopsis script=skills/slice-supervisor/scripts/resume_active_slice.py display="python3 <skill-dir>/scripts/resume_active_slice.py" -->
+```text
+python3 <skill-dir>/scripts/resume_active_slice.py --repository REPOSITORY --identity-json IDENTITY_JSON [--capability CAPABILITY] [--recovery-event-id RECOVERY_EVENT_ID] [--revision REVISION] [--history-limit HISTORY_LIMIT] [--history-cursor HISTORY_CURSOR]
+```
+<!-- /cli-synopsis -->
+
 When recovered evidence establishes that an admitted attempt cannot continue
 but its accepted work must be replanned in the same workspace, use the
 host-owned lifecycle supersession control. Supersession preserves the stopped

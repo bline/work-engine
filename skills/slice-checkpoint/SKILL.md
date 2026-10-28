@@ -21,3 +21,13 @@ update fails closed.
 
 The schema and lifecycle contract are documented in
 [`references/checkpoint-schema.md`](references/checkpoint-schema.md).
+
+## Command line
+
+`<skill-dir>` is this skill's directory. Command line (generated from `--help`):
+
+<!-- cli-synopsis script=skills/slice-checkpoint/scripts/checkpoint.py display="python3 <skill-dir>/scripts/checkpoint.py" -->
+```text
+python3 <skill-dir>/scripts/checkpoint.py [--request-json REQUEST_JSON] [--inspect-ref INSPECT_REF] [--expected-oid EXPECTED_OID] [--repository REPOSITORY]
+```
+<!-- /cli-synopsis -->

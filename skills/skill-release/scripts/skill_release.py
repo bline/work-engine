@@ -16,6 +16,7 @@ import contextlib
 import datetime as dt
 import fcntl
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -234,14 +235,24 @@ def manifest_at(repo: Path, commit: str, targets: dict[str, Path]) -> dict[str, 
     return validate_manifest(json.loads(raw), targets, lambda name: f"skills/{name}/SKILL.md" in tree)
 
 
+def synopsis_problems(repo: Path) -> list[str]:
+    """Stale or malformed generated CLI synopses in the working tree's markdown."""
+    spec = importlib.util.spec_from_file_location("cli_synopsis", Path(__file__).with_name("cli_synopsis.py"))
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return [f"cli-synopsis {problem}" for problem in module.synopsis_problems(repo)]
+
+
 def check_working_tree(repo: Path, targets: dict[str, Path]) -> dict:
-    """Validate the working tree's catalog against the working tree's skill directories."""
+    """Validate the working tree's catalog against its skill directories, and its generated CLI synopses."""
     path = repo / CATALOG_PATH
     if not path.exists():
         return {"ok": False, "problems": [f"{CATALOG_PATH} does not exist"]}
     paths = [f"skills/{d.name}/{f.name}" for d in (repo / "skills").iterdir() if d.is_dir() for f in d.iterdir()]
     catalog = json.loads(path.read_text())
     problems = catalog_problems(catalog, *skills_tree_dirs(paths), targets)
+    problems += synopsis_problems(repo)
     return {"ok": not problems, "problems": problems,
             "install": install_lists(catalog) if not problems else None}
 
@@ -599,7 +610,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("ref", nargs="?", default="HEAD")
     d.add_argument("--replace-copies", action="store_true",
                    help="move real directories found in managed entries to the backup root")
-    sub.add_parser("check", help="validate the working tree's catalog; changes nothing")
+    sub.add_parser("check", help="validate the working tree's catalog and CLI synopses; changes nothing")
     s = sub.add_parser("status", help="show the deployed release and link state")
     s.add_argument("--verify", action="store_true", help="re-hash the release against its commit")
     sub.add_parser("rollback", help="redeploy the release that preceded the current one")

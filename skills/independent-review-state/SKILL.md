@@ -63,3 +63,17 @@ Historical and exact-revision reads are observational. They never resume a
 provider, replay a review, mutate a referenced owner, or reactivate retirement.
 Physical deletion and retention pruning require separate authority and are not
 available through this profile.
+
+## Command line
+
+`<skill-dir>` is this skill's directory. Command lines (generated from `--help`):
+
+<!-- cli-synopsis script=skills/independent-review-state/scripts/independent_review_state.py display="python3 <skill-dir>/scripts/independent_review_state.py" -->
+```text
+# global options, given before the subcommand: --repository REPOSITORY --authority-file AUTHORITY_FILE
+python3 <skill-dir>/scripts/independent_review_state.py begin --request-json REQUEST_JSON
+python3 <skill-dir>/scripts/independent_review_state.py read [--revision REVISION]
+python3 <skill-dir>/scripts/independent_review_state.py history [--cursor CURSOR] [--limit LIMIT]
+python3 <skill-dir>/scripts/independent_review_state.py transition --expected-revision EXPECTED_REVISION --action ACTION --transition-id TRANSITION_ID --payload-json PAYLOAD_JSON
+```
+<!-- /cli-synopsis -->

@@ -284,6 +284,21 @@ class SkillReleaseTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("delta: SKILL.md has no catalog entry", json.loads(out)["problems"])
 
+    def test_check_fails_on_a_stale_cli_synopsis_until_regenerated(self):
+        self.write("skills/alpha/scripts/tool.py",
+                   "import argparse\nparser = argparse.ArgumentParser()\nparser.add_argument('--x')\nparser.parse_args()\n")
+        marker = "<!-- cli-synopsis script=skills/alpha/scripts/tool.py -->\n```text\n{}\n```\n<!-- /cli-synopsis -->\n"
+        self.write("skills/alpha/NOTES.md", marker.format("python3 skills/alpha/scripts/tool.py [--y Y]"))
+        code, out, _ = self.run_cli("check")                  # untracked: another session's draft is not ours
+        self.assertEqual((code, json.loads(out)["problems"]), (0, []))
+        self.git("add", "skills/alpha/NOTES.md")              # staged files are tracked
+        code, out, _ = self.run_cli("check")
+        self.assertEqual(code, 1)
+        self.assertTrue(any(p.startswith("cli-synopsis skills/alpha/NOTES.md:1: stale") for p in json.loads(out)["problems"]), out)
+        self.write("skills/alpha/NOTES.md", marker.format("python3 skills/alpha/scripts/tool.py [--x X]"))
+        code, out, _ = self.run_cli("check")
+        self.assertEqual((code, json.loads(out)["problems"]), (0, []))
+
     def test_repository_catalog_follows_the_rules(self):
         repository = Path(__file__).resolve().parents[3]
         out = io.StringIO()

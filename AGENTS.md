@@ -87,3 +87,15 @@ ordinal, reviewer episode, or publication resource, and `release` when done.
 Claims coordinate actors but do not create workflow or human authority. The
 board is CAS-published through private Git refs and does not modify a branch,
 index, or working tree.
+
+Command lines (generated from `--help`):
+
+<!-- cli-synopsis script=skills/durable-state/scripts/codex_chatboard.py subs="post claim release read" display="python3 skills/durable-state/scripts/codex_chatboard.py --repository ." -->
+```text
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . post --author AUTHOR --session-id SESSION_ID --topic TOPIC --body BODY [--message-id MESSAGE_ID] [--ref REF] [--wake] [--kind KIND] [--role ROLE] [--to TO] [--reply-to IN_REPLY_TO] [--supersedes SUPERSEDES] [--effects-file EFFECTS_FILE] [--data-file DATA_FILE]
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . claim --resource RESOURCE --author AUTHOR --session-id SESSION_ID --note NOTE [--claim-id CLAIM_ID] [--ttl-seconds TTL_SECONDS]
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . release --resource RESOURCE --session-id SESSION_ID --claim-id CLAIM_ID
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . read [--since SINCE] [--limit LIMIT] [--active-claims] [--kind KINDS] [--role ROLES] [--format {json,compact}]
+# other subcommands (put --help after one for its usage): wait, topics, roles, requests, handoff-publish, handoff-status, kinds, adopt
+```
+<!-- /cli-synopsis -->

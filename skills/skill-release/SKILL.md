@@ -54,6 +54,18 @@ Rule 3 allows dormant installs that the layout plan's rule 2 would have
 excluded. The user chose on 2026-10-27 to keep every installed skill installed,
 and recording those as `stable` would misstate their use.
 
+## Generated command lines
+
+Agents spent whole model calls on `--help`: 1,119 help-only calls between
+2026-10-01 and 2026-10-27, 80% of them for five repository scripts. Markdown
+blocks between `<!-- cli-synopsis script=... -->` and `<!-- /cli-synopsis -->`
+hold those scripts' usage lines, generated from their `--help` output, where the
+command is taught. `scripts/cli_synopsis.py write [files]` regenerates them and
+`check` reports stale ones; `skill_release.py check` includes it, and a test runs
+it on this repository, so a parser change without a regenerated block fails.
+Keep blocks in `AGENTS.md` to the commands nearly every session uses: it is
+re-sent with every model call.
+
 ## Releasing
 
 1. Commit the skill changes, after `check` passes. Deploy accepts only commits.

@@ -177,6 +177,23 @@ longer available, preserve the pending obligation and applicable findings,
 record the replacement reason and provenance, and label the replacement as a
 new reviewer rather than a continuation.
 
+Command lines (generated from `--help`):
+
+<!-- cli-synopsis script=skills/slice-supervisor/scripts/manage_active_slice.py subs="bind-actor publish-phase" display="python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py" -->
+```text
+# global options, given before the subcommand: --repository REPOSITORY
+python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py bind-actor --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --event-id EVENT_ID --actor-binding-json ACTOR_BINDING_JSON
+python3 <skill-dir>/../slice-supervisor/scripts/manage_active_slice.py publish-phase --identity-json IDENTITY_JSON --expected-revision EXPECTED_REVISION --phase PHASE --consequence-json CONSEQUENCE_JSON
+# other subcommands (put --help after one for its usage): begin, wait, retire
+```
+<!-- /cli-synopsis -->
+
+<!-- cli-synopsis script=skills/slice-supervisor/scripts/resume_active_slice.py display="python3 <skill-dir>/../slice-supervisor/scripts/resume_active_slice.py" -->
+```text
+python3 <skill-dir>/../slice-supervisor/scripts/resume_active_slice.py --repository REPOSITORY --identity-json IDENTITY_JSON [--capability CAPABILITY] [--recovery-event-id RECOVERY_EVENT_ID] [--revision REVISION] [--history-limit HISTORY_LIMIT] [--history-cursor HISTORY_CURSOR]
+```
+<!-- /cli-synopsis -->
+
 ### Planning turn
 
 Require read-only evidence and an evidence-based plan only. First assess consequence, reversibility, placement ambiguity, repository familiarity, and the number of ownership/runtime boundaries involved. Select and record a route identity. The named defaults are:
