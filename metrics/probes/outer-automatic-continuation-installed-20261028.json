@@ -1,0 +1,182 @@
+{
+  "recorded_at": "2026-10-29T01:18:51.593747+00:00",
+  "status": "passed bounded managed-installed first-exposure qualification",
+  "code_commit": "46d30e9f33823b4fb4e1adeb65cbda512a96d008",
+  "installed_release": "46d30e9f33823b4fb4e1adeb65cbda512a96d008",
+  "source_files": {
+    "skills/manual-orchestration/SKILL.md": "5a78bda9a27261c81a84288124cda2cfe36eae16b53066cbd0567727a419384e",
+    "skills/manual-orchestration/references/same-session-context.md": "7c419d0befc4ed56a8194e70acb4f0977e179e5e9f5c376e2bc602dc965720fa",
+    "skills/manual-orchestration/scripts/auto_continue.py": "13b3d5367920c8c6d826463779e1f8851a1f785a493d90a51ce46db8ca15adc1",
+    "skills/manual-orchestration/tests/test_auto_continue.py": "bdc1d367c5845032f3204b387d91f281eedaa4a91af90cdafe864e3e9681f6cb"
+  },
+  "root_acceptance": {
+    "status": "passed bounded first-exposure installed continuation",
+    "at": "2026-10-29T01:14:16.193314+00:00",
+    "checks": {
+      "all_three_native_turns_completed": true,
+      "same_session_bound": true,
+      "source_compact_recovery_order": true,
+      "one_native_compaction": true,
+      "actual_product_wakeup": true,
+      "wind_meaning_exposed_before_effect": true,
+      "one_successful_counter_command": true,
+      "one_raw_appended_effect": true,
+      "current_usable_telemetry": true,
+      "fresh_applied_settings": true,
+      "actor_collected_original_job": true,
+      "operation_completed_and_reservation_released": true,
+      "controller_process_ended": true,
+      "input_pins_unchanged": true,
+      "no_observer_wakeup_or_repair": true
+    },
+    "session_id": "01a18530-a879-7e82-b8c8-2bb207fee00c",
+    "source_turn": "01a18530-a8cb-7463-a337-72158f6998f4",
+    "compaction_turn": "01a18531-8864-7841-8c42-0acfcd643e2b",
+    "recovery_turn": "01a18532-224d-79d3-a384-0756133681b6",
+    "job_reference": "exec_command session_id=26972; collect with write_stdin session_id 26972",
+    "job_collection": [
+      {
+        "line": 86,
+        "call_id": "call_5ef50ce4b1c34fdcb36cc37e37ffc074",
+        "sha256": "29f258e25a06a0e2ec0901376847e6a72d4e6cefe2e11018387fc88c7193cb64",
+        "outputs": [
+          {
+            "line": 90,
+            "exit_zero": true,
+            "collected_this_wakeup": true,
+            "sha256": "64dc3907db1c60f9ce5c711df739dc42988ee777bdc537941bdfeb9447a7d564"
+          }
+        ]
+      }
+    ],
+    "wind_command_id": "exec-25184889-cfc7-4420-9eba-44f871b8aee8",
+    "effect_command_id": "exec-fbd4f753-3230-449e-9d67-2298ba15eb51",
+    "replacement_line": 71,
+    "post_boundary_settings_line": 74,
+    "telemetry": {
+      "input_tokens": 29034,
+      "window": 475000,
+      "epoch": 1,
+      "limitations": [
+        "token_count line 75 has no request input; current context unavailable"
+      ]
+    },
+    "limitations": [
+      "No unrelated pending question was seeded by the minimal first-exposure source; nonempty pending-human-interaction preservation is not claimed by this case.",
+      "Observed configuration is an applied record, not backend service-tier fulfillment.",
+      "Single controlled default-tier same-SID profile, not arbitrary concurrent input/crash recovery or generic exactly-once external effects."
+    ]
+  },
+  "observer_template": "minimal ordinary work + installed entrypoint + normal binding; no recovery recipe",
+  "native_runtime": "0.165.0",
+  "root_fixture": {
+    "primary_sessions": 1,
+    "native_turns_including_compaction": 3,
+    "agent_turns_excluding_compaction": 2,
+    "compactions": 1,
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "applied_tier": "default",
+    "observer_wakeups": 0,
+    "observer_repairs": 0
+  },
+  "combined_new_phase": {
+    "primary_sessions": 6,
+    "native_turns_including_compaction": 21,
+    "agent_turns_excluding_compaction": 14,
+    "compact_attempts": 7,
+    "limits": {
+      "primary_sessions": 6,
+      "agent_turns": 32,
+      "compact_attempts": 8
+    }
+  },
+  "validation": {
+    "full": 139,
+    "focused": 34,
+    "copied_layout": 34,
+    "root_raw_observations": 15,
+    "source_unchanged_since_accepted_review": true
+  },
+  "review": {
+    "session": "372e09c4-d6b4-4ee3-8d21-7d37bc769ef6",
+    "model": "claude-opus-5-5",
+    "effort_requested": "xhigh",
+    "verdict": "acceptable_as_is",
+    "material_findings": "all resolved; optional O-1 remains advisory",
+    "final_trial": "root acceptance after source review; no new independence claim"
+  },
+  "artifact_bindings": [
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/before-model-entry.json",
+      "sha256": "4dae99de088525d3c63ac788ca522cc03ae98cd6b5bd86af51a6e073ca971c3e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/source-prompt.txt",
+      "sha256": "22e055448a3cd3146a2ff3e50f732640ecb5a227b95eb5a788c5df4b2902f25b"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/source-entry.json",
+      "sha256": "8500d4ac1851b29c93f8a7b6add84f6ef2cba6fdddd166a8ed29d55d31eaa1c8"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/native-thread-final.json",
+      "sha256": "2f1f70fb38e18acb6f650fc841256a38a8e15824b34d3718ac8095f72d7c949d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/rollout-boundary-settings.json",
+      "sha256": "a9409feaa6e565890a4ca1c327faa2f4c3dab617ebedc5130cfc42ac7e452bd8"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/collection.json",
+      "sha256": "034d0f0df5a1a0a06cc3fbaf0c829cdb5cc3996789a5767ce25c2c50e088d577"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/runtime-pins.json",
+      "sha256": "c54c56155c75c35d99f4c4b9889a56e4267ed8b06785f3810b7c89ba305bef5f"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-observer/root-proof-v1.json",
+      "sha256": "c6f777859331725a4e5164030eb0285753dc8aa0c63ab5e8858a92c3e7fcfbf9"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-first-exposure/actor-outcome.json",
+      "sha256": "a9f9313644726cfbc76caf32cc1761e7f4953150779b1415d9a0382d111cc213"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/installed-first-exposure/refresh-operation/operation.json",
+      "sha256": "1dc5dbc13e4adcf2570f2fa00073ffa69ab7e57130de7cc018a3dfd3cadb4455"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/deployment-result.json",
+      "sha256": "79be23a8a941eb0736ae5101179db0fc919abadc7f75a7e4b37b03d9dfe00eec"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/final-release-status.json",
+      "sha256": "909ea8631fc43485e82b1074c5dd08161f89c9b438f8e6faedfd2742fcaa13ce"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/published-code-commit.json",
+      "sha256": "53d464e1db441b8e3a58d8832f5e093ed0f6edb71dec130e9d857d9b33b8e2d3"
+    }
+  ],
+  "collection": {
+    "native_turns": "all completed",
+    "controller_job": "actual actor write_stdin collected original exec26972, exit0",
+    "controller_pid": "842219 observed absent",
+    "reservation": "released and absent",
+    "observer_job": "74766 exited0 and collected",
+    "fixture_role": "idle_released",
+    "nested_roles_and_review_processes": "collected per supervisor result"
+  },
+  "limitations": [
+    "No unrelated pending question was seeded by the minimal first-exposure source; nonempty pending-human-interaction preservation is not claimed by this case.",
+    "Observed configuration is an applied record, not backend service-tier fulfillment.",
+    "Single controlled default-tier same-SID profile, not arbitrary concurrent input/crash recovery or generic exactly-once external effects.",
+    "Failure without a working actual collector is unsupported; the recovered actor cannot collect itself if no wake occurs.",
+    "Arbitrary concurrent direct-client/TUI/cancel-after-admission/crash/daemon-restart guarantees are not established.",
+    "Native pause/duplicate evidence belongs to earlier candidate profiles; exact v5 has local/process tests and this installed ordinary native proof.",
+    "Other owners' uncommitted coordination-channels/skill-release changes remain undeployed and untouched."
+  ],
+  "no_push": true
+}
