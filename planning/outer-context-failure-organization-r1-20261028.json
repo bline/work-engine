@@ -1,0 +1,13 @@
+{
+  "organization_id":"outer-context-failure-20261028",
+  "revision":1,
+  "approval_owner":"root coordinator under user-approved bounded trial scope",
+  "classification":"small continuation of existing supervised fixture organization",
+  "basis":"Same provider, permissions and collection pattern; retained idle evaluator, sequential disposable fixtures and separate user-selected Opus review. No new production owner or deployed control.",
+  "roles":[
+    {"id":"coordinator","runtime_session":"01a1839d-27bf-7882-b2ac-0233b11805f1","owns":["plan","review selection","scope decisions","final integration"]},
+    {"id":"fixture-evaluator","existing_agent":"/root/continuity_implementation","selection":"Retain verified Sol6.1/xhigh/default role under new packet; canceled Rust authority never resumes","owns":["private harness","preflight","scenario entries","all owned native/process collection"]},
+    {"id":"fixture-actor","selection":{"model":"gpt-6.1-sol","effort":"medium","service_tier":"default"},"count_limit":8,"reports_to":"fixture-evaluator"},
+    {"id":"reviewer","selection":{"model":"claude-opus-5-5","effort":"xhigh","host":"native Claude Code","entry":"fresh independent source/evidence review"},"reports_to":"coordinator"}
+  ]
+}

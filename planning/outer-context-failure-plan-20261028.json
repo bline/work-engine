@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "scope": "Outer development skill failure trials on released1623c99d; not Rust lifecycle, S10 or a production automatic controller",
+  "authority": "User: ok, let's do it, accepting the proposed isolated pause/interruption/duplicate/lost-delivery tests",
+  "release": "1623c99dcc9613a680383c9baf7d3b57e8cfb62d",
+  "fixture_model": {"model":"gpt-6.1-sol","effort":"medium","service_tier":"default"},
+  "limits": {"primary_fixture_sessions":8,"model_turns":40,"native_compaction_entries":10,"per_operation_seconds":480},
+  "cases": [
+    {"id":"F1","scenario":"Pause after checkpoint and stale wakeup check, before wakeup submission","required":"Paused counted effects0; later synthetic fixture-human resume permits exactly1; preserve actual native input order and current authority"},
+    {"id":"F2","scenario":"Kill owned compaction client at parent-controlled pre-send barrier","required":"No compaction entry on bounded declared path, no blind retry; independently settled non-entry is distinguishable from unknown"},
+    {"id":"F3","scenario":"Kill owned compaction client after frame send before response receipt","required":"Reconcile existing provider entry/completion without a second compact request; domain work only after known current admission"},
+    {"id":"F4","scenario":"Ambiguous compaction client failure with completion observation unavailable to recovery","required":"No replay or dependent domain effect; visible unresolved outcome and named recovery owner; separate ground-truth observer collects native outcome"},
+    {"id":"F5","scenario":"Deliver identical logical runtime wakeup twice","required":"Exactly1 effect on a fixture-owned non-deduplicating counter; no new authority"},
+    {"id":"F6","scenario":"Drop wakeup before native submission","required":"No assumed progress; visible unresolved/lost delivery and owner; explicit observed recovery may perform exactly1 effect"},
+    {"id":"F7","scenario":"Kill wakeup client after turn/start send before receipt","required":"Reconcile existing turn without blind replay; at most1 counted effect; known collection owner"},
+    {"id":"F8","scenario":"Stop owned pressure listener and replace context during delivery gap","required":"Do not claim active delivery or substitute0 usage; rebind or owned explicit fallback supplies collected current observation before dependent continuation"}
+  ],
+  "evidence_rules": [
+    "Use only freshly created fixture session allowlist, private files, scratch boards and owned client/listener processes. Never target this user root, other sessions or shared daemon termination.",
+    "Counter must append every invocation without deduplicating or blocking paused attempts; otherwise it masks unsafe behavior. Declare finite effect channels; no global absence claim.",
+    "Runtime wakeup author and delivering actor differ from synthetic fixture-human authority. Synthetic authority is confined to harmless fixture actions.",
+    "Use actual native provider history/turns and exact identities alongside actor-attributed journals. A request intent, marker or lower token count alone is not semantic recovery.",
+    "Post-boundary configuration needs a fresh observation. Passive/no-wakeup cases may truthfully leave preservation unestablished rather than manufacturing a turn.",
+    "Prototype guard success is not qualification of an installed automatic-root controller. Positive controls must distinguish refusal from indiscriminate inaction.",
+    "Preserve failed/unsupported attempts and revisions. Never replay an uncertain native effect. Collect every owned client/listener and each native fixture turn; then retire fixture roles.",
+    "Use real scratch chatboard wait with actual collected output and named delivery owner. A file or PID alone does not establish operator delivery."
+  ],
+  "limits_of_claim": "Controlled direct-protocol input paths, not production UI authentication or arbitrary concurrent ingress. No performance/superiority claim, source deployment or automatic controller adoption."
+}

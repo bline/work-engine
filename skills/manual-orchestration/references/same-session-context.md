@@ -104,3 +104,63 @@ Compare preparation, compaction or successor launch, recovery, first accepted
 work, operator effort and visible failure handling. Lower post-compaction input
 alone is not net savings. A useful result can justify a bounded route without
 making it a universal pressure policy or eliminating the handoff alternative.
+
+## Foreground automatic continuation on the Codex app server
+
+For an authorized standing assignment, `scripts/auto_continue.py` provides a
+bounded same-SID route. It does not install a service. Prepare with the verified
+SID, absolute rollout, exact active source turn, durable continuation, pinned
+Wind Walker `SKILL.md`, pinned context-status binary and SHA-256, controller
+author and an actual failure collector and
+delivery route. Bind a frozen continuation snapshot distinct from the role’s working continuation;
+it points to the operation directory, which contains the journal and terminal
+outcome. A changed snapshot or pinned Wind Walker digest is a supersession
+signal and refuses admission, so keep both pins unchanged while the operation
+remains eligible for admission, including during retryable refusals and pauses;
+record working notes elsewhere. Start `run` as a foreground `exec_command` that yields, save its exec
+job reference with `bind-job` in the operation journal, announce the collector and result location,
+and end the source turn. The controller waits for source completion, collects
+an asynchronous native compaction and starts the attributed recovery turn;
+it exits without waiting for recovery completion. The recovered actor collects
+that same job. A fixture supervisor may instead observe and collect failures;
+it does not wake or repair the actor. A named route is necessary for failure
+visibility; a result file alone is not delivery. If no recovery wake occurs,
+the actor cannot collect the failed job in a recovery turn. Exec job handles
+may be actor-scoped, so a different collector needs its own verified observation
+route rather than assuming it can collect that handle.
+
+The controller records intent before native entry, reconciles uncertain entry
+from native history, and never blindly retries an uncertain compact or wakeup.
+One namespace-local SID reservation and one irreversible recovery claim fence competing
+operations and replay. The operation records the resolved reservation path and
+namespace derived from `XDG_STATE_HOME` or its default; different namespaces do
+not share this fence. Only `complete` releases the reservation; pause, cancel,
+failure and uncertainty preserve it. The named owner can inspect the operation,
+reservation, native history, effects and process custody and resolve the exact
+reservation and compare its operation ID with the journal. Once all entries,
+effects and processes are settled, the owner may remove that exact reservation
+file as technical reconciliation. Routine authorized technical reconciliation
+does not require fresh human permission;
+there is no automatic release command. Recovery invokes the pinned Wind Walker skill, verifies
+its own SID, rollout and wakeup turn, reads the continuation and current human
+direction, and reconciles pending questions, effects and collection ownership.
+It uses recovery-only work until the pinned context-status binary reports a
+usable latest post-replacement request and positive window. `admit` records the
+actor's direction reconciliation, checks those observations and post-boundary
+applied settings, and claims operation custody before the declared effect;
+`complete` records the result afterward. The claim grants no authority and
+cannot resolve a human approval. Preserve a genuine user settings change with
+its evidence; unknown or unexplained settings mismatches remain unresolved.
+If a wakeup response was lost, run the same operation to reconcile its existing
+entry before admission, never to resend it. An admitted but unfinished effect
+is uncertain and must not be replayed automatically.
+
+`pause` and `cancel` serialize with the operation; native source interruption,
+visible intervening turns and changed continuation prevent stale entry. Native
+reads and `turn/start` are not an atomic fence against arbitrary other clients;
+a newly started turn can also be temporarily invisible to native reads, extending
+the observation gap beyond the RPC interval.
+Simultaneous direct TUI input, cancellation after admission, hidden mutations,
+missing evidence after a process or machine crash, daemon restart ordering and
+failure without a working collector are unsupported. The journal and exit
+status disclose uncertainty; they do not prove universal exactly-once effects.

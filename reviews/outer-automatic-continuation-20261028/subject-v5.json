@@ -1,0 +1,30 @@
+{
+  "kind": "exact reviewed source projection; bytes are retained by their Git blob IDs in this repository",
+  "original_subject": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/subject-v5/subject.json",
+  "original_subject_sha256": "c5f0b47123c5019994e5104e364fa1a0a1f0d9598c0d7516d9bf4903be76eb84",
+  "source_files": [
+    {
+      "path": "skills/manual-orchestration/SKILL.md",
+      "sha256": "5a78bda9a27261c81a84288124cda2cfe36eae16b53066cbd0567727a419384e",
+      "git_blob": "99cea105ee969e9010d68a97832961c27f8420f5"
+    },
+    {
+      "path": "skills/manual-orchestration/references/same-session-context.md",
+      "sha256": "7c419d0befc4ed56a8194e70acb4f0977e179e5e9f5c376e2bc602dc965720fa",
+      "git_blob": "faada9b006e5fbf6fe7d4371e17e45f4abe2188e"
+    },
+    {
+      "path": "skills/manual-orchestration/scripts/auto_continue.py",
+      "sha256": "13b3d5367920c8c6d826463779e1f8851a1f785a493d90a51ce46db8ca15adc1",
+      "git_blob": "47583869c8b721afb17e66885f474f9ee43053ba"
+    },
+    {
+      "path": "skills/manual-orchestration/tests/test_auto_continue.py",
+      "sha256": "bdc1d367c5845032f3204b387d91f281eedaa4a91af90cdafe864e3e9681f6cb",
+      "git_blob": "0fb640d6673d01d1d6de99e8b5061628074709c6"
+    }
+  ],
+  "review_session": "372e09c4-d6b4-4ee3-8d21-7d37bc769ef6",
+  "review_verdict": "acceptable_as_is",
+  "scope": "root integration and reserved installed first-exposure trial; not a result of that trial"
+}

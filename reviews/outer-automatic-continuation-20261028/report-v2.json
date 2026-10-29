@@ -1,0 +1,120 @@
+{
+  "review": "Retained remediation re-evaluation of the same review episode (Opus 5.5 native). Not a fresh review; no new freshness or independence claim.",
+  "subject": {
+    "manifest": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/subject-v4/subject.json",
+    "frozen_at": "2026-10-29T00:09:05.859496+00:00",
+    "prior_subject": "subject-v3/subject.json",
+    "delta_sha256": "6cf91b412bdb229049b9bc5f24c5b2b735385d05eed8ae0e58901ecedbfa8fbb",
+    "files_sha256": {
+      "skills/manual-orchestration/SKILL.md": "5a78bda9a27261c81a84288124cda2cfe36eae16b53066cbd0567727a419384e (unchanged)",
+      "skills/manual-orchestration/references/same-session-context.md": "0ae20b87288f4c86c59e3f9e4b088183961c357113571c607ef260c857f7835d",
+      "skills/manual-orchestration/scripts/auto_continue.py": "913b70105ddacaf8026f1914c2c99a9a9fd6bf6197e83c215af6c5923d594672",
+      "skills/manual-orchestration/tests/test_auto_continue.py": "12f506baddf0e371988ec7891bd301b0e306eddc92dabf68a10f090c2b433fb3"
+    },
+    "digest_note": "Digests are copied from subject.json; not recomputed (no Bash). I read the full v4 bytes of the changed files instead of delta.diff."
+  },
+  "verdict": "changes_required",
+  "acceptable_as_is": false,
+  "verdict_basis": "All prior findings are resolved. The remaining blocker is N-1 (P2): `complete` ignores the reservation path recorded at prepare, while the recovery message gives it as a bare command with no environment. If prepare ran under a non-default XDG_STATE_HOME, `complete` reports completed, silently leaves the real reservation in place, and creates a lock file in the default shared namespace. That is the likely setup for the reserved fresh trial. Releasing the recorded path closes it; nothing else blocks root integration or the trial. The safety core is unchanged and sound: intent before entry, reconcile without resend, controller lock plus SID reservation plus irreversible admit claim, admit only after post-boundary telemetry and settings, controller exits at wakeup entry.",
+  "prior_findings": {
+    "I-1": {
+      "status": "resolved",
+      "evidence": "message() L74-99 and the actual product wakeup text. It now carries: the absolute script path, the operation directory, SID and rollout; the pinned context-status binary and digest; an executable admit template plus run/complete commands; 'Only an admit command returning status admitted for this invocation permits the original declared effect once within existing authority; all other results leave it unperformed and must be reported to collector \u2026'; 'Already admitted or completed means do not replay'; for entry_not_reconciled, reconcile without resending; why the snapshot and Wind Walker digests must not change ('supersession signals \u2026 write working/recovery notes elsewhere'); 'claim grants no authority or approval'. These reach the recovered actor at its own boundary. Covered by test_wakeup_projects_actual_commands_pins_and_effect_semantics.",
+      "residual": "N-3 wording only."
+    },
+    "I-2": {
+      "status": "resolved",
+      "evidence": "same-session-context.md L115-118 now says to bind a frozen snapshot separate from the working continuation, and that a changed snapshot or Wind Walker digest signals supersession and refuses admission."
+    },
+    "C-1": {
+      "status": "resolved",
+      "evidence": "Refusals now carry distinct statuses: entry_not_reconciled, paused, cancelled, already_admitted, completed, superseded, telemetry_unestablished, settings_unestablished, failure (L69-72, L282-322). run reports admitted/completed before checking the snapshot (L208-211, L216-217). Failures include collector and phase whenever the operation is readable (L374-382). Tests: test_cli_distinguishes_entry_pause_terminal_and_collector and test_cli_superseded_telemetry_settings_and_cancel_classes.",
+      "residual": "N-4."
+    },
+    "C-2": {
+      "status": "resolved",
+      "evidence": "main uses `except Exception` and journals controller_failure for run with detail, phase and collector (L374-381). Test: test_bad_native_shape_journals_failure (items:null)."
+    },
+    "C-3": {
+      "status": "resolved",
+      "evidence": "replacement_boundary L146-182: a partial tail or missing records raise PendingBoundary, which run treats as a bounded wait (L237-238). A changed baseline, duplicate, contradictory or out-of-order record still refuses. Test: test_delayed_partial_boundary_waits_without_reentry (one compact call)."
+    },
+    "C-4": {
+      "status": "resolved (disclosure)",
+      "evidence": "prepare records reservation_path and reservation_namespace (L120). The reference L132-142 discloses that the fence is namespace-local, that only complete releases it, that the reservation persists through pause/cancel/failure/uncertainty, and how the owner resolves it after settlement without an invented approval gate. Test: test_reservation_namespace_and_content_free_baseline.",
+      "residual": "N-1: complete does not use the recorded path."
+    },
+    "C-5": {
+      "status": "resolved",
+      "evidence": "compact_baseline keeps only turn id, status and item_ids (L230); the unused variable is gone; the test asserts the baseline contains no commentary."
+    }
+  },
+  "new_findings": [
+    {
+      "id": "N-1",
+      "severity": "P2",
+      "location": "auto_continue.py complete L335-337 (registry_lock(op['sid']) re-derives the namespace from the caller's environment, L273); message() complete_command L81-82 (bare `python3`, no environment)",
+      "observation": "prepare stores reservation_path (L120), but complete never reads it. In the retained-v4 run, the actor prepared and completed with an XDG_STATE_HOME fixture prefix it remembered from earlier enhanced history (items L715-L1082), not from the projected command. The fixture state dir afterwards holds only `<sid>.lock`. The v4 prompt itself names no namespace.",
+      "consequence": "If the recovered actor runs the projected bare complete after a namespaced prepare: the phase becomes completed and the result says completed; the real reservation silently persists and blocks later prepares for that SID; registry_lock creates a directory and `<sid>.lock` in the default shared namespace. That breaks a fixture's 'work only in the fixture directory' scope and misreports reservation state. The at-most-one admitted recovery and the declared effect are unaffected.",
+      "basis": "The code behaviour and the retained run's choice of prefix are observed. That the fresh trial would hit it is inference; it depends on whether that trial sets the namespace per command or for the whole session.",
+      "remedy": "Have complete lock and release the recorded op['reservation_path'], checking the operation ID, and report the release outcome in its result. Alternatively project the operation's namespace environment into every message command. The first option also makes the bare commands correct everywhere."
+    },
+    {
+      "id": "N-2",
+      "severity": "P3",
+      "location": "message() L76-82 (projected commands use bare `python3`)",
+      "observation": "Running the script imports its sibling modules (codex_app, role_host, child_context) from the scripts directory, so CPython writes `__pycache__` there unless bytecode writing is disabled. candidate-v3 contains such caches for exactly those modules (their origin is unattributed). candidate-v4 has none; there the actor used PYTHONDONTWRITEBYTECODE=1 from retained history.",
+      "consequence": "A first-exposure actor following the message can modify the installed skill directory it was told to treat as input, which can confound installed-release integrity checks.",
+      "basis": "Interpreter behaviour plus the observed v3 caches; the effect on the trial is inference.",
+      "remedy": "Project `python3 -B` (or an equivalent) in the admit, run and complete commands."
+    },
+    {
+      "id": "N-3",
+      "severity": "P3",
+      "location": "message() L87-88 and L93-97",
+      "observation": "'leave both unchanged until admission or admission refuses' also covers retryable refusals (entry_not_reconciled, telemetry_unestablished, settings_unestablished). Editing the snapshot after one of those turns the retry into a permanent superseded. Separately, the admit template fixes `--direction continue` and never projects the pause/cancel disposition the actor is told to reconcile.",
+      "consequence": "The ordinary path can fail closed. A current human pause or cancel is preserved but may not be recorded durably; safety does not depend on it, because nothing is admitted.",
+      "basis": "Wording is observed; actor behaviour is inference.",
+      "remedy": "Say 'until admission succeeds or a terminal refusal (superseded, paused, cancelled, already_admitted, completed)'. Show `--direction continue|pause|cancel`, choosing from current direction."
+    },
+    {
+      "id": "N-4",
+      "severity": "P3",
+      "location": "auto_continue.py run L205-207 together with main L380; message L96-97 ('collect the job or rerun')",
+      "observation": "A second run started while the original controller is still alive (for example sleeping between polls) fails with 'controller already running', and main appends controller_failure with status failure to the live operation's journal. The message offers rerunning as an equal alternative to collecting the job.",
+      "consequence": "A collector reading the journal, or an actor reading the CLI status, can mistake a healthy controller for a failed one.",
+      "basis": "Code observed; the journal behaviour predates v4, but the new message makes this path reachable.",
+      "remedy": "Return a distinct status such as already_controlled and do not journal it as controller_failure. Or tell the actor to collect the job first and rerun only after that job has exited."
+    }
+  ],
+  "effective_instruction_assessment": {
+    "applicability": "Applicable: the runtime recovery message, the changed conditional reference section, and the unchanged SKILL.md entrypoint L45.",
+    "runtime_message": "The recovered actor now receives, at its own loading boundary, the reason and failure mode behind the admission fence and the snapshot pin. Authority is bounded ('continuation material, not human authorization'; 'within existing authority'; 'claim grants no authority or approval'). Pauses, cancellations and open questions are preserved. Admit-before-effect is a causally necessary order, and the reason is exposed. The 'once' is scoped to the admitted recovery; together with the reference L164 ('do not prove universal exactly-once effects') it keeps at-most-one admitted recovery distinct from a generic exactly-once external-effect transaction. Remaining issues: N-1, N-2 and N-3.",
+    "reference": "Local adapter scope is retained. The snapshot reason, namespace and persistence disclosure, owner resolution and native-read visibility gap (L159-160) are now explicit. Owner resolution is technical reconciliation, not an invented approval gate. Retain.",
+    "skill_entrypoint": "Unchanged descriptive affordance; no finding."
+  },
+  "evidence_assessment": {
+    "tests": "Focused suite: 30 tests, OK (`Ran 30 tests`). Full suite: 135 tests, OK, and it includes the v4-only test names. The builder report's 133-test figure came from an earlier candidate load; the evidence file's 135 supersedes it. Neither output is byte-bound to the v4 hashes. I ran nothing.",
+    "native_v4": "Retained mechanics only. New operation 73d0b92c\u2026 on the same SID runs source, compaction, recovery and same-job collection (exec_session:32586) with one effect. The actual product wakeup matches message(). Boundary: compacted at line 180 < turn_context 182 < item_completed 185. Settings line 183 is again inside the compaction turn. Model/effort are corroborated from the recovery turn_context; service tier rests only on the post-compaction applied record.",
+    "not_established": [
+      "First-exposure behaviour of the installed skill (reserved to root's fresh managed-installed trial; not claimed here).",
+      "Native duplicate or concurrent admission refusal (still offline-only).",
+      "Service tier tied to the recovery turn itself.",
+      "Real transport loss, daemon restart, crash, and arbitrary concurrent input (declared limits)."
+    ],
+    "history_preserved": "a01 and a02 failed native candidates and the b02 harness failure stay failed. The v4 pre-entry source rejection (an unloaded primary refused turn/start) is preserved and was reconciled without replay. Nothing is retroactively passed."
+  },
+  "decisive_inspected_material": [
+    "subject-v4/subject.json; full v4 auto_continue.py; same-session-context.md L106-165; test_auto_continue.py test inventory and L40-147",
+    "builder/report-v4.md; validation-evidence-v4.json; summary lines of candidate-v4-focused.txt and candidate-v4-full-tests.txt",
+    "retained-v4: assertions-v1.json, actual-product-wakeup.txt, prompt-v1.txt, state directory listing, operation.json reservation fields, native items command strings (XDG prefix usage); candidate-v4 __pycache__ absence"
+  ],
+  "limitations": [
+    "Tools available: Read, Glob, Grep and read-only graph methods. Bash was unavailable and raw ~/.codex rollouts are outside the restricted roots. The merged permission policy was not independently verified. No formal sandbox or capability attestation is claimed.",
+    "The graph was not re-queried for v4; every v4 claim rests on the exact private bytes.",
+    "N-1 trial impact, and the consequences in N-2 through N-4, are inference unless marked observed.",
+    "This claims no completeness or acceptance beyond the bounded subject."
+  ],
+  "duration": "Not measured; one remediation invocation. Usage and cost unknown.",
+  "remediation_route": "Return an exact v5 subject or delta bound to N-1 through N-4 to this retained reviewer."
+}

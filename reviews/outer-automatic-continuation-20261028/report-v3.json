@@ -1,0 +1,63 @@
+{
+  "review": "Retained remediation recheck of N-1 to N-4 in the same review episode (native Opus 5.5, same session). Not a fresh review; no new freshness or independence claim.",
+  "subject": {
+    "manifest": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/subject-v5/subject.json",
+    "frozen_at": "2026-10-29T00:31:50.083199+00:00",
+    "prior_subject": "subject-v4/subject.json",
+    "delta_sha256": "901cf11a470161c4cacf70c328cc6de4e098b372e3695f89154d26ec1d83ab35",
+    "files_sha256": {
+      "skills/manual-orchestration/SKILL.md": "5a78bda9a27261c81a84288124cda2cfe36eae16b53066cbd0567727a419384e (unchanged)",
+      "skills/manual-orchestration/references/same-session-context.md": "7c419d0befc4ed56a8194e70acb4f0977e179e5e9f5c376e2bc602dc965720fa",
+      "skills/manual-orchestration/scripts/auto_continue.py": "13b3d5367920c8c6d826463779e1f8851a1f785a493d90a51ce46db8ca15adc1",
+      "skills/manual-orchestration/tests/test_auto_continue.py": "bdc1d367c5845032f3204b387d91f281eedaa4a91af90cdafe864e3e9681f6cb"
+    },
+    "digest_note": "Digests are as recorded in subject.json; not recomputed (no Bash). I reviewed delta.diff against the retained v4 understanding."
+  },
+  "verdict": "acceptable_as_is",
+  "acceptable_as_is": true,
+  "scope_of_acceptance": "The exact v5 source and instructions are ready for root integration and the reserved fresh managed-installed first-exposure trial. This is not that trial's result, not final installed-release acceptance, and not a generic exactly-once external-effect guarantee.",
+  "findings": {
+    "N-1": {
+      "status": "resolved",
+      "evidence": "release_bound_reservation() checks the recorded reservation path and namespace: both absolute, path inside the namespace, file named <sid>.json, SID a UUID. It returns `absent` without creating anything if the namespace is missing. Under that namespace's lock it checks operation ID and operation directory, then unlinks and fsyncs the directory. Outcomes are released, absent, mismatch, invalid_binding or error. complete() moves admitted to completed only once; a repeated complete with matching SID and turn only reconciles the reservation and journals reservation_release. The result reports the release outcome. Lock order is safe: complete holds the store lock then blocks on the registry lock, while prepare takes the registry lock then a non-blocking store lock, so the two cannot deadlock.",
+      "tests": "test_complete_uses_bound_namespace_from_real_cli (real subprocess under a different XDG_STATE_HOME releases the bound reservation and creates nothing in the caller's namespace; a retry returns absent) and test_complete_refuses_other_reservation_and_retries_only_cleanup (mismatch keeps the other owner's file; cleanup-only retry releases; exactly one completed event). Both pass in the 139-test full output."
+    },
+    "N-2": {
+      "status": "resolved",
+      "evidence": "`sys.dont_write_bytecode = True` is set before the sibling imports. The admit, run and complete commands are all projected as `python3 -B`.",
+      "tests": "test_actual_cli_help_and_prepare_leave_no_input_cache: a clean writable copied directory with bytecode env protections removed shows no __pycache__ after `--help` and a failing prepare (which runs after the imports). Passes."
+    },
+    "N-3": {
+      "status": "resolved",
+      "evidence": "Message: 'leave both unchanged while this operation remains eligible for admission, including a retryable refusal or pause'. The reference L117-119 matches. The admit template now has `--direction '<CURRENT_DIRECTION>'` with 'choosing continue, pause or cancel from current direction'. A pause or cancel disposition returns a non-admitted status, so the effect stays unperformed under the existing guard.",
+      "tests": "The message test asserts the new wording and the placeholder; test_pause_alone_denies_otherwise_ready_recovery asserts both pin digests are unchanged across a pause refusal."
+    },
+    "N-4": {
+      "status": "resolved",
+      "evidence": "A busy contender gets Refusal(..., 'already_controlled'), and main skips the controller_failure journal entry for that status. The message now says to collect or wait for the existing job first, and to rerun only after it exits if entry is still unresolved.",
+      "tests": "test_busy_actual_cli_does_not_journal_controller_failure: a real subprocess against a held controller lock returns already_controlled with the collector, and the journal is byte-equal before and after."
+    }
+  },
+  "new_material_issues": [],
+  "non_blocking_observations": [
+    {
+      "id": "O-1",
+      "observation": "Neither the runtime message nor the reference tells the actor or owner to surface a complete result whose reservation_release is not `released` (mismatch, error, invalid_binding, absent), or that a cleanup-only complete retry exists. The JSON states it, and the owner-resolution text covers the manual path.",
+      "consequence": "Only fail-closed: a held reservation blocks the next prepare for that SID until the owner resolves it. No effect or authority impact.",
+      "advice": "Optional: add 'surface a non-released reservation_release to the collector; complete can be retried for cleanup only' to the message's closing sentence."
+    }
+  ],
+  "remaining_limits": [
+    "No native v5 run. Native evidence is the v4 retained-mechanics run (enhanced prior history, not first exposure) plus v5 local CLI and process tests. First-exposure behaviour stays reserved to root and is not claimed.",
+    "The guarantee is at most one admitted recovery per logical operation, and the replay fence is cooperative: the actor must honour non-admitted results. It is not an exactly-once transaction for arbitrary external effects. An admitted but unfinished effect is uncertain and must not be replayed automatically.",
+    "Duplicate and concurrent admission refusal is shown offline only; the native duplicate run read completed state and never called admit.",
+    "Settings evidence: the code accepts the latest post-compaction applied-settings record, which in v3 and v4 sat inside the compaction turn. Model and effort were corroborated from the v4 recovery turn_context by the actor; service tier was not tied to the recovery turn itself.",
+    "A pause recorded during the wakeup turn allows a later `resume` to admit only while that same wakeup turn is still in progress. After that turn ends, admit refuses (superseded), the reservation stays held, and the disclosed owner resolution applies. This fails closed, but the reference does not say that resume cannot restore admission across turns.",
+    "Declared unsupported paths are unchanged: native reads followed by turn/start are not atomic, newly started turns can be briefly invisible to reads, and direct TUI input, cancellation after admission, hidden mutation, missing evidence after a crash, daemon restart ordering and failure without a working collector are not covered.",
+    "Test outputs show Ran 34 / Ran 139 / Ran 34 with OK and include the new v5 test names. The before/after hash-match claim rests on the builder's manifest-v5-before and manifest-v5-after-check files, which I did not open. I ran nothing.",
+    "Historical failures stay in lineage: a01 and a02 failed candidates, the b02 harness failure, the v3 initial test-expectation failures, and the v5 initial message-test failure that was corrected. Nothing is retroactively passed.",
+    "Tools available: Read, Glob, Grep and read-only graph methods; Bash unavailable; raw ~/.codex rollouts outside the restricted roots. The merged permission policy was not attested. Graph not used for the v5 claims; exact private bytes own them."
+  ],
+  "lineage": "I-1, I-2 and C-1 to C-5 were resolved in report-v2 and remain resolved. N-1 to N-4 are resolved here. O-1 is advisory.",
+  "duration": "Not measured; one recheck invocation. Usage and cost unknown."
+}

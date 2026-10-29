@@ -1,0 +1,15 @@
+{
+  "organization_id":"outer-context-failure-20261028",
+  "revision":2,
+  "prior_revision":"planning/outer-context-failure-organization-r1-20261028.json",
+  "approval_owner":"root coordinator under user-approved bounded trial scope",
+  "classification":"small pre-launch selection correction",
+  "basis":"User pointed to updated planning/model-selection guidance. The coordinator settles eight case contracts and evidence boundaries; bounded harness implementation uses Terra/medium. No model is selected merely because this is a recovery task or because the planner is Sol. R1 was unlaunched; no live collection ownership changes.",
+  "roles":[
+    {"id":"coordinator","runtime_session":"01a1839d-27bf-7882-b2ac-0233b11805f1","owns":["plan","residual design decisions","review selection","scope decisions","final integration"]},
+    {"id":"fixture-evaluator","selection":{"model":"gpt-6.1-terra","effort":"medium","service_tier":"default","host":"fresh native Codex app-server thread"},"owns":["private harness implementation","preflight","eight cases","all owned native/process collection"],"escalation":"Report unsettled case contract or evidence ambiguity to coordinator; do not invent a native guarantee or change model based on subsystem label or failure count"},
+    {"id":"fixture-actor","selection":{"model":"gpt-6.1-sol","effort":"medium","service_tier":"default"},"count_limit":8,"reports_to":"fixture-evaluator","basis":"Fixed experimental subjects carried from prior supervised feasibility; this is an experiment configuration, not a builder default"},
+    {"id":"reviewer","selection":{"model":"claude-opus-5-5","effort":"xhigh","host":"native Claude Code","entry":"fresh isolated source/evidence review"},"reports_to":"coordinator","basis":"Existing explicit user-selected review model"}
+  ],
+  "scope":"Only private outer-skill trial artifacts and freshly created subject sessions; no Rust, shared source edits, commits, deployment or user-root compaction"
+}

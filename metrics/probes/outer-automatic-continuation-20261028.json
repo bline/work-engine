@@ -1,0 +1,182 @@
+{
+  "recorded_at": "2026-10-29T00:56:21.382198+00:00",
+  "status": "reviewed candidate accepted; managed-installed first-exposure trial pending",
+  "root_authority": {
+    "source": [
+      "Earlier user: yes, commit and deploy",
+      "Current user: proceed accepting planning/outer-automatic-continuation-plan-20261028.md"
+    ],
+    "applicability": "Same continuing outer-skill objective and package; no Rust/runtime expansion. Root decides exact reviewed source/evidence paths and retains installed acceptance."
+  },
+  "source_files": [
+    {
+      "path": "skills/manual-orchestration/SKILL.md",
+      "sha256": "5a78bda9a27261c81a84288124cda2cfe36eae16b53066cbd0567727a419384e",
+      "git_blob": "99cea105ee969e9010d68a97832961c27f8420f5"
+    },
+    {
+      "path": "skills/manual-orchestration/references/same-session-context.md",
+      "sha256": "7c419d0befc4ed56a8194e70acb4f0977e179e5e9f5c376e2bc602dc965720fa",
+      "git_blob": "faada9b006e5fbf6fe7d4371e17e45f4abe2188e"
+    },
+    {
+      "path": "skills/manual-orchestration/scripts/auto_continue.py",
+      "sha256": "13b3d5367920c8c6d826463779e1f8851a1f785a493d90a51ce46db8ca15adc1",
+      "git_blob": "47583869c8b721afb17e66885f474f9ee43053ba"
+    },
+    {
+      "path": "skills/manual-orchestration/tests/test_auto_continue.py",
+      "sha256": "bdc1d367c5845032f3204b387d91f281eedaa4a91af90cdafe864e3e9681f6cb",
+      "git_blob": "0fb640d6673d01d1d6de99e8b5061628074709c6"
+    }
+  ],
+  "supervisor_result": {
+    "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/result-v1.json",
+    "sha256": "2c2000cd4fe98500209643b226f2374851fa7cd86ac8941a5faf0be0f5d9ece6"
+  },
+  "validation": {
+    "focused": {
+      "count": 34,
+      "exit": 0
+    },
+    "full": {
+      "count": 139,
+      "exit": 0,
+      "before_after_source_hashes_unchanged": true
+    },
+    "copied_layout_focused": {
+      "count": 34,
+      "exit": 0
+    },
+    "skill_validate_compile_diff_check": "passed",
+    "evidence": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/validation-evidence-v5.json",
+      "sha256": "abc6b9b2f011f609e048a92238f256a1a66ded04a08cdf5f062ed9c9f75c9707"
+    },
+    "commands": [
+      {
+        "command": "python3 -m unittest discover -s skills/manual-orchestration/tests -p test_auto_continue.py -v",
+        "exit": 0,
+        "count": 34,
+        "output": "focused-tests-v5.txt"
+      },
+      {
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s skills/manual-orchestration/tests -v",
+        "exit": 0,
+        "count": 139,
+        "output": "full-tests-v5.txt",
+        "binding": "manifest-v5-before.txt and manifest-v5-after-check.txt: all four source hashes match before and after suite"
+      },
+      {
+        "command": "python3 /home/bline/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/manual-orchestration",
+        "exit": 0
+      },
+      {
+        "command": "python3 -c \"import pathlib; p=pathlib.Path('skills/manual-orchestration/scripts/auto_continue.py'); compile(p.read_bytes(), str(p), 'exec')\"",
+        "exit": 0
+      },
+      {
+        "command": "git diff --check -- skills/manual-orchestration",
+        "exit": 0
+      }
+    ],
+    "native_v5": "not run; v4 native mechanics plus v5 exact local CLI/process delta evidence",
+    "first_exposure_installed": "root-owned pending, not claimed"
+  },
+  "review": {
+    "verdict": "acceptable_as_is",
+    "report": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/report-v3.json",
+      "sha256": "c4d82ed39055b56123c2d452b79b78b26fa55807854a806030d2909024753e6a"
+    },
+    "subject": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/subject-v5/subject.json",
+      "sha256": "c5f0b47123c5019994e5104e364fa1a0a1f0d9598c0d7516d9bf4903be76eb84"
+    },
+    "transport": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/transport-v5.json",
+      "sha256": "e88c9791c0c183c76e4c8e975e9c16a53d6e95cc665ea1cd970ae4f84e49b030"
+    },
+    "native_sid": "372e09c4-d6b4-4ee3-8d21-7d37bc769ef6",
+    "transcript": "/home/bline/.claude/projects/-home-bline-code-work-engine/372e09c4-d6b4-4ee3-8d21-7d37bc769ef6.jsonl",
+    "requested_model": "claude-opus-5-5",
+    "observed_model": "claude-opus-5-5",
+    "requested_effort": "xhigh",
+    "observed_effort_tier": "xhigh/standard in call records",
+    "exact_model_guard": "verified_exact",
+    "continuity": "fresh replacement initially, same native reviewer retained for remediation; final recheck not fresh",
+    "resolved_findings": [
+      "I-1",
+      "I-2",
+      "C-1",
+      "C-2",
+      "C-3",
+      "C-4",
+      "C-5",
+      "N-1",
+      "N-2",
+      "N-3",
+      "N-4"
+    ],
+    "open_material_findings": [],
+    "optional": "O-1 cleanup result guidance, fail-closed/nonblocking, no source edit after acceptance",
+    "grant_limit": "Read-only advisory configured/used; advertised catalog is not effective grant, no formal merged-policy/security attestation",
+    "instrumentation": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/instrumentation-disposition-v2.json",
+      "sha256": "19d9a0dd33683bf5ac0695dcf6f8e8a9e41a0defcff4b2ea6c3d35c07a6eebb3"
+    }
+  },
+  "limits": [
+    "No native v5 run. Native evidence is the v4 retained-mechanics run (enhanced prior history, not first exposure) plus v5 local CLI and process tests. First-exposure behaviour stays reserved to root and is not claimed.",
+    "The guarantee is at most one admitted recovery per logical operation, and the replay fence is cooperative: the actor must honour non-admitted results. It is not an exactly-once transaction for arbitrary external effects. An admitted but unfinished effect is uncertain and must not be replayed automatically.",
+    "Duplicate and concurrent admission refusal is shown offline only; the native duplicate run read completed state and never called admit.",
+    "Settings evidence: the code accepts the latest post-compaction applied-settings record, which in v3 and v4 sat inside the compaction turn. Model and effort were corroborated from the v4 recovery turn_context by the actor; service tier was not tied to the recovery turn itself.",
+    "A pause recorded during the wakeup turn allows a later `resume` to admit only while that same wakeup turn is still in progress. After that turn ends, admit refuses (superseded), the reservation stays held, and the disclosed owner resolution applies. This fails closed, but the reference does not say that resume cannot restore admission across turns.",
+    "Declared unsupported paths are unchanged: native reads followed by turn/start are not atomic, newly started turns can be briefly invisible to reads, and direct TUI input, cancellation after admission, hidden mutation, missing evidence after a crash, daemon restart ordering and failure without a working collector are not covered.",
+    "Test outputs show Ran 34 / Ran 139 / Ran 34 with OK and include the new v5 test names. The before/after hash-match claim rests on the builder's manifest-v5-before and manifest-v5-after-check files, which I did not open. I ran nothing.",
+    "Historical failures stay in lineage: a01 and a02 failed candidates, the b02 harness failure, the v3 initial test-expectation failures, and the v5 initial message-test failure that was corrected. Nothing is retroactively passed.",
+    "Tools available: Read, Glob, Grep and read-only graph methods; Bash unavailable; raw ~/.codex rollouts outside the restricted roots. The merged permission policy was not attested. Graph not used for the v5 claims; exact private bytes own them.",
+    "Reservations coordinate only their recorded local XDG namespace; another state root or arbitrary direct client is not fenced.",
+    "Production supports explicitly bound coordinator roots; actual root/other sessions were excluded from qualification targets.",
+    "a01 failed actor-scoped exec handle could not be collected cross-session; independent native terminal failure and controller absence establish its bounded failure disposition."
+  ],
+  "native_budget": {
+    "supervisor_used": {
+      "primary_sessions": 5,
+      "native_turns_including_compaction": 18,
+      "compact_attempts": 6
+    },
+    "supervisor_limit": {
+      "primary_sessions": 5,
+      "native_turns_including_compaction": 28,
+      "compact_attempts": 7
+    },
+    "root_reserved_remaining": {
+      "primary_sessions": 1,
+      "native_turns_including_compaction": 4,
+      "compact_attempts": 1
+    }
+  },
+  "collection": {
+    "processes": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/process-disposition-final-v1.json",
+      "sha256": "9f95df493dc4ff4a953231c19a241a220d16b4409209af11493829236e60c2c5"
+    },
+    "builder_result": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/builder/result-v5.json",
+      "sha256": "c58a5d12252be0bf65e110bf17b609506d6f528ea71be59fbbe355c1dac47e07"
+    },
+    "builder_state": "completed/inactive, retain session for concrete remediation",
+    "review_state": "retained, no process outstanding",
+    "fixture_state": "all primary SIDs individually terminal/inactive; b03 remains paused",
+    "outstanding_owned_processes": [],
+    "review_claim_release": {
+      "path": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review-claim-release-v1.json",
+      "sha256": "9994b34517bf5792eca8f6edad5f24ca144724667f31c6ee440a7b8fde88821b"
+    },
+    "root_source_claim": "a09b8649-6ddc-4e8e-a357-e4231eb946c9 preserved; root owns it"
+  },
+  "runtime_vs_schema": "Actual native0.165.0; local generated schema has its own version/source binding; no portable API guarantee",
+  "pending": "One fresh managed installed fixture using minimal source template, no observer wakeup or repair",
+  "next_record": "metrics/probes/outer-automatic-continuation-installed-20261028.json"
+}

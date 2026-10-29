@@ -1,0 +1,127 @@
+{
+  "review": "fresh adversarial implementation and instruction review (retained continuation of the same episode after the process deadline cut collection short)",
+  "subject": {
+    "manifest": "/home/bline/.local/state/work-engine/outer-automatic-continuation-20261028/supervisor/review/subject-v3/subject.json",
+    "frozen_at": "2026-10-28T23:19:11.934162+00:00",
+    "baseline_head": "fbd1d8d593fd635d0b53af45f93659102cde3b71",
+    "diff_sha256": "72ea71d524ecd7335d3dfff50a1e53aea198d1277f662d324911417490315ff8",
+    "files_sha256": {
+      "skills/manual-orchestration/SKILL.md": "5a78bda9a27261c81a84288124cda2cfe36eae16b53066cbd0567727a419384e",
+      "skills/manual-orchestration/references/same-session-context.md": "5f8fd994395b5fcd3d4cd8907e83dfe9ff40a15b9d80ad7188c33c6391bb1f91",
+      "skills/manual-orchestration/scripts/auto_continue.py": "529cd48ba2973e4f3599d88050dfeb8c537f6db9e5a5dd8bcb49b0099656db3c",
+      "skills/manual-orchestration/tests/test_auto_continue.py": "1f9c3354c7c00cc472f4cda8dffaea535087df7204128f75fe9e87f3a50bc4cb"
+    },
+    "digest_note": "Digests are copied from subject.json and the candidate-v3 manifest, where they agree. They were not recomputed because Bash was unavailable. Every review claim comes from the subject-v3 byte copies."
+  },
+  "verdict": "changes_required",
+  "acceptable_as_is": false,
+  "verdict_basis": "No P1 found. Intent is persisted before both native entries. Uncertain compact and wakeup entry are reconciled from native history and never resent. The controller lock, SID reservation and irreversible admit claim fence concurrent and duplicate operations. Pause/cancel and admit serialize under the operation lock. Admission checks session-bound post-boundary telemetry, a positive window and settings. The controller exits once wakeup entry is reconciled. These hold in code and in the offline tests. The blocking issue is I-1 (P2): the runtime recovery message is the subject's only instruction that reliably reaches the recovered actor. It omits what an unsuccessful admission means, why the bound continuation must stay unchanged, and how to reconcile instead of resending. In both qualifying native runs those semantics came from fixture prompts, not from the subject. So the evidence does not show the subject's own projection producing exactly-once production continuation.",
+  "code_findings": [
+    {
+      "id": "C-1",
+      "severity": "P3",
+      "location": "auto_continue.py admit L247; run L177 and L180-181; main L322-329",
+      "observation": "(a) admit returns one message, 'recovery already admitted or wakeup not established', for two different states: already admitted/completed (terminal) and still in wakeup_intent (transient: the controller has not yet reconciled, which happens on an early admit or after a lost wakeup response). (b) Rerunning run on an admitted or completed operation reports status 'wakeup_entered'. (c) run calls continuation_ok before it short-circuits on terminal phases, so a reconciliation rerun after a legitimate continuation update appends controller_failure to a completed journal. (d) Failures carry a collector only for run; the b03 admit refusal stdout shows collector null.",
+      "consequence": "The actor and collector cannot tell 'stop: custody already claimed' from 'wait or reconcile, then retry', and terminal status is misreported. This weakens honest failure ownership and the I-1 semantics.",
+      "basis": "observation (code, b03 admission-refusal.json); consequence is inference",
+      "remedy": "Return distinct refusal classes (already_admitted/completed, entry_not_reconciled, paused/cancelled, superseded, telemetry/settings_unestablished), each with its own exit code or status field. Report the actual terminal phase from run. Check the terminal-phase short-circuit before the continuation digest. Include the collector in admit/complete failures."
+    },
+    {
+      "id": "C-2",
+      "severity": "P3",
+      "location": "auto_continue.py main L322 (exception tuple); compaction L107/L111; history L48",
+      "observation": "run journals controller_failure only for Refusal, HostError, AppServerError, OSError, ValueError and KeyError. An unexpected native shape, such as items:null in compaction() or a non-dict page in history(), raises TypeError or AttributeError. That exits through a traceback, with no journal entry and no failure JSON naming the collector.",
+      "consequence": "The contract says native failure produces a durable non-success outcome with an owner. Here the terminal-outcome location can stay silent while only a nonzero exit is visible. The phase stays truthful about intent, so replay safety is not affected.",
+      "basis": "observation (code); no native instance observed",
+      "remedy": "In run, record any other Exception as controller_failure (detail, phase, collector) before exiting nonzero. Optionally validate native list shapes as a Refusal."
+    },
+    {
+      "id": "C-3",
+      "severity": "P3",
+      "location": "auto_continue.py replacement_boundary L121-123 and L144-145, called from run compact_intent branch L194-196",
+      "observation": "A rollout tail without a final newline, or compacted/turn_context/item_completed records not yet on disk, raises a terminal Refusal. This can happen even when thread/turns/list already reports the compaction turn completed. The branch does not wait within the deadline.",
+      "consequence": "If rollout persistence lags native turn completion, the controller fails and wakes nobody. Production has no required outside collector, so this would be an unowned stall. A rerun reconciles without replay, so safety holds; liveness and failure ownership do not.",
+      "basis": "inference: native/rollout flush ordering is not established; a03 and b03 did not hit it",
+      "remedy": "Treat an incomplete tail or absent boundary records as pending until the deadline. Refuse only on duplicate, contradictory or out-of-order records."
+    },
+    {
+      "id": "C-4",
+      "severity": "P3",
+      "location": "auto_continue.py registry_lock L226-232; prepare L90-99; complete L283-285; same-session-context.md L129-130",
+      "observation": "Only complete releases the SID reservation. Cancel, an admit direction of pause/cancel, controller failure and deadline expiry all leave <sid>.json in place, and later prepares fail with 'resolve it before preparing another'. No supported release or reconcile command exists, and the reference does not disclose this persistence. The 'fixed local namespace' actually comes from XDG_STATE_HOME; the fixtures overrode it per fixture, and the a03 state dir held only the .lock afterwards.",
+      "consequence": "Keeping the reservation while entry is uncertain is correct. For a terminal state that never entered native work (e.g. cancel before compact_intent), a production coordinator root is blocked from automatic continuation until someone deletes a file manually and undocumented. Operations under different XDG_STATE_HOME values are not fenced against each other.",
+      "basis": "observation (code, fixture state layout); operability consequence is inference",
+      "remedy": "Either add an owner-invoked release that is refused while any native entry is uncertain, or state in the reference that the reservation persists after non-complete outcomes, how its owner resolves it, and that the fence is namespace-local."
+    },
+    {
+      "id": "C-5",
+      "severity": "P3",
+      "location": "auto_continue.py run L189 (compact_baseline); wake_match L161",
+      "observation": "compact_baseline stores the full native turn list, including agent message content (the a03 operation.json carries commentary and final_answer items), and nothing reads it. wake_match computes skills and never uses it.",
+      "consequence": "Session content is copied into a custody file that is rewritten on every save. The contract only needs baseline turn/item identities and the rollout byte boundary.",
+      "basis": "observation",
+      "remedy": "Persist turn and item IDs plus statuses instead of full items. Drop the unused variable, or compare the skill item when it is rendered."
+    }
+  ],
+  "instruction_review": {
+    "applicability": "applicable. Three present-day instructions change in this subject: the runtime recovery message (auto_continue.py message L67-78, injected as the wakeup user message), the conditional reference section (same-session-context.md L108-150) and the skill entrypoint script affordance (SKILL.md L45).",
+    "findings": [
+      {
+        "id": "I-1",
+        "severity": "P2",
+        "instruction": "auto_continue.py message() L67-78: 'Before the declared effect use auto_continue.py admit --operation <dir> with your actual session and turn and a reasoned direction disposition. Admission only fences replay; it grants no authority...'",
+        "placement": "Semantic owner: the local Codex adapter (auto_continue.py), which owns the admission fence and supersession signals. Consumer and audience: the recovered actor. Reach: guaranteed, delivered as wakeup turn input. The conditional reference is not guaranteed to load; the a03 native actor read the auto_continue.py source but neither same-session-context.md nor SKILL.md.",
+        "protected_distinction": "At most one admitted recovery effect per logical operation, and a changed bound continuation counts as supersession, not ordinary upkeep.",
+        "causal_exposure": "Partial. The reason ('fences replay') reaches the actor. The failure modes do not. (1) The fence only works if the actor cooperates: a non-'admitted' result means the declared effect must not be performed, and proceeding risks a duplicate or stale effect. (2) admit (L244) and run re-check the continuation and Wind Walker digests, so editing the bound continuation during recovery permanently blocks admission. Standing worker guidance tells roles to keep their continuation current, which makes this edit likely. (3) After a lost wakeup response or a controller interruption, the supported repair is rerunning run to reconcile, never resending. That affordance exists only in the reference (L140-141). (4) The script's absolute path and the context-status binary/digest needed by admit are not in the message, though the controller knows its own path.",
+        "exact_route": "Causally necessary: admit must precede the effect, because the claim has to be checked before the effect crosses its consumption boundary (DESIGN 3.5 and 3.9). DESIGN 3.7 also requires the effective instruction to expose the obligation and its consequence, not only the constraint.",
+        "evidence": "a03 prompt-v1.txt L3 ('must remain immutable after prepare') and L9 ('Only if this unique admission succeeds... If operation is already completed/claimed or unresolved, do not repeat an effect'), plus a03 continuation.json command_prefix/context_binary/recovery. The b03 prompt carries the same 'immutable', 'Only if' and 'do not repeat' text. In the duplicate delivery, the actor read operation state, saw it completed and never called admit. Authority: host-contract-v2 (custody, recovery, replay) and DESIGN 3.7/3.9.",
+        "consequence_confidence": "Medium-high that the subject projection is incomplete (observed). Whether a production actor would actually mis-handle a refusal or edit the continuation is inference.",
+        "outcome": "restate",
+        "remedy": "Add three compact clauses to the message, naming the script's absolute path: proceed with the declared effect only if admit returns admitted, and otherwise leave it unperformed and report to the collector; the bound continuation and Wind Walker digests are this operation's supersession signal, so leave them unchanged until admission and record recovery notes elsewhere; if admit reports that entry is not yet reconciled, collect the job or rerun run, which reconciles without resending."
+      },
+      {
+        "id": "I-2",
+        "severity": "P3",
+        "instruction": "same-session-context.md L114-115: 'The immutable continuation points to the operation directory, which contains the journal and terminal outcome.'",
+        "placement": "Conditional reference, local-adapter scope. Audience: the preparing actor.",
+        "protected_distinction": "The bound continuation digest is the controller/admit supersession signal.",
+        "causal_exposure": "Immutability is stated as a fact, without the reason (run and admit re-check the digest) or the failure mode (ordinary continuation upkeep blocks admission). The text is not reconciled with role guidance to keep a continuation current.",
+        "exact_route": "Not route-specific. A frozen snapshot that is separate from the working continuation satisfies the invariant just as well.",
+        "evidence": "Code at run L177 and admit L244. Both native passes added immutability through fixture prompts.",
+        "outcome": "restate",
+        "remedy": "One clause: bind a frozen continuation snapshot, distinct from the role's working continuation, because a digest change is treated as supersession and refuses admission."
+      }
+    ],
+    "no_finding_rationale": {
+      "SKILL.md L45": "Descriptive script affordance that defers to the owning conditional section. Reach comes through Load-by-role L21. It adds no command. Retain.",
+      "same-session-context.md L108-150 (remainder)": "Scoped as a local Codex app-server adapter ('For an authorized standing assignment'), not universal doctrine. Authority is bounded: wakeup is continuation material, the claim grants no authority and cannot resolve approvals, and no permission gate is invented. Intent-before-entry, never-blind-retry and exit-after-wakeup are causally necessary and carry their reasons (uncertain entry; avoiding a collection cycle). Delivery-versus-file and actor-scoped job handles are stated truthfully. Unsupported paths are explicit limits (non-atomic reads followed by turn/start, direct TUI input, cancellation after admission, crash, daemon restart, no working collector). Retain."
+    }
+  },
+  "evidence_assessment": {
+    "established": "Observed native same-SID ordinary path (a03). Source turn, compaction and wakeup turns are terminal. The controller alone compacted and woke the actor, with no observer wakeup. The new-context actor read pinned Wind Walker, collected the same yielded job (exec_session:63249) with write_stdin, and admitted exactly once. A single raw effect has argv [operation, sid, wakeup turn]. The controller PID is gone. Boundary: compacted record at line 53 < turn_context 55 < item_completed 58. b03: a serialized pause after an otherwise-ready recovery produced an actual admit refusal and zero effects. Duplicate delivery held with one effect and one admission. Offline, 22 test methods match the reported count; they cover lost compact/wakeup without replay, supersession, concurrent controller and admit fencing, telemetry gaps, settings mismatch and SIGTERM.",
+    "not_established": [
+      "The subject's own instruction projection producing the downstream behavior: the fixture prompts supplied the refusal, immutability and argument semantics (I-1).",
+      "The native admit refusal on a duplicate: the duplicate actor read completed state and never invoked admit, so the concurrent fence is offline-only.",
+      "Settings tied to the recovery turn: the accepted settings records (a03 line 56, b03 line 54) sit inside the compaction turn, before thread/resume and the wake turn/start. Whether resume or turn/start can change effective model/effort/tier without a new thread_settings_applied record is unestablished. This literally satisfies the contract's 'post-boundary' wording, but not the reference's 'tied to recovery' reading; it is reported as a limit.",
+      "Native transport loss, daemon restart, crash and arbitrary concurrent ingress, consistent with the declared limits."
+    ],
+    "historical_failures": "a01 and a02 remain failed for v1/v2. b02 remains a failed harness qualification under v3. a03 and b03 are separate v3 runs; nothing retroactively re-labels an earlier run. Minor record ambiguity: a02 names job 81590 in observed_partial_consequences but 83771 in collector_job.",
+    "additional_limit": "role_host.Codex.PENDING_TURN_GRACE=30 (role_host.py L315) records that a just-started turn can be invisible to reads for seconds. The 'visible intervening turns' fence therefore has a race window wider than RPC latency. This is within the declared non-atomic limit, but the window size is not disclosed."
+  },
+  "decisive_inspected_material": [
+    "subject-v3: subject.json, task.diff (head), all four subject files (full)",
+    "supervisor/host-contract-v2.md; validation-evidence-v3.json; candidate-v3/manifest.json; review/packet-v1.md",
+    "candidate-v3 dependencies: role_host.py codex_settings L89-135 and Codex L300-327; child_context.py verify_binary/run_json/assess L53-147; codex_app.py signatures; wind-walker/SKILL.md",
+    "fixtures: a03 assertions/prompt-v1/standing/continuation, operation.json journal events, native items (load evidence), duplicate intent/response/collection.stdout/items commands; b03 assertions and prompt markers; a02 and b02 results; fixture-final-dispositions-v1.json",
+    "DESIGN.md (binding for owned product structure); PHILOSOPHY.md (non-normative reasoning only); agent-instruction-review SKILL and finding-contract; manual-orchestration reviewer references (worker, call-cost, anthropic-host)",
+    "Graph: check_index_coverage on the four paths at generation 2026-10-28T23:16:44Z / store u0cd895c6188ab15ag3 (generation_matches, no_recorded_issue, content_verified, best-effort). Inbound trace of registry_lock shows only prepare, complete and main plus tests, i.e. no external consumers. Used for navigation only; exact private bytes own every claim."
+  ],
+  "limitations": [
+    "Read-only review only: no tests, checks or mutations. The 22-test pass and the scoped full-suite results are taken from the supplied evidence; candidate-v3-focused.txt was not opened.",
+    "Actual configuration: tools advertised in this invocation were Read, Glob, Grep and eight read-only graph methods. In the first invocation, one read-only Bash listing was attempted and refused as unavailable, with no effect. One Grep of a fixture rollout under ~/.codex/sessions was refused by --restricted, so raw rollout records (turn_context settings of the wake turn) were not inspected. The merged effective permission policy was not independently verified. No formal sandbox or capability attestation is claimed.",
+    "Severity and actor-behavior consequences in I-1, C-1 and C-3 are inference unless marked observed.",
+    "This does not claim completeness beyond the bounded subject, and it certifies nothing."
+  ],
+  "duration": "Not measured. Two invocations of one review episode; the first was interrupted by the process deadline before a verdict. Usage and cost unknown.",
+  "remediation_route": "Return a precise new subject or delta to this retained reviewer, bound to finding IDs I-1, I-2 and C-1 through C-5. That is not a new fresh review."
+}

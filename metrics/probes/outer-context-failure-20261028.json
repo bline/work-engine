@@ -1,0 +1,156 @@
+{
+  "recorded_at": "2026-10-28T22:27:48.679570+00:00",
+  "status": "completed qualified assessment; no controller adoption",
+  "source_scope": "outer development skill failure fixtures; no skill/Rust implementation changes",
+  "release_instructions": "d16eeba55d4927922d8298cd487800faf7fd8f29",
+  "board_runtime_revision": "unestablished at actual calls",
+  "counts": {
+    "primary_sessions": 8,
+    "fixture_model_turns": 28,
+    "compaction_attempts": 8,
+    "sent_completed_compactions": 7,
+    "killed_before_send": 1
+  },
+  "limits": {
+    "sessions": 8,
+    "fixture_turns": 40,
+    "compaction_attempts": 10
+  },
+  "initial_results": {
+    "qualified_direct_paths": [
+      "F2",
+      "F5",
+      "F6",
+      "F7"
+    ],
+    "scripted_hold": "F4",
+    "unestablished": [
+      "F1",
+      "F3"
+    ],
+    "failed": "F8"
+  },
+  "review": {
+    "session_id": "93a3c718-697e-4e60-a8fd-13b2860f3f60",
+    "requested_model": "claude-opus-5-5",
+    "requested_effort": "xhigh",
+    "observed_effort": "not exposed to reviewer",
+    "verdicts": [
+      "changes_required",
+      "changes_required: sole P3 wording remaining"
+    ],
+    "reviewer_resolved": [
+      "OCF-01",
+      "OCF-02",
+      "OCF-03",
+      "OCF-04",
+      "OCF-06",
+      "OCF-07",
+      "OCF-08"
+    ],
+    "root_verified_closed": "OCF-05",
+    "final_review_accept_as_is_claim": false,
+    "receipts": [
+      {
+        "invocation": 1,
+        "observed_model": "claude-opus-5-5",
+        "model_guard": "verified_exact",
+        "session_id": "93a3c718-697e-4e60-a8fd-13b2860f3f60",
+        "process_collection": "none_remaining"
+      },
+      {
+        "invocation": 2,
+        "observed_model": "claude-opus-5-5",
+        "model_guard": "verified_exact",
+        "session_id": "93a3c718-697e-4e60-a8fd-13b2860f3f60",
+        "process_collection": "none_remaining"
+      }
+    ],
+    "capability_attestation": "not claimed; assigned read-only and recorded tools used were read-only"
+  },
+  "final_acceptance_owner": "root coordinator 01a1839d-27bf-7882-b2ac-0233b11805f1",
+  "economic_superiority": "unestablished; no complete cost comparison",
+  "artifact_bindings": [
+    {
+      "path": "/home/bline/code/work-engine/planning/outer-context-failure-plan-v2-20261028.json",
+      "sha256": "cf61c29bc08920fd4928f9c74c092e65deda402c4896f2d8329cce7f99a4e7ab"
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/outer-context-failure-packet-20261028.md",
+      "sha256": "7a4bf8d399e1dc8ac67d1ef6f3eda8c9f738f13b93bee0dde78d65e4bc289531"
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/outer-context-failure-remediation-v2-20261028.md",
+      "sha256": "3580e389bce80ce0507d721621f9e285a3522fcd92802fb5a8d638d2bfebbd90"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/evidence-v1-manifest.json",
+      "sha256": "516401ad7f424adb7f9fa0e1a3bc3961cd88e73c3f4387d371a0a8e125095c9f"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/worker/manifest-v2.json",
+      "sha256": "7e572d6e1e338184d809d57aaacfdd4063f738870a77257eaf08b13425d5cd3e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/worker/manifest-v3.json",
+      "sha256": "9fa34f48f7c3352ea507010cf479754264325a3da69737d428d142f409b263f0"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/worker/manifest-v4.json",
+      "sha256": "e09198da6b7452ebccbd6b3b73e6238f707d5d4ab24911f7a89e4743eb230172"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/report-v5.md",
+      "sha256": "5480524ca4c6f004da1e0d72e89f60c9cf482c3cb7c9f9c978ae486c31d53197"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/subject-v1.json",
+      "sha256": "9e869a0bc35f7dec88cabcd4b707dec419ed037921a94f176f86420453dde6a4"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/subject-v2.json",
+      "sha256": "f6c5cac9aa171cbc3adb2d23db82d4386e592e9db58c94470f3bc9a3d18e42cc"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/report-v1.md",
+      "sha256": "312bc02c930b6b2826521ae542df8402a1249ef0835cc66f97f2a768d1d61baf"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/report-v2.md",
+      "sha256": "e55b7e1046e83d17a224050eaa1a672462a3ce41edd6c617710beb74a1f6628e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/root-gap-verification.json",
+      "sha256": "0902bc709a7457cba1faa77b0a87b8bee7eaf7ee912073f7fcadf3d63df0bdf6"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/root-integration.json",
+      "sha256": "b2532fdec1a62e0c80bbaa785aa739d9d1db205535b61e09f89dbc5c2fb24a51"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/transport-v1.json",
+      "sha256": "b4fe539007b44b150fb84cde4db6858b8f0ac45ef69aebc08cf0b8c8360d9a1e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/outer-context-failure-20261028/review/transport-v2.json",
+      "sha256": "b4ddcf4ac97eca7b6a4d0ca8668235e62fb1d968796b873274f7a72389629e8e"
+    },
+    {
+      "path": "/home/bline/code/work-engine/metrics/probes/outer-context-failure-20261028.md",
+      "sha256": "38ca23958f79f92dc820ca3b92ae90d63908e067956040cd56c3c7865c20e457"
+    }
+  ],
+  "immutable_subject_verification": [
+    {
+      "manifest": "subject-v1.json",
+      "checked": 553,
+      "mismatches": []
+    },
+    {
+      "manifest": "subject-v2.json",
+      "checked": 14,
+      "mismatches": []
+    }
+  ],
+  "terminal": "native fixture turns terminal; owned processes collected; evaluator/fixture roles idle_released; claims released at completion"
+}
