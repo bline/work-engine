@@ -154,7 +154,8 @@ the user's terminal for the whole turn), and
 successor only after an authorized commit. Merely spawning a child, writing a
 packet or compacting does not transfer the root.
 
-Record the root's reading at each dispatch and integration boundary, and keep
+Record the root's reading at each dispatch and integration boundary (a current
+[listener observation](context-control.md#what-to-do-with-an-observation) counts), and keep
 the assignment record and continuation current continuously. When transfer is
 the chosen response, plan it before substantial coordination exhausts the room
 needed to settle ownership; on 2026-10-22 a Claude root reached about 580K while

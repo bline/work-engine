@@ -64,7 +64,10 @@ model, tier or independence.
 The user's organization revision boundary is coordinator approval for small
 changes and human approval for large changes. The coordinator classifies a
 change by its consequences and explains the basis; no fixed size or role-count
-rule decides it. Existing provider, budget, mutation, review and other explicit
+rule decides it. Classify against the originally accepted scope and every
+change since, not only the last revision: a series of small changes can add up
+to a large one. The [scope record](coordinator.md#scope-and-budget) holds that
+history. Existing provider, budget, mutation, review and other explicit
 approval boundaries retain precedence even for a small change. Initial candidate
 acceptance belongs to the approval owner named by the active task, without a
 blanket initial human gate. Organization acceptance never grants new task,

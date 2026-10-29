@@ -15,13 +15,37 @@ collection route are verified. Missing or stale observation is unknown headroom,
 not evidence that more work will fit. This prevents a root discovering pressure
 only after it has too little context left to preserve unfinished obligations.
 
+## Scope and budget
+
+At the start, record the accepted objective as a short list of original items, and a budget: hours, weekly quota, and how many additions trigger reconsideration. Use the user's limits. If they gave none, propose limits in your first report and record them as yours; they apply until the user changes them. `scripts/scope_budget.py` keeps this in the assignment record and checks it in one call; run `check` alongside each dispatch and integration context reading.
+
+An addition is something the original items do not cover: a new deliverable, component, evidence class or obligation. Fixing a defect in work an original item already covers is not one. Record each addition when you accept it, with its reason. Judge scope by the cumulative change from the original items, not by whether the newest addition looks small. In the S10 session of 2026-10-28/29 (n=1), a plan of three items grew, one gap at a time, into a candidate that also covered bootstrap evidence, consumer validation and controller resource identity; about 14 gaps each went through its own amendment and review cycle, and no real-host run happened in 17.6 hours.
+
+- When additions reach the trigger, classify the cumulative change under [organization formation](organization-formation.md#revision-decisions-and-authority); a large change goes to the user before more dispatch.
+- When hours or quota reach the limit, stop: dispatch nothing new, collect outstanding results or handoffs, and report the original items, what is done, each addition and why, what was spent, and the decision needed. The limit is the user's boundary; do not raise it yourself.
+
+<!-- cli-synopsis script=skills/manual-orchestration/scripts/scope_budget.py display="python3 -I <skill-dir>/scripts/scope_budget.py" -->
+```text
+python3 -I <skill-dir>/scripts/scope_budget.py init --record RECORD --objective OBJECTIVE --item ITEM [--rollout ROLLOUT] [--max-hours MAX_HOURS] [--max-weekly-points MAX_WEEKLY_POINTS] [--max-weekly-percent MAX_WEEKLY_PERCENT] [--reconsider-after-additions RECONSIDER_AFTER_ADDITIONS] --set-by {user,coordinator} [--reason REASON]
+python3 -I <skill-dir>/scripts/scope_budget.py add --record RECORD --item ITEM --reason REASON
+python3 -I <skill-dir>/scripts/scope_budget.py revise --record RECORD [--max-hours MAX_HOURS] [--max-weekly-points MAX_WEEKLY_POINTS] [--max-weekly-percent MAX_WEEKLY_PERCENT] [--reconsider-after-additions RECONSIDER_AFTER_ADDITIONS] --set-by {user,coordinator} [--reason REASON]
+python3 -I <skill-dir>/scripts/scope_budget.py check --record RECORD [--rollout ROLLOUT]
+```
+<!-- /cli-synopsis -->
+
 ## Packets
 
 When forming or revising an organization, including during ongoing implementation with no new dispatch, launch or discovery assignment, use [organization formation](organization-formation.md) to assemble the candidate and bind revision decisions to their authority.
 
 A useful packet conveys the exact accepted authority, source/subject identity, **applicable settled facts**, outcome, checks, limits and escalation owner. Settled facts are constraints already fixed by accepted slices, contracts or committed code - a schema's version gates, an actor's concurrency model, a published wire contract. In S4-S8 about 42% of independent findings reopened such a fact and about 36% more were arguably preventable by better contract formation. Include only the facts that apply; loading everything recreates the context cost. For an integration or replay assignment, include known predecessor attribution and likely derived dependencies such as a lockfile; mark unknown lineage for the supervisor to resolve rather than making a final patch stand for its history. Treat admission HEAD as a reference until current affected bytes are bound at execution. Give a child only its packet, its identity binding and mandatory repository context; it loads its own role reference from this skill.
 
+**Write packets in plain sentences.** State each settled fact once, in words, and refer back to it by name; put numbers a reader must compare in a small table. Shorthand such as `original68/24/36/8 and actual0/34/0 inclC7breach` (an S10 supervisor packet, 2026-10-29) saves characters, but every reader must decode it and a misread fact costs more than the words saved. The 27 packets and handoffs of that session came to about 19,700 words.
+
+**Ask for custody records, not hand-written custody.** Builds, tests and frozen subjects are recorded by [`scripts/custody.py`](../scripts/custody.py) as the [worker reference](worker.md#builds-tests-and-frozen-subjects) describes. Do not ask children to copy PIDs, exit codes or tool-session output into separate records.
+
 **Size a packet by what it must read, not only what it must write.** Reading the existing code and contract counts against the same context budget. On Claude Code (2026-10-22) a subagent opened at about 35K; agents told to read a 2,700-line crate plus contract sections spent about 100K before writing, and three in a row handed off with the work unfinished. A successor given an explicit read list (handoff, test support, function signatures via `grep`, and only the contract line ranges each test checks) read 46K and finished at 135K (n=1); a longer read list read 92K. Name the read set as precisely as the write scope, ask for signatures before bodies, and have builders commit after each independently passing unit so a handoff loses nothing.
+
+Size a review the same way: count the reviewer's instructions, the subject and the evidence it must check against its window. On 2026-10-29 an Astra reviewer ran out of context at 225,732 of 258,400 tokens before finishing (n=1). If the necessary reading cannot fit, divide the review into named obligations with a reviewer each, and record any obligation left unreviewed. A smaller packet must not quietly narrow what the review claims to cover.
 
 Before dispatch, compare the packet to the owning contract and current candidate. If the run is meant to be compared with another, freeze the subject, controls and scoring before either arm launches ([measurement](measurement.md#accounting-rules)); a run already started cannot be relabelled prospective.
 
@@ -76,7 +100,7 @@ A root accepting substantial new work makes a scoped
 including the work and collection still owed. An earlier decision to finish
 bounded work does not cover the new task, even when no new pressure alert arrives.
 
-A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary, and choose a response against the next scope's needs and available capabilities. Pressure alone does not require a root transfer. For same-session replacement, use the [continuity guidance](same-session-context.md); when transferring ownership, use the user-authorized quiescent procedure under [Roots](context-boundary.md#roots). Keep the continuation and assignment record current continuously, because recovery cannot depend on meaning held only in the old context.
+A root's context grows with every report; roots averaged about 144K per call in the baseline, and the S10 root of 2026-10-28/29 averaged 246K over 596 calls. Keep it small by delegating reads to children and reading their compact results, not their evidence: checking evidence belongs to the supervisor or reviewer whose result you read. Record your reading at each dispatch and integration boundary (a current [listener observation](context-control.md#what-to-do-with-an-observation) counts), and choose a response against the next scope's needs and available capabilities. Pressure alone does not require a root transfer. For same-session replacement, use the [continuity guidance](same-session-context.md); when transferring ownership, use the user-authorized quiescent procedure under [Roots](context-boundary.md#roots). Keep the continuation and assignment record current continuously, because recovery cannot depend on meaning held only in the old context.
 
 ## Worktrees and Codebase Memory
 

@@ -63,10 +63,25 @@ context check or repair the binding; do not substitute zero. A return to `normal
 after a new epoch does not establish that a handoff occurred or that lost meaning
 was recovered.
 
-Continue keeping the durable continuation current. Preserve the explicit
-pre-dispatch and logical-boundary checks until the owning workflow accepts
-timely control delivery as equivalent evidence. A new assignment's expected
-growth still belongs to the dispatch decision and is not inferred by the monitor.
+Continue keeping the durable continuation current.
+
+**A current observation replaces the explicit command at a boundary check.** It
+is current when the listener is verified bound to this session, transcript,
+epoch and levels; is still running; its output has been collected up to the
+decision (reading pending output can share the dispatch call); and nothing since
+reported an error, timeout, `unavailable` or epoch change. The reader emits on
+every change of level and stays quiet while pressure is unchanged
+([board reference](../../../docs/codex-chatboard.md#session-control-subscription)),
+so the last observation bounds the present input: at least its measured input,
+and below the next level. Use that range in the
+[pre-dispatch](context-boundary.md#pre-dispatch-check-parent) or boundary
+decision. Run the explicit check when the observation is not current or when
+the decision would differ across the range. Record which source the reading
+came from. The reading is not the decision: a new assignment's expected growth
+still belongs to the dispatcher, and listener silence does not extend an
+earlier capacity decision to new scope. In the S10 session of 2026-10-28/29
+about 230 tool calls in the tree took explicit context readings over 17.6 hours
+while the root ran a listener (n=1).
 In band, a new event arrives at each further step of the window
 (`--context-step-percent`, default 5). Between steps the listener is quiet, and
 that silence does not renew a prior decision to continue for a different task. Use the scoped capacity decision in

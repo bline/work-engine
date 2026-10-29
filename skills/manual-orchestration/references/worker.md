@@ -19,7 +19,20 @@ python3 -I <skill-dir>/scripts/child_context.py \
   --binary <pinned path> --sha256 <digest> check --session <your id> --rollout <your rollout>
 ```
 
-The script compares your latest input with a trigger (150,000 of a 258,400 window) and the observed compaction band (no compaction below about 171K in 42 events on 2026-10-21). The trigger is a pilot hypothesis, not a rule. If you are over it and the remaining work is substantial, prepare a handoff; otherwise continue. Record the reading, decision and reason in your continuation. Continuing past the trigger risks a compaction mid-task, after which the rest of the work is done from your continuation alone. Use only the binary you were given - do not build to check context, because a build lock can block observation for everyone. If usage cannot be read, record `usage_unavailable` with the script's class; never guess or treat it as zero. An `epoch` change is not a handoff.
+The script compares your latest input with a trigger (150,000 of a 258,400 window) and the observed compaction band (no compaction below about 171K in 42 events on 2026-10-21). The trigger is a pilot hypothesis, not a rule. If you are over it and the remaining work is substantial, prepare a handoff; otherwise continue. Record the reading, decision and reason in your continuation. Continuing past the trigger risks a compaction mid-task, after which the rest of the work is done from your continuation alone. If your parent bound a context listener to you, a current observation from it counts as the reading ([session control](context-control.md#what-to-do-with-an-observation)). Use only the binary you were given - do not build to check context, because a build lock can block observation for everyone. If usage cannot be read, record `usage_unavailable` with the script's class; never guess or treat it as zero. An `epoch` change is not a handoff.
+
+## Builds, tests and frozen subjects
+
+Run builds and tests through `custody.py run` (`<skill-dir>/scripts/custody.py`). It records argv, working directory, environment, wrapper and child PIDs, wait status, output and input digests, and any process still alive afterwards, and prints one line per step. A `--plan` runs a build and its tests in one call: `{"cwd", "env", "env_clear", "steps": [{"name", "argv", "cwd", "env", "env_clear", "digest", "cargo_json", "timeout", "kill_leftovers"}]}`, step values overriding plan values. With `cargo_json` set on a step named `build`, a later step's `{exe:build}` names the test binary it produced (`{exe:build:<target>}` when there are several), and its digest is recorded. Read the one-line results, and open logs only for a failure. Do not write your own runner, or copy PIDs, exit codes or tool-session output into separate records: the record is the custody. In the S10 session of 2026-10-28/29, children referenced 32 helper scripts of their own (13 named `run*`) and 88 tool calls named hand-kept `tool-session.json` records.
+
+To freeze a subject, commit it when it lives in this repository ([slice checkpoint](../../slice-checkpoint/SKILL.md) writes a private ref without moving your branch). For a tree outside it, run `custody.py freeze`: one read of the tree gives a manifest, an archive built from the same bytes, and changes and a diff against a baseline. Task-specific assertions about the frozen subject belong in a check that reads the manifest, not in another freeze script.
+
+<!-- cli-synopsis script=skills/manual-orchestration/scripts/custody.py display="python3 -I <skill-dir>/scripts/custody.py" -->
+```text
+python3 -I <skill-dir>/scripts/custody.py run --out OUT [--name NAME] [--plan PLAN] [--cwd CWD] [--env KEY=VALUE] [--env-clear] [--digest PATH] [--cargo-json] [--timeout SECONDS] [--kill-leftovers] [--keep-going] ...
+python3 -I <skill-dir>/scripts/custody.py freeze --root ROOT --out OUT [--exclude GLOB] [--baseline-root BASELINE_ROOT] [--baseline-manifest BASELINE_MANIFEST] [--label LABEL]
+```
+<!-- /cli-synopsis -->
 
 ## Result
 
