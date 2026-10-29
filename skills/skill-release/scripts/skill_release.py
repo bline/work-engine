@@ -600,7 +600,7 @@ def announce(repo: Path, record: dict) -> dict:
         finally:
             sys.path.remove(str(sibling))
         ack = module.post(repo, author="skill-release", session_id=publisher_id,
-                          topic="skill-release", body=body, references=[record["commit"]],
+                          topic="all" if names else "skill-release", body=body, references=[record["commit"]],
                           message_id=message_id, observed_at=observed_at)
         outcome.update(status="published", revision=ack["revision"], sequence=ack["message"]["sequence"])
     except Exception as error:

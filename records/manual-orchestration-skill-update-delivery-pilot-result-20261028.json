@@ -1,0 +1,163 @@
+{
+  "artifact_type": "manual-orchestration.pilot-result",
+  "recorded_at": "2026-10-29T01:27:23.880874+00:00",
+  "status": "root_accepted_for_approved_scope_uncommitted_undeployed",
+  "organization": {
+    "candidate": "planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66",
+    "accepted_decision": "planning/skill-update-delivery-pilot-20261028/decision-r1-approved.json",
+    "decision_sha256": "070fce785e86b6417684470df802c70b2cc960a0da9fcf69ab82aa9373a4e416",
+    "revisions_during_implementation": 0
+  },
+  "source": {
+    "head_at_acceptance": "2086ecb330aa0db29a0a63aef49e7ab88877c47d",
+    "sha256": {
+      "skills/skill-release/scripts/skill_release.py": "2be9233677738ce8c3af35760243f0a476c7a1e4f98cd22d1d7496b8d08438b0",
+      "skills/skill-release/tests/test_skill_release.py": "1293c2dd7f8b75ab5e08a2d7f352b480f2d7861660b1d5907b5167c47d72f49c",
+      "skills/coordination-channels/SKILL.md": "d9dca6a6fcd3a8318bbc21c51c911f738313a8781b639be8db3338a9554f77b6"
+    },
+    "reviewed_subject": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review-subject-v1/manifest.json",
+    "reviewed_subject_sha256": "cfdd3b96937888d0a7ac783cf25ebdad7db214eb57acee343cc913de482844df",
+    "subject_entries_verified": 25,
+    "live_changed_and_supporting_paths_verified": 7,
+    "head_movement_qualification": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/root-final-head-qualification.json",
+    "source_commit_created_by_this_group": false,
+    "skill_deployment_performed_by_this_group": false
+  },
+  "delivered_behavior": [
+    "Nonempty actual affected installed-skill union publishes one automatic notice on exact topic all.",
+    "Unchanged announceable new release stays on skill-release with no reload demand; same-current suppression and --no-announce preserved.",
+    "Dedicated skill-release-only listeners must include all for changed notices; disclosed migration accepted by human.",
+    "Consumer guidance covers relevance, current installed instructions/references, removed-guidance dependencies, timely child forwarding and exposure/authority limits while preserving useful task context.",
+    "Existing one-attempt, UUID/uncertainty/exit2, deployment-survival and manual rollback-announcement contracts preserved."
+  ],
+  "actors": {
+    "root_session": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+    "supervisor_binding": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor-binding.json",
+    "supervisor": "Retained Sol6.1/xhigh/default discovery session into implementation.",
+    "implementers": [
+      {
+        "logical_id": "publication-owner",
+        "binding": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/publication/binding.json",
+        "requested": {
+          "model": "gpt-6.1-terra",
+          "effort": "medium",
+          "tier": "default",
+          "launch": "followup_task retained same discovery session"
+        },
+        "status": "complete_collected_retained_inactive"
+      },
+      {
+        "logical_id": "refresh-owner",
+        "binding": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/refresh/binding.json",
+        "requested": {
+          "model": "gpt-6.1-terra",
+          "effort": "medium",
+          "tier": "default",
+          "launch": "followup_task retained same discovery session"
+        },
+        "status": "complete_collected_retained_inactive"
+      }
+    ],
+    "reviewer_binding": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/binding.json",
+    "reviewer": "Fresh top-level Astra/high/default/read-only; runtime parent none; root owns collection. Initial and retained-turn settings/grant independently observed; identity binding acknowledged."
+  },
+  "validation": {
+    "release_suite_tests_passed": 43,
+    "board_selector_tests_passed": 3,
+    "other_checks": [
+      "catalog/CLI synopsis",
+      "diff/whitespace",
+      "bounded skill/instruction checks"
+    ],
+    "rehearsal": "Named retained consumer loaded directive ONE, collected the actual all notice, re-read directive TWO through the same current fixture link, then responded TWO while preserving the bounded task/authority.",
+    "limits": [
+      "Temporary fixtures only; no live functional feature post or release.",
+      "Explicitly instructed named consumer; no automatic relevance-judgment, universal listener or global refresh claim.",
+      "Reviewer inspected frozen executable evidence but did not rerun tests requiring filesystem writes."
+    ],
+    "source_pre_review_fix_rounds": 0,
+    "private_evidence_refinements": 1
+  },
+  "review": {
+    "verdict": "accept",
+    "findings": [],
+    "first_independent_review_accepted": true,
+    "review_driven_repair_rounds": 0,
+    "report": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/report-v1.md",
+    "report_sha256": "cf4af4abab6c1cc623df098ff004a3250db70465cb4360e3f1036b2c174b6d02",
+    "binding_acknowledgement": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/binding-ack.md",
+    "grant_evidence": [
+      "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/runtime-observation-v1.json",
+      "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/runtime-observation-v2.json"
+    ],
+    "instruction_review": "Applicable; retain exact bounded consumer projection with locally exposed stale-instruction reason.",
+    "limits": [
+      "Same provider/different model; no cross-provider or author-blind claim.",
+      "Reviewer relied on root exact-hash verification and directly read frozen snapshots."
+    ],
+    "retirement": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/retire.json",
+    "retirement_effect": "Idle released; no in-progress turn or owned process."
+  },
+  "learning": {
+    "ownership": "Discovery identified disjoint publisher code/tests and consumer-guidance outcomes; supervisor joined evidence.",
+    "continuity": "Both exact Terra discovery sessions continued into implementation; no replacement or escalation. This establishes continuity feasibility, not causal savings in investigation/cost.",
+    "accepted_outcome": "Both retained Terra owners reached first independent review acceptance with zero source pre-review fixes and zero review-driven repairs; one private evidence refinement strengthened qualification.",
+    "revisions": "No logical organization revision was needed; small/large revision approval behavior remains untested.",
+    "instruction_refresh": "An external manual-orchestration release occurred during the run. Root and supervisor refreshed the relevant loaded entry in place without task/context transfer; no automatic global reload is claimed.",
+    "coverage_gap": "On-demand supporting-skill notification coverage remains outside the approved direct installed affected-set policy."
+  },
+  "profile_accounting": {
+    "workers": {
+      "builder_profiles": "Both production profiles valid; exact assignment references in assignments.json. Screened not_eligible on accepted same-session continuity and lack of model override, not on Terra preference. Separate ordinary review route otherwise fits.",
+      "selection_order": "Accepted requested model choices predate profile declaration; precise original selection time unestablished, selected_at omitted. No pre-selection/unbiased-analysis claim.",
+      "worker_attribution": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/attribution-corrected.json",
+      "ledger": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/worker-usage-ledger",
+      "ledger_limit": "Ledger corpus also includes other Codex sessions; only exact session/per-turn attributions are group evidence. Broad summary totals are not this group totals.",
+      "administrative_failure_history": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/attribution-commands.json",
+      "failure_disposition": "--ledger initially pointed to calls file; directory argument corrected, all four attributions resolved. Source/tasks/gates unaffected.",
+      "supervisor_cost": "Terminal supervisor rollout accounting remains root-owned after this result; counters recoverable, no total cost/quality comparison claimed.",
+      "source_pre_review_fix_rounds": 0,
+      "private_fixture_evidence_refinements": 1
+    },
+    "reviewer_profile": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review-profile-amendment.json",
+    "reviewer_assignment": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/profile-assignment.json",
+    "reviewer_attribution": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/usage-attribution-result.json",
+    "reviewer_attribution_status": "resolved",
+    "selection_limits": "No original selection timestamp invented; approved models predated profiles. No randomized or causal model-cost comparison.",
+    "screening": "Actual accepted same-session discovery continuity could not be realized by an alternate arm through followup_task without model override; Terra preference alone was not the exclusion.",
+    "remaining_counters": "Terminal supervisor and full root counters remain recoverable from bound rollouts but are not aggregated here; no total accepted-task cost is claimed."
+  },
+  "follow_up": [
+    {
+      "status": "outside_approved_affected_set_scope",
+      "owner": "root/human for later scope decision",
+      "evidence": {
+        "catalog": "skills/catalog.json#skills.coordination-channels",
+        "sha256": "f4c5c4a9937abb1856e71427b6efa6ab630f40a3b1c013c3f153e39d18143d3c",
+        "fact": "coordination-channels has install:[] and is explicitly loaded on demand through manual-orchestration coordinator guidance."
+      },
+      "consequence": "A release changing only on-demand supporting skills can have an empty direct installed affected set and remain on the dedicated skill-release topic. Deploying this guidance therefore still needs an explicit ordinary all notice from the coordinator.",
+      "acceptance_limit": "This source acceptance does not establish dependency-aware notification or universal loaded-guidance coverage; expanding affected-set semantics was not approved."
+    }
+  ],
+  "process_disposition": {
+    "workers": "All four retained task turns, fixture commands, test runner and accounting subprocesses collected. No child/grandchild/background process or active listener remains. Useful contexts retained inactive.",
+    "reviewer": "Initial report and binding acknowledgement captured; idle released.",
+    "required_collection": []
+  },
+  "root_context": {
+    "observation": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/root-context-at-acceptance.json",
+    "input_tokens_at_closing_admission": 267948,
+    "window": 475000,
+    "decision": "Retain for final receipt/terminal notices only; next substantial scope needs a new capacity decision."
+  },
+  "provenance": {
+    "supervisor_result": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/result.json",
+    "sha256": "a742affcd7f2f2a53888c27c2cc86c0f529ad26ca5474c21992f0c061fcd4f3c",
+    "review_adjudication": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/adjudication-v1.json",
+    "root_subject_verification": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/implementation/review/root-subject-verification-v1.json"
+  },
+  "remaining_approved_implementation_obligations": [],
+  "release_status": "Source remains uncommitted and undeployed. Current approval authorized implementation/review, with no commit/deploy."
+}

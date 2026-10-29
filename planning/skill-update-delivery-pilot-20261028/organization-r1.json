@@ -1,0 +1,242 @@
+{
+  "artifact_type": "manual-orchestration.organization-candidate",
+  "organization_id": "skill-update-delivery-pilot-20261028",
+  "revision": "r1",
+  "status": "proposed_for_human_review",
+  "source_head": "fbd1d8d593fd635d0b53af45f93659102cde3b71",
+  "objective_ref": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/objective.md",
+  "authority": {
+    "current": "Formation/discovery only; private artifacts and required coordination. Two justified discovery implementers launched and collected.",
+    "initial_acceptance_owner": "human",
+    "final_assembly_owner": "candidate-coordinator",
+    "implementation_authority": "not granted",
+    "review_launch_authority": "not granted",
+    "revision_boundary": "Coordinator approves small subsequent organization changes; human approves large changes. Classify by consequences with reasons, not role count. Other explicit boundaries retain precedence."
+  },
+  "roles": [
+    {
+      "logical_id": "candidate-coordinator",
+      "reports_to": null,
+      "role": "root coordinator",
+      "outcome": "Assemble and freeze the complete candidate, collect this group, obtain initial human decision, retain final integration and future review/process collection authority.",
+      "selection": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "tier": "default",
+        "launch": "existing root; no replacement proposed"
+      },
+      "runtime_binding_owner": "Root assignment records outside this subtree; no runtime ancestry changed.",
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/root-continuation.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/root-continuation.json"
+    },
+    {
+      "logical_id": "delivery-supervisor",
+      "reports_to": "candidate-coordinator",
+      "role": "supervisor",
+      "outcome": "Own publication/consumer interface, collect both bounded owners, join validation and return private readiness; root owns final acceptance.",
+      "selection": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "tier": "default",
+        "launch": "retain existing discovery supervisor; pre-dispatch scope/context check before implementation"
+      },
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/assignments.json",
+      "binding_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor-binding.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/continuation.json",
+      "retention": "proposed retain; understanding and verified child collection routes remain useful"
+    },
+    {
+      "logical_id": "publication-owner",
+      "reports_to": "delivery-supervisor",
+      "role": "implementer",
+      "outcome": "Changed installed-skill announcements match ordinary all listeners through the existing board API, preserving accepted announcement and failure semantics.",
+      "write_ownership": [
+        "skills/skill-release/scripts/skill_release.py",
+        "skills/skill-release/tests/test_skill_release.py"
+      ],
+      "selection": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "tier": "default",
+        "launch": "retain discovery worker using followup_task after new scope/context/configuration check"
+      },
+      "selection_basis": "Remaining implementation is a bounded existing API argument change plus focused real-boundary tests once human resolves routing compatibility. Supervisor owns the interface decision; no substantial open protocol/ownership reasoning is delegated.",
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/assignments.json#publication-owner",
+      "discovery_result_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/publication/result.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/publication/continuation.json",
+      "implementation_packet_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/publication-implementation-proposed.md",
+      "retention": "proposed retain; current context and evidence do not authorize implementation"
+    },
+    {
+      "logical_id": "refresh-owner",
+      "reports_to": "delivery-supervisor",
+      "role": "implementer",
+      "outcome": "Project existing loading/freshness and communication consequences into the coordinator consumer skill with accurate relevance, in-place refresh, removal and authority handling.",
+      "write_ownership": [
+        "skills/coordination-channels/SKILL.md"
+      ],
+      "selection": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "tier": "default",
+        "launch": "retain discovery worker using followup_task after new scope/context/configuration check"
+      },
+      "selection_basis": "Single existing instruction owner, settled canonical semantics, small consumer projection and bounded private rehearsal; supervisor owns scope/migration adjudication.",
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/assignments.json#refresh-owner",
+      "discovery_result_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/refresh/result.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/refresh/continuation.json",
+      "implementation_packet_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/refresh-implementation-proposed.md",
+      "retention": "proposed retain; no new role or reset required"
+    },
+    {
+      "logical_id": "delivery-adversarial-review",
+      "reports_to": "candidate-coordinator",
+      "role": "reviewer, proposed only",
+      "outcome": "Challenge the exact joined script/test/instruction subject and bounded validation after authorized implementation.",
+      "selection": {
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "tier": "default",
+        "launch": "fresh separate top-level Codex app-server via installed role_host; no inherited discovery/design/build context; no launch now"
+      },
+      "selection_basis": "high for a settled bounded implementation; root must choose xhigh instead if the actual subject reopens architecture, ownership contracts or unresolved design. A revised selection/subject requires its own applicability decision.",
+      "runtime_binding_owner": "No session exists; future root reviewer assignment owns observed identity, isolation evidence, runtime lineage and collection.",
+      "retention": "Initial review separately established; retain useful review context through bounded remediation under its owning contract.",
+      "independence_limit": "Astra and Terra are both OpenAI; this proposal creates no cross-provider claim."
+    }
+  ],
+  "branch_findings": [
+    {
+      "branch": "publisher/subscription",
+      "finding": "Current exact-topic mismatch is real for all-only/no-address listeners; propose publisher-side changed-content broadcast through existing API.",
+      "disposition": "publication-owner is a justified leaf with script+tests ownership.",
+      "evidence_refs": [
+        "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/discovery-evidence.json",
+        "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/publication/result.json"
+      ]
+    },
+    {
+      "branch": "subscriber/refresh",
+      "finding": "Selector eligibility cannot establish collected observation or actual re-read. Existing release loading semantics need a compact projection where responsible coordinators load communication guidance.",
+      "disposition": "refresh-owner is a distinct justified leaf; source ownership disjoint from publisher.",
+      "evidence_refs": [
+        "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/refresh/result.json",
+        "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/instruction-advice.json"
+      ]
+    },
+    {
+      "branch": "supervision/integration",
+      "finding": "Two branches protect different failure boundaries and require joined evidence. More depth has no credible decision value now; no extra listener/runtime/reviewer discovery role is needed.",
+      "disposition": "Keep this group shallow; explicit unknowns and proposed final review suffice for formation."
+    }
+  ],
+  "proposed_behavior_decisions": [
+    {
+      "id": "route-changed-on-all",
+      "status": "proposed_pending_initial_human_acceptance",
+      "behavior": "One automatic post; nonempty affected installed-skill union -> all; unchanged announceable new release -> skill-release. Existing same-current suppression and opt-out unchanged.",
+      "benefit": "Matches the currently documented ordinary all-plus-relevant selector without changing generic board semantics or first updating already-running subscribers.",
+      "cost_and_compatibility": "Changed notices stop matching skill-release-only listeners, which must include all. Every collected all match can incur a model wake even if affected skills are irrelevant to that receiver; only changed installed content uses this broad route. No numeric wake-cost estimate for this run."
+    },
+    {
+      "id": "consumer-role-projection",
+      "status": "proposed_pending_initial_human_acceptance",
+      "behavior": "Add compact consumer relevance/refresh guidance only in coordination-channels, preserving canonical release/loading and DESIGN7 ownership. Still-installed relevant loaded guidance is re-read; removed guidance becomes an owned missing-guidance dependency, not a fictitious refresh. Keep task context and exposure/authority boundaries."
+    },
+    {
+      "id": "bounded-joined-validation",
+      "status": "proposed_not_executed",
+      "behavior": "Real publisher/post/wait fixture plus a named retained-consumer rehearsal before next dependent fixture action; keep publication, selector, observed receipt and read evidence separate. No global listener or real deployment claim."
+    }
+  ],
+  "alternatives": [
+    {
+      "id": "retain-topic-change-subscribers",
+      "behavior": "Keep all automatic notices on skill-release; explicitly add skill-release to relevant subscriber selections.",
+      "compatibility": "Preserves current skill-release-only consumers.",
+      "already_running": "Existing all-plus-relevant listeners lacking skill-release remain ineligible until deliberately reconfigured; updated instruction text cannot bootstrap its own observation. Need an explicit existing-session delivery/update owner and replay from before skipped rows. No complete listener inventory is established.",
+      "wake_consequence": "Relevant subscribers wake for all skill-release publications, including unchanged-content new-release notices unless another allowed mechanism reduces that cost; all remains its existing broad subscription.",
+      "why_not_proposed": "Does not alone close the current ordinary listener gap; would require an additional bootstrap/session-update commitment. Human can choose it by accepting revised exact candidate/packets."
+    },
+    {
+      "id": "all-for-every-release",
+      "why_not_proposed": "Preserves same-current suppression but creates broad wake eligibility for announceable unchanged installed content; unnecessary for refresh consequence."
+    },
+    {
+      "id": "target-known-roles-or-sessions",
+      "why_not_proposed": "Existing accepted addresses require selected role/session strings; no recipient inventory or ordinary-role selector guarantee is established. Addressed receipt still cannot prove refresh."
+    },
+    {
+      "id": "dual-post-or-expand-board",
+      "why_not_proposed": "Dual posting reopens accepted one-attempt semantics; address/schema or matcher expansion changes generic board ownership. Neither is approved."
+    },
+    {
+      "id": "publisher-only",
+      "why_not_proposed": "Closes selector eligibility but leaves timely relevance and actual refresh as an unowned consumer consequence."
+    },
+    {
+      "id": "one-worker-all-files",
+      "why_not_proposed": "Technically possible, but independent script/test and consumer-guidance outcomes are already assignable and retain distinct useful discovery. Supervisor joins their evidence; no production overlap."
+    }
+  ],
+  "owned_unknowns": [
+    {
+      "issue": "Routing compatibility and broadcast wake consequence",
+      "owner": "human through initial candidate acceptance; root prepares exact decision subject",
+      "current": "Explicit proposed decision, no approval inferred."
+    },
+    {
+      "issue": "Actual receiver collection, timing and refresh",
+      "owner": "future delivery-supervisor validation, with refresh-owner rehearsal",
+      "current": "Not established by discovery; named isolated rehearsal proposed, no live/global claim."
+    },
+    {
+      "issue": "Complete live listener inventory and actors that never loaded coordination-channels",
+      "owner": "root if acceptance later requires a broader audience",
+      "current": "Not investigated; no global delivery guarantee."
+    },
+    {
+      "issue": "Active experiment treatment/exposure constraints",
+      "owner": "each experiment owner",
+      "current": "Projection preserves their authority; release messages grant none."
+    },
+    {
+      "issue": "Any necessary manual-orchestration integration",
+      "owner": "root and concurrent owner01a1839d",
+      "current": "Excluded; no required dependency found for the proposed three-file scope."
+    }
+  ],
+  "invalidation_conditions": [
+    "Human requires unchanged skill-release-only compatibility without explicit subscriber update; current proposed publisher route no longer suffices.",
+    "Ordinary responsible consumer does not observe all or does not load communication guidance; qualify audience or obtain a separately accepted loading/bootstrap scope.",
+    "Relevant source or installed release identity changes; refresh affected claims and packets, not just digests.",
+    "Actual acceptance requires reliable delivery to every live session, automatic reload, runtime fencing or a registry; this bounded organization cannot claim it.",
+    "Selected configuration is unavailable/mismatched or retained capacity/continuity is unsuitable; root must adjudicate before dispatch.",
+    "A required change crosses excluded concurrent ownership or reopens installed-content, failure or generic board contracts."
+  ],
+  "revision_examples": {
+    "small_possible": "Refine isolated cases or consumer wording within the same accepted audience/behavior/files/selections, or replace a collected retained worker with a fresh same-selection worker while preserving logical ownership and verified collection. Root must classify with actual consequences and exact revised bytes.",
+    "large_possible": "Expand the audience guarantee, add runtime/registry or generic board semantics, alter provider/review/budget authority, cross excluded ownership, change live publication/deployment scope, or remove an accepted compatibility condition. Human decision and any other owning authority remain required.",
+    "actual_revision": "None: initial proposal only; no fabricated revision episode."
+  },
+  "evidence_refs": [
+    "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/discovery-evidence.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/source-battery-initial.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/source-battery-final.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/publication/result.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/refresh/result.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/instruction-advice.json"
+  ],
+  "actual_runtime_bindings": "Current assignment records and referenced bindings/continuations own actual identity, ancestry, settings and collection. Logical reports_to does not alter runtime ancestry or delivery.",
+  "prior_revision": null,
+  "decision_status": "pending",
+  "coordinator_role_id": "candidate-coordinator",
+  "decision_record_ref": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r1.json",
+  "authority_ref": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/objective.md",
+  "discovery_proposal_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/organization-proposal.json",
+  "discovery_proposal_sha256": "22ce685a4e5c24b9caf2dfb8839328f2518479112a3c9f8138e698b43b8a7b9f",
+  "discovery_group_manifest_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/group-manifest.json",
+  "discovery_group_manifest_sha256": "5ba3721e9eb851d61c0414ab4420f94a8a2860a2e9e4bb1c84a6c92d971c3bd5",
+  "realization_records_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/assignments.json",
+  "packet_status": "Implementation packets are proposed and undispatched. Before any implementation continuation, bind the exact accepted public candidate and separate implementation authority, freeze the revised packet and check current scope/context/configuration."
+}

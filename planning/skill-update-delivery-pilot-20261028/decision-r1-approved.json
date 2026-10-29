@@ -1,0 +1,44 @@
+{
+  "artifact_type": "manual-orchestration.organization-decision",
+  "status": "accepted_for_implementation",
+  "recorded_at": "2026-10-29T00:48:10.334977+00:00",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66"
+  },
+  "prior_revision": null,
+  "supersedes_pending_decision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r1.json",
+    "sha256": "04063bd2abeb4f2e965563e837fe9cf3faf361f0e9e0d42cf52b3ccab911cad3"
+  },
+  "change_classification": "initial_candidate",
+  "decision_owner": "human",
+  "approval_evidence": {
+    "text": "approved",
+    "responds_to": "Approve this organization and routing choice for implementation?",
+    "binding_basis": "Coordinator binds the exact frozen candidate presented immediately before the reply; no claim that the human recited the digest."
+  },
+  "accepted_behavior": [
+    "Affected installed-skill union nonempty: publish one notice on exact topic all.",
+    "Announceable unchanged-installed-content new release: keep skill-release topic and no-reload guidance.",
+    "Dedicated skill-release-only listeners must include all for changed notices; broadcast wake consequence was disclosed.",
+    "Preserve opt-out, same-current suppression, deploy-only publication, one attempt and unconfirmed-publication/exit2 behavior.",
+    "Compact relevance, actual instruction refresh, removed-guidance dependency, context continuity and authority/exposure guidance in coordination-channels."
+  ],
+  "accepted_organization": "Retained Sol6.1/xhigh/default supervisor and two retained Terra/medium/default discovery implementers, plus a future fresh top-level Astra/high/default read-only reviewer owned by root.",
+  "approved_production_files": [
+    "skills/skill-release/scripts/skill_release.py",
+    "skills/skill-release/tests/test_skill_release.py",
+    "skills/coordination-channels/SKILL.md"
+  ],
+  "implementation_authority": "granted for the exact bounded scope, isolated qualification and bounded ordinary remediation",
+  "review_launch_authority": "root may launch and retain the separately established Astra/high/default read-only reviewer for the composed implementation",
+  "not_authorized": [
+    "source commit",
+    "skill deployment",
+    "live functional board/release tests",
+    "generic board or runtime expansion",
+    "concurrent manual-orchestration changes"
+  ],
+  "revision_policy": "Coordinator approves small consequence-preserving organization changes; human approves large changes, classified with reasons. Other owning boundaries retain precedence."
+}

@@ -1,0 +1,20 @@
+{
+  "artifact_type": "organization-pilot.learning-plan",
+  "status": "prospective_formation_only",
+  "pilot": "skill-update-delivery-20261028",
+  "questions": [
+    "Does discovery identify coherent ownership and relevant dependencies?",
+    "Can implementer discovery contexts remain useful for later authorized implementation?",
+    "Are proposed models and effort justified by the remaining assignment?",
+    "Can organization revisions preserve approvals and live collection ownership?",
+    "Is the candidate reviewable without discovery transcripts?"
+  ],
+  "observations_to_preserve": [
+    "proposed versus realized roles and ownership",
+    "reasons for revised scope or selection",
+    "root interventions and duplicate investigation",
+    "review findings and repair rounds if later implementation is authorized",
+    "recoverable role usage with comparable definitions and explicit gaps"
+  ],
+  "limits": "No controlled model-cost experiment; no implementation-continuity or revision-success claim can be established by formation alone."
+}

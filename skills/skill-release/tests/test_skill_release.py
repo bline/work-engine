@@ -101,6 +101,16 @@ class SkillReleaseTest(unittest.TestCase):
                                 capture_output=True, text=True, check=True)
         return json.loads(result.stdout)["messages"]
 
+    def wait_board(self, since, *topics):
+        script = SCRIPT.resolve().parents[2] / "durable-state/scripts/codex_chatboard.py"
+        args = ["python3", str(script), "--repository", str(self.repo), "wait",
+                "--since", str(since), "--timeout-seconds", "0"]
+        for topic in topics:
+            args.extend(["--topic", topic])
+        result = subprocess.run(args, capture_output=True, text=True)
+        self.assertIn(result.returncode, (0, 2), result.stderr)
+        return json.loads(result.stdout)
+
     def test_announcements_follow_installed_visibility_and_noop(self):
         code, out, err = self.run_cli("deploy")
         self.assertEqual(code, 0, err)
@@ -118,6 +128,16 @@ class SkillReleaseTest(unittest.TestCase):
         self.assertEqual(record["current_before"], self.first)
         self.assertIn(second, self.board()[-1]["body"])
         self.assertNotIn("gamma", self.board()[-1]["body"])
+        rows = self.wait_board(1, "all", "role:coordinator")["messages"]
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["topic"], "all")
+        self.assertEqual(row["message_id"], record["announcement"]["message_id"])
+        self.assertEqual(row["references"], [second])
+        self.assertIn("Affected installed skills: alpha", row["body"])
+        self.assertIn("tool automation", row["body"])
+        self.assertIn("not a verified model or human session", row["body"])
+        self.assertEqual(self.wait_board(1, "skill-release")["messages"], [])
         code, out, _ = self.run_cli("deploy")
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(out)["announcement"]["status"], "no-op")
@@ -170,6 +190,10 @@ class SkillReleaseTest(unittest.TestCase):
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["affected"], {})
         self.assertIn("no reload is needed", self.board()[-1]["body"])
+        self.assertEqual(self.wait_board(0, "all")["messages"], [])
+        rows = self.wait_board(0, "skill-release")["messages"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["message_id"], json.loads(out)["announcement"]["message_id"])
         for args in (("check",), ("plan",), ("status",), ("rollback",)):
             self.assertEqual(self.run_cli(*args)[0], 0, args)
         (self.claude / "unmanaged").mkdir()

@@ -1,0 +1,22 @@
+{
+  "artifact_type": "manual-orchestration.organization-decision",
+  "status": "pending_human_review",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66"
+  },
+  "prior_revision": null,
+  "change_classification": "initial_candidate",
+  "decision_owner": "human",
+  "authority_source": "User proceed after selecting formation-only as the next step; objective.md records this scope.",
+  "formation_disposition": "Root accepts the collected discovery artifacts as ready for human review. This is not organization or product acceptance.",
+  "required_decision": [
+    "Accept or revise the exact organization and selections.",
+    "Accept changed-installed-skill notices on all, including the skill-release-only compatibility and broadcast wake consequences, or choose the subscriber-update alternative.",
+    "Grant separate implementation authority before any proposed packet is dispatched."
+  ],
+  "approval_evidence": null,
+  "implementation_authority": "not granted",
+  "review_launch_authority": "not granted",
+  "revision_policy": "Coordinator classifies by consequences and approves small changes; human approves large changes; other owning authority boundaries remain in force."
+}

@@ -1,0 +1,62 @@
+{
+  "artifact_type": "organization-formation.root-result",
+  "status": "formation_complete_pending_human_review",
+  "recorded_at": "2026-10-29T00:34:40.104362+00:00",
+  "candidate": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66"
+  },
+  "pending_decision": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r1.json",
+  "readable_plan": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.md",
+  "discovery_result": {
+    "path": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/formation-result.json",
+    "sha256": "741ddd04f78b11ebd96f89a5d4a23f9bb7cbfabc933407a17ff4a25400512a36"
+  },
+  "group_manifest": {
+    "path": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor/group-manifest.json",
+    "sha256": "5ba3721e9eb851d61c0414ab4420f94a8a2860a2e9e4bb1c84a6c92d971c3bd5",
+    "entries_verified": 22
+  },
+  "source_head": "fbd1d8d593fd635d0b53af45f93659102cde3b71",
+  "write_ownership": {
+    "skills/skill-release/scripts/skill_release.py": "publication-owner",
+    "skills/skill-release/tests/test_skill_release.py": "publication-owner",
+    "skills/coordination-channels/SKILL.md": "refresh-owner"
+  },
+  "readiness": "Coherent disjoint scopes and explicit compatibility decision; ready for initial human review, not implementation.",
+  "root_integration_context": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/root-context-at-assembly.json",
+  "root_input_tokens": 180557,
+  "root_window_tokens": 475000,
+  "root_context_choice": "Retain for bounded candidate assembly and terminal collection; no implementation admission.",
+  "process_disposition": {
+    "supervisor": "No subprocess remains; all tools completed; no listener or probe owned.",
+    "children": "Both collected and retained idle; no grandchildren, background processes or probes.",
+    "collection_owner": "Root remains final collector of this group; existing supervisor retains verified child delivery routes for a separately authorized continuation.",
+    "claim": "Own discovery-group claim released successfully; root formation claim remains root-owned."
+  },
+  "learning_disposition": {
+    "usable_ownership": "Discovery produced disjoint publisher script/test and consumer skill outcomes with joined acceptance evidence; implementation outcome remains untested.",
+    "retain_useful_discovery": "Both contexts retained idle with current readings; later dispatch needs a new scoped parent check and exact current selection.",
+    "selection_basis": "Terra/medium for bounded settled implementation; Sol/xhigh for supervision/interface judgment; future separate Astra/high for settled joined subject, xhigh only for actual open architecture/contract subject. Observed bindings are in assignments, not inferred.",
+    "invalidators": "organization-proposal.json#invalidation_conditions",
+    "small_vs_large": "organization-proposal.json#revision_examples; consequences govern classification, no role-count rule or fabricated revision."
+  },
+  "measurement": {
+    "fresh_discovery_dispatches": 2,
+    "retained_dispatches": 0,
+    "replacement_dispatches": 0,
+    "review_dispatches": 0,
+    "child_collection_context_ref": "context-at-collection.json",
+    "compaction_markers_in_children": 0,
+    "wait_agent_timeouts": 0,
+    "status_probes": "Pinned agents before and after launch for identity, one tree at collection for retention assessment; no list_agents polling.",
+    "comparative_cost_or_quality": "not estimated or claimed",
+    "rollout_accounting": "Per-call/token/quota counters are recoverable from bound rollouts but not yet harvested into a usage ledger; root owns any broader accounting. Backend fulfillment/billing identity is not established by applied settings."
+  },
+  "authority_limits": [
+    "No production implementation, tests, live feature post/release, isolated functional probe, consumer rehearsal, review launch, commit or deploy.",
+    "No exhaustive live listener inventory or global receipt/refresh proof.",
+    "No independent review; instruction advice is a bounded self-review."
+  ],
+  "availability": "Formation actors are inactive pending human review; preserved sessions are recoverable, with no ongoing autonomous board listener claimed."
+}

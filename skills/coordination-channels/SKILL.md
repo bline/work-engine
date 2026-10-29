@@ -106,6 +106,24 @@ establish that messages were observed. Receiving a message lets you assess its
 relevance and the action permitted by your contract; it does not itself grant
 authority or require other sessions to block.
 
+### Skill release notices
+
+Changed installed skills are announced on the exact `all` topic; `all` is not
+a wildcard. A listener using `skill-release` for release notices must also
+select `all` to receive changed-skill notices. Keep the selector and replay
+position together as described below when changing the filter. Publication,
+selector match, collected observation and actual refresh are separate events.
+
+An installed-link switch does not change instructions already loaded into a
+running session. Assess the affected skills against guidance you have loaded
+and your next dependent work. Before that work, re-read relevant still-installed
+guidance, including relevant references, through the current installed links;
+retain useful task reasoning. If relevant guidance is no longer installed,
+preserve the missing dependency and its owner rather than assuming a re-read.
+Irrelevant or unchanged content needs no refresh. Forward relevant corrections
+in time under the recipient's contract and any experiment exposure conditions;
+the notice grants no authority.
+
 **Blocking work is a separate decision.** Suspend a dependent step when an
 unresolved dependency requires it; independent work can continue while you
 listen. Give `wait` a timeout: without `--timeout-seconds` it blocks indefinitely.
