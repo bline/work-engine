@@ -324,7 +324,41 @@ def build_codex(since, until, turns=None, metadata=None):
     return rows, quota, level1, len(files)
 
 # ---------------------------------------------------------------- Claude
-def claude_transcript(path, msgs, cost_state, members=None):
+def observe_compaction(o, state, rows, path, since, until):
+    if o.get('type') == 'assistant':
+        message = o.get('message') or {}
+        model = message.get('model') if isinstance(message, dict) else None
+        if isinstance(model, str) and model != '<synthetic>': state['model'] = model
+    if o.get('type') == 'system' and o.get('subtype') == 'compact_boundary':
+        state['pending'] = None
+        if in_window(o.get('timestamp'), since, until):
+            metadata = o.get('compactMetadata') or {}
+            tokens = metadata.get('preTokens') if isinstance(metadata, dict) else None
+            if not valid_usage({'tokens':tokens}, ('tokens',), ('tokens',)):
+                issue('invalid_compaction_tokens', path=path, value=tokens); tokens = None
+            model = state.get('model'); rate = NATIVE_RATES.get(model)
+            if model == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
+                rate = {k:v*5 for k,v in rate.items()}
+            pending = dict(session_id=o.get('sessionId'), kind='compaction', at=o.get('timestamp'), context_tokens=tokens,
+                           model=model, source=path, usd_low=tokens * rate['cache_read'] / 1e6 if rate and tokens is not None else None,
+                           usd_high=None)
+            rows.append(pending); state['pending'] = pending
+    elif state.get('pending') is not None and o.get('type') == 'user' and o.get('isCompactSummary'):
+        pending = state['pending']; message = o.get('message') or {}
+        content = message.get('content') if isinstance(message, dict) else None
+        if isinstance(content, str): chars = len(content)
+        elif isinstance(content, list) and all(isinstance(x, dict) and isinstance(x.get('text', ''), str) for x in content):
+            chars = sum(len(x.get('text', '')) for x in content)
+        else:
+            issue('invalid_compaction_summary', path=path); state['pending'] = None; return
+        rate = NATIVE_RATES.get(pending['model']); tokens = pending['context_tokens']
+        if pending['model'] == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
+            rate = {k:v*5 for k,v in rate.items()}
+        if rate and tokens is not None:
+            pending['usd_high'] = (tokens * rate['cache_write_1h'] + chars / 3 * rate['output']) / 1e6
+        state['pending'] = None
+
+def claude_transcript(path, msgs, cost_state, members=None, unrecorded=None, since=None, until=None):
     """members, if given, maps transcript path -> set of message ids it contains, including copies."""
     sub = '/subagents/' in path
     mine = members.setdefault(path, set()) if members is not None else set()
@@ -335,9 +369,14 @@ def claude_transcript(path, msgs, cost_state, members=None):
         except (ValueError, OSError): pass
     project = path.split('/.claude/projects/')[1].split('/')[0]
     last_user = None   # F1.1
+    compact_state = {}
     for n, line in enumerate(open_lines(path), 1):
         o = None
         try:
+            if unrecorded is not None and ('"assistant"' in line or '"compact_boundary"' in line or '"isCompactSummary"' in line):
+                try: o = json.loads(line)
+                except ValueError: o = None
+                if isinstance(o, dict): observe_compaction(o, compact_state, unrecorded, path, since, until)
             if '"type":"user"' in line[:300]:
                 try: uo = json.loads(line)
                 except ValueError: uo = None
@@ -348,10 +387,11 @@ def claude_transcript(path, msgs, cost_state, members=None):
                     if o.get('type') == 'cost-state': cost_state[o.get('sessionId')] = dict(o, _path=path)
                 except ValueError: pass
                 continue
-            if '"usage"' not in line or '"assistant"' not in line: continue
-            try: o = json.loads(line)
-            except ValueError:
-                issue('malformed_line', path=path, line=n); continue
+            if '"assistant"' not in line: continue
+            if o is None:
+                try: o = json.loads(line)
+                except ValueError:
+                    issue('malformed_line', path=path, line=n); continue
             if o.get('type') != 'assistant': continue
             m = o.get('message') or {}
             if not isinstance(m, dict): issue('malformed_line', path=path, line=n); continue
@@ -406,11 +446,11 @@ def claude_transcript(path, msgs, cost_state, members=None):
                                              service_tier=None, speed=None, quota_multiplier=None, latency_s=None,
                                              latency_basis='malformed_record')
 
-def build_claude(since, until):
+def build_claude(since, until, unrecorded=None):
     msgs = {}; cost_state = {}; members = {}
     files = sorted(f for f in glob.glob(CLAUDE_GLOB, recursive=True)
                    if since is None or os.path.getmtime(f) >= since.timestamp())
-    for f in files: claude_transcript(f, msgs, cost_state, members)
+    for f in files: claude_transcript(f, msgs, cost_state, members, unrecorded, since, until)
     rows = []
     for r in msgs.values():
         if not in_window(r['ts'], since, until): continue
@@ -436,6 +476,7 @@ def build_claude(since, until):
                  cacheCreationInputTokens='cache_creation_input_tokens')
     for sid, cs in cost_state.items():
         base = cs['_path']
+        if not isinstance(sid, str): issue('level1_unavailable', path=base); continue
         mids = set(members.get(base, set()))
         for f in glob.glob(os.path.join(os.path.dirname(base), sid, 'subagents', '*.jsonl')):
             mids |= members.get(f, set())
@@ -443,6 +484,7 @@ def build_claude(since, until):
         invalid_models = set()
         for mid in mids:
             r = msgs[mid]
+            if not isinstance(r['model'], (str, type(None))): issue('invalid_model', source=r['source']); r['model'] = None
             if not valid_usage(r['usage'], NATIVE_KEYS, NATIVE_KEYS):
                 invalid_models.add(r['model']); continue
             for k in NATIVE_KEYS: per_model[r['model']][k] += r['usage'].get(k, 0)
@@ -464,44 +506,15 @@ def build_claude(since, until):
     return rows, level1, len(files)
 
 def unrecorded_claude(since, until):
+    """Standalone compaction reader for callers that do not build the ledger."""
     rows = []
     for path in sorted(glob.glob(CLAUDE_GLOB, recursive=True)):
         if since and os.path.getmtime(path) < since.timestamp(): continue
-        model = None; pending = None
+        state = {}
         for line in open_lines(path):
             try:
-                try: o = json.loads(line)
-                except ValueError: continue
-                if o.get('type') == 'assistant':
-                    m = (o.get('message') or {}).get('model')
-                    if m and m != '<synthetic>': model = m
-                if o.get('type') == 'system' and o.get('subtype') == 'compact_boundary':
-                    pending = None
-                    if in_window(o.get('timestamp'), since, until):
-                        metadata = o.get('compactMetadata') or {}
-                        tokens = metadata.get('preTokens') if isinstance(metadata, dict) else None
-                        if not valid_usage({'tokens': tokens}, ('tokens',), ('tokens',)):
-                            issue('invalid_compaction_tokens', path=path, value=tokens); tokens = None
-                        rate = NATIVE_RATES.get(model)
-                        if model == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
-                            rate = {k: v * 5 for k, v in rate.items()}
-                        pending = dict(session_id=o.get('sessionId'), kind='compaction', at=o.get('timestamp'),
-                                       context_tokens=tokens, model=model, source=path,
-                                       usd_low=tokens * rate['cache_read'] / 1e6 if rate and tokens is not None else None,
-                                       usd_high=None)
-                        rows.append(pending)
-                elif pending is not None and o.get('type') == 'user' and o.get('isCompactSummary'):
-                    message = o.get('message') or {}
-                    content = message.get('content') if isinstance(message, dict) else None
-                    if isinstance(content, str): chars = len(content)
-                    elif isinstance(content, list) and all(isinstance(x, dict) and isinstance(x.get('text', ''), str) for x in content): chars = sum(len(x.get('text', '')) for x in content)
-                    else: issue('invalid_compaction_summary', path=path); pending = None; continue
-                    rate = NATIVE_RATES.get(pending['model'])
-                    if pending['model'] == 'claude-haiku-5-5' and pending['context_tokens'] is not None and pending['context_tokens'] > 100000:
-                        rate = {k: v * 5 for k, v in rate.items()}
-                    if rate and pending['context_tokens'] is not None:
-                        pending['usd_high'] = (pending['context_tokens'] * rate['cache_write_1h'] + chars / 3 * rate['output']) / 1e6
-                    pending = None
+                o = json.loads(line)
+                if isinstance(o, dict): observe_compaction(o, state, rows, path, since, until)
             except (TypeError, ValueError, KeyError, AttributeError, OverflowError) as e:
                 issue('malformed_compaction_record', path=path, error=str(e))
     return rows
@@ -529,12 +542,12 @@ def stream_quota(globs):
 def cmd_build(a):
     since = ts_of(a.since) if a.since else None; until = ts_of(a.until) if a.until else None
     os.makedirs(a.out, exist_ok=True)
-    calls, quota, l1, turns = [], [], {}, []
+    calls, quota, l1, turns, unrecorded = [], [], {}, [], []
     cov = {}
     if not a.no_codex:
         r, q, l, nf = build_codex(since, until, turns); calls += r; quota += q; l1['codex_threads'] = l; cov['codex_files'] = nf
     if not a.no_claude:
-        r, l, nf = build_claude(since, until); calls += r; l1['claude_sessions'] = l; cov['claude_files'] = nf
+        r, l, nf = build_claude(since, until, unrecorded=unrecorded); calls += r; l1['claude_sessions'] = l; cov['claude_files'] = nf
     if a.streams: quota += stream_quota(a.streams)
     calls.sort(key=lambda r: str(r['ts'] or ''))
     with open(os.path.join(a.out, 'calls.jsonl'), 'w') as fh:
@@ -542,7 +555,7 @@ def cmd_build(a):
     with open(os.path.join(a.out, 'quota.jsonl'), 'w') as fh:
         for r in quota: fh.write(json.dumps(r, sort_keys=True) + '\n')
     with open(os.path.join(a.out, 'unrecorded.jsonl'), 'w') as fh:
-        for r in ([] if a.no_claude else unrecorded_claude(since, until)):
+        for r in unrecorded:
             fh.write(json.dumps(r, sort_keys=True) + '\n')
     with open(os.path.join(a.out, 'issues.jsonl'), 'w') as fh:
         for r in ISSUES: fh.write(json.dumps(r, sort_keys=True) + '\n')
@@ -726,8 +739,8 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     try:
         metadata = {}
         codex, quota, _, _ = build_codex(since, until, metadata=metadata)
-        claude, _, _ = build_claude(since, until)
-        unrecorded = unrecorded_claude(since, until)
+        unrecorded = []
+        claude, _, _ = build_claude(since, until, unrecorded=unrecorded)
     except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError) as e:
         result['issues'].append(dict(kind='build_failed', error=str(e)))
         return result, [], sb
