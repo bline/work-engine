@@ -514,6 +514,7 @@ It prints one JSON document and writes nothing to the record.
  "unattributed": {"totals": {"<pool>": "Spend"}, "sessions": [{"session_id": "...", "provider": "...", "calls": 0, "usd_low": 0, "usd_high": 0}]},
  "unrecorded": [{"session_id": "...", "kind": "compaction", "at": "ISO", "context_tokens": 0, "usd_low": 0, "usd_high": 0}],
  "issues": [],
+ "outside": {"issues": {"<kind>": 0}, "undated_calls": 0},
  "known_gaps": ["Claude Code title and other side calls are not in transcripts"]
 }
 ```
@@ -560,6 +561,15 @@ totals equal `window_totals`.
 - `not_established`: the record has no `sessions`, or the ledger cannot be
   built.
 - `complete`: otherwise.
+
+**Scope.** Only these affect `status`: issues, cost ranges and undated calls that
+come from a session in the tree.
+- An issue whose file belongs to no known session, and names no session ID,
+  stays in scope.
+- Issues and undated calls from other sessions in the window are counted under
+  `outside`.
+- Added 2026-10-30, after the first read-only run on the S10 record. Six
+  issues from an unrelated Claude session had marked S10's tree `partial`.
 
 ### 10.3 Changes to `usage_ledger.py build`
 
