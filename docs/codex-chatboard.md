@@ -382,6 +382,38 @@ make unavailability visible. Explicit boundary checks remain the fallback.
 See the [manual control reference](../skills/manual-orchestration/references/context-control.md)
 for setup ownership and R2 exposure constraints.
 
+## Budget observation subscription
+
+`wait` can combine board and session control with an independently pinned budget
+reader. The coordinator binds an objective record; no session ID is required:
+
+```sh
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
+  --since 0 --budget-record /absolute/assignment.json \
+  --budget-reader /absolute/usage_ledger.py --budget-sha256 '<sha256>' \
+  --budget-interval 60 --follow --timeout-seconds 300
+```
+
+The reader runs at most once per interval (default 60 seconds); the listener
+wakes on that schedule even without board activity. `--budget-limit-fractions`
+and `--budget-hours-fractions` pass comma-separated levels to the reader.
+Pass the last consumed `next_budget_cursor` as `--budget-cursor` to resume;
+it is independent of `next_since` and `next_control_cursor`. Results contain
+`budget_events`, `budget_topic`, and `next_budget_cursor`. Budget-only delivery
+has status `budget`; board messages take precedence, followed by session control.
+Follow mode carries all cursors and retains them in its terminal result.
+
+Events are local `observation_only` notifications, not authority or board posts.
+`control:budget:` topics are reserved: posting and delivery as board messages
+are prohibited. An initial reader failure has a null budget topic until a valid
+reader document establishes it. A nonzero exit, timeout or invalid document
+emits one `reader_failed` event and retains the cursor; a successful subsequent
+read emits `reader_recovered`. Board delivery continues during failures. A
+missing or changed reader digest stops the listener. Each invocation has a
+120-second timeout; the digest check does not prevent concurrent replacement
+between checking and execution. The listener owner must collect and deliver its
+output, and investigate failures; stdout alone does not establish delivery.
+
 ### Roles
 
 ```sh
