@@ -651,6 +651,76 @@ rec.main()
         self.assertIn('enrollments/a: verified', out.splitlines())
         self.assertIn('a@' + 'a' * 16 + ': verified', out.splitlines())
 
+    def attribute_with_ledger_replaced_after_read(self, ledger, *args):
+        ledger_path = ledger / 'calls.jsonl'
+        raw = ledger_path.read_bytes()
+        real_open = open
+        reads = []
+
+        def open_snapshot(path, mode='r', *open_args, **kwargs):
+            if os.fspath(path) == str(ledger_path) and 'r' in mode:
+                self.assertEqual(mode, 'rb')
+                stream = io.BytesIO(raw)
+                read = stream.read
+
+                def read_then_replace(*read_args):
+                    reads.append(path)
+                    data = read(*read_args)
+                    # The external ledger can be rebuilt independently of the round lock.
+                    ledger_path.write_bytes(b'')
+                    return data
+
+                stream.read = read_then_replace
+                return stream
+            return real_open(path, mode, *open_args, **kwargs)
+
+        with mock.patch('builtins.open', side_effect=open_snapshot) as opened:
+            out = self.call('attribute', '--ledger', ledger, *args)
+        self.assertEqual(len(reads), 1)
+        ledger_opens = [c for c in opened.call_args_list if os.fspath(c.args[0]) == str(ledger_path)]
+        self.assertEqual(len(ledger_opens), 1)
+        digest = hashlib.sha256(raw).hexdigest()
+        self.assertNotEqual(digest, rec.sha256(ledger_path))
+        return out, digest
+
+    def test_single_attribute_digest_matches_parsed_snapshot(self):
+        self.call(*self.profile_stub('single'))
+        ledger = self.root / 'ledger'
+        ledger.mkdir()
+        row = {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-02T00:00:00Z',
+               'model': 'synthetic', 'effort': 'medium'}
+        (ledger / 'calls.jsonl').write_text(json.dumps(row) + '\n')
+        out, digest = self.attribute_with_ledger_replaced_after_read(
+            ledger, '--task-revision', 'single@' + 'a' * 16)
+        self.assertEqual(out['models_seen'], ['synthetic'])
+        self.assertEqual(rec.read_json(out['attribution'])['ledger_calls_sha256'], digest)
+
+    def test_identifying_flag_errors_refuse_without_record_changes(self):
+        packet = self.root / 'packet.md'
+        packet.write_text('synthetic packet')
+        rev = 'a@' + 'a' * 16
+        enroll = ['enroll', '--task-id', 'a', '--eligible', 'yes', '--reason', 'test']
+        assign = self.profile_stub()
+        assign = assign[:1] + assign[3:]
+        cases = [
+            ['attribute', '--all', '--assignment', 'assignment.json', '--ledger', str(self.root / 'ledger')],
+            [*enroll, '--packet', str(packet), '--task-revision', rev],
+            enroll,
+            [*assign, '--episode', 'a', '--task-revision', rev],
+            assign,
+        ]
+        before = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        for args in cases:
+            with self.subTest(args=args), mock.patch.object(sys, 'argv', [SCRIPT, args[0], '--run-dir', str(self.run), *args[1:]]):
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit) as exit_status:
+                        rec.main()
+                self.assertEqual(exit_status.exception.code, 2, stderr.getvalue())
+                self.assertIn('error:', stderr.getvalue())
+                self.assertEqual(stdout.getvalue(), '')
+                self.assertEqual(before, {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()})
+
     def test_attribute_all_mixed_assignments_is_write_once_and_bounded(self):
         self.enroll('a')
         self.enroll('b')
@@ -675,8 +745,8 @@ rec.main()
         self.call('attribute', '--task-revision', 'a@' + 'a' * 16, '--ledger', ledger)
         old_attribution = Path(first['assignment']).parent / 'attribution-assignment.json'
         old_bytes = old_attribution.read_bytes()
-        out = self.call('attribute', '--all', '--ledger', ledger,
-                        '--since', '2026-01-02T00:00:00Z', '--until', '2026-01-03T00:00:00Z')
+        out, ledger_digest = self.attribute_with_ledger_replaced_after_read(
+            ledger, '--all', '--since', '2026-01-02T00:00:00Z', '--until', '2026-01-03T00:00:00Z')
         self.assertEqual(len(out['attributions']), 2)
         self.assertEqual({tuple(r['models_seen']) for r in out['attributions']}, {('synthetic',), ('claude-test',)})
         self.assertEqual(old_attribution.read_bytes(), old_bytes)
@@ -685,6 +755,7 @@ rec.main()
             attribution = path.parent / ('attribution-' + path.name)
             data = rec.read_json(attribution)
             self.assertEqual(data['assignment_sha256'], rec.sha256(path))
+            self.assertEqual(data['ledger_calls_sha256'], ledger_digest)
             self.assertEqual(data['recorder']['sha256'], rec.sha256(SCRIPT))
             self.assertEqual(rec.listed(str(path.parent))[attribution.name], rec.sha256(attribution))
         self.assertFalse((Path(unknown['assignment']).parent / 'attribution-assignment.json').exists())

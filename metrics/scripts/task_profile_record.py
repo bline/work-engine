@@ -345,11 +345,10 @@ def cmd_attribute(a):
             paths = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*", "assignment*.json")))
             pending = [p for p in paths if read_json(p).get("child_sessions") and not os.path.exists(
                 os.path.join(os.path.dirname(p), "attribution-" + os.path.basename(p)))]
-            rows = None
+            results = []
             if pending:
-                with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
-                    rows = [json.loads(line) for line in fh]
-            results = [attribute_assignment(a, p, rows) for p in pending]
+                rows, digest = attribution_ledger(a.ledger)
+                results = [attribute_assignment(a, p, rows, digest) for p in pending]
         print(json.dumps({"attributions": results}, indent=1))
         return
     d = record_dir(a.run_dir, a.task_revision)
@@ -357,10 +356,18 @@ def cmd_attribute(a):
     if not names:
         raise SystemExit("no assignment to attribute")
     path = os.path.join(d, a.assignment) if a.assignment else names[-1]
-    print(json.dumps(attribute_assignment(a, path), indent=1))
+    rows, digest = attribution_ledger(a.ledger)
+    print(json.dumps(attribute_assignment(a, path, rows, digest), indent=1))
 
 
-def attribute_assignment(a, path, ledger_rows=None):
+def attribution_ledger(ledger):
+    """Bind attribution rows and their digest to one read of the ledger bytes."""
+    with open(os.path.join(ledger, "calls.jsonl"), "rb") as fh:
+        raw = fh.read()
+    return [json.loads(line) for line in raw.splitlines()], hashlib.sha256(raw).hexdigest()
+
+
+def attribute_assignment(a, path, ledger_rows, ledger_digest):
     d = os.path.dirname(path)
     asg = read_json(path)
     children = set(asg["child_sessions"])
@@ -369,9 +376,6 @@ def attribute_assignment(a, path, ledger_rows=None):
     since = parse_ts(a.since) if a.since else None
     until = parse_ts(a.until) if a.until else None
     if children:
-        if ledger_rows is None:
-            with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
-                ledger_rows = [json.loads(line) for line in fh]
         for r in ledger_rows:
             cid = r.get("thread") if r.get("provider") == "codex" else r.get("session")
             if cid in children:
@@ -393,7 +397,7 @@ def attribute_assignment(a, path, ledger_rows=None):
     out = os.path.join(d, f"attribution-{os.path.splitext(os.path.basename(path))[0]}.json")
     write_once(out, {
         "assignment": os.path.basename(path), "assignment_sha256": sha256(path), "status": status,
-        "ledger": os.path.abspath(a.ledger), "ledger_calls_sha256": sha256(os.path.join(a.ledger, "calls.jsonl")),
+        "ledger": os.path.abspath(a.ledger), "ledger_calls_sha256": ledger_digest,
         "window": {"since": a.since, "until": a.until, "bounded": bool(a.since or a.until)},
         "per_session": {cid: {"calls": [{"model": m, "effort": e, "n": n} for (m, e), n in sorted(c.items(), key=str)],
                               "first_ts": span[cid][0], "last_ts": span[cid][1]} for cid, c in sorted(calls.items())},
