@@ -391,7 +391,7 @@ reader. The coordinator binds an objective record; no session ID is required:
 python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
   --since 0 --budget-record /absolute/assignment.json \
   --budget-reader /absolute/usage_ledger.py --budget-sha256 '<sha256>' \
-  --budget-interval 60 --follow --timeout-seconds 300
+  --budget-interval 60 --follow
 ```
 
 The reader runs at most once per interval (default 60 seconds); the listener
@@ -401,7 +401,10 @@ Pass the last consumed `next_budget_cursor` as `--budget-cursor` to resume;
 it is independent of `next_since` and `next_control_cursor`. Results contain
 `budget_events`, `budget_topic`, and `next_budget_cursor`. Budget-only delivery
 has status `budget`; board messages take precedence, followed by session control.
-Follow mode carries all cursors and retains them in its terminal result.
+Follow mode carries all cursors and retains them in its terminal result. It needs
+no `--timeout-seconds`: when the objective closes, the listener ends on its own
+with status `budget_closed`. A limit raised while it runs applies at the next
+reader invocation.
 
 Events are local `observation_only` notifications, not authority or board posts.
 `control:budget:` topics are reserved: posting and delivery as board messages

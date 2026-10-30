@@ -28,7 +28,12 @@ if state == "slow": time.sleep(3)
 cursor = a[a.index("--cursor") + 1] if "--cursor" in a else None
 topic = "control:budget:objective"
 events = [] if cursor == state or state == "quiet" else [{"topic": topic, "authority": "observation_only", "kind": "mark_crossed"}]
-print(json.dumps({"schema": "objective-budget-control-v1", "topic": topic, "events": events, "next_budget_cursor": state, "snapshot": {}}))
+doc = {"schema": "objective-budget-control-v1", "topic": topic, "events": events, "next_budget_cursor": state, "snapshot": {}}
+if state == "closed":
+    doc["closed_at"] = "2026-01-01T00:00:00Z"
+    doc["events"] = [{"topic": topic, "authority": "observation_only", "kind": "objective_closed"}]
+if state == "wrong-close": doc["closed_at"] = 7
+print(json.dumps(doc))
 '''
 CONTEXT = '''#!/usr/bin/env python3
 import json, sys
@@ -83,6 +88,38 @@ class BudgetTest(unittest.TestCase):
                          (1, 'context-cursor', 'second'))
         self.assertEqual(rows[-1]['control_events'], []); self.assertEqual(rows[-1]['budget_events'], [])
         self.assertEqual(sum(len(row['budget_events']) for row in rows), 1)
+
+    def test_follow_ends_at_close_with_cursors(self):
+        self.record.write_text('first'); self.post()
+        cmd = self.command() + ['--session-id', SESSION, '--context-rollout', str(self.rollout),
+            '--context-binary', str(self.context), '--context-sha256', hashlib.sha256(self.context.read_bytes()).hexdigest(),
+            '--context-trigger-tokens', '100', '--context-band-floor-tokens', '200', '--follow']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        self.addCleanup(lambda: proc.poll() is None and proc.kill())
+        first = json.loads(proc.stdout.readline())
+        self.assertNotIn('budget_closed_at', first)
+        self.record.write_text('closed')
+        output, error = proc.communicate(timeout=4)
+        self.assertEqual(proc.returncode, 0, error)
+        rows = [json.loads(line) for line in output.splitlines()]
+        self.assertEqual([e['kind'] for e in rows[0]['budget_events']], ['objective_closed'])
+        self.assertEqual(rows[0]['budget_closed_at'], '2026-01-01T00:00:00Z')
+        self.assertEqual(rows[-1]['status'], 'budget_closed')
+        self.assertEqual((rows[-1]['next_since'], rows[-1]['next_control_cursor'], rows[-1]['next_budget_cursor']),
+                         (1, 'context-cursor', 'closed'))
+        for key in ('messages', 'control_events', 'budget_events'): self.assertEqual(rows[-1][key], [])
+
+    def test_wrong_close_type_and_legacy_reader(self):
+        observer = self.budget()
+        self.record.write_text('wrong-close'); self.post()
+        result = board.wait_board(self.root, since=0, budget=observer, timeout_seconds=0)
+        self.assertEqual(result['status'], 'messages')
+        self.assertEqual(result['budget_events'][0]['kind'], 'reader_failed')
+        self.assertNotIn('budget_closed_at', result)
+        self.record.write_text('quiet'); time.sleep(.11)
+        result = board.wait_board(self.root, since=1, budget=observer, timeout_seconds=0)
+        self.assertEqual(result['budget_events'][0]['kind'], 'reader_recovered')
+        self.assertNotIn('budget_closed_at', result)
 
     def test_interval_and_unchanged(self):
         observer = self.budget()
