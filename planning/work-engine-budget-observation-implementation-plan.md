@@ -420,3 +420,257 @@ not tested.
    That agent's proposed per-episode cost records for round 2, kept in
    `agent-routing-data`, would be extracted from the same ledger, so there is
    still one counter.
+
+## 10. Interfaces for implementation (settled 2026-10-30)
+
+Three builders implement these in parallel. A change to an interface goes through
+the plan owner, not through a builder.
+
+### 10.1 Assignment record: `scope_budget` version 2
+
+The record stays a JSON object file, and `scope_budget.py` owns only its
+`scope_budget` key. Version 2 sets `"schema": "manual-orchestration.scope-budget.v2"`
+and keeps every version 1 field. It adds:
+
+| Field | Shape | Written by |
+|---|---|---|
+| `objective_id` | UUID string | `init`, or the first version 2 write to a version 1 record |
+| `sessions` | list of `{"session_id", "provider": "codex" or "claude", "from": ISO time, "bound_by": "init", "rotation", "coordinator" or "user", "evidence": string or null}` | `init` (the root), `add-session` |
+| `bindings` | list of `{"session_id", "provider", "parent_session_id": string or null, "bound_at", "bound_by": "coordinator" or "user", "reason"}` | `bind` |
+| `cost_limits` | list of `{"pool", "node": session ID or null, "max_usd": number or null, "marks_usd": ascending numbers, "set_by": "user" or "coordinator", "set_at", "reason"}` | `cost-limit`, which also appends to `limit_history` |
+
+Pools are `codex`, `claude_all_models` and `claude_fable`.
+
+New or changed commands:
+- `init` accepts `--session ID --provider P` and records that session as the
+  root. Without them, it still writes version 2, with an empty `sessions`
+  list.
+- `add-session --record R --session ID --provider P --from ISO --bound-by B
+  [--evidence E]` appends a session. Adding an identical entry again succeeds
+  and changes nothing. Adding a different entry for the same session is
+  refused with exit 2.
+- `bind --record R --session ID --provider P [--parent ID] --bound-by B
+  --reason TEXT` appends a binding.
+- `cost-limit --record R --pool POOL [--node ID] [--max-usd X] [--mark-usd Y
+  ...] --set-by S --reason TEXT` replaces the entry for that pool and node.
+- `--max-weekly-points` on `init` or `revise` is refused with exit 2, and the
+  message names `cost-limit`.
+- `check` treats hours, additions and `max_weekly_percent` as before. The
+  meter's rise is reported as `account_weekly_points` with
+  `"account_wide": true`. An existing `max_weekly_points` limit:
+  - stops the objective only when the user set it;
+  - otherwise appears under `advisory`.
+
+  A limit is user-set when `limits_set_by` is `user`, or when a
+  `limit_history` entry set by `user` has the same value for it.
+- Every command reads version 1 records. The first version 2 write upgrades the
+  schema string and adds the new fields, empty, plus an `objective_id`.
+
+### 10.2 `usage_ledger.py tree`
+
+```
+python3 -I metrics/scripts/usage_ledger.py tree --record PATH [--since ISO] [--until ISO] [--role-host-ledger PATH] [--out FILE]
+```
+
+Defaults:
+- `--since`: the record's `started_at`;
+- `--until`: now;
+- `--role-host-ledger`: `$XDG_STATE_HOME/work-engine/role-host/ledger.jsonl`,
+  with `XDG_STATE_HOME` defaulting to `~/.local/state`.
+
+It prints one JSON document and writes nothing to the record.
+
+```json
+{
+ "schema": "objective-cost-tree-v1",
+ "snapshot_at": "ISO", "window": {"since": "ISO", "until": "ISO"},
+ "record": {"path": "...", "sha256": "...", "objective_id": "..."},
+ "reader": {"path": "...", "sha256": "..."},
+ "pricing": {"source": "...", "fetched": "2026-10-30"},
+ "status": "complete | partial | not_established",
+ "totals": {"<pool>": "Spend"},
+ "window_totals": {"<pool>": "Spend"},
+ "nodes": ["Node"],
+ "unattributed": {"totals": {"<pool>": "Spend"}, "sessions": [{"session_id": "...", "provider": "...", "calls": 0, "usd_low": 0, "usd_high": 0}]},
+ "unrecorded": [{"session_id": "...", "kind": "compaction", "at": "ISO", "context_tokens": 0, "usd_low": 0, "usd_high": 0}],
+ "issues": [],
+ "known_gaps": ["Claude Code title and other side calls are not in transcripts"]
+}
+```
+
+**Shapes.**
+- `Spend` is `{"calls", "unpriced_calls", "usd_low", "usd_high",
+  "quota_usd_low", "quota_usd_high"}`.
+- `Node` is `{"node_id", "session_id", "provider", "parent_node_id", "link",
+  "role_name", "models", "tiers", "first_call", "last_call", "direct":
+  {"<pool>": Spend}, "inclusive": {"<pool>": Spend}}`.
+- `link` is one of `root`, `successor`, `codex_parent`, `role_host`,
+  `claude_subagent` or `binding`.
+- A Claude subagent's `node_id` is `<sessionId>/agent:<agentId>`, because a
+  subagent shares its parent's `sessionId`. Other nodes use the session ID.
+
+**Pools.**
+- Every Codex call counts toward `codex`.
+- Every Claude call counts toward `claude_all_models`.
+- A Claude Fable call (`claude-fable-*`) also counts toward `claude_fable`.
+
+**Quota-weighted dollars.** The call's `usd` times its tier multiplier: Codex
+`priority` 2.5, `default` 1. An unknown Codex tier gives the range 1 to 2.5.
+Claude calls use 1.
+
+**Attribution.**
+- Roots are the record's `sessions`. A root's calls count from its `from` time.
+- Children are joined repeatedly, until nothing new joins, across four sources:
+  - Codex `parent_thread_id`;
+  - `role_host` launch rows' `parent_session_id`;
+  - Claude `subagents/`;
+  - the record's `bindings`.
+- Each call belongs to its own node only. Inclusive totals add descendants
+  once.
+- A session reachable by two links keeps the first, in this order: root,
+  successor, binding, codex_parent, role_host, claude_subagent. The other link
+  is recorded as an issue `multiple_parents`.
+
+**Conservation.** For each pool, the objective totals plus the unattributed
+totals equal `window_totals`.
+
+**Status.**
+- `partial`: the tree has unpriced calls, cost ranges, unrecorded calls or
+  ledger issues.
+- `not_established`: the record has no `sessions`, or the ledger cannot be
+  built.
+- `complete`: otherwise.
+
+### 10.3 Changes to `usage_ledger.py build`
+
+**Prices.** These are added from Anthropic's pricing page
+(`https://platform.claude.com/docs/en/about-claude/pricing`, fetched
+2026-10-30). Existing rows are unchanged; that page confirms Opus 5.5 and
+Sonnet 5.5 at the ledger's current rates.
+
+| Model | Input | 5m cache write | 1h cache write | Cache read | Output |
+|---|---|---|---|---|---|
+| `claude-fable-5-1` | 10 | 12.50 | 20 | 0.25 | 50 |
+| `claude-opus-5` | 5 | 6.25 | 10 | 0.50 | 25 |
+| `claude-opus-4-8` | 5 | 6.25 | 10 | 0.50 | 25 |
+| `claude-haiku-5-5`, prompt up to 100,000 tokens | 0.10 | 0.125 | 0.20 | 0.01 | 0.50 |
+| `claude-haiku-5-5`, prompt over 100,000 tokens | 0.50 | 0.625 | 1 | 0.05 | 2.50 |
+
+Prices are $ per million tokens. A Haiku 5.5 request's prompt length counts its
+input, cache reads and cache writes.
+
+**Fast mode.** A Claude call with `speed` `fast` is left unpriced, with an
+issue, because the page gives no fast-mode cache prices.
+
+**Inconsistent cache split.** When the TTL parts exceed
+`cache_creation_input_tokens`, record the issue `inconsistent_cache_split`, and
+price the call as a range:
+- low: price the total as a cache write of unknown TTL;
+- high: price the parts at their TTL rates.
+
+**Pools.** Each call row gains `pools`, a list.
+
+**Unrecorded calls.** Each Claude transcript `system` record with `subtype`
+`compact_boundary` in the window is an unrecorded compaction call, written to a
+new `unrecorded.jsonl`:
+- `context_tokens` is `compactMetadata.preTokens`;
+- the model is the session's latest assistant model before the boundary;
+- `usd_low` prices `context_tokens` at that model's cache-read rate;
+- `usd_high` prices `context_tokens` at the 1-hour cache-write rate, plus output
+  of one token per 3 characters of the following `isCompactSummary` message.
+
+**No stops.** No single record stops `build`. A record that cannot be priced
+becomes an issue, plus an unpriced or ranged call.
+
+### 10.4 `usage_ledger.py control`
+
+```
+python3 -I metrics/scripts/usage_ledger.py control --record PATH [--cursor CURSOR] [--limit-fractions 0.5,0.8,1.0] [--hours-fractions 0.8,1.0] [--role-host-ledger PATH]
+```
+
+It builds the tree, compares it with the record, and prints:
+
+```json
+{"schema": "objective-budget-control-v1", "topic": "control:budget:<objective_id>",
+ "events": ["Event"], "next_budget_cursor": "<opaque>",
+ "snapshot": {"snapshot_at": "ISO", "status": "...", "totals": {}}}
+```
+
+**Event shape.** `{"topic", "authority": "observation_only", "kind", "pool",
+"node_id", "level", "observed", "snapshot_at", "summary"}`.
+
+`kind` is one of:
+- `mark_crossed`
+- `limit_fraction`
+- `limit_reached`
+- `node_mark_crossed`
+- `hours_fraction`
+- `hours_reached`
+- `coverage_changed`
+- `account_ceiling`
+
+**When events are sent.**
+- An event is sent only when a trigger's state differs from the state in the
+  cursor.
+- With no cursor, only triggers already past a level are reported, once.
+- Spend is compared as `quota_usd_high`, and events carry both bounds.
+- `account_ceiling` compares the latest Codex weekly meter reading in the
+  window with a `max_weekly_percent` limit, and is labelled account-wide.
+- `hours_*` events come from `max_hours` and `started_at`.
+
+**Cursor.**
+- The cursor is bound to `objective_id`, and a cursor for another objective is
+  refused with exit 2.
+- A trigger's key includes its level, so a changed limit or mark is a new
+  trigger.
+
+**Exit codes.** Exit 0 whenever a document is printed, including `status`
+`not_established`. Exit 2 only for usage errors.
+
+### 10.5 `chatboard wait` budget source
+
+```
+codex_chatboard.py wait ... --budget-record PATH --budget-reader PATH --budget-sha256 HEX [--budget-cursor C] [--budget-interval 60] [--budget-limit-fractions F] [--budget-hours-fractions F]
+```
+
+**The adapter.** `BudgetControl` mirrors `ContextControl`:
+- It checks the reader's SHA-256 before every run, and a mismatch stops the
+  listener with an error.
+- It runs `python3 -I <reader> control --record ... [--cursor ...]` with a
+  120-second timeout.
+- It validates the schema, the topic and `authority` on every event, and keeps
+  the cursor.
+
+**Timing.** It runs at most once per interval: `wait` wakes at the next interval
+even with no board activity, runs the reader, and returns if there are events.
+
+**Results.**
+- Results add `budget_events`, `budget_topic` and `next_budget_cursor`.
+- `status` is `budget` when only budget events arrived.
+- `messages`, `next_since`, `control_events` and `next_control_cursor` keep
+  their meaning.
+- With `--follow`, the budget cursor carries across iterations as the control
+  cursor does, and the terminal result keeps it.
+
+**Reader failure.** A reader that exits non-zero, times out or returns invalid
+output produces one local event `{"kind": "reader_failed", "authority":
+"observation_only", ...}` and keeps the last cursor. The next good run produces
+`reader_recovered`. Board delivery must continue, so this failure doesn't stop
+the listener; a digest mismatch does.
+
+**Topics.** Topics starting `control:budget:` are never delivered as board rows
+and cannot be posted, like `control:session:`.
+
+**Session ID.** The budget source alone needs no `--session-id`.
+
+### 10.6 Root rotation
+
+`root_rotation.py` accepts an optional `--record PATH`. After it verifies the
+successor's adoption, it runs `scope_budget.py add-session` with:
+- the successor's session ID and host;
+- `--from` the adoption time;
+- `--bound-by rotation`;
+- the adoption message as evidence.
+
+If that fails, the transfer report records `cost_binding: not_established`, and
+the rotation's own outcome is unchanged.
