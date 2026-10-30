@@ -39,7 +39,7 @@ Usage
   task_profile_record.py attribute --run-dir R --task-revision ID --ledger DIR [--assignment NAME]
                                    [--since ISO8601] [--until ISO8601]
   task_profile_record.py init-round --run-dir R --cap N --terra-in-flight N --terra-repair-budget N
-  task_profile_record.py enroll    --run-dir R --task-id T --task-revision REV --eligible yes|no --reason TEXT
+  task_profile_record.py enroll    --run-dir R --task-id T (--task-revision REV | --packet PATH) --eligible yes|no --reason TEXT
   task_profile_record.py withdraw  --run-dir R --task-id T --reason TEXT
   task_profile_record.py review    --run-dir R --task-id T --verdict accept|changes_required|blocked_evidence|blocked_scope --reviewer-session ID --p1 N --p2 N --p3 N --receipt PATH
   task_profile_record.py repair    --run-dir R --task-id T --review-receipt PATH
@@ -54,7 +54,8 @@ Usage
 Round-2 episode records live in <run_dir>/enrollments/<task_id>/ with their own
 SHA256SUMS and prior_files. Initialize round.json before using round commands.
 Round commands print one JSON object (verify retains text lines); exit 2 is a usage refusal, 1 an integrity
-failure, and 0 includes logged screening refusals. A run-level advisory lock
+failure, 3 means verify found no records, and 0 includes logged screening refusals.
+Exit 4 is profile_required: an eligible packet can enroll; no screening or enrollment is written. A run-level advisory lock
 serializes round commands; episode records are published without replacement by linking a complete, fsynced
 temporary file to the final name. Missing manifest entries are recovered on read
 and reported in command output. Every episode record carries content_sha256 of
@@ -766,15 +767,20 @@ def cmd_init_round(a):
 
 def cmd_enroll(a):
     d = episode_dir(a.run_dir, a.task_id)
-    try:
-        record_dir(a.run_dir, a.task_revision)
-    except SystemExit as e:
-        raise UsageRefusal(str(e)) from e
-    if a.task_revision.split("@")[0] != a.task_id:
-        raise UsageRefusal("task revision belongs to a different task")
-    screened = {"time": now(), "task_id": a.task_id, "task_revision": a.task_revision,
+    if a.packet:
+        identity = {"packet_sha256": sha256(a.packet)}
+    else:
+        try:
+            record_dir(a.run_dir, a.task_revision)
+        except SystemExit as e:
+            raise UsageRefusal(str(e)) from e
+        if a.task_revision.split("@")[0] != a.task_id:
+            raise UsageRefusal("task revision belongs to a different task")
+        identity = {"task_revision": a.task_revision}
+    screened = {"time": now(), "task_id": a.task_id, **identity,
                 "eligible": a.eligible == "yes", "reason": a.reason}
-    screening(a.run_dir, {"event": "screened", **screened})
+    if not a.packet:
+        screening(a.run_dir, {"event": "screened", **screened})
     episodes = enrollments(a.run_dir)
     enforce_triggers(a.run_dir, episodes)
     path = os.path.join(d, "enrollment.json")
@@ -792,6 +798,8 @@ def cmd_enroll(a):
             out["outcome"] = "cap_reached"
         elif open_terra >= config["terra_in_flight"]:
             out["outcome"] = "in_flight_limit"
+        elif a.packet:
+            return {**out, "outcome": "profile_required"}
         else:
             byte = os.urandom(1)[0]
             arm = TERRA if byte & 1 else SOL
@@ -807,7 +815,9 @@ def cmd_enroll(a):
             else:
                 durable_sums(d)
                 out.update(outcome="enrolled", arm=arm)
-    screening(a.run_dir, {"event": "result", "time": now(), "task_revision": a.task_revision, **out})
+    if a.packet:
+        screening(a.run_dir, {"event": "screened", **screened, "recorder": recorder()})
+    screening(a.run_dir, {"event": "result", "time": now(), **identity, **out})
     return out
 
 
@@ -1000,6 +1010,8 @@ def run_round_command(a):
         if RELISTING_REPORTS:
             out["manifest_relistings"] = RELISTING_REPORTS
         print(json.dumps(out, sort_keys=True))
+        if out.get("outcome") == "profile_required":
+            raise SystemExit(4)
     except UsageRefusal as e:
         print(json.dumps({"error": str(e), "outcome": "refused", "manifest_relistings": RELISTING_REPORTS}))
         raise SystemExit(2)
@@ -1059,7 +1071,9 @@ def main():
             for flag in ("--cap", "--terra-in-flight", "--terra-repair-budget"):
                 r.add_argument(flag, type=nonnegative, required=True)
         elif name == "enroll":
-            r.add_argument("--task-revision", required=True)
+            source = r.add_mutually_exclusive_group(required=True)
+            source.add_argument("--task-revision")
+            source.add_argument("--packet", help="screen a frozen packet without a profile; exit 4 (profile_required) writes no screening or enrollment")
             r.add_argument("--eligible", choices=("yes", "no"), required=True)
         elif name == "review":
             r.add_argument("--verdict", choices=("accept", "changes_required", "blocked_evidence", "blocked_scope"), required=True)

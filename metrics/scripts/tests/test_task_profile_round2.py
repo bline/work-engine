@@ -651,6 +651,65 @@ rec.main()
         self.assertIn('enrollments/a: verified', out.splitlines())
         self.assertIn('a@' + 'a' * 16 + ': verified', out.splitlines())
 
+    def packet_screen(self, task='packet', eligible='yes', code=0):
+        packet = self.root / 'screen-packet.md'
+        packet.write_text('Frozen synthetic packet')
+        with mock.patch.object(rec.os, 'urandom') as draw:
+            out = self.call('enroll', '--task-id', task, '--packet', packet,
+                            '--eligible', eligible, '--reason', 'screen first', code=code)
+            draw.assert_not_called()
+        return out
+
+    def test_packet_not_eligible_has_hash_and_balanced_log(self):
+        self.assertEqual(self.packet_screen(eligible='no')['outcome'], 'not_eligible')
+        self.assertFalse(self.episode('packet').exists())
+        self.assertEqual([r['event'] for r in self.log()], ['screened', 'result'])
+        for entry in self.log():
+            self.assertEqual(entry['packet_sha256'], rec.sha256(self.root / 'screen-packet.md'))
+            self.assertNotIn('task_revision', entry)
+        self.assertEqual(self.log()[0]['recorder']['sha256'], rec.sha256(SCRIPT))
+        self.assertEqual(self.call('status')['screening'],
+                         {'screened': 1, 'outcomes': {'not_eligible': 1}})
+
+    def test_packet_paused_and_in_flight_and_cap_are_logged(self):
+        self.enroll('t1', byte=1)
+        self.enroll('t2', byte=1)
+        self.assertEqual(self.packet_screen()['outcome'], 'in_flight_limit')
+        self.call('pause', '--reason', 'owner pause')
+        self.assertEqual(self.packet_screen()['outcome'], 'paused')
+        self.call('resume', '--owner-approval', 'owner resumes')
+        self.run = self.root / 'zero-cap'
+        self.call('init-round', '--cap', '0', '--terra-in-flight', '2', '--terra-repair-budget', '3')
+        self.assertEqual(self.packet_screen()['outcome'], 'cap_reached')
+        self.assertEqual(len(self.log()), 2)
+
+    def test_packet_profile_required_writes_nothing_then_profiled_enroll_draws(self):
+        before = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        self.assertEqual(self.packet_screen(code=4)['outcome'], 'profile_required')
+        after = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        self.assertEqual(before, after)
+        self.assertEqual(self.enroll('packet', byte=1)['arm'], rec.TERRA)
+        self.assertEqual(self.call('status')['screening'], {'screened': 1, 'outcomes': {'enrolled': 1}})
+
+    def test_profiled_enroll_rechecks_after_packet_admission(self):
+        self.packet_screen(code=4)
+        self.call('pause', '--reason', 'changed during profiling')
+        self.enroll('packet', outcome='paused')
+        self.call('resume', '--owner-approval', 'resume')
+        self.enroll('t1', byte=1)
+        self.enroll('t2', byte=1)
+        self.enroll('packet', outcome='in_flight_limit')
+
+    def test_status_mixes_packet_and_revision_screenings(self):
+        self.packet_screen(eligible='no')
+        self.enroll('old', byte=0)
+        self.packet_screen(code=4)
+        self.enroll('packet', byte=1)
+        status = self.call('status')
+        self.assertEqual(status['enrollments']['total'], 2)
+        self.assertEqual(status['screening'], {'screened': 3, 'outcomes': {'not_eligible': 1, 'enrolled': 2}})
+        self.assertEqual(status['inconsistencies'], [])
+
     def test_both_arms_and_screening_precedes_draw(self):
         for task, byte, arm in [('terra', 255, rec.TERRA), ('sol', 254, rec.SOL)]:
             def draw(n):
