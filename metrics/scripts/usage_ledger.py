@@ -56,7 +56,7 @@ unchanged.
   turns.jsonl holds each completed Codex turn with the `duration_ms` and
   `time_to_first_token_ms` Codex records.
 """
-import argparse, collections, datetime as dt, glob, io, json, os, re, sqlite3, subprocess, sys
+import argparse, base64, collections, datetime as dt, glob, hashlib, io, json, os, re, sqlite3, subprocess, sys
 
 CODEX_KEYS = ('input_tokens', 'cached_input_tokens', 'cache_write_input_tokens',
               'output_tokens', 'reasoning_output_tokens', 'total_tokens')
@@ -251,8 +251,8 @@ def codex_files(since):
             if since is None or os.path.getmtime(f) >= since.timestamp(): out.add(f)
     return sorted(out)
 
-def build_codex(since, until, turns=None):
-    idx = thread_index(); seen = {}; metas = {}; rows = []; quota = []; level1 = []
+def build_codex(since, until, turns=None, metadata=None):
+    idx = thread_index(); seen = {}; metas = {} if metadata is None else metadata; rows = []; quota = []; level1 = []
     files = codex_files(since)
     for f in files:
         file_turns = []
@@ -345,7 +345,9 @@ def build_claude(since, until):
         if r.get('speed') == 'fast':
             issue('fast_mode_unpriced', source=r['source']); lo, hi, un = None, None, None
         else:
-            lo, hi, un = native_usd(r['usage'], r['model'])
+            try: lo, hi, un = native_usd(r['usage'], r['model'])
+            except (ValueError, TypeError, ArithmeticError) as e:
+                issue('invalid_call_usage', source=r['source'], error=str(e)); lo, hi, un = None, None, None
         if lo is None: issue('unpriced_call', source=r['source'])
         r['pools'] = ['claude_all_models'] + (['claude_fable'] if (r['model'] or '').startswith('claude-fable-') else [])
         r.update(weighted=native_weighted(r['usage']), usd=lo if lo == hi else None, usd_low=lo, usd_high=hi, unknown_ttl_tokens=un)
@@ -594,6 +596,199 @@ def cmd_windows(a):
         for model, g in sorted(models.items(), key=lambda kv: -kv[1]['usd']):
             print(f"   {str(model):16s} calls={g['calls']:6d} modelled_usd={g['usd']:9.2f} weighted={g['weighted'] / 1e6:8.2f}M unpriced={g['unpriced']}")
 
+POOLS = ('codex', 'claude_all_models', 'claude_fable')
+
+def empty_spend():
+    return dict(calls=0, unpriced_calls=0, usd_low=0.0, usd_high=0.0, quota_usd_low=0.0, quota_usd_high=0.0)
+
+def pools():
+    return {p: empty_spend() for p in POOLS}
+
+def add_spend(dst, src):
+    for k in dst: dst[k] += src[k]
+
+def call_spend(c):
+    lo = c.get('usd_low', c.get('usd')); hi = c.get('usd_high', c.get('usd'))
+    mult = c.get('quota_multiplier') if c['provider'] == 'codex' else 1
+    return dict(calls=1, unpriced_calls=int(lo is None or hi is None), usd_low=lo or 0, usd_high=hi or 0,
+                quota_usd_low=(lo or 0) * (mult if mult is not None else 1),
+                quota_usd_high=(hi or 0) * (mult if mult is not None else 2.5))
+
+def digest(path):
+    with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()
+
+def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
+    with open(record_path) as fh: sb = json.load(fh).get('scope_budget', {})
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    since_s = since_arg or sb.get('started_at'); until_s = until_arg or now
+    since, until = ts_of(since_s), ts_of(until_s)
+    result = dict(schema='objective-cost-tree-v1', snapshot_at=now, window=dict(since=since_s, until=until_s),
+                  record=dict(path=os.path.abspath(record_path), sha256=digest(record_path), objective_id=sb.get('objective_id')),
+                  reader=dict(path=os.path.abspath(__file__), sha256=digest(__file__)),
+                  pricing=dict(source='https://platform.claude.com/docs/en/about-claude/pricing', fetched='2026-10-30'),
+                  status='not_established', totals=pools(), window_totals=pools(), nodes=[],
+                  unattributed=dict(totals=pools(), sessions=[]), unrecorded=[], issues=[],
+                  known_gaps=['Claude Code title and other side calls are not in transcripts'])
+    ISSUES.clear()
+    try:
+        metadata = {}
+        codex, quota, _, _ = build_codex(since, until, metadata=metadata)
+        claude, _, _ = build_claude(since, until)
+        unrecorded = unrecorded_claude(since, until)
+    except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError) as e:
+        result['issues'].append(dict(kind='build_failed', error=str(e)))
+        return result, [], sb
+    calls = codex + claude
+    nodes = {}; starts = {}; links = []
+    def add_node(node_id, sid, provider, parent, link, role=None, start=None):
+        if node_id in nodes:
+            old = nodes[node_id]
+            if (old['parent_node_id'], old['link']) != (parent, link):
+                priority = {'root': 0, 'successor': 1, 'binding': 2, 'codex_parent': 3, 'role_host': 4, 'claude_subagent': 5}
+                replace = priority[link] < priority[old['link']]
+                result['issues'].append(dict(kind='multiple_parents', node_id=node_id, retained=link if replace else old['link'], rejected=old['link'] if replace else link, parent_node_id=parent))
+                if replace:
+                    old.update(parent_node_id=parent, link=link, role_name=role or old['role_name'])
+                    starts[node_id] = start
+                    return True
+            return False
+        nodes[node_id] = dict(node_id=node_id, session_id=sid, provider=provider, parent_node_id=parent, link=link,
+                              role_name=role, models=[], tiers=[], first_call=None, last_call=None, direct=pools(), inclusive=pools())
+        starts[node_id] = start
+        return True
+    sessions = sb.get('sessions') or []
+    for i, root in enumerate(sessions):
+        add_node(root['session_id'], root['session_id'], root['provider'], None if i == 0 else sessions[0]['session_id'],
+                 'root' if i == 0 else 'successor', start=root.get('from'))
+    for b in sb.get('bindings') or []:
+        links.append((0, b['session_id'], b['session_id'], b.get('provider'), b.get('parent_session_id') or (sessions[0]['session_id'] if sessions else None), 'binding', None))
+    for sid, meta in metadata.items():
+        if meta.get('parent_thread_id'):
+            links.append((1, sid, sid, 'codex', meta['parent_thread_id'], 'codex_parent', meta.get('agent_nickname')))
+    ledger = role_ledger or os.path.join(os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state')), 'work-engine/role-host/ledger.jsonl')
+    if os.path.exists(ledger):
+        with open(ledger) as fh:
+            for line in fh:
+                try: row = json.loads(line)
+                except ValueError:
+                    result['issues'].append(dict(kind='malformed_role_host_row')); continue
+                if row.get('event') == 'launch' and row.get('session_id'):
+                    sid = row['session_id']
+                    if sid in nodes and row.get('name'): nodes[sid]['role_name'] = row['name']
+                    if row.get('parent_session_id'):
+                        links.append((2, sid, sid, row.get('host'), row['parent_session_id'], 'role_host', row.get('name')))
+    for c in claude:
+        if c.get('subagent'):
+            sid = c['session']; nid = sid + '/agent:' + c['agent']
+            links.append((3, nid, sid, 'claude', sid, 'claude_subagent', c.get('agent_type')))
+    links = sorted(set(links), key=lambda x: (x[0], str(x[1]), str(x[4])))
+    remaining = links
+    while remaining:
+        later = []; changed = False
+        for _, nid, sid, provider, parent, link, role in remaining:
+            if parent not in nodes:
+                later.append((_, nid, sid, provider, parent, link, role)); continue
+            if add_node(nid, sid, provider, parent, link, role, starts[parent]): changed = True
+        if not changed: break
+        remaining = links if changed else later
+    unattributed = {}
+    for c in calls:
+        sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
+        nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
+        spend = call_spend(c)
+        for p in c['pools']: add_spend(result['window_totals'][p], spend)
+        n = nodes.get(nid)
+        attributable = n is not None and (not starts[nid] or in_window(c['ts'], ts_of(starts[nid]), None))
+        if not attributable:
+            key = (sid, c['provider']); row = unattributed.setdefault(key, dict(session_id=sid, provider=c['provider'], calls=0, usd_low=0, usd_high=0))
+            row['calls'] += 1; row['usd_low'] += spend['usd_low']; row['usd_high'] += spend['usd_high']
+            for p in c['pools']: add_spend(result['unattributed']['totals'][p], spend)
+            continue
+        for p in c['pools']: add_spend(n['direct'][p], spend); add_spend(result['totals'][p], spend)
+        if c.get('model') not in n['models']: n['models'].append(c.get('model'))
+        tier = c.get('service_tier') if c['provider'] == 'codex' else c.get('speed')
+        if tier not in n['tiers']: n['tiers'].append(tier)
+        if c['ts'] and (n['first_call'] is None or c['ts'] < n['first_call']): n['first_call'] = c['ts']
+        if c['ts'] and (n['last_call'] is None or c['ts'] > n['last_call']): n['last_call'] = c['ts']
+    for n in nodes.values():
+        cur = n; visited = set()
+        while cur and cur['node_id'] not in visited:
+            visited.add(cur['node_id'])
+            for p in POOLS: add_spend(cur['inclusive'][p], n['direct'][p])
+            cur = nodes.get(cur['parent_node_id'])
+    result['nodes'] = list(nodes.values()); result['unattributed']['sessions'] = list(unattributed.values())
+    result['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and
+                            (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
+    result['issues'] += ISSUES
+    result['issues'] = list({json.dumps(x, sort_keys=True): x for x in result['issues']}.values())
+    ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['window_totals'].values())
+    result['status'] = 'not_established' if not sessions else ('partial' if ranged or result['unrecorded'] or result['issues'] else 'complete')
+    return result, quota, sb
+
+def cmd_tree(a):
+    doc, _, _ = cost_tree(a.record, a.since, a.until, a.role_host_ledger)
+    out = json.dumps(doc, indent=1, sort_keys=True)
+    if a.out:
+        with open(a.out, 'w') as fh: fh.write(out + '\n')
+    print(out)
+
+def cmd_control(a):
+    doc, quota, sb = cost_tree(a.record, role_ledger=a.role_host_ledger)
+    objective = sb.get('objective_id'); topic = 'control:budget:' + str(objective)
+    previous = {}
+    if a.cursor:
+        try:
+            cursor = json.loads(base64.urlsafe_b64decode(a.cursor + '=' * (-len(a.cursor) % 4)))
+            if cursor['objective_id'] != objective: raise ValueError('cursor belongs to another objective')
+            previous = cursor['states']
+        except (ValueError, KeyError, TypeError) as e:
+            raise ValueError('invalid cursor: ' + str(e))
+    states = {}; events = []
+    def trigger(kind, pool, node, level, active, observed, summary):
+        key = json.dumps([kind, pool, node, level], separators=(',', ':'))
+        states[key] = active
+        if active != previous.get(key, False):
+            events.append(dict(topic=topic, authority='observation_only', kind=kind, pool=pool,
+                               node_id=node, level=level, observed=observed, snapshot_at=doc['snapshot_at'], summary=summary))
+    fractions = [float(x) for x in a.limit_fractions.split(',')]
+    hours_fractions = [float(x) for x in a.hours_fractions.split(',')]
+    nodes = {n['node_id']: n for n in doc['nodes']}
+    for limit in sb.get('cost_limits') or []:
+        pool = limit['pool']; node = limit.get('node')
+        if pool not in POOLS: continue
+        spend = (nodes[node]['inclusive'][pool] if node in nodes else empty_spend()) if node else doc['totals'][pool]
+        value = spend['quota_usd_high']
+        observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'])
+        for mark in limit.get('marks_usd') or []:
+            trigger('node_mark_crossed' if node else 'mark_crossed', pool, node, mark, value >= mark, observed, 'spend mark')
+        maximum = limit.get('max_usd')
+        if maximum is not None:
+            for f in fractions:
+                kind = 'limit_reached' if f == 1 else 'limit_fraction'
+                trigger(kind, pool, node, maximum * f, value >= maximum * f, observed, 'spend limit')
+    limits = sb.get('limits') or {}; hours = limits.get('max_hours')
+    if hours is not None and sb.get('started_at'):
+        elapsed = (ts_of(doc['snapshot_at']) - ts_of(sb['started_at'])).total_seconds() / 3600
+        for f in hours_fractions:
+            trigger('hours_reached' if f == 1 else 'hours_fraction', None, None, hours * f,
+                    elapsed >= hours * f, elapsed, 'elapsed hours')
+    weekly = [q for q in quota if q.get('window_minutes') == 10080 and q.get('used_percent') is not None]
+    if weekly and limits.get('max_weekly_percent') is not None:
+        q = max(weekly, key=lambda x: x.get('ts') or '')
+        trigger('account_ceiling', None, None, limits['max_weekly_percent'], q['used_percent'] >= limits['max_weekly_percent'],
+                dict(used_percent=q['used_percent'], account_wide=True), 'account-wide weekly meter')
+    coverage = dict(status=doc['status'], unpriced_calls=sum(s['unpriced_calls'] for s in doc['totals'].values()),
+                    ranged=any(s['quota_usd_low'] != s['quota_usd_high'] for s in doc['totals'].values()))
+    key = json.dumps(['coverage_changed', None, None, 'coverage'], separators=(',', ':'))
+    states[key] = coverage
+    default_coverage = dict(status='complete', unpriced_calls=0, ranged=False)
+    if coverage != previous.get(key, default_coverage):
+        events.append(dict(topic=topic, authority='observation_only', kind='coverage_changed', pool=None, node_id=None,
+                           level='coverage', observed=coverage, snapshot_at=doc['snapshot_at'], summary='coverage changed'))
+    cursor = base64.urlsafe_b64encode(json.dumps(dict(objective_id=objective, states=states), sort_keys=True).encode()).decode().rstrip('=')
+    print(json.dumps(dict(schema='objective-budget-control-v1', topic=topic, events=events, next_budget_cursor=cursor,
+                          snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'])), sort_keys=True))
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -601,8 +796,14 @@ def main():
     b.add_argument('--no-codex', action='store_true'); b.add_argument('--no-claude', action='store_true'); b.add_argument('--streams', nargs='*')
     r = sp.add_parser('reconcile-trial'); r.add_argument('measurement'); r.add_argument('--out')
     w = sp.add_parser('windows'); w.add_argument('dir')
+    t = sp.add_parser('tree'); t.add_argument('--record', required=True); t.add_argument('--since'); t.add_argument('--until'); t.add_argument('--role-host-ledger'); t.add_argument('--out')
+    c = sp.add_parser('control'); c.add_argument('--record', required=True); c.add_argument('--cursor'); c.add_argument('--limit-fractions', default='0.5,0.8,1.0'); c.add_argument('--hours-fractions', default='0.8,1.0'); c.add_argument('--role-host-ledger')
     a = ap.parse_args()
-    if a.cmd == 'build': cmd_build(a)
+    if a.cmd == 'control':
+        try: cmd_control(a)
+        except ValueError as e: ap.error(str(e))
+    elif a.cmd == 'tree': cmd_tree(a)
+    elif a.cmd == 'build': cmd_build(a)
     elif a.cmd == 'reconcile-trial': sys.exit(cmd_reconcile(a))
     elif a.cmd == 'windows': cmd_windows(a)
 
