@@ -67,6 +67,11 @@ CODEX_RATES = {'gpt-6.1-terra': (1, .05, 1.25, 5), 'gpt-6-sol': (2, .2, 2.5, 10)
 NATIVE_RATES = {
     'claude-sonnet-5-5': dict(input=2, output=10, cache_write_5m=2.5, cache_write_1h=4, cache_read=.1),
     'claude-opus-5-5': dict(input=4, output=20, cache_write_5m=5, cache_write_1h=8, cache_read=.2)}
+NATIVE_RATES.update({
+    'claude-fable-5-1': dict(input=10, output=50, cache_write_5m=12.5, cache_write_1h=20, cache_read=.25),
+    'claude-opus-5': dict(input=5, output=25, cache_write_5m=6.25, cache_write_1h=10, cache_read=.5),
+    'claude-opus-4-8': dict(input=5, output=25, cache_write_5m=6.25, cache_write_1h=10, cache_read=.5),
+    'claude-haiku-5-5': dict(input=.1, output=.5, cache_write_5m=.125, cache_write_1h=.2, cache_read=.01)})
 HOME = os.path.expanduser('~')
 CODEX_GLOBS = [f'{HOME}/.codex/sessions/**/rollout-*.jsonl', f'{HOME}/.codex/sessions/**/rollout-*.jsonl.zst',
                f'{HOME}/.codex/archived_sessions/*.jsonl', f'{HOME}/.codex/archived_sessions/*.jsonl.zst']
@@ -115,7 +120,9 @@ def role_heuristic(agent_path):
 def codex_usd(u, model):
     if model not in CODEX_RATES: return None
     i, c, w, o = (u.get(k, 0) for k in ('input_tokens', 'cached_input_tokens', 'cache_write_input_tokens', 'output_tokens'))
-    if c + w > i: raise ValueError('Codex cache components exceed input')
+    if c + w > i:
+        issue('inconsistent_codex_cache', model=model, usage=u)
+        return None
     ri, rc, rw, ro = CODEX_RATES[model]
     m, mo = (2, 1.5) if i > 272000 else (1, 1)
     return ((i - c - w) * ri + c * rc + w * rw) * m / 1e6 + o * ro * mo / 1e6
@@ -124,8 +131,13 @@ def native_usd(u, model):
     """(low, high, unknown_ttl_tokens); low == high when every cache write has a known TTL."""
     r = NATIVE_RATES.get(model)
     if not r or any(k not in u for k in NATIVE_KEYS): return None, None, None
+    if model == 'claude-haiku-5-5' and sum(u[k] for k in NATIVE_KEYS if k != 'output_tokens') > 100000:
+        r = {k: v * 5 for k, v in r.items()}
     w = u['cache_creation_input_tokens']; w5 = u.get(TTL_KEYS[0], 0); w1 = u.get(TTL_KEYS[1], 0)
-    if w5 + w1 > w: raise ValueError('TTL exceeds cache write')
+    if w5 + w1 > w:
+        issue('inconsistent_cache_split', model=model, usage=u)
+        base = (u['input_tokens'] * r['input'] + u['output_tokens'] * r['output'] + u['cache_read_input_tokens'] * r['cache_read']) / 1e6
+        return base + w * min(r['cache_write_5m'], r['cache_write_1h']) / 1e6, base + (w5 * r['cache_write_5m'] + w1 * r['cache_write_1h']) / 1e6, w
     un = w - w5 - w1
     v = (u['input_tokens'] * r['input'] + u['output_tokens'] * r['output'] + u['cache_read_input_tokens'] * r['cache_read']
          + w5 * r['cache_write_5m'] + w1 * r['cache_write_1h']) / 1e6
@@ -257,7 +269,7 @@ def build_codex(since, until, turns=None):
                              thread=tid, parent_thread=meta.get('parent_thread_id'), agent_path=meta.get('agent_path'),
                              originator=meta.get('originator'), model=c['model'], effort=c['effort'],
                              role_index=(idx.get(tid) or {}).get('agent_role'), role_heuristic=role_heuristic(meta.get('agent_path')),
-                             usage=u, weighted=codex_weighted(u), usd=codex_usd(u, c['model']), source=f'{f}:{c["line"]}',
+                             usage=u, weighted=codex_weighted(u), usd=codex_usd(u, c['model']), source=f'{f}:{c["line"]}', pools=['codex'],
                              service_tier=c.get('tier'), quota_multiplier=QUOTA_MULTIPLIER.get(c.get('tier')),
                              latency_s=c.get('latency_s'), latency_basis=c.get('latency_basis')))
     for r in rows:   # root ancestor by recorded parent links; unknown stays null
@@ -330,7 +342,12 @@ def build_claude(since, until):
     rows = []
     for r in msgs.values():
         if not in_window(r['ts'], since, until): continue
-        lo, hi, un = native_usd(r['usage'], r['model'])
+        if r.get('speed') == 'fast':
+            issue('fast_mode_unpriced', source=r['source']); lo, hi, un = None, None, None
+        else:
+            lo, hi, un = native_usd(r['usage'], r['model'])
+        if lo is None: issue('unpriced_call', source=r['source'])
+        r['pools'] = ['claude_all_models'] + (['claude_fable'] if (r['model'] or '').startswith('claude-fable-') else [])
         r.update(weighted=native_weighted(r['usage']), usd=lo if lo == hi else None, usd_low=lo, usd_high=hi, unknown_ttl_tokens=un)
         rows.append(r)
     # Level 1: cost-state modelUsage (the CLI's running counter) against every message
@@ -361,6 +378,40 @@ def build_claude(since, until):
             level1.append(dict(session=sid, model=model, path=base, cli_cost_usd=mu.get('costUSD'), provider_session_total=prov,
                                reconstructed={k: got.get(k, 0) for k in prov}, delta=delta, cls=cls))
     return rows, level1, len(files)
+
+def unrecorded_claude(since, until):
+    rows = []
+    for path in sorted(glob.glob(CLAUDE_GLOB, recursive=True)):
+        if since and os.path.getmtime(path) < since.timestamp(): continue
+        model = None; pending = None
+        for line in open_lines(path):
+            try: o = json.loads(line)
+            except ValueError: continue
+            if o.get('type') == 'assistant':
+                m = (o.get('message') or {}).get('model')
+                if m and m != '<synthetic>': model = m
+            if o.get('type') == 'system' and o.get('subtype') == 'compact_boundary':
+                pending = None
+                if in_window(o.get('timestamp'), since, until):
+                    tokens = (o.get('compactMetadata') or {}).get('preTokens')
+                    rate = NATIVE_RATES.get(model)
+                    if model == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
+                        rate = {k: v * 5 for k, v in rate.items()}
+                    pending = dict(session_id=o.get('sessionId'), kind='compaction', at=o.get('timestamp'),
+                                   context_tokens=tokens, model=model, source=path,
+                                   usd_low=tokens * rate['cache_read'] / 1e6 if rate and tokens is not None else None,
+                                   usd_high=None)
+                    rows.append(pending)
+            elif pending is not None and o.get('type') == 'user' and o.get('isCompactSummary'):
+                content = (o.get('message') or {}).get('content', '')
+                chars = len(content) if isinstance(content, str) else sum(len(x.get('text', '')) for x in content if isinstance(x, dict))
+                rate = NATIVE_RATES.get(pending['model'])
+                if pending['model'] == 'claude-haiku-5-5' and pending['context_tokens'] is not None and pending['context_tokens'] > 100000:
+                    rate = {k: v * 5 for k, v in rate.items()}
+                if rate and pending['context_tokens'] is not None:
+                    pending['usd_high'] = (pending['context_tokens'] * rate['cache_write_1h'] + chars / 3 * rate['output']) / 1e6
+                pending = None
+    return rows
 
 def stream_quota(globs):
     rows = []
@@ -399,6 +450,9 @@ def cmd_build(a):
         for r in quota: fh.write(json.dumps(r, sort_keys=True) + '\n')
     with open(os.path.join(a.out, 'issues.jsonl'), 'w') as fh:
         for r in ISSUES: fh.write(json.dumps(r, sort_keys=True) + '\n')
+    with open(os.path.join(a.out, 'unrecorded.jsonl'), 'w') as fh:
+        for r in ([] if a.no_claude else unrecorded_claude(since, until)):
+            fh.write(json.dumps(r, sort_keys=True) + '\n')
     json.dump(l1, open(os.path.join(a.out, 'level1.json'), 'w'), indent=1, sort_keys=True)
     turns.sort(key=lambda t: t['completed_ts'] or '')
     with open(os.path.join(a.out, 'turns.jsonl'), 'w') as fh:
