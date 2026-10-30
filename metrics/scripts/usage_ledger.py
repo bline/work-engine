@@ -106,9 +106,11 @@ def in_window(ts, since, until):
     return (since is None or t >= since) and (until is None or t <= until)
 
 def valid_usage(u, keys, required=()):
-    return isinstance(u, dict) and all(k in u for k in required) and all(
-        k not in u or (isinstance(u[k], (int, float)) and not isinstance(u[k], bool)
-                       and math.isfinite(u[k]) and u[k] >= 0) for k in keys)
+    try:
+        return isinstance(u, dict) and all(k in u for k in required) and all(
+            k not in u or (isinstance(u[k], (int, float)) and not isinstance(u[k], bool)
+                           and math.isfinite(u[k]) and u[k] >= 0) for k in keys)
+    except (TypeError, OverflowError): return False
 
 
 def open_lines(path):
@@ -297,6 +299,9 @@ def build_codex(since, until, turns=None, metadata=None):
         meta, calls, q, l1 = codex_rollout(f, seen, file_turns)
         if turns is not None:
             turns += [t for t in file_turns if in_window(t['completed_ts'], since, until)]
+        for key in ('id', 'parent_thread_id', 'agent_path'):
+            if meta.get(key) is not None and not isinstance(meta[key], str):
+                issue('invalid_session_metadata', path=f, field=key); meta[key] = None
         if meta.get('id'): metas[meta['id']] = meta
         quota += [x for x in q if in_window(x['ts'], since, until)]
         if l1: level1.append(l1)
@@ -412,6 +417,7 @@ def claude_transcript(path, msgs, cost_state, members=None, unrecorded=None, sin
                 if row.get('latency_s') is not None:   # F1.1: a message's records span the call; latency runs to the last one
                     later = seconds_between(CLAUDE_LATENCY_START.get(mid), o.get('timestamp'))
                     if later is not None and later > row['latency_s']: row['latency_s'] = later
+                if not valid_usage(flat, NATIVE_KEYS + TTL_KEYS): row['usage']['_invalid_record'] = flat.copy()
                 for k, v in flat.items():
                     if k == 'output_tokens' and valid_usage({k:v}, (k,)) and valid_usage(row['usage'], (k,)): row['usage'][k] = max(row['usage'].get(k, 0), v)
                     elif k == 'output_tokens': row['usage'][k] = v
@@ -501,7 +507,10 @@ def build_claude(since, until, unrecorded=None):
             elif all(v <= 0 for v in delta.values()): cls = 'counter_exceeds_transcript'
             elif all(v >= 0 for v in delta.values()): cls = 'transcript_exceeds_counter'
             else: cls = 'mixed'
-            level1.append(dict(session=sid, model=model, path=base, cli_cost_usd=mu.get('costUSD'), provider_session_total=prov,
+            cli_cost = mu.get('costUSD')
+            if cli_cost is not None and not valid_usage({'costUSD':cli_cost}, ('costUSD',)):
+                issue('invalid_counter_cost', path=base, model=model); cli_cost = None
+            level1.append(dict(session=sid, model=model, path=base, cli_cost_usd=cli_cost, provider_session_total=prov,
                                reconstructed={k: got.get(k, 0) for k in prov}, delta=delta, cls=cls))
     return rows, level1, len(files)
 
@@ -531,11 +540,16 @@ def stream_quota(globs):
                 if '"rate_limit_event"' not in line: continue
                 try: o = json.loads(line)
                 except ValueError: continue
-                info = o.get('rate_limit_info') or o
-                for wname, w in (info.get('unifiedWindows') or {}).items():
-                    rows.append(dict(provider='anthropic', ts=o.get('timestamp') or last_ts, ts_basis='record' if o.get('timestamp') else 'preceding_record',
-                                     window=wname, used_percent=None if w.get('utilization') is None else 100 * w['utilization'],
-                                     resets_at=w.get('resetsAt'), status=w.get('status'), source=f'{f}:{n}'))
+                try:
+                    info = o.get('rate_limit_info') or o
+                    for wname, w in (info.get('unifiedWindows') or {}).items():
+                        utilization = w.get('utilization')
+                        if utilization is not None and not valid_usage({'utilization':utilization}, ('utilization',)):
+                            issue('invalid_quota_reading', path=f, line=n); utilization = None
+                        rows.append(dict(provider='anthropic', ts=o.get('timestamp') or last_ts, ts_basis='record' if o.get('timestamp') else 'preceding_record',
+                                         window=wname, used_percent=None if utilization is None else 100 * utilization,
+                                         resets_at=w.get('resetsAt'), status=w.get('status'), source=f'{f}:{n}'))
+                except (TypeError, ValueError, AttributeError): issue('malformed_quota_record', path=f, line=n)
     return rows
 
 # ---------------------------------------------------------------- commands

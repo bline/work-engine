@@ -21,7 +21,8 @@ class BadRecords(unittest.TestCase):
                     dict(type='assistant', timestamp='2026-01-01T01:00:01Z', sessionId='s', message=dict(id='good', model='claude-opus-5-5', usage=dict(input_tokens=1, cache_creation_input_tokens=0, cache_read_input_tokens=0, output_tokens=1))),
                     dict(type='assistant', timestamp='2026-01-01T01:00:02Z', sessionId='s', message=dict(id='bad-shape', model='claude-opus-5-5', usage=['bad'])),
                     dict(type='system', subtype='compact_boundary', timestamp='2026-01-01T01:00:03Z', sessionId='s', compactMetadata={'preTokens':'bad'}),
-                    dict(type='user', isCompactSummary=True, message={'content':3})]
+                    dict(type='user', isCompactSummary=True, message={'content':3}),
+                    dict(type='cost-state', sessionId='s', modelUsage={'claude-opus-5-5':{'inputTokens':0,'costUSD':'bad'}})]
             with open(claude, 'w') as f:
                 for row in rows: f.write(json.dumps(row, separators=(',', ':'))+'\n')
             records = [dict(type='session_meta', timestamp='2026-01-01T00:00:00Z', payload={'id':'t'}),
