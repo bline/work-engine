@@ -90,7 +90,7 @@ Before dispatch, compare the packet to the owning contract and current candidate
 - `pause` at once on any P1 against a Terra-arm build;
 - `close` at the end (`withdraw` if it was never dispatched).
 
-Do not tell the reviewer of an enrolled episode which model built it. Ask it for the plan's standard verdict (`accept`, `changes_required`, `blocked_evidence` or `blocked_scope`) with P1–P3 severities, and record them with `review --verdict` and the reviewer's `--reviewer-session`.
+Do not tell the reviewer of an enrolled episode which model built it. Ask it for the plan's standard verdict with P1–P3 severities, and put the definitions in its packet, since its own scale may differ. P1 blocks acceptance, P2 must be fixed before acceptance, and P3 is an improvement. `accept` allows P3 findings only; `changes_required` needs at least one P1 or P2; `blocked_evidence` means it cannot judge because evidence the packet should have supplied is missing; `blocked_scope` means it cannot judge because the subject or packet scope is wrong. Record them with `review --verdict` and the reviewer's `--reviewer-session`.
 
 <!-- cli-synopsis script=metrics/scripts/task_profile_record.py subs="start profile assign attribute enroll review repair close pause status" display="python3 -I metrics/scripts/task_profile_record.py" -->
 ```text
