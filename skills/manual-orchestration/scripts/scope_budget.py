@@ -16,6 +16,8 @@ trigger), 4 stop (hours or quota reached). Other commands return 0. All return
 from __future__ import annotations
 
 import argparse
+import hashlib
+import subprocess
 import datetime as dt
 import json
 import os
@@ -99,6 +101,11 @@ def section(doc: dict[str, Any], path: Path) -> dict[str, Any]:
 
 
 
+def require_open(sb: dict[str, Any]) -> None:
+    if "closed_at" in sb:
+        raise UsageError("objective is closed; start a new one with init")
+
+
 def upgrade(sb: dict[str, Any]) -> None:
     if sb["schema"] == SCHEMA_V1:
         sb.update(schema=SCHEMA, objective_id=str(uuid.uuid4()), sessions=[], bindings=[], cost_limits=[])
@@ -147,6 +154,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     upgrade(sb)
     sb["additions"].append({"at": stamp(now()), "item": args.item, "reason": args.reason})
     save(path, doc)
@@ -161,6 +169,7 @@ def cmd_revise(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     reject_points(args)
     changed = limits_from(args)
     if not changed:
@@ -180,6 +189,7 @@ def cmd_add_session(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     parse(args.from_time)
     entry = {"session_id": args.session, "provider": args.provider, "from": args.from_time,
              "bound_by": args.bound_by, "evidence": args.evidence}
@@ -200,6 +210,7 @@ def cmd_bind(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     upgrade(sb)
     entry = {"session_id": args.session, "provider": args.provider, "parent_session_id": args.parent,
              "bound_at": stamp(now()), "bound_by": args.bound_by, "reason": args.reason}
@@ -216,6 +227,7 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     upgrade(sb)
     entry = {"pool": args.pool, "node": args.node, "max_usd": args.max_usd,
              "marks_usd": sorted(set(args.mark_usd)), "set_by": args.set_by,
@@ -230,9 +242,101 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     print(json.dumps({"cost_limit": entry}))
     return 0
 
+def listener_state(sb: dict[str, Any], path: Path) -> dict[str, Any]:
+    entry = sb.get("listener")
+    if not entry:
+        return {"state": "none", "pid": None}
+    pid = entry.get("pid")
+    try:
+        parts = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        alive = str(path.resolve()).encode() in parts
+    except (OSError, ValueError):
+        alive = False
+    return {"state": "alive" if alive else "exited", "pid": pid}
+
+
+def cmd_close(args: argparse.Namespace) -> int:
+    path = Path(args.record)
+    doc = load(path)
+    sb = section(doc, path)
+    require_open(sb)
+    at = parse(args.at) if args.at else now()
+    if at.tzinfo is None:
+        raise UsageError("--at must include a timezone")
+    if at < parse(sb["started_at"]) or at > now():
+        raise UsageError("--at must be between started_at and now")
+    closed_at = stamp(at.astimezone(dt.timezone.utc))
+    entry = {"at": closed_at, "disposition": args.disposition, "reason": args.reason, "set_by": args.set_by}
+    sb["closed_at"], sb["close"] = closed_at, entry
+    save(path, doc)
+    print(json.dumps(entry))
+    return 0
+
+
+def cmd_listen(args: argparse.Namespace) -> int:
+    path = Path(args.record).resolve()
+    doc = load(path)
+    sb = section(doc, path)
+    require_open(sb)
+    if listener_state(sb, path)["state"] == "alive":
+        raise UsageError("listener is already alive")
+    if not math.isfinite(args.interval) or args.interval <= 0:
+        raise UsageError("--interval must be positive and finite")
+    repo = Path(args.repository).resolve() if args.repository else Path(subprocess.check_output(
+        ["git", "rev-parse", "--show-toplevel"], text=True).strip()).resolve()
+    reader = repo / "metrics/scripts/usage_ledger.py"
+    adjacent = Path(__file__).resolve().parents[2] / "durable-state/scripts/codex_chatboard.py"
+    chatboard = adjacent if adjacent.is_file() else repo / "skills/durable-state/scripts/codex_chatboard.py"
+    reader_sha = hashlib.sha256(reader.read_bytes()).hexdigest()
+    chatboard_sha = hashlib.sha256(chatboard.read_bytes()).hexdigest()
+    stdout = path.parent / "budget-listener.jsonl"
+    stderr = path.parent / "budget-listener.stderr"
+    since, cursor = args.since, None
+    incomplete = False
+    if stdout.exists():
+        data = stdout.read_bytes()
+        complete = data.split(b"\n")[:-1]
+        incomplete = bool(data and not data.endswith(b"\n"))
+        for line in reversed(complete):
+            try:
+                last = json.loads(line)
+            except (ValueError, UnicodeDecodeError):
+                continue
+            since, cursor = last["next_since"], last.get("next_budget_cursor")
+            break
+    if since is None:
+        raise UsageError("--since is required without earlier listener output")
+    argv = [sys.executable, str(chatboard), "--repository", str(repo), "wait", "--since", str(since),
+            "--topic", f"session:{args.session}"]
+    for topic in args.topic:
+        argv += ["--topic", topic]
+    argv += ["--exclude-session-id", args.session, "--budget-record", str(path), "--budget-reader", str(reader),
+             "--budget-sha256", reader_sha, "--budget-interval", str(args.interval)]
+    if cursor is not None:
+        argv += ["--budget-cursor", cursor if isinstance(cursor, str) else json.dumps(cursor, separators=(",", ":"))]
+    argv += ["--follow"]
+    with stdout.open("ab") as out, stderr.open("ab") as err:
+        if incomplete:
+            out.write(b"\n")
+            out.flush()
+        proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True)
+    entry = {"pid": proc.pid, "started_at": stamp(now()), "argv": argv, "stdout": str(stdout), "stderr": str(stderr),
+             "reader": str(reader), "reader_sha256": reader_sha, "chatboard": str(chatboard), "chatboard_sha256": chatboard_sha}
+    if sb.get("listener"):
+        sb.setdefault("listener_history", []).append(sb["listener"])
+    sb["listener"] = entry
+    save(path, doc)
+    print(json.dumps(entry))
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     path = Path(args.record)
     sb = section(load(path), path)
+    status = {"closed": "closed_at" in sb, "closed_at": sb.get("closed_at"), "listener": listener_state(sb, path)}
+    if status["closed"]:
+        print(json.dumps(status))
+        return 5
     limits = sb["limits"]
     elapsed = (now() - parse(sb["started_at"])).total_seconds() / 3600
     meter = weekly_percent(Path(args.rollout)) if args.rollout else None
@@ -256,7 +360,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     n = len(sb["additions"])
     trigger = limits.get("reconsider_after_additions")
     reconsider = trigger is not None and n >= trigger
-    result = {"elapsed_hours": round(elapsed, 2), "additions": n, "original_items": len(sb["original_items"]),
+    result = {**status, "elapsed_hours": round(elapsed, 2), "additions": n, "original_items": len(sb["original_items"]),
               "weekly_percent": meter and meter["used_percent"], "account_weekly_points": points, "account_wide": True, "advisory": advisory,
               "limits": limits, "limits_set_by": setter(sb["limits_set_by"]), "reached": reached,
               "unknown": unknown, "reconsider": reconsider, "stop": bool(reached)}
@@ -313,6 +417,19 @@ def parser() -> argparse.ArgumentParser:
     cl.add_argument("--mark-usd", type=float, action="append", default=[])
     cl.add_argument("--set-by", required=True, choices=("user", "supervisor"))
     cl.add_argument("--reason", required=True)
+    close = sub.add_parser("close", help="close the objective")
+    close.add_argument("--record", required=True)
+    close.add_argument("--disposition", required=True, choices=("accepted", "abandoned"))
+    close.add_argument("--reason", required=True)
+    close.add_argument("--set-by", required=True, choices=("user", "supervisor"))
+    close.add_argument("--at")
+    listen = sub.add_parser("listen", help="start the detached budget listener")
+    listen.add_argument("--record", required=True)
+    listen.add_argument("--session", required=True)
+    listen.add_argument("--since", type=int)
+    listen.add_argument("--topic", action="append", default=[])
+    listen.add_argument("--interval", type=float, default=60)
+    listen.add_argument("--repository")
     c = sub.add_parser("check", help="one JSON line: elapsed, additions, meter, reconsider, stop")
     c.add_argument("--record", required=True)
     c.add_argument("--rollout")
@@ -322,11 +439,11 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
-        return {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check, "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit}[args.command](args)
+        return {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check, "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit, "close": cmd_close, "listen": cmd_listen}[args.command](args)
     except UsageError as exc:
         print(f"scope_budget: {exc}", file=sys.stderr)
         return 2
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as exc:
         print(f"scope_budget: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
 
