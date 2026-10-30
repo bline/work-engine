@@ -235,14 +235,17 @@ Limitations the pilot report must state:
 After the 10, the owner reviews the profiles and the discrepancies. Possible
 outcomes: make collection permanent, revise the schema, or stop.
 
-## Round 2 (revision 4, 2026-10-28; not approved, not active)
+## Round 2 (revision 4, 2026-10-28)
+
+The round's state is in the Status lines at the top. It was approved and
+activated on 2026-10-28 (see "Activation" below).
 
 **Design review: ready** (`gpt-6-astra` at `high`, standard tier, one retained
 read-only session, 2026-10-28; [review](probes/dogfood-round2-review-astra-20261028.md)).
 Revisions 1 and 2 were found not ready, revision 3 ready with one change, and this
 revision 4 ready. The finding IDs (R2-01 to R2-15) are marked where they apply.
-The verdict covers the design only: the activation prerequisites below, including
-the owner's approval, remain.
+The verdict covered the design only; the activation prerequisites, including the
+owner's approval, were met separately.
 
 **Question.** On this project's own work, in the subset where either builder is
 acceptable, do `gpt-6.1-terra` builds at `medium` pass review and need repairs at
