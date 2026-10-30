@@ -265,11 +265,15 @@ def build_codex(since, until, turns=None, metadata=None):
         for c in calls:
             if not in_window(c['ts'], since, until): continue
             u = c['usage']; tid = meta.get('id')
+            try: price = codex_usd(u, c['model'])
+            except (ValueError, TypeError, ArithmeticError) as e:
+                issue('invalid_call_usage', path=f, line=c['line'], error=str(e)); price = None
+            if price is None: issue('unpriced_call', path=f, line=c['line'])
             rows.append(dict(provider='codex', ts=c['ts'], call_id=c['response_id'], dedupe_basis=c['dedupe_basis'],
                              thread=tid, parent_thread=meta.get('parent_thread_id'), agent_path=meta.get('agent_path'),
                              originator=meta.get('originator'), model=c['model'], effort=c['effort'],
                              role_index=(idx.get(tid) or {}).get('agent_role'), role_heuristic=role_heuristic(meta.get('agent_path')),
-                             usage=u, weighted=codex_weighted(u), usd=codex_usd(u, c['model']), source=f'{f}:{c["line"]}', pools=['codex'],
+                             usage=u, weighted=codex_weighted(u), usd=price, source=f'{f}:{c["line"]}', pools=['codex'],
                              service_tier=c.get('tier'), quota_multiplier=QUOTA_MULTIPLIER.get(c.get('tier')),
                              latency_s=c.get('latency_s'), latency_basis=c.get('latency_basis')))
     for r in rows:   # root ancestor by recorded parent links; unknown stays null
@@ -763,13 +767,13 @@ def cmd_control(a):
             trigger('node_mark_crossed' if node else 'mark_crossed', pool, node, mark, value >= mark, observed, 'spend mark')
         maximum = limit.get('max_usd')
         if maximum is not None:
-            for f in fractions:
+            for f in sorted(set(fractions + [1.0])):
                 kind = 'limit_reached' if f == 1 else 'limit_fraction'
                 trigger(kind, pool, node, maximum * f, value >= maximum * f, observed, 'spend limit')
     limits = sb.get('limits') or {}; hours = limits.get('max_hours')
     if hours is not None and sb.get('started_at'):
         elapsed = (ts_of(doc['snapshot_at']) - ts_of(sb['started_at'])).total_seconds() / 3600
-        for f in hours_fractions:
+        for f in sorted(set(hours_fractions + [1.0])):
             trigger('hours_reached' if f == 1 else 'hours_fraction', None, None, hours * f,
                     elapsed >= hours * f, elapsed, 'elapsed hours')
     weekly = [q for q in quota if q.get('window_minutes') == 10080 and q.get('used_percent') is not None]
