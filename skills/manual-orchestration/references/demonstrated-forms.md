@@ -1,6 +1,6 @@
 # Demonstrated manual forms
 
-These are observed S10 examples, not required schemas or proof of complete decomposition. Use the smallest fields sufficient for the actual claim and keep authoritative contract text with its owner.
+These are observed S10 examples, not required schemas or proof of complete decomposition. They predate the 2026-10-29 removal of the coordinator role: a form a coordinator produced then is now the supervisor's. Use the smallest fields sufficient for the actual claim and keep authoritative contract text with its owner.
 
 | Form and producer | Exact demonstrated example | Decision-bearing content |
 | --- | --- | --- |

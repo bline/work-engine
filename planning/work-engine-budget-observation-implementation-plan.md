@@ -27,7 +27,7 @@ The user, 2026-10-29:
   when the work can be done deterministically.
 
 So this plan measures what each objective's agents spend, from their
-transcripts, in a host process. It tells the coordinator only when something
+transcripts, in a host process. It tells the top-level supervisor only when something
 changes that bears on a decision. When the work is finished, no agent runs a
 usage check, estimates its own cost or polls. `DESIGN.md` §9 and §14 say the same: fully determined work belongs
 to deterministic machinery, not to model reasoning.
@@ -122,10 +122,10 @@ in the transcript, including compaction summaries and session-title calls
 - **No cross-check ran.** The transcript has no `cost-state` record, so the
   ledger's existing check against Claude Code's counter could not run.
 
-**Edits take effect at once.** Coordinators run
+**Edits take effect at once.** Supervisors (formerly coordinators) run
 `python3 -I metrics/scripts/usage_ledger.py build` from this working tree, and
 `task_profile_record.py attribute` reads that build's `calls.jsonl`. So an edit
-to the ledger reaches every coordinator immediately, while a skill change waits
+to the ledger reaches every supervisor immediately, while a skill change waits
 for a release. The ledger is also the experiment programme's F1 instrument
 (`metrics/experiment-plan-20261026.md`), and that plan's re-pin rule makes a
 change to it an environment change.
@@ -177,8 +177,8 @@ Each is binding because the failure named with it follows when it breaks.
 4. **Observation grants no authority.** Budget events are local, typed
    `observation_only` notifications. They are not board posts, approvals or
    user messages.
-5. **Only the user changes a user limit.** A coordinator mark is the
-   coordinator's own tool. It needs no approval to set or move, and crossing it
+5. **Only the user changes a user limit.** A supervisor mark is the
+   supervisor's own tool. It needs no approval to set or move, and crossing it
    is information, not a stop.
 6. **The binding is durable, and observations can be rebuilt.** The binding and
    limits live in the assignment record. After a listener restart, any snapshot
@@ -188,7 +188,7 @@ Each is binding because the failure named with it follows when it breaks.
 
 ### 6.1 Binding: `scope_budget` version 2
 
-The coordinator's assignment record already holds `scope_budget`: objective,
+The top-level supervisor's assignment record already holds `scope_budget`: objective,
 original items, additions, limits and history. Version 2 adds:
 - `sessions`: the root session, plus each successor appended at a verified
   rotation, with the time it took over;
@@ -254,13 +254,13 @@ Events are sent only when a state changes:
 - the account meter crosses a user-set `max_weekly_percent`, labelled
   account-wide.
 
-Events go to the coordinator only (§9, decision 3). Supervisors, builders and
-reviewers get none of their own; the coordinator passes down what it judges
+Events go to the top-level supervisor only (§9, decision 3). Builders and
+reviewers get none of their own; the supervisor passes down what it judges
 useful.
 
 ### 6.4 At a limit
 
-At a user limit, the coordinator does what `coordinator.md` already says:
+At a user limit, the supervisor does what its guidance (`supervisor.md`, Scope and budget) already says:
 dispatch nothing new, collect outstanding results or handoffs, and report.
 
 Phase 5 can add a deterministic refusal in `role_host launch` for an objective
@@ -273,7 +273,7 @@ reports the overshoot; it does not claim a hard stop.
 ### 6.5 Deferred, and what would justify each
 
 - **Per-assignment allocations, reserves, leeway requests and approvals:** phase
-  4 shows coordinators acting on subtree spend often enough that marks are not
+  4 shows supervisors acting on subtree spend often enough that marks are not
   sufficient.
 - **Expected cost per assignment:** built only if phase 4 shows outlier events
   would have changed a decision. It is computed from history by role and model,
@@ -289,7 +289,7 @@ reports the overshoot; it does not claim a hard stop.
 - In `scope_budget.py`, stop accepting `--max-weekly-points` for new limits, and
   have `check` report the meter's rise as account-wide. It stops on that rise
   only when the user set the limit.
-- In `coordinator.md`, stop asking coordinators to propose weekly-point limits.
+- In the Scope-and-budget guidance (`supervisor.md` since the coordinator role was removed), stop asking for weekly-point limits.
   Keep the hours limit and its `check` until phase 3 delivers deadline events.
 - Ship it in the same release as phase 3, so round 2 is revised once (§9,
   decision 1).
@@ -320,12 +320,12 @@ version 1 compatibility tests.
 - Documentation in `docs/codex-chatboard.md` and the manual-orchestration
   references.
 - The listener replaces the per-dispatch `check`; with no listener bound, the
-  coordinator runs an explicit `tree` query instead.
+  supervisor runs an explicit `tree` query instead.
 - Release phases 0 to 3 together, and revise round 2 once for the combined
   change.
 
 **4. Shadow pilot.** One or two real objectives, with events delivered to the
-coordinator and no new stop behaviour. Measure:
+top-level supervisor and no new stop behaviour. Measure:
 - rebuild time per tick;
 - the events, and the model turns they caused;
 - the unattributed share;
@@ -407,8 +407,10 @@ not tested.
 
    Not established: whether Claude's quota follows list price the way Codex's
    did.
-3. **Events go to the coordinator only.** Information flows down from the
-   coordinator, at its judgment.
+3. **Events go to the top-level supervisor only.** Information flows down from
+   it, at its judgment. (The user decided "coordinator only" on 2026-10-29. On
+   2026-10-30 the user removed the coordinator role, and the top-level
+   supervisor took its place.)
 4. **The ledger stays at `metrics/scripts/usage_ledger.py` in Work Engine,** and
    the listener pins it by path and digest. These are the round 2 agent's
    reasons, checked here:
@@ -435,9 +437,9 @@ and keeps every version 1 field. It adds:
 | Field | Shape | Written by |
 |---|---|---|
 | `objective_id` | UUID string | `init`, or the first version 2 write to a version 1 record |
-| `sessions` | list of `{"session_id", "provider": "codex" or "claude", "from": ISO time, "bound_by": "init", "rotation", "coordinator" or "user", "evidence": string or null}` | `init` (the root), `add-session` |
-| `bindings` | list of `{"session_id", "provider", "parent_session_id": string or null, "bound_at", "bound_by": "coordinator" or "user", "reason"}` | `bind` |
-| `cost_limits` | list of `{"pool", "node": session ID or null, "max_usd": number or null, "marks_usd": ascending numbers, "set_by": "user" or "coordinator", "set_at", "reason"}` | `cost-limit`, which also appends to `limit_history` |
+| `sessions` | list of `{"session_id", "provider": "codex" or "claude", "from": ISO time, "bound_by": "init", "rotation", "supervisor" or "user", "evidence": string or null}` | `init` (the root), `add-session` |
+| `bindings` | list of `{"session_id", "provider", "parent_session_id": string or null, "bound_at", "bound_by": "supervisor" or "user", "reason"}` | `bind` |
+| `cost_limits` | list of `{"pool", "node": session ID or null, "max_usd": number or null, "marks_usd": ascending numbers, "set_by": "user" or "supervisor", "set_at", "reason"}` | `cost-limit`, which also appends to `limit_history` |
 
 Pools are `codex`, `claude_all_models` and `claude_fable`.
 
@@ -452,7 +454,11 @@ New or changed commands:
 - `bind --record R --session ID --provider P [--parent ID] --bound-by B
   --reason TEXT` appends a binding.
 - `cost-limit --record R --pool POOL [--node ID] [--max-usd X] [--mark-usd Y
-  ...] --set-by S --reason TEXT` replaces the entry for that pool and node.
+  ...] --set-by S --reason TEXT` replaces the entry for that pool, node and
+  setter. A user entry and a supervisor entry for the same pool and node
+  coexist, so a supervisor command never changes or removes a user limit
+  (invariant 5). Added 2026-10-30 after review finding 1 on the record
+  change.
 - `--max-weekly-points` on `init` or `revise` is refused with exit 2, and the
   message names `cost-limit`.
 - `check` treats hours, additions and `max_weekly_percent` as before. The
@@ -465,6 +471,10 @@ New or changed commands:
   `limit_history` entry set by `user` has the same value for it.
 - Every command reads version 1 records. The first version 2 write upgrades the
   schema string and adds the new fields, empty, plus an `objective_id`.
+- `--set-by` and `--bound-by` take `user` or `supervisor`. Records written
+  before the coordinator role was removed (2026-10-30) may say `coordinator` in
+  `limits_set_by`, `limit_history`, `bound_by` or `set_by`. Read it as
+  `supervisor`, which is not a user setting.
 
 ### 10.2 `usage_ledger.py tree`
 
@@ -614,6 +624,10 @@ It builds the tree, compares it with the record, and prints:
   cursor.
 - With no cursor, only triggers already past a level are reported, once.
 - Spend is compared as `quota_usd_high`, and events carry both bounds.
+- Only a user entry's `max_usd` produces `limit_fraction` and
+  `limit_reached`. A supervisor entry's `max_usd` is treated as one more
+  mark. Every limit event carries `set_by`, and a trigger's key includes
+  `set_by`. Added 2026-10-30 with the §10.1 setter rule.
 - `account_ceiling` compares the latest Codex weekly meter reading in the
   window with a `max_weekly_percent` limit, and is labelled account-wide.
 - `hours_*` events come from `max_hours` and `started_at`.

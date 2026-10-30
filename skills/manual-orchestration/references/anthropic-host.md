@@ -80,8 +80,8 @@ specifics:
 - Hand the user a prompt of this shape, filled in:
 
 ```
-Act as coordinator under $manual-orchestration (read skills/manual-orchestration/SKILL.md
-and references/coordinator.md by repository path). Continue from the root handoff
+Act as supervisor under $manual-orchestration (read skills/manual-orchestration/SKILL.md
+and references/supervisor.md by repository path). Continue from the root handoff
 <path>, sha256 <digest>, role <role>: verify the digest and run the board's
 handoff-status for this role and digest with your own session ID. If superseded,
 already adopted, conflicting, or unregistered, reconcile its returned continuation
@@ -118,13 +118,8 @@ they do not establish model identity, task completion, or transfer authority.
 
 - The Codex `--session` and `agents` modes read rollouts only; use the `claude`
   and `claude-agents` modes, or `child_context.py claude`, for transcripts.
-- Whether a subagent can itself launch agents depends on the tools its type
-  is granted; a supervisor layer needs a type that includes `Agent`. A
-  `general-purpose` supervisor launched a worker on 2026-10-27 (`spawnDepth`
-  2; n = 1). For another type, confirm before assigning a supervisor role,
-  for example by making the launch the supervisor's first action, with an
-  instruction to stop and report if it is refused. Otherwise the coordinator
-  supervises.
+- The supervisor is the top-level session; subagents are workers or
+  reviewers and do not supervise, so their type need not include `Agent`.
 - The identity binding is the agent ID and transcript path from the spawn
   result, sent after launch by `SendMessage` as in [SKILL.md](../SKILL.md#launching-a-child).
 - Repository instructions still apply: Claude subagents read `CLAUDE.md` and
@@ -134,5 +129,5 @@ they do not establish model identity, task completion, or transfer authority.
 
 `metrics/scripts/claude_transcript_usage.py` sums weighted tokens (uncached +
 cached/10 + 5 x output, the baseline's unit) for one transcript. Account every
-subagent transcript in the task, including the coordinator's own, before a
+subagent transcript in the task, including the supervisor's own, before a
 total; [measurement](measurement.md) holds the rules.

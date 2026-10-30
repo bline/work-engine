@@ -18,7 +18,7 @@ it does not authorize publication or accept its own work.
 ## Assignment and machinery
 
 Use the repository's [manual-orchestration](../manual-orchestration/SKILL.md)
-contract: the Codex caller loads its coordinator or supervisor references; the
+contract: the Codex caller loads its supervisor reference; the
 Claude builder loads the worker references and
 [Anthropic host mapping](../manual-orchestration/references/anthropic-host.md).
 If the packet assigns Claude supervision or decomposition, load that role

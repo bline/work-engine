@@ -1,6 +1,6 @@
 ---
 name: manual-orchestration
-description: Coordinate manually decomposed engineering work across Codex sub-agents as coordinator, supervisor, worker or reviewer - decomposition, packets, dispatch, waiting, the retained-versus-fresh context choice, handoff, review collection and integration. Use whenever a session coordinates sub-agents or is launched as one of these roles outside a configured Slice Builder campaign. It does not plan automatically or replace campaign gate and receipt contracts.
+description: Coordinate manually decomposed engineering work across Codex sub-agents as the top-level supervisor, a worker or a reviewer - decomposition, packets, dispatch, waiting, the retained-versus-fresh context choice, handoff, review collection and integration. Use whenever a session coordinates sub-agents or is launched as one of these roles outside a configured Slice Builder campaign. It does not plan automatically or replace campaign gate and receipt contracts.
 ---
 
 # Manual orchestration
@@ -11,15 +11,16 @@ Use model judgment to divide an authorized objective into coherent outcomes whos
 
 ## Load by role
 
+There are two levels. The supervisor is the top-level role (the root), and the user is its parent. It dispatches builders directly and launches reviewers separately; no coordinator sits above it and no supervisor sits between it and its workers.
+
 - When forming or revising an organization, including during ongoing implementation with no new dispatch, launch or discovery assignment: [organization formation](references/organization-formation.md) - reviewable candidates, branch discovery and revision authority.
 
-- **Coordinator** (root): [coordinator](references/coordinator.md) - decomposition, packets, dispatch, collection, integration.
-- **Supervisor**: [supervisor](references/supervisor.md) - one engineering group, launch, validation, review collection.
+- **Supervisor** (top level): [supervisor](references/supervisor.md) - scope and budget, decomposition, packets, dispatch, validation, review collection, integration.
 - **Worker or reviewer**: [worker](references/worker.md) - one coherent bounded assignment.
 - **Every role**: [call cost](references/call-cost.md) - waiting, batching, request sizing.
-- **Coordinator and supervisor**: [context boundary](references/context-boundary.md) - retained or fresh before dispatch, transfer, roots. Workers carry their own mid-task check.
+- **Supervisor**: [context boundary](references/context-boundary.md) - retained or fresh before dispatch, transfer, roots. Workers carry their own mid-task check.
 - When considering same-session context replacement: [same-session continuity](references/same-session-context.md) - authority, durable meaning, supported controls, visible resumption and recovery.
-- **On Codex**, with any role: [Codex host](references/codex-host.md) - supervisor/builder children, separate top-level reviewers, service tier and identity binding.
+- **On Codex**, with any role: [Codex host](references/codex-host.md) - builder children, separate top-level reviewers, service tier and identity binding.
 - **On Claude Code** (Anthropic models), with any role: [anthropic host](references/anthropic-host.md) - tool mapping, transcript-based context check.
 - After a run: [measurement](references/measurement.md). For a concrete artifact example: [demonstrated forms](references/demonstrated-forms.md).
 
@@ -33,7 +34,7 @@ After launch, verify the role's actual session ID and rollout from recorded line
 
 ## Invariants
 
-Separate worker completion, unfinished continuation, supervisor acceptance, private readiness, and root integration. Carry exact source, subject, binary/schema and evidence identity where those affect the claim; preserve failures and uncertainty. Refresh the *meaning* of affected claims when source or assumptions change, not just their hashes. Record requested model/effort separately from observed identity, and leave unavailable measurements unknown. The coordinator retains responsibility for collecting required child results and owned processes.
+Separate worker completion, unfinished continuation, acceptance of a bounded subject, private readiness, and integration; the supervisor makes the last three, and they remain separate decisions. Carry exact source, subject, binary/schema and evidence identity where those affect the claim; preserve failures and uncertainty. Refresh the *meaning* of affected claims when source or assumptions change, not just their hashes. Record requested model/effort separately from observed identity, and leave unavailable measurements unknown. The supervisor retains responsibility for collecting required child results and owned processes.
 
 This is a manual coordination adapter. In a configured Slice Builder campaign, use its owning [skill and receipt contract](../slice-builder/SKILL.md) unless that contract's owner accepts compatible continuation semantics. An unfinished manual `handoff_ready` is not its terminal `audit_receipt`, `handoff_receipt`, or gate success. The skill grants no new mutation, provider, review, acceptance or publication authority.
 
@@ -45,5 +46,5 @@ This is a manual coordination adapter. In a configured Slice Builder campaign, u
 - `scripts/auto_continue.py` - bounded foreground same-SID compaction and attributed recovery; use under [same-session continuity](references/same-session-context.md#foreground-automatic-continuation-on-the-codex-app-server).
 - `scripts/root_rotation.py` - root transfer gate: `prepare` publishes continuation lineage and stops at `awaiting_authority`; `commit` or `watch` checks that the handoff is still available, launches the successor, waits for its typed `adopt` and retires or keeps the predecessor. `--title` provides a readable task name. See [context boundary](references/context-boundary.md#roots).
 - `scripts/custody.py` - `run` a build or test, or a plan of them, recording PIDs, wait status, output and input digests and leftover processes; `freeze` a tree outside the repository into a manifest, archive and baseline diff. See [worker](references/worker.md#builds-tests-and-frozen-subjects).
-- `scripts/scope_budget.py` - original scope, additions, the objective's sessions and its hours and cost limits in the assignment record; `check` says whether to reconsider or stop. See [coordinator](references/coordinator.md#scope-and-budget).
+- `scripts/scope_budget.py` - original scope, additions, the objective's sessions and its hours and cost limits in the assignment record; `check` says whether to reconsider or stop. See [supervisor](references/supervisor.md#scope-and-budget).
 - `scripts/handoff_validator.py` - checks a root handoff's referents (paths, path-bound digests, labelled git refs, placeholders): 0 pass, 21 defect, 32 not established.

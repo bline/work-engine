@@ -9,10 +9,9 @@ need a separate organization artifact.
 
 ## Discovery and a reviewable candidate
 
-The coordinator assembles the whole candidate against the objective and authority
-map. A supervisor explores its bounded branch and proposes children where they
-make coherent outcomes assignable. An implementer assigned discovery reports its
-findings, ownership boundaries and whether it can own a coherent implementation
+The supervisor assembles the whole candidate against the objective and authority
+map, and may assign a worker to discover a bounded branch. A worker assigned
+discovery reports its findings, ownership boundaries and whether it can own a coherent implementation
 outcome. A justified leaf is a valid branch disposition. Depth, fan-out and the
 order of exploration remain judgment.
 
@@ -49,7 +48,7 @@ requested and observed identity/tier separately in the assignment. An unavailabl
 identity is unknown; a contract-bound mismatch is unmet. An unavailable selected
 model supplies no authority for silent substitution.
 
-A useful discovery supervisor or implementer can continue into authorized
+A useful discovery worker can continue into authorized
 implementation after the existing scoped [context check](context-boundary.md).
 Record the retain-or-fresh choice and reason in its assignment. Durable findings
 make the candidate reviewable without access to the retained conversation;
@@ -61,12 +60,12 @@ model, tier or independence.
 
 ## Revision decisions and authority
 
-The user's organization revision boundary is coordinator approval for small
-changes and human approval for large changes. The coordinator classifies a
+The user's organization revision boundary is supervisor approval for small
+changes and human approval for large changes. The supervisor classifies a
 change by its consequences and explains the basis; no fixed size or role-count
 rule decides it. Classify against the originally accepted scope and every
 change since, not only the last revision: a series of small changes can add up
-to a large one. The [scope record](coordinator.md#scope-and-budget) holds that
+to a large one. The [scope record](supervisor.md#scope-and-budget) holds that
 history. Existing provider, budget, mutation, review and other explicit
 approval boundaries retain precedence even for a small change. Initial candidate
 acceptance belongs to the approval owner named by the active task, without a

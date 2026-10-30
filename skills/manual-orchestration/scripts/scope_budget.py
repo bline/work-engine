@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep a coordinator's original scope, additions and budget in its assignment record.
+"""Keep a supervisor's original scope, additions and budget in its assignment record.
 
 The record is a JSON object file; this script owns only its `scope_budget` key,
 so it can live in the existing assignment record. `init` writes the original

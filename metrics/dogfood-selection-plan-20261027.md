@@ -49,7 +49,7 @@ not published, because the underlying trial data carries no reuse license
 
 Model and effort keep coming from the active user selection
 ([model selection](../docs/model-selection.md)), as
-[coordinator guidance](../skills/manual-orchestration/references/coordinator.md#dispatch-and-the-retained-or-fresh-choice)
+[supervisor guidance](../skills/manual-orchestration/references/supervisor.md#dispatch-and-the-retained-or-fresh-choice)
 already requires. That guidance's "learn from outcomes without creating a new
 gate" applies here as well.
 
@@ -568,6 +568,14 @@ changed argument fails `skill_release.py check`.
 `task_profile_record.py` now also records its own path and sha256 in every
 record (`recorder`): coordinators run it from their checkout, so a change to it
 during the pilot would otherwise go unrecorded.
+
+**Changed 2026-10-29 (owner: "remove orchestrator role. make supervisor the top
+level role"):**
+13. **One top-level role.** The coordinator guidance moved into `supervisor.md`,
+    and `coordinator.md` was removed. The sidecar's `guidance_sha256` is now the
+    sha256 of `<skill-dir>/references/supervisor.md`, and the declaring role is
+    `supervisor`. Earlier records hash `coordinator.md`, so the new value marks
+    the switch.
 
 ## Appendix B: stage B sidecar template
 
