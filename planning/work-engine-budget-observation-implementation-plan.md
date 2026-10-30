@@ -452,7 +452,11 @@ New or changed commands:
 - `bind --record R --session ID --provider P [--parent ID] --bound-by B
   --reason TEXT` appends a binding.
 - `cost-limit --record R --pool POOL [--node ID] [--max-usd X] [--mark-usd Y
-  ...] --set-by S --reason TEXT` replaces the entry for that pool and node.
+  ...] --set-by S --reason TEXT` replaces the entry for that pool, node and
+  setter. A user entry and a coordinator entry for the same pool and node
+  coexist, so a coordinator command never changes or removes a user limit
+  (invariant 5). Added 2026-10-30 after review finding 1 on the record
+  change.
 - `--max-weekly-points` on `init` or `revise` is refused with exit 2, and the
   message names `cost-limit`.
 - `check` treats hours, additions and `max_weekly_percent` as before. The
@@ -614,6 +618,10 @@ It builds the tree, compares it with the record, and prints:
   cursor.
 - With no cursor, only triggers already past a level are reported, once.
 - Spend is compared as `quota_usd_high`, and events carry both bounds.
+- Only a user entry's `max_usd` produces `limit_fraction` and
+  `limit_reached`. A coordinator entry's `max_usd` is treated as one more
+  mark. Every limit event carries `set_by`, and a trigger's key includes
+  `set_by`. Added 2026-10-30 with the §10.1 setter rule.
 - `account_ceiling` compares the latest Codex weekly meter reading in the
   window with a `max_weekly_percent` limit, and is labelled account-wide.
 - `hours_*` events come from `max_hours` and `started_at`.
