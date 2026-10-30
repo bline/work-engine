@@ -104,6 +104,24 @@ message counted once per transcript file. Calls to those models come out
 unpriced. All 31,580 Codex calls in the same 7 days had a price, and 880 of
 them ran on Fast tier.
 
+**Calls missing from transcripts.** Claude Code makes calls that leave no usage
+in the transcript, including compaction summaries and session-title calls
+(Haiku). One session compared (n=1), session `460f623d` at about 2026-10-30
+02:30Z:
+
+| Source | Cost |
+|---|---|
+| Claude Code's own usage screen | $20.93 (Opus 5.5: 7.0k input, 328.0k output, 36.4M cache read, 882.9k cache write) |
+| Ledger, same transcript, up to the same moment | $20.10 |
+
+- **Prices agree.** Claude Code's token counts, priced at the ledger's Opus 5.5
+  rates, give $20.93, so the gap is in coverage.
+- **Part of the gap is explained.** The session had three automatic
+  compactions, each over 213K to 247K tokens of context, and they account for
+  part of the gap. The rest is not established.
+- **No cross-check ran.** The transcript has no `cost-state` record, so the
+  ledger's existing check against Claude Code's counter could not run.
+
 **Edits take effect at once.** Coordinators run
 `python3 -I metrics/scripts/usage_ledger.py build` from this working tree, and
 `task_profile_record.py attribute` reads that build's `calls.jsonl`. So an edit
@@ -286,6 +304,9 @@ release, because ledger edits take effect at once (§4.1).
   readings.
 - Add prices for the unpriced Claude models, a quota pool for each call, and
   quota-weighted dollars (§9, decision 2).
+- Report calls the transcript does not record, at least each compaction, as
+  unrecorded calls with an estimated range, not as zero. Check against Claude
+  Code's own session counter where one can be read.
 - Add the `role_host` join, Claude subagent nodes and the `tree` command.
 - Test on synthetic transcripts for each lineage type, and replay offline on the
   S10 window and the 2026-10-29 evening window.
@@ -335,6 +356,7 @@ not tested.
    - an unknown cache TTL;
    - an inconsistent cache split;
    - a missing transcript;
+   - a compaction, whose call the transcript does not record;
    - an unreadable `role_host` ledger.
 5. **One counter:** the listener's figures equal `usage_ledger.py tree` for the
    same snapshot.
@@ -371,13 +393,20 @@ not tested.
      here.
    - **List dollars leave out Fast tier's 2.5 times charge.** The ledger already
      records each call's tier.
-   - **The pools are metered separately.** The user sees Fable's usage as its
-     own percentage, and the pools' dollar rates differ and are only partly
-     measured, so one combined figure would mix them. One reading on 2026-10-27
-     (n=1, 1% steps) also showed the main Claude meter rise from 8 to 10 in
-     four minutes while three Fable agents spent $7.46 and Opus $2.62. That may
-     mean Fable also draws on the main meter; it is not established. Either
-     way, Fable spend is reported in its own pool.
+   - **The pools are metered separately.** Their dollar rates differ and are
+     only partly measured, so one combined figure would mix them. Fable has its
+     own weekly meter, and the user sees its usage as a separate percentage.
+     Whether Fable also counts toward the main Claude meter is not established.
+     Two observations suggest it might:
+     - Claude Code's usage screen (2026-10-30) labels the main meter "Current
+       week (all models)", beside "Current week (Fable)", and both reset at the
+       same time.
+     - One reading on 2026-10-27 (n=1, 1% steps) showed the main meter rise
+       from 8 to 10 in four minutes while three Fable agents spent $7.46 and
+       Opus $2.62.
+
+     The tree reports Fable spend separately, so the main pool can include or
+     exclude it once this is settled.
    - **Dollars keep their meaning across the 2026-10-29 limit doubling;** meter
      percentages don't.
 
