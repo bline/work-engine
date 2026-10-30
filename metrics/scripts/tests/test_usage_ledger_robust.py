@@ -63,3 +63,48 @@ class LineageBoundary(unittest.TestCase):
         self.assertEqual(tree['unattributed']['totals']['codex']['calls'], 1)
         self.assertTrue(any(x['kind']=='lineage_cycle' for x in tree['issues']))
         self.assertTrue(any(x['kind']=='multiple_parents' for x in tree['issues']))
+
+class Matrix(unittest.TestCase):
+    def test_conservation_every_pool_with_unattributed(self):
+        ts = '2026-01-01T01:00:00Z'
+        sb = dict(started_at=ts, objective_id='id', sessions=[dict(session_id='root',provider='codex', **{'from':ts})],
+                  bindings=[dict(session_id='c',provider='claude',parent_session_id='root')])
+        def codex(sid): return dict(provider='codex', thread=sid, ts=ts, model='gpt-6.1-sol', service_tier='default', quota_multiplier=1, usd=1, pools=['codex'])
+        def claude(sid, model): return dict(provider='anthropic', session=sid, subagent=False, ts=ts, model=model, speed='standard', usd=2, usd_low=2, usd_high=2, pools=['claude_all_models'] + (['claude_fable'] if model.startswith('claude-fable-') else []))
+        with tempfile.TemporaryDirectory() as d:
+            record = os.path.join(d,'record')
+            with open(record,'w') as f: json.dump({'scope_budget':sb},f)
+            with patch.object(L,'build_codex',return_value=([codex('root'),codex('outside')],[],[],0)), patch.object(L,'build_claude',return_value=([claude('c','claude-fable-5-1'),claude('else','claude-fable-5-1'),claude('else','claude-opus-5')],[],0)), patch.object(L,'unrecorded_claude',return_value=[]):
+                tree, _, _ = L.cost_tree(record,role_ledger=os.path.join(d,'none'))
+        for pool in L.POOLS:
+            for key in L.empty_spend():
+                self.assertAlmostEqual(tree['totals'][pool][key] + tree['unattributed']['totals'][pool][key], tree['window_totals'][pool][key])
+            self.assertGreater(tree['totals'][pool]['calls'],0)
+            self.assertGreater(tree['unattributed']['totals'][pool]['calls'],0)
+
+    def test_hours_account_and_coverage_cursor(self):
+        sb = {'objective_id':'id', 'started_at':'2026-01-01T00:00:00Z', 'limits':{'max_hours':10,'max_weekly_percent':90}, 'cost_limits':[]}
+        doc = dict(snapshot_at='2026-01-01T09:00:00Z', status='partial', totals=L.pools(), nodes=[])
+        quota = [dict(ts='2026-01-01T08:00:00Z', window_minutes=10080, used_percent=95), dict(ts='2026-01-01T07:00:00Z', window_minutes=10080, used_percent=5)]
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0', role_host_ledger=None)
+        def run():
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), patch.object(L,'cost_tree',return_value=(doc,quota,sb)): L.cmd_control(args)
+            return json.loads(out.getvalue())
+        a=run(); self.assertEqual({x['kind'] for x in a['events']}, {'hours_fraction','account_ceiling','coverage_changed'})
+        self.assertTrue(next(x for x in a['events'] if x['kind']=='account_ceiling')['observed']['account_wide'])
+        args.cursor=a['next_budget_cursor']; self.assertEqual(run()['events'],[])
+        doc['status']='complete'; doc['snapshot_at']='2026-01-01T11:00:00Z'
+        b=run(); self.assertEqual({x['kind'] for x in b['events']}, {'hours_reached','coverage_changed'})
+        args.cursor=b['next_budget_cursor']; self.assertEqual(run()['events'],[])
+
+    def test_build_failure_and_reader_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            record=os.path.join(d,'record')
+            with open(record,'w') as f: json.dump({'scope_budget':{'objective_id':'id','started_at':'2026-01-01T00:00:00Z','sessions':[{'session_id':'a','provider':'codex','from':'2026-01-01T00:00:00Z'}]}},f)
+            with patch.object(L,'build_codex',side_effect=OSError('unreadable')):
+                tree, quota, _ = L.cost_tree(record)
+            self.assertEqual(tree['status'],'not_established')
+            self.assertEqual(tree['issues'][0]['kind'],'build_failed')
+            self.assertEqual(quota,[])
+            with self.assertRaises(OSError): L.cost_tree(os.path.join(d,'missing'))
