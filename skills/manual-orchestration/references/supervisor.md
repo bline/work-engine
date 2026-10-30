@@ -96,9 +96,9 @@ Do not tell the reviewer of an enrolled episode which model built it. Ask it for
 ```text
 python3 -I metrics/scripts/task_profile_record.py start
 python3 -I metrics/scripts/task_profile_record.py profile --run-dir RUN_DIR --sidecar SIDECAR --repo REPO --declare-started-at DECLARE_STARTED_AT [--call-id CALL_ID] [--tool-dir TOOL_DIR]
-python3 -I metrics/scripts/task_profile_record.py assign --run-dir RUN_DIR --task-revision TASK_REVISION --role {builder,reviewer} --requested-model REQUESTED_MODEL --requested-effort REQUESTED_EFFORT --harness HARNESS [--reported-model REPORTED_MODEL] [--reported-effort REPORTED_EFFORT] --run RUN --dispatched-packet DISPATCHED_PACKET --child-session CHILD_SESSION [--selected-at SELECTED_AT] [--retained]
-python3 -I metrics/scripts/task_profile_record.py attribute --run-dir RUN_DIR --task-revision TASK_REVISION --ledger LEDGER [--assignment ASSIGNMENT] [--since SINCE] [--until UNTIL]
-python3 -I metrics/scripts/task_profile_record.py enroll --run-dir RUN_DIR --task-id TASK_ID --reason REASON --task-revision TASK_REVISION --eligible {yes,no}
+python3 -I metrics/scripts/task_profile_record.py assign --run-dir RUN_DIR (--task-revision TASK_REVISION | --episode EPISODE) --role {builder,reviewer} --requested-model REQUESTED_MODEL --requested-effort REQUESTED_EFFORT --harness HARNESS [--reported-model REPORTED_MODEL] [--reported-effort REPORTED_EFFORT] --run RUN --dispatched-packet DISPATCHED_PACKET --child-session CHILD_SESSION [--selected-at SELECTED_AT] [--retained]
+python3 -I metrics/scripts/task_profile_record.py attribute --run-dir RUN_DIR (--task-revision TASK_REVISION | --all) --ledger LEDGER [--assignment ASSIGNMENT] [--since SINCE] [--until UNTIL]
+python3 -I metrics/scripts/task_profile_record.py enroll --run-dir RUN_DIR --task-id TASK_ID --reason REASON (--task-revision TASK_REVISION | --packet PACKET) --eligible {yes,no}
 python3 -I metrics/scripts/task_profile_record.py review --run-dir RUN_DIR --task-id TASK_ID --verdict {accept,changes_required,blocked_evidence,blocked_scope} --reviewer-session REVIEWER_SESSION --p1 P1 --p2 P2 --p3 P3 --receipt RECEIPT
 python3 -I metrics/scripts/task_profile_record.py repair --run-dir RUN_DIR --task-id TASK_ID --review-receipt REVIEW_RECEIPT
 python3 -I metrics/scripts/task_profile_record.py close --run-dir RUN_DIR --task-id TASK_ID --reason REASON --disposition {accepted,abandoned} --pre-review-fixes PRE_REVIEW_FIXES --escalations ESCALATIONS [--review-receipt REVIEW_RECEIPT] [--artifact ARTIFACT]
