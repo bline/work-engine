@@ -70,7 +70,9 @@ Profiling never blocks dispatch. `profile` exits 0 after writing either a profil
 record (missing tool, unreadable or invalid sidecar, compute error, invalid revision), and 3 when
 the revision already has a profile; in every case the dispatch may continue. `verify` exits 0
 when every record is fully verified, 2 when hashes pass but a recompute was skipped or
-unavailable, 1 on any problem, and 3 when there are no records.
+unavailable (the pinned tool is not installed), 1 on any problem, including a recompute that
+fails or differs, and 3 when there are no records. Recompute uses archived source copies when
+available.
 
 Ordering: `profile_frozen_before_assignment_record` compares the freeze time with when the
 assignment record was written. Pass --selected-at (when the model was actually chosen) to also
@@ -87,6 +89,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -409,6 +412,10 @@ def attribute_assignment(a, path, ledger_rows, ledger_digest):
     return {"attribution": out, "status": status, "models_seen": seen}
 
 
+class RecomputeUnavailable(Exception):
+    """The pinned tool is not installed where verify looks for it."""
+
+
 def verify_records(a):
     worst = 0  # 0 fully verified, 2 recompute not done, 1 problem
     dirs = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*@*")))
@@ -456,27 +463,67 @@ def verify_records(a):
             if sha256(os.path.join(src_dir, name)) != name:
                 problems.append(f"archived source sources/{name} does not match its hash")
         if os.path.exists(os.path.join(d, "overhead.json")):
-            for digest, info in (read_json(os.path.join(d, "overhead.json")).get("sources") or {}).items():
-                if info.get("archived") and not os.path.isfile(os.path.join(src_dir, digest)):
-                    problems.append(f"archived source {digest[:12]} is missing")
+            try:
+                source_listing = read_json(os.path.join(d, "overhead.json")).get("sources") or {}
+                for digest, info in source_listing.items():
+                    if info.get("archived") and not os.path.isfile(os.path.join(src_dir, digest)):
+                        problems.append(f"archived source {digest[:12]} is missing")
+            except (ValueError, OSError, TypeError, AttributeError) as e:
+                problems.append(f"cannot inspect archived source listing: {e}")
         prof = os.path.join(d, "profile-stageB.json")
         if os.path.exists(prof):
             if a.no_recompute or not a.repo:
                 notes.append("recompute not done")
             else:
-                pin = read_json(os.path.join(d, "overhead.json"))["tool"]["commit"]
-                tdir = os.path.join(a.tools_root, pin)
                 try:
-                    exe = tool(tdir, pin)
-                except SystemExit as e:
-                    notes.append(f"recompute unavailable: {e}")
-                else:
-                    tmp = os.path.join(d, ".verify.json")
-                    subprocess.run([exe, "compute", os.path.join(d, "sidecar-stageB.json"), "--repo", a.repo, "-o", tmp], check=True)
-                    same = open(tmp, "rb").read() == open(prof, "rb").read()
-                    os.remove(tmp)
+                    overhead = read_json(os.path.join(d, "overhead.json"))
+                    pin = overhead["tool"]["commit"]
+                    try:
+                        exe = tool(os.path.join(a.tools_root, pin), pin)
+                    except SystemExit as e:
+                        raise RecomputeUnavailable(e) from None
+                    sidecar = read_json(os.path.join(d, "sidecar-stageB.json"))
+                    sources = overhead.get("sources") or {}
+                    groups = [("source_documents", sidecar["provenance"]["source_documents"])]
+                    refs = sidecar["input_snapshot"]["authority_refs"]
+                    if refs["status"] == "declared":
+                        groups.append(("authority_refs", refs["value"]))
+                    missing, aliases = [], []
+                    with tempfile.TemporaryDirectory() as tmp:
+                        for group, entries in groups:
+                            for index, entry in enumerate(entries):
+                                original, digest = entry["path"], entry["sha256"]
+                                archived = os.path.join(src_dir, digest)
+                                if sources.get(digest, {}).get("archived") and os.path.isfile(archived):
+                                    alias = os.path.join(tmp, f"{group}-{index}-{digest}")
+                                    shutil.copyfile(archived, alias)
+                                    entry["path"] = alias
+                                    aliases.append((group, index, alias, original))
+                                else:
+                                    missing.append(original)
+                        sidecar_copy = os.path.join(tmp, "sidecar.json")
+                        output = os.path.join(tmp, "profile.json")
+                        with open(sidecar_copy, "w") as fh:
+                            json.dump(sidecar, fh)
+                        subprocess.run([exe, "compute", sidecar_copy, "--repo", a.repo, "-o", output], check=True)
+                        computed = read_json(output)
+                        for group, index, alias, original in aliases:
+                            try:
+                                entries = (computed["provenance"]["source_documents"] if group == "source_documents"
+                                           else computed["input_snapshot"]["authority_refs"]["value"])
+                                if entries[index]["path"] == alias:
+                                    entries[index]["path"] = original
+                            except (KeyError, IndexError, TypeError):
+                                pass  # The comparison below reports the missing or malformed location.
+                        canonical = lambda value: json.dumps(value, sort_keys=True, separators=(",", ":"))
+                        same = canonical(computed) == canonical(read_json(prof))
                     if not same:
-                        problems.append("recompute differs from profile-stageB.json")
+                        detail = "; inputs without archived copies: " + ", ".join(sorted(set(missing))) if missing else ""
+                        problems.append("recompute differs from profile-stageB.json" + detail)
+                except RecomputeUnavailable as e:  # not established, not a record problem
+                    notes.append(f"recompute unavailable: {e}")
+                except (Exception, SystemExit) as e:
+                    problems.append(f"recompute failed: {e}")
         state = 1 if problems else (2 if notes else 0)
         worst = 1 if 1 in (worst, state) else max(worst, state)
         label = {0: "verified", 2: "hashes ok; " + "; ".join(notes), 1: "; ".join(problems)}[state]
