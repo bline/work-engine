@@ -760,7 +760,11 @@ def cmd_control(a):
     for limit in sb.get('cost_limits') or []:
         pool = limit['pool']; node = limit.get('node')
         if pool not in POOLS: continue
-        spend = (nodes[node]['inclusive'][pool] if node in nodes else empty_spend()) if node else doc['totals'][pool]
+        if doc['status'] == 'not_established': continue
+        if node and node not in nodes:
+            doc['status'] = 'partial'
+            continue
+        spend = nodes[node]['inclusive'][pool] if node else doc['totals'][pool]
         value = spend['quota_usd_high']
         observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'])
         for mark in limit.get('marks_usd') or []:
