@@ -115,6 +115,58 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(sb["cost_limits"][0]["max_usd"], 20)
         self.assertEqual(sb["limit_history"][-1]["previous_cost_limit"]["marks_usd"], [2, 5])
 
+    def test_cost_limits_preserve_other_setters_and_history(self):
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "3", "--set-by", "user")
+        for node in (None, "child"):
+            base = ["cost-limit", "--record", str(self.rec), "--pool", "codex", "--reason", "test"]
+            if node: base += ["--node", node]
+            for setter, option, value in (("user", "--max-usd", "10"), ("coordinator", "--mark-usd", "5"),
+                                          ("coordinator", "--max-usd", "7"), ("user", "--max-usd", "20")):
+                self.assertEqual(call(*base, "--set-by", setter, option, value)[0], 0)
+            sb = json.loads(self.rec.read_text())["scope_budget"]
+            entries = {e["set_by"]: e for e in sb["cost_limits"] if e["node"] == node}
+            self.assertEqual(entries["user"]["max_usd"], 20)
+            self.assertEqual(entries["coordinator"]["max_usd"], 7)
+            history = [h for h in sb["limit_history"] if h["cost_limit"]["node"] == node]
+            self.assertEqual(len(history), 4)
+            self.assertIsNone(history[1]["previous_cost_limit"])
+            self.assertEqual(history[2]["previous_cost_limit"]["marks_usd"], [5])
+            self.assertEqual(history[3]["previous_cost_limit"]["max_usd"], 10)
+
+    def test_input_validation_and_empty_root(self):
+        base = ("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "2", "--set-by", "user")
+        for extra in (("--session", "root"), ("--provider", "codex")):
+            self.assertEqual(call(*base, *extra)[0], 2)
+        self.assertEqual(call(*base)[0], 0)
+        self.assertEqual(json.loads(self.rec.read_text())["scope_budget"]["sessions"], [])
+        cost = ("cost-limit", "--record", str(self.rec), "--pool", "codex", "--set-by", "user", "--reason", "x")
+        before = self.rec.read_bytes()
+        for extra in ((), ("--max-usd", "-1"), ("--max-usd", "nan"), ("--mark-usd", "inf"), ("--mark-usd", "-2")):
+            self.assertEqual(call(*cost, *extra)[0], 2)
+            self.assertEqual(self.rec.read_bytes(), before)
+        self.assertEqual(call(*cost, "--max-usd", "0")[0], 0)
+        self.assertIn("cost-limit", call("revise", "--record", str(self.rec), "--max-weekly-points", "2", "--set-by", "user")[1])
+
+    def test_legacy_authority_and_missing_meter(self):
+        ro = self.d / "meter.jsonl"
+        rollout(ro, [35])
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--rollout", str(ro), "--max-hours", "100", "--set-by", "user")
+        doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
+        sb["schema"] = S.SCHEMA_V1; sb["limits"]["max_weekly_points"] = 2
+        rollout(ro, [40])
+        self.rec.write_text(json.dumps(doc))
+        self.assertEqual(call("check", "--record", str(self.rec), "--rollout", str(ro))[0], 4)
+        rc, result = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, result["account_weekly_points"], result["unknown"], result["advisory"]), (0, None, ["max_weekly_points"], []))
+        sb["limits_set_by"] = "coordinator"
+        sb["limit_history"] = [{"set_by": "user", "limits": {"max_weekly_points": 3}}]
+        self.rec.write_text(json.dumps(doc)); before = self.rec.read_bytes()
+        rc, result = call("check", "--record", str(self.rec), "--rollout", str(ro))
+        self.assertEqual((rc, result["advisory"]), (0, ["max_weekly_points"]))
+        rc, result = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, result["account_weekly_points"], result["unknown"], result["advisory"]), (0, None, [], ["max_weekly_points"]))
+        self.assertEqual(self.rec.read_bytes(), before)
+
     def test_meter_read_across_block_boundaries(self):
         ro = self.d / "rollout.jsonl"
         rollout(ro, [10.0, 42.5], filler=40)

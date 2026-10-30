@@ -216,8 +216,8 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     entry = {"pool": args.pool, "node": args.node, "max_usd": args.max_usd,
              "marks_usd": sorted(set(args.mark_usd)), "set_by": args.set_by,
              "set_at": stamp(now()), "reason": args.reason}
-    previous = next ( (x for x in sb["cost_limits"] if x["pool"] == args.pool and x["node"] == args.node), None)
-    sb["cost_limits"] = [x for x in sb["cost_limits"] if (x["pool"], x["node"]) != (args.pool, args.node)]
+    previous = next ( (x for x in sb["cost_limits"] if x["pool"] == args.pool and x["node"] == args.node and x["set_by"] == args.set_by), None)
+    sb["cost_limits"] = [x for x in sb["cost_limits"] if (x["pool"], x["node"], x["set_by"]) != (args.pool, args.node, args.set_by)]
     sb["cost_limits"].append(entry)
     sb["limit_history"].append({"cost_limit": entry, "previous_cost_limit": previous})
     save(path, doc)
