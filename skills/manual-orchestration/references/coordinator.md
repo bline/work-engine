@@ -17,12 +17,19 @@ only after it has too little context left to preserve unfinished obligations.
 
 ## Scope and budget
 
-At the start, record the accepted objective as a short list of original items, and a budget: hours, weekly quota, and how many additions trigger reconsideration. Use the user's limits. If they gave none, propose limits in your first report and record them as yours; they apply until the user changes them. `scripts/scope_budget.py` keeps this in the assignment record and checks it in one call; run `check` alongside each dispatch and integration context reading.
+At the start, record the accepted objective as a short list of original items, and a budget: hours, cost limits, and how many additions trigger reconsideration. Use the user's limits. If they gave none, propose limits in your first report and record them as yours; they apply until the user changes them. `scripts/scope_budget.py` keeps this in the assignment record:
+- `init --session --provider` binds your own verified session as the objective's root;
+- `bind` adds a session no lineage source links, such as a top-level reviewer started outside `role_host.py`;
+- `cost-limit` sets a limit or marks for a quota pool (`codex`, `claude_all_models`, which includes Fable, or `claude_fable`), optionally for one session.
+
+Spend is measured per objective from transcripts by `metrics/scripts/usage_ledger.py tree`, in quota-weighted API dollars. The account's weekly meter moves with every running agent, so its rise is never one objective's spend; `check` reports it as account-wide only.
+
+Bind the budget source to your board listener (`wait --budget-record`; see [budget observation](../../../docs/codex-chatboard.md#budget-observation-subscription)), so that marks, limits and the hours deadline arrive as events without a model call. With no budget source bound, run `check` before dispatching new scope. Budget events reach the coordinator only; pass down what a child needs. No other role watches its own spend.
 
 An addition is something the original items do not cover: a new deliverable, component, evidence class or obligation. Fixing a defect in work an original item already covers is not one. Record each addition when you accept it, with its reason. Judge scope by the cumulative change from the original items, not by whether the newest addition looks small. In the S10 session of 2026-10-28/29 (n=1), a plan of three items grew, one gap at a time, into a candidate that also covered bootstrap evidence, consumer validation and controller resource identity; about 14 gaps each went through its own amendment and review cycle, and no real-host run happened in 17.6 hours.
 
 - When additions reach the trigger, classify the cumulative change under [organization formation](organization-formation.md#revision-decisions-and-authority); a large change goes to the user before more dispatch.
-- When hours or quota reach the limit, stop: dispatch nothing new, collect outstanding results or handoffs, and report the original items, what is done, each addition and why, what was spent, and the decision needed. The limit is the user's boundary; do not raise it yourself.
+- When the hours limit or a user cost limit is reached, stop: dispatch nothing new, collect outstanding results or handoffs, and report the original items, what is done, each addition and why, what was spent, and the decision needed. A user limit is the user's boundary; do not raise it yourself. A mark you set is information for your next decision, not a stop.
 
 <!-- cli-synopsis script=skills/manual-orchestration/scripts/scope_budget.py display="python3 -I <skill-dir>/scripts/scope_budget.py" -->
 ```text
