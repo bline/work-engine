@@ -414,6 +414,7 @@ def claude_transcript(path, msgs, cost_state, members=None, unrecorded=None, sin
                 if k in split: flat[k] = split[k]
             if mid in msgs:
                 row = msgs[mid]
+                if not valid_timestamp(o.get('timestamp')): row['usage']['_invalid_timestamp'] = o.get('timestamp')
                 if row.get('latency_s') is not None:   # F1.1: a message's records span the call; latency runs to the last one
                     later = seconds_between(CLAUDE_LATENCY_START.get(mid), o.get('timestamp'))
                     if later is not None and later > row['latency_s']: row['latency_s'] = later

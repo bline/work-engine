@@ -19,6 +19,7 @@ class BadRecords(unittest.TestCase):
             rows = [dict(type='assistant', timestamp='broken', sessionId='s', message=dict(id='bad-time', model='claude-opus-5-5', usage=dict(input_tokens=1, cache_creation_input_tokens=0, cache_read_input_tokens=0, output_tokens=1))),
                     dict(type='assistant', timestamp='2026-01-01T01:00:00Z', sessionId='s', message=dict(id='bad-usage', model='claude-opus-5-5', usage=dict(input_tokens='bad', cache_creation_input_tokens=0, cache_read_input_tokens=0, output_tokens=1))),
                     dict(type='assistant', timestamp='2026-01-01T01:00:01Z', sessionId='s', message=dict(id='good', model='claude-opus-5-5', usage=dict(input_tokens=1, cache_creation_input_tokens=0, cache_read_input_tokens=0, output_tokens=1))),
+                    dict(type='assistant', timestamp='broken-later', sessionId='s', message=dict(id='good', model='claude-opus-5-5', usage=dict(input_tokens=1, cache_creation_input_tokens=0, cache_read_input_tokens=0, output_tokens=2))),
                     dict(type='assistant', timestamp='2026-01-01T01:00:02Z', sessionId='s', message=dict(id='bad-shape', model='claude-opus-5-5', usage=['bad'])),
                     dict(type='system', subtype='compact_boundary', timestamp='2026-01-01T01:00:03Z', sessionId='s', compactMetadata={'preTokens':'bad'}),
                     dict(type='user', isCompactSummary=True, message={'content':3}),
@@ -36,7 +37,7 @@ class BadRecords(unittest.TestCase):
             with patch.object(L, 'CODEX_GLOBS', [codex]), patch.object(L, 'CLAUDE_GLOB', claude), patch.object(L, 'thread_index', return_value={}), contextlib.redirect_stdout(io.StringIO()): L.cmd_build(args)
             with open(os.path.join(out, 'calls.jsonl')) as f: calls = {r['call_id']: r for r in map(json.loads, f)}
             self.assertEqual(set(calls), {'bad-time','bad-usage','good','bad-shape','r1','r2','r3'})
-            for name in ('bad-time','bad-usage','bad-shape','r1','r2'): self.assertIsNone(calls[name]['usd'])
+            for name in ('bad-time','bad-usage','bad-shape','good','r1','r2'): self.assertIsNone(calls[name]['usd'])
             self.assertIsNone(calls['bad-usage']['weighted']); self.assertIsNone(calls['r2']['weighted'])
             self.assertEqual(calls['bad-usage']['usage']['input_tokens'], 'bad')
             with open(os.path.join(out,'issues.jsonl')) as f: kinds = {r['kind'] for r in map(json.loads,f)}
