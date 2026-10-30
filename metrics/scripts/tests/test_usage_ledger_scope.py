@@ -101,9 +101,6 @@ class IssueScope(unittest.TestCase):
             self.assertEqual(tree['outside']['undated_calls'], 0)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
 
 def assistant(sid, mid, ts, input_tokens):
     return json.dumps({'type': 'assistant', 'timestamp': ts, 'sessionId': sid,
@@ -195,3 +192,17 @@ class ScopeBoundaries(unittest.TestCase):
             doc = json.loads(out.getvalue())
             self.assertEqual(doc['snapshot']['status'], 'complete')
             self.assertNotIn('coverage_changed', [e['kind'] for e in doc['events']])
+
+    def test_build_failure_document_has_outside(self):
+        with tempfile.TemporaryDirectory() as d:
+            rec = os.path.join(d, 'record'); record(rec, [{'session_id': ROOT, 'provider': 'codex', 'from': T0}])
+            with patch.object(L, 'build_codex', side_effect=OSError('unreadable rollouts')), \
+                    patch.object(L, 'CLAUDE_GLOB', os.path.join(d, 'none')), patch.object(L, 'thread_index', return_value={}):
+                tree = L.cost_tree(rec, role_ledger=os.path.join(d, 'absent'))[0]
+            self.assertEqual(tree['status'], 'not_established')
+            self.assertIn('build_failed', [i['kind'] for i in tree['issues']])
+            self.assertEqual(tree['outside'], {'issues': {}, 'undated_calls': 0})
+
+
+if __name__ == '__main__':
+    unittest.main()
