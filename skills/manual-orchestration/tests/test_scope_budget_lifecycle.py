@@ -13,6 +13,8 @@ from unittest.mock import patch
 
 from test_scope_budget import S, call
 
+SESSION = '11111111-1111-4111-8111-111111111111'
+
 
 class LifecycleTest(unittest.TestCase):
     def setUp(self):
@@ -29,7 +31,7 @@ class LifecycleTest(unittest.TestCase):
         self.script = self.d / 'skills/manual-orchestration/scripts/scope_budget.py'
         self.board = self.d / 'skills/durable-state/scripts/codex_chatboard.py'
         self.board.parent.mkdir(parents=True)
-        self.board.write_text('import json,sys\nfrom pathlib import Path\nPath(sys.argv[sys.argv.index("--budget-record")+1]).with_name("args.json").write_text(json.dumps(sys.argv[1:]))\n')
+        self.board.write_text('import json,sys,time\nfrom pathlib import Path\nPath(sys.argv[sys.argv.index("--budget-record")+1]).with_name("args.json").write_text(json.dumps(sys.argv[1:]))\ntime.sleep(30)\n')
         self.procs = []
 
     def tearDown(self):
@@ -42,7 +44,7 @@ class LifecycleTest(unittest.TestCase):
 
     def listen(self, *args):
         with patch.object(S, '__file__', str(self.script)):
-            return call('listen', '--record', self.r, '--session', 'abc', '--repository', str(self.repo), *args)
+            return call('listen', '--record', self.r, '--session', SESSION, '--repository', str(self.repo), *args)
 
     def close(self, *args):
         return call('close', '--record', self.r, '--disposition', 'accepted', '--reason', 'done', '--set-by', 'user', *args)
@@ -87,19 +89,21 @@ class LifecycleTest(unittest.TestCase):
         self.assertTrue((self.d / 'args.json').exists())
         reader = self.repo / 'metrics/scripts/usage_ledger.py'
         sha = hashlib.sha256(reader.read_bytes()).hexdigest()
-        expected = [str(self.board), '--repository', str(self.repo), 'wait', '--since', '7', '--topic', 'session:abc', '--topic', 'extra', '--exclude-session-id', 'abc', '--budget-record', self.r, '--budget-reader', str(reader), '--budget-sha256', sha, '--budget-interval', '12.0', '--follow']
+        expected = [str(self.board), '--repository', str(self.repo), 'wait', '--since', '7', '--topic', f'session:{SESSION}', '--topic', 'extra', '--exclude-session-id', SESSION, '--budget-record', self.r, '--budget-reader', str(reader), '--budget-sha256', sha, '--budget-interval', '12.0', '--follow']
         self.assertEqual(entry['argv'], [sys.executable] + expected)
         self.assertEqual(json.loads((self.d / 'args.json').read_text()), expected[1:])
         self.assertEqual(entry['chatboard_sha256'], hashlib.sha256(self.board.read_bytes()).hexdigest())
         self.assertEqual(json.loads(self.record.read_text())['scope_budget']['listener'], entry)
+        os.kill(entry['pid'], signal.SIGTERM)
         for _ in range(200):
             if call('check', '--record', self.r)[1]['listener']['state'] == 'exited':
                 break
             time.sleep(.01)
         self.assertEqual(call('check', '--record', self.r)[1]['listener']['state'], 'exited')
-        (self.d / 'budget-listener.jsonl').write_text(json.dumps({'next_since': 42, 'next_budget_cursor': 'cursor'}) + '\n{"partial":')
+        Path(entry['stdout']).write_text(json.dumps({'next_since': 42, 'next_budget_cursor': 'cursor'}) + '\n{"partial":')
         rc, resumed = self.listen('--since', '8')
         self.assertEqual(rc, 0)
+        self.procs.append(resumed['pid'])
         self.assertEqual(resumed['argv'][resumed['argv'].index('--since') + 1], '42')
         self.assertEqual(resumed['argv'][resumed['argv'].index('--budget-cursor') + 1], 'cursor')
         self.assertEqual(json.loads(self.record.read_text())['scope_budget']['listener_history'], [entry])

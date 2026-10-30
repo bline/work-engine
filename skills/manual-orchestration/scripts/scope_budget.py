@@ -16,6 +16,8 @@ trigger), 4 stop (hours or quota reached). Other commands return 0. All return
 from __future__ import annotations
 
 import argparse
+import fcntl
+import tempfile
 import hashlib
 import subprocess
 import datetime as dt
@@ -60,9 +62,16 @@ def load(path: Path) -> dict[str, Any]:
 
 
 def save(path: Path, doc: dict[str, Any]) -> None:
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=path.name + ".", suffix=".tmp", delete=False) as f:
+            tmp = Path(f.name)
+            f.write(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        os.replace(tmp, path)
+    finally:
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
 
 
 def weekly_percent(rollout: Path, block: int = 1 << 20) -> dict[str, Any] | None:
@@ -280,6 +289,15 @@ def cmd_listen(args: argparse.Namespace) -> int:
     require_open(sb)
     if listener_state(sb, path)["state"] == "alive":
         raise UsageError("listener is already alive")
+    try:
+        if str(uuid.UUID(args.session)) != args.session:
+            raise ValueError
+    except ValueError:
+        raise UsageError("--session must be a canonical UUID")
+    if args.since is not None and args.since < 0:
+        raise UsageError("--since must be nonnegative")
+    if any(not topic.strip() or topic.startswith("control:") for topic in args.topic):
+        raise UsageError("--topic must be nonempty and must not start with control:")
     if not math.isfinite(args.interval) or args.interval <= 0:
         raise UsageError("--interval must be positive and finite")
     repo = Path(args.repository).resolve() if args.repository else Path(subprocess.check_output(
@@ -289,11 +307,15 @@ def cmd_listen(args: argparse.Namespace) -> int:
     chatboard = adjacent if adjacent.is_file() else repo / "skills/durable-state/scripts/codex_chatboard.py"
     reader_sha = hashlib.sha256(reader.read_bytes()).hexdigest()
     chatboard_sha = hashlib.sha256(chatboard.read_bytes()).hexdigest()
-    stdout = path.parent / "budget-listener.jsonl"
-    stderr = path.parent / "budget-listener.stderr"
+    upgrade(sb)
+    objective_id = sb["objective_id"]
+    stdout = path.parent / f"budget-listener-{objective_id}.jsonl"
+    stderr = path.parent / f"budget-listener-{objective_id}.stderr"
     since, cursor = args.since, None
     incomplete = False
-    if stdout.exists():
+    recorded = [sb.get("listener"), *sb.get("listener_history", [])]
+    owns_output = any(isinstance(entry, dict) and entry.get("stdout") == str(stdout) for entry in recorded)
+    if owns_output and stdout.exists():
         data = stdout.read_bytes()
         complete = data.split(b"\n")[:-1]
         incomplete = bool(data and not data.endswith(b"\n"))
@@ -306,6 +328,8 @@ def cmd_listen(args: argparse.Namespace) -> int:
             break
     if since is None:
         raise UsageError("--since is required without earlier listener output")
+    if not isinstance(since, int) or isinstance(since, bool) or since < 0:
+        raise UsageError("listener cursor next_since must be a nonnegative integer")
     argv = [sys.executable, str(chatboard), "--repository", str(repo), "wait", "--since", str(since),
             "--topic", f"session:{args.session}"]
     for topic in args.topic:
@@ -322,10 +346,30 @@ def cmd_listen(args: argparse.Namespace) -> int:
         proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True)
     entry = {"pid": proc.pid, "started_at": stamp(now()), "argv": argv, "stdout": str(stdout), "stderr": str(stderr),
              "reader": str(reader), "reader_sha256": reader_sha, "chatboard": str(chatboard), "chatboard_sha256": chatboard_sha}
-    if sb.get("listener"):
-        sb.setdefault("listener_history", []).append(sb["listener"])
-    sb["listener"] = entry
-    save(path, doc)
+    try:
+        try:
+            exit_code = proc.wait(timeout=1.5)
+        except subprocess.TimeoutExpired:
+            exit_code = None
+        if sb.get("listener"):
+            sb.setdefault("listener_history", []).append(sb.pop("listener"))
+        if exit_code is not None:
+            entry["exit_code"] = exit_code
+            sb.setdefault("listener_history", []).append(entry)
+            save(path, doc)
+            print(f"scope_budget: listener exited during startup; see {stderr}", file=sys.stderr)
+            return 3
+        sb["listener"] = entry
+        save(path, doc)
+    except BaseException:
+        try:
+            if proc.poll() is None:
+                proc.terminate()
+        except ProcessLookupError:
+            pass
+        finally:
+            proc.wait()
+        raise
     print(json.dumps(entry))
     return 0
 
@@ -439,7 +483,15 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
-        return {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check, "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit, "close": cmd_close, "listen": cmd_listen}[args.command](args)
+        commands = {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check,
+                    "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit,
+                    "close": cmd_close, "listen": cmd_listen}
+        if args.command == "check":
+            return commands[args.command](args)
+        lock = Path(str(Path(args.record).resolve()) + ".lock")
+        with lock.open("a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            return commands[args.command](args)
     except UsageError as exc:
         print(f"scope_budget: {exc}", file=sys.stderr)
         return 2
