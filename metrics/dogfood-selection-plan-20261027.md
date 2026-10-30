@@ -283,6 +283,14 @@ Definitions, fixed before the round starts:
 
 ### Screening and enrollment (R2-01, R2-06)
 
+**Amended 2026-10-30 (owner):** from the release that carries it, the
+[screen-first amendment](dogfood-round2-amendment-proposal-20261029.md) replaces
+steps 1 to 4 below and per-dispatch accounting:
+- screen with `enroll --packet` before any profile;
+- profile only tasks that enter the comparison;
+- record later episode dispatches with `assign --episode`;
+- run `attribute --all` at check-ins and round close.
+
 For every builder dispatch the guidance would profile, before choosing the model:
 1. Freeze the packet and profile it, as in round 1.
 2. **Screen**, with `task_profile_record.py enroll`. The coordinator gives the
@@ -603,6 +611,15 @@ level role"):**
     sha256 of `<skill-dir>/references/supervisor.md`, and the declaring role is
     `supervisor`. Earlier records hash `coordinator.md`, so the new value marks
     the switch.
+
+**Changed 2026-10-30 (owner adopted the
+[screen-first amendment](dogfood-round2-amendment-proposal-20261029.md)):**
+14. **Screen first.**
+    - Builder dispatches are screened with `enroll --packet` before any
+      profile; exit 4 (`profile_required`) is the only path to a profile.
+    - Later dispatches in an episode use `assign --episode`.
+    - Dispatches outside the comparison, reviewers included, are not profiled.
+    - Accounting is `attribute --all` at check-ins and round close.
 
 ## Appendix B: stage B sidecar template
 
