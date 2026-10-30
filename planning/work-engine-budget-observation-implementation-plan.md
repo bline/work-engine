@@ -1,147 +1,341 @@
-# Work Engine — Objective and Agent Budget Observation
+# Objective cost observation (plan, revision 2)
 
-**Implementation handoff / proposed plan — 2026-10-29**  
-**Repository:** `bline/work-engine`  
-**Repository baseline inspected:** `rescue-detached-20260911` at `471f61068d88999208cfeff477d42de67a6ce6f6`  
-**Standing:** Proposal for local engineering review and implementation; not a recorded approval, changed contract, or permission to deploy. Check the actual checkout, dirty worktrees, installed skills, and current owner instructions before editing.
+**Revision 2, 2026-10-29.** Owner: Claude (Claude Code, `claude-opus-5-5`), at
+the user's request. Revision 1 was drafted by ChatGPT in the web interface with
+Extra High reasoning (model not shown) against `471f6106`, and is committed
+unchanged in `c2ccc569`.
 
-## 1. Purpose and desired result
+**Status:** plan. Implementation has not started, and each phase starts on the
+user's go-ahead. Changes to released skills, or to an active experiment's
+environment, follow those owners' rules.
 
-Give the coordinator and every assigned role useful, reliable information about **the modeled inference cost of work they own**, without requiring model calls for accounting or routine polling. Extend the **existing chatboard `wait` delivery mechanism** that already multiplexes board messages and local context-pressure observations. A coordinator controls additional **discretionary leeway** for subordinate assignments within the objective's authorized resources; a worker, reviewer, or supervisor cannot silently enlarge its own allocation.
+**Scope:** the outer development root: `skills/`, the coordination board
+(`chatboard`) and `metrics/` tooling. These are Work Engine's original
+workflows, which are still used to develop the Rust replacement. The plan
+extends existing Python tools in that root and adds no component to the Rust
+engine. `app-server/` was abandoned and is out of scope.
 
-The outcome is a complete, auditable cost picture for an accepted engineering objective: coordinator preparation and integration; supervisors and discovery; workers/builders; independent reviewers, including separately launched top-level reviewers; retries, remediation, failed launches, collections, and handoff or successor work. The same model call is charged **once** to its owning logical assignment even though its cost appears in ancestor *inclusive* subtotals.
+## 1. Direction
 
-This is **not a bidding/auction system** and should not impose a new model consultation or approval ceremony on every dispatch. Estimates inform decisions; explicit allocations bound delegated work; human authorization bounds the objective. Cost measurement does not create task, mutation, review, provider, security-grant, launch, or publication authority.
+The user, 2026-10-29:
+- the weekly percentage is not a good measure, because several agents run at
+  once and all of them move it;
+- the current approach is too simple;
+- agents should not have to monitor their own usage, which adds complexity
+  when the work can be done deterministically.
 
-## 2. Existing assets and important constraints
+So this plan measures what each objective's agents spend, from their
+transcripts, in a host process. It tells the coordinator only when something
+changes that bears on a decision. When the work is finished, no agent runs a
+usage check, estimates its own cost or polls. `DESIGN.md` §9 and §14 say the same: fully determined work belongs
+to deterministic machinery, not to model reasoning.
 
-Read `AGENTS.md`, `DESIGN.md`, and, for this planning/design change, `PHILOSOPHY.md` in the actual working repository. Preserve DESIGN's distinction between binding invariants and adaptable routes.
+## 2. What revision 2 changes
 
-Inspected sources:
+| Revision 1 | Revision 2 | Why |
+|---|---|---|
+| Agents estimate per-assignment cost. The coordinator issues allocations, keeps reserves and approves leeway, and allocations are conserved. | Observation first. Limits are optional: a user limit binds, and a coordinator mark only produces an event for the coordinator. Allocations, leeway and expected costs are deferred to phase 5 and decided from shadow data. | Every allocation is a number the coordinator must choose at dispatch, and every wrong one becomes a request and an approval. In the S10 session of 2026-10-28/29 (n=1), calls doing only coordination or bookkeeping were already 58% of the tree's spend (a regex classification of call purpose, spot-checked 8 of 8). `DESIGN.md` §11 also says not to manufacture approval requirements. |
+| An incremental cost engine, reconciled against the batch ledger | The existing ledger rebuilds the objective's window at each tick | A full build took 1.2 s for 24 hours of both providers (4,648 calls) and 3.4 s for 7 days of Codex (31,580 calls), one run each. With one counter there is nothing to reconcile. |
+| A new budget registry beside `scope_budget` | Version 2 of the `scope_budget` record holds the binding and the limits | One record and one owner script, so no competing authority |
+| Lineage left to discovery | Lineage sources named and measured (§4.2) | Most of the tree is already linked |
+| None | Phase 0 corrects `scope_budget`'s weekly-point limit now | It is live and charges each objective with everyone's spend (§3) |
+| None | Ledger robustness | A 7-day build stops on one bad record (§4.1) |
 
-- `skills/manual-orchestration/SKILL.md` and `references/coordinator.md`, `supervisor.md`, `worker.md`, `organization-formation.md`, `context-control.md`, `measurement.md`, `context-boundary.md`.
-- `skills/manual-orchestration/scripts/scope_budget.py` and `tests/test_scope_budget.py`. Today `scope_budget` stores original scope, additions, elapsed wall-clock hours, and a **shared weekly meter delta**; it does not assign individual agent spending. `--set-by user` is a recorded assertion, not a cryptographically authenticated approval.
-- `metrics/scripts/usage_ledger.py` (F1/F1.1), its existing tests, and `metrics/scripts/task_profile_record.py`. The ledger reconstructs individual Codex/Claude calls, cached input, model and effort, priced or unpriced API-equivalent cost, Codex service tier, and uncertainty. It records Codex parent/root ancestry when available and Claude subagent transcript identifiers. The task-profile attribution currently joins child sessions to observed models and efforts, **not** an objective-level spending tree.
-- `skills/manual-orchestration/scripts/role_host.py`: its append-only launch/delivery ledger gives cross-host parent links **only for roles launched through it**. Native spawned children and separate top-level reviewers need their actual bindings; a role name or inherited environment session ID is insufficient.
-- `skills/durable-state/scripts/codex_chatboard.py`, `docs/codex-chatboard.md`, `skills/coordination-channels/SKILL.md`, `references/session-control.md`, and `skills/durable-state/tests/test_context_control.py`. `wait` already watches Git refs and bound transcript files through inotify; `ContextControl` reads pinned telemetry; `--follow` maintains cursors; local `control_events` are **not board publications**, and the listener's output must actually be collected by the host.
-- `docs/model-selection.md` and `metrics/dogfood-selection-plan-20261027.md`. Round 2's measurement and blinded reviewer conditions must not be silently changed by this feature. Existing campaign contracts take precedence where manual-orchestration is not the owner.
+Kept from revision 1:
+- the weekly meter as an account-wide signal only;
+- each call charged once, with direct and inclusive totals;
+- unknown never shown as zero;
+- observation grants no authority;
+- a separate cursor in `chatboard wait`;
+- shadow mode before any enforcement;
+- the shared-account isolation check.
 
-**Accounting truth:** API-equivalent dollars and Fast-tier-adjusted **modeled quota weight** are scenarios, not actual subscription deductions or invoices. An account-wide seven-day percentage is an independent global capacity signal; it must not be subtracted across timestamps to charge a single agent. Keep provider, model, pricing version, and quality/coverage metadata attached to every estimate. Do not add heterogeneous measured quantities together or silently treat an unknown price as $0.
+## 3. The problem in the current release
 
-## 3. Semantics and authority (binding design requirements)
+`scope_budget.py`, released in `471f6106`, works like this:
+- `init` records the account's Codex weekly meter;
+- `check` stops the objective (exit 4) when the meter's rise reaches
+  `max_weekly_points`;
+- `coordinator.md` tells coordinators to propose limits when the user gave none,
+  and to run `check` with every dispatch.
 
-### 3.1 Four distinct quantities
+The meter is account-wide:
+- **S10 window** (2026-10-28 22:00Z to 2026-10-29 15:37Z): the S10 root's tree
+  spent $133.73 of the account's $290.57 Codex API-equivalent spend, 46%. The
+  tree was built from Codex parent links plus `role_host` launch links.
+- **2026-10-29, 20:53Z to about 02:00Z:** three roots ran: RP3 `01a18390`, S10
+  `01a18305` and the bounded-inference B3 successor. In 8 records (assignment
+  records and continuations), their coordinators set `max_weekly_points` limits of 2 to 10 on the same meter.
+  The S10 tree was 26% of the Codex spend in that window. In dollar terms, about
+  three quarters of the spend that moved the meter came from other trees, and
+  all of it counted against S10's 2-point limit. Its share of quota is not
+  established, because the meter's charge per dollar differs by model.
 
-For each **logical assignment** (not simply a transcript), maintain:
+## 4. Existing machinery
 
-1. **Estimate:** the agent's current expected *all-in* cost of the outcome it owns, with uncertainty and assumptions. It may be revised with an explanation; it grants no spending authority.
-2. **Approved allocation:** the spending envelope for that assignment (direct inference plus descendants when the role owns a subtree), issued by the coordinator or another owner explicitly authorized by the active contract.
-3. **Actual attributable consumption:** priced calls, upper/lower ranges where applicable, unpriced/unattributed counts, and freshness/coverage; tracked independently of what the agent claims.
-4. **Objective ceiling and reserve:** a human-authorized hard limit only when the human or owning contract actually established one, plus whatever explicitly delegated coordinator-controlled, **unallocated** reserve is available. No human ceiling may be fabricated from an agent estimate.
+### 4.1 The ledger
 
-An approved allocation and a user hard limit are different authorities. Exceeding a *forecast* creates a planning observation; crossing an *assignment allocation* requires a coordinator decision for additional spending; crossing a *user hard ceiling or hard deadline* requires the relevant human or owning-contract decision. Do not silently convert either an estimate or a weekly account-meter delta into an authorization limit.
+`metrics/scripts/usage_ledger.py` (F1/F1.1) already does the counting:
+- Codex calls are counted by unique `response_id`, and Claude calls by
+  `message.id` across main and subagent transcripts. Forked counters are
+  handled.
+- Calls are priced at the frozen Standard API scenario. Claude cost is kept as a
+  range when the cache TTL is unknown, Codex Fast tier is labelled with its quota
+  multiplier, and unknown prices stay null.
 
-Time constraints remain independently typed: **wall-clock deadline** vs **active-execution time estimate**, with an explicit clock origin. Expiring grants/credentials have a separate validity lifecycle. Refresh a grant only when its owning security/approval contract permits it; a budget amendment alone is not that permission.
+Measured 2026-10-29, one run each:
 
-### 3.2 Budget hierarchy and conservation
+| Build | Time | Memory |
+|---|---|---|
+| 24 h, both providers | 1.2 s | 36 MB |
+| 7 days, Codex only | 3.4 s | 107 MB |
 
-A stable `objective_id` owns one budget tree. Stable logical `assignment_id` / `role_id` and `reports_to` determine **budget reporting**, independently of runtime parent-child ancestry. Runtime IDs, transcripts, launches, reviews, context replacements, and root successor sessions are bound to those assignments with exact observed evidence.
+**Defect:** `native_usd` raises `ValueError('TTL exceeds cache write')`, and the
+whole build stops. In the 7 days before 2026-10-30 02:00Z, 4 Claude messages
+(8 records) report `cache_creation_input_tokens: 0` with nonzero
+`ephemeral_1h_input_tokens`. That is out of 34,717 records with a cache split.
 
-At every node report both:
+`metrics/scripts/` is not part of skill releases, which export only `skills/`.
+A released tool can therefore use the ledger only by a pinned path or after the
+ledger moves into a skill.
 
-- `direct_consumption`: model calls charged to that logical assignment only;
-- `inclusive_consumption`: direct consumption plus every descendant assignment's consumption **once**.
+### 4.2 Lineage
 
-Similarly distinguish a parent's inclusive allocation from its explicitly allocated descendant amounts and its remaining unallocated reserve. Invariant: mutually committed direct/child allocations and reserves cannot exceed the parent's authorized envelope; a reallocation does not create new total resources. A child's cost appearing in a parent's inclusive view is **not another charge**. Calls must not be assigned to multiple objectives; unknown/ambiguous attribution stays excluded from established totals and visible as an unresolved liability, never silently zero.
+| Source | Link |
+|---|---|
+| Codex native children | `session_meta.parent_thread_id`. The ledger computes `root_thread` from these links only. |
+| Roles launched through `role_host.py` | Its ledger (`~/.local/state/work-engine/role-host/ledger.jsonl`) records `parent_session_id` for Codex and Claude launches. Codex `deliver` rows carry the `turn_id` they started. |
+| Claude subagents | Transcripts under the parent session's `subagents/` directory, which the ledger already reads |
+| Root successors | `root_rotation.py` verifies the successor's adoption, but nothing records the successor in a cost binding yet. |
 
-**Illustration (not a default budget):** Objective authorized $30 modeled-equivalent; coordinator direct allocation $3; Supervisor A subtree $12; Supervisor B subtree $10; coordinator-controlled reserve $5. Within Supervisor A, its own $2 plus builder $7 plus reviewer $3 exhausts that branch allocation. A request for $1 more for the builder must be approved by the coordinator and covered by available authorized reserve/reallocation; it must not implicitly raise the $30 objective ceiling.
+Coverage in the 24 h before 2026-10-30 02:00Z (one window):
+- 32 of 46 Codex threads had a native parent link.
+- Of the 14 top-level threads, 11 were `role_host` launches: 8 with a parent
+  and 3 roots.
+- 3 had no link. They spent $10.55 of the $115.50 the 14 top-level threads spent
+  in their own calls. Whether they belong to an objective is not established.
 
-**Leeway policy:** no automatic 10% (or other) increase to a child allocation. A supervisor may recommend an increase and explain unfinished obligations; the **coordinator/orchestrator must approve the adjustment** and record its source, reason, old/new allocation, affected reserve, and current objective state. A coordinator cannot approve an increase to the human objective ceiling. Coordinator direct spending may use only its already-authorized own allocation or self-use authority expressly delegated under the objective; otherwise its own allocation overrun is escalated to the human/owner rather than self-approved. If no human ceiling was established, coordinator forecasts remain advisory—do not invent a human approval gate merely because its estimate changed.
+### 4.3 The listener
 
-Approval of additional budget never expands task scope or supersedes other authority gates. Existing scope-addition classifications and user approvals still apply. Ordinary in-scope defect repair is not automatically a new objective.
+`chatboard wait --follow` combines board messages with a context source.
+`ContextControl`:
+- runs a reader pinned by path and SHA-256;
+- keeps an opaque `next_control_cursor`;
+- accepts only `observation_only` events;
+- stops with an error when the reader fails.
 
-### 3.3 Observability and incomplete information
+Delivery to the model follows `skills/manual-orchestration/references/context-control.md`:
+a named collector, and delivery verified from collected output, never claimed
+from stdout alone.
 
-The measured ledger and approval history are authoritative for **what was observed and granted**, not a claim of exact per-call subscription quota. Cost ranges must remain ranges (e.g., Claude unknown cache TTL). Unknown model, provider, role mapping, missing transcript, incomplete attribution, or missing pricing is an explicit status. Conservative budget-admission behavior is required for true hard limits when current liability cannot be established, with a truthful blocked/unknown reason; preserve safe collection, evidence capture, and handoff. No false inference of completion or zero spend.
+## 5. Invariants
 
-The system can check **before the next controllable launch/dispatch/turn**, and alert on completed-call costs. It cannot guarantee an exact ceiling if a running call or another unmanaged host consumes more before the record appears. Report enforcement coverage and in-flight exposure rather than claiming an unimplemented hard kill-switch.
+Each is binding because the failure named with it follows when it breaks.
 
-## 4. Registration and attribution
+1. **One charge per call.** A call belongs to at most one node of one objective,
+   and an ancestor's inclusive total is a view, not another charge. Otherwise
+   totals overstate spend, and limits stop work early.
+2. **Unknown is not zero.** Unpriced calls, cost ranges, unlinked sessions and
+   reader failures are reported as such. A zero would let work continue past a
+   limit it has already reached.
+3. **The weekly meter is account-wide.** It is never subtracted across time to
+   charge an objective (§3).
+4. **Observation grants no authority.** Budget events are local, typed
+   `observation_only` notifications. They are not board posts, approvals or
+   user messages.
+5. **Only the user changes a user limit.** A coordinator mark is the
+   coordinator's own tool. It needs no approval to set or move, and crossing it
+   is information, not a stop.
+6. **The binding is durable, and observations can be rebuilt.** The binding and
+   limits live in the assignment record. After a listener restart, any snapshot
+   can be rebuilt from the record and the transcripts.
 
-Implement a **durable, versioned objective/assignment budget registry** under existing Work Engine local state conventions (the repository's `planning/` is for this proposal, not mutable runtime state). The coordinator's durable assignment/continuation references the registry. Use atomic updates, concurrency control, an append-only decision/identity history or equivalent recoverable journal, and explicit ownership of state writes. Avoid competing sources of authority in the legacy `scope_budget` record and the new registry.
+## 6. Design
 
-A registration records: objective identity, accepted objective/authority reference, estimate and applicable ceilings; logical parent/role; assigned cost envelope; an immutable approval/decision record; start and end **assignment boundaries**; and identity bindings to actual provider/host session, rollout/transcript, agent ID where required, model configuration and collection owner. An unlaunched proposed role has no measured session. Subsequent session/assignment changes append new bindings, not rewrite history.
+### 6.1 Binding: `scope_budget` version 2
 
-The attribution reader should reuse the existing ledger's parsing, deduplication, pricing and uncertainty rules rather than writing a subtly different token counter:
+The coordinator's assignment record already holds `scope_budget`: objective,
+original items, additions, limits and history. Version 2 adds:
+- `sessions`: the root session, plus each successor appended at a verified
+  rotation, with the time it took over;
+- `bindings`: explicit links for sessions no lineage source connects, such as a
+  top-level reviewer started outside `role_host`, each with who bound it and
+  when;
+- cost limits in API-equivalent USD: `max_usd`, binding when the user set it, and
+  `marks_usd`, levels that produce events. Either can also be set per node.
 
-- Codex: use unique `response_id`, own-thread usage, actual `turn_context`, service tier, and verified session lineage; handle inherited/forked counters correctly.
-- Claude: deduplicate by `message.id`, include actual main and subagent transcripts, and use composite identities where a Claude subagent **shares its parent's `sessionId`**; session ID alone is not a unique role key.
-- Cross-provider / separate top-level reviewers: join verified `role_host` launch relationships **and** explicit assignment bindings. An unrelated top-level session is not in the subtree just because it ran at the same time.
-- Retained session changing assignments: attribute calls to an **explicit assignment interval/turn boundary**, not the entire historical session. Define interval boundaries and report ambiguous straddling calls honestly.
-- Root rotation, context compaction, and same-session recovery: preserve `objective_id`, accumulated cost, registered outstanding children, and budget authority; a changed root session cannot reset spending.
+Changes to existing limits:
+- `max_weekly_points` is no longer accepted for new limits.
+- `max_weekly_percent` stays, as an account-wide ceiling, and is reported as
+  account-wide.
+- Version 1 records stay readable, and a user-set version 1 limit keeps its
+  meaning until the user replaces it.
 
-Provide deterministic reports by **objective**, **assignment**, **provider/model/tier**, and **direct vs inclusive** totals. Include any unpriced calls, unknown attribution, first/last observed call, ledger version, snapshot time, source references, and reconciliation status. Preserve original raw call identities for audit and backfill.
+`root_rotation.py` appends the successor to `sessions` after verifying adoption,
+so a rotation cannot reset the objective's spend.
 
-## 5. Monitor and existing `chatboard wait` delivery
+### 6.2 Cost tree: `usage_ledger.py tree`
 
-Extend the **existing delivery path**, not the model's instruction workload:
+Given the record and a window (by default from `started_at`), `tree` builds the
+ledger in memory and joins the three lineage sources with the record's bindings.
+It prints one JSON document with:
+- for each node:
+  - session, provider, and role name where one is recorded (the `role_host` name
+    or the Codex `agent_nickname`);
+  - models and tiers;
+  - direct and inclusive spend (low and high where ranged);
+  - unpriced call count, and first and last call;
+- totals for the objective and for the window;
+- the unattributed remainder, with its session list, so coverage gaps are
+  visible;
+- the reader's SHA-256 and the snapshot time.
 
-1. A single **owned host-side aggregation path per objective (or an equivalently efficient shared host)** consumes registered transcript updates and maintains a durable cost snapshot. Use filesystem notification/incremental input where feasible. Rebuilding the full historical `usage_ledger.py` on each file append or in every agent's waiter is not acceptable. Permit bounded reconciliation against the reference batch ledger for audit, rotations, unknown deltas, and recovery.
-2. Existing per-agent `chatboard wait --follow` registers one budget observation binding in addition to its context-pressure binding. `RefChanges` may watch the relevant objective budget snapshot/registration state. Add a `BudgetControl`-equivalent adapter with its **own cursor**, identity/assignment/policy binding and changed-state suppression. Do **not** interfere with `ContextControl` or reuse its cursor.
-3. Keep ordinary `messages` and `next_since` semantics unchanged. Prefer an **independent `budget_events` and `next_budget_cursor`** on the same `wait` result, so old `control_events` consumers continue to work. Budget events are local, typed, `observation_only` notifications, **not Git board posts, approvals, or user messages**. Reject attempts to spoof them as ordinary chatboard messages.
-4. Only decision-relevant transitions notify: approaching an assignment allocation, estimate materially diverging, allocation exhausted, changed authorized allocation, significant source/coverage degradation, and recovery. Configurable advance notice must leave room for normal call-size/in-flight risk; avoid repeated same-state warnings. Suppress idle churn. Do not wake all descendants for one branch's warning.
-5. Route **allocation decision** events to the coordinator, scoped observations to their responsible roles as needed, and a grant/denial outcome to the waiting requester. The external collector must demonstrably deliver these events to the correct live model session; stdout in a terminal is not delivery. When a model turn is unnecessary, coalesce the observation with the next natural turn. An earlier wake must use a *verified* host mechanism. `wait --follow` retains its bounded lifetime and rearming semantics; handle timeout, failure, replacement and ownership transfer explicitly.
-6. A stopped listener, lost binding, stale budget snapshot, missed membership update, or uncollected stream must not be misrepresented as live observation. A fallback explicit status query is an allowed capability; it is not a request for routine model-driven polling.
+A session reused for several assignments counts as one node in this plan.
+Splitting it at assignment boundaries is investigated in phase 1, and built only
+if phase 4 shows it is needed. `role_host` delivery turn IDs cover Codex roles;
+native children do not go through `role_host`.
 
-**Important separation:** registration and budget approval records must be durable; local budget-pressure notifications need not be persisted to the Git-backed board. The live observed state should be reconstructible from durable authority and usage records after listener interruption.
+### 6.3 Listener source: `wait --budget-record`
 
-## 6. Admission, request and decision semantics
+A `BudgetControl` adapter sits beside `ContextControl` and has the same shape:
+- **Reader:** pinned by path and digest, as the context reader is. Placement is
+  decision 4 in §9.
+- **Cursor:** its own `next_budget_cursor`. Results go in `budget_events`, so
+  `messages`, `next_since` and `control_events` are unchanged.
+- **Interval:** it runs `tree` at most once per interval, a setting that starts
+  at 60 s.
+- **No repeats:** the cursor records the last reported state of each trigger.
+  An unchanged state produces no event, and a restart from the last consumed
+  cursor does not repeat it.
 
-At a controllable dispatch/new assignment boundary, consult the current **approved allocation and objective authority**, not the shared weekly percentage. If estimated remaining cost plus known outstanding/in-flight commitments threatens the allocation, the agent may request leeway early with a compact statement of current measured spend, unfinished obligations, anticipated additional cost and confidence, current reserve and effect on the parent objective. A supervisor can recommend; **only the designated coordinator** can grant additional child allocation inside its delegated objective authority.
+Events are sent only when a state changes:
+- objective spend crosses a mark or a set fraction of the user limit, or reaches
+  the user limit;
+- the hours limit is approaching or reached;
+- a node crosses its own mark, if one is set;
+- coverage changes: the reader fails or recovers, or unpriced or ranged calls
+  appear in the tree;
+- the account meter crosses a user-set `max_weekly_percent`, labelled
+  account-wide.
 
-An approval updates the budget registry transactionally, reduces available reserve or explicitly reallocates an uncommitted amount, links the approving coordinator's verified/current authority binding and exact source decision, and sends a meaningful change event to the requester's existing listener. A denial or unavailable approval leaves the old allocation in force. On root ownership transfer, the successor must establish adoption/authority before it can grant new allocations. Do not confuse a message's claimed session ID with verified identity; call out where OS-local tools cannot authenticate a claimed approval actor.
+The listener is bound to the coordinator by default, and builders and reviewers
+get no events. Whether supervisors get events for their subtree is decision 3
+in §9.
 
-For a **hard authorized ceiling**, new controllable dispatches must be refused when the accounted and conservatively estimated outstanding cost cannot fit. No automatic task restart, unauthorized new model, or self-approval. Existing running work is collected/stopped only through the owning process contracts; preserve provenance and safe handoff. The global weekly meter may provide an independent account-exhaustion warning, not per-objective spending or a new source of spending permission.
+### 6.4 At a limit
 
-**Legacy limits:** preserve existing human-imposed weekly-percentage and deadline conditions until the authorized owner explicitly migrates or replaces them. Do not silently reinterpret a previously accepted wall-clock deadline as execution time, and do not silently remove a hard limit because modeled API dollars are now observable. Design a versioned migration for `scope_budget.py` so no two independently authoritative budget guards disagree. Old records remain readable and tests remain valid or change only with an explicit, reviewed migration.
+At a user limit, the coordinator does what `coordinator.md` already says:
+dispatch nothing new, collect outstanding results or handoffs, and report.
 
-## 7. Implementation sequence and deliverables
+Phase 5 can add a deterministic refusal in `role_host launch` for an objective
+at its user limit. Native Codex spawns cannot be intercepted there, and the
+coverage report says so.
 
-Use judgment about the exact module breakdown; do not turn these into additional approvals or mandatory independent agent calls. Maintain an isolated worktree or otherwise avoid touching other sessions' uncommitted files, and use the existing chatboard coordination/claim rules for overlapping resources.
+A running call can overshoot a limit before its record appears. The event
+reports the overshoot; it does not claim a hard stop.
 
-**A. Validate boundaries and freeze the minimal contracts.** Inspect real launch/rollout shapes for native Codex children, separate Astra reviewers, Claude Code subagents, cross-provider `role_host` children, and retained tasks. Verify the active branch/skills and required tests. Define the versioned objective-budget record, assignment membership rules, call ownership, decision/approval reference, and observer event/cursor semantics. Preserve relevant contract owners and active experiment isolation. Record uncertainty instead of inventing an identity.
+### 6.5 Deferred, and what would justify each
 
-**B. Offline cost-tree attribution (no live enforcement yet).** Build a small deterministic aggregation layer over `usage_ledger.py` output. Given a registered objective and bound assignments, produce direct and inclusive totals, coverage/ranges, and no double-counting. Reconcile selected controlled fixtures against the existing batch ledger. Do not implement a second pricing formula.
+- **Per-assignment allocations, reserves, leeway requests and approvals:** phase
+  4 shows coordinators acting on subtree spend often enough that marks are not
+  sufficient.
+- **Expected cost per assignment:** built only if phase 4 shows outlier events
+  would have changed a decision. It is computed from history by role and model,
+  never asked of agents.
+- **Incremental reading:** rebuild time per tick becomes material in phase 4.
+- **Splitting reused sessions by assignment:** see §6.2.
+- **Converting dollars to quota weight per model:** a measured coefficient
+  exists for each model.
 
-**C. Durable registration and coordinator leeway.** Add budget registrations and decision history with tested invariant checks for nested allocations, reserve conservation, scope and approval authority, rotation, and reassignment. Keep estimate changes distinct from allocation grants. Make the existing `scope_budget.py` transition explicit and backward compatible.
+## 7. Phases
 
-**D. Incremental observation and wait integration.** Maintain cost snapshots host-side without a model turn per append. Add the budget source to existing `chatboard wait`, with separate `budget_events`/cursor and unchanged context/board functionality. Test that one event source can wake a listener while the other two retain their cursors. Do not claim model-visible delivery until an end-to-end host collector confirms it.
+**0. Correct the current release.**
+- In `scope_budget.py`, stop accepting `--max-weekly-points` for new limits, and
+  have `check` report the meter's rise as account-wide. It stops on that rise
+  only when the user set the limit.
+- In `coordinator.md`, stop asking coordinators to propose weekly-point limits.
+  Keep the hours limit and its `check` until phase 3 delivers deadline events.
+- Release through `skill-release`.
 
-**E. Enforcement at supported admission points.** Add deterministic pre-dispatch/admission checking where the actual launch path can be intercepted. Document uncovered host paths and in-flight overshoot; do not pretend monitoring alone enforces the budget. Keep collection, custody and safe stop paths working even after an exhausted allocation. New enforcement begins only after the owner accepts the semantics and coverage.
+Running roots pick up the script change at their next `check`. The change to
+`coordinator.md` alters round 2's `guidance_sha256`, and is reported to round 2
+as an environment change.
 
-**F. Shadow pilot, evidence, and documentation.** First report observed costs and potential alerts with **no stop/approval behavior change** on one bounded mixed-role objective; run a second cross-provider/rotation case if representative traces are available. Measure listener idle overhead, notification count, model wakeups, accounting divergence and missing coverage. Request the appropriate owner decision before activating any real new hard gate or changing an active campaign's instructions. Update `docs/codex-chatboard.md`, manual orchestration/coordination references, CLI help and tests as needed; install/release changed skills through their owning mechanism, not by assuming a source edit changes loaded instructions.
+**1. Ledger.**
+- Fix the stop: record an issue and price the call as a range covering both
+  readings.
+- Add the `role_host` join, Claude subagent nodes and the `tree` command.
+- Test on synthetic transcripts for each lineage type, and replay offline on the
+  S10 window and the 2026-10-29 evening window.
 
-## 8. Minimum acceptance checks
+**2. Binding.** `scope_budget` version 2 with `bind`, the rotation append, and
+version 1 compatibility tests.
 
-All must have durable test evidence; unknown should be reported, not silently passed:
+**3. Listener.**
+- `BudgetControl` and `wait --budget-record`.
+- Documentation in `docs/codex-chatboard.md` and the manual-orchestration
+  references.
+- The listener replaces the per-dispatch `check`; with no listener bound, the
+  coordinator runs an explicit `tree` query instead.
 
-1. **Three-level sum:** coordinator → supervisor → builder/reviewer; root inclusive cost equals the union of actual calls, and child spend is counted exactly once even when nested in both ancestor views.
-2. **Shared-account isolation:** unrelated concurrent Codex/Claude sessions move account-wide quota but do not enter the objective's cost tree.
-3. **Cross-host lineage:** Codex native children, top-level Astra reviewer, `role_host` Claude child, and Claude subagent are attributed to the correct logical assignments with exact bindings and without duplicate inherited usage.
-4. **Retained and successor continuity:** one session handles successive assignments; a root rotates; budgets and call attribution survive without reset or leakage across assignment boundaries.
-5. **Pricing/coverage honesty:** actual model/tier selection is used, Fast multiplier is labeled modeled quota weight, unknown model/cache TTL creates unpriced/ranged/unknown outcome, and missing readings are never zero.
-6. **Conserved leeway:** only the active authorized coordinator increases a child's allocation; nested reservations and cumulative increments cannot oversubscribe the objective; denied or stale approvals do not mutate it; the coordinator never raises the user ceiling.
-7. **Mixed simultaneous notifications:** one `wait --follow` handles board messages, context pressure and budget changes without losing, duplicating or conflating cursors/events; one changed budget wakes only applicable recipients.
-8. **No quiet cost churn:** no repeated model turns when values stay within a state; no historical full-scan on every transcript append. Demonstrate an incremental cost path and reconcile it against batch output.
-9. **Failure/restart:** watcher failure, truncated writer file, log truncation/replacement, missed inotify event, listener timeout, monitoring pause and recovery produce truthful unavailable/recovered state and no unauthorized new dispatch under a hard cap.
-10. **Unchanged contracts:** existing chatboard/context tests and legacy budget tests still pass; active R2 blinding/model selection and configured Slice Builder gates are not silently changed. Report what hasn't been tested live.
+**4. Shadow pilot.** One or two real objectives, with events delivered to the
+coordinator and no new stop behaviour. Measure:
+- rebuild time per tick;
+- the events, and the model turns they caused;
+- the unattributed share;
+- verified delivery.
 
-## 9. Out of scope
+Report to the user with a recommendation on each §6.5 item.
 
-No auction, mandatory per-task bidding, new AI monitor agent, hourly polling inference loop, hardcoded leeway percentage, speculative quota-point attribution, new global scheduler, forced stop of in-flight model requests, automatic credential reissuance, or independent source of authority. Do not rewrite the whole manual-orchestration system or the Rust lifecycle runtime to implement this focused capability.
+**5. User decision.** Admission refusal at `role_host launch`, and any §6.5 item
+the pilot justifies.
 
-## 10. What the local implementer should return
+## 8. Acceptance checks
 
-Return: (a) the exact implementation boundary and changed files; (b) the data model and cost attribution proof, including missing cases; (c) the observed watcher-to-model delivery path; (d) permission/approval and admission coverage, including unenforced hosts; (e) tests and measured overhead; (f) backward compatibility/migration disposition; and (g) unresolved decisions and a concise owner review packet. Do not claim the objective accepted merely because code or fixtures pass. Do not publish or authorize new resource ceilings without the owning approval.
+Each needs test or recorded evidence. Anything not tested live is reported as
+not tested.
 
-**Central success criterion:** An agent can register an estimate and an approved allocation once; an independently owned host observes its actual direct and subtree spending; meaningful updates arrive through the existing chatboard waiting route; and any extra subordinate leeway is a visible, coordinator-approved reallocation, not a fresh human request or a silent enlargement of authority.
+1. **Conservation:** for a window and per provider, the bound trees plus the
+   unattributed remainder equal the ledger total, and no call is in two trees.
+2. **Isolation:** in the 2026-10-29 evening window, the three roots' trees do not
+   overlap.
+3. **Lineage:** each of these lands under the right node, with no inherited
+   counter counted twice:
+   - a native Codex child;
+   - a `role_host` Codex child and a `role_host` Claude child;
+   - a Claude subagent;
+   - a root successor.
+4. **Honesty:** each of these produces an explicit state, and no single record
+   stops the build:
+   - an unpriced model;
+   - an unknown cache TTL;
+   - an inconsistent cache split;
+   - a missing transcript;
+   - an unreadable `role_host` ledger.
+5. **One counter:** the listener's figures equal `usage_ledger.py tree` for the
+   same snapshot.
+6. **Listener:**
+   - one `wait --follow` carries board, context and budget sources with separate
+     cursors, and a budget event leaves the other cursors alone;
+   - no event is sent while a state is unchanged;
+   - restarting from the last consumed cursor does not repeat consumed events.
+7. **Overhead:** the pilot measures rebuild time per tick and the model turns
+   budget events caused.
+8. **Compatibility:**
+   - version 1 records stay readable;
+   - existing `scope_budget`, chatboard and context tests pass;
+   - user-set limits behave as before.
+9. **No self-monitoring:** no released instruction asks a builder, reviewer or
+   supervisor to check or estimate its own usage.
+
+## 9. Decisions for the user
+
+1. **Phase 0 now?** It changes released coordinator guidance and how `check`
+   behaves for running roots, and it is an environment change for round 2.
+2. **Limit unit:** API-equivalent USD at the frozen list prices, which can be
+   attributed to each call. The subscription charges models differently per
+   dollar.
+3. **Event recipients:** the coordinator only, or supervisors too, for their
+   subtrees.
+4. **Reader placement:** pin `usage_ledger.py` by path and digest, as the context
+   reader is pinned, or move it into a released skill.
