@@ -23,6 +23,8 @@ import subprocess
 import datetime as dt
 import json
 import os
+import signal
+import time
 import sys
 import uuid
 import math
@@ -282,6 +284,32 @@ def cmd_close(args: argparse.Namespace) -> int:
     return 0
 
 
+def stop_listener_group(proc: subprocess.Popen) -> None:
+    """Stop the detached listener and its readers after publication fails."""
+    pgid = proc.pid  # start_new_session makes the child the group leader.
+    def signal_group(sig: int) -> bool:
+        try:
+            os.killpg(pgid, sig)
+            return True
+        except ProcessLookupError:
+            return False
+
+    try:
+        if signal_group(signal.SIGTERM):
+            deadline = time.monotonic() + 5.0
+            while True:
+                proc.poll()  # Reap the leader so it cannot keep the group present.
+                if not signal_group(0):
+                    break
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    signal_group(signal.SIGKILL)
+                    break
+                time.sleep(min(0.05, remaining))
+    finally:
+        proc.wait()
+
+
 def cmd_listen(args: argparse.Namespace) -> int:
     path = Path(args.record).resolve()
     doc = load(path)
@@ -362,13 +390,7 @@ def cmd_listen(args: argparse.Namespace) -> int:
         sb["listener"] = entry
         save(path, doc)
     except BaseException:
-        try:
-            if proc.poll() is None:
-                proc.terminate()
-        except ProcessLookupError:
-            pass
-        finally:
-            proc.wait()
+        stop_listener_group(proc)
         raise
     print(json.dumps(entry))
     return 0
