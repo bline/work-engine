@@ -1,3 +1,6 @@
+import argparse
+import contextlib
+import io
 import json
 import os
 import sys
@@ -100,3 +103,95 @@ class IssueScope(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def assistant(sid, mid, ts, input_tokens):
+    return json.dumps({'type': 'assistant', 'timestamp': ts, 'sessionId': sid,
+                       'message': {'id': mid, 'model': 'claude-opus-5-5',
+                                   'usage': {'input_tokens': input_tokens, 'output_tokens': 10,
+                                             'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0}}})
+
+
+class ClaudeScope(unittest.TestCase):
+    """Review finding 1: a transcript can hold several sessions' rows (copied history)."""
+
+    def run_tree(self, d, transcript):
+        rec = os.path.join(d, 'record'); record(rec, [{'session_id': ROOT, 'provider': 'claude', 'from': T0}])
+        with open(transcript, 'w') as f:
+            f.write(assistant(OTHER, 'm-other', T1, 100) + '\n')
+            f.write(assistant(ROOT, 'm-root', T1, 100) + '\n')
+            f.write(assistant(ROOT, 'm-root', T1, 200) + '\n')
+        with patch.object(L, 'HOME', d), patch.object(L, 'CODEX_GLOBS', []), \
+                patch.object(L, 'CLAUDE_GLOB', os.path.join(d, '.claude', 'projects', '**', '*.jsonl')), \
+                patch.object(L, 'thread_index', return_value={}):
+            return L.cost_tree(rec, role_ledger=os.path.join(d, 'absent'))[0]
+
+    def test_member_issue_in_main_transcript_with_outside_row_first(self):
+        with tempfile.TemporaryDirectory() as d:
+            project = os.path.join(d, '.claude', 'projects', 'p'); os.makedirs(project)
+            tree = self.run_tree(d, os.path.join(project, ROOT + '.jsonl'))
+            self.assertEqual(tree['status'], 'partial')
+            self.assertIn('conflicting_native_counter', [i['kind'] for i in tree['issues']])
+            self.assertNotIn('conflicting_native_counter', tree['outside']['issues'])
+
+    def test_member_issue_in_subagent_transcript_with_outside_row_first(self):
+        with tempfile.TemporaryDirectory() as d:
+            project = os.path.join(d, '.claude', 'projects', 'p'); os.makedirs(os.path.join(project, ROOT, 'subagents'))
+            with open(os.path.join(project, ROOT + '.jsonl'), 'w') as f: f.write(assistant(ROOT, 'm-main', T1, 100) + '\n')
+            tree = self.run_tree(d, os.path.join(project, ROOT, 'subagents', 'agent-x.jsonl'))
+            self.assertEqual(tree['status'], 'partial')
+            self.assertIn('conflicting_native_counter', [i['kind'] for i in tree['issues']])
+
+
+class ScopeBoundaries(unittest.TestCase):
+    """Review finding 2: unmapped files, range-only outside calls, early shape, control coverage."""
+
+    def test_unmapped_file_without_session_id_stays_in_scope(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = os.path.join(d, f'rollout-x-{ROOT}.jsonl'); rollout(root, ROOT, [('r1', T1, GOOD)])
+            rec = os.path.join(d, 'record'); record(rec, [{'session_id': ROOT, 'provider': 'codex', 'from': T0}])
+            def index_with_issue():
+                L.issue('malformed_session_metadata', path=os.path.join(d, 'unknown.jsonl')); return {}
+            with patch.object(L, 'CODEX_GLOBS', [root]), patch.object(L, 'CLAUDE_GLOB', os.path.join(d, 'none')), \
+                    patch.object(L, 'thread_index', side_effect=index_with_issue):
+                tree = L.cost_tree(rec, role_ledger=os.path.join(d, 'absent'))[0]
+            self.assertEqual(tree['status'], 'partial')
+            self.assertIn('malformed_session_metadata', [i['kind'] for i in tree['issues']])
+
+    def test_outside_range_only_call_leaves_objective_complete(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = os.path.join(d, f'rollout-x-{ROOT}.jsonl'); other = os.path.join(d, f'rollout-x-{OTHER}.jsonl')
+            rollout(root, ROOT, [('r1', T1, GOOD)])
+            rows = [{'timestamp': T0, 'type': 'session_meta', 'payload': {'id': OTHER}},
+                    {'timestamp': T0, 'type': 'turn_context', 'payload': {'model': 'gpt-6.1-sol'}},
+                    {'timestamp': T1, 'type': 'token_usage_record', 'payload': {'thread_id': OTHER, 'response_id': 'o1', 'usage': GOOD}}]
+            with open(other, 'w') as f:
+                for row in rows: f.write(json.dumps(row, separators=(',', ':')) + '\n')
+            tree = IssueScope().tree(d, [root, other])
+            w = tree['window_totals']['codex']
+            self.assertNotEqual(w['quota_usd_low'], w['quota_usd_high'])
+            self.assertEqual(tree['status'], 'complete')
+
+    def test_not_established_document_has_outside(self):
+        with tempfile.TemporaryDirectory() as d:
+            rec = os.path.join(d, 'record'); record(rec, [])
+            with patch.object(L, 'CODEX_GLOBS', []), patch.object(L, 'CLAUDE_GLOB', os.path.join(d, 'none')), \
+                    patch.object(L, 'thread_index', return_value={}):
+                tree = L.cost_tree(rec, role_ledger=os.path.join(d, 'absent'))[0]
+            self.assertEqual(tree['status'], 'not_established')
+            self.assertEqual(tree['outside'], {'issues': {}, 'undated_calls': 0})
+
+    def test_control_coverage_ignores_outside_issues(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = os.path.join(d, f'rollout-x-{ROOT}.jsonl'); other = os.path.join(d, f'rollout-x-{OTHER}.jsonl')
+            rollout(root, ROOT, [('r1', T1, GOOD)]); rollout(other, OTHER, [('o1', T1, {'input_tokens': 'bad'})])
+            rec = os.path.join(d, 'record'); record(rec, [{'session_id': ROOT, 'provider': 'codex', 'from': T0}])
+            args = argparse.Namespace(record=rec, cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0',
+                                      role_host_ledger=os.path.join(d, 'absent'))
+            out = io.StringIO()
+            with patch.object(L, 'CODEX_GLOBS', [root, other]), patch.object(L, 'CLAUDE_GLOB', os.path.join(d, 'none')), \
+                    patch.object(L, 'thread_index', return_value={}), contextlib.redirect_stdout(out):
+                L.cmd_control(args)
+            doc = json.loads(out.getvalue())
+            self.assertEqual(doc['snapshot']['status'], 'complete')
+            self.assertNotIn('coverage_changed', [e['kind'] for e in doc['events']])

@@ -922,20 +922,20 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     result['undated']['sessions'] = [dict(session_id=sid, provider=provider) for sid, provider in sorted(undated_sessions, key=str)]
     result['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and
                             (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
-    file_session = {}
+    file_sessions = collections.defaultdict(set)
     for c in calls:
         src = c.get('source'); sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
-        if isinstance(src, str) and isinstance(sid, str): file_session.setdefault(src.rsplit(':', 1)[0], sid)
+        if isinstance(src, str) and isinstance(sid, str): file_sessions[src.rsplit(':', 1)[0]].add(sid)
     def in_scope(i):
-        # An issue without a file, or from a file whose session is unknown and names no
-        # session ID, may concern the objective, so it stays in scope (invariant 2).
+        # An issue is outside only when everything known about its file points to
+        # other sessions. A file with any member session (copied history can put
+        # several sessions in one transcript), a path naming a member, or no file or
+        # session at all keeps the issue in scope (invariant 2).
         if isinstance(i.get('path'), str): path = i['path']
         elif isinstance(i.get('source'), str): path = i['source'].rsplit(':', 1)[0]
         else: return True
-        sid = file_session.get(path)
-        if sid is not None: return sid in members
-        ids = SESSION_ID.findall(path)
-        return not ids or any(x in members for x in ids)
+        known = file_sessions.get(path, set()) | set(SESSION_ID.findall(path))
+        return not known or bool(known & members)
     outside = collections.Counter()
     for i in list({json.dumps(x, sort_keys=True): x for x in ISSUES}.values()):
         if in_scope(i): result['issues'].append(i)
