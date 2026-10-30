@@ -433,6 +433,29 @@ All of these, then owner approval:
    2 Terra in flight, 10 Terra repair rounds). **Done 2026-10-28** on the owner's
    approval; `init-round` wrote the run directory's `round.json`.
 
+### Environment changes during the round
+
+Releases of `manual-orchestration`, the skill that carries the round's steps,
+recorded 2026-10-30 from the release history
+(`~/.local/share/work-engine/skill-releases/history.jsonl`). Records from
+different periods are reported apart and not compared directly. Each episode's
+arm is drawn independently, so both arms run in every period.
+
+| Release, deployed | What changed for the round | Guidance hash | Enrolled, Sol / Terra | Open at the change |
+|---|---|---|---|---|
+| `a7c1cf66`, 2026-10-28T21:42:45Z | Activation | `a6c1c27d…` (`coordinator.md`) | 2 / 2 | none |
+| `46d30e9f`, 2026-10-29T01:00:11Z | Automatic same-session continuation for outer agents, in other files of the skill; the guidance file is unchanged | `a6c1c27d…` | 2 / 0 | 1 Sol, 1 Terra |
+| `471f6106`, 2026-10-29T20:10:27Z | "Scope and budget" added to the guidance: a supervisor records hour and quota limits and stops dispatching at them. Also rules for writing packets | `3b9197b8…` (`coordinator.md`) | 2 / 4 | 1 Sol |
+| `5695755f`, 2026-10-30T03:19:59Z | Coordinator role removed (Appendix A, item 13). The round's steps moved to `supervisor.md` unchanged, except "Declare your role as `supervisor`" and the file to hash | `f7a57b7a…` (`supervisor.md`) | none yet | 1 Sol, 1 Terra |
+
+Enrollment counts are by enrollment time; every enrollment profile's hash matches
+its period. The hash marks the period, not the declaring role: 33 of the 83
+sidecars written before `5695755f` already declare `supervisor`. A supervisor
+already running may follow text it loaded before a release, so the boundary is
+approximate for episodes in flight. An episode stopped at a scope-and-budget
+limit closes as `abandoned` with that reason, under the terminal-disposition
+definition above; it is not a builder outcome.
+
 ## Before activation
 
 0. **Approved 2026-10-27** (owner, after ChatGPT's review of v0.2.1), in this
