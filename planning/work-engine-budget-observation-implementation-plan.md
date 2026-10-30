@@ -7,9 +7,19 @@ unchanged in `c2ccc569`. Revision 2 (`ef013ac3`) was Claude's rewrite. Revision
 3 records the user's answers to revision 2's four decisions (§9) and what
 follows from them.
 
-**Status:** plan. Implementation has not started, and each phase starts on the
-user's go-ahead. Changes to released skills, or to an active experiment's
-environment, follow those owners' rules.
+**Status (2026-10-30):** phases 0 to 3 are implemented on branch
+`budget-obs-integration` (head `1ecc1917`). Each unit passed independent review:
+
+| Unit | Accepted at | Review rounds |
+|---|---|---|
+| `wait` budget source | `07bd595f` | 2 |
+| `scope_budget` version 2 and rotation binding | `7c131795` | 2 |
+| ledger `tree`, `control`, prices and pools | `9b911be2` | 3 |
+
+The branch includes main's removal of the coordinator role (`5695755f`). It is
+not merged into the main working tree and not released. Supervisors run the
+ledger from the working tree, so a merge there takes effect at once. Merging and releasing need the user's go-ahead, and round 2 is revised
+for the change then.
 
 **Scope:** the outer development root: `skills/`, the coordination board
 (`chatboard`) and `metrics/` tooling. These are Work Engine's original
