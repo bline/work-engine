@@ -54,7 +54,7 @@ Usage
 Round-2 episode records live in <run_dir>/enrollments/<task_id>/ with their own
 SHA256SUMS and prior_files. Initialize round.json before using round commands.
 Round commands print one JSON object (verify retains text lines); exit 2 is a usage refusal, 1 an integrity
-failure, 3 means verify found no records, and 0 includes logged screening refusals.
+failure, 3 includes profile no-ops and verify with no records, and 0 includes logged screening refusals.
 Exit 4 is profile_required: an eligible packet can enroll; no screening or enrollment is written. A run-level advisory lock
 serializes round commands; episode records are published without replacement by linking a complete, fsynced
 temporary file to the final name. Missing manifest entries are recovered on read

@@ -746,6 +746,16 @@ rec.main()
         self.review(session='fake-session')
         self.assertNotIn('a: reviewer_unlinked', self.call('status')['inconsistencies'])
 
+    def test_packet_profile_required_exit_is_documented_in_help(self):
+        for args in (['--help'], ['enroll', '--help']):
+            out = io.StringIO()
+            with mock.patch.object(sys, 'argv', [SCRIPT, *args]), contextlib.redirect_stdout(out):
+                with self.assertRaises(SystemExit) as exit_status:
+                    rec.main()
+            self.assertEqual(exit_status.exception.code, 0)
+            self.assertIn('profile_required', out.getvalue())
+            self.assertRegex(out.getvalue().lower(), r'exit\s+4')
+
     def packet_screen(self, task='packet', eligible='yes', code=0):
         packet = self.root / 'screen-packet.md'
         packet.write_text('Frozen synthetic packet')
