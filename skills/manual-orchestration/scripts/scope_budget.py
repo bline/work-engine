@@ -108,6 +108,10 @@ def reject_points(args: argparse.Namespace) -> None:
     if args.max_weekly_points is not None:
         raise UsageError("--max-weekly-points is no longer accepted; use cost-limit")
 
+
+def setter(value: str) -> str:
+    return "supervisor" if value == "coordinator" else value
+
 def limits_from(args: argparse.Namespace) -> dict[str, Any]:
     return {k: getattr(args, k) for k in LIMITS if getattr(args, k) is not None}
 
@@ -163,7 +167,7 @@ def cmd_revise(args: argparse.Namespace) -> int:
         raise UsageError("give at least one limit to revise")
     upgrade(sb)
     sb["limit_history"].append({"until": stamp(now()), "limits": sb["limits"],
-                                "set_by": sb["limits_set_by"], "reason": sb.get("limits_reason")})
+                                "set_by": setter(sb["limits_set_by"]), "reason": sb.get("limits_reason")})
     sb["limits"] = {**sb["limits"], **changed}
     sb["limits_set_by"], sb["limits_reason"] = args.set_by, args.reason
     save(path, doc)
@@ -181,7 +185,7 @@ def cmd_add_session(args: argparse.Namespace) -> int:
              "bound_by": args.bound_by, "evidence": args.evidence}
     existing = next((x for x in sb.get("sessions", []) if x["session_id"] == args.session), None)
     if existing is not None:
-        if existing != entry:
+        if {**existing, "bound_by": setter(existing["bound_by"])} != entry:
             raise UsageError("session already exists with different binding")
         print(json.dumps({"session": existing, "added": False}))
         return 0
@@ -216,9 +220,11 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     entry = {"pool": args.pool, "node": args.node, "max_usd": args.max_usd,
              "marks_usd": sorted(set(args.mark_usd)), "set_by": args.set_by,
              "set_at": stamp(now()), "reason": args.reason}
-    previous = next ( (x for x in sb["cost_limits"] if x["pool"] == args.pool and x["node"] == args.node and x["set_by"] == args.set_by), None)
-    sb["cost_limits"] = [x for x in sb["cost_limits"] if (x["pool"], x["node"], x["set_by"]) != (args.pool, args.node, args.set_by)]
+    previous = next ( (x for x in sb["cost_limits"] if x["pool"] == args.pool and x["node"] == args.node and setter(x["set_by"]) == args.set_by), None)
+    sb["cost_limits"] = [x for x in sb["cost_limits"] if (x["pool"], x["node"], setter(x["set_by"])) != (args.pool, args.node, args.set_by)]
     sb["cost_limits"].append(entry)
+    if previous is not None:
+        previous = {**previous, "set_by": setter(previous["set_by"])}
     sb["limit_history"].append({"cost_limit": entry, "previous_cost_limit": previous})
     save(path, doc)
     print(json.dumps({"cost_limit": entry}))
@@ -252,7 +258,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     reconsider = trigger is not None and n >= trigger
     result = {"elapsed_hours": round(elapsed, 2), "additions": n, "original_items": len(sb["original_items"]),
               "weekly_percent": meter and meter["used_percent"], "account_weekly_points": points, "account_wide": True, "advisory": advisory,
-              "limits": limits, "limits_set_by": sb["limits_set_by"], "reached": reached,
+              "limits": limits, "limits_set_by": setter(sb["limits_set_by"]), "reached": reached,
               "unknown": unknown, "reconsider": reconsider, "stop": bool(reached)}
     print(json.dumps(result))
     return 4 if reached else 3 if reconsider else 0
@@ -267,7 +273,7 @@ def parser() -> argparse.ArgumentParser:
         q.add_argument("--max-weekly-points", type=float, help="rise in the weekly meter since init")
         q.add_argument("--max-weekly-percent", type=float, help="ceiling on the weekly meter")
         q.add_argument("--reconsider-after-additions", type=int)
-        q.add_argument("--set-by", required=True, choices=("user", "coordinator"))
+        q.add_argument("--set-by", required=True, choices=("user", "supervisor"))
         q.add_argument("--reason")
 
     i = sub.add_parser("init", help="record the original items and the budget")
@@ -290,14 +296,14 @@ def parser() -> argparse.ArgumentParser:
     a2.add_argument("--session", required=True)
     a2.add_argument("--provider", required=True, choices=("codex", "claude"))
     a2.add_argument("--from", dest="from_time", required=True)
-    a2.add_argument("--bound-by", required=True, choices=("init", "rotation", "coordinator", "user"))
+    a2.add_argument("--bound-by", required=True, choices=("init", "rotation", "supervisor", "user"))
     a2.add_argument("--evidence")
     b = sub.add_parser("bind")
     b.add_argument("--record", required=True)
     b.add_argument("--session", required=True)
     b.add_argument("--provider", required=True, choices=("codex", "claude"))
     b.add_argument("--parent")
-    b.add_argument("--bound-by", required=True, choices=("coordinator", "user"))
+    b.add_argument("--bound-by", required=True, choices=("supervisor", "user"))
     b.add_argument("--reason", required=True)
     cl = sub.add_parser("cost-limit")
     cl.add_argument("--record", required=True)
@@ -305,7 +311,7 @@ def parser() -> argparse.ArgumentParser:
     cl.add_argument("--node")
     cl.add_argument("--max-usd", type=float)
     cl.add_argument("--mark-usd", type=float, action="append", default=[])
-    cl.add_argument("--set-by", required=True, choices=("user", "coordinator"))
+    cl.add_argument("--set-by", required=True, choices=("user", "supervisor"))
     cl.add_argument("--reason", required=True)
     c = sub.add_parser("check", help="one JSON line: elapsed, additions, meter, reconsider, stop")
     c.add_argument("--record", required=True)
