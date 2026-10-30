@@ -770,7 +770,10 @@ class BudgetControl:
                                     capture_output=True, text=True, timeout=120)
             if result.returncode:
                 raise ValueError("reader exited non-zero")
-            value = json.loads(result.stdout)
+            try:
+                value = json.loads(result.stdout)
+            except Exception as failure:
+                raise ValueError("invalid budget reader output") from failure
             if not isinstance(value, dict):
                 raise ValueError("document is not an object")
             topic, events = value.get("topic"), value.get("events")

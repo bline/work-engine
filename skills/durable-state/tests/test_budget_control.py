@@ -23,6 +23,7 @@ a = sys.argv
 state = Path(a[a.index("--record") + 1]).read_text()
 if state == "fail": sys.exit(1)
 if state == "invalid": print("bad"); sys.exit()
+if state == "deep": print("[" * 2000 + "0" + "]" * 2000); sys.exit()
 if state == "slow": time.sleep(3)
 cursor = a[a.index("--cursor") + 1] if "--cursor" in a else None
 topic = "control:budget:objective"
@@ -78,7 +79,10 @@ class BudgetTest(unittest.TestCase):
         rows = [json.loads(line) for line in output.splitlines()]
         changed = next(row for row in rows if row['status'] == 'budget')
         self.assertEqual((changed['next_since'], changed['next_control_cursor'], changed['next_budget_cursor']), (1, 'context-cursor', 'second'))
-        self.assertEqual(rows[-1]['next_budget_cursor'], 'second')
+        self.assertEqual((rows[-1]['next_since'], rows[-1]['next_control_cursor'], rows[-1]['next_budget_cursor']),
+                         (1, 'context-cursor', 'second'))
+        self.assertEqual(rows[-1]['control_events'], []); self.assertEqual(rows[-1]['budget_events'], [])
+        self.assertEqual(sum(len(row['budget_events']) for row in rows), 1)
 
     def test_interval_and_unchanged(self):
         observer = self.budget()
@@ -118,6 +122,78 @@ class BudgetTest(unittest.TestCase):
         with patch.object(board, 'read_board', return_value=(value, revision)):
             result = board.wait_board(self.root, since=0, timeout_seconds=0)
         self.assertEqual(result['messages'], [])
+
+    def test_deep_json_failure_keeps_board_and_cursor_then_recovers(self):
+        observer = self.budget()
+        self.record.write_text('first')
+        board.wait_board(self.root, since=0, budget=observer, timeout_seconds=0)
+        self.record.write_text('deep'); self.post(); time.sleep(.11)
+        failed = board.wait_board(self.root, since=0, budget=observer, timeout_seconds=0)
+        self.assertEqual(failed['status'], 'messages')
+        self.assertEqual(failed['budget_events'][0]['kind'], 'reader_failed')
+        self.assertEqual(failed['next_budget_cursor'], 'first')
+        time.sleep(.11)
+        self.assertEqual(observer.read(), [])
+        self.record.write_text('first'); time.sleep(.11)
+        recovered = board.wait_board(self.root, since=1, budget=observer, timeout_seconds=0)
+        self.assertEqual([event['kind'] for event in recovered['budget_events']], ['reader_recovered'])
+        self.assertEqual(recovered['next_budget_cursor'], 'first')
+
+    def test_invalid_structured_documents_and_changed_topic(self):
+        from unittest.mock import patch
+        observer = self.budget()
+        valid = {'schema': 'objective-budget-control-v1', 'topic': 'control:budget:objective',
+                 'events': [], 'next_budget_cursor': 'cursor', 'snapshot': {}}
+        good = subprocess.CompletedProcess([], 0, json.dumps(valid), '')
+        with patch.object(board.subprocess, 'run', return_value=good):
+            observer.read()
+        variants = [dict(valid, schema='wrong'), dict(valid, topic='ordinary'),
+                    dict(valid, topic='control:budget:other'),
+                    dict(valid, events=[{'topic': valid['topic'], 'authority': 'approval'}]),
+                    dict(valid, events=[{'topic': 'control:budget:other', 'authority': 'observation_only'}])]
+        for value in variants:
+            with self.subTest(value=value):
+                observer.failed = False; observer.next_run = 0
+                output = subprocess.CompletedProcess([], 0, json.dumps(value), '')
+                with patch.object(board.subprocess, 'run', return_value=output):
+                    events = observer.read()
+                self.assertEqual(events[0]['kind'], 'reader_failed')
+                self.assertEqual(observer.cursor, 'cursor')
+                self.assertEqual(observer.topic, valid['topic'])
+
+    def test_digest_after_success_and_argv_timeout_interval(self):
+        from unittest.mock import patch
+        observer = board.BudgetControl(record=self.record, reader=self.reader, sha256=self.digest,
+            cursor='prior', interval=10, limit_fractions='0.5,1', hours_fractions='0.8,1')
+        document = {'schema': 'objective-budget-control-v1', 'topic': 'control:budget:objective',
+                    'events': [], 'next_budget_cursor': 'next', 'snapshot': {}}
+        response = subprocess.CompletedProcess([], 0, json.dumps(document), '')
+        with patch.object(board.time, 'monotonic', side_effect=[100, 100, 101, 109.99, 110, 110]), \
+             patch.object(board.subprocess, 'run', return_value=response) as run:
+            observer.read(); observer.read(); observer.read(); observer.read()
+        self.assertEqual(run.call_count, 2)
+        argv = run.call_args_list[0].args[0]
+        self.assertEqual(argv, ['python3', '-I', str(self.reader), 'control', '--record', str(self.record),
+                                '--limit-fractions', '0.5,1', '--hours-fractions', '0.8,1', '--cursor', 'prior'])
+        self.assertEqual(run.call_args_list[0].kwargs['timeout'], 120)
+        self.assertEqual(run.call_args_list[1].args[0][-2:], ['--cursor', 'next'])
+        self.reader.write_text('changed'); observer.next_run = 0
+        with self.assertRaisesRegex(board.ChatboardError, 'digest changed'): observer.read()
+
+    def test_resume_selector_and_context_status_precedence(self):
+        self.record.write_text('first')
+        result = subprocess.run(self.command() + ['--budget-cursor', 'first', '--timeout-seconds', '0'],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        resumed = json.loads(result.stdout)
+        self.assertEqual(resumed['budget_events'], []); self.assertEqual(resumed['next_budget_cursor'], 'first')
+        with self.assertRaisesRegex(board.ChatboardError, 'budget topics'):
+            board.wait_board(self.root, since=0, topics=['control:budget:objective'], timeout_seconds=0)
+        context = board.ContextControl(session_id=SESSION, rollout=self.rollout, binary=self.context,
+            sha256=hashlib.sha256(self.context.read_bytes()).hexdigest(), trigger_tokens=100, band_floor_tokens=200)
+        result = board.wait_board(self.root, since=0, control=context, budget=self.budget(), timeout_seconds=0)
+        self.assertEqual(result['status'], 'control')
+        self.assertEqual(len(result['control_events']), 1); self.assertEqual(len(result['budget_events']), 1)
 
     def test_cli_budget_without_session(self):
         self.record.write_text('event')
