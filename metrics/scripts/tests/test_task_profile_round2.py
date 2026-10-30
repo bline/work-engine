@@ -651,6 +651,57 @@ rec.main()
         self.assertIn('enrollments/a: verified', out.splitlines())
         self.assertIn('a@' + 'a' * 16 + ': verified', out.splitlines())
 
+    def test_attribute_all_mixed_assignments_is_write_once_and_bounded(self):
+        self.enroll('a')
+        self.enroll('b')
+        first = self.call(*self.profile_stub('a'))
+        retained_args = self.episode_assign_args('b')
+        episode = self.call(*retained_args)
+        retained_args[retained_args.index('--child-session') + 1] = 'claude-child'
+        retained = self.call(*retained_args)
+        unknown_args = self.profile_stub('outside')
+        unknown_args[unknown_args.index('--child-session') + 1] = 'unknown'
+        unknown = self.call(*unknown_args)
+        ledger = self.root / 'ledger'
+        ledger.mkdir()
+        rows = [
+            {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-01T00:00:00Z', 'model': 'too-early', 'effort': 'high'},
+            {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-02T00:00:00Z', 'model': 'synthetic', 'effort': 'medium'},
+            {'provider': 'claude', 'session': 'claude-child', 'ts': '2026-01-02T01:00:00Z', 'model': 'claude-test', 'effort': 'high'},
+            {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-03T00:00:00Z', 'model': 'too-late', 'effort': 'low'},
+        ]
+        (ledger / 'calls.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows))
+        # A pre-existing old-style attribution must remain untouched by --all.
+        self.call('attribute', '--task-revision', 'a@' + 'a' * 16, '--ledger', ledger)
+        old_attribution = Path(first['assignment']).parent / 'attribution-assignment.json'
+        old_bytes = old_attribution.read_bytes()
+        out = self.call('attribute', '--all', '--ledger', ledger,
+                        '--since', '2026-01-02T00:00:00Z', '--until', '2026-01-03T00:00:00Z')
+        self.assertEqual(len(out['attributions']), 2)
+        self.assertEqual({tuple(r['models_seen']) for r in out['attributions']}, {('synthetic',), ('claude-test',)})
+        self.assertEqual(old_attribution.read_bytes(), old_bytes)
+        for assignment in (episode, retained):
+            path = Path(assignment['assignment'])
+            attribution = path.parent / ('attribution-' + path.name)
+            data = rec.read_json(attribution)
+            self.assertEqual(data['assignment_sha256'], rec.sha256(path))
+            self.assertEqual(data['recorder']['sha256'], rec.sha256(SCRIPT))
+            self.assertEqual(rec.listed(str(path.parent))[attribution.name], rec.sha256(attribution))
+        self.assertFalse((Path(unknown['assignment']).parent / 'attribution-assignment.json').exists())
+        before = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        self.assertEqual(self.call('attribute', '--all', '--ledger', ledger)['attributions'], [])
+        self.assertEqual(before, {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()})
+
+    def test_attribute_all_includes_unenrolled_and_unresolved_child_assignments(self):
+        self.call(*self.profile_stub('outside'))
+        ledger = self.root / 'ledger'
+        ledger.mkdir()
+        (ledger / 'calls.jsonl').write_text('')
+        out = self.call('attribute', '--all', '--ledger', ledger)
+        self.assertEqual(len(out['attributions']), 1)
+        self.assertIn('unresolved', out['attributions'][0]['status'])
+        self.assertEqual(self.call('attribute', '--all', '--ledger', ledger)['attributions'], [])
+
     def episode_assign_args(self, task='a'):
         args = self.profile_stub(task)
         args[1:3] = ['--episode', task]

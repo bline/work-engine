@@ -36,7 +36,7 @@ Usage
                                    --requested-model M --requested-effort E --harness H --run NAME
                                    --dispatched-packet PATH --child-session ID [--child-session ID ...]
                                    [--reported-model M] [--reported-effort E] [--selected-at ISO8601] [--retained]
-  task_profile_record.py attribute --run-dir R --task-revision ID --ledger DIR [--assignment NAME]
+  task_profile_record.py attribute --run-dir R (--task-revision ID | --all) --ledger DIR [--assignment NAME]
                                    [--since ISO8601] [--until ISO8601]
   task_profile_record.py init-round --run-dir R --cap N --terra-in-flight N --terra-repair-budget N
   task_profile_record.py enroll    --run-dir R --task-id T (--task-revision REV | --packet PATH) --eligible yes|no --reason TEXT
@@ -338,12 +338,30 @@ def cmd_assign(a):
 
 
 def cmd_attribute(a):
-    """Resolve which models the child sessions actually ran, from the usage ledger's calls.jsonl."""
+    """Resolve recorded child sessions from the usage ledger, once per assignment."""
+    if a.all:
+        # Serialize with round assignments and other batch attribution runs.
+        with round_lock(a.run_dir):
+            paths = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*", "assignment*.json")))
+            pending = [p for p in paths if read_json(p).get("child_sessions") and not os.path.exists(
+                os.path.join(os.path.dirname(p), "attribution-" + os.path.basename(p)))]
+            rows = None
+            if pending:
+                with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
+                    rows = [json.loads(line) for line in fh]
+            results = [attribute_assignment(a, p, rows) for p in pending]
+        print(json.dumps({"attributions": results}, indent=1))
+        return
     d = record_dir(a.run_dir, a.task_revision)
     names = sorted(glob.glob(os.path.join(d, "assignment*.json")))
     if not names:
         raise SystemExit("no assignment to attribute")
     path = os.path.join(d, a.assignment) if a.assignment else names[-1]
+    print(json.dumps(attribute_assignment(a, path), indent=1))
+
+
+def attribute_assignment(a, path, ledger_rows=None):
+    d = os.path.dirname(path)
     asg = read_json(path)
     children = set(asg["child_sessions"])
     calls = collections.defaultdict(lambda: collections.Counter())
@@ -351,17 +369,18 @@ def cmd_attribute(a):
     since = parse_ts(a.since) if a.since else None
     until = parse_ts(a.until) if a.until else None
     if children:
-        with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
-            for line in fh:
-                r = json.loads(line)
-                cid = r.get("thread") if r.get("provider") == "codex" else r.get("session")
-                if cid in children:
-                    ts = parse_ts(r["ts"])
-                    if (since and ts < since) or (until and ts >= until):
-                        continue
-                    calls[cid][(r.get("model"), r.get("effort"))] += 1
-                    lo, hi = span.get(cid, (r["ts"], r["ts"]))
-                    span[cid] = (min(lo, r["ts"]), max(hi, r["ts"]))
+        if ledger_rows is None:
+            with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
+                ledger_rows = [json.loads(line) for line in fh]
+        for r in ledger_rows:
+            cid = r.get("thread") if r.get("provider") == "codex" else r.get("session")
+            if cid in children:
+                ts = parse_ts(r["ts"])
+                if (since and ts < since) or (until and ts >= until):
+                    continue
+                calls[cid][(r.get("model"), r.get("effort"))] += 1
+                lo, hi = span.get(cid, (r["ts"], r["ts"]))
+                span[cid] = (min(lo, r["ts"]), max(hi, r["ts"]))
     req = asg["requested"]
     seen = sorted({m for c in calls.values() for (m, _e) in c})
     efforts = sorted({e for c in calls.values() for (_m, e) in c if e})
@@ -383,7 +402,7 @@ def cmd_attribute(a):
         "effort_matches_request": (efforts == [req["effort"]]) if efforts else None,
         "recorder": recorder(), "prior_files": prior_files(d)})
     append_sums(d)
-    print(json.dumps({"attribution": out, "status": status, "models_seen": seen}, indent=1))
+    return {"attribution": out, "status": status, "models_seen": seen}
 
 
 def verify_records(a):
@@ -1057,7 +1076,9 @@ def main():
     s.add_argument("--retained", action="store_true")
     t = sub.add_parser("attribute")
     t.add_argument("--run-dir", required=True)
-    t.add_argument("--task-revision", required=True)
+    attribution_source = t.add_mutually_exclusive_group(required=True)
+    attribution_source.add_argument("--task-revision")
+    attribution_source.add_argument("--all", action="store_true", help="attribute every assignment with child sessions and no attribution yet")
     t.add_argument("--ledger", required=True)
     t.add_argument("--assignment")
     t.add_argument("--since")
@@ -1099,6 +1120,8 @@ def main():
         elif name == "resume":
             r.add_argument("--owner-approval", required=True)
     a = ap.parse_args()
+    if a.cmd == "attribute" and a.all and a.assignment:
+        ap.error("--assignment cannot be combined with --all")
     if a.cmd in ROUND_COMMANDS:
         run_round_command(a)
     elif a.cmd == "start":
