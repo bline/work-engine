@@ -22,6 +22,10 @@ class Pricing(unittest.TestCase):
         self.assertAlmostEqual(L.native_usd(u, 'claude-haiku-5-5')[0], .0500005)
 
 class Tree(unittest.TestCase):
+    def setUp(self):
+        from unittest.mock import patch
+        self.available = patch.object(L, 'transcript_available', return_value=True)
+        self.available.start(); self.addCleanup(self.available.stop)
     def test_lineage_conservation_and_successor_boundary(self):
         import json
         import tempfile
@@ -51,7 +55,7 @@ class Tree(unittest.TestCase):
         import io
         import json
         from unittest.mock import patch
-        sb = {'objective_id':'one', 'cost_limits':[{'pool':'codex', 'marks_usd':[1], 'max_usd':2}], 'limits':{}}
+        sb = {'objective_id':'one', 'cost_limits':[{'pool':'codex', 'marks_usd':[1], 'max_usd':2, 'set_by':'user'}], 'limits':{}}
         spend = L.pools(); spend['codex']['quota_usd_high'] = spend['codex']['quota_usd_low'] = 1.2
         doc = dict(snapshot_at='2026-01-01T00:00:00Z', status='complete', totals=spend, nodes=[])
         args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0', role_host_ledger=None)

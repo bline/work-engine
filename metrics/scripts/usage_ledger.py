@@ -56,7 +56,7 @@ unchanged.
   turns.jsonl holds each completed Codex turn with the `duration_ms` and
   `time_to_first_token_ms` Codex records.
 """
-import argparse, base64, collections, datetime as dt, glob, hashlib, io, json, math, os, re, sqlite3, subprocess, sys
+import argparse, base64, binascii, collections, datetime as dt, glob, hashlib, io, json, math, os, re, sqlite3, subprocess, sys
 
 CODEX_KEYS = ('input_tokens', 'cached_input_tokens', 'cache_write_input_tokens',
               'output_tokens', 'reasoning_output_tokens', 'total_tokens')
@@ -321,6 +321,19 @@ def build_codex(since, until, turns=None, metadata=None):
                              usage=u, weighted=codex_weighted(u) if not c.get('invalid_usage') and valid_usage(u, CODEX_KEYS, CODEX_KEYS) else None, usd=price, source=f'{f}:{c["line"]}', pools=['codex'],
                              service_tier=c.get('tier'), quota_multiplier=QUOTA_MULTIPLIER.get(c.get('tier')),
                              latency_s=c.get('latency_s'), latency_basis=c.get('latency_basis')))
+    if metadata is not None:
+        # Session metadata is needed for ancestry even when that file has no
+        # calls in the window. Do not re-read current rollouts or charge calls.
+        for path in sorted(set(codex_files(None)) - set(files)):
+            for line in open_lines(path):
+                if 'session_meta' not in line: continue
+                try:
+                    rec = json.loads(line); payload = rec.get('payload') or {}
+                    if rec.get('type') == 'session_meta' and isinstance(payload, dict) and isinstance(payload.get('id'), str):
+                        metas.setdefault(payload['id'], {k: payload.get(k) for k in ('id', 'parent_thread_id', 'agent_path', 'agent_nickname', 'originator', 'thread_source', 'timestamp')})
+                        break
+                except (ValueError, TypeError, AttributeError):
+                    issue('malformed_session_metadata', path=path)
     for r in rows:   # root ancestor by recorded parent links; unknown stays null
         cur, hops = r['thread'], 0
         while cur in metas and metas[cur].get('parent_thread_id') and hops < 20:
@@ -738,6 +751,17 @@ def call_spend(c):
 def digest(path):
     with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()
 
+def transcript_available(provider, sid, metadata):
+    if provider == 'codex': return sid in metadata
+    if provider == 'claude':
+        for path in find_transcripts(sid):
+            if '/subagents/' in path: continue
+            try:
+                with open(path, 'rb') as fh: fh.read(1)
+                return True
+            except OSError: continue
+    return False
+
 def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     with open(record_path) as fh: sb = json.load(fh).get('scope_budget', {})
     now = dt.datetime.now(dt.timezone.utc).isoformat()
@@ -749,6 +773,8 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
                   pricing=dict(source='https://platform.claude.com/docs/en/about-claude/pricing', fetched='2026-10-30'),
                   status='not_established', totals=pools(), window_totals=pools(), nodes=[],
                   unattributed=dict(totals=pools(), sessions=[]), unrecorded=[], issues=[],
+                  undated=dict(counts={p: 0 for p in POOLS}, sessions=[]),
+                  conservation_scope='dated calls in window',
                   known_gaps=['Claude Code title and other side calls are not in transcripts'])
     ISSUES.clear()
     try:
@@ -788,23 +814,34 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for i, root in enumerate(sessions):
         add_node(root['session_id'], root['session_id'], root['provider'], None if i == 0 else sessions[0]['session_id'],
                  'root' if i == 0 else 'successor', start=root.get('from'))
+    missing_root = False
+    for i, bound in enumerate(sessions + (sb.get('bindings') or [])):
+        sid = bound.get('session_id'); provider = bound.get('provider')
+        if not transcript_available(provider, sid, metadata):
+            result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider))
+            if i == 0 and sessions: missing_root = True
     for b in sb.get('bindings') or []:
         links.append((0, b['session_id'], b['session_id'], b.get('provider'), b.get('parent_session_id') or (sessions[0]['session_id'] if sessions else None), 'binding', None))
     for sid, meta in metadata.items():
         if meta.get('parent_thread_id'):
             links.append((1, sid, sid, 'codex', meta['parent_thread_id'], 'codex_parent', meta.get('agent_nickname')))
     ledger = role_ledger or os.path.join(os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state')), 'work-engine/role-host/ledger.jsonl')
-    if os.path.exists(ledger):
+    try:
         with open(ledger) as fh:
-            for line in fh:
+            for number, line in enumerate(fh, 1):
                 try: row = json.loads(line)
-                except ValueError:
-                    result['issues'].append(dict(kind='malformed_role_host_row')); continue
+                except ValueError: row = None
+                if not isinstance(row, dict):
+                    result['issues'].append(dict(kind='malformed_role_host_row', line=number)); continue
                 if row.get('event') == 'launch' and row.get('session_id'):
                     sid = row['session_id']
                     if sid in nodes and row.get('name'): nodes[sid]['role_name'] = row['name']
                     if row.get('parent_session_id'):
                         links.append((2, sid, sid, row.get('host'), row['parent_session_id'], 'role_host', row.get('name')))
+    except FileNotFoundError:
+        result['issues'].append(dict(kind='role_host_ledger_absent', path=ledger))
+    except OSError as e:
+        result['issues'].append(dict(kind='role_host_ledger_unreadable', path=ledger, error=str(e)))
     for c in claude:
         if c.get('subagent'):
             sid = c['session']; nid = sid + '/agent:' + c['agent']
@@ -828,10 +865,14 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         return inherited_start(parent) if parent in nodes else None
     for nid in nodes:
         starts[nid] = inherited_start(nid)
-    unattributed = {}
+    unattributed = {}; undated_sessions = set()
     for c in calls:
         sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
         nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
+        if not valid_timestamp(c.get('ts')):
+            for p in c['pools']: result['undated']['counts'][p] += 1
+            undated_sessions.add((sid, c['provider']))
+            continue
         spend = call_spend(c)
         for p in c['pools']: add_spend(result['window_totals'][p], spend)
         n = nodes.get(nid)
@@ -854,12 +895,14 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             for p in POOLS: add_spend(cur['inclusive'][p], n['direct'][p])
             cur = nodes.get(cur['parent_node_id'])
     result['nodes'] = list(nodes.values()); result['unattributed']['sessions'] = list(unattributed.values())
+    result['undated']['sessions'] = [dict(session_id=sid, provider=provider) for sid, provider in sorted(undated_sessions, key=str)]
     result['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and
                             (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
     result['issues'] += ISSUES
     result['issues'] = list({json.dumps(x, sort_keys=True): x for x in result['issues']}.values())
     ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['window_totals'].values())
-    result['status'] = 'not_established' if not sessions else ('partial' if ranged or result['unrecorded'] or result['issues'] else 'complete')
+    substantive_issues = [i for i in result['issues'] if i['kind'] != 'role_host_ledger_absent']
+    result['status'] = 'not_established' if not sessions or missing_root else ('partial' if ranged or result['unrecorded'] or substantive_issues or undated_sessions else 'complete')
     return result, quota, sb
 
 def cmd_tree(a):
@@ -875,18 +918,42 @@ def cmd_control(a):
     previous = {}
     if a.cursor:
         try:
-            cursor = json.loads(base64.urlsafe_b64decode(a.cursor + '=' * (-len(a.cursor) % 4)))
-            if cursor['objective_id'] != objective: raise ValueError('cursor belongs to another objective')
+            raw = base64.b64decode(a.cursor + '=' * (-len(a.cursor) % 4), altchars=b'-_', validate=True)
+            cursor = json.loads(raw)
+            if not isinstance(cursor, dict) or not isinstance(cursor.get('states'), dict): raise ValueError('invalid cursor shape')
+            if cursor.get('objective_id') != objective: raise ValueError('cursor belongs to another objective')
             previous = cursor['states']
-        except (ValueError, KeyError, TypeError) as e:
+            for key, state in previous.items():
+                parts = json.loads(key)
+                kinds = {'mark_crossed', 'node_mark_crossed', 'limit_fraction', 'limit_reached',
+                         'hours_fraction', 'hours_reached', 'coverage_changed', 'account_ceiling'}
+                if not isinstance(parts, list) or len(parts) not in (4, 5) or parts[0] not in kinds:
+                    raise ValueError('invalid trigger key')
+                if parts[1] is not None and parts[1] not in POOLS: raise ValueError('invalid trigger pool')
+                if parts[2] is not None and not isinstance(parts[2], str): raise ValueError('invalid trigger node')
+                if len(parts) == 5 and parts[4] not in ('user', 'supervisor'): raise ValueError('invalid trigger setter')
+                if parts[0] == 'coverage_changed':
+                    if parts[3] != 'coverage' or not isinstance(state, dict) or state.get('status') not in ('complete', 'partial', 'not_established') or not isinstance(state.get('unpriced_calls'), int) or isinstance(state.get('unpriced_calls'), bool) or state['unpriced_calls'] < 0 or not isinstance(state.get('ranged'), bool):
+                        raise ValueError('invalid coverage state')
+                    if 'undated_calls' in state and (not isinstance(state['undated_calls'], int) or isinstance(state['undated_calls'], bool) or state['undated_calls'] < 0): raise ValueError('invalid undated state')
+                    if 'unknown_spend' in state and not isinstance(state['unknown_spend'], bool): raise ValueError('invalid unknown state')
+                elif not isinstance(state, bool) or not valid_usage({'level': parts[3]}, ('level',), ('level',)):
+                    raise ValueError('invalid trigger state')
+        except (ValueError, KeyError, TypeError, UnicodeError, binascii.Error) as e:
             raise ValueError('invalid cursor: ' + str(e))
-    states = {}; events = []
-    def trigger(kind, pool, node, level, active, observed, summary):
-        key = json.dumps([kind, pool, node, level], separators=(',', ':'))
+    states = dict(previous); events = []; evaluated = set()
+    def trigger(kind, pool, node, level, active, observed, summary, set_by=None):
+        parts = [kind, pool, node, level]
+        if set_by is not None: parts.append(set_by)
+        key = json.dumps(parts, separators=(',', ':'))
+        if active is None or key in evaluated: return
+        evaluated.add(key)
         states[key] = active
         if active != previous.get(key, False):
-            events.append(dict(topic=topic, authority='observation_only', kind=kind, pool=pool,
-                               node_id=node, level=level, observed=observed, snapshot_at=doc['snapshot_at'], summary=summary))
+            event = dict(topic=topic, authority='observation_only', kind=kind, pool=pool,
+                         node_id=node, level=level, observed=observed, snapshot_at=doc['snapshot_at'], summary=summary)
+            if set_by is not None: event['set_by'] = set_by
+            events.append(event)
     fractions = [float(x) for x in a.limit_fractions.split(',')]
     hours_fractions = [float(x) for x in a.hours_fractions.split(',')]
     nodes = {n['node_id']: n for n in doc['nodes']}
@@ -900,13 +967,21 @@ def cmd_control(a):
         spend = nodes[node]['inclusive'][pool] if node else doc['totals'][pool]
         value = spend['quota_usd_high']
         observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'])
+        setter = limit.get('set_by', 'supervisor')
+        if setter == 'coordinator': setter = 'supervisor'
+        def spend_trigger(kind, level, summary):
+            active = True if value >= level else (None if spend['unpriced_calls'] else False)
+            trigger(kind, pool, node, level, active, observed, summary, setter)
+        mark_kind = 'node_mark_crossed' if node else 'mark_crossed'
         for mark in limit.get('marks_usd') or []:
-            trigger('node_mark_crossed' if node else 'mark_crossed', pool, node, mark, value >= mark, observed, 'spend mark')
+            spend_trigger(mark_kind, mark, 'spend mark')
         maximum = limit.get('max_usd')
         if maximum is not None:
-            for f in sorted(set(fractions + [1.0])):
-                kind = 'limit_reached' if f == 1 else 'limit_fraction'
-                trigger(kind, pool, node, maximum * f, value >= maximum * f, observed, 'spend limit')
+            if setter == 'user':
+                for f in sorted(set(fractions + [1.0])):
+                    spend_trigger('limit_reached' if f == 1 else 'limit_fraction', maximum * f, 'spend limit')
+            else:
+                spend_trigger(mark_kind, maximum, 'spend mark')
     limits = sb.get('limits') or {}; hours = limits.get('max_hours')
     if hours is not None and sb.get('started_at'):
         elapsed = (ts_of(doc['snapshot_at']) - ts_of(sb['started_at'])).total_seconds() / 3600
@@ -919,10 +994,12 @@ def cmd_control(a):
         trigger('account_ceiling', None, None, limits['max_weekly_percent'], q['used_percent'] >= limits['max_weekly_percent'],
                 dict(used_percent=q['used_percent'], account_wide=True), 'account-wide weekly meter')
     coverage = dict(status=doc['status'], unpriced_calls=sum(s['unpriced_calls'] for s in doc['totals'].values()),
-                    ranged=any(s['quota_usd_low'] != s['quota_usd_high'] for s in doc['totals'].values()))
+                    ranged=any(s['quota_usd_low'] != s['quota_usd_high'] for s in doc['totals'].values()),
+                    unknown_spend=any(s['unpriced_calls'] for s in doc['totals'].values()),
+                    undated_calls=sum(doc.get('undated', {}).get('counts', {}).values()))
     key = json.dumps(['coverage_changed', None, None, 'coverage'], separators=(',', ':'))
     states[key] = coverage
-    default_coverage = dict(status='complete', unpriced_calls=0, ranged=False)
+    default_coverage = dict(status='complete', unpriced_calls=0, ranged=False, unknown_spend=False, undated_calls=0)
     if coverage != previous.get(key, default_coverage):
         events.append(dict(topic=topic, authority='observation_only', kind='coverage_changed', pool=None, node_id=None,
                            level='coverage', observed=coverage, snapshot_at=doc['snapshot_at'], summary='coverage changed'))

@@ -44,6 +44,9 @@ class BadRecords(unittest.TestCase):
             self.assertTrue({'invalid_call_timestamp', 'invalid_call_usage', 'invalid_compaction_tokens', 'invalid_compaction_summary'} <= kinds)
 
 class LineageBoundary(unittest.TestCase):
+    def setUp(self):
+        available = patch.object(L, 'transcript_available', return_value=True)
+        available.start(); self.addCleanup(available.stop)
     def test_precedence_recalculates_descendants_and_rejects_cycle(self):
         early = '2026-01-01T01:00:00Z'; late = '2026-01-01T03:00:00Z'
         sb = dict(objective_id='id', started_at=early, sessions=[dict(session_id='root', provider='codex', **{'from':early}), dict(session_id='succ', provider='codex', **{'from':late})],
@@ -67,6 +70,9 @@ class LineageBoundary(unittest.TestCase):
         self.assertTrue(any(x['kind']=='multiple_parents' for x in tree['issues']))
 
 class Matrix(unittest.TestCase):
+    def setUp(self):
+        available = patch.object(L, 'transcript_available', return_value=True)
+        available.start(); self.addCleanup(available.stop)
     def test_conservation_every_pool_with_unattributed(self):
         ts = '2026-01-01T01:00:00Z'
         sb = dict(started_at=ts, objective_id='id', sessions=[dict(session_id='root',provider='codex', **{'from':ts})],
