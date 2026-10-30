@@ -1,9 +1,11 @@
-# Objective cost observation (plan, revision 2)
+# Objective cost observation (plan)
 
-**Revision 2, 2026-10-29.** Owner: Claude (Claude Code, `claude-opus-5-5`), at
+**Revision 3, 2026-10-29.** Owner: Claude (Claude Code, `claude-opus-5-5`), at
 the user's request. Revision 1 was drafted by ChatGPT in the web interface with
 Extra High reasoning (model not shown) against `471f6106`, and is committed
-unchanged in `c2ccc569`.
+unchanged in `c2ccc569`. Revision 2 (`ef013ac3`) was Claude's rewrite. Revision
+3 records the user's answers to revision 2's four decisions (§9) and what
+follows from them.
 
 **Status:** plan. Implementation has not started, and each phase starts on the
 user's go-ahead. Changes to released skills, or to an active experiment's
@@ -95,9 +97,23 @@ whole build stops. In the 7 days before 2026-10-30 02:00Z, 4 Claude messages
 (8 records) report `cache_creation_input_tokens: 0` with nonzero
 `ephemeral_1h_input_tokens`. That is out of 34,717 records with a cache split.
 
-`metrics/scripts/` is not part of skill releases, which export only `skills/`.
-A released tool can therefore use the ledger only by a pinned path or after the
-ledger moves into a skill.
+**Price gaps.** The ledger prices two Claude models, Sonnet 5.5 and Opus 5.5.
+In the 7 days before 2026-10-30 02:00Z, Claude transcripts also held messages
+from Opus 5 (3,365), Fable 5.1 (222), Opus 4.8 (51) and Haiku 5.5 (15), each
+message counted once per transcript file. Calls to those models come out
+unpriced. All 31,580 Codex calls in the same 7 days had a price, and 880 of
+them ran on Fast tier.
+
+**Edits take effect at once.** Coordinators run
+`python3 -I metrics/scripts/usage_ledger.py build` from this working tree, and
+`task_profile_record.py attribute` reads that build's `calls.jsonl`. So an edit
+to the ledger reaches every coordinator immediately, while a skill change waits
+for a release. The ledger is also the experiment programme's F1 instrument
+(`metrics/experiment-plan-20261026.md`), and that plan's re-pin rule makes a
+change to it an environment change.
+
+`metrics/scripts/` is not part of skill releases, which export only `skills/`,
+so a released tool uses the ledger by a pinned path (§9, decision 4).
 
 ### 4.2 Lineage
 
@@ -161,8 +177,9 @@ original items, additions, limits and history. Version 2 adds:
 - `bindings`: explicit links for sessions no lineage source connects, such as a
   top-level reviewer started outside `role_host`, each with who bound it and
   when;
-- cost limits in API-equivalent USD: `max_usd`, binding when the user set it, and
-  `marks_usd`, levels that produce events. Either can also be set per node.
+- cost limits in quota-weighted USD for each quota pool (§9, decision 2):
+  `max_usd`, binding when the user set it, and `marks_usd`, levels that produce
+  events. Either can also be set per node.
 
 Changes to existing limits:
 - `max_weekly_points` is no longer accepted for new limits.
@@ -183,7 +200,8 @@ It prints one JSON document with:
   - session, provider, and role name where one is recorded (the `role_host` name
     or the Codex `agent_nickname`);
   - models and tiers;
-  - direct and inclusive spend (low and high where ranged);
+  - direct and inclusive spend for each quota pool, in quota-weighted USD (low
+    and high where ranged);
   - unpriced call count, and first and last call;
 - totals for the objective and for the window;
 - the unattributed remainder, with its session list, so coverage gaps are
@@ -198,8 +216,8 @@ native children do not go through `role_host`.
 ### 6.3 Listener source: `wait --budget-record`
 
 A `BudgetControl` adapter sits beside `ContextControl` and has the same shape:
-- **Reader:** pinned by path and digest, as the context reader is. Placement is
-  decision 4 in §9.
+- **Reader:** `metrics/scripts/usage_ledger.py`, pinned by path and digest, as
+  the context reader is (§9, decision 4).
 - **Cursor:** its own `next_budget_cursor`. Results go in `budget_events`, so
   `messages`, `next_since` and `control_events` are unchanged.
 - **Interval:** it runs `tree` at most once per interval, a setting that starts
@@ -218,9 +236,9 @@ Events are sent only when a state changes:
 - the account meter crosses a user-set `max_weekly_percent`, labelled
   account-wide.
 
-The listener is bound to the coordinator by default, and builders and reviewers
-get no events. Whether supervisors get events for their subtree is decision 3
-in §9.
+Events go to the coordinator only (§9, decision 3). Supervisors, builders and
+reviewers get none of their own; the coordinator passes down what it judges
+useful.
 
 ### 6.4 At a limit
 
@@ -244,8 +262,8 @@ reports the overshoot; it does not claim a hard stop.
   never asked of agents.
 - **Incremental reading:** rebuild time per tick becomes material in phase 4.
 - **Splitting reused sessions by assignment:** see §6.2.
-- **Converting dollars to quota weight per model:** a measured coefficient
-  exists for each model.
+- **Converting quota-weighted dollars to meter percentages:** a measured rate
+  exists for each pool and model.
 
 ## 7. Phases
 
@@ -255,15 +273,19 @@ reports the overshoot; it does not claim a hard stop.
   only when the user set the limit.
 - In `coordinator.md`, stop asking coordinators to propose weekly-point limits.
   Keep the hours limit and its `check` until phase 3 delivers deadline events.
-- Release through `skill-release`.
+- Ship it in the same release as phase 3, so round 2 is revised once (§9,
+  decision 1).
 
-Running roots pick up the script change at their next `check`. The change to
-`coordinator.md` alters round 2's `guidance_sha256`, and is reported to round 2
-as an environment change.
+Until then, running roots keep their coordinator-set weekly-point limits. A root
+that stops on one reports it, and the user can lift the limit with
+`scope_budget.py revise --set-by user`.
 
-**1. Ledger.**
+**1. Ledger.** Develop it in a separate worktree and land it with the phase 3
+release, because ledger edits take effect at once (§4.1).
 - Fix the stop: record an issue and price the call as a range covering both
   readings.
+- Add prices for the unpriced Claude models, a quota pool for each call, and
+  quota-weighted dollars (§9, decision 2).
 - Add the `role_host` join, Claude subagent nodes and the `tree` command.
 - Test on synthetic transcripts for each lineage type, and replay offline on the
   S10 window and the 2026-10-29 evening window.
@@ -277,6 +299,8 @@ version 1 compatibility tests.
   references.
 - The listener replaces the per-dispatch `check`; with no listener bound, the
   coordinator runs an explicit `tree` query instead.
+- Release phases 0 to 3 together, and revise round 2 once for the combined
+  change.
 
 **4. Shadow pilot.** One or two real objectives, with events delivered to the
 coordinator and no new stop behaviour. Measure:
@@ -295,7 +319,7 @@ the pilot justifies.
 Each needs test or recorded evidence. Anything not tested live is reported as
 not tested.
 
-1. **Conservation:** for a window and per provider, the bound trees plus the
+1. **Conservation:** for a window and per quota pool, the bound trees plus the
    unattributed remainder equal the ledger total, and no call is in two trees.
 2. **Isolation:** in the 2026-10-29 evening window, the three roots' trees do not
    overlap.
@@ -328,14 +352,47 @@ not tested.
 9. **No self-monitoring:** no released instruction asks a builder, reviewer or
    supervisor to check or estimate its own usage.
 
-## 9. Decisions for the user
+## 9. Decisions (user, 2026-10-29)
 
-1. **Phase 0 now?** It changes released coordinator guidance and how `check`
-   behaves for running roots, and it is an environment change for round 2.
-2. **Limit unit:** API-equivalent USD at the frozen list prices, which can be
-   attributed to each call. The subscription charges models differently per
-   dollar.
-3. **Event recipients:** the coordinator only, or supervisors too, for their
-   subtrees.
-4. **Reader placement:** pin `usage_ledger.py` by path and digest, as the context
-   reader is pinned, or move it into a released skill.
+1. **Phase 0 waits for the rest.** Phases 0 to 3 ship in one release, and round
+   2 is revised once for it. Round 2's plan reports each environment change and
+   doesn't compare records from before and after one directly, so a single
+   change splits its records once instead of several times. The cost of waiting
+   is in §7, phase 0.
+2. **The unit is quota-weighted dollars, kept per quota pool.** Quota-weighted
+   dollars are API-equivalent list-price dollars times the call's tier
+   multiplier (Codex Fast is 2.5). Each pool has its own limits: Codex weekly,
+   Claude main weekly, and Claude Fable. Reasons:
+   - **Codex quota followed dollars, not tokens.** A fit over five weekly
+     windows (2026-10-20 to 10-26) found that Astra drew 4.4 to 4.7 times Sol's
+     quota per weighted token, close to their list-price ratio. A token limit
+     would let an Astra-heavy objective use 4 to 5 times the quota of a Sol one
+     under the same number. The fit's scripts were not kept, so it is not re-run
+     here.
+   - **List dollars leave out Fast tier's 2.5 times charge.** The ledger already
+     records each call's tier.
+   - **The pools are metered separately.** The user sees Fable's usage as its
+     own percentage, and the pools' dollar rates differ and are only partly
+     measured, so one combined figure would mix them. One reading on 2026-10-27
+     (n=1, 1% steps) also showed the main Claude meter rise from 8 to 10 in
+     four minutes while three Fable agents spent $7.46 and Opus $2.62. That may
+     mean Fable also draws on the main meter; it is not established. Either
+     way, Fable spend is reported in its own pool.
+   - **Dollars keep their meaning across the 2026-10-29 limit doubling;** meter
+     percentages don't.
+
+   Not established: whether Claude's quota follows list price the way Codex's
+   did.
+3. **Events go to the coordinator only.** Information flows down from the
+   coordinator, at its judgment.
+4. **The ledger stays at `metrics/scripts/usage_ledger.py` in Work Engine,** and
+   the listener pins it by path and digest. These are the round 2 agent's
+   reasons, checked here:
+   - it is the experiment programme's F1 instrument, named by that path;
+   - 16 tracked files refer to it;
+   - so moving it would break references, and would be an environment change
+     under the re-pin rule.
+
+   That agent's proposed per-episode cost records for round 2, kept in
+   `agent-routing-data`, would be extracted from the same ledger, so there is
+   still one counter.
