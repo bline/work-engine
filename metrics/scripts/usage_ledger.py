@@ -691,6 +691,13 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     calls = codex + claude
     nodes = {}; starts = {}; links = []
     def add_node(node_id, sid, provider, parent, link, role=None, start=None):
+        # Reject links whose parent chain would make this node its own ancestor.
+        cur = parent; visited = set()
+        while cur is not None and cur in nodes and cur not in visited:
+            if cur == node_id:
+                result['issues'].append(dict(kind='lineage_cycle', node_id=node_id, parent_node_id=parent, link=link))
+                return False
+            visited.add(cur); cur = nodes[cur]['parent_node_id']
         if node_id in nodes:
             old = nodes[node_id]
             if (old['parent_node_id'], old['link']) != (parent, link):
@@ -741,6 +748,15 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             if add_node(nid, sid, provider, parent, link, role, starts[parent]): changed = True
         if not changed: break
         remaining = links if changed else later
+    # The winning graph is now fixed. Derive descendant boundaries from it,
+    # rather than retaining the boundary of an earlier, displaced parent.
+    def inherited_start(nid):
+        node = nodes[nid]
+        if node['link'] in ('root', 'successor'): return starts[nid]
+        parent = node['parent_node_id']
+        return inherited_start(parent) if parent in nodes else None
+    for nid in nodes:
+        starts[nid] = inherited_start(nid)
     unattributed = {}
     for c in calls:
         sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')

@@ -37,3 +37,26 @@ class BadRecords(unittest.TestCase):
             self.assertEqual(calls['bad-usage']['usage']['input_tokens'], 'bad')
             with open(os.path.join(out,'issues.jsonl')) as f: kinds = {r['kind'] for r in map(json.loads,f)}
             self.assertTrue({'invalid_call_timestamp', 'invalid_call_usage'} <= kinds)
+
+class LineageBoundary(unittest.TestCase):
+    def test_precedence_recalculates_descendants_and_rejects_cycle(self):
+        early = '2026-01-01T01:00:00Z'; late = '2026-01-01T03:00:00Z'
+        sb = dict(objective_id='id', started_at=early, sessions=[dict(session_id='root', provider='codex', **{'from':early}), dict(session_id='succ', provider='codex', **{'from':late})],
+                  bindings=[dict(session_id='child', provider='codex', parent_session_id='parent'), dict(session_id='parent', provider='codex', parent_session_id='desc')])
+        call = dict(provider='codex', thread='desc', ts='2026-01-01T02:00:00Z', model='gpt-6.1-sol', service_tier='default', quota_multiplier=1, usd=1, pools=['codex'])
+        with tempfile.TemporaryDirectory() as d:
+            record = os.path.join(d,'record'); ledger = os.path.join(d,'ledger')
+            with open(record,'w') as f: json.dump({'scope_budget':sb}, f)
+            with open(ledger,'w') as f:
+                for child, parent in [('child','root'),('desc','child'),('parent','succ')]:
+                    f.write(json.dumps(dict(event='launch', session_id=child, parent_session_id=parent, host='codex'))+'\n')
+            with patch.object(L,'build_codex', return_value=([call], [], [], 0)), patch.object(L,'build_claude', return_value=([], [], 0)), patch.object(L,'unrecorded_claude', return_value=[]):
+                tree, _, _ = L.cost_tree(record, role_ledger=ledger)
+        nodes = {n['node_id']:n for n in tree['nodes']}
+        self.assertEqual(nodes['child']['parent_node_id'], 'parent')
+        self.assertEqual(nodes['parent']['parent_node_id'], 'succ')
+        self.assertEqual(nodes['desc']['parent_node_id'], 'child')
+        self.assertEqual(tree['totals']['codex']['calls'], 0)
+        self.assertEqual(tree['unattributed']['totals']['codex']['calls'], 1)
+        self.assertTrue(any(x['kind']=='lineage_cycle' for x in tree['issues']))
+        self.assertTrue(any(x['kind']=='multiple_parents' for x in tree['issues']))
