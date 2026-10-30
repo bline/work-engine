@@ -7,8 +7,8 @@ unchanged in `c2ccc569`. Revision 2 (`ef013ac3`) was Claude's rewrite. Revision
 3 records the user's answers to revision 2's four decisions (§9) and what
 follows from them.
 
-**Status (2026-10-30):** phases 0 to 3 are implemented on branch
-`budget-obs-integration` (head `1ecc1917`). Each unit passed independent review:
+**Status (2026-10-30):** phases 0 to 3 are merged (`99450c33`) and released
+(2026-10-30T04:07:40Z, release `99450c33`). Each unit passed independent review:
 
 | Unit | Accepted at | Review rounds |
 |---|---|---|
@@ -16,10 +16,10 @@ follows from them.
 | `scope_budget` version 2 and rotation binding | `7c131795` | 2 |
 | ledger `tree`, `control`, prices and pools | `9b911be2` | 3 |
 
-The branch includes main's removal of the coordinator role (`5695755f`). It is
-not merged into the main working tree and not released. Supervisors run the
-ledger from the working tree, so a merge there takes effect at once. Merging and releasing need the user's go-ahead, and round 2 is revised
-for the change then.
+Round 2 records the release as an environment change (`92d4e65b`). The round 2
+screen-first amendment is not part of it: the user chose to ship first and take
+the amendment later as its own change. Phase 4 (shadow pilot) and phase 5 are
+next, each on the user's go-ahead.
 
 **Scope:** the outer development root: `skills/`, the coordination board
 (`chatboard`) and `metrics/` tooling. These are Work Engine's original
