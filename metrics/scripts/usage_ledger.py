@@ -56,7 +56,7 @@ unchanged.
   turns.jsonl holds each completed Codex turn with the `duration_ms` and
   `time_to_first_token_ms` Codex records.
 """
-import argparse, base64, collections, datetime as dt, glob, hashlib, io, json, os, re, sqlite3, subprocess, sys
+import argparse, base64, collections, datetime as dt, glob, hashlib, io, json, math, os, re, sqlite3, subprocess, sys
 
 CODEX_KEYS = ('input_tokens', 'cached_input_tokens', 'cache_write_input_tokens',
               'output_tokens', 'reasoning_output_tokens', 'total_tokens')
@@ -84,16 +84,32 @@ QUOTA_MULTIPLIER = {'default': 1.0, 'priority': 2.5}
 CLAUDE_LATENCY_START = {}   # message id -> its latency start, for later records of the same message
 
 def seconds_between(start, end):
-    if not start or not end: return None
-    s = (ts_of(end) - ts_of(start)).total_seconds()
-    return s if s >= 0 else None
+    try:
+        if not start or not end: return None
+        s = (ts_of(end) - ts_of(start)).total_seconds()
+        return s if s >= 0 else None
+    except (ValueError, TypeError, AttributeError, OverflowError): return None
 
 ISSUES = []
 def issue(kind, **kw): ISSUES.append(dict(kind=kind, **kw))
 def ts_of(s): return dt.datetime.fromisoformat(s.replace('Z', '+00:00')) if s else None
+def valid_timestamp(ts):
+    try:
+        t = ts_of(ts)
+        return t is not None and t.utcoffset() is not None
+    except (ValueError, TypeError, AttributeError, OverflowError): return False
+
 def in_window(ts, since, until):
+    # An undated record has unknown membership; retain it for coverage, not as zero.
+    if not valid_timestamp(ts): return True
     t = ts_of(ts)
-    return t is not None and (since is None or t >= since) and (until is None or t <= until)
+    return (since is None or t >= since) and (until is None or t <= until)
+
+def valid_usage(u, keys, required=()):
+    return isinstance(u, dict) and all(k in u for k in required) and all(
+        k not in u or (isinstance(u[k], (int, float)) and not isinstance(u[k], bool)
+                       and math.isfinite(u[k]) and u[k] >= 0) for k in keys)
+
 
 def open_lines(path):
     if path.endswith('.zst'):
@@ -193,8 +209,12 @@ def codex_rollout(path, seen, turns=None):
                 issue('copied_codex_usage_excluded', path=path, line=n, thread=p['thread_id']); continue
             latency = seconds_between(last_input, ts); latency_basis = 'since_preceding_input' if latency is not None else 'no_preceding_input'
             last_input = None
-            rid = p.get('response_id'); u = {k: (p.get('usage') or {}).get(k, 0) for k in CODEX_KEYS}
-            if p.get('thread_token_usage'):
+            rid = p.get('response_id'); raw = p.get('usage')
+            u = {k: raw.get(k, 0) for k in CODEX_KEYS} if isinstance(raw, dict) else raw
+            valid = valid_usage(raw, CODEX_KEYS, ('input_tokens', 'output_tokens'))
+            if not valid: issue('invalid_call_usage', path=path, line=n, usage=raw)
+            if not valid_timestamp(ts): issue('invalid_call_timestamp', path=path, line=n, timestamp=ts)
+            if valid and isinstance(p.get('thread_token_usage'), dict) and valid_usage(p['thread_token_usage'], CODEX_KEYS):
                 last_thread = p['thread_token_usage']
                 if fork_offset is None:
                     fork_offset = {k: last_thread.get(k, 0) - u[k] for k in CODEX_KEYS}
@@ -205,7 +225,7 @@ def codex_rollout(path, seen, turns=None):
                 continue
             seen[rid] = u
             calls.append(dict(ts=ts, response_id=rid, usage=u, model=model, effort=effort, line=n, dedupe_basis='response_id',
-                              tier=tier, latency_s=latency, latency_basis=latency_basis))
+                              tier=tier, latency_s=latency, latency_basis=latency_basis, invalid_usage=not valid))
         elif typ == 'event_msg' and p.get('type') == 'token_count':
             rl = p.get('rate_limits') or {}
             for wname in ('primary', 'secondary'):
@@ -227,6 +247,8 @@ def codex_rollout(path, seen, turns=None):
         calls = [dict(c, response_id=None, dedupe_basis='fallback') for c in keyed.values()]
     level1 = None
     if last_thread is not None:
+        if not all(not c.get('invalid_usage') and valid_usage(c['usage'], CODEX_KEYS, CODEX_KEYS) for c in calls):
+            issue('level1_unavailable', path=path); return meta, calls, quota, None
         got = {k: sum(c['usage'][k] for c in calls) for k in CODEX_KEYS}
         off = fork_offset or {}
         level1 = dict(thread=meta.get('id'), path=path, reconstructed=got, provider_thread_total=last_thread,
@@ -265,7 +287,7 @@ def build_codex(since, until, turns=None, metadata=None):
         for c in calls:
             if not in_window(c['ts'], since, until): continue
             u = c['usage']; tid = meta.get('id')
-            try: price = codex_usd(u, c['model'])
+            try: price = codex_usd(u, c['model']) if not c.get('invalid_usage') and valid_usage(u, CODEX_KEYS, CODEX_KEYS) and valid_timestamp(c['ts']) else None
             except (ValueError, TypeError, ArithmeticError) as e:
                 issue('invalid_call_usage', path=f, line=c['line'], error=str(e)); price = None
             if price is None: issue('unpriced_call', path=f, line=c['line'])
@@ -273,7 +295,7 @@ def build_codex(since, until, turns=None, metadata=None):
                              thread=tid, parent_thread=meta.get('parent_thread_id'), agent_path=meta.get('agent_path'),
                              originator=meta.get('originator'), model=c['model'], effort=c['effort'],
                              role_index=(idx.get(tid) or {}).get('agent_role'), role_heuristic=role_heuristic(meta.get('agent_path')),
-                             usage=u, weighted=codex_weighted(u), usd=price, source=f'{f}:{c["line"]}', pools=['codex'],
+                             usage=u, weighted=codex_weighted(u) if not c.get('invalid_usage') and valid_usage(u, CODEX_KEYS, CODEX_KEYS) else None, usd=price, source=f'{f}:{c["line"]}', pools=['codex'],
                              service_tier=c.get('tier'), quota_multiplier=QUOTA_MULTIPLIER.get(c.get('tier')),
                              latency_s=c.get('latency_s'), latency_basis=c.get('latency_basis')))
     for r in rows:   # root ancestor by recorded parent links; unknown stays null
@@ -311,19 +333,28 @@ def claude_transcript(path, msgs, cost_state, members=None):
         except ValueError:
             issue('malformed_line', path=path, line=n); continue
         if o.get('type') != 'assistant': continue
-        m = o.get('message') or {}; u = m.get('usage') or {}; mid = m.get('id'); model = m.get('model')
-        if model == '<synthetic>' or not mid or not u: continue
+        m = o.get('message') or {}
+        if not isinstance(m, dict): issue('malformed_line', path=path, line=n); continue
+        u = m.get('usage'); mid = m.get('id'); model = m.get('model')
+        if model == '<synthetic>' or not mid: continue
+        if not isinstance(u, dict):
+            issue('invalid_call_usage', path=path, line=n, usage=u); u = {'_invalid': u}
+        if not valid_timestamp(o.get('timestamp')): issue('invalid_call_timestamp', path=path, line=n, timestamp=o.get('timestamp'))
         mine.add(mid)
         flat = {k: u[k] for k in NATIVE_KEYS if k in u}
+        if '_invalid' in u: flat['_invalid'] = u['_invalid']
+        split = u.get('cache_creation') or {}
+        if not isinstance(split, dict): flat['_invalid_split'] = split; split = {}
         for k in TTL_KEYS:
-            if k in (u.get('cache_creation') or {}): flat[k] = u['cache_creation'][k]
+            if k in split: flat[k] = split[k]
         if mid in msgs:
             row = msgs[mid]
             if row.get('latency_s') is not None:   # F1.1: a message's records span the call; latency runs to the last one
                 later = seconds_between(CLAUDE_LATENCY_START.get(mid), o.get('timestamp'))
                 if later is not None and later > row['latency_s']: row['latency_s'] = later
             for k, v in flat.items():
-                if k == 'output_tokens': row['usage'][k] = max(row['usage'].get(k, 0), v)
+                if k == 'output_tokens' and valid_usage({k:v}, (k,)) and valid_usage(row['usage'], (k,)): row['usage'][k] = max(row['usage'].get(k, 0), v)
+                elif k == 'output_tokens': row['usage'][k] = v
                 elif k in row['usage'] and row['usage'][k] != v:
                     issue('conflicting_native_counter', message_id=mid, counter=k, path=path, line=n)
                 else: row['usage'][k] = v
@@ -346,15 +377,17 @@ def build_claude(since, until):
     rows = []
     for r in msgs.values():
         if not in_window(r['ts'], since, until): continue
+        usage_ok = valid_usage(r['usage'], NATIVE_KEYS + TTL_KEYS, NATIVE_KEYS) and not any(k.startswith('_invalid') for k in r['usage'])
+        if not usage_ok: issue('invalid_call_usage', source=r['source'], usage=r['usage'])
         if r.get('speed') == 'fast':
             issue('fast_mode_unpriced', source=r['source']); lo, hi, un = None, None, None
         else:
-            try: lo, hi, un = native_usd(r['usage'], r['model'])
+            try: lo, hi, un = native_usd(r['usage'], r['model']) if usage_ok and valid_timestamp(r['ts']) else (None, None, None)
             except (ValueError, TypeError, ArithmeticError) as e:
                 issue('invalid_call_usage', source=r['source'], error=str(e)); lo, hi, un = None, None, None
         if lo is None: issue('unpriced_call', source=r['source'])
         r['pools'] = ['claude_all_models'] + (['claude_fable'] if (r['model'] or '').startswith('claude-fable-') else [])
-        r.update(weighted=native_weighted(r['usage']), usd=lo if lo == hi else None, usd_low=lo, usd_high=hi, unknown_ttl_tokens=un)
+        r.update(weighted=native_weighted(r['usage']) if usage_ok else None, usd=lo if lo == hi else None, usd_low=lo, usd_high=hi, unknown_ttl_tokens=un)
         rows.append(r)
     # Level 1: cost-state modelUsage (the CLI's running counter) against every message
     # the session's transcript and its subagents/ files contain, copies included.
@@ -369,10 +402,15 @@ def build_claude(since, until):
         for f in glob.glob(os.path.join(os.path.dirname(base), sid, 'subagents', '*.jsonl')):
             mids |= members.get(f, set())
         per_model = collections.defaultdict(collections.Counter)
+        invalid_models = set()
         for mid in mids:
             r = msgs[mid]
+            if not valid_usage(r['usage'], NATIVE_KEYS, NATIVE_KEYS):
+                invalid_models.add(r['model']); continue
             for k in NATIVE_KEYS: per_model[r['model']][k] += r['usage'].get(k, 0)
         for model, mu in (cs.get('modelUsage') or {}).items():
+            if model in invalid_models or not isinstance(mu, dict) or not valid_usage(mu, names):
+                issue('level1_unavailable', path=base, model=model); continue
             prov = {names[k]: v for k, v in mu.items() if k in names}
             got = per_model.get(model, collections.Counter())
             delta = {k: got.get(k, 0) - prov[k] for k in prov}
@@ -399,7 +437,10 @@ def unrecorded_claude(since, until):
             if o.get('type') == 'system' and o.get('subtype') == 'compact_boundary':
                 pending = None
                 if in_window(o.get('timestamp'), since, until):
-                    tokens = (o.get('compactMetadata') or {}).get('preTokens')
+                    metadata = o.get('compactMetadata') or {}
+                    tokens = metadata.get('preTokens') if isinstance(metadata, dict) else None
+                    if not valid_usage({'tokens': tokens}, ('tokens',), ('tokens',)):
+                        issue('invalid_compaction_tokens', path=path, value=tokens); tokens = None
                     rate = NATIVE_RATES.get(model)
                     if model == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
                         rate = {k: v * 5 for k, v in rate.items()}
@@ -409,8 +450,11 @@ def unrecorded_claude(since, until):
                                    usd_high=None)
                     rows.append(pending)
             elif pending is not None and o.get('type') == 'user' and o.get('isCompactSummary'):
-                content = (o.get('message') or {}).get('content', '')
-                chars = len(content) if isinstance(content, str) else sum(len(x.get('text', '')) for x in content if isinstance(x, dict))
+                message = o.get('message') or {}
+                content = message.get('content') if isinstance(message, dict) else None
+                if isinstance(content, str): chars = len(content)
+                elif isinstance(content, list) and all(isinstance(x, dict) and isinstance(x.get('text', ''), str) for x in content): chars = sum(len(x.get('text', '')) for x in content)
+                else: issue('invalid_compaction_summary', path=path); pending = None; continue
                 rate = NATIVE_RATES.get(pending['model'])
                 if pending['model'] == 'claude-haiku-5-5' and pending['context_tokens'] is not None and pending['context_tokens'] > 100000:
                     rate = {k: v * 5 for k, v in rate.items()}
@@ -449,23 +493,25 @@ def cmd_build(a):
     if not a.no_claude:
         r, l, nf = build_claude(since, until); calls += r; l1['claude_sessions'] = l; cov['claude_files'] = nf
     if a.streams: quota += stream_quota(a.streams)
-    calls.sort(key=lambda r: r['ts'] or '')
+    calls.sort(key=lambda r: str(r['ts'] or ''))
     with open(os.path.join(a.out, 'calls.jsonl'), 'w') as fh:
         for r in calls: fh.write(json.dumps(r, sort_keys=True) + '\n')
     with open(os.path.join(a.out, 'quota.jsonl'), 'w') as fh:
         for r in quota: fh.write(json.dumps(r, sort_keys=True) + '\n')
-    with open(os.path.join(a.out, 'issues.jsonl'), 'w') as fh:
-        for r in ISSUES: fh.write(json.dumps(r, sort_keys=True) + '\n')
     with open(os.path.join(a.out, 'unrecorded.jsonl'), 'w') as fh:
         for r in ([] if a.no_claude else unrecorded_claude(since, until)):
             fh.write(json.dumps(r, sort_keys=True) + '\n')
+    with open(os.path.join(a.out, 'issues.jsonl'), 'w') as fh:
+        for r in ISSUES: fh.write(json.dumps(r, sort_keys=True) + '\n')
     json.dump(l1, open(os.path.join(a.out, 'level1.json'), 'w'), indent=1, sort_keys=True)
-    turns.sort(key=lambda t: t['completed_ts'] or '')
+    turns.sort(key=lambda t: str(t['completed_ts'] or ''))
     with open(os.path.join(a.out, 'turns.jsonl'), 'w') as fh:
         for t in turns: fh.write(json.dumps(t, sort_keys=True) + '\n')
     agg = collections.defaultdict(lambda: dict(calls=0, weighted=0.0, usd=0.0, unpriced_calls=0))
     for r in calls:
-        g = agg[f"{r['provider']}|{r['model']}"]; g['calls'] += 1; g['weighted'] += r['weighted']
+        g = agg[f"{r['provider']}|{r['model']}"]; g['calls'] += 1
+        if r['weighted'] is None: g['weighted'] = None
+        elif g['weighted'] is not None: g['weighted'] += r['weighted']
         if r['usd'] is None: g['unpriced_calls'] += 1
         else: g['usd'] += r['usd']
     def l1_summary(rows):
@@ -504,7 +550,7 @@ def f11_summary(calls, turns):
     for k, g in sorted(cells.items()):
         lat = g.pop('latencies')
         out[k] = dict(g, latency_n=len(lat), latency_median_s=med(lat))
-    tturns = [t for t in turns if t.get('duration_ms') is not None]
+    tturns = [t for t in turns if valid_usage(t, ('duration_ms',), ('duration_ms',))]
     return dict(key='provider|model|effort|tier (Codex service_tier; Claude speed)', by_cell=out,
                 turns=len(turns), turn_duration_median_ms=med([t['duration_ms'] for t in tturns]),
                 quota_note='quota_weighted_usd = usd x quota_multiplier where the tier is known; an estimate, not a reading')
