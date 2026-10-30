@@ -362,9 +362,13 @@ def cmd_listen(args: argparse.Namespace) -> int:
         sb["listener"] = entry
         save(path, doc)
     except BaseException:
-        if proc.poll() is None:
-            proc.terminate()
-        proc.wait()
+        try:
+            if proc.poll() is None:
+                proc.terminate()
+        except ProcessLookupError:
+            pass
+        finally:
+            proc.wait()
         raise
     print(json.dumps(entry))
     return 0
