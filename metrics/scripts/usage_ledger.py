@@ -174,76 +174,92 @@ def codex_rollout(path, seen, turns=None):
     fork_offset = None   # a forked thread's cumulative counter starts at its source thread's total
     tier = None; last_input = None   # F1.1
     for n, line in enumerate(open_lines(path), 1):
-        m = PREFIX.match(line)
-        if m:
-            mts, mtyp, ptyp = m.groups()
-            if mtyp == 'response_item' and (ptyp in INPUT_ITEMS or (ptyp == 'message' and '"role":"user"' in line[:400])):
-                last_input = mts
-            elif mtyp == 'event_msg' and ptyp == 'task_started':
-                last_input = mts
-            elif mtyp == 'event_msg' and ptyp in ('thread_settings_applied', 'task_complete'):
-                try: e = json.loads(line)
-                except ValueError: e = None
-                ep = (e or {}).get('payload') or {}
-                own = not ep.get('thread_id') or not meta.get('id') or ep['thread_id'] == meta['id']
-                if ptyp == 'thread_settings_applied' and own:
-                    tier = (ep.get('thread_settings') or {}).get('service_tier')
-                elif ptyp == 'task_complete' and e and turns is not None:
-                    turns.append(dict(provider='codex', thread=meta.get('id'), turn_id=ep.get('turn_id'), completed_ts=mts,
-                                      started_at=ep.get('started_at'), completed_at=ep.get('completed_at'),
-                                      duration_ms=ep.get('duration_ms'), time_to_first_token_ms=ep.get('time_to_first_token_ms'),
-                                      service_tier=tier, model=model, effort=effort, agent_path=meta.get('agent_path'),
-                                      source=f'{path}:{n}'))
-        if not any(k in line for k in ('session_meta', 'turn_context', 'token_usage_record', 'token_count')): continue
-        try: d = json.loads(line)
-        except ValueError:
-            issue('malformed_line', path=path, line=n); continue
-        typ = d.get('type'); p = d.get('payload') or {}; ts = d.get('timestamp')
-        if typ == 'session_meta' and not meta:
-            meta = {k: p.get(k) for k in ('id', 'parent_thread_id', 'agent_path', 'agent_nickname', 'originator', 'thread_source', 'timestamp')}
-        elif typ == 'turn_context':
-            model = p.get('model'); effort = p.get('effort')
-        elif typ == 'token_usage_record':
-            n_tur += 1
-            if p.get('thread_id') and meta.get('id') and p['thread_id'] != meta['id']:
-                issue('copied_codex_usage_excluded', path=path, line=n, thread=p['thread_id']); continue
-            latency = seconds_between(last_input, ts); latency_basis = 'since_preceding_input' if latency is not None else 'no_preceding_input'
-            last_input = None
-            rid = p.get('response_id'); raw = p.get('usage')
-            u = {k: raw.get(k, 0) for k in CODEX_KEYS} if isinstance(raw, dict) else raw
-            valid = valid_usage(raw, CODEX_KEYS, ('input_tokens', 'output_tokens'))
-            if not valid: issue('invalid_call_usage', path=path, line=n, usage=raw)
-            if not valid_timestamp(ts): issue('invalid_call_timestamp', path=path, line=n, timestamp=ts)
-            if valid and isinstance(p.get('thread_token_usage'), dict) and valid_usage(p['thread_token_usage'], CODEX_KEYS):
-                last_thread = p['thread_token_usage']
-                if fork_offset is None:
-                    fork_offset = {k: last_thread.get(k, 0) - u[k] for k in CODEX_KEYS}
-            if not rid:
-                issue('missing_response_id', path=path, line=n); continue
-            if rid in seen:
-                if seen[rid] != u: issue('conflicting_repeated_response', path=path, line=n, response_id=rid)
-                continue
-            seen[rid] = u
-            calls.append(dict(ts=ts, response_id=rid, usage=u, model=model, effort=effort, line=n, dedupe_basis='response_id',
-                              tier=tier, latency_s=latency, latency_basis=latency_basis, invalid_usage=not valid))
-        elif typ == 'event_msg' and p.get('type') == 'token_count':
-            rl = p.get('rate_limits') or {}
-            for wname in ('primary', 'secondary'):
-                w = rl.get(wname) or {}
-                if w.get('used_percent') is not None:
-                    quota.append(dict(provider='codex', ts=ts, window=wname, window_minutes=w.get('window_minutes'),
-                                      used_percent=w.get('used_percent'), resets_at=w.get('resets_at'),
-                                      limit_id=rl.get('limit_id'), plan_type=rl.get('plan_type'), thread=meta.get('id'), source=path))
-            lu = ((p.get('info') or {}).get('last_token_usage')) or {}
-            if lu.get('input_tokens', 0) or lu.get('output_tokens', 0):
-                fallback.append(dict(ts=ts, usage={k: lu.get(k, 0) for k in CODEX_KEYS}, model=model, effort=effort, line=n,
-                                     tier=tier, latency_s=None, latency_basis='fallback_record'))
+        d = None
+        try:
+            m = PREFIX.match(line)
+            if m:
+                mts, mtyp, ptyp = m.groups()
+                if mtyp == 'response_item' and (ptyp in INPUT_ITEMS or (ptyp == 'message' and '"role":"user"' in line[:400])):
+                    last_input = mts
+                elif mtyp == 'event_msg' and ptyp == 'task_started':
+                    last_input = mts
+                elif mtyp == 'event_msg' and ptyp in ('thread_settings_applied', 'task_complete'):
+                    try: e = json.loads(line)
+                    except ValueError: e = None
+                    ep = (e or {}).get('payload') or {}
+                    own = not ep.get('thread_id') or not meta.get('id') or ep['thread_id'] == meta['id']
+                    if ptyp == 'thread_settings_applied' and own:
+                        tier = (ep.get('thread_settings') or {}).get('service_tier')
+                    elif ptyp == 'task_complete' and e and turns is not None:
+                        turns.append(dict(provider='codex', thread=meta.get('id'), turn_id=ep.get('turn_id'), completed_ts=mts,
+                                          started_at=ep.get('started_at'), completed_at=ep.get('completed_at'),
+                                          duration_ms=ep.get('duration_ms'), time_to_first_token_ms=ep.get('time_to_first_token_ms'),
+                                          service_tier=tier, model=model, effort=effort, agent_path=meta.get('agent_path'),
+                                          source=f'{path}:{n}'))
+            if not any(k in line for k in ('session_meta', 'turn_context', 'token_usage_record', 'token_count')): continue
+            try: d = json.loads(line)
+            except ValueError:
+                issue('malformed_line', path=path, line=n); continue
+            typ = d.get('type'); p = d.get('payload') or {}; ts = d.get('timestamp')
+            if typ == 'session_meta' and not meta:
+                meta = {k: p.get(k) for k in ('id', 'parent_thread_id', 'agent_path', 'agent_nickname', 'originator', 'thread_source', 'timestamp')}
+            elif typ == 'turn_context':
+                model = p.get('model'); effort = p.get('effort')
+            elif typ == 'token_usage_record':
+                n_tur += 1
+                if p.get('thread_id') and meta.get('id') and p['thread_id'] != meta['id']:
+                    issue('copied_codex_usage_excluded', path=path, line=n, thread=p['thread_id']); continue
+                latency = seconds_between(last_input, ts); latency_basis = 'since_preceding_input' if latency is not None else 'no_preceding_input'
+                last_input = None
+                rid = p.get('response_id'); raw = p.get('usage')
+                u = {k: raw.get(k, 0) for k in CODEX_KEYS} if isinstance(raw, dict) else raw
+                valid = valid_usage(raw, CODEX_KEYS, ('input_tokens', 'output_tokens'))
+                if not valid: issue('invalid_call_usage', path=path, line=n, usage=raw)
+                if not valid_timestamp(ts): issue('invalid_call_timestamp', path=path, line=n, timestamp=ts)
+                if valid and isinstance(p.get('thread_token_usage'), dict) and valid_usage(p['thread_token_usage'], CODEX_KEYS):
+                    last_thread = p['thread_token_usage']
+                    if fork_offset is None:
+                        fork_offset = {k: last_thread.get(k, 0) - u[k] for k in CODEX_KEYS}
+                if not rid:
+                    issue('missing_response_id', path=path, line=n); continue
+                if rid in seen:
+                    if seen[rid] != u: issue('conflicting_repeated_response', path=path, line=n, response_id=rid)
+                    continue
+                seen[rid] = u
+                calls.append(dict(ts=ts, response_id=rid, usage=u, model=model, effort=effort, line=n, dedupe_basis='response_id',
+                                  tier=tier, latency_s=latency, latency_basis=latency_basis, invalid_usage=not valid))
+            elif typ == 'event_msg' and p.get('type') == 'token_count':
+                rl = p.get('rate_limits') or {}
+                for wname in ('primary', 'secondary'):
+                    w = rl.get(wname) or {}
+                    if w.get('used_percent') is not None:
+                        quota.append(dict(provider='codex', ts=ts, window=wname, window_minutes=w.get('window_minutes'),
+                                          used_percent=w.get('used_percent'), resets_at=w.get('resets_at'),
+                                          limit_id=rl.get('limit_id'), plan_type=rl.get('plan_type'), thread=meta.get('id'), source=path))
+                lu = ((p.get('info') or {}).get('last_token_usage')) or {}
+                if lu.get('input_tokens', 0) or lu.get('output_tokens', 0):
+                    fallback.append(dict(ts=ts, usage={k: lu.get(k, 0) for k in CODEX_KEYS}, model=model, effort=effort, line=n,
+                                         tier=tier, latency_s=None, latency_basis='fallback_record'))
+        except (TypeError, ValueError, KeyError, AttributeError, OverflowError) as e:
+            issue('malformed_record', path=path, line=n, error=str(e))
+            if isinstance(d, dict) and d.get('type') == 'token_usage_record':
+                payload = d.get('payload')
+                if isinstance(payload, dict):
+                    rid = payload.get('response_id')
+                    if isinstance(rid, str) and rid and rid not in seen:
+                        seen[rid] = payload.get('usage')
+                        calls.append(dict(ts=d.get('timestamp'), response_id=rid, usage=payload.get('usage'), model=model,
+                                          effort=effort, line=n, dedupe_basis='response_id', tier=tier,
+                                          latency_s=None, latency_basis='malformed_record', invalid_usage=True))
     if n_tur == 0 and fallback:
         keyed = {}
         for c in fallback:
             k = (meta.get('id') or path, c['ts'], c['usage']['input_tokens'], c['usage']['output_tokens'])
-            if k in seen: continue
-            seen[k] = c['usage']; keyed[k] = c
+            try:
+                if k in seen: continue
+                seen[k] = c['usage']; keyed[k] = c
+            except TypeError:
+                issue('invalid_fallback_usage', path=path, line=c['line']); continue
         calls = [dict(c, response_id=None, dedupe_basis='fallback') for c in keyed.values()]
     level1 = None
     if last_thread is not None:
@@ -287,6 +303,8 @@ def build_codex(since, until, turns=None, metadata=None):
         for c in calls:
             if not in_window(c['ts'], since, until): continue
             u = c['usage']; tid = meta.get('id')
+            if not isinstance(c['model'], (str, type(None))): issue('invalid_model', path=f, line=c['line']); c['model'] = None
+            if not isinstance(c.get('tier'), (str, type(None))): issue('invalid_tier', path=f, line=c['line']); c['tier'] = None
             try: price = codex_usd(u, c['model']) if not c.get('invalid_usage') and valid_usage(u, CODEX_KEYS, CODEX_KEYS) and valid_timestamp(c['ts']) else None
             except (ValueError, TypeError, ArithmeticError) as e:
                 issue('invalid_call_usage', path=f, line=c['line'], error=str(e)); price = None
@@ -318,56 +336,75 @@ def claude_transcript(path, msgs, cost_state, members=None):
     project = path.split('/.claude/projects/')[1].split('/')[0]
     last_user = None   # F1.1
     for n, line in enumerate(open_lines(path), 1):
-        if '"type":"user"' in line[:300]:
-            try: uo = json.loads(line)
-            except ValueError: uo = None
-            if uo and uo.get('type') == 'user' and uo.get('timestamp'): last_user = uo['timestamp']
-        if '"cost-state"' in line:
-            try:
-                o = json.loads(line)
-                if o.get('type') == 'cost-state': cost_state[o.get('sessionId')] = dict(o, _path=path)
-            except ValueError: pass
-            continue
-        if '"usage"' not in line or '"assistant"' not in line: continue
-        try: o = json.loads(line)
-        except ValueError:
-            issue('malformed_line', path=path, line=n); continue
-        if o.get('type') != 'assistant': continue
-        m = o.get('message') or {}
-        if not isinstance(m, dict): issue('malformed_line', path=path, line=n); continue
-        u = m.get('usage'); mid = m.get('id'); model = m.get('model')
-        if model == '<synthetic>' or not mid: continue
-        if not isinstance(u, dict):
-            issue('invalid_call_usage', path=path, line=n, usage=u); u = {'_invalid': u}
-        if not valid_timestamp(o.get('timestamp')): issue('invalid_call_timestamp', path=path, line=n, timestamp=o.get('timestamp'))
-        mine.add(mid)
-        flat = {k: u[k] for k in NATIVE_KEYS if k in u}
-        if '_invalid' in u: flat['_invalid'] = u['_invalid']
-        split = u.get('cache_creation') or {}
-        if not isinstance(split, dict): flat['_invalid_split'] = split; split = {}
-        for k in TTL_KEYS:
-            if k in split: flat[k] = split[k]
-        if mid in msgs:
-            row = msgs[mid]
-            if row.get('latency_s') is not None:   # F1.1: a message's records span the call; latency runs to the last one
-                later = seconds_between(CLAUDE_LATENCY_START.get(mid), o.get('timestamp'))
-                if later is not None and later > row['latency_s']: row['latency_s'] = later
-            for k, v in flat.items():
-                if k == 'output_tokens' and valid_usage({k:v}, (k,)) and valid_usage(row['usage'], (k,)): row['usage'][k] = max(row['usage'].get(k, 0), v)
-                elif k == 'output_tokens': row['usage'][k] = v
-                elif k in row['usage'] and row['usage'][k] != v:
-                    issue('conflicting_native_counter', message_id=mid, counter=k, path=path, line=n)
-                else: row['usage'][k] = v
-            row['records'] += 1
-            continue
-        latency = seconds_between(last_user, o.get('timestamp'))
-        if latency is not None: CLAUDE_LATENCY_START[mid] = last_user
-        last_user = None
-        msgs[mid] = dict(provider='anthropic', ts=o.get('timestamp'), call_id=mid, dedupe_basis='message_id',
-                         session=o.get('sessionId'), project=project, subagent=sub, agent=agent, agent_type=agent_type,
-                         model=model, effort=o.get('effort'), usage=flat, records=1, source=f'{path}:{n}',
-                         service_tier=u.get('service_tier'), speed=u.get('speed'), quota_multiplier=None,
-                         latency_s=latency, latency_basis='since_preceding_user_record' if latency is not None else 'no_preceding_input')
+        o = None
+        try:
+            if '"type":"user"' in line[:300]:
+                try: uo = json.loads(line)
+                except ValueError: uo = None
+                if uo and uo.get('type') == 'user' and uo.get('timestamp'): last_user = uo['timestamp']
+            if '"cost-state"' in line:
+                try:
+                    o = json.loads(line)
+                    if o.get('type') == 'cost-state': cost_state[o.get('sessionId')] = dict(o, _path=path)
+                except ValueError: pass
+                continue
+            if '"usage"' not in line or '"assistant"' not in line: continue
+            try: o = json.loads(line)
+            except ValueError:
+                issue('malformed_line', path=path, line=n); continue
+            if o.get('type') != 'assistant': continue
+            m = o.get('message') or {}
+            if not isinstance(m, dict): issue('malformed_line', path=path, line=n); continue
+            u = m.get('usage'); mid = m.get('id'); model = m.get('model')
+            if model == '<synthetic>' or not mid: continue
+            if not isinstance(u, dict):
+                issue('invalid_call_usage', path=path, line=n, usage=u); u = {'_invalid': u}
+            if not valid_timestamp(o.get('timestamp')): issue('invalid_call_timestamp', path=path, line=n, timestamp=o.get('timestamp'))
+            mine.add(mid)
+            flat = {k: u[k] for k in NATIVE_KEYS if k in u}
+            if '_invalid' in u: flat['_invalid'] = u['_invalid']
+            split = u.get('cache_creation') or {}
+            if not isinstance(split, dict): flat['_invalid_split'] = split; split = {}
+            for k in TTL_KEYS:
+                if k in split: flat[k] = split[k]
+            if mid in msgs:
+                row = msgs[mid]
+                if row.get('latency_s') is not None:   # F1.1: a message's records span the call; latency runs to the last one
+                    later = seconds_between(CLAUDE_LATENCY_START.get(mid), o.get('timestamp'))
+                    if later is not None and later > row['latency_s']: row['latency_s'] = later
+                for k, v in flat.items():
+                    if k == 'output_tokens' and valid_usage({k:v}, (k,)) and valid_usage(row['usage'], (k,)): row['usage'][k] = max(row['usage'].get(k, 0), v)
+                    elif k == 'output_tokens': row['usage'][k] = v
+                    elif k in row['usage'] and row['usage'][k] != v:
+                        issue('conflicting_native_counter', message_id=mid, counter=k, path=path, line=n)
+                    else: row['usage'][k] = v
+                row['records'] += 1
+                continue
+            latency = seconds_between(last_user, o.get('timestamp'))
+            if latency is not None: CLAUDE_LATENCY_START[mid] = last_user
+            last_user = None
+            msgs[mid] = dict(provider='anthropic', ts=o.get('timestamp'), call_id=mid, dedupe_basis='message_id',
+                             session=o.get('sessionId'), project=project, subagent=sub, agent=agent, agent_type=agent_type,
+                             model=model, effort=o.get('effort'), usage=flat, records=1, source=f'{path}:{n}',
+                             service_tier=u.get('service_tier'), speed=u.get('speed'), quota_multiplier=None,
+                             latency_s=latency, latency_basis='since_preceding_user_record' if latency is not None else 'no_preceding_input')
+        except (TypeError, ValueError, KeyError, AttributeError, OverflowError) as e:
+            issue('malformed_record', path=path, line=n, error=str(e))
+            if isinstance(o, dict) and o.get('type') == 'assistant':
+                message = o.get('message')
+                if isinstance(message, dict):
+                    mid = message.get('id')
+                    if isinstance(mid, str) and mid:
+                        if mid in msgs:
+                            msgs[mid]['usage']['_invalid_record'] = True
+                        else:
+                            mine.add(mid)
+                            msgs[mid] = dict(provider='anthropic', ts=o.get('timestamp'), call_id=mid, dedupe_basis='message_id',
+                                             session=o.get('sessionId'), project=project, subagent=sub, agent=agent,
+                                             agent_type=agent_type, model=message.get('model'), effort=o.get('effort'),
+                                             usage={'_invalid_record': message.get('usage')}, records=1, source=f'{path}:{n}',
+                                             service_tier=None, speed=None, quota_multiplier=None, latency_s=None,
+                                             latency_basis='malformed_record')
 
 def build_claude(since, until):
     msgs = {}; cost_state = {}; members = {}
@@ -377,6 +414,7 @@ def build_claude(since, until):
     rows = []
     for r in msgs.values():
         if not in_window(r['ts'], since, until): continue
+        if not isinstance(r['model'], (str, type(None))): issue('invalid_model', source=r['source']); r['model'] = None
         usage_ok = valid_usage(r['usage'], NATIVE_KEYS + TTL_KEYS, NATIVE_KEYS) and not any(k.startswith('_invalid') for k in r['usage'])
         if not usage_ok: issue('invalid_call_usage', source=r['source'], usage=r['usage'])
         if r.get('speed') == 'fast':
@@ -408,7 +446,9 @@ def build_claude(since, until):
             if not valid_usage(r['usage'], NATIVE_KEYS, NATIVE_KEYS):
                 invalid_models.add(r['model']); continue
             for k in NATIVE_KEYS: per_model[r['model']][k] += r['usage'].get(k, 0)
-        for model, mu in (cs.get('modelUsage') or {}).items():
+        model_usage = cs.get('modelUsage') or {}
+        if not isinstance(model_usage, dict): issue('level1_unavailable', path=base); continue
+        for model, mu in model_usage.items():
             if model in invalid_models or not isinstance(mu, dict) or not valid_usage(mu, names):
                 issue('level1_unavailable', path=base, model=model); continue
             prov = {names[k]: v for k, v in mu.items() if k in names}
@@ -429,38 +469,41 @@ def unrecorded_claude(since, until):
         if since and os.path.getmtime(path) < since.timestamp(): continue
         model = None; pending = None
         for line in open_lines(path):
-            try: o = json.loads(line)
-            except ValueError: continue
-            if o.get('type') == 'assistant':
-                m = (o.get('message') or {}).get('model')
-                if m and m != '<synthetic>': model = m
-            if o.get('type') == 'system' and o.get('subtype') == 'compact_boundary':
-                pending = None
-                if in_window(o.get('timestamp'), since, until):
-                    metadata = o.get('compactMetadata') or {}
-                    tokens = metadata.get('preTokens') if isinstance(metadata, dict) else None
-                    if not valid_usage({'tokens': tokens}, ('tokens',), ('tokens',)):
-                        issue('invalid_compaction_tokens', path=path, value=tokens); tokens = None
-                    rate = NATIVE_RATES.get(model)
-                    if model == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
+            try:
+                try: o = json.loads(line)
+                except ValueError: continue
+                if o.get('type') == 'assistant':
+                    m = (o.get('message') or {}).get('model')
+                    if m and m != '<synthetic>': model = m
+                if o.get('type') == 'system' and o.get('subtype') == 'compact_boundary':
+                    pending = None
+                    if in_window(o.get('timestamp'), since, until):
+                        metadata = o.get('compactMetadata') or {}
+                        tokens = metadata.get('preTokens') if isinstance(metadata, dict) else None
+                        if not valid_usage({'tokens': tokens}, ('tokens',), ('tokens',)):
+                            issue('invalid_compaction_tokens', path=path, value=tokens); tokens = None
+                        rate = NATIVE_RATES.get(model)
+                        if model == 'claude-haiku-5-5' and tokens is not None and tokens > 100000:
+                            rate = {k: v * 5 for k, v in rate.items()}
+                        pending = dict(session_id=o.get('sessionId'), kind='compaction', at=o.get('timestamp'),
+                                       context_tokens=tokens, model=model, source=path,
+                                       usd_low=tokens * rate['cache_read'] / 1e6 if rate and tokens is not None else None,
+                                       usd_high=None)
+                        rows.append(pending)
+                elif pending is not None and o.get('type') == 'user' and o.get('isCompactSummary'):
+                    message = o.get('message') or {}
+                    content = message.get('content') if isinstance(message, dict) else None
+                    if isinstance(content, str): chars = len(content)
+                    elif isinstance(content, list) and all(isinstance(x, dict) and isinstance(x.get('text', ''), str) for x in content): chars = sum(len(x.get('text', '')) for x in content)
+                    else: issue('invalid_compaction_summary', path=path); pending = None; continue
+                    rate = NATIVE_RATES.get(pending['model'])
+                    if pending['model'] == 'claude-haiku-5-5' and pending['context_tokens'] is not None and pending['context_tokens'] > 100000:
                         rate = {k: v * 5 for k, v in rate.items()}
-                    pending = dict(session_id=o.get('sessionId'), kind='compaction', at=o.get('timestamp'),
-                                   context_tokens=tokens, model=model, source=path,
-                                   usd_low=tokens * rate['cache_read'] / 1e6 if rate and tokens is not None else None,
-                                   usd_high=None)
-                    rows.append(pending)
-            elif pending is not None and o.get('type') == 'user' and o.get('isCompactSummary'):
-                message = o.get('message') or {}
-                content = message.get('content') if isinstance(message, dict) else None
-                if isinstance(content, str): chars = len(content)
-                elif isinstance(content, list) and all(isinstance(x, dict) and isinstance(x.get('text', ''), str) for x in content): chars = sum(len(x.get('text', '')) for x in content)
-                else: issue('invalid_compaction_summary', path=path); pending = None; continue
-                rate = NATIVE_RATES.get(pending['model'])
-                if pending['model'] == 'claude-haiku-5-5' and pending['context_tokens'] is not None and pending['context_tokens'] > 100000:
-                    rate = {k: v * 5 for k, v in rate.items()}
-                if rate and pending['context_tokens'] is not None:
-                    pending['usd_high'] = (pending['context_tokens'] * rate['cache_write_1h'] + chars / 3 * rate['output']) / 1e6
-                pending = None
+                    if rate and pending['context_tokens'] is not None:
+                        pending['usd_high'] = (pending['context_tokens'] * rate['cache_write_1h'] + chars / 3 * rate['output']) / 1e6
+                    pending = None
+            except (TypeError, ValueError, KeyError, AttributeError, OverflowError) as e:
+                issue('malformed_compaction_record', path=path, error=str(e))
     return rows
 
 def stream_quota(globs):
@@ -774,8 +817,8 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         if c.get('model') not in n['models']: n['models'].append(c.get('model'))
         tier = c.get('service_tier') if c['provider'] == 'codex' else c.get('speed')
         if tier not in n['tiers']: n['tiers'].append(tier)
-        if c['ts'] and (n['first_call'] is None or c['ts'] < n['first_call']): n['first_call'] = c['ts']
-        if c['ts'] and (n['last_call'] is None or c['ts'] > n['last_call']): n['last_call'] = c['ts']
+        if valid_timestamp(c['ts']) and (n['first_call'] is None or c['ts'] < n['first_call']): n['first_call'] = c['ts']
+        if valid_timestamp(c['ts']) and (n['last_call'] is None or c['ts'] > n['last_call']): n['last_call'] = c['ts']
     for n in nodes.values():
         cur = n; visited = set()
         while cur and cur['node_id'] not in visited:
