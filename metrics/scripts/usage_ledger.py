@@ -291,6 +291,13 @@ def codex_files(since):
             if since is None or os.path.getmtime(f) >= since.timestamp(): out.add(f)
     return sorted(out)
 
+def validate_session_metadata(meta, path):
+    for key in ('id', 'parent_thread_id', 'agent_path', 'agent_nickname'):
+        if meta.get(key) is not None and not isinstance(meta[key], str):
+            issue('invalid_session_metadata', path=path, field=key)
+            meta[key] = None
+    return meta
+
 def build_codex(since, until, turns=None, metadata=None):
     idx = thread_index(); seen = {}; metas = {} if metadata is None else metadata; rows = []; quota = []; level1 = []
     files = codex_files(since)
@@ -299,9 +306,7 @@ def build_codex(since, until, turns=None, metadata=None):
         meta, calls, q, l1 = codex_rollout(f, seen, file_turns)
         if turns is not None:
             turns += [t for t in file_turns if in_window(t['completed_ts'], since, until)]
-        for key in ('id', 'parent_thread_id', 'agent_path'):
-            if meta.get(key) is not None and not isinstance(meta[key], str):
-                issue('invalid_session_metadata', path=f, field=key); meta[key] = None
+        validate_session_metadata(meta, f)
         if meta.get('id'): metas[meta['id']] = meta
         quota += [x for x in q if in_window(x['ts'], since, until)]
         if l1: level1.append(l1)
@@ -329,8 +334,9 @@ def build_codex(since, until, turns=None, metadata=None):
                 if 'session_meta' not in line: continue
                 try:
                     rec = json.loads(line); payload = rec.get('payload') or {}
-                    if rec.get('type') == 'session_meta' and isinstance(payload, dict) and isinstance(payload.get('id'), str):
-                        metas.setdefault(payload['id'], {k: payload.get(k) for k in ('id', 'parent_thread_id', 'agent_path', 'agent_nickname', 'originator', 'thread_source', 'timestamp')})
+                    if rec.get('type') == 'session_meta' and isinstance(payload, dict):
+                        meta = validate_session_metadata({k: payload.get(k) for k in ('id', 'parent_thread_id', 'agent_path', 'agent_nickname', 'originator', 'thread_source', 'timestamp')}, path)
+                        if meta.get('id'): metas.setdefault(meta['id'], meta)
                         break
                 except (ValueError, TypeError, AttributeError):
                     issue('malformed_session_metadata', path=path)
@@ -751,11 +757,13 @@ def call_spend(c):
 def digest(path):
     with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()
 
-def transcript_available(provider, sid, metadata):
+def transcript_available(provider, sid, metadata, node_id=None):
     if provider == 'codex': return sid in metadata
     if provider == 'claude':
         for path in find_transcripts(sid):
-            if '/subagents/' in path: continue
+            if node_id is not None and node_id != sid:
+                if '/subagents/' not in path or node_id != sid + '/agent:' + os.path.basename(path)[:-6]: continue
+            elif '/subagents/' in path: continue
             try:
                 with open(path, 'rb') as fh: fh.read(1)
                 return True
@@ -814,9 +822,10 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for i, root in enumerate(sessions):
         add_node(root['session_id'], root['session_id'], root['provider'], None if i == 0 else sessions[0]['session_id'],
                  'root' if i == 0 else 'successor', start=root.get('from'))
-    missing_root = False
+    missing_root = False; checked_sessions = set()
     for i, bound in enumerate(sessions + (sb.get('bindings') or [])):
         sid = bound.get('session_id'); provider = bound.get('provider')
+        checked_sessions.add((sid, provider))
         if not transcript_available(provider, sid, metadata):
             result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider))
             if i == 0 and sessions: missing_root = True
@@ -856,6 +865,13 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             if add_node(nid, sid, provider, parent, link, role, starts[parent]): changed = True
         if not changed: break
         remaining = links if changed else later
+    # Explicit bindings are checked above even if unreachable; every joined
+    # member must also have its own readable transcript, including subagents.
+    for node in nodes.values():
+        sid = node['session_id']; provider = node['provider']; nid = node['node_id']
+        if nid == sid and (sid, provider) in checked_sessions: continue
+        if not transcript_available(provider, sid, metadata, nid):
+            result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider, node_id=nid))
     # The winning graph is now fixed. Derive descendant boundaries from it,
     # rather than retaining the boundary of an earlier, displaced parent.
     def inherited_start(nid):
