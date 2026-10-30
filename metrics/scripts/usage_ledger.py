@@ -91,6 +91,7 @@ def seconds_between(start, end):
     except (ValueError, TypeError, AttributeError, OverflowError): return None
 
 ISSUES = []
+SESSION_ID = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 def issue(kind, **kw): ISSUES.append(dict(kind=kind, **kw))
 def ts_of(s): return dt.datetime.fromisoformat(s.replace('Z', '+00:00')) if s else None
 def valid_timestamp(ts):
@@ -782,6 +783,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
                   status='not_established', totals=pools(), window_totals=pools(), nodes=[],
                   unattributed=dict(totals=pools(), sessions=[]), unrecorded=[], issues=[],
                   undated=dict(counts={p: 0 for p in POOLS}, sessions=[]),
+                  outside=dict(issues={}, undated_calls=0),
                   conservation_scope='dated calls in window',
                   known_gaps=['Claude Code title and other side calls are not in transcripts'])
     ISSUES.clear()
@@ -881,11 +883,17 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         return inherited_start(parent) if parent in nodes else None
     for nid in nodes:
         starts[nid] = inherited_start(nid)
-    unattributed = {}; undated_sessions = set()
+    unattributed = {}; undated_sessions = set(); undated_outside = 0
+    # Issues and undated calls count against the objective only when they come from
+    # one of its sessions; the window holds other objectives' sessions too.
+    members = {n['session_id'] for n in nodes.values()}
     for c in calls:
         sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
         nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
         if not valid_timestamp(c.get('ts')):
+            if sid not in members:
+                undated_outside += 1
+                continue
             for p in c['pools']: result['undated']['counts'][p] += 1
             undated_sessions.add((sid, c['provider']))
             continue
@@ -914,9 +922,27 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     result['undated']['sessions'] = [dict(session_id=sid, provider=provider) for sid, provider in sorted(undated_sessions, key=str)]
     result['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and
                             (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
-    result['issues'] += ISSUES
+    file_session = {}
+    for c in calls:
+        src = c.get('source'); sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
+        if isinstance(src, str) and isinstance(sid, str): file_session.setdefault(src.rsplit(':', 1)[0], sid)
+    def in_scope(i):
+        # An issue without a file, or from a file whose session is unknown and names no
+        # session ID, may concern the objective, so it stays in scope (invariant 2).
+        if isinstance(i.get('path'), str): path = i['path']
+        elif isinstance(i.get('source'), str): path = i['source'].rsplit(':', 1)[0]
+        else: return True
+        sid = file_session.get(path)
+        if sid is not None: return sid in members
+        ids = SESSION_ID.findall(path)
+        return not ids or any(x in members for x in ids)
+    outside = collections.Counter()
+    for i in list({json.dumps(x, sort_keys=True): x for x in ISSUES}.values()):
+        if in_scope(i): result['issues'].append(i)
+        else: outside[i['kind']] += 1
     result['issues'] = list({json.dumps(x, sort_keys=True): x for x in result['issues']}.values())
-    ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['window_totals'].values())
+    result['outside'] = dict(issues=dict(sorted(outside.items())), undated_calls=undated_outside)
+    ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['totals'].values())
     substantive_issues = [i for i in result['issues'] if i['kind'] != 'role_host_ledger_absent']
     result['status'] = 'not_established' if not sessions or missing_root else ('partial' if ranged or result['unrecorded'] or substantive_issues or undated_sessions else 'complete')
     return result, quota, sb
