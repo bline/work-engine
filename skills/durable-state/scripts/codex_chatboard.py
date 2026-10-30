@@ -28,6 +28,8 @@ BOARD_KEY = "work-engine/codex-chatboard/v1"
 NAMESPACE = "codex-chatboard"
 MAX_RETRIES = 20
 CONTROL_PREFIX = "control:session:"
+BUDGET_PREFIX = "control:budget:"
+RESERVED_PREFIXES = (CONTROL_PREFIX, BUDGET_PREFIX)
 REGISTRY_PATH = Path(__file__).resolve().parent.parent / "contracts" / "codex-chatboard-kinds.v1.json"
 REGISTRY_TYPE = "work_engine_codex_chatboard_kinds_v1"
 
@@ -229,7 +231,7 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
     canonical_uuid(message_id, "message_id")
     if not all(isinstance(value, str) and value.strip() for value in (author, topic, body)):
         raise ChatboardError("author, topic, and body must be nonempty")
-    if topic.startswith(CONTROL_PREFIX):
+    if topic.startswith(RESERVED_PREFIXES):
         raise ChatboardError("control topics are local telemetry subscriptions, not board publications")
     if not isinstance(wake, bool):
         raise ChatboardError("wake must be a boolean")
@@ -732,6 +734,72 @@ class ContextControl:
         return value
 
 
+class BudgetControl:
+    """Interval-limited adapter to an explicitly pinned budget reader."""
+
+    def __init__(self, *, record: Path, reader: Path, sha256: str,
+                 cursor: str | None = None, interval: float = 60,
+                 limit_fractions: str | None = None, hours_fractions: str | None = None) -> None:
+        self.reader = reader.absolute()
+        self.digest, self.cursor = sha256.lower(), cursor
+        if not re.fullmatch(r"[0-9a-f]{64}", self.digest):
+            raise ChatboardError("--budget-sha256 must be a SHA-256 digest")
+        if not math.isfinite(interval) or interval <= 0:
+            raise ChatboardError("--budget-interval must be finite and positive")
+        self.interval, self.next_run = interval, 0.0
+        self.topic = None
+        self.failed = False
+        self.command = ["python3", "-I", str(self.reader), "control", "--record", str(record.absolute())]
+        if limit_fractions is not None:
+            self.command += ["--limit-fractions", limit_fractions]
+        if hours_fractions is not None:
+            self.command += ["--hours-fractions", hours_fractions]
+
+    def read(self) -> list[dict[str, Any]]:
+        if time.monotonic() < self.next_run:
+            return []
+        self.next_run = time.monotonic() + self.interval
+        try:
+            digest = hashlib.sha256(self.reader.read_bytes()).hexdigest()
+        except OSError as failure:
+            raise ChatboardError("budget reader missing or digest changed; listener stopped") from failure
+        if digest != self.digest:
+            raise ChatboardError("budget reader missing or digest changed; listener stopped")
+        try:
+            result = subprocess.run(self.command + (["--cursor", self.cursor] if self.cursor is not None else []),
+                                    capture_output=True, text=True, timeout=120)
+            if result.returncode:
+                raise ValueError("reader exited non-zero")
+            try:
+                value = json.loads(result.stdout)
+            except Exception as failure:
+                raise ValueError("invalid budget reader output") from failure
+            if not isinstance(value, dict):
+                raise ValueError("document is not an object")
+            topic, events = value.get("topic"), value.get("events")
+            if (value.get("schema") != "objective-budget-control-v1"
+                    or not isinstance(topic, str) or not topic.startswith(BUDGET_PREFIX)
+                    or not topic[len(BUDGET_PREFIX):] or (self.topic is not None and topic != self.topic)
+                    or not isinstance(value.get("next_budget_cursor"), str)
+                    or not isinstance(value.get("snapshot"), dict)
+                    or not isinstance(events, list)
+                    or any(not isinstance(e, dict) or e.get("topic") != topic
+                           or e.get("authority") != "observation_only" for e in events)):
+                raise ValueError("incompatible budget reader document")
+        except (OSError, subprocess.TimeoutExpired, ValueError) as failure:
+            if self.failed:
+                return []
+            self.failed = True
+            return [{"topic": self.topic, "kind": "reader_failed", "authority": "observation_only",
+                     "summary": str(failure)}]
+        self.topic, self.cursor = topic, value["next_budget_cursor"]
+        if self.failed:
+            events = [{"topic": topic, "kind": "reader_recovered", "authority": "observation_only",
+                       "summary": "budget reader recovered"}, *events]
+        self.failed = False
+        return events
+
+
 def addressed_to(row: dict[str, Any], selected: list[str]) -> bool:
     """True when a stored `to` list contains a selected address.
 
@@ -742,13 +810,14 @@ def addressed_to(row: dict[str, Any], selected: list[str]) -> bool:
     """
     to = row.get("to")
     return isinstance(to, list) and all(isinstance(address, str) for address in to) \
-        and any(address in selected and not address.startswith(CONTROL_PREFIX) for address in to)
+        and any(address in selected and not address.startswith(RESERVED_PREFIXES) for address in to)
 
 
 def wait_board(repository: Path, *, since: int, limit: int = 100,
                topic: str | None = None, topics: list[str] | None = None,
                timeout_seconds: float | None = None,
                control: ContextControl | None = None,
+               budget: BudgetControl | None = None,
                exclude_session_id: str | None = None) -> dict[str, Any]:
     if since < 0 or not 1 <= limit <= 500:
         raise ChatboardError("--since must be nonnegative and --limit must be 1..500")
@@ -761,6 +830,8 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
     if any(name.startswith(CONTROL_PREFIX) and (control is None or name != control.topic)
            for name in selected):
         raise ChatboardError("control topic requires the matching explicit session binding")
+    if any(name.startswith(BUDGET_PREFIX) for name in selected):
+        raise ChatboardError("budget topics are local observations, not board subscriptions")
     if timeout_seconds is not None and (not math.isfinite(timeout_seconds) or timeout_seconds < 0):
         raise ChatboardError("--timeout-seconds must be finite and nonnegative")
     deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
@@ -776,7 +847,7 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
             by_path: dict[int, list[str]] = {}
             for row in board["messages"]:
                 if (row["sequence"] > since
-                        and not row["topic"].startswith(CONTROL_PREFIX)
+                        and not row["topic"].startswith(RESERVED_PREFIXES)
                         and (exclude_session_id is None
                              or row.get("session_id", "").lower() != exclude_session_id
                              or row.get("wake") is True)):
@@ -806,9 +877,17 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
                               control_topic=control.topic, next_control_cursor=control.cursor)
                 if result["control_events"] and not rows:
                     result["status"] = "control"
-            if rows or result.get("control_events") or (deadline is not None and time.monotonic() >= deadline):
+            if budget is not None:
+                events = budget.read()
+                result.update(budget_events=events, budget_topic=budget.topic, next_budget_cursor=budget.cursor)
+                if events and not rows and not result.get("control_events"):
+                    result["status"] = "budget"
+            if rows or result.get("control_events") or result.get("budget_events") or (deadline is not None and time.monotonic() >= deadline):
                 return result
             remaining = None if deadline is None else max(0, deadline - time.monotonic())
+            if budget is not None:
+                budget_wait = max(0, budget.next_run - time.monotonic())
+                remaining = budget_wait if remaining is None else min(remaining, budget_wait)
             if changes.wait(remaining):
                 changes.arm()
             # Also reread once at timeout: return the last authoritative view.
@@ -1119,6 +1198,13 @@ def parser() -> argparse.ArgumentParser:
                       help="in band, report again at each further multiple of this percent of the window (default 5)")
     wait.add_argument("--context-lead-calls", type=int, default=3)
     wait.add_argument("--control-cursor", help="opaque next_control_cursor from the last consumed result")
+    wait.add_argument("--budget-record", type=Path)
+    wait.add_argument("--budget-reader", type=Path)
+    wait.add_argument("--budget-sha256")
+    wait.add_argument("--budget-cursor")
+    wait.add_argument("--budget-interval", type=float, default=60)
+    wait.add_argument("--budget-limit-fractions")
+    wait.add_argument("--budget-hours-fractions")
     topics = commands.add_parser("topics", help="list recorded topics with counts and latest sequence")
     topics.add_argument("--since", type=int, default=0)
     topics.add_argument("--limit", type=int, default=100)
@@ -1241,11 +1327,23 @@ def main() -> int:
             elif (args.control_cursor or args.context_agent or args.context_host != "codex"
                   or args.context_lead_calls != 3 or args.context_step_percent is not None):
                 raise ChatboardError("control options require a session binding")
+            budget_required = [args.budget_record, args.budget_reader, args.budget_sha256]
+            budget = None
+            if any(value is not None for value in budget_required):
+                if not all(value is not None for value in budget_required):
+                    raise ChatboardError("budget requires --budget-record, --budget-reader and --budget-sha256")
+                budget = BudgetControl(record=args.budget_record, reader=args.budget_reader,
+                                       sha256=args.budget_sha256, cursor=args.budget_cursor,
+                                       interval=args.budget_interval, limit_fractions=args.budget_limit_fractions,
+                                       hours_fractions=args.budget_hours_fractions)
+            elif (args.budget_cursor is not None or args.budget_interval != 60
+                  or args.budget_limit_fractions is not None or args.budget_hours_fractions is not None):
+                raise ChatboardError("budget options require a budget binding")
             started = time.monotonic()
             remaining = args.timeout_seconds
             while True:
                 result = wait_board(args.repository, since=args.since, limit=args.limit,
-                                    topics=args.topics, timeout_seconds=remaining, control=control,
+                                    topics=args.topics, timeout_seconds=remaining, control=control, budget=budget,
                                     exclude_session_id=args.exclude_session_id)
                 print(json.dumps(result, indent=None if args.follow else 2), flush=True)
                 if result["status"] == "timeout":
@@ -1262,6 +1360,8 @@ def main() -> int:
                         terminal = {**result, "status": "timeout", "messages": []}
                         if control is not None:
                             terminal["control_events"] = []
+                        if budget is not None:
+                            terminal["budget_events"] = []
                         print(json.dumps(terminal), flush=True)
                         return 2
         elif args.command == "topics":

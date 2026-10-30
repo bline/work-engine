@@ -387,9 +387,21 @@ class Gate:
         self.log(f"posted handoff to {topic} at sequence {seq}")
 
         ack = self.await_adoption(succ, sid, topic, dig, cursor)
-        self.log(f"adoption acknowledged by {sid} (message {ack})")
-        self.rec("adoption", f"session={sid} message_id={ack}")
-        self.transfer_report("adoption_verified", adoption_verified=True, adoption_message_id=ack)
+        message_id = ack.get("message_id") or str(ack.get("sequence"))
+        self.log(f"adoption acknowledged by {sid} (message {message_id})")
+        self.rec("adoption", f"session={sid} message_id={message_id}")
+        binding = {}
+        if self.a.record:
+            try:
+                result = subprocess.run([sys.executable, str(HERE / "scope_budget.py"), "add-session",
+                                         "--record", self.a.record, "--session", sid,
+                                         "--provider", self.a.successor_host, "--from", ack["observed_at"],
+                                         "--bound-by", "rotation", "--evidence", json.dumps(ack, sort_keys=True)],
+                                        capture_output=True, text=True, timeout=30)
+                binding["cost_binding"] = "established" if result.returncode == 0 else "not_established"
+            except (OSError, subprocess.SubprocessError, KeyError):
+                binding["cost_binding"] = "not_established"
+        self.transfer_report("adoption_verified", adoption_verified=True, adoption_message_id=message_id, **binding)
         self.rm_awaiting()
         self.post_ending(handoff, dig)
         # Display state follows verified adoption, never just a launch attempt.
@@ -446,7 +458,7 @@ class Gate:
                 continue
             data = m.get("data") or {}
             if data.get("handoff_sha256") == dig and data.get("predecessor_session") == self.a.pred_session:
-                return m.get("message_id") or str(m.get("sequence"))
+                return m
         return None
 
     def await_adoption(self, succ, sid, topic, dig, since):
@@ -602,6 +614,7 @@ def parser():
     ap.add_argument("--title", help="human-readable task name, shared across continuations")
     ap.add_argument("--replaces-handoff-sha256", action="append", default=[],
                     help="explicit older handoff replaced by this preparation; incoming adoptions are linked automatically")
+    ap.add_argument("--record", help="assignment record to bind the successor after adoption")
     ap.add_argument("--state", required=True, help="durable evidence directory for this role")
     ap.add_argument("--repo", default=repo_default, help="repository holding the board")
     ap.add_argument("--board-cmd", default=str(HERE.parents[1] / "durable-state/scripts/codex_chatboard.py"))
