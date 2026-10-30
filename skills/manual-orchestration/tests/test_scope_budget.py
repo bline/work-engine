@@ -61,7 +61,7 @@ class ScopeBudgetTest(unittest.TestCase):
 
     def test_hours_limit_stops_and_revise_keeps_history(self):
         call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
-             "--max-hours", "0", "--set-by", "coordinator", "--reason", "proposed in first report")
+             "--max-hours", "0", "--set-by", "supervisor", "--reason", "proposed in first report")
         rc, r = call("check", "--record", str(self.rec))
         self.assertEqual(rc, 4)
         self.assertEqual(r["reached"], ["hours"])
@@ -72,19 +72,126 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(sb["limits_set_by"], "user")
         self.assertEqual(call("check", "--record", str(self.rec))[0], 0)
 
-    def test_weekly_meter_points_from_rollout(self):
+    def test_v1_meter_authority_and_upgrade(self):
         ro = self.d / "rollout.jsonl"
         rollout(ro, [35.0])
         call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--rollout", str(ro),
-             "--max-weekly-points", "20", "--set-by", "user")
-        rollout(ro, [35.0, 50.0])
+             "--max-hours", "100", "--set-by", "supervisor")
+        doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
+        sb["schema"] = S.SCHEMA_V1
+        for k in ("objective_id", "sessions", "bindings", "cost_limits"): sb.pop(k)
+        sb["limits"]["max_weekly_points"] = 2
+        sb["limit_history"] = [{"set_by": "user", "limits": {"max_hours": 100}}]
+        self.rec.write_text(json.dumps(doc)); rollout(ro, [40.0])
         rc, r = call("check", "--record", str(self.rec), "--rollout", str(ro))
-        self.assertEqual((rc, r["weekly_points_used"]), (0, 15.0))
-        rollout(ro, [35.0, 50.0, 79.0])
-        rc, r = call("check", "--record", str(self.rec), "--rollout", str(ro))
-        self.assertEqual((rc, r["reached"]), (4, ["max_weekly_points"]))
-        rc, r = call("check", "--record", str(self.rec))
-        self.assertEqual((rc, r["unknown"]), (0, ["max_weekly_points"]))
+        self.assertEqual((rc, r["account_weekly_points"], r["advisory"], r["account_wide"]), (0, 5, ["max_weekly_points"], True))
+        sb["limit_history"].append({"set_by": "user", "limits": {"max_weekly_points": 2}})
+        self.rec.write_text(json.dumps(doc))
+        self.assertEqual(call("check", "--record", str(self.rec), "--rollout", str(ro))[0], 4)
+        sb["limits"].pop("max_weekly_points"); sb["limits"]["max_weekly_percent"] = 39
+        self.rec.write_text(json.dumps(doc))
+        self.assertEqual(call("check", "--record", str(self.rec), "--rollout", str(ro))[0], 4)
+        call("add", "--record", str(self.rec), "--item", "b", "--reason", "test")
+        sb = json.loads(self.rec.read_text())["scope_budget"]
+        self.assertEqual(sb["schema"], S.SCHEMA)
+        self.assertTrue(sb["objective_id"]); self.assertEqual(sb["sessions"], [])
+
+    def test_v2_binding_and_cost_limits(self):
+        rc, _ = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
+                     "--max-hours", "3", "--set-by", "user", "--session", "root", "--provider", "codex")
+        self.assertEqual(rc, 0)
+        args = ("add-session", "--record", str(self.rec), "--session", "next", "--provider", "claude",
+                "--from", "2026-10-30T00:00:00Z", "--bound-by", "rotation", "--evidence", "adoption")
+        self.assertEqual(call(*args)[0], 0); before = self.rec.read_bytes()
+        self.assertEqual(call(*args)[0], 0); self.assertEqual(self.rec.read_bytes(), before)
+        self.assertEqual(call(*args[:-1], "different")[0], 2)
+        self.assertEqual(call("bind", "--record", str(self.rec), "--session", "review", "--provider", "codex",
+                              "--parent", "root", "--bound-by", "supervisor", "--reason", "review")[0], 0)
+        base = ("cost-limit", "--record", str(self.rec), "--pool", "codex", "--set-by", "user", "--reason", "limit")
+        self.assertEqual(call(*base, "--max-usd", "10", "--mark-usd", "5", "--mark-usd", "2")[0], 0)
+        self.assertEqual(call(*base, "--max-usd", "20")[0], 0)
+        sb = json.loads(self.rec.read_text())["scope_budget"]
+        self.assertEqual(len(sb["sessions"]), 2); self.assertEqual(sb["bindings"][0]["parent_session_id"], "root")
+        self.assertEqual(sb["cost_limits"][0]["max_usd"], 20)
+        self.assertEqual(sb["limit_history"][-1]["previous_cost_limit"]["marks_usd"], [2, 5])
+
+    def test_cost_limits_preserve_other_setters_and_history(self):
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "3", "--set-by", "user")
+        for node in (None, "child"):
+            base = ["cost-limit", "--record", str(self.rec), "--pool", "codex", "--reason", "test"]
+            if node: base += ["--node", node]
+            for setter, option, value in (("user", "--max-usd", "10"), ("supervisor", "--mark-usd", "5"),
+                                          ("supervisor", "--max-usd", "7"), ("user", "--max-usd", "20")):
+                self.assertEqual(call(*base, "--set-by", setter, option, value)[0], 0)
+            sb = json.loads(self.rec.read_text())["scope_budget"]
+            entries = {e["set_by"]: e for e in sb["cost_limits"] if e["node"] == node}
+            self.assertEqual(entries["user"]["max_usd"], 20)
+            self.assertEqual(entries["supervisor"]["max_usd"], 7)
+            history = [h for h in sb["limit_history"] if h["cost_limit"]["node"] == node]
+            self.assertEqual(len(history), 4)
+            self.assertIsNone(history[1]["previous_cost_limit"])
+            self.assertEqual(history[2]["previous_cost_limit"]["marks_usd"], [5])
+            self.assertEqual(history[3]["previous_cost_limit"]["max_usd"], 10)
+
+    def test_input_validation_and_empty_root(self):
+        base = ("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "2", "--set-by", "user")
+        for extra in (("--session", "root"), ("--provider", "codex")):
+            self.assertEqual(call(*base, *extra)[0], 2)
+        self.assertEqual(call(*base)[0], 0)
+        self.assertEqual(json.loads(self.rec.read_text())["scope_budget"]["sessions"], [])
+        cost = ("cost-limit", "--record", str(self.rec), "--pool", "codex", "--set-by", "user", "--reason", "x")
+        before = self.rec.read_bytes()
+        for extra in ((), ("--max-usd", "-1"), ("--max-usd", "nan"), ("--mark-usd", "inf"), ("--mark-usd", "-2")):
+            self.assertEqual(call(*cost, *extra)[0], 2)
+            self.assertEqual(self.rec.read_bytes(), before)
+        self.assertEqual(call(*cost, "--max-usd", "0")[0], 0)
+        self.assertIn("cost-limit", call("revise", "--record", str(self.rec), "--max-weekly-points", "2", "--set-by", "user")[1])
+
+    def test_legacy_authority_and_missing_meter(self):
+        ro = self.d / "meter.jsonl"
+        rollout(ro, [35])
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--rollout", str(ro), "--max-hours", "100", "--set-by", "user")
+        doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
+        sb["schema"] = S.SCHEMA_V1; sb["limits"]["max_weekly_points"] = 2
+        rollout(ro, [40])
+        self.rec.write_text(json.dumps(doc))
+        self.assertEqual(call("check", "--record", str(self.rec), "--rollout", str(ro))[0], 4)
+        rc, result = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, result["account_weekly_points"], result["unknown"], result["advisory"]), (0, None, ["max_weekly_points"], []))
+        sb["limits_set_by"] = "coordinator"
+        sb["limit_history"] = [{"set_by": "user", "limits": {"max_weekly_points": 3}}]
+        self.rec.write_text(json.dumps(doc)); before = self.rec.read_bytes()
+        rc, result = call("check", "--record", str(self.rec), "--rollout", str(ro))
+        self.assertEqual((rc, result["advisory"]), (0, ["max_weekly_points"]))
+        rc, result = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, result["account_weekly_points"], result["unknown"], result["advisory"]), (0, None, [], ["max_weekly_points"]))
+        self.assertEqual(self.rec.read_bytes(), before)
+
+    def test_legacy_coordinator_matches_supervisor(self):
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "100", "--set-by", "supervisor")
+        doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
+        sb["schema"] = S.SCHEMA_V1
+        sb["limits_set_by"] = "coordinator"
+        sb["limits"]["max_weekly_points"] = 2
+        self.rec.write_text(json.dumps(doc))
+        rc, result = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, result["advisory"], result["limits_set_by"]), (0, ["max_weekly_points"], "supervisor"))
+        cost = ("cost-limit", "--record", str(self.rec), "--pool", "codex", "--set-by", "supervisor", "--reason", "test")
+        call(*cost, "--mark-usd", "1")
+        doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
+        sb["cost_limits"][0]["set_by"] = "coordinator"
+        self.rec.write_text(json.dumps(doc))
+        self.assertEqual(call(*cost, "--max-usd", "4")[0], 0)
+        sb = json.loads(self.rec.read_text())["scope_budget"]
+        self.assertEqual(len(sb["cost_limits"]), 1)
+        self.assertEqual((sb["cost_limits"][0]["set_by"], sb["cost_limits"][0]["max_usd"]), ("supervisor", 4))
+        self.assertEqual(sb["limit_history"][-1]["previous_cost_limit"]["marks_usd"], [1])
+        args = ("add-session", "--record", str(self.rec), "--session", "x", "--provider", "codex", "--from", "2026-10-30T00:00:00Z", "--bound-by", "supervisor")
+        self.assertEqual(call(*args)[0], 0)
+        doc = json.loads(self.rec.read_text()); doc["scope_budget"]["sessions"][0]["bound_by"] = "coordinator"
+        self.rec.write_text(json.dumps(doc)); before = self.rec.read_bytes()
+        self.assertEqual(call(*args)[0], 0)
+        self.assertEqual(self.rec.read_bytes(), before)
 
     def test_meter_read_across_block_boundaries(self):
         ro = self.d / "rollout.jsonl"
@@ -103,7 +210,9 @@ class ScopeBudgetTest(unittest.TestCase):
         rc, err = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
                        "--max-weekly-points", "5", "--set-by", "user")
         self.assertEqual(rc, 2)
-        self.assertIn("--rollout", err)
+        self.assertIn("cost-limit", err)
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "1", "--set-by", "user")
+        self.assertEqual(call("revise", "--record", str(self.rec), "--max-weekly-points", "2", "--set-by", "user")[0], 2)
 
 
 if __name__ == "__main__":
