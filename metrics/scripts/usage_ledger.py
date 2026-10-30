@@ -774,9 +774,9 @@ def transcript_available(provider, sid, metadata, node_id=None):
 def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     with open(record_path) as fh: sb = json.load(fh).get('scope_budget', {})
     now = dt.datetime.now(dt.timezone.utc).isoformat()
-    since_s = since_arg or sb.get('started_at'); until_s = until_arg or now
+    since_s = since_arg or sb.get('started_at'); until_s = until_arg or sb.get('closed_at') or now
     since, until = ts_of(since_s), ts_of(until_s)
-    result = dict(schema='objective-cost-tree-v1', snapshot_at=now, window=dict(since=since_s, until=until_s),
+    result = dict(schema='objective-cost-tree-v1', snapshot_at=now, window=dict(since=since_s, until=until_s, closed_at=sb.get('closed_at')),
                   record=dict(path=os.path.abspath(record_path), sha256=digest(record_path), objective_id=sb.get('objective_id')),
                   reader=dict(path=os.path.abspath(__file__), sha256=digest(__file__)),
                   pricing=dict(source='https://platform.claude.com/docs/en/about-claude/pricing', fetched='2026-10-30'),
@@ -968,13 +968,16 @@ def cmd_control(a):
             for key, state in previous.items():
                 parts = json.loads(key)
                 kinds = {'mark_crossed', 'node_mark_crossed', 'limit_fraction', 'limit_reached',
-                         'hours_fraction', 'hours_reached', 'coverage_changed', 'account_ceiling'}
+                         'hours_fraction', 'hours_reached', 'coverage_changed', 'account_ceiling', 'objective_closed'}
                 if not isinstance(parts, list) or len(parts) not in (4, 5) or parts[0] not in kinds:
                     raise ValueError('invalid trigger key')
                 if parts[1] is not None and parts[1] not in POOLS: raise ValueError('invalid trigger pool')
                 if parts[2] is not None and not isinstance(parts[2], str): raise ValueError('invalid trigger node')
                 if len(parts) == 5 and parts[4] not in ('user', 'supervisor'): raise ValueError('invalid trigger setter')
-                if parts[0] == 'coverage_changed':
+                if parts[0] == 'objective_closed':
+                    if parts != ['objective_closed', None, None, 'closed'] or not isinstance(state, bool):
+                        raise ValueError('invalid objective closed state')
+                elif parts[0] == 'coverage_changed':
                     if parts[3] != 'coverage' or not isinstance(state, dict) or state.get('status') not in ('complete', 'partial', 'not_established') or not isinstance(state.get('unpriced_calls'), int) or isinstance(state.get('unpriced_calls'), bool) or state['unpriced_calls'] < 0 or not isinstance(state.get('ranged'), bool):
                         raise ValueError('invalid coverage state')
                     if 'undated_calls' in state and (not isinstance(state['undated_calls'], int) or isinstance(state['undated_calls'], bool) or state['undated_calls'] < 0): raise ValueError('invalid undated state')
@@ -996,58 +999,64 @@ def cmd_control(a):
                          node_id=node, level=level, observed=observed, snapshot_at=doc['snapshot_at'], summary=summary)
             if set_by is not None: event['set_by'] = set_by
             events.append(event)
-    fractions = [float(x) for x in a.limit_fractions.split(',')]
-    hours_fractions = [float(x) for x in a.hours_fractions.split(',')]
-    nodes = {n['node_id']: n for n in doc['nodes']}
-    for limit in sb.get('cost_limits') or []:
-        pool = limit['pool']; node = limit.get('node')
-        if pool not in POOLS: continue
-        if doc['status'] == 'not_established': continue
-        if node and node not in nodes:
-            doc['status'] = 'partial'
-            continue
-        spend = nodes[node]['inclusive'][pool] if node else doc['totals'][pool]
-        value = spend['quota_usd_high']
-        observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'])
-        setter = limit.get('set_by', 'supervisor')
-        if setter == 'coordinator': setter = 'supervisor'
-        def spend_trigger(kind, level, summary):
-            active = True if value >= level else (None if spend['unpriced_calls'] else False)
-            trigger(kind, pool, node, level, active, observed, summary, setter)
-        mark_kind = 'node_mark_crossed' if node else 'mark_crossed'
-        for mark in limit.get('marks_usd') or []:
-            spend_trigger(mark_kind, mark, 'spend mark')
-        maximum = limit.get('max_usd')
-        if maximum is not None:
-            if setter == 'user':
-                for f in sorted(set(fractions + [1.0])):
-                    spend_trigger('limit_reached' if f == 1 else 'limit_fraction', maximum * f, 'spend limit')
-            else:
-                spend_trigger(mark_kind, maximum, 'spend mark')
-    limits = sb.get('limits') or {}; hours = limits.get('max_hours')
-    if hours is not None and sb.get('started_at'):
-        elapsed = (ts_of(doc['snapshot_at']) - ts_of(sb['started_at'])).total_seconds() / 3600
-        for f in sorted(set(hours_fractions + [1.0])):
-            trigger('hours_reached' if f == 1 else 'hours_fraction', None, None, hours * f,
-                    elapsed >= hours * f, elapsed, 'elapsed hours')
-    weekly = [q for q in quota if q.get('window_minutes') == 10080 and q.get('used_percent') is not None]
-    if weekly and limits.get('max_weekly_percent') is not None:
-        q = max(weekly, key=lambda x: x.get('ts') or '')
-        trigger('account_ceiling', None, None, limits['max_weekly_percent'], q['used_percent'] >= limits['max_weekly_percent'],
-                dict(used_percent=q['used_percent'], account_wide=True), 'account-wide weekly meter')
-    coverage = dict(status=doc['status'], unpriced_calls=sum(s['unpriced_calls'] for s in doc['totals'].values()),
-                    ranged=any(s['quota_usd_low'] != s['quota_usd_high'] for s in doc['totals'].values()),
-                    unknown_spend=any(s['unpriced_calls'] for s in doc['totals'].values()),
-                    undated_calls=sum(doc.get('undated', {}).get('counts', {}).values()))
-    key = json.dumps(['coverage_changed', None, None, 'coverage'], separators=(',', ':'))
-    states[key] = coverage
-    default_coverage = dict(status='complete', unpriced_calls=0, ranged=False, unknown_spend=False, undated_calls=0)
-    if coverage != previous.get(key, default_coverage):
-        events.append(dict(topic=topic, authority='observation_only', kind='coverage_changed', pool=None, node_id=None,
-                           level='coverage', observed=coverage, snapshot_at=doc['snapshot_at'], summary='coverage changed'))
+    closed_at = sb.get('closed_at')
+    if closed_at is not None:
+        trigger('objective_closed', None, None, 'closed', True,
+                dict(closed_at=closed_at, disposition=sb.get('close', {}).get('disposition'), totals=doc['totals']),
+                'objective closed')
+    else:
+        fractions = [float(x) for x in a.limit_fractions.split(',')]
+        hours_fractions = [float(x) for x in a.hours_fractions.split(',')]
+        nodes = {n['node_id']: n for n in doc['nodes']}
+        for limit in sb.get('cost_limits') or []:
+            pool = limit['pool']; node = limit.get('node')
+            if pool not in POOLS: continue
+            if doc['status'] == 'not_established': continue
+            if node and node not in nodes:
+                doc['status'] = 'partial'
+                continue
+            spend = nodes[node]['inclusive'][pool] if node else doc['totals'][pool]
+            value = spend['quota_usd_high']
+            observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'])
+            setter = limit.get('set_by', 'supervisor')
+            if setter == 'coordinator': setter = 'supervisor'
+            def spend_trigger(kind, level, summary):
+                active = True if value >= level else (None if spend['unpriced_calls'] else False)
+                trigger(kind, pool, node, level, active, observed, summary, setter)
+            mark_kind = 'node_mark_crossed' if node else 'mark_crossed'
+            for mark in limit.get('marks_usd') or []:
+                spend_trigger(mark_kind, mark, 'spend mark')
+            maximum = limit.get('max_usd')
+            if maximum is not None:
+                if setter == 'user':
+                    for f in sorted(set(fractions + [1.0])):
+                        spend_trigger('limit_reached' if f == 1 else 'limit_fraction', maximum * f, 'spend limit')
+                else:
+                    spend_trigger(mark_kind, maximum, 'spend mark')
+        limits = sb.get('limits') or {}; hours = limits.get('max_hours')
+        if hours is not None and sb.get('started_at'):
+            elapsed = (ts_of(doc['snapshot_at']) - ts_of(sb['started_at'])).total_seconds() / 3600
+            for f in sorted(set(hours_fractions + [1.0])):
+                trigger('hours_reached' if f == 1 else 'hours_fraction', None, None, hours * f,
+                        elapsed >= hours * f, elapsed, 'elapsed hours')
+        weekly = [q for q in quota if q.get('window_minutes') == 10080 and q.get('used_percent') is not None]
+        if weekly and limits.get('max_weekly_percent') is not None:
+            q = max(weekly, key=lambda x: x.get('ts') or '')
+            trigger('account_ceiling', None, None, limits['max_weekly_percent'], q['used_percent'] >= limits['max_weekly_percent'],
+                    dict(used_percent=q['used_percent'], account_wide=True), 'account-wide weekly meter')
+        coverage = dict(status=doc['status'], unpriced_calls=sum(s['unpriced_calls'] for s in doc['totals'].values()),
+                        ranged=any(s['quota_usd_low'] != s['quota_usd_high'] for s in doc['totals'].values()),
+                        unknown_spend=any(s['unpriced_calls'] for s in doc['totals'].values()),
+                        undated_calls=sum(doc.get('undated', {}).get('counts', {}).values()))
+        key = json.dumps(['coverage_changed', None, None, 'coverage'], separators=(',', ':'))
+        states[key] = coverage
+        default_coverage = dict(status='complete', unpriced_calls=0, ranged=False, unknown_spend=False, undated_calls=0)
+        if coverage != previous.get(key, default_coverage):
+            events.append(dict(topic=topic, authority='observation_only', kind='coverage_changed', pool=None, node_id=None,
+                               level='coverage', observed=coverage, snapshot_at=doc['snapshot_at'], summary='coverage changed'))
     cursor = base64.urlsafe_b64encode(json.dumps(dict(objective_id=objective, states=states), sort_keys=True).encode()).decode().rstrip('=')
     print(json.dumps(dict(schema='objective-budget-control-v1', topic=topic, events=events, next_budget_cursor=cursor,
-                          snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'])), sort_keys=True))
+                          closed_at=closed_at, snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'])), sort_keys=True))
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
