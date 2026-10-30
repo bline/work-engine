@@ -651,6 +651,50 @@ rec.main()
         self.assertIn('enrollments/a: verified', out.splitlines())
         self.assertIn('a@' + 'a' * 16 + ': verified', out.splitlines())
 
+    def episode_assign_args(self, task='a'):
+        args = self.profile_stub(task)
+        args[1:3] = ['--episode', task]
+        return args
+
+    def test_episode_assignment_uses_enrollment_and_appends_without_reprofile(self):
+        self.enroll()
+        args = self.profile_stub()
+        first = self.call(*args)
+        args[1:3] = ['--episode', 'a']
+        out = self.call(*args)
+        assignment = Path(out['assignment'])
+        data = rec.read_json(assignment)
+        self.assertEqual(data['task_revision'], 'a@' + 'a' * 16)
+        self.assertTrue(data['episode_dispatch'])
+        self.assertTrue(data['retained_continuation'])
+        self.assertEqual(data['profile_sha256'], rec.read_json(first['assignment'])['profile_sha256'])
+        self.assertEqual(data['recorder']['sha256'], rec.sha256(SCRIPT))
+        self.assertEqual(rec.listed(str(assignment.parent))[assignment.name], rec.sha256(assignment))
+        self.assertEqual(self.call('close', '--task-id', 'a', '--disposition', 'accepted',
+                                   '--reason', 'test', '--pre-review-fixes', '0', '--escalations', '0')['outcome'], 'closed')
+        self.assertEqual(len(rec.assignments(str(self.run), 'a')), 2)
+
+    def test_episode_assignment_requires_enrollment_and_preserves_withdrawal(self):
+        args = self.episode_assign_args()
+        self.assertEqual(self.call(*args, code=2)['error'], 'task is not enrolled')
+        self.assertFalse(list((self.run / 'task-profiles').glob('*/assignment*.json')))
+        self.enroll()
+        self.call('withdraw', '--task-id', 'a', '--reason', 'withdrawn')
+        self.assertIn('withdrawn', self.call(*args, code=2)['error'])
+
+    def test_episode_reviewer_leak_check_and_review_join(self):
+        self.enroll()
+        args = self.episode_assign_args()
+        args[args.index('--role') + 1] = 'reviewer'
+        packet = self.root / 'packet.md'
+        packet.write_text('Review gpt-6.1-terra and gpt-6.1-sol work')
+        out = self.call(*args)
+        data = rec.read_json(out['assignment'])
+        self.assertFalse(out['profile_absent_from_dispatch'])
+        self.assertTrue({'gpt-6.1-terra', 'gpt-6.1-sol'} <= set(data['leaked_tokens']))
+        self.review(session='fake-session')
+        self.assertNotIn('a: reviewer_unlinked', self.call('status')['inconsistencies'])
+
     def packet_screen(self, task='packet', eligible='yes', code=0):
         packet = self.root / 'screen-packet.md'
         packet.write_text('Frozen synthetic packet')

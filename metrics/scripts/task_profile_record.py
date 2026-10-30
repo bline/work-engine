@@ -32,7 +32,7 @@ Usage
   task_profile_record.py check-tool [--tool-dir DIR]
   task_profile_record.py profile   --run-dir R --sidecar S --repo REPO --declare-started-at ISO8601
                                    [--call-id ID ...] [--tool-dir DIR]
-  task_profile_record.py assign    --run-dir R --task-revision ID --role builder|reviewer
+  task_profile_record.py assign    --run-dir R (--task-revision ID | --episode TASK_ID) --role builder|reviewer
                                    --requested-model M --requested-effort E --harness H --run NAME
                                    --dispatched-packet PATH --child-session ID [--child-session ID ...]
                                    [--reported-model M] [--reported-effort E] [--selected-at ISO8601] [--retained]
@@ -294,7 +294,7 @@ def assign_record(a):
     if not os.path.isdir(d):
         raise SystemExit(f"no profile record for {a.task_revision} in {a.run_dir}")
     existing = sorted(glob.glob(os.path.join(d, "assignment*.json")))
-    if existing and not a.retained:
+    if existing and not (a.retained or a.episode):
         raise SystemExit(f"{existing[-1]} exists; pass --retained for a retained continuation")
     name = "assignment.json" if not existing else f"assignment-{len(existing) + 1:02d}.json"
     prof = os.path.join(d, "profile-stageB.json")
@@ -323,6 +323,7 @@ def assign_record(a):
         "child_sessions": children,
         "attribution": "pending: run `attribute` against the usage ledger" if children else "unresolvable: no child session id recorded",
         "retained_continuation": bool(existing),
+        **({"episode_dispatch": True} if a.episode else {}),
         "dispatched_packet": {"path": os.path.abspath(a.dispatched_packet), "sha256": sha256(a.dispatched_packet)},
         "profile_absent_from_dispatch": not leaked, "leaked_tokens": leaked,
         "recorder": recorder(), "prior_files": prior_files(d)})
@@ -331,7 +332,7 @@ def assign_record(a):
 
 
 def cmd_assign(a):
-    if os.path.isfile(os.path.join(a.run_dir, "round.json")):
+    if a.episode or os.path.isfile(os.path.join(a.run_dir, "round.json")):
         return run_round_command(a)
     print(json.dumps(assign_record(a), indent=1))
 
@@ -998,6 +999,10 @@ def run_round_command(a):
         os.makedirs(a.run_dir, exist_ok=True)
         with round_lock(a.run_dir):
             if a.cmd == "assign":
+                if a.episode:
+                    a.task_id = a.episode
+                    _, enrollment = active_episode(a, allow_terminal=True)
+                    a.task_revision = enrollment["task_revision"]
                 task_id = a.task_revision.split("@")[0]
                 d = episode_dir(a.run_dir, task_id)
                 if os.path.isdir(d):
@@ -1036,7 +1041,9 @@ def main():
     p.add_argument("--tool-dir", default=default_tool)
     s = sub.add_parser("assign")
     s.add_argument("--run-dir", required=True)
-    s.add_argument("--task-revision", required=True)
+    assignment_source = s.add_mutually_exclusive_group(required=True)
+    assignment_source.add_argument("--task-revision")
+    assignment_source.add_argument("--episode", help="append a dispatch using an enrolled task's frozen profile")
     s.add_argument("--role", choices=("builder", "reviewer"), required=True)
     s.add_argument("--requested-model", required=True)
     s.add_argument("--requested-effort", required=True)
