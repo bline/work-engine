@@ -32,14 +32,14 @@ Usage
   task_profile_record.py check-tool [--tool-dir DIR]
   task_profile_record.py profile   --run-dir R --sidecar S --repo REPO --declare-started-at ISO8601
                                    [--call-id ID ...] [--tool-dir DIR]
-  task_profile_record.py assign    --run-dir R --task-revision ID --role builder|reviewer
+  task_profile_record.py assign    --run-dir R (--task-revision ID | --episode TASK_ID) --role builder|reviewer
                                    --requested-model M --requested-effort E --harness H --run NAME
                                    --dispatched-packet PATH --child-session ID [--child-session ID ...]
                                    [--reported-model M] [--reported-effort E] [--selected-at ISO8601] [--retained]
-  task_profile_record.py attribute --run-dir R --task-revision ID --ledger DIR [--assignment NAME]
+  task_profile_record.py attribute --run-dir R (--task-revision ID | --all) --ledger DIR [--assignment NAME]
                                    [--since ISO8601] [--until ISO8601]
   task_profile_record.py init-round --run-dir R --cap N --terra-in-flight N --terra-repair-budget N
-  task_profile_record.py enroll    --run-dir R --task-id T --task-revision REV --eligible yes|no --reason TEXT
+  task_profile_record.py enroll    --run-dir R --task-id T (--task-revision REV | --packet PATH) --eligible yes|no --reason TEXT
   task_profile_record.py withdraw  --run-dir R --task-id T --reason TEXT
   task_profile_record.py review    --run-dir R --task-id T --verdict accept|changes_required|blocked_evidence|blocked_scope --reviewer-session ID --p1 N --p2 N --p3 N --receipt PATH
   task_profile_record.py repair    --run-dir R --task-id T --review-receipt PATH
@@ -54,7 +54,8 @@ Usage
 Round-2 episode records live in <run_dir>/enrollments/<task_id>/ with their own
 SHA256SUMS and prior_files. Initialize round.json before using round commands.
 Round commands print one JSON object (verify retains text lines); exit 2 is a usage refusal, 1 an integrity
-failure, and 0 includes logged screening refusals. A run-level advisory lock
+failure, 3 includes profile no-ops and verify with no records, and 0 includes logged screening refusals.
+Exit 4 is profile_required: an eligible packet can enroll; no screening or enrollment is written. A run-level advisory lock
 serializes round commands; episode records are published without replacement by linking a complete, fsynced
 temporary file to the final name. Missing manifest entries are recovered on read
 and reported in command output. Every episode record carries content_sha256 of
@@ -293,7 +294,7 @@ def assign_record(a):
     if not os.path.isdir(d):
         raise SystemExit(f"no profile record for {a.task_revision} in {a.run_dir}")
     existing = sorted(glob.glob(os.path.join(d, "assignment*.json")))
-    if existing and not a.retained:
+    if existing and not (a.retained or a.episode):
         raise SystemExit(f"{existing[-1]} exists; pass --retained for a retained continuation")
     name = "assignment.json" if not existing else f"assignment-{len(existing) + 1:02d}.json"
     prof = os.path.join(d, "profile-stageB.json")
@@ -322,6 +323,7 @@ def assign_record(a):
         "child_sessions": children,
         "attribution": "pending: run `attribute` against the usage ledger" if children else "unresolvable: no child session id recorded",
         "retained_continuation": bool(existing),
+        **({"episode_dispatch": True} if a.episode else {}),
         "dispatched_packet": {"path": os.path.abspath(a.dispatched_packet), "sha256": sha256(a.dispatched_packet)},
         "profile_absent_from_dispatch": not leaked, "leaked_tokens": leaked,
         "recorder": recorder(), "prior_files": prior_files(d)})
@@ -330,18 +332,43 @@ def assign_record(a):
 
 
 def cmd_assign(a):
-    if os.path.isfile(os.path.join(a.run_dir, "round.json")):
+    if a.episode or os.path.isfile(os.path.join(a.run_dir, "round.json")):
         return run_round_command(a)
     print(json.dumps(assign_record(a), indent=1))
 
 
 def cmd_attribute(a):
-    """Resolve which models the child sessions actually ran, from the usage ledger's calls.jsonl."""
+    """Resolve recorded child sessions from the usage ledger, once per assignment."""
+    if a.all:
+        # Serialize with round assignments and other batch attribution runs.
+        with round_lock(a.run_dir):
+            paths = sorted(glob.glob(os.path.join(a.run_dir, "task-profiles", "*", "assignment*.json")))
+            pending = [p for p in paths if read_json(p).get("child_sessions") and not os.path.exists(
+                os.path.join(os.path.dirname(p), "attribution-" + os.path.basename(p)))]
+            results = []
+            if pending:
+                rows, digest = attribution_ledger(a.ledger)
+                results = [attribute_assignment(a, p, rows, digest) for p in pending]
+        print(json.dumps({"attributions": results}, indent=1))
+        return
     d = record_dir(a.run_dir, a.task_revision)
     names = sorted(glob.glob(os.path.join(d, "assignment*.json")))
     if not names:
         raise SystemExit("no assignment to attribute")
     path = os.path.join(d, a.assignment) if a.assignment else names[-1]
+    rows, digest = attribution_ledger(a.ledger)
+    print(json.dumps(attribute_assignment(a, path, rows, digest), indent=1))
+
+
+def attribution_ledger(ledger):
+    """Bind attribution rows and their digest to one read of the ledger bytes."""
+    with open(os.path.join(ledger, "calls.jsonl"), "rb") as fh:
+        raw = fh.read()
+    return [json.loads(line) for line in raw.splitlines()], hashlib.sha256(raw).hexdigest()
+
+
+def attribute_assignment(a, path, ledger_rows, ledger_digest):
+    d = os.path.dirname(path)
     asg = read_json(path)
     children = set(asg["child_sessions"])
     calls = collections.defaultdict(lambda: collections.Counter())
@@ -349,17 +376,15 @@ def cmd_attribute(a):
     since = parse_ts(a.since) if a.since else None
     until = parse_ts(a.until) if a.until else None
     if children:
-        with open(os.path.join(a.ledger, "calls.jsonl")) as fh:
-            for line in fh:
-                r = json.loads(line)
-                cid = r.get("thread") if r.get("provider") == "codex" else r.get("session")
-                if cid in children:
-                    ts = parse_ts(r["ts"])
-                    if (since and ts < since) or (until and ts >= until):
-                        continue
-                    calls[cid][(r.get("model"), r.get("effort"))] += 1
-                    lo, hi = span.get(cid, (r["ts"], r["ts"]))
-                    span[cid] = (min(lo, r["ts"]), max(hi, r["ts"]))
+        for r in ledger_rows:
+            cid = r.get("thread") if r.get("provider") == "codex" else r.get("session")
+            if cid in children:
+                ts = parse_ts(r["ts"])
+                if (since and ts < since) or (until and ts >= until):
+                    continue
+                calls[cid][(r.get("model"), r.get("effort"))] += 1
+                lo, hi = span.get(cid, (r["ts"], r["ts"]))
+                span[cid] = (min(lo, r["ts"]), max(hi, r["ts"]))
     req = asg["requested"]
     seen = sorted({m for c in calls.values() for (m, _e) in c})
     efforts = sorted({e for c in calls.values() for (_m, e) in c if e})
@@ -372,7 +397,7 @@ def cmd_attribute(a):
     out = os.path.join(d, f"attribution-{os.path.splitext(os.path.basename(path))[0]}.json")
     write_once(out, {
         "assignment": os.path.basename(path), "assignment_sha256": sha256(path), "status": status,
-        "ledger": os.path.abspath(a.ledger), "ledger_calls_sha256": sha256(os.path.join(a.ledger, "calls.jsonl")),
+        "ledger": os.path.abspath(a.ledger), "ledger_calls_sha256": ledger_digest,
         "window": {"since": a.since, "until": a.until, "bounded": bool(a.since or a.until)},
         "per_session": {cid: {"calls": [{"model": m, "effort": e, "n": n} for (m, e), n in sorted(c.items(), key=str)],
                               "first_ts": span[cid][0], "last_ts": span[cid][1]} for cid, c in sorted(calls.items())},
@@ -381,7 +406,7 @@ def cmd_attribute(a):
         "effort_matches_request": (efforts == [req["effort"]]) if efforts else None,
         "recorder": recorder(), "prior_files": prior_files(d)})
     append_sums(d)
-    print(json.dumps({"attribution": out, "status": status, "models_seen": seen}, indent=1))
+    return {"attribution": out, "status": status, "models_seen": seen}
 
 
 def verify_records(a):
@@ -766,15 +791,20 @@ def cmd_init_round(a):
 
 def cmd_enroll(a):
     d = episode_dir(a.run_dir, a.task_id)
-    try:
-        record_dir(a.run_dir, a.task_revision)
-    except SystemExit as e:
-        raise UsageRefusal(str(e)) from e
-    if a.task_revision.split("@")[0] != a.task_id:
-        raise UsageRefusal("task revision belongs to a different task")
-    screened = {"time": now(), "task_id": a.task_id, "task_revision": a.task_revision,
+    if a.packet:
+        identity = {"packet_sha256": sha256(a.packet)}
+    else:
+        try:
+            record_dir(a.run_dir, a.task_revision)
+        except SystemExit as e:
+            raise UsageRefusal(str(e)) from e
+        if a.task_revision.split("@")[0] != a.task_id:
+            raise UsageRefusal("task revision belongs to a different task")
+        identity = {"task_revision": a.task_revision}
+    screened = {"time": now(), "task_id": a.task_id, **identity,
                 "eligible": a.eligible == "yes", "reason": a.reason}
-    screening(a.run_dir, {"event": "screened", **screened})
+    if not a.packet:
+        screening(a.run_dir, {"event": "screened", **screened})
     episodes = enrollments(a.run_dir)
     enforce_triggers(a.run_dir, episodes)
     path = os.path.join(d, "enrollment.json")
@@ -792,6 +822,8 @@ def cmd_enroll(a):
             out["outcome"] = "cap_reached"
         elif open_terra >= config["terra_in_flight"]:
             out["outcome"] = "in_flight_limit"
+        elif a.packet:
+            return {**out, "outcome": "profile_required"}
         else:
             byte = os.urandom(1)[0]
             arm = TERRA if byte & 1 else SOL
@@ -807,7 +839,9 @@ def cmd_enroll(a):
             else:
                 durable_sums(d)
                 out.update(outcome="enrolled", arm=arm)
-    screening(a.run_dir, {"event": "result", "time": now(), "task_revision": a.task_revision, **out})
+    if a.packet:
+        screening(a.run_dir, {"event": "screened", **screened, "recorder": recorder()})
+    screening(a.run_dir, {"event": "result", "time": now(), **identity, **out})
     return out
 
 
@@ -988,6 +1022,10 @@ def run_round_command(a):
         os.makedirs(a.run_dir, exist_ok=True)
         with round_lock(a.run_dir):
             if a.cmd == "assign":
+                if a.episode:
+                    a.task_id = a.episode
+                    _, enrollment = active_episode(a, allow_terminal=True)
+                    a.task_revision = enrollment["task_revision"]
                 task_id = a.task_revision.split("@")[0]
                 d = episode_dir(a.run_dir, task_id)
                 if os.path.isdir(d):
@@ -1000,6 +1038,8 @@ def run_round_command(a):
         if RELISTING_REPORTS:
             out["manifest_relistings"] = RELISTING_REPORTS
         print(json.dumps(out, sort_keys=True))
+        if out.get("outcome") == "profile_required":
+            raise SystemExit(4)
     except UsageRefusal as e:
         print(json.dumps({"error": str(e), "outcome": "refused", "manifest_relistings": RELISTING_REPORTS}))
         raise SystemExit(2)
@@ -1024,7 +1064,9 @@ def main():
     p.add_argument("--tool-dir", default=default_tool)
     s = sub.add_parser("assign")
     s.add_argument("--run-dir", required=True)
-    s.add_argument("--task-revision", required=True)
+    assignment_source = s.add_mutually_exclusive_group(required=True)
+    assignment_source.add_argument("--task-revision")
+    assignment_source.add_argument("--episode", help="append a dispatch using an enrolled task's frozen profile")
     s.add_argument("--role", choices=("builder", "reviewer"), required=True)
     s.add_argument("--requested-model", required=True)
     s.add_argument("--requested-effort", required=True)
@@ -1038,7 +1080,9 @@ def main():
     s.add_argument("--retained", action="store_true")
     t = sub.add_parser("attribute")
     t.add_argument("--run-dir", required=True)
-    t.add_argument("--task-revision", required=True)
+    attribution_source = t.add_mutually_exclusive_group(required=True)
+    attribution_source.add_argument("--task-revision")
+    attribution_source.add_argument("--all", action="store_true", help="attribute every assignment with child sessions and no attribution yet")
     t.add_argument("--ledger", required=True)
     t.add_argument("--assignment")
     t.add_argument("--since")
@@ -1059,7 +1103,9 @@ def main():
             for flag in ("--cap", "--terra-in-flight", "--terra-repair-budget"):
                 r.add_argument(flag, type=nonnegative, required=True)
         elif name == "enroll":
-            r.add_argument("--task-revision", required=True)
+            source = r.add_mutually_exclusive_group(required=True)
+            source.add_argument("--task-revision")
+            source.add_argument("--packet", help="screen a frozen packet without a profile; exit 4 (profile_required) writes no screening or enrollment")
             r.add_argument("--eligible", choices=("yes", "no"), required=True)
         elif name == "review":
             r.add_argument("--verdict", choices=("accept", "changes_required", "blocked_evidence", "blocked_scope"), required=True)
@@ -1078,6 +1124,8 @@ def main():
         elif name == "resume":
             r.add_argument("--owner-approval", required=True)
     a = ap.parse_args()
+    if a.cmd == "attribute" and a.all and a.assignment:
+        ap.error("--assignment cannot be combined with --all")
     if a.cmd in ROUND_COMMANDS:
         run_round_command(a)
     elif a.cmd == "start":

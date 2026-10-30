@@ -651,6 +651,241 @@ rec.main()
         self.assertIn('enrollments/a: verified', out.splitlines())
         self.assertIn('a@' + 'a' * 16 + ': verified', out.splitlines())
 
+    def attribute_with_ledger_replaced_after_read(self, ledger, *args):
+        ledger_path = ledger / 'calls.jsonl'
+        raw = ledger_path.read_bytes()
+        real_open = open
+        reads = []
+
+        def open_snapshot(path, mode='r', *open_args, **kwargs):
+            if os.fspath(path) == str(ledger_path) and 'r' in mode:
+                self.assertEqual(mode, 'rb')
+                stream = io.BytesIO(raw)
+                read = stream.read
+
+                def read_then_replace(*read_args):
+                    reads.append(path)
+                    data = read(*read_args)
+                    # The external ledger can be rebuilt independently of the round lock.
+                    ledger_path.write_bytes(b'')
+                    return data
+
+                stream.read = read_then_replace
+                return stream
+            return real_open(path, mode, *open_args, **kwargs)
+
+        with mock.patch('builtins.open', side_effect=open_snapshot) as opened:
+            out = self.call('attribute', '--ledger', ledger, *args)
+        self.assertEqual(len(reads), 1)
+        ledger_opens = [c for c in opened.call_args_list if os.fspath(c.args[0]) == str(ledger_path)]
+        self.assertEqual(len(ledger_opens), 1)
+        digest = hashlib.sha256(raw).hexdigest()
+        self.assertNotEqual(digest, rec.sha256(ledger_path))
+        return out, digest
+
+    def test_single_attribute_digest_matches_parsed_snapshot(self):
+        self.call(*self.profile_stub('single'))
+        ledger = self.root / 'ledger'
+        ledger.mkdir()
+        row = {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-02T00:00:00Z',
+               'model': 'synthetic', 'effort': 'medium'}
+        (ledger / 'calls.jsonl').write_text(json.dumps(row) + '\n')
+        out, digest = self.attribute_with_ledger_replaced_after_read(
+            ledger, '--task-revision', 'single@' + 'a' * 16)
+        self.assertEqual(out['models_seen'], ['synthetic'])
+        self.assertEqual(rec.read_json(out['attribution'])['ledger_calls_sha256'], digest)
+
+    def test_identifying_flag_errors_refuse_without_record_changes(self):
+        packet = self.root / 'packet.md'
+        packet.write_text('synthetic packet')
+        rev = 'a@' + 'a' * 16
+        enroll = ['enroll', '--task-id', 'a', '--eligible', 'yes', '--reason', 'test']
+        assign = self.profile_stub()
+        assign = assign[:1] + assign[3:]
+        cases = [
+            ['attribute', '--all', '--assignment', 'assignment.json', '--ledger', str(self.root / 'ledger')],
+            [*enroll, '--packet', str(packet), '--task-revision', rev],
+            enroll,
+            [*assign, '--episode', 'a', '--task-revision', rev],
+            assign,
+        ]
+        before = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        for args in cases:
+            with self.subTest(args=args), mock.patch.object(sys, 'argv', [SCRIPT, args[0], '--run-dir', str(self.run), *args[1:]]):
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit) as exit_status:
+                        rec.main()
+                self.assertEqual(exit_status.exception.code, 2, stderr.getvalue())
+                self.assertIn('error:', stderr.getvalue())
+                self.assertEqual(stdout.getvalue(), '')
+                self.assertEqual(before, {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()})
+
+    def test_attribute_all_mixed_assignments_is_write_once_and_bounded(self):
+        self.enroll('a')
+        self.enroll('b')
+        first = self.call(*self.profile_stub('a'))
+        retained_args = self.episode_assign_args('b')
+        episode = self.call(*retained_args)
+        retained_args[retained_args.index('--child-session') + 1] = 'claude-child'
+        retained = self.call(*retained_args)
+        unknown_args = self.profile_stub('outside')
+        unknown_args[unknown_args.index('--child-session') + 1] = 'unknown'
+        unknown = self.call(*unknown_args)
+        ledger = self.root / 'ledger'
+        ledger.mkdir()
+        rows = [
+            {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-01T00:00:00Z', 'model': 'too-early', 'effort': 'high'},
+            {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-02T00:00:00Z', 'model': 'synthetic', 'effort': 'medium'},
+            {'provider': 'claude', 'session': 'claude-child', 'ts': '2026-01-02T01:00:00Z', 'model': 'claude-test', 'effort': 'high'},
+            {'provider': 'codex', 'thread': 'fake-session', 'ts': '2026-01-03T00:00:00Z', 'model': 'too-late', 'effort': 'low'},
+        ]
+        (ledger / 'calls.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows))
+        # A pre-existing old-style attribution must remain untouched by --all.
+        self.call('attribute', '--task-revision', 'a@' + 'a' * 16, '--ledger', ledger)
+        old_attribution = Path(first['assignment']).parent / 'attribution-assignment.json'
+        old_bytes = old_attribution.read_bytes()
+        out, ledger_digest = self.attribute_with_ledger_replaced_after_read(
+            ledger, '--all', '--since', '2026-01-02T00:00:00Z', '--until', '2026-01-03T00:00:00Z')
+        self.assertEqual(len(out['attributions']), 2)
+        self.assertEqual({tuple(r['models_seen']) for r in out['attributions']}, {('synthetic',), ('claude-test',)})
+        self.assertEqual(old_attribution.read_bytes(), old_bytes)
+        for assignment in (episode, retained):
+            path = Path(assignment['assignment'])
+            attribution = path.parent / ('attribution-' + path.name)
+            data = rec.read_json(attribution)
+            self.assertEqual(data['assignment_sha256'], rec.sha256(path))
+            self.assertEqual(data['ledger_calls_sha256'], ledger_digest)
+            self.assertEqual(data['recorder']['sha256'], rec.sha256(SCRIPT))
+            self.assertEqual(rec.listed(str(path.parent))[attribution.name], rec.sha256(attribution))
+        self.assertFalse((Path(unknown['assignment']).parent / 'attribution-assignment.json').exists())
+        before = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        self.assertEqual(self.call('attribute', '--all', '--ledger', ledger)['attributions'], [])
+        self.assertEqual(before, {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()})
+
+    def test_attribute_all_includes_unenrolled_and_unresolved_child_assignments(self):
+        self.call(*self.profile_stub('outside'))
+        ledger = self.root / 'ledger'
+        ledger.mkdir()
+        (ledger / 'calls.jsonl').write_text('')
+        out = self.call('attribute', '--all', '--ledger', ledger)
+        self.assertEqual(len(out['attributions']), 1)
+        self.assertIn('unresolved', out['attributions'][0]['status'])
+        self.assertEqual(self.call('attribute', '--all', '--ledger', ledger)['attributions'], [])
+
+    def episode_assign_args(self, task='a'):
+        args = self.profile_stub(task)
+        args[1:3] = ['--episode', task]
+        return args
+
+    def test_episode_assignment_uses_enrollment_and_appends_without_reprofile(self):
+        self.enroll()
+        args = self.profile_stub()
+        first = self.call(*args)
+        args[1:3] = ['--episode', 'a']
+        out = self.call(*args)
+        assignment = Path(out['assignment'])
+        data = rec.read_json(assignment)
+        self.assertEqual(data['task_revision'], 'a@' + 'a' * 16)
+        self.assertTrue(data['episode_dispatch'])
+        self.assertTrue(data['retained_continuation'])
+        self.assertEqual(data['profile_sha256'], rec.read_json(first['assignment'])['profile_sha256'])
+        self.assertEqual(data['recorder']['sha256'], rec.sha256(SCRIPT))
+        self.assertEqual(rec.listed(str(assignment.parent))[assignment.name], rec.sha256(assignment))
+        self.assertEqual(self.call('close', '--task-id', 'a', '--disposition', 'accepted',
+                                   '--reason', 'test', '--pre-review-fixes', '0', '--escalations', '0')['outcome'], 'closed')
+        self.assertEqual(len(rec.assignments(str(self.run), 'a')), 2)
+
+    def test_episode_assignment_requires_enrollment_and_preserves_withdrawal(self):
+        args = self.episode_assign_args()
+        self.assertEqual(self.call(*args, code=2)['error'], 'task is not enrolled')
+        self.assertFalse(list((self.run / 'task-profiles').glob('*/assignment*.json')))
+        self.enroll()
+        self.call('withdraw', '--task-id', 'a', '--reason', 'withdrawn')
+        self.assertIn('withdrawn', self.call(*args, code=2)['error'])
+
+    def test_episode_reviewer_leak_check_and_review_join(self):
+        self.enroll()
+        args = self.episode_assign_args()
+        args[args.index('--role') + 1] = 'reviewer'
+        packet = self.root / 'packet.md'
+        packet.write_text('Review gpt-6.1-terra and gpt-6.1-sol work')
+        out = self.call(*args)
+        data = rec.read_json(out['assignment'])
+        self.assertFalse(out['profile_absent_from_dispatch'])
+        self.assertTrue({'gpt-6.1-terra', 'gpt-6.1-sol'} <= set(data['leaked_tokens']))
+        self.review(session='fake-session')
+        self.assertNotIn('a: reviewer_unlinked', self.call('status')['inconsistencies'])
+
+    def test_packet_profile_required_exit_is_documented_in_help(self):
+        for args in (['--help'], ['enroll', '--help']):
+            out = io.StringIO()
+            with mock.patch.object(sys, 'argv', [SCRIPT, *args]), contextlib.redirect_stdout(out):
+                with self.assertRaises(SystemExit) as exit_status:
+                    rec.main()
+            self.assertEqual(exit_status.exception.code, 0)
+            self.assertIn('profile_required', out.getvalue())
+            self.assertRegex(out.getvalue().lower(), r'exit\s+4')
+
+    def packet_screen(self, task='packet', eligible='yes', code=0):
+        packet = self.root / 'screen-packet.md'
+        packet.write_text('Frozen synthetic packet')
+        with mock.patch.object(rec.os, 'urandom') as draw:
+            out = self.call('enroll', '--task-id', task, '--packet', packet,
+                            '--eligible', eligible, '--reason', 'screen first', code=code)
+            draw.assert_not_called()
+        return out
+
+    def test_packet_not_eligible_has_hash_and_balanced_log(self):
+        self.assertEqual(self.packet_screen(eligible='no')['outcome'], 'not_eligible')
+        self.assertFalse(self.episode('packet').exists())
+        self.assertEqual([r['event'] for r in self.log()], ['screened', 'result'])
+        for entry in self.log():
+            self.assertEqual(entry['packet_sha256'], rec.sha256(self.root / 'screen-packet.md'))
+            self.assertNotIn('task_revision', entry)
+        self.assertEqual(self.log()[0]['recorder']['sha256'], rec.sha256(SCRIPT))
+        self.assertEqual(self.call('status')['screening'],
+                         {'screened': 1, 'outcomes': {'not_eligible': 1}})
+
+    def test_packet_paused_and_in_flight_and_cap_are_logged(self):
+        self.enroll('t1', byte=1)
+        self.enroll('t2', byte=1)
+        self.assertEqual(self.packet_screen()['outcome'], 'in_flight_limit')
+        self.call('pause', '--reason', 'owner pause')
+        self.assertEqual(self.packet_screen()['outcome'], 'paused')
+        self.call('resume', '--owner-approval', 'owner resumes')
+        self.run = self.root / 'zero-cap'
+        self.call('init-round', '--cap', '0', '--terra-in-flight', '2', '--terra-repair-budget', '3')
+        self.assertEqual(self.packet_screen()['outcome'], 'cap_reached')
+        self.assertEqual(len(self.log()), 2)
+
+    def test_packet_profile_required_writes_nothing_then_profiled_enroll_draws(self):
+        before = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        self.assertEqual(self.packet_screen(code=4)['outcome'], 'profile_required')
+        after = {p.relative_to(self.run): p.read_bytes() for p in self.run.rglob('*') if p.is_file()}
+        self.assertEqual(before, after)
+        self.assertEqual(self.enroll('packet', byte=1)['arm'], rec.TERRA)
+        self.assertEqual(self.call('status')['screening'], {'screened': 1, 'outcomes': {'enrolled': 1}})
+
+    def test_profiled_enroll_rechecks_after_packet_admission(self):
+        self.packet_screen(code=4)
+        self.call('pause', '--reason', 'changed during profiling')
+        self.enroll('packet', outcome='paused')
+        self.call('resume', '--owner-approval', 'resume')
+        self.enroll('t1', byte=1)
+        self.enroll('t2', byte=1)
+        self.enroll('packet', outcome='in_flight_limit')
+
+    def test_status_mixes_packet_and_revision_screenings(self):
+        self.packet_screen(eligible='no')
+        self.enroll('old', byte=0)
+        self.packet_screen(code=4)
+        self.enroll('packet', byte=1)
+        status = self.call('status')
+        self.assertEqual(status['enrollments']['total'], 2)
+        self.assertEqual(status['screening'], {'screened': 3, 'outcomes': {'not_eligible': 1, 'enrolled': 2}})
+        self.assertEqual(status['inconsistencies'], [])
+
     def test_both_arms_and_screening_precedes_draw(self):
         for task, byte, arm in [('terra', 255, rec.TERRA), ('sol', 254, rec.SOL)]:
             def draw(n):
