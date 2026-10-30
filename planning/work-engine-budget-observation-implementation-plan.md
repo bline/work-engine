@@ -18,8 +18,10 @@ follows from them.
 
 Round 2 records the release as an environment change (`92d4e65b`). The round 2
 screen-first amendment is not part of it: the user chose to ship first and take
-the amendment later as its own change. Phase 4 (shadow pilot) and phase 5 are
-next, each on the user's go-ahead.
+the amendment later as its own change. Phase 4, run 1: the S10 slice of 2026-10-30
+([probe](../metrics/probes/budget-observation-pilot-s10-20261030.md)). Delivery
+worked end to end. The run found that an objective needs a close boundary. Phase
+5 is on the user's go-ahead.
 
 **Scope:** the outer development root: `skills/`, the coordination board
 (`chatboard`) and `metrics/` tooling. These are Work Engine's original
