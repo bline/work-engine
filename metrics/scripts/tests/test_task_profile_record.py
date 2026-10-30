@@ -4,6 +4,7 @@ Uses the agent-routing-lab checkout at the pinned commit (AGENT_ROUTING_LAB, def
 ~/code/agent-routing-lab) through a stand-in tool directory, and a synthetic repository, packet,
 sidecar and usage ledger in a temporary directory. Skips if the checkout is not at the pin.
 """
+import copy
 import json
 import os
 import subprocess
@@ -134,6 +135,168 @@ class RecorderTests(unittest.TestCase):
         commit = subprocess.run(["git", "-C", self.repo, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
         b = self.profile(self.make_sidecar("reviewer", commit))
         self.assertNotEqual(a["task_revision"], b["task_revision"])
+
+    def test_verify_uses_archived_packet_and_preserves_record(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        before = {os.path.relpath(os.path.join(root, name), d): rec.sha256(os.path.join(root, name))
+                  for root, _, names in os.walk(d) for name in names}
+        write(self.packet, "changed packet\n")
+        for root, dirs, files in os.walk(d):
+            os.chmod(root, 0o555)
+            for name in files:
+                os.chmod(os.path.join(root, name), 0o444)
+        try:
+            r = self.verify()
+        finally:
+            for root, dirs, files in os.walk(d):
+                os.chmod(root, 0o755)
+                for name in files:
+                    os.chmod(os.path.join(root, name), 0o644)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("verified", r.stdout)
+        after = {os.path.relpath(os.path.join(root, name), d): rec.sha256(os.path.join(root, name))
+                 for root, _, names in os.walk(d) for name in names}
+        self.assertEqual(before, after)
+
+    def test_verify_reports_missing_archived_packet(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        digest = rec.sha256(self.packet)
+        os.remove(os.path.join(d, "sources", digest))
+        write(self.packet, "changed packet\n")
+        r = self.verify()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn(self.packet, r.stdout)
+
+    def test_verify_detects_edited_archived_packet(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out["task_revision"])
+        write(os.path.join(d, "sources", rec.sha256(self.packet)), "edited archive\n")
+        r = self.verify()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("does not match its hash", r.stdout)
+
+    def save(self, path, value):
+        write(path, json.dumps(value))
+
+    def refresh_integrity(self, d):
+        # Model a hash-consistent record; recomputation must still check the
+        # relationship between sidecar and profile, not just each file's hash.
+        overhead_path = os.path.join(d, 'overhead.json')
+        overhead = rec.read_json(overhead_path)
+        overhead['prior_files'] = {
+            name: rec.sha256(os.path.join(d, name))
+            for name in overhead['prior_files']
+        }
+        self.save(overhead_path, overhead)
+        write(os.path.join(d, 'SHA256SUMS'), ''.join(
+            f'{rec.sha256(os.path.join(d, n))}  {n}\n'
+            for n in rec.record_files(d)))
+
+    def archived_path(self, d):
+        return os.path.join(d, 'sources', rec.sha256(self.packet))
+
+    def test_valid_nonpath_string_equal_to_archive(self):
+        probe = os.path.join(self.tmp.name, 'precompute.json')
+        self.cli_lab(['compute', self.sidecar, '--repo', self.repo, '-o', probe])
+        rev = rec.read_json(probe)['computed']['task_revision']['id']
+        d = rec.record_dir(self.run_dir, rev)
+        sidecar = rec.read_json(self.sidecar)
+        sidecar['provenance']['declared_by']['value']['harness'] = self.archived_path(d)
+        self.save(self.sidecar, sidecar)
+        out = self.profile()
+        self.assertTrue(out['valid'])
+        write(self.packet, "changed packet\n")
+        r = self.verify()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_nonpath_mismatch_must_not_verify(self):
+        sidecar = rec.read_json(self.sidecar)
+        sidecar['provenance']['declared_by']['value']['harness'] = self.packet
+        self.save(self.sidecar, sidecar)
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out['task_revision'])
+        stored = os.path.join(d, 'sidecar-stageB.json')
+        sidecar['provenance']['declared_by']['value']['harness'] = self.archived_path(d)
+        self.save(stored, sidecar)
+        self.refresh_integrity(d)
+        r = self.verify()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+
+    def test_duplicate_content_does_not_abort_later_record(self):
+        sidecar = rec.read_json(self.sidecar)
+        duplicate = os.path.join(self.tmp.name, 'second-packet.md')
+        write(duplicate, rec.read_text(self.packet))
+        entry = copy.deepcopy(sidecar['provenance']['source_documents'][0])
+        entry['path'] = duplicate
+        entry['kind'] = 'authority'
+        sidecar['input_snapshot']['authority_refs'] = {
+            'status': 'declared', 'value': [entry], 'basis': 'test'}
+        self.save(self.sidecar, sidecar)
+        first = self.profile()
+        self.assertTrue(first['valid'], rec.read_json(os.path.join(
+            rec.record_dir(self.run_dir, first['task_revision']), 'validation.json')))
+        later = copy.deepcopy(sidecar)
+        later['identity']['task_id'] = 'z-later'
+        later['input_snapshot']['authority_refs'] = {'status': 'unknown', 'basis': 'test'}
+        self.save(self.sidecar, later)
+        second = self.profile()
+        r = self.verify()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn(first['task_revision'] + ': verified', r.stdout, r.stdout + r.stderr)
+        self.assertIn(second['task_revision'] + ': verified', r.stdout, r.stdout + r.stderr)
+
+    def test_same_path_in_both_sets(self):
+        sidecar = rec.read_json(self.sidecar)
+        sidecar['input_snapshot']['authority_refs'] = {
+            'status': 'declared', 'value': copy.deepcopy(sidecar['provenance']['source_documents']),
+            'basis': 'test'}
+        sidecar['input_snapshot']['authority_refs']['value'][0]['kind'] = 'authority'
+        self.save(self.sidecar, sidecar)
+        out = self.profile()
+        self.assertTrue(out['valid'], rec.read_json(os.path.join(
+            rec.record_dir(self.run_dir, out['task_revision']), 'validation.json')))
+        write(self.packet, 'changed\n')
+        r = self.verify()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_json_type_mismatch_must_not_verify(self):
+        out = self.profile()
+        d = rec.record_dir(self.run_dir, out['task_revision'])
+        profile_path = os.path.join(d, 'profile-stageB.json')
+        profile = rec.read_json(profile_path)
+        self.assertEqual(profile['computed']['snapshot']['files'], 1)
+        profile['computed']['snapshot']['files'] = True
+        self.save(profile_path, profile)
+        self.refresh_integrity(d)
+        r = self.verify()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+
+
+    def test_recompute_failure_does_not_abort_later_record(self):
+        first = self.profile()
+        sidecar = rec.read_json(self.sidecar)
+        sidecar["identity"]["task_id"] = "z-later"
+        write(self.sidecar, json.dumps(sidecar))
+        second = self.profile()
+        d = rec.record_dir(self.run_dir, first["task_revision"])
+        broken = rec.read_json(os.path.join(d, "sidecar-stageB.json"))
+        del broken["provenance"]["source_documents"]
+        self.save(os.path.join(d, "sidecar-stageB.json"), broken)
+        self.refresh_integrity(d)
+        r = self.verify()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("recompute failed", r.stdout)
+        self.assertIn(second["task_revision"] + ": verified", r.stdout)
+
+    def test_verify_without_installed_tool_is_not_established(self):
+        self.profile()
+        empty = os.path.join(self.tools_root, "..", "no-tools")
+        os.makedirs(empty)
+        r = self.cli("verify", "--run-dir", self.run_dir, "--repo", self.repo, "--tools-root", empty, check=False)
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("recompute unavailable", r.stdout)
 
     def test_verify_fails_without_sums(self):
         out = self.profile()
