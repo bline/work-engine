@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep a coordinator's original scope, additions and budget in its assignment record.
+"""Keep a supervisor's original scope, additions and budget in its assignment record.
 
 The record is a JSON object file; this script owns only its `scope_budget` key,
 so it can live in the existing assignment record. `init` writes the original
@@ -187,7 +187,7 @@ def parser() -> argparse.ArgumentParser:
         q.add_argument("--max-weekly-points", type=float, help="rise in the weekly meter since init")
         q.add_argument("--max-weekly-percent", type=float, help="ceiling on the weekly meter")
         q.add_argument("--reconsider-after-additions", type=int)
-        q.add_argument("--set-by", required=True, choices=("user", "coordinator"))
+        q.add_argument("--set-by", required=True, choices=("user", "supervisor"))
         q.add_argument("--reason")
 
     i = sub.add_parser("init", help="record the original items and the budget")

@@ -61,7 +61,7 @@ class ScopeBudgetTest(unittest.TestCase):
 
     def test_hours_limit_stops_and_revise_keeps_history(self):
         call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
-             "--max-hours", "0", "--set-by", "coordinator", "--reason", "proposed in first report")
+             "--max-hours", "0", "--set-by", "supervisor", "--reason", "proposed in first report")
         rc, r = call("check", "--record", str(self.rec))
         self.assertEqual(rc, 4)
         self.assertEqual(r["reached"], ["hours"])

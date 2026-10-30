@@ -11,9 +11,9 @@ knows the task's size and holds the launch authority:
 
 | situation | decider | action |
 | --- | --- | --- |
-| A retained child is about to receive a substantial new task, including remediation after review | parent (coordinator or supervisor) | pre-dispatch check, then `followup_task` or `spawn_agent` |
+| A retained child is about to receive a substantial new task, including remediation after review | parent (the supervisor) | pre-dispatch check, then `followup_task` or `spawn_agent` |
 | A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or `handoff_ready` |
-| Root context pressure | root | assess capacity for the next scope; if transferring ownership, use the user-authorized procedure under Roots |
+| Supervisor (root) context pressure | supervisor | assess capacity for the next scope; if transferring ownership, use the user-authorized procedure under Roots |
 
 ## Same-session replacement and root transfer
 
@@ -144,7 +144,7 @@ safely, and record why.
 
 ## Roots
 
-A root cannot authorize its own replacement: it has no parent. **The user is
+The root is the top-level supervisor. A root cannot authorize its own replacement: it has no parent. **The user is
 the root's parent for transfer.** The root prepares everything and the user
 authorizes the transfer. The launch itself can now be mechanical: `claude --bg`
 starts a top-level session, a Codex root starts as a thread on the shared
@@ -212,7 +212,7 @@ routes belong to the predecessor's session. So before transferring:
      service tier as exact launch settings or matching UI controls, including
      the intended Fast state. For another host, carry settings with their known
      source and mark unobserved values unestablished. Then give a prompt naming the root handoff
-     path and sha256, the skill to load as coordinator, and the first actions
+     path and sha256, the skill to load as supervisor, and the first actions
      (verify the digest and run `handoff-status` for this role and digest,
      for Codex verify the successor's own applied settings, read the assignment record,
      adopt on the board, then re-claim board
@@ -266,7 +266,7 @@ record why.
 ## Telemetry rules
 
 The [session control subscription](context-control.md) can supply pressure
-observations through the board wait interface. The coordinator establishes an
+observations through the board wait interface. The supervisor establishes an
 observation route at startup; this subscription and explicit checks are
 alternative mechanisms, not evidence that either is already active. It preserves these
 decision owners and the explicit checks as fallback; enrollment, output

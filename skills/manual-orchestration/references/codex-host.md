@@ -4,10 +4,10 @@ The owner selects Fast for manual supervisors and builders, and the standard
 tier for Astra reviewers. These host mechanics specialize the generic child
 launch and continuation wording in the role and context references.
 
-- **Supervisors and builders:** `spawn_agent` with `fork_turns="none"` for a
+- **Builders:** the supervisor is the top-level session; `spawn_agent` with `fork_turns="none"` for a
   fresh assignment; `followup_task` for a retained continuation. Select model
   and effort from [model selection](../../../docs/model-selection.md). A child
-  inherits the root's Fast tier ([observed probe](../../../metrics/probes/codex-manual-service-tier-20261028.json)).
+  inherits the supervisor's Fast tier ([observed probe](../../../metrics/probes/codex-manual-service-tier-20261028.json)).
 - **Astra reviewers:** launch a separate top-level app-server thread through
   `<skill-dir>/scripts/role_host.py`, where `<skill-dir>` is this skill's
   directory. It has no runtime parent; explicitly pin its tier so shared
@@ -31,7 +31,7 @@ launch and continuation wording in the role and context references.
   thread; retain the pending binding or task until idle rather than replaying it.
   Collect through `wait_threads` when available or a verified completion route;
   `wait_agent` does not collect these top-level threads.
-- Use `/fast` in the root for its supervisor/builder tree. The probed client
+- Use `/fast` in the supervisor for its builder children. The probed client
   also persisted `service_tier="fast"` into `config.toml`, so a separate thread
   alone did not preserve the reviewer's standard tier. The launch override
   above selects it explicitly. Record requested and observed tier in the
@@ -58,7 +58,7 @@ root's setting. This is recorded runtime configuration, not backend fulfillment
 or billing; a later UI change may not yet have an applied record.
 
 Carry the observation and any explicit user override in the continuation. Keep
-the predecessor's model, effort and tier for the successor coordinator unless
+the predecessor's model, effort and tier for the successor supervisor unless
 the user's current selection or owning contract changes them. Preserve a known
 user override; do not silently switch an observed root setting to a generic
 role default. A genuine unresolved conflict remains with its decision owner.
