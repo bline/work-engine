@@ -302,8 +302,9 @@ that stops on one reports it, and the user can lift the limit with
 release, because ledger edits take effect at once (§4.1).
 - Fix the stop: record an issue and price the call as a range covering both
   readings.
-- Add prices for the unpriced Claude models, a quota pool for each call, and
-  quota-weighted dollars (§9, decision 2).
+- Add prices for the unpriced Claude models, the quota pools each call counts
+  toward (a Fable call counts toward two), and quota-weighted dollars (§9,
+  decision 2).
 - Report calls the transcript does not record, at least each compaction, as
   unrecorded calls with an estimated range, not as zero. Check against Claude
   Code's own session counter where one can be read.
@@ -383,8 +384,9 @@ not tested.
    is in §7, phase 0.
 2. **The unit is quota-weighted dollars, kept per quota pool.** Quota-weighted
    dollars are API-equivalent list-price dollars times the call's tier
-   multiplier (Codex Fast is 2.5). Each pool has its own limits: Codex weekly,
-   Claude main weekly, and Claude Fable. Reasons:
+   multiplier (Codex Fast is 2.5). Each pool has its own limits: Codex
+   weekly; Claude all-models weekly, which includes Fable; and Claude Fable
+   weekly. Reasons:
    - **Codex quota followed dollars, not tokens.** A fit over five weekly
      windows (2026-10-20 to 10-26) found that Astra drew 4.4 to 4.7 times Sol's
      quota per weighted token, close to their list-price ratio. A token limit
@@ -394,19 +396,12 @@ not tested.
    - **List dollars leave out Fast tier's 2.5 times charge.** The ledger already
      records each call's tier.
    - **The pools are metered separately.** Their dollar rates differ and are
-     only partly measured, so one combined figure would mix them. Fable has its
-     own weekly meter, and the user sees its usage as a separate percentage.
-     Whether Fable also counts toward the main Claude meter is not established.
-     Two observations suggest it might:
-     - Claude Code's usage screen (2026-10-30) labels the main meter "Current
-       week (all models)", beside "Current week (Fable)", and both reset at the
-       same time.
-     - One reading on 2026-10-27 (n=1, 1% steps) showed the main meter rise
-       from 8 to 10 in four minutes while three Fable agents spent $7.46 and
-       Opus $2.62.
-
-     The tree reports Fable spend separately, so the main pool can include or
-     exclude it once this is settled.
+     only partly measured, so one combined figure would mix them.
+   - **A Fable call counts toward both Claude pools:** the all-models weekly
+     limit and Fable's own limit. The user confirmed this on 2026-10-30.
+     Claude Code's usage screen and a reading on 2026-10-27 had suggested it.
+     Counting the call in both pools is not a second charge, because each pool
+     is a separate limit.
    - **Dollars keep their meaning across the 2026-10-29 limit doubling;** meter
      percentages don't.
 
