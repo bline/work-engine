@@ -115,6 +115,7 @@ cannot be gathered is named in `context_errors`, and the event is still sent.
 | `budget` | the session's objective at the turn's end (limits, `hours_deadline`, the grant and deadline fields roots write beside `scope_budget`, `closed`), with `spend` per pool and `coverage` from `usage_ledger.py tree --until <ended_at>` |
 | `closure` | the session's workers. `workers_total`, `states`, `sources`, `running` (up to 20) and `dead` (shown running, but not written to since the host booted). `workers_settled` is true when none is running. `costs` is the ledger coverage (`complete`, `partial` or `not_established`). |
 | `successors` | adoptions of this session's role on the board. Each is checked: the adoption is on the successor's own topic, the predecessor posted `ending` naming the same handoff digest, and the handoff file hashes to that digest. Whether the gate committed the rotation is recorded only in the gate's state directory, so it is reported as not established. |
+| `artifacts` | files the turn's board posts reference, plus the grant's result files beside its `scope_budget` record (`root-result.json`, `closure-cost.json`, `final-recorded-cost.json`, `continuation.json`). Each has sha256, size, mtime and `changed_this_turn`; JSON files also get a redacted summary of `status`, `grant`, `review`, `verdict` and similar keys. |
 | `monitoring` | gaps (host restart, sleep, daemon stopped) recorded since the previous delivered event |
 
 Enrichment costs about 0.8 s per event, mostly the ledger run (n = 3 roots, a

@@ -883,6 +883,9 @@ class FullEnvelope(ContextFixture):
                   data={"state": "ending", "handoff": {"path": str(handoff), "sha256": digest_hex}})
         self.add_worker()
         self.write_record(SE.iso(self.clock[0] - 600), bindings=[BOUND_ID])
+        self.result_bytes = json.dumps({"status": "CLOSED_ACCEPTED", "grant": "dot-test-g001", "notes": "x" * 9000,
+                                        "review": {"verdict": "accept", "token": "sk-" + "b" * 40}}).encode()
+        self.record_path.with_name("root-result.json").write_bytes(self.result_bytes)
         self.context.budgets.refresh(self.clock[0], force=True)
         identifier = self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID], "envelope": "full"})[
             "result"]["id"]
@@ -911,6 +914,12 @@ class FullEnvelope(ContextFixture):
         self.assertTrue(closure["workers_settled"])
         self.assertEqual(closure["costs"], "complete")
         self.assertEqual(data["context_errors"], [])
+        by_path = {a["path"]: a for a in data["artifacts"]}
+        self.assertFalse(by_path["/tmp/result.json"]["exists"])
+        result = by_path[str(self.record_path.with_name("root-result.json"))]
+        self.assertEqual(result["sha256"], hashlib.sha256(self.result_bytes).hexdigest())
+        self.assertIn('"verdict":"accept"', result["summary"])
+        self.assertNotIn("sk-", result["summary"])
         schema = SE.TURN_EVENT_DESCRIPTOR["payloadSchema"]
         self.assertTrue(set(data) <= set(schema["properties"]))
         # a basic subscription to the same session still gets exactly the basic payload

@@ -947,6 +947,48 @@ def successions(snapshot: tuple[str, dict], session_id: str) -> list[dict]:
     return out
 
 
+# Result files roots write beside their scope_budget record (assignment.json) when a grant closes.
+RESULT_FILES = ("root-result.json", "closure-cost.json", "final-recorded-cost.json", "continuation.json")
+SUMMARY_KEYS = ("status", "grant", "grantId", "closed_at", "verdict", "disposition", "review", "result",
+                "accepted", "terminal_status", "subject")
+MAX_ARTIFACTS = 20
+MAX_SUMMARY_CHARS = 1200
+
+
+def artifacts(paths: list[str], since: float | None) -> list[dict]:
+    """Identity of files a turn points at: sha256, size, mtime, and for JSON a redacted summary of its
+    status, grant and review fields. Content is data; nothing here is interpreted."""
+    out, seen = [], set()
+    for raw in paths:
+        if not isinstance(raw, str) or raw in seen or len(out) >= MAX_ARTIFACTS:
+            continue
+        seen.add(raw)
+        path = Path(raw)
+        if not path.is_absolute():
+            continue
+        data = read_regular(path, MAX_HANDOFF_BYTES)
+        if data is None:
+            out.append({"path": raw, "exists": False})
+            continue
+        mtime = _mtime(path)
+        item = {"path": raw, "exists": True, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
+                "modified_at": None if mtime is None else iso(mtime),
+                "changed_this_turn": None if since is None or mtime is None else mtime >= since}
+        if path.suffix == ".json" and len(data) <= 256 * 1024:
+            try:
+                value = json.loads(data)
+            except ValueError:
+                value = None
+            if isinstance(value, dict):
+                picked = {k: value[k] for k in SUMMARY_KEYS if k in value}
+                if picked:
+                    text, _ = redact(canonical(picked))
+                    item["summary"] = text[:MAX_SUMMARY_CHARS]
+                    item["summary_truncated"] = len(text) > MAX_SUMMARY_CHARS
+        out.append(item)
+    return out
+
+
 # --------------------------------------------------------------------------- budget observation (read-only)
 
 BUDGET_MARK = b'"manual-orchestration.scope-budget.v'   # skills/manual-orchestration/scripts/scope_budget.py
@@ -1835,6 +1877,9 @@ TURN_EVENT_DESCRIPTOR = {
             "closure": {**OBJECT, "description": "Whether the session's workers are idle and its spend is attributed."},
             "successors": {"type": "array", "items": OBJECT,
                            "description": "Sessions that adopted this session's role, with handoff checks."},
+            "artifacts": {"type": "array", "items": OBJECT,
+                          "description": "Files the turn's board posts reference and the grant's result files "
+                                         "(root-result.json etc.): sha256, size, mtime, status/review summary."},
             "monitoring": {**OBJECT, "description": "Monitoring gaps (host restart, sleep) since the previous event."},
             "context_errors": {"type": "array", "items": {"type": "string"},
                                "description": "Context that could not be gathered; the rest is still valid."},
@@ -2978,6 +3023,12 @@ class Daemon:
                 out["successors"] = []
         out["budget"] = self.turn_budget(session, ended, errors)
         out["closure"]["costs"] = (out["budget"] or {}).get("coverage")
+        referenced = [r for row in (out["board"].get("posted") or []) for r in row.get("references") or []]
+        record_path = ((out["budget"] or {}).get("objective") or {}).get("path")
+        if record_path:
+            referenced += [str(Path(record_path).with_name(name)) for name in RESULT_FILES
+                           if Path(record_path).with_name(name).exists()]
+        out["artifacts"] = artifacts(referenced, started)
         previous = parse_time(state.get("lastDeliveryAt")) or parse_time(subscription.get("createdAt")) or 0
         gaps = [g for g in read_lines(self.store.gaps) if (parse_time(g.get("to")) or 0) >= previous]
         out["monitoring"] = {"gaps_since_previous_event": gaps[-10:],
