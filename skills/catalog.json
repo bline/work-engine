@@ -159,6 +159,12 @@
         "codex"
       ]
     },
+    "session-events": {
+      "kind": "tool",
+      "state": "active",
+      "install": [],
+      "not_installed_reason": "Operator-run service: an MCP server started by OpenAI tunnel-client and a delivery daemon. Agents do not invoke it, so listing its description to every agent would cost space without use (added 2026-10-30)."
+    },
     "skill-release": {
       "kind": "tool",
       "state": "active",
