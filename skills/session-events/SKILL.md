@@ -51,7 +51,7 @@ Subscription arguments, which are also `test_pattern`'s:
 |---|---|
 | `session_ids` | 1–20 Codex or Claude Code session ids (UUIDs) |
 | `pattern` | Python regular expression, at most 512 characters, searched in each entry's text |
-| `roles` | any of `user`, `assistant`, `tool_call`, `tool_result`, `reasoning`, `system`, `agent_message`; default `user`, `assistant` |
+| `roles` | any of `user`, `assistant`, `tool_call`, `tool_result`, `reasoning`, `system`, `agent_message`, `turn_end`; default `user`, `assistant` |
 | `case_insensitive` | default `false` |
 | `content` | `excerpt` (default): about 600 characters each side of the match; `full`: the whole entry, cut around the match only to fit the 256 KiB body limit |
 
@@ -64,6 +64,30 @@ an excerpt. The payload fields are `session_id`, `session_title`, `host`,
 `entry_id`, `role`, `timestamp`, `text` and `match`: all strings, all present,
 no others. It exists so that a subscriber that rejects the richer schema still
 has an event it can subscribe to.
+
+### Event `session.turn.ended`
+
+One event each time a watched session stops and waits for input. The only
+argument is `session_ids`. The payload carries `event_id` (the same as the
+delivery's `eventId`), `session_id`, `session_title`, `host`, `entry_id`,
+`turn_id`, `status`, `reason`, `ended_at`, `duration_ms` (`-1` when the host
+records none), `final_message` and `final_message_truncated`. The final message
+is redacted and cut to 4,000 characters, never through a secret. If the turn had
+no final message, `final_message` is empty and the status is still sent.
+
+- **Codex:** a `task_complete` record gives `completed`. A `turn_aborted`
+  record gives `interrupted` when its reason is `interrupted`, otherwise
+  `failed`. Across 669 rollouts on this machine (2026-10-30) there were 2,027
+  `task_complete` records (66 without a final message) and 24 `turn_aborted`
+  records, all `interrupted`, and no failure record of any kind. `failed`
+  has therefore never been observed.
+- **Claude Code:** an assistant text record with `stop_reason: "end_turn"`
+  gives `completed`, with no duration. An interrupted Claude turn produces no
+  event.
+
+A turn end reports only that session. A coordinating root can stop while its
+workers, which are other sessions, are still running. Overspend or a stuck turn
+happens before any turn ends, so alerts for those need a separate subscription.
 
 An *entry* is one content block. For Codex it is a `response_item` line: a
 message, function or custom tool call, tool output, reasoning summary or
@@ -248,10 +272,10 @@ python3 -I <skill-dir>/scripts/session_events.py serve [--principal PRINCIPAL]
 python3 -I <skill-dir>/scripts/session_events.py serve-http [--listen LISTEN] [--path PATH] [--principal PRINCIPAL]
 python3 -I <skill-dir>/scripts/session_events.py run [--poll-seconds POLL_SECONDS] [--max-seconds MAX_SECONDS]
 python3 -I <skill-dir>/scripts/session_events.py sessions [--query QUERY] [--host {codex,claude}] [--limit LIMIT]
-python3 -I <skill-dir>/scripts/session_events.py match --session SESSION_IDS --pattern PATTERN [--role {user,assistant,tool_call,tool_result,reasoning,system,agent_message}] [--ignore-case] [--content {excerpt,full}] [--limit LIMIT]
+python3 -I <skill-dir>/scripts/session_events.py match --session SESSION_IDS --pattern PATTERN [--role {user,assistant,tool_call,tool_result,reasoning,system,agent_message,turn_end}] [--ignore-case] [--content {excerpt,full}] [--limit LIMIT]
 python3 -I <skill-dir>/scripts/session_events.py status
 python3 -I <skill-dir>/scripts/session_events.py revoke --id IDENTIFIER [--allow]
-python3 -I <skill-dir>/scripts/session_events.py subscribe --name NAME --session SESSION_IDS --pattern PATTERN [--role {user,assistant,tool_call,tool_result,reasoning,system,agent_message}] [--ignore-case] [--content {excerpt,full}] [--cursor CURSOR] [--replace]
+python3 -I <skill-dir>/scripts/session_events.py subscribe --name NAME --session SESSION_IDS --pattern PATTERN [--role {user,assistant,tool_call,tool_result,reasoning,system,agent_message,turn_end}] [--ignore-case] [--content {excerpt,full}] [--cursor CURSOR] [--replace]
 python3 -I <skill-dir>/scripts/session_events.py next --name NAME [--wait WAIT] [--limit LIMIT] [--peek] [--from FROM_CURSOR]
 python3 -I <skill-dir>/scripts/session_events.py unsubscribe --name NAME
 python3 -I <skill-dir>/scripts/session_events.py subscriptions

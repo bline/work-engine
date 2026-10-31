@@ -226,7 +226,7 @@ class McpSurface(Fixture):
         self.assertEqual(result["protocolVersion"], "2025-11-25")
         self.assertIn("events", result["capabilities"])
         events = self.rpc("events/list")["result"]["events"]
-        self.assertEqual([e["name"] for e in events], [SE.EVENT_NAME, SE.SIMPLE_EVENT_NAME])
+        self.assertEqual([e["name"] for e in events], [SE.EVENT_NAME, SE.SIMPLE_EVENT_NAME, SE.TURN_EVENT_NAME])
         self.assertEqual(events[0]["delivery"], ["webhook"])
         tools = {t["name"]: t for t in self.rpc("tools/list")["result"]["tools"]}
         self.assertEqual(set(tools), {"list_sessions", "read_session", "test_pattern"})
@@ -589,6 +589,83 @@ class HttpTransport(Fixture):
     def test_listen_must_be_loopback(self):
         with self.assertRaises(SystemExit):
             SE.serve_http(self.server, "0.0.0.0:0")
+
+
+def task_complete(message_text, turn_id="turn-1", duration="61000"):
+    return codex_line("event_msg", type="task_complete", turn_id=turn_id, last_agent_message=message_text,
+                      duration_ms=duration, completed_at="1793331560")
+
+
+class TurnEnded(Fixture):
+    def subscribe_turns(self, session_ids):
+        self.secret = whsec()
+        return self.rpc("events/subscribe", {
+            "name": SE.TURN_EVENT_NAME, "arguments": {"session_ids": session_ids},
+            "delivery": {"mode": "webhook", "url": URL, "secret": self.secret}, "cursor": None})
+
+    def test_codex_turn_ends_are_entries(self):
+        start = self.codex_path.stat().st_size
+        self.append(self.codex_path, task_complete("All done.")
+                    + codex_line("event_msg", type="turn_aborted", turn_id="turn-2", reason="interrupted")
+                    + codex_line("event_msg", type="token_count"))
+        entries = SE.entries_between(SE.resolve_session(self.homes, CODEX_ID), start)
+        self.assertEqual([(e.role, e.text, e.meta["status"]) for e in entries],
+                         [("turn_end", "All done.", "completed"), ("turn_end", "(turn aborted: interrupted)", "interrupted")])
+
+    def test_claude_final_text_ends_the_turn(self):
+        start = self.claude_path.stat().st_size
+        self.append(self.claude_path, json.dumps({"type": "assistant", "message": {
+            "id": "msg_1", "role": "assistant", "stop_reason": "tool_use",
+            "content": [{"type": "text", "text": "working"}]}}) + "\n" + json.dumps({"type": "assistant", "message": {
+            "id": "msg_2", "role": "assistant", "stop_reason": "end_turn",
+            "content": [{"type": "text", "text": "Finished."}]}}) + "\n")
+        entries = SE.entries_between(SE.resolve_session(self.homes, CLAUDE_ID), start)
+        self.assertEqual([(e.role, e.text) for e in entries],
+                         [("assistant", "working"), ("assistant", "Finished."), ("turn_end", "Finished.")])
+        self.assertEqual(entries[2].meta["turn_id"], "msg_2")
+
+    def test_delivers_each_turn_end_with_schema_payload(self):
+        self.subscribe_turns([CODEX_ID, CLAUDE_ID])
+        self.append(self.codex_path, message("assistant", "progress") + task_complete("Built and tested."))
+        self.append(self.codex_path, codex_line("event_msg", type="turn_aborted", turn_id="turn-2", reason="interrupted"))
+        self.daemon.tick()
+        bodies = [body for body, _ in self.receiver.events()]
+        self.assertEqual([b["name"] for b in bodies], [SE.TURN_EVENT_NAME] * 2)
+        schema = SE.TURN_EVENT_DESCRIPTOR["payloadSchema"]
+        for body in bodies:
+            self.assertEqual(set(body["data"]), set(schema["required"]))
+        first, second = (b["data"] for b in bodies)
+        self.assertEqual((first["status"], first["final_message"], first["duration_ms"], first["turn_id"]),
+                         ("completed", "Built and tested.", 61000, "turn-1"))
+        self.assertFalse(first["final_message_truncated"])
+        self.assertEqual((second["status"], second["reason"], second["duration_ms"], second["final_message"]),
+                         ("interrupted", "interrupted", -1, ""))
+        self.assertEqual(first["session_title"], "Assess Dot event monitoring")
+        self.assertEqual([b["data"]["event_id"] for b in bodies], [b["eventId"] for b in bodies])
+
+    def test_status_without_final_message_and_unknown_abort(self):
+        self.subscribe_turns([CODEX_ID])
+        self.append(self.codex_path, task_complete("") + codex_line("event_msg", type="turn_aborted", reason="crashed"))
+        self.daemon.tick()
+        rows = [(b["data"]["status"], b["data"]["reason"], b["data"]["final_message"]) for b, _ in self.receiver.events()]
+        self.assertEqual(rows, [("completed", "", ""), ("failed", "crashed", "")])
+
+    def test_long_final_message_is_capped(self):
+        self.subscribe_turns([CODEX_ID])
+        self.append(self.codex_path, task_complete("x" * 5000 + " sk-" + "s" * 40))
+        self.daemon.tick()
+        data = self.receiver.events()[0][0]["data"]
+        self.assertEqual(len(data["final_message"]), SE.MAX_FINAL_MESSAGE_CHARS)
+        self.assertTrue(data["final_message_truncated"])
+
+    def test_schema_and_arguments(self):
+        schema = SE.TURN_EVENT_DESCRIPTOR["inputSchema"]
+        self.assertEqual(schema["required"], ["session_ids"])
+        self.assertIs(SE.TURN_EVENT_DESCRIPTOR["payloadSchema"]["additionalProperties"], False)
+        reply = self.rpc("events/subscribe", {"name": SE.TURN_EVENT_NAME,
+                                              "arguments": {"session_ids": [CODEX_ID], "pattern": "x"},
+                                              "delivery": {"mode": "webhook", "url": URL, "secret": whsec()}})
+        self.assertEqual(reply["error"]["data"], {"reason": "unknown_arguments", "fields": ["pattern"]})
 
 
 class LocalPull(Fixture):
