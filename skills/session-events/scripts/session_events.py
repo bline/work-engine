@@ -1041,8 +1041,9 @@ TURN_EVENT_DESCRIPTOR = {
     },
 }
 
-EVENT_DESCRIPTORS = {EVENT_NAME: EVENT_DESCRIPTOR, SIMPLE_EVENT_NAME: SIMPLE_EVENT_DESCRIPTOR,
-                     TURN_EVENT_NAME: TURN_EVENT_DESCRIPTOR}
+# Listed first: a Dot's task tool was seen exposing only the first event of this plugin (n = 2).
+EVENT_DESCRIPTORS = {TURN_EVENT_NAME: TURN_EVENT_DESCRIPTOR, EVENT_NAME: EVENT_DESCRIPTOR,
+                     SIMPLE_EVENT_NAME: SIMPLE_EVENT_DESCRIPTOR}
 
 
 def criteria_for(event_name: str, arguments: Any) -> Criteria:

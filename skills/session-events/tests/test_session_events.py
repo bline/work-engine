@@ -226,7 +226,7 @@ class McpSurface(Fixture):
         self.assertEqual(result["protocolVersion"], "2025-11-25")
         self.assertIn("events", result["capabilities"])
         events = self.rpc("events/list")["result"]["events"]
-        self.assertEqual([e["name"] for e in events], [SE.EVENT_NAME, SE.SIMPLE_EVENT_NAME, SE.TURN_EVENT_NAME])
+        self.assertEqual([e["name"] for e in events], [SE.TURN_EVENT_NAME, SE.EVENT_NAME, SE.SIMPLE_EVENT_NAME])
         self.assertEqual(events[0]["delivery"], ["webhook"])
         tools = {t["name"]: t for t in self.rpc("tools/list")["result"]["tools"]}
         self.assertEqual(set(tools), {"list_sessions", "read_session", "test_pattern"})
