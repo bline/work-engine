@@ -1041,7 +1041,7 @@ TURN_EVENT_DESCRIPTOR = {
     },
 }
 
-# Listed first: a Dot's task tool was seen exposing only the first event of this plugin (n = 2).
+# The primary signal for a supervising Dot is listed first.
 EVENT_DESCRIPTORS = {TURN_EVENT_NAME: TURN_EVENT_DESCRIPTOR, EVENT_NAME: EVENT_DESCRIPTOR,
                      SIMPLE_EVENT_NAME: SIMPLE_EVENT_DESCRIPTOR}
 
