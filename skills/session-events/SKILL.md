@@ -1,6 +1,6 @@
 ---
 name: session-events
-description: Deliver new Codex or Claude Code transcript entries that match a regular expression to an MCP Events subscriber such as OpenAI Dot, as signed webhooks, and let it list, search and read local sessions. An operator-run service; it grants the subscriber no authority over the sessions.
+description: Deliver Codex or Claude Code turn ends (optionally with board, budget, worker-closure and successor context), budget/deadline/stall/successor alerts, and regular-expression transcript matches to an MCP Events subscriber such as OpenAI Dot, as signed webhooks with replay; and let it list, search and read local sessions and inspect budgets and delivery health. An operator-run service; it grants the subscriber no authority over the sessions.
 ---
 
 # Session events
@@ -31,15 +31,28 @@ Codex / Claude transcripts ──inotify──▶ session_events.py run ──si
 - **`run`** is the delivery daemon. It watches the transcripts named by
   subscriptions, matches each newly completed line, and POSTs events. It runs
   independently of `serve` and of the tunnel; deliveries go out from this
-  machine.
+  machine. It also raises alerts on timers and writes a heartbeat every minute.
+- **Context sources**, all read-only and each optional, add context to
+  `session.turn.ended` (envelope `full`), `session.alert` and `budget_status`:
+  - the coordination board of `--board-repository`
+    (`skills/durable-state/scripts/codex_chatboard.py`'s JSON document behind a
+    git ref, read with `rev-parse` and `cat-file` only);
+  - the usage ledger `--budget-ledger` (`metrics/scripts/usage_ledger.py`),
+    run only as the bytes of `--budget-ledger-sha256`, from a private copy;
+  - an index of `scope_budget` records under `--budget-root` (default
+    `~/.local/state/work-engine`), built by an mtime scan every 5 minutes;
+  - worker lineage from Codex's `state_5.sqlite` spawn edges, the role_host
+    launch ledger, `scope_budget` bindings and Claude subagent transcripts.
 - **`sessions`, `match`, `status`, `revoke`** are local CLI views: search by
   title, dry-run a pattern (prints event data, sends nothing), inspect stored
   subscriptions without secrets, and refuse a subscription.
 
 State lives in `~/.local/state/work-engine/session-events/` (`--state-dir`,
 `$SESSION_EVENTS_STATE`): `subscriptions/` (written by `serve`; holds signing
-secrets, mode 0600), `delivery/` (written by the daemon), `verified/`,
-`revoked/` and `title-cache.json`. Transcripts are found under `$CODEX_HOME`
+secrets, mode 0600), `delivery/` and `events/` (the per-subscription event log
+used by `replay_events`), `daemon.json` (heartbeat), `gaps.jsonl`,
+`budget-index.json`, `ledger/` (the pinned ledger copy), `verified/`,
+`revoked/` and `title-cache.json`, all written by the daemon except the first. Transcripts are found under `$CODEX_HOME`
 (`sessions/`, `archived_sessions/`) and `$CLAUDE_CONFIG_DIR` (`projects/*/`).
 A session id that resolves to no file, or to more than one, is rejected.
 
@@ -67,27 +80,78 @@ has an event it can subscribe to.
 
 ### Event `session.turn.ended`
 
-One event each time a watched session stops and waits for input. The only
-argument is `session_ids`. The payload carries `event_id` (the same as the
+One event each time a watched session stops and waits for input. Arguments:
+`session_ids`, and `envelope` (`basic`, the default, or `full`). The basic
+payload carries `event_id` (the same as the
 delivery's `eventId`), `session_id`, `session_title`, `host`, `entry_id`,
 `turn_id`, `status`, `reason`, `ended_at`, `duration_ms` (`-1` when the host
 records none), `final_message` and `final_message_truncated`. The final message
 is redacted and cut to 4,000 characters, never through a secret. If the turn had
 no final message, `final_message` is empty and the status is still sent.
 
-- **Codex:** a `task_complete` record gives `completed`. A `turn_aborted`
-  record gives `interrupted` when its reason is `interrupted`, otherwise
-  `failed`. Across 669 rollouts on this machine (2026-10-30) there were 2,027
-  `task_complete` records (66 without a final message) and 24 `turn_aborted`
-  records, all `interrupted`, and no failure record of any kind. `failed`
-  has therefore never been observed.
+- **Codex:** a `task_complete` record gives `completed`, or `failed` when it
+  carries an `error` object; the reason is then its `codex_error_info`, such
+  as `server_overloaded` or `usage_limit_exceeded`. Codex's own turn table
+  records these turns as failed; 19 such records were found in 404 rollouts on
+  2026-10-31. A `turn_aborted` record gives `interrupted` when its reason is
+  `interrupted`, otherwise `failed`.
 - **Claude Code:** an assistant text record with `stop_reason: "end_turn"`
   gives `completed`, with no duration. An interrupted Claude turn produces no
   event.
+- **`lost`:** after the computer restarts, each watched turn that was open
+  and whose transcript was last written before the boot is reported once
+  with status `lost` and reason `host_restart: …`. It cannot finish, because
+  its process died with the host. This is checked once per boot, and only for
+  subscriptions older than that boot.
+
+**Envelope `full`** adds these fields to the payload. Any context that
+cannot be gathered is named in `context_errors`, and the event is still sent.
+
+| field | content |
+|---|---|
+| `subscription_id`, `sequence` | per-subscription numbering for `replay_events`; a jump means missed events |
+| `turn_started_at` | from `task_complete.started_at`, else read back to the turn's start |
+| `board` | `cursor` (the last row considered) and `revision`. `posted` and `received` are rows posted during the turn by the session or its workers, or addressed to the session. `outstanding` covers open `request`s it made or owes and the claims it holds. Bodies are cut to 300 characters and redacted. |
+| `budget` | the session's objective at the turn's end (limits, `hours_deadline`, the grant and deadline fields roots write beside `scope_budget`, `closed`), with `spend` per pool and `coverage` from `usage_ledger.py tree --until <ended_at>` |
+| `closure` | the session's workers. `workers_total`, `states`, `sources`, `running` (up to 20) and `dead` (shown running, but not written to since the host booted). `workers_settled` is true when none is running. `costs` is the ledger coverage (`complete`, `partial` or `not_established`). |
+| `successors` | adoptions of this session's role on the board. Each is checked: the adoption is on the successor's own topic, the predecessor posted `ending` naming the same handoff digest, and the handoff file hashes to that digest. Whether the gate committed the rotation is recorded only in the gate's state directory, so it is reported as not established. |
+| `monitoring` | gaps (host restart, sleep, daemon stopped) recorded since the previous delivered event |
+
+Enrichment costs about 0.8 s per event, mostly the ledger run (n = 3 roots, a
+read-only dry run on 2026-10-31). The envelope is opt-in because a basic
+subscription's payload must keep matching the schema a subscriber already
+holds. Whether ChatGPT validates payloads against `payloadSchema` is not
+established.
+
+### Event `session.alert`
+
+Raised between turn ends. Arguments: `session_ids`, `kinds` (any of `budget`,
+`deadline`, `stalled` and `successor`; default all) and `stall_minutes`
+(5–240, default 20). The payload has `alert_id`, `subscription_id`,
+`sequence`, `kind`, `session_id`, `session_title`, `raised_at`, `summary` and
+`detail`.
+
+- **`budget` and `deadline`:** every 2 minutes, the daemon runs `usage_ledger.py
+  control` with its own persisted cursor for each watched session's current
+  objective. That is the latest `scope_budget` record naming the session that
+  started in the last 24 h and is not closed. Each new ledger event becomes an
+  alert: `hours_*` events are `deadline`, and the rest (marks, limit fractions,
+  account ceiling, coverage changes) are `budget`. `detail` carries the ledger
+  event, the objective and the spend snapshot. The cursor is independent of
+  any supervisor's own listener.
+- **`stalled`:** the session's turn is open, but neither its transcript nor
+  any worker's has changed for `stall_minutes`. Reported once per turn.
+- **`successor`:** a new board adoption names the session as predecessor.
+  `detail` carries the successor's id and the checks listed for `successors`
+  above.
+
+The first pass records what is already true and raises nothing: adoptions
+already on the board, and triggers already crossed when the subscription
+began. An objective that starts later is reported from its first check.
 
 A turn end reports only that session. A coordinating root can stop while its
-workers, which are other sessions, are still running. Overspend or a stuck turn
-happens before any turn ends, so alerts for those need a separate subscription.
+workers, which are other sessions, are still running: envelope `full`'s
+`closure` reports them.
 
 An *entry* is one content block. For Codex it is a `response_item` line: a
 message, function or custom tool call, tool output, reasoning summary or
@@ -112,6 +176,17 @@ Event `data` carries `host`, `sessionId`, `sessionTitle`, `entryId`, `role`,
   latest `tail` entries. `max_chars` and `text_offset` page through a long entry.
 - `test_pattern`: previews the most recent matches in the last 8 MiB of each
   session, without subscribing.
+- `budget_status`: a session's current (or latest) objective, with its saved
+  limits, deadline, grant and setter, its spend per pool, and the marks or
+  limit fractions crossed now (`usage_ledger.py control` without a cursor).
+  It starts no model turn.
+- `delivery_status`: the daemon's heartbeat age (`alive` when at most 180 s),
+  the last 10 monitoring gaps, and each subscription's sequence, pending or
+  failing event and expiry. If the call fails, the computer or the tunnel is
+  unreachable.
+- `replay_events`: a subscription's logged events after a sequence number, in
+  order, with full payloads and their outcome (`delivered`, `abandoned` or
+  `rejected`). Up to 1,000 rows are kept once the log passes 8 MiB.
 
 ### Delivery behaviour
 
@@ -124,11 +199,20 @@ Event `data` carries `host`, `sessionId`, `sessionTitle`, `entryId`, `role`,
   cursor never passes an unacknowledged event. A refresh's response carries the
   same watermark, plus `deliveryStatus`.
 - A partly written last line is not read until it is complete.
-- Each event gets up to 5 attempts over about 13 minutes (after 5 s, 30 s,
-  2 min and 10 min), with the same `eventId` and a fresh signature each time.
-  `410` is not retried. After `413` or the fifth failure the event is abandoned
-  and the watermark passes it; it can still be replayed from an earlier cursor.
-  Three consecutive abandoned events suspend delivery until the next refresh.
+- Every attempt at an event sends the same body, with the same `eventId` and a
+  fresh signature. The body, including any envelope context, is built at the
+  first attempt.
+- An unreachable or failing receiver (no response, `5xx`, `408`, `425` or
+  `429`) is retried after 5 s, 30 s and 2 min, then every 5 minutes until the
+  subscription expires. Later events wait behind it, so an outage delays
+  events but does not drop them.
+- A refusal (any other `4xx`) gets 5 attempts and is then abandoned. So is
+  `413`, at once. `410` is not retried. An abandoned event stays in the event
+  log for `replay_events`. Three abandoned events in a row suspend delivery
+  until the next refresh.
+- A subscription that lapses (expired, but kept 24 h) and is renewed without a
+  cursor resumes where its delivery stopped, keeping its sequence numbers. A
+  renewal with a cursor starts from the cursor.
 - Each subscription sends at most 60 deliveries a minute. Further events wait
   and are reported as `throttled`.
 - TTL: 24 h by default, clamped to between 5 minutes and 7 days. A request for
@@ -171,7 +255,11 @@ Event `data` carries `host`, `sessionId`, `sessionTitle`, `entryId`, `role`,
 1. Run the daemon as a long-lived user service, pointed at a released copy so
    that edits to the working tree do not change a running service:
    `python3 -I <skill-dir>/scripts/session_events.py run`. A systemd user unit
-   with `Restart=on-failure` is one way to do this.
+   with `Restart=on-failure` is one way to do this. For context, give the
+   daemon and `serve-http` the same global options:
+   `--board-repository <repo> --budget-ledger <repo>/metrics/scripts/usage_ledger.py
+   --budget-ledger-sha256 <sha256 of that file>`. A changed ledger runs only
+   after its new digest is configured.
 2. Create a Secure MCP Tunnel in OpenAI Platform tunnel settings. The tunnel
    must be associated with your ChatGPT workspace. Then:
    ```bash
@@ -234,6 +322,15 @@ once, which suits a scheduled check. These filters do not involve `run` or
 
 ## Not established
 
+- **Whether ChatGPT validates payloads against `payloadSchema`.** This is why
+  envelope `full` is opt-in.
+- **Closure completeness.** Workers are found only where this machine records
+  them. Codex spawn edges, role_host launches (the only record of a
+  `claude --bg` child's parent), budget bindings (the only record of
+  direct-native threads) and Claude subagent files were all checked for S10 on
+  2026-10-31 (n = 1 root, 70 workers). A worker started some other way is not
+  seen.
+
 - **The refusal reason on stdio.** The `409`s match the documented guard, and
   the same request succeeded over HTTP. The reason itself was not logged at the
   default level.
@@ -253,7 +350,21 @@ once, which suits a scheduled check. These filters do not involve `run` or
   Code session (n = 1, 2026-10-30), several multi-paragraph assistant replies
   were stored only as a one-sentence `thinking` summary, so a pattern on their
   wording would not match.
-- Claude Code subagent transcripts (`<session>/subagents/`) are not watched.
+- Claude Code subagent transcripts (`<session>/subagents/`) are not watched
+  for matches. They count only as workers in `closure` and `stalled`.
+- Closure is a snapshot. A worker can start a queued or recovery turn after
+  the root's turn ends. A Codex thread that crashed without writing a terminal
+  record looks `running` until the host restarts.
+- The current objective is a heuristic: the latest `scope_budget` record that
+  names the session, started within 24 h, and is not closed. Many objectives
+  are never formally closed, and older ones are not followed.
+- The budget index walks the whole state tree: about 1.9 million entries,
+  266,105 of them JSON files, 4–7 s per scan on 2026-10-31, in a background thread every 5 minutes. A new record
+  can go unseen for up to 5 minutes.
+- The state tree holds FIFOs named like JSON files (13 on 2026-10-31, test
+  fixtures named `plan.json`). Every file read checks for a regular file and
+  opens it non-blocking; an earlier version of the scan blocked on one
+  indefinitely.
 - Python `re` has no timeout. A pathological pattern can stall the daemon for
   every subscription. Patterns are capped at 512 characters and each entry's
   scan at 1,000,000 characters.
@@ -267,7 +378,7 @@ once, which suits a scheduled check. These filters do not involve `run` or
 
 <!-- cli-synopsis script=skills/session-events/scripts/session_events.py display="python3 -I <skill-dir>/scripts/session_events.py" -->
 ```text
-# global options, given before the subcommand: [--codex-home CODEX_HOME] [--claude-home CLAUDE_HOME] [--state-dir STATE_DIR]
+# global options, given before the subcommand: [--codex-home CODEX_HOME] [--claude-home CLAUDE_HOME] [--state-dir STATE_DIR] [--board-repository BOARD_REPOSITORY] [--budget-ledger BUDGET_LEDGER] [--budget-ledger-sha256 BUDGET_LEDGER_SHA256] [--budget-root BUDGET_ROOT] [--role-host-ledger ROLE_HOST_LEDGER]
 python3 -I <skill-dir>/scripts/session_events.py serve [--principal PRINCIPAL]
 python3 -I <skill-dir>/scripts/session_events.py serve-http [--listen LISTEN] [--path PATH] [--principal PRINCIPAL]
 python3 -I <skill-dir>/scripts/session_events.py run [--poll-seconds POLL_SECONDS] [--max-seconds MAX_SECONDS]

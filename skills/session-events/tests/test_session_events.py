@@ -10,7 +10,9 @@ import importlib.util
 import io
 import json
 import secrets
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -226,10 +228,12 @@ class McpSurface(Fixture):
         self.assertEqual(result["protocolVersion"], "2025-11-25")
         self.assertIn("events", result["capabilities"])
         events = self.rpc("events/list")["result"]["events"]
-        self.assertEqual([e["name"] for e in events], [SE.TURN_EVENT_NAME, SE.EVENT_NAME, SE.SIMPLE_EVENT_NAME])
+        self.assertEqual([e["name"] for e in events],
+                         [SE.TURN_EVENT_NAME, SE.ALERT_EVENT_NAME, SE.EVENT_NAME, SE.SIMPLE_EVENT_NAME])
         self.assertEqual(events[0]["delivery"], ["webhook"])
         tools = {t["name"]: t for t in self.rpc("tools/list")["result"]["tools"]}
-        self.assertEqual(set(tools), {"list_sessions", "read_session", "test_pattern"})
+        self.assertEqual(set(tools), {"list_sessions", "read_session", "test_pattern", "delivery_status", "budget_status",
+                                      "replay_events"})
         self.assertTrue(all(t["annotations"]["readOnlyHint"] for t in tools.values()))
         self.assertIsNone(self.server.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}))
         self.assertEqual(self.rpc("nope")["error"]["code"], -32601)
@@ -406,7 +410,7 @@ class Delivery(Fixture):
     def test_abandon_suspend_and_reactivate_on_refresh(self):
         identifier = self.subscribe()["result"]["id"]
         self.append(self.codex_path, "".join(message("assistant", f"deploy {n}") for n in range(4)))
-        self.receiver.statuses = [500] * 100
+        self.receiver.statuses = [400] * 100
         for _ in range(40):
             wake = self.daemon.tick()
             if not self.server.store.state(identifier)["active"]:
@@ -415,7 +419,7 @@ class Delivery(Fixture):
         state = self.server.store.state(identifier)
         self.assertFalse(state["active"])
         self.assertEqual(state["abandoned"], SE.SUSPEND_AFTER_ABANDONED)
-        self.assertEqual(state["lastError"], "http_5xx")
+        self.assertEqual(state["lastError"], "http_4xx")
         self.assertEqual(len(self.receiver.events()), SE.SUSPEND_AFTER_ABANDONED * (len(SE.RETRY_DELAYS) + 1))
         refreshed = self.subscribe()["result"]
         self.assertFalse(refreshed["deliveryStatus"]["active"])
@@ -423,6 +427,97 @@ class Delivery(Fixture):
         self.daemon.tick()
         self.assertEqual(self.receiver.events()[-1][0]["data"]["text"], "deploy 3")
         self.assertTrue(self.server.store.state(identifier)["active"])
+        # abandoned events stay replayable, in sequence order
+        replay = self.rpc("tools/call", {"name": "replay_events", "arguments": {
+            "subscription_id": identifier, "limit": 50}})["result"]["structuredContent"]
+        self.assertEqual([(e["sequence"], e["outcome"]) for e in replay["events"]],
+                         [(1, "abandoned"), (2, "abandoned"), (3, "abandoned"), (4, "delivered")])
+        self.assertEqual(replay["events"][0]["event"]["data"]["text"], "deploy 0")
+
+    def test_outage_is_retried_until_the_receiver_returns(self):
+        identifier = self.subscribe()["result"]["id"]
+        self.append(self.codex_path, message("assistant", "deploy one") + message("assistant", "deploy two"))
+        self.receiver.statuses = [503] * 30  # 30 failures in a row, far beyond the 4xx budget
+        for _ in range(30):
+            wake = self.daemon.tick()
+            interval = wake - self.clock[0]
+            self.clock[0] = max(self.clock[0], wake)
+        self.assertEqual(interval, SE.RETRY_DELAYS[-1])
+        self.daemon.tick()
+        state = self.server.store.state(identifier)
+        self.assertEqual(state["abandoned"], 0)
+        self.assertEqual(state["delivered"], 2)
+        texts = [e["data"]["text"] for e, _ in self.receiver.events()]
+        self.assertEqual(texts, ["deploy one"] * 31 + ["deploy two"])
+        bodies = {b for _, b, _ in self.receiver.calls[1:32]}
+        self.assertEqual(len(bodies), 1)  # every retry sends the identical payload
+
+    def test_sequences_survive_a_lapsed_subscription_which_resumes(self):
+        identifier = self.subscribe(ttlMs=SE.MIN_TTL_MS)["result"]["id"]
+        self.append(self.codex_path, message("assistant", "deploy before"))
+        self.daemon.tick()
+        self.clock[0] += SE.MIN_TTL_MS / 1000 + 60  # the refresh was missed
+        self.append(self.codex_path, message("assistant", "deploy while lapsed"))
+        self.daemon.tick()
+        self.assertEqual(len(self.receiver.events()), 1)
+        renewed = self.subscribe(ttlMs=SE.MIN_TTL_MS)["result"]
+        self.assertEqual(renewed["id"], identifier)
+        self.assertFalse(renewed["truncated"])
+        self.daemon.tick()
+        texts = [e["data"]["text"] for e, _ in self.receiver.events()]
+        self.assertEqual(texts, ["deploy before", "deploy while lapsed"])
+        self.assertEqual(self.server.store.state(identifier)["sequence"], 2)
+        # after another lapse, an explicit cursor starts a fresh delivery epoch where the cursor says
+        self.clock[0] += SE.MIN_TTL_MS / 1000 + 60
+        self.subscribe(cursor=renewed["cursor"])  # points before "deploy while lapsed"
+        self.append(self.codex_path, message("assistant", "deploy after cursor"))
+        self.daemon.tick()
+        texts = [e["data"]["text"] for e, _ in self.receiver.events()]
+        self.assertEqual(texts[2:], ["deploy while lapsed", "deploy after cursor"])
+        self.assertEqual(self.server.store.state(identifier)["sequence"], 4)  # numbering continues
+
+    def test_delivery_status_and_replay_tool(self):
+        identifier = self.subscribe()["result"]["id"]
+        self.append(self.codex_path, message("assistant", "deploy one"))
+        self.receiver.statuses = [500]
+        self.daemon.tick()
+        status = self.rpc("tools/call", {"name": "delivery_status", "arguments": {}})["result"]["structuredContent"]
+        [row] = status["subscriptions"]
+        self.assertEqual((row["id"], row["sequence"], row["pending"]["sequence"], row["lastError"]),
+                         (identifier, 0, 1, "http_5xx"))
+        self.assertFalse(status["daemon"]["alive"])  # no heartbeat written in this test
+        self.assertNotIn("secrets", json.dumps(status))
+        replay = self.rpc("tools/call", {"name": "replay_events", "arguments": {"subscription_id": identifier}})
+        self.assertEqual(replay["result"]["structuredContent"]["pending"]["sequence"], 1)
+        refused = self.rpc("tools/call", {"name": "replay_events", "arguments": {"subscription_id": "sub_" + "0" * 32}})
+        self.assertTrue(refused["result"]["isError"])
+        other = SE.Server(self.homes, "someone-else", SE.CallbackPolicy(), self.receiver, lambda: self.clock[0])
+        self.assertEqual(SE.delivery_status(other.store, "someone-else", self.clock[0])["subscriptions"], [])
+
+    def test_heartbeat_records_monitoring_gaps(self):
+        boot = [self.clock[0] - 10_000]
+        daemon = SE.Daemon(self.homes, SE.CallbackPolicy(), self.receiver, lambda: self.clock[0],
+                           log=lambda row: None, boot_time=lambda: boot[0])
+        daemon.beat()
+        self.assertEqual(SE.read_lines(daemon.store.gaps), [])
+        self.clock[0] += 30
+        daemon.beat()  # too soon: not rewritten
+        self.assertEqual(SE.read_json(daemon.store.heartbeat)["beatAt"], SE.iso(self.clock[0] - 30))
+        self.clock[0] += 1000  # the process did not run for 1000 s: sleep
+        daemon.beat()
+        restarted = SE.Daemon(self.homes, SE.CallbackPolicy(), self.receiver, lambda: self.clock[0],
+                              log=lambda row: None, boot_time=lambda: boot[0])
+        self.clock[0] += 400
+        restarted.beat()  # same boot, old heartbeat: the daemon was stopped
+        boot[0] = self.clock[0] + 100
+        self.clock[0] += 200
+        SE.Daemon(self.homes, SE.CallbackPolicy(), self.receiver, lambda: self.clock[0],
+                  log=lambda row: None, boot_time=lambda: boot[0]).beat()
+        causes = [g["cause"] for g in SE.read_lines(daemon.store.gaps)]
+        self.assertEqual(causes, ["host_suspended_or_daemon_paused", "daemon_stopped", "host_restart"])
+        status = SE.delivery_status(daemon.store, "tester", self.clock[0])
+        self.assertTrue(status["daemon"]["alive"])
+        self.assertEqual(len(status["recentGaps"]), 3)
 
     def test_cursor_replay_on_new_subscription(self):
         first = self.subscribe()["result"]
@@ -666,6 +761,336 @@ class TurnEnded(Fixture):
                                               "arguments": {"session_ids": [CODEX_ID], "pattern": "x"},
                                               "delivery": {"mode": "webhook", "url": URL, "secret": whsec()}})
         self.assertEqual(reply["error"]["data"], {"reason": "unknown_arguments", "fields": ["pattern"]})
+
+
+WORKER_ID = "01a19000-0000-7000-8000-000000000001"
+SUCCESSOR_ID = "01a19000-0000-7000-8000-000000000002"
+BOUND_ID = "01a19000-0000-7000-8000-000000000003"
+
+
+def git(*args, cwd=None, data=None):
+    environment = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    return subprocess.run(["git", *args], cwd=cwd, input=data, stdout=subprocess.PIPE, check=True,
+                          env=environment).stdout
+
+
+class ContextFixture(Fixture):
+    """A board in a real git repository, a pinned fake ledger, budget records and Codex lineage."""
+
+    def setUp(self):
+        super().setUp()
+        self.clock[0] = float(int(time.time()))  # these sources compare real file mtimes with the clock
+        self.repository = self.directory / "repo"
+        self.repository.mkdir()
+        git("init", "-q", str(self.repository))
+        self.messages, self.claims = [], {}
+        self.budget_root = self.directory / "budget-root"
+        (self.budget_root / "grant").mkdir(parents=True)
+        started = SE.iso(self.clock[0] - 600)
+        self.record_path = self.budget_root / "grant" / "assignment.json"
+        self.write_record(started)
+        self.ledger_responses = self.directory / "ledger-responses.json"
+        self.ledger_responses.write_text(json.dumps({"control": {}, "tree": {"totals": {"codex": {
+            "quota_usd_high": 1.25}}, "status": "complete", "snapshot_at": "2026-10-30T10:00:00Z", "nodes": [1, 2]}}))
+        source = (f"import json, sys\nresponses = json.load(open({str(self.ledger_responses)!r}))\n"
+                  "command = sys.argv[1]\n"
+                  "cursor = sys.argv[sys.argv.index('--cursor') + 1] if '--cursor' in sys.argv else ''\n"
+                  "if command == 'tree':\n    print(json.dumps(responses['tree']))\n"
+                  "else:\n    doc = responses['control'].get(cursor) or {'events': [], 'next': cursor or 'c0'}\n"
+                  "    print(json.dumps({'schema': 'objective-budget-control-v1', 'events': doc['events'],\n"
+                  "                      'next_budget_cursor': doc['next'], 'snapshot': {'totals': {}}}))\n")
+        self.ledger_path = self.directory / "fake_ledger.py"
+        self.ledger_path.write_text(source)
+        self.ledger_sha = hashlib.sha256(source.encode()).hexdigest()
+        self.role_ledger = self.budget_root / "role-host" / "ledger.jsonl"
+        self.role_ledger.parent.mkdir()
+        self.role_ledger.write_text("")
+        self.boot = [self.clock[0] - 100_000]
+        self.rebuild()
+
+    def rebuild(self):
+        homes = SE.Homes(self.homes.codex, self.homes.claude, self.homes.state, self.repository)
+        self.homes = homes
+        self.context = SE.Context.build(homes, self.ledger_path, self.ledger_sha, self.role_ledger, self.budget_root)
+        self.daemon = SE.Daemon(homes, SE.CallbackPolicy(), self.receiver, lambda: self.clock[0],
+                                log=lambda row: None, boot_time=lambda: self.boot[0], context=self.context)
+        self.server = SE.Server(homes, "tester", SE.CallbackPolicy(), self.receiver, lambda: self.clock[0],
+                                context=self.context)
+
+    def write_record(self, started, closed=False, bindings=()):
+        self.record_path.write_text(json.dumps({
+            "grant": "dot-test-g001", "deadline": "2026-10-30T11:00:00Z", **({"closed_at": started} if closed else {}),
+            "scope_budget": {"schema": "manual-orchestration.scope-budget.v2", "objective_id": "obj-1",
+                             "objective": "test objective", "started_at": started,
+                             "sessions": [{"session_id": CODEX_ID, "provider": "codex", "from": started}],
+                             "bindings": [{"session_id": b, "provider": "codex", "parent_session_id": CODEX_ID}
+                                          for b in bindings],
+                             "limits": {"max_hours": 1.0}, "limits_set_by": "user",
+                             "cost_limits": [{"pool": "codex", "node": None, "max_usd": 4.5, "marks_usd": [],
+                                              "set_by": "user"}]}}))
+
+    def post(self, **row):
+        row = {"sequence": len(self.messages) + 1, "observed_at": SE.iso(self.clock[0] - 60), "author": "a",
+               "topic": "t", "body": "", "references": [], **row}
+        self.messages.append(row)
+        payload = json.dumps({"artifact_type": "work_engine_codex_chatboard_v1", "schema_version": 1,
+                              "next_sequence": len(self.messages) + 1, "messages": self.messages,
+                              "claims": self.claims}).encode()
+        envelope = json.dumps({"schema_version": 2, "key": SE.BOARD_KEY,
+                               "payload_base64": base64.b64encode(payload).decode(),
+                               "payload_sha256": hashlib.sha256(payload).hexdigest(),
+                               "predecessor_revision": None}).encode()
+        blob = git("hash-object", "-w", "--stdin", cwd=self.repository, data=envelope).decode().strip()
+        git("update-ref", SE.BOARD_REF, blob, cwd=self.repository)
+        return row
+
+    def subscribe_event(self, name, arguments):
+        self.secret = whsec()
+        return self.rpc("events/subscribe", {"name": name, "arguments": arguments,
+                                             "delivery": {"mode": "webhook", "url": URL, "secret": self.secret}})
+
+    def add_worker(self, state="task_complete"):
+        import sqlite3
+        database = self.homes.codex / "state_5.sqlite"
+        connection = sqlite3.connect(database)
+        connection.execute("CREATE TABLE IF NOT EXISTS thread_spawn_edges (parent_thread_id, child_thread_id, status)")
+        connection.execute("CREATE TABLE IF NOT EXISTS threads (id, rollout_path, agent_nickname, agent_path, archived)")
+        rollout = self.codex_path.parent / f"rollout-2026-10-30T10-05-00-{WORKER_ID}.jsonl"
+        rollout.write_text(codex_line("session_meta", id=WORKER_ID)
+                           + codex_line("event_msg", type="task_started", turn_id="w-turn")
+                           + (codex_line("event_msg", type="task_complete", turn_id="w-turn") if state else ""))
+        connection.execute("INSERT INTO thread_spawn_edges VALUES (?, ?, 'open')", (CODEX_ID, WORKER_ID))
+        connection.execute("INSERT INTO threads VALUES (?, ?, 'Plato', '/root/plato', 0)", (WORKER_ID, str(rollout)))
+        connection.commit()
+        connection.close()
+        return rollout
+
+
+class FullEnvelope(ContextFixture):
+    def test_full_turn_envelope_carries_board_budget_closure_and_successors(self):
+        handoff = self.directory / "handoff.md"
+        handoff.write_text("handoff text")
+        digest_hex = hashlib.sha256(b"handoff text").hexdigest()
+        self.post(session_id="0" * 8 + "-0000-7000-8000-000000000000", body="before the turn",
+                  observed_at=SE.iso(self.clock[0] - 5000))
+        self.post(session_id=CODEX_ID, topic="dot:S10:x", body="CLOSED ACCEPTED token sk-" + "a" * 40,
+                  references=["/tmp/result.json"])
+        self.post(session_id=WORKER_ID, topic="aspect:y", body="worker progress")
+        self.post(kind="request", session_id=CODEX_ID, to=[f"session:{SUCCESSOR_ID}"], data={"ask": "review?"})
+        self.post(kind="adoption", session_id=SUCCESSOR_ID, topic=f"session:{SUCCESSOR_ID}", role="s10-root",
+                  data={"predecessor_session": CODEX_ID, "handoff_sha256": digest_hex})
+        self.post(kind="availability", session_id=CODEX_ID, role="s10-root",
+                  data={"state": "ending", "handoff": {"path": str(handoff), "sha256": digest_hex}})
+        self.add_worker()
+        self.write_record(SE.iso(self.clock[0] - 600), bindings=[BOUND_ID])
+        self.context.budgets.refresh(self.clock[0], force=True)
+        identifier = self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID], "envelope": "full"})[
+            "result"]["id"]
+        started = self.clock[0] - 900
+        self.append(self.codex_path, codex_line("event_msg", SE.iso(self.clock[0]), type="task_complete",
+                                                turn_id="turn-9", last_agent_message="Done.", duration_ms=1000,
+                                                started_at=started))
+        self.daemon.tick()
+        [(body, _)] = self.receiver.events()
+        data = body["data"]
+        self.assertEqual((data["subscription_id"], data["sequence"]), (identifier, 1))
+        self.assertEqual(data["turn_started_at"], SE.iso(started))
+        board = data["board"]
+        self.assertEqual(board["cursor"], 6)
+        self.assertEqual([r["sequence"] for r in board["posted"]], [2, 3, 4, 6])  # the root's and its worker's
+        self.assertNotIn("sk-", board["posted"][0]["body"])
+        self.assertEqual([r["sequence"] for r in board["outstanding"]["requests_made"]], [4])
+        [successor] = data["successors"]
+        self.assertEqual(successor["successor_session_id"], SUCCESSOR_ID)
+        self.assertTrue(successor["verified"], successor["checks"])
+        self.assertEqual(data["budget"]["objective"]["grant"], "dot-test-g001")
+        self.assertEqual(data["budget"]["spend"], {"codex": {"quota_usd_high": 1.25}})
+        closure = data["closure"]
+        self.assertEqual(closure["workers_total"], 2)  # the spawned worker and the bound direct-native one
+        self.assertEqual(closure["states"], {"idle": 1, "never_started": 1})
+        self.assertTrue(closure["workers_settled"])
+        self.assertEqual(closure["costs"], "complete")
+        self.assertEqual(data["context_errors"], [])
+        schema = SE.TURN_EVENT_DESCRIPTOR["payloadSchema"]
+        self.assertTrue(set(data) <= set(schema["properties"]))
+        # a basic subscription to the same session still gets exactly the basic payload
+        self.subscribe_turns_basic()
+        self.append(self.codex_path, task_complete("Again."))
+        self.daemon.tick()
+        basic = [b["data"] for b, _ in self.receiver.events() if "sequence" not in b["data"]]
+        self.assertEqual(set(basic[0]), set(schema["required"]))
+
+    def subscribe_turns_basic(self):
+        self.rpc("events/subscribe", {"name": SE.TURN_EVENT_NAME, "arguments": {"session_ids": [CODEX_ID]},
+                                      "delivery": {"mode": "webhook", "url": URL + "/basic", "secret": whsec()}})
+
+    def test_running_worker_is_not_settled_and_errors_do_not_block(self):
+        self.add_worker(state=None)
+        self.ledger_path.write_text("tampered = True\n")  # the copy was not made yet: the digest now fails
+        self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID], "envelope": "full"})
+        self.append(self.codex_path, codex_line("event_msg", SE.iso(self.clock[0]), type="task_complete",
+                                                turn_id="t", last_agent_message="Root done, worker still going."))
+        self.daemon.tick()
+        data = self.receiver.events()[0][0]["data"]
+        self.assertFalse(data["closure"]["workers_settled"])
+        self.assertEqual([w["session_id"] for w in data["closure"]["running"]], [WORKER_ID])
+        self.assertIn("budget: budget_ledger_digest_mismatch", data["context_errors"])
+        self.assertEqual(data["final_message"], "Root done, worker still going.")
+
+    def test_codex_provider_error_is_a_failed_turn(self):
+        self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID]})
+        self.append(self.codex_path, codex_line("event_msg", type="task_complete", turn_id="t", last_agent_message="",
+                                                error={"message": "Selected model is at capacity.",
+                                                       "codex_error_info": "server_overloaded"}))
+        self.daemon.tick()
+        data = self.receiver.events()[0][0]["data"]
+        self.assertEqual((data["status"], data["reason"], data["final_message"]),
+                         ("failed", "server_overloaded", ""))
+
+
+class Alerts(ContextFixture):
+    def test_budget_and_deadline_alerts_after_the_baseline(self):
+        event = {"kind": "limit_fraction", "pool": "codex", "level": 2.25, "set_by": "user", "summary": "spend limit",
+                 "observed": {"quota_usd_high": 2.3}, "snapshot_at": "2026-10-30T10:00:00Z"}
+        hours = {"kind": "hours_fraction", "pool": None, "level": 0.8, "summary": "hours", "observed": 0.81}
+        self.ledger_responses.write_text(json.dumps({"tree": {}, "control": {
+            "c0": {"events": [event, hours], "next": "c1"}}}))
+        identifier = self.subscribe_event(SE.ALERT_EVENT_NAME, {"session_ids": [CODEX_ID]})["result"]["id"]
+        self.daemon.tick()  # baseline: the first control run records the cursor, raises nothing
+        self.assertEqual(self.receiver.events(), [])
+        self.clock[0] += SE.BUDGET_CHECK_SECONDS
+        self.daemon.tick()
+        kinds = [(b["data"]["kind"], b["data"]["sequence"]) for b, _ in self.receiver.events()]
+        self.assertEqual(kinds, [("budget", 1), ("deadline", 2)])
+        first = self.receiver.events()[0][0]["data"]
+        self.assertIn("$2.30", first["summary"])
+        self.assertEqual(first["detail"]["objective"]["grant"], "dot-test-g001")
+        self.assertEqual(set(first), set(SE.ALERT_EVENT_DESCRIPTOR["payloadSchema"]["required"]))
+        self.clock[0] += SE.BUDGET_CHECK_SECONDS
+        self.daemon.tick()  # cursor c1 has no new events
+        self.assertEqual(len(self.receiver.events()), 2)
+        self.assertEqual(self.server.store.state(identifier)["alerts"]["objectives"]["obj-1"]["cursor"], "c1")
+
+    def test_successor_alert_only_for_new_adoptions(self):
+        self.post(kind="adoption", session_id=WORKER_ID, topic=f"session:{WORKER_ID}", role="r",
+                  data={"predecessor_session": CODEX_ID, "handoff_sha256": "x"})
+        self.subscribe_event(SE.ALERT_EVENT_NAME, {"session_ids": [CODEX_ID], "kinds": ["successor"]})
+        self.daemon.tick()
+        self.assertEqual(self.receiver.events(), [])  # an adoption from before the subscription
+        self.post(kind="adoption", session_id=SUCCESSOR_ID, topic=f"session:{SUCCESSOR_ID}", role="r",
+                  data={"predecessor_session": CODEX_ID, "handoff_sha256": "y"})
+        self.clock[0] += SE.ALERT_CHECK_SECONDS
+        self.daemon.tick()
+        [(body, _)] = self.receiver.events()
+        detail = body["data"]["detail"]
+        self.assertEqual(detail["successor_session_id"], SUCCESSOR_ID)
+        self.assertFalse(detail["verified"])
+        self.assertTrue(detail["conflict"])  # two adoptions of one predecessor
+
+    def test_stalled_alert_once_per_turn(self):
+        self.append(self.codex_path, codex_line("event_msg", type="task_started", turn_id="open-turn"))
+        rollout = self.add_worker()
+        self.subscribe_event(SE.ALERT_EVENT_NAME, {"session_ids": [CODEX_ID], "kinds": ["stalled"],
+                                                   "stall_minutes": 5})
+        old = self.clock[0] - 400
+        for path in (self.codex_path, rollout):
+            os.utime(path, (old, old))
+        self.daemon.tick()
+        [(body, _)] = self.receiver.events()
+        self.assertEqual(body["data"]["kind"], "stalled")
+        self.assertEqual(body["data"]["detail"]["turn_id"], "open-turn")
+        self.assertEqual(body["data"]["detail"]["workers_total"], 1)
+        self.clock[0] += SE.ALERT_CHECK_SECONDS
+        self.daemon.tick()
+        self.assertEqual(len(self.receiver.events()), 1)
+        self.assertEqual(self.rpc("events/subscribe", {"name": SE.ALERT_EVENT_NAME, "arguments": {
+            "session_ids": [CODEX_ID], "kinds": ["nope"]}, "delivery": {"mode": "webhook", "url": URL,
+                                                                        "secret": whsec()}})["error"]["data"]["reason"],
+                         "kinds")
+
+    def test_recent_worker_activity_is_not_a_stall(self):
+        self.append(self.codex_path, codex_line("event_msg", type="task_started", turn_id="open-turn"))
+        self.add_worker(state=None)
+        self.subscribe_event(SE.ALERT_EVENT_NAME, {"session_ids": [CODEX_ID], "kinds": ["stalled"],
+                                                   "stall_minutes": 5})
+        old = self.clock[0] - 400
+        os.utime(self.codex_path, (old, old))
+        self.daemon.tick()
+        self.assertEqual(self.receiver.events(), [])
+
+
+class LostTurns(ContextFixture):
+    def test_open_turn_before_a_restart_is_reported_lost_once(self):
+        self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID, CLAUDE_ID], "envelope": "full"})
+        self.daemon.tick()  # first look at this boot: the subscription began after it, nothing is lost
+        self.append(self.codex_path, codex_line("event_msg", type="task_started", turn_id="open-turn"))
+        old = self.clock[0] - 50
+        os.utime(self.codex_path, (old, old))
+        self.boot[0] = self.clock[0] - 10  # the host restarted after the last write
+        self.daemon.tick()
+        [(body, _)] = self.receiver.events()
+        data = body["data"]
+        self.assertEqual((data["status"], data["turn_id"], data["session_id"]), ("lost", "open-turn", CODEX_ID))
+        self.assertTrue(data["reason"].startswith("host_restart"))
+        self.assertEqual(data["sequence"], 1)
+        self.daemon.tick()
+        self.assertEqual(len(self.receiver.events()), 1)
+
+
+class TurnStates(Fixture):
+    def test_claude_turn_states(self):
+        session = SE.resolve_session(self.homes, CLAUDE_ID)
+        self.assertEqual(SE.turn_state(session)["state"], "running")  # its last record is a user prompt
+        self.append(self.claude_path, json.dumps({"type": "user", "message": {"role": "user", "content": [
+            {"type": "text", "text": "[Request interrupted by user for tool use]"}]}}) + "\n")
+        self.assertEqual(SE.turn_state(session)["state"], "idle")
+        self.append(self.claude_path, json.dumps({"type": "assistant", "message": {
+            "stop_reason": "tool_use", "content": []}}) + "\n")
+        self.assertEqual(SE.turn_state(session)["state"], "running")
+        self.append(self.claude_path, json.dumps({"type": "assistant", "message": {"stop_reason": "end_turn"}}) + "\n"
+                    + json.dumps({"type": "system", "subtype": "turn_duration"}) + "\n"
+                    + json.dumps({"type": "custom-title", "customTitle": "x"}) + "\n")
+        self.assertEqual(SE.turn_state(session)["state"], "idle")
+
+    def test_codex_turn_state_reads_back_past_other_records(self):
+        session = SE.resolve_session(self.homes, CODEX_ID)
+        self.append(self.codex_path, codex_line("event_msg", type="task_started", turn_id="t1")
+                    + "".join(message("assistant", "x" * 1000) for _ in range(400)))
+        state = SE.turn_state(session)
+        self.assertEqual((state["state"], state["turn_id"]), ("running", "t1"))
+        self.append(self.codex_path, task_complete("done", turn_id="t1") + codex_line("event_msg", type="token_count"))
+        self.assertEqual(SE.turn_state(session)["state"], "idle")
+
+
+class BudgetSources(ContextFixture):
+    def test_index_skips_fifos_and_backups_and_follows_the_latest_open_objective(self):
+        os.mkfifo(self.budget_root / "grant" / "plan.json")  # opening this for reading would block
+        (self.budget_root / "grant" / "assignment.json.pre-lineage-correction.json").write_text(
+            self.record_path.read_text())
+        index = SE.BudgetIndex(self.budget_root, self.directory / "index.json")
+        index.refresh(self.clock[0], force=True)
+        self.assertEqual(list(index.records), [str(self.record_path)])
+        self.assertEqual(index.current(CODEX_ID, self.clock[0])["grant"], "dot-test-g001")
+        self.write_record(SE.iso(self.clock[0] - 600), closed=True)
+        os.utime(self.record_path, (self.clock[0] + 5, self.clock[0] + 5))
+        self.assertIsNone(index.current(CODEX_ID, self.clock[0]))  # re-read on change: closed
+        self.assertEqual(index.latest(CODEX_ID, self.clock[0])["grant"], "dot-test-g001")
+
+    def test_budget_status_tool(self):
+        reply = self.rpc("tools/call", {"name": "budget_status", "arguments": {"session_id": CODEX_ID}})
+        result = reply["result"]["structuredContent"]
+        self.assertTrue(result["available"])
+        self.assertEqual(result["objective"]["limits"], {"max_hours": 1.0})
+        self.assertEqual(result["ledger"], "ok")
+        self.assertEqual(result["crossed_now"], [])
+
+    def test_ledger_runs_only_the_pinned_bytes(self):
+        ledger = SE.Ledger(self.ledger_path, self.ledger_sha, self.homes.state)
+        self.assertIsNone(ledger.problem())
+        self.ledger_path.write_text("print('changed')\n")
+        self.assertEqual(ledger.control(str(self.record_path), None)["schema"], "objective-budget-control-v1")
+        fresh = SE.Ledger(self.ledger_path, "0" * 64, self.homes.state)
+        self.assertEqual(fresh.problem(), "budget_ledger_digest_mismatch")
 
 
 class LocalPull(Fixture):
