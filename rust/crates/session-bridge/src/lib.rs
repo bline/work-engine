@@ -1,5 +1,6 @@
 //! Local-only admission and receipt owner for the session-events bridge.
 mod native;
+mod provision;
 mod store;
 mod wire;
 
@@ -52,13 +53,63 @@ fn cli(args: Vec<String>) -> Result<Value> {
     }
     let c = store::config(path)?;
     let mut conn = store::open(&c)?;
+    if command == ["provisioning", "owner", "serve"] {
+        return provision::serve(&c, &mut conn);
+    }
+    if command == ["provisioning", "init"] {
+        return provision::initialize(&mut conn);
+    }
+    if command.len() == 6
+        && command[0] == "provisioning"
+        && command[1] == "issue"
+        && command[2] == "--policy-file"
+        && command[4] == "--credential-out"
+    {
+        return provision::issue(&mut conn, &command[3], &command[5]);
+    }
+    if command.len() == 4
+        && command[0] == "provisioning"
+        && command[1] == "revoke"
+        && command[2] == "--permission-id"
+    {
+        let _lock = store::permission_lock(&c, &command[3])?;
+        return provision::revoke(&mut conn, &command[3]);
+    }
     if command == ["rpc"] {
         let mut bytes = Vec::new();
         fail(io::stdin().take(256 * 1024 + 1).read_to_end(&mut bytes))?;
         if bytes.len() > 256 * 1024 {
             return Err("bridge_unavailable");
         }
-        let req: Rpc = serde_json::from_slice(&bytes).map_err(|_| "bridge_unavailable")?;
+        let mut value: Value = serde_json::from_slice(&bytes).map_err(|_| "bridge_unavailable")?;
+        if value.get("provisioning_credential").is_some() {
+            let object = value.as_object_mut().ok_or("unauthorized")?;
+            if object.remove("schema_version").and_then(|v| v.as_u64()) != Some(1)
+                || object.contains_key("grant_credential")
+            {
+                return Err("unauthorized");
+            }
+            let request: provision::OwnerRpc =
+                serde_json::from_value(value).map_err(|_| "unauthorized")?;
+            let result = provision::send(&c, &request);
+            if result.as_ref().is_err_and(|e| *e == "bridge_unavailable")
+                && request.method == "read_session_target"
+                && request.idempotency_key.is_none()
+                && request.grant_handle.is_none()
+                && request.request_id.is_none()
+                && request.session_id.is_none()
+                && request.workspace.is_none()
+                && request.input_text.is_none()
+            {
+                let permission =
+                    provision::authenticate(&conn, &request.provisioning_credential, false)?;
+                let mut value = provision::projection(&conn, &permission.id)?;
+                value["owner_health"] = json!("unavailable");
+                return Ok(value);
+            }
+            return result;
+        }
+        let req: Rpc = serde_json::from_value(value).map_err(|_| "bridge_unavailable")?;
         return rpc(&c, &mut conn, req);
     }
     if command.len() == 4
@@ -232,7 +283,22 @@ fn checked_projection(conn: &Connection, g: &Grant) -> Result<Option<Value>> {
     Ok(Some(value))
 }
 fn submit(c: &Config, conn: &mut Connection, g: &Grant, text: &str) -> Result<Value> {
-    let _lock = store::lock(c, &g.session)?;
+    submit_with_native(c, conn, g, text, None, None, None)
+}
+fn submit_with_native(
+    c: &Config,
+    conn: &mut Connection,
+    g: &Grant,
+    text: &str,
+    held: Option<&mut native::Native>,
+    admission_deadline: Option<std::time::Instant>,
+    profile: Option<&provision::Policy>,
+) -> Result<Value> {
+    let _lock = if admission_deadline.is_some() {
+        store::try_session_lock(c, &g.session)?
+    } else {
+        store::lock(c, &g.session)?
+    };
     // Authorization is rechecked in the same write transaction as admission below.
     let revoked: i64 = fail(conn.query_row(
         "SELECT revoked FROM grants WHERE grant_id=?1",
@@ -258,8 +324,12 @@ fn submit(c: &Config, conn: &mut Connection, g: &Grant, text: &str) -> Result<Va
     if canonical(&g.workspace)? != g.workspace {
         return Err("target_mismatch");
     }
-    let mut native =
-        native::Native::connect(&c.native_socket).map_err(|_| "history_unavailable")?;
+    let mut temporary = None;
+    if held.is_none() {
+        temporary =
+            Some(native::Native::connect(&c.native_socket).map_err(|_| "history_unavailable")?);
+    }
+    let native = held.or(temporary.as_mut()).ok_or("history_unavailable")?;
     let baseline = native.preflight(&g.session, &g.workspace)?;
     let baseline_ids: Vec<Value> = baseline.iter().map(|turn| json!({"id":turn["id"],"sha256":wire::digest(serde_json::to_string(turn).unwrap_or_default().as_bytes())})).collect();
     let baseline_json = fail(serde_json::to_string(&baseline_ids))?;
@@ -291,10 +361,20 @@ fn submit(c: &Config, conn: &mut Connection, g: &Grant, text: &str) -> Result<Va
     tx.execute("INSERT INTO operations(request_id,operation_id,grant_id,session_id,workspace,payload_hash,wire_hash,operation_hash,wire,admitted,state,baseline) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,'admitted',?11)",params![g.request,operation,g.id,g.session,g.workspace,g.payload_hash,g.wire_hash,g.operation_hash,operation,store::now(),baseline_json]).map_err(|_| "payload_conflict")?;
     store::transition(&tx, &g.request, "admitted")?;
     fail(tx.commit())?;
-    let ready = native.resume(&g.session, &g.workspace).is_ok()
+    let resumed = if let Some(profile) = profile {
+        admission_deadline.is_some_and(|deadline| {
+            native
+                .call_until("thread/resume", json!({"threadId":g.session}), deadline)
+                .is_ok_and(|v| provision::target_ack(&v, profile, Some(&g.session)).is_ok())
+        })
+    } else {
+        native.resume(&g.session, &g.workspace).is_ok()
+    };
+    let ready = resumed
         && native
             .preflight(&g.session, &g.workspace)
-            .is_ok_and(|history| history == baseline);
+            .is_ok_and(|history| history == baseline)
+        && profile.is_none_or(|p| provision::recheck_at_entry(native, p, &g.session).is_ok());
     if !ready || canonical(&g.workspace).ok().as_deref() != Some(&g.workspace) {
         let tx = fail(conn.transaction_with_behavior(TransactionBehavior::Immediate))?;
         fail(tx.execute(
@@ -307,6 +387,26 @@ fn submit(c: &Config, conn: &mut Connection, g: &Grant, text: &str) -> Result<Va
         return checked_projection(conn, g)?.ok_or("bridge_unavailable");
     }
     let tx = fail(conn.transaction_with_behavior(TransactionBehavior::Immediate))?;
+    if admission_deadline.is_some() {
+        let (expires, revoked): (i64, i64) = fail(tx.query_row(
+            "SELECT expires,revoked FROM grants WHERE grant_id=?1",
+            [&g.id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        ))?;
+        if revoked != 0
+            || expires <= store::now()
+            || admission_deadline.is_some_and(|d| std::time::Instant::now() >= d)
+        {
+            fail(tx.execute(
+                "UPDATE operations SET state='refused_before_send' WHERE request_id=?1",
+                [&g.request],
+            ))?;
+            fail(tx.execute("DELETE FROM occupancy WHERE request_id=?1", [&g.request]))?;
+            store::transition(&tx, &g.request, "refused_before_send")?;
+            fail(tx.commit())?;
+            return checked_projection(conn, g)?.ok_or("bridge_unavailable");
+        }
+    }
     fail(tx.execute(
         "UPDATE operations SET state='entry_uncertain' WHERE request_id=?1",
         [&g.request],
@@ -319,7 +419,11 @@ fn submit(c: &Config, conn: &mut Connection, g: &Grant, text: &str) -> Result<Va
         // normal binary contains no test stop or externally controlled hook.
         unsafe { libc::raise(libc::SIGSTOP) };
     }
-    if let Ok(ack) = native.start(&g.session, &operation, text) {
+    let started = match admission_deadline {
+        Some(deadline) => native.start_until(&g.session, &operation, text, deadline),
+        None => native.start(&g.session, &operation, text),
+    };
+    if let Ok(ack) = started {
         #[cfg(all(feature = "test-hooks", debug_assertions))]
         if env::var_os("SESSION_BRIDGE_TEST_STOP_BEFORE_ACK_PERSIST").is_some() {
             unsafe { libc::raise(libc::SIGSTOP) };
@@ -335,7 +439,20 @@ fn submit(c: &Config, conn: &mut Connection, g: &Grant, text: &str) -> Result<Va
     checked_projection(conn, g)?.ok_or("bridge_unavailable")
 }
 fn reconcile(c: &Config, conn: &mut Connection, g: &Grant) -> Result<Value> {
-    let _lock = store::lock(c, &g.session)?;
+    reconcile_with_native(c, conn, g, None, false)
+}
+fn reconcile_with_native(
+    c: &Config,
+    conn: &mut Connection,
+    g: &Grant,
+    held: Option<&mut native::Native>,
+    bounded_lock: bool,
+) -> Result<Value> {
+    let _lock = if bounded_lock {
+        store::try_session_lock(c, &g.session)?
+    } else {
+        store::lock(c, &g.session)?
+    };
     // Recheck revocation after waiting on the lock.
     let revoked: i64 = fail(conn.query_row(
         "SELECT revoked FROM grants WHERE grant_id=?1",
@@ -367,7 +484,12 @@ fn reconcile(c: &Config, conn: &mut Connection, g: &Grant) -> Result<Value> {
         store::transition(&tx, &g.request, "admitted_no_attempt")?;
         fail(tx.commit())?;
     } else if state == "entry_uncertain" || state == "entered" {
-        let mut n = native::Native::connect(&c.native_socket).map_err(|_| "history_unavailable")?;
+        let mut temporary = None;
+        if held.is_none() {
+            temporary =
+                Some(native::Native::connect(&c.native_socket).map_err(|_| "history_unavailable")?);
+        }
+        let n = held.or(temporary.as_mut()).ok_or("history_unavailable")?;
         n.verify_target(&g.session, &g.workspace)
             .map_err(|_| "history_unavailable")?;
         let history = n.history(&g.session).map_err(|_| "history_unavailable")?;

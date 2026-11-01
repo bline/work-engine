@@ -469,3 +469,50 @@ unknown even when no running worker is observed. Existing
 completion delivery and replay retain their own event IDs, and operation reads
 do not invent one. Existing session readers and upstream chat or tunnel logs
 may retain text independently of bridge revocation.
+
+### Optional target provisioning
+
+Provisioning is a separate operator-issued capability. It is disabled unless
+trusted startup sets `SESSION_BRIDGE_PROVISIONING_ENABLED=1` alongside the four
+bridge pins. It advertises `create_session_target`, `read_session_target`,
+`issue_session_request_grant`, and `close_session_target`; all action-bearing
+tools are writes. An operator must separately start the deterministic Rust
+owner; an MCP request never starts it. A provisioning credential is a scoped
+bearer capability, not proof of human identity or approval.
+
+The permission fixes one task revision, diagnostic profile, workspace and Git
+checkpoint, configuration hashes, one target slot, one request ID and initial
+payload digest, admission expiry, close-by deadline, and operator-supplied
+budget/clock references. The caller supplies no profile, workspace, model,
+configuration, native RPC, or shell command to create a target. Grant issuance
+accepts the exact initial text and returns a nonsecret handle; the child bearer
+remains in the private bridge store. Submit and operation/result reads accept
+exactly one authorization form: the original `grant_credential`, or both the
+parent `provisioning_credential` and its `grant_handle`. Mixed forms fail.
+
+The owner holds the native connection and services idle notifications and
+WebSocket control frames without a concurrent RPC reader. It records allocation
+intent before entry,
+and never repeats an allocation whose acknowledgement is unknown. A duplicate
+create key observes the same slot; a different key conflicts. A restart marks
+lost custody rather than silently reacquiring or recreating a target. Reads
+remain available after admission expires, while issuance and submission stop;
+revocation blocks reads and admission, but the same capability can request
+cleanup. Closure revokes the child and archives only the known owned target;
+unknown allocation or closure remains uncertain. The owner does not fence
+other native clients. A profile verification timestamp is an observation, not
+a guarantee that an external actor cannot later change files or connect.
+
+The policy's budget and first-funded-clock references are operator data. They
+are not a spend meter or reserve release mechanism; the supervising owner must
+monitor spending and report unavailable settlement as unknown. Synthetic
+initialization, when needed for initially unreadable history, is one recorded
+empty assistant `output_text`, followed by complete stable native TURN reads;
+it is not a model response or authority. Known provisioning and child token
+formats are redacted from projected text. Never place either bearer in a
+request payload, log, or public artifact.
+
+The operator-facing policy schema, explicit owner startup, recovery limits, and
+qualification proposal are documented in the session-bridge component README.
+Offline fake-native tests do not qualify a profile, native service, Dot, or a
+rendered UI. No production activation follows from enabling this source.

@@ -580,6 +580,7 @@ def find_match(regex: re.Pattern, roles: tuple[str, ...], entry: Entry) -> re.Ma
 # commit hashes and digests, which subscribers need intact.
 SECRET_RULES = [
     ("bridge_credential", re.compile(r"webridge_[A-Za-z0-9_-]{43}")),
+    ("provisioning_credential", re.compile(r"weprovision_[A-Za-z0-9_-]{43}")),
     ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----")),
     ("anthropic_key", re.compile(r"\bsk-ant-[A-Za-z0-9_\-]{20,}")),
     ("openai_key", re.compile(r"\bsk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
@@ -2265,10 +2266,45 @@ BRIDGE_TOOLS = [
 ]
 
 
+# Provisioning is separately enabled; the existing nine-tool deployment remains
+# unchanged unless the operator selects it and starts the private Rust owner.
+import copy
+PROVISIONED_BRIDGE_TOOLS = copy.deepcopy(BRIDGE_TOOLS)
+for tool in PROVISIONED_BRIDGE_TOOLS:
+    schema = tool["inputSchema"]
+    schema["required"].remove("grant_credential")
+    schema["properties"].update({"provisioning_credential": {"type": "string"},
+                                  "grant_handle": {"type": "string"}})
+    schema["oneOf"] = [
+        {"required": ["grant_credential"], "not": {"anyOf": [
+            {"required": ["provisioning_credential"]}, {"required": ["grant_handle"]}]}},
+        {"required": ["provisioning_credential", "grant_handle"],
+         "not": {"required": ["grant_credential"]}},
+    ]
+PROVISION_TOOLS = [
+    {"name": name, "description": description, "annotations": annotations,
+     "inputSchema": {"type": "object", "additionalProperties": False,
+                     "required": required, "properties": {k: {"type": "string"} for k in required}}}
+    for name, description, annotations, required in [
+        ("create_session_target", "Create the one target permitted by an operator-issued capability.",
+         {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+         ["provisioning_credential", "idempotency_key"]),
+        ("read_session_target", "Read the scoped target and owner health.", READ_ONLY, ["provisioning_credential"]),
+        ("issue_session_request_grant", "Issue a handle for the exact permitted initial request.",
+         {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+         ["provisioning_credential", "input_text"]),
+        ("close_session_target", "Revoke child admission and close the owned target.",
+         {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False},
+         ["provisioning_credential"]),
+    ]
+]
+
+
 class Bridge:
     """Pinned local helper; the helper owns authorization and durable state."""
-    def __init__(self, binary: str, binary_sha: str, config: str, config_sha: str):
+    def __init__(self, binary: str, binary_sha: str, config: str, config_sha: str, provisioning: bool = False):
         self.binary, self.binary_sha, self.config, self.config_sha = binary, binary_sha, config, config_sha
+        self.provisioning = provisioning
         self.check()
         try:
             self.invoke({"schema_version": 1, "method": "read_session_operation",
@@ -2283,11 +2319,16 @@ class Bridge:
     def from_environment(cls):
         values = [os.environ.get(k) for k in ("SESSION_BRIDGE_BINARY", "SESSION_BRIDGE_BINARY_SHA256",
                   "SESSION_BRIDGE_CONFIG", "SESSION_BRIDGE_CONFIG_SHA256")]
+        provisioning = os.environ.get("SESSION_BRIDGE_PROVISIONING_ENABLED")
+        if provisioning not in (None, "1"):
+            raise ValueError("invalid provisioning switch")
         if not any(values):
+            if provisioning:
+                raise ValueError("provisioning requires bridge pins")
             return None
         if not all(values):
             raise ValueError("incomplete bridge pins")
-        return cls(*values)
+        return cls(*values, provisioning=provisioning == "1")
 
     def check(self):
         for path, expected, private in ((self.binary, self.binary_sha, False), (self.config, self.config_sha, True)):
@@ -2365,7 +2406,7 @@ class Bridge:
             if not response["ok"]:
                 reason = response.get("error")
                 if reason not in {"unauthorized", "payload_conflict", "target_mismatch", "expired", "session_busy",
-                                  "history_unavailable", "entry_uncertain", "identity_conflict", "bridge_unavailable"}:
+                                  "history_unavailable", "entry_uncertain", "identity_conflict", "custody_lost", "bridge_unavailable"}:
                     reason = "bridge_unavailable"
                 raise invalid(reason)
             result = response.get("result")
@@ -2476,7 +2517,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS + (BRIDGE_TOOLS if self.bridge else [])}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)
@@ -2507,6 +2548,8 @@ class Server:
                  "replay_events": self.tool_replay_events, "budget_status": self.tool_budget_status}
         if self.bridge and name in {"submit_session_request", "read_session_operation", "read_session_result"}:
             tools[name] = lambda a: self.bridge_call(name, a)
+        if self.bridge and self.bridge.provisioning and name in {"create_session_target", "read_session_target", "issue_session_request_grant", "close_session_target"}:
+            tools[name] = lambda a: self.bridge_call(name, a)
         if name not in tools:
             raise invalid("unknown_tool", name=str(name)[:80])
         try:
@@ -2520,13 +2563,27 @@ class Server:
         return {"content": [{"type": "text", "text": canonical(result)}], "structuredContent": result}
 
     def bridge_call(self, name: str, arguments: dict) -> dict:
-        required = {"request_id", "grant_credential"}
-        allowed = set(required)
-        if name == "submit_session_request":
-            required |= {"session_id", "workspace", "input_text"}
-            allowed |= {"session_id", "workspace", "input_text"}
-        elif name == "read_session_result":
-            allowed |= {"text_offset", "max_chars"}
+        provisioning_tools = {"create_session_target", "read_session_target", "issue_session_request_grant", "close_session_target"}
+        if name in provisioning_tools:
+            required = {"provisioning_credential"}
+            if name == "create_session_target":
+                required.add("idempotency_key")
+            if name == "issue_session_request_grant":
+                required.add("input_text")
+            allowed = set(required)
+        else:
+            required = {"request_id"}
+            old = "grant_credential" in arguments
+            new = "provisioning_credential" in arguments or "grant_handle" in arguments
+            if old == new or (new and not self.bridge.provisioning):
+                raise invalid("invalid_arguments")
+            required |= {"grant_credential"} if old else {"provisioning_credential", "grant_handle"}
+            allowed = set(required)
+            if name == "submit_session_request":
+                required |= {"session_id", "workspace", "input_text"}
+                allowed |= {"session_id", "workspace", "input_text"}
+            elif name == "read_session_result":
+                allowed |= {"text_offset", "max_chars"}
         if set(arguments) - allowed or not required <= set(arguments):
             raise invalid("invalid_arguments")
         for key in required:

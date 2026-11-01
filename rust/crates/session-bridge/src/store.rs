@@ -30,7 +30,7 @@ fn absolute(p: &str) -> Result<()> {
         Err("bridge_unavailable")
     }
 }
-fn secure(p: &Path, directory: bool) -> Result<()> {
+pub(crate) fn secure(p: &Path, directory: bool) -> Result<()> {
     let meta = fail(fs::symlink_metadata(p))?;
     if meta.file_type().is_symlink()
         || (directory && !meta.is_dir())
@@ -183,10 +183,19 @@ pub fn token_hash(token: &str) -> String {
     digest(format!("work-engine/session-bridge/token/v1\0{token}").as_bytes())
 }
 pub fn lock(c: &Config, session: &str) -> Result<File> {
+    scoped_lock(c, session, "", true)
+}
+pub fn permission_lock(c: &Config, permission: &str) -> Result<File> {
+    scoped_lock(c, permission, "permission-", false)
+}
+pub fn try_session_lock(c: &Config, session: &str) -> Result<File> {
+    scoped_lock(c, session, "", false)
+}
+fn scoped_lock(c: &Config, session: &str, prefix: &str, wait: bool) -> Result<File> {
     if !crate::wire::valid_uuid(session) {
         return Err("bridge_unavailable");
     }
-    let p = Path::new(&c.lock_dir).join(format!("{session}.lock"));
+    let p = Path::new(&c.lock_dir).join(format!("{prefix}{session}.lock"));
     let f = fail(
         OpenOptions::new()
             .read(true)
@@ -197,7 +206,11 @@ pub fn lock(c: &Config, session: &str) -> Result<File> {
             .open(&p),
     )?;
     secure(&p, false)?;
-    fail(f.lock())?;
+    if wait {
+        fail(f.lock())?;
+    } else {
+        f.try_lock().map_err(|_| "session_busy")?;
+    }
     Ok(f)
 }
 #[allow(clippy::too_many_arguments)]
