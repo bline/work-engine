@@ -1,0 +1,22 @@
+[package]
+name = "session-bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+base64.workspace = true
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
+getrandom = "=0.3.4"
+uuid = { version = "=1.22.0", features = ["v4", "serde"] }
+tungstenite = { version = "=0.28.0", default-features = false, features = ["handshake"] }
+libc = "=0.2.190"
+time = { version = "=0.3.55", features = ["parsing", "formatting"] }
+
+[features]
+# Only the isolated crash-test build enables this; production builds use defaults.
+test-hooks = []

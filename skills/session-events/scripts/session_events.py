@@ -513,7 +513,7 @@ def list_sessions(homes: Homes, query: str | None = None, host: str | None = Non
         else:
             info = titles.claude_info(session.path)
             cwd, started = info.get("cwd"), info.get("started")
-        sessions.append({"sessionId": session.session_id, "host": session.host, "title": title,
+        sessions.append({"sessionId": session.session_id, "host": session.host, "title": None if title is None else redact(title)[0],
                          "cwd": cwd, "startedAt": started, "updatedAt": iso(mtime), "bytes": size})
     titles.save()
     return {"sessions": sessions, "matched": len(found), "searched": len(rows)}
@@ -579,6 +579,7 @@ def find_match(regex: re.Pattern, roles: tuple[str, ...], entry: Entry) -> re.Ma
 # Known credential formats only. A generic high-entropy rule would also hit session ids,
 # commit hashes and digests, which subscribers need intact.
 SECRET_RULES = [
+    ("bridge_credential", re.compile(r"webridge_[A-Za-z0-9_-]{43}")),
     ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----")),
     ("anthropic_key", re.compile(r"\bsk-ant-[A-Za-z0-9_\-]{20,}")),
     ("openai_key", re.compile(r"\bsk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}")),
@@ -664,6 +665,17 @@ def redact(text: str) -> tuple[str, int]:
     return rendered.text, rendered.redactions
 
 
+def safe_text_prefix(text: str, limit: int) -> str:
+    """Recognize secrets over the full value before applying a display limit."""
+    return render(text, 0, min(len(text), limit), (0, 0), secret_spans(text)).text
+
+
+def safe_title(title: str | None, limit: int | None = 300) -> str | None:
+    if title is None:
+        return None
+    return redact(title)[0] if limit is None else safe_text_prefix(title, limit)
+
+
 def event_data(session: Session, title: str | None, entry: Entry, match: re.Match,
                content: str, radius: int | None = None) -> dict:
     text = entry.text
@@ -677,7 +689,7 @@ def event_data(session: Session, title: str | None, entry: Entry, match: re.Matc
     return {
         "host": session.host,
         "sessionId": session.session_id,
-        "sessionTitle": title,
+        "sessionTitle": safe_title(title),
         "entryId": entry.entry_id,
         "role": entry.role,
         "tool": entry.tool,
@@ -714,9 +726,9 @@ def turn_data(session: Session, title: str | None, entry: Entry, identifier: str
         duration = int(meta.get("duration_ms"))
     except (TypeError, ValueError):
         duration = -1
-    return {"event_id": identifier, "session_id": session.session_id, "session_title": title or "",
+    return {"event_id": identifier, "session_id": session.session_id, "session_title": safe_title(title) or "",
             "host": session.host, "entry_id": entry.entry_id, "turn_id": str(meta.get("turn_id") or ""),
-            "status": str(meta.get("status") or "completed"), "reason": str(meta.get("reason") or ""),
+            "status": str(meta.get("status") or "completed"), "reason": redact(str(meta.get("reason") or ""))[0],
             "ended_at": iso(parse_time(entry.timestamp) or time.time()), "duration_ms": duration,
             "final_message": final.text, "final_message_truncated": final.end < len(text)}
 
@@ -730,11 +742,11 @@ def event_body(subscription_id: str, session: Session, title: str | None, entry:
     timestamp = iso(parse_time(entry.timestamp) or time.time())
     radius = None
     while True:
-        data = event_data(session, None if title is None else title[:300], entry, match, content, radius)
+        data = event_data(session, title, entry, match, content, radius)
         if event_name == SIMPLE_EVENT_NAME:
             payload = simple_data(data)
         elif event_name == TURN_EVENT_NAME:
-            payload = turn_data(session, None if title is None else title[:300], entry, identifier)
+            payload = turn_data(session, title, entry, identifier)
         else:
             payload = data
         if envelope:
@@ -1111,22 +1123,30 @@ class BudgetIndex:
         self.scanned_at: float | None = saved.get("scannedAt") if isinstance(saved.get("scannedAt"), (int, float)) else None
         self.records: dict[str, dict] = saved.get("records") if isinstance(saved.get("records"), dict) else {}
         self.checked_at: float | None = None
+        # Cached records alone do not prove that this process observed their source.
+        self.lineage_scan_status = "unavailable"
+        self.lineage_scan_floor: float | None = None
         self._lock = threading.Lock()  # a rescan runs in a thread; it builds a new map and swaps it in
 
     def refresh(self, now: float, force: bool = False) -> None:
         if not force and self.checked_at is not None and now - self.checked_at < BUDGET_SCAN_SECONDS:
             return
         self.checked_at = now
-        since = (self.scanned_at - 60) if self.scanned_at else now - BUDGET_FIRST_SCAN_SECONDS
         started = time.time()
         with self._lock:
+            prior_coverage_known = self.lineage_scan_status == "available"
+            floor = self.lineage_scan_floor if prior_coverage_known else now - BUDGET_FIRST_SCAN_SECONDS
+            self.lineage_scan_status = "partial"  # in-flight or interrupted scan is not established
+            since = ((self.scanned_at - 60) if self.scanned_at and prior_coverage_known else floor)
             records = dict(self.records)
         stack = [self.root]
+        scan_complete = True
         while stack:
             directory = stack.pop()
             try:
                 entries = list(os.scandir(directory))
             except OSError:
+                scan_complete = False
                 continue
             for entry in entries:
                 try:
@@ -1138,40 +1158,62 @@ class BudgetIndex:
                         continue
                     info = entry.stat(follow_symlinks=False)
                 except OSError:
+                    scan_complete = False
                     continue
-                if not stat.S_ISREG(info.st_mode) or info.st_mtime < since or info.st_size > MAX_RECORD_BYTES:
+                if not stat.S_ISREG(info.st_mode) or info.st_mtime < since:
                     continue
-                self._read(Path(entry.path), records)
+                if info.st_size > MAX_RECORD_BYTES:
+                    scan_complete = False
+                    continue
+                if not self._read(Path(entry.path), records):
+                    scan_complete = False
         for path in list(records):
-            if not Path(path).exists():
+            try:
+                Path(path).stat()
+            except FileNotFoundError:
                 del records[path]
+            except OSError:
+                del records[path]
+                scan_complete = False
         with self._lock:
             self.records = records
             self.scanned_at = started
+            self.lineage_scan_floor = floor
+            self.lineage_scan_status = "available" if scan_complete else "partial"
             write_json(self.cache, {"scannedAt": self.scanned_at, "records": self.records})
 
-    def _read(self, path: Path, records: dict | None = None) -> None:
+    def _read(self, path: Path, records: dict | None = None) -> bool:
         if records is None:
             with self._lock:
-                self._read(path, self.records)
-            return
+                valid = self._read(path, self.records)
+                if not valid:
+                    self.lineage_scan_status = "partial"
+                return valid
         try:
             mtime = path.stat().st_mtime
         except OSError:
             records.pop(str(path), None)
-            return
+            return False
         data = read_regular(path, MAX_RECORD_BYTES)
+        if data is None:
+            records.pop(str(path), None)
+            return False
+        valid = True
         summary = None
         if data is not None and BUDGET_MARK in data:
             try:
                 value = json.loads(data)
             except ValueError:
                 value = None
+                valid = False
             summary = record_summary(path, value) if isinstance(value, dict) else None
+            if summary is None:
+                valid = False
         if summary:
             records[str(path)] = summary | {"mtime": mtime}
         else:
             records.pop(str(path), None)
+        return valid
 
     def _values(self) -> list[dict]:
         with self._lock:
@@ -1193,6 +1235,7 @@ class BudgetIndex:
         except OSError:
             with self._lock:
                 self.records.pop(latest["path"], None)
+                self.lineage_scan_status = "partial"
             return self.current(session_id, now)
         if latest["closed"] or now - latest["started"] > BUDGET_FOLLOW_SECONDS:
             return None
@@ -1209,6 +1252,20 @@ class BudgetIndex:
         self._read(Path(record["path"]))  # its close may have been written moments ago
         with self._lock:
             return self.records.get(record["path"])
+
+    def lineage_bindings(self, session_id: str) -> tuple[list[dict], str, float | None]:
+        """Capture bindings and their scan evidence under the same lock."""
+        with self._lock:
+            out = []
+            status = self.lineage_scan_status
+            for record in self.records.values():
+                if session_id in record.get("sessions", []):
+                    bindings = [b for b in record.get("bindings", []) if b.get("session_id")]
+                    out.extend(bindings)
+                    if bindings and (self.lineage_scan_floor is None
+                                     or record.get("mtime", 0) < self.lineage_scan_floor):
+                        status = "partial"
+            return out, status, self.scanned_at
 
     def bindings(self, session_id: str) -> list[dict]:
         """Direct-native workers bound to objectives this session leads (recorded nowhere else)."""
@@ -1228,15 +1285,24 @@ def objective_view(record: dict) -> dict:
 def budget_summary(who: str, record: dict, event: dict) -> str:
     observed = event.get("observed") if isinstance(event.get("observed"), dict) else {}
     spend = observed.get("quota_usd_high")
+    account = observed.get("account_quota")
     level = event.get("level")
     what = {"mark_crossed": "crossed spend mark", "node_mark_crossed": "a worker crossed spend mark",
             "limit_fraction": "reached a fraction of its spend limit", "limit_reached": "reached its spend limit",
             "hours_fraction": "used a fraction of its time limit", "hours_reached": "reached its time limit",
             "account_ceiling": "reached its account weekly ceiling",
             "coverage_changed": "spend coverage changed"}.get(str(event.get("kind")), str(event.get("kind")))
+    if isinstance(account, dict) and event.get("kind") == "coverage_changed":
+        what = "spend coverage and account quota observation changed" if event.get('cost_coverage_changed') else "account quota observation changed"
+    account_text = ""
+    if isinstance(account, dict):
+        headroom = account.get('headroom_to_ceiling_percent')
+        account_text = (f"account headroom {headroom} points" if headroom is not None else "account headroom unknown")
+        account_text += f" (reading {account.get('status')}, observed {account.get('observed_at')})"
     parts = [f"{who}: {what}", f"level {level}" if level is not None else "",
              f"pool {event['pool']}" if event.get("pool") else "",
-             f"spend ${spend:.2f} (quota-weighted)" if isinstance(spend, (int, float)) else "",
+           f"spend ${spend:.2f} (API-equivalent, adjusted for subscription speed; proxy)" if isinstance(spend, (int, float)) else "",
+           account_text,
              f"grant {record['grant']}" if record.get("grant") else ""]
     return ", ".join(p for p in parts if p)
 
@@ -1342,6 +1408,83 @@ def turn_state(session: Session) -> dict:
     return state
 
 
+def bridge_turn_state(session: Session) -> dict:
+    """Observe a worker's current marker without falling back past uncertain newer bytes.
+
+    This is a bounded, best-effort file snapshot, not process-closure evidence. The
+    legacy list consumers retain their existing turn_state behavior.
+    """
+    unknown = {"state": "unknown", "last_write": None, "observation_status": "partial"}
+    try:
+        with session.path.open("rb") as handle:
+            before = os.fstat(handle.fileno())
+            if not stat.S_ISREG(before.st_mode) or before.st_size > TURN_SCAN_BYTES:
+                return unknown
+            data = handle.read(before.st_size + 1)
+            after = os.fstat(handle.fileno())
+            current = session.path.stat()
+        identity = lambda st: (st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns)
+        if (identity(before) != identity(after) or identity(after) != identity(current)
+                or len(data) != before.st_size or not data or not data.endswith(b"\n")):
+            return unknown
+        for line in reversed(data.splitlines()):
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line)
+            except (ValueError, UnicodeError):
+                return unknown
+            if not isinstance(record, dict) or not isinstance(record.get("type"), str):
+                return unknown
+            stamp = record.get("timestamp") if isinstance(record.get("timestamp"), str) else None
+            if session.host == "codex":
+                if record.get("type") != "event_msg":
+                    payload = record.get("payload")
+                    if isinstance(payload, dict) and payload.get("type") in ("task_started", "task_complete", "turn_aborted"):
+                        return unknown
+                    continue
+                payload = record.get("payload")
+                if not isinstance(payload, dict) or not isinstance(payload.get("type"), str):
+                    return unknown
+                kind = payload["type"]
+                if kind not in ("task_started", "task_complete", "turn_aborted"):
+                    continue
+                turn_id = payload.get("turn_id")
+                if not isinstance(turn_id, str) or not turn_id:
+                    return unknown
+                return {"state": "running" if kind == "task_started" else "idle", "turn_id": turn_id,
+                        "last_write": after.st_mtime, "observation_status": "available", "marker_at": stamp}
+            if session.host != "claude":
+                return unknown
+            kind = record.get("type")
+            if kind == "system" and record.get("subtype") == "turn_duration":
+                state = "idle"
+            elif kind == "assistant":
+                message = record.get("message")
+                if not isinstance(message, dict):
+                    return unknown
+                error = record.get("isApiErrorMessage", False)
+                if not isinstance(error, bool):
+                    return unknown
+                state = "idle" if message.get("stop_reason") == "end_turn" or error else "running"
+            elif kind == "user" and not record.get("isMeta"):
+                message = record.get("message")
+                if not isinstance(message, dict) or not isinstance(message.get("content"), (str, list)):
+                    return unknown
+                content = message["content"]
+                text = content if isinstance(content, str) else " ".join(
+                    block.get("text", "") for block in content if isinstance(block, dict)
+                    and isinstance(block.get("text", ""), str))
+                state = "idle" if text.lstrip().startswith("[Request interrupted by user") else "running"
+            else:
+                continue
+            return {"state": state, "last_write": after.st_mtime,
+                    "observation_status": "available", "marker_at": stamp}
+    except (OSError, ValueError, OverflowError):
+        return unknown
+    return unknown
+
+
 def turn_bounds(session: Session, entry: Entry) -> dict:
     """When the turn that entry ended began: task_complete carries started_at; otherwise the turn's
     task_started (Codex) or its prompt (Claude) is found by reading back from the entry."""
@@ -1376,60 +1519,118 @@ class Lineage:
         self.homes, self.role_ledger, self.budgets = homes, role_ledger, budgets
         self._cache: dict[str, tuple[float, list[dict]]] = {}
 
-    def _edges(self) -> tuple[dict[str, list[tuple[str, str]]], dict[str, dict]]:
+    def _edges(self) -> tuple[dict[str, list[tuple[str, str]]], dict[str, dict], dict[str, str]]:
         children: dict[str, list[tuple[str, str]]] = {}
         threads: dict[str, dict] = {}
+        sources = {"codex_spawn": "unavailable", "role_host": "not_configured"}
         database = self.homes.codex / "state_5.sqlite"
-        if database.exists():
+        try:
+            connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=5)
             try:
-                connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=5)
-                try:
-                    for parent, child in connection.execute(
-                            "SELECT parent_thread_id, child_thread_id FROM thread_spawn_edges"):
-                        children.setdefault(parent, []).append((child, "codex_spawn"))
-                    for row in connection.execute("SELECT id, rollout_path, agent_nickname, agent_path, archived "
-                                                  "FROM threads"):
-                        threads[row[0]] = {"rollout_path": row[1], "nickname": row[2], "agent_path": row[3],
-                                           "archived": bool(row[4])}
-                finally:
-                    connection.close()
-            except sqlite3.Error:
-                pass
+                connection.execute("BEGIN")
+                malformed = False
+                for parent, child in connection.execute(
+                        "SELECT parent_thread_id, child_thread_id FROM thread_spawn_edges"):
+                    sources["codex_spawn"] = "partial"
+                    if not isinstance(parent, str) or not parent or not isinstance(child, str) or not child:
+                        malformed = True
+                        continue
+                    children.setdefault(parent, []).append((child, "codex_spawn"))
+                sources["codex_spawn"] = "partial"
+                for row in connection.execute("SELECT id, rollout_path, agent_nickname, agent_path, archived FROM threads"):
+                    if not isinstance(row[0], str) or not row[0]:
+                        malformed = True
+                        continue
+                    threads[row[0]] = {"rollout_path": row[1], "nickname": row[2], "agent_path": row[3],
+                                       "archived": bool(row[4])}
+                sources["codex_spawn"] = "partial" if malformed else "available"
+            finally:
+                connection.close()
+        except sqlite3.Error:
+            pass
         if self.role_ledger is not None:
-            for row in read_lines(self.role_ledger):
-                if row.get("event") == "launch" and row.get("parent_session_id") and row.get("session_id"):
-                    host = "codex" if row.get("host") == "codex" else "claude"
-                    children.setdefault(row["parent_session_id"], []).append((row["session_id"], f"role_host:{host}"))
-                    threads.setdefault(row["session_id"], {}).setdefault("name", row.get("name"))
-        return children, threads
+            try:
+                data = self.role_ledger.read_bytes()
+            except OSError:
+                sources["role_host"] = "unavailable"
+            else:
+                sources["role_host"] = "available"
+                if data and not data.endswith(b"\n"):
+                    sources["role_host"] = "partial"
+                for line in data.splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except ValueError:
+                        sources["role_host"] = "partial"
+                        continue
+                    if not isinstance(row, dict):
+                        sources["role_host"] = "partial"
+                        continue
+                    if row.get("event") == "launch":
+                        if not isinstance(row.get("session_id"), str) or not row["session_id"]:
+                            sources["role_host"] = "partial"
+                            continue
+                        if row.get("parent_session_id") is None:
+                            continue  # a top-level launch has no parent edge
+                        if not isinstance(row.get("parent_session_id"), str) or not row["parent_session_id"]:
+                            sources["role_host"] = "partial"
+                            continue
+                        host = "codex" if row.get("host") == "codex" else "claude"
+                        children.setdefault(row["parent_session_id"], []).append((row["session_id"], f"role_host:{host}"))
+                        threads.setdefault(row["session_id"], {}).setdefault("name", row.get("name"))
+        return children, threads, sources
 
     def workers(self, session: Session, since: float | None = None, max_age: float = 60) -> list[dict]:
-        """Every descendant with its current turn state. The tree is cached briefly; states are re-read."""
+        """Compatibility list projection; callers needing coverage use observe()."""
         cached = self._cache.get(session.session_id)
         now = time.time()
         if cached and now - cached[0] < max_age:
             nodes = cached[1]
         else:
-            nodes = self._tree(session)
+            nodes, _, _ = self._tree(session)
             self._cache[session.session_id] = (now, nodes)
-        out = []
-        for node in nodes:
-            out.append(node | self._state(node))
-        return out
+        return [node | self._state(node) for node in nodes]
 
-    def _tree(self, session: Session) -> list[dict]:
-        children, threads = self._edges()
+    def observe(self, session: Session) -> dict:
+        """Fresh source-status-bearing known-lineage observation."""
+        nodes, sources, budget_scan_at = self._tree(session, with_coverage=True)
+        workers = []
+        sources["worker_states"] = "available"
+        for node in nodes:
+            try:
+                state = self._state(node, verify_source=True)
+            except Exception:
+                state = {"state": "unknown", "last_write": None, "observation_status": "partial"}
+            if (state.get("observation_status") != "available"
+                    or state.get("state") not in ("idle", "running", "dead") or state.get("last_write") is None):
+                sources["worker_states"] = "partial"
+            workers.append(node | state)
+        return {"workers": workers, "sources": sources,
+                "budget_scan_at": None if budget_scan_at is None else iso(budget_scan_at)}
+
+    def _tree(self, session: Session, with_coverage: bool = False) -> tuple[list[dict], dict[str, str], float | None]:
+        children, threads, sources = self._edges()
+        bindings, budget_status, budget_scan_at = (self.budgets.lineage_bindings(session.session_id)
+                                                    if self.budgets is not None else ([], "not_configured", None))
+        sources["budget_bindings"] = budget_status
+        if self.budgets is not None and not with_coverage:
+            bindings = self.budgets.bindings(session.session_id)
         bound: dict[str, list[tuple[str, str]]] = {}
         provider: dict[str, Any] = {}
         if self.budgets is not None:
-            for binding in self.budgets.bindings(session.session_id):
+            for binding in bindings:
                 parent = binding.get("parent_session_id") or session.session_id
                 bound.setdefault(parent, []).append((binding["session_id"], "budget_binding"))
                 provider[binding["session_id"]] = binding.get("provider")
         seen, nodes, frontier = {session.session_id}, [], [(session.session_id, 0)]
+        truncated = False
         while frontier and len(nodes) < MAX_WORKERS:
             parent, depth = frontier.pop(0)
             if depth >= LINEAGE_DEPTH:
+                if children.get(parent) or bound.get(parent):
+                    truncated = True
                 continue
             for child, source in children.get(parent, []) + bound.get(parent, []):
                 if child in seen:
@@ -1449,10 +1650,16 @@ class Lineage:
                               "parent_session_id": session.session_id, "depth": 1, "source": "claude_subagent",
                               "name": str(meta.get("description") or meta.get("agentType") or "")[:80] or None,
                               "agent_path": None, "rollout_path": str(transcript), "finished": meta.get("finished")})
-        return nodes
+        if frontier or truncated or len(nodes) > MAX_WORKERS:
+            sources["tree"] = "partial"
+        else:
+            sources["tree"] = "available"
+        return nodes, sources, budget_scan_at
 
-    def _state(self, node: dict) -> dict:
+    def _state(self, node: dict, verify_source: bool = False) -> dict:
         if node["source"] == "claude_subagent":
+            if verify_source:
+                return {"state": "unknown", "last_write": None, "observation_status": "partial"}
             path = Path(node["rollout_path"])
             meta = read_json(path.with_suffix(".meta.json")) or {}
             state = "idle" if meta.get("finished") else "running"
@@ -1466,9 +1673,10 @@ class Lineage:
         if path is None:
             return {"state": "never_started", "last_write": None}
         session = Session("codex" if path.name.startswith("rollout-") else "claude", node["session_id"], path)
-        state = turn_state(session)
+        state = bridge_turn_state(session) if verify_source else turn_state(session)
         return {"state": state["state"], "turn_id": state.get("turn_id"), "last_write": state.get("last_write"),
-                "rollout_path": str(path)}
+                "rollout_path": str(path), **({"observation_status": state.get("observation_status")}
+                                             if verify_source else {})}
 
 
 def _mtime(path: Path) -> float | None:
@@ -2036,10 +2244,223 @@ INSTRUCTIONS = (
     "Use read_session with the event's entryId for surrounding entries.")
 
 
+BRIDGE_TOOLS = [
+    {"name": name, "description": description, "annotations": annotations,
+     "inputSchema": {"type": "object", "additionalProperties": False,
+                     "required": required, "properties": properties}}
+    for name, description, annotations, required, properties in [
+        ("submit_session_request", "Admit one exact runtime-authored message under existing authority.",
+         {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+         ["request_id", "grant_credential", "session_id", "workspace", "input_text"],
+         {k: {"type": "string"} for k in ("request_id", "grant_credential", "session_id", "workspace", "input_text")}),
+        ("read_session_operation", "Read and reconcile one admitted operation without sending.", READ_ONLY,
+         ["request_id", "grant_credential"],
+         {k: {"type": "string"} for k in ("request_id", "grant_credential")}),
+        ("read_session_result", "Read the exact terminal turn's redacted final message.", READ_ONLY,
+         ["request_id", "grant_credential"],
+         {"request_id": {"type": "string"}, "grant_credential": {"type": "string"},
+          "text_offset": {"type": "integer", "minimum": 0},
+          "max_chars": {"type": "integer", "minimum": 1, "maximum": 16000}}),
+    ]
+]
+
+
+class Bridge:
+    """Pinned local helper; the helper owns authorization and durable state."""
+    def __init__(self, binary: str, binary_sha: str, config: str, config_sha: str):
+        self.binary, self.binary_sha, self.config, self.config_sha = binary, binary_sha, config, config_sha
+        self.check()
+        try:
+            self.invoke({"schema_version": 1, "method": "read_session_operation",
+                         "request_id": "00000000-0000-0000-0000-000000000000", "grant_credential": ""})
+        except RpcError as error:
+            if error.data != {"reason": "unauthorized"}:
+                raise ValueError("bridge protocol unavailable") from None
+        else:
+            raise ValueError("bridge protocol unavailable")
+
+    @classmethod
+    def from_environment(cls):
+        values = [os.environ.get(k) for k in ("SESSION_BRIDGE_BINARY", "SESSION_BRIDGE_BINARY_SHA256",
+                  "SESSION_BRIDGE_CONFIG", "SESSION_BRIDGE_CONFIG_SHA256")]
+        if not any(values):
+            return None
+        if not all(values):
+            raise ValueError("incomplete bridge pins")
+        return cls(*values)
+
+    def check(self):
+        for path, expected, private in ((self.binary, self.binary_sha, False), (self.config, self.config_sha, True)):
+            p = Path(path)
+            if not p.is_absolute() or not re.fullmatch(r"[0-9a-f]{64}", expected):
+                raise ValueError("invalid bridge pin")
+            st = p.lstat()
+            if not stat.S_ISREG(st.st_mode) or stat.S_ISLNK(st.st_mode) or st.st_uid != os.geteuid():
+                raise ValueError("unsafe bridge file")
+            if st.st_mode & (0o077 if private else 0o022):
+                raise ValueError("unsafe bridge mode")
+            if private:
+                parent_stat = p.parent.lstat()
+                if parent_stat.st_uid != os.geteuid() or parent_stat.st_mode & 0o077:
+                    raise ValueError("unsafe bridge parent")
+            for parent in p.parents:
+                ps = parent.lstat()
+                if not stat.S_ISDIR(ps.st_mode) or stat.S_ISLNK(ps.st_mode) or ps.st_mode & 0o022:
+                    raise ValueError("unsafe bridge parent")
+            if st.st_size > (64 * 1024 * 1024 if not private else 16384):
+                raise ValueError("bridge file too large")
+            if hashlib.sha256(p.read_bytes()).hexdigest() != expected:
+                raise ValueError("bridge pin mismatch")
+
+    def invoke(self, request: dict) -> dict:
+        try:
+            self.check()
+            payload = canonical(request).encode()
+            if len(payload) > 256 * 1024:
+                raise ValueError("request too large")
+            proc = subprocess.Popen([self.binary, "--config", self.config, "rpc"], stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True)
+            deadline = time.monotonic() + 30
+            output = bytearray()
+            pending = memoryview(payload)
+            os.set_blocking(proc.stdin.fileno(), False)
+            os.set_blocking(proc.stdout.fileno(), False)
+            try:
+                while True:
+                    if time.monotonic() >= deadline:
+                        raise ValueError("timeout")
+                    readable, writable, _ = select.select([proc.stdout], [proc.stdin] if pending else [], [], 0.1)
+                    if writable:
+                        try:
+                            count = os.write(proc.stdin.fileno(), pending)
+                            pending = pending[count:]
+                        except BlockingIOError:
+                            pass
+                    if not pending and not proc.stdin.closed:
+                        proc.stdin.close()
+                    if readable:
+                        chunk = os.read(proc.stdout.fileno(), 65536)
+                        if not chunk:
+                            break
+                        output.extend(chunk)
+                        if len(output) > 128 * 1024:
+                            raise ValueError("output too large")
+                    if proc.poll() is not None and not readable:
+                        break
+                if proc.wait(timeout=max(0.1, deadline - time.monotonic())) != 0 or pending:
+                    raise ValueError("helper failed")
+            finally:
+                if proc.poll() is None:
+                    proc.kill()
+                proc.wait()
+                proc.stdout.close()
+                if not proc.stdin.closed:
+                    proc.stdin.close()
+            response = json.loads(output)
+            if (not isinstance(response, dict) or response.get("schema_version") != 1
+                    or response.get("protocol") != "session-bridge-rpc-v1" or type(response.get("ok")) is not bool
+                    or set(response) != ({"schema_version", "protocol", "ok", "result"} if response.get("ok") else
+                                         {"schema_version", "protocol", "ok", "error"})):
+                raise ValueError("protocol mismatch")
+            if not response["ok"]:
+                reason = response.get("error")
+                if reason not in {"unauthorized", "payload_conflict", "target_mismatch", "expired", "session_busy",
+                                  "history_unavailable", "entry_uncertain", "identity_conflict", "bridge_unavailable"}:
+                    reason = "bridge_unavailable"
+                raise invalid(reason)
+            result = response.get("result")
+            if not isinstance(result, dict) or result.get("schema_version") != 1:
+                raise ValueError("protocol mismatch")
+            return _bridge_redact(result)
+        except RpcError:
+            raise
+        except Exception:
+            raise invalid("bridge_unavailable") from None
+
+
+def _bridge_redact(value):
+    if isinstance(value, str):
+        return redact(value)[0]
+    if isinstance(value, list):
+        return [_bridge_redact(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _bridge_redact(v) for k, v in value.items()}
+    return value
+
+
+def bridge_observation(homes: Homes, context: "Context", now: float, operation: dict, offset: int, maximum: int) -> dict:
+    """Project the exact correlated turn; refuse incomplete or ambiguous transcript state."""
+    output = {"operation": operation, "process_closure": {"available": False},
+              "workers": {"available": False, "coverage": "known-lineage snapshot"},
+              "usage": {"available": False}, "completion": {"available": False},
+              "result": {"available": False, "reason": "transcript_unavailable"}}
+    try:
+        session = resolve_session(homes, operation["session_id"])
+        if session.host != "codex":
+            return _bridge_redact(output)
+        if context.lineage is not None:
+            try:
+                observation = context.lineage.observe(session)
+                sources = observation["sources"]
+                complete = all(status == "available" for status in sources.values())
+                snapshot = closure_view(observation["workers"], now)
+                if not complete:
+                    snapshot["workers_settled"] = None
+                observed_any = any(sources.get(k) in ("available", "partial")
+                                   for k in ("codex_spawn", "role_host", "budget_bindings"))
+                output["workers"] = {"available": complete,
+                                     "availability": "available" if complete else "partial" if observed_any else "unavailable",
+                                     "coverage": "known-lineage snapshot", "sources": sources,
+                                     "budget_scan_at": observation["budget_scan_at"], "snapshot": snapshot}
+            except Exception:
+                pass
+        try:
+            output["usage"] = budget_status(context, session, now)
+        except Exception:
+            pass
+        if operation.get("entry_state") != "terminal":
+            output["result"]["reason"] = "completion_pending"
+            return _bridge_redact(output)
+        st = session.path.stat()
+        if st.st_size > 32 * 1024 * 1024:
+            return _bridge_redact(output)
+        data = session.path.read_bytes()
+        if len(data) != st.st_size or (data and not data.endswith(b"\n")) or session.path.stat().st_size != st.st_size:
+            return _bridge_redact(output)
+        entries, position = [], 0
+        for line in data.splitlines(keepends=True):
+            record = json.loads(line)
+            if not isinstance(record, dict):
+                return _bridge_redact(output)
+            entries.extend(line_entries("codex", position, line))
+            position += len(line)
+        matches = [e for e in entries if e.role == "turn_end" and (e.meta or {}).get("turn_id") == operation["native_turn_id"]]
+        if len(matches) != 1:
+            output["result"]["reason"] = "completion_pending" if not matches else "identity_conflict"
+            return _bridge_redact(output)
+        entry = matches[0]
+        meta = entry.meta or {}
+        if meta.get("status") != operation.get("native_status"):
+            output["result"]["reason"] = "status_conflict"
+            return _bridge_redact(output)
+        text, count = redact(entry.text if meta.get("has_message") else "")
+        output["completion"] = {"available": True, "entry_id": entry.entry_id, "session_id": session.session_id,
+                                "turn_id": operation["native_turn_id"], "status": meta.get("status"),
+                                "timestamp": entry.timestamp}
+        output["result"] = {"available": True, "text": text[offset:offset + maximum], "text_offset": offset,
+                            "text_extent": len(text), "redaction_count": count,
+                            "next_offset": offset + maximum if offset + maximum < len(text) else None,
+                            "truncated": offset + maximum < len(text)}
+    except (OSError, ValueError, SessionError, KeyError):
+        pass
+    return _bridge_redact(output)
+
+
 class Server:
     def __init__(self, homes: Homes, principal: str, policy: CallbackPolicy,
                  transport: Transport = post, clock: Callable[[], float] = time.time,
-                 context: "Context | None" = None):
+                 context: "Context | None" = None, bridge: "Bridge | None" = None):
+        self.bridge = bridge
         self.homes, self.principal, self.policy = homes, principal, policy
         self.transport, self.clock = transport, clock
         self.store = Store(homes.state)
@@ -2055,7 +2476,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + (BRIDGE_TOOLS if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)
@@ -2084,6 +2505,8 @@ class Server:
         tools = {"list_sessions": self.tool_list_sessions, "read_session": self.tool_read_session,
                  "test_pattern": self.tool_test_pattern, "delivery_status": self.tool_delivery_status,
                  "replay_events": self.tool_replay_events, "budget_status": self.tool_budget_status}
+        if self.bridge and name in {"submit_session_request", "read_session_operation", "read_session_result"}:
+            tools[name] = lambda a: self.bridge_call(name, a)
         if name not in tools:
             raise invalid("unknown_tool", name=str(name)[:80])
         try:
@@ -2095,6 +2518,33 @@ class Server:
                                                                      "sessionId": error.session_id}
             return {"isError": True, "content": [{"type": "text", "text": canonical({"error": detail})}]}
         return {"content": [{"type": "text", "text": canonical(result)}], "structuredContent": result}
+
+    def bridge_call(self, name: str, arguments: dict) -> dict:
+        required = {"request_id", "grant_credential"}
+        allowed = set(required)
+        if name == "submit_session_request":
+            required |= {"session_id", "workspace", "input_text"}
+            allowed |= {"session_id", "workspace", "input_text"}
+        elif name == "read_session_result":
+            allowed |= {"text_offset", "max_chars"}
+        if set(arguments) - allowed or not required <= set(arguments):
+            raise invalid("invalid_arguments")
+        for key in required:
+            if not isinstance(arguments[key], str):
+                raise invalid("invalid_arguments")
+        offset, maximum = arguments.get("text_offset", 0), arguments.get("max_chars", 4000)
+        if type(offset) is not int or offset < 0 or type(maximum) is not int or not 1 <= maximum <= 16000:
+            raise invalid("invalid_arguments")
+        request = {"schema_version": 1, "method": name, **{k: v for k, v in arguments.items()
+                   if k not in {"text_offset", "max_chars"}}}
+        result = self.bridge.invoke(request)
+        if name == "read_session_operation":
+            observation = bridge_observation(self.homes, self.context, self.clock(), result, offset, maximum)
+            return {**result, "workers": observation["workers"], "usage": observation["usage"],
+                    "process_closure": observation["process_closure"]}
+        if name == "read_session_result":
+            return bridge_observation(self.homes, self.context, self.clock(), result, offset, maximum)
+        return result
 
     def tool_list_sessions(self, arguments: dict) -> dict:
         query, host, limit = arguments.get("query"), arguments.get("host"), arguments.get("limit", 20)
@@ -2329,7 +2779,7 @@ def read_session(homes: Homes, session_id: Any, entry_id: Any = None, before: An
         rows.append({"entryId": entry.entry_id, "role": entry.role, "tool": entry.tool,
                      "timestamp": entry.timestamp, "text": text, "entryChars": len(entry.text),
                      "textTruncated": len(piece) > max_chars, "redactions": redactions})
-    result = {"host": session.host, "sessionId": session.session_id, "sessionTitle": titles.title(session),
+    result = {"host": session.host, "sessionId": session.session_id, "sessionTitle": safe_title(titles.title(session), None),
               "entries": rows}
     titles.save()
     return result
@@ -2544,6 +2994,7 @@ def budget_status(context: Context, session: Session, now: float) -> dict:
         return out
     snapshot = control.get("snapshot") or {}
     out.update(spend=snapshot.get("totals"), coverage=snapshot.get("status"), snapshot_at=snapshot.get("snapshot_at"),
+               measurements=snapshot.get("measurements"), cost_controls=snapshot.get("cost_controls"),
                crossed_now=control.get("events"), ledger="ok")
     return out
 
@@ -2905,8 +3356,8 @@ class Daemon:
                 self.log({"event": "alert_queue_full", "subscription": subscription["id"]})
                 return
             queue.append({"id": "alt_" + digest(subscription["id"], kind, key)[:32], "kind": kind,
-                          "session_id": session.session_id, "session_title": (title or "")[:300],
-                          "raised_at": iso(now), "summary": summary[:600], "detail": detail})
+                          "session_id": session.session_id, "session_title": safe_title(title) or "",
+                          "raised_at": iso(now), "summary": safe_text_prefix(summary, 600), "detail": detail})
 
         sessions = [s for s in (self._session(item) for item in subscription["sessions"]) if s]
         if now >= next_check:
@@ -3076,7 +3527,7 @@ class Daemon:
                     lost = lost_turn(session, boot)
                     if lost:
                         queue.append(lost | {"session_id": session.session_id,
-                                             "session_title": (titles.title(session) or "")[:300]})
+                                             "session_title": safe_title(titles.title(session)) or ""})
         if not queue:
             return None
 
@@ -3413,9 +3864,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in ("serve", "serve-http", "run"):
             context = context_from_args(args, homes)
         if args.command == "serve":
-            return serve(Server(homes, args.principal, policy, context=context))
+            return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context), args.listen, args.path)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()), args.listen, args.path)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":

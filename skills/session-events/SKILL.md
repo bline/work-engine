@@ -393,3 +393,79 @@ python3 -I <skill-dir>/scripts/session_events.py unsubscribe --name NAME
 python3 -I <skill-dir>/scripts/session_events.py subscriptions
 ```
 <!-- /cli-synopsis -->
+
+### Optional local session bridge (private candidate)
+
+The command profile is disabled by default. It admits one exact runtime-authored
+message into an existing, loaded, dedicated idle Codex session. The local
+bearer grants message admission and associated reads only; it does not establish
+human identity, approval, a mandate, a spending limit, effect authority, or
+permission to delegate. The target's existing authority must independently
+cover both the native turn and any effects. Keep other native writers out: the
+bridge lock does not fence the daemon's TUI or other clients.
+
+This is an offline implementation candidate, not an activation or live trial.
+Before use, the operator must qualify the exact daemon version, target policy,
+thread cwd and status, full history pagination, retained client message ID,
+resume/start policy and dedicated-session ownership. Repeated identical history
+reads cannot by themselves detect a consistently stale initial history; daemon
+freshness must be qualified separately. The one recorded daemon
+0.166.0 observation is not a general qualification; the installed CLI's 0.164.0
+version is a separate observation. Deployment, service/tunnel changes, credential
+delivery and a live Dot trial require their own authorization and evidence.
+
+A trusted local owner creates private directories and explicitly initializes an
+empty store once. The paths below are operator-chosen local paths; remote tool
+arguments cannot select a binary, config, socket, policy or store. Use an
+owner-only config and store directory, and reject writable or symlinked parents.
+For example, with absolute paths and an already-created private lock directory:
+
+```sh
+session-bridge --config /private/bridge/config.json store init \
+  --database /private/bridge/store.sqlite --lock-dir /private/bridge/locks \
+  --native-socket /private/native/app-server.sock
+session-bridge --config /private/bridge/config.json grant preview \
+  --request-id UUID --session-id UUID --workspace /absolute/workspace --input-file /private/input.txt
+session-bridge --config /private/bridge/config.json grant issue \
+  --request-id UUID --session-id UUID --workspace /absolute/workspace --input-file /private/input.txt \
+  --admit-until 2099-01-01T00:00:00Z --credential-out /private/new-credential \
+  --dedicated-session --reviewed-wire-sha256 REVIEWED_DIGEST
+```
+
+Preview prints the exact generated wire input locally. Review it and use its
+wire digest in the issuance command; issuance rechecks the file and target and
+will not overwrite the credential file. Protect that file and the private wire
+input files: the store contains sensitive request material. No remote tool can
+issue or revoke a grant. `grant revoke --grant-id ID` blocks later
+credential-authorized reads and submissions; it does not cancel an already
+admitted turn. Admission expiry does not end reads of an unrevoked admitted
+operation. Local `operation inspect --request-id UUID` shows safe metadata.
+
+The authoritative database, configuration, locks and private wire inputs must
+remain continuous. Missing, corrupt or mismatched state fails closed. Clone,
+restore, rollback or replacement requires explicit operator state disposition:
+retaining a store ID does not detect lost history in an older snapshot. Do not
+resume a cloned or restored store as if it were an ordinary restart. There is no
+remote retry, unsafe-clear or automatic timeout release for uncertain native
+entry; process exit is not proof that the daemon did not receive a turn.
+
+Only trusted server startup may set all four pins: `SESSION_BRIDGE_BINARY`,
+`SESSION_BRIDGE_BINARY_SHA256`, `SESSION_BRIDGE_CONFIG`, and
+`SESSION_BRIDGE_CONFIG_SHA256`. Use an absolute owner-controlled executable and
+owner-only configuration; a missing or mismatched pin prevents the profile
+from loading. The server checks helper protocol and pins and advertises
+`submit_session_request`, `read_session_operation` and `read_session_result`
+only for the enabled profile. The submitted payload is wrapped in the fixed
+runtime provenance envelope; neither that envelope nor its digest confers
+human or effect authority. Do not send the bearer credential in the payload.
+
+Results are projected from the exact correlated terminal transcript entry,
+redacted before paging. Transcript lag or disagreement remains pending or
+unavailable. Known-worker lineage and budget/usage observations have separate
+sources and coverage; agent-created process closure is unavailable. Worker
+observations report source availability and the budget scan time. A partial or
+unavailable source, truncated tree or unknown worker state leaves settlement
+unknown even when no running worker is observed. Existing
+completion delivery and replay retain their own event IDs, and operation reads
+do not invent one. Existing session readers and upstream chat or tunnel logs
+may retain text independently of bridge revocation.

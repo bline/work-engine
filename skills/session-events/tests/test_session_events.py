@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -698,6 +699,32 @@ class TurnEnded(Fixture):
             "name": SE.TURN_EVENT_NAME, "arguments": {"session_ids": session_ids},
             "delivery": {"mode": "webhook", "url": URL, "secret": self.secret}, "cursor": None})
 
+    def test_completion_title_credential_crosses_cap_before_delivery_and_replay(self):
+        credential = "webridge_" + "a" * 43
+        title = "x" * 280 + credential + " trailing"
+        (self.homes.codex / "session_index.jsonl").write_text(json.dumps({"id": CODEX_ID, "thread_name": title}) + "\n")
+        identifier = self.subscribe_turns([CODEX_ID])["result"]["id"]
+        self.append(self.codex_path, task_complete("done"))
+        self.daemon.tick()
+        [event] = [body for body, _ in self.receiver.events()]
+        rendered = event["data"]["session_title"]
+        self.assertNotIn(credential, json.dumps(event))
+        self.assertNotIn(credential[:20], rendered)
+        self.assertIn("[REDACTED:bridge_credential]", rendered)
+        replay = self.rpc("tools/call", {"name": "replay_events", "arguments": {"subscription_id": identifier}})
+        saved = replay["result"]["structuredContent"]["events"][0]["event"]
+        self.assertEqual(saved["data"]["session_title"], rendered)
+        self.assertNotIn(credential[:20], json.dumps(saved))
+        match_id = self.subscribe({"session_ids": [CODEX_ID], "pattern": "deploy"})["result"]["id"]
+        self.append(self.codex_path, message("assistant", "deploy"))
+        self.daemon.tick()
+        match_event = self.receiver.events()[-1][0]
+        self.assertEqual(match_event["data"]["sessionTitle"], rendered)
+        replay = self.rpc("tools/call", {"name": "replay_events", "arguments": {"subscription_id": match_id}})
+        self.assertNotIn(credential[:20], json.dumps(replay))
+        self.assertNotIn(credential[:20], json.dumps(SE.list_sessions(self.homes)))
+        self.assertNotIn(credential[:20], json.dumps(SE.read_session(self.homes, session_id=CODEX_ID)))
+
     def test_codex_turn_ends_are_entries(self):
         start = self.codex_path.stat().st_size
         self.append(self.codex_path, task_complete("All done.")
@@ -959,6 +986,8 @@ class FullEnvelope(ContextFixture):
 
 class Alerts(ContextFixture):
     def test_budget_and_deadline_alerts_after_the_baseline(self):
+        credential = "webridge_" + "a" * 43
+        (self.homes.codex / "session_index.jsonl").write_text(json.dumps({"id": CODEX_ID, "thread_name": "x" * 280 + credential}) + "\n")
         event = {"kind": "limit_fraction", "pool": "codex", "level": 2.25, "set_by": "user", "summary": "spend limit",
                  "observed": {"quota_usd_high": 2.3}, "snapshot_at": "2026-10-30T10:00:00Z"}
         hours = {"kind": "hours_fraction", "pool": None, "level": 0.8, "summary": "hours", "observed": 0.81}
@@ -973,6 +1002,11 @@ class Alerts(ContextFixture):
         self.assertEqual(kinds, [("budget", 1), ("deadline", 2)])
         first = self.receiver.events()[0][0]["data"]
         self.assertIn("$2.30", first["summary"])
+        self.assertIn("API-equivalent, adjusted for subscription speed; proxy", first["summary"])
+        self.assertNotIn("quota-weighted", first["summary"])
+        self.assertNotIn(credential[:20], json.dumps(first))
+        replay = self.rpc("tools/call", {"name": "replay_events", "arguments": {"subscription_id": identifier}})
+        self.assertNotIn(credential[:20], json.dumps(replay))
         self.assertEqual(first["detail"]["objective"]["grant"], "dot-test-g001")
         self.assertEqual(set(first), set(SE.ALERT_EVENT_DESCRIPTOR["payloadSchema"]["required"]))
         self.clock[0] += SE.BUDGET_CHECK_SECONDS
@@ -1030,7 +1064,9 @@ class Alerts(ContextFixture):
 
 class LostTurns(ContextFixture):
     def test_open_turn_before_a_restart_is_reported_lost_once(self):
-        self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID, CLAUDE_ID], "envelope": "full"})
+        credential = "webridge_" + "a" * 43
+        (self.homes.codex / "session_index.jsonl").write_text(json.dumps({"id": CODEX_ID, "thread_name": "x" * 280 + credential}) + "\n")
+        identifier = self.subscribe_event(SE.TURN_EVENT_NAME, {"session_ids": [CODEX_ID, CLAUDE_ID], "envelope": "full"})["result"]["id"]
         self.daemon.tick()  # first look at this boot: the subscription began after it, nothing is lost
         self.append(self.codex_path, codex_line("event_msg", type="task_started", turn_id="open-turn"))
         old = self.clock[0] - 50
@@ -1041,6 +1077,9 @@ class LostTurns(ContextFixture):
         data = body["data"]
         self.assertEqual((data["status"], data["turn_id"], data["session_id"]), ("lost", "open-turn", CODEX_ID))
         self.assertTrue(data["reason"].startswith("host_restart"))
+        self.assertNotIn(credential[:20], json.dumps(body))
+        replay = self.rpc("tools/call", {"name": "replay_events", "arguments": {"subscription_id": identifier}})
+        self.assertNotIn(credential[:20], json.dumps(replay))
         self.assertEqual(data["sequence"], 1)
         self.daemon.tick()
         self.assertEqual(len(self.receiver.events()), 1)
@@ -1092,6 +1131,30 @@ class BudgetSources(ContextFixture):
         self.assertEqual(result["objective"]["limits"], {"max_hours": 1.0})
         self.assertEqual(result["ledger"], "ok")
         self.assertEqual(result["crossed_now"], [])
+
+    def test_budget_status_forwards_separate_cost_and_account_measurements(self):
+        from unittest.mock import patch
+        measurements = {"account_quota": {"status": "stale", "remaining_percent": None},
+                        "objective": {"codex": {"estimated_quota_points": {"status": "not_established", "high": None}}}}
+        controls = [{"max_usd": 10, "basis": "speed_adjusted_api_usd"}]
+        control = {"events": [], "snapshot": {"totals": {"codex": {"quota_usd_high": 2}},
+                                               "measurements": measurements, "cost_controls": controls}}
+        with patch.object(SE.Ledger, 'control', return_value=control):
+            reply = self.rpc("tools/call", {"name": "budget_status", "arguments": {"session_id": CODEX_ID}})
+        result = reply["result"]["structuredContent"]
+        self.assertEqual(result['measurements'], measurements)
+        self.assertEqual(result['cost_controls'], controls)
+        self.assertEqual(result['spend']['codex']['quota_usd_high'], 2)
+
+    def test_unknown_account_headroom_is_visible_in_budget_alert(self):
+        summary = SE.budget_summary('root', {}, {"kind": "coverage_changed", "observed": {
+            "account_quota": {"status": "stale", "observed_at": "2026-01-01T00:00:00Z"}}})
+        self.assertIn('account quota observation changed', summary)
+        self.assertIn('account headroom unknown', summary)
+        self.assertIn('stale', summary)
+        merged = SE.budget_summary('root', {}, {"kind": "coverage_changed", "cost_coverage_changed": True, "observed": {
+            "account_quota": {"status": "expired"}, "status": "partial", "unpriced_calls": 1}})
+        self.assertIn('spend coverage and account quota observation changed', merged)
 
     def test_ledger_runs_only_the_pinned_bytes(self):
         ledger = SE.Ledger(self.ledger_path, self.ledger_sha, self.homes.state)
@@ -1271,3 +1334,224 @@ class InotifyWake(Fixture):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BridgeLineageAvailability(Fixture):
+    def observe(self, context):
+        operation = {"session_id": CODEX_ID, "entry_state": "entry_uncertain"}
+        return SE.bridge_observation(self.homes, context, self.clock[0], operation, 0, 100)["workers"]
+
+    def setup_sources(self):
+        import sqlite3
+        db = self.homes.codex / "state_5.sqlite"
+        with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("CREATE TABLE thread_spawn_edges (parent_thread_id, child_thread_id)")
+            conn.execute("CREATE TABLE threads (id, rollout_path, agent_nickname, agent_path, archived)")
+        role = self.directory / "role-ledger.jsonl"
+        role.write_text("")
+        budget_root = self.directory / "budget-root"
+        budget_root.mkdir()
+        return db, role, budget_root
+
+    def test_normal_context_missing_and_corrupt_sources_are_not_settled(self):
+        db, role, root = self.setup_sources()
+        db.unlink(); role.unlink()
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        observed = self.observe(context)
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["sources"]["codex_spawn"], "unavailable")
+        self.assertEqual(observed["sources"]["role_host"], "unavailable")
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+        db.write_bytes(b"corrupt database with sensitive text")
+        role.write_text('{"event":')
+        observed = self.observe(SE.Context.build(self.homes, role_ledger=role, budget_root=root))
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["sources"]["codex_spawn"], "unavailable")
+        self.assertEqual(observed["sources"]["role_host"], "partial")
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+        self.assertNotIn("sensitive text", json.dumps(observed))
+
+    def test_successful_empty_sources_are_distinct_from_unobserved(self):
+        _, role, root = self.setup_sources()
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        before = self.observe(context)
+        self.assertFalse(before["available"])
+        self.assertEqual(before["sources"]["budget_bindings"], "unavailable")
+        context.budgets.refresh(self.clock[0], force=True)
+        after = self.observe(context)
+        self.assertTrue(after["available"])
+        self.assertTrue(after["snapshot"]["workers_settled"])
+        self.assertEqual(after["snapshot"]["workers_total"], 0)
+        self.assertEqual(set(after["sources"].values()), {"available"})
+
+    def test_budget_scan_failure_and_unconfigured_sources_remain_partial(self):
+        _, role, root = self.setup_sources()
+        missing = root / "missing"
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=missing)
+        context.budgets.refresh(self.clock[0], force=True)
+        observed = self.observe(context)
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["sources"]["budget_bindings"], "partial")
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+        missing.mkdir()
+        context.budgets.refresh(self.clock[0], force=True)
+        recovered = self.observe(context)
+        self.assertTrue(recovered["available"])
+        self.assertTrue(recovered["snapshot"]["workers_settled"])
+        unconfigured = SE.Context.build(self.homes)
+        observed = self.observe(unconfigured)
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["sources"]["role_host"], "not_configured")
+        self.assertEqual(observed["sources"]["budget_bindings"], "not_configured")
+
+    def test_malformed_edge_is_partial_and_top_level_launch_is_valid(self):
+        import sqlite3
+        db, role, root = self.setup_sources()
+        role.write_text(json.dumps({"event": "launch", "session_id": CODEX_ID}) + "\n")
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        context.budgets.refresh(self.clock[0], force=True)
+        self.assertTrue(self.observe(context)["available"])
+        with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("INSERT INTO thread_spawn_edges VALUES (?, ?)", (CODEX_ID, None))
+        observed = self.observe(context)
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["sources"]["codex_spawn"], "partial")
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+
+    def test_old_cached_binding_remains_known_but_coverage_is_partial(self):
+        _, role, root = self.setup_sources()
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        context.budgets.refresh(self.clock[0], force=True)
+        context.budgets.records["old"] = {"sessions": [CODEX_ID], "mtime": 1,
+                                           "bindings": [{"session_id": WORKER_ID}]}
+        session = SE.resolve_session(self.homes, CODEX_ID)
+        self.assertEqual(len(context.lineage.workers(session)), 1)
+        observed = self.observe(context)
+        self.assertEqual(observed["sources"]["budget_bindings"], "partial")
+        self.assertEqual(observed["snapshot"]["workers_total"], 1)
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+
+    def test_unknown_worker_state_does_not_claim_settlement(self):
+        import sqlite3
+        db, role, root = self.setup_sources()
+        with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("INSERT INTO thread_spawn_edges VALUES (?, ?)", (CODEX_ID, WORKER_ID))
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        context.budgets.refresh(self.clock[0], force=True)
+        observed = self.observe(context)
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["sources"]["worker_states"], "partial")
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+        self.assertEqual(observed["snapshot"]["workers_total"], 1)
+
+    def known_worker(self):
+        import sqlite3
+        db, role, root = self.setup_sources()
+        path = self.codex_path.parent / f"rollout-2026-10-30T10-05-00-{WORKER_ID}.jsonl"
+        path.write_text(codex_line("session_meta", id=WORKER_ID)
+                        + codex_line("event_msg", type="task_complete", turn_id="old"))
+        with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("INSERT INTO thread_spawn_edges VALUES (?, ?)", (CODEX_ID, WORKER_ID))
+            conn.execute("INSERT INTO threads VALUES (?, ?, ?, ?, ?)", (WORKER_ID, str(path), "worker", None, 0))
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        context.budgets.refresh(self.clock[0], force=True)
+        return path, context
+
+    def test_newer_torn_and_malformed_markers_do_not_fall_back_to_old_idle(self):
+        path, context = self.known_worker()
+        initial = self.observe(context)
+        self.assertTrue(initial["available"])
+        self.assertTrue(initial["snapshot"]["workers_settled"])
+        with path.open("a") as f:
+            f.write('{"type":"event_msg","payload":{"type":"task_started"')
+        # The old list consumer keeps its historical fallback; bridge coverage does not.
+        session = SE.resolve_session(self.homes, CODEX_ID)
+        self.assertEqual(context.lineage.workers(session, max_age=0)[0]["state"], "idle")
+        uncertain = self.observe(context)
+        self.assertFalse(uncertain["available"])
+        self.assertEqual(uncertain["sources"]["worker_states"], "partial")
+        self.assertIsNone(uncertain["snapshot"]["workers_settled"])
+        with path.open("a") as f:
+            f.write('}\n')  # still malformed, but now a complete newer line
+        uncertain = self.observe(context)
+        self.assertFalse(uncertain["available"])
+        self.assertIsNone(uncertain["snapshot"]["workers_settled"])
+        # A later complete marker is positive new evidence; no delay or old marker is used.
+        with path.open("a") as f:
+            f.write(codex_line("event_msg", type="task_complete", turn_id="new"))
+        recovered = self.observe(context)
+        self.assertTrue(recovered["available"])
+        self.assertTrue(recovered["snapshot"]["workers_settled"])
+
+    def test_complete_json_without_newline_is_unavailable_then_recovers(self):
+        path, context = self.known_worker()
+        started = codex_line("event_msg", type="task_started", turn_id="new")
+        with path.open("a") as f:
+            f.write(started.rstrip("\n"))
+        uncertain = self.observe(context)
+        self.assertFalse(uncertain["available"])
+        self.assertIsNone(uncertain["snapshot"]["workers_settled"])
+        with path.open("a") as f:
+            f.write("\n")
+        running = self.observe(context)
+        self.assertTrue(running["available"])
+        self.assertFalse(running["snapshot"]["workers_settled"])
+        self.assertEqual(running["snapshot"]["running_total"], 1)
+        with path.open("a") as f:
+            f.write(codex_line("event_msg", type="task_complete", turn_id="new"))
+        self.assertTrue(self.observe(context)["snapshot"]["workers_settled"])
+
+    def test_newer_valid_json_without_marker_shape_is_unknown(self):
+        path, context = self.known_worker()
+        with path.open("a") as f:
+            f.write(json.dumps({"type": "event_msg", "payload": {"turn_id": "new"}}) + "\n")
+        uncertain = self.observe(context)
+        self.assertFalse(uncertain["available"])
+        self.assertEqual(uncertain["sources"]["worker_states"], "partial")
+        self.assertIsNone(uncertain["snapshot"]["workers_settled"])
+        with path.open("a") as f:
+            f.write(codex_line("event_msg", type="task_started", turn_id="new"))
+        self.assertFalse(self.observe(context)["snapshot"]["workers_settled"])
+
+    def test_changed_or_unreadable_source_is_unknown(self):
+        from types import SimpleNamespace
+        path, _ = self.known_worker()
+        original = path.stat()
+        changed = SimpleNamespace(**{name: getattr(original, name) for name in
+                                     ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns", "st_mode")})
+        changed.st_size += 1
+        session = SE.Session("codex", WORKER_ID, path)
+        with mock.patch.object(SE.os, "fstat", side_effect=[original, changed]):
+            result = SE.bridge_turn_state(session)
+        self.assertEqual(result["observation_status"], "partial")
+        self.assertEqual(result["state"], "unknown")
+        with mock.patch.object(Path, "open", side_effect=OSError("sensitive filesystem error")):
+            result = SE.bridge_turn_state(session)
+        self.assertEqual(result["observation_status"], "partial")
+        self.assertNotIn("sensitive", json.dumps(result))
+
+    def test_missing_marker_and_capped_source_are_unknown(self):
+        path, context = self.known_worker()
+        path.write_text(codex_line("session_meta", id=WORKER_ID))
+        observed = self.observe(context)
+        self.assertFalse(observed["available"])
+        self.assertIsNone(observed["snapshot"]["workers_settled"])
+        with path.open("a") as f:
+            f.write(codex_line("event_msg", type="task_complete", turn_id="new"))
+        with mock.patch.object(SE, "TURN_SCAN_BYTES", 8):
+            capped = self.observe(context)
+        self.assertFalse(capped["available"])
+        self.assertIsNone(capped["snapshot"]["workers_settled"])
+        self.assertTrue(self.observe(context)["available"])
+
+    def test_partial_sources_keep_known_workers_without_claiming_settlement(self):
+        import sqlite3
+        db, role, root = self.setup_sources()
+        with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("INSERT INTO thread_spawn_edges VALUES (?, ?)", (CODEX_ID, WORKER_ID))
+        role.unlink()
+        context = SE.Context.build(self.homes, role_ledger=role, budget_root=root)
+        observed = self.observe(context)
+        self.assertFalse(observed["available"])
+        self.assertEqual(observed["snapshot"]["workers_total"], 1)
+        self.assertIsNone(observed["snapshot"]["workers_settled"])

@@ -1,0 +1,31 @@
+{
+  "recorded_date": "2026-11-01",
+  "status": "local_controlled_realization_passed",
+  "scope": "Actual loopback MCP to existing native Codex daemon; no actual Dot/tunnel or external event-delivery/replay acceptance",
+  "history": "Four successful complete stable native TURN-history pages before first externally submitted runtime/user request; no unavailable-to-empty conversion",
+  "provisioning": "Non-inference single empty assistant item, explicitly synthetic rather than model output/authority; controlled dedicated owner connection",
+  "profile": "daemon0.166.0, Terra6.1/medium/default, readOnly/networkfalse/approvalnever; disabled MCP/apps/plugins/agent controls observed",
+  "native_turn": "01a197d2-13ec-7410-8bfa-56b150c40626",
+  "request_id": "f9af0b44-b05b-4642-9a1b-090e2d98818d",
+  "two_submissions_one_native_turn": true,
+  "direct_completion_and_result": "bridge-pilot-ok",
+  "public_semantics": "Runtime message admission only; no human approval/effect/spend/mandate authority. Existing grant/preflight unchanged.",
+  "observations": {
+    "completion": "actual exact terminal transcript entry and native completed status agree",
+    "worker_lineage": "partial/unavailable role-host source; known-lineage zero snapshot is not complete processclosure",
+    "usage_via_MCP": "unavailable for target because no direct scope-budget root mapping; not inferredzero",
+    "process_closure_via_MCP": "unavailable",
+    "native_cost_in_parent_ledger": 0.014306
+  },
+  "closure": "Target archived, token revoked, temporaryHTTP/owner/listener stopped, exact global Codex config restored, temporaryworkspace removed",
+  "evidence_root": "/home/bline/.local/state/work-engine/dot-codex-mcp-bridge-20261101/compatibility-repair",
+  "result_sha256": "78d29f621512313c125f38d8f0fc6ea3a8ed5960038a059d3ff50796ee7c8b9b",
+  "controller_manifest_sha256": "750ab5dfa5aa7cbbb58e54f082f1b83c7f33597706878513002a4b513f49d60f",
+  "remaining": [
+    "Actual Dot/tunnel trial/deployment/credentials not approved by this record",
+    "Production fresh-session lifecycle support beyond controlled case not established",
+    "Original preimplementation full battery omission remains disclosed"
+  ],
+  "commit_preparation": "Production code copied from reviewed joined subject. Workspace excludes unrelated publication/crate WIP; selected bridge dependency versions/features match tested qualified binary closure.",
+  "authority": "This dated evidence record grants no operational authority."
+}
