@@ -14,7 +14,7 @@ class ProvisionNative(FakeNative):
         self.target = str(uuid.uuid4()); self.loaded = False; self.allocations = 0
         self.injections = 0; self.archives = 0; self.lost_allocation = False; self.lost_close = False
         self.bad_config = False; self.bad_features = False; self.bad_ack = False; self.unreadable = False; self.unmaterialized = True; self.lost_injection = False; self.workers = []
-        self.delay_fragment=False; self.held=None; self.pong=threading.Event(); self.ping_payload=b'idle-heartbeat'; self.methods=[]
+        self.delay_fragment=False; self.fragment_rpc=threading.Event(); self.fragment_rpc_at=None; self.held=None; self.pong=threading.Event(); self.ping_payload=b'idle-heartbeat'; self.methods=[]
     def run(self):
         while not self.stop:
             try: c,_ = self.sock.accept()
@@ -53,6 +53,7 @@ class ProvisionNative(FakeNative):
                 msg=json.loads(raw); method=msg['method']; p=msg.get('params',{}); self.methods.append(method)
                 if 'id' not in msg: continue
                 if self.delay_fragment:
+                    self.fragment_rpc_at=time.monotonic(); self.fragment_rpc.set()
                     time.sleep(3); c.sendall(b'\x80\x09fixture"}'); self.delay_fragment=False
                 thread={'id':self.target,'cwd':self.workspace,'status':{'type':'idle' if self.loaded else 'notLoaded'}}
                 ack={'thread':thread,'model':'gpt-6.1-terra','reasoningEffort':'medium','serviceTier':'default','approvalPolicy':'never','sandbox':{'type':'readOnly','networkAccess':False}}
@@ -332,20 +333,34 @@ class Provisioning(unittest.TestCase):
         read=self.rpc('read_session_target')['result']
         self.assertEqual(read['setup_state'],'custody_lost'); self.assertNotEqual(read['owner_health'],'held')
         self.assertFalse(self.rpc('issue_session_request_grant',input_text=self.payload)['ok'])
-    def test_fragment_ping_then_rpc_retains_deadline_and_fences(self):
+    def fragment_ping_rpc(self, delayed_header):
         self.assertEqual(self.create()['result']['setup_state'],'ready')
         self.native.delay_fragment=True
-        # An incomplete notification and interleaved Ping let idle_poll return.
-        self.native.held.sendall(b'\x01\x0b{"method":"' + bytes([0x89,len(self.native.ping_payload)]) + self.native.ping_payload)
-        self.assertTrue(self.native.pong.wait(3))
-        time.sleep(8.5)
-        start=time.monotonic()
-        read=self.rpc('read_session_target')
-        self.assertLess(time.monotonic()-start,2.8)
-        self.assertTrue(read['ok'],read)
+        started=time.monotonic()
+        if delayed_header:
+            self.native.held.sendall(b'\x01')
+            time.sleep(8.5)
+            fragment=b'\x0b{"method":"'
+        else:
+            fragment=b'\x01\x0b{"method":"'
+        self.native.held.sendall(fragment + bytes([0x89,len(self.native.ping_payload)]) + self.native.ping_payload)
+        self.assertTrue(self.native.pong.wait(2))
+        if not delayed_header:
+            time.sleep(max(0,started+8.5-time.monotonic()))
+        result=[]
+        task=threading.Thread(target=lambda:result.append(self.rpc('read_session_target')))
+        task.start()
+        self.assertTrue(self.native.fragment_rpc.wait(1),'RPC did not enter peer before deadline')
+        self.assertLess(self.native.fragment_rpc_at-started,9.8)
+        task.join(5); self.assertFalse(task.is_alive())
+        read=result[0]; self.assertTrue(read['ok'],read)
         self.assertEqual(read['result']['setup_state'],'custody_lost')
         self.assertNotEqual(read['result']['owner_health'],'held')
         self.assertFalse(self.rpc('issue_session_request_grant',input_text=self.payload)['ok'])
+    def test_fragment_ping_then_rpc_retains_deadline_and_fences(self):
+        self.fragment_ping_rpc(False)
+    def test_partial_header_ping_then_rpc_retains_original_deadline(self):
+        self.fragment_ping_rpc(True)
     def test_idle_beyond_single_rpc_deadline_keeps_custody(self):
         self.assertEqual(self.create()['result']['setup_state'],'ready')
         time.sleep(11)

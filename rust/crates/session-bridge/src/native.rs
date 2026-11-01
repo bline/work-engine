@@ -32,6 +32,7 @@ struct FrameBoundary {
     remaining: Option<u64>,
     finish_fragment: bool,
     fragment_deadline: Option<Instant>,
+    frame_deadline: Option<Instant>,
 }
 impl FrameBoundary {
     fn limit(&self, requested: usize) -> usize {
@@ -52,7 +53,10 @@ impl FrameBoundary {
         };
         requested.min(need - self.header.len())
     }
-    fn consume(&mut self, bytes: &[u8]) {
+    fn consume(&mut self, bytes: &[u8], deadline: Instant) {
+        if !bytes.is_empty() && self.header.is_empty() && self.remaining.is_none() {
+            self.frame_deadline = Some(deadline.min(Instant::now() + Duration::from_secs(10)));
+        }
         if let Some(left) = self.remaining {
             let left = left - bytes.len() as u64;
             if left == 0 {
@@ -86,7 +90,7 @@ impl FrameBoundary {
         let opcode = self.header[0] & 0x0f;
         let final_frame = self.header[0] & 0x80 != 0;
         if (opcode == 1 || opcode == 2) && !final_frame && self.fragment_deadline.is_none() {
-            self.fragment_deadline = Some(Instant::now() + Duration::from_secs(10));
+            self.fragment_deadline = self.frame_deadline;
         }
         self.finish_fragment = opcode == 0 && final_frame;
         if length == 0 {
@@ -100,6 +104,7 @@ impl FrameBoundary {
             self.fragment_deadline = None;
         }
         self.finish_fragment = false;
+        self.frame_deadline = None;
         self.header.clear();
         self.remaining = None;
     }
@@ -108,8 +113,13 @@ impl DeadlineStream {
     fn remaining(&self) -> io::Result<Duration> {
         self.frames
             .as_ref()
-            .and_then(|f| f.fragment_deadline)
-            .map_or(self.deadline, |fragment| self.deadline.min(fragment))
+            .map(|f| {
+                f.fragment_deadline
+                    .into_iter()
+                    .chain(f.frame_deadline)
+                    .fold(self.deadline, Instant::min)
+            })
+            .unwrap_or(self.deadline)
             .checked_duration_since(Instant::now())
             .filter(|d| !d.is_zero())
             .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "native deadline"))
@@ -157,7 +167,7 @@ impl Read for DeadlineStream {
         // expired deadline when bytes arrive at or after the boundary.
         self.remaining()?;
         if let Some(frames) = self.frames.as_mut() {
-            frames.consume(&buf[..n]);
+            frames.consume(&buf[..n], self.deadline);
         } else {
             self.handshake_tail.extend_from_slice(&buf[..n]);
             if self.handshake_tail.len() > 3 {
@@ -594,14 +604,14 @@ mod deadline_tests {
     #[test]
     fn interleaved_ping_does_not_reset_fragment_deadline() {
         let mut frame = FrameBoundary::default();
-        frame.consume(&[0x01, 0x01]);
-        frame.consume(b"a");
+        frame.consume(&[0x01, 0x01], Instant::now() + Duration::from_secs(10));
+        frame.consume(b"a", Instant::now() + Duration::from_secs(10));
         let deadline = frame.fragment_deadline.unwrap();
-        frame.consume(&[0x89, 0x01]);
-        frame.consume(b"p");
+        frame.consume(&[0x89, 0x01], Instant::now() + Duration::from_secs(10));
+        frame.consume(b"p", Instant::now() + Duration::from_secs(10));
         assert_eq!(frame.fragment_deadline, Some(deadline));
-        frame.consume(&[0x80, 0x01]);
-        frame.consume(b"b");
+        frame.consume(&[0x80, 0x01], Instant::now() + Duration::from_secs(10));
+        frame.consume(b"b", Instant::now() + Duration::from_secs(10));
         assert_eq!(frame.fragment_deadline, None);
     }
     #[test]
