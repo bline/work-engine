@@ -1,7 +1,11 @@
 use serde_json::{Value, json};
 use std::{
     collections::HashSet,
-    os::unix::net::UnixStream,
+    io::{self, Read, Write},
+    os::{
+        fd::{AsRawFd, FromRawFd},
+        unix::{ffi::OsStrExt, net::UnixStream},
+    },
     path::Path,
     time::{Duration, Instant},
 };
@@ -11,19 +15,128 @@ const MAX_HISTORY: usize = 10_000;
 const MAX_PAGES: usize = 100;
 const MAX_MESSAGE: usize = 2 * 1024 * 1024;
 
+// Socket timeouts are per system call. Recompute them on every read and write,
+// including calls made internally while tungstenite assembles fragmented frames.
+struct DeadlineStream {
+    stream: UnixStream,
+    deadline: Instant,
+}
+impl DeadlineStream {
+    fn remaining(&self) -> io::Result<Duration> {
+        self.deadline
+            .checked_duration_since(Instant::now())
+            .filter(|d| !d.is_zero())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "native deadline"))
+    }
+}
+impl Read for DeadlineStream {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.stream.set_read_timeout(Some(self.remaining()?))?;
+        self.stream.read(buf)
+    }
+}
+impl Write for DeadlineStream {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.stream.set_write_timeout(Some(self.remaining()?))?;
+        self.stream.write(buf)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.stream.set_write_timeout(Some(self.remaining()?))?;
+        self.stream.flush()
+    }
+}
+
+// A local socket connect can also block on a full listen queue. Nonblocking
+// connect plus poll keeps that step inside the same deadline as the handshake.
+fn connect_until(path: &Path, deadline: Instant) -> io::Result<UnixStream> {
+    let bytes = path.as_os_str().as_bytes();
+    let mut address: libc::sockaddr_un = unsafe { std::mem::zeroed() };
+    if bytes.is_empty() || bytes.contains(&0) || bytes.len() >= address.sun_path.len() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "native socket path",
+        ));
+    }
+    address.sun_family = libc::AF_UNIX as libc::sa_family_t;
+    for (dst, src) in address.sun_path.iter_mut().zip(bytes) {
+        *dst = *src as libc::c_char;
+    }
+    let fd = unsafe {
+        libc::socket(
+            libc::AF_UNIX,
+            libc::SOCK_STREAM | libc::SOCK_NONBLOCK | libc::SOCK_CLOEXEC,
+            0,
+        )
+    };
+    if fd < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let stream = unsafe { UnixStream::from_raw_fd(fd) };
+    let len =
+        (std::mem::offset_of!(libc::sockaddr_un, sun_path) + bytes.len() + 1) as libc::socklen_t;
+    let rc = unsafe { libc::connect(fd, (&address as *const libc::sockaddr_un).cast(), len) };
+    if rc < 0 {
+        let err = io::Error::last_os_error();
+        if err.raw_os_error() != Some(libc::EINPROGRESS) {
+            return Err(err);
+        }
+        loop {
+            let remaining = deadline
+                .checked_duration_since(Instant::now())
+                .filter(|d| !d.is_zero())
+                .ok_or_else(|| {
+                    io::Error::new(io::ErrorKind::TimedOut, "native connect deadline")
+                })?;
+            let ms = remaining
+                .as_millis()
+                .saturating_add(1)
+                .min(i32::MAX as u128) as i32;
+            let mut pfd = libc::pollfd {
+                fd: stream.as_raw_fd(),
+                events: libc::POLLOUT,
+                revents: 0,
+            };
+            let ready = unsafe { libc::poll(&mut pfd, 1, ms) };
+            if ready == 0 {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "native connect deadline",
+                ));
+            }
+            if ready < 0 {
+                let err = io::Error::last_os_error();
+                if err.kind() == io::ErrorKind::Interrupted {
+                    continue;
+                }
+                return Err(err);
+            }
+            if let Some(err) = stream.take_error()? {
+                return Err(err);
+            }
+            break;
+        }
+    }
+    if Instant::now() >= deadline {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "native connect deadline",
+        ));
+    }
+    stream.set_nonblocking(false)?;
+    Ok(stream)
+}
+
 pub struct Native {
-    ws: WebSocket<UnixStream>,
+    ws: WebSocket<DeadlineStream>,
     id: u64,
 }
 impl Native {
     pub fn connect(path: &str) -> Result<Self, ()> {
-        let stream = UnixStream::connect(Path::new(path)).map_err(|_| ())?;
-        stream
-            .set_read_timeout(Some(Duration::from_secs(10)))
-            .map_err(|_| ())?;
-        stream
-            .set_write_timeout(Some(Duration::from_secs(10)))
-            .map_err(|_| ())?;
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let stream = DeadlineStream {
+            stream: connect_until(Path::new(path), deadline).map_err(|_| ())?,
+            deadline,
+        };
         let (ws, _) = client_with_config(
             "ws://localhost/",
             stream,
@@ -47,6 +160,10 @@ impl Native {
         Ok(me)
     }
     pub fn call(&mut self, method: &str, params: Value) -> Result<Value, ()> {
+        self.call_until(method, params, Instant::now() + Duration::from_secs(10))
+    }
+    fn call_until(&mut self, method: &str, params: Value, deadline: Instant) -> Result<Value, ()> {
+        self.ws.get_mut().deadline = deadline;
         self.id += 1;
         let id = self.id;
         self.ws
@@ -56,13 +173,7 @@ impl Native {
                     .into(),
             ))
             .map_err(|_| ())?;
-        let deadline = Instant::now() + Duration::from_secs(10);
         for _ in 0..1024 {
-            let remaining = deadline.checked_duration_since(Instant::now()).ok_or(())?;
-            self.ws
-                .get_mut()
-                .set_read_timeout(Some(remaining))
-                .map_err(|_| ())?;
             let message = self.ws.read().map_err(|_| ())?;
             if message.len() > MAX_MESSAGE {
                 return Err(());
@@ -80,6 +191,7 @@ impl Native {
         Err(())
     }
     fn pages(&mut self, method: &str, session: Option<&str>) -> Result<Vec<Value>, ()> {
+        let deadline = Instant::now() + Duration::from_secs(10);
         let mut cursor: Option<String> = None;
         let mut seen = HashSet::new();
         let mut result = Vec::new();
@@ -94,7 +206,7 @@ impl Native {
             if let Some(c) = &cursor {
                 p["cursor"] = json!(c);
             }
-            let page = self.call(method, p)?;
+            let page = self.call_until(method, p, deadline)?;
             bytes = bytes
                 .checked_add(serde_json::to_vec(&page).map_err(|_| ())?.len())
                 .ok_or(())?;
@@ -212,5 +324,38 @@ impl Native {
             .filter(|s| crate::wire::valid_uuid(s))
             .map(str::to_owned)
             .ok_or(())
+    }
+}
+
+#[cfg(test)]
+mod deadline_tests {
+    use super::*;
+    use std::thread;
+
+    #[test]
+    fn fragmented_reads_do_not_renew_deadline() {
+        let (reader, mut writer) = UnixStream::pair().unwrap();
+        let handle = thread::spawn(move || {
+            for _ in 0..8 {
+                if writer.write_all(b"x").is_err() {
+                    break;
+                }
+                thread::sleep(Duration::from_millis(30));
+            }
+        });
+        let mut reader = DeadlineStream {
+            stream: reader,
+            deadline: Instant::now() + Duration::from_millis(100),
+        };
+        let start = Instant::now();
+        let mut byte = [0];
+        let mut count = 0;
+        while reader.read_exact(&mut byte).is_ok() {
+            count += 1;
+        }
+        assert!(count > 0 && count < 8);
+        assert!(start.elapsed() < Duration::from_millis(220));
+        drop(reader);
+        handle.join().unwrap();
     }
 }
