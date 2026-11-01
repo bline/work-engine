@@ -49,6 +49,12 @@ impl Write for DeadlineStream {
 // A local socket connect can also block on a full listen queue. Nonblocking
 // connect plus poll keeps that step inside the same deadline as the handshake.
 fn connect_until(path: &Path, deadline: Instant) -> io::Result<UnixStream> {
+    if Instant::now() >= deadline {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "native connect deadline",
+        ));
+    }
     let bytes = path.as_os_str().as_bytes();
     let mut address: libc::sockaddr_un = unsafe { std::mem::zeroed() };
     if bytes.is_empty() || bytes.contains(&0) || bytes.len() >= address.sun_path.len() {
@@ -129,13 +135,17 @@ fn connect_until(path: &Path, deadline: Instant) -> io::Result<UnixStream> {
 pub struct Native {
     ws: WebSocket<DeadlineStream>,
     id: u64,
+    deadline: Instant,
 }
 impl Native {
     pub fn connect(path: &str) -> Result<Self, ()> {
-        let deadline = Instant::now() + Duration::from_secs(10);
+        Self::connect_with_deadline(path, Instant::now() + Duration::from_secs(60))
+    }
+    pub fn connect_with_deadline(path: &str, deadline: Instant) -> Result<Self, ()> {
+        let handshake_deadline = deadline.min(Instant::now() + Duration::from_secs(10));
         let stream = DeadlineStream {
-            stream: connect_until(Path::new(path), deadline).map_err(|_| ())?,
-            deadline,
+            stream: connect_until(Path::new(path), handshake_deadline).map_err(|_| ())?,
+            deadline: handshake_deadline,
         };
         let (ws, _) = client_with_config(
             "ws://localhost/",
@@ -147,10 +157,15 @@ impl Native {
             ),
         )
         .map_err(|_| ())?;
-        let mut me = Self { ws, id: 0 };
-        me.call(
+        let mut me = Self {
+            ws,
+            id: 0,
+            deadline,
+        };
+        me.call_until(
             "initialize",
             json!({"clientInfo":{"name":"session-bridge","version":"1"}}),
+            handshake_deadline,
         )?;
         me.ws
             .send(Message::Text(
@@ -163,7 +178,7 @@ impl Native {
         self.call_until(method, params, Instant::now() + Duration::from_secs(10))
     }
     fn call_until(&mut self, method: &str, params: Value, deadline: Instant) -> Result<Value, ()> {
-        self.ws.get_mut().deadline = deadline;
+        self.ws.get_mut().deadline = deadline.min(self.deadline);
         self.id += 1;
         let id = self.id;
         self.ws
@@ -331,6 +346,12 @@ impl Native {
 mod deadline_tests {
     use super::*;
     use std::thread;
+
+    #[test]
+    fn expired_deadline_prevents_connect() {
+        let err = connect_until(Path::new("/nonexistent"), Instant::now()).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::TimedOut);
+    }
 
     #[test]
     fn fragmented_reads_do_not_renew_deadline() {
