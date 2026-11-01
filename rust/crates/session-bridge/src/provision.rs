@@ -439,6 +439,7 @@ fn checkpoint(policy: &Policy, deadline: std::time::Instant) -> Result<()> {
             &["rev-parse", "--verify", "HEAD"][..],
             Some(policy.checkpoint.as_str()),
         ),
+        (&["ls-files", "-v", "-z"][..], Some("__INDEX_FLAGS__")),
         (
             &[
                 "status",
@@ -471,18 +472,42 @@ fn checkpoint(policy: &Policy, deadline: std::time::Instant) -> Result<()> {
                 .stderr(Stdio::null())
                 .spawn(),
         )?;
+        // Drain concurrently: a large index must not fill the pipe and deadlock Git.
+        let mut stdout = child.stdout.take().ok_or("bridge_unavailable")?;
+        let index_flags = expected == Some("__INDEX_FLAGS__");
+        let reader = std::thread::spawn(move || -> std::io::Result<Vec<u8>> {
+            let mut result = Vec::new();
+            let mut at_start = true;
+            let mut buf = [0u8; 4096];
+            loop {
+                let n = stdout.read(&mut buf)?;
+                if n == 0 {
+                    break;
+                }
+                if index_flags {
+                    for &byte in &buf[..n] {
+                        if at_start && byte != b'H' && result.is_empty() {
+                            result.push(1);
+                        }
+                        at_start = byte == 0;
+                    }
+                } else if result.len() <= 1024 {
+                    let keep = n.min(1025 - result.len());
+                    result.extend_from_slice(&buf[..keep]);
+                }
+            }
+            Ok(result)
+        });
         loop {
             match child.try_wait() {
                 Ok(Some(status)) => {
-                    let mut output = Vec::new();
-                    fail(
-                        child
-                            .stdout
-                            .take()
-                            .ok_or("bridge_unavailable")?
-                            .take(1025)
-                            .read_to_end(&mut output),
-                    )?;
+                    let output = fail(reader.join().map_err(|_| "bridge_unavailable")?)?;
+                    if index_flags {
+                        if !status.success() || !output.is_empty() {
+                            return Err("target_mismatch");
+                        }
+                        break;
+                    }
                     if output.len() > 1024 {
                         return Err("target_mismatch");
                     }
@@ -515,6 +540,7 @@ fn checkpoint(policy: &Policy, deadline: std::time::Instant) -> Result<()> {
                     }
                     let _ = child.kill();
                     let _ = child.wait();
+                    let _ = reader.join();
                     return Err("target_mismatch");
                 }
             }

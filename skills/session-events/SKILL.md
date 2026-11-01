@@ -435,8 +435,9 @@ session-bridge --config /private/bridge/config.json grant issue \
 Preview prints the exact generated wire input locally. Review it and use its
 wire digest in the issuance command; issuance rechecks the file and target and
 will not overwrite the credential file. Protect that file and the private wire
-input files: the store contains sensitive request material. No remote tool can
-issue or revoke a grant. `grant revoke --grant-id ID` blocks later
+input files: the store contains sensitive request material. In the original message-only profile, no remote tool can
+issue or revoke a grant. The separately authorized optional provisioning profile
+can issue a scoped child grant and revoke it through target closure. `grant revoke --grant-id ID` blocks later
 credential-authorized reads and submissions; it does not cancel an already
 admitted turn. Admission expiry does not end reads of an unrevoked admitted
 operation. Local `operation inspect --request-id UUID` shows safe metadata.

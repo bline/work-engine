@@ -106,7 +106,10 @@ impl FrameBoundary {
 }
 impl DeadlineStream {
     fn remaining(&self) -> io::Result<Duration> {
-        self.deadline
+        self.frames
+            .as_ref()
+            .and_then(|f| f.fragment_deadline)
+            .map_or(self.deadline, |fragment| self.deadline.min(fragment))
             .checked_duration_since(Instant::now())
             .filter(|d| !d.is_zero())
             .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "native deadline"))
@@ -150,6 +153,9 @@ impl Read for DeadlineStream {
         };
         self.stream.set_read_timeout(Some(self.remaining()?))?;
         let n = self.stream.read(&mut buf[..limit])?;
+        // Check before consuming: a final continuation must not erase an
+        // expired deadline when bytes arrive at or after the boundary.
+        self.remaining()?;
         if let Some(frames) = self.frames.as_mut() {
             frames.consume(&buf[..n]);
         } else {

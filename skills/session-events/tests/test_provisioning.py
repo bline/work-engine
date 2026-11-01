@@ -14,7 +14,7 @@ class ProvisionNative(FakeNative):
         self.target = str(uuid.uuid4()); self.loaded = False; self.allocations = 0
         self.injections = 0; self.archives = 0; self.lost_allocation = False; self.lost_close = False
         self.bad_config = False; self.bad_features = False; self.bad_ack = False; self.unreadable = False; self.unmaterialized = True; self.lost_injection = False; self.workers = []
-        self.held=None; self.pong=threading.Event(); self.ping_payload=b'idle-heartbeat'; self.methods=[]
+        self.delay_fragment=False; self.held=None; self.pong=threading.Event(); self.ping_payload=b'idle-heartbeat'; self.methods=[]
     def run(self):
         while not self.stop:
             try: c,_ = self.sock.accept()
@@ -52,6 +52,8 @@ class ProvisionNative(FakeNative):
                 if raw is None: continue
                 msg=json.loads(raw); method=msg['method']; p=msg.get('params',{}); self.methods.append(method)
                 if 'id' not in msg: continue
+                if self.delay_fragment:
+                    time.sleep(3); c.sendall(b'\x80\x09fixture"}'); self.delay_fragment=False
                 thread={'id':self.target,'cwd':self.workspace,'status':{'type':'idle' if self.loaded else 'notLoaded'}}
                 ack={'thread':thread,'model':'gpt-6.1-terra','reasoningEffort':'medium','serviceTier':'default','approvalPolicy':'never','sandbox':{'type':'readOnly','networkAccess':False}}
                 if self.bad_ack: ack['model']='unexpected-model'
@@ -226,6 +228,21 @@ class Provisioning(unittest.TestCase):
     def test_changed_checkpoint_prevents_allocation(self):
         (self.workspace/'a').write_text('changed\n')
         self.assertFalse(self.create()['ok']); self.assertEqual(self.native.allocations,0)
+    def test_hidden_index_changes_block_allocation_and_submission(self):
+        for flag in ('--assume-unchanged', '--skip-worktree'):
+            with self.subTest(stage='allocation', flag=flag):
+                self.git('update-index',flag,'a'); (self.workspace/'a').write_text('hidden change\n')
+                self.assertEqual(subprocess.check_output(['/usr/bin/git','-C',str(self.workspace),'status','--porcelain']),b'')
+                self.assertFalse(self.create()['ok']); self.assertEqual(self.native.allocations,0)
+                self.git('update-index',flag.replace('--','--no-',1),'a'); (self.workspace/'a').write_text('checkpoint\n')
+        created=self.create()['result']; grant=self.rpc('issue_session_request_grant',input_text=self.payload)['result']
+        request={'request_id':self.request,'grant_handle':grant['grant_handle'],'session_id':created['target_id'],'workspace':str(self.workspace),'input_text':self.payload}
+        for flag in ('--assume-unchanged', '--skip-worktree'):
+            with self.subTest(stage='submission', flag=flag):
+                self.git('update-index',flag,'a'); (self.workspace/'a').write_text('hidden change\n')
+                self.assertEqual(subprocess.check_output(['/usr/bin/git','-C',str(self.workspace),'status','--porcelain']),b'')
+                self.assertFalse(self.rpc('submit_session_request',**request)['ok']); self.assertEqual(self.native.starts,0)
+                self.git('update-index',flag.replace('--','--no-',1),'a'); (self.workspace/'a').write_text('checkpoint\n')
     def test_close_and_submit_are_serialized(self):
         created=self.create()['result']; grant=self.rpc('issue_session_request_grant',input_text=self.payload)['result']
         request={'request_id':self.request,'grant_handle':grant['grant_handle'],'session_id':created['target_id'],'workspace':str(self.workspace),'input_text':self.payload}
@@ -314,6 +331,20 @@ class Provisioning(unittest.TestCase):
         time.sleep(11)
         read=self.rpc('read_session_target')['result']
         self.assertEqual(read['setup_state'],'custody_lost'); self.assertNotEqual(read['owner_health'],'held')
+        self.assertFalse(self.rpc('issue_session_request_grant',input_text=self.payload)['ok'])
+    def test_fragment_ping_then_rpc_retains_deadline_and_fences(self):
+        self.assertEqual(self.create()['result']['setup_state'],'ready')
+        self.native.delay_fragment=True
+        # An incomplete notification and interleaved Ping let idle_poll return.
+        self.native.held.sendall(b'\x01\x0b{"method":"' + bytes([0x89,len(self.native.ping_payload)]) + self.native.ping_payload)
+        self.assertTrue(self.native.pong.wait(3))
+        time.sleep(8.5)
+        start=time.monotonic()
+        read=self.rpc('read_session_target')
+        self.assertLess(time.monotonic()-start,2.8)
+        self.assertTrue(read['ok'],read)
+        self.assertEqual(read['result']['setup_state'],'custody_lost')
+        self.assertNotEqual(read['result']['owner_health'],'held')
         self.assertFalse(self.rpc('issue_session_request_grant',input_text=self.payload)['ok'])
     def test_idle_beyond_single_rpc_deadline_keeps_custody(self):
         self.assertEqual(self.create()['result']['setup_state'],'ready')
