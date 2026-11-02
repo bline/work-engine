@@ -266,6 +266,20 @@ class GateCommit(Base):
         self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
         self.assertEqual(json.loads((self.state / "transfer-result.json").read_text())["cost_binding"], "not_established")
 
+    def test_closed_record_does_not_block_rotation(self):
+        record = self.tmp / "assignment.json"
+        script = ROOT / "scripts" / "scope_budget.py"
+        subprocess.run([sys.executable, str(script), "init", "--record", str(record), "--objective", "x",
+                        "--item", "a", "--max-hours", "2", "--set-by", "user"], check=True, capture_output=True)
+        subprocess.run([sys.executable, str(script), "close", "--record", str(record), "--disposition", "accepted",
+                        "--reason", "done", "--set-by", "user"], check=True, capture_output=True)
+        before = record.read_bytes()
+        self.assertEqual(self.gate("prepare")[0], 10)
+        rc, status, err = self.gate("commit", "--record", str(record))
+        self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
+        self.assertEqual(json.loads((self.state / "transfer-result.json").read_text())["cost_binding"], "not_established")
+        self.assertEqual(record.read_bytes(), before)
+
     def test_codex_successor_adopts_and_commits(self):
         rc, status, err = self.commit(successor="codex")
         self.assertEqual((rc, status), (0, "committed_rotation_1"), err)

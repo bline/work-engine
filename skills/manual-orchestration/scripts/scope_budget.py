@@ -16,9 +16,15 @@ trigger), 4 stop (hours or quota reached). Other commands return 0. All return
 from __future__ import annotations
 
 import argparse
+import fcntl
+import tempfile
+import hashlib
+import subprocess
 import datetime as dt
 import json
 import os
+import signal
+import time
 import sys
 import uuid
 import math
@@ -29,6 +35,8 @@ KEY = "scope_budget"
 SCHEMA_V1 = "manual-orchestration.scope-budget.v1"
 SCHEMA = "manual-orchestration.scope-budget.v2"
 WEEK_MINUTES = 10080
+METER_MAX_AGE_SECONDS = 300
+COST_BASIS = 'speed_adjusted_api_usd'
 LIMITS = ("max_hours", "max_weekly_points", "max_weekly_percent", "reconsider_after_additions")
 
 
@@ -58,9 +66,16 @@ def load(path: Path) -> dict[str, Any]:
 
 
 def save(path: Path, doc: dict[str, Any]) -> None:
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=path.name + ".", suffix=".tmp", delete=False) as f:
+            tmp = Path(f.name)
+            f.write(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        os.replace(tmp, path)
+    finally:
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
 
 
 def weekly_percent(rollout: Path, block: int = 1 << 20) -> dict[str, Any] | None:
@@ -83,12 +98,50 @@ def weekly_percent(rollout: Path, block: int = 1 << 20) -> dict[str, Any] | None
                 except ValueError:
                     continue
                 limits = (rec.get("payload") or {}).get("rate_limits") or {}
+                if limits.get('limit_id') not in (None, 'codex'):
+                    continue
                 for slot in ("primary", "secondary"):
                     w = limits.get(slot)
                     if isinstance(w, dict) and w.get("window_minutes") == WEEK_MINUTES and w.get("used_percent") is not None:
                         return {"used_percent": float(w["used_percent"]), "observed_at": rec.get("timestamp"),
-                                "resets_at": w.get("resets_at")}
+                                "resets_at": w.get("resets_at"), "window_minutes": WEEK_MINUTES,
+                                "limit_id": limits.get("limit_id"), "plan_type": limits.get("plan_type"),
+                                "source": str(rollout)}
     return None
+
+
+def account_quota(meter: dict[str, Any] | None, ceiling: float | None) -> dict[str, Any]:
+    """Current headroom is unknown when the last recorded reading is unusable."""
+    result = {"status": "not_established", "pool": "codex", "account_wide": True, "used_percent": None,
+              "remaining_percent": None, "headroom_to_ceiling_percent": None,
+              "ceiling_percent": ceiling, "observed_at": None, "resets_at": None,
+              "age_seconds": None, "max_age_seconds": METER_MAX_AGE_SECONDS, "reason": "no_reading"}
+    if meter is None:
+        return result
+    result.update(meter)
+    try:
+        value = meter["used_percent"]
+        if isinstance(value, bool) or not math.isfinite(value) or not 0 <= value <= 100:
+            raise ValueError("invalid percent")
+        age = (now() - parse(meter["observed_at"])).total_seconds()
+        reset = meter.get("resets_at")
+        known_reset = isinstance(reset, (int, float)) and not isinstance(reset, bool) and math.isfinite(reset) and reset >= 0
+        status, reason = "observed", None
+        if age < 0:
+            status, reason = "not_established", "future_reading"
+        elif known_reset and reset <= now().timestamp():
+            status, reason = "expired", "window_reset"
+        elif not known_reset:
+            status, reason = "not_established", "reset_unknown"
+        elif age > METER_MAX_AGE_SECONDS:
+            status, reason = "stale", "reading_age"
+        result.update(status=status, reason=reason, age_seconds=age, last_reported_remaining_percent=100 - value)
+        if status == "observed":
+            result.update(remaining_percent=100 - value,
+                          headroom_to_ceiling_percent=ceiling - value if ceiling is not None else None)
+    except (TypeError, ValueError, KeyError, OverflowError):
+        result.update(status="not_established", reason="invalid_reading")
+    return result
 
 
 def section(doc: dict[str, Any], path: Path) -> dict[str, Any]:
@@ -97,6 +150,11 @@ def section(doc: dict[str, Any], path: Path) -> dict[str, Any]:
         raise UsageError(f"{path} has no {KEY} record; run init first")
     return sb
 
+
+
+def require_open(sb: dict[str, Any]) -> None:
+    if "closed_at" in sb:
+        raise UsageError("objective is closed; start a new one with init")
 
 
 def upgrade(sb: dict[str, Any]) -> None:
@@ -113,7 +171,12 @@ def setter(value: str) -> str:
     return "supervisor" if value == "coordinator" else value
 
 def limits_from(args: argparse.Namespace) -> dict[str, Any]:
-    return {k: getattr(args, k) for k in LIMITS if getattr(args, k) is not None}
+    limits = {k: getattr(args, k) for k in LIMITS if getattr(args, k) is not None}
+    if any(not math.isfinite(v) or v < 0 for v in limits.values()):
+        raise UsageError("limits must be nonnegative and finite")
+    if limits.get('max_weekly_percent', 0) > 100:
+        raise UsageError("--max-weekly-percent must be between 0 and 100")
+    return limits
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -147,6 +210,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     upgrade(sb)
     sb["additions"].append({"at": stamp(now()), "item": args.item, "reason": args.reason})
     save(path, doc)
@@ -161,6 +225,7 @@ def cmd_revise(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     reject_points(args)
     changed = limits_from(args)
     if not changed:
@@ -180,6 +245,7 @@ def cmd_add_session(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     parse(args.from_time)
     entry = {"session_id": args.session, "provider": args.provider, "from": args.from_time,
              "bound_by": args.bound_by, "evidence": args.evidence}
@@ -200,6 +266,7 @@ def cmd_bind(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     upgrade(sb)
     entry = {"session_id": args.session, "provider": args.provider, "parent_session_id": args.parent,
              "bound_at": stamp(now()), "bound_by": args.bound_by, "reason": args.reason}
@@ -216,10 +283,11 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
+    require_open(sb)
     upgrade(sb)
     entry = {"pool": args.pool, "node": args.node, "max_usd": args.max_usd,
              "marks_usd": sorted(set(args.mark_usd)), "set_by": args.set_by,
-             "set_at": stamp(now()), "reason": args.reason}
+             "set_at": stamp(now()), "reason": args.reason, "basis": COST_BASIS}
     previous = next ( (x for x in sb["cost_limits"] if x["pool"] == args.pool and x["node"] == args.node and setter(x["set_by"]) == args.set_by), None)
     sb["cost_limits"] = [x for x in sb["cost_limits"] if (x["pool"], x["node"], setter(x["set_by"])) != (args.pool, args.node, args.set_by)]
     sb["cost_limits"].append(entry)
@@ -230,12 +298,160 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     print(json.dumps({"cost_limit": entry}))
     return 0
 
+def listener_state(sb: dict[str, Any], path: Path) -> dict[str, Any]:
+    entry = sb.get("listener")
+    if not entry:
+        return {"state": "none", "pid": None}
+    pid = entry.get("pid")
+    try:
+        parts = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        alive = str(path.resolve()).encode() in parts
+    except (OSError, ValueError):
+        alive = False
+    return {"state": "alive" if alive else "exited", "pid": pid}
+
+
+def cmd_close(args: argparse.Namespace) -> int:
+    path = Path(args.record)
+    doc = load(path)
+    sb = section(doc, path)
+    require_open(sb)
+    at = parse(args.at) if args.at else now()
+    if at.tzinfo is None:
+        raise UsageError("--at must include a timezone")
+    if at < parse(sb["started_at"]) or at > now():
+        raise UsageError("--at must be between started_at and now")
+    closed_at = stamp(at.astimezone(dt.timezone.utc))
+    entry = {"at": closed_at, "disposition": args.disposition, "reason": args.reason, "set_by": args.set_by}
+    sb["closed_at"], sb["close"] = closed_at, entry
+    save(path, doc)
+    print(json.dumps(entry))
+    return 0
+
+
+def stop_listener_group(proc: subprocess.Popen) -> None:
+    """Stop the detached listener and its readers after publication fails."""
+    pgid = proc.pid  # start_new_session makes the child the group leader.
+    def signal_group(sig: int) -> bool:
+        try:
+            os.killpg(pgid, sig)
+            return True
+        except ProcessLookupError:
+            return False
+
+    try:
+        if signal_group(signal.SIGTERM):
+            deadline = time.monotonic() + 5.0
+            while True:
+                proc.poll()  # Reap the leader so it cannot keep the group present.
+                if not signal_group(0):
+                    break
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    signal_group(signal.SIGKILL)
+                    break
+                time.sleep(min(0.05, remaining))
+    finally:
+        proc.wait()
+
+
+def cmd_listen(args: argparse.Namespace) -> int:
+    path = Path(args.record).resolve()
+    doc = load(path)
+    sb = section(doc, path)
+    require_open(sb)
+    if listener_state(sb, path)["state"] == "alive":
+        raise UsageError("listener is already alive")
+    try:
+        if str(uuid.UUID(args.session)) != args.session:
+            raise ValueError
+    except ValueError:
+        raise UsageError("--session must be a canonical UUID")
+    if args.since is not None and args.since < 0:
+        raise UsageError("--since must be nonnegative")
+    if any(not topic.strip() or topic.startswith("control:") for topic in args.topic):
+        raise UsageError("--topic must be nonempty and must not start with control:")
+    if not math.isfinite(args.interval) or args.interval <= 0:
+        raise UsageError("--interval must be positive and finite")
+    repo = Path(args.repository).resolve() if args.repository else Path(subprocess.check_output(
+        ["git", "rev-parse", "--show-toplevel"], text=True).strip()).resolve()
+    reader = repo / "metrics/scripts/usage_ledger.py"
+    adjacent = Path(__file__).resolve().parents[2] / "durable-state/scripts/codex_chatboard.py"
+    chatboard = adjacent if adjacent.is_file() else repo / "skills/durable-state/scripts/codex_chatboard.py"
+    reader_sha = hashlib.sha256(reader.read_bytes()).hexdigest()
+    chatboard_sha = hashlib.sha256(chatboard.read_bytes()).hexdigest()
+    upgrade(sb)
+    objective_id = sb["objective_id"]
+    stdout = path.parent / f"budget-listener-{objective_id}.jsonl"
+    stderr = path.parent / f"budget-listener-{objective_id}.stderr"
+    since, cursor = args.since, None
+    incomplete = False
+    recorded = [sb.get("listener"), *sb.get("listener_history", [])]
+    owns_output = any(isinstance(entry, dict) and entry.get("stdout") == str(stdout) for entry in recorded)
+    if owns_output and stdout.exists():
+        data = stdout.read_bytes()
+        complete = data.split(b"\n")[:-1]
+        incomplete = bool(data and not data.endswith(b"\n"))
+        for line in reversed(complete):
+            try:
+                last = json.loads(line)
+            except (ValueError, UnicodeDecodeError):
+                continue
+            since, cursor = last["next_since"], last.get("next_budget_cursor")
+            break
+    if since is None:
+        raise UsageError("--since is required without earlier listener output")
+    if not isinstance(since, int) or isinstance(since, bool) or since < 0:
+        raise UsageError("listener cursor next_since must be a nonnegative integer")
+    argv = [sys.executable, str(chatboard), "--repository", str(repo), "wait", "--since", str(since),
+            "--topic", f"session:{args.session}"]
+    for topic in args.topic:
+        argv += ["--topic", topic]
+    argv += ["--exclude-session-id", args.session, "--budget-record", str(path), "--budget-reader", str(reader),
+             "--budget-sha256", reader_sha, "--budget-interval", str(args.interval)]
+    if cursor is not None:
+        argv += ["--budget-cursor", cursor if isinstance(cursor, str) else json.dumps(cursor, separators=(",", ":"))]
+    argv += ["--follow"]
+    with stdout.open("ab") as out, stderr.open("ab") as err:
+        if incomplete:
+            out.write(b"\n")
+            out.flush()
+        proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True)
+    entry = {"pid": proc.pid, "started_at": stamp(now()), "argv": argv, "stdout": str(stdout), "stderr": str(stderr),
+             "reader": str(reader), "reader_sha256": reader_sha, "chatboard": str(chatboard), "chatboard_sha256": chatboard_sha}
+    try:
+        try:
+            exit_code = proc.wait(timeout=1.5)
+        except subprocess.TimeoutExpired:
+            exit_code = None
+        if sb.get("listener"):
+            sb.setdefault("listener_history", []).append(sb.pop("listener"))
+        if exit_code is not None:
+            entry["exit_code"] = exit_code
+            sb.setdefault("listener_history", []).append(entry)
+            save(path, doc)
+            print(f"scope_budget: listener exited during startup; see {stderr}", file=sys.stderr)
+            return 3
+        sb["listener"] = entry
+        save(path, doc)
+    except BaseException:
+        stop_listener_group(proc)
+        raise
+    print(json.dumps(entry))
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     path = Path(args.record)
     sb = section(load(path), path)
+    status = {"closed": "closed_at" in sb, "closed_at": sb.get("closed_at"), "listener": listener_state(sb, path)}
+    if status["closed"]:
+        print(json.dumps(status))
+        return 5
     limits = sb["limits"]
     elapsed = (now() - parse(sb["started_at"])).total_seconds() / 3600
     meter = weekly_percent(Path(args.rollout)) if args.rollout else None
+    account = account_quota(meter, limits.get('max_weekly_percent'))
     start = (sb.get("weekly_at_start") or {}).get("used_percent")
     points = None if meter is None or start is None else meter["used_percent"] - start
     reached, unknown, advisory = [], [], []
@@ -244,7 +460,8 @@ def cmd_check(args: argparse.Namespace) -> int:
         and "max_weekly_points" in h.get("limits", {}) for h in sb.get("limit_history", []))
     if "max_hours" in limits and elapsed >= limits["max_hours"]:
         reached.append("hours")
-    for name, value in (("max_weekly_points", points), ("max_weekly_percent", meter and meter["used_percent"])):
+    percent = account['used_percent'] if account['status'] in ('observed', 'stale') else None
+    for name, value in (("max_weekly_points", points), ("max_weekly_percent", percent)):
         if name in limits:
             if name == "max_weekly_points" and not user_points:
                 advisory.append(name)
@@ -256,10 +473,15 @@ def cmd_check(args: argparse.Namespace) -> int:
     n = len(sb["additions"])
     trigger = limits.get("reconsider_after_additions")
     reconsider = trigger is not None and n >= trigger
-    result = {"elapsed_hours": round(elapsed, 2), "additions": n, "original_items": len(sb["original_items"]),
+    result = {**status, "elapsed_hours": round(elapsed, 2), "additions": n, "original_items": len(sb["original_items"]),
               "weekly_percent": meter and meter["used_percent"], "account_weekly_points": points, "account_wide": True, "advisory": advisory,
               "limits": limits, "limits_set_by": setter(sb["limits_set_by"]), "reached": reached,
-              "unknown": unknown, "reconsider": reconsider, "stop": bool(reached)}
+              "unknown": unknown, "reconsider": reconsider, "stop": bool(reached),
+              "account_quota": account,
+              "cost_basis": COST_BASIS, "cost_limits": sb.get("cost_limits", []),
+              "cost_label": "API-equivalent dollars adjusted for subscription speed (proxy)",
+              "estimated_objective_quota_points": {"status": "not_established", "low": None, "high": None,
+                                                    "calibration_version": None}}
     print(json.dumps(result))
     return 4 if reached else 3 if reconsider else 0
 
@@ -271,7 +493,7 @@ def parser() -> argparse.ArgumentParser:
     def limit_args(q: argparse.ArgumentParser) -> None:
         q.add_argument("--max-hours", type=float)
         q.add_argument("--max-weekly-points", type=float, help="rise in the weekly meter since init")
-        q.add_argument("--max-weekly-percent", type=float, help="ceiling on the weekly meter")
+        q.add_argument("--max-weekly-percent", type=float, help="account-wide used-percent ceiling, independent of objective dollars")
         q.add_argument("--reconsider-after-additions", type=int)
         q.add_argument("--set-by", required=True, choices=("user", "supervisor"))
         q.add_argument("--reason")
@@ -305,7 +527,7 @@ def parser() -> argparse.ArgumentParser:
     b.add_argument("--parent")
     b.add_argument("--bound-by", required=True, choices=("supervisor", "user"))
     b.add_argument("--reason", required=True)
-    cl = sub.add_parser("cost-limit")
+    cl = sub.add_parser("cost-limit", help="limits in API-equivalent dollars adjusted for subscription speed; not quota points")
     cl.add_argument("--record", required=True)
     cl.add_argument("--pool", required=True, choices=("codex", "claude_all_models", "claude_fable"))
     cl.add_argument("--node")
@@ -313,6 +535,19 @@ def parser() -> argparse.ArgumentParser:
     cl.add_argument("--mark-usd", type=float, action="append", default=[])
     cl.add_argument("--set-by", required=True, choices=("user", "supervisor"))
     cl.add_argument("--reason", required=True)
+    close = sub.add_parser("close", help="close the objective")
+    close.add_argument("--record", required=True)
+    close.add_argument("--disposition", required=True, choices=("accepted", "abandoned"))
+    close.add_argument("--reason", required=True)
+    close.add_argument("--set-by", required=True, choices=("user", "supervisor"))
+    close.add_argument("--at")
+    listen = sub.add_parser("listen", help="start the detached budget listener")
+    listen.add_argument("--record", required=True)
+    listen.add_argument("--session", required=True)
+    listen.add_argument("--since", type=int)
+    listen.add_argument("--topic", action="append", default=[])
+    listen.add_argument("--interval", type=float, default=60)
+    listen.add_argument("--repository")
     c = sub.add_parser("check", help="one JSON line: elapsed, additions, meter, reconsider, stop")
     c.add_argument("--record", required=True)
     c.add_argument("--rollout")
@@ -322,11 +557,19 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
-        return {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check, "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit}[args.command](args)
+        commands = {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check,
+                    "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit,
+                    "close": cmd_close, "listen": cmd_listen}
+        if args.command == "check":
+            return commands[args.command](args)
+        lock = Path(str(Path(args.record).resolve()) + ".lock")
+        with lock.open("a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            return commands[args.command](args)
     except UsageError as exc:
         print(f"scope_budget: {exc}", file=sys.stderr)
         return 2
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as exc:
         print(f"scope_budget: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
 

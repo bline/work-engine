@@ -381,7 +381,7 @@ once, which suits a scheduled check. These filters do not involve `run` or
 ```text
 # global options, given before the subcommand: [--codex-home CODEX_HOME] [--claude-home CLAUDE_HOME] [--state-dir STATE_DIR] [--board-repository BOARD_REPOSITORY] [--budget-ledger BUDGET_LEDGER] [--budget-ledger-sha256 BUDGET_LEDGER_SHA256] [--budget-root BUDGET_ROOT] [--role-host-ledger ROLE_HOST_LEDGER]
 python3 -I <skill-dir>/scripts/session_events.py serve [--principal PRINCIPAL]
-python3 -I <skill-dir>/scripts/session_events.py serve-http [--listen LISTEN] [--path PATH] [--principal PRINCIPAL]
+python3 -I <skill-dir>/scripts/session_events.py serve-http [--listen LISTEN] [--path PATH] [--auth-config AUTH_CONFIG] [--authenticated-read-only] [--principal PRINCIPAL]
 python3 -I <skill-dir>/scripts/session_events.py run [--poll-seconds POLL_SECONDS] [--max-seconds MAX_SECONDS]
 python3 -I <skill-dir>/scripts/session_events.py sessions [--query QUERY] [--host {codex,claude}] [--limit LIMIT]
 python3 -I <skill-dir>/scripts/session_events.py match --session SESSION_IDS --pattern PATTERN [--role {user,assistant,tool_call,tool_result,reasoning,system,agent_message,turn_end}] [--ignore-case] [--content {excerpt,full}] [--limit LIMIT]

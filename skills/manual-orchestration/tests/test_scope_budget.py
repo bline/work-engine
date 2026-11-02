@@ -28,7 +28,7 @@ def rollout(path: Path, percents: list[float], filler: int = 0) -> None:
         lines.extend(json.dumps({"type": "response_item", "payload": {"x": "y" * 50}}) for _ in range(filler))
         lines.append(json.dumps({"timestamp": f"2026-10-29T0{i}:00:00Z", "type": "event_msg", "payload": {
             "type": "token_count", "rate_limits": {
-                "primary": {"used_percent": p, "window_minutes": 10080, "resets_at": 1},
+                "primary": {"used_percent": p, "window_minutes": 10080, "resets_at": int(S.now().timestamp()) + 86400},
                 "secondary": None}}}))
     lines.append(json.dumps({"type": "response_item", "payload": {"type": "message"}}))
     path.write_text("\n".join(lines) + "\n")
@@ -199,6 +199,49 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(S.weekly_percent(ro, block=97)["used_percent"], 42.5)
         (self.d / "empty.jsonl").write_text("")
         self.assertIsNone(S.weekly_percent(self.d / "empty.jsonl"))
+
+    def test_account_headroom_and_cost_basis_do_not_rewrite_budget(self):
+        import datetime as dt
+        from unittest.mock import patch
+        instant = dt.datetime(2026, 11, 1, tzinfo=dt.timezone.utc)
+        meter = dict(used_percent=75, observed_at=instant.isoformat(), resets_at=instant.timestamp()+3600)
+        with patch.object(S, 'now', return_value=instant):
+            observation = S.account_quota(meter, 85)
+        self.assertEqual((observation['remaining_percent'], observation['headroom_to_ceiling_percent']), (25, 10))
+        with patch.object(S, 'now', return_value=instant+dt.timedelta(minutes=6)):
+            stale = S.account_quota(meter, 85)
+        self.assertEqual(stale['status'], 'stale')
+        self.assertIsNone(stale['remaining_percent'])
+        self.assertIsNone(stale['headroom_to_ceiling_percent'])
+        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--max-hours', '100', '--set-by', 'user')
+        call('cost-limit', '--record', str(self.rec), '--pool', 'codex', '--max-usd', '10', '--set-by', 'user', '--reason', 'existing units')
+        before = self.rec.read_bytes()
+        rc, result = call('check', '--record', str(self.rec))
+        self.assertEqual(rc, 0)
+        self.assertEqual(result['cost_limits'][0]['max_usd'], 10)
+        self.assertEqual(result['cost_limits'][0]['basis'], 'speed_adjusted_api_usd')
+        self.assertEqual(result['estimated_objective_quota_points']['status'], 'not_established')
+        self.assertIsNone(result['estimated_objective_quota_points']['high'])
+        self.assertEqual(self.rec.read_bytes(), before)
+
+    def test_invalid_account_limits_leave_record_unchanged(self):
+        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--max-hours', '100', '--set-by', 'user')
+        before = self.rec.read_bytes()
+        for value in ('nan', 'inf', '-1', '101'):
+            self.assertEqual(call('revise', '--record', str(self.rec), '--max-weekly-percent', value, '--set-by', 'user')[0], 2)
+            self.assertEqual(self.rec.read_bytes(), before)
+
+    def test_expired_meter_cannot_establish_current_ceiling_crossing(self):
+        from unittest.mock import patch
+        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--max-hours', '100',
+             '--max-weekly-percent', '80', '--set-by', 'user')
+        meter = dict(used_percent=95, observed_at='2026-01-01T00:00:00Z', resets_at=1)
+        with patch.object(S, 'weekly_percent', return_value=meter):
+            rc, result = call('check', '--record', str(self.rec), '--rollout', 'unused')
+        self.assertEqual(rc, 0)
+        self.assertFalse(result['stop'])
+        self.assertIn('max_weekly_percent', result['unknown'])
+        self.assertEqual(result['account_quota']['status'], 'expired')
 
     def test_usage_errors(self):
         rc, err = call("check", "--record", str(self.rec))
