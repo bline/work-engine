@@ -2980,7 +2980,7 @@ def _public_http_operation(message):
         return True
     if method == "tools/call" and isinstance(message.get("params"), dict):
         name = message["params"].get("name")
-        return isinstance(name, str) and name in {"list_sessions", "read_session", "test_pattern", "delivery_status", "replay_events", "budget_status", "read_session_operation", "read_session_result", "read_session_target"}
+        return isinstance(name, str) and name in {"delivery_status", "replay_events"}
     return False
 
 

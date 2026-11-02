@@ -69,6 +69,9 @@ class AuthHttp(Fixture):
         self.assertEqual(status, 200)
         self.assertEqual(len(listing["result"]["tools"]), 13)
         self.assertEqual(self.request({"jsonrpc":"2.0", "method":"notifications/initialized"})[0], 202)
+        # These apparent reads reconcile or update bridge custody state.
+        for name in ("read_session_operation", "read_session_result", "read_session_target", "list_sessions", "read_session", "test_pattern", "budget_status"):
+            self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name}})[0], 401)
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, headers={"Origin":"https://evil.example"})[0], 403)
 
     def test_auth_before_effects_and_bad_requests(self):
