@@ -41,8 +41,9 @@ if name=='role_host.py':
   out({'session_id':cfg['sid'],'turn_id':arg('--turn-id'),'turn_attribution':'exact_turn_interval' if arg('--turn-id') and not cfg.get('stale_settings') else 'latest_session_observation','model':'fixture-model','reasoning_effort':'medium','service_tier':cfg.get('observed_tier','default')})
 elif name=='child_context.py':
  if cfg.get('context_fail') or (arg('--session')==cfg['sid'] and not Path(cfg['rollout']).exists()):out({'status':'unavailable'})
- else:out({'status':'observed','recommendation':'retain_ok','input_tokens':100,'epoch':0})
+ else:out({'status':'observed','recommendation':cfg.get('child_recommendation','retain_ok') if arg('--session')==cfg['sid'] else cfg.get('root_recommendation','retain_ok'),'input_tokens':100,'epoch':0})
 elif name=='usage_ledger.py':
+ if '--role-host-ledger' in sys.argv:raise SystemExit('host must not replace authoritative accounting lineage with private custody')
  if cfg.get('budget_fail'):sys.exit(32)
  out({'schema':'objective-budget-control-v1','topic':'control:budget:objective','closed_at':None,'events':[],
       'next_budget_cursor':'stable-cursor','snapshot':{'status':'complete','cost_controls':[{'max_usd':10,'remaining_usd':cfg.get('headroom',9)}],'totals':{'codex':{'quota_usd_low':1,'quota_usd_high':1}},'post_close':{'candidate_totals':cfg.get('tail_candidate',0),'settlement':{'status':'not_established'}}}})

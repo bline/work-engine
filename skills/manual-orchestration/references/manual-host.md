@@ -94,9 +94,10 @@ records initial unavailability and tolerates at most 30 seconds awaiting the fir
 actual child context observation during foreground collection. It never reports
 that period as healthy enrollment. A retained thread cannot use the allowance.
 A pressure reading remains evidence for root judgment; the host cannot replace
-context. Conservative automatic admission may refuse a capacity decision the
-root could otherwise make; the root can use the ordinary manual route with its
-own required evidence instead of weakening this request's checks.
+context. The authorized dispatch expresses the root's scoped capacity judgment. The
+reader's heuristic recommendation never grants or vetoes admission, enrollment
+or continued collection; usable bound observations are required, while pressure
+and observation loss remain visible to the root.
 
 `require_read_only: true` requires actual returned `thread/start` sandbox evidence
 of type `readOnly` before sending work. Missing evidence leaves the requirement
@@ -146,6 +147,11 @@ wake an ended root. The next meaningful command explicitly acknowledges the
 receipt ID. Stdout alone leaves delivery pending; lost output can be collected
 again. A returned receipt ends that foreground observation scope; its monitoring
 gap is visible, and the next admission re-establishes current observations.
+
+Accounting keeps the budget reader's canonical lineage sources, including
+externally launched root-owned roles, and adds hosted children through existing
+scope_budget bindings. The host's private dispatch ledger records custody and
+never substitutes for the accounting owner's ledger.
 
 The executor observes the existing context and budget readers directly with
 owned one-shot subprocesses and the budget owner's cursor. No board/control

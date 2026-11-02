@@ -663,6 +663,16 @@ impl Host {
     }
     fn evidence(&mut self, id: &str, key: &str, v: Value) -> Result<()> {
         if matches!(key, "root_context" | "child_context")
+            && !self.op(id).evidence.contains_key(key)
+            && v["status"] == "observed"
+            && v["recommendation"] != "retain_ok"
+        {
+            self.observer_event(
+                id,
+                json!({"kind":"context_pressure","source":key,"observation":v}),
+            )?;
+        }
+        if matches!(key, "root_context" | "child_context")
             && let Some(prior) = self.op(id).evidence.get(key)
         {
             let signature = |x: &Value| json!([x["status"], x["recommendation"], x["epoch"]]);
@@ -898,7 +908,7 @@ impl Host {
             .op(id)
             .evidence
             .get("child_context")
-            .is_some_and(|v| v["status"] == "observed" && v["recommendation"] == "retain_ok");
+            .is_some_and(|v| v["status"] == "observed");
         if r.retained.is_some() {
             let tier = if r.service_tier == "fast" {
                 "priority"
@@ -1012,11 +1022,6 @@ impl Host {
             "control".into(),
             "--record".into(),
             r.assignment.display().to_string(),
-            "--role-host-ledger".into(),
-            self.dir
-                .join("role-host/ledger.jsonl")
-                .display()
-                .to_string(),
         ];
         if let Some(cursor) = &self.op(id).budget_cursor {
             args.extend(["--cursor".into(), cursor.clone()]);
@@ -1090,8 +1095,7 @@ impl Host {
         let e = &self.op(id).evidence;
         let root = e.get("root_context");
         let budget = e.get("budget");
-        let context_ok =
-            root.is_some_and(|v| v["status"] == "observed" && v["recommendation"] == "retain_ok");
+        let context_ok = root.is_some_and(|v| v["status"] == "observed");
         let budget_ok = budget.is_some_and(|v| {
             v["schema"] == "objective-budget-control-v1"
                 && v["topic"] == format!("control:budget:{}", self.state.objective_id)
@@ -1218,13 +1222,10 @@ impl Host {
                     .op(id)
                     .started_at
                     .is_some_and(|at| now().saturating_sub(at) < 30);
-            let pressure = context.is_some_and(|v| {
-                (v["status"] != "observed" && !bootstrap)
-                    || (v["status"] == "observed" && v["recommendation"] != "retain_ok")
-            });
+            let unavailable = context.is_some_and(|v| v["status"] != "observed" && !bootstrap);
             if !wait
                 || changed
-                || pressure
+                || unavailable
                 || !self.headroom(id)
                 || begin.elapsed().as_secs() >= r.wait_seconds
                 || STOP.load(Ordering::SeqCst)

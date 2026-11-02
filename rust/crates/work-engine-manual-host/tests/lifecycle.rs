@@ -707,3 +707,52 @@ fn stale_session_settings_cannot_satisfy_selected_turn_configuration() {
             .any(|v| v.as_str().unwrap().contains("settings"))
     );
 }
+#[test]
+fn scoped_root_capacity_decision_allows_pressure_for_fresh_and_retained_work() {
+    let mut f = Fixture::new();
+    f.config("root_recommendation", json!("fresh"));
+    f.config("child_recommendation", json!("fresh"));
+    let admitted = success(f.dispatch());
+    assert_eq!(admitted["summary"]["phase"], "running");
+    success(f.collect());
+    assert!(
+        f.state()["operations"]["one"]["observer_events"]
+            .as_object()
+            .unwrap()
+            .values()
+            .any(|v| v["kind"] == "context_pressure")
+    );
+    f.request["operation_id"] = json!("retained-pressure");
+    f.request["claim"] = Value::Null;
+    f.request["bootstrap_context"] = json!(false);
+    f.request["require_read_only"] = json!(false);
+    f.request["retained"] =
+        json!({"session_id":"child","rollout":f.dir.path().join("child.jsonl")});
+    f.request["result_path"] = json!(f.dir.path().join("retained-pressure-result.json"));
+    f.config("result", f.request["result_path"].clone());
+    let retained = success(f.dispatch());
+    assert_eq!(retained["summary"]["phase"], "running");
+    assert_eq!(f.count("starts"), 2);
+}
+#[test]
+fn acknowledged_pressure_does_not_turn_foreground_collection_into_model_polling() {
+    let f = Fixture::new();
+    f.config("root_recommendation", json!("fresh"));
+    f.config("child_recommendation", json!("fresh"));
+    f.config("turn_status", json!("inProgress"));
+    success(f.dispatch());
+    let first = success(f.collect());
+    let before = f.count("turn_reads");
+    success(f.invoke(&[
+        "collect",
+        "--state",
+        f.dir.path().join("state").to_str().unwrap(),
+        "--operation",
+        "one",
+        "--wait",
+        "--ack-receipt",
+        first["receipt_id"].as_str().unwrap(),
+    ]));
+    assert!(f.count("turn_reads") > before + 1);
+    assert_eq!(f.count("starts"), 1);
+}
