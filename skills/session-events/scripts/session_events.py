@@ -3000,13 +3000,16 @@ def _public_http_operation(message):
     return False
 
 
-def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
+def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
+                      authenticated_read_only: bool = False):
     """Stateless Streamable HTTP: one JSON-RPC object per POST, a JSON reply, no MCP session id.
 
     Loopback only. A browser page could otherwise reach a local listener, so requests must
     name a loopback Host (no DNS rebinding), carry no Origin, and be application/json
     (which a cross-origin page cannot send without a CORS preflight this server never grants).
     """
+    if authenticated_read_only and auth is None:
+        raise ValueError("authenticated read-only mode requires auth")
     log_path = server.store.root / "requests.log"
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -3035,6 +3038,16 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
                 return "path"
             return None
 
+        def _authorize(self) -> bool:
+            decision = auth.authorize(self.headers)
+            if decision == "allow":
+                return True
+            challenge = 'Bearer resource_metadata="' + auth.metadata + '"'
+            if decision == "scope":
+                challenge += ', error="insufficient_scope", scope="' + auth.config["write_scope"] + '"'
+            self._reply(403 if decision == "scope" else 401, extra={"WWW-Authenticate": challenge})
+            return False
+
         def do_POST(self) -> None:
             refused = self._refused()
             if refused:
@@ -3062,14 +3075,12 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
             else:
                 parsed = True
                 reply = None
-            if auth and not _public_http_operation(message):
-                decision = auth.authorize(self.headers)
-                if decision != "allow":
-                    challenge = 'Bearer resource_metadata="' + auth.metadata + '"'
-                    if decision == "scope":
-                        challenge += ', error="insufficient_scope", scope="' + auth.config["write_scope"] + '"'
-                    self._reply(403 if decision == "scope" else 401, extra={"WWW-Authenticate": challenge})
+            if auth and (authenticated_read_only or not _public_http_operation(message)):
+                if not self._authorize():
                     return
+            if authenticated_read_only and not _public_http_operation(message):
+                self._reply(403, b'{"error":"read_only"}')
+                return
             if parsed:
                 reply = server.handle(message)
             log_request(log_path, request_summary(message, reply) | {"transport": "http"})
@@ -3082,6 +3093,8 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
             refused = self._refused()
             if refused is None and auth and urllib.parse.urlsplit(self.path).path in {"/.well-known/oauth-protected-resource", auth.metadata_path}:
                 self._reply(200, json.dumps({"resource": auth.config["resource"], "authorization_servers": [auth.config["issuer"]], "scopes_supported": [auth.config["write_scope"]]}).encode())
+            elif refused is None and authenticated_read_only and not self._authorize():
+                return
             else:
                 self._reply(405 if refused is None else 404, extra={"Allow": "POST"} if refused is None else None)
 
@@ -3093,14 +3106,17 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
     return Handler
 
 
-def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth | None = None) -> int:
+def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth | None = None,
+               authenticated_read_only: bool = False) -> int:
+    if authenticated_read_only and auth is None:
+        raise SystemExit("serve-http: --authenticated-read-only requires --auth-config")
     if auth and urllib.parse.urlsplit(auth.config["resource"]).path != path:
         raise SystemExit("serve-http: path must match configured resource")
     host, _, port_text = listen.rpartition(":")
     host = host.strip("[]")
     if not ipaddress.ip_address(host).is_loopback:
         raise SystemExit("serve-http: --listen must be a loopback address; tunnel-client runs on this machine")
-    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth))
+    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only))
     log_request(server.store.root / "requests.log",
                 {"at": iso(utcnow()), "event": "serve_http_started", "pid": os.getpid(), "version": VERSION,
                  "listen": f"{host}:{httpd.server_address[1]}", "path": path})
@@ -3961,6 +3977,8 @@ def build_parser() -> argparse.ArgumentParser:
     serve_http_cmd.add_argument("--listen", default="127.0.0.1:8787")
     serve_http_cmd.add_argument("--path", default="/mcp")
     serve_http_cmd.add_argument("--auth-config", help="trusted OAuth resource-server configuration file")
+    serve_http_cmd.add_argument("--authenticated-read-only", action="store_true",
+                                help="require OAuth for all RPCs and deny non-read-only operations")
     serve_http_cmd.add_argument("--principal", default="tunnel",
                                 help="subscription owner recorded in every key (default: tunnel)")
     run = commands.add_parser("run", help="delivery daemon")
@@ -4015,7 +4033,10 @@ def context_from_args(args: argparse.Namespace, homes: Homes) -> Context:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.command == "serve-http" and args.authenticated_read_only and not args.auth_config:
+        parser.error("--authenticated-read-only requires --auth-config")
     homes = Homes.from_args(args)
     policy = insecure_test_policy()
     try:
@@ -4024,7 +4045,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "serve":
             return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":

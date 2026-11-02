@@ -10,6 +10,7 @@ import threading
 import time
 import types
 import unittest
+from unittest import mock
 
 from test_session_events import Fixture, SE, CODEX_ID, URL, whsec
 
@@ -162,6 +163,65 @@ class AuthHttp(Fixture):
         # JWT-shaped session/ID fixtures lacking Connected Apps client or jti are denied.
         self.assertEqual(self.request(msg, token({"client_id":None}))[0], 401)
         self.assertEqual(self.request(msg, token({"jti":None}))[0], 401)
+
+    def test_authenticated_read_only_staging(self):
+        client = "connected-app-test-7607c19e-b18a-4ef5-b675-480c2b7457c5"
+        project = "project-test-5f16c2cc-3020-4a9a-93af-b3a0f22aa9bd"
+        config = json.loads(self.config.read_text())
+        config.update(profile="stytch-connected-apps-v1", expected_client_id=client,
+                      expected_project_id=project, write_scope="openid")
+        self.config.write_text(json.dumps(config))
+        auth = SE.HttpAuth(str(self.config))
+        self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth, authenticated_read_only=True)
+        signed = lambda extra=None: self.token({"client_id":client, "aud":[project, RESOURCE], "scope":"openid"} | (extra or {}), {"typ":"JWT"})
+        good, insufficient = signed(), signed({"scope":"profile"})
+        for method in ("initialize", "ping", "tools/list", "events/list", "notifications/initialized"):
+            msg = {"jsonrpc":"2.0", "id":1, "method":method}
+            with self.subTest(method=method):
+                self.assertEqual(self.request(msg)[0], 401)
+                self.assertEqual(self.request(msg, "bad")[0], 401)
+                status, headers, _ = self.request(msg, insufficient)
+                self.assertEqual(status, 403); self.assertIn('error="insufficient_scope"', headers["WWW-Authenticate"])
+        for name in ("delivery_status", "replay_events"):
+            msg = {"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name}}
+            self.assertEqual(self.request(msg)[0], 401)
+        self.server.bridge = types.SimpleNamespace(provisioning=True)
+        status, _, listing = self.request({"jsonrpc":"2.0", "id":1, "method":"tools/list"}, good)
+        self.assertEqual(status, 200); self.assertEqual(len(listing["result"]["tools"]), 13)
+        self.assertEqual(self.request({"jsonrpc":"2.0", "method":"notifications/initialized"}, good)[0], 202)
+        for method in ("initialize", "ping", "events/list"):
+            self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":method}, good)[0], 200)
+        self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"delivery_status"}}, good)[0], 200)
+        self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"replay_events", "arguments":{}}}, good)[0], 200)
+        mutations = [{"jsonrpc":"2.0", "id":1, "method":m} for m in ("events/subscribe", "events/unsubscribe", "future/mutate")]
+        mutations += [{"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":n}} for n in ("submit_session_request", "read_session_operation", "read_session_target", "read_session", "list_sessions", "budget_status", "future_tool")]
+        with mock.patch.object(self.server, "handle", wraps=self.server.handle) as dispatch:
+            for message in mutations:
+                status, _, body = self.request(message, good)
+                self.assertEqual((status, body), (403, {"error":"read_only"}))
+            dispatch.assert_not_called()
+        self.assertEqual(len(self.server.store.all_subscriptions()), 0)
+        self.assertEqual(self.request(path="/.well-known/oauth-protected-resource/mcp", method="GET")[0], 200)
+        self.assertEqual(self.request(path="/mcp", method="GET")[0], 401)
+        self.assertEqual(self.request(token="bad", path="/mcp", method="GET")[0], 401)
+        self.assertEqual(self.request(token=insufficient, path="/mcp", method="GET")[0], 403)
+        self.assertEqual(self.request(token=good, path="/mcp", method="GET")[0], 405)
+        self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, good, headers={"Origin":"https://evil.example"})[0], 403)
+        self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, good, headers={"Host":"evil.example"})[0], 403)
+        log = (self.homes.state / "requests.log").read_text()
+        self.assertNotIn(good, log); self.assertNotIn(insufficient, log)
+
+    def test_read_only_requires_auth_before_bind(self):
+        with self.assertRaises(ValueError):
+            SE.make_http_handler(self.server, "/mcp", authenticated_read_only=True)
+        with mock.patch.object(SE.http.server, "ThreadingHTTPServer") as bind:
+            with self.assertRaises(SystemExit):
+                SE.serve_http(self.server, "127.0.0.1:0", authenticated_read_only=True)
+            bind.assert_not_called()
+        with mock.patch.object(SE.http.server, "ThreadingHTTPServer") as bind:
+            with self.assertRaises(SystemExit):
+                SE.main(["serve-http", "--authenticated-read-only"])
+            bind.assert_not_called()
 
     def test_rejections_and_rotation(self):
         msg = {"jsonrpc":"2.0", "id":1, "method":"events/unsubscribe", "params":{}}
