@@ -487,6 +487,104 @@ class Codex:
         ledger.append(row)
         return row
 
+    def prepare(self, *, cwd, name, host_args, ledger, parent=None):
+        """Create an idle native thread. The caller journals intent before calling.
+
+        No inference is started here. A lost response still has an unknown
+        external effect and must not cause the caller to create a replacement.
+        """
+        params, effort = self.thread_options(host_args)
+        with self._conn() as c:
+            response = self._call(c, "thread/start", {"cwd": str(Path(cwd).resolve()), **params})
+            thread = response.get("thread") or {}
+            sid = thread.get("id", "")
+            if not UUID.match(sid):
+                raise HostError(NOT_ESTABLISHED, "identity_not_established", "prepare returned no canonical thread id")
+            # Keep identity even if naming fails. Naming is cosmetic, not a
+            # reason to discard custody of an already created thread.
+            naming = None
+            try:
+                self._call(c, "thread/name/set", {"threadId": sid, "name": name})
+            except HostError as exc:
+                naming = exc.detail
+        row = {"event": "prepare", "host": self.name, "transport": "app_server",
+               "session_id": sid, "parent_session_id": parent, "name": name,
+               "cwd": str(Path(cwd).resolve()), "effort": effort,
+               "requested": params, "realized": response, "naming_error": naming,
+               "at_epoch": time.time()}
+        ledger.append(row)
+        return row
+
+    def start_prepared(self, sid, *, message, ledger, effort=None):
+        # The caller has already made the start attempt durable. Do not accept
+        # an existing thread with work: the prepared first-turn path is closed.
+        with self._conn() as c:
+            thread = self._call(c, "thread/read", {"threadId": sid}).get("thread") or {}
+            if thread.get("id") != sid or (thread.get("status") or {}).get("type") != "idle":
+                raise HostError(NOT_ESTABLISHED, "prepared_identity_not_established", "prepared thread is not verified idle")
+            history = self._turns(c, sid)
+            if history:
+                raise HostError(BUSY, "prepared_thread_has_turns", "prepared thread already has turn history")
+            tid = self._start_turn(c, sid, message, effort)
+        row = {"event": "start_prepared", "host": self.name, "session_id": sid,
+               "turn_id": tid, "at_epoch": time.time()}
+        ledger.append(row)
+        return row
+
+    def _turns(self, c, sid):
+        turns, cursor, seen = [], None, set()
+        while True:
+            params = {"threadId": sid, "limit": 100, "itemsView": "full"}
+            if cursor is not None:
+                params["cursor"] = cursor
+            page = self._call(c, "thread/turns/list", params)
+            data = page.get("data")
+            if not isinstance(data, list) or any(not isinstance(t, dict) or not t.get("id") for t in data):
+                raise HostError(NOT_ESTABLISHED, "turn_history_not_established", "invalid turn history page")
+            turns.extend(data)
+            cursor = page.get("nextCursor")
+            if not cursor:
+                return turns
+            if cursor in seen or len(turns) > 100000:
+                raise HostError(NOT_ESTABLISHED, "turn_history_not_established", "unbounded/repeating turn history cursor")
+            seen.add(cursor)
+
+    def identity(self, sid):
+        """Resolve the native rollout by exact session_meta, never environment lineage."""
+        with self._conn() as c:
+            thread = self._call(c, "thread/read", {"threadId": sid}).get("thread") or {}
+        if thread.get("id") != sid:
+            raise HostError(NOT_ESTABLISHED, "identity_not_established", "thread/read identity mismatch")
+        candidates = []
+        if thread.get("path"):
+            candidates.append(Path(thread["path"]))
+        candidates.extend((self.home / "sessions").glob(f"**/*{sid}*.jsonl"))
+        matches = set()
+        for path in candidates:
+            try:
+                with path.open() as fh:
+                    meta = json.loads(next(fh))
+                if meta.get("type") == "session_meta" and meta.get("payload", {}).get("id") == sid:
+                    matches.add(str(path.resolve()))
+            except (OSError, ValueError, StopIteration, AttributeError):
+                continue
+        if len(matches) != 1:
+            raise HostError(NOT_ESTABLISHED, "identity_not_established", "no unique verified rollout for native thread")
+        return {"session_id": sid, "rollout": matches.pop(), "source": "thread/read plus exact rollout session_meta"}
+
+    def exact_turn(self, sid, turn_id):
+        with self._conn() as c:
+            thread = self._call(c, "thread/read", {"threadId": sid}).get("thread") or {}
+            if thread.get("id") != sid or (thread.get("status") or {}).get("type") in ("notLoaded", "systemError"):
+                raise HostError(NOT_ESTABLISHED, "turn_not_established", "thread identity/loading unavailable")
+            turns = self._turns(c, sid)
+        matches = [t for t in turns if t["id"] == turn_id]
+        if len(matches) != 1:
+            return {"session_id": sid, "turn_id": turn_id, "status": "not_established",
+                    "reason": "exact turn absent or duplicated", "history_count": len(turns)}
+        return {"session_id": sid, "turn_id": turn_id, "status": matches[0].get("status"),
+                "turn": matches[0], "history_count": len(turns)}
+
     def deliver(self, sid, *, message, cwd, ledger, host_args=(), start_timeout=60) -> dict:
         st = self.status(sid, ledger)
         if st["state"] == "running":
@@ -578,7 +676,7 @@ def host(name):
 
 def children(parent, ledger) -> dict:
     """Ledger children of `parent`, each with its current status."""
-    launched = [r for r in ledger.rows() if r.get("event") == "launch" and r.get("parent_session_id") == parent]
+    launched = [r for r in ledger.rows() if r.get("event") in ("launch", "prepare") and r.get("parent_session_id") == parent]
     rows, unknown = [], 0
     for r in launched:
         try:
@@ -602,6 +700,17 @@ def main(argv=None) -> int:
     la.add_argument("host"); la.add_argument("--cwd", required=True); la.add_argument("--name", required=True)
     la.add_argument("--prompt-file", required=True, type=Path)
     la.add_argument("--parent"); la.add_argument("--host-arg", action="append", default=[])
+    pr = sub.add_parser("prepare", help="create an idle Codex thread, without inference")
+    pr.add_argument("host", choices=("codex",)); pr.add_argument("--cwd", required=True)
+    pr.add_argument("--name", required=True); pr.add_argument("--parent")
+    pr.add_argument("--host-arg", action="append", default=[])
+    st = sub.add_parser("start-prepared", help="start the first turn on an idle prepared Codex thread")
+    st.add_argument("host", choices=("codex",)); st.add_argument("session_id")
+    st.add_argument("--prompt-file", required=True, type=Path); st.add_argument("--effort")
+    ident = sub.add_parser("identity", help="resolve a native thread rollout by verified session_meta")
+    ident.add_argument("host", choices=("codex",)); ident.add_argument("session_id")
+    ex = sub.add_parser("exact-turn", help="observe one exact native turn, paging history")
+    ex.add_argument("host", choices=("codex",)); ex.add_argument("session_id"); ex.add_argument("--turn-id", required=True)
     for verb in ("status", "retire"):
         s = sub.add_parser(verb); s.add_argument("host"); s.add_argument("session_id")
         if verb == "retire":
@@ -648,6 +757,14 @@ def main(argv=None) -> int:
                 if a.host != "codex":
                     raise HostError(USAGE, "unsupported_control", "applied runtime settings reader is Codex-only")
                 res = codex_settings(sid, a.rollout)
+            elif a.cmd == "prepare":
+                res = h.prepare(cwd=a.cwd, name=a.name, host_args=a.host_arg, ledger=ledger, parent=a.parent)
+            elif a.cmd == "start-prepared":
+                res = h.start_prepared(sid, message=a.prompt_file.read_text(), ledger=ledger, effort=a.effort)
+            elif a.cmd == "identity":
+                res = h.identity(sid)
+            elif a.cmd == "exact-turn":
+                res = h.exact_turn(sid, a.turn_id)
             elif a.cmd == "launch":
                 res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
                                host_args=a.host_arg, ledger=ledger, parent=a.parent)

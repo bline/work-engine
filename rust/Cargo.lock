@@ -3322,6 +3322,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-manual-host"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "work-engine-review-host"
 version = "0.1.0"
 dependencies = [

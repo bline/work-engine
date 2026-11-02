@@ -38,8 +38,13 @@ Separate worker completion, unfinished continuation, acceptance of a bounded sub
 
 This is a manual coordination adapter. In a configured Slice Builder campaign, use its owning [skill and receipt contract](../slice-builder/SKILL.md) unless that contract's owner accepts compatible continuation semantics. An unfinished manual `handoff_ready` is not its terminal `audit_receipt`, `handoff_receipt`, or gate success. The skill grants no new mutation, provider, review, acceptance or publication authority.
 
+## Deterministic outer host
+
+The optional [manual host](references/manual-host.md) composes native Codex dispatch, owned observations, exact-turn collection and acknowledged receipts for an explicitly authorized objective. It leaves semantic decisions and existing domain records with their owners.
+
 ## Scripts
 
+- `scripts/provision_manual_host.sh [repo]` - build and pin the optional Rust manual host with its compatible adapter bundle; no global activation.
 - `scripts/provision_context_status.sh [repo]` - build and pin the context-status binary outside the shared target; prints path and SHA-256.
 - `scripts/child_context.py` - `check` one Codex session, `tree` a parent's children, or `claude` a Claude Code subagent transcript against the trigger and observed compaction band; writes a record to retain.
 - `scripts/role_host.py` - host a role or child as a Claude `--bg` or Codex app-server session: `launch` (with `--parent` to record it in the ledger), `status`, `deliver`, `retire`, `children`, `whoami`. Codex also supports `rename`, `archive`, and `unarchive` without a model turn, plus `settings --rollout` to observe applied model/effort/tier for continuation. Detects and stops a Claude copy-on-resume fork.
