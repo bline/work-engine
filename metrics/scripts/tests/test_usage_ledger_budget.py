@@ -64,12 +64,49 @@ class Tree(unittest.TestCase):
             with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, [], sb)):
                 L.cmd_control(args)
             return json.loads(out.getvalue())
-        first = run(); self.assertEqual(len(first['events']), 2)
+        first = run(); self.assertIsNone(first['closed_at']); self.assertEqual(len(first['events']), 2)
         args.cursor = first['next_budget_cursor']; self.assertEqual(run()['events'], [])
         spend['codex']['quota_usd_high'] = spend['codex']['quota_usd_low'] = 1.7
         self.assertEqual([x['kind'] for x in run()['events']], ['limit_fraction'])
         sb['objective_id'] = 'another'
         with self.assertRaises(ValueError): run()
+
+    def test_closed_window_and_control(self):
+        import argparse, base64, contextlib, io, json, tempfile
+        from unittest.mock import patch
+        start, close, later = '2026-01-01T00:00:00Z', '2026-01-01T01:00:00Z', '2026-01-01T02:00:00Z'
+        sb = dict(started_at=start, closed_at=close, close=dict(at=close, disposition='accepted', reason='done', set_by='user'),
+                  objective_id='id', sessions=[dict(session_id='root', provider='codex', **{'from': start})],
+                  cost_limits=[dict(pool='codex', marks_usd=[1], max_usd=2, set_by='user')], limits=dict(max_hours=.1))
+        calls = [dict(provider='codex', thread='root', parent_thread=None, ts=t, model='gpt-6.1-sol',
+                      service_tier=None, quota_multiplier=None, usd=1, pools=['codex']) for t in (close, later)]
+        def build(since, until, **kw):
+            return ([c for c in calls if L.ts_of(c['ts']) <= until], [], [], 0)
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'record')
+            with open(path, 'w') as f: json.dump(dict(scope_budget=sb), f)
+            with patch.object(L, 'build_codex', side_effect=build), patch.object(L, 'build_claude', return_value=([], [], 0)), patch.object(L, 'unrecorded_claude', return_value=[]):
+                tree, _, _ = L.cost_tree(path, role_ledger=os.path.join(d, 'absent'))
+                self.assertEqual(tree['totals']['codex']['calls'], 1)
+                self.assertEqual(tree['window']['closed_at'], close)
+                self.assertEqual(L.cost_tree(path, until_arg=later, role_ledger=os.path.join(d, 'absent'))[0]['totals']['codex']['calls'], 2)
+                prior_key = json.dumps(['mark_crossed', 'codex', None, 1, 'user'], separators=(',', ':'))
+                def cursor(states):
+                    return base64.urlsafe_b64encode(json.dumps(dict(objective_id='id', states=states)).encode()).decode().rstrip('=')
+                args = argparse.Namespace(record=path, cursor=cursor({prior_key: True}), limit_fractions='0.5,0.8,1', hours_fractions='0.8,1', role_host_ledger=os.path.join(d, 'absent'))
+                def run():
+                    out = io.StringIO()
+                    with contextlib.redirect_stdout(out): L.cmd_control(args)
+                    return json.loads(out.getvalue())
+                first = run()
+                self.assertEqual(first['closed_at'], close)
+                self.assertEqual([e['kind'] for e in first['events']], ['objective_closed'])
+                self.assertEqual(first['events'][0]['observed']['disposition'], 'accepted')
+                states = json.loads(base64.urlsafe_b64decode(first['next_budget_cursor'] + '=' * (-len(first['next_budget_cursor']) % 4)))['states']
+                self.assertTrue(states[prior_key])
+                args.cursor = first['next_budget_cursor']; self.assertEqual(run()['events'], [])
+                args.cursor = cursor({json.dumps(['objective_closed', None, 'bad', 'closed']): True})
+                with self.assertRaises(ValueError): run()
 
     def test_all_links_pools_and_statuses(self):
         import json

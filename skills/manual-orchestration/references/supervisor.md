@@ -26,7 +26,7 @@ At the start, record the accepted objective as a short list of original items, a
 
 Spend is measured per objective from transcripts by `metrics/scripts/usage_ledger.py tree`, in quota-weighted API dollars. The account's weekly meter moves with every running agent, so its rise is never one objective's spend; `check` reports it as account-wide only.
 
-Bind the budget source to your board listener (`wait --budget-record`; see [budget observation](../../../docs/codex-chatboard.md#budget-observation-subscription)), so that marks, limits and the hours deadline arrive as events without a model call. With no budget source bound, run `check` before dispatching new scope. Budget events reach you only; pass down what a child needs. No other role watches its own spend.
+Start the budget listener with `listen` right after `init` and before the first dispatch. Do not cancel it at a limit or mark; a raised limit applies to the running listener. If `check` shows it exited, run `listen` again to resume. When the objective is accepted or abandoned, run `close`; the listener ends by itself. Start the next objective with a new record and `init`. With no budget source bound, run `check` before dispatching new scope. Budget events reach you only; pass down what a child needs. No other role watches its own spend.
 
 An addition is something the original items do not cover: a new deliverable, component, evidence class or obligation. Fixing a defect in work an original item already covers is not one. Record each addition when you accept it, with its reason. Judge scope by the cumulative change from the original items, not by whether the newest addition looks small. In the S10 session of 2026-10-28/29 (n=1), a plan of three items grew, one gap at a time, into a candidate that also covered bootstrap evidence, consumer validation and controller resource identity; about 14 gaps each went through its own amendment and review cycle, and no real-host run happened in 17.6 hours.
 
@@ -41,6 +41,8 @@ python3 -I <skill-dir>/scripts/scope_budget.py revise --record RECORD [--max-hou
 python3 -I <skill-dir>/scripts/scope_budget.py add-session --record RECORD --session SESSION --provider {codex,claude} --from FROM_TIME --bound-by {init,rotation,supervisor,user} [--evidence EVIDENCE]
 python3 -I <skill-dir>/scripts/scope_budget.py bind --record RECORD --session SESSION --provider {codex,claude} [--parent PARENT] --bound-by {supervisor,user} --reason REASON
 python3 -I <skill-dir>/scripts/scope_budget.py cost-limit --record RECORD --pool {codex,claude_all_models,claude_fable} [--node NODE] [--max-usd MAX_USD] [--mark-usd MARK_USD] --set-by {user,supervisor} --reason REASON
+python3 -I <skill-dir>/scripts/scope_budget.py close --record RECORD --disposition {accepted,abandoned} --reason REASON --set-by {user,supervisor} [--at AT]
+python3 -I <skill-dir>/scripts/scope_budget.py listen --record RECORD --session SESSION [--since SINCE] [--topic TOPIC] [--interval INTERVAL] [--repository REPOSITORY]
 python3 -I <skill-dir>/scripts/scope_budget.py check --record RECORD [--rollout ROLLOUT]
 ```
 <!-- /cli-synopsis -->

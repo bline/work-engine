@@ -748,6 +748,7 @@ class BudgetControl:
             raise ChatboardError("--budget-interval must be finite and positive")
         self.interval, self.next_run = interval, 0.0
         self.topic = None
+        self.closed_at = None
         self.failed = False
         self.command = ["python3", "-I", str(self.reader), "control", "--record", str(record.absolute())]
         if limit_fractions is not None:
@@ -782,6 +783,7 @@ class BudgetControl:
                     or not topic[len(BUDGET_PREFIX):] or (self.topic is not None and topic != self.topic)
                     or not isinstance(value.get("next_budget_cursor"), str)
                     or not isinstance(value.get("snapshot"), dict)
+                    or (value.get("closed_at") is not None and not isinstance(value["closed_at"], str))
                     or not isinstance(events, list)
                     or any(not isinstance(e, dict) or e.get("topic") != topic
                            or e.get("authority") != "observation_only" for e in events)):
@@ -793,6 +795,7 @@ class BudgetControl:
             return [{"topic": self.topic, "kind": "reader_failed", "authority": "observation_only",
                      "summary": str(failure)}]
         self.topic, self.cursor = topic, value["next_budget_cursor"]
+        self.closed_at = value.get("closed_at")
         if self.failed:
             events = [{"topic": topic, "kind": "reader_recovered", "authority": "observation_only",
                        "summary": "budget reader recovered"}, *events]
@@ -880,9 +883,11 @@ def wait_board(repository: Path, *, since: int, limit: int = 100,
             if budget is not None:
                 events = budget.read()
                 result.update(budget_events=events, budget_topic=budget.topic, next_budget_cursor=budget.cursor)
+                if budget.closed_at is not None:
+                    result["budget_closed_at"] = budget.closed_at
                 if events and not rows and not result.get("control_events"):
                     result["status"] = "budget"
-            if rows or result.get("control_events") or result.get("budget_events") or (deadline is not None and time.monotonic() >= deadline):
+            if rows or result.get("control_events") or result.get("budget_events") or result.get("budget_closed_at") is not None or (deadline is not None and time.monotonic() >= deadline):
                 return result
             remaining = None if deadline is None else max(0, deadline - time.monotonic())
             if budget is not None:
@@ -1346,6 +1351,12 @@ def main() -> int:
                                     topics=args.topics, timeout_seconds=remaining, control=control, budget=budget,
                                     exclude_session_id=args.exclude_session_id)
                 print(json.dumps(result, indent=None if args.follow else 2), flush=True)
+                if args.follow and result.get("budget_closed_at") is not None:
+                    terminal = {**result, "status": "budget_closed", "messages": [],
+                                "control_events": [], "budget_events": []}
+                    terminal.pop("matches", None)
+                    print(json.dumps(terminal), flush=True)
+                    return 0
                 if result["status"] == "timeout":
                     return 2
                 if not args.follow:
