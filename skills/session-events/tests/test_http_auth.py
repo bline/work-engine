@@ -145,8 +145,14 @@ class AuthHttp(Fixture):
         for change in ({"expected_client_id":""}, {"expected_project_id":None}, {"profile":"unknown"}, {"profile":None}):
             self.config.write_text(json.dumps(config | change))
             with self.assertRaises(ValueError): SE.HttpAuth(str(self.config))
+        # Omission keeps the original strict at+jwt profile for direct callers.
+        strict = {k:v for k,v in config.items() if k not in {"profile", "expected_client_id", "expected_project_id"}}
+        strict_token = self.token()
+        strict_result = subprocess.run([str(VERIFIER)], input=json.dumps({"config":strict, "token":strict_token}).encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, check=True)
+        self.assertEqual(strict_result.stdout, b"allow\n")
+        self.assertEqual(strict_result.stderr, b"")
         # Direct verifier callers cannot bypass profile selection or client/project binding.
-        for change in ({"profile":"unknown"}, {"profile":None}, {"expected_client_id":None}, {"expected_project_id":""}):
+        for change in ({"profile":"unknown"}, {"profile":None}, {"profile":[]}, {"profile":1}, {"profile":True}, {"profile":{"stytch-connected-apps-v1":None}}, {"profile":{"rfc9068-v1":None}}, {"expected_client_id":None}, {"expected_project_id":""}):
             result = subprocess.run([str(VERIFIER)], input=json.dumps({"config":config | change, "token":token()}).encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, check=True)
             self.assertEqual(result.stdout, b"invalid\n")
             self.assertEqual(result.stderr, b"")

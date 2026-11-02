@@ -6,13 +6,21 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-#[derive(Default, Deserialize, PartialEq)]
+#[derive(Default, PartialEq)]
 enum Profile {
     #[default]
-    #[serde(rename = "rfc9068-v1")]
     Rfc9068,
-    #[serde(rename = "stytch-connected-apps-v1")]
     StytchConnectedApps,
+}
+impl<'de> Deserialize<'de> for Profile {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let name = String::deserialize(deserializer)?;
+        match name.as_str() {
+            "rfc9068-v1" => Ok(Self::Rfc9068),
+            "stytch-connected-apps-v1" => Ok(Self::StytchConnectedApps),
+            _ => Err(serde::de::Error::custom("unknown profile")),
+        }
+    }
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
