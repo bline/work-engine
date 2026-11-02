@@ -187,6 +187,72 @@ class Tree(unittest.TestCase):
         saved = json.loads(base64.urlsafe_b64decode(result['next_budget_cursor'] + '=' * (-len(result['next_budget_cursor']) % 4)))
         self.assertEqual(saved['account_quota_status'], 'expired')
 
+    def test_closed_real_rollouts_keep_tail_candidates_and_current_account_separate(self):
+        import argparse, contextlib, datetime, io, json, tempfile
+        from unittest.mock import patch
+        now = datetime.datetime.now(datetime.timezone.utc)
+        start, close, later = [(now - datetime.timedelta(seconds=s)).isoformat() for s in (180, 120, 60)]
+        sb = dict(objective_id='closed-real', started_at=start, closed_at=close,
+                  sessions=[dict(session_id='root', provider='codex', **{'from': start})],
+                  close=dict(disposition='accepted'), limits={}, cost_limits=[])
+        with tempfile.TemporaryDirectory() as d:
+            record = os.path.join(d, 'record.json')
+            with open(record, 'w') as f: json.dump(dict(scope_budget=sb), f)
+            files = []
+            for sid, parent, times, reading in (
+                    ('root', None, [close, later], 20), ('child', 'root', [later], None),
+                    ('unrelated', None, [later], 95)):
+                path = os.path.join(d, sid + '.jsonl'); files.append(path)
+                rows = [dict(timestamp=start, type='session_meta', payload=dict(id=sid, parent_thread_id=parent)),
+                        dict(timestamp=start, type='turn_context', payload=dict(model='gpt-6.1-sol', effort='low')),
+                        dict(timestamp=start, type='event_msg', payload=dict(type='thread_settings_applied',
+                             thread_id=sid, thread_settings=dict(service_tier='default')))]
+                for i, ts in enumerate(times):
+                    rows.append(dict(timestamp=ts, type='token_usage_record', payload=dict(thread_id=sid,
+                        response_id=sid + str(i), usage=dict(input_tokens=100, output_tokens=10))))
+                if reading is not None:
+                    rows.append(dict(timestamp=close if sid == 'root' else later, type='event_msg',
+                        payload=dict(type='token_count', rate_limits=dict(limit_id='codex', secondary=dict(
+                            window_minutes=10080, used_percent=reading, resets_at=(now + datetime.timedelta(days=1)).timestamp())))))
+                with open(path, 'w') as f:
+                    for row in rows: f.write(json.dumps(row, separators=(',', ':')) + '\n')
+            with (patch.object(L, 'CODEX_GLOBS', files), patch.object(L, 'CLAUDE_GLOB', os.path.join(d, 'none')),
+                    patch.object(L, 'thread_index', return_value={})):
+                tree, _, _ = L.cost_tree(record, role_ledger=os.path.join(d, 'no-ledger'))
+                self.assertEqual(tree['status'], 'complete')
+                self.assertEqual(tree['totals']['codex']['calls'], 1)
+                tail = tree['post_close']
+                self.assertEqual(tail['candidate_totals']['codex']['calls'], 2)
+                self.assertEqual({s['session_id'] for s in tail['sessions']}, {'root', 'child'})
+                self.assertEqual(tail['settlement']['status'], 'not_established')
+                self.assertEqual(tail['coverage'], 'complete')
+                self.assertEqual(tree['measurements']['account_quota']['used_percent'], 95)
+                self.assertEqual(tree['measurements']['account_quota']['status'], 'observed')
+                args = argparse.Namespace(record=record, cursor=None, limit_fractions='1', hours_fractions='1',
+                                          role_host_ledger=os.path.join(d, 'no-ledger'))
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out): L.cmd_control(args)
+                snapshot = json.loads(out.getvalue())['snapshot']
+                self.assertEqual(snapshot['post_close']['candidate_totals']['codex']['calls'], 2)
+                self.assertEqual(snapshot['measurements']['account_quota']['used_percent'], 95)
+                extended, _, _ = L.cost_tree(record, until_arg=later, role_ledger=os.path.join(d, 'no-ledger'))
+                self.assertEqual(extended['totals']['codex']['calls'], 3)
+                self.assertEqual(extended['post_close']['candidate_totals']['codex']['calls'], 0)
+                self.assertEqual(extended['post_close']['settlement']['status'], 'not_established')
+
+    def test_closed_reader_failure_keeps_tail_unavailable(self):
+        import json, tempfile
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            record = os.path.join(d, 'record.json')
+            with open(record, 'w') as f: json.dump(dict(scope_budget=dict(
+                started_at='2026-01-01T00:00:00Z', closed_at='2026-01-01T01:00:00Z')), f)
+            with patch.object(L, 'build_codex', side_effect=OSError('reader unavailable')):
+                tree, _, _ = L.cost_tree(record)
+        self.assertEqual(tree['status'], 'not_established')
+        self.assertEqual(tree['post_close']['coverage'], 'not_established')
+        self.assertIsNone(tree['post_close']['candidate_totals'])
+
     def test_cost_and_account_controls_are_independent(self):
         import argparse, contextlib, io, json
         from unittest.mock import patch

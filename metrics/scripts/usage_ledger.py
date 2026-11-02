@@ -879,6 +879,10 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     since_s = since_arg or sb.get('started_at'); until_s = until_arg or sb.get('closed_at') or now
     since, until = ts_of(since_s), ts_of(until_s)
+    # Cost-window closure is not an account-observation cutoff or evidence of
+    # settlement. Read through the snapshot, then keep the requested totals
+    # separate from later bound-session candidates.
+    observation_until = max(until, ts_of(now))
     result = dict(schema='objective-cost-tree-v1', snapshot_at=now, window=dict(since=since_s, until=until_s, closed_at=sb.get('closed_at')),
                   record=dict(path=os.path.abspath(record_path), sha256=digest(record_path), objective_id=sb.get('objective_id')),
                   reader=dict(path=os.path.abspath(__file__), sha256=digest(__file__)),
@@ -889,16 +893,26 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
                   outside=dict(issues={}, undated_calls=0),
                   conservation_scope='dated calls in window',
                   known_gaps=['Claude Code title and other side calls are not in transcripts'])
+    if sb.get('closed_at'):
+        result['post_close'] = dict(
+            closed_at=sb['closed_at'], observed_until=now,
+            excluded_after=max(ts_of(sb['closed_at']), until).isoformat(),
+            coverage='not_established', candidate_totals=None, sessions=[],
+            settlement=dict(status='not_established',
+                reason='Closure does not establish that all attributable calls have been reported. '
+                       'Later bound-session calls are candidates, not automatically attributable: '
+                       'a reused session may perform another objective.'))
     ISSUES.clear()
     try:
         metadata = {}
-        codex, quota, _, _ = build_codex(since, until, metadata=metadata)
+        codex, quota, _, _ = build_codex(since, observation_until, metadata=metadata)
         unrecorded = []
-        claude, _, _ = build_claude(since, until, unrecorded=unrecorded)
+        claude, _, _ = build_claude(since, observation_until, unrecorded=unrecorded)
     except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError) as e:
         result['issues'].append(dict(kind='build_failed', error=str(e)))
         return finish_measurements(result, []), [], sb
-    calls = codex + claude
+    observed_calls = codex + claude
+    calls = [c for c in observed_calls if in_window(c.get('ts'), since, until)]
     nodes = {}; starts = {}; links = []
     def add_node(node_id, sid, provider, parent, link, role=None, start=None):
         # Reject links whose parent chain would make this node its own ancestor.
@@ -986,6 +1000,28 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         return inherited_start(parent) if parent in nodes else None
     for nid in nodes:
         starts[nid] = inherited_start(nid)
+    if 'post_close' in result:
+        tail = result['post_close']; tail['candidate_totals'] = pools()
+        tail_sessions = {}; after = ts_of(tail['excluded_after'])
+        for c in observed_calls:
+            if not valid_timestamp(c.get('ts')) or not (after < ts_of(c['ts']) <= ts_of(now)):
+                continue
+            sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
+            nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
+            if nid not in nodes or (starts[nid] and ts_of(c['ts']) < ts_of(starts[nid])):
+                continue
+            spend = call_spend(c)
+            row = tail_sessions.setdefault(nid, dict(node_id=nid, session_id=sid,
+                provider=c['provider'], totals=pools(), first_call=c['ts'], last_call=c['ts']))
+            row['first_call'] = min(row['first_call'], c['ts'], key=ts_of)
+            row['last_call'] = max(row['last_call'], c['ts'], key=ts_of)
+            for p in c['pools']:
+                add_spend(tail['candidate_totals'][p], spend); add_spend(row['totals'][p], spend)
+        tail['sessions'] = list(tail_sessions.values())
+        tail['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and
+                              valid_timestamp(x.get('at')) and after < ts_of(x['at']) <= ts_of(now) and
+                              (not starts[x['session_id']] or ts_of(x['at']) >= ts_of(starts[x['session_id']]))]
+        tail['measurements'] = cost_measurements(tail['candidate_totals'])
     unattributed = {}; undated_sessions = set(); undated_outside = 0
     # Issues and undated calls count against the objective only when they come from
     # one of its sessions; the window holds other objectives' sessions too.
@@ -1023,7 +1059,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             cur = nodes.get(cur['parent_node_id'])
     result['nodes'] = list(nodes.values()); result['unattributed']['sessions'] = list(unattributed.values())
     result['undated']['sessions'] = [dict(session_id=sid, provider=provider) for sid, provider in sorted(undated_sessions, key=str)]
-    result['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and
+    result['unrecorded'] = [x for x in unrecorded if x['session_id'] in nodes and in_window(x.get('at'), since, until) and
                             (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
     file_sessions = collections.defaultdict(set)
     for c in calls:
@@ -1048,6 +1084,13 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['totals'].values())
     substantive_issues = [i for i in result['issues'] if i['kind'] != 'role_host_ledger_absent']
     result['status'] = 'not_established' if not sessions or missing_root else ('partial' if ranged or result['unrecorded'] or substantive_issues or undated_sessions else 'complete')
+    if 'post_close' in result:
+        tail = result['post_close']
+        tail_ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high']
+                          or s['unpriced_calls'] for s in tail['candidate_totals'].values())
+        tail['coverage'] = ('not_established' if not sessions or missing_root else
+            'partial' if tail_ranged or tail['unrecorded'] or substantive_issues or undated_sessions else 'complete')
+        result['coverage_scope'] = 'requested_cost_window; post_close coverage and settlement are separate'
     return finish_measurements(result, quota), quota, sb
 
 def cmd_tree(a):
@@ -1188,7 +1231,8 @@ def cmd_control(a):
     measurements.update(objective=cost_measurements(doc['totals']), account_quota=account)
     print(json.dumps(dict(schema='objective-budget-control-v1', topic=topic, events=events, next_budget_cursor=cursor,
                           closed_at=closed_at, snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'],
-                                        measurements=measurements, cost_controls=cost_controls)), sort_keys=True))
+                                        measurements=measurements, cost_controls=cost_controls,
+                                        post_close=doc.get('post_close'))), sort_keys=True))
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
