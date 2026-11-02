@@ -1,0 +1,129 @@
+{
+  "schema": "bookkeeping-host.core-closure.v1",
+  "status": "complete_qualified_fresh_task_release_candidate",
+  "source_commit": "a0cda34e55e8fd4c44e4a2c7f7932279d9418247",
+  "shared_integration": "25 files applied to working tree; HEAD9e4d7849 and17 other tracked modifications preserved",
+  "objective_id": "0a40dd3e-9a14-4d70-b0f0-398fb130299b",
+  "closed_at": "2026-11-02T19:46:21Z",
+  "scope": "approved120USD10h core only; optional Dot grants inactive; global activation not performed",
+  "result": {
+    "path": "/home/bline/code/work-engine/records/deterministic-bookkeeping-host-core-result-20261102.md",
+    "sha256": "360da833973c7146f82bfb3477ef1a7deb5e1ff05f8154ffacdf11bfd5e4816f"
+  },
+  "release_plan": {
+    "path": "/home/bline/code/work-engine/records/deterministic-bookkeeping-host-release-plan-20261102.md",
+    "sha256": "089b975837152ade2a9f25d42059bfe5d136f6060d428e9b8e4d86f8c2204f95"
+  },
+  "measurement": {
+    "path": "/home/bline/code/work-engine/metrics/deterministic-bookkeeping-host-pilot-20261102.json",
+    "sha256": "157fac599206d19d8c13c65e8d62295cc8fb606f6bb2834802764ca91be6d3bf"
+  },
+  "accounting": {
+    "snapshot_at": "2026-11-02T19:47:17.339812+00:00",
+    "basis": "speed_adjusted_api_usd; modelled proxy, not bill or subscription quota",
+    "coverage": "complete",
+    "closed_window": {
+      "calls": 325,
+      "quota_usd_high": 52.0341256,
+      "quota_usd_low": 52.0341256,
+      "unpriced_calls": 0,
+      "usd_high": 52.0341256,
+      "usd_low": 52.0341256
+    },
+    "post_close_candidates": {
+      "calls": 5,
+      "quota_usd_high": 0.967608,
+      "quota_usd_low": 0.967608,
+      "unpriced_calls": 0,
+      "usd_high": 0.967608,
+      "usd_low": 0.967608
+    },
+    "root_attribution": "All five observed tail calls belong to this same root core closure/reporting; no session reuse for another objective in this interval. Attribution is root judgment, not inferred by host.",
+    "observed_attributed_total_usd": 53.0017336,
+    "observed_calls": 330,
+    "final_settlement": "not_established; subsequent final publication/reporting and delayed usage may remain",
+    "ledger": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/usage-final-observed.json",
+      "sha256": "90a248300934ed498e4fa59f3b1fe0662f21c03184f3530bd126edddfe68dab4"
+    }
+  },
+  "validation": {
+    "passed_tests": 557,
+    "skipped_tests": 25,
+    "checks": "6/6 passed",
+    "custody": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/integration/validation/summary.json",
+      "sha256": "11f99ce41938fe5aae367071684f8b3a9788054ff96ab2ecf9a8ace3355b7f39"
+    },
+    "fixture_cleanup": "one leftover sleep killed; leftovers_after_kill empty"
+  },
+  "operations": {
+    "native-missing-result-r2": {
+      "phase": "closed",
+      "receipt": "d118b51d1c63646daba517a7d07beb098e7a126ee7f638f2f821b4294fb45555",
+      "acknowledged": true
+    },
+    "native-normal-r2": {
+      "phase": "closed",
+      "receipt": "643ce26534f3c377e0cafd0eabedc085116db607cd6a0d22fd639477777aec02",
+      "acknowledged": true
+    },
+    "native-retained-r2": {
+      "phase": "closed",
+      "receipt": "6a7625ac6a8ab05871ef9fb673f9875d57b631026e13e87ac2a9cb4e635811a4",
+      "acknowledged": true
+    }
+  },
+  "final_accounting_receipt": {
+    "receipt_id": "8ad1a9cc76389a171f65a65a16cb04801b45deed2baec7cc34c0658dae6f0f3a",
+    "acknowledged": true,
+    "reference": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/implementation/native-pilot-r2/state/receipts/8ad1a9cc76389a171f65a65a16cb04801b45deed2baec7cc34c0658dae6f0f3a.json",
+      "sha256": "8ad1a9cc76389a171f65a65a16cb04801b45deed2baec7cc34c0658dae6f0f3a"
+    }
+  },
+  "custody": {
+    "host_process_records": 96,
+    "recorded_process_identities_live": [],
+    "root_owned_live_executors": [],
+    "builder": "completed and collected",
+    "reviewer": "native review4 completed and collected"
+  },
+  "claims": "integration and campaign claims released before this record was written",
+  "evidence": [
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/review/review-4.md",
+      "sha256": "dc2389b42479114ae5e5a1dc3150bf97cbdb70f246982700dfdbe188de16125f"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/review/native-evidence-correction.md",
+      "sha256": "4d68c978832b949e805441a795029d67f524459d8494708e5804f688b600134d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/integration/result.json",
+      "sha256": "fcd6575519715b3323b81668e902ad11fdc3ede84cdcfdcf48166f52e51f27bc"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/integration/plan.json",
+      "sha256": "2dfaaa9e20bbdea4330ba86018d7150a01a11cc0ab4e57a8f7ab29675258932f"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/implementation/pilot-repair-result.json",
+      "sha256": "e473c82af40e44bf0b22698c720d6658f7dd8826e6564a5ddfec6cc26c5c0d07"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/final-closure-authority.md",
+      "sha256": "cbdd637989524368b14fc729637f0c415257d87b83e51f06b4ee03868bd122fb"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-20261102/final-objective-close.json",
+      "sha256": "f820a9df5428c4bda8d93b4f0f2531e248f7027bb9ec7d4f60ce703950eba960"
+    }
+  ],
+  "limits": [
+    "Selected-turn settings evidence unavailable for retained native use; task abandoned.",
+    "No50percent bookkeeping-turn reduction or sustained savings established.",
+    "Native paid probes do not establish rare crash/race/cancellation behavior; fixtures have narrower scope.",
+    "Active skill release133946956e6cbc2f7aba0d2a9aa8d7dcedb4a423 remains unchanged."
+  ]
+}
