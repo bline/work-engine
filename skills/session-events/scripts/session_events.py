@@ -2922,7 +2922,69 @@ def serve(server: Server, stdin=None, stdout=None) -> int:
 MAX_HTTP_REQUEST_BYTES = 4 * 1024 * 1024
 
 
-def make_http_handler(server: Server, path: str):
+def _unique_json(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON member")
+        result[key] = value
+    return result
+
+
+class HttpAuth:
+    """Trusted, opt-in resource-server configuration; verifier owns token semantics."""
+    def __init__(self, config_path: str):
+        self.config_path = str(Path(config_path).resolve())
+        with open(self.config_path, "rb") as f:
+            data = f.read(16385)
+        self.config = json.loads(data, object_pairs_hook=_unique_json)
+        if len(data) > 16384 or not isinstance(self.config, dict):
+            raise ValueError("invalid auth config")
+        for name in ("resource", "issuer"):
+            url = urllib.parse.urlsplit(self.config[name])
+            if any(ord(c) < 33 or ord(c) > 126 or c in '\"' for c in self.config[name]) or url.scheme != "https" or not url.netloc or url.username or url.password or url.query or url.fragment:
+                raise ValueError("invalid auth URL")
+        if not self.config["resource"].endswith("/mcp"):
+            raise ValueError("invalid auth resource")
+        self.metadata = self.config["resource"].removesuffix("/mcp") + "/.well-known/oauth-protected-resource/mcp"
+        self.verifier = self.config["verifier"]
+        self._config_bytes = json.dumps(self.config, separators=(",", ":")).encode("ascii")
+        if not os.path.isabs(self.verifier):
+            raise ValueError("verifier must be absolute")
+
+    def authorize(self, headers) -> str:
+        values = headers.get_all("Authorization", [])
+        if len(values) != 1:
+            return "invalid"
+        parts = values[0].split(" ")
+        if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1] or len(parts[1]) > 16384:
+            return "invalid"
+        try:
+            request = b'{"config":' + self._config_bytes + b',"token":' + json.dumps(parts[1]).encode("ascii") + b'}'
+            result = subprocess.run([self.verifier], input=request,
+                                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=3, check=False)
+            if result.returncode == 0 and result.stdout in (b"allow\n", b"scope\n"):
+                return result.stdout.decode().strip()
+        except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
+            pass
+        return "invalid"
+
+
+def _public_http_operation(message):
+    if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
+        return False
+    method = message.get("method")
+    if not isinstance(method, str):
+        return False
+    if method in {"initialize", "ping", "tools/list", "events/list", "notifications/initialized"}:
+        return True
+    if method == "tools/call" and isinstance(message.get("params"), dict):
+        name = message["params"].get("name")
+        return isinstance(name, str) and name in {"list_sessions", "read_session", "test_pattern", "delivery_status", "replay_events", "budget_status", "read_session_operation", "read_session_result", "read_session_target"}
+    return False
+
+
+def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
     """Stateless Streamable HTTP: one JSON-RPC object per POST, a JSON reply, no MCP session id.
 
     Loopback only. A browser page could otherwise reach a local listener, so requests must
@@ -2952,7 +3014,8 @@ def make_http_handler(server: Server, path: str):
                 return "host"
             if self.headers.get("Origin"):
                 return "origin"
-            if urllib.parse.urlsplit(self.path).path != path:
+            request_path = urllib.parse.urlsplit(self.path).path
+            if request_path != path and not (auth and self.command == "GET" and request_path in {"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"}):
                 return "path"
             return None
 
@@ -2965,17 +3028,31 @@ def make_http_handler(server: Server, path: str):
             if self.headers.get_content_type() != "application/json":
                 self._reply(415)
                 return
-            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._reply(400)
+                return
             if not 0 < length <= MAX_HTTP_REQUEST_BYTES:
                 self._reply(413 if length else 400)
                 return
             raw = self.rfile.read(length)
             try:
-                message = json.loads(raw)
+                message = json.loads(raw, object_pairs_hook=_unique_json)
             except ValueError:
+                parsed = False
                 message = None
                 reply = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}
             else:
+                parsed = True
+                reply = None
+            if auth and not _public_http_operation(message):
+                decision = auth.authorize(self.headers)
+                if decision != "allow":
+                    challenge = 'Bearer resource_metadata="' + auth.metadata + '"'
+                    self._reply(403 if decision == "scope" else 401, extra={"WWW-Authenticate": challenge})
+                    return
+            if parsed:
                 reply = server.handle(message)
             log_request(log_path, request_summary(message, reply) | {"transport": "http"})
             if reply is None:
@@ -2983,9 +3060,12 @@ def make_http_handler(server: Server, path: str):
             else:
                 self._reply(200, json.dumps(reply, ensure_ascii=False).encode())
 
-        def do_GET(self) -> None:  # no server-initiated stream; OAuth discovery probes get 404
+        def do_GET(self) -> None:  # no server-initiated stream
             refused = self._refused()
-            self._reply(405 if refused is None else 404, extra={"Allow": "POST"} if refused is None else None)
+            if refused is None and auth and urllib.parse.urlsplit(self.path).path in {"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"}:
+                self._reply(200, json.dumps({"resource": auth.config["resource"], "authorization_servers": [auth.config["issuer"]]}).encode())
+            else:
+                self._reply(405 if refused is None else 404, extra={"Allow": "POST"} if refused is None else None)
 
         do_DELETE = do_GET
 
@@ -2995,12 +3075,14 @@ def make_http_handler(server: Server, path: str):
     return Handler
 
 
-def serve_http(server: Server, listen: str, path: str = "/mcp") -> int:
+def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth | None = None) -> int:
+    if auth and urllib.parse.urlsplit(auth.config["resource"]).path != path:
+        raise SystemExit("serve-http: path must match configured resource")
     host, _, port_text = listen.rpartition(":")
     host = host.strip("[]")
     if not ipaddress.ip_address(host).is_loopback:
         raise SystemExit("serve-http: --listen must be a loopback address; tunnel-client runs on this machine")
-    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path))
+    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth))
     log_request(server.store.root / "requests.log",
                 {"at": iso(utcnow()), "event": "serve_http_started", "pid": os.getpid(), "version": VERSION,
                  "listen": f"{host}:{httpd.server_address[1]}", "path": path})
@@ -3860,6 +3942,7 @@ def build_parser() -> argparse.ArgumentParser:
                                          "(for tunnel-client --mcp-server-url)")
     serve_http_cmd.add_argument("--listen", default="127.0.0.1:8787")
     serve_http_cmd.add_argument("--path", default="/mcp")
+    serve_http_cmd.add_argument("--auth-config", help="trusted OAuth resource-server configuration file")
     serve_http_cmd.add_argument("--principal", default="tunnel",
                                 help="subscription owner recorded in every key (default: tunnel)")
     run = commands.add_parser("run", help="delivery daemon")
@@ -3923,7 +4006,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "serve":
             return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()), args.listen, args.path)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":
