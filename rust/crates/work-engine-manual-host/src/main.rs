@@ -31,6 +31,7 @@ fn run() -> Result<()> {
     let mut wait = false;
     let mut draft = None;
     let mut bind_only = false;
+    let mut reconcile_accounting = false;
     while let Some(a) = args.next() {
         match a.as_str() {
             "--request" => request = args.next(),
@@ -40,6 +41,7 @@ fn run() -> Result<()> {
             "--operation" => operation = args.next(),
             "--ack-receipt" => ack = args.next(),
             "--wait" => wait = true,
+            "--reconcile-accounting" => reconcile_accounting = true,
             _ => {
                 return Err(work_engine_manual_host::Error::Refused(format!(
                     "unknown argument {a}"
@@ -91,12 +93,14 @@ fn run() -> Result<()> {
                     })?)?)?;
                 h.close(c)?
             } else {
-                h.collect(
-                    &operation.ok_or_else(|| {
-                        work_engine_manual_host::Error::Refused("--operation required".into())
-                    })?,
-                    wait,
-                )?
+                let operation = operation.ok_or_else(|| {
+                    work_engine_manual_host::Error::Refused("--operation required".into())
+                })?;
+                if reconcile_accounting {
+                    h.reconcile_accounting(&operation)?
+                } else {
+                    h.collect(&operation, wait)?
+                }
             }
         }
         "inspect" => {

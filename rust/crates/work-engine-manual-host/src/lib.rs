@@ -206,6 +206,7 @@ pub struct Operation {
     pub processes: Vec<ProcessRecord>,
     pub receipt: Option<String>,
     pub closure_digest: Option<String>,
+    pub result_reservation: PathBuf,
     pub started_at: Option<u64>,
     pub context_established: bool,
     pub observer_events: BTreeMap<String, Value>,
@@ -221,6 +222,7 @@ pub struct State {
     pub operations: BTreeMap<String, Operation>,
     pub acknowledged: BTreeSet<String>,
     pub acknowledged_events: BTreeSet<String>,
+    pub objective_closure_digest: Option<String>,
 }
 pub struct Host {
     pub dir: PathBuf,
@@ -277,13 +279,13 @@ impl Host {
             .map_err(|_| Error::Refused("executor busy; no second owner admitted".into()))?;
         let binary = digest(&fs::read(std::env::current_exe()?)?);
         let state = if dir.join("state.json").exists() {
-            let state: State = serde_json::from_slice(&bytes(&dir.join("state.json"))?)?;
-            if state.schema != SCHEMA || state.binary_sha256 != binary {
+            let raw = read_json(&dir.join("state.json"))?;
+            if raw["schema"] != SCHEMA || raw["binary_sha256"] != binary {
                 return refuse(
                     "incompatible state/binary; inspect raw state and restore the pinned executor",
                 );
             }
-            state
+            serde_json::from_value::<State>(raw)?
         } else {
             let r = request.ok_or_else(|| Error::Refused("state missing".into()))?;
             State {
@@ -294,6 +296,7 @@ impl Host {
                 operations: BTreeMap::new(),
                 acknowledged: BTreeSet::new(),
                 acknowledged_events: BTreeSet::new(),
+                objective_closure_digest: None,
             }
         };
         let h = Self {
@@ -442,6 +445,24 @@ impl Host {
             }
             return Ok(id);
         }
+        let result_reservation = fs::canonicalize(
+            r.result_path
+                .parent()
+                .ok_or_else(|| Error::Refused("result parent missing".into()))?,
+        )?
+        .join(
+            r.result_path
+                .file_name()
+                .ok_or_else(|| Error::Refused("result filename missing".into()))?,
+        );
+        if self
+            .state
+            .operations
+            .values()
+            .any(|op| op.result_reservation == result_reservation)
+        {
+            return refuse("result path reserved by another operation");
+        }
         r.authority.verify()?;
         r.packet.verify()?;
         Self::verify_tools(&r)?;
@@ -514,6 +535,7 @@ impl Host {
                 processes: vec![],
                 receipt: None,
                 closure_digest: None,
+                result_reservation,
                 started_at: None,
                 context_established: false,
                 observer_events: BTreeMap::new(),
@@ -1014,7 +1036,7 @@ impl Host {
             .python(id, "scope-check", &r.tools.scope_budget, args)
             .unwrap_or_else(|e| json!({"status":"unavailable","detail":e.to_string()}));
         self.evidence(id, "budget_policy", policy)?;
-        if child {
+        if child && self.op(id).session_id.is_some() {
             let sid = self.op(id).session_id.clone().unwrap();
             if self.op(id).rollout.is_none() {
                 let args = vec!["identity".into(), "codex".into(), sid.clone()];
@@ -1046,13 +1068,16 @@ impl Host {
                 self.save()?;
             }
             if let Some(rollout) = self.op(id).rollout.clone() {
-                let args = vec![
+                let mut args = vec![
                     "settings".into(),
                     "codex".into(),
                     sid,
                     "--rollout".into(),
                     rollout.display().to_string(),
                 ];
+                if let Some(turn) = &self.op(id).turn_id {
+                    args.extend(["--turn-id".into(), turn.clone()]);
+                }
                 let settings = self
                     .python(id, "settings", &r.tools.role_host, args)
                     .unwrap_or_else(|e| json!({"status":"unavailable","detail":e.to_string()}));
@@ -1211,43 +1236,13 @@ impl Host {
     }
     fn collect_artifacts(&mut self, id: &str) -> Result<()> {
         let r = self.op(id).request.clone();
-        if r.result_from_turn && !r.result_path.exists() {
-            let turn = self
-                .op(id)
-                .evidence
-                .get("turn")
-                .cloned()
-                .unwrap_or(Value::Null);
-            if turn["turn"]["itemsView"] != "full" {
-                return refuse("full native turn items unavailable; cannot bind final result");
-            }
-            let finals = turn["turn"]["items"]
-                .as_array()
-                .map(|items| {
-                    items
-                        .iter()
-                        .filter(|item| {
-                            item["type"] == "agentMessage" && item["phase"] == "final_answer"
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default();
-            if finals.len() != 1 {
-                return refuse("no unique explicit native final answer; result remains missing");
-            }
-            let text = finals[0]["text"]
-                .as_str()
-                .ok_or_else(|| Error::Refused("native final text unavailable".into()))?;
-            let value: Value = serde_json::from_str(text)?;
-            // create_new prevents overwriting a concurrently published child
-            // result. This source is native final output, never a file-write claim.
-            let mut f = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(&r.result_path)?;
-            f.write_all(&serde_json::to_vec_pretty(&value)?)?;
-            f.sync_all()?;
-            self.evidence(id,"native_result_source",json!({"session_id":self.op(id).session_id,"turn_id":self.op(id).turn_id,"item_id":finals[0]["id"],"source":"explicit_final_answer"}))?;
+        let current = fs::canonicalize(r.result_path.parent().unwrap())?
+            .join(r.result_path.file_name().unwrap());
+        if current != self.op(id).result_reservation {
+            return refuse("result path reservation changed");
+        }
+        if r.result_from_turn {
+            self.capture_native_result(id)?;
         }
         if !r.result_path.exists() {
             self.failure(id, "result_missing: terminal turn has no assignment result")?;
@@ -1256,6 +1251,9 @@ impl Host {
         if self.op(id).evidence.contains_key("collection") {
             self.verify_snapshot(id)?;
             return Ok(());
+        }
+        if !fs::symlink_metadata(&r.result_path)?.is_file() {
+            return refuse("result must be a regular file");
         }
         let result = bytes(&r.result_path)?;
         let doc: Value = serde_json::from_slice(&result)?;
@@ -1328,7 +1326,9 @@ impl Host {
             &r.service_tier
         };
         if !settings.is_some_and(|s| {
-            s["model"] == r.model
+            s["turn_id"].as_str() == self.op(id).turn_id.as_deref()
+                && s["turn_attribution"] == "exact_turn_interval"
+                && s["model"] == r.model
                 && s["reasoning_effort"] == r.effort
                 && s["service_tier"] == expected_tier
         }) {
@@ -1341,6 +1341,15 @@ impl Host {
         self.save()
     }
     fn verify_snapshot(&self, id: &str) -> Result<()> {
+        let path = &self.op(id).request.result_path;
+        if fs::canonicalize(path.parent().unwrap())?.join(path.file_name().unwrap())
+            != self.op(id).result_reservation
+        {
+            return refuse("result reservation path changed");
+        }
+        if self.op(id).request.result_from_turn && self.op(id).evidence.contains_key("collection") {
+            self.verify_native_result(id)?;
+        }
         if let Some(c) = self.op(id).evidence.get("collection") {
             let mut entries = vec![&c["result"]];
             if let Some(a) = c["artifacts"].as_array() {
@@ -1384,7 +1393,7 @@ impl Host {
         self.op_mut(id).receipt = Some(receipt.clone());
         self.save()?;
         Ok(
-            json!({"receipt_id":receipt,"receipt":path,"delivery":if self.state.acknowledged.contains(&receipt){"acknowledged"}else{"pending"},"summary":{"operation_id":id,"phase":self.op(id).phase,"session_id":self.op(id).session_id,"turn_id":self.op(id).turn_id,"turn_outcome":self.op(id).evidence.get("turn").map(|v|v["status"].clone()),"failures":self.op(id).failures,"acceptance":"root_owned","observations":{"root_context":self.op(id).evidence.get("root_context").map(|v|v["status"].clone()),"child_context":self.op(id).evidence.get("child_context").map(|v|v["status"].clone()),"child_context_established":self.op(id).context_established},"accounting":{"coverage":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["status"].clone()),"totals":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["totals"].clone())},"result":self.op(id).evidence.get("collection").map(|v|v["result"].clone())}}),
+            json!({"receipt_id":receipt,"receipt":path,"delivery":if self.state.acknowledged.contains(&receipt){"acknowledged"}else{"pending"},"summary":{"operation_id":id,"phase":self.op(id).phase,"session_id":self.op(id).session_id,"turn_id":self.op(id).turn_id,"turn_outcome":self.op(id).evidence.get("turn").map(|v|v["status"].clone()),"failures":self.op(id).failures,"acceptance":"root_owned","observations":{"root_context":self.op(id).evidence.get("root_context").map(|v|v["status"].clone()),"child_context":self.op(id).evidence.get("child_context").map(|v|v["status"].clone()),"child_context_established":self.op(id).context_established},"accounting":{"coverage":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["status"].clone()),"totals":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["totals"].clone()),"post_close":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["post_close"].clone())},"result":self.op(id).evidence.get("collection").map(|v|v["result"].clone())}}),
         )
     }
 }
@@ -1411,8 +1420,24 @@ impl Host {
         c.authority.verify()?;
         let id = &c.operation_id;
         let close_digest = digest(&serde_json::to_vec(
-            &json!({"authority":c.authority,"objective_end":c.objective_end,"disposition":c.disposition,"reason":c.reason}),
+            &json!({"authority":c.authority,"disposition":c.disposition,"reason":c.reason}),
         )?);
+        if matches!(self.op(id).phase, Phase::Closed) && c.objective_end {
+            if self.state.objective_closure_digest.is_none()
+                && self.op(id).receipt.as_deref() != Some(c.ack_receipt.as_str())
+            {
+                return refuse("objective transition must acknowledge latest task receipt");
+            }
+            self.acknowledge(&c.ack_receipt)?;
+            self.verify_processes(id)?;
+            self.verify_snapshot(id)?;
+            let already_done = matches!(self.op(id).objective_close, Effect::Done);
+            self.close_objective(id, &c)?;
+            if !already_done {
+                self.observe(id, self.op(id).session_id.is_some())?;
+            }
+            return self.receipt(id);
+        }
         if let Some(old) = &self.op(id).closure_digest {
             if old != &close_digest {
                 return refuse("closure input conflict");
@@ -1468,41 +1493,10 @@ impl Host {
         self.save()?;
         self.evidence(id,"closure_request",serde_json::to_value(json!({"authority":c.authority,"objective_end":c.objective_end,"disposition":c.disposition,"reason":c.reason}))?)?;
         if c.objective_end {
-            if self.state.operations.iter().any(|(other, o)| {
-                other != id && !matches!(o.phase, Phase::Collected | Phase::Closed)
-            }) {
-                return refuse("other objective work remains uncollected");
-            }
-            let sb = read_json(&r.assignment)?;
-            if sb["scope_budget"]["closed_at"].is_null() {
-                if matches!(self.op(id).objective_close, Effect::Unknown) {
-                    return refuse("objective close unknown; owner reconciliation required");
-                }
-                self.op_mut(id).objective_close = Effect::Unknown;
-                self.save()?;
-                let args = vec![
-                    "close".into(),
-                    "--record".into(),
-                    r.assignment.display().to_string(),
-                    "--disposition".into(),
-                    c.disposition,
-                    "--reason".into(),
-                    c.reason,
-                    "--set-by".into(),
-                    "supervisor".into(),
-                ];
-                match self.python(id, "objective-close", &r.tools.scope_budget, args) {
-                    Ok(v) => self.evidence(id, "objective_close", v)?,
-                    Err(e) => {
-                        self.failure(id, &format!("objective_close_unknown: {e}"))?;
-                        return self.receipt(id);
-                    }
-                }
-            }
-            self.op_mut(id).objective_close = Effect::Done;
-            self.save()?;
+            self.close_objective(id, &c)?;
         }
         if let Some(claim) = &r.claim
+            && matches!(self.op(id).claim, Effect::Done)
             && !matches!(self.op(id).release, Effect::Done)
         {
             self.op_mut(id).release = Effect::Unknown;
@@ -1613,4 +1607,192 @@ pub fn bind_draft(mut draft: Value) -> Result<Request> {
     let request: Request = serde_json::from_value(draft)?;
     Host::verify_tools(&request)?;
     Ok(request)
+}
+
+impl Host {
+    fn native_content(&self, id: &str) -> Result<(Value, Vec<u8>)> {
+        let op = self.op(id);
+        let turn = op
+            .evidence
+            .get("turn")
+            .ok_or_else(|| Error::Refused("native turn evidence unavailable".into()))?;
+        if turn["session_id"].as_str() != op.session_id.as_deref()
+            || turn["turn_id"].as_str() != op.turn_id.as_deref()
+            || turn["turn"]["itemsView"] != "full"
+        {
+            return refuse("selected native turn/full items unavailable");
+        }
+        let finals = turn["turn"]["items"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter(|item| {
+                        item["type"] == "agentMessage" && item["phase"] == "final_answer"
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        if finals.len() != 1 {
+            return refuse("no unique explicit native final answer");
+        }
+        let item = finals[0];
+        let item_id = item["id"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| Error::Refused("native final item identity unavailable".into()))?;
+        let value: Value = serde_json::from_str(
+            item["text"]
+                .as_str()
+                .ok_or_else(|| Error::Refused("native final text unavailable".into()))?,
+        )?;
+        let mut content = serde_json::to_vec_pretty(&value)?;
+        content.push(b'\n');
+        let stage = op
+            .result_reservation
+            .with_file_name(format!(".manual-host-native-{}.json", op.input_digest));
+        Ok((
+            json!({"operation_id":id,"input_digest":op.input_digest,"session_id":op.session_id,"turn_id":op.turn_id,"item_id":item_id,"native_text_sha256":digest(item["text"].as_str().unwrap().as_bytes()),"capture_encoding":"json_pretty_with_newline","sha256":digest(&content),"result_path":op.result_reservation,"stage":stage,"source":"explicit_final_answer"}),
+            content,
+        ))
+    }
+    fn same_native_file(&self, id: &str, intent: &Value) -> Result<()> {
+        use std::os::unix::fs::MetadataExt;
+        let path = &self.op(id).request.result_path;
+        let stage = Path::new(
+            intent["stage"]
+                .as_str()
+                .ok_or_else(|| Error::Refused("native stage missing".into()))?,
+        );
+        let a = fs::symlink_metadata(stage)?;
+        let b = fs::symlink_metadata(path)?;
+        if !a.is_file()
+            || !b.is_file()
+            || a.ino() != b.ino()
+            || a.dev() != b.dev()
+            || digest(&bytes(path)?) != intent["sha256"].as_str().unwrap_or("")
+        {
+            return refuse("native output path/content is not the reserved capture publication");
+        }
+        Ok(())
+    }
+    fn capture_native_result(&mut self, id: &str) -> Result<()> {
+        let (intent, content) = self.native_content(id)?;
+        let prior = self.op(id).evidence.get("native_capture_intent").cloned();
+        if let Some(old) = &prior {
+            if old != &intent {
+                return refuse("native source identity/content changed");
+            }
+        } else if self.op(id).request.result_path.exists() {
+            return refuse("foreign result exists before native capture");
+        }
+        self.evidence(id, "native_capture_intent", intent.clone())?;
+        let stage = Path::new(intent["stage"].as_str().unwrap());
+        match OpenOptions::new().create_new(true).write(true).open(stage) {
+            Ok(mut f) => {
+                f.write_all(&content)?;
+                f.sync_all()?;
+                File::open(stage.parent().unwrap())?.sync_all()?;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists && prior.is_some() => {
+                if bytes(stage)? != content {
+                    return refuse("native capture stage conflict/partial write");
+                }
+            }
+            Err(e) => return Err(e.into()),
+        }
+        let path = self.op(id).request.result_path.clone();
+        match fs::hard_link(stage, &path) {
+            Ok(()) => File::open(path.parent().unwrap())?.sync_all()?,
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(e) => return Err(e.into()),
+        }
+        self.same_native_file(id, &intent)?;
+        self.evidence(id, "native_result_source", intent)
+    }
+    fn verify_native_result(&self, id: &str) -> Result<()> {
+        let (intent, _) = self.native_content(id)?;
+        if self.op(id).evidence.get("native_capture_intent") != Some(&intent)
+            || self.op(id).evidence.get("native_result_source") != Some(&intent)
+        {
+            return refuse("native capture binding unestablished");
+        }
+        self.same_native_file(id, &intent)
+    }
+    fn close_objective(&mut self, id: &str, c: &CloseRequest) -> Result<()> {
+        let wanted = digest(&serde_json::to_vec(
+            &json!({"authority":c.authority,"disposition":c.disposition,"reason":c.reason}),
+        )?);
+        if let Some(previous) = &self.state.objective_closure_digest
+            && previous != &wanted
+        {
+            return refuse("objective closure input conflict");
+        }
+        if self
+            .state
+            .operations
+            .iter()
+            .any(|(other, o)| other != id && !matches!(o.phase, Phase::Collected | Phase::Closed))
+        {
+            return refuse("other objective work remains uncollected");
+        }
+        let r = self.op(id).request.clone();
+        let sb = read_json(&r.assignment)?;
+        self.state.objective_closure_digest = Some(wanted);
+        self.save()?;
+        if sb["scope_budget"]["closed_at"].is_null() {
+            if matches!(self.op(id).objective_close, Effect::Unknown) {
+                return refuse("objective close unknown; owner reconciliation required");
+            }
+            self.op_mut(id).objective_close = Effect::Unknown;
+            self.save()?;
+            let args = vec![
+                "close".into(),
+                "--record".into(),
+                r.assignment.display().to_string(),
+                "--disposition".into(),
+                c.disposition.clone(),
+                "--reason".into(),
+                c.reason.clone(),
+                "--set-by".into(),
+                "supervisor".into(),
+            ];
+            let v = self.python(id, "objective-close", &r.tools.scope_budget, args)?;
+            self.evidence(id, "objective_close", v)?;
+        } else if !matches!(self.op(id).objective_close, Effect::Done) {
+            if sb["scope_budget"]["close"]["disposition"] != c.disposition
+                || sb["scope_budget"]["close"]["reason"] != c.reason
+            {
+                return refuse("existing objective closure differs from requested transition");
+            }
+            self.evidence(id, "objective_close", sb["scope_budget"]["close"].clone())?;
+        }
+        self.op_mut(id).objective_close = Effect::Done;
+        self.save()
+    }
+    pub fn reconcile_accounting(&mut self, id: &str) -> Result<Value> {
+        if !self.state.operations.contains_key(id) {
+            return refuse("unknown operation");
+        }
+        self.verify_processes(id)?;
+        self.observe(id, false)?;
+        let op = self.op(id);
+        let content = json!({"schema":SCHEMA,"receipt_kind":"accounting_reconciliation","operation_id":id,"input_digest":op.input_digest,"task_receipt":op.receipt,"task_evidence":"historical_not_revalidated","task_effects_replayed":false,"budget":op.evidence.get("budget"),"budget_cursor":op.budget_cursor,"observer_events":op.observer_events,"process_records":op.processes});
+        let raw = serde_json::to_vec_pretty(&content)?;
+        let receipt = digest(&raw);
+        let path = self.dir.join("receipts").join(format!("{receipt}.json"));
+        fs::create_dir_all(path.parent().unwrap())?;
+        if path.exists() {
+            if bytes(&path)? != raw {
+                return refuse("accounting receipt conflict");
+            }
+        } else {
+            let mut f = File::create(&path)?;
+            f.write_all(&raw)?;
+            f.sync_all()?;
+            File::open(path.parent().unwrap())?.sync_all()?;
+        }
+        Ok(
+            json!({"receipt_id":receipt,"receipt":path,"receipt_kind":"accounting_reconciliation","delivery":if self.state.acknowledged.contains(&receipt){"acknowledged"}else{"pending"},"accounting":content["budget"],"task_receipt":op.receipt}),
+        )
+    }
 }

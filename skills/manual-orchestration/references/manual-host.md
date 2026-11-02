@@ -166,7 +166,15 @@ pilot does not pretend to recover them automatically or offer a force-clear.
 
 By default the task packet tells the child to write `result_path` as JSON.
 For a physically read-only child, use `result_from_turn: true` and request one
-final JSON answer instead. The host collects that exact turn's full native items,
+final JSON answer instead. The host reserves a normalized output path for each operation, including
+operations that have not yet produced a file. No second operation can reserve
+that path or an alias. Native collection always validates the exact turn and
+item even when an output file already exists. Its durable capture intent binds
+operation/input, session, turn, item and content. A retained staging inode and
+atomic hard-link publication distinguish the host capture from a foreign file;
+restart revalidates that binding. The staging file remains part of custody.
+
+The host collects that exact turn's full native items,
 requires one explicit `final_answer` agent message, and writes the bound JSON
 under its own custody. It never labels this as a child file write. Missing,
 ambiguous or legacy phase-unknown output remains unestablished. It may contain
@@ -186,8 +194,10 @@ A closure request contains `schema`, `operation_id`, an exact `authority` artifa
 `ack_receipt`, `objective_end`, `disposition` (`accepted` or `abandoned`) and `reason`.
 It must acknowledge the latest operation receipt. Only an explicit objective-end
 request closes scope_budget, after every other assignment is collected. A single
-child ending never closes the objective. Repeated matching closure has one effect;
-conflicting closure inputs fail. Objective accounting is observed again after close,
+child ending never closes the objective. Task closure and objective closure have separate idempotent transitions. A
+closed task can anchor a later explicit objective-end request with its own
+authority and reason, without replaying native/claim effects. Repeated matching
+closure has one effect; conflicting inputs within either transition fail. Objective accounting is observed again after close,
 so attributable tails and unavailable state remain inspectable.
 
 Accepted closure needs collected assignment evidence. Explicit abandonment can
@@ -198,3 +208,22 @@ is released when its work is quiescent. An objective-end request also carries th
 outside this host registry; the host verifies its own operations, not a global
 census of every agent or process. No close operation kills a running native
 turn, expands a grant or accepts an implementation.
+
+## Turn configuration and accounting refresh
+
+Admission of retained work can inspect the latest session configuration, but
+that observation never establishes the new turn's execution settings. Collection
+uses `role_host settings --turn-id` to bind matching applied settings to the
+selected turn's attributed rollout interval and turn_context. Later turns cannot
+replace that evidence; missing, stale, inconsistent or unattributed observations
+leave the configuration-dependent claim unestablished.
+
+`collect --state DIR --operation ID --reconcile-accounting` explicitly observes
+current budget/account evidence after collection or closure, without replaying
+task, claim or close effects. It emits a separate immutable accounting receipt
+referencing the historical task receipt; historical task evidence is not
+revalidated by this read. The budget owner's `snapshot.post_close` view preserves
+closed-window totals and separately reports later candidate calls and settlement
+uncertainty. Candidate tails are never silently added to settled objective totals,
+and current account readings are independent of the closed cost window. An
+accounting receipt can be acknowledged on the next meaningful command.

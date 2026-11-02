@@ -54,3 +54,21 @@ class AdapterTests(unittest.TestCase):
   p.write_text('{}\n')
   with patch.object(self.h,'_conn',return_value=Connection()),self.assertRaises(role_host.HostError):self.h.identity(SID)
 if __name__=='__main__':unittest.main()
+
+class TurnSettingsTests(unittest.TestCase):
+ def read(self,records,turn):
+  with tempfile.TemporaryDirectory() as d:
+   p=pathlib.Path(d)/'rollout.jsonl';p.write_text('\n'.join(json.dumps(v) for v in [{'type':'session_meta','payload':{'id':SID}},*records])+'\n')
+   return role_host.codex_settings(SID,p,turn)
+ def context(self,turn,model='model'):
+  return {'type':'turn_context','payload':{'turn_id':turn,'model':model,'effort':'medium'}}
+ def setting(self,model='model'):
+  return {'type':'event_msg','payload':{'type':'thread_settings_applied','thread_id':SID,'thread_settings':{'model':model,'reasoning_effort':'medium','service_tier':'default'}}}
+ def test_later_turn_matching_settings_cannot_replace_target_mismatch(self):
+  v=self.read([self.context('A','wrong'),self.setting('wrong'),self.context('B'),self.setting()],'A')
+  self.assertEqual(v['model'],'wrong');self.assertEqual(v['turn_id'],'A');self.assertEqual(v['turn_attribution'],'exact_turn_interval')
+ def test_retained_target_cannot_reuse_old_session_event(self):
+  with self.assertRaises(role_host.HostError):self.read([self.context('A'),self.setting(),self.context('B')],'B')
+ def test_unattributed_and_midturn_changing_settings_refuse(self):
+  for records in [[self.setting()],[self.context('A'),self.setting(),self.setting('changed')]]:
+   with self.assertRaises(role_host.HostError):self.read(records,'A')

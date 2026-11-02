@@ -38,19 +38,19 @@ if name=='role_host.py':
   out({'session_id':cfg['sid'],'turn_id':arg('--turn-id'),'status':cfg.get('turn_status','completed'),'turn':{'itemsView':'full','items':[{'id':'native-final','type':'agentMessage','phase':'final_answer','text':json.dumps({'native':True})}]}})
  elif 'retire' in sys.argv:out({'retired':'idle_released'})
  elif 'settings' in sys.argv:
-  out({'session_id':cfg['sid'],'model':'fixture-model','reasoning_effort':'medium','service_tier':cfg.get('observed_tier','default')})
+  out({'session_id':cfg['sid'],'turn_id':arg('--turn-id'),'turn_attribution':'exact_turn_interval' if arg('--turn-id') and not cfg.get('stale_settings') else 'latest_session_observation','model':'fixture-model','reasoning_effort':'medium','service_tier':cfg.get('observed_tier','default')})
 elif name=='child_context.py':
  if cfg.get('context_fail') or (arg('--session')==cfg['sid'] and not Path(cfg['rollout']).exists()):out({'status':'unavailable'})
  else:out({'status':'observed','recommendation':'retain_ok','input_tokens':100,'epoch':0})
 elif name=='usage_ledger.py':
  if cfg.get('budget_fail'):sys.exit(32)
  out({'schema':'objective-budget-control-v1','topic':'control:budget:objective','closed_at':None,'events':[],
-      'next_budget_cursor':'stable-cursor','snapshot':{'status':'complete','cost_controls':[{'max_usd':10,'remaining_usd':cfg.get('headroom',9)}],'totals':{'codex':{'quota_usd_low':1,'quota_usd_high':1}}}})
+      'next_budget_cursor':'stable-cursor','snapshot':{'status':'complete','cost_controls':[{'max_usd':10,'remaining_usd':cfg.get('headroom',9)}],'totals':{'codex':{'quota_usd_low':1,'quota_usd_high':1}},'post_close':{'candidate_totals':cfg.get('tail_candidate',0),'settlement':{'status':'not_established'}}}})
 elif name=='scope_budget.py':
  p=Path(arg('--record'));d=json.loads(p.read_text())
  if 'bind' in sys.argv:
   count('bindings');d['scope_budget']['bindings'].append({'session_id':arg('--session'),'parent_session_id':arg('--parent'),'provider':'codex'})
- if 'close' in sys.argv:count('closes');d['scope_budget']['closed_at']='closed'
+ if 'close' in sys.argv:count('closes');d['scope_budget']['closed_at']='closed';d['scope_budget']['close']={'reason':arg('--reason'),'disposition':arg('--disposition')}
  p.write_text(json.dumps(d));out({'stop':False,'unknown':[]} if 'check' in sys.argv else {'ok':True})
 elif name=='chatboard.py':
  if 'claim' in sys.argv:count('claims')

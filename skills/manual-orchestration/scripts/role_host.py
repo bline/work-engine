@@ -86,9 +86,11 @@ def child_env():
     return {k: v for k, v in os.environ.items() if k not in CALLER_IDENTITY}
 
 
-def codex_settings(sid: str, rollout: Path) -> dict:
+def codex_settings(sid: str, rollout: Path, turn_id: str | None = None) -> dict:
     """Read applied settings from this session's rollout, without shared-config inference."""
     latest = None
+    active_turn, context_source = None, None
+    selected_settings, selected_contexts = [], []
     try:
         with rollout.open(encoding="utf-8", newline="") as fh:
             first = json.loads(next(fh))
@@ -104,18 +106,39 @@ def codex_settings(sid: str, rollout: Path) -> dict:
                 payload = event.get("payload", {})
                 if not isinstance(payload, dict):
                     raise ValueError(f"payload at line {line_no} must be an object")
+                if event.get("type") == "event_msg" and payload.get("type") == "task_started":
+                    active_turn, context_source = payload.get("turn_id"), None
+                if event.get("type") == "turn_context":
+                    active_turn = payload.get("turn_id")
+                    context_source = {"line": line_no, "event_sha256": hashlib.sha256(raw.encode()).hexdigest(),
+                                      "turn_id": active_turn, "model": payload.get("model"), "effort": payload.get("effort")}
+                    if turn_id is not None and active_turn == turn_id:
+                        selected_contexts.append(context_source)
+                if event.get("type") == "event_msg" and payload.get("type") in ("task_complete", "task_completed"):
+                    active_turn, context_source = None, None
                 if (event.get("type") == "event_msg" and payload.get("type") == "thread_settings_applied"
                         and payload.get("thread_id") == sid):
                     if not isinstance(payload.get("thread_settings"), dict):
                         raise ValueError(f"thread_settings at line {line_no} must be an object")
-                    latest = (payload.get("thread_settings") or {}, {
+                    observation = (payload.get("thread_settings") or {}, {
                         "rollout": str(rollout.resolve()), "line": line_no, "timestamp": event.get("timestamp"),
                         "event_sha256": hashlib.sha256(raw.encode()).hexdigest()})
+                    if turn_id is None:
+                        latest = observation
+                    elif active_turn == turn_id and context_source is not None and context_source["turn_id"] == turn_id:
+                        observation[1]["turn_context"] = context_source
+                        selected_settings.append(observation)
+                        latest = observation
     except (OSError, ValueError, UnicodeError, StopIteration) as e:
         raise HostError(NOT_ESTABLISHED, "settings_not_established", f"{rollout}: {e}")
     if latest is None:
         raise HostError(NOT_ESTABLISHED, "settings_not_established", f"no matching applied-settings record for {sid}")
     settings, source = latest
+    if turn_id is not None:
+        if any(value != settings for value, _ in selected_settings) or not selected_contexts or any(
+                context["model"] != settings.get("model") or context["effort"] != settings.get("reasoning_effort")
+                for context in selected_contexts):
+            raise HostError(NOT_ESTABLISHED, "turn_settings_not_established", "selected turn configuration changed or lacks matching attributed context")
     tier = settings.get("service_tier")
     # Native Codex 0.164: config fast is recorded as runtime priority.
     # Future or missing tiers have no established inverse mapping here.
@@ -125,12 +148,12 @@ def codex_settings(sid: str, rollout: Path) -> dict:
     if cli_tier is not None and isinstance(model, str) and model and isinstance(effort, str) and effort:
         args = ["-m", model, "-c", "model_reasoning_effort=" + json.dumps(effort),
                 "-c", "service_tier=" + json.dumps(cli_tier)]
-    return {"session_id": sid, "model": model, "reasoning_effort": effort, "service_tier": tier,
+    return {"session_id": sid, "turn_id": turn_id, "turn_attribution": "exact_turn_interval" if turn_id is not None else "latest_session_observation", "model": model, "reasoning_effort": effort, "service_tier": tier,
             "recorded_cli_version": recorded_version,
             "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
             "source": source, "successor_host_args": args,
             "preservation": "launch_arguments_available" if args is not None else "not_established",
-            "limitations": ["Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+            "limitations": ["Selected-turn settings require an attributed matching turn_context/interval; later session events are excluded." if turn_id is not None else "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
                             "Successor settings must be observed after launch and adoption; arguments are a request.",
                             "Runtime configuration does not establish backend fulfillment or billing."]}
 
@@ -718,6 +741,7 @@ def main(argv=None) -> int:
     settings = sub.add_parser("settings", help="read a Codex session's applied model, effort and tier from its bound rollout")
     settings.add_argument("host"); settings.add_argument("session_id")
     settings.add_argument("--rollout", required=True, type=Path)
+    settings.add_argument("--turn-id", help="bind settings to an exact native turn interval")
     rename = sub.add_parser("rename", help="rename a Codex thread without starting a turn")
     rename.add_argument("host"); rename.add_argument("session_id"); rename.add_argument("--name", required=True)
     for verb in ("archive", "unarchive"):
@@ -756,7 +780,7 @@ def main(argv=None) -> int:
             if a.cmd == "settings":
                 if a.host != "codex":
                     raise HostError(USAGE, "unsupported_control", "applied runtime settings reader is Codex-only")
-                res = codex_settings(sid, a.rollout)
+                res = codex_settings(sid, a.rollout, a.turn_id)
             elif a.cmd == "prepare":
                 res = h.prepare(cwd=a.cwd, name=a.name, host_args=a.host_arg, ledger=ledger, parent=a.parent)
             elif a.cmd == "start-prepared":

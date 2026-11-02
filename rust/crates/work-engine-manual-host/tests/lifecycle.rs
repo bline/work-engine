@@ -573,3 +573,137 @@ fn readonly_child_final_json_is_collected_without_child_file_write() {
         serde_json::from_slice(&fs::read(f.dir.path().join("result.json")).unwrap()).unwrap();
     assert_eq!(doc["native"], true);
 }
+#[test]
+fn native_capture_rejects_foreign_result_even_when_file_appears_after_dispatch() {
+    let mut f = Fixture::new();
+    f.request["result_from_turn"] = json!(true);
+    success(f.dispatch());
+    assert!(!f.collect().status.success());
+    assert!(
+        !f.state()["operations"]["one"]["evidence"]
+            .as_object()
+            .unwrap()
+            .contains_key("collection")
+    );
+}
+#[test]
+fn admitted_operations_cannot_reserve_one_output_path() {
+    let mut f = Fixture::new();
+    f.config("missing_result", json!(true));
+    success(f.dispatch());
+    f.request["operation_id"] = json!("two");
+    f.request["claim"] = Value::Null;
+    assert!(!f.dispatch().status.success());
+    assert_eq!(f.count("creates"), 1);
+}
+#[test]
+fn native_capture_recovery_revalidates_turn_item_and_exact_publication() {
+    let mut f = Fixture::new();
+    f.request["result_from_turn"] = json!(true);
+    f.config("missing_result", json!(true));
+    success(f.dispatch());
+    success(f.collect());
+    let path = f.dir.path().join("state/state.json");
+    let mut state = f.state();
+    state["operations"]["one"]["phase"] = json!("terminal");
+    state["operations"]["one"]["evidence"]
+        .as_object_mut()
+        .unwrap()
+        .remove("collection");
+    fs::write(&path, state.to_string()).unwrap();
+    success(f.collect());
+    let mut state = f.state();
+    state["operations"]["one"]["evidence"]["native_result_source"]["turn_id"] = json!("other-turn");
+    fs::write(path, state.to_string()).unwrap();
+    assert!(!f.collect().status.success());
+    assert_eq!(f.count("starts"), 1);
+}
+#[test]
+fn precreate_abandonment_completes_task_and_objective_without_claim_release() {
+    for objective in [false, true] {
+        let f = Fixture::new();
+        f.config("headroom", json!(0));
+        let receipt = success(f.dispatch());
+        assert_eq!(f.count("creates"), 0);
+        let c = json!({"schema":SCHEMA,"operation_id":"one","authority":f.request["authority"],"ack_receipt":receipt["receipt_id"],"objective_end":objective,"disposition":"abandoned","reason":"no admission headroom"});
+        let p = f.dir.path().join("abandon.json");
+        fs::write(&p, c.to_string()).unwrap();
+        let closed = success(f.invoke(&[
+            "close",
+            "--state",
+            f.dir.path().join("state").to_str().unwrap(),
+            "--request",
+            p.to_str().unwrap(),
+        ]));
+        assert_eq!(closed["summary"]["phase"], "closed");
+        assert_eq!(f.count("releases"), 0);
+        assert_eq!(f.count("closes"), u64::from(objective));
+    }
+}
+#[test]
+fn task_then_objective_closure_are_separate_idempotent_transitions() {
+    let f = Fixture::new();
+    success(f.dispatch());
+    let result = success(f.collect());
+    let task = success(f.close(result["receipt_id"].as_str().unwrap(), false));
+    let objective = success(f.close(task["receipt_id"].as_str().unwrap(), true));
+    success(f.close(task["receipt_id"].as_str().unwrap(), true));
+    assert_eq!(f.count("closes"), 1);
+    assert_eq!(f.count("releases"), 1);
+    assert_eq!(objective["summary"]["phase"], "closed");
+}
+#[test]
+fn post_closure_accounting_refresh_preserves_historical_receipt_and_effect_counts() {
+    let f = Fixture::new();
+    success(f.dispatch());
+    let result = success(f.collect());
+    let closed = success(f.close(result["receipt_id"].as_str().unwrap(), true));
+    let old = fs::read(closed["receipt"].as_str().unwrap()).unwrap();
+    let counts = (
+        f.count("starts"),
+        f.count("creates"),
+        f.count("releases"),
+        f.count("closes"),
+    );
+    f.config("tail_candidate", json!(5));
+    let refresh = success(f.invoke(&[
+        "collect",
+        "--state",
+        f.dir.path().join("state").to_str().unwrap(),
+        "--operation",
+        "one",
+        "--reconcile-accounting",
+    ]));
+    assert_eq!(
+        refresh["accounting"]["snapshot"]["post_close"]["candidate_totals"],
+        5
+    );
+    assert_eq!(
+        refresh["accounting"]["snapshot"]["post_close"]["settlement"]["status"],
+        "not_established"
+    );
+    assert_eq!(old, fs::read(closed["receipt"].as_str().unwrap()).unwrap());
+    assert_eq!(
+        counts,
+        (
+            f.count("starts"),
+            f.count("creates"),
+            f.count("releases"),
+            f.count("closes")
+        )
+    );
+}
+#[test]
+fn stale_session_settings_cannot_satisfy_selected_turn_configuration() {
+    let f = Fixture::new();
+    success(f.dispatch());
+    f.config("stale_settings", json!(true));
+    let v = success(f.collect());
+    assert!(
+        v["summary"]["failures"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|v| v.as_str().unwrap().contains("settings"))
+    );
+}
