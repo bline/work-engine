@@ -2512,6 +2512,8 @@ class Server:
         if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
             return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
         method, params = message.get("method"), message.get("params") or {}
+        if not isinstance(method, str):
+            return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
         if "id" not in message:
             return None  # notification
         identifier = message["id"]
@@ -2944,9 +2946,15 @@ class HttpAuth:
             url = urllib.parse.urlsplit(self.config[name])
             if any(ord(c) < 33 or ord(c) > 126 or c in '\"' for c in self.config[name]) or url.scheme != "https" or not url.netloc or url.username or url.password or url.query or url.fragment:
                 raise ValueError("invalid auth URL")
-        if not self.config["resource"].endswith("/mcp"):
+        resource = urllib.parse.urlsplit(self.config["resource"])
+        if not resource.path.endswith("/mcp") or resource.path.startswith("//"):
             raise ValueError("invalid auth resource")
-        self.metadata = self.config["resource"].removesuffix("/mcp") + "/.well-known/oauth-protected-resource/mcp"
+        scope = self.config.get("write_scope")
+        # RFC 6749 scope-token excludes space, quotation mark and backslash.
+        if not isinstance(scope, str) or not re.fullmatch(r"[\x21\x23-\x5b\x5d-\x7e]+", scope):
+            raise ValueError("invalid auth write scope")
+        self.metadata_path = "/.well-known/oauth-protected-resource" + resource.path
+        self.metadata = urllib.parse.urlunsplit((resource.scheme, resource.netloc, self.metadata_path, "", ""))
         self.verifier = self.config["verifier"]
         self._config_bytes = json.dumps(self.config, separators=(",", ":")).encode("ascii")
         if not os.path.isabs(self.verifier):
@@ -3015,7 +3023,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
             if self.headers.get("Origin"):
                 return "origin"
             request_path = urllib.parse.urlsplit(self.path).path
-            if request_path != path and not (auth and self.command == "GET" and request_path in {"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"}):
+            if request_path != path and not (auth and self.command == "GET" and request_path in {"/.well-known/oauth-protected-resource", auth.metadata_path}):
                 return "path"
             return None
 
@@ -3050,6 +3058,8 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
                 decision = auth.authorize(self.headers)
                 if decision != "allow":
                     challenge = 'Bearer resource_metadata="' + auth.metadata + '"'
+                    if decision == "scope":
+                        challenge += ', error="insufficient_scope", scope="' + auth.config["write_scope"] + '"'
                     self._reply(403 if decision == "scope" else 401, extra={"WWW-Authenticate": challenge})
                     return
             if parsed:
@@ -3062,8 +3072,8 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None):
 
         def do_GET(self) -> None:  # no server-initiated stream
             refused = self._refused()
-            if refused is None and auth and urllib.parse.urlsplit(self.path).path in {"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"}:
-                self._reply(200, json.dumps({"resource": auth.config["resource"], "authorization_servers": [auth.config["issuer"]]}).encode())
+            if refused is None and auth and urllib.parse.urlsplit(self.path).path in {"/.well-known/oauth-protected-resource", auth.metadata_path}:
+                self._reply(200, json.dumps({"resource": auth.config["resource"], "authorization_servers": [auth.config["issuer"]], "scopes_supported": [auth.config["write_scope"]]}).encode())
             else:
                 self._reply(405 if refused is None else 404, extra={"Allow": "POST"} if refused is None else None)
 

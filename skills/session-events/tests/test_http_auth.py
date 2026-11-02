@@ -61,7 +61,7 @@ class AuthHttp(Fixture):
     def test_discovery_challenge_and_public_reads(self):
         for path in ("/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"):
             status, _, body = self.request(path=path, method="GET")
-            self.assertEqual((status, body), (200, {"resource": RESOURCE, "authorization_servers": [ISSUER]}))
+            self.assertEqual((status, body), (200, {"resource": RESOURCE, "authorization_servers": [ISSUER], "scopes_supported": ["mcp:write"]}))
         status, headers, _ = self.request({"jsonrpc":"2.0", "id":1, "method":"events/subscribe"})
         self.assertEqual(status, 401); self.assertIn('resource_metadata="https://mcp-test.devwits.ai/.well-known/oauth-protected-resource/mcp"', headers["WWW-Authenticate"])
         self.server.bridge = types.SimpleNamespace(provisioning=True)
@@ -78,7 +78,9 @@ class AuthHttp(Fixture):
         msg = {"jsonrpc":"2.0", "id":2, "method":"events/subscribe", "params": {"name": SE.SIMPLE_EVENT_NAME, "arguments":{"session_id":CODEX_ID,"pattern":"x"}, "delivery":{"mode":"webhook", "url":URL,"secret":whsec()}}}
         self.assertEqual(self.request(msg)[0], 401)
         self.assertEqual(len(self.server.store.all_subscriptions()), 0)
-        self.assertEqual(self.request(msg, self.token({"scope":"openid"}))[0], 403)
+        status, headers, _ = self.request(msg, self.token({"scope":"openid"}))
+        self.assertEqual(status, 403)
+        self.assertEqual(headers["WWW-Authenticate"], 'Bearer resource_metadata="https://mcp-test.devwits.ai/.well-known/oauth-protected-resource/mcp", error="insufficient_scope", scope="mcp:write"')
         self.assertEqual(len(self.server.store.all_subscriptions()), 0)
         bearer = self.token()
         status, _, body = self.request(msg, bearer)
@@ -86,9 +88,41 @@ class AuthHttp(Fixture):
         self.assertNotIn(bearer, (self.homes.state / "requests.log").read_text())
         self.assertEqual(self.request(b'{"jsonrpc":"2.0","method":"ping","method":"events/subscribe"}')[0], 401)
         self.assertEqual(self.request(b'bad')[0], 401)
-        self.assertEqual(self.request({"jsonrpc":"2.0","id":1,"method":[]})[0], 401)
+        malformed = {"jsonrpc":"2.0", "id":1, "method":[]}
+        self.assertEqual(self.request(malformed)[0], 401)
+        before = len(self.server.store.all_subscriptions())
+        status, _, body = self.request(malformed, self.token())
+        self.assertEqual(status, 200)
+        self.assertEqual(body["error"]["code"], -32600)
+        self.assertEqual(len(self.server.store.all_subscriptions()), before)
         self.assertEqual(self.request({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":[]}})[0], 401)
         self.assertEqual(self.request({"jsonrpc":"2.0","id":1,"method":"future/mutate"})[0], 401)
+
+    def test_resource_metadata_routes_and_scope_configuration(self):
+        original = json.loads(self.config.read_text())
+        for path in ("/mcp", "/tenant/mcp", "/one/two/mcp"):
+            with self.subTest(path=path):
+                config = {**original, "resource": "https://mcp-test.devwits.ai" + path}
+                self.config.write_text(json.dumps(config))
+                auth = SE.HttpAuth(str(self.config))
+                self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, path, auth)
+                status, headers, _ = self.request({"jsonrpc":"2.0", "id":1, "method":"events/unsubscribe"}, path=path)
+                self.assertEqual(status, 401)
+                metadata_path = "/.well-known/oauth-protected-resource" + path
+                self.assertIn('resource_metadata="https://mcp-test.devwits.ai' + metadata_path + '"', headers["WWW-Authenticate"])
+                for discovery in (metadata_path, "/.well-known/oauth-protected-resource"):
+                    status, _, body = self.request(path=discovery, method="GET")
+                    self.assertEqual((status, body["resource"], body["scopes_supported"]), (200, config["resource"], ["mcp:write"]))
+                self.assertEqual(self.request(path=metadata_path, method="GET", headers={"Host":"evil.example"})[0], 404)
+                self.assertEqual(self.request(path=metadata_path, method="GET", headers={"Origin":"https://evil.example"})[0], 404)
+        for path in ("", "/", "/mcp/", "/tenant/mcp/", "//mcp"):
+            with self.subTest(rejected_path=path):
+                self.config.write_text(json.dumps({**original, "resource":"https://mcp-test.devwits.ai" + path}))
+                with self.assertRaises(ValueError): SE.HttpAuth(str(self.config))
+        for scope in ("", "two scopes", 'mcp:write"', "mcp:write\\evil", "mcp:write\r\nInjected: yes", None, 1):
+            with self.subTest(rejected_scope=scope):
+                self.config.write_text(json.dumps({**original, "write_scope":scope}))
+                with self.assertRaises(ValueError): SE.HttpAuth(str(self.config))
 
     def test_rejections_and_rotation(self):
         msg = {"jsonrpc":"2.0", "id":1, "method":"events/unsubscribe", "params":{}}
