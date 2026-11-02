@@ -95,7 +95,8 @@ class Control(unittest.TestCase):
         self.sb={'objective_id':'obj','limits':{'max_weekly_percent':90},'cost_limits':[{'pool':'codex','node':None,'set_by':'user','marks_usd':[1], 'max_usd':2}]}
         self.spend=L.pools(); self.spend['codex'].update(quota_usd_low=3,quota_usd_high=3)
         self.doc={'snapshot_at':'2026-01-01T01:00:00Z','status':'complete','totals':self.spend,'nodes':[]}
-        self.quota=[{'ts':T1,'window_minutes':10080,'used_percent':95}]
+        self.quota=[{'ts':self.doc['snapshot_at'],'window_minutes':10080,'used_percent':95,
+                     'resets_at':L.ts_of(self.doc['snapshot_at']).timestamp()+3600}]
         self.args=argparse.Namespace(record='none',cursor=None,limit_fractions='0.5,0.8,1.0',hours_fractions='0.8,1.0',role_host_ledger=None)
     def run_control(self):
         out=io.StringIO()
@@ -106,11 +107,11 @@ class Control(unittest.TestCase):
         first=self.run_control(); self.assertEqual(len(first['events']),5); self.consume(first)
         self.spend['codex'].update(quota_usd_low=0,quota_usd_high=0,unpriced_calls=1); self.doc['status']='partial'; self.quota=[]
         unknown=self.run_control(); self.assertEqual([x['kind'] for x in unknown['events']],['coverage_changed']); self.consume(unknown)
-        self.spend['codex'].update(quota_usd_low=3,quota_usd_high=3,unpriced_calls=0); self.doc['status']='complete'; self.quota=[{'ts':T1,'window_minutes':10080,'used_percent':95}]
+        self.spend['codex'].update(quota_usd_low=3,quota_usd_high=3,unpriced_calls=0); self.doc['status']='complete'; self.quota=[{'ts':self.doc['snapshot_at'],'window_minutes':10080,'used_percent':95,'resets_at':L.ts_of(self.doc['snapshot_at']).timestamp()+3600}]
         recovered=self.run_control(); self.assertEqual([x['kind'] for x in recovered['events']],['coverage_changed']); self.consume(recovered)
         self.doc['status']='not_established'; self.quota=[]
         missing=self.run_control(); self.assertEqual([x['kind'] for x in missing['events']],['coverage_changed']); self.consume(missing)
-        self.doc['status']='complete'; self.quota=[{'ts':T1,'window_minutes':10080,'used_percent':95}]
+        self.doc['status']='complete'; self.quota=[{'ts':self.doc['snapshot_at'],'window_minutes':10080,'used_percent':95,'resets_at':L.ts_of(self.doc['snapshot_at']).timestamp()+3600}]
         self.assertEqual([x['kind'] for x in self.run_control()['events']],['coverage_changed'])
     def test_known_subtotal_crosses_and_node_disappears(self):
         self.sb['limits']={}; self.sb['cost_limits']=[{'pool':'codex','node':'n','set_by':'user','marks_usd':[1],'max_usd':2}]

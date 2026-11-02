@@ -21,6 +21,59 @@ class Pricing(unittest.TestCase):
         u['input_tokens'] += 1
         self.assertAlmostEqual(L.native_usd(u, 'claude-haiku-5-5')[0], .0500005)
 
+
+class Measurements(unittest.TestCase):
+    def test_call_aliases_preserve_cost_and_expose_context(self):
+        row = dict(provider='codex', usd=2, quota_multiplier=2.5, weighted=30000,
+                   usage=dict(input_tokens=300000, cached_input_tokens=300000, output_tokens=0))
+        original = dict(row)
+        L.annotate_call_measurements(row)
+        self.assertEqual({k: row[k] for k in original}, original)
+        self.assertEqual(row['api_equivalent_usd_high'], 2)
+        self.assertEqual(row['speed_adjusted_api_usd_high'], 5)
+        self.assertEqual(row['input_context_tokens'], 300000)
+        self.assertTrue(row['api_long_context_input'])
+        row.update(usd=None)
+        L.annotate_call_measurements(row)
+        self.assertIsNone(row['api_equivalent_usd_high'])
+        self.assertIsNone(row['speed_adjusted_api_usd_high'])
+
+    def test_projections_do_not_mutate_aggregates_or_invent_quota(self):
+        import copy
+        spend = L.pools()
+        L.add_spend(spend['codex'], L.call_spend(dict(provider='codex', usd=2, quota_multiplier=None)))
+        original = copy.deepcopy(spend)
+        view = L.cost_measurements(spend)['codex']
+        self.assertEqual(spend, original)
+        self.assertEqual((view['speed_adjusted_api_usd']['low'], view['speed_adjusted_api_usd']['high']), (2, 5))
+        self.assertEqual(view['estimated_quota_points']['status'], 'not_established')
+        self.assertIsNone(view['estimated_quota_points']['high'])
+        self.assertIsNone(view['estimated_quota_points']['calibration_version'])
+        self.assertFalse(L.pricing_scenario()['subscription_quota'])
+
+    def test_scenario_digest_covers_speed_and_context_rules(self):
+        from unittest.mock import patch
+        original = L.pricing_scenario()
+        with patch.dict(L.QUOTA_MULTIPLIER, priority=3):
+            changed = L.pricing_scenario()
+            self.assertEqual(changed['rates_sha256'], original['rates_sha256'])
+            self.assertNotEqual(changed['scenario_sha256'], original['scenario_sha256'])
+        with patch.dict(L.PRICING_RULES, codex_long_input_multiplier=3):
+            self.assertNotEqual(L.pricing_scenario()['scenario_sha256'], original['scenario_sha256'])
+
+    def test_account_headroom_fresh_stale_reset_and_missing(self):
+        snapshot = '2026-01-01T00:00:00Z'
+        q = dict(ts=snapshot, window_minutes=10080, used_percent=70, resets_at=L.ts_of(snapshot).timestamp() + 3600)
+        fresh = L.account_quota_observation([q], snapshot)
+        self.assertEqual((fresh['status'], fresh['remaining_percent']), ('observed', 30))
+        for readings, at, status in [([], snapshot, 'not_established'), ([q], '2026-01-01T00:06:00Z', 'stale'),
+                                      ([q], '2026-01-01T02:00:00Z', 'expired')]:
+            with self.subTest(status=status):
+                result = L.account_quota_observation(readings, at)
+                self.assertEqual(result['status'], status)
+                self.assertIsNone(result['remaining_percent'])
+                self.assertTrue(result['account_wide'])
+
 class Tree(unittest.TestCase):
     def setUp(self):
         from unittest.mock import patch
@@ -107,6 +160,100 @@ class Tree(unittest.TestCase):
                 args.cursor = first['next_budget_cursor']; self.assertEqual(run()['events'], [])
                 args.cursor = cursor({json.dumps(['objective_closed', None, 'bad', 'closed']): True})
                 with self.assertRaises(ValueError): run()
+    def test_closed_objective_preserves_account_cursor_and_emits_no_new_limits(self):
+        import argparse, base64, contextlib, io, json
+        from unittest.mock import patch
+        close = '2026-01-01T01:00:00Z'
+        sb = dict(objective_id='closed-account', started_at='2026-01-01T00:00:00Z',
+                  closed_at=close, close=dict(disposition='accepted'),
+                  limits=dict(max_weekly_percent=90, max_hours=.1),
+                  cost_limits=[dict(pool='codex', max_usd=1, set_by='user')])
+        spend = L.pools()
+        spend['codex'].update(usd_low=2, usd_high=2, quota_usd_low=2, quota_usd_high=2)
+        doc = dict(snapshot_at=close, status='complete', totals=spend, nodes=[])
+        prior = {'objective_id': 'closed-account', 'states': {}, 'account_quota_status': 'expired'}
+        cursor = base64.urlsafe_b64encode(json.dumps(prior).encode()).decode().rstrip('=')
+        args = argparse.Namespace(record='x', cursor=cursor, limit_fractions='1',
+                                  hours_fractions='1', role_host_ledger=None)
+        quota = [dict(ts=close, window_minutes=10080, used_percent=95,
+                      resets_at=1767319200, limit_id='codex')]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, quota, sb)):
+            L.cmd_control(args)
+        result = json.loads(out.getvalue())
+        self.assertEqual([e['kind'] for e in result['events']], ['objective_closed'])
+        self.assertEqual(result['closed_at'], close)
+        self.assertIn('measurements', result['snapshot'])
+        saved = json.loads(base64.urlsafe_b64decode(result['next_budget_cursor'] + '=' * (-len(result['next_budget_cursor']) % 4)))
+        self.assertEqual(saved['account_quota_status'], 'expired')
+
+    def test_cost_and_account_controls_are_independent(self):
+        import argparse, contextlib, io, json
+        from unittest.mock import patch
+        at = '2026-01-01T00:00:00Z'
+        sb = dict(objective_id='one', cost_limits=[dict(pool='codex', max_usd=10, set_by='user')],
+                  limits=dict(max_weekly_percent=90))
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', hours_fractions='1', role_host_ledger=None)
+        for dollars, percent, expected in [(1, 95, ['account_ceiling']), (12, 20, ['limit_reached']), (1, 20, [])]:
+            with self.subTest(dollars=dollars, percent=percent):
+                spend = L.pools(); spend['codex'].update(usd_low=dollars, usd_high=dollars,
+                                                       quota_usd_low=dollars, quota_usd_high=dollars)
+                doc = dict(snapshot_at=at, status='complete', totals=spend, nodes=[])
+                q = [dict(ts='2025-12-31T23:59:59Z', window_minutes=10080, used_percent=percent, resets_at=L.ts_of(at).timestamp()+3600),
+                     dict(ts=at, window_minutes=10080, used_percent=99, resets_at=L.ts_of(at).timestamp()+3600, limit_id='other')]
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, q, sb)):
+                    L.cmd_control(args)
+                result = json.loads(out.getvalue())
+                self.assertEqual([e['kind'] for e in result['events']], expected)
+                self.assertEqual(result['snapshot']['totals'], spend)
+                self.assertEqual(result['snapshot']['cost_controls'][0]['max_usd'], 10)
+                self.assertEqual(result['snapshot']['measurements']['account_quota']['headroom_to_ceiling_percent'], 90-percent)
+
+    def test_unknown_account_headroom_is_observed_once_and_old_cursor_works(self):
+        import argparse, base64, contextlib, io, json
+        from unittest.mock import patch
+        sb = dict(objective_id='one', cost_limits=[], limits=dict(max_weekly_percent=90))
+        doc = dict(snapshot_at='2026-01-01T00:00:00Z', status='complete', totals=L.pools(), nodes=[])
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', hours_fractions='1', role_host_ledger=None)
+        def run():
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, [], sb)):
+                L.cmd_control(args)
+            return json.loads(out.getvalue())
+        # A cursor from before measurement metadata existed is still accepted.
+        args.cursor = base64.urlsafe_b64encode(json.dumps(dict(objective_id='one', states={})).encode()).decode().rstrip('=')
+        first = run()
+        self.assertEqual([e['kind'] for e in first['events']], ['coverage_changed'])
+        self.assertEqual(first['events'][0]['observed']['account_quota']['status'], 'not_established')
+        self.assertIsNone(first['snapshot']['measurements']['account_quota']['remaining_percent'])
+        args.cursor = first['next_budget_cursor']
+        self.assertEqual(run()['events'], [])
+
+    def test_idle_and_resume_do_not_wake_budget_listener(self):
+        import argparse, contextlib, io, json
+        from unittest.mock import patch
+        at = '2026-01-01T00:00:00Z'
+        sb = dict(objective_id='one', cost_limits=[], limits=dict(max_weekly_percent=90))
+        doc = dict(snapshot_at=at, status='complete', totals=L.pools(), nodes=[])
+        q = [dict(ts=at, window_minutes=10080, used_percent=20, resets_at=L.ts_of(at).timestamp()+3600)]
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', hours_fractions='1', role_host_ledger=None)
+        def run():
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, q, sb)):
+                L.cmd_control(args)
+            result = json.loads(out.getvalue()); args.cursor = result['next_budget_cursor']; return result
+        self.assertEqual(run()['events'], [])
+        doc['snapshot_at'] = '2026-01-01T00:06:00Z'
+        stale = run()
+        self.assertEqual(stale['events'], [])
+        self.assertIsNone(stale['snapshot']['measurements']['account_quota']['remaining_percent'])
+        q[0]['ts'] = doc['snapshot_at']
+        self.assertEqual(run()['events'], [])
+        doc['snapshot_at'] = '2026-01-01T02:00:00Z'
+        expired = run()
+        self.assertEqual([e['kind'] for e in expired['events']], ['coverage_changed'])
+        self.assertFalse(any(e['kind'] == 'account_ceiling' for e in expired['events']))
 
     def test_all_links_pools_and_statuses(self):
         import json

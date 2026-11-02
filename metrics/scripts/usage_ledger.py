@@ -55,6 +55,15 @@ unchanged.
   the previous call has null latency. It includes queueing and is an estimate.
   turns.jsonl holds each completed Codex turn with the `duration_ms` and
   `time_to_first_token_ms` Codex records.
+
+Measurement projection v1 (2026-11-01) adds explicit API-equivalent and
+speed-adjusted API cost aliases, pricing-scenario identity, and per-call input
+context length. Raw token categories, observed model/effort/tier, call identity
+and timestamps remain on calls.jsonl. Codex `api_long_context_input` describes
+the API price scenario, not a subscription surcharge. Tree/control snapshots
+separate objective costs from account-wide meter observations and leave
+uncalibrated objective quota estimates null. Existing numeric fields and budget
+thresholds retain their meaning; cost bounds are not quota confidence bounds.
 """
 import argparse, base64, binascii, collections, datetime as dt, glob, hashlib, io, json, math, os, re, sqlite3, subprocess, sys
 
@@ -81,6 +90,11 @@ STATE_DB = f'{HOME}/.codex/state_5.sqlite'
 PREFIX = re.compile(r'^\{"timestamp":"([^"]+)",(?:"ordinal":\d+,)?"type":"(\w+)","payload":\{"type":"(\w+)"')
 INPUT_ITEMS = ('function_call_output', 'custom_tool_call_output')
 QUOTA_MULTIPLIER = {'default': 1.0, 'priority': 2.5}
+PRICING_RULES = dict(codex_long_input_threshold=272000, codex_long_input_multiplier=2,
+                     codex_long_output_multiplier=1.5, unknown_tier_low=1, unknown_tier_high=2.5,
+                     haiku_long_input_threshold=100000, haiku_long_multiplier=5)
+PRICING_SCENARIO_ID = 'usage-ledger-standard-api-v1'
+METER_MAX_AGE_SECONDS = 300
 CLAUDE_LATENCY_START = {}   # message id -> its latency start, for later records of the same message
 
 def seconds_between(start, end):
@@ -114,6 +128,66 @@ def valid_usage(u, keys, required=()):
     except (TypeError, OverflowError): return False
 
 
+def pricing_scenario():
+    """Identity of the frozen API scenario, separate from subscription tariffs."""
+    rates = dict(codex=CODEX_RATES, claude=NATIVE_RATES)
+    scenario = dict(rates=rates, rules=PRICING_RULES, speed_multipliers=QUOTA_MULTIPLIER)
+    return dict(id=PRICING_SCENARIO_ID,
+                rates_sha256=hashlib.sha256(json.dumps(rates, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                scenario_sha256=hashlib.sha256(json.dumps(scenario, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                kind='modelled_api_equivalent', actual_bill=False, subscription_quota=False,
+                rules=PRICING_RULES, speed_multipliers=QUOTA_MULTIPLIER)
+
+
+def cost_measurements(spend):
+    """Derive aliases after aggregation; never add nullable data to spend counters."""
+    return {pool: dict(
+        api_equivalent_usd=dict(low=s['usd_low'], high=s['usd_high']),
+        speed_adjusted_api_usd=dict(low=s['quota_usd_low'], high=s['quota_usd_high'], kind='proxy'),
+        unpriced_calls=s['unpriced_calls'],
+        estimated_quota_points=dict(status='not_established', low=None, high=None, calibration_version=None))
+        for pool, s in spend.items()}
+
+
+def account_quota_observation(quota, snapshot_at):
+    """Last account reading and usable headroom, without attributing it to an objective.
+
+    Freshness is age of the recorded observation, not a charge-settlement bound.
+    Historical/undated/reset-unknown readings cannot establish current headroom.
+    """
+    weekly = [q for q in quota if q.get('provider') in (None, 'codex') and q.get('limit_id') in (None, 'codex')
+              and q.get('window_minutes') == 10080
+              and valid_timestamp(q.get('ts'))
+              and valid_usage(q, ('used_percent',), ('used_percent',)) and q['used_percent'] <= 100]
+    result = dict(status='not_established', pool='codex', account_wide=True, used_percent=None,
+                  remaining_percent=None, observed_at=None, resets_at=None, age_seconds=None,
+                  max_age_seconds=METER_MAX_AGE_SECONDS, reason='no_reading')
+    if not weekly: return result
+    q = max(weekly, key=lambda x: ts_of(x['ts']))
+    age = (ts_of(snapshot_at) - ts_of(q['ts'])).total_seconds()
+    reset = q.get('resets_at')
+    reset_known = valid_usage({'reset': reset}, ('reset',), ('reset',))
+    status, reason = 'observed', None
+    if age < 0: status, reason = 'not_established', 'future_reading'
+    elif reset_known and reset <= ts_of(snapshot_at).timestamp(): status, reason = 'expired', 'window_reset'
+    elif not reset_known: status, reason = 'not_established', 'reset_unknown'
+    elif age > METER_MAX_AGE_SECONDS: status, reason = 'stale', 'reading_age'
+    result.update(status=status, reason=reason, used_percent=q['used_percent'],
+                  last_reported_remaining_percent=100 - q['used_percent'],
+                  remaining_percent=100 - q['used_percent'] if status == 'observed' else None,
+                  observed_at=q['ts'], resets_at=reset, age_seconds=age,
+                  limit_id=q.get('limit_id'), plan_type=q.get('plan_type'), source=q.get('source'))
+    return result
+
+
+def measurement_metadata():
+    return dict(schema='usage-ledger-measurements-v1', pricing_scenario=pricing_scenario(),
+                labels=dict(usd='API-equivalent dollars', quota_usd='API-equivalent dollars adjusted for subscription speed'),
+                legacy_aliases=dict(usd='api_equivalent_usd', quota_usd='speed_adjusted_api_usd'),
+                cost_bounds='scenario bounds for priced calls and unknown tier/cache details; not quota confidence intervals',
+                quota_estimates='not calibrated; unknown is null, never zero')
+
+
 def open_lines(path):
     if path.endswith('.zst'):
         try:
@@ -143,15 +217,15 @@ def codex_usd(u, model):
         issue('inconsistent_codex_cache', model=model, usage=u)
         return None
     ri, rc, rw, ro = CODEX_RATES[model]
-    m, mo = (2, 1.5) if i > 272000 else (1, 1)
+    m, mo = (PRICING_RULES['codex_long_input_multiplier'], PRICING_RULES['codex_long_output_multiplier']) if i > PRICING_RULES['codex_long_input_threshold'] else (1, 1)
     return ((i - c - w) * ri + c * rc + w * rw) * m / 1e6 + o * ro * mo / 1e6
 
 def native_usd(u, model):
     """(low, high, unknown_ttl_tokens); low == high when every cache write has a known TTL."""
     r = NATIVE_RATES.get(model)
     if not r or any(k not in u for k in NATIVE_KEYS): return None, None, None
-    if model == 'claude-haiku-5-5' and sum(u[k] for k in NATIVE_KEYS if k != 'output_tokens') > 100000:
-        r = {k: v * 5 for k, v in r.items()}
+    if model == 'claude-haiku-5-5' and sum(u[k] for k in NATIVE_KEYS if k != 'output_tokens') > PRICING_RULES['haiku_long_input_threshold']:
+        r = {k: v * PRICING_RULES['haiku_long_multiplier'] for k, v in r.items()}
     w = u['cache_creation_input_tokens']; w5 = u.get(TTL_KEYS[0], 0); w1 = u.get(TTL_KEYS[1], 0)
     if w5 + w1 > w:
         issue('inconsistent_cache_split', model=model, usage=u)
@@ -327,6 +401,7 @@ def build_codex(since, until, turns=None, metadata=None):
                              usage=u, weighted=codex_weighted(u) if not c.get('invalid_usage') and valid_usage(u, CODEX_KEYS, CODEX_KEYS) else None, usd=price, source=f'{f}:{c["line"]}', pools=['codex'],
                              service_tier=c.get('tier'), quota_multiplier=QUOTA_MULTIPLIER.get(c.get('tier')),
                              latency_s=c.get('latency_s'), latency_basis=c.get('latency_basis')))
+            annotate_call_measurements(rows[-1])
     if metadata is not None:
         # Session metadata is needed for ancestry even when that file has no
         # calls in the window. Do not re-read current rollouts or charge calls.
@@ -493,6 +568,7 @@ def build_claude(since, until, unrecorded=None):
         if lo is None: issue('unpriced_call', source=r['source'])
         r['pools'] = ['claude_all_models'] + (['claude_fable'] if (r['model'] or '').startswith('claude-fable-') else [])
         r.update(weighted=native_weighted(r['usage']) if usage_ok else None, usd=lo if lo == hi else None, usd_low=lo, usd_high=hi, unknown_ttl_tokens=un)
+        annotate_call_measurements(r)
         rows.append(r)
     # Level 1: cost-state modelUsage (the CLI's running counter) against every message
     # the session's transcript and its subagents/ files contain, copies included.
@@ -619,7 +695,8 @@ def cmd_build(a):
                    unknown_model_calls=sum(r['model'] is None for r in calls),
                    level1={k: l1_summary(v) for k, v in l1.items()}, issues=collections.Counter(i['kind'] for i in ISSUES),
                    by_provider_model=dict(sorted(agg.items())), pricing='frozen Standard API scenario; not a bill or quota',
-                   f1_1=f11_summary(calls, turns))
+                   f1_1=f11_summary(calls, turns), measurements=measurement_metadata())
+    summary['measurements']['account_quota'] = account_quota_observation(quota, dt.datetime.now(dt.timezone.utc).isoformat())
     json.dump(summary, open(os.path.join(a.out, 'summary.json'), 'w'), indent=1, sort_keys=True)
     print(json.dumps(summary, indent=1, sort_keys=True))
 
@@ -644,7 +721,7 @@ def f11_summary(calls, turns):
     tturns = [t for t in turns if valid_usage(t, ('duration_ms',), ('duration_ms',))]
     return dict(key='provider|model|effort|tier (Codex service_tier; Claude speed)', by_cell=out,
                 turns=len(turns), turn_duration_median_ms=med([t['duration_ms'] for t in tturns]),
-                quota_note='quota_weighted_usd = usd x quota_multiplier where the tier is known; an estimate, not a reading')
+                quota_note='quota_weighted_usd is API-equivalent dollars adjusted for subscription speed; a proxy, not measured quota')
 
 def find_transcripts(sid):
     return sorted(set(glob.glob(f'{HOME}/.claude/projects/*/{sid}.jsonl') + glob.glob(f'{HOME}/.claude/projects/*/{sid}/subagents/*.jsonl')))
@@ -752,8 +829,34 @@ def call_spend(c):
     lo = c.get('usd_low', c.get('usd')); hi = c.get('usd_high', c.get('usd'))
     mult = c.get('quota_multiplier') if c['provider'] == 'codex' else 1
     return dict(calls=1, unpriced_calls=int(lo is None or hi is None), usd_low=lo or 0, usd_high=hi or 0,
-                quota_usd_low=(lo or 0) * (mult if mult is not None else 1),
-                quota_usd_high=(hi or 0) * (mult if mult is not None else 2.5))
+                quota_usd_low=(lo or 0) * (mult if mult is not None else PRICING_RULES['unknown_tier_low']),
+                quota_usd_high=(hi or 0) * (mult if mult is not None else PRICING_RULES['unknown_tier_high']))
+
+
+def annotate_call_measurements(row):
+    spend = call_spend(row)
+    priced = not spend['unpriced_calls']
+    for prefix, legacy in (('api_equivalent_usd', 'usd'), ('speed_adjusted_api_usd', 'quota_usd')):
+        for bound in ('low', 'high'):
+            row[prefix + '_' + bound] = spend[legacy + '_' + bound] if priced else None
+    row['pricing_scenario_id'] = PRICING_SCENARIO_ID
+    u = row.get('usage') or {}
+    context = None
+    if row.get('weighted') is not None:
+        context = u.get('input_tokens', 0)
+        if row['provider'] != 'codex':
+            context += u.get('cache_read_input_tokens', 0) + u.get('cache_creation_input_tokens', 0)
+    row['input_context_tokens'] = context
+    row['api_long_context_input'] = context > PRICING_RULES['codex_long_input_threshold'] if row['provider'] == 'codex' and context is not None else None
+
+
+def finish_measurements(result, quota):
+    result['measurements'] = measurement_metadata()
+    result['measurements'].update(objective=cost_measurements(result['totals']),
+                                  account_quota=account_quota_observation(quota, result['snapshot_at']))
+    for n in result['nodes']:
+        n['measurements'] = dict(direct=cost_measurements(n['direct']), inclusive=cost_measurements(n['inclusive']))
+    return result
 
 def digest(path):
     with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()
@@ -794,7 +897,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         claude, _, _ = build_claude(since, until, unrecorded=unrecorded)
     except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError) as e:
         result['issues'].append(dict(kind='build_failed', error=str(e)))
-        return result, [], sb
+        return finish_measurements(result, []), [], sb
     calls = codex + claude
     nodes = {}; starts = {}; links = []
     def add_node(node_id, sid, provider, parent, link, role=None, start=None):
@@ -945,7 +1048,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['totals'].values())
     substantive_issues = [i for i in result['issues'] if i['kind'] != 'role_host_ledger_absent']
     result['status'] = 'not_established' if not sessions or missing_root else ('partial' if ranged or result['unrecorded'] or substantive_issues or undated_sessions else 'complete')
-    return result, quota, sb
+    return finish_measurements(result, quota), quota, sb
 
 def cmd_tree(a):
     doc, _, _ = cost_tree(a.record, a.since, a.until, a.role_host_ledger)
@@ -957,7 +1060,7 @@ def cmd_tree(a):
 def cmd_control(a):
     doc, quota, sb = cost_tree(a.record, role_ledger=a.role_host_ledger)
     objective = sb.get('objective_id'); topic = 'control:budget:' + str(objective)
-    previous = {}
+    previous = {}; previous_account_status = 'observed'
     if a.cursor:
         try:
             raw = base64.b64decode(a.cursor + '=' * (-len(a.cursor) % 4), altchars=b'-_', validate=True)
@@ -965,6 +1068,9 @@ def cmd_control(a):
             if not isinstance(cursor, dict) or not isinstance(cursor.get('states'), dict): raise ValueError('invalid cursor shape')
             if cursor.get('objective_id') != objective: raise ValueError('cursor belongs to another objective')
             previous = cursor['states']
+            previous_account_status = cursor.get('account_quota_status', 'observed')
+            if previous_account_status not in ('observed', 'stale', 'expired', 'not_established'):
+                raise ValueError('invalid account quota status')
             for key, state in previous.items():
                 parts = json.loads(key)
                 kinds = {'mark_crossed', 'node_mark_crossed', 'limit_fraction', 'limit_reached',
@@ -986,7 +1092,7 @@ def cmd_control(a):
                     raise ValueError('invalid trigger state')
         except (ValueError, KeyError, TypeError, UnicodeError, binascii.Error) as e:
             raise ValueError('invalid cursor: ' + str(e))
-    states = dict(previous); events = []; evaluated = set()
+    states = dict(previous); events = []; evaluated = set(); cost_controls = []
     def trigger(kind, pool, node, level, active, observed, summary, set_by=None):
         parts = [kind, pool, node, level]
         if set_by is not None: parts.append(set_by)
@@ -999,12 +1105,19 @@ def cmd_control(a):
                          node_id=node, level=level, observed=observed, snapshot_at=doc['snapshot_at'], summary=summary)
             if set_by is not None: event['set_by'] = set_by
             events.append(event)
+    limits = sb.get('limits') or {}
+    account = account_quota_observation(quota, doc['snapshot_at'])
+    account['ceiling_percent'] = limits.get('max_weekly_percent')
+    account['headroom_to_ceiling_percent'] = (account['ceiling_percent'] - account['used_percent']
+        if account['ceiling_percent'] is not None and account['status'] == 'observed' else None)
+    notification_status = previous_account_status
     closed_at = sb.get('closed_at')
     if closed_at is not None:
         trigger('objective_closed', None, None, 'closed', True,
                 dict(closed_at=closed_at, disposition=sb.get('close', {}).get('disposition'), totals=doc['totals']),
                 'objective closed')
     else:
+        notification_status = 'observed' if account['status'] == 'stale' else account['status']
         fractions = [float(x) for x in a.limit_fractions.split(',')]
         hours_fractions = [float(x) for x in a.hours_fractions.split(',')]
         nodes = {n['node_id']: n for n in doc['nodes']}
@@ -1017,16 +1130,21 @@ def cmd_control(a):
                 continue
             spend = nodes[node]['inclusive'][pool] if node else doc['totals'][pool]
             value = spend['quota_usd_high']
-            observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'])
+            observed = dict(quota_usd_low=spend['quota_usd_low'], quota_usd_high=value, unpriced_calls=spend['unpriced_calls'],
+                            cost_basis='speed_adjusted_api_usd', kind='proxy',
+                            api_equivalent_usd_low=spend['usd_low'], api_equivalent_usd_high=spend['usd_high'])
             setter = limit.get('set_by', 'supervisor')
             if setter == 'coordinator': setter = 'supervisor'
+            maximum = limit.get('max_usd')
+            cost_controls.append(dict(pool=pool, node_id=node, set_by=setter, max_usd=maximum,
+                                      basis='speed_adjusted_api_usd', observed=observed,
+                                      remaining_usd=(maximum - value) if maximum is not None and doc['status'] == 'complete' and not spend['unpriced_calls'] else None))
             def spend_trigger(kind, level, summary):
                 active = True if value >= level else (None if spend['unpriced_calls'] else False)
                 trigger(kind, pool, node, level, active, observed, summary, setter)
             mark_kind = 'node_mark_crossed' if node else 'mark_crossed'
             for mark in limit.get('marks_usd') or []:
                 spend_trigger(mark_kind, mark, 'spend mark')
-            maximum = limit.get('max_usd')
             if maximum is not None:
                 if setter == 'user':
                     for f in sorted(set(fractions + [1.0])):
@@ -1039,11 +1157,13 @@ def cmd_control(a):
             for f in sorted(set(hours_fractions + [1.0])):
                 trigger('hours_reached' if f == 1 else 'hours_fraction', None, None, hours * f,
                         elapsed >= hours * f, elapsed, 'elapsed hours')
-        weekly = [q for q in quota if q.get('window_minutes') == 10080 and q.get('used_percent') is not None]
-        if weekly and limits.get('max_weekly_percent') is not None:
-            q = max(weekly, key=lambda x: x.get('ts') or '')
-            trigger('account_ceiling', None, None, limits['max_weekly_percent'], q['used_percent'] >= limits['max_weekly_percent'],
-                    dict(used_percent=q['used_percent'], account_wide=True), 'account-wide weekly meter')
+        if account['status'] in ('observed', 'stale') and limits.get('max_weekly_percent') is not None:
+            trigger('account_ceiling', None, None, limits['max_weekly_percent'], account['used_percent'] >= limits['max_weekly_percent'],
+                    dict(used_percent=account['used_percent'], account_wide=True, account_quota=account), 'last recorded account-wide weekly meter')
+        # Routine idle/resume freshness changes remain in the snapshot and do not
+        # wake the supervisor. Window loss/expiry and recovery remain observable.
+        previous_account_status = 'observed' if previous_account_status == 'stale' else previous_account_status
+        account_changed = limits.get('max_weekly_percent') is not None and notification_status != previous_account_status
         coverage = dict(status=doc['status'], unpriced_calls=sum(s['unpriced_calls'] for s in doc['totals'].values()),
                         ranged=any(s['quota_usd_low'] != s['quota_usd_high'] for s in doc['totals'].values()),
                         unknown_spend=any(s['unpriced_calls'] for s in doc['totals'].values()),
@@ -1051,12 +1171,24 @@ def cmd_control(a):
         key = json.dumps(['coverage_changed', None, None, 'coverage'], separators=(',', ':'))
         states[key] = coverage
         default_coverage = dict(status='complete', unpriced_calls=0, ranged=False, unknown_spend=False, undated_calls=0)
-        if coverage != previous.get(key, default_coverage):
+        cost_coverage_changed = coverage != previous.get(key, default_coverage)
+        if cost_coverage_changed or account_changed:
+            # The cursor's cost-coverage state retains its original shape. Account
+            # freshness travels in an additive observation, coalesced with any cost
+            # coverage change rather than producing duplicate notifications.
+            observed_coverage = dict(coverage)
+            if account_changed: observed_coverage['account_quota'] = account
             events.append(dict(topic=topic, authority='observation_only', kind='coverage_changed', pool=None, node_id=None,
-                               level='coverage', observed=coverage, snapshot_at=doc['snapshot_at'], summary='coverage changed'))
-    cursor = base64.urlsafe_b64encode(json.dumps(dict(objective_id=objective, states=states), sort_keys=True).encode()).decode().rstrip('=')
+                               level='coverage', observed=observed_coverage, snapshot_at=doc['snapshot_at'],
+                               cost_coverage_changed=cost_coverage_changed,
+                               summary='coverage changed' if cost_coverage_changed else 'account quota observation changed'))
+    cursor = base64.urlsafe_b64encode(json.dumps(dict(objective_id=objective, states=states,
+        account_quota_status=notification_status), sort_keys=True).encode()).decode().rstrip('=')
+    measurements = dict(doc.get('measurements') or measurement_metadata())
+    measurements.update(objective=cost_measurements(doc['totals']), account_quota=account)
     print(json.dumps(dict(schema='objective-budget-control-v1', topic=topic, events=events, next_budget_cursor=cursor,
-                          closed_at=closed_at, snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'])), sort_keys=True))
+                          closed_at=closed_at, snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'],
+                                        measurements=measurements, cost_controls=cost_controls)), sort_keys=True))
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

@@ -93,7 +93,8 @@ class Matrix(unittest.TestCase):
     def test_hours_account_and_coverage_cursor(self):
         sb = {'objective_id':'id', 'started_at':'2026-01-01T00:00:00Z', 'limits':{'max_hours':10,'max_weekly_percent':90}, 'cost_limits':[]}
         doc = dict(snapshot_at='2026-01-01T09:00:00Z', status='partial', totals=L.pools(), nodes=[])
-        quota = [dict(ts='2026-01-01T08:00:00Z', window_minutes=10080, used_percent=95), dict(ts='2026-01-01T07:00:00Z', window_minutes=10080, used_percent=5)]
+        quota = [dict(ts='2026-01-01T08:00:00Z', window_minutes=10080, used_percent=95, resets_at=L.ts_of('2026-01-02T00:00:00Z').timestamp()),
+                 dict(ts='2026-01-01T07:00:00Z', window_minutes=10080, used_percent=5, resets_at=L.ts_of('2026-01-02T00:00:00Z').timestamp())]
         args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0', role_host_ledger=None)
         def run():
             out = io.StringIO()

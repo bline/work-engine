@@ -35,6 +35,8 @@ KEY = "scope_budget"
 SCHEMA_V1 = "manual-orchestration.scope-budget.v1"
 SCHEMA = "manual-orchestration.scope-budget.v2"
 WEEK_MINUTES = 10080
+METER_MAX_AGE_SECONDS = 300
+COST_BASIS = 'speed_adjusted_api_usd'
 LIMITS = ("max_hours", "max_weekly_points", "max_weekly_percent", "reconsider_after_additions")
 
 
@@ -96,12 +98,50 @@ def weekly_percent(rollout: Path, block: int = 1 << 20) -> dict[str, Any] | None
                 except ValueError:
                     continue
                 limits = (rec.get("payload") or {}).get("rate_limits") or {}
+                if limits.get('limit_id') not in (None, 'codex'):
+                    continue
                 for slot in ("primary", "secondary"):
                     w = limits.get(slot)
                     if isinstance(w, dict) and w.get("window_minutes") == WEEK_MINUTES and w.get("used_percent") is not None:
                         return {"used_percent": float(w["used_percent"]), "observed_at": rec.get("timestamp"),
-                                "resets_at": w.get("resets_at")}
+                                "resets_at": w.get("resets_at"), "window_minutes": WEEK_MINUTES,
+                                "limit_id": limits.get("limit_id"), "plan_type": limits.get("plan_type"),
+                                "source": str(rollout)}
     return None
+
+
+def account_quota(meter: dict[str, Any] | None, ceiling: float | None) -> dict[str, Any]:
+    """Current headroom is unknown when the last recorded reading is unusable."""
+    result = {"status": "not_established", "pool": "codex", "account_wide": True, "used_percent": None,
+              "remaining_percent": None, "headroom_to_ceiling_percent": None,
+              "ceiling_percent": ceiling, "observed_at": None, "resets_at": None,
+              "age_seconds": None, "max_age_seconds": METER_MAX_AGE_SECONDS, "reason": "no_reading"}
+    if meter is None:
+        return result
+    result.update(meter)
+    try:
+        value = meter["used_percent"]
+        if isinstance(value, bool) or not math.isfinite(value) or not 0 <= value <= 100:
+            raise ValueError("invalid percent")
+        age = (now() - parse(meter["observed_at"])).total_seconds()
+        reset = meter.get("resets_at")
+        known_reset = isinstance(reset, (int, float)) and not isinstance(reset, bool) and math.isfinite(reset) and reset >= 0
+        status, reason = "observed", None
+        if age < 0:
+            status, reason = "not_established", "future_reading"
+        elif known_reset and reset <= now().timestamp():
+            status, reason = "expired", "window_reset"
+        elif not known_reset:
+            status, reason = "not_established", "reset_unknown"
+        elif age > METER_MAX_AGE_SECONDS:
+            status, reason = "stale", "reading_age"
+        result.update(status=status, reason=reason, age_seconds=age, last_reported_remaining_percent=100 - value)
+        if status == "observed":
+            result.update(remaining_percent=100 - value,
+                          headroom_to_ceiling_percent=ceiling - value if ceiling is not None else None)
+    except (TypeError, ValueError, KeyError, OverflowError):
+        result.update(status="not_established", reason="invalid_reading")
+    return result
 
 
 def section(doc: dict[str, Any], path: Path) -> dict[str, Any]:
@@ -131,7 +171,12 @@ def setter(value: str) -> str:
     return "supervisor" if value == "coordinator" else value
 
 def limits_from(args: argparse.Namespace) -> dict[str, Any]:
-    return {k: getattr(args, k) for k in LIMITS if getattr(args, k) is not None}
+    limits = {k: getattr(args, k) for k in LIMITS if getattr(args, k) is not None}
+    if any(not math.isfinite(v) or v < 0 for v in limits.values()):
+        raise UsageError("limits must be nonnegative and finite")
+    if limits.get('max_weekly_percent', 0) > 100:
+        raise UsageError("--max-weekly-percent must be between 0 and 100")
+    return limits
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -242,7 +287,7 @@ def cmd_cost_limit(args: argparse.Namespace) -> int:
     upgrade(sb)
     entry = {"pool": args.pool, "node": args.node, "max_usd": args.max_usd,
              "marks_usd": sorted(set(args.mark_usd)), "set_by": args.set_by,
-             "set_at": stamp(now()), "reason": args.reason}
+             "set_at": stamp(now()), "reason": args.reason, "basis": COST_BASIS}
     previous = next ( (x for x in sb["cost_limits"] if x["pool"] == args.pool and x["node"] == args.node and setter(x["set_by"]) == args.set_by), None)
     sb["cost_limits"] = [x for x in sb["cost_limits"] if (x["pool"], x["node"], setter(x["set_by"])) != (args.pool, args.node, args.set_by)]
     sb["cost_limits"].append(entry)
@@ -406,6 +451,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     limits = sb["limits"]
     elapsed = (now() - parse(sb["started_at"])).total_seconds() / 3600
     meter = weekly_percent(Path(args.rollout)) if args.rollout else None
+    account = account_quota(meter, limits.get('max_weekly_percent'))
     start = (sb.get("weekly_at_start") or {}).get("used_percent")
     points = None if meter is None or start is None else meter["used_percent"] - start
     reached, unknown, advisory = [], [], []
@@ -414,7 +460,8 @@ def cmd_check(args: argparse.Namespace) -> int:
         and "max_weekly_points" in h.get("limits", {}) for h in sb.get("limit_history", []))
     if "max_hours" in limits and elapsed >= limits["max_hours"]:
         reached.append("hours")
-    for name, value in (("max_weekly_points", points), ("max_weekly_percent", meter and meter["used_percent"])):
+    percent = account['used_percent'] if account['status'] in ('observed', 'stale') else None
+    for name, value in (("max_weekly_points", points), ("max_weekly_percent", percent)):
         if name in limits:
             if name == "max_weekly_points" and not user_points:
                 advisory.append(name)
@@ -429,7 +476,12 @@ def cmd_check(args: argparse.Namespace) -> int:
     result = {**status, "elapsed_hours": round(elapsed, 2), "additions": n, "original_items": len(sb["original_items"]),
               "weekly_percent": meter and meter["used_percent"], "account_weekly_points": points, "account_wide": True, "advisory": advisory,
               "limits": limits, "limits_set_by": setter(sb["limits_set_by"]), "reached": reached,
-              "unknown": unknown, "reconsider": reconsider, "stop": bool(reached)}
+              "unknown": unknown, "reconsider": reconsider, "stop": bool(reached),
+              "account_quota": account,
+              "cost_basis": COST_BASIS, "cost_limits": sb.get("cost_limits", []),
+              "cost_label": "API-equivalent dollars adjusted for subscription speed (proxy)",
+              "estimated_objective_quota_points": {"status": "not_established", "low": None, "high": None,
+                                                    "calibration_version": None}}
     print(json.dumps(result))
     return 4 if reached else 3 if reconsider else 0
 
@@ -441,7 +493,7 @@ def parser() -> argparse.ArgumentParser:
     def limit_args(q: argparse.ArgumentParser) -> None:
         q.add_argument("--max-hours", type=float)
         q.add_argument("--max-weekly-points", type=float, help="rise in the weekly meter since init")
-        q.add_argument("--max-weekly-percent", type=float, help="ceiling on the weekly meter")
+        q.add_argument("--max-weekly-percent", type=float, help="account-wide used-percent ceiling, independent of objective dollars")
         q.add_argument("--reconsider-after-additions", type=int)
         q.add_argument("--set-by", required=True, choices=("user", "supervisor"))
         q.add_argument("--reason")
@@ -475,7 +527,7 @@ def parser() -> argparse.ArgumentParser:
     b.add_argument("--parent")
     b.add_argument("--bound-by", required=True, choices=("supervisor", "user"))
     b.add_argument("--reason", required=True)
-    cl = sub.add_parser("cost-limit")
+    cl = sub.add_parser("cost-limit", help="limits in API-equivalent dollars adjusted for subscription speed; not quota points")
     cl.add_argument("--record", required=True)
     cl.add_argument("--pool", required=True, choices=("codex", "claude_all_models", "claude_fable"))
     cl.add_argument("--node")

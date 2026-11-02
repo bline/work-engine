@@ -417,6 +417,43 @@ missing or changed reader digest stops the listener. Each invocation has a
 between checking and execution. The listener owner must collect and deliver its
 output, and investigate failures; stdout alone does not establish delivery.
 
+The budget reader exposes two independent controls. Objective dollar limits
+retain their existing **API-equivalent dollars adjusted for subscription speed**
+basis (`quota_usd_low/high` are legacy names). The separate
+`max_weekly_percent` ceiling concerns the shared account meter, not an
+objective's consumption. Changing a label or calibration does not change a
+recorded grant, its history or its dollar thresholds.
+
+`snapshot.measurements` identifies the pricing scenario, its token-rates digest
+and a full scenario digest covering speed and context pricing rules,
+exposes `api_equivalent_usd` and `speed_adjusted_api_usd` separately, and carries
+the account reading's timestamp, reset and age. Cost bounds describe modeled
+pricing/tier uncertainty for priced calls; they are not confidence intervals on
+quota. Unpriced calls and coverage gaps remain explicit. Objective quota-point
+estimates have `status: not_established`, null bounds and a null calibration
+version until a separate calibration is validated.
+
+Current account headroom is null when the recorded reading is missing, older
+than five minutes, from a reset window, future-dated or missing its reset
+identity. Five minutes is an observation-freshness policy, not a guarantee that
+charges have settled. The last reported percentage remains visible. When an
+account ceiling is configured, loss of the reading/window identity, expiry and
+recovery use the existing `coverage_changed` event. Routine fresh/stale changes
+remain in snapshots without waking the supervisor. Coalesced events retain both
+cost-coverage and account changes. These observations do not create a new limit
+or authorize work. Ceiling checks use the same selected reading as the metadata;
+a stale reading in the current window can retain a known crossing, while an
+expired or invalid reading cannot establish a current crossing. Dollar and
+account-ceiling amounts keep their existing thresholds. New
+work must also allow for committed work, review, repair and closure; a recorded
+subtotal alone is not a forecast of those costs.
+
+The additional measurement fields do not change the control schema or the
+legacy cursor-state keys. Old readers can consume the new cursor; new readers
+accept old cursors. A running listener remains bound to its reader digest.
+Adopting a changed reader requires its owner to update that pin; no grant is
+recreated or repriced by adoption.
+
 ### Roles
 
 ```sh
