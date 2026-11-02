@@ -1,0 +1,135 @@
+{
+  "schema": "bookkeeping-host.merge-live-result.v1",
+  "status": "merged_live_verified",
+  "merge": {
+    "status": "merged",
+    "commit": "afa161b1967bcbd14a6f82123a1f666f568342d6",
+    "parents": [
+      "9e4d7849c4a5e0d186eceaba563845cb1b49c864",
+      "e3a583116c87bfc035331dffb9fd3416c5ac2c0f"
+    ],
+    "working_tree_paths_preserved": 245,
+    "regular_files_byte_verified": 239,
+    "directories_not_recursively_read": [
+      ".claude/worktrees/agent-a27d1ec9c1e4acca4/",
+      ".claude/worktrees/agent-a35db21c726a78dc8/",
+      ".claude/worktrees/agent-a4675d48b42da1f6b/",
+      ".claude/worktrees/agent-a7981c03b78812ef2/",
+      ".claude/worktrees/agent-af874a95656df746b/",
+      ".claude/worktrees/claude-metrics-prod-rotation/"
+    ],
+    "index": "updated to merge tree; previously no staged changes",
+    "plan": "/home/bline/.local/state/work-engine/bookkeeping-host-merge-live-20261102/merge-plan.json",
+    "prior_attempt": "Snapshot refused a nested-worktree directory before any mutation; this version records it as a directory rather than claiming recursive byte coverage."
+  },
+  "native": {
+    "session_id": "01a19dd9-4c92-71b2-b52b-b85d0d0f9bed",
+    "turn_id": "01a19dd9-56a6-7360-a88e-9a60a210924f",
+    "rollout": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T13-00-26-01a19dd9-4c92-71b2-b52b-b85d0d0f9bed.jsonl",
+    "requested": {
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "service_tier": "default",
+      "sandbox": "read-only"
+    },
+    "observed_settings": {
+      "limitations": [
+        "Selected-turn settings require an attributed matching turn_context/interval; later session events are excluded.",
+        "Successor settings must be observed after launch and adoption; arguments are a request.",
+        "Runtime configuration does not establish backend fulfillment or billing."
+      ],
+      "model": "gpt-6.1-sol",
+      "preservation": "launch_arguments_available",
+      "reasoning_effort": "medium",
+      "recorded_cli_version": "0.166.0",
+      "service_tier": "default",
+      "session_id": "01a19dd9-4c92-71b2-b52b-b85d0d0f9bed",
+      "source": {
+        "event_sha256": "465ada7539bbb73b9e0cafb5283629cdb479072e53963ca37446c39fae7a29bc",
+        "line": 12,
+        "rollout": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T13-00-26-01a19dd9-4c92-71b2-b52b-b85d0d0f9bed.jsonl",
+        "timestamp": "2026-11-02T20:00:29.243Z",
+        "turn_context": {
+          "effort": "medium",
+          "event_sha256": "e35502b534b3c0774396251277e1ce883c2aee186f4d13ed0f2d342c9667e916",
+          "line": 11,
+          "model": "gpt-6.1-sol",
+          "turn_id": "01a19dd9-56a6-7360-a88e-9a60a210924f"
+        }
+      },
+      "successor_host_args": [
+        "-m",
+        "gpt-6.1-sol",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "service_tier=\"default\""
+      ],
+      "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+      "turn_attribution": "exact_turn_interval",
+      "turn_id": "01a19dd9-56a6-7360-a88e-9a60a210924f"
+    },
+    "result": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-merge-live-20261102/native-result.json",
+      "sha256": "129c56a0b67b1b84f920eaa9649aae27d028dbdfe147748a63d152906c0c04d1"
+    },
+    "root_disposition": "accepted bounded merged-tree comparison and two supported operational consequences",
+    "receipt_id": "17225e089ee20ee05e926510334bfb0a77a4b4b5ccbabc13acc5a706c4ec2fd7",
+    "receipt_acknowledged": true,
+    "context_established": true,
+    "failures": [],
+    "process_records": 66,
+    "live_recorded_processes": []
+  },
+  "validation": {
+    "merged_host_tests": 33,
+    "host_tests": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-merge-live-20261102/merge-tests/host-tests.json",
+      "sha256": "bc99360f166c6ec27ddcd83b8a23a906dfc84918ad52c0e780d4c93e168f7ae5"
+    },
+    "skill_check": "passed; ok true, no problems",
+    "prior_joined_tests": "557 passed,25 skipped retained evidence from unchanged candidate; not rerun as a new full suite"
+  },
+  "budget": {
+    "guardrail_usd": 10,
+    "guardrail_hours": 0.75,
+    "set_by": "supervisor",
+    "snapshot_at": "2026-11-02T20:02:47.427157+00:00",
+    "closed_window": {
+      "calls": 20,
+      "quota_usd_high": 3.1819680000000004,
+      "quota_usd_low": 3.1819680000000004,
+      "unpriced_calls": 0,
+      "usd_high": 3.1819680000000004,
+      "usd_low": 3.1819680000000004
+    },
+    "root_attributed_reporting_tail": {
+      "calls": 1,
+      "quota_usd_high": 0.297762,
+      "quota_usd_low": 0.297762,
+      "unpriced_calls": 0,
+      "usd_high": 0.297762,
+      "usd_low": 0.297762
+    },
+    "tail_attribution": "Only current root closure/reporting in observed interval; no other objective reused this session during that tail",
+    "observed_followup_usd": 3.4797300000000004,
+    "prior_core_usd": 54.1313976,
+    "observed_combined_usd": 57.6111276,
+    "overall_ceiling_usd": 120,
+    "basis": "speed-adjusted API-equivalent proxy; not invoice or quota",
+    "settlement": "not established; final publication/reporting tail may remain",
+    "ledger": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-merge-live-20261102/usage-closed.json",
+      "sha256": "ac4ae2fb951eb7db2dd0a17a9e8373207495e6631a4f9e50ef4daa08b810f0f2"
+    }
+  },
+  "objective_closed_at": "2026-11-02T20:02:46Z",
+  "claim_released": true,
+  "activation": "global skills unchanged; live test used previously qualified pinned bundle8b8621bd",
+  "limits": [
+    "One fresh native read-only task, not a performance benchmark or broad new adversarial review.",
+    "Selected-turn settings limitation for retained sessions remains.",
+    "No global activation or persistent service created.",
+    "239 regular dirty/untracked files were byte-verified across merge adoption;6 nested worktree directories were recorded without recursive content coverage."
+  ]
+}
