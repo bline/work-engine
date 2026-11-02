@@ -1,0 +1,31 @@
+{
+  "source_head": "63bbd7ea4f9a7deee15bd1fad036f427806496d3",
+  "candidate_a0c_ancestor": true,
+  "active_manual_skill": "/home/bline/.local/share/work-engine/skill-releases/releases/133946956e6cbc2f7aba0d2a9aa8d7dcedb4a423/skills/manual-orchestration",
+  "files": {
+    "rust/crates/session-bridge/src/wire.rs": "1f2c457eb993a18a629800796df43c3d827984086f3110f18250d913983e1f2d",
+    "rust/crates/session-bridge/src/store.rs": "2be986cb0be4d32c5fffbc0ccd69e62e8cbbd3d87c570591bd45bdf94630f240",
+    "rust/crates/session-bridge/README.md": "e0f624d79a5df027c74aff6df55c1beb2342a42d7d1aa49c4db8d0f9f628011c",
+    "rust/crates/work-engine-manual-host/src/lib.rs": "443f5c676c9c6f85704d4480d51488e028fc255af8fd87df82db6b0161fd738f",
+    "skills/manual-orchestration/references/manual-host.md": "4562385b98110c582e7eca97017ea6a063fb6ff83556acdf91e6d89faf2722ef",
+    "records/deterministic-bookkeeping-host-core-result-20261102.md": "360da833973c7146f82bfb3477ef1a7deb5e1ff05f8154ffacdf11bfd5e4816f",
+    "records/deterministic-bookkeeping-host-release-plan-20261102.md": "089b975837152ade2a9f25d42059bfe5d136f6060d428e9b8e4d86f8c2204f95"
+  },
+  "noncode_external": {
+    "/home/bline/code/devwits-auth/docs/owner-answer-v1.md": "01a268b91a29d093db7259213d3b3682a19cb5c38a4f6efa7c5713166f6f20bd"
+  },
+  "graph": "Tier2;exact7pathcoverage2026-11-02T20:04:36Z/u57f042b835badf99g2contentverified; staleoutboundpaginationnotreliedon; directadmit_prepared826-998fallbackmaterialbudget/startbinding",
+  "status": "phase0 bounded source identities; no runtime activation",
+  "parent_graph_recheck": {
+    "indexed_at": "2026-11-02T20:19:44Z",
+    "store_generation": "u4959e4d8df4ea0abg2",
+    "tier": "Tier2",
+    "paths": 9,
+    "content_verified": true,
+    "limitations": "No recorded issue is not proof of completeness. Backend stale pagination was not relied upon; direct source fallback recorded in contribution."
+  },
+  "bookkeeping_followup": "Merged fresh-task read-only verification at63bbd7ea; records/deterministic-bookkeeping-host-merge-live-result-20261102.md. No global activation.",
+  "backend_result_sha256": "59ad7d52d5f613f9d0453c2c61026acc1a43906abcd477f970edb14985d66317",
+  "concurrence": "Peer source-owner/UI concurrence; not independent implementation review.",
+  "placement_concurrence": "Backend owner concurs with proposed rust/crates/session-task-admission/ library, protected SQLite task/admission/outbox; bridge sole native custody; no duplicate budget store or cross-store atomicity claim."
+}

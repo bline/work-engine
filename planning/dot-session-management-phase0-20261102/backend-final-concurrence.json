@@ -1,0 +1,13 @@
+{
+  "status": "concur_final_canonical_proposal",
+  "scope": "Source-ownerconcurrenceonly; no independentimplementationreview or execution/activation grant",
+  "reviewed": {
+    "planning/dot-session-management-phase0-20261102/contracts-v1.md": "5523484f621cf6b4484b2a11f9c8cd6fad43ab9f7e9c89e54d80cc1bc2822e46",
+    "planning/dot-session-management-phase0-20261102/owner-map.md": "65876422edfee03efb0fcea2623197f87d27e1f673e44f63569b7cd8180d632f",
+    "planning/dot-session-management-phase0-20261102/first-slice-bid.md": "ebc8b9fd8110c39514542ef6a8104ea9c29f5aa977a0577de089e90266274b0a"
+  },
+  "otherwise": "concurcanonicalnewproposalversions/ownerboundary/start-only/emptycomment/nochilddelegation/30USDallactorsbid",
+  "not_authorized": "runtimeeffects/implementation/activation",
+  "at": "2026-11-02T20:31:41.986908+00:00",
+  "limited_fix_verified": "Exactproposal:Ref and currentrevisioncheck nowexplicit; other2revieweddocs byteunchanged"
+}

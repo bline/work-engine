@@ -1,0 +1,88 @@
+{
+  "schema": "dot.phase0.semantic-acceptance-cases/v1",
+  "status": "proposed obligations, not runtime test results",
+  "proof_assumption": "Valid independently checked owner proof where a case says valid; fixtures provide no proof.",
+  "native_invocations_in_phase0": 0,
+  "cases": [
+    {
+      "id": "typed-current-approval",
+      "given": "All signed task terms are supported and rendered; current revision and pinned-key proof are valid.",
+      "expected": "eligible_for_atomic_admission_check"
+    },
+    {
+      "id": "identity-only",
+      "given": "Valid Stytch/Dot login without an independent owner decision.",
+      "expected": "deny_missing_decision"
+    },
+    {
+      "id": "unrendered-task-fields",
+      "given": "Request carries execution terms that the current generic page does not render.",
+      "expected": "hold_unreviewable_intent"
+    },
+    {
+      "id": "unknown-intent-version",
+      "given": "Client or consumer cannot interpret the task intent version.",
+      "expected": "hold_unsupported_version"
+    },
+    {
+      "id": "changed-request-bytes",
+      "given": "Request body or budget changes while the old signed request digest is reused.",
+      "expected": "deny_digest_mismatch"
+    },
+    {
+      "id": "stale-task-revision",
+      "given": "Unchanged signed board request refers to r1; current authoritative task is r2.",
+      "expected": "hold_stale_revision"
+    },
+    {
+      "id": "reply-closes-own-request",
+      "given": "The exact valid signed reply closed the board request; no withdrawal/supersession/previous effect exists.",
+      "expected": "do_not_reject_only_for_answered_status; reconcile_then_atomic_admission_check"
+    },
+    {
+      "id": "withdrawn-or-foreign-close",
+      "given": "A withdrawal, supersession or different decision closed the request.",
+      "expected": "deny_not_current"
+    },
+    {
+      "id": "same-answer-retry",
+      "given": "Same answer_id and operation intent already reserved or admitted.",
+      "expected": "return_existing_operation; no_second_native_entry"
+    },
+    {
+      "id": "conflicting-answer-reuse",
+      "given": "Same answer_id now points at different task/effect bytes.",
+      "expected": "deny_conflicting_replay"
+    },
+    {
+      "id": "expired-or-revoked",
+      "given": "Decision/key/task grant expired or was revoked before effect admission.",
+      "expected": "deny_authority"
+    },
+    {
+      "id": "nonapprove-decision",
+      "given": "Decision is reject, defer or ask.",
+      "expected": "no_start_effect; preserve_decision_state"
+    },
+    {
+      "id": "conditional-comment",
+      "given": "Approve includes a material condition not represented in typed task bounds.",
+      "expected": "hold_until_meaning_and_bounds_reconciled; never_ignore_signed_comment"
+    },
+    {
+      "id": "nonempty-comment-first-profile",
+      "given": "Any nonempty signed approve comment, even apparently harmless prose, in the first writable profile.",
+      "expected": "hold_preserve_comment; no_text_parser_or_ignored_comment_fallback"
+    },
+    {
+      "id": "unknown-admission-ack",
+      "given": "Native entry may have occurred, but its acknowledgment was lost.",
+      "expected": "hold_unknown; no_blind_replay"
+    },
+    {
+      "id": "budget-unknown",
+      "given": "Required aggregate reservation or spend coverage is unavailable.",
+      "expected": "hold_budget; no_new_funded_entry"
+    }
+  ]
+}

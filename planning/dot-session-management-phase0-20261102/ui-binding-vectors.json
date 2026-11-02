@@ -1,0 +1,21 @@
+{
+  "schema": "dot.phase0.ui-binding-vectors/v1",
+  "cryptographic_proof_included": false,
+  "executable_authority": false,
+  "vectors": [
+    {
+      "id": "ascii",
+      "request_json": "{\"author\":\"fixture-task-planner\",\"body\":\"Synthetic phase0 fixture. No execution authority.\",\"data\":{\"ask\":\"Review the complete task terms before starting this fixture.\",\"intent\":{\"budget\":{\"includes\":\"all objective actors including review and closure\",\"maximum\":\"5.00\",\"units\":\"speed_adjusted_api_usd\"},\"close_by\":\"2026-11-03T00:00:00Z\",\"effects\":{\"network\":false,\"write_paths\":[\"greeting.txt\"]},\"execution_profile\":\"disposable-codex-write-v1-unqualified\",\"objective\":\"Change the greeting in a disposable fixture repository.\",\"operation\":\"start\",\"provider\":\"codex\",\"revision\":\"r1\",\"schema\":\"dot.task-intent/v1-proposal\",\"source_checkpoint\":\"0000000000000000000000000000000000000000\",\"steering\":\"within the approved task effects and budget\",\"task_id\":\"00000000-0000-4000-8000-000000009001\",\"workspace_profile\":\"fixture-repository\"}},\"kind\":\"request\",\"observed_at\":\"2026-11-02T00:00:00Z\",\"sequence\":9001,\"session_id\":\"00000000-0000-4000-8000-000000009002\",\"to\":[\"role:owner\"],\"topic\":\"fixture:task-review\"}",
+      "request_digest": "df70328f0bb381cdbedd0e03a513ca86209235cdfe594f10df8247ff0bf84e44",
+      "answer_json": "{\"v\":1,\"type\":\"work-engine.owner-answer\",\"answer_id\":\"00000000-0000-4000-8000-000000009003\",\"board_seq\":9001,\"request_digest\":\"df70328f0bb381cdbedd0e03a513ca86209235cdfe594f10df8247ff0bf84e44\",\"decision\":\"approve\",\"comment\":\"\",\"owner\":\"user-test-00000000-0000-4000-8000-000000009000\",\"created_at\":\"2026-11-02T00:01:00Z\",\"expires_at\":\"2026-11-03T00:01:00Z\",\"rp_id\":\"auth.devwits.ai\"}",
+      "answer_challenge_b64url": "CNqKlKvNhPEYnSDj6Qdrjb8DKUPiRel7PgN71jaiy1M"
+    },
+    {
+      "id": "utf8",
+      "request_json": "{\"author\":\"fixture-task-planner\",\"body\":\"Synthetic phase0 fixture. No execution authority. Café — α\\nA second line.\",\"data\":{\"ask\":\"Review the complete task terms before starting this fixture.\",\"intent\":{\"budget\":{\"includes\":\"all objective actors including review and closure\",\"maximum\":\"5.00\",\"units\":\"speed_adjusted_api_usd\"},\"close_by\":\"2026-11-03T00:00:00Z\",\"effects\":{\"network\":false,\"write_paths\":[\"greeting.txt\"]},\"execution_profile\":\"disposable-codex-write-v1-unqualified\",\"objective\":\"Change the greeting in a disposable fixture repository.\",\"operation\":\"start\",\"provider\":\"codex\",\"revision\":\"r1\",\"schema\":\"dot.task-intent/v1-proposal\",\"source_checkpoint\":\"0000000000000000000000000000000000000000\",\"steering\":\"within the approved task effects and budget\",\"task_id\":\"00000000-0000-4000-8000-000000009001\",\"workspace_profile\":\"fixture-repository\"}},\"kind\":\"request\",\"observed_at\":\"2026-11-02T00:00:00Z\",\"sequence\":9001,\"session_id\":\"00000000-0000-4000-8000-000000009002\",\"to\":[\"role:owner\"],\"topic\":\"fixture:task-review\"}",
+      "request_digest": "f0e998f97895fc86322f800337bff98426ebd0712d5e8efeec2a6c97a9ec239f",
+      "answer_json": "{\"v\":1,\"type\":\"work-engine.owner-answer\",\"answer_id\":\"00000000-0000-4000-8000-000000009003\",\"board_seq\":9001,\"request_digest\":\"f0e998f97895fc86322f800337bff98426ebd0712d5e8efeec2a6c97a9ec239f\",\"decision\":\"approve\",\"comment\":\"\",\"owner\":\"user-test-00000000-0000-4000-8000-000000009000\",\"created_at\":\"2026-11-02T00:01:00Z\",\"expires_at\":\"2026-11-03T00:01:00Z\",\"rp_id\":\"auth.devwits.ai\"}",
+      "answer_challenge_b64url": "LsDOW6IDGwGs2x3QqgZQbGx9KU04ToV-BwlBNAVKYvE"
+    }
+  ]
+}

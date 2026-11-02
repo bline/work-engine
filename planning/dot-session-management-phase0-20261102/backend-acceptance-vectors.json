@@ -1,0 +1,92 @@
+{
+  "status": "proposed_semantic_vectors_not_executed",
+  "wire_format": "owner-answer/v1 unchanged; new task/admission concepts provisional",
+  "cases": [
+    {
+      "id": "valid_present",
+      "given": "known typed task rendered; byte-exact proof; answered by this proof; task live; current profile/budget/authority",
+      "expected": "one_admission_one_native_intent"
+    },
+    {
+      "id": "hidden_task_fields",
+      "given": "effect/budget only in unrendered metadata despite valid row digest",
+      "expected": "hold_unknown_or_incomplete_view"
+    },
+    {
+      "id": "unknown_task_view_version",
+      "given": "signed task/view version unsupported",
+      "expected": "hold_no_effect"
+    },
+    {
+      "id": "identity_only",
+      "given": "valid owner-subject OAuth but no checked task decision",
+      "expected": "reject_no_authority"
+    },
+    {
+      "id": "answered_by_other",
+      "given": "board answered by a different answer/proof",
+      "expected": "hold_no_effect"
+    },
+    {
+      "id": "withdrawn_superseded",
+      "given": "valid historical proof but task withdrawn/superseded/current revision changed",
+      "expected": "reject_no_effect"
+    },
+    {
+      "id": "exact_answer_replay",
+      "given": "same answer/task/admission content",
+      "expected": "return_existing_admission_no_native_replay"
+    },
+    {
+      "id": "conflicting_key",
+      "given": "same idempotency key with changed intent/effect/cost/time",
+      "expected": "conflict_no_replacement"
+    },
+    {
+      "id": "cross_task_lane",
+      "given": "answer bound to another request/task/lane",
+      "expected": "reject_no_effect"
+    },
+    {
+      "id": "revoked_expired",
+      "given": "authority/mandate revoked or deadline expired before effect check",
+      "expected": "hold_or_reject_no_effect"
+    },
+    {
+      "id": "lost_admission_ack",
+      "given": "native create/start admitted status unknown after missing ACK",
+      "expected": "preserve_unknown_reconcile_no_blind_create"
+    },
+    {
+      "id": "restart_after_funded_setup",
+      "given": "readiness/setup had funded receipt before restart",
+      "expected": "same_first_funded_clock_no_reset"
+    },
+    {
+      "id": "interrupt_unobserved",
+      "given": "cancel requested but native/children closure unproved",
+      "expected": "cancel_requested_unknown_not_closed"
+    },
+    {
+      "id": "missing_result",
+      "given": "selected turn ended with missing/malformed worker packet",
+      "expected": "visible_missing_or_invalid_contract_not_success"
+    },
+    {
+      "id": "away_no_mandate",
+      "given": "mode request/unknown kind without explicit delegated envelope",
+      "expected": "hold_for_owner_no_silent_delegation"
+    },
+    {
+      "id": "signed_approved_comment",
+      "given": "otherwise valid typed approve with any nonempty signedcomment",
+      "expected": "hold_preserve_comment_no_effect_until_typed_terms_reconciled"
+    }
+  ],
+  "ui_concurrence": {
+    "ui_contract": "planning/dot-session-management-phase0-20261102/ui-contract-v1.md",
+    "status": "backend_concurs_with_rev1_semantics",
+    "scope": "unconditionalemptycommentfirstprofile; exactproofcurrenttaskstate; signedbytesunchanged",
+    "fixtures": "data-only/noauthority/noexecutedtests"
+  }
+}
