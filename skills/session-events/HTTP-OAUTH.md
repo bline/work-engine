@@ -25,3 +25,17 @@ The policy requires a signed RS256 JWT with `typ` = `at+jwt`, nonempty `client_i
 **Provider prerequisite:** these are a strict resource-server policy and synthetic fixtures, not evidence that the Stytch test project currently issues compatible tokens. Its observed access-token template and standard scopes do not establish this audience, access-token type, required claims, or write-scope issuance. Verify and configure those provider properties before enabling the feature; a project-ID-only audience is insufficient. No client registration, deployment, live token, key rotation, or revocation was exercised by these source tests.
 
 Protected-resource discovery publishes the configured write scope through `scopes_supported`. The resource-specific discovery URL inserts `/.well-known/oauth-protected-resource` before the entire configured resource path; the root discovery alias is also served. The configured path must end in `/mcp`, and its listener path must match. A verified token missing the write scope receives an `insufficient_scope` challenge naming that scope.
+
+## Stytch Connected Apps profile (opt-in)
+
+The omitted `profile` retains the existing `rfc9068-v1` policy requiring `typ: at+jwt`. For the explicitly configured Stytch Connected Apps access-token issuance contract, set all three additional trusted fields:
+
+```json
+"profile": "stytch-connected-apps-v1",
+"expected_client_id": "connected-app-test-7607c19e-b18a-4ef5-b675-480c2b7457c5",
+"expected_project_id": "project-test-5f16c2cc-3020-4a9a-93af-b3a0f22aa9bd"
+```
+
+This profile requires `typ: JWT`, RS256 and the same issuer, owner, key, time and scope checks. It additionally pins the client ID and requires the exact project and resource as audience members. Unknown profiles and missing bindings fail closed. The resource audience must be issued by the provider for this client; a project-only audience cannot pass. The configured project, issuer and client must be the intended Connected Apps issuer and grant, and the keys must be provisioned from that issuer.
+
+These checks assume the issuer reserves the bound client/resource claim combination for Connected Apps access tokens. A different JWT type signed with the same issuer keys and carrying identical claims is not cryptographically distinguishable by this profile; do not enable it unless provider issuance and token-type separation establish that assumption. A session or ID token lacking the bound client, project/resource audiences, or required access-token claims is rejected, but merely labeling a token an ID or session token cannot make otherwise identical bytes distinguishable. The authenticated identity does not grant separate owner decision approval. Actual provider issuance and write-scope availability require independent verification.

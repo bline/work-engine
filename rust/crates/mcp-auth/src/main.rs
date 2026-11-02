@@ -6,9 +6,21 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+#[derive(Default, Deserialize, PartialEq)]
+enum Profile {
+    #[default]
+    #[serde(rename = "rfc9068-v1")]
+    Rfc9068,
+    #[serde(rename = "stytch-connected-apps-v1")]
+    StytchConnectedApps,
+}
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Config {
+    #[serde(default)]
+    profile: Profile,
+    expected_client_id: Option<String>,
+    expected_project_id: Option<String>,
     resource: String,
     issuer: String,
     subject: String,
@@ -62,12 +74,22 @@ fn verify() -> Result<bool, ()> {
     {
         return Err(());
     }
+    if c.profile == Profile::StytchConnectedApps
+        && (c.expected_client_id.as_deref().is_none_or(str::is_empty)
+            || c.expected_project_id.as_deref().is_none_or(str::is_empty))
+    {
+        return Err(());
+    }
     let token = request.token.as_str();
     if token.is_empty() || token.len() > 16384 {
         return Err(());
     }
     let header = decode_header(token).map_err(|_| ())?;
-    if header.alg != Algorithm::RS256 || header.typ.as_deref() != Some("at+jwt") {
+    let expected_typ = match c.profile {
+        Profile::Rfc9068 => "at+jwt",
+        Profile::StytchConnectedApps => "JWT",
+    };
+    if header.alg != Algorithm::RS256 || header.typ.as_deref() != Some(expected_typ) {
         return Err(());
     }
     let kid = header.kid.ok_or(())?;
@@ -146,6 +168,17 @@ fn verify() -> Result<bool, ()> {
             .is_some_and(|n| n > jsonwebtoken::get_current_timestamp())
     {
         return Err(());
+    }
+    if c.profile == Profile::StytchConnectedApps {
+        let project = c.expected_project_id.as_deref().ok_or(())?;
+        let audience_has_project = claims.aud.as_str() == Some(project)
+            || claims
+                .aud
+                .as_array()
+                .is_some_and(|a| a.iter().any(|v| v.as_str() == Some(project)));
+        if claims.client_id != c.expected_client_id.as_deref().ok_or(())? || !audience_has_project {
+            return Err(());
+        }
     }
     Ok(claims
         .scope

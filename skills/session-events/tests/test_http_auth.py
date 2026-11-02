@@ -13,7 +13,7 @@ import unittest
 
 from test_session_events import Fixture, SE, CODEX_ID, URL, whsec
 
-VERIFIER = Path(__file__).resolve().parents[3] / "rust/target/debug/mcp-auth"
+VERIFIER = Path(os.environ.get("MCP_AUTH_TEST_BINARY", Path(__file__).resolve().parents[3] / "rust/target/debug/mcp-auth"))
 RESOURCE = "https://mcp-test.devwits.ai/mcp"
 ISSUER = "https://checkered-replace-0099.customers.stytch.dev"
 SUBJECT = "user-test-8b1b7b52-0fa4-4b70-8594-b2b043592a1c"
@@ -123,6 +123,36 @@ class AuthHttp(Fixture):
             with self.subTest(rejected_scope=scope):
                 self.config.write_text(json.dumps({**original, "write_scope":scope}))
                 with self.assertRaises(ValueError): SE.HttpAuth(str(self.config))
+
+    def test_stytch_profile_requires_bound_client_project_and_resource(self):
+        config = json.loads(self.config.read_text())
+        client = "connected-app-test-7607c19e-b18a-4ef5-b675-480c2b7457c5"
+        project = "project-test-5f16c2cc-3020-4a9a-93af-b3a0f22aa9bd"
+        config.update(profile="stytch-connected-apps-v1", expected_client_id=client, expected_project_id=project)
+        self.config.write_text(json.dumps(config))
+        auth = SE.HttpAuth(str(self.config))
+        self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth)
+        msg = {"jsonrpc":"2.0", "id":1, "method":"events/unsubscribe", "params":{}}
+        claims = {"client_id":client, "aud":[project, RESOURCE]}
+        token = lambda extra=None, header=None: self.token(claims | (extra or {}), {"typ":"JWT"} | (header or {}))
+        self.assertEqual(self.request(msg, token())[0], 200)
+        self.assertEqual(self.request(msg, token({"scope":"openid"}))[0], 403)
+        now = int(time.time())
+        for value in ({"aud":[project]}, {"aud":[RESOURCE]}, {"aud":[project,"https://wrong/mcp"]}, {"client_id":"other"}, {"client_id":None}, {"jti":None}, {"sub":"other"}, {"iss":"https://wrong"}, {"exp":now-1}, {"iat":now+60}, {"nbf":now+60}):
+            with self.subTest(value=value): self.assertEqual(self.request(msg, token(value))[0], 401)
+        self.assertEqual(self.request(msg, token(header={"typ":"at+jwt"}))[0], 401)
+        valid = token(); self.assertEqual(self.request(msg, valid.rsplit(".",1)[0]+"."+"A"*342)[0], 401)
+        for change in ({"expected_client_id":""}, {"expected_project_id":None}, {"profile":"unknown"}, {"profile":None}):
+            self.config.write_text(json.dumps(config | change))
+            with self.assertRaises(ValueError): SE.HttpAuth(str(self.config))
+        # Direct verifier callers cannot bypass profile selection or client/project binding.
+        for change in ({"profile":"unknown"}, {"profile":None}, {"expected_client_id":None}, {"expected_project_id":""}):
+            result = subprocess.run([str(VERIFIER)], input=json.dumps({"config":config | change, "token":token()}).encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, check=True)
+            self.assertEqual(result.stdout, b"invalid\n")
+            self.assertEqual(result.stderr, b"")
+        # JWT-shaped session/ID fixtures lacking Connected Apps client or jti are denied.
+        self.assertEqual(self.request(msg, token({"client_id":None}))[0], 401)
+        self.assertEqual(self.request(msg, token({"jti":None}))[0], 401)
 
     def test_rejections_and_rotation(self):
         msg = {"jsonrpc":"2.0", "id":1, "method":"events/unsubscribe", "params":{}}

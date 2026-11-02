@@ -2949,6 +2949,14 @@ class HttpAuth:
         resource = urllib.parse.urlsplit(self.config["resource"])
         if not resource.path.endswith("/mcp") or resource.path.startswith("//"):
             raise ValueError("invalid auth resource")
+        profile = self.config.get("profile", "rfc9068-v1")
+        if profile not in ("rfc9068-v1", "stytch-connected-apps-v1"):
+            raise ValueError("invalid auth profile")
+        if profile == "stytch-connected-apps-v1":
+            for field in ("expected_client_id", "expected_project_id"):
+                value = self.config.get(field)
+                if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9._-]{1,512}", value):
+                    raise ValueError("invalid auth profile binding")
         scope = self.config.get("write_scope")
         # RFC 6749 scope-token excludes space, quotation mark and backslash.
         if not isinstance(scope, str) or not re.fullmatch(r"[\x21\x23-\x5b\x5d-\x7e]+", scope):
