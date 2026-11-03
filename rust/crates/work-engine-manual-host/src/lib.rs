@@ -1231,8 +1231,19 @@ impl Host {
                         "--turn-id".into(),
                         turn,
                     ];
-                    match self.python(id, "turn", &r.tools.role_host, args) {
-                        Ok(v) => {
+                    let turn_readable = match self.python(id, "turn", &r.tools.role_host, args) {
+                        Ok(v)
+                            if matches!(
+                                v["status"].as_str(),
+                                Some(
+                                    "inProgress"
+                                        | "running"
+                                        | "completed"
+                                        | "failed"
+                                        | "interrupted"
+                                )
+                            ) =>
+                        {
                             let terminal = matches!(
                                 v["status"].as_str(),
                                 Some("completed" | "failed" | "interrupted")
@@ -1242,14 +1253,28 @@ impl Host {
                                 self.op_mut(id).phase = Phase::Terminal;
                                 self.save()?;
                             }
+                            true
                         }
-                        Err(e) => self.evidence(
-                            id,
-                            "turn",
-                            json!({"status":"unavailable","detail":e.to_string()}),
-                        )?,
-                    }
+                        Ok(v) => {
+                            self.evidence(id,"turn",json!({"status":"unavailable","detail":"selected turn state not established","observation":v}))?;
+                            false
+                        }
+                        Err(e) => {
+                            self.evidence(
+                                id,
+                                "turn",
+                                json!({"status":"unavailable","detail":e.to_string()}),
+                            )?;
+                            false
+                        }
+                    };
                     self.observe(id, true)?;
+                    if !turn_readable {
+                        // A lost/unloaded native view is a decision boundary,
+                        // not another reason to silently poll until the deadline.
+                        // Do not resume the thread or change its realized grant.
+                        return self.receipt(id);
+                    }
                     if matches!(self.op(id).phase, Phase::Terminal) {
                         self.collect_artifacts(id)?;
                         return self.receipt(id);

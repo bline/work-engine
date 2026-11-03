@@ -209,6 +209,14 @@ pagination; latest-thread idleness never establishes a selected turn's outcome.
 Ambiguous unknown effects need the owning root's external reconciliation; this
 pilot does not pretend to recover them automatically or offer a force-clear.
 
+If the selected-turn reader fails or returns an unestablished status, foreground
+collection returns a receipt with `turn_outcome: unavailable` promptly. The
+operation's `phase` remains its prior workflow phase; `running` alone does not
+establish current native execution. The native observation or error remains
+recorded, and a later collection can recover the same known operation when its
+reader becomes available. The host does not resume an unloaded thread, change
+its sandbox, infer completion from thread idleness or start a replacement turn.
+
 By default the task packet tells the child to write `result_path` as JSON.
 For a physically read-only child, use `result_from_turn: true` and request one
 final JSON answer instead. The host reserves a normalized output path for each operation, including

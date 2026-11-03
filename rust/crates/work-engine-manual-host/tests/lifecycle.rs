@@ -1114,3 +1114,46 @@ fn raw_inspect_remains_available_for_oversized_other_version_state() {
             .success()
     );
 }
+
+#[test]
+fn waiting_returns_unavailable_turn_evidence_without_polling_or_relaunch() {
+    for fault in ["observer_fail", "unknown_status"] {
+        let f = Fixture::new();
+        success(f.dispatch());
+        if fault == "observer_fail" {
+            f.config("observer_fail", json!(true));
+        } else {
+            f.config("turn_status", json!("not_established"));
+        }
+        let dir = f.dir.path().join("state");
+        let receipt = success(f.invoke(&[
+            "collect",
+            "--state",
+            dir.to_str().unwrap(),
+            "--operation",
+            "one",
+            "--wait",
+        ]));
+        assert_eq!(receipt["summary"]["phase"], "running");
+        assert_eq!(receipt["summary"]["turn_outcome"], "unavailable");
+        assert_eq!(f.count("turn_reads"), 1);
+        assert!(
+            f.state()["operations"]["one"]["evidence"]
+                .get("collection")
+                .is_none()
+        );
+        assert_eq!(f.count("creates"), 1);
+        assert_eq!(f.count("starts"), 1);
+        let historical = fs::read(receipt["receipt"].as_str().unwrap()).unwrap();
+        f.config("observer_fail", json!(false));
+        f.config("turn_status", json!("completed"));
+        let recovered = success(f.collect());
+        assert_eq!(recovered["summary"]["phase"], "collected");
+        assert_eq!(f.count("creates"), 1);
+        assert_eq!(f.count("starts"), 1);
+        assert_eq!(
+            historical,
+            fs::read(receipt["receipt"].as_str().unwrap()).unwrap()
+        );
+    }
+}
