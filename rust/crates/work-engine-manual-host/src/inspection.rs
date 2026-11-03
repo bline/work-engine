@@ -1,5 +1,5 @@
 //! Read-only projections of recorded evidence; no reader polling or acceptance.
-use crate::{Operation, Phase, Result, SCHEMA, State, read_json, refuse};
+use crate::{Operation, Phase, Result, SCHEMA, State, read_record, refuse};
 use serde_json::{Value, json};
 use std::path::Path;
 
@@ -135,13 +135,11 @@ pub fn inspect(dir: &Path, operation: Option<&str>, summary: bool) -> Result<Val
         if operation.is_some() {
             return refuse("--operation requires inspect --summary");
         }
-        // Preserve the raw escape hatch even for oversized/other-version state
-        // that the bounded executor and typed summary cannot open.
-        return Ok(serde_json::from_slice(&std::fs::read(
-            dir.join("state.json"),
-        )?)?);
+        // Preserve the raw escape hatch for other-version state that typed
+        // inspection cannot understand.
+        return read_record(&dir.join("state.json"));
     }
-    let raw = read_json(&dir.join("state.json"))?;
+    let raw = read_record(&dir.join("state.json"))?;
     if raw["schema"] != SCHEMA {
         return refuse("unsupported inspection state schema");
     }

@@ -1116,6 +1116,125 @@ fn raw_inspect_remains_available_for_oversized_other_version_state() {
 }
 
 #[test]
+fn large_owned_records_reopen_inspect_acknowledge_and_close() {
+    let f = Fixture::new();
+    let r: Request = serde_json::from_value(f.request.clone()).unwrap();
+    let mut h = Host::open(&r.state_dir, Some(&r)).unwrap();
+    h.dispatch(r.clone()).unwrap();
+    h.collect("one", false).unwrap();
+    // Model accumulated observation history beyond the external-input limit.
+    h.state
+        .operations
+        .get_mut("one")
+        .unwrap()
+        .observer_events
+        .insert(
+            "large-history".into(),
+            json!({"recorded": "x".repeat(9 * 1024 * 1024)}),
+        );
+    h.save().unwrap();
+    assert!(fs::metadata(r.state_dir.join("state.json")).unwrap().len() > 8 * 1024 * 1024);
+    drop(h);
+
+    let mut h = Host::open(&r.state_dir, None).unwrap();
+    let before_inspect = fs::read(r.state_dir.join("state.json")).unwrap();
+    let summary = work_engine_manual_host::inspect(&r.state_dir, Some("one"), true).unwrap();
+    assert_eq!(summary["operations"][0]["phase"], "collected");
+    assert_eq!(
+        before_inspect,
+        fs::read(r.state_dir.join("state.json")).unwrap()
+    );
+    let task = h.receipt("one").unwrap();
+    let task_path = Path::new(task["receipt"].as_str().unwrap());
+    let task_bytes = fs::read(task_path).unwrap();
+    assert!(task_bytes.len() > 8 * 1024 * 1024);
+    let config_before_ack = fs::read(f.dir.path().join("config.json")).unwrap();
+    h.acknowledge_receipt(task["receipt_id"].as_str().unwrap())
+        .unwrap();
+    assert_eq!(
+        config_before_ack,
+        fs::read(f.dir.path().join("config.json")).unwrap()
+    );
+    assert_eq!(task_bytes, fs::read(task_path).unwrap());
+
+    let close = serde_json::from_value(json!({
+        "schema":SCHEMA, "operation_id":"one", "authority":f.request["authority"],
+        "ack_receipt":task["receipt_id"], "objective_end":true,
+        "disposition":"accepted", "reason":"explicit large registry closure",
+    }))
+    .unwrap();
+    let closed = h.close(close).unwrap();
+    h.acknowledge_receipt(closed["receipt_id"].as_str().unwrap())
+        .unwrap();
+    assert_eq!(f.count("creates"), 1);
+    assert_eq!(f.count("starts"), 1);
+    assert_eq!(f.count("releases"), 1);
+    assert_eq!(f.count("closes"), 1);
+
+    let accounting = h.reconcile_accounting("one").unwrap();
+    assert!(
+        fs::metadata(accounting["receipt"].as_str().unwrap())
+            .unwrap()
+            .len()
+            > 8 * 1024 * 1024
+    );
+    h.acknowledge_receipt(accounting["receipt_id"].as_str().unwrap())
+        .unwrap();
+    let accounting_bytes = fs::read(accounting["receipt"].as_str().unwrap()).unwrap();
+    let repeated = h.reconcile_accounting("one").unwrap();
+    h.acknowledge_receipt(repeated["receipt_id"].as_str().unwrap())
+        .unwrap();
+    assert_eq!(
+        accounting_bytes,
+        fs::read(accounting["receipt"].as_str().unwrap()).unwrap()
+    );
+    drop(h);
+    let mut h = Host::open(&r.state_dir, None).unwrap();
+    assert!(matches!(
+        h.state.operations["one"].phase,
+        work_engine_manual_host::Phase::Closed
+    ));
+    assert!(
+        h.state
+            .acknowledged
+            .contains(closed["receipt_id"].as_str().unwrap())
+    );
+    assert!(
+        h.state
+            .acknowledged
+            .contains(accounting["receipt_id"].as_str().unwrap())
+    );
+    // Large records retain exact-byte identity checking.
+    let mut tampered = task_bytes.clone();
+    tampered.push(b' ');
+    fs::write(task_path, tampered).unwrap();
+    assert!(
+        h.acknowledge_receipt(task["receipt_id"].as_str().unwrap())
+            .unwrap_err()
+            .to_string()
+            .contains("receipt identity conflict")
+    );
+}
+
+#[test]
+fn large_external_artifacts_remain_bounded() {
+    let f = Fixture::new();
+    let path = f.dir.path().join("large-packet.md");
+    fs::write(&path, "x".repeat(9 * 1024 * 1024)).unwrap();
+    let artifact: work_engine_manual_host::Artifact =
+        serde_json::from_value(artifact(&path)).unwrap();
+    assert!(
+        artifact
+            .verify()
+            .unwrap_err()
+            .to_string()
+            .contains("oversize input")
+    );
+    assert_eq!(f.count("creates"), 0);
+    assert_eq!(f.count("starts"), 0);
+}
+
+#[test]
 fn waiting_returns_unavailable_turn_evidence_without_polling_or_relaunch() {
     for fault in ["observer_fail", "unknown_status"] {
         let f = Fixture::new();

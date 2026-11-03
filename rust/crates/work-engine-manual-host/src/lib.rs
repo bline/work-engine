@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
-use std::io::Write;
+use std::io::{BufReader, BufWriter, Write};
 use std::os::unix::{fs::DirBuilderExt, process::CommandExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -45,6 +45,12 @@ fn read_json(path: &Path) -> Result<Value> {
     Ok(serde_json::from_slice(&bytes(path)?)?)
 }
 
+// Owned records accumulate across operations; the external-input bound must
+// not prevent the executor from reopening records it successfully persisted.
+fn read_record(path: &Path) -> Result<Value> {
+    Ok(serde_json::from_reader(BufReader::new(File::open(path)?))?)
+}
+
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -58,8 +64,12 @@ fn atomic(path: &Path, value: &impl Serialize) -> Result<()> {
         .create(true)
         .truncate(true)
         .open(&tmp)?;
-    f.write_all(&serde_json::to_vec_pretty(value)?)?;
-    f.write_all(b"\n")?;
+    {
+        let mut writer = BufWriter::new(&mut f);
+        serde_json::to_writer_pretty(&mut writer, value)?;
+        writer.write_all(b"\n")?;
+        writer.flush()?;
+    }
     f.sync_all()?;
     fs::rename(&tmp, path)?;
     File::open(
@@ -282,7 +292,7 @@ impl Host {
             .map_err(|_| Error::Refused("executor busy; no second owner admitted".into()))?;
         let binary = digest(&fs::read(std::env::current_exe()?)?);
         let state = if dir.join("state.json").exists() {
-            let raw = read_json(&dir.join("state.json"))?;
+            let raw = read_record(&dir.join("state.json"))?;
             if raw["schema"] != SCHEMA || raw["binary_sha256"] != binary {
                 return refuse(
                     "incompatible state/binary; inspect raw state and restore the pinned executor",
@@ -328,7 +338,7 @@ impl Host {
             return refuse("invalid receipt identity");
         }
         let path = self.dir.join("receipts").join(format!("{receipt}.json"));
-        let raw = bytes(&path)?;
+        let raw = fs::read(&path)?;
         if digest(&raw) != receipt {
             return refuse("receipt identity conflict");
         }
@@ -1859,7 +1869,7 @@ impl Host {
         let path = self.dir.join("receipts").join(format!("{receipt}.json"));
         fs::create_dir_all(path.parent().unwrap())?;
         if path.exists() {
-            if bytes(&path)? != raw {
+            if fs::read(&path)? != raw {
                 return refuse("accounting receipt conflict");
             }
         } else {
