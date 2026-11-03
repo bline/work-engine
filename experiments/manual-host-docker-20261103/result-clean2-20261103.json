@@ -1,0 +1,173 @@
+{
+  "status": "mechanics feasible; clean four-turn fixture passed; not accepted or integrated",
+  "authority": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2/authority-revision2.json",
+  "source_base": "ab906b90acc343876e1f927b821a6e4c2a4aeb79",
+  "prior_attempt_checkpoint": "88cc5518",
+  "root_collector": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+  "worker_session": "01a1a34f-8fbc-7383-9e2a-f4317220e252",
+  "container": {
+    "id": "f8e41233a7ff6aaf5b5b261fbbbbade0beb0094de925a9599e976d4992a0bc01",
+    "name": "/we-manual-host-docker-20261103-clean2-retained",
+    "started_at": "2026-11-03T21:39:22.127954037Z",
+    "same_app_server_pid": 2938623,
+    "restart_count": 0,
+    "terminal_exit": 0,
+    "removed": true
+  },
+  "runtime_package": [
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "sha256": "b8a11fedf24b2dfb59a70c9e52b030f9a508dcd49cd2dd0d41956f4c785156b8",
+      "bytes": 319346888
+    },
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex-code-mode-host",
+      "sha256": "657f4e902726e05867c937b583049d5997e057f8cd0ab40450633c9c9ef8d630",
+      "bytes": 77997328
+    },
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/codex-package.json",
+      "sha256": "a734b829e73b56b59a1ed45e8669785c8e3d23290e60f40f4b5174f68e8ea7cd",
+      "bytes": 205
+    }
+  ],
+  "actors": [
+    {
+      "role": "builder",
+      "session_id": "01a1a35a-712f-7ae0-9857-102fc749877d",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "service_tier": "default",
+      "realized_sandbox": {
+        "type": "dangerFullAccess"
+      },
+      "turns": [
+        {
+          "sid": "01a1a35a-712f-7ae0-9857-102fc749877d",
+          "turn_id": "01a1a35b-2910-7fd0-8e26-4fa8480c04b5",
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-clean2-retained"
+        },
+        {
+          "sid": "01a1a35a-712f-7ae0-9857-102fc749877d",
+          "turn_id": "01a1a35b-c9d5-7463-a466-392e13839666",
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-clean2-retained"
+        }
+      ],
+      "cost": {
+        "calls": 4,
+        "quota_usd_high": 0.029034400000000002,
+        "quota_usd_low": 0.029034400000000002,
+        "unpriced_calls": 0,
+        "usd_high": 0.029034400000000002,
+        "usd_low": 0.029034400000000002
+      }
+    },
+    {
+      "role": "reviewer",
+      "session_id": "01a1a35a-722c-7243-8153-7457db20f37e",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "realized_sandbox": {
+        "type": "dangerFullAccess"
+      },
+      "turns": [
+        {
+          "sid": "01a1a35a-722c-7243-8153-7457db20f37e",
+          "turn_id": "01a1a35b-6c6a-7b33-ba6e-cb5c417c3f89",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-clean2-retained"
+        },
+        {
+          "sid": "01a1a35a-722c-7243-8153-7457db20f37e",
+          "turn_id": "01a1a35c-1af4-7b51-a97f-5ca2c653305c",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-clean2-retained"
+        }
+      ],
+      "cost": {
+        "calls": 4,
+        "quota_usd_high": 0.168206,
+        "quota_usd_low": 0.168206,
+        "unpriced_calls": 0,
+        "usd_high": 0.168206,
+        "usd_low": 0.168206
+      }
+    }
+  ],
+  "artifact_effects": {
+    "initial": {
+      "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2/answer-initial.txt",
+      "sha256": "f0b5c2c2211c8d67ed15e75e656c7862d086e9245420892a7de62cd9ec582a06",
+      "value": 5
+    },
+    "corrected": {
+      "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2/answer-corrected.txt",
+      "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+      "value": 4
+    },
+    "python_assertion": {
+      "record": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2/builder-assertion.json",
+      "exit": 0
+    },
+    "builder_retained_marker": "MAPLE-42",
+    "reviewer_retained_marker": "CEDAR-17",
+    "rereview_finding_resolved": true
+  },
+  "obligations": {
+    "bootstrap": "offline native/companion/RPC command-exec/files checks pass before inference",
+    "exec_socket": "first offline OSS startup saw no socket; authenticated exec role-host socket behavior unestablished",
+    "private_app_server": "same explicitly started server accepts sequential exec clients",
+    "filesystem": "declared fixture read/write observed; host home/repository/Docker socket not mounted; not comprehensive adversarial confinement",
+    "durable_logs": "full raw native rollouts + JSONL events + final outputs + role-host ledger + settings + assignment/budget + Docker custody + server logs retained",
+    "metrics": "canonical live raw namespace prices8clean calls; both child_context and4exact-turn settings readers succeed",
+    "cleanup": "all owned containers stopped/waited/removed; no named containers remain",
+    "production_isolation": "unestablished; both dangerFullAccess, one shared container, unrestricted outbound bridge, auth readable inside container, no frozen startup input set",
+    "pilot": "non-scored fixture only; no trial allocation/acceptance/integration"
+  },
+  "cost": {
+    "clean_actor_usd_proxy": 0.19724039999999998,
+    "clean_calls": 8,
+    "prior_actor_usd_proxy": 0.1566072,
+    "all_qualification_usd_proxy": 0.3538476,
+    "original_combined_cap": 2,
+    "worker_snapshot": {
+      "calls": 70,
+      "quota_usd_high": 1.2392836000000005,
+      "quota_usd_low": 1.2392836000000005,
+      "unpriced_calls": 0,
+      "usd_high": 1.2392836000000005,
+      "usd_low": 1.2392836000000005
+    },
+    "snapshot_at": "2026-11-03T21:41:50.175201+00:00",
+    "basis": "frozen canonical API-equivalent proxy; not bill/quota; later worker result tail unsettled"
+  },
+  "raw_rollouts": [
+    {
+      "canonical_path": "/home/bline/.codex/sessions/we-manual-host-docker-20261103-clean2/2026/11/03/rollout-2026-11-03T21-39-36-01a1a35a-722c-7243-8153-7457db20f37e.jsonl",
+      "private_copy": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2/raw-rollouts/rollout-2026-11-03T21-39-36-01a1a35a-722c-7243-8153-7457db20f37e.jsonl",
+      "sha256": "5ae3bece3d04bc8dbf49417ebd274d24e5779af6363d91bfa5cb60c161d51d13",
+      "bytes": 148500,
+      "session_id": "01a1a35a-722c-7243-8153-7457db20f37e"
+    },
+    {
+      "canonical_path": "/home/bline/.codex/sessions/we-manual-host-docker-20261103-clean2/2026/11/03/rollout-2026-11-03T21-39-35-01a1a35a-712f-7ae0-9857-102fc749877d.jsonl",
+      "private_copy": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2/raw-rollouts/rollout-2026-11-03T21-39-35-01a1a35a-712f-7ae0-9857-102fc749877d.jsonl",
+      "sha256": "35b9f0931897cba660a82084b9b8c9d3dd4dc082714290084e8d21a9e9230693",
+      "bytes": 146510,
+      "session_id": "01a1a35a-712f-7ae0-9857-102fc749877d"
+    }
+  ],
+  "evidence_directory": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2",
+  "next_scope": "If root chooses productionization: small Rust Docker transport/custody adapter composing existing native app-server and budget/evidence owners; separately establish reviewer grants/exposure, frozen inputs and network boundaries before any pilot admission."
+}
