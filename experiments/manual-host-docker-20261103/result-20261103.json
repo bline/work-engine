@@ -1,0 +1,137 @@
+{
+  "status": "bounded feasibility collected; artifact loop unestablished",
+  "source_base": "ab906b90acc343876e1f927b821a6e4c2a4aeb79",
+  "worktree": "/home/bline/cbm-work/wt-manual-host-docker-20261103",
+  "root_collector": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+  "worker_session": "01a1a34f-8fbc-7383-9e2a-f4317220e252",
+  "runtime": {
+    "native_version": "0.166.0",
+    "image": "python:3.12-slim",
+    "image_id": "ccc7089399c8",
+    "retained_container_id": "931442b22ddca44bcf57600b10bb6bb63749f4390f034279d54dae2a689e2474",
+    "credential_route": "single read-only native auth.json bind; never copied into image or artifacts"
+  },
+  "obligations": {
+    "native_binary_bootstrap": "feasible; cached static native binary",
+    "exec_socket": "offline OSS startup failed before inference; no socket observed; does not qualify authenticated exec route",
+    "private_app_server_rpc": "feasible; unix WebSocket client from separate docker exec calls",
+    "allowed_excluded_paths": "scripted read of declared fixture; host home/repo/Docker socket absent; not a comprehensive filesystem security claim",
+    "durability": "host bind preserves fixture and native state after clients/server exit",
+    "retained_builder_reviewer": "same SIDs over two turns each; both markers retained; same container/server process",
+    "artifact_builder_review_repair_rereview": "unestablished; missing code-mode-host prevents all model shell actions; answer.txt never created",
+    "metrics": "canonical ledger discovers raw namespace and prices8 calls; child_context and4 exact-turn settings observations succeed",
+    "cleanup": "owned containers stopped/waited/removed; retained server exit0; no remaining study-prefixed containers",
+    "independence_and_pilot": "unestablished; both dangerFullAccess; no startup input freeze or outbound allowlist; no admission claim"
+  },
+  "actors": [
+    {
+      "role": "builder",
+      "session_id": "01a1a353-4214-70a2-a60f-951d953c7a49",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "service_tier": "default",
+      "realized_sandbox": {
+        "type": "dangerFullAccess"
+      },
+      "retained_marker": "MAPLE-42",
+      "turns": [
+        {
+          "sid": "01a1a353-4214-70a2-a60f-951d953c7a49",
+          "turn_id": "01a1a355-32fc-7073-9054-1c5d08d77b15",
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-retained"
+        },
+        {
+          "sid": "01a1a353-4214-70a2-a60f-951d953c7a49",
+          "turn_id": "01a1a356-6b5d-7aa3-a5ee-e5407a30b844",
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-retained"
+        }
+      ],
+      "cost": {
+        "calls": 4,
+        "quota_usd_high": 0.027535200000000003,
+        "quota_usd_low": 0.027535200000000003,
+        "unpriced_calls": 0,
+        "usd_high": 0.027535200000000003,
+        "usd_low": 0.027535200000000003
+      }
+    },
+    {
+      "role": "reviewer",
+      "session_id": "01a1a353-43d0-7942-a896-5784dd89282c",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "realized_sandbox": {
+        "type": "dangerFullAccess"
+      },
+      "retained_marker": "CEDAR-17",
+      "turns": [
+        {
+          "sid": "01a1a353-43d0-7942-a896-5784dd89282c",
+          "turn_id": "01a1a356-24fe-7dd0-8fce-938d11c54600",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-retained"
+        },
+        {
+          "sid": "01a1a353-43d0-7942-a896-5784dd89282c",
+          "turn_id": "01a1a356-b9d4-77c3-8161-fb60db381cb0",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "service_tier": "default",
+          "container": "we-manual-host-docker-20261103-retained"
+        }
+      ],
+      "cost": {
+        "calls": 4,
+        "quota_usd_high": 0.129072,
+        "quota_usd_low": 0.129072,
+        "unpriced_calls": 0,
+        "usd_high": 0.129072,
+        "usd_low": 0.129072
+      }
+    }
+  ],
+  "worker_cost_snapshot": {
+    "calls": 50,
+    "quota_usd_high": 0.8262076000000002,
+    "quota_usd_low": 0.8262076000000002,
+    "unpriced_calls": 0,
+    "usd_high": 0.8262076000000002,
+    "usd_low": 0.8262076000000002
+  },
+  "cost_snapshot_at": "2026-11-03T21:36:21.020346+00:00",
+  "actor_total_usd": 0.1566072,
+  "raw_rollouts": [
+    {
+      "canonical_path": "/home/bline/.codex/sessions/we-manual-host-docker-20261103/2026/11/03/rollout-2026-11-03T21-31-45-01a1a353-4214-70a2-a60f-951d953c7a49.jsonl",
+      "private_copy": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/raw-rollouts/rollout-2026-11-03T21-31-45-01a1a353-4214-70a2-a60f-951d953c7a49.jsonl",
+      "sha256": "1fd8ec7d87b095a724890324f23ba7132ffef465f90d74d53cf57323a9cfe54a",
+      "bytes": 147673,
+      "session_id": "01a1a353-4214-70a2-a60f-951d953c7a49"
+    },
+    {
+      "canonical_path": "/home/bline/.codex/sessions/we-manual-host-docker-20261103/2026/11/03/rollout-2026-11-03T21-31-45-01a1a353-43d0-7942-a896-5784dd89282c.jsonl",
+      "private_copy": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/raw-rollouts/rollout-2026-11-03T21-31-45-01a1a353-43d0-7942-a896-5784dd89282c.jsonl",
+      "sha256": "e789df5e5753addbda8f2a15fe424e1112fcdd132073c0cb6c83b685d494ccd5",
+      "bytes": 147066,
+      "session_id": "01a1a353-43d0-7942-a896-5784dd89282c"
+    }
+  ],
+  "failures": [
+    "cap-drop ALL root could not write uid1000 host bind; corrected to user1000",
+    "native socket parent must prevent other users replacing entries; chmod700",
+    "socket path is symlink into container /tmp, so host is_socket false; readiness checked inside container",
+    "one-off probe command quoting error corrected before offline success",
+    "native companion omitted; tool failure caught after first model turn; explicit per-thread code_mode_host=false did not restore tools"
+  ],
+  "next_scope": "Mount the complete matching cached native distribution, including codex-code-mode-host, before a separately authorized fresh clean four-turn fixture. Companion --help boots offline in cached image. No more inference authorized in this run.",
+  "evidence_directory": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker"
+}
