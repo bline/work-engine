@@ -1,0 +1,37 @@
+{
+  "schema": "manual-host.efficiency-validation.v1",
+  "analysis_sha256": "d14f8ae295260472d099f7f77848acb5a1eb3b75fd8154f6df5d64283c3ab6c1",
+  "unique_state_snapshots": 21,
+  "receipt_content_hashes_verified": 170,
+  "review_rows": 13,
+  "unique_window_calls_reconciled": 203,
+  "price_unknown": 0,
+  "latency_missing": 3,
+  "known_state_inspections_calibrated": [
+    {
+      "line": 10915,
+      "sha256": "5b35d6c46c3527ee866c7f89c4d52cccc0ad76eb585c49b6df8f14b694337259"
+    },
+    {
+      "line": 10922,
+      "sha256": "1de0ff60ace096c75c5a8ad301db32a25d56716f4bb98d446fb6c9b061d26f49"
+    },
+    {
+      "line": 10930,
+      "sha256": "6e9e7aeded787010dca57ba58b3fd8e17690c0717e51a4ac2113ce018f0331e5"
+    },
+    {
+      "line": 10998,
+      "sha256": "2f104feb3107dbda07e52167dbab811cc416b0a91365d41d9f45130df978b0e0"
+    },
+    {
+      "line": 11029,
+      "sha256": "23beef36de381f117883107da0079afb089002338b87e4fb391c8029d42f2d35"
+    },
+    {
+      "line": 11051,
+      "sha256": "ff0c4cb6aafe5fa5675e4cb57c50253766996f3298036974d651438e91a08dcc"
+    }
+  ],
+  "counter_reconstruction_delta_zero": true
+}
