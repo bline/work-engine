@@ -5,15 +5,18 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufReader, BufWriter, Write};
-use std::os::unix::{fs::DirBuilderExt, process::CommandExt};
+use std::io::{BufReader, BufWriter, Read, Write};
+use std::os::unix::{
+    fs::{DirBuilderExt, OpenOptionsExt},
+    process::CommandExt,
+};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 mod inspection;
-pub use inspection::inspect;
+pub use inspection::{compact_output, inspect};
 
 pub const SCHEMA: &str = "work-engine.manual-host.v1";
 const MAX_BYTES: u64 = 8 * 1024 * 1024;
@@ -34,6 +37,46 @@ fn refuse<T>(s: impl Into<String>) -> Result<T> {
 }
 pub fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+fn file_digest(path: &Path, mut copy: Option<&mut File>) -> Result<String> {
+    let source = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NONBLOCK)
+        .open(path)?;
+    let metadata = source.metadata()?;
+    if !metadata.is_file() {
+        return refuse(format!(
+            "artifact must be a regular file: {}",
+            path.display()
+        ));
+    }
+    // A growing file cannot turn one observation into an unbounded copy.
+    let limit = metadata
+        .len()
+        .checked_add(1)
+        .ok_or_else(|| Error::Refused("artifact length overflow".into()))?;
+    let mut source = source.take(limit);
+    let mut observed = 0_u64;
+    let mut hash = Sha256::new();
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let n = source.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        hash.update(&buffer[..n]);
+        observed += n as u64;
+        if let Some(dest) = copy.as_mut() {
+            dest.write_all(&buffer[..n])?;
+        }
+    }
+    if observed != metadata.len() {
+        return refuse(format!(
+            "artifact changed while reading: {}",
+            path.display()
+        ));
+    }
+    Ok(format!("{:x}", hash.finalize()))
 }
 fn bytes(path: &Path) -> Result<Vec<u8>> {
     if fs::metadata(path)?.len() > MAX_BYTES {
@@ -92,6 +135,51 @@ impl Artifact {
             return refuse(format!("artifact conflict: {}", self.path.display()));
         }
         Ok(b)
+    }
+    fn snapshot(&self, snapshots: &Path) -> Result<PathBuf> {
+        if !self.path.is_absolute()
+            || self.sha256.len() != 64
+            || !self.sha256.chars().all(|c| c.is_ascii_hexdigit())
+        {
+            return refuse("invalid artifact reference");
+        }
+        let pin = snapshots.join(&self.sha256);
+        if pin.exists() {
+            if file_digest(&self.path, None)? != self.sha256
+                || file_digest(&pin, None)? != self.sha256
+            {
+                return refuse("artifact/snapshot conflict");
+            }
+            return Ok(pin);
+        }
+        let stage = snapshots.join(format!(".{}.tmp", self.sha256));
+        match fs::remove_file(&stage) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e.into()),
+        }
+        let mut output = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&stage)?;
+        if file_digest(&self.path, Some(&mut output))? != self.sha256 {
+            return refuse(format!("artifact conflict: {}", self.path.display()));
+        }
+        output.sync_all()?;
+        // Publish only verified complete bytes; a killed copy leaves a stage
+        // that the same executor can replace, never an accepted partial pin.
+        match fs::hard_link(&stage, &pin) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                if file_digest(&pin, None)? != self.sha256 {
+                    return refuse("snapshot conflict");
+                }
+            }
+            Err(e) => return Err(e.into()),
+        }
+        fs::remove_file(stage)?;
+        File::open(snapshots)?.sync_all()?;
+        Ok(pin)
     }
 }
 #[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
@@ -152,6 +240,8 @@ pub struct Request {
     #[serde(default)]
     pub result_from_turn: bool,
     pub result_path: PathBuf,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub preflight_files: Vec<Artifact>,
     #[serde(default)]
     pub artifacts: Vec<Artifact>,
     #[serde(default)]
@@ -469,6 +559,9 @@ impl Host {
         }
         r.authority.verify()?;
         r.packet.verify()?;
+        for input in &r.preflight_files {
+            input.verify()?;
+        }
         Self::verify_tools(&r)?;
         if r.result_path.exists() {
             return refuse(
@@ -1364,17 +1457,7 @@ impl Host {
         fs::create_dir_all(&snapshots)?;
         let mut bindings = vec![];
         for a in artifacts.iter().chain(custody.iter()) {
-            let content = a.verify()?;
-            let pin = snapshots.join(&a.sha256);
-            if pin.exists() {
-                if digest(&bytes(&pin)?) != a.sha256 {
-                    return refuse("snapshot conflict");
-                }
-            } else {
-                let mut f = File::create(&pin)?;
-                f.write_all(&content)?;
-                f.sync_all()?;
-            }
+            let pin = a.snapshot(&snapshots)?;
             bindings.push(json!({"path":a.path,"sha256":a.sha256,"snapshot":pin}));
         }
         // Custody records must demonstrate collected processes rather than a
@@ -1445,8 +1528,8 @@ impl Host {
                     .as_str()
                     .ok_or_else(|| Error::Refused("invalid collection".into()))?;
                 let sha = e["sha256"].as_str().unwrap_or("");
-                if digest(&bytes(Path::new(path))?) != sha
-                    || digest(&bytes(Path::new(e["snapshot"].as_str().unwrap_or("")))?) != sha
+                if file_digest(Path::new(path), None)? != sha
+                    || file_digest(Path::new(e["snapshot"].as_str().unwrap_or("")), None)? != sha
                 {
                     return refuse(format!("collected artifact mutated: {path}"));
                 }
@@ -1659,11 +1742,22 @@ pub fn bind_draft(mut draft: Value) -> Result<Request> {
             .ok_or_else(|| Error::Refused(format!("draft {key} must be an absolute path")))?;
         draft[key] = serde_json::to_value(reference(Path::new(path))?)?;
     }
-    for key in ["artifacts", "custody"] {
-        if let Some(list) = draft[key].as_array_mut() {
+    for key in ["artifacts", "custody", "preflight_files"] {
+        if let Some(list) = draft.get_mut(key).and_then(Value::as_array_mut) {
             for value in list {
                 if let Some(path) = value.as_str() {
-                    *value = serde_json::to_value(reference(Path::new(path))?)?;
+                    *value = serde_json::to_value(if key == "artifacts" {
+                        let path = Path::new(path);
+                        if !path.is_absolute() {
+                            return refuse("draft paths must be absolute");
+                        }
+                        Artifact {
+                            path: path.into(),
+                            sha256: file_digest(path, None)?,
+                        }
+                    } else {
+                        reference(Path::new(path))?
+                    })?;
                 }
             }
         }

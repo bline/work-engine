@@ -544,8 +544,16 @@ fn draft_binding_freezes_tool_and_authority_identities_without_effects() {
     draft["tools"] =
         json!({"bundle":p,"python":"/usr/bin/python3","context_binary":p.join("context-binary")});
     draft["result_path"] = json!(p.join("bind-only-must-not-create/result.json"));
-    let bound = work_engine_manual_host::bind_draft(draft).unwrap();
+    let bound = work_engine_manual_host::bind_draft(draft.clone()).unwrap();
     assert_eq!(bound.packet.sha256, f.request["packet"]["sha256"]);
+    assert!(bound.preflight_files.is_empty());
+    let binary = p.join("bound-binary");
+    fs::write(&binary, vec![0x7f; 9 * 1024 * 1024]).unwrap();
+    draft["preflight_files"] = json!([p.join("packet.md")]);
+    draft["artifacts"] = json!([binary]);
+    let bound = work_engine_manual_host::bind_draft(draft).unwrap();
+    assert_eq!(bound.preflight_files[0].sha256, bound.packet.sha256);
+    assert_eq!(bound.artifacts[0].sha256, artifact(&binary)["sha256"]);
     assert_eq!(f.count("starts"), 0);
     assert!(!p.join("bind-only-must-not-create").exists());
 }
@@ -1217,7 +1225,7 @@ fn large_owned_records_reopen_inspect_acknowledge_and_close() {
 }
 
 #[test]
-fn large_external_artifacts_remain_bounded() {
+fn large_structured_input_references_remain_bounded() {
     let f = Fixture::new();
     let path = f.dir.path().join("large-packet.md");
     fs::write(&path, "x".repeat(9 * 1024 * 1024)).unwrap();
@@ -1232,6 +1240,136 @@ fn large_external_artifacts_remain_bounded() {
     );
     assert_eq!(f.count("creates"), 0);
     assert_eq!(f.count("starts"), 0);
+}
+
+#[test]
+fn large_binary_artifacts_are_snapshotted_and_revalidated_without_input_limit() {
+    let f = Fixture::new();
+    f.config("with_artifact", json!(true));
+    success(f.dispatch());
+    let output = f.dir.path().join("output.txt");
+    fs::write(&output, vec![0x7f; 32 * 1024 * 1024]).unwrap();
+    fs::write(
+        f.dir.path().join("result.json"),
+        json!({"artifacts":[artifact(&output)]}).to_string(),
+    )
+    .unwrap();
+    let collected = success(f.collect());
+    assert_eq!(collected["summary"]["phase"], "collected");
+    let hash = artifact(&output)["sha256"].as_str().unwrap().to_owned();
+    let snapshot = f.dir.path().join("state/snapshots").join(&hash);
+    assert_eq!(digest(&fs::read(&snapshot).unwrap()), hash);
+    assert_eq!(success(f.collect())["receipt_id"], collected["receipt_id"]);
+    let mut altered = fs::read(&output).unwrap();
+    altered[0] = 1;
+    fs::write(&output, altered).unwrap();
+    assert!(
+        !f.close(collected["receipt_id"].as_str().unwrap(), true)
+            .status
+            .success()
+    );
+    assert_eq!(f.count("closes"), 0);
+}
+
+#[test]
+fn preflight_gate_missing_or_changed_refuses_before_native_launch() {
+    for missing in [false, true] {
+        let mut f = Fixture::new();
+        let gate = f.dir.path().join("entry-gate.py");
+        fs::write(&gate, "original gate").unwrap();
+        f.request["preflight_files"] = json!([artifact(&gate)]);
+        if missing {
+            fs::remove_file(&gate).unwrap();
+        } else {
+            fs::write(&gate, "different gate").unwrap();
+        }
+        assert!(!f.dispatch().status.success());
+        assert_eq!(f.count("creates"), 0);
+        assert_eq!(f.count("starts"), 0);
+    }
+}
+
+#[test]
+fn compact_cli_output_keeps_full_log_and_exact_acknowledgment() {
+    let f = Fixture::new();
+    let request = f.dir.path().join("request.json");
+    fs::write(&request, f.request.to_string()).unwrap();
+    let log = f.dir.path().join("dispatch.json");
+    let compact = success(f.invoke(&[
+        "dispatch",
+        "--request",
+        request.to_str().unwrap(),
+        "--compact",
+        "--out",
+        log.to_str().unwrap(),
+    ]));
+    let full: Value = serde_json::from_slice(&fs::read(&log).unwrap()).unwrap();
+    assert_eq!(compact["receipt_id"], full["receipt_id"]);
+    assert_eq!(compact["full_output"], log.to_str().unwrap());
+    assert_eq!(compact["operations"][0]["phase"], "running");
+    assert!(full.to_string().len() > compact.to_string().len());
+    let collected = success(f.collect());
+    let closed = success(f.close(collected["receipt_id"].as_str().unwrap(), true));
+    let ack_log = f.dir.path().join("ack.json");
+    let config_before = fs::read(f.dir.path().join("config.json")).unwrap();
+    let ack = success(f.invoke(&[
+        "ack",
+        "--state",
+        f.dir.path().join("state").to_str().unwrap(),
+        "--ack-receipt",
+        closed["receipt_id"].as_str().unwrap(),
+        "--compact",
+        "--out",
+        ack_log.to_str().unwrap(),
+    ]));
+    assert_eq!(ack["delivery"], "acknowledged");
+    assert_eq!(ack["operations"][0]["receipt"]["delivery"], "acknowledged");
+    assert_eq!(
+        config_before,
+        fs::read(f.dir.path().join("config.json")).unwrap()
+    );
+}
+
+#[test]
+fn output_log_conflicts_refuse_before_effects_and_errors_are_logged() {
+    let mut f = Fixture::new();
+    let request = f.dir.path().join("request.json");
+    fs::write(&request, f.request.to_string()).unwrap();
+    let old = fs::read(&request).unwrap();
+    assert!(
+        !f.invoke(&[
+            "dispatch",
+            "--request",
+            request.to_str().unwrap(),
+            "--out",
+            request.to_str().unwrap()
+        ])
+        .status
+        .success()
+    );
+    assert_eq!(old, fs::read(&request).unwrap());
+    assert_eq!(f.count("creates"), 0);
+    assert!(!f.dir.path().join("state").exists());
+    f.request["preflight_files"] =
+        json!([{"path":f.dir.path().join("absent-gate"),"sha256":"0".repeat(64)}]);
+    fs::write(&request, f.request.to_string()).unwrap();
+    let log = f.dir.path().join("error.json");
+    assert!(
+        !f.invoke(&[
+            "dispatch",
+            "--request",
+            request.to_str().unwrap(),
+            "--compact",
+            "--out",
+            log.to_str().unwrap()
+        ])
+        .status
+        .success()
+    );
+    let error: Value = serde_json::from_slice(&fs::read(log).unwrap()).unwrap();
+    assert_eq!(error["status"], "not_established");
+    assert!(error["detail"].is_string());
+    assert_eq!(f.count("creates"), 0);
 }
 
 #[test]

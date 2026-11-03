@@ -60,6 +60,7 @@ pub(crate) fn operation_summary(state: &State, op: &Operation, dir: &Path) -> Va
         "session_id": op.session_id, "turn_id": op.turn_id, "rollout": op.rollout,
         "identity": evidence("identity"),
         "turn_outcome": evidence("turn")["status"],
+        "collection_reader": fields(evidence("turn"), &["source", "thread_loading", "reason", "detail"]),
         "configuration": {
             "status": settings_status,
             "requested": {"model":r.model,"effort":r.effort,"service_tier":r.service_tier},
@@ -109,6 +110,34 @@ pub(crate) fn operation_summary(state: &State, op: &Operation, dir: &Path) -> Va
             "evidence_scope": "recorded_process_status; current liveness not rechecked",
         },
     })
+}
+
+/// Project an execution response without polling or losing its full-log link.
+pub fn compact_output(value: &Value, out: Option<&Path>) -> Value {
+    let summary = value.get("summary").unwrap_or(value);
+    let summaries = if let Some(rows) = summary["operations"].as_array() {
+        rows.iter().collect::<Vec<_>>()
+    } else if summary.get("operation_id").is_some() {
+        vec![summary]
+    } else {
+        vec![]
+    };
+    let operations: Vec<_> = summaries.iter().map(|s| json!({
+        "operation_id": s["operation_id"], "phase": s["phase"],
+        "session_id": s["session_id"], "turn_id": s["turn_id"],
+        "turn_outcome": s["turn_outcome"], "settings": s["configuration"]["status"],
+        "root_context": s["context"]["root"]["input_tokens"],
+        "child_context": s["context"]["child"]["input_tokens"],
+        "accounting": fields(&s["accounting"], &["coverage", "snapshot_at", "totals", "post_close", "role_controls"]),
+        "receipt": s["receipt"], "result": s["result"], "failures": s["failures"],
+        "unknown_effects": s["unknown_effects"], "processes": s["processes"],
+        "collection_reader": s["collection_reader"],
+    })).collect();
+    json!({"receipt_id":value["receipt_id"],"delivery":value["delivery"],
+        "receipt":value["receipt"],"receipt_kind":value["receipt_kind"],
+        "accounting":fields(&value["accounting"]["snapshot"], &["status","snapshot_at","totals","cost_controls","post_close"]),
+        "task_receipt":value["task_receipt"],"operations":operations,"full_output":out,
+        "evidence_status":"projection_of_recorded_response"})
 }
 
 pub(crate) fn state_summary(state: &State, dir: &Path, operation: Option<&str>) -> Result<Value> {

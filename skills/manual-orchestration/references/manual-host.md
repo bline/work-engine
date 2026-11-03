@@ -33,6 +33,10 @@ The host binds these references and all tool/dependency digests itself; the root
 does not write hashing code. `dispatch --draft FILE --bind-only` emits the exact
 bound request for review without launching work or creating host state.
 Root-declared `artifacts`/`custody` may likewise use paths for automatic binding.
+Optional `preflight_files` accepts known gate scripts or other required input
+files in the same form. The host binds their hashes and verifies them before a
+native launch; missing or changed files refuse admission. Paths are declared by
+the root, without interpreting gate locations from packet prose.
 Authorization meaning still belongs to the root; automatic hashing does not
 approve a packet or confer launch authority.
 
@@ -72,6 +76,7 @@ A bound request is a JSON object; unknown fields fail. Paths are absolute. For e
   "retained": null,
   "result_from_turn": false,
   "result_path": "/absolute/task-output/result.json",
+  "preflight_files": [],
   "artifacts": [],
   "custody": [],
   "claim": null,
@@ -131,6 +136,8 @@ stronger grant claim.
 
 ```sh
 work-engine-manual-host dispatch --request /absolute/request.json --wait
+work-engine-manual-host dispatch --draft /absolute/draft.json --wait \
+  --compact --out /absolute/logs/dispatch-1.json
 work-engine-manual-host inspect --state /absolute/objective/manual-host
 work-engine-manual-host inspect --state /absolute/objective/manual-host \
   --summary --operation task-1
@@ -152,10 +159,18 @@ recorded observations, without new polling, artifact revalidation or a current
 process-liveness claim. Inspection remains available across executor versions;
 mutation still requires the original pinned executor.
 
+`--compact` projects receipt identity/delivery, operation/turn status, settings,
+context, accounting, failures and process counts. It also works with
+`inspect --summary`. `--out` reserves a new absolute log path before execution,
+writes the full JSON response (or execution error) there and syncs it. Existing
+log paths refuse before effects, so packets, state and earlier results cannot
+be truncated. The compact response links `full_output` when a log is requested;
+full receipts and raw inspection remain available without `--compact`.
+
 Dispatch prepares missing parents of the root-authorized `result_path` after
 validating its authority, packet, tools and objective binding. A blocked directory
 returns its exact path and error before a native launch. Existing outputs and
-operation/path conflicts remain refusals. `--bind-only` does not create output
+operation/path conflicts remain refusals. `--bind-only` does not create result
 directories or host state.
 
 Use the foreground waiting form through an active root tool invocation. A yielded
@@ -206,6 +221,10 @@ Before an external effect the host fsyncs its attempt. A lost create response is
 `create_unknown`; a lost start response is `start_unknown`. Repeated dispatch
 cannot create a replacement. Exact known turns are read with complete needed
 pagination; latest-thread idleness never establishes a selected turn's outcome.
+An unloaded session's completed, failed or interrupted turn can be read through
+the native history API. This uses only `thread/read` and paged
+`thread/turns/list`, without resume, grant changes or a new model turn.
+Unloaded nonterminal history does not establish current execution.
 Ambiguous unknown effects need the owning root's external reconciliation; this
 pilot does not pretend to recover them automatically or offer a force-clear.
 
@@ -240,6 +259,20 @@ and preserves result/turn/settings distinctions. A turn can fail while its
 report is mechanically collected. Missing results or mismatched settings do not
 become semantic success. Changed collected bytes invalidate later consumption;
 the old receipt remains historical evidence.
+
+Binary artifacts are hashed and snapshotted in fixed-size chunks; their size is
+not subject to the 8 MiB structured-input limit. Only a complete copy matching
+the declared digest is published as a snapshot, and both source and snapshot
+are rehashed at later consumption. Packets, results, custody JSON and adapter
+responses retain their existing input bounds. Host-owned state and receipts can
+grow beyond that bound without becoming unreadable to their executor.
+
+Selected-turn settings may be evidenced inside the turn or by an idle-interval
+applied-settings record followed by the selected `task_started` and its matching
+`turn_context`. The reader preserves all source hashes and start/context
+attribution. An earlier turn's settings, missing start/context,
+conflicting configuration or a later turn's matching settings do not establish
+the selected turn's configuration.
 
 ## Explicit closure
 

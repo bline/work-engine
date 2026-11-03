@@ -90,6 +90,7 @@ def codex_settings(sid: str, rollout: Path, turn_id: str | None = None) -> dict:
     """Read applied settings from this session's rollout, without shared-config inference."""
     latest = None
     active_turn, context_source = None, None
+    pending_settings, start_settings, start_source = None, None, None
     selected_settings, selected_contexts = [], []
     try:
         with rollout.open(encoding="utf-8", newline="") as fh:
@@ -108,14 +109,32 @@ def codex_settings(sid: str, rollout: Path, turn_id: str | None = None) -> dict:
                     raise ValueError(f"payload at line {line_no} must be an object")
                 if event.get("type") == "event_msg" and payload.get("type") == "task_started":
                     active_turn, context_source = payload.get("turn_id"), None
+                    start_source = {"line": line_no, "turn_id": active_turn,
+                                    "event_sha256": hashlib.sha256(raw.encode()).hexdigest()}
+                    start_settings, pending_settings = pending_settings, None
                 if event.get("type") == "turn_context":
+                    if active_turn != payload.get("turn_id"):
+                        start_settings, start_source = None, None
                     active_turn = payload.get("turn_id")
+                    pending_settings = None
                     context_source = {"line": line_no, "event_sha256": hashlib.sha256(raw.encode()).hexdigest(),
                                       "turn_id": active_turn, "model": payload.get("model"), "effort": payload.get("effort")}
                     if turn_id is not None and active_turn == turn_id:
                         selected_contexts.append(context_source)
+                        # Retained turns can apply settings before task_started,
+                        # with no duplicate settings event inside the turn. Bind
+                        # only this idle-interval application, explicit start and
+                        # matching context; never carry an earlier turn's event.
+                        if start_settings is not None and start_source["turn_id"] == turn_id:
+                            settings, source = start_settings
+                            observation = (settings, {**source, "task_started": start_source,
+                                                      "turn_context": context_source})
+                            selected_settings.append(observation)
+                            latest = observation
+                    start_settings = None
                 if event.get("type") == "event_msg" and payload.get("type") in ("task_complete", "task_completed"):
                     active_turn, context_source = None, None
+                    pending_settings, start_settings, start_source = None, None, None
                 if (event.get("type") == "event_msg" and payload.get("type") == "thread_settings_applied"
                         and payload.get("thread_id") == sid):
                     if not isinstance(payload.get("thread_settings"), dict):
@@ -129,6 +148,10 @@ def codex_settings(sid: str, rollout: Path, turn_id: str | None = None) -> dict:
                         observation[1]["turn_context"] = context_source
                         selected_settings.append(observation)
                         latest = observation
+                    if active_turn is None:
+                        pending_settings = observation
+                    elif context_source is None and start_source is not None:
+                        start_settings = observation
     except (OSError, ValueError, UnicodeError, StopIteration) as e:
         raise HostError(NOT_ESTABLISHED, "settings_not_established", f"{rollout}: {e}")
     if latest is None:
@@ -598,15 +621,23 @@ class Codex:
     def exact_turn(self, sid, turn_id):
         with self._conn() as c:
             thread = self._call(c, "thread/read", {"threadId": sid}).get("thread") or {}
-            if thread.get("id") != sid or (thread.get("status") or {}).get("type") in ("notLoaded", "systemError"):
-                raise HostError(NOT_ESTABLISHED, "turn_not_established", "thread identity/loading unavailable")
+            loading = (thread.get("status") or {}).get("type")
+            if thread.get("id") != sid or loading == "systemError":
+                raise HostError(NOT_ESTABLISHED, "turn_not_established", "thread identity/read state unavailable")
+            # History remains readable when the execution session is unloaded.
+            # Both calls are read-only; collection never resumes or starts work.
             turns = self._turns(c, sid)
         matches = [t for t in turns if t["id"] == turn_id]
         if len(matches) != 1:
             return {"session_id": sid, "turn_id": turn_id, "status": "not_established",
                     "reason": "exact turn absent or duplicated", "history_count": len(turns)}
+        if loading == "notLoaded" and matches[0].get("status") not in ("completed", "failed", "interrupted"):
+            return {"session_id": sid, "turn_id": turn_id, "status": "not_established",
+                    "reason": "unloaded history does not establish a current nonterminal turn",
+                    "history_count": len(turns), "thread_loading": loading}
         return {"session_id": sid, "turn_id": turn_id, "status": matches[0].get("status"),
-                "turn": matches[0], "history_count": len(turns)}
+                "turn": matches[0], "history_count": len(turns),
+                "thread_loading": loading, "source": "thread/read and paged thread/turns/list"}
 
     def deliver(self, sid, *, message, cwd, ledger, host_args=(), start_timeout=60) -> dict:
         st = self.status(sid, ledger)

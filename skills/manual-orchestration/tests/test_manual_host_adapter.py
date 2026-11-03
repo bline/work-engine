@@ -48,6 +48,15 @@ class AdapterTests(unittest.TestCase):
  def test_repeating_cursor_cannot_claim_history_complete(self):
   c=Connection(pages={None:{'data':[],'nextCursor':'same'},'same':{'data':[],'nextCursor':'same'}})
   with patch.object(self.h,'_conn',return_value=c),self.assertRaises(role_host.HostError):self.h.exact_turn(SID,'target')
+ def test_unloaded_completed_turn_uses_read_only_history_without_resume(self):
+  c=Connection(thread={'id':SID,'status':{'type':'notLoaded'}},pages={None:{'data':[{'id':'target','status':'completed','itemsView':'full','items':[]}]}})
+  with patch.object(self.h,'_conn',return_value=c):v=self.h.exact_turn(SID,'target')
+  self.assertEqual(v['status'],'completed');self.assertEqual(v['thread_loading'],'notLoaded')
+  self.assertEqual([m for m,_ in c.calls],['thread/read','thread/turns/list'])
+ def test_unloaded_nonterminal_history_does_not_establish_current_execution(self):
+  c=Connection(thread={'id':SID,'status':{'type':'notLoaded'}},pages={None:{'data':[{'id':'target','status':'inProgress'}]}})
+  with patch.object(self.h,'_conn',return_value=c):v=self.h.exact_turn(SID,'target')
+  self.assertEqual(v['status'],'not_established')
  def test_rollout_requires_actual_matching_meta(self):
   p=pathlib.Path(self.tmp.name)/'sessions'/f'rollout-{SID}.jsonl';p.parent.mkdir();p.write_text(json.dumps({'type':'session_meta','payload':{'id':SID}})+'\n')
   with patch.object(self.h,'_conn',return_value=Connection()):self.assertEqual(self.h.identity(SID)['rollout'],str(p.resolve()))
@@ -69,6 +78,18 @@ class TurnSettingsTests(unittest.TestCase):
   self.assertEqual(v['model'],'wrong');self.assertEqual(v['turn_id'],'A');self.assertEqual(v['turn_attribution'],'exact_turn_interval')
  def test_retained_target_cannot_reuse_old_session_event(self):
   with self.assertRaises(role_host.HostError):self.read([self.context('A'),self.setting(),self.context('B')],'B')
+ def test_applied_settings_before_retained_task_start_bind_exact_context(self):
+  records=[self.context('A'),self.setting('old'),{'type':'event_msg','payload':{'type':'task_complete','turn_id':'A'}},self.setting(),{'type':'event_msg','payload':{'type':'task_started','turn_id':'B'}},self.context('B')]
+  v=self.read(records,'B')
+  self.assertEqual(v['model'],'model');self.assertEqual(v['turn_id'],'B')
+  self.assertEqual(v['source']['task_started']['turn_id'],'B')
+  self.assertEqual(v['source']['turn_context']['turn_id'],'B')
+ def test_preceding_settings_need_task_start_context_and_matching_configuration(self):
+  for records in [[self.setting(),self.context('B')],[self.setting(),{'type':'event_msg','payload':{'type':'task_started','turn_id':'B'}},self.context('B','different')],[self.setting(),{'type':'event_msg','payload':{'type':'task_started','turn_id':'C'}},self.context('B')]]:
+   with self.assertRaises(role_host.HostError):self.read(records,'B')
+ def test_old_turn_applied_settings_cannot_be_carried_through_start_marker(self):
+  records=[self.context('A'),self.setting(),{'type':'event_msg','payload':{'type':'task_complete','turn_id':'A'}},{'type':'event_msg','payload':{'type':'task_started','turn_id':'B'}},self.context('B')]
+  with self.assertRaises(role_host.HostError):self.read(records,'B')
  def test_unattributed_and_midturn_changing_settings_refuse(self):
   for records in [[self.setting()],[self.context('A'),self.setting(),self.setting('changed')]]:
    with self.assertRaises(role_host.HostError):self.read(records,'A')
