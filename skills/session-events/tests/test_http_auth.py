@@ -175,7 +175,7 @@ class AuthHttp(Fixture):
         self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth, authenticated_read_only=True)
         signed = lambda extra=None: self.token({"client_id":client, "aud":[project, RESOURCE], "scope":"openid"} | (extra or {}), {"typ":"JWT"})
         good, insufficient = signed(), signed({"scope":"profile"})
-        for method in ("initialize", "ping", "tools/list", "events/list", "notifications/initialized"):
+        for method in ("initialize", "ping", "tools/list", "events/list", "notifications/initialized", "server/discover"):
             msg = {"jsonrpc":"2.0", "id":1, "method":method}
             with self.subTest(method=method):
                 self.assertEqual(self.request(msg)[0], 401)
@@ -185,6 +185,9 @@ class AuthHttp(Fixture):
         for name in ("delivery_status", "replay_events"):
             msg = {"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name}}
             self.assertEqual(self.request(msg)[0], 401)
+        status, _, discovery = self.request({"jsonrpc":"2.0", "id":1, "method":"server/discover"}, good)
+        self.assertEqual(status, 200)
+        self.assertEqual(discovery["error"]["code"], -32601)
         self.server.bridge = types.SimpleNamespace(provisioning=True)
         status, _, listing = self.request({"jsonrpc":"2.0", "id":1, "method":"tools/list"}, good)
         self.assertEqual(status, 200); self.assertEqual(len(listing["result"]["tools"]), 13)
@@ -193,7 +196,7 @@ class AuthHttp(Fixture):
             self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":method}, good)[0], 200)
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"delivery_status"}}, good)[0], 200)
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"replay_events", "arguments":{}}}, good)[0], 200)
-        mutations = [{"jsonrpc":"2.0", "id":1, "method":m} for m in ("events/subscribe", "events/unsubscribe", "future/mutate")]
+        mutations = [{"jsonrpc":"2.0", "id":1, "method":m} for m in ("events/subscribe", "events/unsubscribe", "future/mutate", "server/discover/extra")]
         mutations += [{"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":n}} for n in ("submit_session_request", "read_session_operation", "read_session_target", "read_session", "list_sessions", "budget_status", "future_tool")]
         with mock.patch.object(self.server, "handle", wraps=self.server.handle) as dispatch:
             for message in mutations:

@@ -3078,7 +3078,8 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
             if auth and (authenticated_read_only or not _public_http_operation(message)):
                 if not self._authorize():
                     return
-            if authenticated_read_only and not _public_http_operation(message):
+            if authenticated_read_only and not (_public_http_operation(message) or
+                    isinstance(message, dict) and message.get("jsonrpc") == "2.0" and message.get("method") == "server/discover"):
                 self._reply(403, b'{"error":"read_only"}')
                 return
             if parsed:
