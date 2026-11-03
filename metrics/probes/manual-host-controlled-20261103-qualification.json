@@ -1,0 +1,214 @@
+{
+  "schema": "manual-host.controlled-qualification-result.v1",
+  "recorded_at": "2026-11-03T20:18:40.837207+00:00",
+  "status": "not_qualified; trial_not_admitted",
+  "comparison_status": "unavailable_due_to_unestablished_registered_environment",
+  "performance_result_class": null,
+  "explanation": "Qualification stopped under the approved prerequisite rule before allocation or either treatment. No host-versus-manual efficiency outcome is available.",
+  "authority": {
+    "approval": "records/manual-host-controlled-pilot-approval-20261103.json",
+    "approval_sha256": "2e4e9f2fa2aae0877f84228336e177c71a56825d96cfc52a7c02adcc653d1cd2",
+    "maximum_usd": 200,
+    "qualification_maximum_usd": 20,
+    "specification": "591386e17e3a8c7410e6dad7eaeb8a8d6d452f03b0775455b86d5d8d40603650"
+  },
+  "gates": {
+    "registration_and_frozen_inputs": "verified",
+    "funding": "approved",
+    "fresh_protocol_review": "ready; accepted within design-only scope",
+    "runtime_settings_and_filesystem_readonly_for_reviewer": "verified for exact selected turn",
+    "registered_read_allowlist": "not_established_on_current_frozen_launch_path",
+    "startup_instruction_inventory": "incomplete; native global AGENTS source was not in manifest",
+    "tool_connector_network_allowlists": "not_established_as_registered",
+    "allocation_recovery_and_full_masking_joins": "not_run_after_prior_environment_gate_failed",
+    "realized_environment_addendum": "not_qualified"
+  },
+  "trial_counts": {
+    "planned_pairs": 6,
+    "planned_episodes": 12,
+    "allocated_pairs": 0,
+    "episode_roots_launched": 0,
+    "completed_pairs": 0,
+    "infrastructure_retries": 0
+  },
+  "qualification_activity": {
+    "paid_model_children": 1,
+    "child_role": "fresh protocol reviewer",
+    "metadata_only_thread_probes": 2,
+    "model_turns_started_by_metadata_probes": 0,
+    "empty_threads_created": 1,
+    "empty_threads_archived": 1,
+    "native_probe_command_results": {
+      "allowed_read_exit": 0,
+      "excluded_read_exit": 0,
+      "excluded_write_exit": 1
+    },
+    "native_probe_scope": "Direct native command executor under the observed legacy sandbox shape; not every tool or connector and not model execution in a trial."
+  },
+  "cost_observation": {
+    "as_of": "2026-11-03T20:22:31.550850+00:00",
+    "since": "2026-11-03T19:18:20.262Z",
+    "actors": [
+      {
+        "session_id": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+        "role": "study_controller_preparation_qualification",
+        "calls": 56,
+        "api_equivalent_usd_high": 4.713980600000001
+      },
+      {
+        "session_id": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+        "role": "fresh_protocol_reviewer",
+        "calls": 20,
+        "api_equivalent_usd_high": 2.970928
+      }
+    ],
+    "total_api_equivalent_usd_high": 7.684908600000001,
+    "unpriced_calls": 0,
+    "pricing_scenario": {
+      "actual_bill": false,
+      "id": "usage-ledger-standard-api-v1",
+      "kind": "modelled_api_equivalent",
+      "rates_sha256": "96730ca91379a25c3378605503b9cdbcf1f441b8494062550d6ee56d0d024719",
+      "rules": {
+        "codex_long_input_multiplier": 2,
+        "codex_long_input_threshold": 272000,
+        "codex_long_output_multiplier": 1.5,
+        "haiku_long_input_threshold": 100000,
+        "haiku_long_multiplier": 5,
+        "unknown_tier_high": 2.5,
+        "unknown_tier_low": 1
+      },
+      "scenario_sha256": "a4b0df301ac49e946f9a4e7b786f3fc3004decdb7171b0e6e6e8a3a83d43447a",
+      "speed_multipliers": {
+        "default": 1.0,
+        "priority": 2.5
+      },
+      "subscription_quota": false
+    },
+    "preinit_charge": 1.7109256,
+    "preinit_is_included_in_controller_total": true,
+    "private_complete_snapshot": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/qualification-reporting-usage.json",
+    "snapshot_sha256": "f33e238a95d1ba2cb00ca499197585caad3d65eb06629e95f33bed0a720debbe",
+    "settlement": "Not established; later controller return/closure/reporting calls remain additional candidates.",
+    "nonqualification_allocations_used": 0,
+    "attributed_until": "2026-11-03T20:22:31.482251+00:00",
+    "scope_budget_closed_at": "2026-11-03T20:20:16Z",
+    "reporting_tail_attribution": "Explicit until includes only this controller/reviewer in the continuing approved qualification/reporting task after close; retained separately from the default closed-budget window. No future root work is automatically charged."
+  },
+  "review": {
+    "schema": "manual-host.protocol-review-provenance.v1",
+    "subject_commit": "72c05cf7323b961892e32eac6a500efc46a3b5a7",
+    "subject_sha256": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+    "requested": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "service_tier": "default"
+    },
+    "binding": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/protocol-review-binding.json",
+    "binding_sha256": "cba178ecf95a4fb662cc09efc4d177370ac6bf03aa095f98abd086560be62ba1",
+    "native_session_id": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+    "native_turn_id": "01a1a2f7-f9c3-7162-ace6-f056bc9bac4b",
+    "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T12-51-59-01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab.jsonl",
+    "result_sha256": "aeebd1d334499e17ee37bfe7d93c7d52a853205ef6b4e8a32c590cb9af91f36d",
+    "verdict": "ready",
+    "findings": [],
+    "actual_model_effort_tier": "gpt-6-astra/xhigh/default; exact selected-turn source verified before gate",
+    "native_filesystem_policy": {
+      "networkAccess": false,
+      "type": "readOnly"
+    },
+    "scope": "Fresh read-only protocol design assessment; wider tool isolation/provider independence/runtime qualification not established.",
+    "task_disposition": "accepted",
+    "task_closed": true,
+    "latest_task_receipt_acknowledged": true,
+    "receipt_id": "7d2c7853bdbfc5f7248232c7adbd092e12e69fc4ec5c612cedb5198bddf1c280",
+    "observed_reviewer_cost_usd": 2.970928,
+    "cost_limit_usd": 4,
+    "recorded_helpers": 29,
+    "recorded_leftovers": 0,
+    "closure_record": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/close-protocol-review.json"
+  },
+  "evidence": {
+    "path": "metrics/probes/manual-host-controlled-20261103-qualification-evidence.json",
+    "sha256": "b31f09f470cb49582a6efeb9c54454884c427c4f443d69c0a188d8b7cf09a99a"
+  },
+  "source_placement_evidence": {
+    "tier": "2",
+    "graph_project": "home-bline-code-work-engine",
+    "generation": "2026-11-03T20:02:59Z",
+    "qualified_symbol": "home-bline-code-work-engine.rust.crates.work-engine-manual-host.src.lib.Request",
+    "request_lines": [
+      220,
+      255
+    ],
+    "prepare_argv_lines": [
+      742,
+      797
+    ],
+    "coverage": "Host lib and role_host source content-verified; actual draft/config/schema responses read directly. No exhaustive capability claim."
+  },
+  "remaining_work_for_another_qualified_realization": [
+    "A common launch path that can select and attest the required input/tool/network restrictions without the legacy sandbox override.",
+    "Materialized complete startup inputs, including global instruction sources and capability configuration.",
+    "New frozen execution-path bindings and approval-applicability decision before any prospective allocation."
+  ],
+  "owned_model_work_remaining": false,
+  "trial_allocation_record": null,
+  "scope_limits": "No product source, global configuration, skill activation or peer state changed. No universal claim that Codex cannot support isolation. No new isolation platform was built in this setup allowance.",
+  "previous_cost_observation": {
+    "as_of": "2026-11-03T20:11:31.049321+00:00",
+    "since": "2026-11-03T19:18:20.262Z",
+    "actors": [
+      {
+        "session_id": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+        "role": "study_controller_preparation_qualification",
+        "calls": 52,
+        "api_equivalent_usd_high": 4.017369200000001
+      },
+      {
+        "session_id": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+        "role": "fresh_protocol_reviewer",
+        "calls": 20,
+        "api_equivalent_usd_high": 2.970928
+      }
+    ],
+    "total_api_equivalent_usd_high": 6.988297200000001,
+    "unpriced_calls": 0,
+    "pricing_scenario": {
+      "actual_bill": false,
+      "id": "usage-ledger-standard-api-v1",
+      "kind": "modelled_api_equivalent",
+      "rates_sha256": "96730ca91379a25c3378605503b9cdbcf1f441b8494062550d6ee56d0d024719",
+      "rules": {
+        "codex_long_input_multiplier": 2,
+        "codex_long_input_threshold": 272000,
+        "codex_long_output_multiplier": 1.5,
+        "haiku_long_input_threshold": 100000,
+        "haiku_long_multiplier": 5,
+        "unknown_tier_high": 2.5,
+        "unknown_tier_low": 1
+      },
+      "scenario_sha256": "a4b0df301ac49e946f9a4e7b786f3fc3004decdb7171b0e6e6e8a3a83d43447a",
+      "speed_multipliers": {
+        "default": 1.0,
+        "priority": 2.5
+      },
+      "subscription_quota": false
+    },
+    "preinit_charge": 1.7109256,
+    "preinit_is_included_in_controller_total": true,
+    "private_complete_snapshot": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/qualification-final-usage.json",
+    "snapshot_sha256": "f6981b8ffc4c490811cad962ebe076c91af839c139a6c9970a9153c5fbe9d1a8",
+    "settlement": "Not established; subsequent controller reporting/closure calls remain a separately attributable tail.",
+    "nonqualification_allocations_used": 0
+  },
+  "closure": {
+    "scope_budget_disposition": "abandoned",
+    "closed_at": "2026-11-03T20:20:16Z",
+    "deadline_schedule": "manual-host-pilot-qualification-deadline-20261103 cancelled after phase closure",
+    "model_collectors_outstanding": 0,
+    "raw_exec_observer_86611": "collected",
+    "native_empty_probe_thread": "archived",
+    "next_execution_authority": "Original approval remains historical; current realization not qualified. No new platform/arm/source-pin change is inferred from unused funds."
+  }
+}

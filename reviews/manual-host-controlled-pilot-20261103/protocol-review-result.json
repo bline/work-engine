@@ -1,0 +1,82 @@
+{
+  "assessment": "The six randomized pairs can support the stated narrow lifecycle-workload comparison if registered qualification succeeds. Exclusive episode identities, complete root-call accounting, cumulative retry attribution, separate all-actor costs and quality conditions make outcomes interpretable. The design retains failures, protects collection funding and explicitly limits generalization. Small sample size, public examples and unresolved runtime realization are disclosed limitations rather than concealed evidence of success.",
+  "execution_prerequisites_still_unestablished": [
+    "Root disposition of this review and completion of registered qualification.",
+    "All six tasks' eligibility and feasibility under equivalent authority and available budget headroom.",
+    "Separate single-baseline exports, frozen instruction materialization, permitted substitutions and actual readable/writable path, tool, connector and network allowlists.",
+    "Common-launcher realization: observed settings/grants, identity and accounting joins, budget controls, cleanup, exact-turn collection and cost-tail handling.",
+    "Synthetic exclusive-allocation recovery and non-overlapping accounting demonstrations; qualified masking and exposure provenance.",
+    "Frozen realized-environment addendum and approval applicability, followed by durable allocation publication before any episode root starts."
+  ],
+  "findings": [],
+  "identity_binding_ack": {
+    "binding_path": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/protocol-review-binding.json",
+    "binding_read_before_source_entry": true,
+    "collector": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+    "context_pin_sha256": "d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204",
+    "cost_limitation": "Pre-final canonical observation; collector owns final actual-turn cost and tail reconciliation.",
+    "cost_observed_at": "2026-11-03T19:57:08.014536+00:00",
+    "last_observed_cost_usd": 2.751988,
+    "native_grant": "readOnly; networkAccess=false",
+    "observed_configuration": "gpt-6-astra/xhigh/default",
+    "operation": "qualification-protocol-review-1",
+    "return_route": "One final JSON for host result_from_turn; no result file written.",
+    "session_id": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+    "turn_id": "01a1a2f7-f9c3-7162-ace6-f056bc9bac4b",
+    "wider_tool_isolation": "unestablished"
+  },
+  "inspected_material": [
+    "Exact-tree DESIGN.md and PHILOSOPHY.md in full.",
+    "manual-orchestration skill and reviewer-required worker, call-cost and Codex-host references; agent-instruction-review and its finding contract; Wind Walker.",
+    "The preregistration, environment, registration, decision and approval records.",
+    "root-common.md, hosted.md, manual.md, tasks.json, fixture/Cargo.toml, fixture/src/lib.rs and all four supplied fixture test files.",
+    "Specification structure, embedded artifact integrity and typed serialization identity.",
+    "Targeted neighboring supervisor/manual-host instructions, experiment-plan comparison rules, and experiment-control serialization definitions.",
+    "Host binding, assignment, canonical cost/context observations and startup coordination-board read."
+  ],
+  "instruction_review": {
+    "applicability": "applicable",
+    "decisive_evidence": [
+      {
+        "assessment": "The effective root packet exposes conditional execution authority, semantic ownership, required evidence and the failure caused by skipping checks. It distinguishes instructions from established isolation.",
+        "source": "metrics/probes/manual-host-controlled-20261103/root-common.md:3-31"
+      },
+      {
+        "assessment": "The prescribed host/manual routes and P05 staging define the accepted experimental treatment and workload. Their restriction is local and causally relevant to comparability; it is not promoted into general product doctrine.",
+        "source": "metrics/probes/manual-host-controlled-20261103/{hosted.md,manual.md}; tasks.json#/pairs/4"
+      },
+      {
+        "assessment": "Settings, allowances, failure preservation and collection obligations have an explicit owner and consequence. Runtime qualification may fill declared bindings; changing treatment, tasks, thresholds or limits requires a different accepted prospective subject.",
+        "source": "metrics/probes/manual-host-controlled-20261103/root-common.md:33-62; prereg.md sections Proposed budget and time, Qualification and activation"
+      }
+    ],
+    "doctrine": "DESIGN.md was treated as binding within its product scope; PHILOSOPHY.md was read as non-normative rationale.",
+    "finding_contract": "/home/bline/.codex/skills/agent-instruction-review/references/finding-contract.md",
+    "findings": [],
+    "limitations": "No completeness or runtime compliance certification. Future generated actor packets and the realized environment were not available for review.",
+    "reason": "The preregistration, common root packet, condition packets and task definitions contain present agent-facing authority, loading, treatment, evidence and stopping contracts.",
+    "subject_binding": "The commit and specification identified above."
+  },
+  "limitations": [
+    "No writes, tests, servers, new actors or production operations were performed.",
+    "Fixture stubs were assessed as deliberately unsolved inputs, not implementation defects.",
+    "No exact-worktree graph was established. The available main-tree graph reported generation 2026-11-03T19:50:59Z; coverage was checked for relied-on repository paths. tasks.json was untracked and the approval record missing there, so direct exact-source/hash evidence was used. Graph coverage is not completeness proof.",
+    "No author instruction-check or prior host-efficiency conclusions were used as rationale.",
+    "This qualification review establishes neither provider independence nor realized experiment isolation, successful execution or savings."
+  ],
+  "prospective_invalidation": [
+    "Unestablished required isolation, configuration, allocation, masking or cost coverage prevents the registered confirmatory interpretation.",
+    "Dropping invalid pairs, replacing tasks after outcomes, uncounted intervention, behavioral retries or resetting attribution would violate the registered comparison.",
+    "Changes to arms, tasks, thresholds or limits need a new prospective revision and exact approval-applicability decision. Qualification failure must remain a failure, not be relabeled successful isolation."
+  ],
+  "status": "completed",
+  "subject": {
+    "commit": "72c05cf7323b961892e32eac6a500efc46a3b5a7",
+    "path": "metrics/probes/manual-host-controlled-20261103-prereg.md",
+    "sha256": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+    "specification": "591386e17e3a8c7410e6dad7eaeb8a8d6d452f03b0775455b86d5d8d40603650",
+    "verification": "HEAD matches. All four decision subjects, twelve environment inputs and thirty-four baseline references match recorded hashes. Typed specification digest recomputes correctly; all thirteen embedded artifact digests match. Approval subjects agree, and approval rollout line 4709 matches its recorded SHA-256."
+  },
+  "verdict": "ready",
+  "verdict_scope": "Prospective protocol design only, advisory to root. No material P1/P2 defect identified. This is not qualification completion, semantic acceptance or permission to begin allocation or episodes."
+}

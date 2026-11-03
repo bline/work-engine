@@ -578,3 +578,15 @@ are instances: a supervisor paying a full-context call to ask `list_agents` what
 the scheduler already knows, and a reviewer re-reading source to establish a
 freshness the file watcher already tracked (M15). The levers above are specific
 mitigations; the claim is what makes them one problem rather than several.
+
+
+## Host/manual controlled pilot qualification, 2026-11-03
+
+The [registered six-pair pilot](probes/manual-host-controlled-20261103-prereg.md)
+was not admitted: **0 allocated pairs and 0 trial episodes**. The fresh protocol
+review was ready, but the frozen launch route did not establish the registered
+input/tool isolation or fully frozen startup inputs. Qualification and preparation
+cost is recorded with its reporting tail in the
+[result](probes/manual-host-controlled-20261103-qualification.md); it is not a
+host-versus-manual efficiency observation. No savings or quality-equivalence
+claim follows.

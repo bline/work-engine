@@ -1,0 +1,45 @@
+{
+  "schema": "manual-host.controlled-pilot-approval.v1",
+  "status": "approved_for_qualification_and_conditional_execution",
+  "decision_owner": "user",
+  "user_quote": "Approved",
+  "source": {
+    "rollout": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl",
+    "line": 4709,
+    "timestamp": "2026-11-03T19:43:10.031Z",
+    "sha256": "93fad2a2ca7c82957c9f740edf8aac4c27d57179adea2711c55cfa6ab249137a"
+  },
+  "accepted_subjects": [
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103-prereg.md",
+      "sha256": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+      "bytes": 20588
+    },
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103-environment.json",
+      "sha256": "891a740d48918defe758eba2deab86e23f9a42ef0f65c20044c3b4a97879897a",
+      "bytes": 16778
+    },
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103/tasks.json",
+      "sha256": "40eb435f09d80c44c567585fd47866ba002d7e6f11341b0de9762301d7e58957",
+      "bytes": 9041
+    },
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103-specification.json",
+      "sha256": "3c1f8a19b02c1138e6352e523c72620bfeca1a37e364e6f6a1ec844f1d00d640",
+      "bytes": 82322
+    }
+  ],
+  "specification": "591386e17e3a8c7410e6dad7eaeb8a8d6d452f03b0775455b86d5d8d40603650",
+  "approved_commit": "72c05cf7323b961892e32eac6a500efc46a3b5a7",
+  "maximum_usd": 200,
+  "qualification_maximum_usd": 20,
+  "preparation_cost_start": "2026-11-03T19:18:20.262Z",
+  "funded_at": "2026-11-03T19:43:10.031Z",
+  "qualification_deadline_conservative": "2026-11-03T21:18:20.262Z",
+  "study_elapsed_deadline": "2026-11-05T19:43:10.031Z",
+  "study_active_hours_maximum": 16,
+  "no_reset": true,
+  "execution_condition": "Registered qualification passes before allocation or episode roots. No further permission needed for twelve episodes/retries within these exact conditions and allocations."
+}

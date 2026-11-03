@@ -1,0 +1,34 @@
+{
+  "schema": "manual-host.protocol-review-provenance.v1",
+  "subject_commit": "72c05cf7323b961892e32eac6a500efc46a3b5a7",
+  "subject_sha256": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+  "requested": {
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "service_tier": "default"
+  },
+  "binding": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/protocol-review-binding.json",
+  "binding_sha256": "cba178ecf95a4fb662cc09efc4d177370ac6bf03aa095f98abd086560be62ba1",
+  "native_session_id": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+  "native_turn_id": "01a1a2f7-f9c3-7162-ace6-f056bc9bac4b",
+  "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T12-51-59-01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab.jsonl",
+  "result_sha256": "aeebd1d334499e17ee37bfe7d93c7d52a853205ef6b4e8a32c590cb9af91f36d",
+  "verdict": "ready",
+  "findings": [],
+  "actual_model_effort_tier": "gpt-6-astra/xhigh/default; exact selected-turn source verified before gate",
+  "native_filesystem_policy": {
+    "networkAccess": false,
+    "type": "readOnly"
+  },
+  "scope": "Fresh read-only protocol design assessment; wider tool isolation/provider independence/runtime qualification not established.",
+  "task_disposition": "accepted",
+  "task_closed": true,
+  "latest_task_receipt_acknowledged": true,
+  "receipt_id": "7d2c7853bdbfc5f7248232c7adbd092e12e69fc4ec5c612cedb5198bddf1c280",
+  "observed_reviewer_cost_usd": 2.970928,
+  "cost_limit_usd": 4,
+  "recorded_helpers": 29,
+  "recorded_leftovers": 0,
+  "closure_record": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/close-protocol-review.json",
+  "liveness_scope": "Recorded helper termination/leftover observations, not a global current-process census."
+}

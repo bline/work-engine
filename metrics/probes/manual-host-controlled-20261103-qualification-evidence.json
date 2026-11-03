@@ -1,0 +1,534 @@
+{
+  "schema": "manual-host.controlled-qualification-evidence.v1",
+  "records": {
+    "native-read-confinement.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/native-read-confinement.json",
+      "sha256": "df98fa68bd62abf14f048699bfcd0d09f358dcc5e2798903e9b96bdd40d473dc",
+      "data": {
+        "schema": "manual-host.native-read-confinement-probe.v1",
+        "at": "2026-11-03T19:56:45.032167+00:00",
+        "declared_read_allowlist": [
+          "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files"
+        ],
+        "excluded_sentinel": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/excluded-files/read-sentinel.txt",
+        "sentinel_sha256": "8ce82d7b8c2b59be40816e351eae6c997b52c7801f30c34deedc2320dbb53440",
+        "native_thread_realization": {
+          "model": "gpt-6-astra",
+          "sandbox": {
+            "networkAccess": false,
+            "type": "readOnly"
+          },
+          "activePermissionProfile": null,
+          "instructionSources": [
+            "/home/bline/.codex/AGENTS.md",
+            "/home/bline/cbm-work/wt-manual-host-controlled-run-20261103/AGENTS.md"
+          ],
+          "disabledPluginIds": [],
+          "runtime_cli_version": "0.166.0"
+        },
+        "probes": [
+          {
+            "name": "allowed_read",
+            "request": {
+              "command": [
+                "/bin/cat",
+                "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files/read-sentinel.txt"
+              ],
+              "cwd": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files",
+              "sandboxPolicy": {
+                "networkAccess": false,
+                "type": "readOnly"
+              },
+              "timeoutMs": 5000,
+              "outputBytesCap": 2048
+            },
+            "response": {
+              "exitCode": 0,
+              "stdout": "manual-host-pilot controlled allowed-read sentinel\n",
+              "stderr": ""
+            }
+          },
+          {
+            "name": "excluded_read",
+            "request": {
+              "command": [
+                "/bin/cat",
+                "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/excluded-files/read-sentinel.txt"
+              ],
+              "cwd": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files",
+              "sandboxPolicy": {
+                "networkAccess": false,
+                "type": "readOnly"
+              },
+              "timeoutMs": 5000,
+              "outputBytesCap": 2048
+            },
+            "response": {
+              "exitCode": 0,
+              "stdout": "manual-host-pilot controlled outside-read sentinel\n",
+              "stderr": ""
+            }
+          },
+          {
+            "name": "excluded_write",
+            "request": {
+              "command": [
+                "/usr/bin/python3",
+                "-c",
+                "from pathlib import Path; Path('/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/excluded-files/write-test.txt').write_text('controlled write probe')"
+              ],
+              "cwd": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files",
+              "sandboxPolicy": {
+                "networkAccess": false,
+                "type": "readOnly"
+              },
+              "timeoutMs": 5000,
+              "outputBytesCap": 2048
+            },
+            "response": {
+              "exitCode": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    from pathlib import Path; Path('/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/excluded-files/write-test.txt').write_text('controlled write probe')\n                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 810, in write_text\n    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 772, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [Errno 30] Read-only file system: '/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/excluded-files/write-test.txt'\n"
+            }
+          }
+        ],
+        "scope": "Direct native command executor under the exact observed legacy sandbox shape, not execution by the reviewer model and not a probe of every connector/tool surface. Sentinels contain only study-owned public test strings.",
+        "required_outcome": "Allowed read succeeds; excluded read/write denied if this legacy policy establishes the registered per-run path allowlist."
+      }
+    },
+    "named-profile-compatibility.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/named-profile-compatibility.json",
+      "sha256": "e3e5957e9bea567f1cc2065541f41cca2f6a7e4364db4b4627215a0e29cf02bb",
+      "data": {
+        "schema": "manual-host.named-profile-compatibility-probe.v1",
+        "at": "2026-11-03T20:08:31.168689+00:00",
+        "scope": "Metadata-only thread/start with per-thread config overrides; no turn/start, no inference, no global config modification. Created empty threads archived.",
+        "results": [
+          {
+            "name": "legacy_route",
+            "request": {
+              "model": "gpt-6.1-sol",
+              "cwd": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files",
+              "approvalPolicy": "never",
+              "config": {
+                "default_permissions": "study-probe",
+                "permissions.study-probe.filesystem": {
+                  ":root": "deny",
+                  ":minimal": "read",
+                  "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files": "read"
+                },
+                "permissions.study-probe.network": {
+                  "enabled": false
+                },
+                "model_reasoning_effort": "medium",
+                "service_tier": "default"
+              },
+              "sandbox": "read-only"
+            },
+            "response": {
+              "model": "gpt-6.1-sol",
+              "reasoningEffort": "medium",
+              "serviceTier": "default",
+              "activePermissionProfile": null,
+              "sandbox": {
+                "type": "readOnly",
+                "networkAccess": false
+              },
+              "instructionSources": [
+                "/home/bline/.codex/AGENTS.md"
+              ],
+              "disabledPluginIds": []
+            },
+            "session_id": "01a1a307-0bce-7062-b412-909fb2517815",
+            "turns_at_creation": [],
+            "model_turn_started": false,
+            "archive_response": {}
+          },
+          {
+            "name": "named_profile_route",
+            "request": {
+              "model": "gpt-6.1-sol",
+              "cwd": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files",
+              "approvalPolicy": "never",
+              "config": {
+                "default_permissions": "study-probe",
+                "permissions.study-probe.filesystem": {
+                  ":root": "deny",
+                  ":minimal": "read",
+                  "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/allowed-files": "read"
+                },
+                "permissions.study-probe.network": {
+                  "enabled": false
+                },
+                "model_reasoning_effort": "medium",
+                "service_tier": "default"
+              },
+              "permissions": "study-probe"
+            },
+            "error": "thread/start: thread/start.permissions requires experimentalApi capability",
+            "model_turn_started": false
+          }
+        ]
+      }
+    },
+    "startup-projection.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/startup-projection.json",
+      "sha256": "bc0b50dbe6153d8556f432d09464f97ef92a4243dfa3a94070190779b7afab69",
+      "data": {
+        "schema": "manual-host.startup-projection-qualification.v1",
+        "native_thread": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+        "instruction_sources": [
+          {
+            "source": "/home/bline/.codex/AGENTS.md",
+            "sha256": "2b5886d4ed87e64316d348cd460dae17046c3159a6e5846b06a47a20748d1340",
+            "registered_as_baseline_path": null,
+            "registered_hash_match": false
+          },
+          {
+            "source": "/home/bline/cbm-work/wt-manual-host-controlled-run-20261103/AGENTS.md",
+            "sha256": "946db010ab78d3a070c3fd24df0c8e3e13b5ba8816139d410a56487863e04f48",
+            "registered_as_baseline_path": "AGENTS.md",
+            "registered_hash_match": true
+          }
+        ],
+        "all_observed_sources_in_registered_manifest": false,
+        "qualification": "Native startup sources must be materialized/frozen under the approved environment before arms. This observations records unestablished inputs; it does not waive or change the registration."
+      }
+    },
+    "current-permission-config.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/current-permission-config.json",
+      "sha256": "972e9f2b287bd2ff323f6143ca86c01f58199869195053baf7dce4eddc41b7c8",
+      "data": {
+        "at": "2026-11-03T20:05:14.521818+00:00",
+        "selected_configuration": {
+          "permissions": null,
+          "default_permissions": null,
+          "sandbox_mode": "danger-full-access",
+          "sandbox_workspace_write": null,
+          "tools": null
+        },
+        "layer_shapes": [
+          {
+            "name": {
+              "type": "sessionFlags"
+            },
+            "keys": [
+              "features"
+            ],
+            "permission_keys": {}
+          },
+          {
+            "name": {
+              "type": "user",
+              "file": "/home/bline/.codex/config.toml",
+              "profile": null
+            },
+            "keys": [
+              "approval_policy",
+              "approvals_reviewer",
+              "background_terminal_max_timeout",
+              "cli_auth_credentials_store",
+              "desktop",
+              "developer_instructions",
+              "hooks",
+              "marketplaces",
+              "mcp_servers",
+              "model",
+              "model_reasoning_effort",
+              "notice",
+              "personality",
+              "plugins",
+              "projects",
+              "sandbox_mode",
+              "service_tier",
+              "skills",
+              "tui"
+            ],
+            "permission_keys": {
+              "sandbox_mode": "danger-full-access"
+            }
+          },
+          {
+            "name": {
+              "type": "system",
+              "file": "/etc/codex/config.toml"
+            },
+            "keys": [],
+            "permission_keys": {}
+          }
+        ],
+        "response_sha256": "59be6cb3e2a1b897961675fa683c71d3930d50caa9acd407d51554154aa1a846",
+        "note": "Only permission-related fields/layer key names retained; no authentication/provider configuration values copied."
+      }
+    },
+    "preinit-cost.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/preinit-cost.json",
+      "sha256": "693c30ec08280710bbc4807be661c37c54b83eace2d1f68d4e6a7e5bc57640f6",
+      "data": {
+        "schema": "manual-host.preinit-cost.v1",
+        "from_inclusive": "2026-11-03T19:18:20.262Z",
+        "until_exclusive": "2026-11-03T19:47:52Z",
+        "reader_sha256": "ed026f40f93801c9fffab4a9d5d5fc32745fd1d94a6137edd22ed875b5a67291",
+        "cost_high": 1.7109256,
+        "calls": [
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea337c79a48199a26790416ac9f97b",
+            "ts": "2026-11-03T19:18:27.262Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4390",
+            "speed_adjusted_api_usd_high": 0.0202208
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea3383d0a4819981f63d6ad2c4fc61",
+            "ts": "2026-11-03T19:19:23.541Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4403",
+            "speed_adjusted_api_usd_high": 0.0520452
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea33bbe3608199b0254b4e7208170f",
+            "ts": "2026-11-03T19:20:52.000Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4428",
+            "speed_adjusted_api_usd_high": 0.061393600000000007
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea34144e648199bc992a3c8edb50a7",
+            "ts": "2026-11-03T19:21:00.120Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4441",
+            "speed_adjusted_api_usd_high": 0.0348848
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea341c747881998888147022c08693",
+            "ts": "2026-11-03T19:24:57.891Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4471",
+            "speed_adjusted_api_usd_high": 0.0957768
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea350aa024819981db14fe43b72c25",
+            "ts": "2026-11-03T19:28:51.810Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4488",
+            "speed_adjusted_api_usd_high": 0.1189636
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea35f41e8c81999a3bbf3262bf2488",
+            "ts": "2026-11-03T19:30:29.248Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4498",
+            "speed_adjusted_api_usd_high": 0.0598456
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea3656029c8199a12965bc5c8c424d",
+            "ts": "2026-11-03T19:32:13.038Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4513",
+            "speed_adjusted_api_usd_high": 0.0603688
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea36bd59b88199be733ac2ea2afbfa",
+            "ts": "2026-11-03T19:32:36.668Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4520",
+            "speed_adjusted_api_usd_high": 0.0304344
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea36d4f93081999812bb94d0bcd9cb",
+            "ts": "2026-11-03T19:32:44.841Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4531",
+            "speed_adjusted_api_usd_high": 0.0313196
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea36dd162481999e2429da5716cb4e",
+            "ts": "2026-11-03T19:32:53.838Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4540",
+            "speed_adjusted_api_usd_high": 0.0280292
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea36e630148199ade792986b231c4a",
+            "ts": "2026-11-03T19:33:10.739Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4550",
+            "speed_adjusted_api_usd_high": 0.0376356
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea36f6fff08199a6704a872aeb8242",
+            "ts": "2026-11-03T19:34:36.738Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4565",
+            "speed_adjusted_api_usd_high": 0.051865999999999995
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea374d3fc08199bf73bec867eafb76",
+            "ts": "2026-11-03T19:34:58.757Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4574",
+            "speed_adjusted_api_usd_high": 0.0462368
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea376397d08199967f6d0941372eb6",
+            "ts": "2026-11-03T19:35:04.813Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4582",
+            "speed_adjusted_api_usd_high": 0.0281424
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea376a5dc88199be112ad57e98aba2",
+            "ts": "2026-11-03T19:36:04.855Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4596",
+            "speed_adjusted_api_usd_high": 0.040764800000000004
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea37a5395c8199866f3d8f513d9dc6",
+            "ts": "2026-11-03T19:37:03.532Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4606",
+            "speed_adjusted_api_usd_high": 0.043438000000000004
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea37dfda608199a49dfecacc3dda7e",
+            "ts": "2026-11-03T19:37:08.388Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4612",
+            "speed_adjusted_api_usd_high": 0.027155600000000002
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea37e4c1108199b10d6c3fad10f84d",
+            "ts": "2026-11-03T19:37:28.352Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4619",
+            "speed_adjusted_api_usd_high": 0.0411792
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea37f8c2c0819985cb172d6fb362aa",
+            "ts": "2026-11-03T19:38:04.631Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4629",
+            "speed_adjusted_api_usd_high": 0.039446
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea381cffd081998ad98ca8974ee0d7",
+            "ts": "2026-11-03T19:38:54.246Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4638",
+            "speed_adjusted_api_usd_high": 0.047956399999999996
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea384eb26c8199b7ab92fd4625c612",
+            "ts": "2026-11-03T19:40:07.389Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4652",
+            "speed_adjusted_api_usd_high": 0.0514636
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea3897dc0c8199a80188980a0d6775",
+            "ts": "2026-11-03T19:41:13.547Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4669",
+            "speed_adjusted_api_usd_high": 0.0469864
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea38da6384819995932f9af7345a2f",
+            "ts": "2026-11-03T19:41:27.362Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4680",
+            "speed_adjusted_api_usd_high": 0.036191600000000004
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea38e84a3081999d7cd88c57a8ddf0",
+            "ts": "2026-11-03T19:41:59.535Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4693",
+            "speed_adjusted_api_usd_high": 0.040841999999999996
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea3908be6c8199a352dcec031ba3d8",
+            "ts": "2026-11-03T19:42:19.588Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4703",
+            "speed_adjusted_api_usd_high": 0.0348684
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea394e48e4819990fa391375a8dd5b",
+            "ts": "2026-11-03T19:43:16.534Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4720",
+            "speed_adjusted_api_usd_high": 0.0308692
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea3954f7e88199a6f45cecf7c17b40",
+            "ts": "2026-11-03T19:44:41.887Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4736",
+            "speed_adjusted_api_usd_high": 0.1321912
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea39aa64d481999a30644959ebf97d",
+            "ts": "2026-11-03T19:45:05.580Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4748",
+            "speed_adjusted_api_usd_high": 0.0759156
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea39c232a081999a84c789a55e5151",
+            "ts": "2026-11-03T19:45:35.221Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4762",
+            "speed_adjusted_api_usd_high": 0.09937939999999999
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea39df7b488199aa776c027300f310",
+            "ts": "2026-11-03T19:46:16.525Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4775",
+            "speed_adjusted_api_usd_high": 0.082919
+          },
+          {
+            "call_id": "resp_051a33f0ac4bcc90016aea3a08d6e0819984f4b54f3dadad33",
+            "ts": "2026-11-03T19:46:51.397Z",
+            "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl:4785",
+            "speed_adjusted_api_usd_high": 0.082196
+          }
+        ],
+        "net_runtime_qualification_maximum": 18.2890744,
+        "net_runtime_root_maximum": 14.2890744,
+        "meaning": "Disjoint pre-init row; default objective window starts at scope init. Tightened runtime controls include this prior charge in the unchanged20/16 authorization, not an extra grant."
+      }
+    },
+    "protocol-review-binding.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/protocol-review-binding.json",
+      "sha256": "cba178ecf95a4fb662cc09efc4d177370ac6bf03aa095f98abd086560be62ba1",
+      "data": {
+        "schema": "manual-host.protocol-review-binding.v1",
+        "session_id": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+        "turn_id": "01a1a2f7-f9c3-7162-ace6-f056bc9bac4b",
+        "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T12-51-59-01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab.jsonl",
+        "parent_collection_owner": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+        "assignment": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/assignment.json",
+        "context_binary": "/home/bline/.local/state/work-engine/tools/context-status/d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204/work-engine-context-status",
+        "context_sha256": "d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204",
+        "observed_model": "gpt-6-astra",
+        "observed_effort": "xhigh",
+        "observed_tier": "default",
+        "settings_source": {
+          "line": 12,
+          "sha256": "4c2e3c3c6929126264247bf15883fe1e8af88032995ca5ed4f925333d10abdfd",
+          "turn_context_line": 11,
+          "turn_id": "01a1a2f7-f9c3-7162-ace6-f056bc9bac4b"
+        },
+        "native_sandbox": {
+          "networkAccess": false,
+          "type": "readOnly"
+        },
+        "wider_tool_isolation": "unestablished; no stronger independence claim",
+        "node_maximum_usd": 4,
+        "substantive_stop_usd": 3,
+        "report_reserve_usd": 1,
+        "qualification_maximum_usd": 20,
+        "productive_deadline": "2026-11-03T20:05:00Z",
+        "final_deadline": "2026-11-03T20:10:00Z",
+        "allow_source_entry": true
+      }
+    },
+    "review-budget-boundary.json": {
+      "source": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/qualification/review-budget-boundary.json",
+      "sha256": "1de7e42f4d4e591d04b373022d2ca8c429f3c61c1ff87ae7bd3548a22b769139",
+      "data": {
+        "at": "2026-11-03T20:00:27.245111+00:00",
+        "session": "01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab",
+        "turn": "01a1a2f7-f9c3-7162-ace6-f056bc9bac4b",
+        "message": "Budget boundary: latest canonical direct2.970928 of your4USD at19:59:31; substantive mark3 is now due. Finish substantive reading and return your bounded protocol verdict/findings/inspected limits within remaining report allowance. Do not broaden scope or wait for native qualification evidence. Your original exactturn and deadline remain; no new turn, budget or model is authorized.",
+        "response": {
+          "steer_unavailable": "turn/steer: thread not found: 01a1a2f7-ed17-7bf3-a3ea-7b5944fd25ab"
+        }
+      }
+    }
+  },
+  "official_sources": [
+    {
+      "url": "https://learn.chatgpt.com/docs/permissions",
+      "retrieved": "2026-11-03",
+      "supports": "Legacy sandbox selection can override default permission profiles; named profiles describe read/write/deny filesystem policy."
+    },
+    {
+      "url": "https://developers.openai.com/cookbook/examples/partners/harness_aware_plugin_evals/harness_aware_plugin_evals",
+      "retrieved": "2026-11-03",
+      "supports": "Permission profiles can protect evaluation inputs; filesystem controls do not cover MCP traffic over HTTP."
+    }
+  ],
+  "scope": "These are bounded qualification observations, not experimental arm outcomes or a repository-wide absence/security claim."
+}
