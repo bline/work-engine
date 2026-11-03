@@ -132,11 +132,31 @@ stronger grant claim.
 ```sh
 work-engine-manual-host dispatch --request /absolute/request.json --wait
 work-engine-manual-host inspect --state /absolute/objective/manual-host
+work-engine-manual-host inspect --state /absolute/objective/manual-host \
+  --summary --operation task-1
 work-engine-manual-host collect --state /absolute/objective/manual-host \
   --operation task-1 --wait --ack-receipt '<previous-receipt-id>'
 work-engine-manual-host close --state /absolute/objective/manual-host \
   --request /absolute/close.json
+work-engine-manual-host ack --state /absolute/objective/manual-host \
+  --ack-receipt '<delivered-receipt-id>'
 ```
+
+`--help` and command `--help` show this surface without reading state or starting
+work. `inspect` retains its raw-state output by default; `--summary` presents
+the recorded identity, requested/observed selected-turn settings, native sandbox
+realization with field-presence evidence, context timestamps, configured cost
+controls, result identity, failures, process counts and latest task delivery.
+An optional `--operation` selects one operation in the summary. These are
+recorded observations, without new polling, artifact revalidation or a current
+process-liveness claim. Inspection remains available across executor versions;
+mutation still requires the original pinned executor.
+
+Dispatch prepares missing parents of the root-authorized `result_path` after
+validating its authority, packet, tools and objective binding. A blocked directory
+returns its exact path and error before a native launch. Existing outputs and
+operation/path conflicts remain refusals. `--bind-only` does not create output
+directories or host state.
 
 Use the foreground waiting form through an active root tool invocation. A yielded
 exec session can keep running while the root handles independent semantic work;
@@ -148,10 +168,29 @@ receipt ID. Stdout alone leaves delivery pending; lost output can be collected
 again. A returned receipt ends that foreground observation scope; its monitoring
 gap is visible, and the next admission re-establishes current observations.
 
+For a final acknowledgment, `ack` consumes exactly the named existing receipt.
+It does not run observers, refresh accounting, revalidate task artifacts, replay
+effects or issue a successor receipt. Its top-level `delivery` describes that
+receipt; `summary.operations[].receipt` separately shows each latest task receipt
+and its delivery. Acknowledging an older receipt does not acknowledge a newer
+one. Ordinary `collect` can issue a new task receipt when recorded observations
+changed, so using it merely to acknowledge final output can leave that successor
+pending. `ack` avoids that extra transition. Task and accounting receipts retain
+their separate identities and can each be acknowledged directly.
+
 Accounting keeps the budget reader's canonical lineage sources, including
 externally launched root-owned roles, and adds hosted children through existing
 scope_budget bindings. The host's private dispatch ledger records custody and
 never substitutes for the accounting owner's ledger.
+
+The summary's `accounting.cost_controls` exposes the canonical controls in the
+recorded snapshot; `role_controls` selects those naming this child's node.
+`none_in_recorded_snapshot` preserves the absence of such evidence, including
+snapshots after objective closure. A prose allowance in a packet is not itself
+a configured canonical control. A limit added after launch cannot constrain
+earlier calls. Cost observations and foreground notifications can lag inference;
+they do not impose a hard provider billing cap or automatically interrupt a
+native turn. The root retains interruption and further-admission judgment.
 
 The executor observes the existing context and budget readers directly with
 owned one-shot subprocesses and the budget owner's cursor. No board/control

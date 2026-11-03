@@ -11,7 +11,28 @@ fn main() {
     }
 }
 fn run() -> Result<()> {
-    let mut args = env::args().skip(1);
+    let arguments: Vec<_> = env::args().skip(1).collect();
+    if arguments.is_empty()
+        || arguments
+            .iter()
+            .any(|v| matches!(v.as_str(), "--help" | "-h" | "help"))
+    {
+        println!(
+            "Usage: work-engine-manual-host <command> [options]\n\
+Commands:\n\
+  dispatch --draft FILE [--bind-only] [--wait] [--ack-receipt ID]\n\
+  dispatch --request FILE [--wait] [--ack-receipt ID]\n\
+  collect --state DIR --operation ID [--wait] [--reconcile-accounting] [--ack-receipt ID]\n\
+  close --state DIR --request FILE [--ack-receipt ID]\n\
+  ack --state DIR --ack-receipt ID\n\
+  inspect --state DIR [--summary [--operation ID]]\n\
+  schema | --version\n\
+ack only acknowledges existing receipt bytes; it does not poll or issue a receipt.\n\
+inspect reads recorded state; it does not refresh observations."
+        );
+        return Ok(());
+    }
+    let mut args = arguments.into_iter();
     let verb = args.next().unwrap_or_default();
     if verb == "schema" {
         println!(
@@ -32,6 +53,7 @@ fn run() -> Result<()> {
     let mut draft = None;
     let mut bind_only = false;
     let mut reconcile_accounting = false;
+    let mut summary = false;
     while let Some(a) = args.next() {
         match a.as_str() {
             "--request" => request = args.next(),
@@ -42,12 +64,18 @@ fn run() -> Result<()> {
             "--ack-receipt" => ack = args.next(),
             "--wait" => wait = true,
             "--reconcile-accounting" => reconcile_accounting = true,
+            "--summary" => summary = true,
             _ => {
                 return Err(work_engine_manual_host::Error::Refused(format!(
                     "unknown argument {a}"
                 )));
             }
         }
+    }
+    if summary && verb != "inspect" {
+        return Err(work_engine_manual_host::Error::Refused(
+            "--summary is supported only by inspect".into(),
+        ));
     }
     let result = match verb.as_str() {
         "dispatch" => {
@@ -78,6 +106,27 @@ fn run() -> Result<()> {
                 h.receipt(&id)?
             }
         }
+        "ack" => {
+            if request.is_some()
+                || draft.is_some()
+                || operation.is_some()
+                || wait
+                || bind_only
+                || reconcile_accounting
+                || summary
+            {
+                return Err(work_engine_manual_host::Error::Refused(
+                    "ack accepts only --state and --ack-receipt".into(),
+                ));
+            }
+            let dir = PathBuf::from(state.ok_or_else(|| {
+                work_engine_manual_host::Error::Refused("--state required".into())
+            })?);
+            let receipt = ack.ok_or_else(|| {
+                work_engine_manual_host::Error::Refused("--ack-receipt required".into())
+            })?;
+            Host::open(&dir, None)?.acknowledge_receipt(&receipt)?
+        }
         "collect" | "close" => {
             let dir = PathBuf::from(state.ok_or_else(|| {
                 work_engine_manual_host::Error::Refused("--state required".into())
@@ -107,12 +156,11 @@ fn run() -> Result<()> {
             let dir = PathBuf::from(state.ok_or_else(|| {
                 work_engine_manual_host::Error::Refused("--state required".into())
             })?);
-            // Atomic state replacement permits concurrent read-only inspection.
-            serde_json::from_slice::<serde_json::Value>(&fs::read(dir.join("state.json"))?)?
+            work_engine_manual_host::inspect(&dir, operation.as_deref(), summary)?
         }
         _ => {
             return Err(work_engine_manual_host::Error::Refused(
-                "use dispatch/inspect/collect/close; --version reports schema".into(),
+                "use --help for dispatch/inspect/collect/close/ack".into(),
             ));
         }
     };

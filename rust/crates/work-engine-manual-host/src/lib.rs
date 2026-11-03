@@ -6,11 +6,14 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
-use std::os::unix::process::CommandExt;
+use std::os::unix::{fs::DirBuilderExt, process::CommandExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+mod inspection;
+pub use inspection::inspect;
 
 pub const SCHEMA: &str = "work-engine.manual-host.v1";
 const MAX_BYTES: u64 = 8 * 1024 * 1024;
@@ -344,6 +347,15 @@ impl Host {
         self.state.acknowledged.insert(receipt.into());
         self.save()
     }
+    /// Acknowledge exactly the delivered bytes, without observation or a new receipt.
+    pub fn acknowledge_receipt(&mut self, receipt: &str) -> Result<Value> {
+        self.acknowledge(receipt)?;
+        Ok(json!({
+            "receipt_id": receipt,
+            "delivery": "acknowledged",
+            "summary": inspection::state_summary(&self.state, &self.dir, None)?,
+        }))
+    }
     fn verify_bundle(tools: &Tools) -> Result<()> {
         let manifest: BTreeMap<String, String> =
             serde_json::from_slice(&tools.bundle_manifest.verify()?)?;
@@ -445,24 +457,6 @@ impl Host {
             }
             return Ok(id);
         }
-        let result_reservation = fs::canonicalize(
-            r.result_path
-                .parent()
-                .ok_or_else(|| Error::Refused("result parent missing".into()))?,
-        )?
-        .join(
-            r.result_path
-                .file_name()
-                .ok_or_else(|| Error::Refused("result filename missing".into()))?,
-        );
-        if self
-            .state
-            .operations
-            .values()
-            .any(|op| op.result_reservation == result_reservation)
-        {
-            return refuse("result path reserved by another operation");
-        }
         r.authority.verify()?;
         r.packet.verify()?;
         Self::verify_tools(&r)?;
@@ -515,6 +509,43 @@ impl Host {
             if r.bootstrap_context {
                 return refuse("bootstrap allowance is fresh-thread only");
             }
+        }
+        // The root explicitly authorizes this output path. Prepare it only after
+        // validating the request/authority and before any native launch effect.
+        // Draft binding remains read-only, and conflicting replays return above.
+        let parent = r
+            .result_path
+            .parent()
+            .ok_or_else(|| Error::Refused("result parent missing".into()))?;
+        let filename = r
+            .result_path
+            .file_name()
+            .ok_or_else(|| Error::Refused("result filename missing".into()))?;
+        fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(parent)
+            .map_err(|e| {
+                Error::Refused(format!(
+                    "cannot prepare authorized result directory {}: {e}",
+                    parent.display()
+                ))
+            })?;
+        let result_reservation = fs::canonicalize(parent)
+            .map_err(|e| {
+                Error::Refused(format!(
+                    "cannot resolve authorized result directory {}: {e}",
+                    parent.display()
+                ))
+            })?
+            .join(filename);
+        if self
+            .state
+            .operations
+            .values()
+            .any(|op| op.result_reservation == result_reservation)
+        {
+            return refuse("result path reserved by another operation");
         }
         self.state.operations.insert(
             id.clone(),
@@ -1393,9 +1424,11 @@ impl Host {
         }
         self.op_mut(id).receipt = Some(receipt.clone());
         self.save()?;
-        Ok(
-            json!({"receipt_id":receipt,"receipt":path,"delivery":if self.state.acknowledged.contains(&receipt){"acknowledged"}else{"pending"},"summary":{"operation_id":id,"phase":self.op(id).phase,"session_id":self.op(id).session_id,"turn_id":self.op(id).turn_id,"turn_outcome":self.op(id).evidence.get("turn").map(|v|v["status"].clone()),"failures":self.op(id).failures,"acceptance":"root_owned","observations":{"root_context":self.op(id).evidence.get("root_context").map(|v|v["status"].clone()),"child_context":self.op(id).evidence.get("child_context").map(|v|v["status"].clone()),"child_context_established":self.op(id).context_established},"accounting":{"coverage":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["status"].clone()),"totals":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["totals"].clone()),"post_close":self.op(id).evidence.get("budget").map(|v|v["snapshot"]["post_close"].clone())},"result":self.op(id).evidence.get("collection").map(|v|v["result"].clone())}}),
-        )
+        let mut summary = inspection::operation_summary(&self.state, self.op(id), &self.dir);
+        summary["monitoring"] = json!("foreground_observation_scope_ended");
+        Ok(json!({"receipt_id":receipt,"receipt":path,
+            "delivery":if self.state.acknowledged.contains(&receipt){"acknowledged"}else{"pending"},
+            "summary":summary}))
     }
 }
 

@@ -543,9 +543,11 @@ fn draft_binding_freezes_tool_and_authority_identities_without_effects() {
     draft["packet"] = draft["packet"]["path"].clone();
     draft["tools"] =
         json!({"bundle":p,"python":"/usr/bin/python3","context_binary":p.join("context-binary")});
+    draft["result_path"] = json!(p.join("bind-only-must-not-create/result.json"));
     let bound = work_engine_manual_host::bind_draft(draft).unwrap();
     assert_eq!(bound.packet.sha256, f.request["packet"]["sha256"]);
     assert_eq!(f.count("starts"), 0);
+    assert!(!p.join("bind-only-must-not-create").exists());
 }
 #[test]
 fn public_schema_and_parser_preserve_version_and_unknown_field_boundaries() {
@@ -755,4 +757,324 @@ fn acknowledged_pressure_does_not_turn_foreground_collection_into_model_polling(
     ]));
     assert!(f.count("turn_reads") > before + 1);
     assert_eq!(f.count("starts"), 1);
+}
+
+#[test]
+fn ack_only_preserves_receipts_and_does_not_run_observers_or_native_effects() {
+    let f = Fixture::new();
+    success(f.dispatch());
+    let collected = success(f.collect());
+    let closed = success(f.close(collected["receipt_id"].as_str().unwrap(), true));
+    f.config("tail_candidate", json!(7));
+    let state_dir = f.dir.path().join("state");
+    let state_arg = state_dir.to_str().unwrap();
+    let accounting = success(f.invoke(&[
+        "collect",
+        "--state",
+        state_arg,
+        "--operation",
+        "one",
+        "--reconcile-accounting",
+    ]));
+    let before = f.state();
+    let config_before = fs::read(f.dir.path().join("config.json")).unwrap();
+    let receipt_bytes = fs::read(closed["receipt"].as_str().unwrap()).unwrap();
+    let accounting_bytes = fs::read(accounting["receipt"].as_str().unwrap()).unwrap();
+    let receipt_count = fs::read_dir(state_dir.join("receipts")).unwrap().count();
+    let ack_accounting = success(f.invoke(&[
+        "ack",
+        "--state",
+        state_arg,
+        "--ack-receipt",
+        accounting["receipt_id"].as_str().unwrap(),
+    ]));
+    assert_eq!(ack_accounting["delivery"], "acknowledged");
+    let ack = success(f.invoke(&[
+        "ack",
+        "--state",
+        state_arg,
+        "--ack-receipt",
+        closed["receipt_id"].as_str().unwrap(),
+    ]));
+    assert_eq!(
+        ack["summary"]["operations"][0]["receipt"]["delivery"],
+        "acknowledged"
+    );
+    let repeated = success(f.invoke(&[
+        "ack",
+        "--state",
+        state_arg,
+        "--ack-receipt",
+        closed["receipt_id"].as_str().unwrap(),
+    ]));
+    assert_eq!(repeated, ack);
+    assert_eq!(f.state()["operations"], before["operations"]);
+    assert_eq!(
+        config_before,
+        fs::read(f.dir.path().join("config.json")).unwrap()
+    );
+    assert_eq!(
+        receipt_count,
+        fs::read_dir(state_dir.join("receipts")).unwrap().count()
+    );
+    assert_eq!(
+        receipt_bytes,
+        fs::read(closed["receipt"].as_str().unwrap()).unwrap()
+    );
+    assert_eq!(
+        accounting_bytes,
+        fs::read(accounting["receipt"].as_str().unwrap()).unwrap()
+    );
+}
+
+#[test]
+fn acknowledging_historical_receipt_does_not_claim_latest_task_delivery() {
+    let f = Fixture::new();
+    success(f.dispatch());
+    let collected = success(f.collect());
+    let closed = success(f.close(collected["receipt_id"].as_str().unwrap(), true));
+    f.config("tail_candidate", json!(8));
+    let dir = f.dir.path().join("state");
+    let path = dir.to_str().unwrap();
+    success(f.invoke(&[
+        "collect",
+        "--state",
+        path,
+        "--operation",
+        "one",
+        "--reconcile-accounting",
+    ]));
+    let newer = success(f.collect());
+    assert_ne!(newer["receipt_id"], closed["receipt_id"]);
+    let ack = success(f.invoke(&[
+        "ack",
+        "--state",
+        path,
+        "--ack-receipt",
+        closed["receipt_id"].as_str().unwrap(),
+    ]));
+    assert_eq!(ack["delivery"], "acknowledged");
+    assert_eq!(
+        ack["summary"]["operations"][0]["receipt"]["receipt_id"],
+        newer["receipt_id"]
+    );
+    assert_eq!(
+        ack["summary"]["operations"][0]["receipt"]["delivery"],
+        "pending"
+    );
+    let invalid = "0".repeat(64);
+    assert!(
+        !f.invoke(&["ack", "--state", path, "--ack-receipt", &invalid])
+            .status
+            .success()
+    );
+    let receipt = newer["receipt"].as_str().unwrap();
+    fs::write(receipt, "corrupt").unwrap();
+    assert!(
+        !f.invoke(&[
+            "ack",
+            "--state",
+            path,
+            "--ack-receipt",
+            newer["receipt_id"].as_str().unwrap()
+        ])
+        .status
+        .success()
+    );
+    assert!(
+        !f.state()["acknowledged"]
+            .as_array()
+            .unwrap()
+            .contains(&newer["receipt_id"])
+    );
+}
+
+#[test]
+fn compact_inspection_exposes_evidence_and_controls_without_refresh_or_mutation() {
+    let f = Fixture::new();
+    success(f.dispatch());
+    success(f.collect());
+    let state_path = f.dir.path().join("state/state.json");
+    let mut state = f.state();
+    state["operations"]["one"]["evidence"]["budget"]["snapshot"]["cost_controls"] = json!([
+        {"node_id":null,"max_usd":30,"remaining_usd":25},
+        {"node_id":"child","max_usd":0.75,"remaining_usd":-0.5}
+    ]);
+    fs::write(&state_path, serde_json::to_vec(&state).unwrap()).unwrap();
+    let before = fs::read(&state_path).unwrap();
+    let dir = f.dir.path().join("state");
+    let view = success(f.invoke(&[
+        "inspect",
+        "--state",
+        dir.to_str().unwrap(),
+        "--summary",
+        "--operation",
+        "one",
+    ]));
+    let op = &view["operations"][0];
+    assert_eq!(view["evidence_status"], "recorded_state_not_refreshed");
+    assert_eq!(op["configuration"]["status"], "matched");
+    assert_eq!(op["configuration"]["observed"]["model"], "fixture-model");
+    assert_eq!(op["realization"]["sandbox"]["type"], "readOnly");
+    assert_eq!(op["accounting"]["role_controls"][0]["remaining_usd"], -0.5);
+    assert_eq!(
+        op["accounting"]["role_control_status"],
+        "configured_in_recorded_snapshot"
+    );
+    assert_eq!(op["receipt"]["delivery"], "pending");
+    assert_eq!(op["context"]["root"]["input_tokens"], 100);
+    assert_eq!(op["monitoring"], "not_established_by_recorded_state");
+    assert!(!op.to_string().contains("process_records"));
+    assert_eq!(before, fs::read(&state_path).unwrap());
+    assert_eq!(
+        success(f.invoke(&["inspect", "--state", dir.to_str().unwrap()])),
+        state
+    );
+    assert!(
+        !f.invoke(&[
+            "inspect",
+            "--state",
+            dir.to_str().unwrap(),
+            "--summary",
+            "--operation",
+            "unknown"
+        ])
+        .status
+        .success()
+    );
+    state["binary_sha256"] = json!("another-version");
+    state["operations"]["one"]["evidence"]
+        .as_object_mut()
+        .unwrap()
+        .remove("settings");
+    state["operations"]["one"]["evidence"]["budget"]["snapshot"]["cost_controls"] = json!([]);
+    state["operations"]["one"]["evidence"]
+        .as_object_mut()
+        .unwrap()
+        .remove("prepared");
+    fs::write(&state_path, serde_json::to_vec(&state).unwrap()).unwrap();
+    let missing = success(f.invoke(&["inspect", "--state", dir.to_str().unwrap(), "--summary"]));
+    assert_eq!(
+        missing["operations"][0]["configuration"]["status"],
+        "not_established"
+    );
+    assert_eq!(
+        missing["operations"][0]["accounting"]["role_control_status"],
+        "none_in_recorded_snapshot"
+    );
+    assert_eq!(
+        missing["operations"][0]["realization"]["field_presence"]["sandbox"],
+        false
+    );
+    assert_eq!(
+        missing["operations"][0]["realization"]["field_presence"]["forked_from"],
+        false
+    );
+    assert!(
+        !f.invoke(&[
+            "ack",
+            "--state",
+            dir.to_str().unwrap(),
+            "--ack-receipt",
+            op["receipt"]["receipt_id"].as_str().unwrap()
+        ])
+        .status
+        .success()
+    );
+}
+
+#[test]
+fn authorized_nested_output_directory_is_prepared_before_native_start() {
+    use std::os::unix::fs::PermissionsExt;
+    let mut f = Fixture::new();
+    let output = f.dir.path().join("new/task/output/result.json");
+    f.request["result_path"] = json!(output);
+    f.config("result", json!(output));
+    assert!(!output.parent().unwrap().exists());
+    success(f.dispatch());
+    assert!(output.exists());
+    assert_eq!(
+        fs::metadata(output.parent().unwrap())
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o700
+    );
+    let result = success(f.collect());
+    assert!(result["summary"]["failures"].as_array().unwrap().is_empty());
+    success(f.dispatch());
+    assert_eq!(f.count("creates"), 1);
+    assert_eq!(f.count("starts"), 1);
+}
+
+#[test]
+fn output_preflight_validates_authority_and_reports_blocked_parent_without_launch() {
+    let mut f = Fixture::new();
+    let parent = f.dir.path().join("unapproved");
+    f.request["result_path"] = json!(parent.join("result.json"));
+    f.request["authority"]["sha256"] = json!("invalid");
+    assert!(!f.dispatch().status.success());
+    assert!(!parent.exists());
+    assert_eq!(f.count("creates"), 0);
+    let mut f = Fixture::new();
+    let blocked = f.dir.path().join("blocked");
+    fs::write(&blocked, "preserve").unwrap();
+    f.request["result_path"] = json!(blocked.join("nested/result.json"));
+    let result = f.dispatch();
+    assert!(!result.status.success());
+    let error = String::from_utf8_lossy(&result.stderr);
+    assert!(error.contains("cannot prepare authorized result directory"));
+    assert!(error.contains(blocked.to_str().unwrap()));
+    assert_eq!(fs::read_to_string(blocked).unwrap(), "preserve");
+    assert_eq!(f.count("creates"), 0);
+    assert!(f.state()["operations"].as_object().unwrap().is_empty());
+}
+
+#[test]
+fn help_is_available_before_state_or_provider_effects() {
+    let f = Fixture::new();
+    for args in [
+        &["--help"][..],
+        &["dispatch", "--help"][..],
+        &["ack", "--help"][..],
+    ] {
+        let output = f.invoke(args);
+        assert!(output.status.success());
+        let help = String::from_utf8(output.stdout).unwrap();
+        assert!(help.contains("ack --state DIR --ack-receipt ID"));
+        assert!(help.contains("inspect --state DIR [--summary"));
+    }
+    assert!(!f.dir.path().join("state").exists());
+    assert_eq!(f.count("creates"), 0);
+}
+
+#[test]
+fn summary_flag_on_dispatch_cannot_be_silently_ignored() {
+    let f = Fixture::new();
+    let p = f.dir.path().join("request.json");
+    fs::write(&p, f.request.to_string()).unwrap();
+    let output = f.invoke(&["dispatch", "--request", p.to_str().unwrap(), "--summary"]);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("only by inspect"));
+    assert!(!f.dir.path().join("state").exists());
+    assert_eq!(f.count("starts"), 0);
+}
+
+#[test]
+fn raw_inspect_remains_available_for_oversized_other_version_state() {
+    let f = Fixture::new();
+    let dir = f.dir.path().join("historical");
+    fs::create_dir(&dir).unwrap();
+    let value = json!({"schema":"future-or-unknown","opaque":"x".repeat(8*1024*1024)});
+    fs::write(dir.join("state.json"), value.to_string()).unwrap();
+    assert_eq!(
+        success(f.invoke(&["inspect", "--state", dir.to_str().unwrap()])),
+        value
+    );
+    assert!(
+        !f.invoke(&["inspect", "--state", dir.to_str().unwrap(), "--summary"])
+            .status
+            .success()
+    );
 }
