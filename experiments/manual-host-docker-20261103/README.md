@@ -33,8 +33,9 @@ for model qualification (proxy, not billing or quota). Worker cost/tail is separ
 Full native rollouts, JSONL event streams, exact final outputs, assignment/budget
 snapshots, role-host records, server logs, artifact snapshots, assertion exit and
 Docker custody remain in the private evidence directories referenced by
-`result-clean2-20261103.json`. No credentials entered source, image layers or
-exported evidence: authentication was one narrow read-only native auth file bind.
+`result-clean2-20261103.json`. Authentication used one narrow read-only native
+auth file bind and remained readable to the actors. These exports have not
+received a comprehensive credential audit.
 All owned containers were stopped/waited/removed; clean app-server exit0 and an
 empty study-prefixed container census were observed. No image/volume was created,
 and no shared daemon/config or production file was changed.

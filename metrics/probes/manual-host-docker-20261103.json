@@ -1,0 +1,83 @@
+{
+  "schema": "manual-host.docker-exploration-disposition.v1",
+  "status": "bounded_mechanics_supported_pilot_unqualified",
+  "authority": "records/manual-host-docker-exploration-20261103.json",
+  "source_commit": "3e8f6212438d8181614bf789ac2cf13a765a5f0c",
+  "source_branch": "explore/manual-host-docker-20261103",
+  "source_scope": "experiments/manual-host-docker-20261103/",
+  "clean_result": "experiments/manual-host-docker-20261103/result-clean2-20261103.json",
+  "clean_result_sha256": "d872b8566f8f45ea3a9c52f7ff35c736715268be98c81436d3a396cf69b9df4f",
+  "private_evidence_manifest": {
+    "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/evidence-manifest.json",
+    "sha256": "0dd3821a05cfc2a54ddb44c1e68a4564455289a1b9a3e5546b6c0686771cf171",
+    "entries_verified": 320
+  },
+  "review": {
+    "result": "reviews/manual-host-docker-20261103/mechanics-result.json",
+    "verdict": "supported",
+    "scope": "Externally scripted retained-session mechanics only",
+    "continuity": "same_session",
+    "source_shipping_or_pilot_acceptance": false
+  },
+  "root_audits": {
+    "all_evidence_manifest_entries_match": true,
+    "actual_fixture_hash_values_match": true,
+    "canonical_private_raw_transcripts_match": true,
+    "owned_container_census_empty": true,
+    "low_readme_claim_scoped": true
+  },
+  "cost_snapshot": {
+    "since": "2026-11-03T20:30:00.555Z",
+    "until": "2026-11-03T21:51:21.519470+00:00",
+    "whole_remediation_totals": {
+      "calls": 240,
+      "quota_usd_high": 11.394266000000002,
+      "quota_usd_low": 11.394266000000002,
+      "unpriced_calls": 0,
+      "usd_high": 11.394266000000002,
+      "usd_low": 11.394266000000002
+    },
+    "whole_cap": 25,
+    "pre_init_already_included": 0.075872,
+    "clean_actor_cost": 0.1972404,
+    "both_attempt_actor_cost": 0.3538476,
+    "basis": "modeled speed-adjusted API-equivalent proxy, not invoice/subscription quota",
+    "later_tail": "root reporting and closure remain unsettled",
+    "closure_observation": {
+      "since": "2026-11-03T20:30:00.555Z",
+      "until": "2026-11-03T21:56:00Z",
+      "closed_at": "2026-11-03T21:55:44Z",
+      "totals": {
+        "calls": 244,
+        "quota_usd_high": 11.898691200000002,
+        "quota_usd_low": 11.898691200000002,
+        "unpriced_calls": 0,
+        "usd_high": 11.898691200000002,
+        "usd_low": 11.898691200000002
+      },
+      "attribution": "All measured calls in this explicit window belong to preparation, qualification, prototype, review and report closure; later root report tail unsettled"
+    }
+  },
+  "original_clock_retained": true,
+  "source_integration": "one-off experiment and evidence only; runtime probes byte-preserved, credential statement scoped",
+  "production_activation": false,
+  "controlled_trial_allocations": 0,
+  "controlled_trial_episodes": 0,
+  "efficiency_estimate": null,
+  "pending_pilot_properties": [
+    "root-driven complete common launch",
+    "role/cross-arm file and tool boundaries",
+    "reviewer capability/exposure isolation",
+    "credential and outbound controls",
+    "complete frozen startup/image/runtime set",
+    "registered accounting/recovery/receipt/cleanup qualification and approval applicability"
+  ],
+  "next_implementation": "Separately bounded Rust Docker transport/custody adapter composing current budget/evidence/session owners; not authorized by this result alone.",
+  "closure": {
+    "at": "2026-11-03T21:55:44Z",
+    "budget_disposition": "abandoned for original full pilot-launch objective; bounded Docker mechanics accepted separately",
+    "listener": "exited, PID2928357; launch tool session51335 collected",
+    "all_required_actor_results_collected": true,
+    "controlled_trial_entry": false
+  }
+}

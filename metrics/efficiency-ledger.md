@@ -600,3 +600,14 @@ orchestration-socket handshake failed at AF_UNIX creation. The separate fresh
 review returned unestablished. The partial adapter candidate remains unaccepted;
 **0 trial episodes** ran and no new efficiency estimate follows. Costs, setup
 failures, exact tool evidence and reporting-tail uncertainty remain in the record.
+
+## Docker retained-session mechanics, 2026-11-03
+
+The [bounded Docker exploration](probes/manual-host-docker-20261103.md) demonstrated
+a real builder/review/correction/rereview loop on retained sessions, persistent
+native logs, compatible usage/context readers and observed teardown. A complete
+native package fixed the separately preserved first attempt's missing-helper
+failure. Sixteen non-scored actor calls across both attempts cost $0.3538476 in
+the canonical proxy; total exploration cost includes the root, worker and reviews.
+This establishes mechanics feasibility only: **0 controlled trial episodes**,
+no host-efficiency estimate, and no production-isolation acceptance.

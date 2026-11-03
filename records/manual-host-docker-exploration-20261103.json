@@ -1,0 +1,72 @@
+{
+  "schema": "manual-host.docker-route-steering.v1",
+  "source": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl",
+  "messages": [
+    {
+      "line": 6084,
+      "timestamp": "2026-11-03T21:15:34.728Z",
+      "sha256": "d19f4cdafca7e481e9e63cf4702ba1f7a67f6e0147908814a2093d2abb4f12f3",
+      "message": "We talked about a docker solution for isolation. I wonder if that is feasible. We have much more control over the operating env."
+    },
+    {
+      "line": 6109,
+      "timestamp": "2026-11-03T21:17:33.780Z",
+      "sha256": "d2c582ac13fa094e968ba9d489b793c140e5f9fa4c4559ab29b02c8e03ee2101",
+      "message": "I think we can execute an agent with exec and that starts it's on internal app server. I think we would have to ensure logs are retained and anything else our metrics uses for example. Not sure the scope of such a change or if the current boundaries make it easier or harder."
+    },
+    {
+      "line": 6139,
+      "timestamp": "2026-11-03T21:19:21.924Z",
+      "sha256": "1ca7f93a11d650c1fde1942bffd814ebf8dccf2ba68049ddc1757769856eeab8",
+      "message": "what about retaining for review and builder, retaining for rereview?"
+    },
+    {
+      "line": 6146,
+      "timestamp": "2026-11-03T21:19:46.114Z",
+      "sha256": "6a8fa69451b5c00edf86b0a408b8d7ad49ebf4bed20281be7066ca03c6869cad",
+      "message": "I guess we could just keep the docker session running until we are done"
+    },
+    {
+      "line": 6162,
+      "timestamp": "2026-11-03T21:20:47.528Z",
+      "sha256": "9337b96118f91e6b94a79baa05cab52cc9c45368f34b9c1c84e5bf13318fc5d2",
+      "message": "perfect. perhaps we should explore this"
+    }
+  ],
+  "scope": "Bounded Docker feasibility prototype inside unchanged25 remediation cap; no trial allocation, production activation or general platform build",
+  "initial_grant": "records/manual-host-launch-remediation-approval-20261103.json",
+  "second_qualification_authority": {
+    "schema": "manual-host.docker-qualification-revision.v1",
+    "revision": 2,
+    "at": "2026-11-03T21:37:51.635784+00:00",
+    "authority": "Root implementation/qualification judgment inside user Docker exploration request DOCKER-STEERING.json; unchanged25 cap/original clock",
+    "why": "Known cached native companion missing from initial Docker runtime; per-thread feature fallback did not enable tools. Fix packaging, preserve failure and qualify one fresh complete recipe instead of inferring success from context recall.",
+    "precondition": "First four-turn attempt terminal, frozen and accounted; offline companion startup/dependencies and owned socket/file checks pass before new inference.",
+    "change": "Include the exact cached codex-code-mode-host companion alongside codex in a fresh complete initial runtime recipe; no general platform rebuild or new native source.",
+    "models": [
+      {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "tier": "default",
+        "max_usd_proxy": 0.75,
+        "productive_stop": 0.5,
+        "turns": 2
+      },
+      {
+        "role": "reviewer",
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "tier": "default",
+        "max_usd_proxy": 0.75,
+        "productive_stop": 0.5,
+        "turns": 2
+      }
+    ],
+    "actor_pool": "Original combined2 qualification envelope. First attempt observed0.1566072 plus0.10 tail forecast; new1.5 max ->1.7566072. Recalculate after first terminal pricing before admission; refuse if insufficient.",
+    "retention": "Same live container/app-server and SID per role across B1,R1,B2,R2 for this new attempt; preserve exact source/settings/cost/artifacts. No extra turn or additional actor after this attempt.",
+    "worker": "Retain native worker01a1a34f-8fbc-7383-9e2a-f4317220e252; latest122663+estimated20000growth below314829bandfloor; no allowance/time reset.",
+    "scope": "Non-scored prototype qualification, never a retry/deletion in registered host/manual pilot. No trial allocation.",
+    "stop": "If complete pinned native package still fails tools, collect and report exact blocker; no further paid workaround."
+  }
+}

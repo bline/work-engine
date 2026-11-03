@@ -1,0 +1,106 @@
+{
+  "schema": "manual-host.docker-mechanics-review.v1",
+  "verdict": "supported",
+  "claim_scope": "The bounded, externally scripted Docker/private-app-server demonstration supports retained builder/reviewer turns, actual artifact correction, exported accounting and owned teardown. It does not qualify production isolation, reviewer independence, autonomous orchestration or pilot entry.",
+  "subject": {
+    "commit": "3e8f6212438d8181614bf789ac2cf13a765a5f0c",
+    "scope": "experiments/manual-host-docker-20261103/",
+    "result_sha256_verified": "d872b8566f8f45ea3a9c52f7ff35c736715268be98c81436d3a396cf69b9df4f",
+    "evidence_manifest_sha256_verified": "0dd3821a05cfc2a54ddb44c1e68a4564455289a1b9a3e5546b6c0686771cf171",
+    "committed_results_match_private_results": true
+  },
+  "continuity": {
+    "review_type": "retained_same_session",
+    "session_id": "01a1a339-76cb-7342-b345-096a05648197",
+    "collection_owner": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+    "continuation": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/assignment.json",
+    "prior_identity_binding_acknowledged": true,
+    "fresh_independence_claim": false,
+    "prior_native_review": "Unchanged; this result concerns a different route.",
+    "prior_charged_usd": 1.753514,
+    "cumulative_reviewer_ceiling_usd": 3.253514,
+    "incremental_final_cost": "Pending root collection; no allowance reset."
+  },
+  "evidence_base": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/docker/clean2",
+  "findings": [
+    {
+      "severity": "info",
+      "claim": "The four-turn artifact loop is demonstrated.",
+      "evidence": [
+        "Builder raw rollout 01a1a35a-712f-7ae0-9857-102fc749877d, lines 16/19: writes and verifies 5, exit 0.",
+        "Reviewer raw rollout 01a1a35a-722c-7243-8153-7457db20f37e, lines 16/19/24: reads 5 and reports required 4.",
+        "Builder rollout lines 33/36: writes 4 and executes the Python assertion, exit 0.",
+        "Reviewer rollout lines 35/38/41: reads 4 and resolves the prior finding.",
+        "builder-assertion.json and hash-verified answer-initial.txt / answer-corrected.txt"
+      ],
+      "claim_limitations": "The defect and correction were prescribed fixture behavior; this supplies mechanics evidence, not engineering-quality or efficiency evidence."
+    },
+    {
+      "severity": "info",
+      "claim": "Role continuity and selected-turn settings are supported.",
+      "evidence": [
+        "qualification_turn_clean2.py:8-24 matches the exported execution script byte-for-byte.",
+        "Actual follow-up prompts: builder rollout line 29 and reviewer rollout line 31 omit MAPLE-42 and CEDAR-17 respectively.",
+        "Later final outputs recall the respective markers under the original role SIDs.",
+        "All four *-settings.json event and turn_context hashes match their cited raw lines and selected turn IDs.",
+        "builder-context.json and reviewer-context.json report successful observations."
+      ],
+      "claim_limitations": "This establishes two retained turns per role under observed Sol/medium/default and Astra/high/default settings. It does not establish crash recovery, long-duration retention or independent reviewer isolation."
+    },
+    {
+      "severity": "info",
+      "claim": "One live private app-server spans the clean sequence, and teardown is observed.",
+      "evidence": [
+        "inspect-retained.stdout and collect-inspect-live.stdout agree on container f8e41233a7ff6aaf5b5b261fbbbbade0beb0094de925a9599e976d4992a0bc01, PID 2938623, StartedAt 2026-11-03T21:39:22.127954037Z and RestartCount 0.",
+        "collect-top-live.stdout identifies PID 2938623 as codex app-server.",
+        "collect-wait.stdout contains 0.",
+        "collect-inspect-stopped.stdout reports Status=exited, Running=false, ExitCode=0.",
+        "Removal succeeded and collect-owned-list.stdout is empty; custody output hashes match."
+      ],
+      "claim_limitations": "Container exit is established by wait output and stopped-state inspection, not Docker CLI exit alone. This is teardown evidence for the observed owned containers, not a general cleanup guarantee."
+    },
+    {
+      "severity": "info",
+      "claim": "Canonical accounting discovers the original raw actor identities and includes both attempts.",
+      "evidence": [
+        "raw-manifest.json and rollout-mapping.json identify the original native SIDs.",
+        "Both canonical clean rollouts equal their private copies byte-for-byte and match manifest hashes; session_meta IDs agree.",
+        "tree-final.json attributes four priced calls to each clean actor: 0.0290344 + 0.168206 = 0.1972404 USD proxy.",
+        "The first attempt remains separately attributed at 0.1566072; combined actor qualification cost is 0.3538476."
+      ],
+      "claim_limitations": "These are modeled actor costs, not billing, quota consumption or total exploration cost. Worker/root/review costs and reporting tails remain separate."
+    },
+    {
+      "severity": "info",
+      "claim": "The clean attempt is a prospectively authorized packaging correction, with the failed attempt preserved.",
+      "evidence": [
+        "../RESULT.json and committed result-20261103.json retain the missing-companion failure and unestablished artifact loop.",
+        "../../DOCKER-QUALIFICATION-REVISION2.json matches authority-revision2.json.",
+        "clean2_bootstrap.py:11-24 mounts the complete cached distribution and explicitly starts the private app-server.",
+        "commands.json hashes verify offline native/companion startup and RPC shell/file observations before the clean model turns."
+      ],
+      "claim_limitations": "The failed offline OSS exec test did not establish the role_host socket. Only the explicitly started private app-server route is demonstrated."
+    },
+    {
+      "severity": "low",
+      "claim": "Broad security negatives remain outside this review's evidence coverage.",
+      "evidence": [
+        "README.md:35-47",
+        "clean2_bootstrap.py:11-13",
+        "Both raw turn_context records grant danger-full-access."
+      ],
+      "claim_limitations": "The retained container has bridge networking, readable provider authentication and shared writable state. I did not audit all 320 artifacts for credential absence; the README's categorical exported-evidence statement is not independently certified here."
+    }
+  ],
+  "remaining_pilot_gates": [
+    "Establish actual filesystem, tool, connector, network and credential boundaries for roots and children, including cross-arm separation.",
+    "Establish reviewer capability and exposure isolation; shared-container dangerFullAccess does not supply it.",
+    "Freeze complete startup inputs, runtime package/image identity and the common production-equivalent launch configuration.",
+    "Qualify common launcher accounting, dollar controls, recovery, receipt collection and cleanup; complete the protocol's registration and approval requirements before allocation."
+  ],
+  "review_limits": [
+    "Read-only inspection only; no agents, containers, models or provider calls launched.",
+    "Inspected exact committed experiment source directly; graph coverage for these new files was not established.",
+    "Supported is limited to this mechanics demonstration. Acceptance, integration and collection remain with the root."
+  ]
+}
