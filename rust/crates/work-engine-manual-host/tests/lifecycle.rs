@@ -1032,6 +1032,42 @@ fn output_preflight_validates_authority_and_reports_blocked_parent_without_launc
 }
 
 #[test]
+fn preparing_parent_cannot_expose_and_overwrite_an_existing_result() {
+    let mut f = Fixture::new();
+    let existing = f.dir.path().join("result.json");
+    fs::write(&existing, "preserve prior result").unwrap();
+    let missing = f.dir.path().join("new");
+    f.request["result_path"] = json!(missing.join("../result.json"));
+    assert!(!Path::new(f.request["result_path"].as_str().unwrap()).exists());
+    let output = f.dispatch();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("result already exists"));
+    assert_eq!(
+        fs::read_to_string(existing).unwrap(),
+        "preserve prior result"
+    );
+    assert!(f.state()["operations"].as_object().unwrap().is_empty());
+    assert_eq!(f.count("creates"), 0);
+    assert_eq!(f.count("starts"), 0);
+}
+
+#[test]
+fn dangling_output_link_remains_an_occupied_reservation() {
+    let f = Fixture::new();
+    std::os::unix::fs::symlink(
+        f.dir.path().join("not-created"),
+        f.dir.path().join("result.json"),
+    )
+    .unwrap();
+    let output = f.dispatch();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("result already exists"));
+    assert!(f.dir.path().join("result.json").is_symlink());
+    assert!(!f.dir.path().join("not-created").exists());
+    assert_eq!(f.count("creates"), 0);
+}
+
+#[test]
 fn help_is_available_before_state_or_provider_effects() {
     let f = Fixture::new();
     for args in [

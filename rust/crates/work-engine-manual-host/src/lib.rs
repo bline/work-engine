@@ -539,6 +539,24 @@ impl Host {
                 ))
             })?
             .join(filename);
+        // Creating a missing component may make `new/../result.json` resolve
+        // to an already occupied output. Check the resolved slot as well as
+        // the original preflight path; dangling symlinks also occupy the slot.
+        match fs::symlink_metadata(&result_reservation) {
+            Ok(_) => {
+                return refuse(format!(
+                    "result already exists before dispatch; choose a fresh assignment output ({})",
+                    result_reservation.display()
+                ));
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => {
+                return refuse(format!(
+                    "cannot inspect authorized result path {}: {e}",
+                    result_reservation.display()
+                ));
+            }
+        }
         if self
             .state
             .operations
