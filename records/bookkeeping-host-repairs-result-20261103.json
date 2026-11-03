@@ -1,0 +1,158 @@
+{
+  "schema": "bookkeeping-host.repairs-result.v1",
+  "status": "accepted_integrated_release_ready",
+  "source_commit": "bdf564f9bbe4568b740323fc74c49bd42bf7150e",
+  "baseline": "68153055601cd8df308a9a03c97507f6c0c5e640",
+  "changes": [
+    "ACK-only validates exact delivered receipt without new observation/effect/receipt",
+    "Compact inspect/dispatch/collect views expose recorded identity, settings, grant, context, canonical controls and delivery",
+    "Authorized missing output parents created0700; canonical output occupancy rechecked before launch, including dangling links",
+    "Lost/unestablished selected-turn read returns unavailable promptly; same known operation remains recoverable without automatic resume or grant change"
+  ],
+  "review": {
+    "initial_subject": "26398a9f852fd9bf3e05e8f45010551cb4dceb49",
+    "initial": "changes_required MHR-001 P2",
+    "correction_subject": "8603835d4f0f34d68e2a9b8c3074cf5eaaea58c4",
+    "correction": "accept_delta MHR-001 resolved",
+    "final": "accept_delta no new findings; prior exact-subject review carried only for unchanged source",
+    "actors": [
+      "01a19f19-c53c-7810-a38b-eaf2fbe836a8",
+      "01a19f15-b1f1-77c2-a8c5-25bf3d59a231",
+      "01a19f1d-aa6d-7752-b30f-5a79c81c2efa"
+    ],
+    "continuity": "fresh reconstructed delta reviewers because retained required readOnly realization remains unqualified; no same-reviewer continuity claim",
+    "guidance": "agent-instruction-review applicable/retain"
+  },
+  "validation": {
+    "lifecycle_tests": 44,
+    "integrated_tests": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/integrated-tests/host-tests.json",
+      "sha256": "ac5fdc271a7c8a492ae0bfe7beddc3801915d6698b233b1ee744b9b8b13cc3e8"
+    },
+    "format_clippy": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/tests-5/summary.json",
+      "sha256": "020ff10f3a38e0c423a9bc3dbc04bfb0f0f94813dba3812f83ca2b3d8816179e"
+    },
+    "skill_check": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/final-skill-check/skill-check.json",
+      "sha256": "57464d714543926642610d6b8ae31f2e8065c52f7c9e627e15b9c9eeb7bfce27"
+    },
+    "native_smoke": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/native-ack-proof.json",
+      "sha256": "42ec37c240e66341c25349d453a31197d2255ec4af036e37040a1255b336c750"
+    },
+    "native_readonly_reload": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/native-load-collection.json",
+      "sha256": "50d9c450cafda8708a52303d5f92d1a739dcd366c48f0b98eb4ab3a2263a126d"
+    },
+    "native_recovery_custody": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/native-recovery-custody/collection-only-load.json",
+      "sha256": "e426f1040602a4df5a098264769505001c72ce6aa85fbd43d1556597a20f4609"
+    },
+    "representation_measure": {
+      "raw_operation_json_bytes": 897386,
+      "summary_operation_json_bytes": 6243,
+      "comparison_scope": "one historical operation; representation size, not root-time or cost savings"
+    },
+    "measurement_limit": "Representation size and fixture/native correctness; no root-time or cost-savings claim"
+  },
+  "pin": {
+    "binary": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/provision/tools/manual-host/68736703ade77d6cd125fec73e15548d64728f3801839c040353ae0cdd40ae22/work-engine-manual-host",
+    "binary_sha256": "9a8536e165cb6d56a6ef773db221fe7527e75e62964c5213600e4e4e40a748a7",
+    "build_custody": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/provision/manual-host-build.O3kJRXBW/custody",
+    "bundle": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/provision/tools/manual-host/68736703ade77d6cd125fec73e15548d64728f3801839c040353ae0cdd40ae22",
+    "bundle_sha256": "68736703ade77d6cd125fec73e15548d64728f3801839c040353ae0cdd40ae22",
+    "manifest": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/provision/tools/manual-host/68736703ade77d6cd125fec73e15548d64728f3801839c040353ae0cdd40ae22/manifest.json"
+  },
+  "manifest": {
+    "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/provision/tools/manual-host/68736703ade77d6cd125fec73e15548d64728f3801839c040353ae0cdd40ae22/manifest.json",
+    "sha256": "be4c38fb50f33403d556fabaa3cdc69cc37ec0f2e30cef7efd291b5e771fa63d"
+  },
+  "integration": {
+    "status": "integrated",
+    "commit": "bdf564f9bbe4568b740323fc74c49bd42bf7150e",
+    "files": 6,
+    "foreign_tracked_preserved": 16,
+    "index": "no staged changes before/after",
+    "native_smoke": "completed exact turn, same-SID read-only collection reload,1native turn, ACK-only no new receipts/helpers"
+  },
+  "accounting": {
+    "snapshot_at": "2026-11-03T04:24:28.954137+00:00",
+    "coverage": "complete",
+    "closed_window": {
+      "calls": 70,
+      "quota_usd_high": 10.101511800000003,
+      "quota_usd_low": 10.101511800000003,
+      "unpriced_calls": 0,
+      "usd_high": 10.101511800000003,
+      "usd_low": 10.101511800000003
+    },
+    "post_close_candidates": {
+      "calls": 1,
+      "quota_usd_high": 0.1202124,
+      "quota_usd_low": 0.1202124,
+      "unpriced_calls": 0,
+      "usd_high": 0.1202124,
+      "usd_low": 0.1202124
+    },
+    "tail_attribution": "Root explicitly attributes observed candidate tail to this same closure/reporting; no session reuse in this interval",
+    "observed_usd": 10.221724200000002,
+    "dollar_guardrail_usd": 25,
+    "elapsed_guardrail_hours": 2,
+    "elapsed_status": "exceeded; source and native turns admitted before03:36:13Z; final collection/integration/closure after user continuation04:16:15.295Z. No clock reset, retroactive waiver or new numeric grant",
+    "closed_at": "2026-11-03T04:23:32Z",
+    "settlement": "not_established; later reporting/delayed usage may remain",
+    "ledger": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/usage-final.json",
+      "sha256": "e97d3cbf5a34d6a461bf213514c151d999bf93f691d39e958e9bbd4ddaa8836d"
+    }
+  },
+  "custody": {
+    "review_operations": "all3 closed/latest task receipts acknowledged",
+    "native_operation": "closed/latest task and accounting receipts acknowledged",
+    "host_helper_records": 204,
+    "live_recorded_process_identities": [],
+    "owned_executors": []
+  },
+  "release": {
+    "source_plan": {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/release-plan.txt",
+      "sha256": "270c675757180dfc896ad6719bbe3c196cbbc4d630913c0c66e87997eaabf29c"
+    },
+    "global_activation": "not performed",
+    "current_at_final_observation": "133946956e6cbc2f7aba0d2a9aa8d7dcedb4a423",
+    "mutation_compatibility": "Existing state still requires exact original executor; use new state for new binary"
+  },
+  "limits": [
+    "No automatic unloaded-session recovery or retained-readOnly qualification implemented",
+    "No hard provider billing cap; historical role-limit timing diagnosis is in records/bookkeeping-host-budget-diagnosis-20261103.md",
+    "Historical peer receipt/pin/state data untouched",
+    "No remote push performed by this repair"
+  ],
+  "evidence": [
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/review/result.json",
+      "sha256": "93a8bf9b5e1b8dbc8e5d0e71c3205a7fa02bc3d232c221cd149b3ec42120527c"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/review/result-2.json",
+      "sha256": "d1e144e95f05dacaeeff8a031386520d356bea8ad2e7261c241bdc19dd0edfbd"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/review/result-3.json",
+      "sha256": "d22ffcffc790cebe7759b8df9311af5d1b4954ca0710a27932e6c824add826c6"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/final-closure-authority.md",
+      "sha256": "23db5987bcee472434980800e1fe439be1cef41096235c4244bc3f2174561f87"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/native-load-collection.json",
+      "sha256": "50d9c450cafda8708a52303d5f92d1a739dcd366c48f0b98eb4ab3a2263a126d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/bookkeeping-host-repairs-20261103/integration-plan.json",
+      "sha256": "4e42d055ea41bd986a388e11b511e3744bc0137efd18fad46432e4b0c15a379f"
+    }
+  ]
+}
