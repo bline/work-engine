@@ -1,0 +1,50 @@
+{
+  "schema": "manual-host.controlled-registration.v1",
+  "experiment": "manual-host-controlled-20261103",
+  "registered_at": "2026-11-03T19:38:54.202339+00:00",
+  "durable_namespace": "experiment-control-v1",
+  "repository": "/home/bline/code/work-engine",
+  "receipt": {
+    "revision": "59030affeb0a3b259285f227caafbacb78bf4398",
+    "result": {
+      "applicability": "opt-in coexistence; existing revisions remain admissible until sealed",
+      "authority": "caller_asserted",
+      "spec": "591386e17e3a8c7410e6dad7eaeb8a8d6d452f03b0775455b86d5d8d40603650"
+    }
+  },
+  "subjects": {
+    "metrics/probes/manual-host-controlled-20261103-prereg.md": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+    "metrics/probes/manual-host-controlled-20261103-environment.json": "891a740d48918defe758eba2deab86e23f9a42ef0f65c20044c3b4a97879897a",
+    "metrics/probes/manual-host-controlled-20261103-specification.json": "3c1f8a19b02c1138e6352e523c72620bfeca1a37e364e6f6a1ec844f1d00d640"
+  },
+  "registrar_binary": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/registrar/ed0c68c68c38dcd001bdeae06e982a8598ec801789fbb2175e89a903a3095af5/experiment-control",
+  "registrar_binary_sha256": "ed0c68c68c38dcd001bdeae06e982a8598ec801789fbb2175e89a903a3095af5",
+  "build_custody": "/home/bline/.local/state/work-engine/manual-host-controlled-pilot-20261103/registrar-build/registrar-build.json",
+  "pre_registration_validation": {
+    "fresh_reducer_accepts_spec": true,
+    "active_bindings": 0,
+    "native_roles_created": 0,
+    "fixture_compiles_without_running_tasks": true,
+    "frozen_study_files": 12,
+    "verified_bundle_files": 44
+  },
+  "funding_approved": false,
+  "qualification_passed": false,
+  "allocation_published": false,
+  "trial_episodes_started": 0,
+  "limitations": [
+    "Registration is caller-attributed storage, not independent human approval or outcome/exposure attestation.",
+    "Native path/tool/connector/network isolation remains unestablished and blocks trial entry.",
+    "Fresh protocol review is planned, not completed."
+  ],
+  "registry_readback": {
+    "revision": "59030affeb0a3b259285f227caafbacb78bf4398",
+    "payload_sha256": "694914a4bbbf56585ff30ebdc660c724684e37701946bf01671ac9b091081394",
+    "specifications": 1,
+    "bindings": 0,
+    "receipts": 0,
+    "audit_operations": [
+      "register"
+    ]
+  }
+}

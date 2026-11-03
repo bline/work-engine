@@ -1,0 +1,83 @@
+{
+  "schema": "manual-host.controlled-tasks.v1",
+  "product_baseline_commit": "8e0ff12daae60073a7836028d6fa78698ac348c2",
+  "fixture": "metrics/probes/manual-host-controlled-20261103/fixture",
+  "task_count": 6,
+  "answer_key": null,
+  "scoring_basis": "Public contracts and examples plus separate masked source assessment; no predefined bug labels or hidden expected-answer corpus.",
+  "common_result": {
+    "root": ["terminal disposition", "contract judgment", "source/artifact hashes", "actual actor and selected-turn identities", "observed settings and grants", "context/budget bindings", "review verdicts", "cost coverage", "custody/leftovers", "acknowledgment and closure", "limitations"],
+    "reviewer": ["verdict", "P1/P2/P3 findings with exact source evidence or explicit no-finding result", "inspected scope", "validation observed", "limits"],
+    "workers": "Return a bounded report with paths/hashes and owned process custody. Do not claim product integration or release."
+  },
+  "pairs": [
+    {
+      "id": "P01",
+      "kind": "source_review",
+      "title": "Codec contract review",
+      "source": ["rust/crates/work-engine-types/src/codec.rs", "rust/crates/work-engine-types/tests/codec_vectors.rs", "rust/crates/work-engine-types/tests/fixtures/codec-v1.json", "rust/crates/work-engine-types/Cargo.toml"],
+      "objective": "Obtain a bounded source assessment of the existing trusted codec/declaration/digest boundary, then judge whether the report is supported and close the review task. No code changes or proof of the whole product is requested.",
+      "contract": "Reviewer checks contract selection, payload-kind separation, declaration verification, numeric bounds and test coverage, reporting actual defects or explicit no findings. Root accepts a well-evidenced review even if it identifies product defects; it does not declare the existing source defect-free merely because the review task completes.",
+      "roles": ["fresh Astra/high/default filesystem-readOnly reviewer"],
+      "mutation": "Run-local records only. Source is read-only; no builds or new tests.",
+      "quality": "Separate assessor checks whether claims follow from exact source and limitations. No known-defect recall score."
+    },
+    {
+      "id": "P02",
+      "kind": "source_review",
+      "title": "Identifier contract review",
+      "source": ["rust/crates/work-engine-types/src/identity.rs", "rust/crates/work-engine-types/src/lib.rs", "rust/crates/work-engine-types/tests/codec_vectors.rs", "rust/crates/work-engine-types/Cargo.toml"],
+      "objective": "Obtain a bounded source assessment of IdValue parsing, serialized construction and its byte/character boundary, judge the evidence and close the review task.",
+      "contract": "Reviewer checks that the nonempty/128-byte/alphabet invariants hold at exposed construction/deserialization paths and states what tests establish. Report defects only with exact evidence, or explicit no findings with limits. Root judges review adequacy, not acceptance of all product behavior.",
+      "roles": ["fresh Astra/high/default filesystem-readOnly reviewer"],
+      "mutation": "Run-local records only. Source is read-only; no builds or new tests.",
+      "quality": "Separate assessor checks correctness and coverage of the report against public contract/source, with no predefined findings."
+    },
+    {
+      "id": "P03",
+      "kind": "implementation",
+      "title": "UTF-8 line summary",
+      "objective": "Implement only summarize_lines in the experimental fixture; validate, obtain fresh source review and reach a truthful terminal disposition.",
+      "contract": "Return UTF-8 byte length, Unicode scalar count and logical line count. Empty input has zero lines; otherwise count LF characters plus one if the input does not end with LF. CR is ordinary data, including before LF. The function is total for every &str and must not normalize or trim text. Do not change the API or the other task stubs.",
+      "public_test_target": "lines",
+      "roles": ["Sol6.1/medium/default workspace-write worker", "fresh Astra/high/default filesystem-readOnly reviewer"],
+      "mutation": "Experimental fixture src/lib.rs and additional task-specific tests only. Preserve supplied public tests.",
+      "validation": "Offline cargo test --test lines, with owned custody. Additional relevant checks are allowed within the episode cap.",
+      "quality": "Public examples plus masked source inspection for general implementation and unchanged scope; hardcoding examples is failure."
+    },
+    {
+      "id": "P04",
+      "kind": "implementation",
+      "title": "Portable relative-path predicate",
+      "objective": "Implement only is_portable_relative_path in the experimental fixture, validate and obtain fresh review.",
+      "contract": "Accept exactly nonempty slash-separated UTF-8 relative names with no empty component, '.' or '..' component, backslash, colon or Unicode control character. Leading/trailing or repeated '/' therefore reject. Ordinary spaces and non-control Unicode names are accepted. This is a lexical portable-name predicate only: it does not inspect a filesystem, normalize Unicode, resolve symlinks or establish filesystem confinement. Do not change other task stubs or the API.",
+      "public_test_target": "paths",
+      "roles": ["Sol6.1/medium/default workspace-write worker", "fresh Astra/high/default filesystem-readOnly reviewer"],
+      "mutation": "Experimental fixture src/lib.rs and additional task-specific tests only. Preserve supplied public tests.",
+      "validation": "Offline cargo test --test paths with owned custody; tests should cover the public general contract, including spaces and Unicode controls.",
+      "quality": "Public examples plus masked inspection of general behavior and absence of a false filesystem-security claim."
+    },
+    {
+      "id": "P05",
+      "kind": "planned_retained_extension",
+      "title": "Tag counting then checked merge",
+      "objective": "Use one worker SID for two bounded assignments before a fresh reviewer judges their combined result. This fixed staging exercises retained-worker bookkeeping in both arms, rather than choosing retention after observing which arm is cheaper.",
+      "stage_1": "Implement only tag_counts: count exact nonempty &str labels into BTreeMap<String,u64>, preserving case, whitespace and Unicode without normalization. Empty labels are ignored. No merge implementation is in this stage's mutation grant. Validate tags_stage1 and collect the completed first assignment.",
+      "stage_2": "After collection, actual settings/capacity verification and a new bounded packet, continue the same worker SID. Implement merge_counts as a fresh union of both maps with checked u64 addition on overlapping keys. Preserve zero counts, leave both inputs unchanged and return CountOverflow if any sum overflows. Validate tags_stage1 and tags_stage2. Stage 1 may remain in context; no root or reviewer context is inherited from another arm.",
+      "roles": ["one Sol6.1/medium/default workspace-write worker across two turns", "fresh Astra/high/default filesystem-readOnly reviewer"],
+      "mutation": "Experimental fixture src/lib.rs and additional task-specific tests only, within each stage's grant. Preserve supplied tests.",
+      "quality": "Correct implementation of both contracts, actual retained SID/exact-turn evidence, scoped mutation and no duplicate/unknown launch. A planned stage is not counted as a repair."
+    },
+    {
+      "id": "P06",
+      "kind": "artifact_collection",
+      "title": "12 MiB artifact and bounded manifest",
+      "objective": "Have a workspace-write worker produce a large binary artifact and small result manifest, verify custody and source/snapshot integrity, obtain fresh review and close.",
+      "contract": "artifact.bin is exactly 12,582,912 bytes; byte at offset i is i modulo 256. Produce it by a bounded streaming method and report its exact byte length and SHA-256 in a JSON result smaller than 64 KiB. Record actual producer process completion, outputs and zero leftovers through the existing custody tool. Root captures an immutable snapshot and verifies both source and snapshot hashes/lengths before acceptance. No entire-artifact stdout or embedded JSON/base64 blob. JSON reference fields must obey the pinned capture contract.",
+      "roles": ["Sol6.1/medium/default workspace-write artifact worker", "fresh Astra/high/default filesystem-readOnly reviewer"],
+      "mutation": "Run-local producer source, artifact, result and custody records only; no product source.",
+      "validation": "Independently compare source/snapshot size, full SHA-256 and deterministic byte pattern. Existing streaming/custody helpers are available in both arms. Record the physical process evidence rather than merely asserting a successful exit.",
+      "quality": "Actual large-file collection succeeds with a bounded report and verified source/snapshot/custody. This is not a test of arbitrary large structured JSON."
+    }
+  ]
+}

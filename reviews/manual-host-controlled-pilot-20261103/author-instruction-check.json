@@ -1,0 +1,62 @@
+{
+  "schema": "agent-instruction-review.author-check.v1",
+  "applicability": {
+    "status": "applicable",
+    "reason": "Common and condition packets impose present prospective role/condition/loading contracts once activated."
+  },
+  "subject": {
+    "registration_spec": "591386e17e3a8c7410e6dad7eaeb8a8d6d452f03b0775455b86d5d8d40603650",
+    "files": {
+      "metrics/probes/manual-host-controlled-20261103-prereg.md": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+      "metrics/probes/manual-host-controlled-20261103/root-common.md": "53d4571550b466443a32fae241830b11dd5a7ecb8d7f5725deb33fc460ab966d",
+      "metrics/probes/manual-host-controlled-20261103/hosted.md": "0e767f3400e9aab79ad9700de95b356de2586d310624d774a4c5784eee3239d4",
+      "metrics/probes/manual-host-controlled-20261103/manual.md": "4675a25dee54549fef6d68e31a1bc5e0f96da41604878a6c771cf6cbdb3356a4",
+      "metrics/probes/manual-host-controlled-20261103/tasks.json": "40eb435f09d80c44c567585fd47866ba002d7e6f11341b0de9762301d7e58957"
+    }
+  },
+  "inspected_material": [
+    "DESIGN.md",
+    "PHILOSOPHY.md",
+    "metrics/experiment-plan-20261026.md",
+    "skills/manual-orchestration/SKILL.md",
+    "skills/manual-orchestration/references/organization-formation.md",
+    "skills/agent-instruction-review/SKILL.md",
+    "skills/agent-instruction-review/references/finding-contract.md"
+  ],
+  "decisive_evidence": [
+    {
+      "instruction": "Use the assigned condition, preserve checks and keep the same task through retries.",
+      "owner": "This experiment; episode root is consumer.",
+      "protected_distinction": "One-factor automation comparison with original-arm accounting.",
+      "causal_exposure": "The common and condition packets explain that omitted checks, unmeasured helpers or condition changes alter the comparison.",
+      "exact_route": "H/M tool choice is the experimental factor, not general engineering doctrine."
+    },
+    {
+      "instruction": "No cross-arm source/output exposure; use frozen inputs and observed grants.",
+      "owner": "Experiment validity contract; launcher and episode roles.",
+      "protected_distinction": "Prospective outcomes and comparable environments.",
+      "causal_exposure": "Protocol and common packet name contamination and the limits of native filesystem-only evidence.",
+      "exact_route": "Isolation outcome is required; any qualified implementation preserving it is allowed."
+    },
+    {
+      "instruction": "P05 uses the same worker for two scoped stages.",
+      "owner": "P05 workload contract.",
+      "protected_distinction": "Exercises retained-worker lifecycle consistently in both arms, not outcome-selected repair.",
+      "causal_exposure": "Task P05 and common packet explain why fixed staging is used and that it is not a fabricated repair.",
+      "exact_route": "Limited to this experiment task, not a general retention rule."
+    },
+    {
+      "instruction": "Budget, settings, authority and failure boundaries.",
+      "owner": "Human study owner; existing manual/domain contracts continue to own their meanings.",
+      "protected_distinction": "Registration is distinct from funding, execution, native realization and acceptance.",
+      "causal_exposure": "Status, decision record and root packet explicitly keep those distinctions.",
+      "exact_route": "The cap/configuration and measurement boundaries belong to the approved comparison; no new global policy."
+    }
+  ],
+  "findings": [],
+  "limitations": [
+    "Author consistency check only; not a fresh or independent adversarial review, not approval or activation.",
+    "Does not validate native launch/tool isolation, mask completeness, model availability, statistic implementation or runtime accounting joins.",
+    "Fresh Astra/xhigh protocol review and qualification remain required before any trial."
+  ]
+}

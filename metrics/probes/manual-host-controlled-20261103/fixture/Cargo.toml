@@ -1,0 +1,8 @@
+[package]
+name = "manual-host-pilot-fixture"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# An experimental input, deliberately independent of the product workspace.
+[workspace]

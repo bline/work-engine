@@ -1,0 +1,40 @@
+{
+  "schema": "manual-host.controlled-pilot-decision.v1",
+  "status": "preparation_authorized; trial_funding_and_activation_pending",
+  "owner": "user",
+  "source": {
+    "kind": "current conversation",
+    "user_quote": "Ok, let's do it",
+    "approved_scope": "Prepare registration and budget under the preceding recommendation. No numeric pilot funding was previously specified."
+  },
+  "subjects": [
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103-prereg.md",
+      "sha256": "85d08fb097881d476e7419c93689d5271bc86911be69ee69e4097ef670634821",
+      "bytes": 20588
+    },
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103-environment.json",
+      "sha256": "891a740d48918defe758eba2deab86e23f9a42ef0f65c20044c3b4a97879897a",
+      "bytes": 16778
+    },
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103/tasks.json",
+      "sha256": "40eb435f09d80c44c567585fd47866ba002d7e6f11341b0de9762301d7e58957",
+      "bytes": 9041
+    },
+    {
+      "path": "metrics/probes/manual-host-controlled-20261103-specification.json",
+      "sha256": "3c1f8a19b02c1138e6352e523c72620bfeca1a37e364e6f6a1ec844f1d00d640",
+      "bytes": 82322
+    }
+  ],
+  "proposed_total_usd": 200,
+  "funding_approval": null,
+  "qualification_passed": false,
+  "allocation_published": false,
+  "trials_started": false,
+  "authority_limit": "No paid model actors or arm runs until exact budget/registration approval and qualification; existing preparation remains attributable without reset.",
+  "registration_receipt": "metrics/probes/manual-host-controlled-20261103-registration.json",
+  "specification_revision": "591386e17e3a8c7410e6dad7eaeb8a8d6d452f03b0775455b86d5d8d40603650"
+}
