@@ -1,0 +1,78 @@
+{
+  "schema": "manual-host.native-launch-review-provenance.v1",
+  "subject": "Bounded native launch feasibility evidence; no source shipping approval",
+  "authority": {
+    "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/APPROVAL.json",
+    "sha256": "12246929a0a28ac65d2f09777815dc378c9e5c8cbc494f1849ab7d43264fb310"
+  },
+  "packet": {
+    "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/review-packet.md",
+    "sha256": "931d215b3590f9bccc8d93c9e2f8b023a89b9f87e6ac504cea6508ac34acf624"
+  },
+  "result": {
+    "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/review-result.txt",
+    "sha256": "1aa2a26446f517cca6fb944c8ef10abb60f77c23709551faadda0ec56baccfb2"
+  },
+  "identity_binding": {
+    "session_id": "01a1a339-76cb-7342-b345-096a05648197",
+    "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T14-03-35-01a1a339-76cb-7342-b345-096a05648197.jsonl",
+    "session_meta_sha256": "e5dcce41102e3979a9cb472a4b2279ef8401d82bd387d0d2e9128f1b04b6220b",
+    "collection_owner": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+    "continuation": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/assignment.json",
+    "context_binary": "/home/bline/.local/state/work-engine/tools/context-status/d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204/work-engine-context-status",
+    "context_binary_sha256": "d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204",
+    "grant_evidence": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/review-admission.json"
+  },
+  "actual_settings": {
+    "limitations": [
+      "Selected-turn settings require an attributed matching turn_context/interval; later session events are excluded.",
+      "Successor settings must be observed after launch and adoption; arguments are a request.",
+      "Runtime configuration does not establish backend fulfillment or billing."
+    ],
+    "model": "gpt-6-astra",
+    "preservation": "launch_arguments_available",
+    "reasoning_effort": "xhigh",
+    "recorded_cli_version": "0.166.0",
+    "service_tier": "default",
+    "session_id": "01a1a339-76cb-7342-b345-096a05648197",
+    "source": {
+      "event_sha256": "4ae0723c627501132af1c08a9ada71c495edf703bde36e15e4ba5565677f4166",
+      "line": 11,
+      "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T14-03-35-01a1a339-76cb-7342-b345-096a05648197.jsonl",
+      "timestamp": "2026-11-03T21:05:26.886Z",
+      "turn_context": {
+        "effort": "xhigh",
+        "event_sha256": "710865038381e7ab5f2e53823bc57870b0cce49b1798a8eaa60a75b300b476e4",
+        "line": 10,
+        "model": "gpt-6-astra",
+        "turn_id": "01a1a33b-28e6-7fa2-98d9-f8b87fe8c40d"
+      }
+    },
+    "successor_host_args": [
+      "-m",
+      "gpt-6-astra",
+      "-c",
+      "model_reasoning_effort=\"xhigh\"",
+      "-c",
+      "service_tier=\"default\""
+    ],
+    "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+    "turn_attribution": "exact_turn_interval",
+    "turn_id": "01a1a33b-28e6-7fa2-98d9-f8b87fe8c40d"
+  },
+  "admission": {
+    "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/review-resumed-admission.json",
+    "sha256": "d8b3847df5261e6ea04e6a6c55902b1f7ab9af460acd9d63047be8f2da3f21c0"
+  },
+  "collection": {
+    "path": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/review-collection-custody/native-feasibility-review.json",
+    "sha256": "ab31e7761c4cdc825428cb67d512e6cbefb586f283267a08261ea6d1fe1b2dba"
+  },
+  "root_disposition": "Accept review as decision support for unmet qualification; partial code remains unaccepted",
+  "fresh_entry_evidence": "Prepared native thread had zero turns; resumed with identical requested settings and native readOnly/network-off plus zero MCP and callable-app inventories before first inference",
+  "limitations": [
+    "No accepted source change or complete pilot isolation claim",
+    "Reviewer used exact supplied source because graph tools were unavailable",
+    "Native configuration evidence does not establish backend fulfillment or billing"
+  ]
+}

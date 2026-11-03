@@ -590,3 +590,13 @@ cost is recorded with its reporting tail in the
 [result](probes/manual-host-controlled-20261103-qualification.md); it is not a
 host-versus-manual efficiency observation. No savings or quality-equivalence
 claim follows.
+
+## Native launch remediation checkpoint, 2026-11-03
+
+The native route within the approved $25 [remediation envelope](probes/manual-host-launch-remediation-20261103.md)
+demonstrated useful native restrictions but left the complete common launch path
+unqualified. A model command could read its allowed sentinel, while the owned
+orchestration-socket handshake failed at AF_UNIX creation. The separate fresh
+review returned unestablished. The partial adapter candidate remains unaccepted;
+**0 trial episodes** ran and no new efficiency estimate follows. Costs, setup
+failures, exact tool evidence and reporting-tail uncertainty remain in the record.

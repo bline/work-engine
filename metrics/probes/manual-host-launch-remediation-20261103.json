@@ -1,0 +1,193 @@
+{
+  "schema": "manual-host.native-launch-remediation-result.v1",
+  "status": "unqualified_stopped_at_feasibility",
+  "authority": "records/manual-host-launch-remediation-approval-20261103.json",
+  "approved_additional_usd_proxy": 25,
+  "whole_authorization_ceiling_usd_proxy": 225,
+  "accepted_original_items": [
+    "Establish usable native isolation and orchestration controls",
+    "Conditionally implement minimal adapter support and frozen startup inputs",
+    "Review/requalify and amend registration prospectively only if supported"
+  ],
+  "qualified": false,
+  "trial_allocations": 0,
+  "trial_episodes": 0,
+  "efficiency_estimate": null,
+  "review": {
+    "verdict": "unestablished",
+    "result": "reviews/manual-host-native-launch-20261103/feasibility-result.json",
+    "provenance": "reviews/manual-host-native-launch-20261103/provenance.json",
+    "source_shipping_approval": false
+  },
+  "findings": {
+    "demonstrated": [
+      "Experimental client capability plus explicit selector chooses a named native permission profile",
+      "Controlled native commands allow declared reads and deny excluded reads/writes under the tested profile",
+      "Explicit app controls remove callable app tools in metadata",
+      "A model command read the allowed sentinel and another model command was denied the excluded sentinel"
+    ],
+    "unestablished": [
+      "Functioning isolated root/child orchestration common to both arms",
+      "A complete frozen startup inventory and its preservation across root/child launch",
+      "Server-side control-operation isolation if connectivity becomes available",
+      "All required writable paths, child inheritance and cross-arm separation"
+    ],
+    "decisive_observation": "In raw model tool output, allowed sentinel read exits0 while the owned control-socket handshake exits1 with EPERM at socket.socket(AF_UNIX, SOCK_STREAM), despite requested explicit Unix socket allowlist/proxy configuration. Existing role_host uses this AF_UNIX client."
+  },
+  "limitations": [
+    "A tested CLI0.166.0 route failure, not a universal Codex impossibility or a demonstrated control-plane bypass",
+    "Connection refusal in network-enabled probes does not establish full domain filtering",
+    "Metadata checks came from separate configurations, not one qualified end-to-end environment",
+    "The recorded binary digest is the installed JavaScript launcher digest, not a complete native executable pin",
+    "Custody wrapper exit0 means collection completed, not that every inner command passed",
+    "Earlier interrupted, environment-less and refusal attempts are not OS evidence or trial data"
+  ],
+  "cost_snapshot": {
+    "since": "2026-11-03T20:30:00.555Z",
+    "until": "2026-11-03T21:12:25.420854+00:00",
+    "totals": {
+      "calls": 95,
+      "quota_usd_high": 4.5172616,
+      "quota_usd_low": 4.5172616,
+      "unpriced_calls": 0,
+      "usd_high": 4.5172616,
+      "usd_low": 4.5172616
+    },
+    "actors": [
+      {
+        "session_id": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+        "direct": {
+          "calls": 76,
+          "quota_usd_high": 2.6281528,
+          "quota_usd_low": 2.6281528,
+          "unpriced_calls": 0,
+          "usd_high": 2.6281528,
+          "usd_low": 2.6281528
+        }
+      },
+      {
+        "session_id": "01a1a333-b8c3-7881-9127-d86543b4fafc",
+        "direct": {
+          "calls": 3,
+          "quota_usd_high": 0.0450736,
+          "quota_usd_low": 0.0450736,
+          "unpriced_calls": 0,
+          "usd_high": 0.0450736,
+          "usd_low": 0.0450736
+        }
+      },
+      {
+        "session_id": "01a1a334-cf8c-7760-a33e-ac153acc499a",
+        "direct": {
+          "calls": 2,
+          "quota_usd_high": 0.042423199999999994,
+          "quota_usd_low": 0.042423199999999994,
+          "unpriced_calls": 0,
+          "usd_high": 0.042423199999999994,
+          "usd_low": 0.042423199999999994
+        }
+      },
+      {
+        "session_id": "01a1a336-4782-7aa3-becc-52761c56f3a3",
+        "direct": {
+          "calls": 3,
+          "quota_usd_high": 0.048097999999999995,
+          "quota_usd_low": 0.048097999999999995,
+          "unpriced_calls": 0,
+          "usd_high": 0.048097999999999995,
+          "usd_low": 0.048097999999999995
+        }
+      },
+      {
+        "session_id": "01a1a339-76cb-7342-b345-096a05648197",
+        "direct": {
+          "calls": 11,
+          "quota_usd_high": 1.7535139999999998,
+          "quota_usd_low": 1.7535139999999998,
+          "unpriced_calls": 0,
+          "usd_high": 1.7535139999999998,
+          "usd_low": 1.7535139999999998
+        }
+      }
+    ],
+    "basis": "speed_adjusted_api_usd; modeled proxy, not measured subscription quota or invoice",
+    "pre_init_usd_proxy": 0.075872,
+    "pre_init_already_included": true,
+    "reporting_tail": "Later root reporting/closure calls remain unsettled; never infer zero"
+  },
+  "candidate": {
+    "accepted": false,
+    "integrated": false,
+    "activated": false,
+    "patch": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/unqualified-adapter-candidate.patch",
+    "sha256": "5c7123b5ce2aea0f344ae57790c7f4cdf5e24c58cbe4e2c431afa186af622455",
+    "source_restored": true,
+    "rust_build_performed": false,
+    "complete_candidate_qualification": false
+  },
+  "terminal_actors": [
+    {
+      "session_id": "01a1a331-eb61-7b30-b7d0-2ca346a778c9",
+      "turn_id": "01a1a331-efcf-7ce2-a521-a87fef559970",
+      "status": "interrupted",
+      "thread_loading": {
+        "type": "notLoaded"
+      },
+      "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T13-55-21-01a1a331-eb61-7b30-b7d0-2ca346a778c9.jsonl"
+    },
+    {
+      "session_id": "01a1a333-b8c3-7881-9127-d86543b4fafc",
+      "turn_id": "01a1a333-bc1a-7811-9f56-b772e5202542",
+      "status": "completed",
+      "thread_loading": {
+        "type": "notLoaded"
+      },
+      "rollout": "/home/bline/.codex/archived_sessions/rollout-2026-11-03T13-57-18-01a1a333-b8c3-7881-9127-d86543b4fafc.jsonl"
+    },
+    {
+      "session_id": "01a1a334-cf8c-7760-a33e-ac153acc499a",
+      "turn_id": "01a1a334-d0b5-7231-8afc-993906a11b9c",
+      "status": "completed",
+      "thread_loading": {
+        "type": "notLoaded"
+      },
+      "rollout": "/home/bline/.codex/archived_sessions/rollout-2026-11-03T13-58-29-01a1a334-cf8c-7760-a33e-ac153acc499a.jsonl"
+    },
+    {
+      "session_id": "01a1a336-4782-7aa3-becc-52761c56f3a3",
+      "turn_id": "01a1a336-48b4-7443-8739-3da4794021d5",
+      "status": "completed",
+      "thread_loading": {
+        "type": "notLoaded"
+      },
+      "rollout": "/home/bline/.codex/archived_sessions/rollout-2026-11-03T14-00-05-01a1a336-4782-7aa3-becc-52761c56f3a3.jsonl"
+    },
+    {
+      "session_id": "01a1a339-76cb-7342-b345-096a05648197",
+      "turn_id": "01a1a33b-28e6-7fa2-98d9-f8b87fe8c40d",
+      "status": "completed",
+      "thread_loading": {
+        "type": "notLoaded"
+      },
+      "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T14-03-35-01a1a339-76cb-7342-b345-096a05648197.jsonl"
+    }
+  ],
+  "owned_process_custody": {
+    "probe_groups": 9,
+    "collector_groups": 1,
+    "recorded_remaining_processes": 0
+  },
+  "registration": {
+    "original": "metrics/probes/manual-host-controlled-20261103-prereg.md",
+    "new_revision_activated": false,
+    "allocations_stay_closed": true,
+    "trial_category_allocations_unchanged": true
+  },
+  "next_boundary": "Identify a concrete existing scoped orchestration route before further implementation. A new broker or isolation platform needs separately bounded scope; no such work is authorized or scheduled by this result.",
+  "later_user_steering": {
+    "at": "2026-11-03T21:20:47.528Z",
+    "source": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/DOCKER-STEERING.json",
+    "message": "perfect. perhaps we should explore this",
+    "effect": "User requested a bounded Docker route exploration within the remaining original25 cap; native route stays unqualified. New evidence will be a separate record; original deadline not reset."
+  }
+}

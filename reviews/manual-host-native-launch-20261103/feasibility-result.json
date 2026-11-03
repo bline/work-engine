@@ -1,0 +1,100 @@
+{
+  "schema": "manual-host.native-launch-feasibility-review.v1",
+  "verdict": "unestablished",
+  "summary": "The evidence establishes useful native restrictions, but not functioning isolated root/child orchestration common to both arms. The tested model route fails before connecting to the control socket. No small correction that closes this gap is established by the bounded evidence.",
+  "identity_binding": {
+    "acknowledged": true,
+    "session_id": "01a1a339-76cb-7342-b345-096a05648197",
+    "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T14-03-35-01a1a339-76cb-7342-b345-096a05648197.jsonl",
+    "session_meta_sha256_verified": "e5dcce41102e3979a9cb472a4b2279ef8401d82bd387d0d2e9128f1b04b6220b",
+    "collection_owner": "01a19d59-05c0-7861-b8d5-b227b13a9f1e",
+    "continuation": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103/assignment.json",
+    "observed_settings": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "service_tier": "default"
+    }
+  },
+  "evidence_base": "/home/bline/.local/state/work-engine/manual-host-launch-remediation-20261103",
+  "findings": [
+    {
+      "severity": "high",
+      "finding": "The tested native model route cannot reach the orchestration transport.",
+      "evidence": [
+        "native-command-custody/native-model-socket-handshake.stdout and .json",
+        "/home/bline/.codex/archived_sessions/rollout-2026-11-03T14-00-05-01a1a336-4782-7aa3-becc-52761c56f3a3.jsonl:10",
+        "Raw rollout lines 17/20: call_1315e04499584aaa8bdc2ce855e8ab00 reads the allowed sentinel successfully.",
+        "Raw rollout lines 22/24: call_857a8f67a2cd4d2e9fb1bc3a3c41533c exits 1 with EPERM at socket.socket(AF_UNIX, SOCK_STREAM)."
+      ],
+      "consequence": "Profile selection, network-enabled metadata and the configured socket allowlist do not establish child dispatch. The failure precedes pathname connection, WebSocket initialization and any application RPC.",
+      "claim_limitations": "This is an observed failure of the tested CLI 0.166.0 configuration and execution route, not proof that every supported native route fails. The handshake command requested no excluded-file read. The raw tool output supplies evidence absent from the native history's commandExecution inventory."
+    },
+    {
+      "severity": "high",
+      "finding": "The released adapter depends on the transport that failed.",
+      "evidence": [
+        "/home/bline/code/work-engine/skills/manual-orchestration/scripts/codex_app.py:34",
+        "/home/bline/code/work-engine/skills/manual-orchestration/scripts/codex_app.py:45",
+        "/home/bline/code/work-engine/skills/manual-orchestration/scripts/role_host.py:346",
+        "/home/bline/code/work-engine/skills/manual-orchestration/scripts/role_host.py:521",
+        "/home/bline/code/work-engine/rust/crates/work-engine-manual-host/src/lib.rs:735"
+      ],
+      "consequence": "The client creates an AF_UNIX stream socket; role_host uses that client for thread creation; Rust preparation invokes role_host. Adding profile-selection arguments alone cannot demonstrate the required orchestration consequence.",
+      "claim_limitations": "Inspection covered the supplied source ranges. It does not establish that no alternative transport exists elsewhere. The partial adapter candidate was neither reviewed for acceptance nor accepted."
+    },
+    {
+      "severity": "medium",
+      "finding": "Filesystem and network observations establish narrower properties than full pilot isolation.",
+      "evidence": [
+        "native-command-custody/named-profile-sentinels-2.stdout and .json",
+        "native-command-custody/orchestration-allowlisted-socket-sentinels.stdout and .json"
+      ],
+      "consequence": "The explicit profile allowed the declared sentinel read, hid excluded paths from read/write commands and prevented the tested local socket operation. With network enabled and the proxy feature requested, AF_UNIX creation still failed.",
+      "claim_limitations": "These command/exec observations do not qualify all model tools, required writable locations, child inheritance or cross-arm separation. ConnectionRefusedError from the network-enabled loopback attempt does not establish complete domain filtering. Wrapper exit 0 denotes successful collection, not successful inner commands."
+    },
+    {
+      "severity": "medium",
+      "finding": "App restrictions have supporting metadata, but startup freezing remains incomplete.",
+      "evidence": [
+        "feasibility-metadata.json",
+        "feasibility-no-apps.json",
+        "feasibility-frozen-startup.json"
+      ],
+      "consequence": "Disabling configured servers/plugins left 305 codex_apps tools. Adding app feature/default controls removed that server from the inventory; the later app inventory reported all 15 listed apps non-callable. Global AGENTS remained an instruction source despite project_doc_max_bytes=0 and 98 disabled skill entries.",
+      "claim_limitations": "These are metadata observations from separate configurations, not one qualified end-to-end environment. The supplied evidence does not establish a complete frozen startup inventory or preservation across root/child launch."
+    },
+    {
+      "severity": "high",
+      "finding": "Successful socket connectivity would still require evidence that control operations preserve isolation.",
+      "evidence": [
+        "/home/bline/code/work-engine/skills/manual-orchestration/scripts/codex_app.py:127",
+        "/home/bline/code/work-engine/skills/manual-orchestration/scripts/role_host.py:521",
+        "native-command-custody/orchestration-allowlisted-socket-sentinels.stdout"
+      ],
+      "consequence": "The client forwards arbitrary RPC method/parameter pairs. A future working connection must preserve the required file, thread and child-grant boundaries; shell restrictions alone cannot attest those server-side effects.",
+      "claim_limitations": "No control-plane bypass was demonstrated: the recorded socket attempt failed before RPC. Additional mediation may be needed, but its necessity is not established without evidence about an already-supported scoped route."
+    }
+  ],
+  "existing_route_corrections": {
+    "closing_correction_established": false,
+    "supported_partial_corrections": [
+      "Use the experimental API handshake and explicit named permissions selector; the released initializer and host-argument mapping do not supply these together.",
+      "Retain explicit app feature/default disabling rather than relying only on configured MCP/plugin disabling.",
+      "Retain a usable local execution environment; environments=[] explained an earlier unusable attempt, but cannot explain the later successful sentinel read followed by AF_UNIX EPERM."
+    ],
+    "assessment": "These corrections address observed setup gaps and were already incorporated into relevant probes. None establishes a repair for the remaining socket failure. Changing socket pathname permissions is not supported as a fix for failure at socket creation."
+  },
+  "recommended_next_action": {
+    "action": "Return the feasibility checkpoint as unqualified, preserve the successful restriction evidence and exact failed route, and keep trial allocation closed.",
+    "within_scope": "The root should collect this review and accounting tails, record the unmet orchestration/startup properties, and leave the partial candidate unaccepted. Further implementation should depend on identifying a concrete existing native route that can establish those properties within the approved bounds.",
+    "boundary": "If the remedy requires a new control broker or isolation platform, report that scope change to the operator rather than building it inside this slice. The present evidence does not justify either qualification or a universal impossibility claim.",
+    "authority": "Acceptance, integration and collection remain with the root under APPROVAL.json and the protocol's qualification/activation section."
+  },
+  "review_limitations": [
+    "Graph tools were unavailable. Used the exact supplied source ranges; did not independently refresh the parent graph generation or coverage.",
+    "Verified stdout/stderr hashes against all three cited custody records. The current probe source matches the final handshake custody digest; earlier probes bind different source revisions.",
+    "Earlier interrupted, environment-less and refusal attempts were not treated as OS evidence or trial observations.",
+    "No agents, providers or model probes were launched; no files or configuration were changed.",
+    "Final modeled cost and reporting tail are not yet collected; root retains accounting ownership."
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "manual-host-launch-remediation-approval-v1",
+  "approved_at": "2026-11-03T20:34:37.833Z",
+  "approver": "user",
+  "message": "Approved",
+  "source": {
+    "rollout": "/home/bline/.codex/sessions/2026/11/02/rollout-2026-11-02T10-40-19-01a19d59-05c0-7861-b8d5-b227b13a9f1e.jsonl",
+    "line": 5374,
+    "sha256": "ea9887a64efe4cde9c0bb93df1bc881ecad930317da7a9a3dda4a9c68e63da12"
+  },
+  "objective": "Qualify a common isolated launch path for the registered host-versus-manual comparison; bounded native controls first, then minimal adapter changes only if feasible.",
+  "budget_usd_proxy": 25,
+  "allocations": {
+    "feasibility": 5,
+    "implementation": 10,
+    "review_and_qualification": 5,
+    "protected_completion": 5
+  },
+  "max_active_hours": 3,
+  "early_checkpoint": {
+    "usd": 5,
+    "minutes": 45,
+    "at": "2026-11-03T21:19:37.833Z"
+  },
+  "conservative_hard_return": "2026-11-03T23:34:37.833Z",
+  "whole_authorization_ceiling": 225,
+  "original_pilot_authority": "records/manual-host-controlled-pilot-approval-20261103.json",
+  "trial_allocations_unchanged": true,
+  "stop_if_substantial_new_infrastructure_required": true
+}
