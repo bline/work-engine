@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "strategic_objective": "Deliver a usable, governed Work Engine by composing demonstrated root behavior with existing Rust semantic owners, preserving authority and truthful evidence while testing inference economics.",
+  "evidence_cutoff": {
+    "roadmap_revision": "sha256:972d04af67301dc752c81f9148f4de19942769bf28e418e3f1ad1ec0998f3b00",
+    "repository_revision": "ab906b90acc343876e1f927b821a6e4c2a4aeb79",
+    "campaign_terminals": []
+  },
+  "continuity": "initialized",
+  "verdict": "revise",
+  "current_rationale": "The root workflow demonstrates useful model-directed operation and the Rust domains contain substantial reusable execution/state mechanisms. Their composition and realized capability boundaries remain incomplete. New pilot and lifecycle qualification evidence supports a bounded, capability-qualified integration route. No causal net savings or full replacement is established. The dated reconciliation records the cutoff, source standing and exact proposed route.",
+  "assumptions": {
+    "confirmed": [
+      {
+        "statement": "Model judgment within explicit owned contracts remains the governing product direction.",
+        "evidence": [
+          "DESIGN.md",
+          "PHILOSOPHY.md"
+        ],
+        "strategic_consequence": "Preserve doctrine while revising delivery priorities."
+      },
+      {
+        "statement": "Root orchestration is an operational baseline and Rust domain owners are useful integration foundations.",
+        "evidence": [
+          "notes/work-engine-builder-architecture-assessment-20261103.md",
+          "records/rust-workspace-w1-result.md",
+          "skills/manual-orchestration/SKILL.md"
+        ],
+        "strategic_consequence": "Compare proposed replacements and integrations with demonstrated behavior; compose existing owners."
+      },
+      {
+        "statement": "Development can proceed offline with coordinated host/consumer replacement.",
+        "evidence": [
+          "docs/rust-development.md",
+          "records/rust-host-replacement-plan.md"
+        ],
+        "strategic_consequence": "Continuous operation, dual writers and temporary bridges are not default prerequisites."
+      }
+    ],
+    "changed": [
+      {
+        "statement": "The external development workflow can supply product operating behavior rather than remain only a bootstrap mechanism.",
+        "evidence": [
+          "notes/work-engine-builder-architecture-assessment-20261103.md",
+          "skills/manual-orchestration/references/organization-formation.md"
+        ],
+        "strategic_consequence": "Promote demonstrated properties into a comparison baseline without freezing topology or treating operational success as authority."
+      },
+      {
+        "statement": "The controlled economic comparison is approved but its original launch route is unqualified; there are zero allocated pairs and trial episodes at the recorded qualification result.",
+        "evidence": [
+          "records/manual-host-controlled-pilot-approval-20261103.json",
+          "metrics/probes/manual-host-controlled-20261103-qualification.md"
+        ],
+        "strategic_consequence": "Resolve the separately owned realized-input/capability boundary prospectively; no efficiency outcome can be inferred."
+      },
+      {
+        "statement": "The lifecycle owner selected a constrained delivery direction after a bounded observation exposed limits of the original evidence route.",
+        "evidence": [
+          "records/rust-lifecycle-s10-feasibility-result-20261103.md",
+          "records/rust-lifecycle-s10-constrained-profile-direction-20261103.md",
+          "proposals/rust-lifecycle/constrained-development-profile/proposal.md"
+        ],
+        "strategic_consequence": "Consume exact profile qualification separately from the original full-S10 claim; unsupported assurance remains represented."
+      },
+      {
+        "statement": "The canonical strategic route predates substantial current orchestration and Rust integration work.",
+        "evidence": [
+          "roadmap.md#current-strategic-route",
+          "planning/architecture-roadmap-refresh-brief.md"
+        ],
+        "strategic_consequence": "Propose a new near-term route and reconcile workstream evidence after adoption, preserving invariant release outcomes."
+      }
+    ],
+    "invalidated": []
+  },
+  "route_changes": {
+    "priorities": [
+      {
+        "statement": "Use demonstrated root behavior as the reference comparison and qualify one supported execution profile.",
+        "evidence": [
+          "skills/manual-orchestration/SKILL.md",
+          "metrics/probes/manual-host-controlled-20261103-qualification.md"
+        ],
+        "strategic_consequence": "Put realized capability, startup-input and evidence-producer feasibility before dependent effectful integration."
+      },
+      {
+        "statement": "Join task/lifecycle, execution, review/evidence and the applicable completion owners for one bounded workflow.",
+        "evidence": [
+          "rust/crates/work-engine-task-host/Cargo.toml",
+          "rust/crates/review-workflow/Cargo.toml",
+          "rust/crates/work-engine-completion-host/Cargo.toml",
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#owners-to-retain-and-joins-to-establish"
+        ],
+        "strategic_consequence": "Demonstrate one recoverable owned path rather than create overlapping state authorities."
+      },
+      {
+        "statement": "Prove supervisor replacement, uncertain-effect recovery and current authority on a task supported by the selected profile.",
+        "evidence": [
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#next-reviewable-integration-milestone",
+          "proposals/rust-lifecycle/constrained-development-profile/proposal.md"
+        ],
+        "strategic_consequence": "A retained-snapshot result cannot silently satisfy an engineering-mutation milestone."
+      },
+      {
+        "statement": "Measure outer-host automation and whole-workflow integration separately, then expand by demonstrated need.",
+        "evidence": [
+          "metrics/probes/manual-host-controlled-20261103-prereg.md",
+          "metrics/manual-host-efficiency-20261103.md",
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#disposition-of-the-existing-roadmap"
+        ],
+        "strategic_consequence": "Preserve quality and truthful failures; do not infer general savings or retire release requirements from a bounded pilot."
+      }
+    ],
+    "dependencies": [
+      {
+        "statement": "Required capability and evidence premises must be established for the exact admitted claim.",
+        "evidence": [
+          "records/rust-lifecycle-s10-feasibility-result-20261103.md",
+          "metrics/probes/manual-host-controlled-20261103-qualification.md"
+        ],
+        "strategic_consequence": "Unsupported routes return a bounded result or an owner-approved claim change instead of an automatic prerequisite project."
+      },
+      {
+        "statement": "Existing independently authorized lanes retain their owners, funding and timing.",
+        "evidence": [
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#existing-work-and-its-owners"
+        ],
+        "strategic_consequence": "Use lifecycle, native-launch, backend and delivery outcomes without duplicating or redirecting their current assignments."
+      },
+      {
+        "statement": "Directly authorized objectives can exercise runtime integration independently of completing every planning consumer.",
+        "evidence": [
+          "roadmap.md#product-boundary-after-extraction",
+          "ARCHITECTURE.md",
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#disposition-of-the-existing-roadmap"
+        ],
+        "strategic_consequence": "Keep idea-to-proposal development and its release requirement; do not impose it as an invented prerequisite for this vertical."
+      },
+      {
+        "statement": "Historical disposition and applicable compatibility/live-proof conditions precede the actual operational cutover they govern.",
+        "evidence": [
+          "docs/rust-development.md",
+          "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md"
+        ],
+        "strategic_consequence": "A fresh development composition does not settle legacy uncertainty or require importing all historical state before its first task."
+      }
+    ],
+    "newly_important": [
+      {
+        "statement": "Realized startup inputs and capability restrictions differ from requested sandbox flags.",
+        "evidence": [
+          "metrics/probes/manual-host-controlled-20261103-qualification.md",
+          "rust/crates/lifecycle-service/src/operations/mod.rs"
+        ],
+        "strategic_consequence": "Bind actual realization and admissible evidence; static policy checks alone do not establish runtime isolation."
+      },
+      {
+        "statement": "Service-owned delivery and context-pressure timeliness have a separately approved implementation lane.",
+        "evidence": [
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#existing-work-and-its-owners",
+          "git:a875d519df668d92841f86e6985b54d36c152350:proposals/unified-event-delivery-20261103/README.md"
+        ],
+        "strategic_consequence": "Reuse its qualified local delivery outcomes; delivery never settles work, transfers authority or mandates context replacement."
+      },
+      {
+        "statement": "The integrated consumer needs owner operations and readbacks with truthful unknown states.",
+        "evidence": [
+          "rust/crates/lifecycle-service/src/actor.rs",
+          "records/rust-workspace-w1-result.md",
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#owners-to-retain-and-joins-to-establish"
+        ],
+        "strategic_consequence": "Preserve semantic ownership across cross-store commits and effect reconciliation."
+      }
+    ],
+    "deferred": [
+      {
+        "statement": "Additional generalized organizational automation or supervisory layers without a selected workload need.",
+        "evidence": [
+          "skills/manual-orchestration/references/organization-formation.md",
+          "skills/manual-orchestration/references/supervisor.md"
+        ],
+        "strategic_consequence": "Retain model-directed formation and minimal runtime bindings for the first vertical; do not assert a universal flat-topology optimum."
+      },
+      {
+        "statement": "Extension activation without a concrete consuming workload.",
+        "evidence": [
+          "records/rust-compiler-c4-result.md",
+          "records/rust-compiler-c5-plan.md"
+        ],
+        "strategic_consequence": "Preserve the useful compiler and its existing consumer-based deferral."
+      },
+      {
+        "statement": "Broad backend interchangeability, general OS observation and unrelated planning/control expansion as default integration prerequisites.",
+        "evidence": [
+          "records/rust-lifecycle-s10-feasibility-result-20261103.md",
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#disposition-of-the-existing-roadmap"
+        ],
+        "strategic_consequence": "Scope each separately when an actual required consequence or existing authorization justifies it; no accepted product requirement is silently retired."
+      }
+    ]
+  },
+  "recommended_campaign": {
+    "disposition": "start_new",
+    "objective": "After exact capability feasibility and owner agreement, qualify one root-directed engineering workflow through selected Rust owners with supervisor replacement, uncertain-effect reconciliation, applicable review and complete cost reporting.",
+    "work_source": "planning/work-engine-convergence-roadmap-reconciliation-20261103.md#next-reviewable-integration-milestone",
+    "reason": "This is a contingent recommendation for a separately scoped integration assignment, not a launch or an amendment to active campaigns. Its workload and operation profile must match; consume existing lane outcomes first where they are actual prerequisites."
+  },
+  "open_uncertainties": [
+    "The current constrained retained-snapshot profile has no qualification pass established at this cutoff; its broader engineering-mutation suitability is unestablished.",
+    "The first supported integration profile may lack a builder or reviewer capability needed by the proposed engineering task.",
+    "Cross-owner authority and evidence readbacks need one agreed integration contract; a shared Cargo workspace does not establish their composition.",
+    "The current native launch must establish the registered input/tool/network boundary before the economic pilot can allocate treatments.",
+    "Local delivery transport, busy-session timing and receiver admission still need their own evidence; Dot turn idempotency is a separate claim.",
+    "No causal net cost or time advantage is established for the full converged workflow.",
+    "Active status and amendment consequences of every historical campaign reading roadmap.md were not established."
+  ],
+  "authority_required": [
+    "Roadmap owner adoption of the proposed strategic route, with the applicable campaign work-source/amendment consequences established before changing roadmap.md.",
+    "A named integration owner and an exact new engineering assignment covering workload, supported profile, review, recovery evidence, limits and acceptance. No renewal of already granted independent work is requested.",
+    "The affected acceptance owner must authorize any change to a required assurance claim or standalone release outcome; useful narrower evidence cannot waive the original requirement.",
+    "Operational publication, live proof, historical-state disposition or cutover retains the authority of its owning contract when selected; none is activated by this handoff."
+  ],
+  "revisit_when": [
+    "The selected constrained lifecycle profile reaches a qualified, failed or unsupported terminal result.",
+    "The separately owned isolated-launch work establishes or rejects an admissible common route, or a valid matched pilot reports outcomes.",
+    "The selected engineering task cannot fit the actually qualified operation profile.",
+    "A domain join reveals missing ownership, currentness, evidence or effect reconciliation.",
+    "Qualified event delivery changes liveness/timeliness or removes model-managed waiting.",
+    "Remaining work, review and recovery no longer fit the actual granted scope, cost or time.",
+    "Changed source, claim or authority invalidates evidence used for this recommendation."
+  ]
+}
