@@ -365,6 +365,8 @@ impl PiOwner {
             expires: self.until()?,
             closed: std::cell::Cell::new(false),
             failed: std::cell::Cell::new(false),
+            #[cfg(test)]
+            before_deadline_observation: std::cell::RefCell::new(None),
         })
     }
     fn until(&self) -> Result<OffsetDateTime> {
@@ -448,14 +450,19 @@ pub struct EffectLease {
     expires: OffsetDateTime,
     closed: std::cell::Cell<bool>,
     failed: std::cell::Cell<bool>,
+    // Per-lease deterministic scheduling seam, absent from production builds.
+    #[cfg(test)]
+    before_deadline_observation: std::cell::RefCell<Option<Box<dyn FnOnce()>>>,
 }
 impl EffectLease {
     /// A conservative consumption bound, not a transferable authority permit.
     /// Only this opaque owner lease can project the signed authority clocks.
     pub fn consumption_deadline_millis(&self, job_until_seconds: u64) -> Result<i64> {
-        self.check_current()?;
-        let owner = PiOwner::open_unchecked(self.owner_pin.clone())?;
-        let (e, h) = owner.current(&self.db)?;
+        #[cfg(test)]
+        if let Some(before) = self.before_deadline_observation.borrow_mut().take() {
+            before();
+        }
+        let (e, h) = self.current_evidence()?;
         let row: Row = serde_json::from_str(&e.original).map_err(|_| "pi_task")?;
         let until = [
             self.expires,
@@ -474,6 +481,11 @@ impl EffectLease {
         i64::try_from(signed_ms.min(job_ms)).map_err(|_| "pi_clock")
     }
     pub fn check_current(&self) -> Result<()> {
+        self.current_evidence().map(|_| ())
+    }
+    // One observation owns both the returned clocks and denial bookkeeping.
+    // Consumers must not perform a second unguarded current read.
+    fn current_evidence(&self) -> Result<(inspect::Evidence, control::Head)> {
         if self.failed.get() || self.closed.get() {
             return Err("pi_lease_closed");
         }
@@ -483,7 +495,8 @@ impl EffectLease {
         }
         // Reopen signed proof/key/current board while retaining registry ordering.
         let owner = PiOwner::open_unchecked(self.owner_pin.clone())?;
-        if let Err(e) = owner.current(&self.db) {
+        let current = owner.current(&self.db);
+        if let Err(e) = current {
             // No effect has been acknowledged in this transaction. Retain a
             // newly observed signed revocation/advance instead of forgetting
             // it when the denied dispatch drops its lease. Unknown intent was
@@ -493,7 +506,7 @@ impl EffectLease {
             self.closed.set(true);
             return Err(e);
         }
-        Ok(())
+        current
     }
     pub fn observed(self, evidence_sha: &str) -> Result<()> {
         if self.failed.get() || self.closed.get() {

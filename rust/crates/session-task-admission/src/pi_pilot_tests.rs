@@ -799,3 +799,141 @@ fn consumption_deadline_is_owner_derived_precise_and_job_bounded() {
         assert!(o.enter(effect).is_err());
     }
 }
+
+#[test]
+fn deadline_projection_retains_inter_observation_revocation() {
+    // The control executes the exact old two-read sequence, including the
+    // unguarded error return. The fixed path uses the real projection method.
+    for legacy_two_reads in [true, false] {
+        let (f, o) = admitted();
+        let f = std::rc::Rc::new(std::cell::RefCell::new(f));
+        drop(o.enter(Effect::Allocation).unwrap());
+        o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+            .unwrap();
+        let snapshot = || {
+            let db = f.borrow().db();
+            let tables = ["pi_effect", "capacity_claim", "outbox"];
+            tables.map(|table| {
+                let mut statement = db
+                    .prepare(&format!("SELECT * FROM {table} ORDER BY rowid"))
+                    .unwrap();
+                let columns = statement.column_count();
+                statement
+                    .query_map([], |row| {
+                        Ok((0..columns)
+                            .map(|i| format!("{:?}", row.get_ref(i).unwrap()))
+                            .collect::<Vec<_>>())
+                    })
+                    .unwrap()
+                    .collect::<std::result::Result<Vec<_>, _>>()
+                    .unwrap()
+            })
+        };
+        let lease = o.enter(Effect::Provider(1)).unwrap();
+        // Establish the active first observation before scheduling revocation
+        // specifically inside projection, rather than before a guarded check.
+        lease.check_current().unwrap();
+        let active = f.borrow().rows.clone();
+        let reserved_before = snapshot();
+        // Read through the lease transaction: the registry write lock is held.
+        let before = {
+            let mut statement = lease
+                .db
+                .prepare("SELECT effect_key,state,evidence_sha FROM pi_effect ORDER BY effect_key")
+                .unwrap();
+            statement
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                    ))
+                })
+                .unwrap()
+                .collect::<std::result::Result<Vec<_>, _>>()
+                .unwrap()
+        };
+        let trigger = f.clone();
+        *lease.before_deadline_observation.borrow_mut() =
+            Some(Box::new(move || trigger.borrow_mut().control("revoked")));
+        let result = if legacy_two_reads {
+            lease.check_current().unwrap();
+            lease
+                .before_deadline_observation
+                .borrow_mut()
+                .take()
+                .unwrap()();
+            PiOwner::open_unchecked(lease.owner_pin.clone())
+                .unwrap()
+                .current(&lease.db)
+                .map(|_| 0)
+        } else {
+            lease.consumption_deadline_millis(
+                (clock() + time::Duration::minutes(2)).unix_timestamp() as u64,
+            )
+        };
+        assert_eq!(result, Err("pi_current_authority"));
+        assert_eq!(lease.failed.get(), !legacy_two_reads);
+        assert_eq!(lease.closed.get(), !legacy_two_reads);
+        drop(lease);
+        let reserved = snapshot();
+        assert_eq!(
+            reserved_before, reserved,
+            "projection leaves reservations unchanged"
+        );
+        let after = {
+            let db = f.borrow().db();
+            let mut statement = db
+                .prepare("SELECT effect_key,state,evidence_sha FROM pi_effect ORDER BY effect_key")
+                .unwrap();
+            statement
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                    ))
+                })
+                .unwrap()
+                .collect::<std::result::Result<Vec<_>, _>>()
+                .unwrap()
+        };
+        assert_eq!(
+            before, after,
+            "projection must not acknowledge or change effects"
+        );
+        let retained: String = f
+            .borrow()
+            .db()
+            .query_row(
+                "SELECT state FROM scoped_control ORDER BY generation DESC LIMIT 1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            retained,
+            if legacy_two_reads {
+                "active"
+            } else {
+                "revoked"
+            }
+        );
+        f.borrow_mut().rows = active;
+        f.borrow().save();
+        assert_eq!(
+            PiOwner::open(f.borrow().pin.clone()).is_ok(),
+            legacy_two_reads,
+            "only the faulty sequence forgets revocation and accepts source rollback"
+        );
+        assert!(
+            o.enter(Effect::Provider(1)).is_err(),
+            "unique effect never replays"
+        );
+        assert_eq!(
+            reserved,
+            snapshot(),
+            "effect, capacity reservation and outbox are unchanged"
+        );
+    }
+}
