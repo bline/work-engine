@@ -2366,7 +2366,7 @@ class Bridge:
             if len(payload) > 256 * 1024:
                 raise ValueError("request too large")
             proc = self.spawn()
-            deadline = time.monotonic() + 30
+            deadline = time.monotonic() + getattr(self, "timeout_seconds", 30)
             output = bytearray()
             pending = memoryview(payload)
             os.set_blocking(proc.stdin.fileno(), False)
@@ -2410,8 +2410,9 @@ class Bridge:
                 raise ValueError("protocol mismatch")
             if not response["ok"]:
                 reason = response.get("error")
-                if reason not in {"unauthorized", "payload_conflict", "target_mismatch", "expired", "session_busy",
-                                  "history_unavailable", "entry_uncertain", "identity_conflict", "custody_lost", "bridge_unavailable"}:
+                if not isinstance(reason, str) or reason not in getattr(self, "error_reasons", {
+                        "unauthorized", "payload_conflict", "target_mismatch", "expired", "session_busy",
+                        "history_unavailable", "entry_uncertain", "identity_conflict", "custody_lost", "bridge_unavailable"}):
                     reason = self.unavailable_reason
                 raise invalid(reason)
             result = response.get("result")
@@ -2619,12 +2620,71 @@ def bridge_observation(homes: Homes, context: "Context", now: float, operation: 
     return _bridge_redact(output)
 
 
+OBSERVATION_TOOLS = [
+    {"name": "pi_observation_" + method,
+     "description": ("WRITE: invoke the single preauthorized provider-disabled Pi observation. "
+                     "Unknown outcomes never retry." if method == "observe" else
+                     "Read existing exact observation evidence; never starts native execution."),
+     "annotations": {"readOnlyHint": method != "observe", "destructiveHint": False,
+                     "idempotentHint": True, "openWorldHint": False},
+     "inputSchema": {"type": "object", "properties": {k: {"type": "string", "minLength": 1, "maxLength": 256}
+                     for k in ("handle", "revision", "idempotency_key")},
+                     "required": ["handle", "revision", "idempotency_key"], "additionalProperties": False}}
+    for method in ("observe", "status", "result")]
+
+
+class ObservationHelper(DeliveryHelper):
+    """Fixed binary/config transport only. Existing Rust Host/Store own effects."""
+    protocol = "work-engine.mcp-pi-observation.v1"
+    unavailable_reason = "observation_unavailable"
+    timeout_seconds = 180
+    error_reasons = {"authority_or_request_conflict", "immutable_input_conflict",
+                     "grant_expired_or_revoked", "trusted_target_profile_conflict"}
+
+    def __init__(self, binary, binary_sha, config, config_sha):
+        self.binary, self.binary_sha = binary, binary_sha
+        self.config, self.config_sha = config, config_sha
+        self.provisioning = False
+        binary_fd, config_fd = self._open_pins()
+        try:
+            self.settings = json.loads(os.read(config_fd, 16385), object_pairs_hook=_unique_json)
+        finally:
+            os.close(binary_fd)
+            os.close(config_fd)
+        if self.settings.get("schema") != self.protocol or any(
+                not isinstance(self.settings.get(k), str) or not self.settings[k]
+                for k in ("subject", "principal", "target", "handle", "revision", "idempotency_key")):
+            raise ValueError("complete trusted observation binding required")
+
+    @classmethod
+    def from_environment(cls):
+        keys = ("PI_OBSERVATION_BINARY", "PI_OBSERVATION_BINARY_SHA256",
+                "PI_OBSERVATION_CONFIG", "PI_OBSERVATION_CONFIG_SHA256")
+        values = [os.environ.get(k) for k in keys]
+        enabled = os.environ.get("PI_OBSERVATION_ENABLED")
+        if not enabled and not any(values):
+            return None
+        if enabled != "1" or not all(values):
+            raise ValueError("explicit observation switch and complete pins required")
+        return cls(*values)
+
+    def call(self, method, principal, arguments):
+        required = {"handle", "revision", "idempotency_key"}
+        if (set(arguments) != required or principal != self.settings["principal"] or
+                any(not isinstance(arguments[k], str) or not 1 <= len(arguments[k]) <= 256 or
+                    arguments[k] != self.settings[k] for k in required)):
+            raise invalid("observation_arguments")
+        return self.invoke({"schema": self.protocol, "method": method,
+                            "principal": principal, **arguments})
+
+
 class Server:
     def __init__(self, homes: Homes, principal: str, policy: CallbackPolicy,
                  transport: Transport = post, clock: Callable[[], float] = time.time,
                  context: "Context | None" = None, bridge: "Bridge | None" = None,
-                 delivery: "DeliveryHelper | None" = None):
+                 delivery: "DeliveryHelper | None" = None, observation: "ObservationHelper | None" = None):
         self.bridge = bridge
+        self.observation = observation
         self.delivery = delivery
         self.homes, self.principal, self.policy = homes, principal, policy
         self.transport, self.clock = transport, clock
@@ -2643,7 +2703,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)
@@ -2680,6 +2740,8 @@ class Server:
             tools[name] = lambda a: self.delivery.call(name.removeprefix("delivery_"), self.principal, a)
         if self.delivery and name == "delivery_inspect":
             tools[name] = lambda a: self.delivery.call("status", self.principal, a)
+        if self.observation and name in {t["name"] for t in OBSERVATION_TOOLS}:
+            tools[name] = lambda a: self.observation.call(name.removeprefix("pi_observation_"), self.principal, a)
         if name not in tools:
             raise invalid("unknown_tool", name=str(name)[:80])
         try:
@@ -3029,6 +3091,8 @@ def log_request(path: Path, row: dict) -> None:
 
 def serve(server: Server, stdin=None, stdout=None) -> int:
     stdin, stdout = stdin or sys.stdin, stdout or sys.stdout
+    if server.observation:
+        raise ValueError("observation requires authenticated HTTP admission")
     log_path = server.store.root / "requests.log"
     log_request(log_path, {"at": iso(utcnow()), "event": "serve_started", "pid": os.getpid(), "version": VERSION})
     for line in stdin:
@@ -3129,7 +3193,7 @@ def _public_http_operation(message):
 
 
 def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
-                      authenticated_read_only: bool = False):
+                      authenticated_read_only: bool = False, observation_only: bool = False):
     """Stateless Streamable HTTP: one JSON-RPC object per POST, a JSON reply, no MCP session id.
 
     Loopback only. A browser page could otherwise reach a local listener, so requests must
@@ -3138,6 +3202,13 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
     """
     if authenticated_read_only and auth is None:
         raise ValueError("authenticated read-only mode requires auth")
+    if server.observation:
+        if (not observation_only or authenticated_read_only or auth is None or
+                server.observation.settings["principal"] != server.principal or
+                server.observation.settings["subject"] != auth.config.get("subject")):
+            raise ValueError("observation requires OAuth subject/principal binding and observation-only mode")
+    elif observation_only:
+        raise ValueError("observation-only mode requires complete observation pins")
     log_path = server.store.root / "requests.log"
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -3203,15 +3274,26 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
             else:
                 parsed = True
                 reply = None
-            if auth and (authenticated_read_only or not _public_http_operation(message)):
+            if auth and (authenticated_read_only or observation_only or not _public_http_operation(message)):
                 if not self._authorize():
                     return
             if authenticated_read_only and not (_public_http_operation(message) or
                     isinstance(message, dict) and message.get("jsonrpc") == "2.0" and message.get("method") == "server/discover"):
                 self._reply(403, b'{"error":"read_only"}')
                 return
+            if observation_only:
+                allowed = (_public_http_operation(message) or isinstance(message, dict) and
+                           message.get("method") == "tools/call" and isinstance(message.get("params"), dict) and
+                           isinstance(message["params"].get("name"), str) and
+                           message["params"].get("name") in {t["name"] for t in OBSERVATION_TOOLS})
+                if not allowed:
+                    self._reply(403, b'{"error":"observation_only"}')
+                    return
             if parsed:
                 reply = server.handle(message)
+                if observation_only and message.get("method") == "tools/list" and reply and "result" in reply:
+                    names = {t["name"] for t in OBSERVATION_TOOLS} | {"delivery_status", "replay_events"}
+                    reply["result"]["tools"] = [t for t in reply["result"]["tools"] if t["name"] in names]
             log_request(log_path, request_summary(message, reply) | {"transport": "http"})
             if reply is None:
                 self._reply(202)
@@ -3236,7 +3318,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
 
 
 def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth | None = None,
-               authenticated_read_only: bool = False) -> int:
+               authenticated_read_only: bool = False, observation_only: bool = False) -> int:
     if authenticated_read_only and auth is None:
         raise SystemExit("serve-http: --authenticated-read-only requires --auth-config")
     if auth and urllib.parse.urlsplit(auth.config["resource"]).path != path:
@@ -3245,7 +3327,7 @@ def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth |
     host = host.strip("[]")
     if not ipaddress.ip_address(host).is_loopback:
         raise SystemExit("serve-http: --listen must be a loopback address; tunnel-client runs on this machine")
-    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only))
+    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only, observation_only))
     log_request(server.store.root / "requests.log",
                 {"at": iso(utcnow()), "event": "serve_http_started", "pid": os.getpid(), "version": VERSION,
                  "listen": f"{host}:{httpd.server_address[1]}", "path": path})
@@ -4108,6 +4190,8 @@ def build_parser() -> argparse.ArgumentParser:
     serve_http_cmd.add_argument("--auth-config", help="trusted OAuth resource-server configuration file")
     serve_http_cmd.add_argument("--authenticated-read-only", action="store_true",
                                 help="require OAuth for all RPCs and deny non-read-only operations")
+    serve_http_cmd.add_argument("--observation-only", action="store_true",
+                                help="require OAuth for every RPC; permit only fixed Pi observation writes and authorized reads")
     serve_http_cmd.add_argument("--principal", default="tunnel",
                                 help="subscription owner recorded in every key (default: tunnel)")
     run = commands.add_parser("run", help="delivery daemon")
@@ -4174,7 +4258,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "serve":
             return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment(), observation=ObservationHelper.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only, args.observation_only)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":

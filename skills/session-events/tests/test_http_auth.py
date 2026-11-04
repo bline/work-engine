@@ -214,6 +214,32 @@ class AuthHttp(Fixture):
         log = (self.homes.state / "requests.log").read_text()
         self.assertNotIn(good, log); self.assertNotIn(insufficient, log)
 
+    def test_observation_only_exact_subject_and_write_boundary(self):
+        seen = []
+        auth = SE.HttpAuth(str(self.config))
+        self.server.observation = types.SimpleNamespace(
+            settings={"subject": SUBJECT, "principal": self.server.principal},
+            call=lambda method, principal, arguments: seen.append((method, principal)) or {"schema_version": 1})
+        self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth, observation_only=True)
+        msg = {"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"pi_observation_observe", "arguments":{}}}
+        for token, status in ((None,401), (self.token({"sub":"other"}),401),
+                              (self.token({"exp":int(time.time())-1}),401),
+                              (self.token({"scope":"openid"}),403)):
+            self.assertEqual(self.request(msg,token)[0],status)
+        self.assertEqual(seen,[])
+        good = self.token()
+        self.assertEqual(self.request(msg,good)[0],200)
+        self.assertEqual(seen,[("observe",self.server.principal)])
+        for name in ("submit_session_request", "create_session_target", "issue_session_request_grant", "delivery_ack"):
+            msg["params"]["name"] = name
+            self.assertEqual(self.request(msg,good)[0],403)
+        for method in ("events/subscribe", "events/unsubscribe"):
+            self.assertEqual(self.request({"jsonrpc":"2.0","id":1,"method":method},good)[0],403)
+        listing = self.request({"jsonrpc":"2.0","id":1,"method":"tools/list"},good)[2]["result"]["tools"]
+        self.assertEqual({t["name"] for t in listing},
+                         {"pi_observation_observe", "pi_observation_status", "pi_observation_result", "delivery_status", "replay_events"})
+        self.assertFalse(next(t for t in listing if t["name"]=="pi_observation_observe")["annotations"]["readOnlyHint"])
+
     def test_read_only_requires_auth_before_bind(self):
         with self.assertRaises(ValueError):
             SE.make_http_handler(self.server, "/mcp", authenticated_read_only=True)

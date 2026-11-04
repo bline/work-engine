@@ -14,48 +14,48 @@ type R<T> = Result<T, Box<dyn std::error::Error>>;
 fn bad<T>(s: &str) -> R<T> {
     Err(s.to_owned().into())
 }
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Startup {
-    config: Config,
-    event_path: PathBuf,
-    ready_path: PathBuf,
-    envelope_path: PathBuf,
-    release_path: PathBuf,
-    input_digest: String,
-    container_id: String,
-    ready_sha256: String,
-    job: String,
-    deadline_unix_seconds: u64,
-    recipient: Recipient,
+pub(crate) struct Startup {
+    pub(crate) config: Config,
+    pub(crate) event_path: PathBuf,
+    pub(crate) ready_path: PathBuf,
+    pub(crate) envelope_path: PathBuf,
+    pub(crate) release_path: PathBuf,
+    pub(crate) input_digest: String,
+    pub(crate) container_id: String,
+    pub(crate) ready_sha256: String,
+    pub(crate) job: String,
+    pub(crate) deadline_unix_seconds: u64,
+    pub(crate) recipient: Recipient,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Recipient {
-    recipient: String,
-    principal: String,
-    job: String,
-    lane: String,
-    workspace: String,
-    generation: u64,
-    address: String,
-    fixture_mode: String,
-    expires_at: u64,
-    active: bool,
+pub(crate) struct Recipient {
+    pub(crate) recipient: String,
+    pub(crate) principal: String,
+    pub(crate) job: String,
+    pub(crate) lane: String,
+    pub(crate) workspace: String,
+    pub(crate) generation: u64,
+    pub(crate) address: String,
+    pub(crate) fixture_mode: String,
+    pub(crate) expires_at: u64,
+    pub(crate) active: bool,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Ready {
-    schema: String,
-    input_digest: String,
-    container_id: String,
-    native_session_id: String,
-    deadline_unix_seconds: u64,
+pub(crate) struct Ready {
+    pub(crate) schema: String,
+    pub(crate) input_digest: String,
+    pub(crate) container_id: String,
+    pub(crate) native_session_id: String,
+    pub(crate) deadline_unix_seconds: u64,
 }
-fn now() -> R<u64> {
+pub(crate) fn now() -> R<u64> {
     Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())
 }
-fn publish(path: &Path, bytes: &[u8]) -> R<()> {
+pub(crate) fn publish(path: &Path, bytes: &[u8]) -> R<()> {
     if !path.is_absolute() {
         return bad("artifact path must be absolute");
     }
@@ -79,7 +79,7 @@ fn publish(path: &Path, bytes: &[u8]) -> R<()> {
     let _ = fs::remove_file(tmp);
     result
 }
-fn source(s: &Startup) -> R<()> {
+pub(crate) fn source(s: &Startup) -> R<()> {
     if !s.config.targets.is_empty() || s.config.pressure.is_none() {
         return bad("source-only config required");
     }
@@ -95,7 +95,7 @@ fn source(s: &Startup) -> R<()> {
     let e = state.events.values().next().unwrap();
     publish(&s.event_path, &serde_json::to_vec(e)?)
 }
-fn release(s: &Startup, time: u64) -> R<()> {
+pub(crate) fn release(s: &Startup, time: u64) -> R<()> {
     if !s.config.targets.is_empty() || s.config.pressure.is_none() {
         return bad("source-only config required");
     }
@@ -195,12 +195,18 @@ fn release(s: &Startup, time: u64) -> R<()> {
 }
 // Only this function can create VerifiedRun, immediately after the owning Host
 // has parsed final native stdout/history and reconciled all owned processes.
-struct VerifiedRun {
+pub(crate) struct VerifiedRun {
     host: work_engine_manual_host::pi_docker::Host,
     receipt: serde_json::Value,
 }
 impl VerifiedRun {
-    fn run(job: work_engine_manual_host::pi_docker::Job) -> R<Self> {
+    pub(crate) fn journal(&self) -> &work_engine_manual_host::pi_docker::Journal {
+        self.host.journal()
+    }
+    pub(crate) fn receipt_value(&self) -> &serde_json::Value {
+        &self.receipt
+    }
+    pub(crate) fn run(job: work_engine_manual_host::pi_docker::Job) -> R<Self> {
         if job.receiver.is_none() {
             return bad("observation profile required");
         }
@@ -212,7 +218,7 @@ impl VerifiedRun {
     fn ack(&mut self, s: &Startup, time: u64) -> R<serde_json::Value> {
         self.ack_with_clock(s, || Ok(time))
     }
-    fn ack_with_clock(
+    pub(crate) fn ack_with_clock(
         &mut self,
         s: &Startup,
         clock: impl FnOnce() -> R<u64>,

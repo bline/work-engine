@@ -23,6 +23,30 @@ fn main() {
             .args(&args)
             .status()
             .unwrap();
+        // Offline revocation barrier fixture: native owner must see cancellation
+        // after create returns and before it may start the contained receiver.
+        if mode == "revoke-on-create"
+            && args.first().map(String::as_str) == Some("create")
+            && status.success()
+        {
+            let daemon: Value = serde_json::from_slice(
+                &fs::read(exe.with_extension("base").with_extension("state")).unwrap(),
+            )
+            .unwrap();
+            let export = daemon["Mounts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|m| m["Destination"] == "/export")
+                .unwrap()["Source"]
+                .as_str()
+                .unwrap();
+            fs::write(
+                Path::new(export).parent().unwrap().join("cancel.json"),
+                b"{}",
+            )
+            .unwrap();
+        }
         std::process::exit(status.code().unwrap_or(1));
     }
     writeln!(
