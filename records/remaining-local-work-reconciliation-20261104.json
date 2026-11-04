@@ -1,0 +1,605 @@
+{
+  "record_type": "remaining-local-work-standing-resolution",
+  "status": "validated_scoped_source_and_frozen_record_capture",
+  "recorded_at": "2026-11-04T23:42:56.254194+00:00",
+  "authority": "/home/bline/.local/state/work-engine/final-local-reconciliation-20261104-01a1a877/AUTHORITY.json",
+  "admission_base": "30541bd7f37918efa2af3e1d3156153c084affb2",
+  "scope": "60 existing regular shared-checkout files; six nested Git worktrees excluded",
+  "files": [
+    {
+      "path": "app-server/docs/semantic-context-lifecycle-manager.md",
+      "sha256_at_admission": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660",
+      "mode": 436,
+      "group_id": "transition-protocol-design",
+      "original_owner_session": "01a088a4-233b-7851-9f4b-d6bcacf4ed4b",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "app-server/migrations/skills/portfolio-inventory-v1.json",
+      "sha256_at_admission": "177c19ee79a77feb912218bed65ef5c01e21c70f2d389d376021141444aa869f",
+      "mode": 436,
+      "group_id": "portfolio-inventory",
+      "original_owner_session": "8759c6b7-3694-4d79-a2e5-a0ac3cab174c",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+      "sha256_at_admission": "609306a1e9d2acb03a1097d04650419f3bafb3e531fb3a7325d53824212a1eee",
+      "mode": 436,
+      "group_id": "mixed-lifecycle-plan",
+      "original_owner_session": null,
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "ideas/01-semantic-durability-and-context-lifetime-judgment.md",
+      "sha256_at_admission": "65131438fc8934ff859500b66d542f5e183576f55d2ab786bade781262c984b1",
+      "mode": 436,
+      "group_id": "semantic-durability-idea",
+      "original_owner_session": null,
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "roadmap.md",
+      "sha256_at_admission": "31cb3921387616c6c3c62f5b7d4ba8254225fd7b8f820552c7e421ed56302218",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/Cargo.lock",
+      "sha256_at_admission": "eedb0d1510ede10163f7e1cb488ae1f79428bcef6b354a3e2b920b54455cdba3",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "sha256_at_admission": "d81d4daa250ae774e55f6312987d6803496b264901433e93b992bebbc052f46c",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/review-workflow/Cargo.toml",
+      "sha256_at_admission": "44cf9a08408122a5e3c3a745265dfa07d05fb0abd86c8e9a56753710134df41a",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/review-workflow/tests/campaign_owner_join.rs",
+      "sha256_at_admission": "445b9de14d3bff412f57dd259d75009f77318c1f603d01fd4031756eae89d233",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/slice-campaign/Cargo.toml",
+      "sha256_at_admission": "67ea8b83c5916c2e664767ff40f2681b60849d0f26224e5ff3dcb4b15d3f6ace",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/lib.rs",
+      "sha256_at_admission": "ecaaaf19f95c3226764847357fa70536fed38a8567d17331b938d9bd52eccc9e",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "app-server/docs/context-lifecycle-transition-protocol.md",
+      "sha256_at_admission": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd",
+      "mode": 436,
+      "group_id": "transition-protocol-design",
+      "original_owner_session": "01a088a4-233b-7851-9f4b-d6bcacf4ed4b",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "app-server/docs/prior-art.md",
+      "sha256_at_admission": "0435d29febb4c6d1e5dffb7659203a1b5c7cb558717f2e956d764d6edebad026",
+      "mode": 436,
+      "group_id": "prior-art-research",
+      "original_owner_session": null,
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "metrics/hitl-reduction-study-plan-20261031.md",
+      "sha256_at_admission": "3220380a2f571acfcecd80fb6377ca04d52d9709f0864cbdb2e46a5a17b49046",
+      "mode": 436,
+      "group_id": "hitl-study",
+      "original_owner_session": "e0eed396-8700-46ec-bd8b-de19472029ff",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "notes/dot-codex-mcp-bridge-investigation-20261101.md",
+      "sha256_at_admission": "c34ad84c05bf7b5572c5b2bdc93245445a134c726f72370812467a8ece4243da",
+      "mode": 436,
+      "group_id": "dot-investigation",
+      "original_owner_session": "01a195d4-b7a7-77f2-ba65-277669c0ec97",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/ah-next-steps-budget-20261104-r2.md",
+      "sha256_at_admission": "66a13cd7cf9078d5d8a6ec70212c093459761c68dbea759a525460299d12af13",
+      "mode": 436,
+      "group_id": "ah-historical-records",
+      "original_owner_session": "01a1a862-034f-7750-b86b-de29e11cf327",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/ah-next-steps-budget-20261104.md",
+      "sha256_at_admission": "cfb5de02b5c20bc0f8cc0d3c06473addb1feb11bf4d356d08694435f7771d0e8",
+      "mode": 436,
+      "group_id": "ah-historical-records",
+      "original_owner_session": "01a1a862-034f-7750-b86b-de29e11cf327",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/ah-shared-rust-server-implementation-plan-20261104.md",
+      "sha256_at_admission": "37d648d685c3707ff9a1d3a7dde5f815e4b92190031fbb11faad43b5ca3e2916",
+      "mode": 436,
+      "group_id": "ah1-plan",
+      "original_owner_session": "01a1a862-034f-7750-b86b-de29e11cf327",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/s10-constrained-development-implementation-bid-20261103.md",
+      "sha256_at_admission": "f42e2dfa3283a4bd6b2b9e8a33a768e9a2be11e2d449c9740454d0e36da49e0b",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/s10-diagnostic-runs-amendment-proposal-20261029.md",
+      "sha256_at_admission": "c277587008cc59feb326926b3e2e4a31609b688e6712a67d22720f2e2e89fc93",
+      "mode": 436,
+      "group_id": "s10-diagnostic-policy",
+      "original_owner_session": "01a18305-58a4-79c0-b319-7d0cf7ab1e8a",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/s10-f-feasibility-assignment-20261103.md",
+      "sha256_at_admission": "11c393d23b7abdaa6c2a5bb7b7c94c436bca3ed0ef1545eebfc50faf82d33c78",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/s10-pi-docker-convergence-amendment-20261103.md",
+      "sha256_at_admission": "67aba3e2bf72c715f541129b975c952a6b28bdbf582e1c5b2a8c8ede5faf53e1",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/s10-pi-docker-host-first-revision-20261103.md",
+      "sha256_at_admission": "319d99fd97820f9c34b88bbd9bf72e7378bda071bd63ba9ad92114f4c10994ab",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/s10-rust-reuse-map-20261103.md",
+      "sha256_at_admission": "8e17f071f1f15c183f86f8f1b1f54755cc56df95d98a4cdad6796902384bda4c",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "planning/work-engine-convergence-session-alignment-20261103.json",
+      "sha256_at_admission": "bb7026ddce24c5d90e70865c723371e6a5448103f9b3fee1148bfdf8b6e635c2",
+      "mode": 436,
+      "group_id": "strategic-alignment-record",
+      "original_owner_session": null,
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "proposals/rust-lifecycle/constrained-development-profile/decision.json",
+      "sha256_at_admission": "a19a976db6e28d9d27d4fbb1400458c57dfa8a798fbd67ded7dee67c1b650b08",
+      "mode": 384,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "proposals/rust-lifecycle/constrained-development-profile/packet.json",
+      "sha256_at_admission": "ee5c95bd9a3c0ddab49dd0a27b8558e2fb71c042d394c3ed3500377b4584931c",
+      "mode": 384,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "proposals/rust-lifecycle/constrained-development-profile/proposal.md",
+      "sha256_at_admission": "5a6de70d5ad234bcd4f62f74c183fdb508f09c74440d088d82cd00a1121afe25",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/ah1-shared-rust-server-result-20261104.md",
+      "sha256_at_admission": "6fb365d61d13a07d1348f53e212ace33a340adbb01e75bd92f631ff34f08bdcf",
+      "mode": 436,
+      "group_id": "ah-historical-records",
+      "original_owner_session": "01a1a862-034f-7750-b86b-de29e11cf327",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/ah2c-shared-rust-server-result-20261104.md",
+      "sha256_at_admission": "e74c710cebf2cdec7c497ee2a2cd6ae5c6aef900ebc4fbd87b4ed1328103c072",
+      "mode": 436,
+      "group_id": "ah-historical-records",
+      "original_owner_session": "01a1a862-034f-7750-b86b-de29e11cf327",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-admission-only-result-20261103.md",
+      "sha256_at_admission": "f7c9cf57d734a4bcf5bb687eddaf4e836e2d7013c3960b53643efbb3bd8c3330",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-constrained-offline-result-20261103.md",
+      "sha256_at_admission": "092bdb8facf4bba60aff727dea41eab09dcb25c0705689f8560c7f11f0c9eb3d",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-constrained-profile-direction-20261103.md",
+      "sha256_at_admission": "70b13f827af2a19bdaafacbd758e7e0806f5eee985f3f39e10970996ae765a2b",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-constrained-profile-review-20261103.md",
+      "sha256_at_admission": "01b06f076e2dd7f747a0a3c9362b6a63ffa5841b0cc1fa06fde0a01f520eb6ae",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-context-adapter-integration-note-20261104.md",
+      "sha256_at_admission": "f20c51c5cefdd623e08db155004b41a3acff79651e4e0f5762feac1b1516627f",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-context-replacement-followup-20261104.md",
+      "sha256_at_admission": "7e2311c8b0502584e555dea8de2d5f21b86dcaf6c479eb9c04557fdb7856ff77",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-convergence-plan-20261103.md",
+      "sha256_at_admission": "815ef4d9bbfc52d96927d6671358b98f9ac69fc7010e93af1fb471f9b3f91fbb",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-feasibility-result-20261103.md",
+      "sha256_at_admission": "34795dafe4198786e678736f17d9c463835196fe629c6c01444e3b37fc275399",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-pi-docker-host-component-result-20261103.md",
+      "sha256_at_admission": "2c0b40633623aaed8790effae996524573ae197347c1440c6b36921391b85822",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-pi-docker-real-coding-result-20261104.md",
+      "sha256_at_admission": "d655097188e6931fa2a6e838b53b7ec0dbdf424059e6678445dbe038655abe92",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "records/rust-lifecycle-s10-runner-feasibility-stop-20261103.md",
+      "sha256_at_admission": "a4a367751e1da3936f51a3c65e92ce422362db88605f96412c10903f9ead5a0d",
+      "mode": 436,
+      "group_id": "s10-planning-results",
+      "original_owner_session": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication.rs",
+      "sha256_at_admission": "fa70e862ae528b1403f6574cb52512680a5b7a0cf611a04d484fbc4f313c201e",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication_ingress.rs",
+      "sha256_at_admission": "97587c9e41d0c3aeb1dc9b9509c94145870dbec342f5658d986838686c01fe28",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication_store.rs",
+      "sha256_at_admission": "4ca36467a2c69d490f7fcbafb44733f3e55c731210d63fa92a4b63005ba98ac8",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/publication.rs",
+      "sha256_at_admission": "e2f8cbfc50d0464256c8ad85e2509b3f1ac2a9b751bd1bef2f70ee5f193982be",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/Cargo.toml",
+      "sha256_at_admission": "d72e31a9464af531b02e3137ec003bcc1605e33583cc0562f91e6abacffa6f02",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/bin/work-engine-completionctl.rs",
+      "sha256_at_admission": "96ba6c02c4ce06dd4969b6dcb32f23efc54b3f6b7acd0fe1cf6d720e79e639ca",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/fixture_host.rs",
+      "sha256_at_admission": "9b0958d1f5e8221d148b458825959ce2d991c897334fdf30f34349f490b496a2",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/lib.rs",
+      "sha256_at_admission": "0c20af3c3d0697e3ead8f39571c960c303f94c8d8b234d7afdb97072dd281cbd",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/main.rs",
+      "sha256_at_admission": "04b18f754920c85045d7c82716c80004c44c1b4d5ed201eedeea385f8a983b5b",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/tests/joined.rs",
+      "sha256_at_admission": "90bfe2e0ab4b829caf9e646278e55e47406edd1889399895ebaeb0de7587db3c",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/Cargo.toml",
+      "sha256_at_admission": "1955a3bd25b2dec5468314d3f11e168e7d2028e8fde77fcf7cd3ad0592e97916",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/codec.rs",
+      "sha256_at_admission": "503b693202a41831d1c0b565f47dc22e392b0358b1f157efd94e957c2ee34dd8",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/contract.rs",
+      "sha256_at_admission": "1d47f9782003546ac21dca50a6baed6545c192bf10ba9d6b51c535ea5ddbb4ef",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "sha256_at_admission": "55c1bdbd0a22440557c4f5fe5121cec77825b3e3ad219ba4af429cf7bb3aa99c",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lib.rs",
+      "sha256_at_admission": "98fb849c47df0a40327cf36c1b3c35ebc6deaaf131eb3d8b28b9b967ac23410f",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lock.rs",
+      "sha256_at_admission": "e740b96afd650d632b864efda5c884fc7589976ab48446fe13193d37cd62973a",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/store.rs",
+      "sha256_at_admission": "778d15b50689e570dcd85bd7a6924732b1dde006aced2a758b8da2df9ddbb0bf",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/validation.rs",
+      "sha256_at_admission": "049623cb35ce68d51eaaffa65436e2316df18f2873ca342c574ad67ab6e359e4",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/publication.rs",
+      "sha256_at_admission": "550f66b7471c0b8b5cb18fceb22d824020339af332dd3e0e1ab953c5a8b58fc2",
+      "mode": 436,
+      "group_id": "w1-rust-publication",
+      "original_owner_session": "fcf011c4-0418-4c24-8135-0e622b3af414",
+      "capture_owner": "01a1a877-74c8-7051-b468-3f33283ba811"
+    }
+  ],
+  "resolutions": {
+    "W1": {
+      "standing": "Commit the reviewed scoped implementation under current user authorization, preserving incomplete standalone readiness. No selected-owner API addition, activation or production claim.",
+      "original_source_match": "23 non-Cargo files equal reviewed v5; two Cargo files are rebased workspace composition",
+      "prior_review": {
+        "path": "/home/bline/.local/state/work-engine/w1-20261018/review-v5.json",
+        "sha256": "0b4a76b4289d5a6a3d3ec8b9d44b5efad343d80467de8faf7f3439039e678c52"
+      },
+      "full_W1_limitation": "Distinct completion executable cannot read an episode root created by another executable under unchanged ER1. Existing planning/w1-selected-owner-readonly-decision-20261104.json remains pending; committing scoped source does not decide it."
+    },
+    "S10": {
+      "standing": "21 exact planning/result/roadmap/lifecycle-plan files frozen and commit-safe by original active owner; preserve individual draft/accepted/held/closed statuses",
+      "proof": "/home/bline/.local/state/work-engine/s10-pressure-publication-20261104/owner-record-disposition-20261104.json",
+      "board_sequence": 4505
+    },
+    "diagnostic_policy": {
+      "standing": "Original adoption verified, not merely inferred from the current file header. Older execution window remains expired.",
+      "source_rollout": "/home/bline/.codex/sessions/2026/10/28/rollout-2026-10-28T08-58-48-01a18305-58a4-79c0-b319-7d0cf7ab1e8a.jsonl",
+      "source_lines": {
+        "reviewed_revision_8e2d12eb": 9923,
+        "human_adopt_direction": 9930,
+        "human_execute_two_hour_window": 9947
+      },
+      "source_at": "2026-10-29T20:50:05.237Z /20:50:47.292Z",
+      "evidence": "/home/bline/.local/state/work-engine/final-local-reconciliation-20261104-01a1a877/diagnostic-adoption-context.json",
+      "mixed_hunks": "Current S10 owner identified four Nov3 hunks and the older diagnostic block exactly matching quoted adopted source; whole file frozen, no unknown text-origin hunk."
+    },
+    "AH": {
+      "standing": "Five exact plan/budget/result files frozen and commit-safe by owner. R1 budget superseded, later30/20 forecasts remain unapproved; AH2 private/unmerged wording is its dated23:23 observation. New AH2 source merge is separately owned.",
+      "proof": "/home/bline/.local/state/work-engine/ah2c-merge-next-20261104T2332/frozen-historical-records.json"
+    },
+    "backend_note": {
+      "standing": "Nov1 dated investigation, not current runtime qualification; owner confirms frozen exactc34ad84c",
+      "board_sequence": 4503
+    },
+    "transition_design": {
+      "standing": "Preserve already accepted design basis from board632 and its nine-line companion pointer. Current user authorizes its Git publication only; no implementation or activation follows.",
+      "original_owner_state": "stopped"
+    },
+    "portfolio_inventory": {
+      "standing": "Historical evidence pinned to41b72898, classification provisional and authority not_accepted. Current source-freshness mismatches are recorded explicitly; no current completeness or migration acceptance claim.",
+      "evidence": "/home/bline/.local/state/work-engine/final-local-reconciliation-20261104-01a1a877/documentation-reference-check.json"
+    },
+    "semantic_idea": {
+      "standing": "Preserve current raw idea/proposal revision as unassessed capture. Existing intake still describes earlier blob2b16ccb8; no new policy adoption or replacement authority.",
+      "original_patch_writer": "unresolved; do not invent attribution",
+      "capture_authority": "Current maintainer instruction authorizes preserving inherited work."
+    },
+    "prior_art": {
+      "standing": "Inherited research draft comparing planned architecture, not accepted doctrine or verified novelty claim. Bibliography/factual research not freshly re-evaluated in this consolidation.",
+      "original_writer": "unresolved",
+      "capture_authority": "Current maintainer authorizes curation and Git capture, not authorship attribution or architecture acceptance."
+    },
+    "HITL": {
+      "standing": "Draft study plan, not preregistration or funded experiment",
+      "original_writer": "native Claudee0eed396-8700-46ec-bd8b-de19472029ff, existing Write/Edit provenance atline178",
+      "runtime_observation": "native host absent at reconciliation; no active claim found"
+    },
+    "strategic_alignment": {
+      "standing": "Dated Nov3 alignment observation at recorded0d51c0b/roadmap31cb cutoff. Original continue verdict and assignment claims are historical; no old assignments or approval conditions revived.",
+      "original_writer": "unresolved",
+      "capture_authority": "Current maintainer authorizes preservation; semantic roadmap adoption is not inferred."
+    }
+  },
+  "reference_check": {
+    "path": "/home/bline/.local/state/work-engine/final-local-reconciliation-20261104-01a1a877/documentation-reference-check.json",
+    "sha256": "896377b670dedb4e2f4823ea6e52ea3209ec884a7056f9326ee910976de16022",
+    "summary": "Current-path availability and direct binding checks only; historical mismatches and external URLs remain qualified."
+  },
+  "active_source_exclusion": "Private current CLI/backend/AH2 code and future grants remain with those owners. Only exact confirmed records enter this capture.",
+  "nested_repositories": "Six local Git worktrees remain untouched and untracked by the parent; no submodules or ignore-based claim of completion.",
+  "W1_current_validation": {
+    "source_identity": "/home/bline/.local/state/work-engine/final-local-reconciliation-20261104-01a1a877/W1-IDENTITY.json",
+    "source_identity_sha256": "a556a011c27ca6a2fdc1e890552a4ac1632f2e3398bd5142bfa14d70ec6ac236",
+    "affected_tests_passed": 60,
+    "affected_tests_ignored": 1,
+    "joined_tests_passed": 8,
+    "fmt": "pass",
+    "strict_no_deps_clippy": "pass",
+    "custody_summary": "/home/bline/.local/state/work-engine/final-local-reconciliation-20261104-01a1a877/w1-checks/summary.json",
+    "custody_summary_sha256": "2e121352687d4a39d73ef1c181ba737bb1f189939961470e7c79583e6eff9a12",
+    "leftover_processes": 0,
+    "AH_base_update": {
+      "old": "30541bd7f37918efa2af3e1d3156153c084affb2",
+      "new": "9d93428ab07823d5827c2f531e1a3a65e061614c",
+      "inherited_AH_paths": [
+        "planning/ah-task-approval-next-budget-20261104.md",
+        "records/ah2c-server-merge-qualification-20261104.md",
+        "rust/crates/work-engine-server/README.md",
+        "rust/crates/work-engine-server/command_owner.py",
+        "rust/crates/work-engine-server/examples/local_command.rs",
+        "rust/crates/work-engine-server/src/command.rs",
+        "rust/crates/work-engine-server/src/lib.rs",
+        "rust/crates/work-engine-server/src/main.rs",
+        "rust/crates/work-engine-server/tests/command_checkpoint.py"
+      ],
+      "all25W1_source_and_Cargo_hashes_unchanged": true,
+      "selected_W1_dependency_feature_closure_unchanged": 218,
+      "qualification_carry_basis": "AH changed only seven server files and two metadata files, with no overlap in any W1 source/Cargo path or selected dependency closure. Existing68 passing W1 tests plus fmt/strictClippy remain applicable to the unchanged W1 subject; no W1/AH runtime composition claim added.",
+      "initial_helper_failure": "The first bookkeeping check incorrectly assumed an overlapping Cargo.lock and compared an empty old package set. Private ff itself succeeded. Corrected complete25hash/218dependency closure checks establish there was no W1/Cargo change. No build/test/source defect inferred."
+    }
+  },
+  "validation_limitations": [
+    "Fresh checks establish the scoped existing implementation only. The pending selected-owner read-only API and distinct-executable standalone completion-host readiness are not implemented or accepted.",
+    "Existing ignored performance test remains ignored. No production UID/custody isolation, hostile-mutator or hermetic compiler/registry claim.",
+    "Historical reviewer report is retained component evidence without an independence claim; this current composition receives separate review.",
+    "Research novelty, study results and raw idea policy are not newly fact-checked or adopted. Portfolio current-source freshness gaps remain explicit."
+  ],
+  "current_user_capture_effect": "Current instruction authorizes local Git commits of these existing files with their exact standing; it does not create original author attribution, new runtime authority, provider funding, installation, deployment or push.",
+  "prepared_on_parent": "9d93428ab07823d5827c2f531e1a3a65e061614c",
+  "concurrent_new_work": {
+    "paths": 17,
+    "scope": "New metrics-analysis files created after this60-file admission; separate active owner/S10 commit authority, preserved and excluded from this capture",
+    "notice": "Current Git status may include this newer work until its owner commits it."
+  }
+}
