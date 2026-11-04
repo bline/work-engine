@@ -8,6 +8,7 @@ pub mod provider;
 #[path = "pi_coding_validation.rs"]
 pub mod validation;
 use std::os::unix::fs::PermissionsExt;
+pub const SIGNED_SUBSCRIPTION_PROFILE: &str = "work-engine.pi-coding-signed-subscription.v1";
 pub const SIGNED_PROFILE: &str = "work-engine.pi-coding-signed-fixture.v1";
 pub const PROFILE: &str = "work-engine.pi-coding-fixture.v1";
 pub const TOOL_IMAGE: &str = "cbm-doc-claims-lint-tidy@sha256:dda6d32b2c2df1064f056db0db4cff894c833089ccf92862331359c0e6072754";
@@ -78,7 +79,11 @@ impl Profile {
     pub(super) fn validate(&self, job: &Job) -> Result<()> {
         if self.schema
             != if self.provider.is_some() {
-                provider::LIVE_PROFILE
+                if self.schema == SIGNED_SUBSCRIPTION_PROFILE {
+                    SIGNED_SUBSCRIPTION_PROFILE
+                } else {
+                    provider::LIVE_PROFILE
+                }
             } else if self.schema == SIGNED_PROFILE {
                 SIGNED_PROFILE
             } else {
@@ -261,8 +266,18 @@ fn expected_mounts(
             ),
             (j.job.state_dir.join("coding-public"), "/profile", false),
             (
-                j.job.state_dir.join("private-access/access.json"),
-                "/auth/access.json",
+                j.job
+                    .state_dir
+                    .join(if profile.schema == SIGNED_SUBSCRIPTION_PROFILE {
+                        "private-access"
+                    } else {
+                        "private-access/access.json"
+                    }),
+                if profile.schema == SIGNED_SUBSCRIPTION_PROFILE {
+                    "/auth"
+                } else {
+                    "/auth/access.json"
+                },
                 false,
             ),
         ]);
@@ -380,11 +395,19 @@ pub(super) fn verify_inference(j: &Journal, v: &Value) -> Result<()> {
 }
 impl Host {
     pub(super) fn signed_pi(&self) -> bool {
+        self.journal.job.coding.as_ref().is_some_and(|p| {
+            matches!(
+                p.schema.as_str(),
+                SIGNED_PROFILE | SIGNED_SUBSCRIPTION_PROFILE
+            )
+        })
+    }
+    pub(super) fn signed_subscription(&self) -> bool {
         self.journal
             .job
             .coding
             .as_ref()
-            .is_some_and(|p| p.schema == SIGNED_PROFILE)
+            .is_some_and(|p| p.schema == SIGNED_SUBSCRIPTION_PROFILE)
     }
     fn pi_lease(
         &self,
@@ -546,19 +569,31 @@ impl Host {
                     if frame["accessPresent"] != false {
                         return refuse("fixture access existed before allocation");
                     }
-                    let access = self.journal.job.state_dir.join("coding-canary/access.json");
-                    let mut access_file = OpenOptions::new()
-                        .create_new(true)
-                        .write(true)
-                        .open(&access)?;
-                    access_file.write_all(
-                        br#"{"classification":"fake_fixture","access":"FAKE-NEVER-A-CREDENTIAL"}"#,
-                    )?;
-                    access_file.sync_all()?;
-                    fs::set_permissions(&access, fs::Permissions::from_mode(0o644))?;
-                    File::open(access.parent().unwrap())?.sync_all()?;
+                    let reply = if self.signed_subscription() {
+                        // Access content is first opened only after the exact allocation is
+                        // sealed and current signed initialization authority is held.
+                        lease
+                            .check_current()
+                            .map_err(|e| Error::Refused(e.into()))?;
+                        self.coding_project_provider_access(Some(&lease))?;
+                        json!({"type":"initialize","sessionId":native,"deadline":self.journal.job.deadline_unix_seconds})
+                    } else {
+                        let access = self.journal.job.state_dir.join("coding-canary/access.json");
+                        let mut access_file = OpenOptions::new()
+                            .create_new(true)
+                            .write(true)
+                            .open(&access)?;
+                        access_file.write_all(br#"{"classification":"fake_fixture","access":"FAKE-NEVER-A-CREDENTIAL"}"#)?;
+                        access_file.sync_all()?;
+                        fs::set_permissions(&access, fs::Permissions::from_mode(0o644))?;
+                        File::open(access.parent().unwrap())?.sync_all()?;
+                        json!({"type":"initialize","sessionId":native,"fixtureAccess":"FAKE-NEVER-A-CREDENTIAL","deadline":self.journal.job.deadline_unix_seconds})
+                    };
+                    lease
+                        .check_current()
+                        .map_err(|e| Error::Refused(e.into()))?;
                     self.reply_leases.push(lease);
-                    replies.push(serde_json::to_vec(&json!({"type":"initialize","sessionId":native,"fixtureAccess":"FAKE-NEVER-A-CREDENTIAL","deadline":self.journal.job.deadline_unix_seconds}))?);
+                    replies.push(serde_json::to_vec(&reply)?);
                 }
                 "provider_request" | "provider_observation" | "provider_complete" => {
                     if let Some(reply) = self.coding_provider_frame(&frame)? {
@@ -857,7 +892,7 @@ impl Host {
         if !self.journal.removed {
             return Ok(());
         }
-        if self.signed_pi() {
+        if self.signed_pi() && !self.signed_subscription() {
             let private = self.journal.job.state_dir.join("coding-canary");
             for name in ["access.json", "signed-fixture.json"] {
                 let p = private.join(name);
@@ -1102,6 +1137,27 @@ mod tests {
         assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"allocated","sessionId":"00000000-0000-4000-8000-000000000002","accessPresent":false}))).is_err());
         assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"ready","sessionId":"00000000-0000-4000-8000-000000000002","tools":["workspace_exec"]}))).is_err());
         assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
+    }
+    #[test]
+    fn signed_subscription_cannot_allocate_or_spawn_without_owner_or_after_deadline() {
+        let (_dir, mut h) = fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = SIGNED_SUBSCRIPTION_PROFILE.into();
+        assert!(Host::admit(h.journal.job.clone()).is_err());
+        assert!(h.coding_advance(&frame(json!({"schema":SIGNED_SUBSCRIPTION_PROFILE,"type":"allocated","sessionId":"00000000-0000-4000-8000-000000000001","accessPresent":false}))).is_err());
+        assert!(h.journal.session_id.is_none());
+        h.journal.job.deadline_unix_seconds = now().saturating_sub(1);
+        assert!(
+            h.command("coding-tool-exec", vec!["must-never-execute".into()], false)
+                .is_err()
+        );
+        assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
+        assert!(
+            !h.journal
+                .job
+                .state_dir
+                .join("private-access/access.json")
+                .exists()
+        );
     }
     #[test]
     #[ignore = "explicit signed authority generator required; no Docker or provider"]

@@ -201,36 +201,9 @@ impl Host {
         let private = self.journal.job.state_dir.join("private-access");
         fs::create_dir(&private)?;
         fs::set_permissions(&private, fs::Permissions::from_mode(0o700))?;
-        // Only this explicit runtime-admitted branch reads the original native
-        // source. It never writes it or copies refresh/id tokens. No digest/log.
-        let metadata = fs::symlink_metadata(&plan.lane.native_auth_source)?;
-        if !metadata.is_file()
-            || metadata.len() > 65536
-            || metadata.permissions().mode() & 0o077 != 0
-        {
-            return refuse("native credential source metadata invalid");
+        if !self.signed_subscription() {
+            self.coding_project_provider_access(None)?;
         }
-        use std::io::Read;
-        use std::os::unix::fs::MetadataExt;
-        let source = OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NOFOLLOW)
-            .open(&plan.lane.native_auth_source)?;
-        let before = source.metadata()?;
-        let mut raw = Vec::new();
-        (&source).take(65537).read_to_end(&mut raw)?;
-        let after = source.metadata()?;
-        if raw.len() > 65536
-            || before.len() != after.len()
-            || before.mtime() != after.mtime()
-            || before.mtime_nsec() != after.mtime_nsec()
-            || before.ino() != metadata.ino()
-        {
-            return refuse("native source changed during bounded read");
-        }
-        let grant =
-            auth::project_native_access(&raw, now(), self.journal.job.deadline_unix_seconds)?;
-        grant.stage(&private)?;
         let config = self.journal.job.state_dir.join("coding-public-config");
         fs::create_dir(&config)?;
         for (path, entry) in inventory(&plan.lane.pi_config.root)? {
@@ -249,12 +222,77 @@ impl Host {
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
         atomic(
             &public.join("job.json"),
-            &json!({"schema":LIVE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
+            &json!({"schema":if self.signed_subscription() {super::SIGNED_SUBSCRIPTION_PROFILE} else {LIVE_PROFILE},"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
         )?;
         Ok(())
     }
+    // Caller must hold current Initialization lease for signed jobs. This
+    // private operation is never exposed as a request-selected callback.
+    pub(super) fn coding_project_provider_access(
+        &self,
+        lease: Option<&session_task_admission::pi_pilot::EffectLease>,
+    ) -> Result<()> {
+        if self.signed_subscription() && lease.is_none() {
+            return refuse("signed access requires initialization lease");
+        }
+        let plan = self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .and_then(|p| p.provider.as_ref())
+            .ok_or_else(|| Error::Refused("provider plan absent".into()))?;
+        plan.validate(&self.journal.job)?;
+        let private = self.journal.job.state_dir.join("private-access");
+        // Only this explicit runtime-admitted branch reads the original native
+        // source. It never writes it or copies refresh/id tokens. No digest/log.
+        if let Some(lease) = lease {
+            lease
+                .check_current()
+                .map_err(|e| Error::Refused(e.into()))?;
+        }
+        let metadata = fs::symlink_metadata(&plan.lane.native_auth_source)?;
+        if !metadata.is_file()
+            || metadata.len() > 65536
+            || metadata.permissions().mode() & 0o077 != 0
+        {
+            return refuse("native credential source metadata invalid");
+        }
+        use std::io::Read;
+        use std::os::unix::fs::MetadataExt;
+        if let Some(lease) = lease {
+            lease
+                .check_current()
+                .map_err(|e| Error::Refused(e.into()))?;
+        }
+        let source = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW)
+            .open(&plan.lane.native_auth_source)?;
+        let before = source.metadata()?;
+        let mut raw = Vec::new();
+        (&source).take(65537).read_to_end(&mut raw)?;
+        let after = source.metadata()?;
+        if raw.len() > 65536
+            || before.len() != after.len()
+            || before.mtime() != after.mtime()
+            || before.mtime_nsec() != after.mtime_nsec()
+            || before.ino() != metadata.ino()
+        {
+            return refuse("native source changed during bounded read");
+        }
+        let grant =
+            auth::project_native_access(&raw, now(), self.journal.job.deadline_unix_seconds)?;
+        if let Some(lease) = lease {
+            lease
+                .check_current()
+                .map_err(|e| Error::Refused(e.into()))?;
+        }
+        grant.stage(&private)?;
+        Ok(())
+    }
     pub(super) fn coding_provider_frame(&mut self, frame: &Value) -> Result<Option<Value>> {
-        if self.signed_pi() {
+        if self.signed_pi() && !self.signed_subscription() {
             return self.coding_fake_provider_frame(frame);
         }
         let plan = self
@@ -313,6 +351,19 @@ impl Host {
                     },
                 );
                 self.save()?; // Durable unknown reservation BEFORE granting possible network entry.
+                if self.signed_subscription() {
+                    let owner = self
+                        .pi_owner
+                        .as_ref()
+                        .ok_or_else(|| Error::Refused("Pi owner absent".into()))?;
+                    let lease = owner
+                        .enter(session_task_admission::pi_pilot::Effect::Provider(id))
+                        .map_err(|e| Error::Refused(e.into()))?;
+                    lease
+                        .check_current()
+                        .map_err(|e| Error::Refused(e.into()))?;
+                    self.reply_leases.push(lease);
+                }
                 Ok(Some(
                     json!({"type":"provider_grant","id":id,"reservedMicrousd":reserve}),
                 ))
@@ -753,5 +804,39 @@ mod signed_fake_tests {
                 .is_none()
         );
         assert!(h.journal.processes.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod signed_subscription_tests {
+    use super::*;
+    #[test]
+    fn signed_subscription_uses_full_reservation_and_requires_owner_before_grant() {
+        let (_dir, mut h) = super::ledger_tests::fixture();
+        h.journal.job.coding.as_mut().unwrap().schema =
+            super::super::SIGNED_SUBSCRIPTION_PROFILE.into();
+        let frame = json!({"type":"provider_request","id":1,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":12});
+        assert!(h.coding_provider_frame(&frame).is_err());
+        let r = &h.journal.coding.as_ref().unwrap().provider_requests[&1];
+        assert_eq!(r.reserved_microusd, 164001);
+        assert!(r.settled_microusd.is_none());
+        assert!(h.reply_leases.is_empty());
+        assert!(h.coding_provider_frame(&frame).is_err());
+    }
+    #[test]
+    fn signed_subscription_unknown_completion_cannot_settle_or_regrant() {
+        let (_dir, mut h) = super::ledger_tests::fixture();
+        h.journal.job.coding.as_mut().unwrap().schema =
+            super::super::SIGNED_SUBSCRIPTION_PROFILE.into();
+        let request = json!({"type":"provider_request","id":1,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":12});
+        assert!(h.coding_provider_frame(&request).is_err());
+        // Even SDK normalized zeros plus a success-looking stop are not raw evidence.
+        assert!(h.coding_provider_frame(&json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{"input":0,"output":0}})).is_err());
+        assert!(
+            h.journal.coding.as_ref().unwrap().provider_requests[&1]
+                .settled_microusd
+                .is_none()
+        );
+        assert!(h.coding_provider_frame(&request).is_err());
     }
 }

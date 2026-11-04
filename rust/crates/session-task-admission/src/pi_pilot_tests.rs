@@ -28,6 +28,9 @@ struct Fixture {
 }
 impl Fixture {
     fn new(export: Option<PathBuf>, job: &str, exe: &str) -> Self {
+        Self::new_kind(export, job, exe, false)
+    }
+    fn new_kind(export: Option<PathBuf>, job: &str, exe: &str, subscription: bool) -> Self {
         static N: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let keep = export.is_some();
         let dir = export.unwrap_or_else(|| {
@@ -61,6 +64,13 @@ impl Fixture {
             .format(&Rfc3339)
             .unwrap()
             .into();
+        if subscription {
+            i["schema"] = "dot.task-intent/pi-coding-subscription-v1".into();
+            i["execution_profile"] = "disposable-pi-coding-subscription-v1".into();
+            i["workspace"]["profile_id"] = SUBSCRIPTION_PROFILE.into();
+            i["effects"]["network"] = true.into();
+            i["model"] = json!({"id":"gpt-6-luna","effort":"off","tier":"subscription"});
+        }
         let raw = task.to_string();
         let task_ref = crate::validate_review(&raw).unwrap();
         let i = &task["data"]["intent"];
@@ -123,7 +133,7 @@ impl Fixture {
             None
         }
         .unwrap_or(time::Duration::minutes(15));
-        let profile = json!({"schema":PROFILE,"classification":"fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker","task":task_ref,"proposal":i["proposal"],"mode":i["authority"]["mode"],"configuration":i["workspace"]["configuration"],"parent":i["prerequisites"][0],"actor":"fixture-actor","objective":"fixture-objective","job_sha256":job,"native_executable_sha256":exe,"transport_sha256":transport.sha256(),"expires_at":(now+lifetime).format(&Rfc3339).unwrap()});
+        let profile = json!({"schema":if subscription {SUBSCRIPTION_PROFILE} else {PROFILE},"classification":if subscription {SUBSCRIPTION_CLASSIFICATION} else {"fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker"},"task":task_ref,"proposal":i["proposal"],"mode":i["authority"]["mode"],"configuration":i["workspace"]["configuration"],"parent":i["prerequisites"][0],"actor":"fixture-actor","objective":"fixture-objective","job_sha256":job,"native_executable_sha256":exe,"transport_sha256":transport.sha256(),"expires_at":(now+lifetime).format(&Rfc3339).unwrap()});
         put(&dir.join("profile.json"), profile.to_string());
         let mut f = Self {
             pin: Pin {
@@ -601,4 +611,148 @@ fn transactional_denials_retain_new_signed_head_without_action_writes() {
             "{boundary}"
         );
     }
+}
+
+#[test]
+fn subscription_exact_schema_and_field_negatives() {
+    let f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+    assert!(f.owner().is_subscription());
+    assert!(crate::validate_review(&f.rows[0]).is_ok());
+    for (section, field, value) in [
+        ("effects", "network", json!(false)),
+        ("effects", "write_paths", json!(["src/lib.rs", "other"])),
+        ("model", "id", json!("fake-pi-model")),
+        ("model", "tier", json!("fixture")),
+        ("model", "effort", json!("high")),
+        ("workspace", "profile_id", json!(PROFILE)),
+    ] {
+        let mut row: Value = serde_json::from_str(&f.rows[0]).unwrap();
+        row["data"]["intent"][section][field] = value;
+        assert!(
+            crate::validate_review(&row.to_string()).is_err(),
+            "{section}.{field}"
+        );
+    }
+    for (field, value) in [
+        ("schema", "dot.task-intent/pi-coding-v1"),
+        ("provider", "codex"),
+        ("execution_profile", "disposable-pi-coding-fixture-v1"),
+    ] {
+        let mut row: Value = serde_json::from_str(&f.rows[0]).unwrap();
+        row["data"]["intent"][field] = value.into();
+        assert!(crate::validate_review(&row.to_string()).is_err());
+    }
+}
+
+#[test]
+fn subscription_unknowns_native_seal_idempotency_and_result() {
+    let f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+    let o = f.owner();
+    let before = o.admit(&"a".repeat(64), &exe()).unwrap();
+    assert_eq!(before, o.admit(&"a".repeat(64), &exe()).unwrap());
+    assert!(o.admit(&"b".repeat(64), &exe()).is_err());
+    assert!(o.enter(Effect::Initialization).is_err());
+    drop(o.enter(Effect::Allocation).unwrap());
+    let id = "00000000-0000-4000-8000-000000000001";
+    assert!(o.seal(&"b".repeat(64), id).is_err());
+    o.seal(&"a".repeat(64), id).unwrap();
+    assert!(
+        o.check_native("00000000-0000-4000-8000-000000000002")
+            .is_err()
+    );
+    assert!(o.seal(&"a".repeat(64), id).is_err());
+    for effect in [
+        Effect::Initialization,
+        Effect::Provider(1),
+        Effect::Tool("one".into()),
+    ] {
+        drop(o.enter(effect.clone()).unwrap());
+        assert!(o.enter(effect).is_err());
+    }
+    assert!(o.enter(Effect::Allocation).is_err());
+    drop(o);
+    assert!(f.owner().enter(Effect::Allocation).is_err());
+    let r = f.owner().record_result(&json!({"receipt":{"input_digest":"a".repeat(64),"session_id":id,"owner_pending":true},"classification":"synthetic signing/access/provider"})).unwrap();
+    assert_eq!(r["schema"], "dot.pi-coding-subscription-result/v1");
+    assert_eq!(r["owner_acceptance"], "not_claimed");
+    assert_eq!(r["retry_permitted"], false);
+    assert!(
+        f.owner()
+            .record_result(&json!({"input_digest":"a".repeat(64)}))
+            .is_err()
+    );
+}
+
+#[test]
+fn subscription_current_boundaries_revocation_and_monotone_observation() {
+    for effect in [
+        Effect::Initialization,
+        Effect::Provider(1),
+        Effect::Tool("one".into()),
+    ] {
+        let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+        let o = f.owner();
+        o.admit(&"a".repeat(64), &exe()).unwrap();
+        drop(o.enter(Effect::Allocation).unwrap());
+        o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+            .unwrap();
+        let lease = o.enter(effect.clone()).unwrap();
+        lease.check_current().unwrap();
+        let active = f.rows.clone();
+        f.control("revoked");
+        assert!(lease.check_current().is_err());
+        drop(lease);
+        f.rows = active;
+        f.save();
+        assert!(o.enter(effect).is_err());
+        assert!(PiOwner::open(f.pin.clone()).is_err());
+    }
+    for case in [
+        "key",
+        "task",
+        "proposal",
+        "budget",
+        "profile",
+        "transport",
+        "expiry",
+    ] {
+        let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+        let o = f.owner();
+        o.admit(&"a".repeat(64), &exe()).unwrap();
+        match case {
+            "key" => put(&f.dir.join("keys.json"), b"{\"keys\":{}}"),
+            "task" => {
+                f.db()
+                    .execute("UPDATE task_head SET state='withdrawn'", [])
+                    .unwrap();
+            }
+            "proposal" => {
+                f.db()
+                    .execute("UPDATE proposal_head SET state='withdrawn'", [])
+                    .unwrap();
+            }
+            "budget" => put(&f.dir.join("record"), b"changed"),
+            "profile" => put(&f.dir.join("profile.json"), b"{}"),
+            "transport" => put(&f.pin.path, b"{}"),
+            "expiry" => {
+                let mut l = o.enter(Effect::Allocation).unwrap();
+                l.expires = clock() - time::Duration::seconds(1);
+                assert!(l.check_current().is_err());
+                drop(l);
+            }
+            _ => unreachable!(),
+        }
+        assert!(o.enter(Effect::Allocation).is_err(), "{case}");
+        f.rows.clear();
+    }
+}
+
+#[test]
+#[ignore = "explicit synthetic subscription authority export; no provider or Docker"]
+fn export_signed_pi_subscription() {
+    let out = std::env::var_os("PI_SUBSCRIPTION_EXPORT").expect("owned output required");
+    let job = std::env::var("PI_SUBSCRIPTION_JOB_SHA").unwrap();
+    let executor = std::env::var("PI_SUBSCRIPTION_EXECUTOR_SHA").unwrap();
+    let f = Fixture::new_kind(Some(PathBuf::from(out)), &job, &executor, true);
+    put(&f.dir.join("ui-golden-vectors.json"), json!({"standing":"synthetic owner signing/identity only; subscription backend candidate; no live qualification","schema":"dot.task-intent/pi-coding-subscription-v1","persistent_write_paths":["src/lib.rs"],"network":"inference fixed subscription adapter; tool/validator none","descriptor":descriptor(&f.pin).unwrap(),"profile_json":std::fs::read_to_string(f.dir.join("profile.json")).unwrap(),"signed_rows":f.rows}).to_string());
 }

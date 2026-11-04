@@ -229,6 +229,10 @@ pub fn validate_review(raw_request: &str) -> Result<Ref, ReviewError> {
             "dot.task-intent/pi-coding-v1",
             "pi",
             "disposable-pi-coding-fixture-v1"
+        ) | (
+            "dot.task-intent/pi-coding-subscription-v1",
+            "pi",
+            "disposable-pi-coding-subscription-v1"
         )
     ) || i.operation != "start"
         || (i.schema == "dot.task-intent/pi-coding-v1"
@@ -237,7 +241,13 @@ pub fn validate_review(raw_request: &str) -> Result<Ref, ReviewError> {
                 || i.model.id != "fake-pi-model"
                 || i.model.effort != "off"
                 || i.model.tier != "fixture"))
-        || i.effects.network
+        || (i.schema == "dot.task-intent/pi-coding-subscription-v1"
+            && (i.effects.write_paths != ["src/lib.rs"]
+                || i.workspace.profile_id != pi_pilot::SUBSCRIPTION_PROFILE
+                || i.model.id != "gpt-6-luna"
+                || i.model.effort != "off"
+                || i.model.tier != "subscription"))
+        || i.effects.network != (i.schema == "dot.task-intent/pi-coding-subscription-v1")
         || i.effects.max_concurrent_tasks != 1
         || i.effects.max_child_tasks != 0
         || i.clock.first_funded_rule != "first_funded_setup_or_readiness"

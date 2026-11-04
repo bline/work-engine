@@ -306,11 +306,12 @@ impl Host {
         &self.journal
     }
     pub fn admit(job: Job) -> Result<Self> {
-        if job
-            .coding
-            .as_ref()
-            .is_some_and(|p| p.schema == coding::SIGNED_PROFILE)
-        {
+        if job.coding.as_ref().is_some_and(|p| {
+            matches!(
+                p.schema.as_str(),
+                coding::SIGNED_PROFILE | coding::SIGNED_SUBSCRIPTION_PROFILE
+            )
+        }) {
             return refuse("signed fixture requires Pi owner");
         }
         Self::admit_inner(job, None)
@@ -319,12 +320,36 @@ impl Host {
         job: Job,
         owner: session_task_admission::pi_pilot::PiOwner,
     ) -> Result<Self> {
-        if !job.coding.as_ref().is_some_and(|p| {
-            p.schema == coding::SIGNED_PROFILE
-                && p.provider.is_none()
-                && p.workspace_write_boundary == coding::WorkspaceWriteBoundary::SrcLibRs
-        }) {
+        if owner.is_subscription()
+            || !job.coding.as_ref().is_some_and(|p| {
+                p.schema == coding::SIGNED_PROFILE
+                    && p.provider.is_none()
+                    && p.workspace_write_boundary == coding::WorkspaceWriteBoundary::SrcLibRs
+            })
+        {
             return refuse("signed fixture profile required");
+        }
+        owner
+            .admit(
+                &digest(&serde_json::to_vec(&job)?),
+                &digest(&fs::read(std::env::current_exe()?)?),
+            )
+            .map_err(|e| Error::Refused(e.into()))?;
+        Self::admit_inner(job, Some(owner))
+    }
+    /// Exact signed subscription candidate. Ordinary admission cannot create it.
+    pub fn admit_signed_subscription(
+        job: Job,
+        owner: session_task_admission::pi_pilot::PiOwner,
+    ) -> Result<Self> {
+        if !owner.is_subscription()
+            || !job.coding.as_ref().is_some_and(|p| {
+                p.schema == coding::SIGNED_SUBSCRIPTION_PROFILE
+                    && p.provider.is_some()
+                    && p.workspace_write_boundary == coding::WorkspaceWriteBoundary::SrcLibRs
+            })
+        {
+            return refuse("signed subscription profile required");
         }
         owner
             .admit(
@@ -882,19 +907,19 @@ impl Host {
             return refuse("signed fixture cannot resume allocation");
         }
         let launch = (|| -> Result<()> {
-            if let Some(owner) = &self.pi_owner {
-                self.allocation_lease = Some(
-                    owner
-                        .enter(session_task_admission::pi_pilot::Effect::Allocation)
-                        .map_err(|e| Error::Refused(e.into()))?,
-                );
-            }
             check_job(&self.journal.job, true)?;
             if self.cancelled() {
                 return refuse("cancelled before create");
             }
             if self.journal.job.coding.is_some() {
                 self.coding_prepare_tool()?;
+            }
+            if let Some(owner) = &self.pi_owner {
+                self.allocation_lease = Some(
+                    owner
+                        .enter(session_task_admission::pi_pilot::Effect::Allocation)
+                        .map_err(|e| Error::Refused(e.into()))?,
+                );
             }
             self.journal.phase = Phase::CreateUnknown;
             self.save()?;
@@ -1198,7 +1223,7 @@ impl Host {
         if let Some(coding) = &self.journal.coding {
             value["coding"] = serde_json::to_value(coding)?;
             value["profile"] = json!(self.journal.job.coding.as_ref().unwrap().schema);
-            if self.signed_pi() {
+            if self.signed_pi() && !self.signed_subscription() {
                 value["provider"] = json!("fake_fixture");
                 value["model"] = json!("fake-pi-model");
                 value["cost_evidence"] = json!("synthetic zero-cost fixture usage; not billing");

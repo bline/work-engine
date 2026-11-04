@@ -4,17 +4,19 @@ import {createAssistantMessageEventStream} from '/pi/node_modules/@earendil-work
 import {Type} from '/pi/node_modules/typebox/build/index.mjs';
 import {createInterface} from 'node:readline';
 import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync} from 'node:fs';
-const signed=existsSync('/auth/signed-fixture.json');
+const fixtureSigned=existsSync('/auth/signed-fixture.json');
 const live=existsSync('/profile/job.json');
-if(signed&&live)throw Error('fixture/live conflict');
-if(signed)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
+if(fixtureSigned&&live)throw Error('fixture/live conflict');
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
-const schema=signed?'work-engine.pi-coding-signed-fixture.v1':live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
+const signedSubscription=live&&config.schema==='work-engine.pi-coding-signed-subscription.v1';
+const signed=fixtureSigned||signedSubscription;
+if(fixtureSigned)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
+const schema=fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
 let session,manager,signedDeadline;
 let initializeResolve;
 const initialization=new Promise(resolve=>{initializeResolve=resolve;});
 const emit=value=>{
- const bytes=JSON.stringify({schema,sessionId:session?.sessionId??manager?.getSessionId(),...(signed?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value})+'\n';
+ const bytes=JSON.stringify({schema,sessionId:session?.sessionId??manager?.getSessionId(),...(fixtureSigned?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value})+'\n';
  if(Buffer.byteLength(bytes)>65536)throw Error('output frame bound');
  process.stdout.write(bytes);
 };
@@ -27,10 +29,10 @@ input.on('line',line=>{
  try {
   if(Buffer.byteLength(line)>131072)throw Error('input frame bound');
   const value=JSON.parse(line);
-  if(signed&&value.type==='initialize'&&initializeResolve&&value.sessionId===manager?.getSessionId()&&value.fixtureAccess==='FAKE-NEVER-A-CREDENTIAL'){initializeResolve(value);initializeResolve=null;}
+  if(signed&&value.type==='initialize'&&initializeResolve&&value.sessionId===manager?.getSessionId()&&(!fixtureSigned||value.fixtureAccess==='FAKE-NEVER-A-CREDENTIAL')){initializeResolve(value);initializeResolve=null;}
   else if(value.type===(live?'task_start':'fixture_start')&&startResolve&&value.sessionId===session?.sessionId){startResolve(value);startResolve=null;}
   else if(value.type==='tool_result'&&pending.has(value.id)&&(!signed||value.sessionId===manager?.getSessionId())){pending.get(value.id)(value);pending.delete(value.id);}
-  else if(value.type==='provider_grant'&&grants.has(value.id)&&(!signed||(value.classification==='fake_fixture'&&value.sessionId===manager?.getSessionId()))){grants.get(value.id)(value);grants.delete(value.id);}
+  else if(value.type==='provider_grant'&&grants.has(value.id)&&(!signed||(value.sessionId===manager?.getSessionId()&&(!fixtureSigned||value.classification==='fake_fixture')))){grants.get(value.id)(value);grants.delete(value.id);}
   else throw Error('unexpected host frame');
  }catch{emit({type:'error',message:'host protocol rejected'});process.exitCode=2;session?.abort();input.close();}
 });
@@ -42,9 +44,11 @@ try {
   emit({type:'allocated',classification:'actual SDK allocation; no ModelRuntime/access yet',accessPresent:existsSync('/auth/access.json')});
   const initialized=await initialization;signedDeadline=initialized.deadline;
   if(!Number.isSafeInteger(signedDeadline)||Date.now()>=signedDeadline*1000)throw Error('fixture initialization deadline');
+  if(fixtureSigned){
   const access=JSON.parse(readFileSync('/auth/access.json','utf8'));
   if(access.classification!=='fake_fixture'||access.access!=='FAKE-NEVER-A-CREDENTIAL')throw Error('fixture access rejected');
   writeFileSync('/tmp/fixture-auth.json','{}',{flag:'wx',mode:0o600});
+  }
  }
  const publicSettings=live&&existsSync('/config/settings.json')?JSON.parse(readFileSync('/config/settings.json','utf8')):{};
  const settingsManager=SettingsManager.inMemory({...publicSettings,compaction:{enabled:false},retry:{enabled:false},cacheWarming:'off'});
@@ -144,7 +148,7 @@ try {
  const started=await start;command=started.command;
  await session.prompt(live?config.task:'Exercise the fixed provider-disabled workspace tool fixture.',{expandPromptTemplates:false});
  if(session.isStreaming||session.isCompacting||session.pendingMessageCount!==0)throw Error('session not idle');
- const history={schema,...(signed?{classification:'fake provider messages/usage; actual SDK manager and catalog configuration',nativeCatalog:{provider:model.provider,model:model.id}}:{}),provider:signed?'fake_fixture':live?'openai-codex':'disabled_fixture',model:signed?'fake-pi-model':live?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader()};
+ const history={schema,...(fixtureSigned?{classification:'fake provider messages/usage; actual SDK manager and catalog configuration',nativeCatalog:{provider:model.provider,model:model.id}}:{}),provider:fixtureSigned?'fake_fixture':live?'openai-codex':'disabled_fixture',model:fixtureSigned?'fake-pi-model':live?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader()};
  const fd=openSync('/export/coding-native-history.json','wx',0o600);
  try{writeFileSync(fd,JSON.stringify(history)+'\n');fsyncSync(fd);}finally{closeSync(fd);}
  emit({type:'complete',provider:history.provider});

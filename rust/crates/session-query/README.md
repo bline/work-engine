@@ -8,7 +8,7 @@ Create a private mode `0600` JSON profile owned by the invoking user. All paths 
 {
   "version": 1,
   "owner": "/absolute/path/to/session_events.py",
-  "owner_sha256": "d5d51ab3a870a6efa82f5824a4e3cb9ba5468263724f6068c0d46b5ec586b8a2",
+  "owner_sha256": "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d",
   "codex_home": "/absolute/path/to/local/codex",
   "claude_home": "/absolute/path/to/local/claude",
   "state_dir": "/absolute/path/to/private/session-events-state",

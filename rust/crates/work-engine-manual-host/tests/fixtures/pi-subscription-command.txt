@@ -1,0 +1,11 @@
+set -eu
+if touch /workspace/forbidden; then exit 31; fi
+if touch /workspace/src/forbidden; then exit 32; fi
+if printf bad > /acceptance.rs; then exit 33; fi
+printf replacement > /tmp/replacement
+if mv /tmp/replacement /workspace/src/lib.rs; then exit 34; fi
+if ln /workspace/src/lib.rs /workspace/src/alias; then exit 35; fi
+rustc --edition=2024 --test /acceptance.rs -o /tmp/before
+if /tmp/before; then exit 18; else test "$?" -eq 101; fi
+printf 'pub fn parse_delay_ms(n:u64)->u64 { n*60000 }\n' > /workspace/src/lib.rs
+printf 'SYNTHETIC_SUBSCRIPTION_SSE_TOOL_DONE\n'

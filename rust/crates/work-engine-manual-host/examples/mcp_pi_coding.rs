@@ -16,6 +16,7 @@ use work_engine_manual_host::{
     pi_docker::{Host, Job},
 };
 const PROTOCOL: &str = "work-engine.mcp-pi-coding-fixture.v1";
+const SUBSCRIPTION_PROTOCOL: &str = "work-engine.mcp-pi-coding-subscription.v1";
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Config {
@@ -39,8 +40,8 @@ struct Request {
     idempotency_key: String,
 }
 fn call(c: Config, r: Request) -> Result<Value, String> {
-    if c.schema != PROTOCOL
-        || r.schema != PROTOCOL
+    if !matches!(c.schema.as_str(), PROTOCOL | SUBSCRIPTION_PROTOCOL)
+        || r.schema != c.schema
         || !["submit", "status", "result"].contains(&r.method.as_str())
     {
         return Err("pi_protocol".into());
@@ -81,12 +82,21 @@ fn call(c: Config, r: Request) -> Result<Value, String> {
     let job: Job = serde_json::from_slice(&c.job.verify().map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
     let owner = PiOwner::open(c.descriptor.clone()).map_err(str::to_owned)?;
-    let mut host = Host::admit_signed_fixture(job, owner).map_err(|e| e.to_string())?;
+    if owner.is_subscription() != (c.schema == SUBSCRIPTION_PROTOCOL) {
+        return Err("pi_protocol_profile".into());
+    }
+    let mut host = if c.schema == SUBSCRIPTION_PROTOCOL {
+        Host::admit_signed_subscription(job, owner)
+    } else {
+        Host::admit_signed_fixture(job, owner)
+    }
+    .map_err(|e| e.to_string())?;
     let _native = host.run().map_err(|e| e.to_string())?;
     pi_pilot::read(&c.descriptor).map_err(str::to_owned)
 }
 fn main() {
     let args: Vec<_> = std::env::args().collect();
+    let mut protocol = PROTOCOL.to_owned();
     let result = (|| -> Result<Value, String> {
         if args.len() != 4
             || args[3] != "rpc"
@@ -114,13 +124,16 @@ fn main() {
             return Err("pi_request".into());
         }
         let r = serde_json::from_slice(&request).map_err(|_| "pi_request")?;
+        if c.schema == SUBSCRIPTION_PROTOCOL {
+            protocol = c.schema.clone();
+        }
         call(c, r)
     })();
     let out = match result {
         Ok(v) => {
-            json!({"schema_version":1,"protocol":PROTOCOL,"ok":true,"result":{"schema_version":1,"pi_coding":v}})
+            json!({"schema_version":1,"protocol":protocol,"ok":true,"result":{"schema_version":1,"pi_coding":v}})
         }
-        Err(e) => json!({"schema_version":1,"protocol":PROTOCOL,"ok":false,"error":e}),
+        Err(e) => json!({"schema_version":1,"protocol":protocol,"ok":false,"error":e}),
     };
     let _ = writeln!(std::io::stdout(), "{out}");
 }

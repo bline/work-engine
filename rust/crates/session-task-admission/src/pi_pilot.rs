@@ -10,6 +10,9 @@ use serde_json::{Value, json};
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 pub type Result<T> = std::result::Result<T, &'static str>;
 pub const PROFILE: &str = "dot.pi-coding-fixture-profile/v1";
+pub const SUBSCRIPTION_PROFILE: &str = "dot.pi-coding-subscription-profile/v1";
+pub const SUBSCRIPTION_CLASSIFICATION: &str =
+    "subscription-backend-candidate; owner-and-provider-qualification-not-claimed";
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Transport {
@@ -130,10 +133,13 @@ impl PiOwner {
         let p: Profile =
             serde_json::from_slice(&service::protected(&d.profile.path).ok_or("pi_profile")?)
                 .map_err(|_| "pi_profile")?;
-        if p.schema != PROFILE
-            || p.classification
-                != "fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker"
-            || !sha(&p.job_sha256)
+        if !matches!(
+            (p.schema.as_str(), p.classification.as_str()),
+            (
+                PROFILE,
+                "fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker"
+            ) | (SUBSCRIPTION_PROFILE, SUBSCRIPTION_CLASSIFICATION)
+        ) || !sha(&p.job_sha256)
             || !sha(&p.native_executable_sha256)
             || p.transport_sha256 != d.transport.sha256()
         {
@@ -151,6 +157,10 @@ impl PiOwner {
         let db = owner.db()?;
         owner.current(&db)?;
         Ok(owner)
+    }
+    /// Profile identity only, never an authorization permit.
+    pub fn is_subscription(&self) -> bool {
+        self.p.schema == SUBSCRIPTION_PROFILE
     }
     pub fn profile_sha256(&self) -> &str {
         &self.d.profile.sha256
@@ -178,14 +188,36 @@ impl PiOwner {
             .ok_or("pi_mode")?;
         let mode: crate::ModeView =
             serde_json::from_str(&mode.content_json).map_err(|_| "pi_mode")?;
-        if i.schema != "dot.task-intent/pi-coding-v1"
+        let subscription = self.is_subscription();
+        if i.schema
+            != if subscription {
+                "dot.task-intent/pi-coding-subscription-v1"
+            } else {
+                "dot.task-intent/pi-coding-v1"
+            }
             || i.provider != "pi"
-            || i.execution_profile != "disposable-pi-coding-fixture-v1"
-            || i.effects.network
+            || i.execution_profile
+                != if subscription {
+                    "disposable-pi-coding-subscription-v1"
+                } else {
+                    "disposable-pi-coding-fixture-v1"
+                }
+            || i.workspace.profile_id != p.schema
+            || i.effects.network != subscription
             || i.effects.write_paths != ["src/lib.rs"]
-            || i.model.id != "fake-pi-model"
+            || i.model.id
+                != if subscription {
+                    "gpt-6-luna"
+                } else {
+                    "fake-pi-model"
+                }
             || i.model.effort != "off"
-            || i.model.tier != "fixture"
+            || i.model.tier
+                != if subscription {
+                    "subscription"
+                } else {
+                    "fixture"
+                }
             || e.task != p.task
             || i.proposal != p.proposal
             || i.authority.mode != p.mode
@@ -498,8 +530,15 @@ pub fn read(pin: &Pin) -> Result<Value> {
         let mut s=db.prepare("SELECT effect_key,state,evidence_sha FROM pi_effect WHERE profile_sha=?1 ORDER BY effect_key").map_err(|_|"pi_registry")?;
         s.query_map([&d.profile.sha256],|r|Ok(json!({"key":r.get::<_,String>(0)?,"state":r.get::<_,String>(1)?,"evidence_sha256":r.get::<_,Option<String>>(2)?}))).map_err(|_|"pi_registry")?.collect::<std::result::Result<_,_>>().map_err(|_|"pi_registry")?
     };
+    let profile: Profile =
+        serde_json::from_slice(&service::protected(&d.profile.path).ok_or("pi_profile")?)
+            .map_err(|_| "pi_profile")?;
+    if !source::pinned(&d.profile) {
+        return Err("pi_profile_pin");
+    }
+    let subscription = profile.schema == SUBSCRIPTION_PROFILE;
     Ok(
-        json!({"schema":"dot.pi-coding-result/v1","classification":"fixture signing/identity/provider; actual Pi SDK/Docker/tool/validator","admission_id":a.admission.id,"operation_id":a.admission.operation,"profile_sha256":d.profile.sha256,"descriptor_sha256":pin.sha256,"job_sha256":job,"native_session_id":native,"state":if result.is_some(){"runtime_evidence_recorded"}else{"unknown_or_pending"},"outbox":a.status,"effects":effects,"runtime_result":result.map(|s|serde_json::from_str::<Value>(&s)).transpose().map_err(|_|"pi_result")?,"owner_acceptance":"not_claimed","retry_permitted":false}),
+        json!({"schema":if subscription {"dot.pi-coding-subscription-result/v1"} else {"dot.pi-coding-result/v1"},"classification":if subscription {SUBSCRIPTION_CLASSIFICATION} else {"fixture signing/identity/provider; actual Pi SDK/Docker/tool/validator"},"admission_id":a.admission.id,"operation_id":a.admission.operation,"profile_sha256":d.profile.sha256,"descriptor_sha256":pin.sha256,"job_sha256":job,"native_session_id":native,"state":if result.is_some(){"runtime_evidence_recorded"}else{"unknown_or_pending"},"outbox":a.status,"effects":effects,"runtime_result":result.map(|s|serde_json::from_str::<Value>(&s)).transpose().map_err(|_|"pi_result")?,"owner_acceptance":"not_claimed","retry_permitted":false}),
     )
 }
 /// Explicit control ingestion uses the same registry ordering as effect entry.
