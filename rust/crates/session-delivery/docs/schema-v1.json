@@ -225,6 +225,67 @@
           "active"
         ],
         "type": "object"
+      },
+      "PressureConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "host": {
+            "type": "string"
+          },
+          "incarnation": {
+            "description": "Explicit owner-selected incarnation; changing it requires a new store.",
+            "type": "string"
+          },
+          "lead_calls": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "levels": {
+            "description": "Exact existing reader binding levels, never a second policy."
+          },
+          "reader": {
+            "type": "string"
+          },
+          "reader_sha256": {
+            "type": "string"
+          },
+          "recipients": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rollout": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "step_percent": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "reader",
+          "reader_sha256",
+          "incarnation",
+          "session",
+          "host",
+          "rollout",
+          "levels",
+          "step_percent",
+          "lead_calls",
+          "recipients"
+        ],
+        "type": "object"
       }
     },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -238,6 +299,16 @@
       },
       "fixture_only": {
         "type": "boolean"
+      },
+      "pressure": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/PressureConfig"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "repository": {
         "type": "string"

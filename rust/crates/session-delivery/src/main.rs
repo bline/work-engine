@@ -380,6 +380,7 @@ fn run() -> Result<()> {
                 }
             }
         }
+        "observe-pressure" => store.observe_pressure()?,
         "dispatch" => dispatch(&mut store, &args[2])?,
         "run" => {
             let cycles: u64 = args.get(4).and_then(|v| v.parse().ok()).unwrap_or(1);
@@ -394,6 +395,9 @@ fn run() -> Result<()> {
                     Ok(()) => {}
                     Err(e) => store.source_hold(&e.to_string())?,
                 }
+                // Each source retains its own durable hold; pressure failure
+                // does not suppress already admitted board delivery.
+                let _ = store.observe_pressure();
                 dispatch(&mut store, &args[2])?;
                 std::thread::sleep(Duration::from_millis(50));
             }

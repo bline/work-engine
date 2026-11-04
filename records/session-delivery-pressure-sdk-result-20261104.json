@@ -1,0 +1,45 @@
+{
+  "status": "source_qualified_runtime_unmet_budget_stop",
+  "user_goal_complete": false,
+  "foundation_commit": "07918fbcee8bff04aa1cbac3067d2a1092a06db5",
+  "source_manifest_sha256": "cc3a26d033c975cb6536afc2ffeeabcd8b1db1efe6eb7305a0e138deb7ac04e6",
+  "qualified": "Pressure occurrence/CAS repair, source-only observation, native-bound release helper and opt-in Pi SDK receiver source; immutable source review plus Root closure of evidence-only P2-F1.",
+  "tests": {
+    "final_bound_Rust": 34,
+    "breakdown": {
+      "pressure_unit": 4,
+      "pinned_reader_synthetic": 5,
+      "foundation": 22,
+      "fake_join": 3
+    },
+    "inputs_per_run": 42,
+    "exit": 0,
+    "leftovers": 0,
+    "receiver_R4": "6unit/9fake plus syntax/lint/format source-bound; actual runtime not run",
+    "legacy_full_suite": "timeout/partial failures retained; earlier focused pass not final-source proof"
+  },
+  "reviews": [
+    {
+      "result": "/home/bline/.local/state/work-engine/delivery-pressure-s10-integration-20261104/review-pressure/result.json",
+      "verdict": "changes_required P2-1; repaired source and regression reviewed in final episode"
+    },
+    {
+      "result": "/home/bline/.local/state/work-engine/delivery-pressure-s10-integration-20261104/final-review/result.json",
+      "verdict": "changes_required evidence-only P2-F1; Root closed via qualified-checks/summary.json, original verdict preserved"
+    }
+  ],
+  "not_proved": [
+    "Actual Pi SDK compatibility/native insertion and daemon cleanup",
+    "Service Store.ack bridge; helper leaves ACK held",
+    "Live MCP/Dot/OAuth or production release"
+  ],
+  "real_runtime": "No Pi/Docker launch/provider/credential/deployment; Docker image inspection only.",
+  "spend_snapshot": {
+    "all_in_usd": 19.1282136,
+    "cap_usd": 20,
+    "basis": "speed-adjusted API-equivalent proxy, not bill/quota",
+    "closure_reporting_tail": "not yet settled; final Root record outside Git retains latest accounting"
+  },
+  "actors": "All current model operations closed/ACKed; Root-owned listeners stopping/collection pending before final objective closure.",
+  "records": "Final closure/result authority in /home/bline/.local/state/work-engine/delivery-pressure-s10-integration-20261104"
+}

@@ -113,3 +113,35 @@ print(json.dumps(dict(schema_version=1,protocol='session-delivery-rpc-v1',ok=Tru
                 unknown_before_ack=status, final_observation=final,
                 wrong_attempt_rejected=True, duplicate_ack_idempotent=True), indent=2))
 
+    @unittest.skipUnless(BINARY and os.environ.get('PRESSURE_TEST_READER'), 'requires pinned actual pressure reader and Rust owner')
+    def test_joined_pressure_reader_status_and_attempt_ack(self):
+        binary = self.root/'rust-helper'; shutil.copy2(BINARY,binary);binary.chmod(0o700)
+        reader = Path(os.environ['PRESSURE_TEST_READER'])
+        self.assertEqual(hashlib.sha256(reader.read_bytes()).hexdigest(), os.environ['PRESSURE_TEST_READER_SHA256'])
+        session = '11111111-1111-4111-8111-111111111111'
+        rollout = self.root/'synthetic-rollout.jsonl'
+        rows = [dict(type='session_meta',payload=dict(id=session)),
+                dict(type='event_msg',timestamp='2026-11-04T00:20:00Z',payload=dict(type='token_count',info=dict(
+                    last_token_usage=dict(input_tokens=700,cached_input_tokens=0),model_context_window=1000)))]
+        rollout.write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        self.cfg['pressure'] = dict(reader=str(reader), reader_sha256=os.environ['PRESSURE_TEST_READER_SHA256'],
+            incarnation='disposable-mcp-pressure', session=session, host='codex', agent=None,
+            rollout=str(rollout),levels=dict(window_percent=dict(trigger=58.0,band_floor=66.0)),
+            step_percent=5.0,lead_calls=3,recipients=['fixture'])
+        self.config.write_text(json.dumps(self.cfg))
+        server = SE.Server(self.homes,'tester',SE.CallbackPolicy(),delivery=self.helper(binary))
+        self.assertFalse(self.call(server,'delivery_subscribe',dict(recipient='fixture')).get('isError',False))
+        subprocess.run([binary,'--config',self.config,'observe-pressure'],check=True)
+        subprocess.run([binary,'--config',self.config,'dispatch'],check=True)
+        status=self.call(server,'delivery_inspect',dict(recipient='fixture'))['structuredContent']
+        self.assertTrue(status['pressure']['cursor_committed']);self.assertIsNone(status['pressure']['hold'])
+        self.assertNotIn('rollout',json.dumps(status));self.assertNotIn(str(rollout),json.dumps(status))
+        d=status['deliveries'][0];self.assertEqual(d['stage'],'unknown')
+        a={k:d[k] for k in ('attempt_id','delivery_id','event_id','binding_sha256','envelope_sha256','payload_sha256','generation')}
+        a.update(schema='work-engine.delivery-observation/v1',stage='target_observed')
+        wrong=dict(a,attempt_id='0'*64)
+        self.assertTrue(self.call(server,'delivery_ack',dict(recipient='fixture',ack=wrong))['isError'])
+        self.assertFalse(self.call(server,'delivery_ack',dict(recipient='fixture',ack=a)).get('isError',False))
+        self.assertTrue(self.call(server,'delivery_ack',dict(recipient='fixture',ack=a))['structuredContent']['duplicate'])
+        final=self.call(server,'delivery_inspect',dict(recipient='fixture'))['structuredContent']['deliveries'][0]
+        self.assertTrue(final['target_observed']);self.assertIsNone(final['application_result'])

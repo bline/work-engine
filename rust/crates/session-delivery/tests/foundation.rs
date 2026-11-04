@@ -34,6 +34,7 @@ fn fixture() -> (TempDir, Config) {
         source_adapter: std::env::var_os("SESSION_DELIVERY_R1_ADAPTER")
             .map(PathBuf::from)
             .unwrap_or_else(|| root().join("rust/crates/session-delivery/scripts/board_source.py")),
+        pressure: None,
         targets: vec![binding(t.path(), "one"), binding(t.path(), "two")],
     };
     save(&t, &cfg);

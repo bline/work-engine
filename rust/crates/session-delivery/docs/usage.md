@@ -51,5 +51,28 @@ points `after_inbox_before_cursor`, `before_commit`, `after_commit`,
 is retained. It is never a real recipient or delivery qualification mechanism.
 
 No daemon is installed. `run` is a bounded foreground service, suitable for this
-fixture qualification. A production deployment, pressure-producer enrollment,
+fixture qualification. A production deployment, production pressure-producer enrollment,
 Pi receiver and long-lived service host remain separate work owned by Root.
+
+Optional pressure fixture config adds `pressure` with `reader`,
+`reader_sha256`, `incarnation`, `session`, `host`, nullable `agent`, absolute
+`rollout`, `levels` (for example `{"window_percent":{"trigger":58.0,"band_floor":66.0}}`),
+`step_percent`, `lead_calls`, and `recipients` (configured recipient names).
+Levels are owner-selected inputs to the existing reader, not new thresholds.
+Use `observe-pressure` for one observation, or the existing bounded `run N`
+for board plus pressure observation. No recipient maintains a board wait.
+
+The additional integration tests require an explicit existing-reader pin and
+are ignored by default; they never enroll the running agent:
+
+```sh
+PRESSURE_TEST_READER=/absolute/pinned/work-engine-context-status \
+PRESSURE_TEST_READER_SHA256=ACTUAL_SHA256 \
+CARGO_TARGET_DIR=/tmp/session-delivery-build \
+cargo test --offline --locked --manifest-path rust/Cargo.toml \
+  -p session-delivery --test pressure -- --ignored --nocapture
+```
+
+They use disposable synthetic rollout bytes, actual existing reader processes,
+SQLite restarts/crash injection and the isolated stdio receiver. Passing them
+is not live model/window qualification or Pi delivery evidence.

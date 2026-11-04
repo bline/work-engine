@@ -9,6 +9,9 @@ use std::{
     time::Duration,
 };
 
+mod pressure;
+pub use pressure::{PressureConfig, PressureState};
+
 pub const MAX_ROW: usize = 64 * 1024;
 pub const MAX_EVENTS: usize = 1000;
 pub const MAX_DELIVERIES: usize = 2000;
@@ -86,6 +89,8 @@ pub struct Config {
     pub board_reader: PathBuf,
     pub source_adapter: PathBuf,
     pub targets: Vec<Binding>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pressure: Option<PressureConfig>,
 }
 impl Config {
     pub fn validate(&self) -> Result<()> {
@@ -101,10 +106,13 @@ impl Config {
             ]
             .iter()
             .all(|p| p.is_absolute())
-            || self.targets.is_empty()
+            || (self.targets.is_empty() && self.pressure.is_none())
             || self.targets.len() > 16
         {
             return fail("fixture_configuration_required");
+        }
+        if let Some(p) = &self.pressure {
+            p.validate(&self.targets)?;
         }
         let mut names = std::collections::BTreeSet::new();
         for b in &self.targets {
@@ -189,6 +197,10 @@ pub struct Delivery {
 }
 #[derive(Clone, Debug, Default, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct State {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pressure: Option<PressureState>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub event_order: Vec<String>,
     pub source: String,
     pub repository: String,
     pub cursor: u64,
@@ -258,12 +270,53 @@ impl Store {
             "INSERT OR IGNORE INTO delivery_state VALUES(1,?1)",
             [serde_json::to_string(&state)?],
         )?;
-        let store = Self { connection, config };
+        let mut store = Self { connection, config };
         let state = store.state()?;
         if state.source != store.config.source_id
             || state.repository != store.config.repository_identity
         {
             return fail("source_identity_conflict");
+        }
+        let pressure = store.config.pressure.clone();
+        if state.pressure.as_ref().map(|p| p.binding_sha256.clone())
+            != pressure.as_ref().map(PressureConfig::sha)
+        {
+            if state.pressure.is_some() || pressure.is_none() {
+                return fail("pressure_binding_changed_explicit_baseline_required");
+            }
+            let cfg = pressure.expect("present");
+            store.change(|s| {
+                if let Some(p) = &s.pressure {
+                    return if p.binding_sha256 == cfg.sha() {
+                        Ok(())
+                    } else {
+                        fail("pressure_binding_conflict")
+                    };
+                }
+                s.pressure = Some(PressureState {
+                    binding_sha256: cfg.sha(),
+                    cursor: None,
+                    history_len: 0,
+                    history_sha256: digest(b""),
+                    last_output: None,
+                    hold: None,
+                    recipients: cfg.recipients.clone(),
+                });
+                Ok(())
+            })?;
+        }
+        // Migrate legacy board state once, retaining source ordering solely as
+        // an initial local dispatch order. Future mixed sources use insertion order.
+        if state.event_order.len() != state.events.len() {
+            store.change(|s| {
+                if s.event_order.len() == s.events.len() {
+                    return Ok(());
+                }
+                let mut events: Vec<_> = s.events.values().collect();
+                events.sort_by_key(|e| e.sequence);
+                s.event_order = events.iter().map(|e| e.event_id.clone()).collect();
+                Ok(())
+            })?;
         }
         Ok(store)
     }
@@ -275,6 +328,7 @@ impl Store {
             || config.repository != self.config.repository
             || config.board_reader != self.config.board_reader
             || config.source_adapter != self.config.source_adapter
+            || config.pressure != self.config.pressure
         {
             return fail("running_source_configuration_changed");
         }
@@ -387,7 +441,11 @@ impl Store {
                     }
                     continue;
                 }
-                if seq <= s.cursor || s.events.values().any(|e| e.sequence == seq) {
+                if seq <= s.cursor
+                    || s.events
+                        .values()
+                        .any(|e| e.schema == "codex-chatboard-row-v1" && e.sequence == seq)
+                {
                     return fail("sequence_conflict");
                 }
                 if s.events.len() >= MAX_EVENTS {
@@ -412,6 +470,7 @@ impl Store {
                 for b in s.bindings.clone().values() {
                     enqueue(s, &event, b)?;
                 }
+                s.event_order.push(event_id.clone());
                 s.events.insert(event_id, event);
             }
             crash("after_inbox_before_cursor");
@@ -619,13 +678,21 @@ impl Store {
         };
         Ok(
             json!({"schema":"session-delivery-status-v1","fixture_only":true,"recipient":recipient,"cursor":s.cursor,
-            "source_hold":s.source_hold,"count":count,"truncated":remaining>rows.len(),"next_after":next_after,"deliveries":rows}),
+            "source_hold":s.source_hold,"pressure":s.pressure.as_ref().map(|p|json!({"binding_sha256":p.binding_sha256,"cursor_committed":p.cursor.is_some(),"hold":p.hold})),"count":count,"truncated":remaining>rows.len(),"next_after":next_after,"deliveries":rows}),
         )
     }
     pub fn pending_ids(&self) -> Result<Vec<String>> {
         let s = self.state()?;
         let mut rows: Vec<_> = s.deliveries.values().collect();
-        rows.sort_by_key(|d| (s.events[&d.event_id].sequence, d.binding.recipient.clone()));
+        rows.sort_by_key(|d| {
+            (
+                s.event_order
+                    .iter()
+                    .position(|e| e == &d.event_id)
+                    .unwrap_or(usize::MAX),
+                d.binding.recipient.clone(),
+            )
+        });
         let mut blocked = std::collections::BTreeSet::new();
         let mut pending = Vec::new();
         for d in rows {
@@ -659,9 +726,14 @@ fn envelope(d: &Delivery, e: &Event) -> Envelope {
 fn enqueue(s: &mut State, e: &Event, b: &Binding) -> Result<()> {
     let row: Value = serde_json::from_str(&e.raw_payload)?;
     // Exact addressing only. Broadcast/topic opt-in is deliberately not implicit.
-    if !row["to"]
-        .as_array()
-        .is_some_and(|a| a.iter().any(|v| v.as_str() == Some(&b.address)))
+    let pressure_match = e.schema == "manual-context-control-v1"
+        && s.pressure
+            .as_ref()
+            .is_some_and(|p| p.recipients.contains(&b.recipient));
+    if !pressure_match
+        && !row["to"]
+            .as_array()
+            .is_some_and(|a| a.iter().any(|v| v.as_str() == Some(&b.address)))
     {
         return Ok(());
     }

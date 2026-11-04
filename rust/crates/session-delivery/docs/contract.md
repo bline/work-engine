@@ -119,14 +119,72 @@ open descriptors and executes/passes those same descriptors through Linux
 The inherited OAuth/role middleware still owns authentication. A local fixture
 credential or storage access is not human approval or production authority.
 
-## Context compatibility and outstanding join
+## Foundation context compatibility (before the optional producer extension)
 
 The board raw slice retains any nested context data byte-for-byte, including
 source session, epoch, sequence, freshness/unavailable quality and model/window.
 There is no cross-session sequence flattening or lifecycle order assignment.
 The test vector exercises an unavailable context envelope nested in board data.
 This is **envelope preservation**, not enrollment of the existing pressure
-producer. No concrete producer adapter, active Pi control route or timeliness
-proof was demonstrated. Actual pressure enrollment and live Pi/Claude/Dot
+producer. At foundation acceptance, no concrete producer adapter, active Pi control route
+or timeliness proof was demonstrated. The optional producer extension below
+adds only its explicitly stated disposable qualification. Actual pressure enrollment and live Pi/Claude/Dot
 qualification remain unmet and owned by Root plus the relevant source/runtime
 owners. No budget/completion source migration is claimed.
+
+## Optional existing pressure producer
+
+The trusted fixture config optionally pins one `pressure` producer: actual reader
+executable SHA-256/path, explicit incarnation, native session/agent/host/rollout,
+existing reader levels/step/lead-calls, and exact configured recipient names.
+No MCP caller supplies any of these. Existing configs omit this field and retain
+board behavior. Service command `observe-pressure` invokes the pinned reader's
+`control` command; `run` observes both sources and dispatches independently of
+either source's hold. This remains bounded foreground fixture qualification,
+not production enrollment. The policy stays entirely with the existing reader;
+this crate does not use lifecycle sequences or request compaction.
+
+Pressure reuses the existing Event and envelope v1 DTOs. The variant discriminator
+is `Event.schema:manual-context-control-v1`, `kind:context_pressure`, with codec
+`reader-output-utf8-v1`. `raw_payload` retains the complete exact UTF-8 reader
+stdout, including its nullable event, opaque cursor and final newline. The
+existing producer does not supply global event IDs: `message_id` and `event_id`
+are delivery-owner identities hashing `[incarnation, binding_digest, cursor]`.
+They are not board IDs. `revision` hashes the verified source prefix;
+`source_key` identifies the producer. `epoch` is the JSON representation of its
+native epoch, including `null`. Native position/observation time, model/window,
+freshness, status, unavailable detail, levels and original event bytes remain
+in raw_payload. Legacy `sequence` projects source_line (0 only when absent);
+legacy `observed_at` projects its string (empty only when absent). Those
+sentinels never imply measured counters, timestamp or lifecycle order. Consumers
+must branch on Event.schema and use the nullable native fields. Source sequence
+is not the delivery scheduler: a durable local insertion order schedules mixed
+source events and preserves board ordering on migration. No fabricated board
+row, topic, address or sequence is published or inserted.
+
+SQLite's same existing state transaction binds producer config, opaque cursor,
+source-prefix length/digest, last raw output, inbox and recipient deliveries.
+A quiet initial normal result commits a baseline without generating an alert;
+this is observation evidence, not proof of enrollment or timely notification.
+The source prefix must remain unchanged and must be stable across the reader
+invocation; concurrent growth yields a visible retry-required hold without
+advancing the cursor. Truncation/rewrite never adopts a new baseline. Native
+appended compaction epochs retain distinct producer epochs and the existing
+reader's changed-state event. Binding/policy/incarnation changes cannot reuse
+the saved baseline; explicit owner disposition/new store is required. This
+bounded profile offers no in-place successor migration. Reader observation
+errors/counter gaps remain unavailable exactly as emitted; missing source,
+pin, history or process errors retain a durable hold without substituting zero.
+
+The source reader is executed from the same open descriptor whose bytes were
+hashed. Environment is cleared; stdout is bounded to128KiB, runtime15seconds,
+source history256MiB and executable64MiB. A producer call and any read thread
+are collected before return. Filesystem/stdlib/dynamic-library isolation is
+not hermetic. Current prefix hashing is linear in source size; this bounded
+adapter does not promise lossless recovery of transient pressure between
+observations. Recipient delivery uses the common backlog, attempt/unknown and
+principal/generation/digest ACK contracts. Pressure status in existing opt-in
+MCP inspect exposes binding digest, cursor-committed and hold only, with no raw
+rollout/config paths. Real Pi remains blocked as described in
+[receiver-candidate.md](receiver-candidate.md); no runtime profile is authorized
+by the optional pressure config or fixture_only flag.
