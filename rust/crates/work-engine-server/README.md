@@ -60,3 +60,45 @@ deadline separately; it keeps the config lock while awaiting those helpers.
 This covers orderly shutdown, not an abrupt process crash or external effects.
 Restart only reopens the same read-only profile and creates no job settlement
 or recovery claim.
+
+## Granted commands (offline synthetic profile)
+
+Commands are disabled unless the trusted server configuration supplies both
+`"command_capability":"offline-synthetic-v1"` and an absolute
+`"command_profile":"/absolute/private/command-profile.json"`. The separate
+profile uses the session-query profile schema with a pinned bridge binary and
+configuration. The operator must control these inputs, the private bridge store,
+and the synthetic native socket. The capability name declares the selected test
+profile; it does not verify that an arbitrary socket is synthetic. Live, Pi and
+provisioning profiles are not qualified here. The query profile remains
+`bridge: null`. Server identity includes the command profile bytes.
+
+The existing HTTP envelope and MCP tools expose `submit_session_request`,
+`read_session_operation`, and `read_session_result` when enabled. Submit takes
+`request_id`, `grant_credential`, `session_id`, `workspace`, and `input_text`.
+Reads take the original `request_id` and `grant_credential`; result also accepts
+`text_offset` and `max_chars`. Reads may reconcile owner state. Keep those exact
+references across restart; there is no server-side pending-request scan. An
+uncertain entry or a transport timeout is not cancellation or settlement. The
+bridge owns admission, grants, durable identity, and reconciliation. The server
+credential authenticates a local transport caller; it does not issue or confer a
+domain grant. An unrelated native client is not fenced by the existing dedicated
+session profile.
+
+Rust callers use `LocalClient::command(operation, arguments, correlation_id)`;
+`LocalClient::query` retains its read-only API. For example, supply the grant
+and input over a protected channel rather than command arguments:
+
+```rust,ignore
+let outcome = client.command("read_session_operation", serde_json::json!({
+    "request_id": request_id, "grant_credential": grant_credential
+}), "local-correlation")?;
+```
+
+MCP stdio is trusted process access, and HTTP still requires the separate local
+server credential. Helpers receive request material through stdin. The bridge
+checks its configured binary and config pins on use; its existing executable
+check/use race is not a hostile-mutator guarantee. Treat the referenced files
+and their parent directories as privately controlled. Result enrichment is from
+the session-events owner; unavailable completion, workers, usage or closure
+remain unavailable rather than inferred from an admission receipt.

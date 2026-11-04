@@ -1,4 +1,4 @@
-//! Local client for the AH1 HTTP query envelope.
+//! Local client for the application server HTTP envelope.
 use serde_json::{Value, json};
 use std::{
     io::{Read, Write},
@@ -51,10 +51,36 @@ impl LocalClient {
         arguments: Value,
         request_id: &str,
     ) -> Result<Value, &'static str> {
-        if !matches!(operation, "list_sessions" | "read_session")
-            || request_id.is_empty()
-            || request_id.len() > 128
-        {
+        if !matches!(operation, "list_sessions" | "read_session") {
+            return Err("invalid_request");
+        }
+        self.call(operation, arguments, request_id)
+    }
+
+    /// Calls a granted command or its public reconciliation reads. The server capability
+    /// and the independent domain grant both remain authoritative.
+    pub fn command(
+        &self,
+        operation: &str,
+        arguments: Value,
+        request_id: &str,
+    ) -> Result<Value, &'static str> {
+        if !matches!(
+            operation,
+            "submit_session_request" | "read_session_operation" | "read_session_result"
+        ) {
+            return Err("invalid_request");
+        }
+        self.call(operation, arguments, request_id)
+    }
+
+    fn call(
+        &self,
+        operation: &str,
+        arguments: Value,
+        request_id: &str,
+    ) -> Result<Value, &'static str> {
+        if request_id.is_empty() || request_id.len() > 128 {
             return Err("invalid_request");
         }
         let token = session_query::read_file(&self.credential_file, 4096, true)?;

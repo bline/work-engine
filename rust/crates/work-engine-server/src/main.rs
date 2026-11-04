@@ -1,3 +1,4 @@
+mod command;
 use serde::{
     Deserialize,
     de::{self, MapAccess, SeqAccess, Visitor},
@@ -31,6 +32,10 @@ struct Config {
     mcp: bool,
     query_profile: String,
     credential_file: String,
+    #[serde(default)]
+    command_profile: Option<String>,
+    #[serde(default)]
+    command_capability: Option<String>,
     max_connections: usize,
     max_queries: usize,
     request_timeout_seconds: u64,
@@ -38,6 +43,8 @@ struct Config {
 struct App {
     profile: Profile,
     credential: Vec<u8>,
+    command_profile: Option<Profile>,
+    _command_profile_lock: Option<std::fs::File>,
     identity: String,
     build: String,
     slots: Arc<Semaphore>,
@@ -112,17 +119,25 @@ struct Request {
 }
 impl App {
     async fn call(self: &Arc<Self>, r: Request) -> Value {
-        if r.schema_version != 1
-            || r.request_id.is_empty()
-            || r.request_id.len() > 128
-            || !matches!(r.operation.as_str(), "list_sessions" | "read_session")
-        {
+        if r.schema_version != 1 || r.request_id.is_empty() || r.request_id.len() > 128 {
             return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
         }
-        let q = match Query::parse(&r.operation, r.arguments) {
-            Ok(q) => q,
-            Err(e) => {
-                return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":e}});
+        let is_command = matches!(
+            r.operation.as_str(),
+            "submit_session_request" | "read_session_operation" | "read_session_result"
+        );
+        if is_command && self.command_profile.is_none() {
+            return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
+        }
+        let submit = r.operation == "submit_session_request";
+        let q = if submit {
+            None
+        } else {
+            match Query::parse(&r.operation, r.arguments.clone()) {
+                Ok(q) => Some(q),
+                Err(e) => {
+                    return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":e}});
+                }
             }
         };
         let permit = match self.slots.clone().acquire_owned().await {
@@ -134,7 +149,16 @@ impl App {
         let app = self.clone();
         let res = tokio::task::spawn_blocking(move || {
             let _permit = permit;
-            session_query::query(&app.profile, &q)
+            let profile = if is_command {
+                app.command_profile.as_ref().unwrap()
+            } else {
+                &app.profile
+            };
+            if submit {
+                command::submit(profile, r.arguments)
+            } else {
+                session_query::query(profile, q.as_ref().unwrap())
+            }
         })
         .await;
         match res {
@@ -206,6 +230,31 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     if profile.bridge.is_some() {
         return Err("invalid_profile");
     }
+    if !matches!(
+        (&config.command_capability, &config.command_profile),
+        (None, None) | (Some(_), Some(_))
+    ) || config
+        .command_capability
+        .as_deref()
+        .is_some_and(|c| c != "offline-synthetic-v1")
+    {
+        return Err("invalid_profile");
+    }
+    let (command_profile_lock, command_profile, command_bytes) =
+        if let Some(path) = &config.command_profile {
+            if !std::path::Path::new(path).is_absolute() {
+                return Err("invalid_profile");
+            }
+            let (lock, bytes) = lock_private(path).map_err(|_| "invalid_profile")?;
+            let profile: Profile = serde_json::from_slice(&bytes).map_err(|_| "invalid_profile")?;
+            profile.validate()?;
+            if profile.bridge.is_none() {
+                return Err("invalid_profile");
+            }
+            (Some(lock), Some(profile), bytes)
+        } else {
+            (None, None, Vec::new())
+        };
     let credential = session_query::read_file(&config.credential_file, 4096, true)?;
     if credential.len() < 32
         || credential.len() > 4096
@@ -216,6 +265,7 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     let mut hash = Sha256::new();
     hash.update(&bytes);
     hash.update(&p);
+    hash.update(&command_bytes);
     let identity = format!("sha256:{:x}", hash.finalize());
     let executable = std::env::current_exe().map_err(|_| "invalid_build")?;
     let mut f = std::fs::File::open(executable).map_err(|_| "invalid_build")?;
@@ -224,6 +274,8 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     let build = format!("sha256:{:x}", hasher.finalize());
     let app = Arc::new(App {
         profile,
+        command_profile,
+        _command_profile_lock: command_profile_lock,
         credential,
         identity,
         build,
@@ -484,7 +536,14 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
                 json!({"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"work-engine-server","version":"0.1.0"}})
             }
             "tools/list" if initialized => {
-                json!({"tools":[{"name":"list_sessions","description":"List sessions","inputSchema":{"type":"object","additionalProperties":false,"properties":{"query":{"type":"string"},"host":{"type":"string"},"limit":{"type":"integer"}}}},{"name":"read_session","description":"Read session","inputSchema":{"type":"object","additionalProperties":false,"properties":{"session_id":{"type":"string"},"entry_id":{"type":"string"},"before":{"type":"integer"},"after":{"type":"integer"},"tail":{"type":"integer"},"roles":{"type":"array","items":{"type":"string"}},"text_offset":{"type":"integer"},"max_chars":{"type":"integer"}},"required":["session_id"]}}]})
+                let mut listing = json!({"tools":[{"name":"list_sessions","description":"List sessions","inputSchema":{"type":"object","additionalProperties":false,"properties":{"query":{"type":"string"},"host":{"type":"string"},"limit":{"type":"integer"}}}},{"name":"read_session","description":"Read session","inputSchema":{"type":"object","additionalProperties":false,"properties":{"session_id":{"type":"string"},"entry_id":{"type":"string"},"before":{"type":"integer"},"after":{"type":"integer"},"tail":{"type":"integer"},"roles":{"type":"array","items":{"type":"string"}},"text_offset":{"type":"integer"},"max_chars":{"type":"integer"}},"required":["session_id"]}}]});
+                if app.command_profile.is_some() {
+                    let tools = listing["tools"].as_array_mut().unwrap();
+                    tools.push(json!({"name":"submit_session_request","description":"Submit an already granted exact request","inputSchema":{"type":"object","additionalProperties":false,"properties":{"request_id":{"type":"string"},"grant_credential":{"type":"string"},"session_id":{"type":"string"},"workspace":{"type":"string"},"input_text":{"type":"string"}},"required":["request_id","grant_credential","session_id","workspace","input_text"]}}));
+                    tools.push(json!({"name":"read_session_operation","description":"Read and reconcile an exact granted request","inputSchema":{"type":"object","additionalProperties":false,"properties":{"request_id":{"type":"string"},"grant_credential":{"type":"string"}},"required":["request_id","grant_credential"]}}));
+                    tools.push(json!({"name":"read_session_result","description":"Read enriched result of an exact granted request","inputSchema":{"type":"object","additionalProperties":false,"properties":{"request_id":{"type":"string"},"grant_credential":{"type":"string"},"text_offset":{"type":"integer"},"max_chars":{"type":"integer"}},"required":["request_id","grant_credential"]}}));
+                }
+                listing
             }
             "tools/call" if initialized => {
                 let p = &v["params"];
