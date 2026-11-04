@@ -13,6 +13,16 @@ const signed=fixtureSigned||signedSubscription;
 if(fixtureSigned)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
 const schema=fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
 let session,manager,signedDeadline;
+// Deadlines arrive only on the private Host IPC channel. They restrict use;
+// they do not replace the Host's signed current/effect/reservation checks.
+const consumptionDeadline=(frame,upper)=>{
+ const value=frame.consumptionDeadlineMs;
+ if(!Number.isSafeInteger(value)||value<=0)throw Error('consumption deadline absent');
+ return Math.min(value,upper);
+};
+const checkConsumption=until=>{
+ if(!Number.isSafeInteger(until)||Date.now()>=until)throw Error('consumption deadline expired');
+};
 let initializeResolve;
 const initialization=new Promise(resolve=>{initializeResolve=resolve;});
 const emit=value=>{
@@ -42,8 +52,9 @@ try {
  if(signed){
   manager=SessionManager.create('/workspace','/export/sessions');
   emit({type:'allocated',classification:'actual SDK allocation; no ModelRuntime/access yet',accessPresent:existsSync('/auth/access.json')});
-  const initialized=await initialization;signedDeadline=initialized.deadline;
-  if(!Number.isSafeInteger(signedDeadline)||Date.now()>=signedDeadline*1000)throw Error('fixture initialization deadline');
+  const initialized=await initialization;
+  signedDeadline=consumptionDeadline(initialized,initialized.deadline*1000);
+  checkConsumption(signedDeadline);
   if(fixtureSigned){
   const access=JSON.parse(readFileSync('/auth/access.json','utf8'));
   if(access.classification!=='fake_fixture'||access.access!=='FAKE-NEVER-A-CREDENTIAL')throw Error('fixture access rejected');
@@ -59,19 +70,22 @@ try {
  if(live){
   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
   const nativeAccess=await import('/receiver/pi-native-access.mjs');
+  if(signed)checkConsumption(signedDeadline);
   const {createNativeAccessStore}=nativeAccess;rawTerminalEvidence=nativeAccess.rawTerminalEvidence;
   const grant=JSON.parse(readFileSync('/auth/access.json','utf8'));
   const credentials=createNativeAccessStore(grant);
   modelRuntime=await ModelRuntime.create({credentials,modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+  if(signed)checkConsumption(signedDeadline);
   model=modelRuntime.getModel('openai-codex',config.model);
   if(!model||model.api!=='openai-codex-responses'||model.baseUrl!=='https://chatgpt.com/backend-api')throw Error('exact subscription model absent');
  }else{
-  if(signed&&Date.now()>=signedDeadline*1000)throw Error('fixture runtime deadline');
+  if(signed)checkConsumption(signedDeadline);
   modelRuntime=await ModelRuntime.create({authPath:'/tmp/fixture-auth.json',modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
   model=modelRuntime.getModels().find(m=>m.provider==='openai');
   if(!model)throw Error('fixture catalog model absent');
   await modelRuntime.setRuntimeApiKey(model.provider,'FAKE-FIXTURE-NOT-A-CREDENTIAL');
  }
+ if(signed)checkConsumption(signedDeadline);
  const tool={name:'workspace_exec',label:'Workspace command',description:'Execute a shell command only in the separate disposable network-disabled workspace container. Workdir /workspace. rustc and cc are available. Immutable tests are /acceptance.rs; compile with rustc --edition=2024 --test /acceptance.rs -o /tmp/check and run /tmp/check. Only edit src/lib.rs.',
   promptSnippet:'Execute commands in disposable workspace',parameters:Type.Object({command:Type.String()}),executionMode:'sequential',
   execute:async(id,args,signal)=>{
@@ -83,6 +97,7 @@ try {
    return {content:[{type:'text',text:result.output}],details:{hostReportedSuccess:result.ok}};
   }};
  ({session}=await createAgentSession({cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,thinkingLevel:'off',sessionManager:manager??SessionManager.create('/workspace','/export/sessions'),noTools:'builtin',tools:['workspace_exec'],customTools:[tool]}));
+ if(signed)checkConsumption(signedDeadline);
  session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
  session.subscribe(event=>emit({type:'native_event',event}));
  let command,turn=0;
@@ -99,12 +114,14 @@ try {
    try{
     const contextBytes=Buffer.byteLength(JSON.stringify(context));
     if(id>config.maxRequests||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000)return failure();
-    await new Promise((resolve,reject)=>{
+    const grant=await new Promise((resolve,reject)=>{
      grants.set(id,resolve);
      options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
      emit({type:'provider_request',id,provider:requestModel.provider,model:requestModel.id,contextBytes});
     });
-    const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',fetch:(url,init)=>globalThis.fetch(url,{...init,redirect:'error'}),timeoutMs:Math.max(1,Math.min(30000,config.deadline*1000-Date.now())),
+    const until=consumptionDeadline(grant,config.deadline*1000);
+    checkConsumption(until);
+    const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',fetch:(url,init)=>{checkConsumption(until);return globalThis.fetch(url,{...init,redirect:'error'});},timeoutMs:Math.max(1,Math.min(30000,until-Date.now())),
      onResponse:response=>emit({type:'provider_observation',id,httpStatus:response.status}),
      onProviderStreamEvent:data=>{const backendModel=data?.response?.model;const rawTerminal=rawTerminalEvidence(data);if(typeof backendModel==='string'||rawTerminal)emit({type:'provider_observation',id,...(typeof backendModel==='string'?{backendModel}:{}),...(rawTerminal?{rawTerminal}:{})});},
     });
@@ -130,8 +147,8 @@ try {
    const stream=createAssistantMessageEventStream();const toolTurn=turn++===0;
    const id=turn;
    if(signed){
-    await new Promise(resolve=>{grants.set(id,resolve);emit({type:'provider_request',id,provider:'fake_fixture',model:'fake-pi-model',contextBytes:1});});
-    if(Date.now()>=signedDeadline*1000)throw Error('fixture provider deadline');
+    const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'provider_request',id,provider:'fake_fixture',model:'fake-pi-model',contextBytes:1});});
+    checkConsumption(consumptionDeadline(grant,Number.MAX_SAFE_INTEGER));
     emit({type:'provider_observation',id,httpStatus:200,backendModel:'fake-pi-model',rawTerminal:{classification:'fake_fixture',eventType:'response.completed',status:'completed',usage:{input_tokens:1,output_tokens:1,total_tokens:2}}});
    }
    const message={role:'assistant',content:toolTurn?[{type:'toolCall',id:'fixture-tool-1',name:'workspace_exec',arguments:{command}}]:[{type:'text',text:'Provider-disabled tool-path fixture completed.'}],api:model.api,provider:model.provider,model:model.id,

@@ -569,6 +569,9 @@ impl Host {
                     if frame["accessPresent"] != false {
                         return refuse("fixture access existed before allocation");
                     }
+                    let consumption_deadline = lease
+                        .consumption_deadline_millis(self.journal.job.deadline_unix_seconds)
+                        .map_err(|e| Error::Refused(e.into()))?;
                     let reply = if self.signed_subscription() {
                         // Access content is first opened only after the exact allocation is
                         // sealed and current signed initialization authority is held.
@@ -576,7 +579,7 @@ impl Host {
                             .check_current()
                             .map_err(|e| Error::Refused(e.into()))?;
                         self.coding_project_provider_access(Some(&lease))?;
-                        json!({"type":"initialize","sessionId":native,"deadline":self.journal.job.deadline_unix_seconds})
+                        json!({"type":"initialize","sessionId":native,"deadline":self.journal.job.deadline_unix_seconds,"consumptionDeadlineMs":consumption_deadline})
                     } else {
                         let access = self.journal.job.state_dir.join("coding-canary/access.json");
                         let mut access_file = OpenOptions::new()
@@ -587,7 +590,7 @@ impl Host {
                         access_file.sync_all()?;
                         fs::set_permissions(&access, fs::Permissions::from_mode(0o644))?;
                         File::open(access.parent().unwrap())?.sync_all()?;
-                        json!({"type":"initialize","sessionId":native,"fixtureAccess":"FAKE-NEVER-A-CREDENTIAL","deadline":self.journal.job.deadline_unix_seconds})
+                        json!({"type":"initialize","sessionId":native,"fixtureAccess":"FAKE-NEVER-A-CREDENTIAL","deadline":self.journal.job.deadline_unix_seconds,"consumptionDeadlineMs":consumption_deadline})
                     };
                     lease
                         .check_current()

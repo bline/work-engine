@@ -450,6 +450,29 @@ pub struct EffectLease {
     failed: std::cell::Cell<bool>,
 }
 impl EffectLease {
+    /// A conservative consumption bound, not a transferable authority permit.
+    /// Only this opaque owner lease can project the signed authority clocks.
+    pub fn consumption_deadline_millis(&self, job_until_seconds: u64) -> Result<i64> {
+        self.check_current()?;
+        let owner = PiOwner::open_unchecked(self.owner_pin.clone())?;
+        let (e, h) = owner.current(&self.db)?;
+        let row: Row = serde_json::from_str(&e.original).map_err(|_| "pi_task")?;
+        let until = [
+            self.expires,
+            h.valid_until,
+            e.verified.expires_at,
+            utc(&row.data.intent.clock.admit_until)?,
+            utc(&row.data.intent.clock.close_by)?,
+            e.budget.at + time::Duration::seconds(30),
+        ]
+        .into_iter()
+        .min()
+        .ok_or("pi_clock")?;
+        // Floor fractional milliseconds: conversion must never extend authority.
+        let signed_ms = until.unix_timestamp_nanos().div_euclid(1_000_000);
+        let job_ms = i128::from(job_until_seconds) * 1000;
+        i64::try_from(signed_ms.min(job_ms)).map_err(|_| "pi_clock")
+    }
     pub fn check_current(&self) -> Result<()> {
         if self.failed.get() || self.closed.get() {
             return Err("pi_lease_closed");

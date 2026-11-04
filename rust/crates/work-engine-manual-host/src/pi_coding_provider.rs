@@ -351,6 +351,8 @@ impl Host {
                     },
                 );
                 self.save()?; // Durable unknown reservation BEFORE granting possible network entry.
+                let mut consumption_deadline =
+                    self.journal.job.deadline_unix_seconds.saturating_mul(1000);
                 if self.signed_subscription() {
                     let owner = self
                         .pi_owner
@@ -362,10 +364,16 @@ impl Host {
                     lease
                         .check_current()
                         .map_err(|e| Error::Refused(e.into()))?;
+                    consumption_deadline = u64::try_from(
+                        lease
+                            .consumption_deadline_millis(self.journal.job.deadline_unix_seconds)
+                            .map_err(|e| Error::Refused(e.into()))?,
+                    )
+                    .map_err(|_| Error::Refused("provider consumption deadline invalid".into()))?;
                     self.reply_leases.push(lease);
                 }
                 Ok(Some(
-                    json!({"type":"provider_grant","id":id,"reservedMicrousd":reserve}),
+                    json!({"type":"provider_grant","id":id,"reservedMicrousd":reserve,"consumptionDeadlineMs":consumption_deadline}),
                 ))
             }
             "provider_observation" => {
@@ -507,6 +515,10 @@ mod ledger_tests {
         let (dir, mut h) = fixture();
         let grant = h.coding_provider_frame(&request(1)).unwrap().unwrap();
         assert_eq!(grant["reservedMicrousd"], 164001);
+        assert_eq!(
+            grant["consumptionDeadlineMs"],
+            h.journal.job.deadline_unix_seconds * 1000
+        );
         let record: Value =
             serde_json::from_slice(&fs::read(dir.path().join("pi-state.json")).unwrap()).unwrap();
         assert_eq!(
@@ -718,9 +730,12 @@ impl Host {
                 lease
                     .check_current()
                     .map_err(|e| Error::Refused(e.into()))?;
+                let consumption_deadline = lease
+                    .consumption_deadline_millis(self.journal.job.deadline_unix_seconds)
+                    .map_err(|e| Error::Refused(e.into()))?;
                 self.reply_leases.push(lease);
                 Ok(Some(
-                    json!({"type":"provider_grant","id":id,"classification":"fake_fixture","reservedMicrousd":0}),
+                    json!({"type":"provider_grant","id":id,"classification":"fake_fixture","reservedMicrousd":0,"consumptionDeadlineMs":consumption_deadline}),
                 ))
             }
             "provider_observation" => {

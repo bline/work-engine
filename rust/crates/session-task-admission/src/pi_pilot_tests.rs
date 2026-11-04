@@ -760,3 +760,42 @@ fn export_signed_pi_subscription() {
     );
     put(&f.dir.join("ui-golden-vectors.json"), json!({"standing":"synthetic owner signing/identity only; subscription backend candidate; no live qualification","schema":"dot.task-intent/pi-coding-subscription-v1","persistent_write_paths":["src/lib.rs"],"network":"inference fixed subscription adapter; tool/validator none","descriptor":descriptor(&f.pin).unwrap(),"profile_json":std::fs::read_to_string(f.dir.join("profile.json")).unwrap(),"signed_rows":f.rows}).to_string());
 }
+
+#[test]
+fn consumption_deadline_is_owner_derived_precise_and_job_bounded() {
+    let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+    let mut d = descriptor(&f.pin).unwrap();
+    let mut profile: Value =
+        serde_json::from_slice(&std::fs::read(&d.profile.path).unwrap()).unwrap();
+    let expiry = clock() + time::Duration::seconds(20) + time::Duration::nanoseconds(123456);
+    profile["expires_at"] = expiry.format(&Rfc3339).unwrap().into();
+    put(&d.profile.path, profile.to_string());
+    d.profile = pin(d.profile.path);
+    put(&f.pin.path, serde_json::to_vec(&d).unwrap());
+    f.pin = pin(f.pin.path.clone());
+    f.rows.truncate(2);
+    f.control("active");
+    let o = f.owner();
+    o.admit(&"a".repeat(64), &exe()).unwrap();
+    drop(o.enter(Effect::Allocation).unwrap());
+    o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+        .unwrap();
+    for effect in [Effect::Initialization, Effect::Provider(1)] {
+        let lease = o.enter(effect.clone()).unwrap();
+        let later_job = (clock() + time::Duration::minutes(2)).unix_timestamp() as u64;
+        let bound = lease.consumption_deadline_millis(later_job).unwrap();
+        assert_eq!(
+            i128::from(bound),
+            expiry.unix_timestamp_nanos().div_euclid(1_000_000)
+        );
+        let earlier_job = (clock() + time::Duration::seconds(10)).unix_timestamp() as u64;
+        assert_eq!(
+            lease.consumption_deadline_millis(earlier_job).unwrap(),
+            (earlier_job * 1000) as i64
+        );
+        // IPC observation is not remote execution; the unique effect remains
+        // consumed even if the receiver later refuses an expired grant.
+        lease.observed(&"b".repeat(64)).unwrap();
+        assert!(o.enter(effect).is_err());
+    }
+}
