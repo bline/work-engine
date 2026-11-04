@@ -1,0 +1,43 @@
+{
+  "artifact_type": "manual-orchestration.organization-decision",
+  "status": "accepted_for_implementation",
+  "recorded_at": "2026-10-29T03:26:56.505551+00:00",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r2.json",
+    "sha256": "041149b5a8fb70aaa4f0800ad10bd99e1e10b1206022ca767c5b118aa1faaa48"
+  },
+  "prior_pending_decision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r2-proposed.json",
+    "sha256": "a77fb32fe1f401748e431ba684306c633b49c0b027057ed11996a172b3cd12d2"
+  },
+  "classification": "large",
+  "decision_owner": "human",
+  "approval_evidence": {
+    "text": "APPROVED",
+    "responds_to": "Approve r2 and its implementation?",
+    "binding_basis": "Coordinator binds the immediately presented exact frozen candidate; no claim that the user recited its digest."
+  },
+  "implementation_authority": "Granted for the five bounded production paths, isolated qualification and ordinary remediation under the accepted contract.",
+  "review_authority": "Fresh separate top-level gpt-6-astra/xhigh/default/read-only review of the composed subject; retain useful review context through bounded remediation.",
+  "production_paths": [
+    "skills/skill-release/scripts/skill_release.py",
+    "skills/skill-release/tests/test_skill_release.py",
+    "skills/catalog.json",
+    "skills/skill-release/SKILL.md",
+    "skills/coordination-channels/SKILL.md"
+  ],
+  "accepted_contract": {
+    "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/notification-contract-proposed.md",
+    "sha256": "cb162e5c81b98ee323da0b93ad53ccd728b3b688ce5b294e1acb70544f97c830",
+    "status_note": "Historical proposed marker does not undo current human approval and bounded dispatch authority."
+  },
+  "revision_policy": "Coordinator approves small consequence-preserving revisions with exact decision records; human approves large changes.",
+  "context_admission": "Resolve parent-owned supervisor renewal/replacement and worker collection before source work; no root transfer granted.",
+  "not_authorized": [
+    "commit",
+    "deployment",
+    "live functional feature board/release tests",
+    "out-of-scope production edits",
+    "root transfer"
+  ]
+}

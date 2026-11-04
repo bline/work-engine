@@ -1,5 +1,5 @@
 {
-  "schema": "work-engine.skill-catalog.v1",
+  "schema": "work-engine.skill-catalog.v2",
   "skills": {
     "agent-environment-graph": {
       "kind": "tool",
@@ -113,6 +113,9 @@
       "install": [
         "claude",
         "codex"
+      ],
+      "runtime_dependencies": [
+        "coordination-channels"
       ]
     },
     "orchestrator": {

@@ -200,6 +200,278 @@ class SkillReleaseTest(unittest.TestCase):
         self.assertEqual(self.run_cli("retire", "claude", "unmanaged")[0], 0)
         self.assertEqual(len(self.board()), 1)
 
+    def test_support_only_notice_and_scope_metadata(self):
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]},
+                     {"alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                                "runtime_dependencies": ["gamma"]}})
+        self.commit("declare support")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        initial = json.loads(out)["notification"]
+        self.assertEqual(initial["support_coverage"]["before"], "no_managed_baseline")
+        self.assertEqual(initial["changed_support"][0]["change"], "introduced")
+        self.write("skills/gamma/SKILL.md", skill_md("gamma", "support changed"))
+        commit = self.commit("support only")
+        planned = self.plan()["notification"]
+        self.assertEqual(planned["changed_support"], [{"name": "gamma", "change": "modified",
+                         "potential_consumers": {"claude": ["alpha"], "codex": ["alpha"]},
+                         "relation_basis": ["before", "after"]}])
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        result = json.loads(out)
+        self.assertEqual(result["affected"], {})
+        self.assertEqual(result["notification"], planned)
+        self.assertEqual(self.wait_board(1, "all")["messages"][0]["message_id"], result["announcement"]["message_id"])
+        self.assertIn(commit, self.board()[-1]["body"])
+        self.assertNotIn("no reload is needed", self.board()[-1]["body"])
+        self.assertEqual(json.loads(self.root.joinpath("history.jsonl").read_text().splitlines()[-1])["notification"], planned)
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]})
+        self.commit("remove declaration only")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["notification"]["changed_support"], [])
+        self.assertEqual(json.loads(out)["notification"]["dependency_scope_changes"], {"claude": ["alpha"], "codex": ["alpha"]})
+        self.assertIn("no content re-read is demanded", self.board()[-1]["body"])
+        self.assertEqual(self.board()[-1]["topic"], "all")
+
+    def test_support_reach_cycles_old_new_and_exclusions(self):
+        def catalog(alpha, gamma, excludes=None):
+            extra = {"alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                               "runtime_dependencies": alpha},
+                     "gamma": {"kind": "tool", "state": "active", "install": [],
+                               "not_installed_reason": "fixture", "runtime_dependencies": gamma}}
+            if excludes:
+                extra["gamma"]["release_exclude"] = excludes
+            self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]}, extra)
+        self.write("skills/gamma/data/x", "hidden")
+        catalog(["gamma"], ["alpha"], ["data/"])
+        self.commit("cyclic support")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/gamma/data/x", "still hidden")
+        self.commit("excluded only")
+        self.assertEqual(self.plan()["notification"]["changed_support"], [])
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        catalog(["gamma"], ["alpha"])
+        self.commit("unexclude")
+        n = self.plan()["notification"]
+        self.assertEqual([r["name"] for r in n["changed_support"]], ["gamma"])
+        self.assertEqual(n["dependency_scope_changes"], {})
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        catalog([], ["alpha"])
+        self.write("skills/gamma/SKILL.md", skill_md("gamma", "old reach changed"))
+        self.commit("old reach only")
+        row = self.plan()["notification"]["changed_support"][0]
+        self.assertEqual(row["relation_basis"], ["before"])
+        self.assertEqual(row["name"], "gamma")
+
+    def test_dependency_validation_and_v1_compatibility(self):
+        targets = {"claude": None, "codex": None}
+        base = {"kind": "tool", "state": "active", "install": ["claude"]}
+        for deps in ("gamma", [1], ["../x"], ["missing"]):
+            catalog = {"schema": release.CATALOG_SCHEMA, "skills": {"alpha": {**base, "runtime_dependencies": deps}}}
+            self.assertTrue(release.catalog_problems(catalog, {"alpha"}, set(), targets), deps)
+        duplicate = {"schema": release.CATALOG_SCHEMA, "skills": {
+            "alpha": {**base, "runtime_dependencies": ["gamma", "gamma"]}, "gamma": base}}
+        errors = release.catalog_problems(duplicate, {"alpha", "gamma"}, set(), targets)
+        self.assertTrue(any("unique skill names" in error for error in errors), errors)
+        catalog = {"schema": release.CATALOG_SCHEMA_V1, "skills": {"alpha": base}}
+        self.assertEqual(release.catalog_problems(catalog, {"alpha"}, set(), targets), [])
+        self.write(release.CATALOG_PATH, json.dumps(catalog))
+        # Match this v1 catalog's directory universe.
+        shutil.rmtree(self.repo / "skills/beta")
+        shutil.rmtree(self.repo / "skills/gamma")
+        self.commit("v1")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["notification"]["support_coverage"]["after"], "legacy_unknown")
+
+    def test_transitive_redundancy_modes_and_removed_support(self):
+        self.write("skills/gamma/tool", "content")
+        def declare(alpha, beta):
+            self.install({"claude": ["alpha"], "codex": ["beta"]}, {
+                "alpha": {"kind": "tool", "state": "active", "install": ["claude"], "runtime_dependencies": alpha},
+                "beta": {"kind": "tool", "state": "active", "install": ["codex"], "runtime_dependencies": beta}})
+        declare(["alpha", "beta"], ["gamma", "alpha"])
+        self.commit("transitive cycle")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/alpha/SKILL.md", skill_md("alpha", "changed cycle root"))
+        self.commit("change cycle root")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        n = json.loads(out)["notification"]
+        alpha = next(row for row in n["changed_support"] if row["name"] == "alpha")
+        self.assertEqual(alpha["potential_consumers"], {"codex": ["beta"]})
+        self.assertEqual(alpha["relation_basis"], ["before", "after"])
+        declare(["alpha", "beta", "gamma"], ["gamma", "alpha"])
+        self.commit("redundant direct edge")
+        self.assertEqual(self.plan()["notification"]["dependency_scope_changes"], {})
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/gamma/tool", "content", mode=0o755)
+        self.commit("mode change")
+        row = next(r for r in self.plan()["notification"]["changed_support"] if r["name"] == "gamma")
+        self.assertEqual(row["change"], "modified")
+        self.assertEqual(row["potential_consumers"], {"claude": ["alpha"], "codex": ["beta"]})
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        shutil.rmtree(self.repo / "skills/gamma")
+        declare(["beta"], ["alpha"])
+        self.commit("remove support")
+        row = next(r for r in self.plan()["notification"]["changed_support"] if r["name"] == "gamma")
+        self.assertEqual(row["change"], "removed")
+        self.assertEqual(row["relation_basis"], ["before"])
+        self.assertFalse(any(r["name"] == "alpha" and "alpha" in r["potential_consumers"].get("claude", [])
+                             for r in self.plan()["notification"]["changed_support"]))
+
+    def test_noncurrent_target_preflight_rejects_missing_and_concealed_support(self):
+        self.write("skills/gamma/reference.md", "support reference\n")
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]}, {
+            "alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                      "runtime_dependencies": ["gamma"]}})
+        target = self.commit("release A")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/beta/SKILL.md", skill_md("beta", "release B"))
+        current = self.commit("release B")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        release_dir = self.root / "releases" / target
+        reference = release_dir / "skills/gamma/reference.md"
+        os.chmod(reference.parent, 0o755)
+        reference.unlink()
+        history = (self.root / "history.jsonl").read_bytes()
+        board = self.board()
+        metadata = release_dir / "RELEASE.json"
+        original_metadata = metadata.read_bytes()
+        for concealed in (False, True):
+            if concealed:
+                altered = json.loads(original_metadata)
+                altered["release_exclude"] = ["skills/gamma/reference.md"]
+                os.chmod(metadata, 0o644)
+                metadata.write_text(json.dumps(altered))
+            before_metadata = metadata.read_bytes()
+            for command in ("plan", "deploy"):
+                code, _, err = self.run_cli(command, target)
+                self.assertEqual(code, 1, err)
+                self.assertIn(target, err)
+                self.assertIn("exclusions disagree" if concealed else "does not match", err)
+                self.assertEqual(release.Store(self.root).current_commit(), current)
+                self.assertEqual((self.root / "history.jsonl").read_bytes(), history)
+                self.assertEqual(self.board(), board)
+                self.assertEqual(metadata.read_bytes(), before_metadata)
+                self.assertFalse(reference.exists())
+
+    def test_missing_historical_commit_fails_before_switch(self):
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        old = release.Store(self.root).current_commit()
+        bogus = "0" * 40
+        os.chmod(self.root / "releases" / old, 0o755)
+        os.rename(self.root / "releases" / old, self.root / "releases" / bogus)
+        (self.root / "current").unlink()
+        os.symlink(f"releases/{bogus}", self.root / "current")
+        before = (self.root / "history.jsonl").read_bytes()
+        self.write("skills/alpha/SKILL.md", skill_md("alpha", "candidate"))
+        self.commit("candidate")
+        code, _, err = self.run_cli("deploy")
+        self.assertEqual(code, 1)
+        self.assertIn(bogus, err)
+        self.assertEqual(release.Store(self.root).current_commit(), bogus)
+        self.assertEqual((self.root / "history.jsonl").read_bytes(), before)
+        self.assertEqual(len(self.board()), 1)
+
+    def test_legacy_to_declared_new_support_and_commit_scoped_policy(self):
+        catalog = json.loads((self.repo / release.CATALOG_PATH).read_text())
+        catalog["schema"] = release.CATALOG_SCHEMA_V1
+        self.write(release.CATALOG_PATH, json.dumps(catalog))
+        self.commit("v1 baseline")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/delta/SKILL.md", skill_md("delta"))
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]}, {
+            "alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                      "runtime_dependencies": ["delta"]}})
+        candidate = self.commit("v2 support")
+        # Uncommitted policy is not the target policy.
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]})
+        n = self.plan(candidate)["notification"]
+        self.assertEqual(n["support_coverage"], {"before": "legacy_unknown", "after": "declared_only",
+                                                "dynamic_complete": False})
+        self.assertEqual(n["changed_support"][0]["name"], "delta")
+        self.assertEqual(n["changed_support"][0]["change"], "added")
+        self.assertEqual(n["changed_support"][0]["relation_basis"], ["after"])
+
+    def test_declared_to_v1_or_legacy_keeps_old_support_impact(self):
+        for destination in ("v1", "legacy"):
+            with self.subTest(destination=destination):
+                # A separate test fixture makes each direction start at the same v2 baseline.
+                case = SkillReleaseTest("runTest")
+                case.setUp()
+                self.addCleanup(case.tearDown)
+                case.install({"claude": ["alpha"], "codex": ["alpha", "beta"]}, {
+                    "alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                              "runtime_dependencies": ["gamma"]}})
+                case.commit("declared baseline")
+                self.assertEqual(case.run_cli("deploy")[0], 0)
+                case.write("skills/gamma/SKILL.md", skill_md("gamma", "changed support"))
+                if destination == "v1":
+                    catalog = json.loads((case.repo / release.CATALOG_PATH).read_text())
+                    catalog["schema"] = release.CATALOG_SCHEMA_V1
+                    del catalog["skills"]["alpha"]["runtime_dependencies"]
+                    case.write(release.CATALOG_PATH, json.dumps(catalog))
+                else:
+                    case.git("rm", "-q", release.CATALOG_PATH)
+                    case.write(release.MANIFEST_PATH, json.dumps({"schema": release.MANIFEST_SCHEMA,
+                               "targets": {"claude": ["alpha"], "codex": ["alpha", "beta"]}}))
+                case.commit(destination)
+                code, out, err = case.run_cli("deploy")
+                self.assertEqual(code, 0, err)
+                result = json.loads(out)
+                self.assertEqual(result["affected"], {})
+                n = result["notification"]
+                self.assertEqual(n["support_coverage"]["before"], "declared_only")
+                self.assertEqual(n["support_coverage"]["after"], "legacy_unknown")
+                self.assertEqual(n["changed_support"], [{"name": "gamma", "change": "modified",
+                                 "potential_consumers": {"claude": ["alpha"], "codex": ["alpha"]},
+                                 "relation_basis": ["before"]}])
+                self.assertEqual(case.board()[-1]["topic"], "all")
+
+    def test_removed_installed_root_retains_former_support_reach(self):
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]}, {
+            "alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                      "runtime_dependencies": ["gamma"]}})
+        self.commit("root with support")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/gamma/SKILL.md", skill_md("gamma", "changed"))
+        shutil.rmtree(self.repo / "skills/alpha")
+        self.install({"codex": ["beta"]})
+        self.commit("remove root")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        result = json.loads(out)
+        self.assertEqual(result["affected"], {"claude": ["alpha"], "codex": ["alpha"]})
+        self.assertEqual(result["notification"]["changed_support"], [{"name": "gamma", "change": "modified",
+                         "potential_consumers": {"claude": ["alpha"], "codex": ["alpha"]},
+                         "relation_basis": ["before"]}])
+        self.assertEqual(result["notification"]["dependency_scope_changes"], {"claude": ["alpha"], "codex": ["alpha"]})
+
+    def test_unrelated_export_and_catalog_format_do_not_signal_support_change(self):
+        self.write("skills/delta/SKILL.md", skill_md("delta"))
+        self.install({"claude": ["alpha"], "codex": ["alpha", "beta"]}, {
+            "alpha": {"kind": "tool", "state": "active", "install": ["claude", "codex"],
+                      "runtime_dependencies": ["gamma"]}})
+        self.commit("baseline")
+        self.assertEqual(self.run_cli("deploy")[0], 0)
+        self.write("skills/delta/SKILL.md", skill_md("delta", "unrelated edit"))
+        catalog = json.loads((self.repo / release.CATALOG_PATH).read_text())
+        self.write(release.CATALOG_PATH, json.dumps(catalog, indent=4, sort_keys=True))
+        self.commit("unrelated and formatting")
+        code, out, err = self.run_cli("deploy")
+        self.assertEqual(code, 0, err)
+        result = json.loads(out)
+        self.assertEqual(result["affected"], {})
+        n = result["notification"]
+        self.assertEqual(n["support_coverage"], {"before": "declared_only", "after": "declared_only",
+                                                "dynamic_complete": False})
+        self.assertEqual(n["changed_support"], [])
+        self.assertEqual(n["dependency_scope_changes"], {})
+        self.assertEqual(n["potential_consumers"], {})
+        self.assertEqual(self.board()[-1]["topic"], "skill-release")
+
     def test_publication_failure_and_ack_uncertainty_preserve_deployment(self):
         with mock.patch.object(release.importlib.util, "spec_from_file_location", side_effect=OSError("unavailable")):
             code, out, err = self.run_cli("deploy")
@@ -582,10 +854,10 @@ class SkillReleaseTest(unittest.TestCase):
         target.write_text("tampered")
         self.write("skills/beta/SKILL.md", skill_md("beta", "changed"))
         self.commit("second")
-        self.run_cli("deploy")
-        code, _, err = self.run_cli("rollback")
+        code, _, err = self.run_cli("deploy")
         self.assertEqual(code, 1)
         self.assertIn("does not match", err)
+        self.assertEqual(release.Store(self.root).current_commit(), self.first)
 
 
 if __name__ == "__main__":

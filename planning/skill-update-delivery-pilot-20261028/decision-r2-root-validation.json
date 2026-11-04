@@ -1,0 +1,64 @@
+{
+  "artifact_type": "manual-orchestration.organization-root-validation",
+  "recorded_at": "2026-10-29T03:06:39.382400+00:00",
+  "status": "ready_for_exact_human_decision",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r2.json",
+    "sha256": "041149b5a8fb70aaa4f0800ad10bd99e1e10b1206022ca767c5b118aa1faaa48"
+  },
+  "pending_human_decision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r2-proposed.json",
+    "sha256": "a77fb32fe1f401748e431ba684306c633b49c0b027057ed11996a172b3cd12d2",
+    "status": "pending_human",
+    "classification": "large"
+  },
+  "prior_revision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66"
+  },
+  "classification": "large",
+  "basis": "Explicit dependency ownership/catalog v2, additive reporting/history, broader notice eligibility and historical preflight expand the accepted contract. Role counts do not decide classification.",
+  "verified": {
+    "group_manifest_entries": 29,
+    "logical_roles": 5,
+    "reporting_tree": "unchanged and acyclic",
+    "proposed_source_paths": 5,
+    "ownership": "disjoint",
+    "production_source": "unchanged from deployed644f9b33",
+    "prior_approval": "Exact prior candidate and decision intact; no r1 approval applied to r2 semantics."
+  },
+  "recommendation": "Explicit commit-scoped runtime_dependencies; before/after declared reach with each side own exclusions; separate direct/support/potential-consumer report and broaden one-post all eligibility.",
+  "limits": "Declared reach only, not dynamic completeness, actual loading or receipt/refresh. V1/legacy coverage unknown. Missing historical data required for comparison fails before mutation; old publishers reject v2.",
+  "consumer_correction": "Absent standalone link is not unavailable support; resolve current consuming skill to its release and read sibling support there.",
+  "instruction_advice": {
+    "applicability": "applicable to proposed normative authoring, notification and consumer contracts",
+    "inspected_subjects": [
+      "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r2.json",
+      "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/notification-contract-proposed.md",
+      "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r2-proposed.json"
+    ],
+    "outcome": "No blocking authority/loading/ownership conflict found in bounded root advisory check. Declaration ownership, causal consumer-loading reason and coverage limits are explicit.",
+    "limitation": "Self-advisory planning review, not independent review or implementation acceptance."
+  },
+  "human_direction": {
+    "proceed": "r2 discovery/proposal before further implementation",
+    "continue": "Complete active validation/handoff; no r2 approval inferred"
+  },
+  "future_context_admission": {
+    "root": {
+      "owner": "current root and human for actual root transfer",
+      "requirement": "Before substantial r2 implementation make a scoped renewal or authorized replacement decision. Current large root is admitted only for compact collection; no automatic recovery/transfer/resumption route established."
+    },
+    "supervisor": {
+      "owner": "root/coordinator",
+      "requirement": "Current supervisor retention covers final r2 proposal assembly only; renew scoped capacity/configuration or authorize a fresh successor with durable findings and verified collection before implementation."
+    },
+    "leaves": {
+      "owner": "dispatching supervisor/coordinator",
+      "requirement": "Useful discovery retention is not a future scope/configuration/selection or comparison-eligibility decision."
+    }
+  },
+  "implementation_authority": "not granted",
+  "review_launch_authority": "not granted",
+  "process_disposition": "Both child and supervisor results collected; no owned process/listener outstanding. Contexts preserved inactive."
+}

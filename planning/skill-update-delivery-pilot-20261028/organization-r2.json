@@ -1,0 +1,265 @@
+{
+  "artifact_type": "manual-orchestration.organization-candidate",
+  "organization_id": "skill-update-delivery-pilot-20261028",
+  "revision": "r2",
+  "status": "proposed_pending_human",
+  "prior_revision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66",
+    "decision": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r1-approved.json",
+    "decision_sha256": "070fce785e86b6417684470df802c70b2cc960a0da9fcf69ab82aa9373a4e416"
+  },
+  "source_head": "644f9b330f1728ece862bcb6ce8d0852bd12ad9a",
+  "objective_ref": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/r2-objective.md",
+  "authority": {
+    "current": "Discovery/proposal only under human proceed; all production implementation/review/commit/deploy/live feature authority absent for r2.",
+    "decision_owner": "human",
+    "revision_classification": {
+      "classification": "large",
+      "basis": [
+        "Notification contract expands beyond directly installed content to conditional declared support reach and potential consumers.",
+        "New catalog schema and additive notification projection affect authoring, tooling compatibility, history semantics and failure preflight.",
+        "Consumer refresh distinguishes standalone install from exported same-release availability.",
+        "Future review effort changes high to xhigh because the actual subject is a new ownership/compatibility contract.",
+        "Role tree stays unchanged; neither file count nor role count is the classification basis."
+      ],
+      "decision_owner": "human",
+      "coordinator_validation": "Root validates this proposed classification and exact composed candidate before presentation."
+    },
+    "no_inherited_r2_implementation_grant": true
+  },
+  "roles": [
+    {
+      "logical_id": "candidate-coordinator",
+      "reports_to": null,
+      "role": "root coordinator",
+      "outcome": "Collect and verify frozen r2, classify by consequences and obtain exact human decision; own later independent review and final acceptance.",
+      "selection": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "tier": "default",
+        "launch": "pending scoped renewal or human-authorized root replacement; no automatic recovery route established"
+      },
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/root-continuation.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/root-continuation.json"
+    },
+    {
+      "logical_id": "delivery-supervisor",
+      "reports_to": "candidate-coordinator",
+      "role": "supervisor",
+      "outcome": "Own declared dependency/reporting contract, joined source/instruction scope, collection and truthful bounded evidence.",
+      "selection": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "tier": "default",
+        "launch": "pending root-owned scoped renewal or authorized fresh successor before implementation; current retention covers final proposal only"
+      },
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/assignments.json",
+      "binding_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-formation-20261028-01a18339/supervisor-binding.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/continuation.json",
+      "retention": "Useful retained supervisor for completed discovery; reassess before implementation, do not carry this final assembly capacity exception into a new task."
+    },
+    {
+      "logical_id": "publication-owner",
+      "reports_to": "delivery-supervisor",
+      "role": "implementer",
+      "outcome": "Own release catalog schema/seed, commit-scoped declared support impact and separate notification reporting/routing with preserved direct/failure contracts.",
+      "write_ownership": [
+        "skills/skill-release/scripts/skill_release.py",
+        "skills/skill-release/tests/test_skill_release.py",
+        "skills/catalog.json"
+      ],
+      "selection": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "tier": "default",
+        "launch": "proposed retain discovery worker using followup_task after new scope/context/configuration, authority and then-current selection/profiling check"
+      },
+      "selection_basis": "Supervisor proposes a settled finite graph/content/compatibility contract and focused validation; existing Python tool remains owner. Terra/medium is the bounded implementation starting choice; reconsider if contract decisions reopen rather than using subsystem labels.",
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/assignments.json#publication-owner",
+      "discovery_result_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/publication/result.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/publication/continuation.json",
+      "implementation_packet_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/publication-implementation-proposed.md",
+      "retention": "Propose retain useful context subject to fresh scoped check, exact human scope and then-current selection/profiling rules; no fixed Terra/continuity exclusion is implied."
+    },
+    {
+      "logical_id": "refresh-owner",
+      "reports_to": "delivery-supervisor",
+      "role": "implementer",
+      "outcome": "Own catalog authoring/release explanation and consumer support-refresh projection, including same-release sibling loading and truthful coverage.",
+      "write_ownership": [
+        "skills/skill-release/SKILL.md",
+        "skills/coordination-channels/SKILL.md"
+      ],
+      "selection": {
+        "model": "gpt-6.1-terra",
+        "effort": "medium",
+        "tier": "default",
+        "launch": "proposed retain discovery worker using followup_task after new scope/context/configuration, authority and then-current selection/profiling check"
+      },
+      "selection_basis": "Bounded two-skill documentation projection and isolated consumer qualification under explicit supervisor contract; Terra/medium remains appropriate if behavior is accepted as proposed.",
+      "assignment_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/assignments.json#refresh-owner",
+      "discovery_result_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/refresh/result.json",
+      "continuation_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/refresh/continuation.json",
+      "implementation_packet_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/refresh-implementation-proposed.md",
+      "retention": "Retain useful context subject to new scope/context/configuration and actual future selection authority."
+    },
+    {
+      "logical_id": "delivery-adversarial-review",
+      "reports_to": "candidate-coordinator",
+      "role": "reviewer, proposed only",
+      "outcome": "Challenge exact new dependency/catalog/reporting contract and composed implementation/consumer evidence.",
+      "selection": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "tier": "default",
+        "launch": "new separately established top-level read-only review after authorization; no inherited discovery/build context; no launch now"
+      },
+      "selection_basis": "R2 introduces an ownership/metadata/compatibility and reporting contract, so xhigh is justified by the actual subject. Prior completed r1 high review remains historical and does not establish this revised contract.",
+      "retention": "Fresh entry proposed for the changed review premise; retain that useful review context through bounded remediation thereafter.",
+      "independence_limit": "Astra and Terra are both OpenAI; this proposal creates no cross-provider claim.",
+      "runtime_binding_owner": "No r2 reviewer exists; future root assignment owns actual grant/configuration/identity and collection."
+    }
+  ],
+  "topology_delta": "No reporting-edge or actor-count change; publication-owner expands to catalog schema/seed, refresh-owner expands to canonical release authoring. Existing supervisor remains contract owner; root final collector.",
+  "proposed_production_scope": {
+    "publication-owner": [
+      "skills/skill-release/scripts/skill_release.py",
+      "skills/skill-release/tests/test_skill_release.py",
+      "skills/catalog.json"
+    ],
+    "refresh-owner": [
+      "skills/skill-release/SKILL.md",
+      "skills/coordination-channels/SKILL.md"
+    ]
+  },
+  "contract": {
+    "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/notification-contract-proposed.md",
+    "sha256": "cb162e5c81b98ee323da0b93ad53ccd728b3b688ce5b294e1acb70544f97c830",
+    "catalog_schema": "work-engine.skill-catalog.v2",
+    "field": "runtime_dependencies",
+    "direction": "consumer -> potentially loaded support skill",
+    "seed": {
+      "manual-orchestration": [
+        "coordination-channels"
+      ]
+    },
+    "edge_coverage": "declared_only; conditional possible reach, never complete dynamic inventory",
+    "comparison": "per-side immutable release/commit policy and exclusions; union of before/after target roots and transitive declared support reach; visited-set cycle termination",
+    "report": "Keep direct affected unchanged; add versioned notification with changed_support, potential_consumers, dependency_scope_changes and coverage/provenance.",
+    "routing": "One all post for direct affected, changed relevant support or relevant effective declared-scope change; otherwise dedicated unchanged/new-release notice.",
+    "legacy_and_failure": "v1/legacy remain accepted with unknown support coverage; first managed baseline labels introduced; missing required historical comparison evidence is explicit pre-mutation failure.",
+    "storage": "No new store or RELEASE.json migration; target catalog is in immutable release source; result/history fields are additive.",
+    "consumer": "Read current released support via resolved installed consumer sibling even when no standalone support link exists."
+  },
+  "acceptance_matrix": [
+    "Changed declared on-demand support with direct affected={} yields one all row naming support and potential installed consumers; direct field remains {}.",
+    "Synthetic transitive and cyclic declarations terminate, deduplicate and attribute per-target roots; no hardcoded skill names in algorithm.",
+    "Old-only/new-only edges, root/support removal, added support and policy-only closure changes preserve before/after provenance.",
+    "Excluded-only changes, per-side exclusion changes, file modes, unrelated exported changes, empty installs and unchanged/new/no-op/opt-out cases.",
+    "V1/legacy-to-v2 and v2-to-legacy cases expose coverage; no baseline introduction; unavailable historical input fails before any mutation.",
+    "Malformed/duplicate/unknown referents rejected; old publisher incompatibility and new-tool rollout documented; old release metadata still reads.",
+    "Existing direct installed, deploy/nondeploy/rollback and pre-/post-append uncertainty/UUID/exit2/deployment-survival regressions remain passing.",
+    "Named retained consumer fixture uses noninstalled support reachable via current installed consumer sibling; actual all receipt precedes current support re-read and next changed-instruction action.",
+    "Catalog/synopsis, meaningful release tests, exact instruction ownership/causal review and source identities; no global delivery or dependency completeness claim."
+  ],
+  "prior_approval_applicability": {
+    "carry_forward": [
+      "Direct affected retains r1 meaning and existing all-vs-dedicated behavior when no new support/scope impact applies.",
+      "Opt-out/no-op, single immediate post, deploy-only automatic publication, rollback/manual policy, tool origin, UUID/uncertainty/exit2 and deployment survival.",
+      "No forced reset, receiver authority/exposure, separate publication/selection/receipt/refresh and unchanged generic board semantics.",
+      "Stable organization/logical IDs and actual existing child collection routes."
+    ],
+    "does_not_carry_forward": [
+      "R1 approval does not authorize catalog v2, additional metadata/source scope or changed support/dependency-scope notification meaning.",
+      "R1 independent high review and direct installed coverage do not establish new dependency/consumer semantics.",
+      "R1 missing-guidance wording must not classify an absent standalone support link as unavailable current exported guidance."
+    ],
+    "historical_validity": "R1 accepted direct-installed scope, first-review result and deployed644f9b33 remain valid history; r2 addresses the observed next boundary, not a rewrite of that acceptance."
+  },
+  "alternatives": [
+    {
+      "option": "Broad all-exported-skill broadcast",
+      "benefit": "Covers undeclared exported support without new dependency metadata.",
+      "reason_not_recommended": "Cannot identify consumers and broadens all wakeups to unrelated uninstalled/dormant/research skill content; loses targeted policy meaning. Human could accept that different contract."
+    },
+    {
+      "option": "Infer all Markdown links as dependencies",
+      "reason_not_recommended": "References/examples/conditional instructions are not equivalent runtime loads; inference misses dynamic paths and can assert false ownership. Advisory discovery only."
+    },
+    {
+      "option": "Continue manual all compensation",
+      "reason_not_recommended": "Covers known case but fails desired routine automatic consequence and carries operator omission risk."
+    },
+    {
+      "option": "Install support everywhere",
+      "reason_not_recommended": "Reverses explicit keep-out-of-worker-listing decision and increases audience/context; unnecessary to export and load support."
+    },
+    {
+      "option": "Session dependency registry/automatic reload",
+      "reason_not_recommended": "New runtime/lifecycle authority and machinery outside the objective; static notification policy deliberately makes no actual-reader guarantee."
+    },
+    {
+      "option": "Hardcode coordination-channels special case",
+      "reason_not_recommended": "Does not generalize the owned skill dependency relation and would silently encode mutable domain knowledge."
+    }
+  ],
+  "owned_uncertainties": [
+    {
+      "issue": "Declared graph is deliberately incomplete; authors must maintain explicit real loading edges. Undeclared/dynamic/external consumers can be missed.",
+      "owner": "Consuming skill/catalog authors; root if broader coverage becomes required",
+      "disposition": "Visible coverage limitation, not a blocker manufactured by local tooling."
+    },
+    {
+      "issue": "Historical comparison preflight may reject deploys an older tool could perform when old source is unavailable.",
+      "owner": "Human r2 decision and release operator",
+      "disposition": "Explicit proposed compatibility cost; no silent fallback or approval inferred."
+    },
+    {
+      "issue": "Exact future implementation authority, current model availability/capacity and profiling draw eligibility.",
+      "owner": "Root/coordinator at dispatch",
+      "disposition": "Reassess then; discovery retention/Terra preference grants no exclusion or launch authority."
+    },
+    {
+      "issue": "Actual receipt/refresh for a live actor is not established by a declared edge or broadcast.",
+      "owner": "Responsible receiving coordinator; future supervisor owns named isolated qualification",
+      "disposition": "No all-live-session guarantee or new registry."
+    },
+    {
+      "issue": "Need for manual-orchestration source changes beyond existing proven loader.",
+      "owner": "Root and concurrent/manual-orchestration owner",
+      "disposition": "None proposed; that source remains excluded."
+    }
+  ],
+  "invalidation_conditions": [
+    "Accepted outcome requires complete dynamic/external consumer knowledge or all-live-session delivery.",
+    "The actual seed loading relationship changes or no current installed consumer can reach support in the released layout.",
+    "Human rejects catalog/tool compatibility or historical-data failure semantics; revise exact contract before dispatch.",
+    "Observed source, policy or exclusions change and affect the causal support; refresh meaning and subject, not only hashes.",
+    "Implementation reopens unresolved cross-owner protocol/schema decisions; return them to supervisor/root and reconsider selection."
+  ],
+  "runtime_realization_ref": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/assignments.json",
+  "evidence_refs": [
+    "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/parent-evidence.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/discovery-evidence.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/publication/result.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/refresh/result.json",
+    "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/source-battery-initial.json"
+  ],
+  "decision_record_ref": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r2-proposed.json",
+  "packet_status": "Both bounded implementation packets proposed and undispatched; exact r2 human decision and new authority required.",
+  "future_context_admission": {
+    "root": {
+      "owner": "current root and human for actual root transfer",
+      "requirement": "Before substantial r2 implementation make a scoped renewal or authorized replacement decision. Current large root is admitted only for compact collection; no automatic recovery/transfer/resumption route established."
+    },
+    "supervisor": {
+      "owner": "root/coordinator",
+      "requirement": "Current supervisor retention covers final r2 proposal assembly only; renew scoped capacity/configuration or authorize a fresh successor with durable findings and verified collection before implementation."
+    },
+    "leaves": {
+      "owner": "dispatching supervisor/coordinator",
+      "requirement": "Useful discovery retention is not a future scope/configuration/selection or comparison-eligibility decision."
+    }
+  }
+}

@@ -31,7 +31,8 @@ import uuid
 from pathlib import Path
 
 CATALOG_PATH = "skills/catalog.json"
-CATALOG_SCHEMA = "work-engine.skill-catalog.v1"
+CATALOG_SCHEMA_V1 = "work-engine.skill-catalog.v1"
+CATALOG_SCHEMA = "work-engine.skill-catalog.v2"
 KINDS = ("workflow", "tool", "research", "other-project")
 STATES = ("active", "stable", "dormant", "retired")
 CATALOG_FIELDS = {"kind", "state", "install", "install_reason", "not_installed_reason", "release_exclude"}
@@ -169,8 +170,8 @@ def catalog_problems(catalog, skill_dirs: set[str], other_dirs: set[str], target
     costs each worker listing space, so installing one that is dormant, research
     or another project's needs a stated reason.
     """
-    if not isinstance(catalog, dict) or catalog.get("schema") != CATALOG_SCHEMA:
-        return [f"catalog schema must be {CATALOG_SCHEMA}"]
+    if not isinstance(catalog, dict) or catalog.get("schema") not in (CATALOG_SCHEMA_V1, CATALOG_SCHEMA):
+        return [f"catalog schema must be {CATALOG_SCHEMA_V1} or {CATALOG_SCHEMA}"]
     skills = catalog.get("skills")
     if not isinstance(skills, dict):
         return ["catalog needs a skills object"]
@@ -182,7 +183,8 @@ def catalog_problems(catalog, skill_dirs: set[str], other_dirs: set[str], target
         if not isinstance(entry, dict):
             problems.append(f"{name}: entry must be an object")
             continue
-        unknown = sorted(entry.keys() - CATALOG_FIELDS)
+        fields = CATALOG_FIELDS | ({"runtime_dependencies"} if catalog["schema"] == CATALOG_SCHEMA else set())
+        unknown = sorted(entry.keys() - fields)
         if unknown:
             problems.append(f"{name}: unknown fields {unknown}")
         kind, state, install = entry.get("kind"), entry.get("state"), entry.get("install")
@@ -208,6 +210,16 @@ def catalog_problems(catalog, skill_dirs: set[str], other_dirs: set[str], target
                     or any(not isinstance(x, str) or not x.strip() or x.startswith("/") or ".." in x.split("/")
                            or x.rstrip("/") in ("", "SKILL.md") for x in excludes)):
                 problems.append(f"{name}: release_exclude must list unique skill-relative paths, not SKILL.md")
+        if "runtime_dependencies" in entry and catalog["schema"] == CATALOG_SCHEMA:
+            dependencies = entry["runtime_dependencies"]
+            if (not isinstance(dependencies, list)
+                    or any(not isinstance(d, str) or not d or '/' in d or d.startswith('.') for d in dependencies)
+                    or len(set(dependencies)) != len(dependencies)):
+                problems.append(f"{name}: runtime_dependencies must list unique skill names")
+            else:
+                for dependency in dependencies:
+                    if dependency not in skills:
+                        problems.append(f"{name}: runtime dependency {dependency!r} has no catalog entry")
     return problems
 
 
@@ -458,6 +470,101 @@ def content_change(repo: Path, commit: str, name: str, entry: Path, excludes=())
             "listing_changes": current_front != new_front}
 
 
+def notification_projection(repo: Path, store: Store, targets: dict[str, Path],
+                            commit: str, manifest: dict, excludes) -> dict:
+    """Compare commit-scoped declared reach and effective exported support content."""
+    current = store.current_commit()
+
+    def side(subject, expected_manifest, expected_excludes):
+        # Validate historical source and release metadata before any mutation.
+        actual_manifest = manifest_at(repo, subject, targets)
+        actual_excludes = excludes_at(repo, subject)
+        if actual_manifest != expected_manifest or list(actual_excludes) != list(expected_excludes):
+            raise ReleaseError(f"release {subject}: manifest or exclusions disagree with commit")
+        tree = tree_entries(repo, subject, "skills")
+        exported = drop_excluded(tree, actual_excludes)
+        if CATALOG_PATH not in tree:
+            return "legacy_unknown", {}, exported
+        catalog = json.loads(git(repo, "show", f"{subject}:{CATALOG_PATH}"))
+        if catalog["schema"] == CATALOG_SCHEMA_V1:
+            return "legacy_unknown", {}, exported
+        return "declared_only", {name: entry.get("runtime_dependencies", [])
+                                 for name, entry in catalog["skills"].items()}, exported
+
+    try:
+        after_coverage, after_graph, after_tree = side(commit, manifest, excludes)
+        if store.release_dir(commit).exists():
+            target_record = store.release_record(commit)
+            if target_record["manifest"] != manifest or target_record.get("release_exclude", []) != list(excludes):
+                raise ReleaseError(f"target release {commit}: manifest or exclusions disagree with commit")
+            problems = compare(after_tree, dir_entries(store.release_dir(commit) / "skills", "skills"))
+            if any(problems.values()):
+                raise ReleaseError(f"target release {commit} does not match its commit: {summary(problems)}")
+        if current:
+            record = store.release_record(current)
+            before_manifest = record["manifest"]
+            before_coverage, before_graph, before_tree = side(
+                current, before_manifest, record.get("release_exclude", []))
+            problems = verify_release(repo, store, current)
+            if any(problems.values()):
+                raise ReleaseError(f"current release {current} does not match its commit: {summary(problems)}")
+        else:
+            before_manifest, before_graph, before_tree = {}, {}, {}
+            before_coverage = "no_managed_baseline"
+    except (OSError, KeyError, json.JSONDecodeError, ReleaseError) as error:
+        raise ReleaseError(f"notification comparison for current {current or 'none'} and target {commit}: {error}") from error
+
+    def reach(graph, root):
+        visited, pending = {root}, list(graph.get(root, []))
+        while pending:
+            name = pending.pop()
+            if name not in visited:
+                visited.add(name)
+                pending.extend(graph.get(name, []))
+        return visited - {root}
+
+    scope, consumers, relations = {}, {}, {}
+    for target in sorted(set(before_manifest) | set(manifest)):
+        roots = sorted(set(before_manifest.get(target, [])) | set(manifest.get(target, [])))
+        for root in roots:
+            old, new = reach(before_graph, root), reach(after_graph, root)
+            if old != new:
+                scope.setdefault(target, []).append(root)
+                consumers.setdefault(target, set()).add(root)
+            for support in old | new:
+                entry = relations.setdefault(support, {})
+                entry.setdefault(target, {})[root] = (support in old, support in new)
+
+    rows = []
+    for name, target_roots in sorted(relations.items()):
+        prefix = f"skills/{name}/"
+        old = {k: v for k, v in before_tree.items() if k.startswith(prefix)}
+        new = {k: v for k, v in after_tree.items() if k.startswith(prefix)}
+        if current is None:
+            change = "introduced"
+        elif old == new:
+            continue
+        elif not old:
+            change = "added"
+        elif not new:
+            change = "removed"
+        else:
+            change = "modified"
+        possible = {target: sorted(roots) for target, roots in sorted(target_roots.items())}
+        basis = sorted({side for roots in target_roots.values() for flags in roots.values()
+                        for side, present in zip(("before", "after"), flags) if present},
+                       key=("before", "after").index)
+        for target, roots in possible.items():
+            consumers.setdefault(target, set()).update(roots)
+        rows.append({"name": name, "change": change, "potential_consumers": possible,
+                     "relation_basis": basis})
+    return {"schema": "work-engine.skill-notification.v1",
+            "support_coverage": {"before": before_coverage, "after": after_coverage,
+                                 "dynamic_complete": False},
+            "changed_support": rows, "dependency_scope_changes": scope,
+            "potential_consumers": {target: sorted(names) for target, names in sorted(consumers.items())}}
+
+
 def plan(repo: Path, store: Store, targets: dict[str, Path], commit: str,
          manifest: dict[str, list[str]], excludes=()) -> dict:
     current = store.current_commit()
@@ -467,7 +574,8 @@ def plan(repo: Path, store: Store, targets: dict[str, Path], commit: str,
             reconciled.setdefault(target, [])
     result = {"commit": commit, "current": current,
               "release_exists": store.release_dir(commit).exists(), "targets": {},
-              "release_exclude": list(excludes)}
+              "release_exclude": list(excludes),
+              "notification": notification_projection(repo, store, targets, commit, manifest, excludes)}
     for target, names in reconciled.items():
         if target not in targets:
             raise ReleaseError(f"target {target!r} from current release is not configured")
@@ -571,7 +679,7 @@ def apply(repo: Path, store: Store, targets: dict[str, Path], backup_root: Path,
         raise ReleaseError("post-deploy verification failed: " + "; ".join(problems))
     record = {"action": action_name, "at": now(), "commit": commit, "previous": previous,
               "current_before": current_before, "affected": affected,
-              "release_created": created, "changes": changes}
+              "notification": planned["notification"], "release_created": created, "changes": changes}
     store.append_history(record)
     return record
 
@@ -584,11 +692,20 @@ def announce(repo: Path, record: dict) -> dict:
                "publisher_id": publisher_id, "observed_at": observed_at}
     names = sorted({name for values in record["affected"].values() for name in values})
     details = "; ".join(f"{target}: {', '.join(values)}" for target, values in record["affected"].items())
+    notification = record["notification"]
+    support = notification["changed_support"]
+    scope = notification["dependency_scope_changes"]
     body = (f"Skill release {record['commit']} deployed. "
             f"Affected installed skills: {', '.join(names) if names else 'none'}"
             f"{f' ({details})' if details else ''}. "
-            + ("New reads follow current links; already loaded instructions need explicit re-reading."
-               if names else "Installed content is unchanged; no reload is needed for this release.")
+            + f"Changed declared support: {', '.join(row['name'] for row in support) if support else 'none'}. "
+            + f"Potential consumers: {json.dumps(notification['potential_consumers'], sort_keys=True)}. "
+            + f"Dependency scope changes: {json.dumps(scope, sort_keys=True)}. "
+            + f"Support coverage: {json.dumps(notification['support_coverage'], sort_keys=True)}; declarations do not establish actual loads. "
+            + ("New reads follow current links; assess and explicitly re-read relevant loaded instructions."
+               if names or support else
+               "Dependency metadata changed; no content re-read is demanded by this notice." if scope else
+               "Installed content is unchanged; no reload is needed for this release.")
             + " Published by skill-release tool automation; publisher UUID is not a verified model or human session.")
     try:
         sibling = Path(__file__).resolve().parents[2] / "durable-state" / "scripts"
@@ -600,7 +717,7 @@ def announce(repo: Path, record: dict) -> dict:
         finally:
             sys.path.remove(str(sibling))
         ack = module.post(repo, author="skill-release", session_id=publisher_id,
-                          topic="all" if names else "skill-release", body=body, references=[record["commit"]],
+                          topic="all" if names or support or scope else "skill-release", body=body, references=[record["commit"]],
                           message_id=message_id, observed_at=observed_at)
         outcome.update(status="published", revision=ack["revision"], sequence=ack["message"]["sequence"])
     except Exception as error:
@@ -695,6 +812,7 @@ def render_plan(planned: dict) -> str:
             lines.append(f"  {item['action']:<13} {item['name']:<32} {item['entry']:<8} {describe(item)}")
         if details["unmanaged"]:
             lines.append(f"  unmanaged, left alone: {', '.join(details['unmanaged'])}")
+    lines.append("\nNotification: " + json.dumps(planned["notification"], sort_keys=True))
     return "\n".join(lines)
 
 

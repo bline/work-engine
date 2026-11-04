@@ -1,0 +1,52 @@
+{
+  "artifact_type": "manual-orchestration.organization-decision",
+  "status": "pending_human",
+  "subject": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r2.json",
+    "sha256": "041149b5a8fb70aaa4f0800ad10bd99e1e10b1206022ca767c5b118aa1faaa48"
+  },
+  "prior_revision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r1.json",
+    "sha256": "39aadec7b3e00e425aeda8e451a5c6d252a85857052205c7625c33751f5bfb66"
+  },
+  "prior_decision": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r1-approved.json",
+    "sha256": "070fce785e86b6417684470df802c70b2cc960a0da9fcf69ab82aa9373a4e416"
+  },
+  "change_classification": {
+    "classification": "large",
+    "basis": [
+      "Notification contract expands beyond directly installed content to conditional declared support reach and potential consumers.",
+      "New catalog schema and additive notification projection affect authoring, tooling compatibility, history semantics and failure preflight.",
+      "Consumer refresh distinguishes standalone install from exported same-release availability.",
+      "Future review effort changes high to xhigh because the actual subject is a new ownership/compatibility contract.",
+      "Role tree stays unchanged; neither file count nor role count is the classification basis."
+    ],
+    "decision_owner": "human",
+    "coordinator_validation": "Root validates this proposed classification and exact composed candidate before presentation."
+  },
+  "authority_source": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/r2-objective.md",
+    "sha256": "ed47dd45125dbe50c79542bba29c9ebb1a945b815995cf5b3bcdd71b7f7cc21c",
+    "meaning": "Human proceed authorized discovery/proposal before further implementation, not r2 acceptance."
+  },
+  "decision_owner": "human",
+  "approval_evidence": null,
+  "implementation_authority": "not granted",
+  "review_launch_authority": "not granted",
+  "scope_if_accepted": "Acceptance of organization is distinct from later implementation/review/deploy authority; root must bind exact decisions at dispatch.",
+  "prior_approval_applicability": {
+    "carry_forward": [
+      "Direct affected retains r1 meaning and existing all-vs-dedicated behavior when no new support/scope impact applies.",
+      "Opt-out/no-op, single immediate post, deploy-only automatic publication, rollback/manual policy, tool origin, UUID/uncertainty/exit2 and deployment survival.",
+      "No forced reset, receiver authority/exposure, separate publication/selection/receipt/refresh and unchanged generic board semantics.",
+      "Stable organization/logical IDs and actual existing child collection routes."
+    ],
+    "does_not_carry_forward": [
+      "R1 approval does not authorize catalog v2, additional metadata/source scope or changed support/dependency-scope notification meaning.",
+      "R1 independent high review and direct installed coverage do not establish new dependency/consumer semantics.",
+      "R1 missing-guidance wording must not classify an absent standalone support link as unavailable current exported guidance."
+    ],
+    "historical_validity": "R1 accepted direct-installed scope, first-review result and deployed644f9b33 remain valid history; r2 addresses the observed next boundary, not a rewrite of that acceptance."
+  }
+}

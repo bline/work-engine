@@ -1,0 +1,234 @@
+{
+  "artifact_type": "manual-orchestration.skill-update-delivery-r2-result",
+  "recorded_at": "2026-10-29T04:17:23.926385+00:00",
+  "status": "root_accepted_source_uncommitted_undeployed",
+  "organization": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/organization-r2.json",
+    "sha256": "041149b5a8fb70aaa4f0800ad10bd99e1e10b1206022ca767c5b118aa1faaa48"
+  },
+  "authority": {
+    "path": "/home/bline/code/work-engine/planning/skill-update-delivery-pilot-20261028/decision-r2-approved.json",
+    "sha256": "8329cf420c36a494ad9aa8fe142533afeee4f7fd84039c8839a4edb00d9025d1"
+  },
+  "accepted_contract": {
+    "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/supervisor/notification-contract-proposed.md",
+    "sha256": "cb162e5c81b98ee323da0b93ad53ccd728b3b688ce5b294e1acb70544f97c830",
+    "status_note": "Historical proposed marker does not undo current human approval and bounded dispatch authority."
+  },
+  "source": {
+    "branch": "rescue-detached-20260911",
+    "HEAD": "644f9b330f1728ece862bcb6ce8d0852bd12ad9a",
+    "reviewed_subject": {
+      "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/review-subject-v3/manifest.json",
+      "sha256": "ab0a5bc31ff79dc5818239d3d7d30b47570cdfcefab14b09e6a15352b6c83e80"
+    },
+    "production_path_sha256": {
+      "skills/skill-release/scripts/skill_release.py": "a921446c60c620be7c80a5bad19b19a3e9533c086d2546be9d49119ccd869f35",
+      "skills/skill-release/tests/test_skill_release.py": "8d68f104801113e01e546ec8676ba9381b16ae49142d7013eaabbf83f3139b5f",
+      "skills/catalog.json": "c4bec391aa81bd63259e6513b4c197e914d49097c7e6bcdb8016cb6c3477155a",
+      "skills/skill-release/SKILL.md": "32548002d39f1506c13dc9362454e0bf0e2114f429400e938af91ef6c9cc1747",
+      "skills/coordination-channels/SKILL.md": "e15aeaeb44cb431b8ea704457cdd14f228a487c7c34af01a534b7896bb54bd25"
+    },
+    "live_equals_reviewed_subject": true,
+    "integration": "Accepted existing five-file working-tree implementation. No merge, staging, commit or deployment performed by this work."
+  },
+  "delivered_behavior": [
+    "Catalog v2 accepts author-declared runtime_dependencies, initially only manual-orchestration -> coordination-channels; existing skill install lists and metadata are preserved.",
+    "Release comparison keeps direct affected unchanged and adds versioned declared support reach, support changes, dependency scope changes and potential consumers using each immutable release side and its own exclusions.",
+    "A direct change, relevant support change or effective declared scope change selects one automatic notice on exact all. Other announceable releases retain skill-release. Publication/receipt/read remain distinct.",
+    "Support is reread beside the resolved current consuming skill within that release; absence of a standalone installed link does not imply removal.",
+    "Necessary historical policy/evidence and reused release metadata/export integrity are checked before mutation. Legacy coverage is unknown; old publishers reject catalog v2."
+  ],
+  "actors": {
+    "root": {
+      "session_id": "01a18339-409a-7d72-be0f-4d96cd7fe4a6",
+      "configuration": "gpt-6.1-sol/xhigh/default",
+      "role": "Final acceptance and collection owner; same session after automatic context replacement."
+    },
+    "supervisor": {
+      "session_id": "01a185b6-75cf-7610-9eb8-57f03c0a09a4",
+      "configuration": "gpt-6.1-sol/xhigh/default",
+      "context_decision": "Fresh implementation supervisor; discovery supervisor retained as inactive history."
+    },
+    "builders": [
+      {
+        "session_id": "01a18507-ac3a-7b63-920a-8705da78deaa",
+        "configuration": "gpt-6.1-terra/medium/default",
+        "role": "publication-owner"
+      },
+      {
+        "session_id": "01a18507-c0d5-7850-816f-e6d0992009ba",
+        "configuration": "gpt-6.1-terra/medium/default",
+        "role": "refresh-owner"
+      }
+    ],
+    "worker_routing": "Discovery sessions retained; runtime ancestry still points to historical supervisor01a18504. Both explicitly acknowledged and used the fresh supervisor collection route.",
+    "reviewer": {
+      "session_id": "01a185c2-4de7-7210-9b68-e532b95837cc",
+      "configuration": "gpt-6-astra/xhigh/default",
+      "runtime_parent": null,
+      "capability": "read-only, approval never; managed root-read filesystem and restricted network",
+      "independent_configuration_evidence": {
+        "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/root-reviewer-grant.json",
+        "sha256": "8de9b01d0568704d4902f06629034e07109c5437bf0b45ab3c2486f56fa3cf80"
+      },
+      "scope": "Fresh entry then same retained reviewer for repair; same provider, disclosed startup board exposure, no blind or cross-provider claim."
+    }
+  },
+  "validation": {
+    "release_directory": {
+      "command": "python3 -m unittest discover -s skills/skill-release/tests -v",
+      "passed": 53,
+      "breakdown": {
+        "test_skill_release": 39,
+        "test_cli_synopsis": 14
+      },
+      "log": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/publication/repair-1/release-suite.log"
+    },
+    "board": {
+      "command": "python3 -m unittest discover -s skills/durable-state/tests -p test_codex_chatboard.py -v",
+      "passed": 24,
+      "log": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/publication/repair-1/board-suite.log"
+    },
+    "catalog_synopsis": {
+      "command": "python3 skills/skill-release/scripts/skill_release.py check",
+      "passed": true,
+      "log": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/publication/repair-1/catalog-check.log"
+    },
+    "instruction_authoring": "Both quick validators and scoped diff check pass; exact normative subject independently reviewed applicable/retain.",
+    "history": "35/38 module and52 full-directory pre-repair gates preserved, never substituted for final53; unsuccessful historical-tamper assertion log retained."
+  },
+  "consumer": {
+    "named": "Retained refresh-owner, explicit isolated fixture only",
+    "result": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/refresh/repair-1/result.json",
+    "rehearsal": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/refresh/repair-1/rehearsal.json",
+    "raw_observation": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/consumer-observation-repair-1.json",
+    "row_uuid": "f074c7cf-ec2d-4731-b9c6-ff62a4aca170",
+    "chain": "Old released support ONE read; one support-only publication; actual all matched/collected output with affected={}; new resolved-current consumer sibling support TWO read; subsequent TWO action, task/authority retained.",
+    "prior_runs": "Preserved original source identities, not relabeled; new run binds repaired publisher/tests/catalog/board/harness."
+  },
+  "review": {
+    "initial": {
+      "verdict": "changes_required",
+      "P1": 0,
+      "P2": 2,
+      "P3": 1,
+      "raw_report": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/review/report-v1.md",
+      "sha256": "99a54b90dfa12945eaa91d5668891a7089c4c0d5f7e70c3076246edacb157207"
+    },
+    "final": {
+      "verdict": "accept",
+      "open_findings": [],
+      "raw_report": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/review/report-v3.md",
+      "sha256": "0ade0c90125a2bfea43a013d9c28d302d371a990440985c95e719b90bfd7a428",
+      "binding": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/review/report-v3-binding.json"
+    },
+    "review_repairs": 1,
+    "pre_review_corrections": 2,
+    "instruction_review": "Applicable; bounded normative guidance retained. Final repair changes script/tests/evidence only.",
+    "adjudications": [
+      "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/review/adjudication-v1.json",
+      "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/review/adjudication-v3.json"
+    ]
+  },
+  "repairs_and_attribution": {
+    "pre_review_corrections": 2,
+    "detail": [
+      "Historical comparison preflight operator documentation",
+      "Missing accepted matrix cases, tests only"
+    ],
+    "review_repairs": 1,
+    "scope_decisions": "No changed contract, provider, logical role, ownership or production scope.",
+    "R2-001": "Pre-existing baseline integrity hole re-exposed under expanded commit-scoped support contract. Exact baseline private reproduction plan/deploy exit0 with concealed missing export; repaired preflight now rejects before mutation.",
+    "R2-002": "Supervisor evidence-extractor field error; original selected outputs existed but admitted extract null. Not a publication/consumer failure. Corrected and new repaired-source actual observation provided.",
+    "R2-003": "New regression-test isolation weakness; valid referent duplicate and changed self/cycle cases strengthened.",
+    "attribution_evidence": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/attribution/baseline-reproduction.json"
+  },
+  "learning": [
+    "The first direct-installed-only pilot omitted on-demand support. Human-approved r2 expands the affected-notification contract through explicit declarations, without claiming dynamic dependency discovery.",
+    "Useful leaf discovery context was retained for implementation while a fresh supervisor took over collection with verified routing; logical reporting and runtime ancestry stayed separate.",
+    "Terra/medium builders completed the bounded work with Astra/xhigh review and one repair. This is descriptive evidence, not a randomized quality or cost comparison.",
+    "Read-only separate top-level review kept default tier and exposed a pre-existing export-integrity hole, a supervisor evidence-extractor defect and a new test-isolation weakness; each attribution and repair remains explicit."
+  ],
+  "profile_accounting": {
+    "summary": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/accounting-summary.json",
+    "attributions": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/profile-attributions.json",
+    "profiles": 5,
+    "resolved": 5,
+    "comparison": "Both original builder tasks and repair excluded by required xhigh contract review vs round2 high route; no enrollment; no Terra-preference exemption.",
+    "limits": "Pre-existing proposed selections fixed; no original timestamp/pre-selection neutrality claim. Exact default-tier observed windows retained. Ledger group estimate excludes root and later terminal collection; full concurrent raw ledger not mislabeled group total."
+  },
+  "process_disposition": {
+    "required_child_results": "All worker finals, supervisor result and complete raw reviewer reports collected.",
+    "owned_processes": "All supervisor-owned foreground commands/review waits/fixtures collected; no outstanding owned process or listener. Reviewer idle_released; retained workers/supervisors inactive.",
+    "root_claim_closure": "Root implementation/catalog claim release and terminal board acknowledgement are recorded in the current root continuation.",
+    "continuation": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/root-continuation.json"
+  },
+  "root_context": {
+    "recovery": "Provider-initiated compaction; Wind Walker invoked and durable authority/results/collection reconciled. No lifecycle control or root transfer invoked.",
+    "post_recovery_settings": {
+      "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/root-settings-post-recovery.json",
+      "sha256": "0261d8b551647ea2f28ab820a6eead61e2750923edb3b3eb3fef7fc76dc1c57e"
+    },
+    "applied_at": "2026-10-29T04:14:39.966Z",
+    "post_recovery_context": {
+      "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/root-context-post-recovery.json",
+      "sha256": "a2c9950a062d34061877e2c03ba25a2b2ec3a6cf06342f20b29a145ac2f90c3b"
+    },
+    "input_tokens": 62223,
+    "window": 475000,
+    "observation_route": "Explicit pinned readings at boundaries; no automatic context monitor claimed.",
+    "admission": "Bounded final receipt/closure only; new substantial work requires a new scoped decision."
+  },
+  "provenance": {
+    "supervisor_result": {
+      "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/result.json",
+      "sha256": "edcf6f56f7736b6494d333fe6f7996f41538db54071f7ff7a527a24c8a255cd7"
+    },
+    "final_manifest": {
+      "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/final-manifest.json",
+      "sha256": "432f31cce2b3d9ebafacc4d0e4945b72d5b00f28f966de94d106b0c2ae20b183"
+    },
+    "manifest_entries_verified": 155,
+    "root_verification": {
+      "path": "/home/bline/.local/state/work-engine/skill-update-delivery-r2-formation-20261028-01a18339/implementation/root-integration-verification.json",
+      "sha256": "170b88af10fe9fc38d758ab0626e5be723c44a73a990ae7c6abb7b8478e7c30b"
+    },
+    "graph": "Tier2 Verify; project home-bline-code-work-engine, store u3098616323a99df0g2, generation2026-10-29T03:54:33Z; five paths content_verified/metadata_match/no_recorded_issue. Best-effort, no exhaustive dependency claim.",
+    "administrative_limits": [
+      {
+        "operation": "board compact read with active claims",
+        "exit": 1,
+        "reason": "unsupported flag combination; corrected read-only invocation completed"
+      },
+      {
+        "operation": "review wait timeout600000",
+        "reason": "tool maximum120000; no work replayed; failed raw bootstrap-wait.json retained; corrected bounded host wait completed"
+      },
+      {
+        "operation": "runtime observation output oversize",
+        "reason": "Full session_meta base instructions omitted from minimal retained observation; exact relevant fields reread and confirmed."
+      },
+      {
+        "operation": "per-dispatch board observation",
+        "limitation": "Startup/prelaunch read and root scope/catalog claims established; a fresh read was not repeated immediately before every retained followup/delivery. Current paged read collected all returned later rows, no new conflicting source claim observed. No retroactive prior-read claim."
+      }
+    ],
+    "root_administrative_limit": "Recovery board compact+active-claims combination rejected; corrected read succeeded. A missing standalone support link was resolved through installed manual-orchestration current release."
+  },
+  "limitations": [
+    "Declared-only reach; unknown v1/legacy and unrecorded dynamic/external consumers.",
+    "One explicitly directed isolated retained consumer; no global live receipt/refresh claim.",
+    "Missing necessary historical comparison evidence now fails before mutation and older publisher rejects v2; deliberate reviewed-tool rollout remains operator-owned.",
+    "Read-only reviewer uses supplied gate evidence, runs no mutation tests. Startup board exposure disclosed.",
+    "Final integration/commit/deployment remains root/human authority; none performed."
+  ],
+  "remaining_approved_implementation_obligations": [],
+  "release_status": {
+    "committed": false,
+    "deployed": false,
+    "deployed_baseline_at_approval": "644f9b330f1728ece862bcb6ce8d0852bd12ad9a",
+    "next_release_requirement": "Use the reviewed r2-capable publisher with catalog v2; installed older publisher rejects it. Commit/deployment require their separate authority."
+  },
+  "invalidation": "Any change to the five accepted source bytes or owning contract requires acceptance/evidence reassessment; hashes establish identity, not universal runtime coverage."
+}

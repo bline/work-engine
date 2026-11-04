@@ -37,7 +37,17 @@ python3 <skill-dir>/scripts/skill_release.py retire TARGET NAME...   # move unma
 Each entry has a `kind` (`workflow`, `tool`, `research`, `other-project`), a
 `state` (`active`, `stable` meaning unchanged but in use, `dormant`, `retired`)
 and its `install` targets. `plan` and `deploy` refuse a commit whose catalog
-breaks these rules, and `check` applies them to the working tree:
+breaks these rules, and `check` applies them to the working tree.
+
+Catalog v2 also permits `runtime_dependencies`: unique names of catalog skills
+whose exported operational guidance this skill can load, including conditional
+role-specific loads. The consuming skill's author maintains these declarations.
+They describe potential reach, not actual loads; an omitted field declares no
+edges but does not prove there are no dependencies. Do not infer edges from
+Markdown links. Declarations are skill-level and may be transitive or cyclic;
+dynamic and external consumers are not completely covered.
+
+The existing catalog rules include:
 
 1. **Entries and skill directories correspond one to one.** A directory without
    a `SKILL.md` is not a skill and does not belong in `skills/`. An
@@ -57,6 +67,15 @@ would copy it into every release without any agent reading it there.
 `RELEASE.json` records the exclusions and the number of files excluded, and
 verification compares a release with its commit less those paths. Each path must
 name something, and `SKILL.md` cannot be excluded.
+
+Release comparison uses each commit's declarations and exclusions. V2 coverage
+is declared-only; v1 catalogs and legacy manifests have unknown support coverage.
+When an actual support comparison needs historical source or policy data, plan
+and deploy fail before mutation if that data is unavailable or invalid, naming
+the missing subject rather than assuming unchanged content.
+Older publisher tools reject v2: deliberately use the reviewed v2-capable tool
+to plan the approved release, and deploy only on the user's decision. This does
+not grant automatic deployment.
 
 Rule 3 allows dormant installs that the layout plan's rule 2 would have
 excluded. On 2026-10-27 the user first kept every installed skill installed,
@@ -87,9 +106,13 @@ so the default check skips them; name one to check it.
    real directory sits where a managed link belongs; the directory is moved to
    `~/cbm-work/skill-release-retired/`, outside every skill directory, never
    deleted.
-4. A successful deploy announces the full commit and affected installed skills
-   on the repository coordination board by default. New reads follow current
-   links; agents must explicitly re-read instructions already loaded. Use
+4. A successful deploy announces the full commit on the repository coordination
+   board by default. Direct installed impact, changed exported support and its
+   potential consumers are separate: potential reach does not prove a skill was
+   loaded or its own content changed. A dependency-scope-only notice reports
+   metadata changes and does not itself establish a content change or require a
+   re-read. New reads follow current links; agents must explicitly re-read
+   relevant changed instructions already loaded. Use
    `--no-announce` to skip publication. A pure same-current redeploy with no
    link changes is not announced. Exit 2 means deployment succeeded but the
    announcement is unconfirmed: inspect the returned message UUID on the board
