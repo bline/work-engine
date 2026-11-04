@@ -9,6 +9,15 @@ independently controlled Work Engine role thread. It is not a claim that the
 required provider capabilities are implemented or stable in the currently
 pinned Codex release.
 
+The companion
+[`context-lifecycle-transition-protocol.md`](context-lifecycle-transition-protocol.md)
+records the accepted design basis for host-owned transition orchestration after
+live incidents demonstrated that reservation, controlled yield, consumption,
+reset attribution, and successor admission can be observed out of order. Its
+acceptance is recorded at chatboard sequence 632. It does not supersede this
+semantic contract and carries no implementation, publication, or activation
+authority.
+
 The plan preserves the semantic model developed in
 [`ideas/01-semantic-context-manager-proposal.md`](../../ideas/01-semantic-context-manager-proposal.md)
 while revising its execution architecture. Context management becomes common
