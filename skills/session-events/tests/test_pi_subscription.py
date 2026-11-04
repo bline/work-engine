@@ -93,6 +93,7 @@ class ActualSubscription(unittest.TestCase):
         encode=lambda v:b64(json.dumps(v,separators=(',',':')).encode())
         access=encode(dict(alg='RS256',typ='JWT'))+'.'+encode({'exp':4102444800,'https://api.openai.com/auth':{'chatgpt_account_id':'synthetic-account'}})+'.'+b64(bytes(32))
         write(native,dict(auth_mode='chatgpt',OPENAI_API_KEY=None,tokens=dict(access_token=access,account_id='synthetic-account',refresh_token='SYNTHETIC_REFRESH_NEVER_PROJECT',id_token='SYNTHETIC_ID_NEVER_PROJECT')))
+        self.addCleanup(native.unlink, missing_ok=True)
         task=write(root/'task.json','Perform the bounded disposable parser correction and validate the original tests.')
         catalog=artifact(runtime_root/'node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json')
         job = dict(schema='work-engine.pi-docker-custody.v1',job_id='signed-pi-subscription-synthetic',state_dir=str(state),
