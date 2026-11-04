@@ -1,0 +1,27 @@
+[package]
+name = "pi-runtime-pressure"
+version = "0.1.0"
+edition = "2024"
+publish = false
+[workspace]
+[dependencies]
+work-engine-manual-host = { path = "../work-engine-manual-host" }
+serde_json = "=1.0.151"
+time = { version = "=0.3.55", features = ["formatting"] }
+
+[profile.dev]
+opt-level = 0
+[profile.dev.package.work-engine-manual-host]
+opt-level = 1
+[profile.dev.package.sha2]
+opt-level = 3
+[profile.dev.package.digest]
+opt-level = 3
+[profile.test]
+opt-level = 0
+[profile.test.package.work-engine-manual-host]
+opt-level = 1
+[profile.test.package.sha2]
+opt-level = 3
+[profile.test.package.digest]
+opt-level = 3
