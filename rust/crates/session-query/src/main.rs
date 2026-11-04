@@ -1,68 +1,116 @@
 use serde_json::{Value, json};
+use session_query::{INPUT_LIMIT, Profile, Query};
 use std::{
-    env, fs,
+    env,
     io::{self, Read},
-    os::unix::fs::PermissionsExt,
     process,
 };
 fn main() {
-    if let Err(e) = run() {
-        eprintln!("{e}");
-        process::exit(1);
+    let args: Vec<String> = env::args().collect();
+    let json_mode = args.get(3).is_some_and(|s| s == "--json");
+    match run(&args) {
+        Ok(value) => {
+            if json_mode {
+                println!(
+                    "{}",
+                    json!({"schema":"work-engine.session-query.v1","ok":true,"result":value})
+                );
+            } else {
+                human(&args[2], &value);
+            }
+        }
+        Err(code) => {
+            if json_mode {
+                println!(
+                    "{}",
+                    json!({"schema":"work-engine.session-query.v1","ok":false,"error":{"code":code}})
+                );
+            } else {
+                eprintln!("Query failed: {code}");
+            }
+            process::exit(1);
+        }
     }
 }
-fn run() -> Result<(), String> {
-    let a: Vec<String> = env::args().collect();
-    if a.len() != 4 && a.len() != 5 {
-        return Err(
-            "usage: work-engine-query PROFILE QUERY --json|--human [ARGUMENTS_FILE|-]".into(),
-        );
+fn run(args: &[String]) -> Result<Value, &'static str> {
+    if !(args.len() == 4 || args.len() == 5) || !matches!(args[3].as_str(), "--json" | "--human") {
+        return Err("invalid_invocation");
     }
-    if a[3] != "--json" && a[3] != "--human" {
-        return Err("invalid format".into());
+    let profile: Profile =
+        serde_json::from_slice(&session_query::read_file(&args[1], 16384, true)?)
+            .map_err(|_| "invalid_profile")?;
+    profile.validate()?;
+    let bytes = if args.len() == 4 {
+        b"{}".to_vec()
+    } else if args[4] == "-" {
+        let mut b = Vec::new();
+        io::stdin()
+            .take(INPUT_LIMIT as u64 + 1)
+            .read_to_end(&mut b)
+            .map_err(|_| "input_unavailable")?;
+        b
+    } else {
+        session_query::read_file(&args[4], INPUT_LIMIT, true)?
+    };
+    if bytes.len() > INPUT_LIMIT {
+        return Err("input_too_large");
     }
-    let profile: Value =
-        serde_json::from_slice(&fs::read(&a[1]).map_err(|_| "profile unavailable")?)
-            .map_err(|_| "invalid profile")?;
-    let mut input = Vec::new();
-    if a.len() == 5 {
-        if a[4] == "-" {
-            io::stdin()
-                .take(262145)
-                .read_to_end(&mut input)
-                .map_err(|_| "input unavailable")?;
-        } else {
-            let meta = fs::symlink_metadata(&a[4]).map_err(|_| "input unavailable")?;
-            if !meta.file_type().is_file()
-                || meta.permissions().mode() & 0o077 != 0
-                || meta.len() > 262144
-            {
-                return Err("input file must be private and bounded".into());
+    let arguments = serde_json::from_slice(&bytes).map_err(|_| "invalid_arguments")?;
+    let query = Query::parse(&args[2], arguments)?;
+    session_query::query(&profile, &query)
+}
+fn human(name: &str, v: &Value) {
+    match name {
+        "list_sessions" => {
+            let rows = v["sessions"].as_array();
+            println!(
+                "{} session(s)",
+                v["matched"]
+                    .as_u64()
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| "unknown".to_string())
+            );
+            if let Some(rows) = rows {
+                for r in rows {
+                    println!(
+                        "{}  {}  {}",
+                        r["sessionId"].as_str().unwrap_or("?"),
+                        r["host"].as_str().unwrap_or("?"),
+                        r["title"].as_str().unwrap_or("")
+                    );
+                }
             }
-            input = fs::read(&a[4]).map_err(|_| "input unavailable")?;
         }
-    } else {
-        input.extend_from_slice(b"{}");
+        "read_session" => {
+            println!("Session {}", v["sessionId"].as_str().unwrap_or("?"));
+            if let Some(rows) = v["entries"].as_array() {
+                for r in rows {
+                    println!(
+                        "{}: {}",
+                        r["role"].as_str().unwrap_or("?"),
+                        r["text"].as_str().unwrap_or("")
+                    );
+                }
+            }
+        }
+        "read_session_operation" => println!(
+            "Operation {}: {}",
+            v["operation_id"].as_str().unwrap_or("?"),
+            v["entry_state"].as_str().unwrap_or("unknown")
+        ),
+        "read_session_result" => {
+            println!(
+                "Result: {}",
+                if v["result"]["available"] == true {
+                    "available"
+                } else {
+                    "unavailable"
+                }
+            );
+            if let Some(s) = v["result"]["text"].as_str() {
+                println!("{s}");
+            }
+        }
+        _ => {}
     }
-    if input.len() > 262144 {
-        return Err("input too large".into());
-    }
-    let args: Value = serde_json::from_slice(&input).map_err(|_| "invalid arguments")?;
-    let result = session_query::query(profile, &a[2], args)?;
-    if result.get("isError").and_then(Value::as_bool) == Some(true) {
-        return Err(format!("query failed: {}", result));
-    }
-    let content = result.get("structuredContent").ok_or("invalid response")?;
-    if a[3] == "--json" {
-        println!(
-            "{}",
-            json!({"schema":"work-engine.session-query.v1", "result":content})
-        );
-    } else {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(content).map_err(|_| "invalid response")?
-        );
-    }
-    Ok(())
 }
