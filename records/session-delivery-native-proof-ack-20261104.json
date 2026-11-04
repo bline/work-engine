@@ -1,0 +1,29 @@
+{
+  "schema": "session-delivery-native-proof-ack-checkpoint-v1",
+  "status": "bounded_real_observation_passed",
+  "baseline": "3124067708b2363067311d59ca8de37a2ebacd68",
+  "native_proof_path": "/home/bline/.local/state/work-engine/delivery-native-proof-ack-20261104/NATIVE-PROOF.json",
+  "native_proof_sha256": "68bfdbc14b0a13902f24e3e3c5774345d9239632d3e4b341a533335c995f6706",
+  "native_session_id": "01a1a4dc-b20b-7782-be9a-2693f5801ed4",
+  "native_receipt": "7ba5069074de979f7ca01d8e2f51ee3a5da21243b81f14fc50272cb736e5aa29",
+  "delivery_id": "e62ef667d154aaccc21f5b35694d562f4ddf3dea4dadddf43ad9e05fc24c4cbe",
+  "stage": "target_observed",
+  "attempts": 1,
+  "native_receipt_acknowledged": true,
+  "provider": "disabled",
+  "daemon_removed": true,
+  "native_jsonl": null,
+  "sdk_history_sha256": "152c0439330647b2fca0b876557afd74f93a15df028a74428585499cb3b32c03",
+  "tests": "7 focused Rust tests plus 8-concurrent fake invocation regression, zero leftovers",
+  "source_acceptance": "/home/bline/.local/state/work-engine/delivery-native-proof-ack-20261104/SOURCE-ACCEPTANCE-R2.json",
+  "review": "Independent Astra reported two P2 findings and reject; Root fixed and regression-validated both. Original verdict retained, no second Astra acceptance claimed.",
+  "cost_snapshot_usd": 4.9858024,
+  "cost_scope": "All-actor adjusted API-equivalent proxy through precommit snapshot; final closure/reporting outside this record",
+  "cap_usd": 6,
+  "limitations": [
+    "No provider inference, cognition, real task or action approval",
+    "Native history is SDK snapshot; native JSONL absent",
+    "No Dot/MCP/production route or main integration qualified",
+    "Prior broad legacy full-suite timeout remains; focused new tests passed"
+  ]
+}

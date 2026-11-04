@@ -27,6 +27,7 @@ Commands:\n\
   ack --state DIR --ack-receipt ID\n\
   inspect --state DIR [--summary [--operation ID]]\n\
   schema | --version\n\
+  pi-docker run|reconcile|cancel|inspect|ack|inventory (provider-disabled component)\n\
 Execution/inspection output: --compact, --out FILE (new absolute JSON log; reserved before effects)\n\
 ack only acknowledges existing receipt bytes; it does not poll or issue a receipt.\n\
 inspect reads recorded state; it does not refresh observations."
@@ -35,6 +36,9 @@ inspect reads recorded state; it does not refresh observations."
     }
     let mut args = arguments.into_iter();
     let verb = args.next().unwrap_or_default();
+    if verb == "pi-docker" {
+        return pi_docker(args.collect());
+    }
     if matches!(verb.as_str(), "schema" | "--version") && args.len() != 0 {
         return Err(work_engine_manual_host::Error::Refused(
             "schema and --version accept no options".into(),
@@ -227,5 +231,51 @@ inspect reads recorded state; it does not refresh observations."
         result
     };
     println!("{}", serde_json::to_string(&shown)?);
+    Ok(())
+}
+
+fn pi_docker(args: Vec<String>) -> Result<()> {
+    use work_engine_manual_host::{
+        Error,
+        pi_docker::{Host as PiHost, Job},
+    };
+    let refused = || {
+        Error::Refused("pi-docker run --request FILE | reconcile|cancel|inspect --state DIR | ack --state DIR --receipt ID | inventory --root DIR".into())
+    };
+    let action = args.first().ok_or_else(refused)?.as_str();
+    let mut options = std::collections::BTreeMap::new();
+    let mut rest = args[1..].iter();
+    while let Some(key) = rest.next() {
+        let value = rest.next().ok_or_else(refused)?;
+        if options.insert(key.as_str(), value.as_str()).is_some() {
+            return Err(refused());
+        }
+    }
+    let get = |key: &str| options.get(key).copied().ok_or_else(refused);
+    let output = match action {
+        "inventory" if options.len() == 1 => serde_json::to_value(
+            work_engine_manual_host::pi_docker::inventory(&PathBuf::from(get("--root")?))?,
+        )?,
+        "run" if options.len() == 1 => {
+            let job: Job = serde_json::from_slice(&fs::read(get("--request")?)?)?;
+            PiHost::admit(job)?.run()?
+        }
+        "reconcile" if options.len() == 1 => {
+            PiHost::open(&PathBuf::from(get("--state")?))?.reconcile()?
+        }
+        "cancel" if options.len() == 1 => {
+            work_engine_manual_host::pi_docker::request_cancel(&PathBuf::from(get("--state")?))?
+        }
+        "inspect" if options.len() == 1 => {
+            let dir = PathBuf::from(get("--state")?);
+            let host = PiHost::open(&dir)?;
+            serde_json::to_value(host.journal())?
+        }
+        "ack" if options.len() == 2 => {
+            PiHost::open(&PathBuf::from(get("--state")?))?.acknowledge(get("--receipt")?)?
+        }
+        _ => return Err(refused()),
+    };
+    println!("{}", serde_json::to_string(&output)?);
     Ok(())
 }

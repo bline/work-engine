@@ -75,6 +75,25 @@ class AuthHttp(Fixture):
             self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name}})[0], 401)
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, headers={"Origin":"https://evil.example"})[0], 403)
 
+    def test_explicit_offline_discovery_preserves_write_scope_and_subject(self):
+        config = json.loads(self.config.read_text())
+        config["advertise_offline_access"] = True
+        self.config.write_text(json.dumps(config))
+        auth = SE.HttpAuth(str(self.config))
+        self.assertNotIn("advertise_offline_access", json.loads(auth._config_bytes))
+        self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth)
+        self.assertEqual(self.request(path="/.well-known/oauth-protected-resource/mcp", method="GET")[2]["scopes_supported"], ["mcp:write", "offline_access"])
+        message = {"jsonrpc": "2.0", "id": 2, "method": "events/subscribe"}
+        self.assertEqual(self.request(message, self.token({"scope": "openid offline_access"}))[0], 403)
+        self.assertEqual(self.request(message, self.token({"sub": "wrong-subject"}))[0], 401)
+        # Valid write policy reaches normal RPC validation, not an auth rejection.
+        self.assertEqual(self.request(message, self.token())[0], 200)
+        self.assertEqual(len(self.server.store.all_subscriptions()), 0)
+        config["advertise_offline_access"] = "true"
+        self.config.write_text(json.dumps(config))
+        with self.assertRaises(ValueError):
+            SE.HttpAuth(str(self.config))
+
     def test_auth_before_effects_and_bad_requests(self):
         msg = {"jsonrpc":"2.0", "id":2, "method":"events/subscribe", "params": {"name": SE.SIMPLE_EVENT_NAME, "arguments":{"session_id":CODEX_ID,"pattern":"x"}, "delivery":{"mode":"webhook", "url":URL,"secret":whsec()}}}
         self.assertEqual(self.request(msg)[0], 401)
@@ -213,6 +232,38 @@ class AuthHttp(Fixture):
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, good, headers={"Host":"evil.example"})[0], 403)
         log = (self.homes.state / "requests.log").read_text()
         self.assertNotIn(good, log); self.assertNotIn(insufficient, log)
+
+    def test_observation_only_exact_subject_and_write_boundary(self):
+        seen = []
+        auth = SE.HttpAuth(str(self.config))
+        self.server.observation = types.SimpleNamespace(
+            settings={"subject": SUBJECT, "principal": self.server.principal},
+            call=lambda method, principal, arguments: seen.append((method, principal)) or {"schema_version": 1})
+        self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth, observation_only=True)
+        msg = {"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"pi_observation_observe", "arguments":{}}}
+        for token, status in ((None,401), (self.token({"sub":"other"}),401),
+                              (self.token({"exp":int(time.time())-1}),401),
+                              (self.token({"scope":"openid"}),403)):
+            self.assertEqual(self.request(msg,token)[0],status)
+        self.assertEqual(seen,[])
+        good = self.token()
+        discovery = {"jsonrpc":"2.0", "id":"openai-mcp-discover", "method":"server/discover"}
+        self.assertEqual(self.request(discovery)[0], 401)
+        status, _, body = self.request(discovery, good)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["error"]["code"], -32601)
+        self.assertEqual(seen, [])
+        self.assertEqual(self.request(msg,good)[0],200)
+        self.assertEqual(seen,[("observe",self.server.principal)])
+        for name in ("submit_session_request", "create_session_target", "issue_session_request_grant", "delivery_ack"):
+            msg["params"]["name"] = name
+            self.assertEqual(self.request(msg,good)[0],403)
+        for method in ("events/subscribe", "events/unsubscribe"):
+            self.assertEqual(self.request({"jsonrpc":"2.0","id":1,"method":method},good)[0],403)
+        listing = self.request({"jsonrpc":"2.0","id":1,"method":"tools/list"},good)[2]["result"]["tools"]
+        self.assertEqual({t["name"] for t in listing},
+                         {"pi_observation_observe", "pi_observation_status", "pi_observation_result", "delivery_status", "replay_events"})
+        self.assertFalse(next(t for t in listing if t["name"]=="pi_observation_observe")["annotations"]["readOnlyHint"])
 
     def test_read_only_requires_auth_before_bind(self):
         with self.assertRaises(ValueError):

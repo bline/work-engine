@@ -1,0 +1,10 @@
+{
+  "status": "source_candidate_accepted_live_test_pending",
+  "authority": "/home/bline/.local/state/work-engine/delivery-mcp-pi-integration-20261104/AUTHORITY.json",
+  "acceptance": "/home/bline/.local/state/work-engine/delivery-mcp-pi-integration-20261104/SOURCE-ACCEPTANCE.json",
+  "source_manifest_sha256": "0ca7c7ceff9b2c4bded5c1ec98ef70937ed3de8dc5c4d1b6fd0458efd85d3ab2",
+  "tests": "13 focused MCP,8socketOAuth,7originalRust; zero leftovers",
+  "native": "Previous direct SDK observation passed; new actual Dot pipeline not yet tested",
+  "budget": "12total, final accounting outside dated source checkpoint",
+  "limitation": "Independent original changes_required; Root verified targeted repairs, no second independent acceptance"
+}

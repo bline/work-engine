@@ -1,0 +1,174 @@
+{
+  "status": "accepted bounded fixture; not production delivery",
+  "recorded_at": "2026-11-04T00:01:43.519848+00:00",
+  "source_manifest": {
+    "changed": 6,
+    "files": 15,
+    "includes_board_reader_dependency_closure": true,
+    "path": "/home/bline/cbm-work/wt-session-delivery-foundation-20261103/.delivery-evidence/repair-r1/frozen-source/manifest.json",
+    "sha256": "f2fe31b3aa2393083d9e81deba0bbe7a1d9fd932b446ae12b07743f1ea80dac3"
+  },
+  "source_files": [
+    {
+      "path": "rust/Cargo.lock",
+      "type": "file",
+      "mode": 436,
+      "length": 81261,
+      "sha256": "88b31425fd91e753f745e3793098b2bdb63a30ff8644014ad57ea1643e9411c1"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "type": "file",
+      "mode": 436,
+      "length": 1886,
+      "sha256": "768fba3c734d2cc8de59c352a5ec0b83fbc01003a3527c4b6b3ecdefa28461cb"
+    },
+    {
+      "path": "rust/crates/session-delivery/Cargo.toml",
+      "type": "file",
+      "mode": 436,
+      "length": 383,
+      "sha256": "1b17e88e8dd101858eb939dfd58202ce1ea3f7be3c4b20e8c0202a3d129aa846"
+    },
+    {
+      "path": "rust/crates/session-delivery/docs/contract.md",
+      "type": "file",
+      "mode": 436,
+      "length": 8479,
+      "sha256": "960c1d38bbe8c809405e29c555c4c0b340af2e2c95cfab6ad9c8e2b99c2129ad"
+    },
+    {
+      "path": "rust/crates/session-delivery/docs/schema-v1.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8410,
+      "sha256": "c2d42a8a6dc76f5619092f0c6f5a69ffca14d28c5d19ed96f6b9f194baa494a2"
+    },
+    {
+      "path": "rust/crates/session-delivery/docs/usage.md",
+      "type": "file",
+      "mode": 436,
+      "length": 3273,
+      "sha256": "3fb118ae3ef6470443ede6c9c6b19748c5ad4f2123c1d8cb2b46c42db8c1f271"
+    },
+    {
+      "path": "rust/crates/session-delivery/scripts/board_source.py",
+      "type": "file",
+      "mode": 436,
+      "length": 5713,
+      "sha256": "5b9347cd868341aad65ed99103e8b7e4ee8912c1ac7123de5c60899622e1a6b2"
+    },
+    {
+      "path": "rust/crates/session-delivery/src/lib.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 26004,
+      "sha256": "a1cec40fadac0df165310a21017be279a5cb018879f454676edaff8fddb4fd2c"
+    },
+    {
+      "path": "rust/crates/session-delivery/src/main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 14429,
+      "sha256": "aa38dcfd8924b28d7855679f6db8ef6fc42f8cbfae3ee1d3b28467b12ea16ec4"
+    },
+    {
+      "path": "rust/crates/session-delivery/tests/foundation.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 29011,
+      "sha256": "87357c214f52e9bfaf0019c4d5cfc27e48ddaff6bc077d4020b3a345db6064a6"
+    },
+    {
+      "path": "skills/durable-state/contracts/codex-chatboard-kinds.v1.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2930,
+      "sha256": "76621847ecedab7e6509a55fa9641c18abc2aa575fa78064696130f1b713f109"
+    },
+    {
+      "path": "skills/durable-state/scripts/codex_chatboard.py",
+      "type": "file",
+      "mode": 436,
+      "length": 79057,
+      "sha256": "e2cf5b8d62451b57255825a3a8b0fd754ae9575aa195ace62a559c46b6dfdfb7"
+    },
+    {
+      "path": "skills/durable-state/scripts/durable_state.py",
+      "type": "file",
+      "mode": 436,
+      "length": 9146,
+      "sha256": "2f1f7b42e5b1f3f362caf7c0ea6f26eab2eb03479d06d5f9b9564c214bd58a2b"
+    },
+    {
+      "path": "skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 221582,
+      "sha256": "0bbe6e693453aaf4dc1ec356d2f9c1acd5bcf394acde5ba1199f9a2bb3694a19"
+    },
+    {
+      "path": "skills/session-events/tests/test_delivery.py",
+      "type": "file",
+      "mode": 436,
+      "length": 7738,
+      "sha256": "a2ff516f50ef6d007593aeb99915e6309a785bd845f6c1772eb98bd972da192f"
+    }
+  ],
+  "validation": {
+    "rust": 22,
+    "mcp": 82,
+    "optional_skipped": 32,
+    "clippy": "pass",
+    "workspace_locked_offline": "pass",
+    "public_schema": "unchanged",
+    "counterfactual": "four semantic failures with history guard disabled"
+  },
+  "reviews": [
+    {
+      "path": "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/review/result.json",
+      "sha256": "8a7292229e5a8fdf6f4f3c305274fc2fe9250d75131a46475eb59d5a111edc36",
+      "scope": "full initial 12-file subject",
+      "verdict": "one P2R1; complete report accepted, source held",
+      "model": "gpt-6-astra/high/default",
+      "native_readonly_policy_observed": true,
+      "cost": 3.36943
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/review-final/result.json",
+      "sha256": "fdba37dcc08fad7a72b3144055bc60c768302e41d857eefd2ffd1307da511d49",
+      "scope": "fresh focused R1 remediation against reviewed baseline",
+      "verdict": "R1 resolved, no new findings",
+      "model": "gpt-6-astra/high/default",
+      "native_readonly_policy_observed": true,
+      "cost": 2.243798,
+      "continuity": "fresh replacement; no same-session or broader provider/tool independence claim"
+    }
+  ],
+  "limits": [
+    "Fixture-only recipient: no real Pi, Claude or Dot delivery/inference or production grant.",
+    "Context envelope preservation only; producer enrollment, lifecycle ordering and active-control timeliness unqualified.",
+    "Socket/HTTP transport and actual OAuth/user approval path unqualified for these new tools. Existing Stytch app health lookup returned reauthentication required earlier.",
+    "History verification holds beyond128predecessor iterations; no automatic reset/baseline adoption or retarget.",
+    "OS/stdlib/dynamic libraries/caches and hostile filesystem/container isolation remain nonhermetic/unqualified.",
+    "Skipped optional tests are not passes. Existing failed/absent/stale input records retained; final decisive inputs reverified.",
+    "No completed task or settled effect inferred from transport or target observation."
+  ],
+  "result": {
+    "path": "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/RESULT.json",
+    "sha256": "9f5c392d126cb4b3f789790c32d579641285e4f860227c7ffc210b20d09b3449"
+  },
+  "commit_authority": {
+    "user_message": "Let's commit this work and move to the pressure-producer and real S10 receiver integration,",
+    "source": {
+      "path": "/home/bline/.codex/sessions/2026/11/01/rollout-2026-11-01T00-38-29-01a195d4-b7a7-77f2-ba65-277669c0ec97.jsonl",
+      "line": 24679,
+      "sha256": "ac52e7011fb4fc59c64beeff76ddf9180a9cdce0136454f94bcacaaf5bd8ab00",
+      "at": "2026-11-03T23:58:54.420Z"
+    },
+    "owner": "01a195d4-b7a7-77f2-ba65-277669c0ec97",
+    "scope": "Commit reviewed foundation on private branch; advance pressure-producer and exact S10 receiver join. No production rollout, credentials or task inference implied."
+  },
+  "parent": "0d51c0b8668d2497c0f7b31d5aac9b169faa60b5",
+  "private_branch": "private/session-delivery-foundation-20261103"
+}

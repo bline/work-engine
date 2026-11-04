@@ -1,0 +1,471 @@
+{
+  "envelope": {
+    "$defs": {
+      "Binding": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "address": {
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fixture_mode": {
+            "type": "string"
+          },
+          "generation": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "job": {
+            "type": "string"
+          },
+          "lane": {
+            "type": "string"
+          },
+          "principal": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "workspace": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipient",
+          "principal",
+          "job",
+          "lane",
+          "session",
+          "workspace",
+          "generation",
+          "address",
+          "fixture_mode",
+          "expires_at",
+          "active"
+        ],
+        "type": "object"
+      },
+      "Event": {
+        "properties": {
+          "epoch": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "message_id": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string"
+          },
+          "payload_codec": {
+            "type": "string"
+          },
+          "payload_sha256": {
+            "type": "string"
+          },
+          "raw_payload": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "sequence": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "source_key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "source_id",
+          "repository",
+          "source_key",
+          "revision",
+          "epoch",
+          "message_id",
+          "sequence",
+          "observed_at",
+          "kind",
+          "schema",
+          "payload_codec",
+          "payload_sha256",
+          "raw_payload"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "attempt_id": {
+        "type": "string"
+      },
+      "authority": {
+        "type": "string"
+      },
+      "binding_sha256": {
+        "type": "string"
+      },
+      "delivery_id": {
+        "type": "string"
+      },
+      "event": {
+        "$ref": "#/$defs/Event"
+      },
+      "fixture_only": {
+        "type": "boolean"
+      },
+      "recipient": {
+        "$ref": "#/$defs/Binding"
+      },
+      "schema": {
+        "type": "string"
+      },
+      "subscription_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "schema",
+      "fixture_only",
+      "authority",
+      "delivery_id",
+      "attempt_id",
+      "subscription_id",
+      "binding_sha256",
+      "recipient",
+      "event"
+    ],
+    "title": "Envelope",
+    "type": "object"
+  },
+  "fixture_config": {
+    "$defs": {
+      "Binding": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "address": {
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fixture_mode": {
+            "type": "string"
+          },
+          "generation": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "job": {
+            "type": "string"
+          },
+          "lane": {
+            "type": "string"
+          },
+          "principal": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "workspace": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipient",
+          "principal",
+          "job",
+          "lane",
+          "session",
+          "workspace",
+          "generation",
+          "address",
+          "fixture_mode",
+          "expires_at",
+          "active"
+        ],
+        "type": "object"
+      },
+      "PressureConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "host": {
+            "type": "string"
+          },
+          "incarnation": {
+            "description": "Explicit owner-selected incarnation; changing it requires a new store.",
+            "type": "string"
+          },
+          "lead_calls": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "levels": {
+            "description": "Exact existing reader binding levels, never a second policy."
+          },
+          "reader": {
+            "type": "string"
+          },
+          "reader_sha256": {
+            "type": "string"
+          },
+          "recipients": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rollout": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "step_percent": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "reader",
+          "reader_sha256",
+          "incarnation",
+          "session",
+          "host",
+          "rollout",
+          "levels",
+          "step_percent",
+          "lead_calls",
+          "recipients"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "board_reader": {
+        "type": "string"
+      },
+      "database": {
+        "type": "string"
+      },
+      "fixture_only": {
+        "type": "boolean"
+      },
+      "pressure": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/PressureConfig"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "repository": {
+        "type": "string"
+      },
+      "repository_identity": {
+        "type": "string"
+      },
+      "schema": {
+        "type": "string"
+      },
+      "source_adapter": {
+        "type": "string"
+      },
+      "source_id": {
+        "type": "string"
+      },
+      "targets": {
+        "items": {
+          "$ref": "#/$defs/Binding"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "schema",
+      "fixture_only",
+      "database",
+      "repository",
+      "repository_identity",
+      "source_id",
+      "board_reader",
+      "source_adapter",
+      "targets"
+    ],
+    "title": "Config",
+    "type": "object"
+  },
+  "observation": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "attempt_id": {
+        "type": "string"
+      },
+      "binding_sha256": {
+        "type": "string"
+      },
+      "delivery_id": {
+        "type": "string"
+      },
+      "envelope_sha256": {
+        "type": "string"
+      },
+      "event_id": {
+        "type": "string"
+      },
+      "generation": {
+        "format": "uint64",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "payload_sha256": {
+        "type": "string"
+      },
+      "schema": {
+        "type": "string"
+      },
+      "stage": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "schema",
+      "attempt_id",
+      "delivery_id",
+      "event_id",
+      "binding_sha256",
+      "envelope_sha256",
+      "payload_sha256",
+      "generation",
+      "stage"
+    ],
+    "title": "Ack",
+    "type": "object"
+  },
+  "receipt": {
+    "$defs": {
+      "Ack": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "binding_sha256": {
+            "type": "string"
+          },
+          "delivery_id": {
+            "type": "string"
+          },
+          "envelope_sha256": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "generation": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "payload_sha256": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema",
+          "attempt_id",
+          "delivery_id",
+          "event_id",
+          "binding_sha256",
+          "envelope_sha256",
+          "payload_sha256",
+          "generation",
+          "stage"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "ack": {
+        "$ref": "#/$defs/Ack"
+      },
+      "fixture_only": {
+        "type": "boolean"
+      },
+      "schema": {
+        "type": "string"
+      },
+      "transport_accepted": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "schema",
+      "fixture_only",
+      "transport_accepted",
+      "ack"
+    ],
+    "title": "Receipt",
+    "type": "object"
+  }
+}
