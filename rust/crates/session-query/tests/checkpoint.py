@@ -58,7 +58,7 @@ with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
         if name=='read_session_result': assert v['operation']['operation_id']==opid and v['completion']['status']=='completed' and v['result']['available'] and '[REDACTED:bridge_credential]' in v['result']['text'] and not v['usage']['available'] and not v['process_closure']['available']
         print(name,'matches actual MCP and assertions')
     # An explicitly configured real context reaches the same owner projection.
-    role=t/'role-ledger.jsonl'; role.write_text('')
+    role=t/'role-ledger.jsonl'; role.write_text(json.dumps({'event':'launch','session_id':'66666666-6666-4666-8666-666666666666','parent_session_id':sid,'host':'codex','name':'fixture-worker'})+'\n')
     profile['context']={'budget_root':None,'role_ledger':str(role),'ledger_path':None,'ledger_sha256':None}
     prof.write_text(json.dumps(profile))
     context=m.Context.build(m.Homes(c,cl,state),role_ledger=role)
@@ -66,7 +66,7 @@ with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
     args={'request_id':req,'grant_credential':token}
     direct=observed.call_tool({'name':'read_session_operation','arguments':args})['structuredContent']
     via=cli('read_session_operation',args)['result']
-    assert via==direct and via['workers']['availability']=='partial' and via['workers']['sources']['role_host']=='available'
+    assert via==direct and via['workers']['availability']=='partial' and via['workers']['sources']['role_host']=='available' and via['workers']['snapshot']['workers_total']==1 and via['workers']['snapshot']['states']=={'never_started':1} and via['workers']['snapshot']['workers_settled'] is None
     profile.pop('context'); prof.write_text(json.dumps(profile))
     print('configured owner context preserved partial worker observation')
     # Existing ambiguous state remains ambiguous on repeated reads, with no native entry.
