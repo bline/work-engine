@@ -211,6 +211,30 @@ impl PiOwner {
         control::synchronize(db, &self.d.profile, &h)?;
         Ok((e, h))
     }
+    // Observation and action share the registry lock, but have different rollback
+    // semantics: a verified signed head survives denial; action writes do not.
+    fn begin_current(&self, db: &Connection) -> Result<()> {
+        db.execute_batch("BEGIN IMMEDIATE")
+            .map_err(|_| "pi_registry")?;
+        if let Err(e) = self.current(db) {
+            db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
+            return Err(e);
+        }
+        Ok(())
+    }
+    fn action(&self, db: &Connection, run: impl FnOnce() -> Result<()>) -> Result<()> {
+        self.begin_current(db)?;
+        db.execute_batch("SAVEPOINT pi_action")
+            .map_err(|_| "pi_registry")?;
+        let result = run();
+        if result.is_err() {
+            db.execute_batch("ROLLBACK TO pi_action")
+                .map_err(|_| "pi_registry")?;
+        }
+        db.execute_batch("RELEASE pi_action; COMMIT")
+            .map_err(|_| "pi_registry")?;
+        result
+    }
     /// Consume signed approval and capacity using the existing admission owner.
     /// An exact duplicate returns evidence; it does not authorize another run.
     pub fn admit(&self, job_sha: &str, executable_sha: &str) -> Result<Value> {
@@ -248,10 +272,7 @@ impl PiOwner {
             &gate,
         )
         .map_err(|_| "pi_admission_conflict")?;
-        db.execute_batch("BEGIN IMMEDIATE")
-            .map_err(|_| "pi_registry")?;
-        let result = (|| {
-            self.current(&db)?;
+        let result = self.action(&db, || {
             let old: Option<(String, String, String)> = db
                 .query_row(
                     "SELECT operation_id,descriptor_sha,job_sha FROM pi_claim WHERE profile_sha=?1",
@@ -268,12 +289,7 @@ impl PiOwner {
                 db.execute("INSERT INTO pi_claim(profile_sha,operation_id,descriptor_sha,job_sha) VALUES(?1,?2,?3,?4)",params![self.d.profile.sha256,a.operation,self.pin.sha256,job_sha]).map_err(|_|"pi_claim_conflict")?;
             }
             Ok(())
-        })();
-        if result.is_ok() {
-            db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
-        } else {
-            let _ = db.execute_batch("ROLLBACK");
-        }
+        });
         result?;
         read(&self.pin)
     }
@@ -283,10 +299,7 @@ impl PiOwner {
         ingest_control(&self.pin)?;
         let db = self.db()?;
         let key = effect.key()?;
-        db.execute_batch("BEGIN IMMEDIATE")
-            .map_err(|_| "pi_registry")?;
-        let prepared = (|| {
-            self.current(&db)?;
+        let prepared = self.action(&db, || {
             let (operation,native):(String,Option<String>)=db.query_row("SELECT operation_id,native_id FROM pi_claim WHERE profile_sha=?1 AND descriptor_sha=?2 AND job_sha=?3",params![self.d.profile.sha256,self.pin.sha256,self.p.job_sha256],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|_|"pi_claim_missing")?;
             store::admitted_heads_live(&db, &operation).map_err(|_| "pi_heads")?;
             if effect != Effect::Allocation && native.is_none() {
@@ -309,19 +322,9 @@ impl PiOwner {
             )
             .map_err(|_| "pi_effect_unknown_no_retry")?;
             Ok(())
-        })();
-        if prepared.is_ok() {
-            db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
-        } else {
-            let _ = db.execute_batch("ROLLBACK");
-        }
+        });
         prepared?;
-        db.execute_batch("BEGIN IMMEDIATE")
-            .map_err(|_| "pi_registry")?;
-        if let Err(e) = self.current(&db) {
-            let _ = db.execute_batch("ROLLBACK");
-            return Err(e);
-        }
+        self.begin_current(&db)?;
         Ok(EffectLease {
             db,
             owner_pin: self.pin.clone(),
@@ -341,21 +344,12 @@ impl PiOwner {
         }
         ingest_control(&self.pin)?;
         let db = self.db()?;
-        db.execute_batch("BEGIN IMMEDIATE")
-            .map_err(|_| "pi_registry")?;
-        let result = (|| {
-            self.current(&db)?;
+        self.action(&db, || {
             let allocation:i64=db.query_row("SELECT count(*) FROM pi_effect WHERE profile_sha=?1 AND effect_key='allocation' AND state='unknown'",[&self.d.profile.sha256],|r|r.get(0)).map_err(|_|"pi_registry")?;
             if allocation!=1 || db.execute("UPDATE pi_claim SET native_id=?2 WHERE profile_sha=?1 AND native_id IS NULL",params![self.d.profile.sha256,native]).map_err(|_|"pi_registry")?!=1 {return Err("pi_allocation_replacement");}
             db.execute("UPDATE pi_effect SET state='observed',evidence_sha=?2 WHERE profile_sha=?1 AND effect_key='allocation'",params![self.d.profile.sha256,crate::hash(native)]).map_err(|_|"pi_registry")?;
             Ok(())
-        })();
-        if result.is_ok() {
-            db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
-        } else {
-            let _ = db.execute_batch("ROLLBACK");
-        }
-        result
+        })
     }
     pub fn check_native(&self, native: &str) -> Result<()> {
         let db = self.db()?;

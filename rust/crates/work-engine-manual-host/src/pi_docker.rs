@@ -490,6 +490,15 @@ impl Host {
             .collect()
     }
     fn command(&mut self, label: &str, args: Vec<String>, rpc: bool) -> Result<(bool, Vec<u8>)> {
+        self.command_with_lease(label, args, rpc, None)
+    }
+    fn command_with_lease(
+        &mut self,
+        label: &str,
+        args: Vec<String>,
+        rpc: bool,
+        effect_lease: Option<&session_task_admission::pi_pilot::EffectLease>,
+    ) -> Result<(bool, Vec<u8>)> {
         let argv = self.argv(args);
         let number = self.journal.processes.len();
         // Retain and bypass any legacy/unpublished reservation. Publication of
@@ -545,6 +554,11 @@ impl Host {
             .stdout(stdout)
             .stderr(stderr);
         if rpc && let Some(lease) = &self.allocation_lease {
+            lease
+                .check_current()
+                .map_err(|e| Error::Refused(e.into()))?;
+        }
+        if let Some(lease) = effect_lease {
             lease
                 .check_current()
                 .map_err(|e| Error::Refused(e.into()))?;

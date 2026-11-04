@@ -638,7 +638,7 @@ impl Host {
                             .check_current()
                             .map_err(|e| Error::Refused(e.into()))?;
                     }
-                    let (ok, output) = self.command(
+                    let (ok, output) = self.command_with_lease(
                         "coding-tool-exec",
                         vec![
                             "exec".into(),
@@ -650,6 +650,7 @@ impl Host {
                             command,
                         ],
                         false,
+                        effect_lease.as_ref(),
                     )?;
                     if let Some(lease) = effect_lease {
                         lease
@@ -1101,5 +1102,71 @@ mod tests {
         assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"allocated","sessionId":"00000000-0000-4000-8000-000000000002","accessPresent":false}))).is_err());
         assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"ready","sessionId":"00000000-0000-4000-8000-000000000002","tools":["workspace_exec"]}))).is_err());
         assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
+    }
+    #[test]
+    #[ignore = "explicit signed authority generator required; no Docker or provider"]
+    fn signed_tool_authority_expires_before_job_and_prevents_spawn() {
+        let (dir, mut h) = fixture();
+        h.journal.job.deadline_unix_seconds = now() + 180;
+        let generator = std::env::var_os("PI_CODING_GENERATOR").expect("pinned generator");
+        let authority = dir.path().join("signed-authority");
+        let job_sha = digest(&serde_json::to_vec(&h.journal.job).unwrap());
+        let exe_sha = digest(&fs::read(std::env::current_exe().unwrap()).unwrap());
+        let status = std::process::Command::new(generator)
+            .args([
+                "--ignored",
+                "--exact",
+                "pi_pilot::tests::export_signed_pi_fixture",
+            ])
+            .env("PI_FIXTURE_EXPORT", &authority)
+            .env("PI_FIXTURE_JOB_SHA", &job_sha)
+            .env("PI_FIXTURE_EXECUTOR_SHA", &exe_sha)
+            .env("PI_FIXTURE_LIFETIME_SECONDS", "45")
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let pin = serde_json::from_slice(&fs::read(authority.join("descriptor-pin.json")).unwrap())
+            .unwrap();
+        let owner = session_task_admission::pi_pilot::PiOwner::open(pin).unwrap();
+        owner.admit(&job_sha, &exe_sha).unwrap();
+        drop(
+            owner
+                .enter(session_task_admission::pi_pilot::Effect::Allocation)
+                .unwrap(),
+        );
+        owner
+            .seal(&job_sha, "00000000-0000-4000-8000-000000000001")
+            .unwrap();
+        let lease = owner
+            .enter(session_task_admission::pi_pilot::Effect::Tool(
+                "expiry".into(),
+            ))
+            .unwrap();
+        lease.check_current().unwrap();
+        let clock: Value =
+            serde_json::from_slice(&fs::read(authority.join("export-clock.json")).unwrap())
+                .unwrap();
+        // Cross the signed deadline after acquiring valid authority, while the
+        // independently pinned job deadline remains well in the future.
+        while now() <= clock["profile_expires_unix"].as_u64().unwrap() {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(
+            !h.expired(),
+            "job remains valid after signed profile expiry"
+        );
+        let err = h
+            .command_with_lease(
+                "coding-tool-exec",
+                vec!["must-never-execute".into()],
+                false,
+                Some(&lease),
+            )
+            .unwrap_err();
+        assert!(err.to_string().contains("pi_lease_expired"), "{err}");
+        assert_eq!(h.journal.processes.len(), 1, "journal preparation occurred");
+        assert!(h.journal.processes[0].stdout.exists());
+        assert!(h.journal.processes[0].stderr.exists());
+        assert!(h.journal.processes[0].pid.is_none(), "no child started");
     }
 }

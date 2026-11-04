@@ -115,7 +115,15 @@ impl Fixture {
             revision: "r1".into(),
             idempotency_key: "one-exact-job".into(),
         };
-        let profile = json!({"schema":PROFILE,"classification":"fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker","task":task_ref,"proposal":i["proposal"],"mode":i["authority"]["mode"],"configuration":i["workspace"]["configuration"],"parent":i["prerequisites"][0],"actor":"fixture-actor","objective":"fixture-objective","job_sha256":job,"native_executable_sha256":exe,"transport_sha256":transport.sha256(),"expires_at":(now+time::Duration::minutes(15)).format(&Rfc3339).unwrap()});
+        let lifetime = if keep {
+            std::env::var("PI_FIXTURE_LIFETIME_SECONDS")
+                .ok()
+                .map(|v| time::Duration::seconds(v.parse().unwrap()))
+        } else {
+            None
+        }
+        .unwrap_or(time::Duration::minutes(15));
+        let profile = json!({"schema":PROFILE,"classification":"fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker","task":task_ref,"proposal":i["proposal"],"mode":i["authority"]["mode"],"configuration":i["workspace"]["configuration"],"parent":i["prerequisites"][0],"actor":"fixture-actor","objective":"fixture-objective","job_sha256":job,"native_executable_sha256":exe,"transport_sha256":transport.sha256(),"expires_at":(now+lifetime).format(&Rfc3339).unwrap()});
         put(&dir.join("profile.json"), profile.to_string());
         let mut f = Self {
             pin: Pin {
@@ -327,6 +335,12 @@ fn export_signed_pi_fixture() {
     let job = std::env::var("PI_FIXTURE_JOB_SHA").unwrap();
     let executor = std::env::var("PI_FIXTURE_EXECUTOR_SHA").unwrap();
     let f = Fixture::new(Some(PathBuf::from(out)), &job, &executor);
+    let p: Profile =
+        serde_json::from_slice(&std::fs::read(f.dir.join("profile.json")).unwrap()).unwrap();
+    put(
+        &f.dir.join("export-clock.json"),
+        json!({"profile_expires_unix":utc(&p.expires_at).unwrap().unix_timestamp()}).to_string(),
+    );
     put(
         &f.dir.join("descriptor-pin.json"),
         serde_json::to_vec(&f.pin).unwrap(),
@@ -468,5 +482,123 @@ fn explicit_pi_review_variant_rejects_generic_codex_and_widened_effects() {
         let mut task: Value = serde_json::from_str(&f.rows[0]).unwrap();
         task["data"]["intent"][section][field] = value;
         assert!(crate::validate_review(&task.to_string()).is_err());
+    }
+}
+
+// The pinned board program changes its export at an exact acquisition count,
+// after initial ingestion and before the transaction's signed-head fetch.
+#[test]
+fn transactional_denials_retain_new_signed_head_without_action_writes() {
+    for (boundary, switch_at) in [
+        ("prepare", 3),
+        ("post_fence", 5),
+        ("seal", 3),
+        ("claim", 5),
+        ("action", 2),
+    ] {
+        let mut f = Fixture::new(None, &"a".repeat(64), &exe());
+        let active = std::fs::read(f.dir.join("board.json")).unwrap();
+        f.control(if boundary == "action" {
+            "active"
+        } else {
+            "revoked"
+        });
+        put(
+            &f.dir.join("revoked.json"),
+            std::fs::read(f.dir.join("board.json")).unwrap(),
+        );
+        put(&f.dir.join("board.json"), &active);
+        let script = format!(
+            "from pathlib import Path\np=Path({dir:?})\nc=p/'count'\nn=int(c.read_text())+1 if c.exists() else 1\nc.write_text(str(n))\ns=int((p/'switch').read_text()) if (p/'switch').exists() else 999999\nprint((p/('revoked.json' if n>=s else 'board.json')).read_text())",
+            dir = f.dir.to_str().unwrap()
+        );
+        put(&f.dir.join("board.py"), script);
+        let mut config: Value =
+            serde_json::from_slice(&std::fs::read(f.dir.join("admission-config.json")).unwrap())
+                .unwrap();
+        config["sources"]["board"]["script"] =
+            serde_json::to_value(pin(f.dir.join("board.py"))).unwrap();
+        put(&f.dir.join("admission-config.json"), config.to_string());
+        let mut d = descriptor(&f.pin).unwrap();
+        d.config = pin(f.dir.join("admission-config.json"));
+        put(&f.pin.path, serde_json::to_vec(&d).unwrap());
+        f.pin = pin(f.pin.path.clone());
+        let o = f.owner();
+        if boundary != "claim" {
+            o.admit(&"a".repeat(64), &exe()).unwrap();
+        }
+        if boundary == "seal" {
+            drop(o.enter(Effect::Allocation).unwrap());
+        }
+        put(&f.dir.join("count"), "0");
+        put(&f.dir.join("switch"), switch_at.to_string());
+        let action_db = f.db();
+        let denied = match boundary {
+            "action" => o.action(&action_db, || {
+                action_db
+                    .execute("UPDATE outbox SET state='unknown'", [])
+                    .unwrap();
+                Err("injected_action_denial")
+            }),
+            "claim" => o.admit(&"a".repeat(64), &exe()).map(|_| ()),
+            "seal" => o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001"),
+            _ => o.enter(Effect::Allocation).map(drop),
+        };
+        assert_eq!(
+            denied,
+            Err(if boundary == "action" {
+                "injected_action_denial"
+            } else {
+                "pi_current_authority"
+            }),
+            "{boundary}"
+        );
+        let db = f.db();
+        let generation: i64 = db
+            .query_row("SELECT max(generation) FROM scoped_control", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(generation, 2, "{boundary}");
+        let effects: i64 = db
+            .query_row("SELECT count(*) FROM pi_effect", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(
+            effects,
+            i64::from(boundary == "post_fence" || boundary == "seal"),
+            "{boundary}"
+        );
+        let sealed: i64 = db
+            .query_row(
+                "SELECT count(*) FROM pi_claim WHERE native_id IS NOT NULL",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(sealed, 0, "{boundary}");
+        if boundary == "action" {
+            let state: String = db
+                .query_row("SELECT state FROM outbox", [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(
+                state, "pending",
+                "failed action must roll back allocation mutation"
+            );
+        }
+        if boundary == "claim" {
+            let claims: i64 = db
+                .query_row("SELECT count(*) FROM pi_claim", [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(claims, 0);
+        }
+        // Restore the old export: no path may resurrect the revoked authority.
+        put(&f.dir.join("switch"), "999999");
+        assert!(o.enter(Effect::Allocation).is_err(), "{boundary}");
+        assert!(o.admit(&"a".repeat(64), &exe()).is_err(), "{boundary}");
+        assert!(
+            o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+                .is_err(),
+            "{boundary}"
+        );
     }
 }
