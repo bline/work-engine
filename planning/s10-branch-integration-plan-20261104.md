@@ -1,7 +1,7 @@
 # S10 and connector branch integration queue
 
 Date: 2026-11-04. Status: proposed merge plan, based on local Git and owner state
-at approximately 21:17 UTC. The user requested a merge plan; no shared-branch
+at approximately 21:17 UTC, with owner standing refreshed through board 4401. The user requested a merge plan; no shared-branch
 merge, push, deletion, deployment or implementation launch has been performed.
 
 ## Decision
@@ -45,7 +45,7 @@ The CLI branch also overlaps both dirty workspace Cargo files.
 | 1 | `implement/pi-context-observer-20261104` | Ready for an explicitly authorized merge of the pinned branch. Source commit `6f0ecd4c` is independently accepted; the separate planning commit `c2f1b21e` records a proposal, not implementation authority. The preflight dry merge into `d86df598` was clean, and its eight incoming paths had no overlap with the shared dirty checkout. This queue document is a later proposal-only addition on that same branch. Re-pin its final tip before merge. |
 | 2 | Signed-Pi/delivery lineage | Hold until the current backend owner finishes repair, independent recheck and final acceptance, then supplies the exact final commit and full publication delta. Current observed branch `private/dot-signed-pi-fixture-20261104` at `44ed91c2` is not yet accepted. Integrate its accepted lineage once, rather than merging each ancestor as a separate feature. |
 | 3 | `implement/rust-shared-cli-read-20261104` | Hold until the query owner supplies final qualification/review acceptance and a frozen tip. It was actively changing during this read-only audit (`ce237f04` to `2fe2de43`); neither observation is a final publication pin. Reconcile its Cargo changes with the accepted backend tree. |
-| 4 | AH application server | Planning only, owned by `01a1a862-034f-7750-b86b-de29e11cf327`. It should consume the accepted runtime/query boundaries and eventual common integration base. No AH implementation merge exists to schedule from this preflight. |
+| 4 | AH application server | AH1 was separately approved at 21:17:41 UTC for $25/2 hours; its owner `01a1a862-034f-7750-b86b-de29e11cf327` is doing dependency preflight and awaits the final accepted query handoff (board 4400). It should consume the accepted runtime/query boundaries and eventual common integration base. No AH implementation merge exists to schedule from this preflight. |
 | Separate audit | Older planning, exploration and legacy runtime branches | Retain until their owners identify accepted, superseded, imported or still-needed content. Patch equivalence is evidence for avoiding duplicate changes, not deletion or abandonment authority. |
 
 The backend and CLI merge order may be exchanged if final owner evidence makes
