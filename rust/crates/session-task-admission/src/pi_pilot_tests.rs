@@ -754,5 +754,9 @@ fn export_signed_pi_subscription() {
     let job = std::env::var("PI_SUBSCRIPTION_JOB_SHA").unwrap();
     let executor = std::env::var("PI_SUBSCRIPTION_EXECUTOR_SHA").unwrap();
     let f = Fixture::new_kind(Some(PathBuf::from(out)), &job, &executor, true);
+    put(
+        &f.dir.join("descriptor-pin.json"),
+        serde_json::to_vec(&f.pin).unwrap(),
+    );
     put(&f.dir.join("ui-golden-vectors.json"), json!({"standing":"synthetic owner signing/identity only; subscription backend candidate; no live qualification","schema":"dot.task-intent/pi-coding-subscription-v1","persistent_write_paths":["src/lib.rs"],"network":"inference fixed subscription adapter; tool/validator none","descriptor":descriptor(&f.pin).unwrap(),"profile_json":std::fs::read_to_string(f.dir.join("profile.json")).unwrap(),"signed_rows":f.rows}).to_string());
 }
