@@ -16,7 +16,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-const OWNER_SHA: &str = "e4ceb6d7f5f7685f8c9c0ad84ce7ddd54fd1dc6bae8cc71f35be86373e53c716";
+const OWNER_SHA: &str = "5095b4b7c6ed3ab23a92b6763253c45409a3abbdbcb0223e3a0a93feac736739";
 const HELPER: &str = include_str!("../owner.py");
 const OWNER_LIMIT: usize = 512 * 1024;
 pub const INPUT_LIMIT: usize = 256 * 1024;

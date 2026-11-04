@@ -8,7 +8,7 @@ Create a private mode `0600` JSON profile owned by the invoking user. All paths 
 {
   "version": 1,
   "owner": "/absolute/path/to/session_events.py",
-  "owner_sha256": "e4ceb6d7f5f7685f8c9c0ad84ce7ddd54fd1dc6bae8cc71f35be86373e53c716",
+  "owner_sha256": "5095b4b7c6ed3ab23a92b6763253c45409a3abbdbcb0223e3a0a93feac736739",
   "codex_home": "/absolute/path/to/local/codex",
   "claude_home": "/absolute/path/to/local/claude",
   "state_dir": "/absolute/path/to/private/session-events-state",
@@ -24,3 +24,5 @@ Run `work-engine-query profile.json list_sessions --json -` and provide `{}` on 
 The test fixture seeds disposable existing bridge records directly; it does not submit a request or contact a provider. Its protocol-responder tests exercise transport behavior but do not stand in for bridge authorization checks. No real user credentials are needed.
 
 Remove or replace this adapter when the accepted A3 session-owned Rust query implementation takes over the compositor and preserves the granted operation and result semantics; this adapter does not authorize that replacement. The bridge's existing own path validation and reconciliation remain its responsibility, including its existing check/use properties.
+
+For `read_session`, `text_offset` and `max_chars` count characters in the original entry. When a window boundary falls inside a recognized credential, the owner expands that boundary to the whole credential and returns a redaction marker. Adjacent windows may therefore repeat the marker; advance using original-entry offsets. `entryChars` is the original length, `textTruncated` reports whether original text remains after the expanded end, and `redactions` counts markers in the returned window. Beyond the end, the result is empty and not truncated. Human output escapes terminal control characters; JSON preserves the owner’s string representation.

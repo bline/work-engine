@@ -2833,11 +2833,14 @@ def read_session(homes: Homes, session_id: Any, entry_id: Any = None, before: An
     titles = Titles(homes)
     rows = []
     for entry in chosen:
-        piece = entry.text[text_offset if entry_id is not None and entry.entry_id == str(entry_id) else 0:]
-        text, redactions = redact(piece[:max_chars])
+        start = min(len(entry.text), text_offset if entry_id is not None and entry.entry_id == str(entry_id) else 0)
+        end = min(len(entry.text), start + max_chars)
+        # Identify secrets in the original entry before selecting a window. If a
+        # boundary cuts a secret, render expands to its full span and replaces it.
+        window = render(entry.text, start, end, (start, start), secret_spans(entry.text))
         rows.append({"entryId": entry.entry_id, "role": entry.role, "tool": entry.tool,
-                     "timestamp": entry.timestamp, "text": text, "entryChars": len(entry.text),
-                     "textTruncated": len(piece) > max_chars, "redactions": redactions})
+                     "timestamp": entry.timestamp, "text": window.text, "entryChars": len(entry.text),
+                     "textTruncated": window.end < len(entry.text), "redactions": window.redactions})
     result = {"host": session.host, "sessionId": session.session_id, "sessionTitle": safe_title(titles.title(session), None),
               "entries": rows}
     titles.save()

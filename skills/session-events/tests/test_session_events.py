@@ -348,6 +348,40 @@ class McpSurface(Fixture):
         self.assertTrue(call("read_session", session_id="bad")["isError"])
 
 
+    def test_read_session_redacts_before_original_offset_windows(self):
+        secret = "webridge_" + "A" * 43
+        text = "x" * 3980 + secret + "z" * 200
+        entry_id = str(self.codex_path.stat().st_size)
+        self.append(self.codex_path, message("assistant", text))
+
+        def read(**arguments):
+            result = self.rpc("tools/call", {"name": "read_session", "arguments": {
+                "session_id": CODEX_ID, "entry_id": entry_id, **arguments}})["result"]
+            return result["structuredContent"]["entries"][0]
+
+        default = read()
+        self.assertEqual(default["entryId"], entry_id)
+        self.assertEqual(default["text"], "x" * 3980 + "[REDACTED:bridge_credential]")
+        self.assertEqual((default["entryChars"], default["textTruncated"], default["redactions"]),
+                         (len(text), True, 1))
+        # The default cut, an offset inside the secret and both touching edges
+        # all count original characters and never expose complementary fragments.
+        for offset in (3900, 3980, 3990, 4000, 4031):
+            row = read(text_offset=offset, max_chars=100)
+            self.assertNotIn("webridge_", row["text"])
+            self.assertNotIn("A" * 12, row["text"])
+            self.assertIn("[REDACTED:bridge_credential]", row["text"])
+            self.assertEqual(row["redactions"], 1)
+        after = read(text_offset=4032, max_chars=100)
+        self.assertEqual((after["text"], after["redactions"], after["textTruncated"]), ("z" * 100, 0, True))
+        past = read(text_offset=len(text) + 10, max_chars=100)
+        self.assertEqual((past["text"], past["redactions"], past["textTruncated"]), ("", 0, False))
+        harmless = read(text_offset=100, max_chars=100)
+        self.assertEqual((harmless["text"], harmless["redactions"], harmless["textTruncated"]), ("x" * 100, 0, True))
+        whole = read(text_offset=3980, max_chars=100)
+        self.assertEqual(whole["text"], "[REDACTED:bridge_credential]" + "z" * 48)
+
+
 class Delivery(Fixture):
     def test_delivers_matches_in_order_with_watermark_cursor(self):
         identifier = self.subscribe()["result"]["id"]

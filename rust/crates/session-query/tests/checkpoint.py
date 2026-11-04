@@ -18,6 +18,7 @@ gid='33333333-3333-4333-8333-333333333333'
 opid='44444444-4444-4444-8444-444444444444'
 turn='55555555-5555-4555-8555-555555555555'
 token='webridge_'+'A'*43
+controls='benign Ω '+chr(27)+'[2J'+chr(27)+']52;c;Zm9v'+chr(7)+'\r\b'+chr(0x9b)+' done'
 with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
     t = pathlib.Path(tmp); t.chmod(0o700)
     c, cl, state = (t / n for n in ('codex', 'claude', 'state'))
@@ -25,9 +26,10 @@ with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
     locks=t/'locks'; locks.mkdir(mode=0o700)
     path = c / ('sessions/2026/01/01/rollout-fixture-'+sid+'.jsonl'); path.parent.mkdir(parents=True)
     records = [{'type':'session_meta','timestamp':'2026-01-01T00:00:00Z','payload':{'cwd':str(workspace),'timestamp':'2026-01-01T00:00:00Z'}},
-      {'type':'response_item','timestamp':'2026-01-01T00:00:01Z','payload':{'type':'message','role':'user','content':[{'type':'input_text','text':'fixture '+token}]}},
-      {'type':'event_msg','timestamp':'2026-01-01T00:00:02Z','payload':{'type':'task_complete','turn_id':turn,'last_agent_message':'complete '+token}}]
+      {'type':'response_item','timestamp':'2026-01-01T00:00:01Z','payload':{'type':'message','role':'user','content':[{'type':'input_text','text':'fixture '+token+' '+controls}]}},
+      {'type':'event_msg','timestamp':'2026-01-01T00:00:02Z','payload':{'type':'task_complete','turn_id':turn,'last_agent_message':'complete '+token+' '+controls}}]
     path.write_text(''.join(json.dumps(r)+'\n' for r in records)); os.utime(path,(1767225600,1767225600))
+    (c/'session_index.jsonl').write_text(json.dumps({'id':sid,'thread_name':'title '+controls})+'\n')
     config=t/'config.json'; db=t/'state.sqlite'; binary=t/'bridge'; shutil.copyfile(bridge_exe,binary); binary.chmod(0o700)
     init=subprocess.run([str(binary),'--config',str(config),'store','init','--database',str(db),'--lock-dir',str(locks),'--native-socket',str(t/'unused.sock')],capture_output=True,check=True,timeout=10)
     assert json.loads(init.stdout)['ok'], init.stdout
@@ -57,6 +59,30 @@ with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
         if name=='read_session_operation': assert v['entry_state']=='terminal' and v['native_status']=='completed' and v['workers']['available'] is False and v['process_closure']['available'] is False and v['usage']['available'] is False
         if name=='read_session_result': assert v['operation']['operation_id']==opid and v['completion']['status']=='completed' and v['result']['available'] and '[REDACTED:bridge_credential]' in v['result']['text'] and not v['usage']['available'] and not v['process_closure']['available']
         print(name,'matches actual MCP and assertions')
+    # Actual human rendering escapes C0/C1/ESC while JSON retains the owner text.
+    for name,args in [('list_sessions',{}),('read_session',{'session_id':sid}),('read_session_result',{'request_id':req,'grant_credential':token})]:
+        human=cli(name,args,fmt='--human')
+        assert 'benign Ω ' in human and 'done' in human
+        assert all((ord(ch)>=32 and not 0x7f<=ord(ch)<=0x9f) or ch=='\n' for ch in human)
+        assert r'\u{1b}' in human and r'\r' in human and r'\u{8}' in human
+        data=cli(name,args)['result']
+        field=data['sessions'][0]['title'] if name=='list_sessions' else data['entries'][0]['text'] if name=='read_session' else data['result']['text']
+        assert controls in field
+    # Original-entry offsets remain stable at secret boundaries, including the default cut.
+    boundary='x'*3980+token+'z'*200
+    entry_id=str(path.stat().st_size)
+    with path.open('a') as f:
+        f.write(json.dumps({'type':'response_item','timestamp':'2026-01-01T00:00:03Z','payload':{'type':'message','role':'user','content':[{'type':'input_text','text':boundary}]}})+'\n')
+    for offset in (0,3900,3980,3990,4000,4031,4032,len(boundary)+5):
+        args={'session_id':sid,'entry_id':entry_id,'text_offset':offset}
+        direct=server.call_tool({'name':'read_session','arguments':args})['structuredContent']
+        actual=cli('read_session',args)['result']
+        assert actual==direct and actual['entries'][0]['entryId']==entry_id
+        text=actual['entries'][0]['text']; assert 'webridge_' not in text and 'A'*12 not in text
+        if offset in (0,3900,3980,3990,4000,4031): assert '[REDACTED:bridge_credential]' in text
+        if offset==4032: assert text=='z'*200 and not actual['entries'][0]['textTruncated']
+        if offset>len(boundary): assert text=='' and not actual['entries'][0]['textTruncated']
+    print('human terminal controls escaped; JSON and secret-boundary MCP parity preserved')
     # An explicitly configured real context reaches the same owner projection.
     role=t/'role-ledger.jsonl'; role.write_text(json.dumps({'event':'launch','session_id':'66666666-6666-4666-8666-666666666666','parent_session_id':sid,'host':'codex','name':'fixture-worker'})+'\n')
     profile['context']={'budget_root':None,'role_ledger':str(role),'ledger_path':None,'ledger_sha256':None}

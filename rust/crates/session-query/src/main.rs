@@ -59,6 +59,18 @@ fn run(args: &[String]) -> Result<Value, &'static str> {
     let query = Query::parse(&args[2], arguments)?;
     session_query::query(&profile, &query)
 }
+fn safe_human(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(|c| {
+            if c.is_control() {
+                c.escape_default().to_string().chars().collect::<Vec<_>>()
+            } else {
+                vec![c]
+            }
+        })
+        .collect()
+}
 fn human(name: &str, v: &Value) {
     match name {
         "list_sessions" => {
@@ -74,29 +86,32 @@ fn human(name: &str, v: &Value) {
                 for r in rows {
                     println!(
                         "{}  {}  {}",
-                        r["sessionId"].as_str().unwrap_or("?"),
-                        r["host"].as_str().unwrap_or("?"),
-                        r["title"].as_str().unwrap_or("")
+                        safe_human(r["sessionId"].as_str().unwrap_or("?")),
+                        safe_human(r["host"].as_str().unwrap_or("?")),
+                        safe_human(r["title"].as_str().unwrap_or(""))
                     );
                 }
             }
         }
         "read_session" => {
-            println!("Session {}", v["sessionId"].as_str().unwrap_or("?"));
+            println!(
+                "Session {}",
+                safe_human(v["sessionId"].as_str().unwrap_or("?"))
+            );
             if let Some(rows) = v["entries"].as_array() {
                 for r in rows {
                     println!(
                         "{}: {}",
-                        r["role"].as_str().unwrap_or("?"),
-                        r["text"].as_str().unwrap_or("")
+                        safe_human(r["role"].as_str().unwrap_or("?")),
+                        safe_human(r["text"].as_str().unwrap_or(""))
                     );
                 }
             }
         }
         "read_session_operation" => println!(
             "Operation {}: {}",
-            v["operation_id"].as_str().unwrap_or("?"),
-            v["entry_state"].as_str().unwrap_or("unknown")
+            safe_human(v["operation_id"].as_str().unwrap_or("?")),
+            safe_human(v["entry_state"].as_str().unwrap_or("unknown"))
         ),
         "read_session_result" => {
             println!(
@@ -108,7 +123,7 @@ fn human(name: &str, v: &Value) {
                 }
             );
             if let Some(s) = v["result"]["text"].as_str() {
-                println!("{s}");
+                println!("{}", safe_human(s));
             }
         }
         _ => {}
