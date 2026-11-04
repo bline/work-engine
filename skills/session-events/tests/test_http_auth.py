@@ -228,6 +228,12 @@ class AuthHttp(Fixture):
             self.assertEqual(self.request(msg,token)[0],status)
         self.assertEqual(seen,[])
         good = self.token()
+        discovery = {"jsonrpc":"2.0", "id":"openai-mcp-discover", "method":"server/discover"}
+        self.assertEqual(self.request(discovery)[0], 401)
+        status, _, body = self.request(discovery, good)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["error"]["code"], -32601)
+        self.assertEqual(seen, [])
         self.assertEqual(self.request(msg,good)[0],200)
         self.assertEqual(seen,[("observe",self.server.principal)])
         for name in ("submit_session_request", "create_session_target", "issue_session_request_grant", "delivery_ack"):

@@ -3283,6 +3283,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
                 return
             if observation_only:
                 allowed = (_public_http_operation(message) or isinstance(message, dict) and
+                           message.get("jsonrpc") == "2.0" and message.get("method") == "server/discover" or isinstance(message, dict) and
                            message.get("method") == "tools/call" and isinstance(message.get("params"), dict) and
                            isinstance(message["params"].get("name"), str) and
                            message["params"].get("name") in {t["name"] for t in OBSERVATION_TOOLS})
