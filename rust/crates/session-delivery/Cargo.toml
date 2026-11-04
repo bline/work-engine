@@ -15,3 +15,4 @@ rusqlite = { version = "=0.37.0", features = ["bundled"] }
 
 [dev-dependencies]
 tempfile = "=3.27.0"
+work-engine-manual-host = { path = "../work-engine-manual-host" }

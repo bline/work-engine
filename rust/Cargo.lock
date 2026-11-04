@@ -2489,6 +2489,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror",
+ "work-engine-manual-host",
 ]
 
 [[package]]

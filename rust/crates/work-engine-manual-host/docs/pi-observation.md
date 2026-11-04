@@ -164,3 +164,9 @@ constraints; the service-side after-readiness envelope publication owner;
 provider-disabled containment and the single additional shim mount; raw process,
 native-history and daemon exports; bounded reconciliation and receipt collection.
 Only an exact subsequently reviewed immutable probe grant may admit those effects.
+
+The fixture-only `session-delivery` `pressure_release observe-ack JOB STARTUP`
+example composes this Host in the same executable and joins freshly verified
+native proof to the prepared Store ACK. Its operator contract and failure limits
+are in `../../session-delivery/docs/pressure-release-pilot.md`. Host receipt
+delivery ACK and service `target_observed` remain separate operations.

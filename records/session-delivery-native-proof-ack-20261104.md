@@ -1,0 +1,7 @@
+# Pressure producer to actual Pi observation checkpoint
+
+One synthetic pressure event, produced by the pinned real reader, reached an actual contained Pi1.5 SDK session. Native message event, messages, SDK history and final process stdout proved the exact envelope; the service committed `target_observed` for one attempt. The native receipt was separately acknowledged. All seven owned processes exited successfully and the exact Docker container was removed and independently observed absent.
+
+The new same-process join reuses existing Host custody and Store ACK owners. Missing or conflicting proof remains unknown; custody-only recovery cannot send or advance service ACK. Independent Astra review found two P2 defects (concurrent input overwrite and early expiry timestamp). Root repaired both and ran seven focused Rust tests plus an eight-invocation concurrency regression with no leftovers. The original reject verdict remains recorded; this checkpoint does not claim a second independent approval.
+
+Proof and exact source/evidence references are in the adjacent JSON. Native JSONL was absent; history is explicitly an SDK snapshot. No provider inference, cognition, task/action authority, Dot/MCP route, production deployment or main-branch integration was qualified. Previous broad legacy test timeouts remain outside these focused claims. Budget snapshot precedes final closure; canonical final accounting lives in the referenced objective directory.

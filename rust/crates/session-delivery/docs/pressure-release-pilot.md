@@ -38,8 +38,7 @@ The helper selects the single retained Event, uses the actual ready session in a
 new fully validated Binding, subscribes and calls Store.prepare once. It publishes
 immutable files with exclusive hard links after syncing their contents. A crash
 or failed publication after prepare leaves the attempt prepared/unknown and held;
-rerunning cannot prepare or send again. Root must reconcile that attempt. No ACK
-is written by this helper. Publication and send acceptance are not target proof.
+rerunning cannot prepare or send again. Root must reconcile that attempt. The source/release phases never ACK. Publication and send acceptance are not target proof.
 Use the official owning Host receipt verification and evidence boundary described
 in `work-engine-manual-host/docs/pi-observation.md`: exact job, session, attempt,
 payload, native message_end, SDK messages and native history snapshot, plus daemon
@@ -61,6 +60,50 @@ these commands were not run here. Receipt ACK verifies the receipt and artifact
 hashes and acknowledges receipt delivery only. The component owner must match
 its verified receipt's job, input digest, container and native session, receiver
 observation, release-intent envelope and exact Event/attempt/payload against the
-prepared Store record and review the native proof and daemon closure. No command
-in this pilot converts that result into a delivery ACK. Root must arrange an
-owner-reviewed Store.ack operation after those checks; until then leave it held.
+prepared Store record and review the native proof and daemon closure. The `observe-ack` composition below joins that result without treating receipt-delivery
+ACK as service observation. The separate Host receipt ACK remains an operator operation.
+
+## Callable native proof to Store ACK composition
+
+Build the example once and pin that executable in the immutable pilot admission.
+Only after Root admits the exact job, launch this **instead of** launching the
+standalone manual-host executable:
+
+```sh
+pressure_release observe-ack /absolute/pinned-job.json /absolute/trusted-startup.json
+```
+
+This phase performs runtime effects through the existing Pi Host. Source/fake
+qualification does not authorize running it. The example calls `Host::admit` and
+`Host::run` itself, preserving Host's current-executable custody binding and
+using its native stdout/events/messages/history verifier in the same process.
+It accepts no asserted receipt file, success flag, or hand-authored ACK. The
+standalone host's state cannot be imported as proof into this executable.
+An already admitted job refuses another launch. Failure/crash/unknown does not
+retry or resend, including when native proof exists but the Store ACK did not
+commit. Root retains reconciliation of such unknowns; this helper supplies no
+post-crash ACK recovery claim.
+
+While that process waits at native readiness, the trusted operator finalizes
+startup with exact job input digest, actual container, ready digest and deadline,
+then invokes the existing `release` phase in another process using that same
+startup and Store. Startup, job and all output paths must remain private and
+operator-owned; filesystem write access is not human identity or action authority.
+Do not rewrite startup after release. The composition reads it after Host run
+returns, checks its identity against the admitted job, ready projection, recipient
+constraints, immutable event, release intent and exact prepared envelope, and
+revalidates pinned inputs, complete runtime/workspace inventories, final stdout,
+Host receipt artifacts and successful cleanup before calling `Store::ack`.
+Store validates attempt, principal, binding generation, payload and expiry and
+owns the durable `target_observed` transition. Exact repeats within the retained
+composition are idempotent; no send API is called by the ACK path.
+
+This remains one fixture-only observation. It asserts neither cognition nor
+application, native JSONL persistence, task completion, effect settlement, human
+identity, or action authority. The SDK history snapshot retains its existing
+meaning. Missing, altered, incomplete or unknown proof leaves Store Unknown.
+The `native_ack_fixture` test executable is explicitly fake and operator-owned;
+it emits protocol fixtures and composes the existing fake daemon without importing
+Pi, contacting a provider, or executing Docker. It is not a production driver.
+
+The successful same-process join also acknowledges delivery of the exact native Host receipt, separately from Store target observation. If the owned process fails, `pressure_release custody-reconcile /absolute/STATE` uses the same executable pin to finish existing daemon custody only. It never creates, starts, sends, imports proof or advances a Store ACK. An unknown result remains held.
