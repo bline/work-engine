@@ -3395,6 +3395,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-server"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "session-query",
+ "sha2",
+ "tokio",
+]
+
+[[package]]
 name = "work-engine-task-host"
 version = "0.1.0"
 dependencies = [

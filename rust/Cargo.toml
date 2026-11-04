@@ -4,6 +4,7 @@ members = [
   "crates/session-task-admission",
   "crates/session-delivery",
   "crates/session-query",
+  "crates/work-engine-server",
   "crates/session-bridge",
   "crates/mcp-auth",
   "crates/review-workflow",
