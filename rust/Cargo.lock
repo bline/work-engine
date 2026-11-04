@@ -3377,6 +3377,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-query"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "session-query",
+ "work-engine-server",
+]
+
+[[package]]
 name = "work-engine-review-host"
 version = "0.1.0"
 dependencies = [
