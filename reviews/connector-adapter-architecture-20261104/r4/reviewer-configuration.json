@@ -1,0 +1,30 @@
+{
+  "limitations": [
+    "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+    "Successor settings must be observed after launch and adoption; arguments are a request.",
+    "Runtime configuration does not establish backend fulfillment or billing."
+  ],
+  "model": "gpt-6-astra",
+  "preservation": "launch_arguments_available",
+  "reasoning_effort": "high",
+  "recorded_cli_version": "0.166.0",
+  "service_tier": "default",
+  "session_id": "01a1a857-cb13-7bd0-9d96-3d84c9d8770b",
+  "source": {
+    "event_sha256": "31e2df0d6b93852dfe0878138ae727516e4d0b454ae8361df182abca5107e7a9",
+    "line": 12,
+    "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T13-54-49-01a1a857-cb13-7bd0-9d96-3d84c9d8770b.jsonl",
+    "timestamp": "2026-11-04T20:54:50.617Z"
+  },
+  "successor_host_args": [
+    "-m",
+    "gpt-6-astra",
+    "-c",
+    "model_reasoning_effort=\"high\"",
+    "-c",
+    "service_tier=\"default\""
+  ],
+  "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+  "turn_attribution": "latest_session_observation",
+  "turn_id": null
+}

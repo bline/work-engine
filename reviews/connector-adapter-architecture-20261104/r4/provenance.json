@@ -1,0 +1,65 @@
+{
+  "reviewer_session": "01a1a857-cb13-7bd0-9d96-3d84c9d8770b",
+  "turn_id": "01a1a857-ce74-7ea0-bf93-07a9ed64e261",
+  "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T13-54-49-01a1a857-cb13-7bd0-9d96-3d84c9d8770b.jsonl",
+  "final_line": 111,
+  "final_event_sha256": "a42e2adff1256278abd8cd60ce9a3e8af88c3cda6a38f62e33e5bf9cb8983768",
+  "final_text_sha256": "d967dc0058a506d1829c49c598415e3c14950e1ef2d97fc5c45cf88e616a5443",
+  "report_sha256": "0744fed70aa569d51d4f5c56cb1195c6a54fbf75ab135aa73caeaa0450e87a3e",
+  "requested": {
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "service_tier": "default",
+    "sandbox": "read-only"
+  },
+  "observed_settings": {
+    "limitations": [
+      "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+      "Successor settings must be observed after launch and adoption; arguments are a request.",
+      "Runtime configuration does not establish backend fulfillment or billing."
+    ],
+    "model": "gpt-6-astra",
+    "preservation": "launch_arguments_available",
+    "reasoning_effort": "high",
+    "recorded_cli_version": "0.166.0",
+    "service_tier": "default",
+    "session_id": "01a1a857-cb13-7bd0-9d96-3d84c9d8770b",
+    "source": {
+      "event_sha256": "31e2df0d6b93852dfe0878138ae727516e4d0b454ae8361df182abca5107e7a9",
+      "line": 12,
+      "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T13-54-49-01a1a857-cb13-7bd0-9d96-3d84c9d8770b.jsonl",
+      "timestamp": "2026-11-04T20:54:50.617Z"
+    },
+    "successor_host_args": [
+      "-m",
+      "gpt-6-astra",
+      "-c",
+      "model_reasoning_effort=\"high\"",
+      "-c",
+      "service_tier=\"default\""
+    ],
+    "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+    "turn_attribution": "latest_session_observation",
+    "turn_id": null
+  },
+  "observed_turn_context": {
+    "turn_id": "01a1a857-ce74-7ea0-bf93-07a9ed64e261",
+    "line": 11,
+    "event_sha256": "f5be9bfba4f130bbd5047f83251f5af0bc26bb272a05fe417f2dbee951e4ac25",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "sandbox_policy": {
+      "type": "read-only"
+    },
+    "approval_policy": "never"
+  },
+  "native_terminal_events": [
+    {
+      "turn_id": "01a1a857-ce74-7ea0-bf93-07a9ed64e261",
+      "type": "task_complete",
+      "line": 114,
+      "event_sha256": "1706424f0a4b1cbc1e8f3add70ac7357e1502b4f8563a95fa268439c43da8268"
+    }
+  ],
+  "review_context": "Fresh replacement for bounded AH amendment. Earlier accepted reports support unchanged regions. No uninterrupted continuity/fullsource-rerun/crossprovider claim."
+}

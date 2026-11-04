@@ -1,20 +1,21 @@
 {
   "status": "reviewed_candidate_ready",
-  "plan_revision": 3,
+  "plan_revision": 4,
   "plan": "/home/bline/code/work-engine/planning/connector-adapter-architecture-plan-20261104.md",
-  "plan_sha256": "360e8fee417efe52dbab03489b5ab7ff21a808e854f9e41f06694a5d69fea65e",
+  "plan_sha256": "026fca8e02c317fa60997d20a04c71625f006e8194aad00584a751e634765da9",
   "review_verdict": "accept",
-  "review_report": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r3/report.json",
-  "review_report_sha256": "063b4e8eb3d733359ccf1f8a62325b33e83336493dae0ef60ac6ae9e9e6f6be7",
-  "reviewer_session": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+  "review_report": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r4/report.json",
+  "review_report_sha256": "0744fed70aa569d51d4f5c56cb1195c6a54fbf75ab135aa73caeaa0450e87a3e",
+  "reviewer_session": "01a1a857-cb13-7bd0-9d96-3d84c9d8770b",
   "requested_and_observed": {
     "model": "gpt-6-astra",
     "effort": "high",
     "service_tier": "default"
   },
   "findings": [],
-  "prior_accepted_decision": "r2/decision.json",
-  "prior_accepted_subject_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469",
-  "root_disposition": "User-requested Web replacement/conformance amendment is ready. Existing narrower work retains its scope; review does not authorize implementation, trust migration or deployment.",
+  "nonblocking_observations": 3,
+  "prior_accepted_decision": "r3/decision.json",
+  "prior_accepted_subject_sha256": "360e8fee417efe52dbab03489b5ab7ff21a808e854f9e41f06694a5d69fea65e",
+  "root_disposition": "User-requested AH thin application-server package and proposed allocation ready for notification. Requires separately admitted implementation; existing backend/query/S10 grants unchanged.",
   "implementation_performed": false
 }

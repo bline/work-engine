@@ -1,0 +1,36 @@
+{
+  "recorded_at": "2026-11-04T20:53:53.617745+00:00",
+  "tier": 2,
+  "graph": {
+    "project": "home-bline-code-work-engine",
+    "index_generation": "2026-11-04T20:32:02Z",
+    "store_generation": "ud98cfa1f43d3df5fg2",
+    "coverage": "four selected paths no recorded issue; exact Host.run snippet/call list previously checked; not exhaustive or new runtime qualification"
+  },
+  "rows": [
+    {
+      "source": "/home/bline/code/work-engine/rust/crates/work-engine-manual-host/src/main.rs",
+      "snapshot": "evidence/rust/crates/work-engine-manual-host/src/main.rs",
+      "sha256": "6ca2fa5d04999b4f39c7cfc6cacc59a3fad3b5605975a8e8eb205d4c8c6b0f9d",
+      "mode": "direct_bytes; graph_no_recorded_issue_for_selected_path"
+    },
+    {
+      "source": "/home/bline/code/work-engine/rust/crates/work-engine-manual-host/src/pi_docker.rs",
+      "snapshot": "evidence/rust/crates/work-engine-manual-host/src/pi_docker.rs",
+      "sha256": "1d601ce0d31d86e9bf8d52e0ce6ff7f6ad9c5177653f6ea444b42255a8a231fd",
+      "mode": "direct_bytes; graph_no_recorded_issue_for_selected_path"
+    },
+    {
+      "source": "/home/bline/code/work-engine/records/rust-lifecycle-s10-pi-docker-real-coding-result-20261104.md",
+      "snapshot": "evidence/records/rust-lifecycle-s10-pi-docker-real-coding-result-20261104.md",
+      "sha256": "d655097188e6931fa2a6e838b53b7ec0dbdf424059e6678445dbe038655abe92",
+      "mode": "direct_bytes; graph_no_recorded_issue_for_selected_path"
+    },
+    {
+      "source": "/home/bline/code/work-engine/records/rust-lifecycle-s10-pi-docker-host-component-result-20261103.md",
+      "snapshot": "evidence/records/rust-lifecycle-s10-pi-docker-host-component-result-20261103.md",
+      "sha256": "2c0b40633623aaed8790effae996524573ae197347c1440c6b36921391b85822",
+      "mode": "direct_bytes; graph_no_recorded_issue_for_selected_path"
+    }
+  ]
+}

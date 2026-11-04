@@ -1,0 +1,16 @@
+{
+  "request": "Concrete shared Rust application-server package and correct owner notifications.",
+  "changes": [
+    "AH owns a thin composition executable under rust/crates, proposed work-engine-server.",
+    "Shared operation handlers with MCP/Web HTTP adapters and local Rust client/CLI boundary.",
+    "Existing domain APIs/stores retain semantics and authority; S10 supplies runtime execution through an admitted profile.",
+    "Trusted startup, enabled capability readiness, local-only fixture profile, auth prerequisites, drain/restart and unknown-entry behavior explicit.",
+    "AH required for overall A5 process-level conformance; A4 fixtures may proceed against pinned contracts before AH.",
+    "Proposed backend-integration/AH, auth-Web/A4, CLI/query-contract and S10-runtime allocations; existing grants not enlarged."
+  ],
+  "prior_decision": {
+    "path": "r3/decision.json",
+    "sha256": "b3cfbd25dc8783838f1f440def90ebfe0192a2eb2a451733471e22aa6b98f32c"
+  },
+  "review_context": "Fresh replacement review of this bounded amendment; r1-r3 accepted findings/subjects remain historical, no uninterrupted-review or whole-source-rerun claim."
+}

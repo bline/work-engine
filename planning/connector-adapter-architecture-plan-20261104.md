@@ -1,6 +1,6 @@
 # Connector adapters around existing Work Engine owners
 
-Date: 2026-11-04. Revision: 3.
+Date: 2026-11-04. Revision: 4.
 
 Status: candidate implementation plan. This document proposes work; the user's
 current instruction authorizes planning and an Astra high review. It does not
@@ -17,6 +17,12 @@ runtime implementation without changing each channel. These are two different
 extension axes. Dot and the Web UI are both replaceable channel presentations;
 their MCP and HTTP/mailbox transports are adapters to the same owned application
 contracts. Neither current presentation is a required domain component.
+
+Deliver those shared interfaces through a thin Rust application server. It
+composes existing domain owners and calls the existing qualified runtime host;
+it is not a new execution engine or an MCP-only backend. This server is an
+explicit implementation package, AH below, rather than an assumed prerequisite
+that no current assignment delivers.
 
 The first delivered proof is a real non-MCP CLI channel, alongside the existing
 MCP channel, using the same query and granted-input operations. Overall plan
@@ -85,10 +91,11 @@ flowchart LR
     Web[Web HTTP/mailbox adapter] --> Ports
     CLI[CLI adapter] --> Ports
     Future[Other connector adapter] --> Ports
-    Ports --> Bridge[Existing bridge owner]
-    Ports --> Task[Existing task admission owner]
-    Ports --> Board[Existing board and decision owners]
-    Bridge --> Native[Qualified runtime execution adapter]
+    Ports --> App[Thin Rust application server]
+    App --> Bridge[Existing bridge owner]
+    App --> Task[Existing task admission owner]
+    App --> Board[Existing board and decision owners]
+    Bridge --> Native[Qualified runtime execution adapter / S10 host]
     Task --> Native
     Sources[Runtime observation adapters] --> Relay[Observation and delivery service]
     Relay --> Dot
@@ -96,9 +103,88 @@ flowchart LR
     Relay --> Future
 ```
 
-The diagram shows dependency boundaries, not one process or database. The Web
-adapter can continue to use the mailbox and polling. Shared observation
-contracts do not require it to implement MCP or receive inbound laptop traffic.
+The diagram shows dependency boundaries. The application server is a concrete
+composition process; existing domain owners and the runtime may remain separate
+processes with their own stores. The Web adapter can continue to use the mailbox
+and polling. Shared observation contracts do not require it to implement MCP or
+receive inbound laptop traffic.
+
+### Shared Rust application server
+
+AH delivers a small application executable under `rust/crates/`, proposed name
+`work-engine-server`. Its initial realization is one locally operated process
+with trusted startup configuration, a versioned local client boundary, and MCP
+and Web HTTP adapters over the same enabled application operations. The CLI
+uses that public local boundary through its Rust client. The Web HTTP adapter
+may be the upstream of the existing mailbox/sync projection; direct public
+browser access to the laptop is not required. Endpoint/command spelling is
+bound in AH's implementation contract, not guessed independently by clients.
+
+The executable assembles existing owner APIs and clients. It does not move
+approval verification, task admission, budget/accounting, canonical records,
+native custody or delivery-grant policy into a universal server state machine.
+It never exposes a writable domain database or a general launch/shell RPC to
+clients. The reusable application handlers are independent of the MCP and Web
+transport packages. Disabling the MCP adapter leaves the supported Web and
+CLI paths usable through the same application service.
+
+S10 already supplies execution machinery: the Rust Pi/Docker host launches and
+collects bounded jobs, retains uncertainty and cleanup evidence, and has an
+accepted bounded real-coding trial. AH reuses the exact accepted host/profile
+through its owning runtime boundary after normal domain admission. It does not
+create a second launcher, tool loop, native journal or lifecycle manager. The
+trial and private source-integration handbacks do not qualify every proposed
+server operation; incomplete Pi authority/profile hooks remain Held. The
+existing legacy bridge route retains its own grant and reconciliation contract.
+
+Trusted startup configuration binds enabled operations/profile versions,
+domain-owner endpoints and source pins, auth/client/visibility policy, listener
+addresses and any protected state paths. Client request fields cannot replace
+those bindings or select executables. Startup and health responses distinguish
+the running process from readiness of each configured capability. Health/read
+requests do not launch a native job. Missing dependencies produce attributed
+unavailable/Held results rather than a fabricated healthy writable backend.
+
+AH first proves local fixture operation under the existing explicit operator
+profile. Multi-client or remotely exposed endpoints require A2's verified
+identity, visibility and asynchronous-grant policy before activation. No new
+OAuth issuance, scope, origin allowance, production installation or credential
+broker is implied by creating the binary. Domains retain their own protocol
+versions and historical identity codecs across adapter or process boundaries.
+
+The process owns listener/adapter/task collection and orderly admission drain.
+Stop accepting new commands before shutting down owned transport work; obtain
+the existing owners' durable unknown/continuation disposition for unresolved
+operations. Restart reads or reconciles those same operation identities and
+does not resend an uncertain native start. Process exit is neither provider
+settlement nor proof that an external effect was cancelled. AH's operational
+metadata cannot become a parallel admission, money, approval or effect ledger.
+
+The package's first checkpoint binds the executable and source closure, exact
+owner-client contracts, startup/readiness/drain behavior and a running local
+query path reached through two actual adapters. Its acceptance then exercises
+MCP, Web HTTP and CLI against the same owner-bound operations, with supported
+mutations routed through existing admission under synthetic authority/effects.
+Unknown/refused operations stay unknown/refused. Adapter disablement, process
+restart, unavailable owner and duplicate/ambiguous requests are tested at the
+composed process boundary. Library DTO equivalence alone does not complete AH.
+
+### Proposed implementation allocation
+
+| Work | Proposed responsible role | Boundary and handoff |
+| --- | --- | --- |
+| AH application server and composed backend integration | Backend integration | Own the thin executable, startup configuration and common handlers; consume existing domain/runtime contracts. Estimate and admit AH as a new bounded slice after or separately from the active signed-Pi fixture scope. |
+| Web presentation/transport/signer adapter, A4 | Auth/Web UI owner | Consume AH's public contracts; preserve browser review and exact proof verification. A different presentation or transport does not require rewriting server/domain rules. |
+| Shared CLI/query increment | Current CLI/query role | Supply the compatible public query/client contract and fixtures already in its accepted narrow scope. AH is not silently added to its current query assignment. |
+| Pi/Docker runtime and lifecycle capability evidence | S10/runtime owner | Supply accepted runtime/profile contracts and their actual evidence/limits. Keep native execution/custody and context-lifecycle ownership; a launcher is not the common application server. |
+
+These are proposed responsibilities for future admitted work, not permission to
+spend another session's current grant or change its deadline. AH admission binds
+an actual implementation owner, source/profile standing, estimate, budget,
+checkpoint, reviewer and collection route. Notifying a role does not launch its
+work. Already-admitted query, Pi fixture and pressure-observation slices retain
+their exact scopes; their useful outputs are inputs to AH, not claims that AH
+has already been implemented or funded.
 
 ### Web presentation, transport and approval signer
 
@@ -328,10 +414,11 @@ blindly. One integration owner collects cross-repository evidence.
 | --- | --- | --- |
 | A0: Bind contracts and predecessor standing | Integration owner records the exact main/dirty/private inputs, accepted predecessor portions, endpoint profiles, raw/enriched wire fixtures, composition and domain owners, compatibility commitments, and supported channel/profile operations including the Web read/review/signed-answer baseline. Rejects unsupported claims of Pi execution or OAuth refresh. | Planning can proceed from the pinned evidence now. Importing private source, moving state or changing a deployed release remains a separately owned integration decision. Complete when later packages have exact inputs and no ambiguous semantic owner. |
 | A1: First shared operation and CLI | Bridge owner exports narrow public request/result DTOs, extracts its internal Codex execution port, and exposes existing granted-input behavior. Observation owner exposes the shared enriched operation/result query. MCP adapter and a new Rust CLI use those same boundaries. Include existing read-only typed inspection only if the task candidate is accepted; it remains Held where it was Held. | A0. Provider-disabled exact fixtures demonstrate the same request identity, composed result and refusal through MCP and CLI, including missing worker/usage/closure evidence. Exact retry returns the same operation; changed payload conflicts; a lost native ACK stays unknown with no second send. No new remote exposure. |
+| AH: Shared Rust application server | Backend integration delivers the thin `work-engine-server` composition executable, trusted startup/readiness/drain contract, local Rust client boundary, and MCP/Web HTTP adapter composition over existing owners; reuses S10/native hosts through their admitted runtime contracts. | A0 and the exact A1 query/command interfaces selected for the profile; integrate A3 delivery when enabled and require A2 before shared remote activation. First checkpoint is a running owner-bound local query through two adapters. Completion requires actual MCP/Web/CLI process composition, MCP-disabled Web/CLI operation, owner-unavailable and restart/uncertainty cases, and an exact release/config candidate. No new Pi qualification or deployment is inferred. |
 | A2: Connector identity and scoped ingress | Auth/delivery owners establish trusted connector-policy ownership, verified caller/installation binding, operation/visibility checks, and persisted delivery-grant lifetime/invalidation. Keep old token issuance and legacy endpoints explicitly separated. | A0; complete before adding remote clients to a shared endpoint. Two test client bindings under one owner cannot read or mutate each other's subscriptions/replay. Wrong owner/client/audience, expired credentials, forbidden targets/destinations and stale policy are rejected or held at the owning boundaries. |
 | A3: Observation sources and delivery composition | Observation owner extracts Codex and Claude source implementations and isolates source-neutral filtering/enrichment/delivery. Reuse existing delivery mechanics while enforcing the new profile's grant checks at observation/send/retry boundaries, ordered with invalidation. Port bounded mechanics to Rust as their owner is replaced; remove any temporary A1 compositor delegation. | A0, public query contracts, A2 for shared remote access. Replay real redacted transcript fixtures, partial lines, rotation/replacement, daemon restart, outage and independent-recipient progress. Compatibility and unknown-state results match the selected old profile; new-profile invalidation survives restart and does not rewrite retained payloads. Split parsing and delivery if one package cannot establish both coherently. |
-| A4: Replaceable Web channel and profile review | Observation/task/approval owners publish the shared query, projection and review/answer contracts; the devwits-auth owner separates presentation, transport and signer dependencies. Both the current Web presentation and a minimal replacement consume those contracts. Demonstrate an alternative local transport adapter without changing domain owners. Preserve pinned-key and action-time checks; existing polling can remain. | A0/A1 public contracts and existing board/approval contracts; accepted task-owner source for the typed profiles claimed. Web query/board conformance can proceed without a new Pi gate or full event push. Browser/client fixtures and Rust/JavaScript vectors establish exact terms, request/answer bytes, source revisions, denied/unknown outcomes, wrong-origin/key rejection and equivalent owner decisions. Unknown profiles and missing terms hold approval visibly. Pi-specific review support still waits for its qualified contract. |
-| A5: Connector conformance and release candidate | Integration owner exercises MCP, CLI and the mandatory Web path, including replacement presentation and transport fixtures, plus the local non-MCP HTTP connector fixture. Prepare one exact release/configuration candidate and state migration/import disposition. | A1-A4 for the selected existing profiles. A Web-omitting A1-A3 result is bounded partial work, not overall plan completion. The fixture uses two installations, restart/replay and denied-authority cases. It covers a queued retry after access removal, installation disablement, source/enrichment/destination grant invalidation, expiry and stale policy, restart after invalidation and renewal after scope reduction. Source readiness and live qualification are separate results. A later selected real connector requires its actual ingress/auth/callback checks before activation. |
+| A4: Replaceable Web channel and profile review | Observation/task/approval owners publish the shared query, projection and review/answer contracts; the devwits-auth owner separates presentation, transport and signer dependencies. Both the current Web presentation and a minimal replacement consume those contracts. Demonstrate an alternative local transport adapter without changing domain owners. Preserve pinned-key and action-time checks; existing polling can remain. | A0/A1 public contracts and existing board/approval contracts; use AH for composed-server conformance. Presentation fixtures can proceed against pinned contracts before AH is ready. Accepted task-owner source is needed for the typed profiles claimed. Web query/board work does not require a new Pi gate or full event push. Browser/client fixtures and Rust/JavaScript vectors establish exact terms, request/answer bytes, source revisions, denied/unknown outcomes, wrong-origin/key rejection and equivalent owner decisions. Unknown profiles and missing terms hold approval visibly. Pi-specific review support still waits for its qualified contract. |
+| A5: Connector conformance and release candidate | Integration owner exercises the actual AH server with MCP, CLI and the mandatory Web path, including replacement presentation and transport fixtures, plus the local non-MCP HTTP connector fixture. Prepare one exact release/configuration candidate and state migration/import disposition. | AH and A1-A4 for the selected existing profiles. Omitting the application server or Web proof yields bounded partial work, not overall plan completion. The fixture uses two installations, restart/replay and denied-authority cases. It covers a queued retry after access removal, installation disablement, source/enrichment/destination grant invalidation, expiry and stale policy, restart after invalidation and renewal after scope reduction. Source readiness and live qualification are separate results. A later selected real connector requires its actual ingress/auth/callback checks before activation. |
 
 An additional runtime execution profile is not necessary to prove channel
 extensibility. After these interfaces are demonstrated, the existing Pi/S10 or
@@ -383,6 +470,13 @@ profile boundary:
 7. Historical codecs, event cursors, retained deliveries, operation/grant state
    and pending owner interaction have an explicit accepted import or archive
    disposition. New projections are not a second authoritative store.
+8. A running thin Rust application server hosts the common application boundary
+   through actual MCP, Web HTTP and CLI adapters. It uses existing domain and
+   S10/runtime owners, survives the declared restart/drain cases without
+   duplicate entry, and keeps Web/CLI usable when MCP is disabled. Startup,
+   configured capability readiness, owner-unavailable state and admitted writable
+   capability remain distinct. Separate demos or matching DTOs do not establish
+   this process-level composition.
 
 Use focused domain tests, cross-language golden vectors, protocol fixtures and
 crash/restart tests for those claims. Then exercise actual service composition
@@ -405,6 +499,12 @@ amendment does not retroactively add implementation obligations to those
 actors. Such work can be accepted as its bounded portion while mandatory A4
 and the composed A5 proof remain visible before overall plan completion.
 
+Revision 4 adds the explicit AH application-server package and proposed
+backend/UI/runtime allocation. It likewise does not enlarge the active query,
+signed-Pi fixture or S10 observation grants. Those sessions receive the exact
+amendment as coordination information; a later AH implementation assignment
+must be formed and admitted with its own estimate and acceptance scope.
+
 Offline replacement is allowed by the Rust direction; continuous availability
 and dual running are not prerequisites. The selected cutover needs one named
 writer for each durable store, compatible readers or an explicit state
@@ -414,8 +514,10 @@ An old executable is not a safe rollback if new durable state or uncertain
 effects are incompatible with it. Reconcile or retain the new owner until a
 compatible recovery path is established.
 
-The next implementation decision is admission of A0/A1 with an exact owner,
-source baseline, acceptance scope and estimate. Acceptance of this plan by a
+The next shared-server implementation decision is admission of AH after binding
+its required A0/A1 contracts, with an exact owner, source baseline, supported
+profile, checkpoint, acceptance scope and estimate. Existing narrower A0/A1 work
+can proceed under its own authority. Acceptance of this plan by a
 reviewer establishes review of this candidate only; it is not human acceptance
 of implementation, state migration, third-party installation or deployment.
 

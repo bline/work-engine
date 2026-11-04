@@ -1,0 +1,51 @@
+{
+  "subject_sha256": "026fca8e02c317fa60997d20a04c71625f006e8194aad00584a751e634765da9",
+  "verdict": "accept",
+  "assessment": {
+    "summary": "AH is a coherent, bounded application-composition package. It closes the previously implicit server responsibility, requires actual MCP/Web/CLI composition, and preserves existing domain and runtime ownership. No P1 or P2 finding was identified.",
+    "ownership": "The server owns configuration, adapter composition, common handlers and collection of its transport work. Approval, admission, accounting, durable operation identity, delivery grants and native custody remain with their existing owners. Its prohibition on general launch RPCs, writable domain databases and parallel ledgers prevents the composition layer from becoming a competing execution or lifecycle authority.",
+    "runtime_boundary": "The selected S10 source exposes a bounded host with separate run, reconcile, cancel, inspect and acknowledgement operations. Host.run refuses launch replay after admission and records uncertainty before Docker creation/start. This supports reuse through an owning runtime boundary, not treating S10 as an existing application service. The amendment appropriately separates the bounded real-coding qualification from unqualified Pi admission/profile hooks and keeps those hooks Held.",
+    "dependencies_and_composition": "A0 binds actual source standing and contracts; A1 supplies the selected query/command interfaces; AH assembles them into a process. A3 delivery is conditional on enablement, while A2 gates multi-client or remote activation. A4 can develop presentation fixtures against pinned contracts before AH exists, but A5 requires the actual server. These dependencies permit incremental implementation without substituting DTO agreement or separate demonstrations for composed behavior.",
+    "layering_and_authorization": "Transport-independent handlers, a versioned local Rust client boundary and MCP-disabled Web/CLI operation establish meaningful adapter separation. Trusted startup owns endpoint, profile, source and policy selection. Existing operation grants and signed-answer verification remain necessary at their owning boundaries. The Web HTTP adapter can serve the mailbox/sync path without requiring public laptop exposure or changing signing trust.",
+    "recovery_and_release": "AH requires capability-specific readiness, truthful owner-unavailable outcomes, admission drain, durable unresolved-operation disposition and reconciliation of the same identities after restart. It explicitly rejects inferring cancellation or settlement from process exit. Process-level duplicate, ambiguity, restart and adapter-disablement fixtures, together with the existing single-writer and incompatible-rollback constraints, adequately define acceptance at this planning boundary.",
+    "allocation": "Backend integration is a plausible proposed AH owner; auth/Web, CLI/query and S10 retain distinct responsibilities. Admission must bind an actual owner, estimate, checkpoint, review and collection route. The amendment explicitly leaves current grants and deadlines unchanged, and notifications convey planning information only."
+  },
+  "findings": [],
+  "nonblocking_observations": [
+    {
+      "id": "CA-R4-O1",
+      "severity": "P3",
+      "section": "AH implementation contract and first checkpoint",
+      "observation": "When binding the selected profile, identify which operations use the legacy bridge and which, if any, use the accepted S10 host/profile. The host-component source and later private real-coding qualification are distinct evidence subjects. The plan already requires exact source/profile standing; making this mapping explicit will prevent collection from overstating runtime coverage."
+    },
+    {
+      "id": "CA-R4-O2",
+      "severity": "P3",
+      "section": "Startup/readiness/drain and process-level acceptance",
+      "observation": "The implementation contract should make drain timeout and owner-unavailable restart outcomes directly observable. In particular, a server that cannot obtain a durable owner disposition must preserve that uncertainty rather than report a completed drain. This concretizes the existing recovery requirement without adding a new lifecycle owner or requiring deployment."
+    },
+    {
+      "id": "CA-R4-O3",
+      "severity": "P3",
+      "section": "Local fixture profile",
+      "observation": "Record the trusted local caller binding and listener protections used by the fixture. Multiple adapter connections under one operator profile should be distinguishable from separately installed clients requiring A2. Existing HTTP source explicitly addresses browser-origin and Host checks; the new realization should preserve the relevant protection through its selected local boundary."
+    }
+  ],
+  "evidence_limits": {
+    "reviewed": "Read the complete revision-4 subject, changes.diff, amendment.json, retained r3/report.json, DESIGN.md and PHILOSOPHY.md. Read both S10 result records and the assigned host/CLI source ranges. Checked selected frozen bridge, admission-service, MCP/HTTP/delivery source ranges, Rust direction and Web approval contracts.",
+    "integrity": "The subject and both manifest hashes matched the assignment. All eleven selected frozen source/document records checked against those manifests matched their recorded digests.",
+    "retrieval": "Confirmed graph project home-bline-code-work-engine ready. Used supplied parent structural evidence and direct reads of exact frozen sources; no new symbol or call-chain audit is claimed. Coverage for 23 relied-on repository paths returned no recorded issue, with complete pagination, at generation 2026-11-04T20:55:01Z and store generation ue41f8e7a100b95f3g2.",
+    "limitations": "Coverage is best effort, not proof of completeness. Earlier accepted reports support unaffected regions only. S10 qualification results remain attributed records and were not rerun. Acceptance applies to this plan amendment, not implementation, full S10 acceptance, production authentication, deployment or release. No implementation, file mutation, service/provider/credential operation, board publication or child launch was performed."
+  },
+  "identity_acknowledgement": {
+    "acknowledged": true,
+    "episode": "Fresh replacement reviewer for the bounded revision-4 amendment; no uninterrupted continuity, repeated complete source audit or cross-provider independence claimed.",
+    "session_id": "01a1a857-cb13-7bd0-9d96-3d84c9d8770b",
+    "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T13-54-49-01a1a857-cb13-7bd0-9d96-3d84c9d8770b.jsonl",
+    "runtime_parent": null,
+    "collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+    "continuation": "/home/bline/.local/state/work-engine/connector-adapter-server-plan-20261104/assignment.json",
+    "configuration": "Acknowledged the root-verified binding and read reviewer-settings-r4.json, which records gpt-6-astra/high/default. Requested settings alone do not establish observed configuration; the recorded configuration does not establish backend fulfillment or billing.",
+    "context": "Pinned context-status check reported 68110 input tokens, epoch 0 and no compaction at 2026-11-04T20:55:41Z. Retained context to complete this bounded review."
+  }
+}

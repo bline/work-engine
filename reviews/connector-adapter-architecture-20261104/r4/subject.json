@@ -1,0 +1,13 @@
+{
+  "revision": 4,
+  "plan": "/home/bline/code/work-engine/planning/connector-adapter-architecture-plan-20261104.md",
+  "frozen_subject": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r4/subject.md",
+  "subject_sha256": "026fca8e02c317fa60997d20a04c71625f006e8194aad00584a751e634765da9",
+  "prior_subject_sha256": "360e8fee417efe52dbab03489b5ab7ff21a808e854f9e41f06694a5d69fea65e",
+  "evidence_manifest": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/evidence/manifest.json",
+  "evidence_manifest_sha256": "3e9d1ad411a14f2043bd563925f9ba02caaf28882b0eb0e3d572f1551a34ebda",
+  "additional_evidence_manifest": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r4/evidence/manifest.json",
+  "status": "awaiting_review",
+  "authority": "User requested adding thin Rust application server and proposed ownership to the plan and notifying correct sessions.",
+  "additional_evidence_manifest_sha256": "18b2eb64687bff53e70bae0f8e62a52cd5a32f7c01eecf090601010dfa27af65"
+}
