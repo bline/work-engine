@@ -3,6 +3,7 @@ resolver = "3"
 members = [
   "crates/session-task-admission",
   "crates/session-delivery",
+  "crates/session-query",
   "crates/session-bridge",
   "crates/mcp-auth",
   "crates/review-workflow",
