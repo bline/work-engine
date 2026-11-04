@@ -1,0 +1,55 @@
+{
+  "subject_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469",
+  "verdict": "accept",
+  "assessment": "Revision 2 resolves both original findings at the architecture-plan boundary. The added authority rules are implementable, have explicit owners and acceptance consequences, and leave the fencing mechanism to implementation judgment. No new material plan defect was identified. This acceptance does not establish implementation correctness, runtime qualification or deployment authority.",
+  "original_finding_dispositions": [
+    {
+      "id": "CA-R1-001",
+      "original_severity": "P2",
+      "disposition": "resolved",
+      "subject_locations": [
+        "Subscription authority during asynchronous delivery, lines 202-241",
+        "A2/A3/A5, lines 285-288",
+        "Acceptance item 5, lines 319-324"
+      ],
+      "assessment": "The plan now separates ingress-token lifetime from a persisted delivery grant and assigns installation, source, enrichment and destination policy to a trusted authorization owner. Observation and each send/retry require current authority; missing or stale policy holds work. Invalidation is ordered with disclosure entry, survives restart and cannot be undone by renewal or policy rollback. Retained payloads exceeding current access are suppressed without silently changing their identity, and replay checks current visibility. These consequences close the queued-retry disclosure scenario from revision 1.",
+      "boundary": "The plan correctly distinguishes local policy invalidation from unproven immediate upstream OAuth revocation, and already-entered sends from preventable future disclosure. A2/A3 still must demonstrate the selected ordering mechanism; an unlocked check followed by a send would not satisfy the accepted plan."
+    },
+    {
+      "id": "CA-R1-002",
+      "original_severity": "P3",
+      "disposition": "resolved",
+      "subject_locations": [
+        "Public operations and ownership, lines 111-121",
+        "A0/A1/A3, lines 283-286"
+      ],
+      "assessment": "The observation owner now explicitly owns composed operation/result queries, while the bridge retains admission/native state and the task owner retains typed projections. MCP and CLI must share enriched semantics, including missing worker, usage and closure evidence. A0 captures raw and enriched contracts; A1 establishes parity. Any temporary delegation to the pinned compositor has bounded scope and removal in A3, avoiding a second permanent composition owner."
+    }
+  ],
+  "new_findings": [],
+  "remaining_nonblocking_observations": [
+    "The trusted verified-caller requirement at lines 181-184 addresses the existing verifier's decision-only output without prescribing a universal identity service. Connector-supplied or unverified claims remain insufficient.",
+    "A1 now owns the narrow Codex execution-port extraction, and A3 owns observation-source extraction. Other runtime implementations remain separately qualified; channel acceptance does not imply Pi execution or replacement of lifecycle-provider semantics.",
+    "The delivery policy owner can be a bounded local authority. The plan does not require a universal policy service, online issuer lookup for every event or completion of unrelated OAuth work.",
+    "Implementation should preserve the distinction between immutable event payload identity and per-attempt callback authentication. Whole-payload suppression must coexist with the selected profile's signing and retry compatibility fixtures.",
+    "The CLI and local HTTP fixture remain sufficient for the stated channel-extensibility proof. Actual third-party ingress, callback behavior and provider execution require their separately scoped evidence.",
+    "Private task-source standing, exact approval bytes, uncertain native effects and state-compatible cutover remain appropriately bounded. No unaffected revision-1 observation requires further plan changes."
+  ],
+  "evidence_limits": {
+    "manifest_sha256": "3e9d1ad411a14f2043bd563925f9ba02caaf28882b0eb0e3d572f1551a34ebda",
+    "reviewed": "Read the complete revision-2 subject, retained r1/report.json, r2/changes.diff and r2/repairs.json. Subject and manifest hashes matched the assignment. Repair claims were assessed against the actual revised text and retained frozen-source evidence.",
+    "method": "Retained Tier 2 review. Reused prior source verification and doctrine context; no additional source ranges were necessary. Coverage for the four review artifacts returned no recorded issues at graph generation 2026-11-04T19:44:31Z, store generation ud6dfbdfd190b4a54g2, with no remaining pages.",
+    "limitations": "Coverage is best effort, not proof of completeness. This is plan review, not implementation validation. Private candidate and attributed handback limitations remain unchanged. No tests, implementation, mutations, services, external providers, credentials, board publication or child launches were undertaken."
+  },
+  "identity_binding_acknowledgement": {
+    "acknowledged": true,
+    "episode": "Same retained read-only review episode as revision 1; not a new independent review.",
+    "session_id": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+    "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+    "collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+    "runtime_parent": null,
+    "continuation": "/home/bline/.local/state/work-engine/connector-adapter-plan-20261104/assignment.json",
+    "configuration": "Requested gpt-6-astra/high/default retained. Root owns independent settings and identity binding; requested configuration is not proof of backend fulfillment.",
+    "context_check": "Pinned context-status observation at 2026-11-04T19:45:11Z reported 129321 input tokens, epoch 0, no compaction and retain_ok. Completed without context replacement."
+  }
+}

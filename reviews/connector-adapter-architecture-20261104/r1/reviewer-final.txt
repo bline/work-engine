@@ -1,0 +1,60 @@
+{
+  "subject_sha256": "799eea2d51b4b68c7d40dd4537294f6ff0b98848e4ecd550d7e20591e40dffaa",
+  "verdict": "changes_required",
+  "assessment": "The plan is implementable and appropriately bounded overall. It preserves distinct observation, admission, approval, execution and lifecycle owners, and its CLI plus HTTP fixture can demonstrate channel extensibility without completing Pi qualification. One material omission remains: authorization lifetime for asynchronous delivery. Initial subscription authorization and caller-scoped replay do not establish permission for later callback sends.",
+  "findings": [
+    {
+      "id": "CA-R1-001",
+      "severity": "P2",
+      "subject_location": "Identity and visibility, lines 150-178; Event and projection compatibility, lines 188-193; A2/A3/A5, lines 222-225; acceptance item 5, lines 256-258",
+      "title": "Define authorization lifetime and invalidation for asynchronous deliveries",
+      "concrete_failure_scenario": "Installation A subscribes while allowed to read session S. Its callback becomes unavailable, leaving a retained payload pending. The owner subsequently removes A's access to S or disables the installation. The callback recovers and the relay sends the retained payload, or continues observing new entries, because ingress authentication is no longer involved. A2's current tests can pass: new requests are denied and A cannot access B's subscriptions, while A's existing callback still receives data. The plan also leaves unclear whether a subscription is an independently authorized lease or must follow current visibility policy; bearer-token expiration alone does not answer that question.",
+      "evidence": [
+        "Frozen session_events.py:2688-2742 persists a subscription with principal, sessions and its own expiresAt.",
+        "Frozen session_events.py:3292-3317 processes subscriptions according to subscription expiry.",
+        "Frozen session_events.py:3374-3420 delivers from persisted session selection.",
+        "Frozen session_events.py:3431-3482 reuses the retained pending body and sends it through the callback transport.",
+        "Frozen session_events.py:4093-4102 provides a local subscription deletion/revocation mechanism, but this does not establish how the proposed installation and visibility authority invalidates delivery."
+      ],
+      "required_consequence": "For the new profile, the delivery owner must know the authority and lifetime under which each subscription may disclose data. Once an installation, source permission or destination grant is invalidated according to that contract, subsequent sends and retries must not disclose outside the remaining grant. Restart and renewal must preserve that decision. Already-entered sends must retain truthful uncertainty rather than being described as recalled.",
+      "suggested_repair": "Add a bounded A2/A3 contract for subscription authorization lifetime, invalidation ownership and the send boundary. Distinguish access-token lifetime from any separately authorized delivery lease. Bind persisted subscriptions to the trusted installation and authorized source/destination scope, with sufficient version or lease evidence to enforce the selected policy. Add A5 cases for queued-payload retry after access removal, installation disablement, daemon restart and renewal after scope reduction. Specify the disposition of retained payloads without rewriting their signed bytes. This requires neither online issuer checks on every event nor unrelated OAuth-refresh work."
+    },
+    {
+      "id": "CA-R1-002",
+      "severity": "P3",
+      "subject_location": "Public operations and ownership, lines 103-120; A1, line 221",
+      "title": "Name the owner of composed operation/result views",
+      "concrete_failure_scenario": "A1 exports the Rust bridge's raw operation DTO and the CLI uses it directly, while MCP retains its Python enrichment. Both channels reach the same admission owner, but CLI results omit worker, usage or process-closure observations currently supplied by MCP. The generic parity requirement should detect this, but the proposed deliverable does not identify who owns that composition.",
+      "evidence": [
+        "Frozen session_events.py:2599-2606 enriches read_session_operation and constructs read_session_result through bridge_observation.",
+        "Frozen session-bridge/src/lib.rs:205-210 sends both read methods to bridge reconciliation."
+      ],
+      "required_consequence": "Equivalent supported reads should have explicitly defined semantic parity, including unavailable and unknown observations, without moving observation interpretation into admission.",
+      "suggested_repair": "Have A0 identify the existing composed result contract and its owner. Make A1 fixtures cover enriched results as well as raw bridge state, and state whether composition is shared through an observation query boundary or remains an explicitly versioned presentation projection."
+    }
+  ],
+  "nonblocking_observations": [
+    "Identity and approval are correctly separated. The existing resource verifier returns an authorization decision, while owner-answer verification binds exact bytes, pinned keys and current requests. A2 will need a trusted verified-caller result or equivalent configured binding; parsing unverified claims downstream would not implement the stated design.",
+    "The private task candidate is correctly treated as conditional source, with ordinary inspection remaining Held. Its public projection does not establish qualified production admission. A1 can proceed independently, so the plan does not improperly require Pi or the entire S10 effort to finish.",
+    "The proposed runtime port preserves useful provider differences and avoids competing lifecycle ownership. Its extraction is not explicitly assigned to a package. Clarify whether it is part of A1 or deferred runtime work; channel acceptance should not imply a second runtime has been qualified.",
+    "The existing CLI and a non-MCP HTTP fixture are sufficient bounded demonstrations of the stated channel objective. They do not qualify Slack, Telegram or another real provider, and the plan correctly reserves those claims for actual integration evidence.",
+    "Exact owner-answer bytes, historical dot.* codecs, provider limitations, uncertain native entry and state-compatible recovery receive appropriate protection. The cutover section correctly rejects rollback based solely on retaining an old executable.",
+    "The small domain-owned wire/client direction is justified. No universal dispatcher, event bus, mandatory crate count or replacement tool loop is needed."
+  ],
+  "evidence_limits": {
+    "manifest_sha256": "3e9d1ad411a14f2043bd563925f9ba02caaf28882b0eb0e3d572f1551a34ebda",
+    "integrity": "Subject and manifest hashes matched the assignment. All 35 snapshot hashes matched the manifest. Current DESIGN.md and PHILOSOPHY.md matched their frozen copies and were read completely.",
+    "method": "Tier 2 verification using the supplied frozen source ranges, targeted additional delivery-path snippets and call traces. Graph project home-bline-code-work-engine was confirmed at generation 2026-11-04T19:37:13Z, store generation u794a5c278c718fabg2. Coverage returned no recorded issues for all 22 submitted evidence paths, with no remaining coverage pages.",
+    "limitations": "Clean coverage is best effort, not completeness. Findings concern the candidate plan and selected frozen paths, not an exhaustive repository audit. Original external repositories were not independently reindexed. Private source remains a partial candidate; handback standing is attributed, not newly qualified. No implementation tests, live connectors, provider requests, service changes, credentials, file mutations, board publication or child launches were performed."
+  },
+  "identity_binding_acknowledgement": {
+    "acknowledged": true,
+    "session_id": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+    "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+    "collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+    "runtime_parent": null,
+    "continuation_owner_record": "/home/bline/.local/state/work-engine/connector-adapter-plan-20261104/assignment.json",
+    "configuration": "Requested gpt-6-astra/high/default. The supplied reviewer-settings-r1.json records those applied settings; this is recorded configuration, not independent proof of backend fulfillment or billing. Root retains independent identity verification and collection.",
+    "context_check": "The pinned context-status binary reported 108116 input tokens, epoch 0 and retain_ok at 2026-11-04T19:39:59Z. Continued to completion without context replacement."
+  }
+}

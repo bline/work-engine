@@ -1,0 +1,331 @@
+{
+  "recorded_at": "2026-11-04T19:35:43.245140+00:00",
+  "graph": {
+    "project": "home-bline-code-work-engine",
+    "indexed_at": "2026-11-04T18:04:20Z",
+    "store_generation": "uf26ca0b8169e9032g2",
+    "tier": 2,
+    "coverage": "main evidence paths have no recorded issue; outside-project paths use exact direct-source fallback; clean best effort is not completeness",
+    "final_coverage_generation": "2026-11-04T19:35:17Z",
+    "final_coverage_store_generation": "ua0d1dfc6a4d4a38ag2"
+  },
+  "work_engine_head": "0d51c0b8668d2497c0f7b31d5aac9b169faa60b5",
+  "devwits_auth_head": "119c8669c0d5bccd1acc613eeb14566a057132cc",
+  "rows": [
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/DESIGN.md",
+      "snapshot": "evidence/work-engine/DESIGN.md",
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+      "bytes": 41500,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/PHILOSOPHY.md",
+      "snapshot": "evidence/work-engine/PHILOSOPHY.md",
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307",
+      "bytes": 34973,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/docs/rust-development.md",
+      "snapshot": "evidence/work-engine/docs/rust-development.md",
+      "sha256": "225d2ea65c088b6614dd56824157b847ea453518417cc0aab61ed3ed39f1e904",
+      "bytes": 9740,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/docs/model-selection.md",
+      "snapshot": "evidence/work-engine/docs/model-selection.md",
+      "sha256": "353f257dbb8aff0f9db8bf2c7526435cf67b5fc1ef553cb206ad80736d853ddc",
+      "bytes": 18518,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/skills/session-events/scripts/session_events.py",
+      "snapshot": "evidence/work-engine/skills/session-events/scripts/session_events.py",
+      "sha256": "e4ceb6d7f5f7685f8c9c0ad84ce7ddd54fd1dc6bae8cc71f35be86373e53c716",
+      "bytes": 214881,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/skills/session-events/HTTP-OAUTH.md",
+      "snapshot": "evidence/work-engine/skills/session-events/HTTP-OAUTH.md",
+      "sha256": "4e55ac36c00da86712411ce102f373aa343477f68018242b0f5e7d3af703761e",
+      "bytes": 7147,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/session-bridge/README.md",
+      "snapshot": "evidence/work-engine/rust/crates/session-bridge/README.md",
+      "sha256": "e0f624d79a5df027c74aff6df55c1beb2342a42d7d1aa49c4db8d0f9f628011c",
+      "bytes": 6616,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/session-bridge/src/lib.rs",
+      "snapshot": "evidence/work-engine/rust/crates/session-bridge/src/lib.rs",
+      "sha256": "f94ccaa8d3ccb9724141baf61fc3bdf05eeab082436027e50949a21dd0df3180",
+      "bytes": 24416,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/session-bridge/src/native.rs",
+      "snapshot": "evidence/work-engine/rust/crates/session-bridge/src/native.rs",
+      "sha256": "d915c5f9a5ef1985240312fa2404016fc034a8dec9d695d0f449a07cfc923a2f",
+      "bytes": 23548,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/session-bridge/src/store.rs",
+      "snapshot": "evidence/work-engine/rust/crates/session-bridge/src/store.rs",
+      "sha256": "2be986cb0be4d32c5fffbc0ccd69e62e8cbbd3d87c570591bd45bdf94630f240",
+      "bytes": 13341,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/session-bridge/src/provision.rs",
+      "snapshot": "evidence/work-engine/rust/crates/session-bridge/src/provision.rs",
+      "sha256": "3cc4f17a0aa41babac4d573dcf3c28b0992a63bcab2b9b06474e74131a0a44e7",
+      "bytes": 60911,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/session-bridge/src/wire.rs",
+      "snapshot": "evidence/work-engine/rust/crates/session-bridge/src/wire.rs",
+      "sha256": "1f2c457eb993a18a629800796df43c3d827984086f3110f18250d913983e1f2d",
+      "bytes": 3853,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/mcp-auth/src/main.rs",
+      "snapshot": "evidence/work-engine/rust/crates/mcp-auth/src/main.rs",
+      "sha256": "736f8e3cf00f790968e9883486738806749be112ed14aeb01f1dc5c8c0a7c345",
+      "bytes": 6153,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/rust/crates/lifecycle-provider/src/lib.rs",
+      "snapshot": "evidence/work-engine/rust/crates/lifecycle-provider/src/lib.rs",
+      "sha256": "d78b1a6483b7a7c8493951b559a349b512a7bd2cbcb38c0c00bf98f99edfa2a3",
+      "bytes": 1856,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "work-engine",
+      "source": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/POST_S10_BACKEND_ABSTRACTION_AMENDMENT.md",
+      "snapshot": "evidence/work-engine/experiments/context-lifecycle-rust/POST_S10_BACKEND_ABSTRACTION_AMENDMENT.md",
+      "sha256": "40d1285388247c79e7628d91b03335e12aca217de0d103ebe84081715bb03304",
+      "bytes": 16668,
+      "mode": "graph_verified_and_direct_bytes",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/README.md",
+      "snapshot": "evidence/devwits-auth/README.md",
+      "sha256": "4798208ce0dd4cabebad642bb0eaa647435909c97dd3b7395207fbd2c5729233",
+      "bytes": 4331,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/docs/owner-answer-v1.md",
+      "snapshot": "evidence/devwits-auth/docs/owner-answer-v1.md",
+      "sha256": "41fd29e540c4c344ed4254b6a5f8f3eb0d8781f5fd0300423a187c32ff47b5ac",
+      "bytes": 7814,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/docs/task-ui.md",
+      "snapshot": "evidence/devwits-auth/docs/task-ui.md",
+      "sha256": "ffdb6e47e8e0fdb616cb2f635f707130b1be7d3828366dff8ef12b2baf586500",
+      "bytes": 5509,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/src/App.jsx",
+      "snapshot": "evidence/devwits-auth/src/App.jsx",
+      "sha256": "cafb283e40cc849688b77021838c60a72389fa471778ced9f188ae8cd257ed66",
+      "bytes": 9124,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/src/task-contract.js",
+      "snapshot": "evidence/devwits-auth/src/task-contract.js",
+      "sha256": "7a77015c955b532e47b0c1a7eed3aa1a3a448e7f7bd41a1698cad6b3510580bd",
+      "bytes": 8474,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/src/task-projection.js",
+      "snapshot": "evidence/devwits-auth/src/task-projection.js",
+      "sha256": "7bfdfca270a0a2838a5b520946869ce80ecd023561d0023339d87cdd4a8e90ea",
+      "bytes": 6436,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/src/work-dashboard.jsx",
+      "snapshot": "evidence/devwits-auth/src/work-dashboard.jsx",
+      "sha256": "a8e32d58e30d9a04e6b38df7ca35976df766d8dfe42520c7b071e6a8e57c91db",
+      "bytes": 11235,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/api/_lib.js",
+      "snapshot": "evidence/devwits-auth/api/_lib.js",
+      "sha256": "f24dc86d14902cff21b378656d6fa8b7b827e5b114e7a06cf6048614501e5558",
+      "bytes": 7663,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/api/_storage.js",
+      "snapshot": "evidence/devwits-auth/api/_storage.js",
+      "sha256": "69accad7c77391e13b40f2ca7cce836e47b9697c5e52b782994b19832b44b248",
+      "bytes": 2422,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/api/requests.js",
+      "snapshot": "evidence/devwits-auth/api/requests.js",
+      "sha256": "90fd555e3afff6da979fc0ba78dbfedde56196abcdbb30435cdfc8c6812f1b6d",
+      "bytes": 1931,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/api/answers.js",
+      "snapshot": "evidence/devwits-auth/api/answers.js",
+      "sha256": "a5ba701324aa36ca3b6effc56d3ff6100f95eb5d7af8a3e97e0df04058e1a36a",
+      "bytes": 2503,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/laptop/approval_sync.py",
+      "snapshot": "evidence/devwits-auth/laptop/approval_sync.py",
+      "sha256": "9bd6895c0188c0c0a02bc49ddea1ecb91c07f39dd8dec538ae3593a7d08a4f56",
+      "bytes": 16478,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "devwits-auth",
+      "source": "/home/bline/code/devwits-auth/laptop/owner_answer.py",
+      "snapshot": "evidence/devwits-auth/laptop/owner_answer.py",
+      "sha256": "7b786b3d3652e8d36324f9a3a3779b7075fe9ca76297f6f65b1d49d61a2cd13f",
+      "bytes": 7111,
+      "mode": "direct_source_index_unavailable",
+      "revision": null
+    },
+    {
+      "group": "private-candidate",
+      "source": "/home/bline/cbm-work/wt-dot-s10-coding-20261104/rust/crates/session-task-admission/README.md",
+      "snapshot": "evidence/private-candidate/rust/crates/session-task-admission/README.md",
+      "sha256": "33ec3aa99e2e362903a9c34a50c377d07198380b92c708f5a9d3e4c52053f118",
+      "bytes": 7039,
+      "mode": "git_show_exact_commit_outside_project",
+      "revision": "0dc727766169cc0b4c8a2f587a176ffda1ce5d54"
+    },
+    {
+      "group": "private-candidate",
+      "source": "/home/bline/cbm-work/wt-dot-s10-coding-20261104/rust/crates/session-task-admission/src/lib.rs",
+      "snapshot": "evidence/private-candidate/rust/crates/session-task-admission/src/lib.rs",
+      "sha256": "f8f3be0f61067ce2ad5f053e63ef2a5b385c569f4092f0093734bd6a5b1c11e7",
+      "bytes": 10175,
+      "mode": "git_show_exact_commit_outside_project",
+      "revision": "0dc727766169cc0b4c8a2f587a176ffda1ce5d54"
+    },
+    {
+      "group": "private-candidate",
+      "source": "/home/bline/cbm-work/wt-dot-s10-coding-20261104/rust/crates/session-task-admission/src/service.rs",
+      "snapshot": "evidence/private-candidate/rust/crates/session-task-admission/src/service.rs",
+      "sha256": "a1aad659f0755afcba9a230a340b719085703081e8f5699316e3bf43bc89e739",
+      "bytes": 8876,
+      "mode": "git_show_exact_commit_outside_project",
+      "revision": "0dc727766169cc0b4c8a2f587a176ffda1ce5d54"
+    },
+    {
+      "group": "private-candidate",
+      "source": "/home/bline/cbm-work/wt-dot-s10-coding-20261104/rust/crates/session-task-admission/src/native_authority.rs",
+      "snapshot": "evidence/private-candidate/rust/crates/session-task-admission/src/native_authority.rs",
+      "sha256": "a6a3fc8c2b5138a0d912df0affb1514913e9434e79dc5351c2f221d1f8cf23dc",
+      "bytes": 5773,
+      "mode": "git_show_exact_commit_outside_project",
+      "revision": "0dc727766169cc0b4c8a2f587a176ffda1ce5d54"
+    },
+    {
+      "group": "private-candidate",
+      "source": "/home/bline/cbm-work/wt-dot-s10-coding-20261104/rust/crates/session-task-admission/src/projection.rs",
+      "snapshot": "evidence/private-candidate/rust/crates/session-task-admission/src/projection.rs",
+      "sha256": "5f3a43c5b4164732ceac38b7c6677c8779ee7211488ea47a7ef6c183587351b6",
+      "bytes": 6980,
+      "mode": "git_show_exact_commit_outside_project",
+      "revision": "0dc727766169cc0b4c8a2f587a176ffda1ce5d54"
+    },
+    {
+      "group": "handbacks",
+      "source": "/home/bline/.local/state/work-engine/dot-s10-coding-integration-20261104T1754/RESULT.json",
+      "snapshot": "evidence/handbacks/dot-integration-result.json",
+      "sha256": "f2ca2205ace31e39678388d42586d5c3202b8edcbb194e013242d657162a0733",
+      "bytes": 9625,
+      "mode": "attributed_handback_not_rerun",
+      "revision": null
+    },
+    {
+      "group": "handbacks",
+      "source": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/ROOT-RESULT.json",
+      "snapshot": "evidence/handbacks/s10-integration-result.json",
+      "sha256": "58ca98269e4522ec28b61af5d532b0192ef22d696c38815dcf34475fb068c3a2",
+      "bytes": 10825,
+      "mode": "attributed_handback_not_rerun",
+      "revision": null
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+--- r1/subject.md
++++ r2/subject.md
+@@ -1,6 +1,6 @@
+ # Connector adapters around existing Work Engine owners
+ 
+-Date: 2026-11-04. Revision: 1.
++Date: 2026-11-04. Revision: 2.
+ 
+ Status: candidate implementation plan. This document proposes work; the user's
+ current instruction authorizes planning and an Astra high review. It does not
+@@ -108,6 +108,18 @@
+ | Inspect typed task admission; read task projections | Existing task admission owner, once its source is accepted | Preserve Held and unknown results; do not construct a qualification permit or add execution as a side effect of extraction. |
+ | Transport an owner answer | Existing signed-answer and board consumers | Preserve exact signed bytes and independently check them where the owning action consumes them. |
+ 
++The existing MCP operation/result reads are composed views: Python
++`bridge_observation` adds worker, usage and process-closure observations to the
++Rust bridge's operation state. The session observation owner owns that
++composition through a public observation-query boundary. The bridge retains
++admission/native state; the task owner retains its distinct typed task/result
++projection. A0 captures both raw and enriched contracts. A1 shares the composed
++query between MCP and CLI, including unknown/unavailable fields, rather than
++having CLI return only raw bridge DTOs. It can delegate to the unchanged pinned
++compositor temporarily for those actual consumers, with bounded A1 scope/cost
++and removal in A3, or move that bounded composition to Rust immediately.
++Either route has one composition owner and the same compatibility fixtures.
++
+ Adapters do not access writable owner databases, private permits, provider
+ credentials, coordinator credentials, or internal reducers. A reference in a
+ request is data; it does not become a grant through serialization. A bridge
+@@ -138,6 +150,11 @@
+ Pi can use the boundary only after its actual admission/custody/authority hooks
+ are qualified; the allocation experiment alone is insufficient.
+ 
++A1 includes the narrow internal Codex execution-port extraction and its existing
++failure/reconciliation fixtures. A3 owns observation-source extraction. Additional
++runtime execution implementations remain deferred to their existing owners;
++channel acceptance does not qualify them.
++
+ Capabilities are versioned descriptions bound to a selected implementation and
+ qualified profile: observation, history, granted input, interruption, usage,
+ custody and closure evidence as applicable. The trusted operator/owner selects
+@@ -160,6 +177,11 @@
+ capability names are not a claim that Stytch currently issues corresponding
+ custom scopes. Client registration, issuance changes, refresh, key rotation and
+ revocation each need their own supported provider evidence when exercised.
++
++The current verifier returns allow/scope rather than a caller identity. A2
++therefore needs a trusted verified-caller result from that same validation
++boundary or a configuration binding with equivalent assurance. Downstream
++parsing of unverified JWT claims cannot construct the caller context.
+ 
+ For the new multi-connector profile, protected queries, transcript reads,
+ subscription inspection and replay are authenticated and visibility-scoped.
+@@ -177,6 +199,47 @@
+ access has an explicit operator profile; it is not an unauthenticated remote
+ backdoor. Tokens and capabilities are not command-line arguments or log data.
+ 
++### Subscription authority during asynchronous delivery
++
++For the new multi-connector profile, ingress authentication permits a request
++to create or renew a separately recorded delivery grant. The trusted connector
++authorization policy owner in A2 owns installation enablement, permitted source
++and enrichment visibility, destination binding, policy revisions and grant
++expiry. This is access policy, not another task/approval ledger. The delivery
++owner stores the grant reference and required currentness evidence alongside
++the subscription; a bare principal string and subscription TTL are insufficient.
++
++Choose an explicit grant expiry within the trusted policy's bound. A delivery
++grant may outlive the access token used to create it only when that policy
++expressly permits that lifetime. An expired token cannot renew it. Installation
++disablement, grant revocation, source/enrichment access removal or destination
++invalidation fences affected subsequent observation and disclosure, even when
++the grant has not expired. This contract concerns the trusted policy owner;
++immediate upstream OAuth-token revocation is not claimed without a supported
++issuer signal and its own freshness contract.
++
++Before collecting new protected observations and before every callback send or
++retry, the delivery owner establishes that the grant is unexpired and its
++installation/source/destination policy is current. Missing, stale or unreadable
++policy holds affected work. The authorization-to-disclose boundary is ordered
++with policy invalidation: an invalidation committed before disclosure entry
++prevents that entry. A2/A3 select and test the local fencing mechanism rather
++than assuming a prior ingress check or an unlocked check-then-send suffices.
++Already-entered sends retain their actual acknowledged or uncertain outcome;
++revocation is never described as recalling bytes already disclosed.
++
++Persist accepted policy/grant revisions and invalidation through restart;
++rollback to an older revision cannot restore access. Renewal revalidates the
++current binding and reduced scope and cannot resurrect an invalidated grant.
++It needs a new authorized grant if access is later restored. A retained payload
++that exceeds the current grant is suppressed as a whole, with its original
++bytes and delivery disposition kept under the declared retention policy.
++Re-signing or silently trimming it is not a retry of the same payload. Retained
++payload reads/replay also check current visibility, including enrichment
++dependencies, rather than relying only on subscription ownership. This does
++not require an online issuer lookup for every event or completion of OAuth
++refresh work before local policy fencing can be demonstrated.
++
+ ### Event and projection compatibility
+ 
+ Keep a small versioned observation envelope with event identity/type, semantic
+@@ -217,12 +280,12 @@
+ 
+ | Package | Concrete deliverable and ownership | Dependency and completion evidence |
+ | --- | --- | --- |
+-| A0: Bind contracts and predecessor standing | Integration owner records the exact main/dirty/private inputs, accepted predecessor portions, endpoint profiles, wire fixtures, domain owners and compatibility commitments. Rejects unsupported claims of Pi execution or OAuth refresh. | Planning can proceed from the pinned evidence now. Importing private source, moving state or changing a deployed release remains a separately owned integration decision. Complete when later packages have exact inputs and no ambiguous semantic owner. |
+-| A1: First shared operation and CLI | Bridge owner exports narrow public request/result DTOs and an application boundary over existing granted-input/read behavior. MCP adapter and a new Rust CLI use the same boundary. Include existing read-only typed inspection only if the task candidate is accepted; it remains Held where it was Held. | A0. Provider-disabled exact fixtures demonstrate the same request identity, result and refusal through MCP and CLI. Exact retry returns the same operation; changed payload conflicts; a lost native ACK stays unknown with no second send. No new remote exposure. |
+-| A2: Connector identity and scoped ingress | Auth/delivery owners replace process-global identity for the new profile with verified caller/installation binding and operation/visibility checks. Keep old token issuance and legacy endpoints explicitly separated. | A0; complete before adding remote clients to a shared endpoint. Two test client bindings under one owner cannot read or mutate each other's subscriptions/replay. Wrong owner/client/audience, expired credentials, forbidden targets and callback destinations are rejected at the owning boundaries. |
+-| A3: Observation sources and delivery composition | Observation owner extracts Codex and Claude source implementations and isolates source-neutral filtering/enrichment/delivery. Reuse the existing delivery semantics. Port bounded mechanics to Rust as their owner is replaced; do not grow new Python branches as the permanent extension route. | A0, public query contracts, A2 for shared remote access. Replay real redacted transcript fixtures, partial lines, rotation/replacement, daemon restart, outage and independent-recipient progress. Compatibility and unknown-state results match the selected old profile. Split parsing and delivery if one package cannot establish both coherently. |
++| A0: Bind contracts and predecessor standing | Integration owner records the exact main/dirty/private inputs, accepted predecessor portions, endpoint profiles, raw/enriched wire fixtures, composition and domain owners, and compatibility commitments. Rejects unsupported claims of Pi execution or OAuth refresh. | Planning can proceed from the pinned evidence now. Importing private source, moving state or changing a deployed release remains a separately owned integration decision. Complete when later packages have exact inputs and no ambiguous semantic owner. |
++| A1: First shared operation and CLI | Bridge owner exports narrow public request/result DTOs, extracts its internal Codex execution port, and exposes existing granted-input behavior. Observation owner exposes the shared enriched operation/result query. MCP adapter and a new Rust CLI use those same boundaries. Include existing read-only typed inspection only if the task candidate is accepted; it remains Held where it was Held. | A0. Provider-disabled exact fixtures demonstrate the same request identity, composed result and refusal through MCP and CLI, including missing worker/usage/closure evidence. Exact retry returns the same operation; changed payload conflicts; a lost native ACK stays unknown with no second send. No new remote exposure. |
++| A2: Connector identity and scoped ingress | Auth/delivery owners establish trusted connector-policy ownership, verified caller/installation binding, operation/visibility checks, and persisted delivery-grant lifetime/invalidation. Keep old token issuance and legacy endpoints explicitly separated. | A0; complete before adding remote clients to a shared endpoint. Two test client bindings under one owner cannot read or mutate each other's subscriptions/replay. Wrong owner/client/audience, expired credentials, forbidden targets/destinations and stale policy are rejected or held at the owning boundaries. |
++| A3: Observation sources and delivery composition | Observation owner extracts Codex and Claude source implementations and isolates source-neutral filtering/enrichment/delivery. Reuse existing delivery mechanics while enforcing the new profile's grant checks at observation/send/retry boundaries, ordered with invalidation. Port bounded mechanics to Rust as their owner is replaced; remove any temporary A1 compositor delegation. | A0, public query contracts, A2 for shared remote access. Replay real redacted transcript fixtures, partial lines, rotation/replacement, daemon restart, outage and independent-recipient progress. Compatibility and unknown-state results match the selected old profile; new-profile invalidation survives restart and does not rewrite retained payloads. Split parsing and delivery if one package cannot establish both coherently. |
+ | A4: Web adapter and profile review | Task/approval owners publish the accepted task projection/review contract; the devwits-auth owner adapts mailbox transport and UI validation/rendering to it. Preserve local pinned-key and action-time checks. Existing polling can remain. | Accepted task-owner source and A0 compatibility fixtures; it need not wait for full event push. Rust/JavaScript vectors bind the same request bytes, digest, answer and task/result references. Unknown profiles and missing terms hold approval visibly. Pi review support waits for its qualified contract. |
+-| A5: Connector conformance and release candidate | Integration owner exercises MCP and CLI plus a local non-MCP HTTP connector fixture against the owned interfaces; prepares one exact release/configuration candidate and state migration/import disposition. | A1-A3; include A4 only for typed-task/approval claims. The fixture uses two installations, restart/replay and denied-authority cases. Source readiness and live qualification are separate results. A later selected real connector requires its actual ingress/auth/callback checks before activation. |
++| A5: Connector conformance and release candidate | Integration owner exercises MCP and CLI plus a local non-MCP HTTP connector fixture against the owned interfaces; prepares one exact release/configuration candidate and state migration/import disposition. | A1-A3; include A4 only for typed-task/approval claims. The fixture uses two installations, restart/replay and denied-authority cases. It covers a queued retry after access removal, installation disablement, source/enrichment/destination grant invalidation, expiry and stale policy, restart after invalidation and renewal after scope reduction. Source readiness and live qualification are separate results. A later selected real connector requires its actual ingress/auth/callback checks before activation. |
+ 
+ An additional runtime execution profile is not necessary to prove channel
+ extensibility. After these interfaces are demonstrated, the existing Pi/S10 or
+@@ -256,6 +319,9 @@
+ 5. Two connector installations are isolated for session visibility,
+    subscriptions, replay and credentials. Callback verification, public HTTPS
+    destination checks, redaction and bounded payload behavior remain effective.
++   Unexpired delivery grants do not bypass current policy: an earlier committed
++   invalidation fences later disclosure and retries, including across restart.
++   Reduced-scope renewal cannot expose retained payloads outside current access.
+ 6. A signed decision retains exact bytes, request/profile/actor binding,
+    currentness and replay protections. Revocation committed before the effect
+    is consumed prevents that effect under the owning contract; later

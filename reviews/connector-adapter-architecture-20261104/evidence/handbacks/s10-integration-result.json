@@ -1,0 +1,203 @@
+{
+  "schema": "s10-rust-source-integration-root-result-v1",
+  "status": "accepted_bounded_source_integration_candidate",
+  "at": "2026-11-04T19:05:46.189093+00:00",
+  "authority": {
+    "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl",
+    "line": 5705,
+    "at": "2026-11-04T18:42:16.604000+00:00",
+    "text": "Ok, let's proceed with that",
+    "event_sha256": "61ec088ff2e779ddeb335815a432614427e5ffe62aae5ae0b3cc7e9306b24bff"
+  },
+  "scope": "Reviewed, build-tested integration candidate of accepted Pi/Docker coding component against current Rust workspace, preserving existing changes; exact patch and limits, no shared main mutation",
+  "hard_deadline": "2026-11-04T19:42:16.604000+00:00",
+  "worktree": "/home/bline/cbm-work/wt-s10-rust-integration-20261104",
+  "base_head": "0d51c0b8668d2497c0f7b31d5aac9b169faa60b5",
+  "baseline": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/builder/baseline.json",
+    "sha256": "8e0f52cd8774d7da50d36572b64056a204adad8ec2f1ac76ac0eadc19d55d8b4"
+  },
+  "accepted_source_manifest_sha256": "44808fb00a8d7e45cfd43b3d3ab10b78e92cc54a4f8e59382f82624f7771d197",
+  "candidate": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/builder/frozen/manifest.json",
+    "sha256": "496a28ff4566d2e0e2be09a573d765362e5dd20e84e8556bd414e3dc0f04fe18"
+  },
+  "patch": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/builder/frozen/subject.diff",
+    "sha256": "2007c6a2c07f8662e84d2cdad8dd2912ce4f1ca516ec43552483491d4ffb9a3b"
+  },
+  "archive": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/builder/frozen/subject.tar",
+    "sha256": "29d2d2596710715836f3f96b57e4b3965df1b047286601cc38fe3f1440e65b2c"
+  },
+  "changes": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/builder/frozen/changes.json",
+    "sha256": "6e52f73faaeb83f3206b1753190ad4908982cc33298432175883e6a71a1d254d"
+  },
+  "builder_result": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/builder/result.json",
+    "sha256": "6cc3d1cd7ef961e34a4900b603b6d554db5e5478df934057dc5f871862688b8e"
+  },
+  "validation": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/revalidation/result.json",
+    "sha256": "6fa10092e9792849ef9476f45ba8c64f232ed3db1d9e8757f6ec45881b89cd30"
+  },
+  "validated_binary": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/revalidation/target/debug/work-engine-manual-host",
+    "sha256": "e9a4f246b945b48b0713cf398afa3dc86ee01d0c1e06b21ae77cf5bb7fb5721a"
+  },
+  "parent_source_verification": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/parent-verification.json",
+    "sha256": "db229f37354092060e9f8ebc76aea12fc8d584e2f4b483243fee0d9a63955733"
+  },
+  "parent_revalidation_check": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/parent-revalidation-check.json",
+    "sha256": "b732280e2fdf3433af3cec69317aef7a40a2ad6ea1bc1a99198492d63a2be135"
+  },
+  "patch_reproduction": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/patch-reproduction.json",
+    "sha256": "6a0ddf600cf776957c33d2859351049df02ebd1f495853d8ff402dfbae80a719"
+  },
+  "initial_review": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/review/initial-report.json",
+    "sha256": "13ec85bc632c149eb5b0c971d1596c50e4ffa1de46efae50110e8298ca256666"
+  },
+  "repair_review": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/review-r2/final-report.json",
+    "sha256": "e6fef9403a018bcb27e453e6168b87c224a14a5535c2088bfb7a6d0ce83f4f47"
+  },
+  "review_native_provenance": [
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/review/final-provenance.json",
+      "sha256": "ebcfe83696b197d47dba50ad54b112d5451584a8ac0aa0742db6ff4c71950045"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/review-r2/final-provenance.json",
+      "sha256": "f55148c6a669f51404970efb05e06f8130824ea8e344dd786310cc2be596bfa8"
+    }
+  ],
+  "findings": [
+    {
+      "id": "I1",
+      "severity": "P2",
+      "resolution": "New exact-input/output bound offline reruns accepted; original unbound executions remainhistorical",
+      "source_changed": false
+    }
+  ],
+  "validation_summary": "70Rusttests pass,5intentionallyignored;5Nodechecks pass;strictalltargetClippy/build/examplebuild pass;3extra selectedfakefixtures pass;8custody runs with851inputs each;sourceandSDKbefore/after equal;outputexe digests bound;no leftovers",
+  "preservation": "22acceptedhostfilesbyteidentical; all30capturedmainbaselinepathsandHEAD unchanged atfinalRootcheck; patchreproducesall26frozenentries",
+  "cost": {
+    "basis": "speed-adjusted API-equivalent cost proxy, not measured quota",
+    "approved_total": 8,
+    "measured_at": "2026-11-04T19:09:38.751847+00:00",
+    "measured_total": 5.869478599999998,
+    "unpriced_calls": 0,
+    "actors": [
+      {
+        "session_id": "01a1a7e1-d164-7e51-a00c-53c5a830994a",
+        "requested_model": "gpt-6.1-terra",
+        "requested_effort": "medium",
+        "requested_tier": "default",
+        "observed_model": "gpt-6.1-terra",
+        "observed_effort": "medium",
+        "observed_tier": "default",
+        "measured_cost": 0.24891979999999997
+      },
+      {
+        "session_id": "01a1a7eb-aa89-73d0-8307-9dd8cb3a7f1f",
+        "requested_model": "gpt-6-astra",
+        "requested_effort": "high",
+        "requested_tier": "default",
+        "observed_model": "gpt-6-astra",
+        "observed_effort": "high",
+        "observed_tier": "default",
+        "measured_cost": 1.46568
+      },
+      {
+        "session_id": "01a1a7f1-0697-7b12-b97a-f035cbacb6e3",
+        "requested_model": "gpt-6-astra",
+        "requested_effort": "high",
+        "requested_tier": "default",
+        "observed_model": "gpt-6-astra",
+        "observed_effort": "high",
+        "observed_tier": "default",
+        "measured_cost": 1.187892
+      }
+    ],
+    "root_measured": 2.966986799999999,
+    "variances": [
+      {
+        "kind": "feasibility_marker",
+        "allocation": 1.0,
+        "observed": 1.6870316,
+        "variance": 0.6870316,
+        "status": "retained_no_clock_or_budget_reset"
+      },
+      {
+        "kind": "repair_reviewer_node_allocation",
+        "allocation": 0.7,
+        "observed": 1.187892,
+        "variance": 0.487892,
+        "status": "terminal_overshoot_not_retroactively_raised",
+        "reason": "Boundary observation collected after final; no continuous automatic per-node stop was active. Overall8total remainsprotected by reserve; no further worker/reviewer inference."
+      }
+    ],
+    "unsettled_reporting_tail": true,
+    "closure_reserve_inside8": 0.5,
+    "not_measured": "Actualsubscriptionquota attribution and providerbill",
+    "ledger": {
+      "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/cost-including-closure.json",
+      "sha256": "13dba4a796364337b26f7cff898d36c7a538c0a3979942e3fb06728cded79f18"
+    },
+    "window": {
+      "closed_at": "2026-11-04T19:06:28Z",
+      "since": "2026-11-04T18:42:16.604Z",
+      "until": "2026-11-04T19:09:38.751847+00:00"
+    },
+    "closure_tail_accounting": "Explicit until overrides closed_at only for this read-only accounting report; includes post-closure coordination/report preparation. Original authority and closed scope unchanged. Only final response tail remains unsettled."
+  },
+  "collection": {
+    "builder": "terminal finalhandback verified",
+    "reviewers": "both exactnativefinals collected withrolloutline/eventSHA",
+    "revalidation": "exec40361 exit0 collected",
+    "context_controller": "78146 exit0 viaoriginalg103:435 collected;744a3d45 completed/reservationreleased",
+    "owned_processes": [],
+    "listeners": [],
+    "claim_release": "released; receipt /home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/claim-release.json",
+    "terminal_board": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/board-terminal.json"
+  },
+  "context": {
+    "path": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/acceptance-context.json",
+    "sha256": "eff01a6b09fe8c2f6a95673f3c98dd8a69b43c93e5493ec963740b7a2449a519"
+  },
+  "limitations": [
+    "Private26fileoverlay on exactHEAD plus capturedcurrentRustbaseline, not standalonefullworkspace",
+    "No sharedmain/index/branch mutation, commit, push, deployment or release",
+    "No actualDocker/nativeauth/provider rerun or fullworkspace validation; prior runtimeproof remainsoldsource/environmentbound",
+    "ReviewerI1followup reconstructedcontinuity; not uninterrupted retainedreviewercontext or repeatedfullsourceaudit",
+    "Attributableperstepboundarycustody, not continuoustamperproofmonitoring or hermetictoolchain",
+    "Mainpreservation checkedcapturedpaths, not allpossibleforeignnewfiles",
+    "Oldinitiallockfailure and unboundchecks preserved; earlierbinary dce1273 notnewvalidatedbinary"
+  ],
+  "next_owner": "OtherRoot01a195d4-b7a7-77f2-ba65-277669c0ec97 owns independent signedMCP/OAuthcodingjoin; contextadapterintegration deferred peruser. Sharedmainpromotion/release outsidecurrentcandidate scope.",
+  "closure": {
+    "at": "2026-11-04T19:08:22.322987+00:00",
+    "budget_record": {
+      "closed_at": "2026-11-04T19:06:28Z",
+      "close": {
+        "at": "2026-11-04T19:06:28Z",
+        "disposition": "accepted",
+        "reason": "Exact private source integration candidate accepted after initialreadOnlyreview and I1 exactinput/outputcustody rerun plusboundedrepairreevaluation. Allchild/process resultscollected, no furtherworker/reviewerinference. Overall8total/19:42scope preserved; checkpoint and nodeovershoot recorded, finalreportingtail unsettled. Mainpromotion/provider/MCP/contextreset excluded.",
+        "set_by": "supervisor"
+      }
+    },
+    "claim_release": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/claim-release.json",
+    "board_terminal": "/home/bline/.local/state/work-engine/s10-rust-integration-20261104T1842/board-terminal.json",
+    "owned_processes": [],
+    "pending_questions": [],
+    "reporting_tail_unsettled": true
+  },
+  "operational_corrections": [
+    "Three terminal board post attempts were refused before publication: unregistered kind result, missing session address prefix, and status kind requiring data.subject. A single untyped note was then published successfully. No duplicate terminal message."
+  ]
+}

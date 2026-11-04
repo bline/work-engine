@@ -1,0 +1,16 @@
+{
+  "reviewer_session": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+  "turn_id": "01a1a810-b136-7450-8d29-dc44b5c88efa",
+  "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+  "final_line": 176,
+  "final_event_sha256": "d12e441cce430bd06be174dead93fbbf5f0f1a19233d64f9fd8f9c47c63bd9ed",
+  "final_text_sha256": "2a988d439bea554feae02b400a6b7a6e87a9c1f67a6baa3189023e756b48e625",
+  "report_sha256": "8046a9c3cb415e3c052901d2e2fc73b767d1f13ff12dcbb1a567bc632739a229",
+  "requested": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "service_tier": "default"
+  },
+  "settings_record": "/home/bline/.local/state/work-engine/connector-adapter-plan-20261104/reviewer-settings-r1.json",
+  "same_provider": "OpenAI; fresh different model/context, no cross-provider claim"
+}

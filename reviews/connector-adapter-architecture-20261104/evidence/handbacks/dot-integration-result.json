@@ -1,0 +1,158 @@
+{
+  "status": "partial_closed_no_live_coding",
+  "objective_complete": false,
+  "authority": "/home/bline/.local/state/work-engine/dot-s10-coding-integration-20261104T1754/AUTHORITY.json",
+  "clock": {
+    "first_funded": "2026-11-04T17:54:14.729Z",
+    "checkpoint": "2026-11-04T18:24:14.729Z",
+    "productive_cutoff": "2026-11-04T19:24:14.729Z",
+    "hard": "2026-11-04T19:54:14.729Z",
+    "reset": false
+  },
+  "source_checkpoint": {
+    "commit": "0dc727766169cc0b4c8a2f587a176ffda1ce5d54",
+    "tree": "dc87954743a89a497cd41266a562dbc4c2068b1e",
+    "branch": "private/dot-s10-coding-20261104",
+    "base": "f426efd6272bf1532a3679a54df6a3b080aafc8c",
+    "changed_paths": [
+      "rust/Cargo.lock",
+      "rust/Cargo.toml",
+      "rust/crates/session-task-admission/Cargo.toml",
+      "rust/crates/session-task-admission/README.md",
+      "rust/crates/session-task-admission/src/accounting.rs",
+      "rust/crates/session-task-admission/src/admission.rs",
+      "rust/crates/session-task-admission/src/board.rs",
+      "rust/crates/session-task-admission/src/canonical_source.rs",
+      "rust/crates/session-task-admission/src/current.rs",
+      "rust/crates/session-task-admission/src/inspect.rs",
+      "rust/crates/session-task-admission/src/key_policy.rs",
+      "rust/crates/session-task-admission/src/lib.rs",
+      "rust/crates/session-task-admission/src/main.rs",
+      "rust/crates/session-task-admission/src/native_authority.rs",
+      "rust/crates/session-task-admission/src/projection.rs",
+      "rust/crates/session-task-admission/src/proof.rs",
+      "rust/crates/session-task-admission/src/request.rs",
+      "rust/crates/session-task-admission/src/result.rs",
+      "rust/crates/session-task-admission/src/scoped_pilot.rs",
+      "rust/crates/session-task-admission/src/service.rs",
+      "rust/crates/session-task-admission/src/source.rs",
+      "rust/crates/session-task-admission/src/store.rs",
+      "rust/crates/session-task-admission/tests/owner-answer-v1.json",
+      "rust/crates/session-task-admission/tests/projection-fixture.json",
+      "rust/crates/session-task-admission/tests/projection.rs",
+      "rust/crates/session-task-admission/tests/proof.rs",
+      "rust/crates/session-task-admission/tests/result.rs",
+      "rust/crates/session-task-admission/tests/review.rs",
+      "rust/crates/session-task-admission/tests/service.rs",
+      "rust/crates/work-engine-manual-host/Cargo.toml",
+      "rust/crates/work-engine-manual-host/docs/pi-coding.md",
+      "rust/crates/work-engine-manual-host/receiver/pi-coding.mjs",
+      "rust/crates/work-engine-manual-host/receiver/pi-native-access.mjs",
+      "rust/crates/work-engine-manual-host/src/pi_coding.rs",
+      "rust/crates/work-engine-manual-host/src/pi_coding_auth.rs",
+      "rust/crates/work-engine-manual-host/src/pi_coding_provider.rs",
+      "rust/crates/work-engine-manual-host/src/pi_coding_validation.rs",
+      "rust/crates/work-engine-manual-host/src/pi_docker.rs",
+      "rust/crates/work-engine-manual-host/tests/pi-native-access.test.mjs",
+      "rust/crates/work-engine-manual-host/tests/pi-session-allocation.test.mjs",
+      "rust/crates/work-engine-manual-host/tests/pi_coding_actual.rs",
+      "skills/session-events/scripts/session_events.py",
+      "skills/session-events/tests/test_http_auth.py"
+    ],
+    "worktree": "/home/bline/cbm-work/wt-dot-s10-coding-20261104",
+    "main_merged": false,
+    "deployed": false,
+    "source_standing": "bounded reviewed partial only",
+    "post_commit_status": "?? .builder-handback/\n?? .mcp-coding-build/\n?? .mcp-coding-join/"
+  },
+  "source_acceptance": "/home/bline/.local/state/work-engine/dot-s10-coding-integration-20261104T1754/ACCEPTANCE.json",
+  "completed": [
+    "New Events Pi bridge connection requested openid offline_access; user consented; Dot reported a successful delivery_status at19:01:50Z.",
+    "Reviewed optional single persistent src/lib.rs write containment and operator-only offline_access discovery flag.",
+    "Reviewed provider-disabled actual SDK allocation primitive and same-manager identity test.",
+    "Accepted S10 and existing admission source imported into isolated private checkpoint; original/main sources preserved."
+  ],
+  "validation": {
+    "host_library": "22 passed;4 ignored",
+    "existing_admission": "37 library +15 integration passed; no new Pi authority acceptance",
+    "oauth_observation": "22 synthetic-token/fixture tests passed",
+    "strict_file_docker": "provider-disabled actual Docker fixture passed; forbidden persistent sibling/acceptance/rename/hardlink effects denied; original3tests passed; missing final proof fails closed",
+    "sdk_allocation": "actual pinned SDK test exited0; same actual manager/session UUID, no provider prompt; counters observe test ordering only",
+    "independent_review": "Two bounded Astra review passes accept_bounded, no blocking findings",
+    "runtime_custody_limit": "Strict Docker fixture has incomplete immutable source-to-executed-test-binary chain at execution; source acceptance does not elevate this into exact runtime qualification."
+  },
+  "remaining": [
+    "Distinct signed Pi task/profile and current-authority composition.",
+    "Production Host native-allocation seal before credential projection and current-authority effect hooks.",
+    "Coding-only MCP adapter/HTTP/status/result composition.",
+    "Explicit Pi signing UI support and negative authority/replay/revocation/uncertainty tests.",
+    "Exact immutable disposable-edit packet followed by separate owner passkey approval and real Dot pilot.",
+    "Token refresh after expiry remains untested; consent occurred after temporary TTL restored."
+  ],
+  "live": {
+    "coding": "HELD",
+    "actual_edit": false,
+    "provider_inference": false,
+    "services_changed_this_slice": false,
+    "main_merged": false,
+    "bridge_release": "existing accepted provider-disabled observation service retained",
+    "old_stytch_app": "kept unchanged",
+    "temporary_client_ttl": "restored480minutes; claim released"
+  },
+  "closure": {
+    "all_six_native_operations": "closed, exact receipts acknowledged; native turns completed",
+    "owned_process_records": "recorded exits all known, zero recorded leftovers; SDK/Docker evidence records exact container removal",
+    "children_running": false,
+    "subscriptions_created": false,
+    "scope_budget_close": {
+      "at": "2026-11-04T19:12:07Z",
+      "disposition": "abandoned",
+      "reason": "Close original funded objective as partial: bounded reviewed groundwork and new OAuth read accepted; full signed MCP-Pi coding join and refresh-after-expiry unproved. All discovery/builder/reviewer operations across three host states collected, closed and acknowledged; no owned native turn, unknown effect, child or fixture container remains in recorded closure evidence. Live edit disabled, no further dispatch. Preserve original clocks, cost variance and source/runtime evidence limits. Main merge/deployment not performed.",
+      "set_by": "supervisor"
+    },
+    "resource_claim": "Root claim26977dab retained through this terminal publication; exact later release evidence is claim-release.json. An absent release artifact leaves release unknown.",
+    "objective_close_receipt": "f71eaf8e42406a5c5f15e972a3704c9e3c20ae9ceb916984b951d5a594a98e20",
+    "accounting_receipt": "cafe4de64a12ac64f3f744e088e00c84b0e8ebab48c79913197b4d24eaa23155",
+    "accounting_receipt_acknowledged": true
+  },
+  "cost": {
+    "limit_usd": 20,
+    "basis": "API-equivalent adjusted for subscription speed; proxy, not actual bill/quota",
+    "recorded_before_closure": 13.121778400000007,
+    "ledger": "/home/bline/.local/state/work-engine/dot-s10-coding-integration-20261104T1754/preclosure-full-funded-ledger.json",
+    "runtime_provider_cost": 0,
+    "report_tail_pending": true,
+    "reserved_for_remaining_reporting": 0.5,
+    "coverage": "Complete native transcript attribution in funded window including pre-init Root calls; no Claude or provider calls. Subscription quota uncalibrated.",
+    "internal_variance": "Root8 forecast exceeded; prospective forecast revised without changing20 cap or original clocks. First3USD checkpoint included, not extra.",
+    "recorded_through_final_observation": 13.310216000000008,
+    "final_observed_window": {
+      "closed_at": null,
+      "since": "2026-11-04T17:54:14.729Z",
+      "until": "2026-11-04T19:14:17.555432+00:00"
+    },
+    "final_ledger": "/home/bline/.local/state/work-engine/dot-s10-coding-integration-20261104T1754/final-observed-funded-ledger.json",
+    "role_costs": [
+      {
+        "session": "01a195d4-b7a7-77f2-ba65-277669c0ec97",
+        "recorded_usd": 8.719848800000003
+      },
+      {
+        "session": "01a1a7ba-1d4b-7c23-b14d-d4f4b8bc966d",
+        "recorded_usd": 0.40527640000000004
+      },
+      {
+        "session": "01a1a7c4-0a14-7842-9e55-cd5e6e820766",
+        "recorded_usd": 1.5418128000000002
+      },
+      {
+        "session": "01a1a7e7-338d-7100-8009-c47ab23c29a3",
+        "recorded_usd": 2.6432779999999996
+      }
+    ],
+    "closure_reporting_tail": "Current final publication/report calls may settle later;0.50USD reserved within20. No new workers or runtime."
+  },
+  "s10_peer_result": "/home/bline/.local/state/work-engine/dot-s10-coding-integration-20261104T1754/S10-INTEGRATION-PEER.json",
+  "estimate_correction": "The approved slice did not complete the signed coding join. Preparatory source and OAuth connection are accepted only at their stated scopes; no signing packet is manufactured from proposed interfaces.",
+  "stopped_at": "2026-11-04T19:11:40.813387+00:00"
+}

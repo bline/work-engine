@@ -1,0 +1,27 @@
+{
+  "CA-R1-001": {
+    "disposition": "repaired",
+    "sections": [
+      "Subscription authority during asynchronous delivery",
+      "A2/A3/A5",
+      "Acceptance item 5"
+    ],
+    "consequence": "Recorded delivery grant bound to trusted policy and current installation/source/enrichment/destination permissions; explicit token-versus-lease lifetime, ordered invalidation, stale-policy hold, persisted invalidation and scope-aware retained payload suppression/replay."
+  },
+  "CA-R1-002": {
+    "disposition": "repaired",
+    "sections": [
+      "Public operations and ownership",
+      "A0/A1/A3"
+    ],
+    "consequence": "Observation owner explicitly owns enriched views; MCP and CLI share them and parity fixtures include unknown worker/usage/closure evidence. Any existing pinned Python compositor delegation is bounded to A1 and removed in A3."
+  },
+  "runtime_port_ownership": {
+    "disposition": "clarified",
+    "consequence": "A1 owns the internal Codex execution port; A3 owns observation ports; other runtime implementations remain deferred."
+  },
+  "verified_caller": {
+    "disposition": "clarified",
+    "consequence": "A2 requires a trusted validated caller result or equivalent configured binding; unverified claim parsing cannot create caller context."
+  }
+}

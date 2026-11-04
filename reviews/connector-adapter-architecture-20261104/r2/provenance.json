@@ -1,0 +1,71 @@
+{
+  "reviewer_session": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+  "turn_id": "01a1a817-537b-7803-9e70-c08cf9a8e491",
+  "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+  "final_line": 219,
+  "final_event_sha256": "3d4db693baacaf2f2c5b4773f6172b75868b0d9db6b6782ad793503b68ffc446",
+  "final_text_sha256": "034a2c7ddf15db3a83a620d904d288ef6f34da5c768dd20108f4f3190a33e395",
+  "report_sha256": "9016d751efd8ca70834ce300ccaeb37da30dccc629858f042e151eb969079c00",
+  "requested": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "service_tier": "default",
+    "sandbox": "read-only"
+  },
+  "observed_settings": {
+    "limitations": [
+      "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+      "Successor settings must be observed after launch and adoption; arguments are a request.",
+      "Runtime configuration does not establish backend fulfillment or billing."
+    ],
+    "model": "gpt-6-astra",
+    "preservation": "launch_arguments_available",
+    "reasoning_effort": "high",
+    "recorded_cli_version": "0.166.0",
+    "service_tier": "default",
+    "session_id": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+    "source": {
+      "event_sha256": "e64397da00882f487994bd083fc3ff13f1cf55a5e3949f38bbc593376b082baa",
+      "line": 180,
+      "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+      "timestamp": "2026-11-04T19:44:23.421Z"
+    },
+    "successor_host_args": [
+      "-m",
+      "gpt-6-astra",
+      "-c",
+      "model_reasoning_effort=\"high\"",
+      "-c",
+      "service_tier=\"default\""
+    ],
+    "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+    "turn_attribution": "latest_session_observation",
+    "turn_id": null
+  },
+  "observed_turn_context": {
+    "turn_id": "01a1a817-537b-7803-9e70-c08cf9a8e491",
+    "line": 182,
+    "event_sha256": "47ebddb171ee24e876861e1e3af5e2def674d0709271c3c3593dc96780ce20a8",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "sandbox_policy": {
+      "type": "read-only"
+    },
+    "approval_policy": "never"
+  },
+  "native_terminal_events": [
+    {
+      "turn_id": "01a1a810-b136-7450-8d29-dc44b5c88efa",
+      "type": "task_complete",
+      "line": 179,
+      "event_sha256": "f9f1b72f609493bd51ece02d50bac38b9be51a817db29d410a5c9f08d57395d1"
+    },
+    {
+      "turn_id": "01a1a817-537b-7803-9e70-c08cf9a8e491",
+      "type": "task_complete",
+      "line": 222,
+      "event_sha256": "3301b8b7bf70e76ec9a0760b83e18cb9eb5afda76e86eb96ddf3881bd8b999dc"
+    }
+  ],
+  "independence_scope": "Fresh top-level different-model context at r1, same retained reviewer for r2. Both designer and reviewer use OpenAI; no cross-provider claim. Recorded configuration does not prove backend fulfillment or billing."
+}

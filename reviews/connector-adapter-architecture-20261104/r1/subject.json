@@ -1,0 +1,9 @@
+{
+  "revision": 1,
+  "plan": "/home/bline/code/work-engine/planning/connector-adapter-architecture-plan-20261104.md",
+  "frozen_subject": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r1/subject.md",
+  "subject_sha256": "799eea2d51b4b68c7d40dd4537294f6ff0b98848e4ecd550d7e20591e40dffaa",
+  "evidence_manifest": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/evidence/manifest.json",
+  "evidence_manifest_sha256": "3e9d1ad411a14f2043bd563925f9ba02caaf28882b0eb0e3d572f1551a34ebda",
+  "status": "awaiting_review"
+}
