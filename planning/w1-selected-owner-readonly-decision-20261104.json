@@ -1,0 +1,61 @@
+{
+  "record_type": "w1-selected-owner-readonly-decision-packet",
+  "recorded_at": "2026-11-04T22:35:03.822563+00:00",
+  "status": "pending_human_contract_decision",
+  "preparation_authority": "/home/bline/.local/state/work-engine/consolidation-20261104-01a1a877/AUTHORITY.json",
+  "baseline": "8f78a24966c09b8b8663ce0eb908d92014ec41c3",
+  "decision_owner": "user",
+  "implementation_authorized": false,
+  "question": "Authorize a separately named selected-owner read-only episode API so the completion executable can read a root produced by a different executable?",
+  "recommendation": "Approve the narrow owner-contract addition as a separately budgeted implementation. Keep the existing same-executable native writer and reader APIs unchanged.",
+  "cause": "The native marker verifier recomputes current_exe() hash. A distinct completion executable is therefore correctly refused under ER1; reviewed W1 library composition does not prove standalone executable completion.",
+  "options": [
+    {
+      "option": "Add selected-owner read-only route",
+      "effect": "Trusted startup supplies the exact producer selection and read scope. The episode owner verifies the original producer identity and every read-only invariant on open and each read. Completion executable identity stays separate.",
+      "requires": "Explicit contract approval, a separate implementation budget, focused review and two-executable qualification."
+    },
+    {
+      "option": "Retain current ER1 contract",
+      "effect": "Keep W1 standalone completion-host readiness unaccepted. Existing same-executable evidence remains usable within its limits."
+    }
+  ],
+  "invariants": [
+    "Existing current-executable native writer and reader routes keep their semantics and cross-executable refusal.",
+    "New reader preserves original producer selection, exact canonical marker/root/database identity, schema/history and scoped checked-readback validation.",
+    "Trusted startup fixes expected selection and scope; requests cannot replace or widen either.",
+    "No marker rewriting, schema migration, writable store opening, deserialized checked evidence, or generic ignore-executable switch."
+  ],
+  "required_proof": [
+    "Producer A writes through actual native owner APIs; distinct concrete completion executable B reads exact historical target through the normal completion socket and repeats after restart. Bind both executable digests and unchanged producer selection.",
+    "From B, existing read/write admission APIs still reject A roots. New handles cannot write or checkpoint.",
+    "Reject wrong producer/digest/root, invalid marker/profile/codec/permissions/symlinks, swapped databases and changed history, including changes after opening.",
+    "Preserve existing historical resolution, checked absence versus unavailable/corrupt state, authority scope, and live-WAL behavior."
+  ],
+  "proposed_ownership": [
+    "rust/crates/review-episode-store/src/{lib,sqlite}.rs",
+    "rust/crates/review-episode/src/in_process_admission.rs",
+    "Focused owner tests and work-engine-completion-host opener integration",
+    "Explicit additive read-route contract record"
+  ],
+  "evidence": {
+    "historical_result": {
+      "path": "/home/bline/.local/state/work-engine/w1-20261018/root-result-v5.json",
+      "status": "59 affected and 8 joined tests passed; zero open code findings; owner decision unanswered"
+    },
+    "historical_boundary": "/home/bline/.local/state/work-engine/w1-20261018/owner-boundary.md",
+    "current_contract": "records/rust-episode-owner-join-implementation-plan.md:138",
+    "current_verifier": "rust/crates/review-episode-store/src/sqlite.rs:535",
+    "current_executable_basis": "rust/crates/review-episode-store/src/sqlite.rs:433"
+  },
+  "verification": {
+    "tier": "Tier 2, bounded",
+    "project": "home-bline-code-work-engine",
+    "store_generation": "u134f73b6564c157bg2",
+    "search": "read_native_selection and existing native read opener found; no selected-owner symbols found in exact-name search; this is not an exhaustive API absence claim",
+    "trace": "Depth-one inbound and outbound native selection trace collected; heuristic codec edges qualified by direct function source",
+    "coverage": "Four current owner/contract files content verified, no recorded issue; best effort only",
+    "runtime_tests": "Not run for this packet; historical W1 tests are not relabeled as current standalone proof"
+  },
+  "commit_disposition": "Documentation only; W1 source and mixed Cargo overlays remain preserved and uncommitted."
+}
