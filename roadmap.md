@@ -112,6 +112,16 @@ their claims become stale.
 
 ## Current strategic route
 
+**Maintainer direction, 2026-11-03:** the next integration milestone follows the
+[Pi/Docker convergence amendment](planning/s10-pi-docker-convergence-amendment-20261103.md):
+a small deterministic Rust host launches whole contract-bound inference jobs;
+local reasoning and supervision live inside the container; existing MCP events
+carry outside context/budget pressure. Existing root skills supply role behavior,
+not a standing top-level supervisor model. Reuse Rust continuity/authority owners
+and the existing delivery lane, then prove one complete engineering job. This
+selects a development route; implementation grants and original standalone
+release/operational acceptance conditions remain separate.
+
 The 2026-08-20 strategic reconciliation found that the command-and-control
 direction remains sound, while distribution and live recovery lag behind the
 repository-local terminal lifecycle. Fourteen accepted slices now establish

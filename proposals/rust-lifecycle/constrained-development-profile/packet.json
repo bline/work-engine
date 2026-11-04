@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.rust-lifecycle.constrained-development-profile",
+  "family_id": "work-engine.rust-lifecycle",
+  "title": "Constrained retained-snapshot development qualification",
+  "lifecycle_state": "decided",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "human_delivery_direction",
+      "path": "../../../records/rust-lifecycle-s10-constrained-profile-direction-20261103.md"
+    },
+    {
+      "kind": "reviewed_feasibility_result",
+      "path": "../../../records/rust-lifecycle-s10-feasibility-result-20261103.md"
+    },
+    {
+      "kind": "current_stage_plan",
+      "path": "../../../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "kind": "governing_lifecycle_contract",
+      "path": "../../../experiments/context-lifecycle-rust/DESIGN.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A separately identified qualification profile at the existing retained-task, lifecycle and packaged-host boundaries. Existing owners retain operation meaning, admission, persistence, execution and settlement; no parallel lifecycle owner or general observation platform. The exact native-harness enforcement route remains to be established."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "The selected existing harness cannot exclude or gate undeclared model-invocable tools before their effects; do not infer enforcement from post-hoc history.",
+      "A required operation, confidentiality, cancellation, recovery or settlement fact still depends on unavailable world evidence under the proposed controlled starting conditions.",
+      "Original claim mapping reveals that a proposed exclusion weakens a requirement the acceptance owner has not explicitly changed.",
+      "Current store, compiler/verifier or native-profile composition cannot supply the named evidence without a materially different implementation boundary.",
+      "Complete implementation, review and qualification cannot be bounded economically; return a decision instead of adding prerequisites indefinitely."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user as S10 acceptance owner, or an explicitly delegated acceptance owner",
+    "implementation_authorized": false
+  },
+  "relationships": []
+}

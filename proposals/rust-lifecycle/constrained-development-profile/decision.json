@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.rust-lifecycle.constrained-development-profile",
+  "source": {
+    "repository_revision": "371c7fc67c76f0a7e13d61e4a6d08eb55bbfef29",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "A separately identified qualification profile at the existing retained-task, lifecycle and packaged-host boundaries. Existing owners retain operation meaning, admission, persistence, execution and settlement; no parallel lifecycle owner or general observation platform. The exact native-harness enforcement route remains to be established.",
+    "rationale": "User approved exact reviewed v2 reduced development assurance claim and separately approved the bounded2h/18TOTAL offline qualification bid. Original native-profile raw8/17 requirements and fullS10/M6 remain unchanged; scoped execution authority is recorded separately in active offline assignment, not granted by proposal state.",
+    "reopening_conditions": [
+      "The selected existing harness cannot exclude or gate undeclared model-invocable tools before their effects; do not infer enforcement from post-hoc history.",
+      "A required operation, confidentiality, cancellation, recovery or settlement fact still depends on unavailable world evidence under the proposed controlled starting conditions.",
+      "Original claim mapping reveals that a proposed exclusion weakens a requirement the acceptance owner has not explicitly changed.",
+      "Current store, compiler/verifier or native-profile composition cannot supply the named evidence without a materially different implementation boundary.",
+      "Complete implementation, review and qualification cannot be bounded economically; return a decision instead of adding prerequisites indefinitely."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user as S10 acceptance owner, or an explicitly delegated acceptance owner",
+    "exercised_by": "user",
+    "evidence": "Exact native approval 2026-11-03T20:16:09.754Z at /home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl:892, SHA256 6b433a24644913503a9554ab05ee5f27f871167a31288730b45e42048d1a7647; preceding final asked approval of exact profile v2 and2h/18offline bid. Profile narrative SHA256 5a6de70d5ad234bcd4f62f74c183fdb508f09c74440d088d82cd00a1121afe25. Separate execution grant /home/bline/.local/state/work-engine/s10-supervision-20261103/offline-qualification/assignment.json."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

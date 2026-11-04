@@ -7,6 +7,44 @@ its existing owner. The exact S4 slice contract still binds its implementation
 scope. S5 implementation, provider inference, legacy disposition, cutover and
 ordinary publication remain outside that grant; this document grants none of them.
 
+**Current S10 planning, 2026-11-03:** the user selected the
+[Pi/Docker root/Rust convergence amendment](../../planning/s10-pi-docker-convergence-amendment-20261103.md).
+The first working base has a deterministic outside Rust host launching whole
+contract-bound inference jobs; local supervision stays inside the container.
+Reuse the existing MCP event system for outside context/budget pressure and
+the Rust lifecycle for durable continuity, with Pi providing qualified session
+operations. There is no standing outside supervisor model. Pi/Docker remains a
+candidate to qualify; planning approval is not an implementation, inference or
+release grant. All earlier S10 execution allocations are closed.
+
+The user previously authorized the
+[three-stage convergence update](../../records/rust-lifecycle-s10-convergence-plan-20261103.md).
+The original native profile remains held at evidence feasibility; its accepted
+private diagnostics and synthetic coverage do not establish full replacement.
+The first S10-F attempt
+has [closed with a reviewed local holder witness](../../records/rust-lifecycle-s10-feasibility-result-20261103.md);
+the original native profile's complete evidence route remains unestablished.
+The user has since selected the
+[constrained development direction](../../records/rust-lifecycle-s10-constrained-profile-direction-20261103.md),
+accepted the [exact constrained profile](../../proposals/rust-lifecycle/constrained-development-profile/proposal.md),
+and funded one offline attempt capped at 120 minutes/$18 total. That attempt
+has [closed at unsupported admission after an actual compatible-native run](../../records/rust-lifecycle-s10-constrained-offline-result-20261103.md).
+The subsequent [admission-only followup](../../records/rust-lifecycle-s10-admission-only-result-20261103.md)
+confirmed explicit refusal of one undeclared write and attributed new-run Git
+startup inside an isolated network/PID realization. Separate review accepts
+those targeted facts. The subsequent approved 90-minute/$12
+[runner attempt stopped at its early feasibility checkpoint](../../records/rust-lifecycle-s10-runner-feasibility-stop-20261103.md).
+Private-root schema export works, but complete native builtin admission remains
+unestablished and no credible full remaining forecast was available. Fresh
+review accepts the stopped result; no implementation or replacement/restart
+qualification was entered. S10-Q is held for an explicit native-adapter/profile
+decision, with no automatic repair, renewed allocation or live authority.
+The update separates
+evidence feasibility, bounded retained-workflow qualification and operational
+replacement. It changes planning and stopping conditions, grants no execution
+or spending, and preserves the original acceptance requirements. The dated S4
+authorization above and in the final section is historical, not a new dispatch.
+
 ## Objective and governing inputs
 
 Deliver the replacement in [DESIGN.md](DESIGN.md), preserving the requirements
@@ -82,7 +120,11 @@ M0 design decisions + implementation authority
                     |
         S9-D Rust join; S9-H historical transfer deferred
                     |
-             S10 replacement qualification
+             S10-F evidence feasibility
+                    |
+             S10-Q bounded qualification
+                    |
+             S10-O operational replacement
                     |
        separate live-proof and operational authorities
 ```
@@ -444,6 +486,66 @@ their stated development cases, not this exit.
 
 ## S10 — Replacement qualification and operational handoff
 
+### Current convergence stages (2026-11-03)
+
+The [convergence record](../../records/rust-lifecycle-s10-convergence-plan-20261103.md)
+owns the F/Q/O distinctions and stopping conditions. The user-selected
+[Pi/Docker amendment](../../planning/s10-pi-docker-convergence-amendment-20261103.md)
+now selects the integration route and deterministic-host/container development
+base. It preserves original acceptance and historical diagnostic-run boundaries.
+These stage labels do
+not rename earlier A–D repair packets or the existing S10-D development scope.
+
+| Stage | Exit | Current standing |
+| --- | --- | --- |
+| S10-F evidence feasibility | A defensible route for the selected operation's remaining history/custody claims, with an actual minimal demonstration of the uncertain evidence capability and a bounded plan through qualification; otherwise an explicit infeasible, authority-blocked or inconclusive disposition and owner alternatives. | First attempt closed: reviewed local outside-holder witness accepted; original-profile feasibility remains unestablished. [Result and owner decision](../../records/rust-lifecycle-s10-feasibility-result-20261103.md). No automatic next attempt. |
+| S10-Q bounded retained-workflow qualification | Exact integrated build/profile evidence establishes completed-result use across the selected replacement/restart cases, authority and ordering preservation, no repeated effect, and the applicable original history/custody requirements. Controlled and live results retain their distinct claims. | User selected Pi/Docker with deterministic outside control, existing MCP pressure delivery and Rust continuity ownership. Qualify one joined development job and the separately identified retained-snapshot obligations; both remain unqualified. Earlier native runner stopped at NO-GO and its grant is closed. No automatic execution, claim waiver or live authority. |
+| S10-O operational replacement | Applicable S9 disposition/compatibility/rollback obligations and M6 live evidence/human acceptance are resolved for the selected operational scope before cutover. | Separately scoped and authorized; S10-Q alone cannot close full S10/M6. |
+
+Because further synthetic controls cannot establish missing actual history,
+the first S10-F attempt replaced the unbounded diagnostic-consumer repair
+chain. That attempt is now closed; its planning ceiling was **90 minutes / $15 total modeled
+speed-adjusted API cost**, including preparation, all actors, any recovery,
+review and closure. It is not a renewed allocation or an S10-Q completion estimate.
+The user subsequently accepted the exact constrained profile and funded its
+first offline attempt; its separate 120-minute/$18 total ceiling is now closed.
+The user then agreed to an admission-only followup with a separate supervisor
+45-minute/$6 total self-limit, now closed after reviewed targeted evidence.
+That followup resolves its fixture-exhaustion and new-run Git-attribution
+questions; it does not establish general domain-only tool admission or absence
+of ambient credentials/filesystem/UNIX-IPC exposure through the host-root view.
+A subsequent user-approved 90-minute/$12 runner attempt stopped at its
+20-minute/$3 feasibility checkpoint. Schema export from an empty private root
+works; complete native builtin control remains unestablished through the
+current callback seam or evidenced pinned-native policy. Its full remaining
+forecast was not credible under the original limit. No implementation followed.
+The user has now selected Pi/Docker as the preferred candidate route for a
+deterministic outside host with local in-container supervision. The
+[amendment](../../planning/s10-pi-docker-convergence-amendment-20261103.md)
+reuses the existing MCP event system and distinguishes its pressure transport
+from Rust-owned continuity and Pi's provider/session operations. The next
+execution packet must bind that joined route, actual effects and owner contracts
+under one prospective total ceiling. Its exact profile remains to be qualified;
+another backend project or qualification run is not automatically funded.
+The earlier inconclusive negative fixture and earlier surviving process-group
+members do not establish a universal native-backend limitation. Any subsequent execution
+requires its own numeric assignment and required authority before execution;
+a different ceiling is an explicit decision, not an automatic extension.
+Missing access produces an authority-blocked result, not a claim of technical
+impossibility. Runtime/backend repairs are outside the closed test-only grant.
+
+Later grants fund a named stage outcome against an explicit total ceiling,
+deadline and complete remaining review/closure forecast. Child assignments
+consume that stage's allocation; smaller assignments and retries do not reset
+its clock or cost. A newly discovered prerequisite that invalidates the route
+or forecast returns to the stage decision owner. At the ceiling, or without a
+viable evidence route, collect owned work and return a disposition instead of
+automatically commissioning another slice. Additional test coverage is useful
+when it addresses a named unmet acceptance condition or a concrete defect and
+advances the admitted route; test count alone is not the exit.
+
+### Preserved qualification and operating boundaries
+
 S10-D may qualify only the provider-disabled development composition reached
 through S9-D; it must name the exact offline native entry/result and current
 recovery scope, plus live-provider, egress-isolation and semantic downgrade
@@ -460,6 +562,89 @@ The offline candidate can become ready for a separately authorized bounded live
 proof. That authority specifies the exact build/profile, provider, quota, disposable
 state, deadlines, permitted tool domain and semantic acceptance. A consumed attempt
 is not reused. Any failure preserves the subject and stops advancement for diagnosis.
+
+**Diagnostic runs.** Between qualification attempts, the implementation owner
+may run the current candidate on this host to see how it behaves. This is a
+standing authorization. A run that meets the limits below needs no review,
+entry grant, qualification freeze or approval from the root. It informs
+engineering only: it satisfies no qualification check, consumes no
+qualification attempt, and is never cited as qualification evidence. The
+assignment names the operations its diagnostic runs may exercise. If it names
+none, a run may only start the host to readiness and stop it.
+
+- **Identity.** The run record identifies the candidate. It holds the digest
+  of each executable the run starts and the command, plus the digest of each
+  configuration file. It also holds the source identity: a commit, or for a
+  tree outside the repository the manifest digest from `custody.py freeze`,
+  taken once per source change. `custody.py run` records the command and,
+  with `--digest`, the files.
+- **State.** The run starts from a new private root made for that run: home,
+  Codex home, stores and work directory. No later qualification subject reuses
+  that root.
+- **Permitted inputs and effects.** Besides its own root, the run may read:
+  - system directories (`/usr`, `/lib*`, `/bin`, `/sbin`, and `/etc` except
+    `/etc/codex`), read-only;
+  - `/dev` and its own `/proc` entries;
+  - the candidate's executables and pinned inputs, read-only.
+
+  It writes only under its root, and its network is loopback only.
+
+  Everything else is prohibited. That includes:
+  - the rest of the user's home, including Codex, Claude and Work Engine
+    state;
+  - the repository working tree;
+  - other content of `/tmp`, `/var/tmp` and `/dev/shm`;
+  - `/run/user`, which holds the user's service manager and session bus;
+  - other sessions' processes;
+  - credentials, live providers, and any network beyond loopback;
+  - Codex system configuration under `/etc/codex`;
+  - any change to an installed tool or service, or to a host-wide privilege,
+    namespace or hardening setting.
+- **Exclusion before the run.** Each prohibited access is excluded before the
+  run starts. Either a mechanism enforces the exclusion, or the resource is
+  shown to be absent. Clearing the environment and capping process lifetime
+  do not enforce filesystem or network limits.
+
+  One mechanism on this host (as of 2026-10-29) is `bwrap`. It ran
+  unprivileged with a private network holding only loopback, a read-only root,
+  and a private home with chosen paths bound in, as user 1000 with no
+  capabilities. `/etc/codex` was absent.
+
+  If a prohibited access cannot be excluded, the run does not start. The
+  record names the mechanism used, because a sandbox can change what the run
+  observes.
+- **Containment.** The sandbox runs inside one transient user scope with a
+  wall-clock cap and a kill of the whole control group, as the 2026-10-28
+  startup grant did (`systemd-run --user --scope`, `RuntimeMaxSec`,
+  `KillMode=control-group`). The run is started through `custody.py run`, so
+  its process IDs, exit and leftover processes are recorded.
+- **Cleanup.** When the run ends, its scope is gone and no process of it
+  remains. The run stops only its own processes. The record and logs are kept
+  whatever the outcome. The root may be deleted after that.
+- **Limit.** At most 10 diagnostic runs per assignment. They come out of the
+  assignment's time and quota budget, and each stays within the qualification
+  attempt's own caps. The coordinator may approve more runs and record that
+  in the assignment's scope record. An extension does not raise the budget,
+  and a new assignment for the same work does not reset the count.
+
+**Failures.** Some failures are ordinary: a failed assertion, a nonzero exit,
+or a candidate stopped by the cap after missing a deadline. They are
+engineering information. Diagnosis continues, and unlike a failed
+qualification attempt they do not stop candidate advancement.
+
+A boundary failure is different. It is any of these:
+- a process that outlives the run or escapes its scope;
+- an observed access or effect outside the permitted ones;
+- a cleanup that leaves the scope, processes or files outside the root behind.
+
+After a boundary failure, the implementation owner tells its supervisor at
+once. No further diagnostic run starts in the assignment until the supervisor
+accepts a fix.
+
+So that repeated runs cannot hide a flaky result, the qualification review
+receives the list of diagnostic runs on the candidate's lineage, with their
+identities and outcomes. Qualification attempts do not change: a frozen and
+reviewed subject, a separate grant, one attempt, and no reuse.
 
 M6 completes only after the required live evidence and human replacement acceptance.
 Publication, real legacy reconciliation/custody disposition, shutdown, activation
@@ -526,6 +711,14 @@ or promotion of nonrecurrence into an explanation. Use separate temporary roots
 per lane and no shared mutable provider profile.
 
 ## Decisions and next authorization
+
+For current S10 planning, use the
+[2026-11-03 convergence record](../../records/rust-lifecycle-s10-convergence-plan-20261103.md)
+and stages above. This planning update starts no worker, acquisition,
+qualification attempt or operational action. Earlier consumed attempts, closed
+allocations and accepted evidence retain their standing. The following S4 and
+pre-slice decisions record the original authorization and remaining owner
+boundaries; they are not instructions to restart completed foundation work.
 
 S0–S3 are complete at the published revisions above. The next authorized work
 is S4's provider-disabled Rust composition under its exact accepted slice plan,
