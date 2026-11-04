@@ -1,0 +1,119 @@
+{
+  "duration_api_ms": 377817,
+  "stop_reason": "end_turn",
+  "session_id": "cc534e93-17e9-466f-9016-c5e964de94a2",
+  "total_cost_usd": 3.94137175,
+  "usage": {
+    "input_tokens": 226,
+    "cache_creation_input_tokens": 129038,
+    "cache_read_input_tokens": 494407,
+    "output_tokens": 24695,
+    "output_tokens_details": {
+      "thinking_tokens": 11523
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 129038,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 32,
+        "output_tokens": 2885,
+        "cache_read_input_tokens": 121233,
+        "cache_creation_input_tokens": 7805,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 7805
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-fable-5-1": {
+      "inputTokens": 226,
+      "outputTokens": 24695,
+      "cacheReadInputTokens": 494407,
+      "cacheCreationInputTokens": 129038,
+      "webSearchRequests": 0,
+      "costUSD": 3.94137175,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 11523,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 129038,
+      "canonicalModel": "claude-fable-5-1",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "model_not_allowed",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 29,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "# Second-tier review: same-session context continuity (subject `7370f619\u2026`)\n\n**Verdict: `changes_required`.** The candidate's core separation is sound: compaction is not root transfer, and both actuation and resumption must be covered by current authority. Four distinctions are missing from the contract text itself before acceptance. The rest of the Opus findings are realization evidence obligations, pilot design, or wording. No owner decision blocks progress.\n\n**Durable state:** episode begun at revision `c6fa0f9d\u2026`, initial result recorded with transition `fable-initial-result-1` at revision **`23102c398b990a6201c2ad0ea116e1fed09cd42b`**, ref `refs/work-engine/independent-review-state/2443c66a\u2026`. Read-back confirms 12 open findings, status `active`, `pending_next_action: await_remediation`. Publication complete.\n\n**Specialist applicability (agent-instruction-review): applicable.** The contract insertion at `proposal.md:40-114` and the loaded text at `context-boundary.md:16-40` are materially normative. Advisory only; no acceptance, implementation authority, or safe-runtime declaration.\n\n## Finding dispositions\n\n| Opus | Opus sev | Disposition | Fable sev | Causal reason and location |\n| --- | --- | --- | --- | --- |\n| 1 | P1 | uphold | P1 | `proposal.md:50-51` says restriction \"remains binding\" but `:64-66` only reuses lease revocation; the owner loop re-grants readiness after recompilation (`manager:601-606`) and the manager does not own human intent (`manager:75-78`). Nobody is assigned to judge whether input restricts the lifecycle operation itself. Irreversible (`manager:708-713`). `pilot.md:65-66` passes a run that compacts after \"do not refresh\". |\n| 2 | P1 | qualify | P2 | `proposal.md:64-65` already quantifies over all human input; the requirement is correct. The gap is realization evidence (DESIGN \u00a73.9) and pilot claim identity: `manager:626-649` orders only the switchboard; `pilot.md:55-57` names no path. Not an acceptance blocker. |\n| 3 | P1 | qualify | P2 | `context-boundary.md:25-29` is a limitation, not a grant; \"reads as permission\" is overstated. Missing distinction is described-vs-available: the proposal's own boundary (`:126-128`) is not loaded, and no host contract supports the route today (`manager:644-646` rejects direct compact; a Claude manual root has no lifecycle host). |\n| 4 | P2 | uphold custody gap, reject contradiction | P2 | `proposal.md:83-84` binds custody only to host-dispatched effects, so a role-dispatched compaction escapes the no-duplicate obligation. But `manager` invariant 9 already permits model actuation under host-owned state, and the design view's invariant 1 is proposed, not binding. No contradiction with the owner. |\n| 5 | P2 | uphold | P2 | The wakeup is a third input category: not queued human input (`protocol:561-570`) and not the tool-less rehydration turn (`manager:694-697`). `proposal.md:73-79` gives it attribution but no admission position; `:67` departs from release-after-acceptance silently. |\n| 6 | P2 | reject as contradiction | P3 | `proposal.md:50` and `:47-49` read together match the non-reservation default that `packet.json:23` reopens on. \"Permit\" is ambiguous; DESIGN \u00a711 forbids imposing the affirmative-grant reading. Wording fix only. |\n| 7 | P2 | qualify | P3 | Outcome already governed at `proposal.md:54-56` and checked at `pilot.md:69` (\"approval remains pending\"). Author/deliverer is a recording refinement. The pilot fixture change is accepted: the wakeup must assert closure so the case can fail. |\n| 8 | P2 | uphold | P2 | `proposal.md:107-109` \"resumption or notification\" admits a realization whose only route is the resumption. `:102-103` requires distinguishing failure but names no route by which failure reaches the operator. S10 was announcement then silence. `pilot.md:118-119` scores visibility on nominal runs only. |\n| 9 | P2 | qualify | P2 (pilot only) | `pilot.md:111-112` \"admissible evidence\" is undefined for post-pause work, unauthorized actions and wakeup replay. Bounded fix: the fixture closes the action set, so name a source per case. No global absence proof or all-tools monitor is required. |\n| 10 | P3 | uphold | P3 | `proposal.md:35-37` claims reuse of \"existing\" protocol contracts, but attribution, abort-from-reserved and control-turn identity are new_context-shaped (`protocol:173-184, 542-549`; `manager:651-657`). Record as realization obligation. |\n| 11 | P3 | uphold, not blocking | P3 | Intent-projection view (proposed status) overlaps `proposal.md:70-71, 118-120` on pending disposition. Scope \"ordering\" to lifecycle actuation and resumption; add a relationship note. Owner choice stays with the architecture owner. |\n\n## New finding\n\n**SSC-FABLE-1, P3.** Ambiguous scope of newer human input is not fail-closed at the admission boundary. `proposal.md:68-70` governs \"affected domain work\", leaving the successor or host to judge whether an ambiguous pause covers the pending compaction or the resumed work. `manager:485` makes ambiguity exact/escalate at compile time and invariant 3 forbids guessing closure, but neither is restated for lifecycle admission. One clause closes the shared root of Opus 1 and 5 without an approval step.\n\n## Minimum necessary contract changes\n\nContract text (`proposal.md`):\n1. **Lifecycle-targeting input.** Input ordered before actuation that restricts, or may restrict, the lifecycle operation itself leaves re-actuation unestablished until current authority resolves it. Reason: compaction is irreversible. Add one pilot row.\n2. **Role request vs host admission.** A role may judge or request a transition; the host retains readiness and admission. Any lifecycle effect not dispatched under the host's durable transition operation leaves ordering, custody and no-duplicate claims unestablished.\n3. **Wakeup admission identity.** Automatic continuation is an admitted input with a position in the same authoritative order; its productive admission is checked against every human input ordered before it. Record the reconciliation-participation delta against the protocol.\n4. **Failure route.** A failed or unresolved resumption outcome must reach the operator through an owned evidenced route, or the announcement states where the outcome appears and what its absence means.\n5. **Ambiguous scope** (SSC-FABLE-1): ambiguous coverage leaves admission unestablished rather than narrow.\n\nLoaded text (`context-boundary.md`): one sentence stating that automatic resumption after self-invoked compaction is not an established route under current role or host contracts, while recovery from provider-initiated compaction still goes through Wind Walker.\n\nPilot: freeze human-usable ingress paths and inject through each or mark unsupported; adversarial wakeup content; per-case evidence source and completeness basis; score transparency on denied, interrupted and crash cases.\n\nWording: clarify \"permit\" at `:48` as coverage under existing authority without reservation and with a supporting host contract; qualify `:35-37` as subject to a realization binding compaction attribution and abort; scope \"ordering\" at `:118-120`.\n\n## Owner decisions\n\nNone block progress. Opus's four questions resolve as follows: the authority default is settled by DESIGN \u00a711 plus the non-reservation wording; host-only vs role-request is already answered by manager invariant 9; the intent-projection owner question is deferrable because both views are proposed; placement is out of scope by instruction. The one fact the owner should know is that the route is currently unestablished in both existing environments, Codex and Claude manual roots, which is a realization gap rather than a decision.\n\n## Limitations\n\nRead-only prose review of the frozen subject; no tests, commands or transcripts. Supplemental design views were read in cited ranges only and treated as proposed. The prior advisory review named in `packet.json:11` was not read. Requested effort was default; actual effort is not exposed and is not inferred. Opus findings were disclosed before my reading, so no independence from tier-1 reasoning is claimed.",
+  "ttft_ms": 5201,
+  "type": "result",
+  "duration_ms": 382967,
+  "uuid": "4afb0cfb-0bcb-49a5-8acf-0d24ccd37c43",
+  "ttft_stream_ms": 2825,
+  "time_to_request_ms": 69,
+  "first_content_frame_ms": 2826,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+    "claude-fable-5-1": {
+      "inputTokens": 226,
+      "outputTokens": 24695,
+      "cacheReadInputTokens": 494407,
+      "cacheCreationInputTokens": 129038,
+      "webSearchRequests": 0,
+      "costUSD": 3.94137175,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 11523,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 129038,
+      "canonicalModel": "claude-fable-5-1",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

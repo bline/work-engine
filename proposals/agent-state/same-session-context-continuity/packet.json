@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.same-session-context-continuity",
+  "family_id": "work-engine.agent-state",
+  "title": "Same-session context continuity and human interaction",
+  "lifecycle_state": "decided",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {"kind": "scoped_execution_grant", "path": "../../../records/context-continuity-authorization-20261028.json"},
+    {"kind": "prospective_trial_cohort", "path": "../../../records/context-continuity-pilot-preregistration-20261028.json"},
+    {
+      "kind": "human_direction_and_formation_evidence",
+      "path": "formation-evidence.md"
+    },
+    {
+      "kind": "pilot_acceptance_criteria",
+      "path": "pilot.md"
+    },
+    {
+      "kind": "advisory_instruction_review",
+      "path": "../../../reviews/same-session-context-continuity-20261028/review.md"
+    },
+    {
+      "kind": "opus_initial_review",
+      "path": "../../../reviews/same-session-context-continuity-external-20261028/opus-report-v1.md"
+    },
+    {
+      "kind": "fable_second_tier_review",
+      "path": "../../../reviews/same-session-context-continuity-external-20261028/fable-report-v1.md"
+    },
+    {
+      "kind": "existing_semantic_owner",
+      "path": "../../../app-server/docs/semantic-context-lifecycle-manager.md"
+    },
+    {
+      "kind": "existing_transition_protocol",
+      "path": "../../../app-server/docs/context-lifecycle-transition-protocol.md"
+    },
+    {
+      "kind": "runtime_projection",
+      "path": "../../../skills/manual-orchestration/references/context-boundary.md"
+    },
+    {
+      "kind": "final_opus_re_evaluation",
+      "path": "../../../reviews/same-session-context-continuity-external-20261028/opus-report-v2.md"
+    },
+    {
+      "kind": "coordinator_review_disposition",
+      "path": "../../../reviews/same-session-context-continuity-external-20261028/coordinator-disposition.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The human-interaction and lifecycle-authority clarification belongs with the existing semantic context-lifecycle contract; host transition orchestration consumes it without acquiring domain authority. Manual-orchestration carries only a compact role-facing clarification. Wind Walker remains mechanism-neutral. This packet preserves the candidate delta without editing the owner-held lifecycle design or accepting a new lifecycle mechanism."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Existing assignment authority does not cover the operation, an owning contract reserves it, or a supporting host contract cannot establish the ordering, custody and recovery claims; this does not imply a new per-operation approval requirement.",
+      "The selected host cannot preserve runtime authorship, order new human input against actuation and resumption, or establish durable effect custody across restart.",
+      "Pinned provider evidence cannot distinguish the realized context transformation or establish recovery from the selected checkpoint.",
+      "Pilot evidence finds lost obligations, stale authority, duplicated effects, misleading visibility, or total lifecycle cost that makes another route preferable.",
+      "The same-session route needs live child or process preservation; this pilot's quiescent boundary does not establish that behavior.",
+      "Instruction review finds an exact mechanism, universal approval requirement, or loading burden not required by the protected outcome."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized architecture owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.semantic-durability-context-lifetime",
+      "rationale": "Supplies the separately scoped human-interaction contract that the neighboring candidate explicitly leaves unresolved; does not replace its durability and economic-judgment contract.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.context-decision-observability",
+      "rationale": "Uses attributed transition and recovery observations without giving pressure telemetry lifecycle authority or claiming a smaller input proves correct continuation.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.role-owned-durable-operational-state",
+      "rationale": "Required continuation meaning stays with existing role and domain owners; a lifecycle checkpoint references rather than replaces them.",
+      "causal": false
+    }
+  ]
+}

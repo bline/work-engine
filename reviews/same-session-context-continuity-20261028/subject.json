@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-10-28",
+  "producer_session": "01a1839d-27bf-7882-b2ac-0233b11805f1",
+  "review_scope": "proposed lifecycle instructions and changed manual root guidance; pilot counts are bounded research procedure",
+  "subjects": [
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/proposal.md",
+      "sha256": "42831b3b17a76c9086977cfbf445d352ec7409c30b496f866b898d4771a2770c",
+      "ranges": [
+        [
+          32,
+          134
+        ]
+      ]
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-boundary.md",
+      "sha256": "9a40fc07faaae664e54071b01a479793e7d3b375829ca40b95d81f276daa8da2",
+      "ranges": [
+        [
+          1,
+          41
+        ],
+        [
+          141,
+          159
+        ]
+      ]
+    }
+  ],
+  "frozen_subject": {
+    "path": "subject.md",
+    "sha256": "64a6648eb5a4a1c31d44e01af4a148908e236b7ebf9c42c4d85eb63984d28d5d"
+  },
+  "reviewer_context": "author self-review; retained context, no independent or fresh-review claim"
+}

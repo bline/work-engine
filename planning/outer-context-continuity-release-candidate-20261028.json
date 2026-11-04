@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "prepared_awaiting_user_commit_and_deploy_decision",
+  "recorded_at": "2026-10-28T21:00:31.281168+00:00",
+  "root_session": "01a1839d-27bf-7882-b2ac-0233b11805f1",
+  "baseline_commit": "bec012d7452ea0a4f5164caec69ba44f3d62ec8f",
+  "candidate_commit": "15ec4137f6de226c3e7bb5acd92640bd63f4208d",
+  "candidate_tree": "9357d623e3718458862840333083cfdcd8d9a547",
+  "private_ref": "refs/work-engine/checkpoints/outer-context-continuity-release-20261028/slice-1/candidate-1",
+  "checkpoint_receipt": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/release-preparation/checkpoint-receipt.json",
+  "content_binding": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/release-preparation/candidate-content-binding.json",
+  "release_plan": "/home/bline/.local/state/work-engine/outer-context-continuity-20261028/release-preparation/release-plan.txt",
+  "release_plan_sha256": "b5c2109881a2878b4cafe652f156ea05fcfba42a9bb338238b39f8658c7003f7",
+  "effect": "Only manual-orchestration changes on Codex and Claude; six existing files change, two added; names/descriptions/install lists unchanged. Other-session committed/deployed baseline retained.",
+  "branch_index_and_worktree_changed": false,
+  "deployment_performed": false,
+  "required_user_decision": "Commit the scoped changes and deploy them to active skills",
+  "approval_source": "skills/skill-release/SKILL.md: Deploy only on the user decision."
+}

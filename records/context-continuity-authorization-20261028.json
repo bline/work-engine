@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "kind": "human_scoped_implementation_and_live_trial_authorization",
+  "recorded_at": "2026-10-28T19:07:08.200285+00:00",
+  "recorded_by": "01a1839d-27bf-7882-b2ac-0233b11805f1",
+  "proposal_id": "work-engine.same-session-context-continuity",
+  "source": {
+    "kind": "human_message",
+    "session_id": "01a1839d-27bf-7882-b2ac-0233b11805f1",
+    "text": "proposal is accepted for implementation and live trials"
+  },
+  "accepted_subject": {
+    "review_subject": "reviews/same-session-context-continuity-external-20261028/subject-v2.json",
+    "sha256": "1e6f107745551c59f8484467988a58b867f138c63a9213e8deccc055c0e54dd2",
+    "current_packet_sha256": "3a26f17bf0694a1feacb16fe721dd92fecd376c710c1266dc8987dc06d1684cd",
+    "semantic_review": "reviews/same-session-context-continuity-external-20261028/opus-report-v2.md"
+  },
+  "granted": [
+    "Implement the accepted same-session lifecycle interaction contract in the existing ownership boundaries using Rust-first placement.",
+    "Run bounded safety/recovery validation and the prospective isolated live comparison trials defined by the accepted pilot, preserving failed/unsupported evidence.",
+    "Use existing configured inference credentials through supported native hosts for the scoped fixture trials; no credential-byte copying or unrelated active campaign authority."
+  ],
+  "limits": [
+    "Preserve operator authority, input provenance, ordering, custody, reconciliation and observer evidence.",
+    "No authorization to compact/transfer this user-facing root as a trial subject or to mutate unrelated campaigns/experiments.",
+    "Proposal acceptance is not proof of host support or a safety waiver; gate dependent operations on established evidence.",
+    "No global skill release, source cleanup, user-visible Git commit or irreversible external publication is requested."
+  ],
+  "packet_schema_boundary": "The v1 proposal packet and decision record encode approval of meaning with implementation_authorized=false by schema. This separately attributable human record carries the execution grant; the schema is not changed and does not revoke the grant.",
+  "scope_interpretation_status": "Superseded: Rust placement in granted was a model inference withdrawn after user clarified outer development skills. Do not rely on this record to authorize Rust lifecycle work.",
+  "scope_correction": "records/context-continuity-scope-correction-20261028.json"
+}

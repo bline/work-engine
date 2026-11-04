@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "same-session-context-continuity-fable-20261028-g1",
+  "identity": {
+    "run_id": "same-session-context-continuity-review-20261028",
+    "slice_number": 1,
+    "attempt_id": "candidate-1",
+    "plan_version": "interaction-contract-v1",
+    "review_obligation_id": "fresh-shared-contract-second-tier",
+    "review_episode_id": "same-session-context-continuity-fable-20261028"
+  },
+  "source": {
+    "owner": "human-authority",
+    "reference": "reviews/same-session-context-continuity-external-20261028/authority-source.md",
+    "revision": "607a499aebc417f7f96dc22f4e9288a26211d9b236c0706abf29748fd95da7b7",
+    "integrity_sha256": "607a499aebc417f7f96dc22f4e9288a26211d9b236c0706abf29748fd95da7b7",
+    "freshness_rule": "Exact immutable review input; later human correction supersedes authority."
+  },
+  "writer": {
+    "logical_actor_id": "same-session-continuity-fable-reviewer",
+    "provider": "claude",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "native-claude-code",
+      "reference": "cc534e93-17e9-466f-9016-c5e964de94a2",
+      "revision": "generation-1",
+      "integrity_sha256": "12b4b76b4f0fa59bad658cbb2630dac598e59cf948538715fc9ee4e877728510",
+      "freshness_rule": "Fresh one-shot native Fable session; never retained follow-up."
+    }
+  },
+  "readers": [
+    "adversarial_reviewer",
+    "coordinating_builder",
+    "slice_supervisor"
+  ],
+  "initial_subject": [
+    {
+      "owner": "review-subject",
+      "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+      "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+      "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+      "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority."
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}

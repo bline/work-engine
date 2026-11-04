@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "codebase-memory-mcp": {
+      "type": "stdio",
+      "command": "/home/bline/.local/bin/codebase-memory-mcp",
+      "args": []
+    },
+    "work-engine-review-state": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/home/bline/code/work-engine/skills/work-engine-mcp/scripts/server.mjs",
+        "--repository",
+        "/home/bline/code/work-engine",
+        "--review-authority-file",
+        "/home/bline/code/work-engine/reviews/same-session-context-continuity-external-20261028/fable-authority.json"
+      ]
+    }
+  }
+}

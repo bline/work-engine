@@ -1,0 +1,32 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-10-28T18:44:35.603548+00:00",
+  "session_id": "eae3d3dd-2aeb-46ab-aab8-48a680906f35",
+  "rollout": "/home/bline/.claude/projects/-home-bline-code-work-engine/eae3d3dd-2aeb-46ab-aab8-48a680906f35.jsonl",
+  "next_task_tokens": 20000,
+  "next_task_basis": "parent estimate",
+  "observed_at": "2026-10-28T18:32:01.636Z",
+  "freshness": null,
+  "recorded_model": "claude-opus-5-5",
+  "recorded_effort": null,
+  "input_tokens": 225747,
+  "context_window_tokens": null,
+  "epoch": 0,
+  "compaction_markers": 0,
+  "lineage": [],
+  "limitations": [
+    "Claude Code transcripts record no context window; levels are absolute"
+  ],
+  "status": "observed",
+  "trigger_tokens": 150000,
+  "band_floor_tokens": 202533,
+  "headroom_to_trigger": -75747,
+  "headroom_to_band_floor": -23214,
+  "fraction_of_window": null,
+  "recommendation": "fresh",
+  "reasons": [
+    "input 225747 is inside the observed compaction band (floor 202533)",
+    "input plus estimated next task (225747 + 20000) reaches the band floor 202533"
+  ],
+  "host": "claude-code"
+}

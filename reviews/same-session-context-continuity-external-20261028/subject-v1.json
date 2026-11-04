@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "subject": "work-engine.same-session-context-continuity",
+  "revision": "candidate-v1",
+  "source_head": "2c7102058ec0d49ed4ead68a8e0fb7fd85082b48",
+  "primary_subjects": [
+    "proposals/agent-state/same-session-context-continuity/packet.json",
+    "proposals/agent-state/same-session-context-continuity/proposal.md",
+    "proposals/agent-state/same-session-context-continuity/pilot.md",
+    "proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+    "skills/manual-orchestration/references/context-boundary.md"
+  ],
+  "files": [
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/packet.json",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/packet.json",
+      "sha256": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/proposal.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+      "sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/pilot.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/pilot.md",
+      "sha256": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+      "sha256": "311f7213e8ce241c70906f829eed664b864b16a9f4e70f46ebed0862802be5db"
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-boundary.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/manual-orchestration/references/context-boundary.md",
+      "sha256": "9a40fc07faaae664e54071b01a479793e7d3b375829ca40b95d81f276daa8da2"
+    },
+    {
+      "path": "skills/wind-walker/SKILL.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/wind-walker/SKILL.md",
+      "sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005"
+    },
+    {
+      "path": "app-server/docs/semantic-context-lifecycle-manager.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/semantic-context-lifecycle-manager.md",
+      "sha256": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660"
+    },
+    {
+      "path": "app-server/docs/context-lifecycle-transition-protocol.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/context-lifecycle-transition-protocol.md",
+      "sha256": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd"
+    },
+    {
+      "path": "proposals/agent-state/semantic-durability-context-lifetime/proposal.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/semantic-durability-context-lifetime/proposal.md",
+      "sha256": "f456b960041d6c61214f1ebcdf16b7c926522d5b841c44a27591a770b63e7e02"
+    },
+    {
+      "path": "DESIGN.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/DESIGN.md",
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095"
+    },
+    {
+      "path": "PHILOSOPHY.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/PHILOSOPHY.md",
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307"
+    },
+    {
+      "path": "skills/agent-instruction-review/SKILL.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/agent-instruction-review/SKILL.md",
+      "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72"
+    },
+    {
+      "path": "skills/agent-instruction-review/references/finding-contract.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/agent-instruction-review/references/finding-contract.md",
+      "sha256": "ad0099e0744011aeb5662f8e630d3cf7b70411635b09a8b9dc7e856df625f69a"
+    }
+  ],
+  "evidence_tier": "Tier2; graph project home-bline-code-work-engine, generation2026-10-28T18:06:09Z, storeue61d324c0b15868bg3; no recorded issue for named source paths, best effort; prose examined directly; not exhaustive code audit"
+}

@@ -1,0 +1,322 @@
+{
+  "authority_binding": {
+    "authorized_readers": [
+      "adversarial_reviewer",
+      "coordinating_builder",
+      "slice_supervisor"
+    ],
+    "grant_id": "same-session-context-continuity-fable-20261028-g1",
+    "manifest_sha256": "d9bed5df1be29c892ff1d53b9d9aa1de68333db18cb64d22691b25f2f5b5fd17",
+    "source": {
+      "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+      "integrity_sha256": "607a499aebc417f7f96dc22f4e9288a26211d9b236c0706abf29748fd95da7b7",
+      "owner": "human-authority",
+      "reference": "reviews/same-session-context-continuity-external-20261028/authority-source.md",
+      "revision": "607a499aebc417f7f96dc22f4e9288a26211d9b236c0706abf29748fd95da7b7"
+    }
+  },
+  "claim_references": [],
+  "continuity": "same_session",
+  "current_review_phase": "remediation",
+  "durable_provenance": {
+    "adapter": "git-ref-v1",
+    "integrity_sha256": "ceae2c940b20bf44a03f891dd73c8e516a83bfe2ffb86bab2ebf93c6542702ac",
+    "location": "refs/work-engine/independent-review-state/2443c66a6d44de434a7933b4d91ff99ee04ddb145f4f445fb9f6d8e8edee0104"
+  },
+  "durable_revision": "23102c398b990a6201c2ad0ea116e1fed09cd42b",
+  "evidence_references": [
+    {
+      "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+      "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+      "owner": "review-subject",
+      "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+      "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+    }
+  ],
+  "field_modes": {
+    "derived": [
+      "durable_revision",
+      "predecessor_revision",
+      "durable_provenance"
+    ],
+    "referenced": [
+      "authority_binding",
+      "writer_binding.runtime_session_ref",
+      "reviewed_subject",
+      "evidence_references",
+      "claim_references"
+    ],
+    "role_owned": [
+      "status",
+      "current_review_phase",
+      "findings",
+      "unresolved_questions",
+      "pending_next_action",
+      "uncertainty",
+      "retirement"
+    ]
+  },
+  "findings": [
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-1-fable",
+      "observation": "UPHOLD P1. proposal.md:50-51 states route restriction/pause 'remains binding' but :64-66 only reuses lease revocation; the owner loop (manager:601-606) returns to recompilation and may re-grant readiness, and the manager does not own human intent (manager:75-78), so no party is assigned to judge whether new input restricts the pending lifecycle operation itself. Retirement is irreversible (manager:708-713). pilot.md:65-66 consequences pass a run that compacts after a 'do not refresh' reply. Minimum change: one clause that input ordered before actuation which restricts, or may restrict, the lifecycle operation leaves re-actuation unestablished until current authority resolves it; one pilot row 'pause targets compaction; no actuation ordered after the restriction'. Not a new approval gate; it preserves an existing binding human restriction under DESIGN.md s11.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P1",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-2-fable",
+      "observation": "QUALIFY to P2. proposal.md:64-65 already quantifies over all human input; the contract requirement is correct. The gap is realization evidence (DESIGN.md s3.9) and pilot claim identity: manager:626-649 covers only the mediated switchboard, and pilot.md:55-57 'synthetic input' names no path, so a host-path-only injection proves a narrower claim. Minimum change: one clause mirroring proposal.md:78-79 (a human-usable ingress path the host cannot order before actuation leaves the ordering claim unestablished for that environment); pilot freezes the human-usable ingress list and injects through each or marks it unsupported. Not a contract-acceptance blocker.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-3-fable",
+      "observation": "QUALIFY to P2. context-boundary.md:25-29 is a limitation, not a permission grant ('does not grant permission'; 'remain inside the current role, host and user authority'); 'reads as permission' is overstated. The real missing distinction is described-vs-available: the proposal's own boundary (proposal.md:126-128, no improvised controller; host contract not activated) is not loaded with the text, and today no host contract supports the route (Codex host rejects direct compact for role threads, manager:644-646; a Claude manual root has no lifecycle host at all). Minimum change: one loaded sentence stating that automatic resumption after self-invoked compaction is not an established route under current role/host contracts, while recovery from provider-initiated compaction still goes through Wind Walker. Do not add per-compaction approval.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-4-fable",
+      "observation": "UPHOLD P2 on the custody gap; REJECT the contradiction framing. proposal.md:83-84 binds custody only to effects the host dispatches, so a role-dispatched compaction (the S10 shape) escapes ordering/custody/no-duplicate obligations. However manager invariant 9 (:964-965) already permits model actuation under host-owned lifecycle state, and design view invariant 1 (context-lifecycle.md:143) is proposed, not binding; the owner documents do not forbid role request. Minimum change: state that a role may judge or request a transition while the host retains readiness and admission, and that any lifecycle effect not dispatched under the host's durable transition operation leaves this contract's claims unestablished. Owner decision 2 is not blocking.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-5-fable",
+      "observation": "UPHOLD P2. The wakeup is a third input category: neither queued human input (protocol:561-570, released after acceptance) nor the tool-less rehydration control turn (manager:694-697). proposal.md:64-65 requires ordering of 'productive resumption' but :73-79 gives the wakeup only attribution, no admission identity, and :67 'participates in successor reconciliation' differs from the protocol's release-after-acceptance without saying so. Minimum change: automatic continuation is an admitted input with a position in the same authoritative order, its productive admission checked against every human input ordered before it; record the reconciliation-participation delta or define the mapping.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-6-fable",
+      "observation": "REJECT as material contradiction; retain as P3 wording advice. proposal.md:50 ('No new approval is required solely because context changes') and :47-49 read together are consistent with coverage under existing assignment authority absent reservation, which is what packet.json:23 reopens on. 'Permit' at :48 is ambiguous between affirmative grant and non-reservation; DESIGN.md s11 forbids manufacturing approval for already-authorized capability, so the affirmative-grant reading should not be imposed. Minimum change: clarify 'permit' as 'cover under existing authority without reservation and with a supporting host contract'. No owner decision required to proceed.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-7-fable",
+      "observation": "QUALIFY to P3 for the contract; pilot fixture change accepted. The outcome is already governed: proposal.md:54-56 requires resumption covered by current authority and pilot.md:69 checks 'pending human approval remains pending'. Author-vs-deliverer (root authored, role_host delivered; formation-evidence.md:79-81) is a recording refinement, not a missing invariant. Minimum change: pilot wakeup content must assert closure or wider scope so the case can fail; record author and deliverer separately in the envelope.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-8-fable",
+      "observation": "UPHOLD P2. proposal.md:107-109 'resumption or notification route' admits a realization whose only owned route is the resumption itself; when it fails, :102-103 requires the operator to be able to distinguish failure but names no route by which failure reaches them (manager invariant 19 and context-boundary.md:216-222 already require evidenced delivery for the transfer case). S10 is exactly announcement-then-silence. pilot.md:118-119 scores visibility only on nominal runs. Minimum change: a failed or unresolved resumption outcome must reach the operator through an owned evidenced route, or the announcement states where the outcome will appear and what its absence means; score transparency on denied, interrupted and crash cases.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-9-fable",
+      "observation": "QUALIFY: P2 for the pilot only, bounded. pilot.md:111-112 'with admissible evidence' is undefined for 'no affected domain work', 'unauthorized actions' and 'no fresh wakeup replay'; the counter (:56) covers only the stable effect, and the custody record is the host under test's own record. This does not require a global absence proof or an all-tools monitor: the fixture closes the action set (prohibited action, stable effect, pending decision), so evidence is bounded to those channels. Minimum change: per safety case name the evidence source and completeness basis (provider history for wakeup entries; harness tool/effect telemetry over the fixture's channels for post-pause work; independent counter for the effect) and class host records as actor-attributed for host-conduct claims (DESIGN.md s12).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-10-fable",
+      "observation": "UPHOLD P3. proposal.md:35-37 asserts consumption 'through existing' protocol contracts, but the protocol's attribution, abort-from-reserved and control-turn identity are shaped around new_context (protocol:173-184, :542-549) and the owner forbids equating compact with new_context without pinned evidence (manager:651-657). packet.json:24 and proposal.md:140 partly record this. Minimum change: qualify :35-37 with 'subject to a realization binding the compaction mechanism's attribution, abort and control-turn identity', as an implementation evidence obligation.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-OPUS-11-fable",
+      "observation": "UPHOLD P3, not blocking. The intent-projection view (proposed status) owns pending/admitted/refused feedback for submitted human intent; proposal.md:118-120 gives the lifecycle host 'ordering' and :70-71 observable pending disposition, which overlaps. Both supplemental views are proposed, not binding, so no owner decision is required now. Minimum change: scope 'ordering' to 'ordering relative to lifecycle actuation and resumption' and add a related_to note naming the intent-projection mechanism; leave the owner choice to the architecture owner (DESIGN.md s1.2).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-fable-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+          "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+          "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+        }
+      ],
+      "finding_id": "SSC-FABLE-1",
+      "observation": "NEW P3: ambiguous scope of newer human input is not fail-closed at the admission boundary. proposal.md:68-70 governs 'affected domain work' and :65-66 'competing input', leaving the successor or host to judge whether an ambiguous pause or correction covers the pending compaction (Opus 1) or the resumed work (Opus 5). manager:485 makes ambiguous meaning exact/escalate at compile time and invariant 3 forbids guessing closure, but neither is stated for lifecycle admission. Minimum change: one clause that input whose scope over the pending lifecycle operation or resumption is ambiguous leaves that admission unestablished rather than narrow. This closes the shared root of Opus 1 and 5 without a new approval step.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    }
+  ],
+  "handled_transition_ids": {
+    "fable-begin": "d20ecf6e7099ce72789d42469ce584d4dfb9e565108cf91132174dc14bfd861f",
+    "fable-initial-result-1": "4a420bd9c58645ce50bf366e415d6a8b6573442db677c237f494dc8cbedf513f"
+  },
+  "identity": {
+    "attempt_id": "candidate-1",
+    "plan_version": "interaction-contract-v1",
+    "review_episode_id": "same-session-context-continuity-fable-20261028",
+    "review_obligation_id": "fresh-shared-contract-second-tier",
+    "run_id": "same-session-context-continuity-review-20261028",
+    "slice_number": 1
+  },
+  "limitations": [
+    "scope verification is not caller authentication",
+    "review state cannot accept a slice or mutate referenced owners"
+  ],
+  "pending_next_action": "await_remediation",
+  "predecessor_revision": "c6fa0f9d33154f19e22c34fe7209a97fb3f86f6a",
+  "profile": "independent-adversarial-review-episode-v1",
+  "retirement": null,
+  "reviewed_subject": [
+    {
+      "freshness_rule": "Exact frozen second-tier review subject; no acceptance or implementation authority.",
+      "integrity_sha256": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644",
+      "owner": "review-subject",
+      "reference": "reviews/same-session-context-continuity-external-20261028/fable-subject-v1.json",
+      "revision": "7370f61952402ff8800329c5b88002e9b4ac9b60e08a0ecd6b212f8f5961d644"
+    }
+  ],
+  "schema_version": 1,
+  "status": "active",
+  "uncertainty": null,
+  "unresolved_questions": [],
+  "writer_binding": {
+    "generation": 1,
+    "logical_actor_id": "same-session-continuity-fable-reviewer",
+    "provider": "claude",
+    "runtime_session_ref": {
+      "freshness_rule": "Fresh one-shot native Fable session; never retained follow-up.",
+      "integrity_sha256": "12b4b76b4f0fa59bad658cbb2630dac598e59cf948538715fc9ee4e877728510",
+      "owner": "native-claude-code",
+      "reference": "cc534e93-17e9-466f-9016-c5e964de94a2",
+      "revision": "generation-1"
+    }
+  }
+}

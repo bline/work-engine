@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "kind": "prospective_bounded_context_continuity_trial",
+  "recorded_at": "2026-10-28T19:19:10.050237+00:00",
+  "authority_ref": "records/context-continuity-authorization-20261028.json",
+  "contract_ref": "proposals/agent-state/same-session-context-continuity/proposal.md",
+  "criteria_ref": "proposals/agent-state/same-session-context-continuity/pilot.md",
+  "pair_count": 4,
+  "nominal_run_count": 8,
+  "pairs": [
+    {
+      "pair_id": "pair-1",
+      "fixture_kind": "readonly_engineering",
+      "seed": 1701,
+      "execution_order": [
+        "same_session",
+        "successor_handoff"
+      ],
+      "runs": [
+        "cc-1-same-session",
+        "cc-1-successor-handoff"
+      ]
+    },
+    {
+      "pair_id": "pair-2",
+      "fixture_kind": "readonly_engineering",
+      "seed": 1702,
+      "execution_order": [
+        "successor_handoff",
+        "same_session"
+      ],
+      "runs": [
+        "cc-2-same-session",
+        "cc-2-successor-handoff"
+      ]
+    },
+    {
+      "pair_id": "pair-3",
+      "fixture_kind": "pending_human_decision",
+      "seed": 2701,
+      "execution_order": [
+        "same_session",
+        "successor_handoff"
+      ],
+      "runs": [
+        "cc-3-same-session",
+        "cc-3-successor-handoff"
+      ]
+    },
+    {
+      "pair_id": "pair-4",
+      "fixture_kind": "pending_human_decision",
+      "seed": 2702,
+      "execution_order": [
+        "successor_handoff",
+        "same_session"
+      ],
+      "runs": [
+        "cc-4-same-session",
+        "cc-4-successor-handoff"
+      ]
+    }
+  ],
+  "requested_inference_profile": {
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "service_tier": "default",
+    "selection_basis": "Current hazard-class engineering model guidance; same fixed model/settings across routes. Verify installed provider support before entry."
+  },
+  "required_before_entry": [
+    "Bound exact implementation/profile/build/source hashes and actual input-path inventory.",
+    "Run every applicable frozen safety/interleaving/crash case and classify unsupported paths truthfully.",
+    "Fresh implementation review collected; root releases exact scoped profile under existing human authority.",
+    "Verify fixture-only subjects and non-sensitive declared capabilities; no user-root/campaign/private S10 mutation."
+  ],
+  "dispositions": {
+    "missing_required_claim": "dependent realization/trial not admitted; preserve unestablished evidence, no fabricated success",
+    "ambiguous_effect_entry": "observe/reconcile or recovery-required, no blind retry",
+    "failed_safety_or_visibility": "no nominal adoption/scoring on that profile; preserve failure and repair as a new revision",
+    "efficiency": "assess only after correctness/visibility; fixed scenario rates only, no billed/quota claims"
+  },
+  "run_authorization_scope": "Eight nominal attempts after safety; safety provider-entry attempts must be separately enumerated in the concrete profile before root release. No unbounded retries or extra cohorts.",
+  "operator_approval_measurement": "The user has authorized these bounded trials. Any fixture root-transfer approval/adoption requirements must be preserved with exact trial/handoff authority binding; no spoofed human wakeup or fabricated per-handoff approval.",
+  "execution_started": false,
+  "remaining_freeze_fields": [
+    "provider executable/version/hash",
+    "route implementation/artifact revisions",
+    "actual ingress paths and observer completeness",
+    "exact safety case points and provider-entry counts",
+    "deadlines/output bounds/cleanup and effect reconciliation proof"
+  ]
+}

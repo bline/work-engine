@@ -1,0 +1,36 @@
+{
+  "candidate_subject": "subject-v1.json",
+  "candidate_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+  "candidate_changed_since_opus": false,
+  "tier1_report": {
+    "path": "opus-report-v1.md",
+    "sha256": "c748425b274de23f37371d1954424c8a62a2a64dc3dbdd36c7678fb23c8638a5"
+  },
+  "tier1_summary": {
+    "path": "fable-tier1-input.md",
+    "sha256": "0fff702511ac81bbd0b873a6bfadb25fdfc49922c7b0b0bb4071e0c83bf448e9"
+  },
+  "supplemental_evidence": [
+    {
+      "path": "design/architecture/mechanisms/authority-preserving-intent-projection.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/design/architecture/mechanisms/authority-preserving-intent-projection.md",
+      "sha256": "a6cac7aca17cb715eb2188c69c558a5a38602504b20ebc7fae8207eb57275dac"
+    },
+    {
+      "path": "design/architecture/context-lifecycle.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/design/architecture/context-lifecycle.md",
+      "sha256": "ab6a095f839a82975e55d10f468867eac358b43811db27ce192b6ce7874df4f6"
+    },
+    {
+      "path": "design/ideas/pending/context-replacement-emergency-and-writable-operator-ingress.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/design/ideas/pending/context-replacement-emergency-and-writable-operator-ingress.md",
+      "sha256": "7a89b81dce47c2871e3945bf677c7fed4ead6daee44c001ecd2bfdcc4e6afcad"
+    },
+    {
+      "path": "app-server/README.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/README.md",
+      "sha256": "92edfb2bce5668f48521cdf4a19537d407cd6966265a6e471db9945f2b589228"
+    }
+  ],
+  "perspective": "fresh second-tier shared authority/interaction contract adjudication; tier1 findings disclosed, no independence from tier1 reasoning claimed"
+}

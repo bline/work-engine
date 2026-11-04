@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "proposal_id": "work-engine.same-session-context-continuity",
+  "source": {
+    "repository_revision": "992c8e896dd99269f7cdff200e1eaba2f4b4bec7",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "The human-interaction and lifecycle-authority clarification belongs with the existing semantic context-lifecycle contract; host transition orchestration consumes it without acquiring domain authority. Manual-orchestration carries only a compact role-facing clarification. Wind Walker remains mechanism-neutral. This packet preserves the candidate delta without editing the owner-held lifecycle design or accepting a new lifecycle mechanism.",
+    "rationale": "User explicitly accepted the reviewed and remediated proposal for implementation and live trials. Opus5.5/xhigh verified11 findings resolved on exact v2; Fable5.1 qualifications preserve existing authority defaults. This record accepts meaning; the separately attributed execution grant is records/context-continuity-authorization-20261028.json.",
+    "reopening_conditions": [
+      "Existing assignment authority does not cover the operation, an owning contract reserves it, or a supporting host contract cannot establish the ordering, custody and recovery claims; this does not imply a new per-operation approval requirement.",
+      "The selected host cannot preserve runtime authorship, order new human input against actuation and resumption, or establish durable effect custody across restart.",
+      "Pinned provider evidence cannot distinguish the realized context transformation or establish recovery from the selected checkpoint.",
+      "Pilot evidence finds lost obligations, stale authority, duplicated effects, misleading visibility, or total lifecycle cost that makes another route preferable.",
+      "The same-session route needs live child or process preservation; this pilot's quiescent boundary does not establish that behavior.",
+      "Instruction review finds an exact mechanism, universal approval requirement, or loading burden not required by the protected outcome."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized architecture owner",
+    "exercised_by": "user",
+    "evidence": "2026-10-28 human message: \"proposal is accepted for implementation and live trials\"; scoped grant records/context-continuity-authorization-20261028.json."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  },
+  "supersedes": null
+}

@@ -1,0 +1,541 @@
+{
+  "authority_binding": {
+    "authorized_readers": [
+      "adversarial_reviewer",
+      "coordinating_builder",
+      "slice_supervisor"
+    ],
+    "grant_id": "same-session-context-continuity-opus-20261028-g1",
+    "manifest_sha256": "54953a3b4df5238d97ff5a72e3b9e893c9dff6f456bc5ae350515d41b4a6f5e5",
+    "source": {
+      "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+      "integrity_sha256": "607a499aebc417f7f96dc22f4e9288a26211d9b236c0706abf29748fd95da7b7",
+      "owner": "human-authority",
+      "reference": "reviews/same-session-context-continuity-external-20261028/authority-source.md",
+      "revision": "607a499aebc417f7f96dc22f4e9288a26211d9b236c0706abf29748fd95da7b7"
+    }
+  },
+  "claim_references": [],
+  "continuity": "same_session",
+  "current_review_phase": "remediation",
+  "durable_provenance": {
+    "adapter": "git-ref-v1",
+    "integrity_sha256": "cb745fed08e5ef35386b4f710980c70647f9565688b8260f0dad240583e585c3",
+    "location": "refs/work-engine/independent-review-state/84a85818819a0e78769b8645fcebe143b666784450407bd687cdf95ce437fe26"
+  },
+  "durable_revision": "e4d7732fea579c3b45e77aa5b1267c6741dbfb88",
+  "evidence_references": [
+    {
+      "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+      "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+      "owner": "review-subject",
+      "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+      "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+    }
+  ],
+  "field_modes": {
+    "derived": [
+      "durable_revision",
+      "predecessor_revision",
+      "durable_provenance"
+    ],
+    "referenced": [
+      "authority_binding",
+      "writer_binding.runtime_session_ref",
+      "reviewed_subject",
+      "evidence_references",
+      "claim_references"
+    ],
+    "role_owned": [
+      "status",
+      "current_review_phase",
+      "findings",
+      "unresolved_questions",
+      "pending_next_action",
+      "uncertainty",
+      "retirement"
+    ]
+  },
+  "findings": [
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/pilot.md.",
+          "integrity_sha256": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/pilot.md",
+          "revision": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/semantic-context-lifecycle-manager.md.",
+          "integrity_sha256": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/semantic-context-lifecycle-manager.md",
+          "revision": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/context-lifecycle-transition-protocol.md.",
+          "integrity_sha256": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/context-lifecycle-transition-protocol.md",
+          "revision": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd"
+        }
+      ],
+      "finding_id": "SSC-OPUS-1",
+      "observation": "Location: proposal.md:47-58 (authority), :64-70 (human input); pilot.md:65-66. Distinction missing: newly ordered human input treated as a content delta (recompile and continue) vs as a possible authority change whose scope may cover the pending lifecycle operation itself (pause/route restriction of the compaction, not only of domain work). Evidence (observed): the insertion reuses the existing lease ('competing input invalidates readiness'); the owner's existing loop returns a changed revision to recompilation and re-admits readiness (semantic-context-lifecycle-manager.md:601-606); open+exact is a valid interaction disposition and escalate is discretionary (:475, :482-490); abort exists only from reserved (context-lifecycle-transition-protocol.md:542-549); retirement is irreversible (manager :708-713). Pilot consequences for correction/pause cases require only that stale readiness not consume the prior checkpoint and that no affected domain work follows. Failure path (inferred): human replies 'pause, do not refresh' to the announcement -> lease revoked -> message compiled as open/exact -> new readiness -> compaction proceeds against the direction; every listed pilot consequence still holds, so acceptance passes. Remediation (restate, consequence-level): state that before readiness is re-admitted, newly ordered human input is assessed for its effect on the pending lifecycle operation, and input whose scope covers or may cover it leaves re-actuation unestablished until current authority resolves it; causal reason: actuation is irreversible, so no later observation can repair it (DESIGN.md 3.9 constraint condition). Add a pilot case where the pause/restriction targets the lifecycle operation, with consequence 'no actuation ordered after the restriction'. Confidence: high for the pilot gap (observed); medium-high for the realization failure path (inferred).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P1",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/pilot.md.",
+          "integrity_sha256": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/pilot.md",
+          "revision": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/semantic-context-lifecycle-manager.md.",
+          "integrity_sha256": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/semantic-context-lifecycle-manager.md",
+          "revision": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path skills/manual-orchestration/references/context-boundary.md.",
+          "integrity_sha256": "9a40fc07faaae664e54071b01a479793e7d3b375829ca40b95d81f276daa8da2",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/manual-orchestration/references/context-boundary.md",
+          "revision": "9a40fc07faaae664e54071b01a479793e7d3b375829ca40b95d81f276daa8da2"
+        }
+      ],
+      "finding_id": "SSC-OPUS-2",
+      "observation": "Location: proposal.md:64-67; pilot.md:31-33 (freeze list), :55-57 ('Use synthetic input'). Distinction missing: host-mediated ingress (which a lease can revoke) vs provider-native ingress the human uses directly (which the host can at most observe). Evidence (observed): the existing ordering relies on a mediated switchboard plus rejecting direct provider turn/steer/queue/compact routes for role-owned threads, and states that the pinned method inventory and canAcceptDirectInput are not universal pause proofs (semantic-context-lifecycle-manager.md:633-649); the reference gate does not route every provider-native input path and does not make unmediated ingress safe (:626-631). Inferred: a human-supervised Codex root is a daemon thread that the user's own terminal or client reaches directly (context-boundary.md:145-149), so that ingress bypasses any Work Engine lease. Consequence: (a) the reused lease cannot revoke on that input, so ordering is unestablished exactly in the human-facing case the contract targets; (b) a pilot that injects synthetic input through the host's mediated path establishes ordering for a narrower covered state than the claim (DESIGN.md 3.9 claim identity), and acceptance would over-generalize. Remediation (restate): state that the ordering requirement covers every path by which human direction can reach the role in the bound realization, and that a path the host neither mediates nor can order before actuation leaves the claim unestablished, parallel to the existing transport sentence at proposal.md:78-79. In the pilot, freeze the human-usable ingress paths and inject race input through each, or record a path as unsupported. Confidence: high on the reuse premise (observed); medium on manual-root ingress topology (inferred).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P1",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path skills/manual-orchestration/references/context-boundary.md.",
+          "integrity_sha256": "9a40fc07faaae664e54071b01a479793e7d3b375829ca40b95d81f276daa8da2",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/manual-orchestration/references/context-boundary.md",
+          "revision": "9a40fc07faaae664e54071b01a479793e7d3b375829ca40b95d81f276daa8da2"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/formation-evidence.md.",
+          "integrity_sha256": "311f7213e8ce241c70906f829eed664b864b16a9f4e70f46ebed0862802be5db",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+          "revision": "311f7213e8ce241c70906f829eed664b864b16a9f4e70f46ebed0862802be5db"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path skills/agent-instruction-review/SKILL.md.",
+          "integrity_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/agent-instruction-review/SKILL.md",
+          "revision": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72"
+        }
+      ],
+      "finding_id": "SSC-OPUS-3",
+      "observation": "Location: skills/manual-orchestration/references/context-boundary.md:16 (root row), :20-23, :25-29. Loading: conditional reference for manual-orchestration parents and roots. Distinction missing: affirmative permission vs limitation, and the protected consequences the actual realizer must preserve. Evidence (observed): the changed text presents same-session compaction as an alternative to transfer ('context pressure alone does not require that route') and says lifecycle control and automatic resumption 'remain inside the current role, host and user authority'. The proposal conditions coverage on 'the governing role and host contracts permit both operations' (proposal.md:47-50) and says the clarification 'does not activate this candidate host contract or authorize an improvised controller' (:126-128); neither the condition nor the non-authorization appears in the loaded text. The governed consumer is the actor that realized S10: a manual root that composed compaction, its own controller and a role_host user-role wakeup (formation-evidence.md:56-61, :78-82). The text carries authorship (:31-33) and recovery (:33-35), but not ordering of human input across the boundary, non-repetition of compaction/wakeup after restart or uncertain entry, or an owned end-of-turn notification route (proposal.md:64-70, :83-91, :107-109). Delta (observed in a 2026-10-27 copy at ~/.local/state/work-engine/anthropic-builder-baselines-20261027/opus/final-review-repository/skills/manual-orchestration/references/context-boundary.md:16; that copy's identity with the recorded pre-clarification digest 3165149e... was not verified): the root row previously read 'at a quiescent boundary, write a root handoff; the user starts the successor'. Consequence (inferred): once released, a root under pressure can read the reference as permission to self-compact with automatic resumption through currently available daemon and role_host capabilities, reproducing S10's separate input check and restart-unsafe one-attempt limit in a human-facing thread, although the proposal records that no supported host realization exists. Remediation (restate, no approval gate): either state the route's establishment status for the current environment (no role/host contract currently establishes ordered input, an attributable wakeup and restart-safe effects for root self-compaction, so automatic same-session resumption is unestablished there; provider-initiated compaction still recovers through Wind Walker), or project the minimal consequences with their causal reasons. Confidence: high on text (observed); medium on behavioral consequence (inferred).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P1",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/packet.json.",
+          "integrity_sha256": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/packet.json",
+          "revision": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/semantic-context-lifecycle-manager.md.",
+          "integrity_sha256": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/semantic-context-lifecycle-manager.md",
+          "revision": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path skills/wind-walker/SKILL.md.",
+          "integrity_sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/skills/wind-walker/SKILL.md",
+          "revision": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005"
+        }
+      ],
+      "finding_id": "SSC-OPUS-4",
+      "observation": "Location: proposal.md:22-24 ('how an active human-supervised root may use those boundaries'), :47-50, :83-86 (host owns 'lifecycle effects it dispatches'), :104 ('initiator'); packet.json:18 placement. Distinction missing: who requests a transition vs who decides readiness/actuation vs who dispatches the effect, and host-dispatched vs role-dispatched lifecycle effects. Evidence (observed): the owner architecture keeps roles out of pressure monitoring and persistence decisions (semantic-context-lifecycle-manager.md:49-53), assigns readiness and actuation coordination to the service (:62-73), and has invariant 9 (:964-965); the existing realization rejects direct compact routes for role-owned threads (:644-649). The current design view names this document as owner (design/architecture/context-lifecycle.md:197) and lists 'The model never decides my context is too full' as key invariant 1 (:143), with design status proposed. Wind Walker leaves 'whether replacement improves the current work' to model judgment (SKILL.md:25-27). The motivating case and the runtime guidance have the root deciding and dispatching. Consequence (inferred): inserted into the owner document, the text either contradicts the service-decides architecture or is silent on it. A role holding covering authority that dispatches compaction or a wakeup itself (the S10 shape) falls outside the custody clause, which binds only effects the host dispatches, so the uniqueness and ordering obligations bind no one and the contract does not say that realization fails. Remediation (restate/split): state whether a role may request or decide a transition and that the host keeps readiness and admission; state, mechanism-neutrally, that a lifecycle effect not dispatched under the host's durable transition operation leaves this contract's ordering, custody and uniqueness claims unestablished. Confidence: high on text (observed); medium on consequence. design/architecture/context-lifecycle.md is outside the frozen manifest and its digest was not computed.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/context-lifecycle-transition-protocol.md.",
+          "integrity_sha256": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/context-lifecycle-transition-protocol.md",
+          "revision": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/semantic-context-lifecycle-manager.md.",
+          "integrity_sha256": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/semantic-context-lifecycle-manager.md",
+          "revision": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660"
+        }
+      ],
+      "finding_id": "SSC-OPUS-5",
+      "observation": "Location: proposal.md:66-69 ('participates in successor reconciliation'; 'newer pause ... must govern admission'), :92-95; pilot.md:67-68. Distinction missing: a host-originated productive-resumption input (the automatic-continuation wakeup) vs queued human input, and 'participates in reconciliation' vs the existing 'released after accepted reconciliation'. Evidence (observed): the existing custody contract releases queued items after accepted reconciliation, in custody order, to the domain scheduler (context-lifecycle-transition-protocol.md:561-570; desired outcome 6 at :120-121; semantic-context-lifecycle-manager.md:633-641). Reconciliation checks that the next action is still valid against canonical sources (:674-682) while queued input is still held in custody, and the rehydration turn denies tools (:694-697). The insertion says these contracts are consumed as they exist (proposal.md:35-37) but never gives the wakeup an admission identity in that order. Failure path (inferred): the wakeup is prepared before actuation; a human pause is queued after actuation; reconciliation validates the next action without the still-queued pause; the wakeup's productive admission resumes the paused work, or the pause is delivered first and the later wakeup restarts that work. The stated outcome forbids this, but a realization that reuses the existing order would produce it. Remediation (restate): give the automatic continuation its own admission identity in the same authoritative order as human input, evaluate its productive admission against every human input ordered before that admission, and either mark 'participates in successor reconciliation' as a delta to the protocol's release-after-acceptance order or define how the two map. Confidence: medium-high (inferred from observed contracts).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/packet.json.",
+          "integrity_sha256": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/packet.json",
+          "revision": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        }
+      ],
+      "finding_id": "SSC-OPUS-6",
+      "observation": "Location: packet.json:23 (uncertainty.reopening_conditions[0]) vs proposal.md:47-50. Distinction missing: whether the authority default is permitted unless reserved, or established only by an affirmative contract. Evidence (observed): the packet reopens only if 'an owning role or environment reserves lifecycle administration or automatic resumption to the human', which presumes ordinary task authority covers the route by default. The contract text requires that 'the governing role and host contracts permit both operations', and no permitting contract is named. The runtime guidance phrase 'remain inside the current role, host and user authority' (context-boundary.md:28-29) supports either reading. Consequence (inferred): the decision owner may accept on a permitted-unless-reserved premise while the realization lacks any named permitting contract; combined with SSC-OPUS-3, agents and decision owner then hold different authority defaults. Remediation (restate): align the reopening condition with the affirmative condition (for example, no governing role or host contract permits the operations), and name the contract(s) expected to grant it or record that as an open owner decision. Confidence: high (observed).",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/pilot.md.",
+          "integrity_sha256": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/pilot.md",
+          "revision": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/formation-evidence.md.",
+          "integrity_sha256": "311f7213e8ce241c70906f829eed664b864b16a9f4e70f46ebed0862802be5db",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+          "revision": "311f7213e8ce241c70906f829eed664b864b16a9f4e70f46ebed0862802be5db"
+        }
+      ],
+      "finding_id": "SSC-OPUS-7",
+      "observation": "Location: proposal.md:73-79; pilot.md:69. Distinctions missing: (a) host attribution (envelope, ledger, origin label) vs the successor model's interpretation, which is a behavior outcome the host can influence but not guarantee; (b) content author vs delivering component. Evidence (observed): the S10 wakeup was authored by the pre-compaction root and delivered by role_host as ordinary user-role turn input (formation-evidence.md:59-60, :80-81). Inclusion in a projection does not confer authority (semantic-context-lifecycle-manager.md:154-158), and reconciliation receipts are model assertions (:702-703). The insertion makes 'a model-visible projection that does not promote it to human authority' a host obligation, and the pilot consequence requires only that the fixture's pending approval remain pending. Consequence (inferred): a host can satisfy envelope plus label while the successor still acts on the wakeup text as direction beyond existing authority. If the fixture's wakeup does not itself assert closure or wider scope, the case passes without discriminating promotion from non-promotion. Remediation (split): separate the host obligation (attributable envelope; an origin label consistent with the loaded governing instructions) from the required outcome (the successor does not treat wakeup content as human approval or widened scope) and name evidence for the outcome. Record author and deliverer separately. Make the pilot wakeup discriminating: content that would close the pending decision or widen scope if it were promoted. Confidence: medium-high.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/pilot.md.",
+          "integrity_sha256": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/pilot.md",
+          "revision": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0"
+        }
+      ],
+      "finding_id": "SSC-OPUS-8",
+      "observation": "Location: proposal.md:107-109 ('an owned, evidenced resumption or notification route'); pilot.md:91-94 (transparency measure), :114-116 (interrupted cases need only 'a visible recovery owner'), :118-119 (visibility gates efficiency only for nominal runs). Distinctions missing: the success route vs the failure or unresolved route, and 'owner visible' vs 'state visible on the normal operator surface'. Evidence (observed): the S10 root announced the refresh and ended its turn (formation-evidence.md:57-58); manager invariant 19 says an attempted route is not delivery (semantic-context-lifecycle-manager.md:986-987). The existing root-transfer guidance requires the predecessor to keep collecting when no verified delivery route exists (context-boundary.md:216-222). Consequence (inferred): the disjunction admits a realization whose only owned route is the resumption itself. If the controller crashes between compaction and wakeup, the operator sees an announcement followed by silence that cannot be told apart from progress, and the pilot does not score visibility in that case. Remediation (restate): require that a failure or unresolved outcome of the resumption route reaches the operator surface through an owned route, or that the announcement before the turn ends says where the outcome will be observable and what its absence means; apply the transparency criterion to crash, denied and interrupted cases, not only nominal runs. Confidence: high (observed text); consequence inferred.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/pilot.md.",
+          "integrity_sha256": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/pilot.md",
+          "revision": "2133b0a692aa0495143c5c70ec0a81c104521749b8f3bb1d4147ef6ab3ee55c0"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path DESIGN.md.",
+          "integrity_sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/DESIGN.md",
+          "revision": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path PHILOSOPHY.md.",
+          "integrity_sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/PHILOSOPHY.md",
+          "revision": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307"
+        }
+      ],
+      "finding_id": "SSC-OPUS-9",
+      "observation": "Location: pilot.md:55-57, :63-74, :84-90, :111-113. Distinctions missing: actor-recorded vs independently observed evidence, and one counted effect vs every action channel available to the role. Evidence (observed): the independently owned effect counter is required only for duplicate effects. 'No fresh wakeup replay' (:72) relies on the custody record, which belongs to the host under test. Joins use the existing lifecycle and handoff records (:84). Nothing names the source or completeness basis for 'no affected domain work follows', 'unauthorized actions' or the fixture's 'prohibited action'. DESIGN.md 3.9 (:424-429) and PHILOSOPHY.md 18 (:798-803) treat these as world-history claims that need independent observation when the actor cannot know them. Consequence (inferred): safety absences can be asserted from the host's own records plus one counter that cannot see other actions, so 'with admissible evidence' (:111-113) is undefined for those cases. Remediation (restate): for each safety consequence, name its admissible evidence source and completeness basis (for example, provider history for wakeup entries, harness-observed tool and effect channels for post-pause work), and keep host records classed as actor-attributed. Confidence: medium-high.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P2",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path app-server/docs/context-lifecycle-transition-protocol.md.",
+          "integrity_sha256": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/app-server/docs/context-lifecycle-transition-protocol.md",
+          "revision": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/proposal.md.",
+          "integrity_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/proposal.md",
+          "revision": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6"
+        }
+      ],
+      "finding_id": "SSC-OPUS-10",
+      "observation": "Location: proposal.md:35-37 ('consumes these outcomes through its existing admission, custody, lease, effect and recovery contracts'), :65-66. Distinction missing: whether the existing protocol is reused as written or must be mapped to a different mechanism. Evidence (observed): the protocol's attribution and authorization invariants are new_context-shaped. Reset attribution requires the retirement control-turn identity, and 'preparation reservation alone never authorizes new_context' (context-lifecycle-transition-protocol.md:173-184); abort exists only from reserved (:542-549). The owner document says compaction is not equivalent to new_context without pinned evidence (semantic-context-lifecycle-manager.md:651-657). Consequence (inferred): implementers may assume the protocol already covers a host-invoked same-session compaction, while attribution, abort and control-turn identity for that mechanism are unmapped. Remediation (restate): record the mapping, or its absence, as an implementation evidence obligation or open decision rather than asserting that existing contracts consume it. Confidence: medium.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    },
+    {
+      "attributed_reviewer": "same-session-continuity-opus-reviewer",
+      "evidence_references": [
+        {
+          "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+          "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+          "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path proposals/agent-state/same-session-context-continuity/packet.json.",
+          "integrity_sha256": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/proposals/agent-state/same-session-context-continuity/packet.json",
+          "revision": "79b13f664705c3fd3d1e61e823ade66fa805b0aeebfab3173d340c51cde68bd7"
+        },
+        {
+          "freshness_rule": "Frozen snapshot bound by subject-v1.json; original path DESIGN.md.",
+          "integrity_sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+          "owner": "review-subject",
+          "reference": "reviews/same-session-context-continuity-external-20261028/source-v1/DESIGN.md",
+          "revision": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095"
+        }
+      ],
+      "finding_id": "SSC-OPUS-11",
+      "observation": "Location: proposal.md:64-71, :102-109, :118-121; packet.json:35-54 (relationships). Distinction missing: a credible neighboring owner for human-intent ingress and pending-disposition feedback. Evidence (observed, outside the frozen manifest, digests not computed): design/architecture/mechanisms/authority-preserving-intent-projection.md:3, :28-29 covers submitting human intent without manufacturing authority and showing proposed, pending, admitted, refused, completed and stale lifecycle feedback. design/ideas/pending/context-replacement-emergency-and-writable-operator-ingress.md:216-237 and :333-377 covers retained-role ingress, interruption and queued-input behavior and maps it to that mechanism. The insertion assigns receipt, pending disposition and ordering visibility to 'the lifecycle host' and lists neither as a relationship. Consequence (inferred): a parallel owner of ingress and feedback semantics risks forming, against DESIGN.md 1.2 ('does not ignore a credible competing owner'). Remediation: name the relationship and leave the owner choice to the architecture owner; this review does not decide it. Confidence: medium.",
+      "remediation_references": [],
+      "reviewer_generation": 1,
+      "severity": "P3",
+      "status": "open"
+    }
+  ],
+  "handled_transition_ids": {
+    "same-session-context-continuity-opus-20261028-begin": "fc6a3a2a43fe3ea3151dae1d37b34ff65d3758b77c1f09005bf481a2b7cabcb7",
+    "same-session-context-continuity-opus-20261028-initial-result-1": "af5e0038dede7a21bca5e3aca99ca9761f48e694611d773357bd96b74841031e"
+  },
+  "identity": {
+    "attempt_id": "candidate-1",
+    "plan_version": "interaction-contract-v1",
+    "review_episode_id": "same-session-context-continuity-opus-20261028",
+    "review_obligation_id": "architecture-authority-and-instruction-integrity",
+    "run_id": "same-session-context-continuity-review-20261028",
+    "slice_number": 1
+  },
+  "limitations": [
+    "scope verification is not caller authentication",
+    "review state cannot accept a slice or mutate referenced owners"
+  ],
+  "pending_next_action": "await_remediation",
+  "predecessor_revision": "c6db38b7a60eaa97a1c3d8c3e6a9f5f93a9d97a4",
+  "profile": "independent-adversarial-review-episode-v1",
+  "retirement": null,
+  "reviewed_subject": [
+    {
+      "freshness_rule": "Exact immutable review input; later human correction supersedes authority.",
+      "integrity_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+      "owner": "review-subject",
+      "reference": "reviews/same-session-context-continuity-external-20261028/subject-v1.json",
+      "revision": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67"
+    }
+  ],
+  "schema_version": 1,
+  "status": "active",
+  "uncertainty": null,
+  "unresolved_questions": [
+    "Which governing role or host contract, if any, affirmatively permits a human-supervised root to administer same-session lifecycle and automatic resumption, and is the manual-orchestration realization in scope at all?",
+    "Is transition initiation host-only (design/architecture/context-lifecycle.md key invariant 1) or role-requestable (Wind Walker model judgment), and where is that recorded?",
+    "Which owner holds human-input ingress ordering and pending-disposition feedback for human-facing roles: the lifecycle host or the authority-preserving intent projection mechanism?",
+    "Is a planning document for the App Server runtime, located in the app-server/ directory that app-server/README.md:3-5 marks superseded, the right home for a mechanism-neutral contract motivated mainly by a manual-orchestration realization? design/architecture/context-lifecycle.md:197 currently names it owner, so placement agrees with the current design view.",
+    "Out-of-manifest reads (design/architecture/context-lifecycle.md, design/architecture/mechanisms/authority-preserving-intent-projection.md, design/ideas/pending/context-replacement-emergency-and-writable-operator-ingress.md, app-server/README.md, a 2026-10-27 context-boundary.md copy) were not digest-bound; the prior advisory review reviews/same-session-context-continuity-20261028/review.md was not read, so overlap with its findings is not established."
+  ],
+  "writer_binding": {
+    "generation": 1,
+    "logical_actor_id": "same-session-continuity-opus-reviewer",
+    "provider": "claude",
+    "runtime_session_ref": {
+      "freshness_rule": "Predeclared fresh retained native session; coordinator verifies observed identity.",
+      "integrity_sha256": "74d4f5ca149ddb93e39c9822adebff34019e100777bb9e162f35fb8cf806f2fd",
+      "owner": "native-claude-code",
+      "reference": "eae3d3dd-2aeb-46ab-aab8-48a680906f35",
+      "revision": "generation-1"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "reviewed_semantic_subject": "subject-v2.json",
+  "reviewed_semantic_sources": [
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/proposal.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/proposals/agent-state/same-session-context-continuity/proposal.md",
+      "sha256": "dc61709af12b84af651b5c42752db94c23505af0b85a88b8af17415a69469379"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/pilot.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/proposals/agent-state/same-session-context-continuity/pilot.md",
+      "sha256": "84b11a0ba2b8d64a65a9ae392658e8d1542cc4dc3c3c92e6f93dfee53d534de9"
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-boundary.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/skills/manual-orchestration/references/context-boundary.md",
+      "sha256": "384bb313df297d303ab173c55f4ad79966f6033cfae195324cc6e5d768e36f0d"
+    }
+  ],
+  "packet_before_sha256": "278cc66a119e88b2df6d68639ec1f266aa2b02adc75e03380dbb6f4b1cf45780",
+  "packet_after_sha256": "3a26f17bf0694a1feacb16fe721dd92fecd376c710c1266dc8987dc06d1684cd",
+  "post_review_delta": "Only origin_refs add final Opus and coordinator report pointers; formatting normalized. Lifecycle, authority, placement, uncertainty, relationships and narrative unchanged."
+}

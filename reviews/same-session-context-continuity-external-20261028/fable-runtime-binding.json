@@ -1,0 +1,100 @@
+{
+  "requested_model": "claude-fable-5-1",
+  "requested_effort": "default_no_invocation_override",
+  "observed_effort": "not separately exposed",
+  "model_observations": {
+    "assistant_models": {
+      "claude-fable-5-1": 41
+    },
+    "metadata_only": {
+      "init_models": [
+        "claude-fable-5-1"
+      ],
+      "model_usage_scope": "this_session",
+      "result_model_usage_models": [
+        "claude-fable-5-1"
+      ],
+      "usage_models_other_than_requested": []
+    },
+    "parent_tool_use_records": 0,
+    "stream_event_models": {
+      "claude-fable-5-1": 8
+    },
+    "synthetic_assistant_messages": 0,
+    "synthetic_error_categories": {}
+  },
+  "identity": {
+    "observed_session_ids": [
+      "cc534e93-17e9-466f-9016-c5e964de94a2"
+    ],
+    "requested_session_id": "cc534e93-17e9-466f-9016-c5e964de94a2",
+    "requested_session_mode": "new",
+    "result_session_id": "cc534e93-17e9-466f-9016-c5e964de94a2",
+    "session_identity": "matches"
+  },
+  "model_guard_outcome": "verified_exact",
+  "native": {
+    "pid": 3903614,
+    "result_status": "success",
+    "returncode": 0,
+    "started": true,
+    "stopped_by_launcher": false
+  },
+  "process_collection": "none_remaining",
+  "init": {
+    "session_id": "cc534e93-17e9-466f-9016-c5e964de94a2",
+    "model": "claude-fable-5-1",
+    "permissionMode": "dontAsk",
+    "tools": [
+      "Glob",
+      "Grep",
+      "Read",
+      "mcp__codebase-memory-mcp__check_index_coverage",
+      "mcp__codebase-memory-mcp__compare_graphs",
+      "mcp__codebase-memory-mcp__delete_project",
+      "mcp__codebase-memory-mcp__detect_changes",
+      "mcp__codebase-memory-mcp__get_architecture",
+      "mcp__codebase-memory-mcp__get_code_snippet",
+      "mcp__codebase-memory-mcp__get_file_outline",
+      "mcp__codebase-memory-mcp__get_graph_schema",
+      "mcp__codebase-memory-mcp__index_repository",
+      "mcp__codebase-memory-mcp__index_status",
+      "mcp__codebase-memory-mcp__ingest_traces",
+      "mcp__codebase-memory-mcp__list_projects",
+      "mcp__codebase-memory-mcp__manage_adr",
+      "mcp__codebase-memory-mcp__query_graph",
+      "mcp__codebase-memory-mcp__search_code",
+      "mcp__codebase-memory-mcp__search_graph",
+      "mcp__codebase-memory-mcp__trace_path",
+      "mcp__work-engine-review-state__advance_independent_review_episode",
+      "mcp__work-engine-review-state__begin_independent_review_episode",
+      "mcp__work-engine-review-state__list_active_slice_history",
+      "mcp__work-engine-review-state__list_independent_review_episode_history",
+      "mcp__work-engine-review-state__read_active_slice_state",
+      "mcp__work-engine-review-state__read_independent_review_episode"
+    ],
+    "mcp_servers": [
+      {
+        "name": "codebase-memory-mcp",
+        "status": "connected",
+        "source": "dynamic"
+      },
+      {
+        "name": "work-engine-review-state",
+        "status": "connected",
+        "source": "dynamic"
+      }
+    ],
+    "effort": null
+  },
+  "observed_tool_uses": [
+    "Read",
+    "mcp__work-engine-review-state__advance_independent_review_episode",
+    "mcp__work-engine-review-state__begin_independent_review_episode",
+    "mcp__work-engine-review-state__read_independent_review_episode"
+  ],
+  "gateway": "anthropic",
+  "upstream_provider_observed": false,
+  "capability_evidence_limit": "CLI permission allowlist and dontAsk requested read-only repository access plus one episode state writer; effective policy is not independently attested. No repository mutation tool observed.",
+  "no_retained_followup": true
+}

@@ -1,0 +1,41 @@
+{
+  "purpose": "Local provenance; raw native stream is not a user-facing report or portable review subject.",
+  "artifacts": [
+    {
+      "name": "opus-stream-v1.jsonl",
+      "path": "/home/bline/.local/state/work-engine/same-session-context-continuity-review-20261028/raw/opus-stream-v1.jsonl",
+      "sha256": "c56fc88df700a70bd194ac12b4e52fb2a711ccf8e82e6386a532606fb26d8b4a",
+      "bytes": 3191751
+    },
+    {
+      "name": "opus-stderr-v1.txt",
+      "path": "/home/bline/.local/state/work-engine/same-session-context-continuity-review-20261028/raw/opus-stderr-v1.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "fable-stream-v1.jsonl",
+      "path": "/home/bline/.local/state/work-engine/same-session-context-continuity-review-20261028/raw/fable-stream-v1.jsonl",
+      "sha256": "d6f444db8f46b29d2ee1568e628387f13fc7f0dfb5ba48551f0592c966e1ebfb",
+      "bytes": 1450416
+    },
+    {
+      "name": "fable-stderr-v1.txt",
+      "path": "/home/bline/.local/state/work-engine/same-session-context-continuity-review-20261028/raw/fable-stderr-v1.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "opus-stream-v2.jsonl",
+      "path": "/home/bline/.local/state/work-engine/same-session-context-continuity-review-20261028/raw/opus-stream-v2.jsonl",
+      "sha256": "0dbc97468928bef741da18bfb25330d8bc3bf8754a6988d28afaa5a651ab25f6",
+      "bytes": 3944330
+    },
+    {
+      "name": "opus-stderr-v2.txt",
+      "path": "/home/bline/.local/state/work-engine/same-session-context-continuity-review-20261028/raw/opus-stderr-v2.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

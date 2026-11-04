@@ -1,0 +1,19 @@
+{
+  "baseline_subject": "subject.json",
+  "baseline_source_sha256": "42831b3b17a76c9086977cfbf445d352ec7409c30b496f866b898d4771a2770c",
+  "new_source": "proposals/agent-state/same-session-context-continuity/proposal.md",
+  "new_source_sha256": "15f544e8fbbecbdf41216764a8b0a77700037093a9d9024fff6a9277e075c6f6",
+  "author_disposition": "accept both advisory findings; restate authorization consequence and specialize transition scope",
+  "changes": [
+    {
+      "finding_id": "SSC-IR-1",
+      "before": "Because a checkpoint records authority rather than issuing it, the host must\nresolve the current governing authority before actuation and again before\nproductive resumption. Missing or conflicting authority leaves the dependent\noperation unestablished. Rehydration permitted for recovery cannot reactivate\nthe paused assignment or resolve a pending human decision.",
+      "after": "Because a checkpoint records authority rather than issuing it, actuation and\nproductive resumption must each be covered by current governing authority. A\nchange of authority invalidates stale admission. Missing or conflicting\nauthority leaves the dependent operation unestablished. Rehydration permitted\nfor recovery cannot reactivate the paused assignment or resolve a pending\nhuman decision."
+    },
+    {
+      "finding_id": "SSC-IR-2",
+      "before": "The host owns one durable transition operation and the lifecycle effects it\ndispatches. Its existing lease and effect records must bind the exact role,",
+      "after": "For each transitioning logical role instance, the host owns the durable\ntransition operation and lifecycle effects it dispatches. Its existing lease\nand effect records must bind the exact role,"
+    }
+  ]
+}

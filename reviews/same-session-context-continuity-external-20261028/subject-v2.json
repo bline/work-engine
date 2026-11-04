@@ -1,0 +1,45 @@
+{
+  "subject": "work-engine.same-session-context-continuity",
+  "revision": "candidate-v2",
+  "files": [
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/packet.json",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/proposals/agent-state/same-session-context-continuity/packet.json",
+      "sha256": "278cc66a119e88b2df6d68639ec1f266aa2b02adc75e03380dbb6f4b1cf45780"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/proposal.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/proposals/agent-state/same-session-context-continuity/proposal.md",
+      "sha256": "dc61709af12b84af651b5c42752db94c23505af0b85a88b8af17415a69469379"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/pilot.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/proposals/agent-state/same-session-context-continuity/pilot.md",
+      "sha256": "84b11a0ba2b8d64a65a9ae392658e8d1542cc4dc3c3c92e6f93dfee53d534de9"
+    },
+    {
+      "path": "proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/proposals/agent-state/same-session-context-continuity/formation-evidence.md",
+      "sha256": "311f7213e8ce241c70906f829eed664b864b16a9f4e70f46ebed0862802be5db"
+    },
+    {
+      "path": "skills/manual-orchestration/references/context-boundary.md",
+      "snapshot": "reviews/same-session-context-continuity-external-20261028/source-v2/skills/manual-orchestration/references/context-boundary.md",
+      "sha256": "384bb313df297d303ab173c55f4ad79966f6033cfae195324cc6e5d768e36f0d"
+    }
+  ],
+  "unchanged_dependencies": "subject-v1.json",
+  "unchanged_dependencies_sha256": "dbbefc6c4902cbf4a259122ba51d0fba7c526cd21a17ff2f273d176c6d120e67",
+  "delta": {
+    "path": "delta-v1-v2.patch",
+    "sha256": "31beed9141324c9ef92a66576c11db1bb935c5550698eaa10230a48117c2468d"
+  },
+  "remediation": {
+    "path": "remediation-v2.md",
+    "sha256": "1038520b92eea6a7df01bb565f1bdabf46ab752f146b1a5875c5ff5892c5c924"
+  },
+  "tier2_report": {
+    "path": "fable-report-v1.md",
+    "sha256": "00482307ea79f4c15a0070dced6b41de09abf2492784d5bf5fbdd9df7c3079dc"
+  }
+}

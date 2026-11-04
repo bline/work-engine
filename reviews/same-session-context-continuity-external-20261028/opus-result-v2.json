@@ -1,0 +1,119 @@
+{
+  "duration_api_ms": 1447800,
+  "stop_reason": "end_turn",
+  "session_id": "eae3d3dd-2aeb-46ab-aab8-48a680906f35",
+  "total_cost_usd": 6.827381999999998,
+  "usage": {
+    "input_tokens": 20,
+    "cache_creation_input_tokens": 132049,
+    "cache_read_input_tokens": 2526552,
+    "output_tokens": 65191,
+    "output_tokens_details": {
+      "thinking_tokens": 9862
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 132049,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2102,
+        "cache_read_input_tokens": 356651,
+        "cache_creation_input_tokens": 1143,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1143
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 62,
+      "outputTokens": 150625,
+      "thinkingTokens": 65848,
+      "cacheReadInputTokens": 4761410,
+      "cacheCreationInputTokens": 357794,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 357794,
+      "webSearchRequests": 0,
+      "costUSD": 6.827381999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 16,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "# Re-evaluation: subject-v2 (`1e6f1077\u2026`)\n\n**Verdict: `acceptable_as_proposed`.** No blocking finding remains. The verdict covers the proposed contract and the unreleased guidance only; the packet stays `formed` with `implementation_authorized=false`. The root keeps acceptance authority. Fable's recommendations were weighed as evidence, not as authority.\n\n## Dispositions (all 11 `verified_resolved`)\n\n| ID | Resolution in v2 | Fable qualification |\n|---|---|---|\n| 1 (P1) | `proposal.md:76-77` adds the reason; `:90-96` says a restriction ordered before actuation, or one that may apply, leaves re-actuation unestablished, and recompiling it as open is not authority; pilot `:102-103` | upheld |\n| 2 (P1) | `proposal.md:79-81` binds the human-usable input paths, and testing only the mediated path cannot prove wider coverage; pilot `:37-42` | accepted: v1 already covered all human input, so the gap was realization and pilot evidence (P2 would have sufficed) |\n| 3 (P1) | `context-boundary.md:30-32`: the reference sets up no host contract for automatic resumption and authorizes no improvised controller; recovery still goes through Wind Walker | accepted: `:25-29` is a limitation, and \"reads as permission\" overstated it |\n| 4 (P2) | `proposal.md:68-72`: a role may request; the host keeps readiness and admission; effects dispatched outside the host operation leave the claims unestablished | accepted (correction below) |\n| 5 (P2) | `proposal.md:98-105`: the wakeup has its own ordered admission identity, and the delta from the protocol is declared | \u2014 |\n| 6 (P2) | packet reopening condition 0 and `proposal.md:51-56` now agree | accepted: it was an ambiguity, not a contradiction (correction below) |\n| 7 (P2) | `proposal.md:107-117`: author and deliverer recorded separately; attribution \u2260 compliance; the pilot wakeup now adversarially asserts approval (`pilot.md:60-64`) | accepted in part: the material defect was the pilot case |\n| 8 (P2) | `proposal.md:149-153`: a route for failure outcomes; pilot `:113, :117` | upheld |\n| 9 (P2) | `pilot.md:74-118`: a finite set of action channels; evidence sources E1\u2013E5; host records are classed as actor records | accepted as pilot-only |\n| 10 (P3) | `proposal.md:35-40`: reuse of the transition protocol is now an obligation on the realization; `pilot.md:41-42` | upheld |\n| 11 (P3) | `proposal.md:168-175`: neighbors named, no ownership taken | \u2014 |\n\n**Fable's ambiguous-scope finding (SSC-FABLE-1):** resolved. `proposal.md:95-96` says ambiguous scope leaves the affected actuation or admission unestablished rather than narrowing the pause. Pilot `:103` adds the case, and unrelated authorized work does not have to halt.\n\n**Corrections to my v1 findings:**\n- **SSC-OPUS-4.** I claimed the text contradicted the owner's architecture, in which the service, not the role, decides. That treated a *proposed* view's invariant (`design/architecture/context-lifecycle.md:143`) as binding and gave too little weight to the manager's invariant 9. As a result, the placement half was overstated; only the custody split was needed. Reading the view's status block together with invariant 9 would have caught this.\n- **SSC-OPUS-6.** I read the ambiguous word \"permit\" in its stricter, affirmative-grant sense, against DESIGN.md \u00a711 and the adjacent \"no new approval\" sentence. A P3 wording fix would have been enough. Reading v1 `:47-51` as one unit would have caught this.\n\n## Remaining, non-blocking\n- **Optional wording.** At `:91`, name the human as the owner of a human-issued restriction's scope. At `:85`, say the input's \"authority effect\" participates, matching `:100-104`.\n- **Reconciliation note.** If v2 is accepted, `:68-70` departs from invariant 1 of the proposed design view. Reconciling that belongs to the view's owner and changes nothing about this candidate's authority.\n- **No owner decision is required.** It remains a fact that no supporting host contract currently exists for any root environment. No pilot or realization has run.\n\n## State\n- Remediation subject recorded at `fea97b9d5d67ad25a496751b9dbd0cb38d2936cd`.\n- Re-evaluation `opus-v2-result` recorded at **`94687646864fe4d00ce7d1f5d124c7ebb5490159`**, predecessor `fea97b9d\u2026`.\n- Read-back confirms 11 `verified_resolved`, status `active`, `pending_next_action: await_remediation`.\n- Two earlier attempts were rejected because finding evidence and observation text are immutable; the state did not change. The final record therefore keeps each finding's v1 text and evidence verbatim. The v2 dispositions are carried only in `status` and in `remediation_references`, whose freshness rules give the exact resolving line ranges. The causal reasons are in this report.\n\n## Specialist applicability and limits\n**agent-instruction-review: applicable.** The changed root guidance now carries the establishment-status statement at its loading boundary. The new contract clauses carry their reasons inline, for example at `:76-77`.\n\n**Limits:**\n- Read-only review of the delta, the remediation note, the Fable report and the changed v2 ranges.\n- No tests, no commands, no Fable follow-up.\n- Fable reviewed v1 only, so it does not attest v2.",
+  "ttft_ms": 7073,
+  "type": "result",
+  "duration_ms": 610994,
+  "uuid": "e2d0f841-32b7-4c9f-bffd-82e3bf0dcc68",
+  "ttft_stream_ms": 6119,
+  "time_to_request_ms": 119,
+  "first_content_frame_ms": 6119,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+    "claude-opus-5-5": {
+      "inputTokens": 20,
+      "outputTokens": 65191,
+      "cacheReadInputTokens": 2526552,
+      "cacheCreationInputTokens": 132049,
+      "webSearchRequests": 0,
+      "costUSD": 2.8656024,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 9862,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 132049,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

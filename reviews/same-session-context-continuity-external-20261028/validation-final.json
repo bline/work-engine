@@ -1,0 +1,10 @@
+{
+  "proposal_and_skill_checks": "pass",
+  "semantic_sources_match_final_review": true,
+  "frozen_subjects_intact": true,
+  "metadata_only_reference_update": "post-review-reference-update.json",
+  "local_link_errors": [],
+  "all_native_process_collections": "none_remaining",
+  "opus_transcript_compaction_markers": [],
+  "limits": "No runtime/pilot/implementation validation; best-effort process and transcript observation only."
+}
