@@ -1,0 +1,15 @@
+[package]
+name = "pi-context-observer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+publish = false
+
+[dependencies]
+context-pressure = { path = "../context-pressure" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
+sha2 = "=0.10.9"
+time = { version = "=0.3.47", features = ["parsing"] }
+
+[workspace]

@@ -1,0 +1,411 @@
+{
+  "identity": {
+    "source": "pi:test",
+    "session": "sdk-session",
+    "generation": "g1",
+    "model": "model",
+    "window": 1000
+  },
+  "max_age_ms": 1000,
+  "now_ms": 1767225600000,
+  "policy": {
+    "schemaVersion": 1,
+    "unit": "basis_points",
+    "approaching": {
+      "exit": 4000,
+      "enter": 5000
+    },
+    "replacementCandidate": {
+      "exit": 6000,
+      "enter": 7000
+    },
+    "critical": {
+      "exit": 8000,
+      "enter": 9000
+    }
+  },
+  "records": [
+    {
+      "kind": "pi",
+      "payload": {
+        "identity": {
+          "source": "pi:test",
+          "session": "sdk-session",
+          "generation": "g1",
+          "model": "model",
+          "window": 1000
+        },
+        "observation_id": "fixture-1",
+        "sequence": 1,
+        "observed_at": "2026-01-01T00:00:00.000Z",
+        "observed_ms": 1767225600000,
+        "tokens": 750,
+        "provenance": "constructed SDK estimate"
+      }
+    },
+    {
+      "kind": "budget_control",
+      "producer": "metrics/scripts/usage_ledger.py control",
+      "payload": {
+        "schema": "objective-budget-control-v1",
+        "topic": "control:budget:fixture-objective",
+        "events": [
+          {
+            "topic": "control:budget:fixture-objective",
+            "authority": "observation_only",
+            "kind": "limit_fraction",
+            "pool": "codex",
+            "node_id": null,
+            "level": 1.0,
+            "observed": {
+              "quota_usd_low": 1.2,
+              "quota_usd_high": 1.2,
+              "unpriced_calls": 0,
+              "cost_basis": "speed_adjusted_api_usd",
+              "kind": "proxy",
+              "api_equivalent_usd_low": 1.2,
+              "api_equivalent_usd_high": 1.2
+            },
+            "snapshot_at": "2026-01-01T00:00:00.000Z",
+            "summary": "spend limit",
+            "set_by": "user"
+          },
+          {
+            "topic": "control:budget:fixture-objective",
+            "authority": "observation_only",
+            "kind": "hours_fraction",
+            "pool": null,
+            "node_id": null,
+            "level": 0.5,
+            "observed": 0.6,
+            "snapshot_at": "2026-01-01T00:00:00.000Z",
+            "summary": "elapsed hours"
+          }
+        ],
+        "next_budget_cursor": "eyJhY2NvdW50X3F1b3RhX3N0YXR1cyI6ICJub3RfZXN0YWJsaXNoZWQiLCAib2JqZWN0aXZlX2lkIjogImZpeHR1cmUtb2JqZWN0aXZlIiwgInN0YXRlcyI6IHsiW1wiaG91cnNfZnJhY3Rpb25cIixudWxsLG51bGwsMC41XSI6IHRydWUsICJbXCJsaW1pdF9mcmFjdGlvblwiLFwiY29kZXhcIixudWxsLDEuMCxcInVzZXJcIl0iOiB0cnVlfX0",
+        "snapshot": {
+          "snapshot_at": "2026-01-01T00:00:00.000Z",
+          "status": "complete",
+          "totals": {
+            "codex": {
+              "calls": 1,
+              "unpriced_calls": 0,
+              "usd_low": 1.2,
+              "usd_high": 1.2,
+              "quota_usd_low": 1.2,
+              "quota_usd_high": 1.2
+            },
+            "claude_all_models": {
+              "calls": 0,
+              "unpriced_calls": 0,
+              "usd_low": 0.0,
+              "usd_high": 0.0,
+              "quota_usd_low": 0.0,
+              "quota_usd_high": 0.0
+            },
+            "claude_fable": {
+              "calls": 0,
+              "unpriced_calls": 0,
+              "usd_low": 0.0,
+              "usd_high": 0.0,
+              "quota_usd_low": 0.0,
+              "quota_usd_high": 0.0
+            }
+          },
+          "measurements": {
+            "account_quota": {
+              "status": "not_established",
+              "pool": "codex",
+              "account_wide": true,
+              "used_percent": null,
+              "remaining_percent": null,
+              "observed_at": null,
+              "resets_at": null,
+              "age_seconds": null,
+              "max_age_seconds": 300,
+              "reason": "no_reading",
+              "ceiling_percent": null,
+              "headroom_to_ceiling_percent": null
+            },
+            "cost_bounds": "scenario bounds for priced calls and unknown tier/cache details; not quota confidence intervals",
+            "labels": {
+              "quota_usd": "API-equivalent dollars adjusted for subscription speed",
+              "usd": "API-equivalent dollars"
+            },
+            "legacy_aliases": {
+              "quota_usd": "speed_adjusted_api_usd",
+              "usd": "api_equivalent_usd"
+            },
+            "objective": {
+              "claude_all_models": {
+                "api_equivalent_usd": {
+                  "low": 0.0,
+                  "high": 0.0
+                },
+                "speed_adjusted_api_usd": {
+                  "low": 0.0,
+                  "high": 0.0,
+                  "kind": "proxy"
+                },
+                "unpriced_calls": 0,
+                "estimated_quota_points": {
+                  "status": "not_established",
+                  "low": null,
+                  "high": null,
+                  "calibration_version": null
+                }
+              },
+              "claude_fable": {
+                "api_equivalent_usd": {
+                  "low": 0.0,
+                  "high": 0.0
+                },
+                "speed_adjusted_api_usd": {
+                  "low": 0.0,
+                  "high": 0.0,
+                  "kind": "proxy"
+                },
+                "unpriced_calls": 0,
+                "estimated_quota_points": {
+                  "status": "not_established",
+                  "low": null,
+                  "high": null,
+                  "calibration_version": null
+                }
+              },
+              "codex": {
+                "api_equivalent_usd": {
+                  "low": 1.2,
+                  "high": 1.2
+                },
+                "speed_adjusted_api_usd": {
+                  "low": 1.2,
+                  "high": 1.2,
+                  "kind": "proxy"
+                },
+                "unpriced_calls": 0,
+                "estimated_quota_points": {
+                  "status": "not_established",
+                  "low": null,
+                  "high": null,
+                  "calibration_version": null
+                }
+              }
+            },
+            "pricing_scenario": {
+              "actual_bill": false,
+              "id": "usage-ledger-standard-api-v1",
+              "kind": "modelled_api_equivalent",
+              "rates_sha256": "96730ca91379a25c3378605503b9cdbcf1f441b8494062550d6ee56d0d024719",
+              "rules": {
+                "codex_long_input_multiplier": 2,
+                "codex_long_input_threshold": 272000,
+                "codex_long_output_multiplier": 1.5,
+                "haiku_long_input_threshold": 100000,
+                "haiku_long_multiplier": 5,
+                "unknown_tier_high": 2.5,
+                "unknown_tier_low": 1
+              },
+              "scenario_sha256": "a4b0df301ac49e946f9a4e7b786f3fc3004decdb7171b0e6e6e8a3a83d43447a",
+              "speed_multipliers": {
+                "default": 1.0,
+                "priority": 2.5
+              },
+              "subscription_quota": false
+            },
+            "quota_estimates": "not calibrated; unknown is null, never zero",
+            "schema": "usage-ledger-measurements-v1"
+          },
+          "cost_controls": [
+            {
+              "pool": "codex",
+              "node_id": null,
+              "set_by": "user",
+              "max_usd": 2.0,
+              "basis": "speed_adjusted_api_usd",
+              "observed": {
+                "quota_usd_low": 1.2,
+                "quota_usd_high": 1.2,
+                "unpriced_calls": 0,
+                "cost_basis": "speed_adjusted_api_usd",
+                "kind": "proxy",
+                "api_equivalent_usd_low": 1.2,
+                "api_equivalent_usd_high": 1.2
+              },
+              "remaining_usd": 0.8
+            }
+          ],
+          "post_close": null
+        },
+        "closed_at": null
+      }
+    },
+    {
+      "kind": "budget_control",
+      "producer": "metrics/scripts/usage_ledger.py control",
+      "payload": {
+        "schema": "objective-budget-control-v1",
+        "topic": "control:budget:fixture-objective",
+        "events": [
+          {
+            "topic": "control:budget:fixture-objective",
+            "authority": "observation_only",
+            "kind": "coverage_changed",
+            "pool": null,
+            "node_id": null,
+            "level": "coverage",
+            "observed": {
+              "status": "not_established",
+              "unpriced_calls": 0,
+              "ranged": false,
+              "unknown_spend": false,
+              "undated_calls": 0
+            },
+            "snapshot_at": "2026-01-01T00:00:00.000Z",
+            "cost_coverage_changed": true,
+            "summary": "coverage changed"
+          }
+        ],
+        "next_budget_cursor": "eyJhY2NvdW50X3F1b3RhX3N0YXR1cyI6ICJub3RfZXN0YWJsaXNoZWQiLCAib2JqZWN0aXZlX2lkIjogImZpeHR1cmUtb2JqZWN0aXZlIiwgInN0YXRlcyI6IHsiW1wiY292ZXJhZ2VfY2hhbmdlZFwiLG51bGwsbnVsbCxcImNvdmVyYWdlXCJdIjogeyJyYW5nZWQiOiBmYWxzZSwgInN0YXR1cyI6ICJub3RfZXN0YWJsaXNoZWQiLCAidW5kYXRlZF9jYWxscyI6IDAsICJ1bmtub3duX3NwZW5kIjogZmFsc2UsICJ1bnByaWNlZF9jYWxscyI6IDB9fX0",
+        "closed_at": null,
+        "snapshot": {
+          "snapshot_at": "2026-01-01T00:00:00.000Z",
+          "status": "not_established",
+          "totals": {
+            "codex": {
+              "calls": 0,
+              "unpriced_calls": 0,
+              "usd_low": 0.0,
+              "usd_high": 0.0,
+              "quota_usd_low": 0.0,
+              "quota_usd_high": 0.0
+            },
+            "claude_all_models": {
+              "calls": 0,
+              "unpriced_calls": 0,
+              "usd_low": 0.0,
+              "usd_high": 0.0,
+              "quota_usd_low": 0.0,
+              "quota_usd_high": 0.0
+            },
+            "claude_fable": {
+              "calls": 0,
+              "unpriced_calls": 0,
+              "usd_low": 0.0,
+              "usd_high": 0.0,
+              "quota_usd_low": 0.0,
+              "quota_usd_high": 0.0
+            }
+          },
+          "measurements": {
+            "account_quota": {
+              "status": "not_established",
+              "pool": "codex",
+              "account_wide": true,
+              "used_percent": null,
+              "remaining_percent": null,
+              "observed_at": null,
+              "resets_at": null,
+              "age_seconds": null,
+              "max_age_seconds": 300,
+              "reason": "no_reading",
+              "ceiling_percent": null,
+              "headroom_to_ceiling_percent": null
+            },
+            "cost_bounds": "scenario bounds for priced calls and unknown tier/cache details; not quota confidence intervals",
+            "labels": {
+              "quota_usd": "API-equivalent dollars adjusted for subscription speed",
+              "usd": "API-equivalent dollars"
+            },
+            "legacy_aliases": {
+              "quota_usd": "speed_adjusted_api_usd",
+              "usd": "api_equivalent_usd"
+            },
+            "objective": {
+              "claude_all_models": {
+                "api_equivalent_usd": {
+                  "low": 0.0,
+                  "high": 0.0
+                },
+                "speed_adjusted_api_usd": {
+                  "low": 0.0,
+                  "high": 0.0,
+                  "kind": "proxy"
+                },
+                "unpriced_calls": 0,
+                "estimated_quota_points": {
+                  "status": "not_established",
+                  "low": null,
+                  "high": null,
+                  "calibration_version": null
+                }
+              },
+              "claude_fable": {
+                "api_equivalent_usd": {
+                  "low": 0.0,
+                  "high": 0.0
+                },
+                "speed_adjusted_api_usd": {
+                  "low": 0.0,
+                  "high": 0.0,
+                  "kind": "proxy"
+                },
+                "unpriced_calls": 0,
+                "estimated_quota_points": {
+                  "status": "not_established",
+                  "low": null,
+                  "high": null,
+                  "calibration_version": null
+                }
+              },
+              "codex": {
+                "api_equivalent_usd": {
+                  "low": 0.0,
+                  "high": 0.0
+                },
+                "speed_adjusted_api_usd": {
+                  "low": 0.0,
+                  "high": 0.0,
+                  "kind": "proxy"
+                },
+                "unpriced_calls": 0,
+                "estimated_quota_points": {
+                  "status": "not_established",
+                  "low": null,
+                  "high": null,
+                  "calibration_version": null
+                }
+              }
+            },
+            "pricing_scenario": {
+              "actual_bill": false,
+              "id": "usage-ledger-standard-api-v1",
+              "kind": "modelled_api_equivalent",
+              "rates_sha256": "96730ca91379a25c3378605503b9cdbcf1f441b8494062550d6ee56d0d024719",
+              "rules": {
+                "codex_long_input_multiplier": 2,
+                "codex_long_input_threshold": 272000,
+                "codex_long_output_multiplier": 1.5,
+                "haiku_long_input_threshold": 100000,
+                "haiku_long_multiplier": 5,
+                "unknown_tier_high": 2.5,
+                "unknown_tier_low": 1
+              },
+              "scenario_sha256": "a4b0df301ac49e946f9a4e7b786f3fc3004decdb7171b0e6e6e8a3a83d43447a",
+              "speed_multipliers": {
+                "default": 1.0,
+                "priority": 2.5
+              },
+              "subscription_quota": false
+            },
+            "quota_estimates": "not calibrated; unknown is null, never zero",
+            "schema": "usage-ledger-measurements-v1"
+          },
+          "cost_controls": [],
+          "post_close": null
+        }
+      }
+    }
+  ],
+  "initial_disposition": "comfortable"
+}
