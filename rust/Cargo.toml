@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/session-task-admission",
   "crates/session-delivery",
   "crates/session-bridge",
   "crates/mcp-auth",

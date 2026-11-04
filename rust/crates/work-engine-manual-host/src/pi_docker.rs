@@ -17,6 +17,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[path = "pi_coding.rs"]
+pub mod coding;
 #[path = "pi_observation.rs"]
 pub mod receiver;
 
@@ -121,6 +123,8 @@ pub struct Job {
     pub idle_seconds: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub receiver: Option<receiver::Profile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub coding: Option<coding::Profile>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -157,6 +161,8 @@ pub struct Journal {
     pub rpc_verified: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub receiver: Option<receiver::Observation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub coding: Option<coding::State>,
     /// Prefix readiness is distinct from successful validation of completed bytes.
     /// Older journals have no final proof and cannot become success on recovery.
     #[serde(default)]
@@ -233,6 +239,12 @@ fn check_job(job: &Job, fresh: bool) -> Result<()> {
     }
     if fresh && (job.deadline_unix_seconds <= now() || job.deadline_unix_seconds > now() + 300) {
         return refuse("fresh fixture deadline must be within 300 seconds");
+    }
+    if job.receiver.is_some() && job.coding.is_some() {
+        return refuse("exclusive Pi profile required");
+    }
+    if let Some(profile) = &job.coding {
+        profile.validate(job)?;
     }
     if let Some(profile) = &job.receiver {
         profile.validate(job)?;
@@ -325,6 +337,32 @@ impl Host {
                 });
             }
         }
+        if let Some(profile) = &job.coding {
+            for input in [
+                &profile.shim,
+                &profile.toolchain.manifest,
+                &profile.acceptance,
+            ] {
+                input_pins.push(Artifact {
+                    path: input.snapshot(&job.state_dir.join("snapshots"))?,
+                    sha256: input.sha256.clone(),
+                });
+            }
+        }
+        if let Some(plan) = job.coding.as_ref().and_then(|p| p.provider.as_ref()) {
+            for input in [
+                &plan.task,
+                &plan.catalog,
+                &plan.access_adapter,
+                &plan.lane.pi_config.manifest,
+            ] {
+                input_pins.push(Artifact {
+                    path: input.snapshot(&job.state_dir.join("snapshots"))?,
+                    sha256: input.sha256.clone(),
+                });
+            }
+        }
+        let coding = job.coding.as_ref().map(|_| coding::State::default());
         let receiver = job
             .receiver
             .as_ref()
@@ -343,6 +381,7 @@ impl Host {
             failures: vec![],
             rpc_verified: false,
             receiver,
+            coding,
             rpc_completion: None,
             daemon_exit: None,
             removed: false,
@@ -470,11 +509,12 @@ impl Host {
         self.save()?;
         let mut stdin = child.stdin.take();
         let mut write_result = if let Some(input) = stdin.as_mut() {
-            let initial = if self.journal.job.receiver.is_some() {
-                vec![]
-            } else {
-                rpc_input()
-            };
+            let initial =
+                if self.journal.job.receiver.is_some() || self.journal.job.coding.is_some() {
+                    vec![]
+                } else {
+                    rpc_input()
+                };
             input.write_all(&initial).and_then(|_| input.flush())
         } else {
             Ok(())
@@ -492,7 +532,22 @@ impl Host {
             }
             if rpc && !verified && output_size <= LIMIT {
                 let raw = fs::read(&stdout_path)?;
-                if self.journal.job.receiver.is_some() {
+                if self.journal.job.coding.is_some() {
+                    match self.coding_advance(&raw) {
+                        Ok(commands) => {
+                            for command in commands {
+                                if let Some(input) = stdin.as_mut() {
+                                    write_result =
+                                        input.write_all(&command).and_then(|_| input.flush());
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            self.failure(e);
+                            aborted = true;
+                        }
+                    }
+                } else if self.journal.job.receiver.is_some() {
                     match self.receiver_advance(&raw, number) {
                         Ok(Some(command)) => {
                             write_result = stdin
@@ -547,7 +602,11 @@ impl Host {
                     self.journal.job.command_timeout_seconds
                 });
             if timeout
-                || (rpc && (self.expired() || self.cancelled()))
+                || ((rpc
+                    || label == "coding-tool-exec"
+                    || label == "coding-final-acceptance"
+                    || label == "coding-validation-start")
+                    && (self.expired() || self.cancelled()))
                 || write_result.is_err()
                 || aborted
             {
@@ -583,7 +642,13 @@ impl Host {
         self.save()?;
         let bytes = crate::bytes(&stdout_path)?;
         if rpc && success {
-            let session = if self.journal.job.receiver.is_some() {
+            let session = if self.journal.job.coding.is_some() {
+                self.coding_complete(&bytes)?;
+                self.journal
+                    .session_id
+                    .clone()
+                    .ok_or_else(|| Error::Refused("coding session missing".into()))?
+            } else if self.journal.job.receiver.is_some() {
                 self.receiver_complete(&bytes, number)?;
                 self.journal
                     .session_id
@@ -609,6 +674,9 @@ impl Host {
         Ok((success, bytes))
     }
     fn create_args(&self) -> Vec<String> {
+        if self.journal.job.coding.is_some() {
+            return self.coding_inference_args();
+        }
         let j = &self.journal;
         let r = &j.job;
         let mut args = vec![
@@ -724,6 +792,9 @@ impl Host {
             if self.cancelled() {
                 return refuse("cancelled before create");
             }
+            if self.journal.job.coding.is_some() {
+                self.coding_prepare_tool()?;
+            }
             self.journal.phase = Phase::CreateUnknown;
             self.save()?;
             let (ok, output) = self.command("create", self.create_args(), false)?;
@@ -756,6 +827,9 @@ impl Host {
             )?;
             if !ok {
                 return refuse("Pi attach/start failed or uncertain");
+            }
+            if self.journal.job.coding.is_some() {
+                self.coding_validate_task()?;
             }
             self.journal.phase = Phase::Running;
             self.save()?;
@@ -805,7 +879,18 @@ impl Host {
         self.journal.phase = Phase::Collecting;
         self.save()?;
         let collect = (|| -> Result<()> {
-            let mut inspected = self.inspect_container()?;
+            let mut inspected = match self.inspect_container() {
+                Ok(value) => value,
+                Err(error) if self.journal.job.coding.is_some() => {
+                    if self.coding_confirm_inference_absence()? {
+                        self.journal.removed = true;
+                        self.save()?;
+                        return Ok(());
+                    }
+                    return Err(error);
+                }
+                Err(error) => return Err(error),
+            };
             let name = self.journal.container_name.clone();
             if inspected["State"]["Running"] == true {
                 self.failure("running container required recovery/cancel stop");
@@ -865,6 +950,26 @@ impl Host {
         if let Err(error) = collect {
             self.failure(error);
         }
+        if self.journal.job.coding.is_some()
+            && let Err(error) = self.coding_collect_tool()
+        {
+            self.failure(error);
+        }
+        if self.journal.job.coding.is_some()
+            && let Err(error) = self.coding_collect_validation()
+        {
+            self.failure(error);
+        }
+        if self.journal.job.coding.is_some()
+            && let Err(error) = self.coding_export_validation()
+        {
+            self.failure(error);
+        }
+        if self.journal.job.coding.is_some()
+            && let Err(error) = self.coding_cleanup_secret()
+        {
+            self.failure(error);
+        }
         if let Err(error) = self
             .journal
             .job
@@ -877,7 +982,14 @@ impl Host {
         if let Err(error) = self.collect_artifacts() {
             self.failure(error);
         }
-        if self.journal.removed {
+        if self.journal.removed
+            && self.journal.coding.as_ref().is_none_or(|c| {
+                (c.tool_removed || !c.tool_create_intent)
+                    && (c.validation_removed || !c.validation_intent)
+                    && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
+                        || c.access_removed)
+            })
+        {
             self.journal.phase = Phase::Collected;
         }
         self.save()?;
@@ -932,7 +1044,13 @@ impl Host {
         for artifact in &self.journal.artifacts {
             artifact.verify()?;
         }
-        let pass = self.journal.rpc_verified
+        let pass = self.journal.coding.as_ref().is_none_or(|c| {
+            c.tool_removed
+                && c.completed
+                && self.coding_final_proof_valid()
+                && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
+                    || c.access_removed)
+        }) && self.journal.rpc_verified
             && self.journal.rpc_completion.as_ref().is_some_and(|proof| {
                 self.journal.session_id.as_deref() == Some(&proof.session_id)
                     && self
@@ -952,16 +1070,31 @@ impl Host {
             && self.journal.daemon_exit == Some(0)
             && self.journal.removed
             && self.journal.failures.is_empty()
-            && self
-                .journal
-                .processes
-                .iter()
-                .all(|p| p.status == Some(0) && !p.timed_out && p.leftovers.is_empty());
+            && self.journal.processes.iter().all(|p| {
+                (p.status == Some(0)
+                    || (self.journal.coding.is_some()
+                        && p.status.is_some()
+                        && p.stdout.file_name().is_some_and(|name| {
+                            name.to_string_lossy().contains("-coding-tool-exec-")
+                        })))
+                    && !p.timed_out
+                    && p.leftovers.is_empty()
+            });
         let mut value = json!({"schema":SCHEMA,"job":self.journal.job,"job_id":self.journal.job.job_id,"input_digest":self.journal.input_digest,"status":if pass {"component_passed"} else {"not_established"},"acceptance":"owner_pending","domain_effect_settlement":"not_claimed","provider":"disabled","container_id":self.journal.container_id,"session_id":self.journal.session_id,"phase":self.journal.phase,"rpc_verified":self.journal.rpc_verified,"rpc_completion":self.journal.rpc_completion,"daemon_exit":self.journal.daemon_exit,"removed":self.journal.removed,"failures":self.journal.failures,"artifacts":self.journal.artifacts,"exported_files":self.journal.exported_files,"processes":self.journal.processes});
         if let Some(observation) = &self.journal.receiver {
             value["receiver"] = serde_json::to_value(observation)?;
             value["profile"] = json!(receiver::PROFILE);
             value["cognition_application_completion"] = json!("not_claimed");
+        }
+        if let Some(coding) = &self.journal.coding {
+            value["coding"] = serde_json::to_value(coding)?;
+            value["profile"] = json!(self.journal.job.coding.as_ref().unwrap().schema);
+            if self.journal.job.coding.as_ref().unwrap().provider.is_some() {
+                value["provider"] = json!("openai-codex");
+                value["model"] = json!("gpt-6-luna");
+                value["cost_evidence"] =
+                    json!("pinned_catalog_proxy_only_not_subscription_billing");
+            }
         }
         let bytes = serde_json::to_vec(&value)?;
         let id = digest(&bytes);
@@ -1122,6 +1255,9 @@ fn runtime_command(job: &Job) -> Vec<String> {
 }
 
 fn verify_container(j: &Journal, v: &Value) -> Result<()> {
+    if j.job.coding.is_some() {
+        return coding::verify_inference(j, v);
+    }
     let id = v["Id"].as_str().unwrap_or("");
     if !pin_is_hash(id)
         || j.container_id.as_ref().is_some_and(|old| old != id)
@@ -1280,6 +1416,7 @@ mod tests {
             command_timeout_seconds: 2,
             idle_seconds: 0,
             receiver: None,
+            coding: None,
         };
         (dir, job)
     }

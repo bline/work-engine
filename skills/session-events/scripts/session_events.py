@@ -3153,10 +3153,19 @@ class HttpAuth:
         # RFC 6749 scope-token excludes space, quotation mark and backslash.
         if not isinstance(scope, str) or not re.fullmatch(r"[\x21\x23-\x5b\x5d-\x7e]+", scope):
             raise ValueError("invalid auth write scope")
+        advertise_offline = self.config.get("advertise_offline_access", False)
+        if not isinstance(advertise_offline, bool):
+            raise ValueError("invalid offline access advertisement")
+        self.discovery_scopes = [scope]
+        if advertise_offline and "offline_access" not in self.discovery_scopes:
+            self.discovery_scopes.append("offline_access")
         self.metadata_path = "/.well-known/oauth-protected-resource" + resource.path
         self.metadata = urllib.parse.urlunsplit((resource.scheme, resource.netloc, self.metadata_path, "", ""))
         self.verifier = self.config["verifier"]
-        self._config_bytes = json.dumps(self.config, separators=(",", ":")).encode("ascii")
+        # Discovery configuration is operator-owned metadata, not JWT policy.
+        verifier_config = {k: v for k, v in self.config.items()
+                           if k != "advertise_offline_access"}
+        self._config_bytes = json.dumps(verifier_config, separators=(",", ":")).encode("ascii")
         if not os.path.isabs(self.verifier):
             raise ValueError("verifier must be absolute")
 
@@ -3304,7 +3313,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
         def do_GET(self) -> None:  # no server-initiated stream
             refused = self._refused()
             if refused is None and auth and urllib.parse.urlsplit(self.path).path in {"/.well-known/oauth-protected-resource", auth.metadata_path}:
-                self._reply(200, json.dumps({"resource": auth.config["resource"], "authorization_servers": [auth.config["issuer"]], "scopes_supported": [auth.config["write_scope"]]}).encode())
+                self._reply(200, json.dumps({"resource": auth.config["resource"], "authorization_servers": [auth.config["issuer"]], "scopes_supported": auth.discovery_scopes}).encode())
             elif refused is None and authenticated_read_only and not self._authorize():
                 return
             else:

@@ -75,6 +75,25 @@ class AuthHttp(Fixture):
             self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name}})[0], 401)
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, headers={"Origin":"https://evil.example"})[0], 403)
 
+    def test_explicit_offline_discovery_preserves_write_scope_and_subject(self):
+        config = json.loads(self.config.read_text())
+        config["advertise_offline_access"] = True
+        self.config.write_text(json.dumps(config))
+        auth = SE.HttpAuth(str(self.config))
+        self.assertNotIn("advertise_offline_access", json.loads(auth._config_bytes))
+        self.httpd.RequestHandlerClass = SE.make_http_handler(self.server, "/mcp", auth)
+        self.assertEqual(self.request(path="/.well-known/oauth-protected-resource/mcp", method="GET")[2]["scopes_supported"], ["mcp:write", "offline_access"])
+        message = {"jsonrpc": "2.0", "id": 2, "method": "events/subscribe"}
+        self.assertEqual(self.request(message, self.token({"scope": "openid offline_access"}))[0], 403)
+        self.assertEqual(self.request(message, self.token({"sub": "wrong-subject"}))[0], 401)
+        # Valid write policy reaches normal RPC validation, not an auth rejection.
+        self.assertEqual(self.request(message, self.token())[0], 200)
+        self.assertEqual(len(self.server.store.all_subscriptions()), 0)
+        config["advertise_offline_access"] = "true"
+        self.config.write_text(json.dumps(config))
+        with self.assertRaises(ValueError):
+            SE.HttpAuth(str(self.config))
+
     def test_auth_before_effects_and_bad_requests(self):
         msg = {"jsonrpc":"2.0", "id":2, "method":"events/subscribe", "params": {"name": SE.SIMPLE_EVENT_NAME, "arguments":{"session_id":CODEX_ID,"pattern":"x"}, "delivery":{"mode":"webhook", "url":URL,"secret":whsec()}}}
         self.assertEqual(self.request(msg)[0], 401)

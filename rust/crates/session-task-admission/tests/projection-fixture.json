@@ -1,0 +1,92 @@
+{
+  "schema": "dot.task-projection/v1-proposal",
+  "observed_at": "2026-11-02T00:02:00Z",
+  "source_revision": "fixture-snapshot-r1",
+  "tasks": [
+    {
+      "task": {
+        "id": "fixture-task",
+        "revision": "r1",
+        "sha256": "6257350b69db9443151055af6fcc17dca48dc8e749fff7f1d304bec2cfc18711"
+      },
+      "request_json": "{\"author\":\"fixture-actor\",\"body\":\"Synthetic fixture, no authority\",\"data\":{\"intent\":{\"schema\":\"dot.task-intent/v1-proposal\",\"task_id\":\"fixture-task\",\"lane_id\":\"fixture-lane\",\"revision\":\"r1\",\"proposal\":{\"id\":\"proposal\",\"revision\":\"r1\",\"sha256\":\"1ede3c7f6921629ae0a2abdd1b302a68e1443117ddf36ac41e4c6f11f2c078fb\"},\"objective\":\"Edit a disposable fixture\",\"input\":{\"id\":\"input\",\"revision\":\"r1\",\"sha256\":\"cfeb577f3d2e1ee03c7601a7418b10d95f078b726e80ca59ce66652c1eb6f7e3\"},\"operation\":\"start\",\"provider\":\"codex\",\"execution_profile\":\"disposable-codex-write-v1\",\"workspace\":{\"profile_id\":\"fixture-workspace\",\"checkpoint\":\"fixture-checkpoint\",\"configuration\":{\"id\":\"config\",\"revision\":\"r1\",\"sha256\":\"88fb74a0181bbef947fe17d2624842423973f6a4fbbf475a48f402c0d3959020\"}},\"model\":{\"id\":\"fixture-model\",\"effort\":\"medium\",\"tier\":\"default\"},\"effects\":{\"write_paths\":[\"greeting.txt\"],\"network\":false,\"max_concurrent_tasks\":1,\"max_child_tasks\":0},\"prerequisites\":[{\"id\":\"prerequisite\",\"revision\":\"r1\",\"sha256\":\"ffcc2e101ab954ded068354a98341464267cdac4ac8f10b19ddf9a7b80db53d4\"}],\"clock\":{\"first_funded_rule\":\"first_funded_setup_or_readiness\",\"admit_until\":\"2026-11-03T00:00:00Z\",\"close_by\":\"2026-11-03T01:00:00Z\"},\"budget\":{\"objective_id\":\"fixture-objective\",\"units\":\"speed_adjusted_api_usd\",\"maximum\":\"5.00\",\"productive_maximum\":\"4.00\",\"closure_reserve\":\"1.00\",\"coverage\":\"all_objective_actors\"},\"submitter\":\"fixture-actor\",\"authority\":{\"mode\":{\"id\":\"mode\",\"revision\":\"r1\",\"sha256\":\"4486df5a018e6b7b977a7b395ff59f1c305be60a6a848aee523be033112f77f5\"},\"mandate\":null,\"allowed_operations\":[\"start\"],\"reserved_decisions\":[]}},\"intent_artifacts\":[{\"ref\":{\"id\":\"proposal\",\"revision\":\"r1\",\"sha256\":\"1ede3c7f6921629ae0a2abdd1b302a68e1443117ddf36ac41e4c6f11f2c078fb\"},\"content_json\":\"{\\\"fixture\\\":\\\"proposal\\\",\\\"description\\\":\\\"Synthetic only; no authority\\\"}\"},{\"ref\":{\"id\":\"input\",\"revision\":\"r1\",\"sha256\":\"cfeb577f3d2e1ee03c7601a7418b10d95f078b726e80ca59ce66652c1eb6f7e3\"},\"content_json\":\"{\\\"fixture\\\":\\\"input\\\",\\\"description\\\":\\\"Synthetic only; no authority\\\"}\"},{\"ref\":{\"id\":\"config\",\"revision\":\"r1\",\"sha256\":\"88fb74a0181bbef947fe17d2624842423973f6a4fbbf475a48f402c0d3959020\"},\"content_json\":\"{\\\"fixture\\\":\\\"config\\\",\\\"description\\\":\\\"Synthetic only; no authority\\\"}\"},{\"ref\":{\"id\":\"prerequisite\",\"revision\":\"r1\",\"sha256\":\"ffcc2e101ab954ded068354a98341464267cdac4ac8f10b19ddf9a7b80db53d4\"},\"content_json\":\"{\\\"fixture\\\":\\\"prerequisite\\\",\\\"description\\\":\\\"Synthetic only; no authority\\\"}\"},{\"ref\":{\"id\":\"mode\",\"revision\":\"r1\",\"sha256\":\"4486df5a018e6b7b977a7b395ff59f1c305be60a6a848aee523be033112f77f5\"},\"content_json\":\"{\\\"schema\\\":\\\"dot.mode-view/v1-proposal\\\",\\\"owner_id\\\":\\\"fixture-owner\\\",\\\"revision\\\":\\\"r1\\\",\\\"mode\\\":\\\"present\\\",\\\"effective_at\\\":\\\"2026-11-02T00:00:00Z\\\",\\\"pending_transition\\\":null,\\\"mandates\\\":[],\\\"in_flight\\\":[],\\\"observed_at\\\":\\\"2026-11-02T00:02:00Z\\\",\\\"source_revision\\\":\\\"fixture-snapshot-r1\\\"}\"}]},\"kind\":\"request\",\"observed_at\":\"2026-11-02T00:00:00Z\",\"sequence\":9001,\"session_id\":\"fixture-session\",\"to\":[\"role:owner\"],\"topic\":\"fixture:task\"}",
+      "admission": {
+        "schema": "dot.admission-view/v1-proposal",
+        "admission_id": "fixture-admission",
+        "task": {
+          "id": "fixture-task",
+          "revision": "r1",
+          "sha256": "6257350b69db9443151055af6fcc17dca48dc8e749fff7f1d304bec2cfc18711"
+        },
+        "decision": {
+          "id": "fixture-answer",
+          "revision": "r1",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "answer_id": "fixture-answer",
+        "revision": "r1",
+        "status": "closure_pending",
+        "hold_reasons": [],
+        "reservation_ref": null,
+        "authority_revision": "r1",
+        "native_operation_id": "fixture-operation",
+        "observed_at": "2026-11-02T00:02:00Z",
+        "source_revision": "fixture-snapshot-r1"
+      },
+      "result": {
+        "schema": "dot.result-view/v1-proposal",
+        "task": {
+          "id": "fixture-task",
+          "revision": "r1",
+          "sha256": "6257350b69db9443151055af6fcc17dca48dc8e749fff7f1d304bec2cfc18711"
+        },
+        "admission_id": "fixture-admission",
+        "session_id": "fixture-native-session",
+        "turn_id": "fixture-turn",
+        "worker_contract_revision": null,
+        "outcome": null,
+        "operational_status": "missing_or_invalid_worker_contract",
+        "exceptions": [
+          "usage_unavailable",
+          "native_closure_unknown"
+        ],
+        "artifacts": [],
+        "evidence": [],
+        "clock": {
+          "first_funded_at": null,
+          "admitted_at": null,
+          "observed_start_at": null,
+          "close_by": "2026-11-03T01:00:00Z"
+        },
+        "accounting": {
+          "units": "speed_adjusted_api_usd",
+          "limit": "5.00",
+          "reservation": null,
+          "observed_usage": null,
+          "coverage": "unknown",
+          "unsettled": null
+        },
+        "custody": {
+          "native": {
+            "id": "fixture-native-session",
+            "disposition": "unknown"
+          },
+          "children": [
+            {
+              "id": null,
+              "disposition": "unknown"
+            }
+          ],
+          "processes": [
+            {
+              "id": null,
+              "disposition": "unknown"
+            }
+          ]
+        },
+        "observed_at": "2026-11-02T00:02:00Z",
+        "source_revision": "fixture-snapshot-r1"
+      }
+    }
+  ]
+}
