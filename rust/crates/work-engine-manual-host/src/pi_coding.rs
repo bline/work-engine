@@ -8,6 +8,7 @@ pub mod provider;
 #[path = "pi_coding_validation.rs"]
 pub mod validation;
 use std::os::unix::fs::PermissionsExt;
+pub const SIGNED_PROFILE: &str = "work-engine.pi-coding-signed-fixture.v1";
 pub const PROFILE: &str = "work-engine.pi-coding-fixture.v1";
 pub const TOOL_IMAGE: &str = "cbm-doc-claims-lint-tidy@sha256:dda6d32b2c2df1064f056db0db4cff894c833089ccf92862331359c0e6072754";
 pub const SHIM: &[u8] = include_bytes!("../receiver/pi-coding.mjs");
@@ -53,6 +54,8 @@ pub struct State {
     pub native_tool_ids: BTreeSet<String>,
     pub completed: bool,
     #[serde(default)]
+    pub ready_observed: bool,
+    #[serde(default)]
     pub provider_requests: BTreeMap<u64, provider::Reservation>,
     #[serde(default)]
     pub provider_failed: bool,
@@ -76,6 +79,8 @@ impl Profile {
         if self.schema
             != if self.provider.is_some() {
                 provider::LIVE_PROFILE
+            } else if self.schema == SIGNED_PROFILE {
+                SIGNED_PROFILE
             } else {
                 PROFILE
             }
@@ -374,6 +379,22 @@ pub(super) fn verify_inference(j: &Journal, v: &Value) -> Result<()> {
     verify(j, v, false, false)
 }
 impl Host {
+    pub(super) fn signed_pi(&self) -> bool {
+        self.journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| p.schema == SIGNED_PROFILE)
+    }
+    fn pi_lease(
+        &self,
+        effect: session_task_admission::pi_pilot::Effect,
+    ) -> Result<Option<session_task_admission::pi_pilot::EffectLease>> {
+        self.pi_owner
+            .as_ref()
+            .map(|o| o.enter(effect).map_err(|e| Error::Refused(e.into())))
+            .transpose()
+    }
     pub(super) fn coding_inference_args(&self) -> Vec<String> {
         let j = &self.journal;
         let mut args = base(j, &j.container_name);
@@ -430,8 +451,13 @@ impl Host {
         if j.job.coding.as_ref().unwrap().provider.is_none() {
             let canary = j.job.state_dir.join("coding-canary");
             fs::create_dir(&canary)?;
-            fs::write(canary.join("auth.json"), b"FAKE-CANARY-NOT-A-CREDENTIAL\n")?;
+            if !self.signed_pi() {
+                fs::write(canary.join("auth.json"), b"FAKE-CANARY-NOT-A-CREDENTIAL\n")?;
+            }
             fs::set_permissions(&canary, fs::Permissions::from_mode(0o755))?;
+            if self.signed_pi() {
+                fs::write(canary.join("signed-fixture.json"), br#"{"schema":"work-engine.pi-coding-signed-fixture.v1","classification":"public bootstrap marker; no credential"}"#)?;
+            }
         }
         if j.job.coding.as_ref().unwrap().workspace_write_boundary
             == WorkspaceWriteBoundary::SrcLibRs
@@ -485,19 +511,65 @@ impl Host {
                 return refuse("frames after coding completion");
             }
             if kind != "ready"
+                && !(self.signed_pi() && kind == "allocated")
                 && (self.journal.session_id.is_none()
                     || frame["sessionId"].as_str() != self.journal.session_id.as_deref())
             {
                 return refuse("coding session mismatch");
             }
             match kind {
+                "allocated" if self.signed_pi() => {
+                    if self.journal.session_id.is_some() {
+                        return refuse("replacement native allocation");
+                    }
+                    let native = frame["sessionId"]
+                        .as_str()
+                        .ok_or_else(|| Error::Refused("allocation ID absent".into()))?;
+                    let owner = self
+                        .pi_owner
+                        .as_ref()
+                        .ok_or_else(|| Error::Refused("Pi owner absent".into()))?;
+                    owner
+                        .seal(&self.journal.input_digest, native)
+                        .map_err(|e| Error::Refused(e.into()))?;
+                    self.journal.session_id = Some(native.into());
+                    self.save()?;
+                    let lease = self
+                        .pi_lease(session_task_admission::pi_pilot::Effect::Initialization)?
+                        .ok_or_else(|| Error::Refused("Pi initialization lease absent".into()))?;
+                    lease
+                        .check_current()
+                        .map_err(|e| Error::Refused(e.into()))?;
+                    if self.expired() || self.cancelled() {
+                        return refuse("fixture initialization expired/cancelled");
+                    }
+                    if frame["accessPresent"] != false {
+                        return refuse("fixture access existed before allocation");
+                    }
+                    let access = self.journal.job.state_dir.join("coding-canary/access.json");
+                    let mut access_file = OpenOptions::new()
+                        .create_new(true)
+                        .write(true)
+                        .open(&access)?;
+                    access_file.write_all(
+                        br#"{"classification":"fake_fixture","access":"FAKE-NEVER-A-CREDENTIAL"}"#,
+                    )?;
+                    access_file.sync_all()?;
+                    fs::set_permissions(&access, fs::Permissions::from_mode(0o644))?;
+                    File::open(access.parent().unwrap())?.sync_all()?;
+                    self.reply_leases.push(lease);
+                    replies.push(serde_json::to_vec(&json!({"type":"initialize","sessionId":native,"fixtureAccess":"FAKE-NEVER-A-CREDENTIAL","deadline":self.journal.job.deadline_unix_seconds}))?);
+                }
                 "provider_request" | "provider_observation" | "provider_complete" => {
                     if let Some(reply) = self.coding_provider_frame(&frame)? {
                         replies.push(serde_json::to_vec(&reply)?);
                     }
                 }
                 "ready" => {
-                    if self.journal.session_id.is_some()
+                    if self.journal.coding.as_ref().unwrap().ready_observed
+                        || (!self.signed_pi() && self.journal.session_id.is_some())
+                        || (self.signed_pi()
+                            && self.journal.session_id.as_deref() != frame["sessionId"].as_str())
                         || frame["tools"] != json!(["workspace_exec"])
                     {
                         return refuse("coding ready mismatch");
@@ -506,7 +578,13 @@ impl Host {
                         .as_str()
                         .filter(|s| !s.is_empty())
                         .ok_or_else(|| Error::Refused("native session absent".into()))?;
+                    if let Some(owner) = &self.pi_owner {
+                        owner
+                            .check_native(session)
+                            .map_err(|e| Error::Refused(e.into()))?;
+                    }
                     self.journal.session_id = Some(session.into());
+                    self.journal.coding.as_mut().unwrap().ready_observed = true;
                     self.save()?;
                     let profile = self.journal.job.coding.as_ref().unwrap();
                     let reply = if let Some(plan) = &profile.provider {
@@ -553,6 +631,13 @@ impl Host {
                     state.tool_requests.insert(id.clone(), None);
                     self.save()?; // intent precedes exec; None stays unknown on interruption
                     self.coding_inspect_tool()?;
+                    let effect_lease =
+                        self.pi_lease(session_task_admission::pi_pilot::Effect::Tool(id.clone()))?;
+                    if let Some(lease) = &effect_lease {
+                        lease
+                            .check_current()
+                            .map_err(|e| Error::Refused(e.into()))?;
+                    }
                     let (ok, output) = self.command(
                         "coding-tool-exec",
                         vec![
@@ -566,6 +651,11 @@ impl Host {
                         ],
                         false,
                     )?;
+                    if let Some(lease) = effect_lease {
+                        lease
+                            .observed(&digest(&output))
+                            .map_err(|e| Error::Refused(e.into()))?;
+                    }
                     let process = self
                         .journal
                         .processes
@@ -623,7 +713,8 @@ impl Host {
                     {
                         return refuse("coding completion lacks native tool evidence");
                     }
-                    if self.journal.job.coding.as_ref().unwrap().provider.is_some()
+                    if (self.journal.job.coding.as_ref().unwrap().provider.is_some()
+                        || self.journal.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE)
                         && (state.provider_failed
                             || state.provider_requests.is_empty()
                             || state
@@ -641,6 +732,11 @@ impl Host {
             self.save()?;
         }
         for reply in &mut replies {
+            if self.signed_pi() {
+                let mut value: Value = serde_json::from_slice(reply)?;
+                value["sessionId"] = json!(self.journal.session_id);
+                *reply = serde_json::to_vec(&value)?;
+            }
             reply.push(b'\n');
         }
         Ok(replies)
@@ -757,7 +853,25 @@ impl Host {
         Ok(ok && output.iter().all(u8::is_ascii_whitespace))
     }
     pub(super) fn coding_cleanup_secret(&mut self) -> Result<()> {
-        if self.journal.job.coding.as_ref().unwrap().provider.is_none() || !self.journal.removed {
+        if !self.journal.removed {
+            return Ok(());
+        }
+        if self.signed_pi() {
+            let private = self.journal.job.state_dir.join("coding-canary");
+            for name in ["access.json", "signed-fixture.json"] {
+                let p = private.join(name);
+                if p.try_exists()? {
+                    fs::remove_file(p)?;
+                }
+            }
+            if fs::read_dir(&private)?.next().is_some() {
+                return refuse("fixture access directory not empty");
+            }
+            File::open(&private)?.sync_all()?;
+            self.journal.coding.as_mut().unwrap().access_removed = true;
+            return self.save();
+        }
+        if self.journal.job.coding.as_ref().unwrap().provider.is_none() {
             return Ok(());
         }
         let private = self.journal.job.state_dir.join("private-access");
@@ -834,6 +948,9 @@ mod tests {
         };
         let host = Host {
             journal,
+            pi_owner: None,
+            allocation_lease: None,
+            reply_leases: vec![],
             _lock: File::create(root.join("lock")).unwrap(),
         };
         (dir, host)
@@ -969,5 +1086,20 @@ mod tests {
         duplicate.extend(&ready);
         assert!(h.coding_advance(&duplicate).is_err());
         assert!(h.journal.processes.is_empty());
+    }
+    #[test]
+    fn signed_fixture_dispatch_and_replacement_fail_before_effects() {
+        let (_dir, mut h) = fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = SIGNED_PROFILE.into();
+        h.journal.job.deadline_unix_seconds = now().saturating_sub(1);
+        assert!(
+            h.command("coding-tool-exec", vec!["must-never-execute".into()], false)
+                .is_err()
+        );
+        assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
+        h.journal.session_id = Some("00000000-0000-4000-8000-000000000001".into());
+        assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"allocated","sessionId":"00000000-0000-4000-8000-000000000002","accessPresent":false}))).is_err());
+        assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"ready","sessionId":"00000000-0000-4000-8000-000000000002","tools":["workspace_exec"]}))).is_err());
+        assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
     }
 }

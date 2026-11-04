@@ -254,6 +254,9 @@ impl Host {
         Ok(())
     }
     pub(super) fn coding_provider_frame(&mut self, frame: &Value) -> Result<Option<Value>> {
+        if self.signed_pi() {
+            return self.coding_fake_provider_frame(frame);
+        }
         let plan = self
             .journal
             .job
@@ -619,5 +622,136 @@ mod raw_evidence_tests {
             );
             assert!(h.coding_provider_frame(&json!({"type":"provider_request","id":2,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":1000})).is_err());
         }
+    }
+}
+
+impl Host {
+    fn coding_fake_provider_frame(&mut self, frame: &Value) -> Result<Option<Value>> {
+        let id = frame["id"]
+            .as_u64()
+            .filter(|id| (1..=2).contains(id))
+            .ok_or_else(|| Error::Refused("fake provider ID".into()))?;
+        match frame["type"].as_str().unwrap_or("") {
+            "provider_request" => {
+                if self.expired() || self.cancelled() {
+                    return refuse("fake provider deadline/cancel");
+                }
+                let state = self.journal.coding.as_mut().unwrap();
+                if state.provider_failed
+                    || id != state.provider_requests.len() as u64 + 1
+                    || state
+                        .provider_requests
+                        .values()
+                        .any(|r| r.settled_microusd.is_none())
+                    || frame["provider"] != "fake_fixture"
+                    || frame["model"] != "fake-pi-model"
+                    || frame["contextBytes"].as_u64().is_none_or(|n| n > 65536)
+                {
+                    return refuse("fake provider identity/context/unknown conflict");
+                }
+                state.provider_requests.insert(
+                    id,
+                    Reservation {
+                        reserved_microusd: 0,
+                        ..Reservation::default()
+                    },
+                );
+                self.save()?;
+                let owner = self
+                    .pi_owner
+                    .as_ref()
+                    .ok_or_else(|| Error::Refused("fake provider owner absent".into()))?;
+                let lease = owner
+                    .enter(session_task_admission::pi_pilot::Effect::Provider(id))
+                    .map_err(|e| Error::Refused(e.into()))?;
+                lease
+                    .check_current()
+                    .map_err(|e| Error::Refused(e.into()))?;
+                self.reply_leases.push(lease);
+                Ok(Some(
+                    json!({"type":"provider_grant","id":id,"classification":"fake_fixture","reservedMicrousd":0}),
+                ))
+            }
+            "provider_observation" => {
+                let r = self
+                    .journal
+                    .coding
+                    .as_mut()
+                    .unwrap()
+                    .provider_requests
+                    .get_mut(&id)
+                    .ok_or_else(|| Error::Refused("fake observation before intent".into()))?;
+                if r.raw_terminal.is_some()
+                    || r.settled_microusd.is_some()
+                    || frame["backendModel"] != "fake-pi-model"
+                    || frame["httpStatus"] != 200
+                    || frame["rawTerminal"]
+                        != json!({"classification":"fake_fixture","eventType":"response.completed","status":"completed","usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2}})
+                {
+                    return refuse("fake raw terminal conflict");
+                }
+                r.backend_model = Some("fake-pi-model".into());
+                r.http_status = Some(200);
+                r.raw_terminal = Some(frame["rawTerminal"].clone());
+                self.save()?;
+                Ok(None)
+            }
+            "provider_complete" => {
+                let r = self
+                    .journal
+                    .coding
+                    .as_mut()
+                    .unwrap()
+                    .provider_requests
+                    .get_mut(&id)
+                    .ok_or_else(|| Error::Refused("fake completion before intent".into()))?;
+                if r.settled_microusd.is_some()
+                    || r.raw_terminal.is_none()
+                    || frame["usage"]
+                        != json!({"input":1,"output":1,"cacheRead":0,"cacheWrite":0,"totalTokens":2,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}})
+                    || frame["stopReason"] != if id == 1 { "toolUse" } else { "stop" }
+                {
+                    return refuse("fake usage/completion conflict");
+                }
+                r.usage = Some(frame["usage"].clone());
+                r.settled_microusd = Some(0);
+                self.save()?;
+                Ok(None)
+            }
+            _ => refuse("unknown fake provider frame"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod signed_fake_tests {
+    use super::*;
+    #[test]
+    fn fake_provider_unknown_entry_and_missing_raw_usage_never_replay() {
+        let (_dir, mut h) = super::super::tests::fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = super::super::SIGNED_PROFILE.into();
+        h.journal.job.deadline_unix_seconds = now() + 120;
+        let request = json!({"type":"provider_request","id":1,"provider":"fake_fixture","model":"fake-pi-model","contextBytes":1});
+        // The journal reserves first, but an absent authority owner cannot
+        // release a provider grant. This durable unknown cannot be replayed.
+        assert!(h.coding_provider_frame(&request).is_err());
+        assert!(h.coding_provider_frame(&request).is_err());
+        assert_eq!(
+            h.journal.coding.as_ref().unwrap().provider_requests.len(),
+            1
+        );
+        assert!(
+            h.coding_provider_frame(
+                &json!({"type":"provider_complete","id":1,"stopReason":"toolUse","usage":{}})
+            )
+            .is_err()
+        );
+        assert!(h.coding_provider_frame(&json!({"type":"provider_observation","id":1,"httpStatus":200,"backendModel":"fake-pi-model","rawTerminal":{"classification":"fake_fixture","status":"completed"}})).is_err());
+        assert!(
+            h.journal.coding.as_ref().unwrap().provider_requests[&1]
+                .settled_microusd
+                .is_none()
+        );
+        assert!(h.journal.processes.is_empty());
     }
 }

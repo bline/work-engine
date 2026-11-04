@@ -2653,7 +2653,7 @@ class ObservationHelper(DeliveryHelper):
             os.close(config_fd)
         if self.settings.get("schema") != self.protocol or any(
                 not isinstance(self.settings.get(k), str) or not self.settings[k]
-                for k in ("subject", "principal", "target", "handle", "revision", "idempotency_key")):
+                for k in (("subject", "principal", "handle", "revision", "idempotency_key") if self.protocol == "work-engine.mcp-pi-coding-fixture.v1" else ("subject", "principal", "target", "handle", "revision", "idempotency_key"))):
             raise ValueError("complete trusted observation binding required")
 
     @classmethod
@@ -2678,13 +2678,46 @@ class ObservationHelper(DeliveryHelper):
                             "principal": principal, **arguments})
 
 
+CODING_TOOLS = [
+    {"name": "pi_coding_" + method,
+     "description": "Submit the exact signed Pi fake-provider fixture." if method == "submit" else "Read existing Pi fixture evidence without ACK, retry or execution.",
+     "annotations": {"readOnlyHint": method != "submit", "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+     "inputSchema": {"type": "object", "properties": {k: {"type": "string", "minLength": 1, "maxLength": 256} for k in ("handle", "revision", "idempotency_key")},
+                     "required": ["handle", "revision", "idempotency_key"], "additionalProperties": False}}
+    for method in ("submit", "status", "result")]
+
+
+class CodingHelper(ObservationHelper):
+    """Fixed fixture transport; Rust owns signed admission and native effects."""
+    protocol = "work-engine.mcp-pi-coding-fixture.v1"
+    unavailable_reason = "coding_unavailable"
+    timeout_seconds = 300
+    error_reasons = {"pi_transport_conflict", "pi_read_conflict", "pi_current_authority", "pi_effect_unknown_no_retry", "pi_allocation_unknown", "pi_job_binding"}
+
+    @classmethod
+    def from_environment(cls):
+        values = [os.environ.get(k) for k in ("PI_CODING_BINARY", "PI_CODING_BINARY_SHA256", "PI_CODING_CONFIG", "PI_CODING_CONFIG_SHA256")]
+        enabled = os.environ.get("PI_CODING_FIXTURE_ENABLED")
+        if not enabled and not any(values):
+            return None
+        if enabled != "1" or not all(values):
+            raise ValueError("explicit coding fixture switch and complete pins required")
+        return cls(*values)
+
+    def call(self, method, principal, arguments):
+        if method not in {"submit", "status", "result"}:
+            raise invalid("coding_method")
+        return super().call(method, principal, arguments)
+
+
 class Server:
     def __init__(self, homes: Homes, principal: str, policy: CallbackPolicy,
                  transport: Transport = post, clock: Callable[[], float] = time.time,
                  context: "Context | None" = None, bridge: "Bridge | None" = None,
-                 delivery: "DeliveryHelper | None" = None, observation: "ObservationHelper | None" = None):
+                 delivery: "DeliveryHelper | None" = None, observation: "ObservationHelper | None" = None, coding: "CodingHelper | None" = None):
         self.bridge = bridge
         self.observation = observation
+        self.coding = coding
         self.delivery = delivery
         self.homes, self.principal, self.policy = homes, principal, policy
         self.transport, self.clock = transport, clock
@@ -2703,7 +2736,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + (CODING_TOOLS if self.coding else []) + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)
@@ -2742,6 +2775,8 @@ class Server:
             tools[name] = lambda a: self.delivery.call("status", self.principal, a)
         if self.observation and name in {t["name"] for t in OBSERVATION_TOOLS}:
             tools[name] = lambda a: self.observation.call(name.removeprefix("pi_observation_"), self.principal, a)
+        if self.coding and name in {t["name"] for t in CODING_TOOLS}:
+            tools[name] = lambda a: self.coding.call(name.removeprefix("pi_coding_"), self.principal, a)
         if name not in tools:
             raise invalid("unknown_tool", name=str(name)[:80])
         try:
@@ -3091,8 +3126,8 @@ def log_request(path: Path, row: dict) -> None:
 
 def serve(server: Server, stdin=None, stdout=None) -> int:
     stdin, stdout = stdin or sys.stdin, stdout or sys.stdout
-    if server.observation:
-        raise ValueError("observation requires authenticated HTTP admission")
+    if server.observation or server.coding:
+        raise ValueError("Pi operations require authenticated HTTP admission")
     log_path = server.store.root / "requests.log"
     log_request(log_path, {"at": iso(utcnow()), "event": "serve_started", "pid": os.getpid(), "version": VERSION})
     for line in stdin:
@@ -3202,7 +3237,7 @@ def _public_http_operation(message):
 
 
 def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
-                      authenticated_read_only: bool = False, observation_only: bool = False):
+                      authenticated_read_only: bool = False, observation_only: bool = False, coding_only: bool = False):
     """Stateless Streamable HTTP: one JSON-RPC object per POST, a JSON reply, no MCP session id.
 
     Loopback only. A browser page could otherwise reach a local listener, so requests must
@@ -3218,6 +3253,13 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
             raise ValueError("observation requires OAuth subject/principal binding and observation-only mode")
     elif observation_only:
         raise ValueError("observation-only mode requires complete observation pins")
+    if server.coding:
+        if (not coding_only or observation_only or authenticated_read_only or auth is None or
+                server.coding.settings["principal"] != server.principal or
+                server.coding.settings["subject"] != auth.config.get("subject")):
+            raise ValueError("coding requires verified fixed subject/principal and coding-only mode")
+    elif coding_only:
+        raise ValueError("coding-only mode requires complete coding pins")
     log_path = server.store.root / "requests.log"
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -3283,7 +3325,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
             else:
                 parsed = True
                 reply = None
-            if auth and (authenticated_read_only or observation_only or not _public_http_operation(message)):
+            if auth and (authenticated_read_only or observation_only or coding_only or not _public_http_operation(message)):
                 if not self._authorize():
                     return
             if authenticated_read_only and not (_public_http_operation(message) or
@@ -3299,8 +3341,15 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
                 if not allowed:
                     self._reply(403, b'{"error":"observation_only"}')
                     return
+            if coding_only:
+                allowed = (_public_http_operation(message) or isinstance(message, dict) and message.get("jsonrpc") == "2.0" and message.get("method") == "server/discover" or isinstance(message, dict) and message.get("method") == "tools/call" and isinstance(message.get("params"), dict) and message["params"].get("name") in {t["name"] for t in CODING_TOOLS})
+                if not allowed:
+                    self._reply(403, b'{"error":"coding_only"}')
+                    return
             if parsed:
                 reply = server.handle(message)
+                if coding_only and message.get("method") == "tools/list" and reply and "result" in reply:
+                    reply["result"]["tools"] = [t for t in reply["result"]["tools"] if t["name"] in {x["name"] for x in CODING_TOOLS}]
                 if observation_only and message.get("method") == "tools/list" and reply and "result" in reply:
                     names = {t["name"] for t in OBSERVATION_TOOLS} | {"delivery_status", "replay_events"}
                     reply["result"]["tools"] = [t for t in reply["result"]["tools"] if t["name"] in names]
@@ -3328,7 +3377,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
 
 
 def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth | None = None,
-               authenticated_read_only: bool = False, observation_only: bool = False) -> int:
+               authenticated_read_only: bool = False, observation_only: bool = False, coding_only: bool = False) -> int:
     if authenticated_read_only and auth is None:
         raise SystemExit("serve-http: --authenticated-read-only requires --auth-config")
     if auth and urllib.parse.urlsplit(auth.config["resource"]).path != path:
@@ -3337,7 +3386,7 @@ def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth |
     host = host.strip("[]")
     if not ipaddress.ip_address(host).is_loopback:
         raise SystemExit("serve-http: --listen must be a loopback address; tunnel-client runs on this machine")
-    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only, observation_only))
+    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only, observation_only, coding_only))
     log_request(server.store.root / "requests.log",
                 {"at": iso(utcnow()), "event": "serve_http_started", "pid": os.getpid(), "version": VERSION,
                  "listen": f"{host}:{httpd.server_address[1]}", "path": path})
@@ -4200,6 +4249,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_http_cmd.add_argument("--auth-config", help="trusted OAuth resource-server configuration file")
     serve_http_cmd.add_argument("--authenticated-read-only", action="store_true",
                                 help="require OAuth for all RPCs and deny non-read-only operations")
+    serve_http_cmd.add_argument("--coding-only", action="store_true", help="fixed signed Pi fake-provider fixture operations only")
     serve_http_cmd.add_argument("--observation-only", action="store_true",
                                 help="require OAuth for every RPC; permit only fixed Pi observation writes and authorized reads")
     serve_http_cmd.add_argument("--principal", default="tunnel",
@@ -4268,7 +4318,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "serve":
             return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment(), observation=ObservationHelper.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only, args.observation_only)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment(), observation=ObservationHelper.from_environment(), coding=CodingHelper.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only, args.observation_only, args.coding_only)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":

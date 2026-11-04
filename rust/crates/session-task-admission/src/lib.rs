@@ -215,10 +215,28 @@ fn hash(s: &str) -> String {
 pub fn validate_review(raw_request: &str) -> Result<Ref, ReviewError> {
     let row: Row = serde_json::from_str(raw_request).map_err(|_| ReviewError::InvalidJson)?;
     let i = row.data.intent;
-    if i.schema != "dot.task-intent/v1-proposal"
-        || i.operation != "start"
-        || i.provider != "codex"
-        || i.execution_profile != "disposable-codex-write-v1"
+    if !matches!(
+        (
+            i.schema.as_str(),
+            i.provider.as_str(),
+            i.execution_profile.as_str()
+        ),
+        (
+            "dot.task-intent/v1-proposal",
+            "codex",
+            "disposable-codex-write-v1"
+        ) | (
+            "dot.task-intent/pi-coding-v1",
+            "pi",
+            "disposable-pi-coding-fixture-v1"
+        )
+    ) || i.operation != "start"
+        || (i.schema == "dot.task-intent/pi-coding-v1"
+            && (i.effects.write_paths != ["src/lib.rs"]
+                || i.workspace.profile_id != pi_pilot::PROFILE
+                || i.model.id != "fake-pi-model"
+                || i.model.effort != "off"
+                || i.model.tier != "fixture"))
         || i.effects.network
         || i.effects.max_concurrent_tasks != 1
         || i.effects.max_child_tasks != 0
@@ -366,3 +384,6 @@ pub mod canonical_source;
 pub mod native_authority;
 /// Signed scoped authority observations; native custody remains bridge-owned.
 pub mod scoped_pilot;
+
+/// Fixture-only signed Pi composition; never qualifies the ordinary native gate.
+pub mod pi_pilot;

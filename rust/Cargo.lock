@@ -3360,6 +3360,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "session-task-admission",
  "sha2",
  "tempfile",
  "thiserror",

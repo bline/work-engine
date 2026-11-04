@@ -177,6 +177,9 @@ pub struct Journal {
 
 pub struct Host {
     journal: Journal,
+    pi_owner: Option<session_task_admission::pi_pilot::PiOwner>,
+    allocation_lease: Option<session_task_admission::pi_pilot::EffectLease>,
+    reply_leases: Vec<session_task_admission::pi_pilot::EffectLease>,
     _lock: File,
 }
 
@@ -303,6 +306,38 @@ impl Host {
         &self.journal
     }
     pub fn admit(job: Job) -> Result<Self> {
+        if job
+            .coding
+            .as_ref()
+            .is_some_and(|p| p.schema == coding::SIGNED_PROFILE)
+        {
+            return refuse("signed fixture requires Pi owner");
+        }
+        Self::admit_inner(job, None)
+    }
+    pub fn admit_signed_fixture(
+        job: Job,
+        owner: session_task_admission::pi_pilot::PiOwner,
+    ) -> Result<Self> {
+        if !job.coding.as_ref().is_some_and(|p| {
+            p.schema == coding::SIGNED_PROFILE
+                && p.provider.is_none()
+                && p.workspace_write_boundary == coding::WorkspaceWriteBoundary::SrcLibRs
+        }) {
+            return refuse("signed fixture profile required");
+        }
+        owner
+            .admit(
+                &digest(&serde_json::to_vec(&job)?),
+                &digest(&fs::read(std::env::current_exe()?)?),
+            )
+            .map_err(|e| Error::Refused(e.into()))?;
+        Self::admit_inner(job, Some(owner))
+    }
+    fn admit_inner(
+        job: Job,
+        owner: Option<session_task_admission::pi_pilot::PiOwner>,
+    ) -> Result<Self> {
         // Caller creates a private state directory; never create arbitrary mounted paths.
         check_job(&job, true)?;
         let lock = Self::lock(&job.state_dir)?;
@@ -393,6 +428,9 @@ impl Host {
         let host = Self {
             journal,
             _lock: lock,
+            pi_owner: owner,
+            allocation_lease: None,
+            reply_leases: vec![],
         };
         host.save()?;
         Ok(host)
@@ -426,6 +464,9 @@ impl Host {
         Ok(Self {
             journal,
             _lock: lock,
+            pi_owner: None,
+            allocation_lease: None,
+            reply_leases: vec![],
         })
     }
     fn save(&self) -> Result<()> {
@@ -503,7 +544,21 @@ impl Host {
             .stdin(if rpc { Stdio::piped() } else { Stdio::null() })
             .stdout(stdout)
             .stderr(stderr);
+        if rpc && let Some(lease) = &self.allocation_lease {
+            lease
+                .check_current()
+                .map_err(|e| Error::Refused(e.into()))?;
+        }
+        if self.signed_pi()
+            && (rpc || label == "coding-tool-exec")
+            && (self.expired() || self.cancelled())
+        {
+            return refuse("signed fixture dispatch expired/cancelled");
+        }
         let mut child = OwnedChild(cmd.spawn()?);
+        if rpc {
+            drop(self.allocation_lease.take());
+        } // allocation remains durably unknown until actual ID sealing
         self.journal.processes[number].pid = Some(child.id());
         self.journal.processes[number].start = crate::proc_stat(child.id()).map(|s| s.0);
         self.save()?;
@@ -535,10 +590,32 @@ impl Host {
                 if self.journal.job.coding.is_some() {
                     match self.coding_advance(&raw) {
                         Ok(commands) => {
+                            let leases = std::mem::take(&mut self.reply_leases);
+                            // Hold all owner ordering leases through the actual IPC grant write.
+                            for lease in &leases {
+                                lease
+                                    .check_current()
+                                    .map_err(|e| Error::Refused(e.into()))?;
+                            }
+                            if self.signed_pi() && (self.expired() || self.cancelled()) {
+                                return refuse("signed fixture IPC dispatch expired/cancelled");
+                            }
                             for command in commands {
                                 if let Some(input) = stdin.as_mut() {
                                     write_result =
                                         input.write_all(&command).and_then(|_| input.flush());
+                                    if write_result.is_err() {
+                                        break;
+                                    }
+                                } else {
+                                    return refuse("coding stdin absent");
+                                }
+                            }
+                            if write_result.is_ok() {
+                                for lease in leases {
+                                    lease
+                                        .observed(digest(b"host IPC grant flushed").as_str())
+                                        .map_err(|e| Error::Refused(e.into()))?;
                                 }
                             }
                         }
@@ -787,7 +864,17 @@ impl Host {
         if self.journal.phase != Phase::Admitted {
             return refuse("existing realization must reconcile; launch is not replayable");
         }
+        if self.signed_pi() && self.pi_owner.is_none() {
+            return refuse("signed fixture cannot resume allocation");
+        }
         let launch = (|| -> Result<()> {
+            if let Some(owner) = &self.pi_owner {
+                self.allocation_lease = Some(
+                    owner
+                        .enter(session_task_admission::pi_pilot::Effect::Allocation)
+                        .map_err(|e| Error::Refused(e.into()))?,
+                );
+            }
             check_job(&self.journal.job, true)?;
             if self.cancelled() {
                 return refuse("cancelled before create");
@@ -839,7 +926,15 @@ impl Host {
             self.failure(error);
             self.save()?;
         }
-        self.reconcile()
+        drop(self.allocation_lease.take());
+        self.reply_leases.clear();
+        let result = self.reconcile()?;
+        if let Some(owner) = &self.pi_owner {
+            owner
+                .record_result(&result)
+                .map_err(|e| Error::Refused(e.into()))?;
+        }
+        Ok(result)
     }
     /// Recovery never issues create/start or resends RPC. A running orphan is
     /// stopped and collected; uncertain facts cannot authorize launch replay.
@@ -1089,6 +1184,11 @@ impl Host {
         if let Some(coding) = &self.journal.coding {
             value["coding"] = serde_json::to_value(coding)?;
             value["profile"] = json!(self.journal.job.coding.as_ref().unwrap().schema);
+            if self.signed_pi() {
+                value["provider"] = json!("fake_fixture");
+                value["model"] = json!("fake-pi-model");
+                value["cost_evidence"] = json!("synthetic zero-cost fixture usage; not billing");
+            }
             if self.journal.job.coding.as_ref().unwrap().provider.is_some() {
                 value["provider"] = json!("openai-codex");
                 value["model"] = json!("gpt-6-luna");

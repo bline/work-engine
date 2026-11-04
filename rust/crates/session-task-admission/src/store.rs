@@ -44,7 +44,7 @@ fn hash(s: &str) -> String {
     format!("{:x}", Sha256::digest(s.as_bytes()))
 }
 
-const TABLES: [(&str, &str); 12] = [
+const TABLES: [(&str, &str); 14] = [
     (
         "admission",
         "CREATE TABLE admission(answer_id TEXT PRIMARY KEY,request_id TEXT NOT NULL UNIQUE,task_id TEXT NOT NULL,revision TEXT NOT NULL,request_sha TEXT NOT NULL,lane_id TEXT NOT NULL,proposal_id TEXT NOT NULL,proposal_revision TEXT NOT NULL,proposal_sha TEXT NOT NULL,decision_revision TEXT NOT NULL,decision_sha TEXT NOT NULL,answer_sha TEXT NOT NULL,answer_json TEXT NOT NULL,assertion_sha TEXT NOT NULL,admission_id TEXT NOT NULL UNIQUE,reservation_ref TEXT NOT NULL,operation_id TEXT NOT NULL UNIQUE,UNIQUE(task_id,revision),FOREIGN KEY(task_id,revision) REFERENCES task_revision(task_id,revision))",
@@ -93,6 +93,14 @@ const TABLES: [(&str, &str); 12] = [
         "task_revision",
         "CREATE TABLE task_revision(task_id TEXT NOT NULL,revision TEXT NOT NULL,request_sha TEXT NOT NULL,request_json TEXT NOT NULL,PRIMARY KEY(task_id,revision))",
     ),
+    (
+        "pi_claim",
+        "CREATE TABLE pi_claim(profile_sha TEXT PRIMARY KEY,operation_id TEXT NOT NULL UNIQUE REFERENCES outbox(operation_id),descriptor_sha TEXT NOT NULL,job_sha TEXT NOT NULL UNIQUE,native_id TEXT UNIQUE,result_json TEXT)",
+    ),
+    (
+        "pi_effect",
+        "CREATE TABLE pi_effect(profile_sha TEXT NOT NULL REFERENCES pi_claim(profile_sha),effect_key TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN ('unknown','observed')),evidence_sha TEXT,PRIMARY KEY(profile_sha,effect_key))",
+    ),
 ];
 #[allow(dead_code)]
 pub(crate) fn initialize(db: &Connection) -> Result<(), Error> {
@@ -102,7 +110,7 @@ pub(crate) fn initialize(db: &Connection) -> Result<(), Error> {
         return Err(Error::Store);
     }
     let version: i64 = db.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-    if ![0, 1, 2].contains(&version) {
+    if ![0, 1, 2, 3].contains(&version) {
         return Err(Error::Store);
     }
     let count: i64 = db.query_row(
@@ -114,10 +122,10 @@ pub(crate) fn initialize(db: &Connection) -> Result<(), Error> {
         db.execute_batch("BEGIN IMMEDIATE")?;
         let created = (|| -> Result<(), Error> {
             // Task table must exist before its foreign-key consumers.
-            for n in [11, 4, 5, 10, 0, 1, 2, 3, 6, 7, 8, 9] {
+            for n in [11, 4, 5, 10, 0, 1, 2, 3, 6, 7, 8, 9, 12, 13] {
                 db.execute_batch(TABLES[n].1)?;
             }
-            db.execute_batch("PRAGMA user_version=2; COMMIT")?;
+            db.execute_batch("PRAGMA user_version=3; COMMIT")?;
             Ok(())
         })();
         if created.is_err() {
@@ -131,7 +139,7 @@ pub(crate) fn initialize(db: &Connection) -> Result<(), Error> {
         }
         let legacy = TABLES
             .iter()
-            .filter(|(name, _)| !name.starts_with("scoped_"));
+            .filter(|(name, _)| !name.starts_with("scoped_") && !name.starts_with("pi_"));
         let mut stmt =
             db.prepare("SELECT name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY name")?;
         let actual = stmt
@@ -169,7 +177,7 @@ pub(crate) fn initialize(db: &Connection) -> Result<(), Error> {
             .collect::<Result<Vec<_>, _>>()?;
         let expected: Vec<_> = TABLES
             .iter()
-            .filter(|(name, _)| *name != "scoped_final_claim")
+            .filter(|(name, _)| *name != "scoped_final_claim" && !name.starts_with("pi_"))
             .collect();
         if actual.len() != expected.len()
             || actual
@@ -191,15 +199,50 @@ pub(crate) fn initialize(db: &Connection) -> Result<(), Error> {
         }
         migrated?;
     }
+    let current_count: i64 = db.query_row(
+        "SELECT count(*) FROM sqlite_schema WHERE sql IS NOT NULL",
+        [],
+        |r| r.get(0),
+    )?;
+    if current_count == 12 {
+        let mut statement =
+            db.prepare("SELECT name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY name")?;
+        let actual = statement
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut expected = TABLES[..12].to_vec();
+        expected.sort_by_key(|x| x.0);
+        if actual
+            .iter()
+            .zip(expected)
+            .any(|((n, s), (en, es))| n != en || s != es)
+        {
+            return Err(Error::Store);
+        }
+        drop(statement);
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let migrated = (|| -> Result<(), Error> {
+            db.execute_batch(TABLES[12].1)?;
+            db.execute_batch(TABLES[13].1)?;
+            db.execute_batch("PRAGMA user_version=3; COMMIT")?;
+            Ok(())
+        })();
+        if migrated.is_err() {
+            let _ = db.execute_batch("ROLLBACK");
+        }
+        migrated?;
+    }
     let mut statement =
         db.prepare("SELECT name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY name")?;
     let actual = statement
         .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
         .collect::<Result<Vec<_>, _>>()?;
+    let mut expected = TABLES.to_vec();
+    expected.sort_by_key(|x| x.0);
     if actual.len() != TABLES.len()
         || actual
             .iter()
-            .zip(TABLES)
+            .zip(expected)
             .any(|((name, sql), (expected, ddl))| name != expected || sql != ddl)
     {
         return Err(Error::Store);
@@ -1046,7 +1089,7 @@ mod tests {
             let db = Connection::open_in_memory().unwrap();
             for (name, ddl) in TABLES
                 .iter()
-                .filter(|(name, _)| *name != "scoped_final_claim")
+                .filter(|(name, _)| *name != "scoped_final_claim" && !name.starts_with("pi_"))
             {
                 let _ = name;
                 db.execute_batch(ddl).unwrap();
@@ -1062,7 +1105,7 @@ mod tests {
                 assert_eq!(
                     db.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                         .unwrap(),
-                    2
+                    3
                 );
             }
         }

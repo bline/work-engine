@@ -106,12 +106,12 @@ struct Control {
     predecessor: Option<String>,
     state: String,
 }
-struct Head {
-    valid_until: OffsetDateTime,
-    generation: i64,
-    sha: String,
-    state: String,
-    raw: String,
+pub(crate) struct Head {
+    pub(crate) valid_until: OffsetDateTime,
+    pub(crate) generation: i64,
+    pub(crate) sha: String,
+    pub(crate) state: String,
+    pub(crate) raw: String,
 }
 /// No Deserialize, qualification boolean, callback, or filesystem executor.
 pub struct ScopedOwner {
@@ -133,7 +133,7 @@ fn digest(s: &str) -> bool {
 fn utc(s: &str) -> Result<OffsetDateTime> {
     OffsetDateTime::parse(s, &Rfc3339).map_err(|_| "scoped_clock")
 }
-fn config(pin: &Pin) -> Result<service::Config> {
+pub(crate) fn config(pin: &Pin) -> Result<service::Config> {
     if !source::pinned(pin) {
         return Err("scoped_config_pin");
     }
@@ -145,7 +145,7 @@ fn config(pin: &Pin) -> Result<service::Config> {
     }
     Ok(c)
 }
-fn database(c: &service::Config) -> Result<Connection> {
+pub(crate) fn database(c: &service::Config) -> Result<Connection> {
     use std::os::unix::fs::MetadataExt;
     let m = std::fs::symlink_metadata(&c.database).map_err(|_| "scoped_registry")?;
     if !m.is_file()
@@ -164,7 +164,7 @@ fn database(c: &service::Config) -> Result<Connection> {
     crate::store::initialize(&db).map_err(|_| "scoped_registry")?;
     Ok(db)
 }
-fn head(c: &service::Config, pin: &Pin, now: OffsetDateTime) -> Result<Head> {
+pub(crate) fn head(c: &service::Config, pin: &Pin, now: OffsetDateTime) -> Result<Head> {
     let clock = source::AcquisitionTime::new(now);
     let board =
         source::board(&c.sources.board, &c.sources.board_repository).ok_or("scoped_board")?;
@@ -244,7 +244,7 @@ fn head(c: &service::Config, pin: &Pin, now: OffsetDateTime) -> Result<Head> {
 }
 /// Apply the signed current head under the existing registry's write ordering.
 /// Possession of the startup config/DB does not replace the signed board proof.
-fn synchronize(db: &Connection, pin: &Pin, h: &Head) -> Result<()> {
+pub(crate) fn synchronize(db: &Connection, pin: &Pin, h: &Head) -> Result<()> {
     let old: Option<(i64,String)> = db.query_row("SELECT generation,request_sha FROM scoped_control WHERE profile_sha=?1 ORDER BY generation DESC LIMIT 1", [&pin.sha256], |r| Ok((r.get(0)?, r.get(1)?))).optional().map_err(|_| "scoped_registry")?;
     if let Some((generation, sha)) = old.as_ref() {
         if *generation > h.generation || (*generation == h.generation && sha != &h.sha) {
