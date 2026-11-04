@@ -2479,6 +2479,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "session-delivery"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

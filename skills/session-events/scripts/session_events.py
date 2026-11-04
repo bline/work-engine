@@ -2302,6 +2302,8 @@ PROVISION_TOOLS = [
 
 class Bridge:
     """Pinned local helper; the helper owns authorization and durable state."""
+    protocol = "session-bridge-rpc-v1"
+    unavailable_reason = "bridge_unavailable"
     def __init__(self, binary: str, binary_sha: str, config: str, config_sha: str, provisioning: bool = False):
         self.binary, self.binary_sha, self.config, self.config_sha = binary, binary_sha, config, config_sha
         self.provisioning = provisioning
@@ -2353,14 +2355,17 @@ class Bridge:
             if hashlib.sha256(p.read_bytes()).hexdigest() != expected:
                 raise ValueError("bridge pin mismatch")
 
+    def spawn(self):
+        return subprocess.Popen([self.binary, "--config", self.config, "rpc"], stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True)
+
     def invoke(self, request: dict) -> dict:
         try:
             self.check()
             payload = canonical(request).encode()
             if len(payload) > 256 * 1024:
                 raise ValueError("request too large")
-            proc = subprocess.Popen([self.binary, "--config", self.config, "rpc"], stdin=subprocess.PIPE,
-                                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True)
+            proc = self.spawn()
             deadline = time.monotonic() + 30
             output = bytearray()
             pending = memoryview(payload)
@@ -2399,7 +2404,7 @@ class Bridge:
                     proc.stdin.close()
             response = json.loads(output)
             if (not isinstance(response, dict) or response.get("schema_version") != 1
-                    or response.get("protocol") != "session-bridge-rpc-v1" or type(response.get("ok")) is not bool
+                    or response.get("protocol") != self.protocol or type(response.get("ok")) is not bool
                     or set(response) != ({"schema_version", "protocol", "ok", "result"} if response.get("ok") else
                                          {"schema_version", "protocol", "ok", "error"})):
                 raise ValueError("protocol mismatch")
@@ -2407,7 +2412,7 @@ class Bridge:
                 reason = response.get("error")
                 if reason not in {"unauthorized", "payload_conflict", "target_mismatch", "expired", "session_busy",
                                   "history_unavailable", "entry_uncertain", "identity_conflict", "custody_lost", "bridge_unavailable"}:
-                    reason = "bridge_unavailable"
+                    reason = self.unavailable_reason
                 raise invalid(reason)
             result = response.get("result")
             if not isinstance(result, dict) or result.get("schema_version") != 1:
@@ -2416,7 +2421,124 @@ class Bridge:
         except RpcError:
             raise
         except Exception:
-            raise invalid("bridge_unavailable") from None
+            raise invalid(self.unavailable_reason) from None
+
+
+DELIVERY_TOOLS = [
+    {"name": ("delivery_inspect" if name == "status" else "delivery_" + name), "description": description,
+     "inputSchema": {"type": "object", "properties": {
+         "recipient": {"type": "string", "maxLength": 512},
+         **({"ack": {"type": "object"}} if name == "ack" else {}),
+         **({"after": {"type": "string", "pattern": "^[a-f0-9]{64}$"}} if name == "status" else {})},
+         "required": ["recipient"] + (["ack"] if name == "ack" else []),
+         "additionalProperties": False}}
+    for name, description in (
+        ("subscribe", "Opt into a configured isolated fixture recipient. Observation only; no execution authority."),
+        ("status", "Inspect bounded delivery evidence for a configured fixture recipient."),
+        ("ack", "Acknowledge one exact transport or target observation; never completion."))
+]
+
+
+class DeliveryHelper(Bridge):
+    """Opt-in fixture seam sharing the protected, pinned bounded helper transport."""
+    protocol = "session-delivery-rpc-v1"
+    unavailable_reason = "delivery_unavailable"
+
+    def __init__(self, binary, binary_sha, config, config_sha):
+        self.binary, self.binary_sha = binary, binary_sha
+        self.config, self.config_sha = config, config_sha
+        self.provisioning = False
+        self.check()
+        binary_fd, config_fd = self._open_pins()
+        try:
+            value = json.loads(os.read(config_fd, 16385))
+        finally:
+            os.close(binary_fd)
+            os.close(config_fd)
+        if value.get("schema") != "session-delivery-fixture-config-v1" or value.get("fixture_only") is not True:
+            raise ValueError("fixture delivery config required")
+        self.targets = {(b["recipient"], b["principal"]) for b in value["targets"]}
+        if not 1 <= len(self.targets) <= 16:
+            raise ValueError("bounded delivery allowlist required")
+
+    def _open_pins(self):
+        # Resolve paths to pinned descriptors before execution. Group-writable
+        # workspace ancestors cannot swap what is executed after verification.
+        fds = []
+        try:
+            for path, expected, private in ((self.binary, self.binary_sha, False),
+                                            (self.config, self.config_sha, True)):
+                if not Path(path).is_absolute() or not re.fullmatch(r"[a-f0-9]{64}", expected):
+                    raise ValueError("invalid delivery pin")
+                fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+                fds.append(fd)
+                st = os.fstat(fd)
+                if (not stat.S_ISREG(st.st_mode) or st.st_uid != os.geteuid()
+                        or st.st_mode & (0o077 if private else 0o022)
+                        or st.st_size > (16384 if private else 64 * 1024 * 1024)):
+                    raise ValueError("unsafe delivery pin")
+                h = hashlib.sha256()
+                while chunk := os.read(fd, 65536):
+                    h.update(chunk)
+                os.lseek(fd, 0, os.SEEK_SET)
+                if h.hexdigest() != expected:
+                    raise ValueError("delivery pin mismatch")
+            return fds
+        except BaseException:
+            for fd in fds:
+                os.close(fd)
+            raise
+
+    def check(self):
+        for fd in self._open_pins():
+            os.close(fd)
+
+    def spawn(self):
+        binary_fd, config_fd = self._open_pins()
+        try:
+            return subprocess.Popen([f"/proc/self/fd/{binary_fd}", "--config-fd", str(config_fd), "rpc"],
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                    close_fds=True, pass_fds=(binary_fd, config_fd))
+        finally:
+            os.close(binary_fd)
+            os.close(config_fd)
+
+    @classmethod
+    def from_environment(cls):
+        keys = ("SESSION_DELIVERY_BINARY", "SESSION_DELIVERY_BINARY_SHA256",
+                "SESSION_DELIVERY_CONFIG", "SESSION_DELIVERY_CONFIG_SHA256")
+        values = [os.environ.get(k) for k in keys]
+        enabled = os.environ.get("SESSION_DELIVERY_FIXTURE_ENABLED")
+        if not enabled and not any(values):
+            return None
+        if enabled != "1" or not all(values):
+            raise ValueError("explicit fixture switch and complete delivery pins required")
+        return cls(*values)
+
+    def call(self, method, principal, arguments):
+        allowed = {"recipient", "ack"} if method == "ack" else {"recipient"}
+        if method == "status":
+            allowed = {"recipient", "after"} if "after" in arguments else {"recipient"}
+            if "after" in arguments and (not isinstance(arguments["after"], str) or not re.fullmatch(r"[a-f0-9]{64}", arguments["after"])):
+                raise invalid("delivery_status_cursor")
+        if set(arguments) != allowed or not isinstance(arguments.get("recipient"), str):
+            raise invalid("delivery_arguments")
+        recipient = arguments["recipient"]
+        if (recipient, principal) not in self.targets:
+            raise invalid("unauthorized_target")
+        if method == "ack":
+            ack = arguments["ack"]
+            fields = {"schema", "attempt_id", "delivery_id", "event_id", "binding_sha256", "envelope_sha256",
+                      "payload_sha256", "generation", "stage"}
+            if (not isinstance(ack, dict) or set(ack) != fields
+                    or type(ack["generation"]) is not int or ack["generation"] < 1
+                    or ack["schema"] != "work-engine.delivery-observation/v1"
+                    or ack["stage"] not in {"transport_accepted", "target_observed"}
+                    or any(not isinstance(ack[k], str) or not re.fullmatch(r"[a-f0-9]{64}", ack[k])
+                           for k in fields - {"generation", "stage", "schema"})):
+                raise invalid("delivery_ack_arguments")
+        return self.invoke({"schema": "session-delivery-rpc-v1", "method": method,
+                            "principal": principal, **arguments})
 
 
 def _bridge_redact(value):
@@ -2500,8 +2622,10 @@ def bridge_observation(homes: Homes, context: "Context", now: float, operation: 
 class Server:
     def __init__(self, homes: Homes, principal: str, policy: CallbackPolicy,
                  transport: Transport = post, clock: Callable[[], float] = time.time,
-                 context: "Context | None" = None, bridge: "Bridge | None" = None):
+                 context: "Context | None" = None, bridge: "Bridge | None" = None,
+                 delivery: "DeliveryHelper | None" = None):
         self.bridge = bridge
+        self.delivery = delivery
         self.homes, self.principal, self.policy = homes, principal, policy
         self.transport, self.clock = transport, clock
         self.store = Store(homes.state)
@@ -2519,7 +2643,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)
@@ -2552,6 +2676,10 @@ class Server:
             tools[name] = lambda a: self.bridge_call(name, a)
         if self.bridge and self.bridge.provisioning and name in {"create_session_target", "read_session_target", "issue_session_request_grant", "close_session_target"}:
             tools[name] = lambda a: self.bridge_call(name, a)
+        if self.delivery and name in {"delivery_subscribe", "delivery_ack"}:
+            tools[name] = lambda a: self.delivery.call(name.removeprefix("delivery_"), self.principal, a)
+        if self.delivery and name == "delivery_inspect":
+            tools[name] = lambda a: self.delivery.call("status", self.principal, a)
         if name not in tools:
             raise invalid("unknown_tool", name=str(name)[:80])
         try:
@@ -4044,9 +4172,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in ("serve", "serve-http", "run"):
             context = context_from_args(args, homes)
         if args.command == "serve":
-            return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()))
+            return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":
