@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "strategic_objective": "Assess alignment of the current S10 and delivery-foundation sessions with the root/Rust convergence recommendation.",
+  "evidence_cutoff": {
+    "roadmap_revision": "sha256:31cb3921387616c6c3c62f5b7d4ba8254225fd7b8f820552c7e421ed56302218",
+    "repository_revision": "0d51c0b8668d2497c0f7b31d5aac9b169faa60b5",
+    "campaign_terminals": []
+  },
+  "continuity": "retained",
+  "verdict": "continue",
+  "current_rationale": "At 2026-11-03T23:17:32Z the sessions have complementary, explicitly bounded assignments. Session 01a1a2c0-7191-76f2-afa1-16d32d5c4883 is implementing a provider-disabled Pi/Docker custody component within the existing manual host. Session 01a195d4-b7a7-77f2-ba65-277669c0ec97 is implementing durable Rust event delivery and an opt-in MCP facade using an isolated receiver. Both remain in progress and neither establishes the joined engineering-workflow milestone. Current intent and in-progress code support continuing these scopes; the next integration should connect their actual outputs to canonical lifecycle ownership.",
+  "assumptions": {
+    "confirmed": [
+      {
+        "statement": "The Pi/Docker implementation reuses work-engine-manual-host rather than starting an unrelated general orchestrator.",
+        "evidence": [
+          "planning/s10-pi-docker-host-first-revision-20261103.md",
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/builder-phase2-host-first.md",
+          "/home/bline/cbm-work/wt-s10-pi-docker-base-20261103/rust/crates/work-engine-manual-host/src/pi_docker.rs"
+        ],
+        "strategic_consequence": "This aligns with reusing existing mechanical infrastructure; the custody journal explicitly claims no task effects, lifecycle transitions or acceptance."
+      },
+      {
+        "statement": "The shared delivery owner and S10 have agreed a semantic responsibility split.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/receiver-contract-v1-r2.json",
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/assignment.json",
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/assignment.json"
+        ],
+        "strategic_consequence": "Delivery owns source/inbox/transport observations; S10 owns container execution and the future Pi/lifecycle join. Separate journals for these different meanings are appropriate."
+      },
+      {
+        "statement": "The complete workflow is still unqualified.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/host-first-decision.json",
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/assignment.json"
+        ],
+        "strategic_consequence": "Treat component acceptance separately from live inference, actual Pi delivery, canonical context replacement and a reviewed engineering job."
+      }
+    ],
+    "changed": [
+      {
+        "statement": "The maintainer selected an outside deterministic Rust parent, with most local model supervision inside the container.",
+        "evidence": [
+          "planning/s10-pi-docker-convergence-amendment-20261103.md"
+        ],
+        "strategic_consequence": "Refine the earlier root-directed mechanism to this explicit topology while preserving model judgment and existing domain ownership."
+      },
+      {
+        "statement": "S10's immediate delivery was explicitly narrowed from the complete base to the host component.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/host-first-decision.json",
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/builder-phase2-host-first.md"
+        ],
+        "strategic_consequence": "The selected component is legitimate staged progress under the same original cap; it does not discharge the larger integration milestone."
+      }
+    ],
+    "invalidated": []
+  },
+  "route_changes": {
+    "priorities": [
+      {
+        "statement": "Complete the two currently admitted components with their required tests, review and truthful disposition.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/assignment.json",
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/assignment.json"
+        ],
+        "strategic_consequence": "Do not interrupt or redirect current work solely because the larger milestone remains open."
+      },
+      {
+        "statement": "Prefer a joined supported-workflow proof after those components over unrelated expansion.",
+        "evidence": [
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md",
+          "planning/s10-pi-docker-convergence-amendment-20261103.md"
+        ],
+        "strategic_consequence": "Connect one admitted job, actual recipient delivery and canonical lifecycle/recovery; keep separate costs and acceptance evidence."
+      }
+    ],
+    "dependencies": [
+      {
+        "statement": "An isolated receiver proof is not actual delivery into a busy Pi lane.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/receiver-contract-v1-r2.json",
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/assignment.json"
+        ],
+        "strategic_consequence": "Demonstrate actual receipt and required context-pressure timeliness at the selected recipient before relying on that claim."
+      },
+      {
+        "statement": "A container/session custody journal is not canonical semantic continuity.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/builder-phase2-host-first.md",
+          "planning/s10-pi-docker-convergence-amendment-20261103.md"
+        ],
+        "strategic_consequence": "The existing Rust lifecycle needs a qualified Pi session adapter and owner transitions; this remains deferred in the current host-only assignment."
+      }
+    ],
+    "newly_important": [
+      {
+        "statement": "The agreed receiver contract distinguishes a logical delivery from each physical attempt.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/receiver-contract-v1-r2.json",
+          "/home/bline/cbm-work/wt-session-delivery-foundation-20261103/rust/crates/session-delivery/src/lib.rs"
+        ],
+        "strategic_consequence": "Current Envelope and Ack source include attempt_id. Tests and review must still establish that a late ACK cannot settle a different attempt."
+      },
+      {
+        "statement": "Both efforts currently prove components rather than the complete engineering outcome.",
+        "evidence": [
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/host-first-decision.json",
+          "/home/bline/.local/state/work-engine/session-delivery-foundation-20261103/assignment.json"
+        ],
+        "strategic_consequence": "Keep the larger milestone visible so successive component scopes do not become an indefinite substitute for integration."
+      }
+    ],
+    "deferred": [
+      {
+        "statement": "Extra providers, general organization automation, a competing inbox, or a second lifecycle owner.",
+        "evidence": [
+          "planning/work-engine-convergence-roadmap-reconciliation-20261103.md",
+          "/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/builder-phase2-host-first.md"
+        ],
+        "strategic_consequence": "Further construction needs an unmet consequence of the selected joined workflow, not only architectural symmetry."
+      }
+    ]
+  },
+  "recommended_campaign": {
+    "disposition": "continue_current",
+    "objective": "Finish the admitted Pi/Docker host component and shared delivery foundation, then present the exact remaining joined-workflow contract and evidence gaps.",
+    "work_source": "planning/s10-pi-docker-convergence-amendment-20261103.md",
+    "reason": "The bounded scopes align with convergence and have explicit user selection. This assessment does not dispatch work, change current limits or accept incomplete component results."
+  },
+  "open_uncertainties": [
+    "The in-progress source has not received final component qualification or acceptance in this assessment.",
+    "Actual subscription inference, credential-bearing containment and engineering/reviewer execution are deferred from the current host component.",
+    "The shared delivery proof currently uses an isolated receiver; actual Pi receipt, busy-lane control timeliness and application remain unestablished.",
+    "Canonical Rust lifecycle-to-Pi context transition, queued-input/authority preservation and recovery still need the joined adapter.",
+    "No causal total-cost benefit of this integrated route has been demonstrated."
+  ],
+  "authority_required": [
+    "No additional approval is requested for routine work inside the two currently accepted assignments.",
+    "A subsequent joined task involving currently deferred inference, credentials, engineering mutation, live recipient delivery or canonical context replacement needs the owning scope and execution authority.",
+    "Any changed claim or release acceptance condition remains with its existing owner."
+  ],
+  "revisit_when": [
+    "Either current component reaches a frozen reviewed result or reports an infeasible remaining forecast.",
+    "The concrete receiver DTO, attempt semantics or ownership boundary changes.",
+    "The next proposed scope adds another standalone component without closing an identified joined-workflow gap.",
+    "A real recipient/lifecycle integration demonstrates or falsifies the selected runtime assumptions."
+  ]
+}

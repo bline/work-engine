@@ -712,13 +712,110 @@ E[C_{keep}] > E[C_{reset}]
 
 provided semantic safety is already satisfied.
 
-The actual optimum should be learned from real runs.
+This comparison does not require a predictor of future work before it becomes
+useful. Start with deterministic accounting and conditional break-even results;
+learn when to act on them later. The following staged development proposal does
+not change runtime policy or confer context-replacement authority.
+
+### 17.1 Cache-aware accounting first
+
+For one model request, normalize provider-reported usage into disjoint ordinary
+input, cache-read input, cache-write input, and output categories:
+
+\[
+C_{request} = U p_U + R p_R + \sum_k W_k p_{W_k} + O p_O
+\]
+
+Here prices are per token; cache writes may have different retention classes
+\(k\). Record the provider, model, pricing revision and applicable service tier.
+Provider adapters own normalization: some input counters include cache tokens,
+while others exclude them. Preserve raw counters and their availability; missing
+usage is not measured zero. Do not count a reasoning-output subset twice or add
+cumulative session totals as though each were a new request.
+
+Input age and billing category are separate dimensions. Old context can miss
+cache, and newly introduced content can reuse a cached prefix. Observed reads
+and writes describe the request that occurred, not guaranteed cache availability
+for the next request. Token-processing cost is also distinct from active context
+occupancy. Price-weighted usage is a cost estimate, not necessarily an invoice
+or a subscription-quota measurement.
+
+### 17.2 Report break-even without predicting remaining work
+
+Compare retention and replacement over the same useful continuation. Let \(K\)
+be the incremental preservation, replacement and rehydration overhead, including
+cold-cache creation and attributable reconstruction. Let \(s_t\) be the request
+cost saved by replacement under an explicitly stated continuation/cache scenario.
+Do not charge the same overhead in both \(K\) and the request comparison.
+
+\[
+S(N) = \sum_{t=1}^{N} s_t - K
+\]
+
+For a simplified scenario with constant positive saving \(s\), break-even is:
+
+\[
+N_{break-even} = \left\lceil K / s \right\rceil
+\]
+
+Equality repays overhead; strictly positive net savings require \(Ns > K\).
+If \(s \leq 0\) and \(K > 0\), that scenario has no finite payback. For example,
+if replacement avoids reading \(D\) cached tokens on each subsequent request,
+and all other ongoing costs are equal, \(s = D p_R\). This is a conditional
+calculation, not a claim that those tokens are unnecessary or that enough work
+remains. If replacement adds requests or changes the work, compare the full
+costs for equivalent useful outcomes rather than assuming equal request counts.
+
+An initial report can say: "Replacement repays its overhead after N model
+requests under these assumptions." It need not predict N remaining requests,
+infer a universal threshold, or recommend immediate replacement. Distinguish
+measured inputs, supplied assumptions and estimates. Keep latency and quality
+separate from monetary cost unless an explicit objective supplies a conversion.
+
+### 17.3 Deliver value before predictive optimization
+
+The proposed rollout is:
+
+1. **Accounting and break-even:** expose normalized usage, lifecycle overhead
+   and conditional payback. No broad telemetry platform or ML model is a
+   prerequisite. Existing authorized judgment can use these comparisons;
+   instrumentation itself does not initiate replacement.
+2. **Continuation evidence:** collect a bounded record of what actually follows
+   existing retain/reset decisions: request counts, cache usage, reconstruction
+   and useful outcomes. This stage leaves lifecycle behavior unchanged.
+3. **Optional prediction:** evaluate simple heuristics first, or an ML model if
+   it adds demonstrated value, for remaining work, cache reuse and reconstruction
+   costs. Validate any decision-policy change separately before adoption.
+
+This brings cost visibility and opportunities for efficiency improvement
+forward without waiting for a future-work predictor. It does not promise savings
+from observation alone. Economic estimates remain benefit evidence; semantic
+safety, quality requirements and effect authority are independent prerequisites.
 
 ---
 
-## 18. Metrics Required for Calibration
+## 18. Bounded Continuation Evidence and Later Calibration
 
-Potential telemetry includes:
+Start with existing usage events linked to exact request, role/session and
+context-cycle identities. Record lifecycle phase, model/provider, normalized
+cache categories, pricing basis, elapsed time and whether values are observed,
+estimated or unavailable. Deduplicate request identities and distinguish main
+agent, subagent and cumulative totals. No additional inference call or prompt
+content capture is needed merely to harvest available counters.
+
+For each observed retain/reset decision, retain the assumptions behind any
+break-even estimate and correlate subsequent requests with the next replacement
+or task outcome. A truncated or interrupted observation is incomplete, not proof
+that no further work remained. Intentional waiting by a retained role is not a
+failure or token expense by itself; elapsed time may affect later cache reuse.
+
+The chosen continuation is observed; the alternative is counterfactual. A reset
+run alone does not establish what retaining context would have cost, or vice
+versa. Keep modeled alternatives distinct from actual usage. Later controlled
+or prospective comparisons can assess savings and quality over comparable work.
+
+Expand collection only where it improves a relevant estimate or evaluates a
+candidate optimization. Potential later telemetry includes:
 
 ### Context
 
@@ -766,7 +863,8 @@ Potential telemetry includes:
 - later defects;
 - recovery success.
 
-These measurements allow preservation and reset policies to become empirical rather than rhetorical.
+These measurements can calibrate a later optimization policy. They are not all
+required to deliver the initial accounting and break-even capability.
 
 ---
 
@@ -782,14 +880,20 @@ meaning_save_score = 7.43
 
 and treat it as objective.
 
-The weights and thresholds are unknown.
+The arithmetic is deterministic once its inputs are supplied. Future request
+counts, cache behavior and reconstruction costs may be unknown; that does not
+make a measured usage total uncertain or require a predictive model upfront.
+Any weights combining cost, latency and quality need an explicit objective,
+not an unexplained score.
 
-The progression should be:
+The proposed development progression is:
 
 ```text
-conceptual variables
+normalized accounting + explicit assumptions
     ↓
-measurement
+conditional break-even reporting
+    ↓
+bounded actual-continuation measurement
     ↓
 historical correlation
     ↓
