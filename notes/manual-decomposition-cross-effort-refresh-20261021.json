@@ -1,0 +1,51 @@
+{
+  "schema": "cross-effort-learning-refresh-v2",
+  "recorded_at": "2026-10-21T03:36:13.559375+00:00",
+  "supersedes_for_current_use": {
+    "path": "notes/manual-decomposition-cross-effort-20261020.json",
+    "sha256": "67215b48b9b3c2bd756219ce9e317a672e6425d42dc9bfb6ede902a7e32c4a12"
+  },
+  "historical_policy": "Original synthesis remains immutable historical evidence. Current report and skill proposal use this refresh and recheck source revision at consumption.",
+  "current_source": {
+    "path": "notes/s2-boundary-audit-20261020.md",
+    "sha256": "c6d2b2bc4373df72c88e1508ceff32b3932527e6347e6ac473c7be2514f70ab6"
+  },
+  "trigger": "User identified stale source pin and later corrections/withdrawals; revision binding made drift observable.",
+  "verified_current_document_updates": [
+    {
+      "claim": "Nonempty-row deterministic gate would have passed S2 because ABSENT was zero.",
+      "consequence": "Complete accounting and resolving references do not establish semantic sufficiency; explicit absence is a valid disposition."
+    },
+    {
+      "claim": "Pilot1 separates inventory, obligation-to-artifact mapping, and adequacy judgment.",
+      "consequence": "Staged cost0.9624 versus bundled0.4103 is2.35x; reconstruction share69% is not savings. Stage3 cost0.2963 yields0.1140/28% measured assessment-side headroom, not ceiling or net savings; production and adjudication costs unmeasured."
+    },
+    {
+      "claim": "Disposition replication includes corresponding bases; staged invariant6 basis notes reviewer recorded test assertions also hold on defective detach path.",
+      "consequence": "Do not infer absent reviewer objection or lost verification concern from missing convenient linkage. Replicated disposition alone would not establish replicated warrant."
+    },
+    {
+      "claim": "Manual A packets were prose assignments without enumerated obligation representation, according to parallel audit.",
+      "consequence": "Prospective correspondence needs semantic obligation formation; packet precision and immutable hashes do not establish exhaustive decomposition."
+    }
+  ],
+  "user_reported_corrections_requiring_source_lineage_before_positive_reliance": {
+    "corrections": [
+      "four F3 absence claims withdrawn, including claim S2 lost verification objection",
+      "rule-7 derivation"
+    ],
+    "inspection_limit": "Current926-line source at c6d2b2bc read in relevant sections; exact four-withdrawal chain and rule7 passage not located by bounded notes/metrics text search. User correction preserved as controlling exclusion; no positive claim reconstructed from unavailable lineage.",
+    "disposition": "Exclude superseded F3/invariant6 governance-absence conclusions from report/skill until exact current warrants and withdrawal lineage are located."
+  },
+  "prospective_experiment": {
+    "D": "Already launched before prospective designation; not a preregistered prospective comparison.",
+    "next_campaign": "Subject selection and controls remain pending before next coordinator launch; no automatic enrollment."
+  },
+  "authority_pending_user_reported": [
+    "branch push (reported92 ahead; not executed or independently verified)",
+    "four conformance concerns at reported HEAD",
+    "E4 three s2-plan-v1 contract defects pending owner since board2211"
+  ],
+  "unchanged_boundaries": "No S2 acceptance reopening, schema/skill change, paid probe, branch push or contract remediation authorized by this correction. D engineering/review continues separately.",
+  "next_consumption_check": "Reconcile current source revisions, corrections and applicability before final report/skill proposal; preserve what changed and limitations, not just refreshed digests."
+}

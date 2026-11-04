@@ -1,0 +1,37 @@
+{
+  "schema": "cross-effort-lineage-refresh-v3",
+  "recorded_at": "2026-10-21T03:52:16.164134+00:00",
+  "supersedes_lineage_unavailable_limit_in": {
+    "path": "notes/manual-decomposition-cross-effort-refresh-20261021.json",
+    "sha256": "d70e15ec46c412001a72743da0081b25c8b7f92b34775882de60f18ce037565e"
+  },
+  "trigger": "Source-location board message2250, supplied without separate action request",
+  "current_source_evidence": {
+    "path": "/home/bline/.local/state/work-engine/manual-decomposition-s10-20261020/source-evidence-manifest-20261021-v2.json",
+    "sha256": "3f3a3ff5c51e8bcfca173623dbf1770f4bcd64e5acb20d4fbc7f092c7fccab0d"
+  },
+  "correction_history": "Git commit messages, including full identities and content bindings in source manifest v2",
+  "rule7_derivation_commit": "7f72a17b4156fbaa26d5a57c8125a39829e86618",
+  "rule7_lesson": "An absence claim needs a bounded search domain, artifact classes and completeness basis. Information not repeated by a downstream summary may still have been considered through referenced inputs. CLAUDE.md is evidence of this effort, not new authority over this coordinator.",
+  "F3": {
+    "source_author_disposition": "S2 remediation chain complete: finding, repair decision, implementation and discriminating retained-handle test at accepted checkpoint4071955569568b2460b80fcc3d6188fb4adfd12c.",
+    "withdrawals": "Four absence claims and the claim Pilot1 failed to retrieve the evidence are withdrawn.",
+    "attribution_limit": "Source-author conclusion with bound commit/test-presence evidence; synthesis is not an independent S2 implementation audit."
+  },
+  "invariant6": {
+    "surviving_disposition": "INSUFFICIENT on transport close and rejected/attempted/timed-out close states",
+    "exclusion_scope": "Exclude withdrawn F3/governance-absence conclusions; do not exclude surviving invariant6 disposition or assert entire invariant established."
+  },
+  "other_limits_preserved": [
+    "ABSENT0 refutes nonempty-row safeguard as sufficient",
+    "2.35x staging overhead",
+    "28% procedure-specific assessment headroom, not ceiling/net savings",
+    "D not prospectively enrolled",
+    "next prospective campaign subject/controls pending before coordinator launch"
+  ],
+  "consumers": [
+    "docs/manual-decomposition-experiment-result-20261021.md",
+    "planning/manual-orchestration-skill-proposal-20261021.md"
+  ],
+  "authority": "Source reconciliation only; no campaign/contract remediation or branch push."
+}

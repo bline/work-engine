@@ -1,0 +1,74 @@
+{
+  "schema": "cross-effort-learning-note-v1",
+  "recorded_at": "2026-10-20T23:24:37.345531+00:00",
+  "authority": "User requested bidirectional learning between manual decomposition and parallel notes/metrics probes",
+  "status": "Evidence synthesis for final report and thin skill proposal; no contract or acceptance changes",
+  "sources": [
+    {
+      "path": "notes/s2-boundary-audit-20261020.md",
+      "sha256": "1d1f9b65e84827d2065d4503bc6c27dc2271fda4447f057485d768e75f3a5037"
+    },
+    {
+      "path": "metrics/probes/claude-finding-attribution-20261020.md",
+      "sha256": "8ca2b240f8fdf3f59ab91ae21a007eed49336bf6c8b9ef470d75a6a545e8536d"
+    },
+    {
+      "path": "docs/manual-decomposition-pilot.md",
+      "sha256": "3eb26e2e8975522f2a754dab6b64ec4d396433e4f8376acf50b6cd589f4af413"
+    }
+  ],
+  "source_qualification": "Directly read current documents. S2 findings and probe outcomes are attributed reports, not independently re-audited implementation claims. Graph marked S2 note metadata_changed; direct full source read used.",
+  "incoming_lessons": [
+    {
+      "lesson": "Obligation-to-evidence correspondence must distinguish absent evidence, insufficient evidence and uncertainty from adequate discharge.",
+      "application": "Assess demonstrated packet/result/refresh formats for these distinctions; a populated row or passing suite alone is not proof.",
+      "limit": "S2 record-only probe does not establish code violations or universally validate a ledger safeguard."
+    },
+    {
+      "lesson": "Finding truth and remediation authority are separate.",
+      "application": "Preserve contract unrealizability, inconsistency, evidence insufficiency and unresolved attribution in experiment analysis; do not silently assign all gaps to builders.",
+      "limit": "E4 changed task, instructions and perspective; a vocabulary field alone has not been shown to fix attribution."
+    },
+    {
+      "lesson": "A terminal success record can lose a boundary-stop history.",
+      "application": "Look for retained escalation and disposition events in existing handoffs and report gaps truthfully.",
+      "limit": "No retained stop record does not prove the builder recognized and ignored a stop."
+    },
+    {
+      "lesson": "Input selection can manufacture apparent evidence gaps.",
+      "application": "Preserve supplied artifact inventory/bindings and limitations; distinguish missing supplied inputs from absent owning evidence.",
+      "limit": "Hash correctness alone cannot establish inventory completeness."
+    },
+    {
+      "lesson": "Pre-execution realizability and acceptance evidence checks prevent different losses.",
+      "application": "Report preparation, reconstruction and repair cost separately from acceptance correctness.",
+      "limit": "No general cost advantage established."
+    }
+  ],
+  "outgoing_lessons": [
+    {
+      "lesson": "Manual pilot already distinguishes packet discharge from coverage outside the packet.",
+      "source": "docs/manual-decomposition-pilot.md, mid-run measurement amendment",
+      "relevance": "A ledger over listed obligations cannot alone establish decomposition completeness; denominator and omitted-family uncertainty matter."
+    },
+    {
+      "lesson": "Fresh context handoff preserves ownership only when a collector and durable continuation are identified.",
+      "source": "handoff/START-HERE.md and coordinator-launch-c1-v1.json in manual run",
+      "relevance": "Separate unfinished handoff, execution completion and accepted result when comparing workflow arms."
+    },
+    {
+      "lesson": "Reviewer replacement after session reset requires explicit continuity provenance.",
+      "source": "slices/C1/reviewer-successor-authority-v1.json in manual run; supervisor-reported recovery",
+      "relevance": "Reconstructed same-episode continuity is not fresh independence; final C1 review evidence still pending."
+    }
+  ],
+  "follow_on_owner": "Thin coordinator final experiment report and reusable skill proposal",
+  "follow_on_reference": "/home/bline/.local/state/work-engine/manual-decomposition-s10-20261020/handoff/skill-follow-on-clarification-v1.json",
+  "sharing": "Repository note plus coordination board reference; supervisor receives bounded lessons; parallel source artifacts remain unchanged",
+  "open_questions": [
+    "Which existing packet/result/refresh records demonstrate sufficient evidence rather than assertion?",
+    "Which handoff omissions caused real reconstruction or repair?",
+    "Do final artifacts retain stop disposition and remediation authority without creating duplicate semantic owners?",
+    "Which benefits are demonstrated operationally and which need a separately authorized comparison?"
+  ]
+}

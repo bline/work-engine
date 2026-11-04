@@ -1,0 +1,25 @@
+{
+  "schema": "manual-experiment-measurement-correction-v1",
+  "source_board_sequence": 2255,
+  "previous_report_sha256": "60ad1786dc6f6b22b1cfd503b0746d81110c41edc7b02a299d2ea8a232357c10",
+  "historical_reviewed_report": "/home/bline/.local/state/work-engine/manual-decomposition-s10-20261020/experiment-result.md",
+  "corrected_report_sha256": "e9a8b6b7599b5d2b55f24cb2c19c8951687254c22bae8da166700394a0de6e76",
+  "correction": "Token counters and recorded model configuration were uncaptured, not unavailable. Full manual campaign cost remains unreconstructed; no comparative efficiency claim follows. Recorded configuration does not independently attest backend execution identity.",
+  "verified_current_run": {
+    "freeze": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/evaluation-freeze-v1.json",
+    "snapshot": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/cost-snapshot-001.json",
+    "registry": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/session-registry-v1.json",
+    "held_supervisor_Mwt": 0.1820702,
+    "held_worker_Mwt": 0.0295912,
+    "held_subtotal_Mwt": 0.2116614,
+    "observed_total_including_coordinator_Mwt": 0.9728168,
+    "limitation": "Observed-through counters; active coordinator reporting tail and future work not yet captured. Only root charged window plus named supervisor subtree. Additional actors must be explicitly included before claiming complete cost. Weighting is not dollars/quota.",
+    "freeze_erratum": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/evaluation-freeze-erratum-v1.json"
+  },
+  "source_rebind_2252": {
+    "source": "notes/s2-boundary-audit-20261020.md",
+    "sha256": "c2cc3cdaf97d605c7ece913b37661dbb5b2df08fadb56a69dee5e9336f24aed1",
+    "meaning": "Headings corrected ceiling to headroom; existing report already used headroom. Prior bindings remain historical."
+  },
+  "validation": "Both held session raw counters independently read; snapshot recomputes frozen weighting. Forwarded worker arithmetic corrected: 24142 + 46592/10 + 5*158 = 29591.2. No complete historical denominator asserted. Prior review receipt binds prior report bytes, not this factual correction."
+}
