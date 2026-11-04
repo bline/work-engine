@@ -10,7 +10,7 @@ if(signed&&live)throw Error('fixture/live conflict');
 if(signed)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
 const schema=signed?'work-engine.pi-coding-signed-fixture.v1':live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
-let session,manager,signedDeadline;
+let session,manager,signedDeadline,pressureCheckpoint,model,pressureContextRequested=false;
 let initializeResolve;
 const initialization=new Promise(resolve=>{initializeResolve=resolve;});
 const emit=value=>{
@@ -28,6 +28,11 @@ input.on('line',line=>{
   if(Buffer.byteLength(line)>131072)throw Error('input frame bound');
   const value=JSON.parse(line);
   if(signed&&value.type==='initialize'&&initializeResolve&&value.sessionId===manager?.getSessionId()&&value.fixtureAccess==='FAKE-NEVER-A-CREDENTIAL'){initializeResolve(value);initializeResolve=null;}
+  else if(value.type==='pressure_context'&&!live&&!signed&&!pressureContextRequested&&startResolve&&value.sessionId===session?.sessionId&&Object.keys(value).sort().join(',')==='sessionId,type'){
+   pressureContextRequested=true;
+   const usage=session.getContextUsage();
+   emit({type:'pressure_context',snapshot:{sessionId:session.sessionId,idle:!session.isStreaming&&!session.isCompacting&&session.pendingMessageCount===0,observedMs:Date.now(),model:{id:model.id,provider:model.provider,contextWindow:model.contextWindow},usage:usage===undefined?{availability:'undefined'}:{availability:'estimate',value:usage}}});
+  }
   else if(value.type===(live?'task_start':'fixture_start')&&startResolve&&value.sessionId===session?.sessionId){startResolve(value);startResolve=null;}
   else if(value.type==='tool_result'&&pending.has(value.id)&&(!signed||value.sessionId===manager?.getSessionId())){pending.get(value.id)(value);pending.delete(value.id);}
   else if(value.type==='provider_grant'&&grants.has(value.id)&&(!signed||(value.classification==='fake_fixture'&&value.sessionId===manager?.getSessionId()))){grants.get(value.id)(value);grants.delete(value.id);}
@@ -51,7 +56,7 @@ try {
  const agentDir=live?'/config':'/tmp/pi-empty';
  const resourceLoader=new DefaultResourceLoader({cwd:'/workspace',agentDir,settingsManager,noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true});
  await resourceLoader.reload();
- let modelRuntime,model,rawTerminalEvidence;
+ let modelRuntime,rawTerminalEvidence;
  if(live){
   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
   const nativeAccess=await import('/receiver/pi-native-access.mjs');
@@ -122,7 +127,11 @@ try {
   };
   deadline=setTimeout(()=>{process.exitCode=2;session.abort();input.close();process.stdin.destroy();},Math.max(1,config.deadline*1000-Date.now()));
  }else{
-  session.agent.streamFunction=async()=>{
+  session.agent.streamFunction=async(requestModel,context)=>{
+   if(pressureCheckpoint){
+    emit({type:'pressure_request',classification:'actual SDK request; fake provider stream',generation:pressureCheckpoint.generation,input_digest:pressureCheckpoint.input_digest,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},context});
+    pressureCheckpoint=null;
+   }
    const stream=createAssistantMessageEventStream();const toolTurn=turn++===0;
    const id=turn;
    if(signed){
@@ -142,6 +151,13 @@ try {
  }
  emit({type:'ready',tools:session.getActiveToolNames(),...(live?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});
  const started=await start;command=started.command;
+ if(started.pressureCheckpoint){
+  const p=started.pressureCheckpoint;
+  if(live||signed||!pressureContextRequested||p.schema!=='work-engine.pi-pressure-fixture.v2'||p.session_id!==session.sessionId||typeof p.generation!=='string'||typeof p.pressure!=='string'||Buffer.byteLength(p.pressure)>24000)throw Error('pressure checkpoint rejected');
+  pressureCheckpoint=p;
+  await session.sendCustomMessage({customType:'work-engine.pressure-fixture.v2',content:[{type:'text',text:p.pressure}],display:false,details:{input_digest:p.input_digest,generation:p.generation,authority:'observation_only'}},{triggerTurn:false});
+  emit({type:'pressure_inserted',input_digest:p.input_digest,generation:p.generation,messages:session.messages});
+ }
  await session.prompt(live?config.task:'Exercise the fixed provider-disabled workspace tool fixture.',{expandPromptTemplates:false});
  if(session.isStreaming||session.isCompacting||session.pendingMessageCount!==0)throw Error('session not idle');
  const history={schema,...(signed?{classification:'fake provider messages/usage; actual SDK manager and catalog configuration',nativeCatalog:{provider:model.provider,model:model.id}}:{}),provider:signed?'fake_fixture':live?'openai-codex':'disabled_fixture',model:signed?'fake-pi-model':live?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader()};
