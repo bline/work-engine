@@ -1,13 +1,17 @@
 // TEST REALIZATION ONLY. Never imported by the production receiver or binary.
 // The synthetic SDK tree adds one import of this module to its entry point.
 import {readFileSync} from 'node:fs';
+import {zstdDecompressSync} from 'node:zlib';
 export function fixedSyntheticFetch(command) {
  let request=0;
  return async(url,init)=>{
   if(String(url)!=='https://chatgpt.com/backend-api/codex/responses'||init?.method!=='POST'||init.redirect!=='error')throw Error('unexpected synthetic provider request path');
   const headers=new Headers(init.headers);
   if(headers.get('authorization')!=='Bearer '+syntheticToken())throw Error('only synthetic access admitted');
-  const body=JSON.parse(init.body);
+  const encoding=headers.get('content-encoding');
+  if(encoding&&encoding!=='zstd')throw Error('unexpected synthetic request encoding');
+  const raw=encoding==='zstd'?zstdDecompressSync(init.body,{maxOutputLength:131072}):init.body;
+  const body=JSON.parse(typeof raw==='string'?raw:Buffer.from(raw).toString('utf8'));
   if(body.model!=='gpt-6-luna'||body.stream!==true||++request>2)throw Error('unexpected synthetic provider request');
   const item=request===1?{type:'function_call',id:'fc_synthetic',call_id:'synthetic-tool-1',name:'workspace_exec',arguments:JSON.stringify({command}),status:'completed'}:
    {type:'message',id:'msg_synthetic',role:'assistant',phase:'final_answer',status:'completed',content:[{type:'output_text',text:'Synthetic subscription SSE fixture completed.',annotations:[]}]};

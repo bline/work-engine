@@ -96,8 +96,9 @@ class ActualSubscription(unittest.TestCase):
         self.addCleanup(native.unlink, missing_ok=True)
         task=write(root/'task.json','Perform the bounded disposable parser correction and validate the original tests.')
         catalog=artifact(runtime_root/'node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json')
-        job = dict(schema='work-engine.pi-docker-custody.v1',job_id='signed-pi-subscription-synthetic',state_dir=str(state),
-            authority=write(root/'authority.json',dict(schema='work-engine.pi-coding-runtime-admission.v1',job_id='signed-pi-subscription-synthetic',binary_sha256=sha(helper),model='gpt-6-luna',native_auth_source=str(native),pi_config_manifest_sha256=config_manifest['sha256'],task_sha256=task['sha256'],catalog_sha256=catalog['sha256'],max_requests=2,budget_microusd=1000000,allow_native_access_projection=True,allow_provider=True)),
+        job_id='signed-pi-subscription-synthetic-'+root.name
+        job = dict(schema='work-engine.pi-docker-custody.v1',job_id=job_id,state_dir=str(state),
+            authority=write(root/'authority.json',dict(schema='work-engine.pi-coding-runtime-admission.v1',job_id=job_id,binary_sha256=sha(helper),model='gpt-6-luna',native_auth_source=str(native),pi_config_manifest_sha256=config_manifest['sha256'],task_sha256=task['sha256'],catalog_sha256=catalog['sha256'],max_requests=2,budget_microusd=1000000,allow_native_access_projection=True,allow_provider=True)),
             packet=write(root/'packet.json',dict(classification='synthetic subscription access/SSE/signing/identity; actual SDK and Docker')),
             docker=artifact('/usr/bin/docker'),image='node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da',
             runtime=dict(root=str(runtime_root),manifest=artifact(root/'runtime.json')),

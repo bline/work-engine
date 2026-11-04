@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {zstdCompressSync} from 'node:zlib';
 import assert from 'node:assert/strict';
 import {fixedSyntheticFetch,syntheticToken} from './fixtures/pi-subscription-preload.mjs';
 const url='https://chatgpt.com/backend-api/codex/responses';
@@ -16,4 +17,10 @@ test('SSE raw evidence is explicit and bounded; no SDK normalized zero stands in
   assert.equal(raw.response.output[0].type,n===0?'function_call':'message');
  }
  await assert.rejects(fetch(url,init()));
+});
+
+test('synthetic endpoint decodes actual SDK zstd request without changing production transport',async()=>{
+ const request=init();request.body=zstdCompressSync(request.body);request.headers['content-encoding']='zstd';
+ const response=await fixedSyntheticFetch('fixture')(url,request);assert.equal(response.status,200);
+ const bad=init();bad.headers['content-encoding']='gzip';await assert.rejects(fixedSyntheticFetch('fixture')(url,bad));
 });
