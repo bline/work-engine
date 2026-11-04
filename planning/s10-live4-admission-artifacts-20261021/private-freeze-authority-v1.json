@@ -1,0 +1,7 @@
+{
+  "schema": "preparation-private-freeze-authority-v1",
+  "basis": "User authorized concrete preregistration package preparation; protocol section5 requires committed obligations before dispatch. Private reversible checkpoint mechanics are necessary preparation, not a user-visible commit or publication.",
+  "clarifies": "preparation-authority-v1.json exclusion commit/push means no user-visible branch commit or push. Permit slice-checkpoint candidate-only immutable commit under refs/work-engine/checkpoints with temporary index; no accepted lifecycle transition.",
+  "scope": "Only exact authored trial packet/obligations/sealed-key/role/budget manifests, with explicit attribution and static integrity validation. No branch/index/source changes, no tests or execution.",
+  "limitations": "Checkpoint does not authorize launch or prove semantic adequacy; owner authorization still pending."
+}

@@ -1,0 +1,123 @@
+{
+  "schema": "s10-live4-local-tool-mode-diagnosis-v1",
+  "at": "2026-10-21T14:03:15.626806+00:00",
+  "scope": "isolated fake custom Responses endpoint, fake auth, no external network or model response, cache copied only into ephemeral private state",
+  "probe_source_sha256": "90e3e5efac614cfd5599fcde49de0844d360329aa6d1c6f2a5bcb24eb2d530e0",
+  "models_cache_sha256": "4cf80c589c204f9e64277a6e246e01b0c6ff907e5084de03e7120601f35b3759",
+  "model_cache_tool_modes": {
+    "gpt-6-astra": "code_mode_only",
+    "gpt-6-sol": "code_mode_only"
+  },
+  "variants": [
+    {
+      "model": "gpt-6-sol",
+      "code_mode_only_flag_enabled": false,
+      "unified_exec_not_disabled": false,
+      "outer_exit": 0,
+      "request_count": 1,
+      "request_sha256": "e5cb41785d5f1c178ee672539701b780149d559d5b976758c1892cad01c9297b",
+      "advertised_tools": [],
+      "mcp_handshake_methods": [
+        "protocol:initialize",
+        "protocol:tools/list"
+      ],
+      "synthetic_session_ids": [
+        "01a15ec5-edb8-7ea1-bd67-7b487af951a3"
+      ],
+      "temporary_rollout_paths": [
+        "/probe/sessions/2026/10/21/rollout-2026-10-21T14-03-12-01a15ec5-edb8-7ea1-bd67-7b487af951a3.jsonl"
+      ],
+      "codex_exit": 1
+    },
+    {
+      "model": "gpt-6-sol",
+      "code_mode_only_flag_enabled": true,
+      "unified_exec_not_disabled": true,
+      "outer_exit": 0,
+      "request_count": 1,
+      "request_sha256": "16f4f18d63f261858b6da8b866a267fd1858c7ad6ec903fcf6d05cbe7217f17e",
+      "advertised_tools": [],
+      "mcp_handshake_methods": [
+        "protocol:initialize",
+        "protocol:tools/list"
+      ],
+      "synthetic_session_ids": [
+        "01a15ec5-f087-7120-acd7-1d5482c9d554"
+      ],
+      "temporary_rollout_paths": [
+        "/probe/sessions/2026/10/21/rollout-2026-10-21T14-03-12-01a15ec5-f087-7120-acd7-1d5482c9d554.jsonl"
+      ],
+      "codex_exit": 1
+    },
+    {
+      "model": "gpt-6-astra",
+      "code_mode_only_flag_enabled": false,
+      "unified_exec_not_disabled": false,
+      "outer_exit": 0,
+      "request_count": 1,
+      "request_sha256": "b2d333250b89cd1af8f20a7700bf5ab1a62a22cf7d832ce8fa3bc73e564e8c53",
+      "advertised_tools": [],
+      "mcp_handshake_methods": [
+        "protocol:initialize",
+        "protocol:tools/list"
+      ],
+      "synthetic_session_ids": [
+        "01a15ec5-f356-7d60-917b-d3ab0802b143"
+      ],
+      "temporary_rollout_paths": [
+        "/probe/sessions/2026/10/21/rollout-2026-10-21T14-03-13-01a15ec5-f356-7d60-917b-d3ab0802b143.jsonl"
+      ],
+      "codex_exit": 1
+    },
+    {
+      "model": "gpt-6-astra",
+      "code_mode_only_flag_enabled": true,
+      "unified_exec_not_disabled": true,
+      "outer_exit": 0,
+      "request_count": 1,
+      "request_sha256": "26c337de9321b5fc6afab716c566f5b2209dc8c35556de4174f216562d8d6371",
+      "advertised_tools": [],
+      "mcp_handshake_methods": [
+        "protocol:initialize",
+        "protocol:tools/list"
+      ],
+      "synthetic_session_ids": [
+        "01a15ec5-f623-7e23-a4e8-b26c0b9705b4"
+      ],
+      "temporary_rollout_paths": [
+        "/probe/sessions/2026/10/21/rollout-2026-10-21T14-03-14-01a15ec5-f623-7e23-a4e8-b26c0b9705b4.jsonl"
+      ],
+      "codex_exit": 1
+    },
+    {
+      "model": "gpt-5.4",
+      "code_mode_only_flag_enabled": false,
+      "unified_exec_not_disabled": false,
+      "outer_exit": 0,
+      "request_count": 1,
+      "request_sha256": "ea66797580a812791b974817697fc36d5d130276ea8e8c47f1619bea3b78ad23",
+      "advertised_tools": [
+        "list_mcp_resources",
+        "list_mcp_resource_templates",
+        "read_mcp_resource",
+        "request_user_input",
+        "mcp__corpus",
+        "get_goal",
+        "create_goal",
+        "update_goal"
+      ],
+      "mcp_handshake_methods": [
+        "protocol:initialize",
+        "protocol:tools/list"
+      ],
+      "synthetic_session_ids": [
+        "01a15ec5-f8ec-7ec0-bf5d-93a126637311"
+      ],
+      "temporary_rollout_paths": [
+        "/probe/sessions/2026/10/21/rollout-2026-10-21T14-03-15-01a15ec5-f8ec-7ec0-bf5d-93a126637311.jsonl"
+      ],
+      "codex_exit": 1
+    }
+  ],
+  "interpretation": "MCP initialize/tools/list succeeded in all variants. gpt-6-sol/astra request tool omission is not a JSON decoder or MCP startup failure; exact standalone CLI model/tool-mode cause remains unresolved. gpt-5.4 same route advertises MCP plus extra tools, only a possible reviewed alternative. No matched bounded reader established. Temporary fake rollouts removed; no actual provider/model call."
+}

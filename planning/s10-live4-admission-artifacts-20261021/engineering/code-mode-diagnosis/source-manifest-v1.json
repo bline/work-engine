@@ -1,0 +1,201 @@
+{
+  "captured_at": "2026-10-21T14:15:17.517018+00:00",
+  "source_checkout_commit": "039eb58a0ba6647fb8f29fdd35341f3f1b153728",
+  "source_checkout_commit_date": "2026-08-26T09:23:41Z",
+  "source_checkout_equals_installed_binary": "not_established",
+  "installed_cli_version": "0.163.0",
+  "files": [
+    {
+      "path": "/home/bline/code/work-engine/rust/crates/lifecycle-service/src/operations/mod.rs",
+      "bytes": 46017,
+      "sha256": "d6788cd51e5703c35c11664415fdb1125973a612c6f59f98842574ec99715014",
+      "coverage": "no_recorded_issue/content_verified via parent project; direct selected-range reads"
+    },
+    {
+      "path": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/profile-probe-2026-10-07.json",
+      "bytes": 3450,
+      "sha256": "9919ffaec2d64ef7d7e44a6199a808772b6717d133c32144298dfd389b39598c",
+      "coverage": "no_recorded_issue/content_verified via parent project; direct selected-range reads"
+    },
+    {
+      "path": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/NATIVE_VERTICAL.md",
+      "bytes": 12626,
+      "sha256": "663aabe76a64e5fb77051bcde6009c8abde10d4f725347296bb74e6cd1390119",
+      "coverage": "no_recorded_issue/content_verified via parent project; direct selected-range reads"
+    },
+    {
+      "path": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/src/codex.rs",
+      "bytes": 68258,
+      "sha256": "80d452f7d81737554782183dcff40be04bd3dcbc3763d993fadb3e656f98e9ee",
+      "coverage": "no_recorded_issue/content_verified via parent project; direct selected-range reads"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/client.rs",
+      "bytes": 102128,
+      "sha256": "eb6e5d53a9638f554e6b824bc78e4fc258f2a234d631e5d54dd5f0564884ffb8",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/tools/mod.rs",
+      "bytes": 4895,
+      "sha256": "ec00b8b25b2d36f75aa36fdd2fc90b243ac03e785fc1d584c0f72990f53ee05d",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/tools/code_mode/mod.rs",
+      "bytes": 17945,
+      "sha256": "03c5965529ee2851b16edce3282af46af1c4dd5007a0201c142ee7f90d05850b",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/tools/code_mode/execute_handler.rs",
+      "bytes": 7329,
+      "sha256": "d82a550252f357ae8d02d8d78fdc0071cbe5418d563d4002b856ec239e550d6f",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/code-mode/src/remote_session.rs",
+      "bytes": 19244,
+      "sha256": "30f866ccc860e3f0185da4a1e4e040b0042e06a6fc31041e4227721cbb29e3ce",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/code-mode/src/remote_session/connection.rs",
+      "bytes": 20044,
+      "sha256": "abda69cebf2e871ba21744aed1a6959d154a4ff3e4bcfa8f6acfd04bce9512d3",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/install-context/src/lib.rs",
+      "bytes": 31661,
+      "sha256": "c69b32ccf726bfdd8f18acdad99e4c5a4cdc844049c4750775d4178ec0f41ddf",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/thread_manager.rs",
+      "bytes": 89990,
+      "sha256": "8413832bd97d1e216f4ba0444d3cbb9cde3cb922cb149c40cdf653c832266336",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/tests/common/responses.rs",
+      "bytes": 59259,
+      "sha256": "7616935a3f5244c3640b416133ca56d8fe2614c29500c850f04db7312807fc91",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/protocol/src/models.rs",
+      "bytes": 152048,
+      "sha256": "d884f03dad7e9c57f622f0a3d576ebe292b0beb68c3b6a71d04bd69a415936f6",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/tools/src/code_mode.rs",
+      "bytes": 8320,
+      "sha256": "f554dfbaabc4fcbd367f325f3ad677c564cda794d3a0a3cae1b193542db0b08e",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/tools/src/tool_spec.rs",
+      "bytes": 6750,
+      "sha256": "af8b5286fb6d2eb3574c484b25076f515bca2d4350ecb5059e436966ecdd519d",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/.codex/models_cache.json",
+      "bytes": 398806,
+      "sha256": "924a6ed520f9c57218aa0127c12b1a3aa2d454287b6881642615691d6da56cc6",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/bin/codex.js",
+      "bytes": 8790,
+      "sha256": "61b0194f3bb6534439c8d26a3ed57d0805f84b884588b761795323eeb92fcf70",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/codex-package.json",
+      "bytes": 205,
+      "sha256": "5fa8533bde21972564cbb2c665c99c6d6d0e92b625fa6f4fdf1354ac5fb71a78",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "bytes": 296865480,
+      "sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex-code-mode-host",
+      "bytes": 74277776,
+      "sha256": "8724d73ec190536233ab4628d24a071bfbcf27e5124f08fe35129f26fe48b916",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/fake_endpoint_probe.py",
+      "bytes": 6232,
+      "sha256": "88dd707e90cb534d6e2d1a5c387b2017acb23a04745aa4f34a41fb37dc57d425",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/corpus_mcp.py",
+      "bytes": 4782,
+      "sha256": "c1e92619f2505173870f55b3119be64c8d156ccf9e6f740336caed87c950b00c",
+      "coverage": "outside parent graph; direct selected-range reads (binary hash/help only for binaries)"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/tools/spec_plan.rs",
+      "bytes": 54003,
+      "sha256": "6675de0b7f166e3ad6f2f23e79c7ec909ec73f93697b7b36a723d98ce5cf5b12",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/tools/handlers/apply_patch.rs",
+      "bytes": 21966,
+      "sha256": "1e3f977ec79e1ed722cda713f97076ff1f856f35f8c0b0848d508cfaaded0d37",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/apply_patch.rs",
+      "bytes": 3467,
+      "sha256": "1341252f7b902ccda36acfadd53a995df1c26d306a8c840c3abab9f000739810",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/safety.rs",
+      "bytes": 6889,
+      "sha256": "f591ae74ef9ee3c50aff85a9e20eaac70ba75845efd7a0dc93fb9e51552363d9",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/apply-patch/src/invocation.rs",
+      "bytes": 35921,
+      "sha256": "ab6ce54396919236a2b68a5dc33f670663c67c12fa8def3b80588933d297047a",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/exec/src/lib.rs",
+      "bytes": 78584,
+      "sha256": "242ca7364d8c6ea5d87e0c045346f6549ae2d8bb4f3926e1f1d0c69573136029",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/exec/src/cli.rs",
+      "bytes": 9810,
+      "sha256": "ba4767bdf5d83376830864b60a8a5e350e5e189fbc6e97a834d4a7f36240e822",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/config.schema.json",
+      "bytes": 191689,
+      "sha256": "fadaa5d86aa77c6e91785d6c0900a891c033579a418f479fef7617f3bd71947a",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    },
+    {
+      "path": "/home/bline/code/codex/codex-rs/core/src/config/mod.rs",
+      "bytes": 189872,
+      "sha256": "0ecbe37e84b25071525b0b43dcc898b1cc22a3935bcce3d533f5a34caeb6fb11",
+      "coverage": "outside parent graph; direct selected-range reads; targeted literal search for config absence"
+    }
+  ]
+}

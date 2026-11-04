@@ -1,0 +1,244 @@
+{
+  "schema": "manual-orchestration-skill-refinement-manifest-v2",
+  "created_utc": "2026-10-21T11:58:49.301209+00:00",
+  "supersedes_for_current_use": {
+    "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/manifest-v1.json",
+    "sha256": "fe7c15e16d6bb2ec7b5cfd2b7a186759713047d7629c07556edf51083420e475",
+    "bytes": 8583
+  },
+  "reviewed_subject_preserved": {
+    "note_historical_copy": {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/note-reviewed-v1.md",
+      "sha256": "bf344af58fb921d30f65e32496680a22881a5b1279ac5adab547ac5c7bf911e1",
+      "bytes": 8075
+    },
+    "review": {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-v1.md",
+      "sha256": "8df3f79452c689db0880d9ee45b35e57f1da0bcdcc884808920c1e84cc9f004f",
+      "bytes": 7942
+    },
+    "receipt": {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-receipt-v1.json",
+      "sha256": "031cc7cb41e4ffc9d3f9f3c3f536d800aedabd2321b881ea358a42152a6ddc62",
+      "bytes": 4377
+    }
+  },
+  "remediation": {
+    "AIR-MANUAL-002": "Retained scoped advisory review described without independence claim.",
+    "AIR-MANUAL-003": "Coordinator reference loading distinguished from cost-rule conditional applicability.",
+    "integration_status": "Separate user authority and supervisor-complete shared integration acknowledged; root final disposition and full S10 distinct."
+  },
+  "sources": [
+    {
+      "path": "/home/bline/code/work-engine/AGENTS.md",
+      "sha256": "9af3381a92332c5b7fdcd953851d695cdd4b335f93f2840f5410f3f7eb33e561",
+      "bytes": 4058
+    },
+    {
+      "path": "/home/bline/code/work-engine/DESIGN.md",
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+      "bytes": 41500
+    },
+    {
+      "path": "/home/bline/code/work-engine/PHILOSOPHY.md",
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307",
+      "bytes": 34973
+    },
+    {
+      "path": "/home/bline/code/work-engine/notes/manual-orchestration-operational-test-20261021.md",
+      "sha256": "a0615d3e247103375467cd147969368915455f920a57c05b3a194323cd2216e7",
+      "bytes": 3365
+    },
+    {
+      "path": "/home/bline/code/work-engine/skills/agent-instruction-review/SKILL.md",
+      "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+      "bytes": 4273
+    },
+    {
+      "path": "/home/bline/.codex/skills/.system/skill-creator/SKILL.md",
+      "sha256": "6656e54755638e8efcf275a472b9672eaa8a9a1b9e59dc210e275b03b59e1e66",
+      "bytes": 15311
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/manual-decomposition-s10-20261020/synthesis-output-manifest-20261021-v3.json",
+      "sha256": "a964119c11cf2bb9dff2c7335f766f55ec6c1eddac894acc787e3a946999ef94",
+      "bytes": 2955
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate/SKILL.md",
+      "sha256": "293a7aa61d6dd7b1993176e3a9621d359fd46de99147afe29bb7006dc24bd73f",
+      "bytes": 2424
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate/references/coordinator.md",
+      "sha256": "d565313baa80926dc3e3664ee0df5fe8224d54aa54994c2338f70a9a4e0220c9",
+      "bytes": 2416
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate/references/demonstrated-forms.md",
+      "sha256": "f124c56bdecce2f5681cdbb4474bef70f96c7ef8a81bc28582e17364ef575efa",
+      "bytes": 3619
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate/references/supervisor.md",
+      "sha256": "952fde04639a6860c9ff5408c549016aa1e2c017aa8f9ce1a5a518609bb6735a",
+      "bytes": 2162
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate/references/worker.md",
+      "sha256": "dc2d5009ee4232d38ffbfa52c19fb8e947bb9461fa77122fdbbce58cd4021eb4",
+      "bytes": 1390
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/coordinator-adjudication-v1.json",
+      "sha256": "dd7a8ed7ad0bbe48153adc33b84718782f3a6ae8c87135e9533d6b82214feb7c",
+      "bytes": 4816
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/session-registry-v1.json",
+      "sha256": "41860e05b6d09f20943a684ac23739e6e19e2a97d43067302c37241b013c760a",
+      "bytes": 3782
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/evaluation-freeze-v1.json",
+      "sha256": "f679324a597d931b7fd47d129f832501adc2002701536038489d4e367c180722",
+      "bytes": 6230
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/evaluation-freeze-erratum-v1.json",
+      "sha256": "83953497c42b7a262020f8ba45227bb667d4d909204053c9132db6e0716d5d41",
+      "bytes": 504
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement-cost-baseline-v1.json",
+      "sha256": "b7d949038f2cbf07f413d64fb31142db61f0d4b85655242114f385dad6bf4147",
+      "bytes": 1972
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/admission-v1.json",
+      "sha256": "8b09f645f5bb89984a737beeddcc83dc190bd68af09fabfcab3d71214a84eb2d",
+      "bytes": 5605
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/supervisor-result-v1.json",
+      "sha256": "08718835cc1dc15c70a667f416d3e058a4b8ebcc74f50aa4d5cbf911daa5c088",
+      "bytes": 7607
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/supervisor-handoff-v1.md",
+      "sha256": "849b486e58c29ea159d7253c6ba15f5db91fcac90743dbb36b91fab2e3bee181",
+      "bytes": 2838
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/worker/handoff-v1.md",
+      "sha256": "897be8af57c7b531c50c50dcb10dd83e14cc42edad1bf7d506015bb66fda89e7",
+      "bytes": 4076
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/worker/composition-v1.json",
+      "sha256": "7aba8548ac30013718fde3bbd982f4df10fc79a382f2aa035a437d560547eae2",
+      "bytes": 19627
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-v1.md",
+      "sha256": "8df3f79452c689db0880d9ee45b35e57f1da0bcdcc884808920c1e84cc9f004f",
+      "bytes": 7942
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-receipt-v1.json",
+      "sha256": "031cc7cb41e4ffc9d3f9f3c3f536d800aedabd2321b881ea358a42152a6ddc62",
+      "bytes": 4377
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/note-reviewed-v1.md",
+      "sha256": "bf344af58fb921d30f65e32496680a22881a5b1279ac5adab547ac5c7bf911e1",
+      "bytes": 8075
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/integration-authority-v1.json",
+      "sha256": "4c74410f91cd35374a702a117f4cfc8e402fed86a9e95e5f16bffbd004ce8a44",
+      "bytes": 2592
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/integration/supervisor-result-v1.json",
+      "sha256": "6705c75f7ef3213bc3fd1e94b81c699a70fa17cdc691a9a2a248875fa6e92f5f",
+      "bytes": 5505
+    }
+  ],
+  "outputs": [
+    {
+      "path": "/home/bline/code/work-engine/notes/manual-orchestration-skill-refinement-20261021.md",
+      "sha256": "09f6f383a716f91a1be16b708ffd0acbbb7e6ecbd1ac4577e1f4db3b51fb7431",
+      "bytes": 8611
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/SKILL.md",
+      "sha256": "293a7aa61d6dd7b1993176e3a9621d359fd46de99147afe29bb7006dc24bd73f",
+      "bytes": 2424
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/coordinator.md",
+      "sha256": "e4ee6d910c230c56652eeafeacea29ea266cfe78f02edb38efde10d7bf7e2510",
+      "bytes": 3310
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/demonstrated-forms.md",
+      "sha256": "f124c56bdecce2f5681cdbb4474bef70f96c7ef8a81bc28582e17364ef575efa",
+      "bytes": 3619
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/supervisor.md",
+      "sha256": "dc11eb741185aac6bc4da04d9fcb6c80cd7d986dedbcf3b1d949663d3f657501",
+      "bytes": 2747
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/worker.md",
+      "sha256": "dc2d5009ee4232d38ffbfa52c19fb8e947bb9461fa77122fdbbce58cd4021eb4",
+      "bytes": 1390
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/author-cost-observed-v1.json",
+      "sha256": "99f0ed60dbde08c84b82aac58ee43b2cb597825a52dda23b1b3691af9681a0d5",
+      "bytes": 1744
+    }
+  ],
+  "unchanged_prior_outputs": [
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/SKILL.md",
+      "sha256": "293a7aa61d6dd7b1993176e3a9621d359fd46de99147afe29bb7006dc24bd73f",
+      "bytes": 2424
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/coordinator.md",
+      "sha256": "e4ee6d910c230c56652eeafeacea29ea266cfe78f02edb38efde10d7bf7e2510",
+      "bytes": 3310
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/demonstrated-forms.md",
+      "sha256": "f124c56bdecce2f5681cdbb4474bef70f96c7ef8a81bc28582e17364ef575efa",
+      "bytes": 3619
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/supervisor.md",
+      "sha256": "dc11eb741185aac6bc4da04d9fcb6c80cd7d986dedbcf3b1d949663d3f657501",
+      "bytes": 2747
+    },
+    {
+      "path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/worker.md",
+      "sha256": "dc2d5009ee4232d38ffbfa52c19fb8e947bb9461fa77122fdbbce58cd4021eb4",
+      "bytes": 1390
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/author-cost-observed-v1.json",
+      "sha256": "99f0ed60dbde08c84b82aac58ee43b2cb597825a52dda23b1b3691af9681a0d5",
+      "bytes": 1744
+    }
+  ],
+  "validation": {
+    "v2_skill_quick_validate": "passed",
+    "git_diff_check": "passed",
+    "link_count": 36,
+    "missing_links": []
+  },
+  "limits": "Single operational preparation run; no comparison or omission-recall claim. V1 candidate and v2 role text unchanged."
+}

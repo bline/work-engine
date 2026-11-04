@@ -1,0 +1,36 @@
+{
+  "schema": "s10-live4-admission-reviewer-eligibility-v1",
+  "session_meta_id": "01a15ea5-c4bd-75d1-bb57-782b3b5e18a8",
+  "agent_path": "/root/live4_admission_reviewer",
+  "rollout": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-28-04-01a15ea5-c4bd-75d1-bb57-782b3b5e18a8.jsonl",
+  "observed_turn_context": {
+    "model": "gpt-6-astra",
+    "effort": "high"
+  },
+  "fresh_entry": "parent task supplied; no author reasoning transcript inherited",
+  "authored_packets_obligations_key": false,
+  "read_key": true,
+  "assessment_arms_eligible": false,
+  "independent_adjudicator_eligible": "yes under frozen protocol section 6, conditional on unchanged future authorship/exposure rules",
+  "capability_limit": "Role is instructed read-only for subject, but ambient tool grant includes shell/filesystem writes; no claim of enforced read-only capability. Own review output only plus required coordination board claim/post.",
+  "exposures": [
+    "doctrine and nonnormative philosophy",
+    "required shared board with historical summaries",
+    "public scope/obligations and accepted contract excerpts",
+    "engineering/admission packets and static runner/extractor",
+    "restricted semantic key",
+    "restricted subject protocol",
+    "role exposure register and session metadata only for identities"
+  ],
+  "not_observed": [
+    "new execution outputs",
+    "correspondence map",
+    "assessment outputs"
+  ],
+  "mutations": [
+    "admission-review output",
+    "required coordination board claim/post"
+  ],
+  "no_execution": true,
+  "no_subagents": true
+}

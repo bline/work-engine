@@ -1,0 +1,23 @@
+{
+  "schema": "s10-live4-synthetic-boundary-v1",
+  "at": 1792591478.9515264,
+  "scope": "no secret, no provider, no model, synthetic input only",
+  "reader_source_sha256": "c1e92619f2505173870f55b3119be64c8d156ccf9e6f740336caed87c950b00c",
+  "reader_namespace_exit": 0,
+  "reader_response_sha256": "00175eff5b224e65a5f7826e36fec28a9ba6156cf641df3a96fcbb96a39a435d",
+  "reader_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "audit_sha256": "a613e1c2fa2b59cdbb977cb5103f8d2bb1d4761211c05f4b40a897954aacfb6c",
+  "tools": [
+    "list_artifacts",
+    "read_artifact"
+  ],
+  "outside_auth_repo_proc_unavailable": true,
+  "external_connect_errno": 101,
+  "unknown_path_denied": true,
+  "allowed_text_read_exact": true,
+  "mcp_resources_empty": true,
+  "mcp_resource_templates_empty": true,
+  "mcp_resource_read_denied": true,
+  "unix_socket_bridge": true,
+  "limits": "Does not prove effective Codex advertised tools, real credential boundary or live assessment."
+}

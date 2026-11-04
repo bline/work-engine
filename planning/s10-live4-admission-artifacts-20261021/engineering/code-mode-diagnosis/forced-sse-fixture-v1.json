@@ -1,0 +1,46 @@
+{
+  "scope": "Synthetic fixture; no model or provider call. prompt.md must contain synthetic bytes hello.",
+  "frames": [
+    {
+      "type": "response.created",
+      "response": {
+        "id": "synthetic-1"
+      }
+    },
+    {
+      "type": "response.output_item.done",
+      "item": {
+        "type": "custom_tool_call",
+        "call_id": "code-mode-probe-1",
+        "namespace": "functions",
+        "name": "exec",
+        "input": "text(ALL_TOOLS.map(t => t.name)); text(await tools.mcp__corpus__list_artifacts({})); text(await tools.mcp__corpus__read_artifact({path: \"prompt.md\", offset: 0, length: 5}));"
+      }
+    },
+    {
+      "type": "response.completed",
+      "response": {
+        "id": "synthetic-1",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "input_tokens_details": null,
+          "output_tokens_details": null
+        }
+      }
+    }
+  ],
+  "expected_followup_item": {
+    "type": "custom_tool_call_output",
+    "call_id": "code-mode-probe-1"
+  },
+  "assertions": [
+    "Capture complete ALL_TOOLS names from actual enabled nested registry.",
+    "MCP audit list_artifacts then read_artifact with exact admitted name/range.",
+    "Returned UTF-8 bytes hello and file hash match synthetic input.",
+    "Preserve installed binary and host digests plus effective feature configuration.",
+    "Host disabled is a negative control, not a supported modern-model assessment route."
+  ],
+  "not_run_by_this_agent": true
+}

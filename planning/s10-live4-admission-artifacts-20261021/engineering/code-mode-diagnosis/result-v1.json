@@ -1,0 +1,12 @@
+{
+  "schema": "code-mode-diagnosis-v1",
+  "session_id": "01a15ec9-e76f-7602-a618-9ea9ac9c4be9",
+  "status": "completed_bounded_read_only_diagnosis",
+  "conclusion": "Empty top-level tools not a blocker; parent synthetic gpt-6-sol MCP bridge succeeds. Standalone exec exposes apply_patch and cannot establish MCP-exclusive credential isolation with visible auth files. Existing app-server environments:[] is concrete candidate, requiring exact synthetic qualification.",
+  "report": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/diagnosis-v1.md",
+  "report_sha256": "91a96ce6d464d7cddcc4d39110b731314e0c9cc61ede4dc07b26519c2681f24d",
+  "source_manifest_sha256": "6bb45f036c984e3a6e62c77c475547bdb16bed31d71bb6aec1c00022ce02f252",
+  "owned_processes": [],
+  "real_model_provider_calls": 0,
+  "source_edits": 0
+}

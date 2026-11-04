@@ -1,0 +1,4511 @@
+{
+  "schema": "s10-live4-isolated-source-v1",
+  "at": "2026-10-21T13:19:50.474563+00:00",
+  "baseline_commit": "e3c7c9a3bd429b6d5b702a50de9c9a751c126562",
+  "source_root": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/source-snapshot",
+  "tracked_count": 620,
+  "untracked_count": 20,
+  "file_count": 642,
+  "status_sha256": "0c5422bb912be72ffaf5ac2bd65c3eb1b0ebdcfe3044d97d84bbccd1e6ca27f3",
+  "status_bytes": 6065,
+  "index_sha256": "82b5381722b7ba2e3e04fc9c2115110ebf64ebe9d29a3454bf7be73b724d1bda",
+  "index_bytes": 397035,
+  "entries": [
+    {
+      "path": "docs/rust-context-lifecycle-s8-implementation-plan.md",
+      "origin": "historical_selected_manifest_untracked_by_rust_snapshot",
+      "kind": "file",
+      "size": 39637,
+      "sha256": "69db816691f619b756a2752dc607fb70ec38b3918c5039b3519fcc1cca657513"
+    },
+    {
+      "path": "docs/rust-retained-task-host-contract.md",
+      "origin": "historical_selected_manifest_untracked_by_rust_snapshot",
+      "kind": "file",
+      "size": 19801,
+      "sha256": "f2fd68ce9b97307485883b5e8ecc7a67c9b1e89914d944dceaa8e66ebc358576"
+    },
+    {
+      "path": "rust/.gitignore",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9,
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "rust/Cargo.lock",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 65477,
+      "sha256": "11ccdf8ca4ffd9626eeb9e54e89ec0a3fe301dcaf962ec4405ee8a851b2a532f"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1786,
+      "sha256": "9dbba8b1f69f7070fd83f38d7bc0ed59578853e5f08a3425ca17c14b317a3ef9"
+    },
+    {
+      "path": "rust/FOUNDATION_GATE.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11053,
+      "sha256": "c00ab7e47f02e5389dbd4504e5970f29e1f2c07baf0d258ded589c891b48ef65"
+    },
+    {
+      "path": "rust/crates/claim-evidence/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 413,
+      "sha256": "0faece74cafbde0ceb2f3bed0e4d2a22565ef1bcfc9281ff79f48b9b61d5ca06"
+    },
+    {
+      "path": "rust/crates/claim-evidence/examples/generate_schemas.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 492,
+      "sha256": "4df5997c758fd131c73045bd96f779ac648d84041aee57ee8d18687d7543cd74"
+    },
+    {
+      "path": "rust/crates/claim-evidence/migrations/0002_private_production_path.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1594,
+      "sha256": "313f1d3ebfb88883578989bc46b81924a83bab3cfbc72bf1110a13984a69c374"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/bootstrap-config-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1867,
+      "sha256": "42d765aafdc1a640e55a4671d02d8aa4b485a19d8fba2a4c8976db21a7fc78d4"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/bootstrap-config-v2.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2852,
+      "sha256": "d9b4a0cf6cc2f165e8b33dac7cf597698ed322e4aeaf82a1d2b671c8ad01fa11"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/bootstrap-source-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1058,
+      "sha256": "0ea00d2722bbf141c60c38d95126fd8f3515719c353b76b43bb3c08bcd080a8a"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/bootstrap-source-v2.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 945,
+      "sha256": "4411e4c140af514db2a588b9b0ebc0685e120f2b1ffd886d56df626f40f9232d"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/exact-reliance-ref-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 804,
+      "sha256": "bee17c6084d972a04d12b0edf27d4c784745b9c4668727875e37bcfda2db0738"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/exact-revision-projection-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4361,
+      "sha256": "3141d7aafb9e1f402547d7c1824aaba640e59fd6c09d2adf9557b3c2ef84bcdc"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/finding-operation-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1712,
+      "sha256": "7cbc6cf957a940aaf8eecfd1f7f6ced0695d1dbdf74c9cf80995db3f37a529c7"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/production-path-claim-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2113,
+      "sha256": "8da5f23f9878ec5a599f8065377697b51d7df0c4bacee1ee6077072e4c7e645b"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/production-path-establishment-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 979,
+      "sha256": "a3dd8add3425c1a6a5866816370c17354a590c769a8f979bb410957d8c7a136f"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/production-path-observation-v2.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2991,
+      "sha256": "fd32c30241ddca323e319bb535381762dc9159dc8487f5d4339283c8a73b234f"
+    },
+    {
+      "path": "rust/crates/claim-evidence/schemas/production-path-reference-v1.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 477,
+      "sha256": "c824cdaf0af8bd2a424f9c898ce443ae6007bd6dcfbe95ca22351b273c98f59c"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/application.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 37695,
+      "sha256": "2531bf4f404ee889ff4ed17dfd4a2530a53ae2902fc43315ee67262076624cdd"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/authority.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8602,
+      "sha256": "e8b678dc8ac0364cfb31a0038f82761ad377cd5b645e38094c17c17e9479ead8"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16642,
+      "sha256": "5c181baf3cca5878796d42b2b0ef8e6a61ee2eeb5f7081056d9fd1092499fe56"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2152,
+      "sha256": "5e72ab2a7811bbb1bc3672328cad5648194eba3699427b63b6be8dfdd0a9972c"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/findings.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6391,
+      "sha256": "95fa532962e6e8ec6f4e4cd2000624aeefc5f93c3a1dc51c00bd30d12fa1842e"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2702,
+      "sha256": "20a58039198e689336377af5bfeffd3e76f84d2f5564953d1d7847465268d2a4"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/production_path.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 77710,
+      "sha256": "2525d08fa217845251944687ed5a44bff3e1bc85eef3b40096ada74f0c63c320"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/projection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18716,
+      "sha256": "01c4fe15178909780ba13eebf03b9742975cfdf5a38cfb90836149b9ffcf2bd4"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/reliance.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2796,
+      "sha256": "a97931f144e80a85355de969fd3ae506b5df08d80d5997730b8edf41ad5b2476"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/schema.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13526,
+      "sha256": "e3a450dd9cf4f8c5db5d58e8be22157c93e948331987c915b2acc2394b698d4c"
+    },
+    {
+      "path": "rust/crates/claim-evidence/src/store.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 28259,
+      "sha256": "3409e386a733ec4b8a8e2ee4bcf52abd001d57604ee79b1a60223ac7ebff918f"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/ce1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 27772,
+      "sha256": "212572be39898ec2e33705a915acdf8a393a7a4781edbe5a20c1d239161219af"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/ce2.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 31403,
+      "sha256": "530c6cea135b8b970d722009968a577361afd5784a659a09058096a044f4c395"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/ce3.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 53633,
+      "sha256": "9e5b7c33d89b80ab088a00bd3e0485df63358fc67c55862371572981b0a6c29e"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/fixtures/legacy-v1/codec-vectors.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4379,
+      "sha256": "6785cc490be5ad933f8e23693a0bf5213e373755c41d15af0f28e933ab26570b"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/fixtures/legacy-v1/reliance-projection.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2425,
+      "sha256": "687d8779be884a5a997d7a4a5acf8bddedbb6daaaa2438353929a0b8685b7b30"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/fixtures/legacy-v1/surrogate-finding.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4999,
+      "sha256": "6ba06107c21040b80a828a96d6d4a99157ec10800370a35b5d899b5f4306e1a7"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/fixtures/production-path-v1/expected-deltas.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 709,
+      "sha256": "c0ff6792245b263a3a0236fda25432eb8fdc34df4b0adde8d0f9df7b727d7c97"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/fixtures/production-path-v1/legacy-vectors.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 19191,
+      "sha256": "57cdd38c1f9dd641e71720114072f1049c2a03fa4bc54e7226e74245695dc2b7"
+    },
+    {
+      "path": "rust/crates/claim-evidence/tests/fixtures/production-path-v1/timestamps.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1348,
+      "sha256": "cb07270e1f0f173266f3bbd9c7b107d78d4da975493cddddc301c5a58a905ce5"
+    },
+    {
+      "path": "rust/crates/historical-evidence-client/.gitignore",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9,
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "rust/crates/historical-evidence-client/Cargo.lock",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3010,
+      "sha256": "d3b701d8a15c0bcb6705bc8964276c8dc6112694ee972a705f228536a4edd404"
+    },
+    {
+      "path": "rust/crates/historical-evidence-client/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 258,
+      "sha256": "82a5ede9b6bada3e862a23d6a1843cae477ee40f0bb794382340d72d7efaaee8"
+    },
+    {
+      "path": "rust/crates/historical-evidence-client/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 39348,
+      "sha256": "a80b8a0602acefda3c82062461d3b420ba7e00e9b4f19933f620f85904e2823e"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/.gitignore",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9,
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/Cargo.lock",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15051,
+      "sha256": "3cdd878002ea4735bdf03052bcfdf91082dd0a8c7071c8309074c3566254ca2a"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 516,
+      "sha256": "a149f19ddb17622a96195c43d29013fe92ea50bae35b79a4f5a9cdc26d028f95"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/README.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10578,
+      "sha256": "69ddc5d5b9b0a8183dcbc89485d2901bc37c57327eccca2ee986e3d1c46f27ae"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/bin/historical_s5_source_read.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3158,
+      "sha256": "f473feb61466c6ee091587ed30920b33e40d3cbf9130f325e9c2e51d0ce14d6f"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 68130,
+      "sha256": "34ce5bc5033cfae6613ef918bedb4628b6bd335da67060ee38d049c0dee3eae1"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/source_read/frozen_metrics.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8768,
+      "sha256": "de8d85174ed2709da0a68332b07440ed99fb0cdab600a28228c350ef001fee4e"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/source_read/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7648,
+      "sha256": "c75c0c0f31cffba3ead403adbb86045fb85a8c6263f193dff5cb6440aac10d76"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/source_read/provider_capture.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7479,
+      "sha256": "2bf7d06d686b9f62549262bd58512f9ade705211441d47d54a79c56c611c396a"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/source_read/repair_contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 19531,
+      "sha256": "2654c637b0287aac11c44bb8d833bd356effbe1c0358b6e1ef702e0bfd219860"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/src/source_read/scheduler_item.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7200,
+      "sha256": "bc0fd12c680d02e89f255583f8868f2ad1fcf79635ed41fe9c712f8db2a1d4a0"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/tests/frozen_metrics_git.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5554,
+      "sha256": "639156e615c9889c252216992e691eb9501afcbae8211bfc713c6b584de1425c"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/tests/scheduler_no_write.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6460,
+      "sha256": "17d9a4229b3305f67db271cc915a71fa72fcc20915acfda1a5ec60ada0ef027e"
+    },
+    {
+      "path": "rust/crates/historical-evidence-read/tests/shutdown.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7300,
+      "sha256": "f34e3eff33669b84725471f3c2f76085fb16a31b3597ec41ccdfbdc71df6c092"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/.gitignore",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9,
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/Cargo.lock",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2681,
+      "sha256": "a15eb3136a37937f661abc2ed55e24beca6a40263e8ecd3cfafa1e94c85bb7ed"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 226,
+      "sha256": "f518c93bcd84480d30c328dd02a3aaa32955938fcc4b6f7b2971df3fb83bf4db"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/src/graph.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 46377,
+      "sha256": "988c727220c7bfa01dfdecbc9f68cd3be5545e078decd9ba06aaddfaa0bbbfd6"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/src/graph_v2.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15581,
+      "sha256": "5c9c5cf8d54685e478e18c610ec96adc9d98d85acfe4b9d1734446ea9d195fab"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 35624,
+      "sha256": "1616febda4b1f8bfece53577f0685d04c03ddf1ee9e7f28aa8b69621ddea9e5b"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/tests/graph_contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9712,
+      "sha256": "ac427e4b30e7e932086371a5d3a9152e5f4354fe834d3a0ebc6eeebf86dc58f4"
+    },
+    {
+      "path": "rust/crates/historical-evidence-wire/tests/graph_v2_contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6163,
+      "sha256": "5b73104f3c080f1b0ec5d908481125d5e16682c914254ddd2048c61ed9942625"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 554,
+      "sha256": "8cd9c2a70bfde0d82e68c128e6323d404fc60e6c9e67ff01d787ca3b212d2359"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/legacy_v28.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 140282,
+      "sha256": "be6981bd86fb9f7f8761987668ca37955e6f1a062a4e8f0f255a26fc0a43627c"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/legacy_v28_held.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3150,
+      "sha256": "03b22a926d02a6ec4ce9a29ce906c8d3be851fd61131430edac428792e4c84f8"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 189,
+      "sha256": "b9d4a1b91aa2084b4466df5dd239e2b5afb4f12718ba443505ba78efa00e258a"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6469,
+      "sha256": "5dc0769ed92860d6c75a9f3a40ba0deac2fdd03093ada76c6628b91307f042b3"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1075,
+      "sha256": "758a4e63412d0748dcdc26fdd4b909dc26685a60d32a84e8d12f0fbb578bbbbb"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/selection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11048,
+      "sha256": "68aad581ddaae8ffc1631643bc83235c12e5eb736799b31dfd1e5e1a0f607b05"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/startup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3337,
+      "sha256": "9fbafa8ec9fc28201da3cbd750d774a1aab3c5dcf6e9cdc621faa58d990b9bda"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/src/transfer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10371,
+      "sha256": "94cd3dbd1ada1fc66d38eed9e8077ac803c47899e7a4990259b24ac1bbd2102b"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/adoption.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2665,
+      "sha256": "f51870a696c40acea2d6a676bae4df2eafb0db315414d31e36969313f9124e3b"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/crash.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11273,
+      "sha256": "bc3f647d26ed82c274d2c16c8efb438fdf47d1e4b828189ef55ed72a9cf384a5"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/export.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18292,
+      "sha256": "199e23fe64067027a130f5aa2ddb945c0cf013c737fb10853de41bc12e0b660a"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/fixtures/ed25519-rfc8032-vector1-seed.hex",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 65,
+      "sha256": "69cb65712b6e3b31d67de53e7eefa898027dc63e19f4f67ae0ae3e698a8fa0f8"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/late_conflict.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13410,
+      "sha256": "06d079af26df187e6ae0ca673d747014848cbca47b9edbfe4bd381b4a5473237"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/legacy_v28.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 187532,
+      "sha256": "b691d013be42d83360374bf50f2efa58a3755673d22da81368a9b687ca5a2f51"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/legacy_v28_capture.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13581,
+      "sha256": "1fb28e6e998a3dde8f6f77266c05e4cf1258bcda1a0080c8db250004b8067bef"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/legacy_v28_held.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9329,
+      "sha256": "60f723d538d041e2ae20cd2689c66f0cee711edc4fb067c98728754e89e14d27"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/old_s5_startup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18711,
+      "sha256": "360cc7ab3be64721397d7a4e4c6727df9d2c160026feddb4175bb7330d7e72f9"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/qualified.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21473,
+      "sha256": "c88e9978982812845c35dce95cb8c9bebe68e61a1bb5196f7b3eb72ca1ec25d9"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 20591,
+      "sha256": "86a9a5689e189e2f6c2f310042ddefa1ae173462740555a398b4f2b36dd7c9e7"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/review_f1_partial_adoption.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21345,
+      "sha256": "39e56e2ee26b56b4482d0cab87305a0717d6c210af3f808a059400eb8b5e4f8b"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/review_f2_export_freshness.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4462,
+      "sha256": "aaccb35b133c823158ddad7c7beb331893102e57464fab168eea10d5d28d6f0d"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/selection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4234,
+      "sha256": "235731d5015e59b885abfcbf3e4af7c7352d7075a133e01390a63e554c3626c7"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/semantic_marker_transfer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13195,
+      "sha256": "e59bfe52f315a805ec184be512c4dc161f9740478855b2f0d2cb19dfae8a1a07"
+    },
+    {
+      "path": "rust/crates/lifecycle-admin/tests/transfer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16543,
+      "sha256": "bf9a27d06f1e4e0cc57dcdef8ac52140759afa99cd47644a4d6884734583545b"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 346,
+      "sha256": "6793fb9b12462234eeed539d04d186dce9e32379e397f21f7df9888af76f792d"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/README.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2255,
+      "sha256": "bab2cc39dd763d1f7f17f7082548614401d421487aba047d73701d4f786350de"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9220,
+      "sha256": "020ef6575a80051b17bdc41ca96c6d99103f6f86a22996a8646285df937b6e34"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/src/socket.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6038,
+      "sha256": "a9d954705d479b9e105af5342ae9bbee84d9425f526124493f8591afbf31b124"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/tests/compile_fail.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 134,
+      "sha256": "b0d390fc494af4b9b256081524a90300d40ada41afb3e9fe75bd5f2c58fe2f00"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/tests/observation_flow.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13907,
+      "sha256": "140ab6900bf57df951b792fff22e34084565e5a19fa70293b9be86649520cfa1"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/tests/public_api.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2213,
+      "sha256": "22b88cab64ebed0dc7a7e0e6720ae1813d508887eb77f5d42709926b5efdfbfc"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/tests/socket_transport.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3972,
+      "sha256": "3c4df2950a807c1b3916eaa44dd9dc458b5e34036516501730f43ceee44b0055"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/tests/ui/read_client_mutation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 697,
+      "sha256": "cebb91a830cf8dcb1ddef2ac20baf4cfccfe02c088b1cdd9f1efcb24f5f96e3e"
+    },
+    {
+      "path": "rust/crates/lifecycle-client/tests/ui/read_client_mutation.stderr",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 284,
+      "sha256": "cb48a11395805febfa4e77b52735875f4e1649b0fd0d63691fa0e7c641ef42af"
+    },
+    {
+      "path": "rust/crates/lifecycle-codex/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 381,
+      "sha256": "d3cfd707a60110e91113f1c751b21920601bf100d10bcf0c999b0c518b2fb478"
+    },
+    {
+      "path": "rust/crates/lifecycle-codex/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 548,
+      "sha256": "aaad0da2fee000634e90e423feeafe633f683c01498e0264ff2d8bf21b86e719"
+    },
+    {
+      "path": "rust/crates/lifecycle-codex/src/protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14998,
+      "sha256": "fed0c5268f980dce9c8fc0903d948edc1cd3bc11ddd4eb59136b736c11cece81"
+    },
+    {
+      "path": "rust/crates/lifecycle-codex/src/transport.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6713,
+      "sha256": "4b06cd56b52d506f4728017338b4ef8a52c7b5f528daa5167ef34ea14be34742"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 381,
+      "sha256": "79403472e7f433bbd9e273d85b87ca2048f1e7ae1a02595c4d045f0b60422e9c"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/src/contracts.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8535,
+      "sha256": "27ecc9d7ea7c7fb16cb2c30b5bc50e372bb66a58ee594360b7795daf035d5d16"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 183,
+      "sha256": "30b4b6ea9c8fe59de183a3d131f0e0757f35586b570168a5bca97248f8a7b987"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/src/reducer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 24275,
+      "sha256": "b1b902ef8a0a75937f7a2011a14cc965595b61e00482ef140da29b3bafda3023"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/src/state.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7177,
+      "sha256": "9be17fb55700ac68f567031bf6504bc37f7a9345c60fec1ecb92b55c907744e3"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/tests/compile_fail.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 138,
+      "sha256": "1c98b5fbbafc2315ff9b566401d4fd9643358c9648bbcd4f61baa50d7fc95ffc"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/tests/grant_revision.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8481,
+      "sha256": "3c174d08852acbab73a9d6d60078f2dc43a4a581bfcf6530180918251ee48dc9"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/tests/identity_types.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2780,
+      "sha256": "6fbb7300152ac4c8babef536257dc3ff4ec50bde7137772f2f5c553cf1909611"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/tests/reducer_model.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 20419,
+      "sha256": "e18b77453e2a7cd5c835c211effb6e4d3007ea65b00e00e1bd0ba88a2f2e4a26"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/tests/ui/wrong_identity.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 190,
+      "sha256": "037cf2d7d569f3e86a19ca16bfc9947ceb7b220884a00e9734f6116700b3c1c1"
+    },
+    {
+      "path": "rust/crates/lifecycle-core/tests/ui/wrong_identity.stderr",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 399,
+      "sha256": "59b65c243ca2359ab03d3b8d5cea98a369f41183916789ba0693f96c7364020d"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 849,
+      "sha256": "0f39d2e31a3d82d6545e019b2dc1863719a2c805cde8bfd2b8910b040ec05ea7"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/src/host.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6286,
+      "sha256": "83bb6d7d2c08f615bd79f51bcab60b708f6d683d4e8b02813f653957409f5d3a"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/src/identity.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7099,
+      "sha256": "6ef3f929aa381611c9e3757b153e2513ad027944900700e1389f898a2be3dc38"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 692,
+      "sha256": "bf9b063c1d4f38b97da24b1713d7f4978fac08043f889effbefe90a3e397643a"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/src/provider.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 32823,
+      "sha256": "7728f7244c1e3515c8512b10dfcd41053ebc4b6c1375cb92234f916108fcf642"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/src/receipt.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 53461,
+      "sha256": "bac5fdf97f89d5022993b09f73b62a37711a856c43bf8253344e33ab30b26f41"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/common/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 20478,
+      "sha256": "0acbdf63d2dce3d6be381a213b05b865bbeb2a5dc09f4854418256216a3ad976"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/grant_shutdown_drain.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13658,
+      "sha256": "5da2dc490ddb80dc0c17feafb5b348a166a54d8d5b69ea451e167929173292ac"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/host_identity_failures.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5853,
+      "sha256": "3cec102ca90f5341064d16d3319e1bd1bbe745509fa3bdef7d5484ed6f3c4822"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/host_identity_replacement.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4612,
+      "sha256": "84b2f1484a050bd54bcb0076745844cf2a698b771e52d49903021972a271bd77"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/host_transport_bounds.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4740,
+      "sha256": "bf4d6570a6415ea250627d6373d5e0551a9e30fc291197961ac016a62c32175d"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/identity_and_cleanup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3171,
+      "sha256": "ac2aa507ced84a800cf091a3a9064a5d7fcce1e9df97eca0148311c2ccd0cd8a"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/native_spawn_custody.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 22485,
+      "sha256": "1a466a15eeb49867041bda3c2178ba3d939ef2dc46f9f785d2676fcbf39b5f4f"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/recovery_and_faults.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1233,
+      "sha256": "32a4f25864e83a9e1afd8e358109076f729da0e7e9e274d3bab583fffa506195"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/retained_workflow.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 69831,
+      "sha256": "459f08f0be3246182fc3318d8949598ac10b24ac896801491790067a06b780ae"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/task_observation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4917,
+      "sha256": "5cc52603514df5b069b5f60efa892593b343673105a18002bae70724abf83d6d"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/task_question_answer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 12866,
+      "sha256": "3207173212c2d425a4f35e2734a38b17773a9011a712ff751cc3abd88d188b10"
+    },
+    {
+      "path": "rust/crates/lifecycle-proof/tests/task_result_publish.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 39522,
+      "sha256": "9ffcb889f2f3b1ed1c088a95a982aa8449a135d722c64df978b895230444afbc"
+    },
+    {
+      "path": "rust/crates/lifecycle-provider/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 234,
+      "sha256": "74d345711d06f94cc598b1a285d348fcc74f5533a44536d2f4075de2b53d2ef9"
+    },
+    {
+      "path": "rust/crates/lifecycle-provider/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1856,
+      "sha256": "d78b1a6483b7a7c8493951b559a349b512a7bd2cbcb38c0c00bf98f99edfa2a3"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 485,
+      "sha256": "8dff033c6b4b0c03204e1f013f535f98663fae8d5b7836eb684e8bf461164727"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/src/clock.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2636,
+      "sha256": "077aa0f32dac1e6d30891da8b4eccd4627c7919bb11de962b6cbf2d3c8853502"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/src/executor.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 26551,
+      "sha256": "416111a966baa147f572abcf8af72c87a772257963de93ea18bb4e4dfa0f5e64"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/src/framing.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6817,
+      "sha256": "bfc1a8ee754307360541065717a8dddaa8c758fcf66da33eb0ea9993078271c8"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2145,
+      "sha256": "2e6db8fa84400143c952e3db79493dbe343be49a56fc5d8224c6e7966c140cf5"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/src/native_stdio.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5438,
+      "sha256": "595c747e8a33755ed5f300f86e978d05b8d6e8030eaff8b0448e291f41711156"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/src/process.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 27285,
+      "sha256": "a99aafab53c174db73624090cf9b38889477c33af65efc413f5fe7f338c0bcbe"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/tests/clock_framing.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4947,
+      "sha256": "3abfe5878f4b1f2abc2d53a864b8f6538daa20ca049a6fe464fa0f3fd37742ab"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/tests/owned_execution.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13846,
+      "sha256": "9b1e18b1948927c7123e3bbc18535cdd725bc0de4b99a94834d15800e52f21d9"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/tests/process_supervision.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5963,
+      "sha256": "97db64d8b618cdb33f02f4df64ae3a97897405d67814ea921c4dbf2972386c1a"
+    },
+    {
+      "path": "rust/crates/lifecycle-runtime/tests/support/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4569,
+      "sha256": "e97b4a61e119a4b8c4c9aa78b89b3a2b9d0a519687b4a647ec0057b9a181a665"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 328,
+      "sha256": "e861cf1d00c1b84e377299460818498e6914b51c27302c5cd3f334e1ccc710d9"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/src/assessment.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 12617,
+      "sha256": "70f95e38b818050562d3a111e7f83c260a1ef43edca749eb85e8fe36060facf4"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/src/continuation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 25917,
+      "sha256": "2589b5ea798dc7a0ac13cb0f247e8f583162083725a49abab133b111a86cc002"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1741,
+      "sha256": "26d6f5f266d0627483bd4d74c378416f0c0a25f829713a1dbff8eb977e4b8c7c"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/src/material.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15829,
+      "sha256": "8191a37b95f86c82b41f39a779556d4959ad4ca92ad5e8e0a7d539c5c28a131e"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/src/policy.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2631,
+      "sha256": "b92121829149322c954157486b7a0e6339ea9776947640bbe5911f6f1bb02665"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/tests/common/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14046,
+      "sha256": "f39be8aee8c49ebf2dbaefd9e117d6d75c95d1a94a05de2abe0af9c86290a8b1"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/tests/continuation_assessment.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 12188,
+      "sha256": "e348c3e9aea0f89af3f333832934e98d21f7e5c579c7395b806aa236bd31b8b9"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/tests/material_contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9457,
+      "sha256": "4467e9d3fda7819de2142225db2a0acc45af80e163b70e43b61d688fa6587f38"
+    },
+    {
+      "path": "rust/crates/lifecycle-semantic/tests/semantic_corpus.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7981,
+      "sha256": "26a65af44a1dd4df6e8f7eb0d55c8f4bc74d82b0b577abf4872a4cba4d856729"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1693,
+      "sha256": "9950f246d514b1cede5e53b5b6c456207f2050d400d9f287e7032883d73a56b2"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/README.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5557,
+      "sha256": "82bf2db0feb64788b21cc3f1885f63fb68b7ce7670b523a57005d7437c8a5e7a"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/actor.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 170475,
+      "sha256": "be90601f1bb5d8bc38c83f1724bb728ae2b07bf89c9ea0005b268ddc621f8a8d"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6052,
+      "sha256": "0e6e4abcfdfc626538b0036aff7d56feefea40d0e011c26ab81facbdbcd0fb73"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/controlled.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6006,
+      "sha256": "2aee3178acf4f6829c4bc679a87de3a4abeb6c6e3872f336234a994eb540cfaa"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/development_startup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14198,
+      "sha256": "501b01e657c3ab3fab38f740f69093f31d5202b83f4dead84f4eab6aade2de32"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/engine.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 20090,
+      "sha256": "ab0569272bf530ec268701653ff2675a3d94b7be321e9fff07e312f955d5cb37"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18001,
+      "sha256": "6000252105f2f141265c20cd9b61e44620e6e1455fe3f3aca84255fe35cece27"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1414,
+      "sha256": "84fd3cdcf37289ee444e7997ee8b80f2a91afd36b8b4b34bf3bb97fe1ba3f865"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/material_port.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1148,
+      "sha256": "02ae476ed78adca13a589a48f6cbbaf57fa5c9b1aeef74a93f3427e9b577eba9"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/operations/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 46017,
+      "sha256": "d6788cd51e5703c35c11664415fdb1125973a612c6f59f98842574ec99715014"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/operations/workspace_snapshot_read.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5266,
+      "sha256": "7eea206a46ff407d4694b6ed11dd251cb09cb3cf299d947fc344aac508a335d9"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/projection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9969,
+      "sha256": "43290413a747869140b4a89847d35f2405e12fea64a1ed4e5920977cc21a66fa"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/semantic.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 22086,
+      "sha256": "b62c9f0e4a7eb507ad703f9117790c21fbe0bed324585bd50ec4f88d3a5952bf"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/semantic_control.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 25517,
+      "sha256": "54c05723fa50e3db970aba0a8a61c5a691299bea9925914fa89e8d5d1fd5b297"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/socket.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 23014,
+      "sha256": "98dd752511b35f6f0e1c8332ebf998f1b4bdb8bd59937a1465fd527dc6947e21"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/src/task_port.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5911,
+      "sha256": "a7236f76e12baff6a3b01d7dc8a2d3f2ba6e61c630e2d2d1cd3ea65bd7ff3e84"
+    },
+    {
+      "path": "rust/crates/lifecycle-service/tests/development_startup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11890,
+      "sha256": "fd1612ebb7d66f448562527c3b4a32bf5de2380fbdcb1de56e1f701d45621d84"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 626,
+      "sha256": "cf529e94e1b6a6c8b51448aadcd80c717d469966da9c5a16ea61151faeb15110"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0001_initial.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5954,
+      "sha256": "d7f98e08ece4e275fac2ac5562dbf60e6cef6146bb9c221794bff96cbc8e99ce"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0002_service.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1800,
+      "sha256": "0bf566e553c699d3c2b2a19f522151c8f6a5a0948435036a5e9bb1435a4737d0"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0003_native_operation.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4999,
+      "sha256": "7396db3c40c2abb52d89e509fcd74d8ff9fd3aca250bfa7a7504775fc3aa569c"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0004_composite_s67.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 26870,
+      "sha256": "4bcd27fb717c5ac6740303fe73ec2d4ff81f4d5f9c261b742085db6ef05bf63f"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0005_retained_task.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4110,
+      "sha256": "f17a404693d98c180efc8160a6ba9daa1a35b92148a7e07fc0e8ccd8e01b5654"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0006_legacy_v28_held.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 25644,
+      "sha256": "d51425b7e0f60d8a2c28829ed296e64c90530b07ff5ccbb929e8f782794e0a9a"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/migrations/0007_native_restart_epoch.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3117,
+      "sha256": "9ce553aa7bd91c32e63ede03edde63ed7b93138706b9e6463ab9c85098fdeae0"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/admin.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 203200,
+      "sha256": "9ca62051dbfc7ddbac262170713ab178110d5e456aa8988408b1e055d801cd0f"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/artifact.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10484,
+      "sha256": "e67b2489ca6dfce2e8a990bbedc2c571c47ed8a42e53161688442cc3aa63c241"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/held_selection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 26684,
+      "sha256": "7f6c021c4d83bd93237757fe75b6a6a5ec3faabe0889f478b7ded87df6113a11"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6339,
+      "sha256": "abcb2ba47fd7e1cca26b352798f3149169cac0b4f8fefc985ab750abb442029b"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/native.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 233431,
+      "sha256": "aaa7d513ca218c39a599830bebf18ae9f2e172898b67d9d4cf83ea0a90361ccd"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 22249,
+      "sha256": "8325d0099879163aa7c64d04206c9d6646f62d4ad6a57d2bf6cc42f982203526"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/semantic.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 48730,
+      "sha256": "53b367768ffa73625839b7043c98323d950f3f4e36b0e8eb180c1fb30fe5cdf6"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/src/sqlite.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 131425,
+      "sha256": "f5c749e2575ecaf70362cbf331bac9320a3144dc730b4b62284ef933321282d7"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/compile_fail.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 137,
+      "sha256": "3babd9091a756cfd2eae63ce6e44e7597335d8072eb74a26a7e50711e68e57a1"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/legacy_v28_held_import.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3147,
+      "sha256": "39126247c32f8d39fea358f06da21d39aec7e4fbd86f48df9789f0b2fced23b5"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/process_writer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11655,
+      "sha256": "81ff576c8ccc93004fd7924c1e83ebaa53028519cbf269183aec1d1970fd0bf8"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/recovery_artifacts.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3717,
+      "sha256": "5cbe23945b9d83b0839d3cb7c9151204deffc637032f42f23a96b40cb3ecfe0d"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/schema_compat.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 25617,
+      "sha256": "f5c5acedb7932ac7f0b4ce4c74c2cf8100e8f1aea2d7e11b91cb56abe5c445a7"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/transactional_vertical.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 56618,
+      "sha256": "622a654868f5ba4520296c525041d18090008caed18b0e4131f322190821b6f0"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/ui/forge_entry_permit.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 411,
+      "sha256": "bd39a9d40df4ae13a2c40f2344404c10b2788060ff5ceccbe2075f07e4c4b5b3"
+    },
+    {
+      "path": "rust/crates/lifecycle-store/tests/ui/forge_entry_permit.stderr",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1289,
+      "sha256": "8bde9c5a7f10e57df0e0b85b89736b47ac8cc7ec12dcb3667fc3305ad4d4a31f"
+    },
+    {
+      "path": "rust/crates/lifecycle-test-support/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 417,
+      "sha256": "62e12b6b85b653f7c03108fee2d315e2d707b339b89dcb252eb38a8c975d2cf0"
+    },
+    {
+      "path": "rust/crates/lifecycle-test-support/fixtures/v1_store_opener.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1148,
+      "sha256": "ea2da9e83662681d5d9460600e199ed11baa70de850a011f7c60bbc2b9f0a944"
+    },
+    {
+      "path": "rust/crates/lifecycle-test-support/src/bin/controlled_peer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6926,
+      "sha256": "44db13b1a886cbc47c0d3d063592fd4218ac2b3044e89b44ccab9357b41a216d"
+    },
+    {
+      "path": "rust/crates/lifecycle-test-support/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 157,
+      "sha256": "e9185340f8ef72fd0db09a9d531caf8171087e57f97872e32141bfd737bf074a"
+    },
+    {
+      "path": "rust/crates/lifecycle-test-support/src/semantic_owners.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5791,
+      "sha256": "6c60fa0b885bc091ea3ca7a841ca8f4b3fc1310bed9213e9e6d44df27bdd3a93"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 409,
+      "sha256": "ea408839d02cb149e8594add133e7088cf2c948b6f707778b314acc47c51d061"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/examples/generate_command_v2.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2300,
+      "sha256": "8ed3431ee433c132bad4b34bc21cd4fb7f5057bf2430a4ee36937b7dd2fd2923"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/examples/generate_schema_bundle.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3339,
+      "sha256": "c0ab332c438436f7269c37c978b7e3c2fa88513569efa76e4c8ce577b115699d"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v1/command.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2680,
+      "sha256": "9bdfe1a5366d0aa73011cbe6534d5e49fdd01b16cbf81ca804bf44d5a424e14a"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v1/error.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 795,
+      "sha256": "5c775a35d155e8e95b47539fd4d297d24bcdf9e0909b115862574421ed4a6753"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v1/manifest.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2788,
+      "sha256": "f4c73a45602284989fc352f5529f421a5e2c73cdaece2c4678035825032727be"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v1/snapshot.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11109,
+      "sha256": "45b16a5c43b3223652f4b0da8a7c6404dc3c3d2556efab3ced627ee35a358520"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v1/wait-request.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2460,
+      "sha256": "08cdd0b1d16a26171985b4c10cb860c691e53840b1d9a1852ae2939fb59738ca"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v1/wait-result.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13082,
+      "sha256": "07673872823652a66865f5b23d8af30583c9405ea11252877e9120be3887d6f2"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v2/command-result.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 802,
+      "sha256": "4772937f9e0942d2828282aa0a3172c1ae9b458bc0456fac18398db8695ba3e7"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v2/command.schema.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2928,
+      "sha256": "5553ee7c30301aac00910550d07bc795afb071729455b98e63f3d1cd49cda6c4"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/schemas/v2/manifest.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1277,
+      "sha256": "f997a66c52f46faa9fc74afae6a89bb06302fcb6290f6296ba64a1ad54d5af72"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/src/command_v2.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5888,
+      "sha256": "d8dbf5a86b42a48b26d29d1099ff21a0c982b1bda23d5b48d4b08ca1ebf368ec"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/src/json.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3583,
+      "sha256": "664e5cfb7cebf5a88b312c90a782b3da097e6c84783a2601232c2407449fa16f"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 12418,
+      "sha256": "0dae0ccc33c9057d0f7b0dffdd0cbbd4a552a92e085ed4420d7a969fd3f690d3"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/src/observation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6032,
+      "sha256": "72ebae4ecd316888f2fb3eb37e3fea6833b79e53b0be9be6e968f78adf0a0757"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/src/read_values.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14242,
+      "sha256": "0d51a38811edf134bfb365b47ec2280d6ef660fc4fc48d6b93a6796cac790fd9"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/src/schema.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1629,
+      "sha256": "eb33bee77392364bb41530067dce879ce82686d1c75d95068b1991755f27564b"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/command-v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 446,
+      "sha256": "01f9a951fa2c2e4486e3f7fcb412bf3edbfddfe938731fbc56e1a168d1c48aa6"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/command-v2.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 613,
+      "sha256": "881d534ac5c7fe2badbfde15ed895c8bc82069fe21ee7f5079a221836cb2838e"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/compatibility-v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2219,
+      "sha256": "80473fe41d54418a388432340d133cf927cf49a6c4944790cd3f3cff3df6c21e"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/compatibility-v2.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 922,
+      "sha256": "aab2bdf7c4d2c1bd7a5ff6fa85e10ebec989fa7597f552aaa1ea48810f08be6b"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/failed-unsettled-v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1069,
+      "sha256": "1a4f9c1506bad03851054c2076a8e8af73d76fbabaf60ce8c3878a45e6129691"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/historical-complete-current-blocked-v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1190,
+      "sha256": "5b6df3542e1a4a1b20bf37b7346d153a4355cfaa0bc2e15323bd2e6a64aab7fb"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/observation-unavailable-v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 95,
+      "sha256": "6ad6611aef5df0d18d5a3bcd8e185b1e25e17ed4ccc9fb2d67a86a6235c0f482"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/fixtures/unsupported-observation-v2.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1071,
+      "sha256": "387edaffb95005c06d08cd1d897c6624ffea82dd0f1b8726ff6e0e9a80801335"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/foundation_flow.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4879,
+      "sha256": "830a1ca824092e15e07e0ab76e1e7112a172d83ca3c7f0174a91fa2c4f050130"
+    },
+    {
+      "path": "rust/crates/lifecycle-wire/tests/schema_compat.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13406,
+      "sha256": "b0af37f7fda379c0ca96951b4ae3fa016e2ecabb58c424b129c98a0e29a4f116"
+    },
+    {
+      "path": "rust/crates/retained-task-workflow/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 568,
+      "sha256": "cb31c3a667ad5e6fc9e77a92f524bc225a4ae15084b5d9bd31bba6878d4e6cb7"
+    },
+    {
+      "path": "rust/crates/retained-task-workflow/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 72372,
+      "sha256": "d1aa2bf24668c6bf0d2bfbd8e06766c892310cbfbf3c5a4821b0cb8330040f57"
+    },
+    {
+      "path": "rust/crates/retained-task-workflow/src/material.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5620,
+      "sha256": "7c988a268dcfe185734cb88abefe62c2958ac7053185e222d16fd8fb941899f3"
+    },
+    {
+      "path": "rust/crates/retained-task-workflow/src/port.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9887,
+      "sha256": "5218bd666ef67afeea372dae0740ca5b9a03176d35cc0ccc49b707e6e8df606b"
+    },
+    {
+      "path": "rust/crates/retained-task-workflow/tests/owner_flow.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 57694,
+      "sha256": "a804f67e8c7850744dae6ade92ee551e73c7bb66369f71a13a0ba01eaa086063"
+    },
+    {
+      "path": "rust/crates/review-episode-core/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 206,
+      "sha256": "70f570686f9327be18d42911c15fcf5e3ef4a289343ab2ca7d50a3e62c9b034f"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14789,
+      "sha256": "ae2f70cd8ab4ae10db609f47f384734baecab62312c335dfb049b762d2571407"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/command.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3919,
+      "sha256": "a9619f15844a30de8004589ec2c87d0c13474a3a86a0ebdb5a89d93ab2f43d24"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/identity.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8588,
+      "sha256": "5426f5721cecea2816d25aa81f818a2dd5022e7842af8f69da42c2d76c3601df"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/implementation_review_v1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8717,
+      "sha256": "ea08c9a554ca2ab29a9073b17f958ab0e756d5ffe56e3b4a6d0d795c6643bdbe"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1519,
+      "sha256": "e380dd1f80a7789b5229bb641c2c6347c687e3a0cc7c42722ca4d34adc3b693f"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/reducer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15612,
+      "sha256": "ad07b24fb6296353695995d027d55143605695d380c687aed1e07ca882096d7a"
+    },
+    {
+      "path": "rust/crates/review-episode-core/src/state.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10836,
+      "sha256": "d0ae41c6ce721e3b6311822adbffa62490e1d31a1a5909a266a7e592dbdb57d3"
+    },
+    {
+      "path": "rust/crates/review-episode-core/tests/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2527,
+      "sha256": "e8cdd62e765fd14ea2d899bf662a8351fdec4d90f95f3665cb3a46a9ac046587"
+    },
+    {
+      "path": "rust/crates/review-episode-core/tests/contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2953,
+      "sha256": "9e64875f67b2d903351ca497bd8974b048b6f5b93f7cb6d7769cd3545094956b"
+    },
+    {
+      "path": "rust/crates/review-episode-core/tests/transitions.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 32615,
+      "sha256": "b194a0fc6016c71129cf5d79532d847e5d08e3d4d325f74229f63d6c205182c9"
+    },
+    {
+      "path": "rust/crates/review-episode-store/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 448,
+      "sha256": "f5a293ed8b9ff3f4c6ec69f2250fb8e116bc17eaf01a6441978f1e8b828f14a8"
+    },
+    {
+      "path": "rust/crates/review-episode-store/src/import.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14712,
+      "sha256": "4e0dbdd5f137aae9ad4d87b5bacb9b6f914da45abb1089f70fa2f1d2da69d9ca"
+    },
+    {
+      "path": "rust/crates/review-episode-store/src/integrity.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5356,
+      "sha256": "8d4088d5bd6525f1e2a0c7df1dc4fb8994e6c13e7cc7ed5e080ef9fc3d32be11"
+    },
+    {
+      "path": "rust/crates/review-episode-store/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2031,
+      "sha256": "3ae1a70f9c4270395bbe1d227eb40fd37fc8faf84cde94e839e06be9ae1a7779"
+    },
+    {
+      "path": "rust/crates/review-episode-store/src/sqlite.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 30742,
+      "sha256": "7a02104a8d9dc24cd654e0e8eb6f0d7f0a4d7c364af391829303d0921161ad3a"
+    },
+    {
+      "path": "rust/crates/review-episode-store/tests/cas.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3713,
+      "sha256": "5bfe1ede32e421d3d7c41f8b70ed7ba93022d551bbff090adbec8019b5c27b27"
+    },
+    {
+      "path": "rust/crates/review-episode-store/tests/compatibility.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 19599,
+      "sha256": "dce0d3a6f45a7da355da4ad982cc1d4e1f2b233a0ccb714a32570e0328ba6653"
+    },
+    {
+      "path": "rust/crates/review-episode-store/tests/hp1_profile.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3559,
+      "sha256": "0a9f7ac3ea08b1d413cadd466106685b7af0e758d97bc848af9cda4b9b9d36bd"
+    },
+    {
+      "path": "rust/crates/review-episode-store/tests/recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10106,
+      "sha256": "01ce27b135c1fb857158352fbf754d1ea4a66a52e3f0a93d783edd86c11f7ca7"
+    },
+    {
+      "path": "rust/crates/review-episode/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 625,
+      "sha256": "1829b247a042cd44fe1caffd5dc10ffae38f1580b21c93c9efa6e7107123e976"
+    },
+    {
+      "path": "rust/crates/review-episode/src/admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5673,
+      "sha256": "5227eafa59ba13253ed7ab50ac8d75d0278e98467ab517a9a52f7de1596f8149"
+    },
+    {
+      "path": "rust/crates/review-episode/src/host_admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9784,
+      "sha256": "562e2c21ae0862db1ccc3f51483d181604dd27ba72345993b85766472b2783d2"
+    },
+    {
+      "path": "rust/crates/review-episode/src/in_process_admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 17173,
+      "sha256": "a29c0b86a78ce5b826d34604b550176aa3d7c02b84338168a221b1a071512ce6"
+    },
+    {
+      "path": "rust/crates/review-episode/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 19563,
+      "sha256": "52533102c5781b6eb1007be27377183ecc1aec17aa3d8f519431f58eed5f3f3d"
+    },
+    {
+      "path": "rust/crates/review-episode/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7991,
+      "sha256": "dd7c07c21f255ff46535ac734af9b567227a354512ed66a99baea95ede312d5e"
+    },
+    {
+      "path": "rust/crates/review-episode/src/operation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10960,
+      "sha256": "498f715cc595bdfe5f74182392059a17bdc26c91ebb50d0a6dad59f197afcc93"
+    },
+    {
+      "path": "rust/crates/review-episode/src/protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11294,
+      "sha256": "4be4bd13cc83fa242587742481c0ffde971f6a8bec6d034876840a0c4fa820b2"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/command.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 41489,
+      "sha256": "8ad385df3cc6ed62185f9d636efcd05ac8c8ef35190d905a7196a04bdfdf6ff0"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/crash.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 23113,
+      "sha256": "bd1645313a8e7ed3fd7b4826e6f873a88b9672c152804e3b965484c72a7e0aa1"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/hp1_direct.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21389,
+      "sha256": "ba65bf81f4641aeb672b2909c0bd31a573c327011da30c88f2d371b968db204b"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/hp1_history.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4427,
+      "sha256": "f7719c19e9639ca83f66414f6219ca0ef8007dc4cbb4c493bb898fd4e5f9bb65"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/hp1_relative_root.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4698,
+      "sha256": "f31c4a67107cd22d786e1c551aa1ef92be1e46719ee8b105797f6d2211bfbce8"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/native_host.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16158,
+      "sha256": "86ba2edea680e908dfde0b15c662632bb51c6f238e99b80ba96a8c89cf6c3789"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/sc2_readback.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 33160,
+      "sha256": "66f90704fa6ee444f26ab33f6bfda2e1943cb081092688f74d894a9d8079497b"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/support/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6969,
+      "sha256": "7a5043375eaaf02f01ec944e66b9ac85d6213669c1c3933f9ef1bed9588c27ee"
+    },
+    {
+      "path": "rust/crates/review-episode/tests/trusted_native_admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21381,
+      "sha256": "36f292388fb6a48200b3d26deda2eed6788df85a93dc551040d372a0f6a7905e"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 532,
+      "sha256": "e6d613c047521d02e2b95f7dca9fad5221525cc1fa4a07ad94cd74dab7922f3d"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 354,
+      "sha256": "36435b1d82d4574b046fae76165158147e844568bab38868adece8b445b13397"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/profile.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8981,
+      "sha256": "d03cdc53e8aef01bb7cfe3a7d5abd03e8d02bbb22d70e9a74a42da719de978f6"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/reader.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 22163,
+      "sha256": "4bd3d8b3184c3b175d54f6589faad0e5f51bcdae96ff5987980bfb9b9f18c1f6"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/record.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5896,
+      "sha256": "b0b42b7d61de706bc6fc0c495115fb3a2c584d45ca27dc387435ea3b5fd63b16"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/selection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11236,
+      "sha256": "8d936eb641d1e16d09ef66d3f4be54290bcba55a861fc6686ab3439cbf9d28d3"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/session_read.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 19397,
+      "sha256": "b5e0fc96cfe534c6b9afa1529d4148c5942cfe9d74cca39b8c696072f36a52c0"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/transport_validation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4034,
+      "sha256": "25013b14dd4a579e793642fea09a22926a088437fe9e8e349302656fc06e9a1d"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15030,
+      "sha256": "6ac28126556af34e30454d57ab97d706dd36bf7ef4be6f592649a9e3d18b48f6"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1094,
+      "sha256": "2a431ec71a54f2c46b29c44fffda4c4b5daae855ea8d1061edfd7364ed61a274"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/process.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1731,
+      "sha256": "8b5b27fdf886629502ce1e92db39daa2c82989a9055a2c94cbd184341ad5e9c2"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/reader.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16248,
+      "sha256": "895f920e688a8cc844c7d6bc0f6aaa83164358b5bc5b9afacd566b2006151322"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/record.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2614,
+      "sha256": "90753f1e70a955ad1ed1030fccd70e701970386ecb43792247bd39d7e1332eea"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/store_read.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10962,
+      "sha256": "888176adddce2a86c9ef15121f0f282394cecfee27d7b4e995638ab14425a51a"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/test_support.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13134,
+      "sha256": "46521012b193d60207ff2980bae29388b427b83b402d9ccb7fdecc1a536c5bff"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1209,
+      "sha256": "be989be9a6b28187c619e9561d99f753661599d28d97ff6e306dae77bef4fee8"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/migrations/0001_evidence.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 506,
+      "sha256": "a84494953264e11f50a784e3823605fad6f5714a325eaec9ab70fe73d8d3dcb5"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/bin/controlled_peer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1426,
+      "sha256": "253271421da06d0ccde18761ed67f56f534bcac34cccc3c1a76b18850a1e9b0d"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/bin/reader_probe.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1159,
+      "sha256": "6e6995605ea2b5f75e3e0f99ff22a39a2f41fd6a3e2a5714935ec7361f793ac2"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/cbm_client.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2242,
+      "sha256": "9bfc883f025f423b25987dd08386c6c4abb3c1338be2e68e8f77b891c766921e"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/cbm_launcher.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4907,
+      "sha256": "6ae7d90beb7de5726faf3d801e2f04b8f8c6ca1a79a7c8aa9de981f6fd09ee6f"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/credentials.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7682,
+      "sha256": "0112009bd60d200697523d7109729a5a25004d4dbd7a8a91e4cc02b3bb3784f9"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/isolation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 77204,
+      "sha256": "b6280e548faa7e31e9087f6c75ead438ee91f84820d52c1cea527462c8e886e3"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/launch_guard.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21644,
+      "sha256": "a460191a40f55d69b786d38773bd6fb46ecdd07a9e14fa266c78fc1ed87e3712"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/local_probe.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9675,
+      "sha256": "2bea35137cca244e4a34a4b381c9a213e2306b694dea7d493167a53556836972"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/local_probe_peer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 985,
+      "sha256": "551c5b875e75fae1082b137998b51bb23cbe725954f0b84317fab299d3164659"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 909,
+      "sha256": "f165a277640d7ed4009e4cdba7175b3b407b7dab64d59dd7ea87bd392a90ee27"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/offline_peer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9575,
+      "sha256": "8545067e48a7137e405927d7dcdbca7c828b5864e67f64ef698120a902d03c49"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/profile.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 960,
+      "sha256": "373a376d2357f989b067578430d9bef995a167bb86287059b0c7be3bda6091c7"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/qualified.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 22473,
+      "sha256": "fa51b0d0416f592b500c404ad17f741ccbf2c9b04c4e8bd4e84b3f5520179b69"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/reader.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 59,
+      "sha256": "80e0f37be83e3773bb15b2d4797d2f397a6ed7d7560f871558ec77b13cacd68f"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/session.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 25274,
+      "sha256": "1d64b1e3dfefb5fc5914e14a59c655fceb5959a7a17ad5602723b3de9ceb6ac3"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/transport.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 83,
+      "sha256": "e99bb21aeb75a0cf171743f48c8dce70470a5ab97ca448448c432bb57b137884"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/writer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 35469,
+      "sha256": "caaebd45ecb1fab2d56b08ffd5671356ce45abb9084bac3f2f27a3c77a8aecd3"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 107,
+      "sha256": "1593e0caf8902c41458abb6d3dd16dacf6620853fb3f5715065027ff6be7e54a"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1266,
+      "sha256": "25e2055b76c8eaf672ad8e727c074588b58002d58c3de929985c63b1109b3850"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/process.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10314,
+      "sha256": "96150b69b2130a00588f61820e671913bddbe9bbac3b90d4dcc956c8b49abeda"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/producer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 24248,
+      "sha256": "a1435ebe46f4d9394f93e75b08fdd5f7623a058c48ab28934a91ebcb686623d5"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/reader.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 50,
+      "sha256": "e60ec1848e9eef559025b585e4e0b42a1bc6327fcdaa635f6fa204eeab5472c8"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/store.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 23534,
+      "sha256": "e2c385bef88b3ce2179b5968187be5d8dc7453676e4d68679f1fa2ce58779b5a"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/test_support.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 51,
+      "sha256": "073750042a1838ab607645a431338ba51191ddf98a74f3b93eef04705cf0a4ba"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/claude_boundary.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 30405,
+      "sha256": "4026c5b2e3730b5e62d50015d2db2c84c29395efff7cc0f576ee126da682708f"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/claude_common/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5575,
+      "sha256": "c8b0fd1e1e0fbc460d780896e5cc8fed68c33fc21400a748f19a8e8ef72f4229"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/claude_custody.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13164,
+      "sha256": "2a9a7bf39c2651f74531ab4fff5e68926060aa916d2c3a9268f3477c75685514"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/claude_execution.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8144,
+      "sha256": "c191c0fe7c825b19882f40e0966680675364cd29d29f1f985cd1116ed91a8c1c"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/claude_guarded.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 38282,
+      "sha256": "9880a7c007d5e7f3757e4382723330790192686e783bba038acd107e976ddde2"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/claude_recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 12514,
+      "sha256": "a122232618e7c076adddb6689981935abbb4b2ed9a32ff0c03c908def3153af3"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/common/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2864,
+      "sha256": "1520bfc033dad0a8a511618d882f1dc0b78e1ef8de9b6b73face9465a90e8565"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/controlled_process.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2668,
+      "sha256": "54884b0493fb19bce64580112b73151759299132e7571fa3747eda1c000747ec"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/crash_recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5659,
+      "sha256": "635b3b7dcc093220d9c2b56fcf5424f0f520c4c3f5cbcbfd3e42a8ca2a02fa4f"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/custody_readback.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18978,
+      "sha256": "18351f246f5acd178986f76465c61d193b2d14ad82517ed11e23920b28fd76a5"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/e0_contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7241,
+      "sha256": "5ab3876d0df048f755d72b0cdfa1623539f58423116505680354ee09154ddfad"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/support/cbm_abuse_probe.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2991,
+      "sha256": "3d02968eafa2b84418ae2dcc8b8595f0eef16bf9cb2a9bb41727dcd36517aa9f"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/support/cbm_probe.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9612,
+      "sha256": "7e6e9ecf7f9cdfd8c228a20561dd8633b602f7664ca46517535d58e210e7cea4"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/support/coverage_probe.py",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 2639,
+      "sha256": "0ddbf2f4cdd2b72e3430c3e595c232d8ccc08955727e2c5177a1833acfb1bff3"
+    },
+    {
+      "path": "rust/crates/review-workflow/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1402,
+      "sha256": "44cf9a08408122a5e3c3a745265dfa07d05fb0abd86c8e9a56753710134df41a"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/initial.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 40159,
+      "sha256": "8fffacb7d0b086466ed295e1b882d055384edae2ed46965c370a01064a835151"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5382,
+      "sha256": "505b36d7d06eaddfac1de06f3ef7d36b3fc83f1d5ef9d87ebccfe75bee4d1a3c"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1994,
+      "sha256": "3a701c90b3f6de963c4361d18b8273beacfb0890c0f14efcbb3523e7404ca0ef"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/provider.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5839,
+      "sha256": "b6fbdef7fd1d648776918a41692710766a92ed2718d35baed18c415bd5612042"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6248,
+      "sha256": "ca299db8c249b17c72235d1534979633b24c659729114084b6291b3aa77890a0"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/startup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 47460,
+      "sha256": "3f00cf62bed729ae25c6c7556862c708c5ddf39996b5a297160c463e7d8cd7fb"
+    },
+    {
+      "path": "rust/crates/review-workflow/tests/authority_boundary.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1716,
+      "sha256": "93295c01bdc75460f2e7effea900eff9b0c115251c5a370b53560e27c23b41de"
+    },
+    {
+      "path": "rust/crates/review-workflow/tests/campaign_owner_join.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 247258,
+      "sha256": "445b9de14d3bff412f57dd259d75009f77318c1f603d01fd4031756eae89d233"
+    },
+    {
+      "path": "rust/crates/review-workflow/tests/startup_binding.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1932,
+      "sha256": "7e96b6c5c5c134b1ec4baa58198ef0c05e5f1e5531ce3448757bf38558a0c9f8"
+    },
+    {
+      "path": "rust/crates/slice-campaign/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 862,
+      "sha256": "67ea8b83c5916c2e664767ff40f2681b60849d0f26224e5ff3dcb4b15d3f6ace"
+    },
+    {
+      "path": "rust/crates/slice-campaign/migrations/0001_private_review.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1385,
+      "sha256": "187a750464c68b9bd877451a5fa83edad9c021156861e23c9ef18cb39c96c9d6"
+    },
+    {
+      "path": "rust/crates/slice-campaign/migrations/0002_initial_completion.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 993,
+      "sha256": "91c4e29dd273816bfd52e5857878afd21fa4f98b75d439b467b2aa4ab8280c84"
+    },
+    {
+      "path": "rust/crates/slice-campaign/migrations/0003_new_root.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1989,
+      "sha256": "10780e8fedca66fef6774a34ddcbced3e0baff43019f2eba5114d6e650717cd3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/migrations/0004_remediation.sql",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2012,
+      "sha256": "5771d0f1bb3c780468ae3071b7d088f6a28d21e3fa7f7ed3885696b4b8d9e6f3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1218,
+      "sha256": "252721de1264d41f40efcf474464f58724fb45434a41ca4cbc27438089a1477a"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/application.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 97027,
+      "sha256": "091a58f03e2609a25c9f66f910e991e750e51848f56b24fd8c4bc1d96368b6be"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11672,
+      "sha256": "381d23a9a56784f857e4d7fc5e080ed1b66032c67d6d55565dfca605c1eb12fc"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/completion.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 27145,
+      "sha256": "7a20bccf4bedfeaa130af635f945b5ef906a2b50444739f5f97f2d77858979f8"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15977,
+      "sha256": "38bfc1ac95e7f5dc3fe9a07d1ea916b1a61c6bf753d86d64558f237ba1dc5941"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/initial_outcome.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 108755,
+      "sha256": "ca6eaf87de47850d1e46ec62c6c40d36e4b04edaa5474d2d43bffd67f65bee13"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/installed_authority.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 20810,
+      "sha256": "f7c3f7cf4f706387294b4b474cff8967e3ac1fd35d0609ec7cfea9add0f5cae0"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4671,
+      "sha256": "ecaaaf19f95c3226764847357fa70536fed38a8567d17331b938d9bd52eccc9e"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/owner_readback.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 130766,
+      "sha256": "17ebf87b3d761d5f65638a218a0d44bb8abcf11b5b75fbfd134a3c2f9159225c"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 37992,
+      "sha256": "fa70e862ae528b1403f6574cb52512680a5b7a0cf611a04d484fbc4f313c201e"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication_ingress.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 1057,
+      "sha256": "97587c9e41d0c3aeb1dc9b9509c94145870dbec342f5658d986838686c01fe28"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication_store.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 9780,
+      "sha256": "4ca36467a2c69d490f7fcbafb44733f3e55c731210d63fa92a4b63005ba98ac8"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1327,
+      "sha256": "fd4ea58a058e5292f2b753f59d45d08d51a380b227eec4355b9dfa73a5c0653f"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/remediation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 245469,
+      "sha256": "b4a8e4643ba0524a21c0599b78e784277e4100622c77f30808486f5bc1eb1f29"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/store.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 66132,
+      "sha256": "d23e813fa58b20f3916d050c29dd4f9622407f9b55c1a16479fac0bed1fa4991"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/subject_binding.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 45070,
+      "sha256": "4df891a8cdf5e65b77f5d30b6d0894a2ca66b02d912aa087e87deb3e8ae1fbe2"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/admission.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 29526,
+      "sha256": "aa51c1f6c098bdc2609458796ede53c50eac76b88031b094aa7d12c1741c351c"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2633,
+      "sha256": "286ee702374f5a8e3249bfc8e37fe5de3e9c4d8a750523a613c7f090855a84ff"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/codec-capture.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 19349,
+      "sha256": "ef9ca66756e0c2b845537b48d0590e6ab943abf27cbe8f18c8fd35a75e4960a7"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/subject-handoff.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 67751,
+      "sha256": "409985af70e233377e39d0303063db184597b5fa9898b39adf07da87af835a0e"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/01b40cefd773abaea6128fd8c6ccf27be97df6944279a9492f9be13c71b29e84.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4234,
+      "sha256": "01b40cefd773abaea6128fd8c6ccf27be97df6944279a9492f9be13c71b29e84"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/0448f6d4ac3bbdac7b1f08f13bb22bcb1c482f7186082588f015bf689d72a1f2.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 40,
+      "sha256": "0448f6d4ac3bbdac7b1f08f13bb22bcb1c482f7186082588f015bf689d72a1f2"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/06a550363e3a9adc7318377dfdfc201d87d43a8a0fe8a37d18c84dbe9e8ea23e.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8388,
+      "sha256": "06a550363e3a9adc7318377dfdfc201d87d43a8a0fe8a37d18c84dbe9e8ea23e"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/082ab20c47779059d5c223b7152e99e5f40181aee5ec51984b2de7ae33bcabb0.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16,
+      "sha256": "082ab20c47779059d5c223b7152e99e5f40181aee5ec51984b2de7ae33bcabb0"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/09db95efb8cbe46c11578ac10988d21fd29a764dad969dbdfcd28bcb29bb44ac.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 41,
+      "sha256": "09db95efb8cbe46c11578ac10988d21fd29a764dad969dbdfcd28bcb29bb44ac"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/0ca15c45cf85d5b930a3c2b22905b8db161c6347adf027ccc726441ef6cb3c38.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6165,
+      "sha256": "0ca15c45cf85d5b930a3c2b22905b8db161c6347adf027ccc726441ef6cb3c38"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/12ef78b5a4a73f9a469803d6ba3c70a8aeb64f97ca4fc438e5492a16b4d8636d.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "12ef78b5a4a73f9a469803d6ba3c70a8aeb64f97ca4fc438e5492a16b4d8636d"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/139b41f9a65e920a163acfc29388825ab05f31f470ada010146ddbd179d46285.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 48,
+      "sha256": "139b41f9a65e920a163acfc29388825ab05f31f470ada010146ddbd179d46285"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/16dffaafcff903df2801e8d66ef41cfa697a5545b7927f50d3d2dced035d959e.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 30,
+      "sha256": "16dffaafcff903df2801e8d66ef41cfa697a5545b7927f50d3d2dced035d959e"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14,
+      "sha256": "1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/24a244b9fbde1e6779f885b2486a31eea83137fc346c9450436b640cd38e3aa3.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6210,
+      "sha256": "24a244b9fbde1e6779f885b2486a31eea83137fc346c9450436b640cd38e3aa3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/2675a6eda5e7ec7ecf81480f3be4147a56a3019696f33fb5f8d1c3cfa7dd0e1b.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4231,
+      "sha256": "2675a6eda5e7ec7ecf81480f3be4147a56a3019696f33fb5f8d1c3cfa7dd0e1b"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/2e5bb0a6612ff9082a69f530010db34d0b9c459b345be114936568de2fdcfaee.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15,
+      "sha256": "2e5bb0a6612ff9082a69f530010db34d0b9c459b345be114936568de2fdcfaee"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 40,
+      "sha256": "2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/30c4fea1649292849f36a4b27871394b09acb11a08b2b67ac9bbc86b7f2bef48.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2024,
+      "sha256": "30c4fea1649292849f36a4b27871394b09acb11a08b2b67ac9bbc86b7f2bef48"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/36aa2c487bbbf1257a0826ebe63f3d54af0f207d1b1e1f8eae3e0192172ad427.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6210,
+      "sha256": "36aa2c487bbbf1257a0826ebe63f3d54af0f207d1b1e1f8eae3e0192172ad427"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/433baf730ba81e96ed55dd998973edae2471efaff9d0dd0d71ae91becb4ffbea.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "433baf730ba81e96ed55dd998973edae2471efaff9d0dd0d71ae91becb4ffbea"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/43598c2406f857d4b195e69824e51d1691db0c377968e6fa2cfb3959c1fd2a14.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 285,
+      "sha256": "43598c2406f857d4b195e69824e51d1691db0c377968e6fa2cfb3959c1fd2a14"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2,
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/4431b0658c18762760e488c81c8c74bf466b9943b3473bfd6b5237828074aac7.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6155,
+      "sha256": "4431b0658c18762760e488c81c8c74bf466b9943b3473bfd6b5237828074aac7"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/4656e734eab0ab60bf37022ef2cd81ef740ea2f498140c40bd2c8880d7f5dad7.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6183,
+      "sha256": "4656e734eab0ab60bf37022ef2cd81ef740ea2f498140c40bd2c8880d7f5dad7"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/47dc3665a86adc66b82d3415285139197b3b16eac1c4bd8be24dd602efe5cb43.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "47dc3665a86adc66b82d3415285139197b3b16eac1c4bd8be24dd602efe5cb43"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6725,
+      "sha256": "4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/51543476fc008dd3d311817e7de231e77e591ce3f5a45908351c401bf8a47b60.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "51543476fc008dd3d311817e7de231e77e591ce3f5a45908351c401bf8a47b60"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/51f383441d5f5af2b37ea217b7b698c4caef7a83d211fff9f6c0fc9058db2459.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2016,
+      "sha256": "51f383441d5f5af2b37ea217b7b698c4caef7a83d211fff9f6c0fc9058db2459"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/5a67675909eec5c11d1114fed0e87744220df485ce3408e6e5a32a7129befe49.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "5a67675909eec5c11d1114fed0e87744220df485ce3408e6e5a32a7129befe49"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7,
+      "sha256": "5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/6162f264fe2bae0d2ea54d242245ad338a5c1d77be27b790d344485dc5bb6318.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "6162f264fe2bae0d2ea54d242245ad338a5c1d77be27b790d344485dc5bb6318"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/62a9840080af8d4ef95fbe153d0c9653bf302f3f9d9b3d8727b47a94bbdcdc14.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6210,
+      "sha256": "62a9840080af8d4ef95fbe153d0c9653bf302f3f9d9b3d8727b47a94bbdcdc14"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/62d60dbba1f36c210422b858b89cfc1a6afd6853d9e84e30dc8e3e2f41dbc4da.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "62d60dbba1f36c210422b858b89cfc1a6afd6853d9e84e30dc8e3e2f41dbc4da"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 90,
+      "sha256": "67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/6877a4956ed384163f86943082821ea2382121aa234c43c5d86525316288e5d8.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6210,
+      "sha256": "6877a4956ed384163f86943082821ea2382121aa234c43c5d86525316288e5d8"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/6a0cb8cea0abd45862490ed421938b8037ddf0f86df128e3950894ca0283e3f2.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "6a0cb8cea0abd45862490ed421938b8037ddf0f86df128e3950894ca0283e3f2"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/6f948c2d42dc8c90908edbff055ccbe6f191a5839cb486c16eb51ce08c8484d8.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2145,
+      "sha256": "6f948c2d42dc8c90908edbff055ccbe6f191a5839cb486c16eb51ce08c8484d8"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/763a75d3eb2a1fa74cb788f2a1197f704f7c64dc3c1d91910c9cc25952f4f74b.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6206,
+      "sha256": "763a75d3eb2a1fa74cb788f2a1197f704f7c64dc3c1d91910c9cc25952f4f74b"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/785450d8bf2f8768cee24885114be005e5aa0a720ef63739829ebc7be59449dc.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1519,
+      "sha256": "785450d8bf2f8768cee24885114be005e5aa0a720ef63739829ebc7be59449dc"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/7e5cd5a42700d46986dd1a47c3af5f0af6a9c2bb3894ffb2bbf0cf937f7d53f3.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 91,
+      "sha256": "7e5cd5a42700d46986dd1a47c3af5f0af6a9c2bb3894ffb2bbf0cf937f7d53f3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/81103aa69250ea56e887eaab3cd9bf363d341563f05d0676be389c3e40a72871.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14,
+      "sha256": "81103aa69250ea56e887eaab3cd9bf363d341563f05d0676be389c3e40a72871"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/8787392a6450d6412b68763f4d4b72fb44f42c23c865620556cbca0024acc39c.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 40,
+      "sha256": "8787392a6450d6412b68763f4d4b72fb44f42c23c865620556cbca0024acc39c"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/937ece0245c57049d177c1911c1a12735e4a20e5b1f04295b5b23de6d0c07e38.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2002,
+      "sha256": "937ece0245c57049d177c1911c1a12735e4a20e5b1f04295b5b23de6d0c07e38"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 45,
+      "sha256": "966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/998cc5a9c02968e9f60bdf074befc18fa105583681ec1fcd307404188e88f257.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6176,
+      "sha256": "998cc5a9c02968e9f60bdf074befc18fa105583681ec1fcd307404188e88f257"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/99fba65cb422e57902ce48739093d67629a2dc620309e7df770cffd64460c00c.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4231,
+      "sha256": "99fba65cb422e57902ce48739093d67629a2dc620309e7df770cffd64460c00c"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/9e3b51b7636e0e54ae528e35f9cf6fd53d9fc2d8acb8cd8c7ff01b54c96766c0.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16,
+      "sha256": "9e3b51b7636e0e54ae528e35f9cf6fd53d9fc2d8acb8cd8c7ff01b54c96766c0"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13,
+      "sha256": "a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/a3528273a247fc59c1ae9ef13999e5c662a11bfa6ff6e1e626ef210ef03346f4.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6210,
+      "sha256": "a3528273a247fc59c1ae9ef13999e5c662a11bfa6ff6e1e626ef210ef03346f4"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/abf5c951f3709ba567e52907c3559f8721528c9a77da2a5b252a623221702552.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "abf5c951f3709ba567e52907c3559f8721528c9a77da2a5b252a623221702552"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/ac9eff99608e6814abc603b2a464eec4ea91d78ef89570b08777b5a4dfb6ec2f.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8388,
+      "sha256": "ac9eff99608e6814abc603b2a464eec4ea91d78ef89570b08777b5a4dfb6ec2f"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/b93e4fec146553d6123481de5e73632bcf272925b96e775d1dc51bb7f4656fb3.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "b93e4fec146553d6123481de5e73632bcf272925b96e775d1dc51bb7f4656fb3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/b9f0fb9fedeb1242cb11b6de0077c07c312665400418c3db2e8de95fbf32d72a.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 46,
+      "sha256": "b9f0fb9fedeb1242cb11b6de0077c07c312665400418c3db2e8de95fbf32d72a"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/bf15e37a1d3bb163adbcecf03f6614974e4119741ba21eb795dc2e8a1879afbd.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 25,
+      "sha256": "bf15e37a1d3bb163adbcecf03f6614974e4119741ba21eb795dc2e8a1879afbd"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/c170719a49772a84223752144d1fb7611bf7b1f5a387b8a9bb22c8114907479d.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "c170719a49772a84223752144d1fb7611bf7b1f5a387b8a9bb22c8114907479d"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/c187b1e17c212d1763f6da650bdc8b667cabd6f0fe13b1566dfcb11edc5aabfc.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 90,
+      "sha256": "c187b1e17c212d1763f6da650bdc8b667cabd6f0fe13b1566dfcb11edc5aabfc"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/c315b5c1eb455130f99ea964a3be698f91ab4f98328dc9487d5e571f8cfe78fa.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "c315b5c1eb455130f99ea964a3be698f91ab4f98328dc9487d5e571f8cfe78fa"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/c379426e5d52daf801c77f38214783bace9368ebb0ef4e769fe3a6d6f0c8af47.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "c379426e5d52daf801c77f38214783bace9368ebb0ef4e769fe3a6d6f0c8af47"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/c77f5f76c10e4d2127746585a3aa707cf19766eed08ed0f1fff849ce6417181d.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1511,
+      "sha256": "c77f5f76c10e4d2127746585a3aa707cf19766eed08ed0f1fff849ce6417181d"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 285,
+      "sha256": "c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/cc425717fc1dace62a325d359f85a317e910af2cbd0ce98273a2ba7f40200d35.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6194,
+      "sha256": "cc425717fc1dace62a325d359f85a317e910af2cbd0ce98273a2ba7f40200d35"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/d12b9a0af4a6cd8f0c562457048fc40d304580a072f56dbca0812913c55bb7a1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6208,
+      "sha256": "d12b9a0af4a6cd8f0c562457048fc40d304580a072f56dbca0812913c55bb7a1"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1523,
+      "sha256": "d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13,
+      "sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 29,
+      "sha256": "d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/d38245cfdb5d2239d67fe2a719312768b668a6928d8d97d04fbce83215e50b44.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13,
+      "sha256": "d38245cfdb5d2239d67fe2a719312768b668a6928d8d97d04fbce83215e50b44"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/dbce708397093394b7363b366cbb5feb6f165a9b9e3c2b41bdf72ba71e7cb004.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "dbce708397093394b7363b366cbb5feb6f165a9b9e3c2b41bdf72ba71e7cb004"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/dbe13486dc8902920630de2232ddd7766622cdcea9703de6da76212196b35ff7.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "dbe13486dc8902920630de2232ddd7766622cdcea9703de6da76212196b35ff7"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/df1890f39a83c2a3ebdc4d0af0137ad8689fdb21b6d99c6e9b287d469c3e8c84.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1523,
+      "sha256": "df1890f39a83c2a3ebdc4d0af0137ad8689fdb21b6d99c6e9b287d469c3e8c84"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/df8384b402380fa6cc6ab0cdb57fcda9b632ef677a571d9d79378269258507ad.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 896,
+      "sha256": "df8384b402380fa6cc6ab0cdb57fcda9b632ef677a571d9d79378269258507ad"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/e1fea752e7b0f6bfb02847982e422a786131d32a1889bc565864f1acbf8f5bc3.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 329,
+      "sha256": "e1fea752e7b0f6bfb02847982e422a786131d32a1889bc565864f1acbf8f5bc3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/e5bb0742ac7a1ddeb3f9be5c52a9a3d35aaffabd586c8fa7485d17217ff85d68.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6209,
+      "sha256": "e5bb0742ac7a1ddeb3f9be5c52a9a3d35aaffabd586c8fa7485d17217ff85d68"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/e6ab4c08274a2788b876c8eceee23886eedb886e0701a99d3d2272c1d0cf8dc9.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6149,
+      "sha256": "e6ab4c08274a2788b876c8eceee23886eedb886e0701a99d3d2272c1d0cf8dc9"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 24,
+      "sha256": "edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8388,
+      "sha256": "f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/f9815b086e50b75a1bfb45a6a4afbed930cdc61da215ecfeb8809b975301c51b.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4234,
+      "sha256": "f9815b086e50b75a1bfb45a6a4afbed930cdc61da215ecfeb8809b975301c51b"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/fadf97926d3b03cf8d551ee293437f5e02112979c849618581dd7f1469ff6963.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2006,
+      "sha256": "fadf97926d3b03cf8d551ee293437f5e02112979c849618581dd7f1469ff6963"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/fixtures/vectors/feb939020e9d63a4e5671c2fee3621703f45dcd172d5ab9380cec70a163dea5d.bin",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8,
+      "sha256": "feb939020e9d63a4e5671c2fee3621703f45dcd172d5ab9380cec70a163dea5d"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/history_integrity.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2978,
+      "sha256": "fd6a2a6473c073112306a08ba4186eddf08898e28636511fe13ffc7b4aac89a5"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/history_performance.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15050,
+      "sha256": "8d493fcaa1093419a2c27e95316f1955150b0a834e2a93b967f85e85aae5058f"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/owner_join_recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2020,
+      "sha256": "9403684fef039976c7b376947b614ac8f7e4719584ffac8dae14ddf8060ddb66"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/publication.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 900,
+      "sha256": "e2f8cbfc50d0464256c8ad85e2509b3f1ac2a9b751bd1bef2f70ee5f193982be"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/qualified_initial.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10109,
+      "sha256": "09593bcf372646619bb36014be9a830a6a271a5d171ce3b8cbddec63ade26180"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/remediation_profile.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5454,
+      "sha256": "34b203b7c79babe207b0f275c127915b003b75f36da36f17ffe64c1892bdbc3c"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/subject_binding.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8180,
+      "sha256": "15f3ba7f5b816799e6a591f0afc50a5345832f52172adb86046916dc333ae926"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/support/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13723,
+      "sha256": "e957f764fbe4c8673ad9134f4d75a08e61b398aae0adbc6d62243952bbbdfd90"
+    },
+    {
+      "path": "rust/crates/slice-campaign/tests/support/remediation_artifacts.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8273,
+      "sha256": "d1a61a433dc0f974341b661ec71ce70723235fd46a79500f65d125fe82e0f9f1"
+    },
+    {
+      "path": "rust/crates/terminal-ui/.gitignore",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9,
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "rust/crates/terminal-ui/Cargo.lock",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 36154,
+      "sha256": "07b70f264cb2cdfc445a95682c46d4b1370c0fb86d45272586a257092792aec2"
+    },
+    {
+      "path": "rust/crates/terminal-ui/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1253,
+      "sha256": "cecd901537846f98aebef32f5ff40ac10ea5c9aec7970c90c131aecccef001cc"
+    },
+    {
+      "path": "rust/crates/terminal-ui/README.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 36182,
+      "sha256": "dfa6bbc91e88362a72a86bf3bb7ebe085acb6789b30f5e697cce12c79421c618"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/evidence/s5-source-map.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 44335,
+      "sha256": "09b761609edcfa2de83f635a9779addcc4d7db673126a168512c842674341f94"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/implementation-roadmap.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 23450,
+      "sha256": "d856a466dbc9fe10ef33285c74dffbec23bfffc5f904987695b0b9d94927584e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/installed-host-validation.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4986,
+      "sha256": "2483dd27f150bd211bb60ba9162ceeab071eb301b9cb9002c03994589a335b74"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/conversation-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 118771,
+      "sha256": "ddf18787eadcfc04061727c2ad800348bfa11a89496c35de4f1eaadff2e9d38d"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/graph-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 112445,
+      "sha256": "1ea443f8322ec87d32d4c972e11e192810beb55276947fbd63776c0c5e71b6fa"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/graph-80x30.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 68017,
+      "sha256": "27e715ed109bebe275ce784ac107c4f032c2ef295638b496422e412f2d11babd"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/pending-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 110389,
+      "sha256": "bd8ff300cf2e467a17be5316cd18904650994be6929be3ce84db71e17d4af1de"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/pending-80x30.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 61307,
+      "sha256": "94f3dbeb94f8fd51fd806877d70f002222424cb604e6b6d03272a5b77d8bb557"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/refused-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 113305,
+      "sha256": "96f1f5492527a95d3fedf639b7bf52f11816e93a6599dff7c39ba015e9373428"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/refused-80x30.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 64192,
+      "sha256": "6001d4f742a416051bf47205225e56653660c86b789c6a2920d06e4807e944a2"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/result-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 111811,
+      "sha256": "251db99e16bd00f11a7deb153ed5e33929360ef08881e68144077306552a5e38"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/result-80x30.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 62764,
+      "sha256": "603010ca85322f573f73d00ae2f54f3a048fc0f1d28175e89aa76f3c96afcd0d"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/stale-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 114789,
+      "sha256": "9a6d125aaf6243f7373a84651e7c60b742e2a258de49f1e8684e6869e8dfe7b5"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/previews/task/stale-80x30.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 66334,
+      "sha256": "3984b8a2322b25ff4b509be30350efb89bf399c6ebdb41242956fb9fb82940f1"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/s4-client-pin.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1256,
+      "sha256": "27a8c3de65b61112558dbd9ad89ed6533cd7cc7866972d4fb052bc084e9c356d"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/s5-source-map.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11883,
+      "sha256": "ba7af97805c3f4b7649426a2dc07ecf974006730a401db701574d64666f58a3e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/task-fixtures.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7006,
+      "sha256": "cd35f82666247b8766fd5153b8ab08b7eecc6494e86808b3180dbeb5c5b0de6e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/task-observation.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14073,
+      "sha256": "9e44bb13c5af05831521bbc1ac32721cbe0d878d20538c9e7f92aced2b4f19ba"
+    },
+    {
+      "path": "rust/crates/terminal-ui/docs/u0-preparation.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11059,
+      "sha256": "18bec568bde731caced34e99e5432e171bc69edf15d48d654c13eec5d60a8b9e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/chat-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 110022,
+      "sha256": "5210f8871fd85f2dd9eccb8f0aa4d152516bea268f812b3e44a76b9f5684e96b"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/chat-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2783,
+      "sha256": "7b6d8e55bddaa0fcd680c4448bafd4bdbd2b13b03292a3b188cdf34153ab48a0"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/colors-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 109191,
+      "sha256": "3e67eff2685baaf720fe8655d3a17741c36fdf11247e75861a8a085d27d08589"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/colors-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2696,
+      "sha256": "d9dfac3a1c5126eb0a2710b7c77d05ce66c909a3e16336e4f81ad27645c00769"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/commands-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 75404,
+      "sha256": "b7508592e75c8f016d2f1f3817212333315d9023c8cb7ed3f2d5fdc1beb5caa7"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/commands-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2816,
+      "sha256": "1c243a15683090a93ec55d0701bdf4635b0f92134385e2c0f6ae0cf3261303e5"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/commands-60x18.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 34889,
+      "sha256": "f69025dcb0cf29a0a77b3909ac965fff303533454aaf365a0a8795ec5aeaef4c"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/commands-60x18.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 708,
+      "sha256": "ec98dfb1e7e73f8986649db06ea8903e0532e289b3be4d917ce8b9aae5620435"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/commands-80x24.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 44779,
+      "sha256": "d63c7583e02e4c21b2678f4384cd8f63912158979e066d6b42b9498dff567e6d"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/commands-80x24.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 833,
+      "sha256": "0b14348e8765c079481056e7957065859000f448d8845c4e69aacb3ebb04fd94"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/compose-80x24.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 58825,
+      "sha256": "13b68059c5febba65e79c478346857cb8519608387805a590cd93c64fa65bb96"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/compose-80x24.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1112,
+      "sha256": "fc3193fbaccf3bebd479def7c2b1479d8333a91e6715ac87504e549aec52100f"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/contract-failed-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 116957,
+      "sha256": "69c936e2a2b35fd16934b7383634e1a0c7a37c7d341b3141e656f4c2e8477697"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/contract-failed-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3282,
+      "sha256": "2e16921352473f3c1d7c09564bba02342d22307ab296daf167231edb2d91d117"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/contract-historical-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 121541,
+      "sha256": "38c24036a58a9e180d2fb32b75855f0b8f7028bedc4b97c251b43d9f0d8e14f8"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/contract-historical-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3449,
+      "sha256": "fb5f8f2091a9216cf042f9cb25690bad8793df3ac5c5625b9e4c836bb18df8c5"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/contract-unavailable-80x24.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 53759,
+      "sha256": "260b7a1bf9b53abd49b62c646b84b2a3a5135457a8025df97133777087fc978c"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/contract-unavailable-80x24.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1043,
+      "sha256": "1debac78bf82adfce3ad1476897eaeb09491363ec7ee0c7d6a25f102374b2524"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/conversation-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 114300,
+      "sha256": "71a401f86cd8ac6bb31ad7277e0821d859f3ebbcd0b87f3b51c22f7848aa03a3"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/conversation-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2950,
+      "sha256": "2937325852ad86b1d375efc1010b16e33ecbed172af96ef2ca6d72bc0987c91d"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/dashboard-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 94351,
+      "sha256": "cbc2b762cd7d32557634304c7cf79a0c4ad27d89767d18bd2f8e1d8b2abbb380"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/dashboard-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4175,
+      "sha256": "b2fcfa445ad4adc2a6d2d7ed838c81ba4f4fe6462261374437068aebafb91243"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/dashboard-80x24.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 58050,
+      "sha256": "a230744640f03dbac429cb8d23ed79439b1434b837fa53c78445182cb30b5404"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/dashboard-80x24.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1105,
+      "sha256": "93f6101cecdfd38f625dd501de79ac6958aaa9d53f7c9aaa90fdf113e0659dfa"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/history-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 107279,
+      "sha256": "c99d0c86bd5579cf8b87d0c0184225156a851df006de53cb312bcfbd7850fe6f"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/history-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2942,
+      "sha256": "72e42ef97042520266330d6b8c61afddd46ec0bf00a970b1dd60a2f948db783e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/lifecycle-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 118607,
+      "sha256": "43dfb470ad3f26904339b8dd26f7dfa8312d79b791cc18da54c07719682af15f"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/lifecycle-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3466,
+      "sha256": "c7688f1abf7747e2957c9fbd1f89cb24f44e976025ca210c1a7c5223070e67af"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/lifecycle-uncertain-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 107716,
+      "sha256": "7de7f766dd9a99a161e4d5c6c2b848b68d3bbbfe53256711394ff5a2d0512b87"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/lifecycle-uncertain-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3475,
+      "sha256": "e880897a835ba1cf3962bfccd60a41a194d5f48f5158fa50d962955b65af9020"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/paste-80x24.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 59241,
+      "sha256": "8059fba9120492c24cdb066aa7ffd6ecb6cdde39a0a4276d028688099ab2b5e2"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/paste-80x24.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1096,
+      "sha256": "01e1149449853c5c5f077f8b333346ec643d528008f84004684dd91602d67e70"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/replay-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 136925,
+      "sha256": "d474aeb38f61334478355453ba0370a7e1a327463623f97dd41ad88e5955e13c"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/replay-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3570,
+      "sha256": "2daabfd30a349bc62feeba214ddb923822626af1f0211ded4b3e2bc341cf70af"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/replay-rejected-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 100074,
+      "sha256": "b9cc34a284e49ee1a937ef50997a05c6e5abae83eb76f2cf550a11068bbd227f"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/replay-rejected-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3361,
+      "sha256": "117d9f74dc886b4f4231fb04cfca2886922482e7de7f4344cfcfc4091ff79bd2"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/selection-128x40.png",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 95640,
+      "sha256": "2dcb3aa3badbaf2d65c27a19bc602cae3a64c826fe6325a975b357fe8a1d7287"
+    },
+    {
+      "path": "rust/crates/terminal-ui/previews/selection-128x40.txt",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2603,
+      "sha256": "d0c26423ea4b0847351b18dd8fab32ea94cdce1c1777c2f8e976a3626f82bc38"
+    },
+    {
+      "path": "rust/crates/terminal-ui/replays/live-proof-2026-10-07.v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6992,
+      "sha256": "e57de0d58ca38588174a9c68d8eecd90823420edaa4db7d9c4ceee63bae97670"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/check_s3_pin.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2412,
+      "sha256": "b2c23872baa702c4bad7bd169414e1f055e4c277dcc4c118ff4e4c7c00073400"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/connection_smoke.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6544,
+      "sha256": "26318f813cb408e4151ddbef23b38ed004216e639709908e0d635053be96b463"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/export_live_replay.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6803,
+      "sha256": "3070b4869f25f689739744e9b01373f0dd5f065ffa01057cf9cffefe1f0b8a65"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/preview_png.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1177,
+      "sha256": "29f195df3b02dad3fede1b8e0ea5d0de097f5258669a435aba545e892995865e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/pty_smoke.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6433,
+      "sha256": "345096768830e42e46dca08cbff82025fdddca6716b6db42aa5647023e9046e1"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/s5_populated_smoke.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 22743,
+      "sha256": "08d0e21495bf54457b925f6ea4aba5fc4dbdf2485d88bbbd0d3b2d5b661df02a"
+    },
+    {
+      "path": "rust/crates/terminal-ui/scripts/task_pty_smoke.py",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2573,
+      "sha256": "324e504db3630bfde7b05b0754caacb90b4c6ad1877471326f6e7ef54e45328f"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/chat.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3095,
+      "sha256": "d104f2071f57d73d169c2e39026f57ca02fb8ef104810cc52fc5b10961bcfccf"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/clipboard.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 407,
+      "sha256": "1080b25abd9fb03fa070dcecd73a91ad79f14848536559011d60b4fb3bfec3bb"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/commands.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 23228,
+      "sha256": "d78aabbd3c0222e33212f81df03d6522b944d2e4c1cf2aa7092264e859a4b9e0"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/connection.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2853,
+      "sha256": "06423e559d479fdfe028ec20325cad3dba22a2cd05e6d0874086843798b73a16"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14345,
+      "sha256": "95903a270486887e09ff37a85b1bdc4ac4dd63810cfc156811b3f1d80c120607"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/draft.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8017,
+      "sha256": "518e37916ea2012493f2076c1aa6d16931267314ced3dadd784e8551ddb1c33e"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/fixture.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8355,
+      "sha256": "7c6c2a0ce3baa316bd10cac49661baba85eb11f82372a4943bebfc9c80717b32"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/highlight.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5592,
+      "sha256": "4426e78c9854a773eabc902d4fc1e2dbd0d21d621981fb637153436472bc8238"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/history_view.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 57919,
+      "sha256": "11b4326df558aaf849445e65106f2060a472429f46145485fda330fdb85b02b6"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 106,
+      "sha256": "d0f034ae84c7f820cb281f410b850022f06c3e174d1e5eb2dc6b9cc48bb71ce3"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/lifecycle.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10667,
+      "sha256": "02807e70b8c28b8df2c2e913c8f79ca1c29d6deedb01b4f379f9d9762877b5c7"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18183,
+      "sha256": "373aed3b8ed432beaf98111d83017160581c8b04da762ac9f7035f277b183963"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/model.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 45129,
+      "sha256": "4cca3fd24de9ed7d9585caddc2f0cb7559327ab157d939f99bbd9ed4e0e40ce9"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/mouse.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10070,
+      "sha256": "af86de8886d61d973089ebdcda688da6608758320f0fe77e0a4261ea89761d7c"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/presentation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4241,
+      "sha256": "896e32073e8d91967fb600c14298375996316d74957c2b05a0a481a0c896b606"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/replay.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5409,
+      "sha256": "e0d08e2a738478e59d3a127abfb29ccfb6bf736ab224684dd1eb3543537613d5"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/task.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 17789,
+      "sha256": "f00c928d3756a40f82cf44dfba75a93bf622a11ccd03c7239d082ef266b52ee7"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/task_live.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 16877,
+      "sha256": "036c42313678b855edb31bae10cf8e4efb9a45f65bf1b6d8591c7e6338e6438a"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/task_live_tests.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 13148,
+      "sha256": "d05d5b8a6db7d1899d240519296179bcb97be96fd13e7058e7d53efe7b4fff79"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/task_observation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 36929,
+      "sha256": "ced562697b68cfd88f008ac322e01fb717411f71e32cbab535e15edd02a8d09c"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/tests.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 81185,
+      "sha256": "e3fafdd98b0b55e629d62e8734b676c487c0de489464bdfc82a851bd0d4c6507"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/theme.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 882,
+      "sha256": "b2413ef12c1932cd64b308b7e77cbdd39fce4254aefceeced8651e57bb4a0578"
+    },
+    {
+      "path": "rust/crates/terminal-ui/src/ui.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 51121,
+      "sha256": "d305275b58ae614a33885ab4e136197eaa623d5ca636fa31b7695afd5bcb6731"
+    },
+    {
+      "path": "rust/crates/terminal-ui/tests/history_read_host.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 26952,
+      "sha256": "c7823a955ffb15d531f7b0605bacbbb41a8509a83239e98178a42b774be3d6b6"
+    },
+    {
+      "path": "rust/crates/terminal-ui/tests/support/terminal.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6258,
+      "sha256": "71fad93ad926a68eed3cb9fce424321e6c5dd6fc3cd084c11c8f8aef6208fc22"
+    },
+    {
+      "path": "rust/crates/terminal-ui/tests/task_observation_host.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2584,
+      "sha256": "337d6306bdc1ae6b1ad21ca70d180ff70bf1b3c8b40a308c0d38b67778cd13f7"
+    },
+    {
+      "path": "rust/crates/terminal-ui/tests/task_refresh_host.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 12383,
+      "sha256": "28178a644198b80377b9bb10e354b548b470b39c89ae0e9913ff4d7caa62a720"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 465,
+      "sha256": "10e5c9f20bf1a2286672a00baf81756848023437f53bbb0c8cb4f6968af84218"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/src/aeg.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10731,
+      "sha256": "1c8f973513b0ef95c92ab714ac0bd2a7ca757a8a86a413715bec4d12960e2f38"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/src/extension_protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7276,
+      "sha256": "efe1094c9a3147e58ee0a83b7fc07a8bffb6167af4473e8b2857eb2cc4e8f5a4"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2186,
+      "sha256": "7707d44aa2904e22317d07fea8c30fe3a797251306667633064cf23df89854a7"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/src/manifest_protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5127,
+      "sha256": "5ad6be2cbdc3a9271d6ba56b610c020eb4f88e2a354e04281505bc8d73a594bb"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/src/protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18073,
+      "sha256": "96c9307b2bf46f05537db00a515dbc25b81e37feebc906aaaaee929387e8913b"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/src/source_snapshot.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6045,
+      "sha256": "9bf462a994444d43162633e15fc99f05ba990ff761f32e2e4ed77934a7d142d9"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/tests/aeg_process.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14385,
+      "sha256": "2460e80c1f5d9e7872788d569dad4e2502e9b055f9dad5bfad02e343fc0504be"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/tests/extension_protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8461,
+      "sha256": "335f5b83263cd3885f5d1a3174e4cfc1e5a483f7bb9a99610e03f5d2545f7653"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/tests/manifest_protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3384,
+      "sha256": "fe8fd7cd0ab7db72f02e334d693247a9d822f0e726ced19e818097867621aa06"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/tests/protocol.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3476,
+      "sha256": "49a6bf1ff78968afb63718b68d2a3ce39e61cbb94681846a3f27547df1786031"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler-cli/tests/verified_skill.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11839,
+      "sha256": "8421de0e3463740a7d034b1e4637fdfd8a2f558e175f759a12ed05b498b47adf"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 285,
+      "sha256": "c00913da18637bcd7562b84527681d4d320bd715f5c1bddea8919ed106b0a242"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1442,
+      "sha256": "ca940efcf512b70fc9511e51ed74a906613afcb116a4e59224eba1aa29306063"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/error.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 891,
+      "sha256": "59a9ae9187572e9b03fb1d8d09fb9a259a75c79d04a84d9b52461fa872f9cb90"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/extension.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 18963,
+      "sha256": "12912c8e1fe8ac6a56592511be0666fc8024df9d7b3e37f5564f94875c423806"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 747,
+      "sha256": "2d1eac35a6078b5c38687638516b5e59e900d86c3715e9fd9030084c775cb2c3"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/manifest.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 27651,
+      "sha256": "794334af1b0bc83faf200d3dfe2eba4c90774af644a0015cdb85ad11290a68fe"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/skill.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 35327,
+      "sha256": "43eb3f9e71476aa316470363b152389a9eac05eb275870ecf276e07367025d2c"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/src/verification.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9495,
+      "sha256": "f07646bb5615976555c89c28d6cc5bebf461c92b197703f5c73ed7b3e66bcb24"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/codec_v1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1105,
+      "sha256": "42984161b1a8eedb083f34cec619e0a032d82396263980d92d7123d7d5473970"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/extension_v1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9034,
+      "sha256": "373774d64b276a308af3c5297b279a8db3c66009e9325e1d47bf99e5be0356c3"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/extension_v1/sealed-bundle.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1607,
+      "sha256": "0eafeb310e75dd368ab68dffab4fc44374ebaadd7e9fab2fc4e28182b63e5a40"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/cases.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2723,
+      "sha256": "8bbc6ca3bff468f47895229692b47d1d7e5ad3e4cbfb1bacac5ec91cadc4b43c"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/manifest/projection-oracle.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 70088,
+      "sha256": "8500ee088ae6561b9700463b49ac9ed8e5a780dc2dc12500040c0c8a574f6626"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-air/expected-ir.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4848,
+      "sha256": "69bdd6e2dabc4665b616b69234b992d8ea9e99465870bd24408b58a5495b0813"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-air/expected.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4273,
+      "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-air/interface.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 945,
+      "sha256": "18c8c47cd7fb3e2a6778becbbe583f79864f2114113ea730776b48363900fbdc"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-air/structure.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6503,
+      "sha256": "4d47d42de934b8a5d020294bdf46eca6e591b4ad0566c9903fd8e6f97effeffa"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-bld/expected-ir.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 11873,
+      "sha256": "31fc5505a2cb6bda71a7e67e1c9a8e229a188a92b950e1d7c9bcce616140085c"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-bld/expected.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 24608,
+      "sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-bld/interface.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1798,
+      "sha256": "50a5cf4a3bc69900a4694e3753e245552b308f8809763e653fc2b331d38cb12a"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-bld/structure.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 33772,
+      "sha256": "9ad73f6d2e683ce2891b7bdf7dbfbbccf5f2e8b213bbc7055c054c1b0923b898"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-clm/expected-ir.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4870,
+      "sha256": "7f2ebd56cb4c7ffab4384a9cd14551d389110fab0c2239fb180b83c3dff38143"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-clm/expected.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3140,
+      "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-clm/interface.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1052,
+      "sha256": "2181d13d0f8cbe4d3844a10a665e286d3232452e9b9d4c9b28901ea07d7c296d"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-clm/structure.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5112,
+      "sha256": "96d49135fd31c590dade3a126a91baff2ee17d7b2be175fc608bd618647b783f"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-rep/expected-ir.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 5158,
+      "sha256": "f11d536541e7e486c453e99f6edbcf9e46861eabb8d44472e50bbf0107dea2b1"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-rep/expected.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4344,
+      "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-rep/interface.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 807,
+      "sha256": "69c795407d84cafeb30c4e4254be106f5df39e73031a417189de5e8835f9d82e"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-rep/structure.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7154,
+      "sha256": "05fc9c134c0957d6bdf6d8b0dfb94c01fd33da2b4ae28aeb10c604b8a8bd31ff"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-sup/expected-ir.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 14867,
+      "sha256": "889f27b1d1991fbcc91fd3f2a7f98fc70d90aef3612750cc8e5cf233bfd6c14b"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-sup/expected.md",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 29439,
+      "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-sup/interface.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 2059,
+      "sha256": "62e2261c20e1b605ca281afbc2c5b5811e2b2dfb929de7c4e8ccfe97515c1fcc"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/fixtures/v1/skills/p-sup/structure.yaml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 40898,
+      "sha256": "7cf2bd8c33a05b8c49a1567118352aee1d8c05d8b83e584bd1d6f84d137e850b"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/manifest_v1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7276,
+      "sha256": "04cea1ce130f449784b0fa0ba09cff9c6d2c75495b77fbf73162fa7e26785dbd"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/skill_v1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 17390,
+      "sha256": "21d4c19eada68293b72491bf71469404c4b0e9ca0cb3f91c19cd66c5aef5ba37"
+    },
+    {
+      "path": "rust/crates/work-engine-compiler/tests/verified_skill_v1.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4544,
+      "sha256": "fdbc7fd90547cab24d5f8b7ecfc075ec5257f6d8dbc42d5f7aba99865c61c781"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/Cargo.toml",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 850,
+      "sha256": "d72e31a9464af531b02e3137ec003bcc1605e33583cc0562f91e6abacffa6f02"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/bin/work-engine-completionctl.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 3984,
+      "sha256": "96ba6c02c4ce06dd4969b6dcb32f23efc54b3f6b7acd0fe1cf6d720e79e639ca"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/fixture_host.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 14267,
+      "sha256": "9b0958d1f5e8221d148b458825959ce2d991c897334fdf30f34349f490b496a2"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/lib.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 11510,
+      "sha256": "0c20af3c3d0697e3ead8f39571c960c303f94c8d8b234d7afdb97072dd281cbd"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/main.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 518,
+      "sha256": "04b18f754920c85045d7c82716c80004c44c1b4d5ed201eedeea385f8a983b5b"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/tests/joined.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 883,
+      "sha256": "90bfe2e0ab4b829caf9e646278e55e47406edd1889399895ebaeb0de7587db3c"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1051,
+      "sha256": "23897ee7af7066d4ae0c2aa83536048aac905d321207bc3845897bbf9cfadd13"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/control.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7599,
+      "sha256": "c465f51ed979ea0806787bfaea7661e97717d84207fcadb4f4ccbe471d96021b"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1304,
+      "sha256": "0658a17021d9436c7807911c94338da6c788696ef7a4b5c3a856dcf8727be9be"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/worker.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3408,
+      "sha256": "328f37fecb3819ccf2031e4cddb88b45badf1fc12c0d4b6bf02bdb5351df2821"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/control_responsiveness.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 8978,
+      "sha256": "d3d0a9f8e11d92461e716dfb334e1124916d63384ed7c3c744218e40ea9296bb"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/controlled_host.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21230,
+      "sha256": "2691ada787f4057b4cfb47006956b8dff2b35b65b2fde339cb6abeb6d0395590"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/host_recovery.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 3793,
+      "sha256": "0a8f6816a8512b4c5e5bafa2e13911dd83ef3e6ead78b248272c733609a320bf"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/qualified_control.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 37107,
+      "sha256": "bd2dbadb9bb57c1c10fc2e7f38423043c502d9dbcee49949ac591c00fbe3ec9a"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/support/mod.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21668,
+      "sha256": "2df231a760d769839cfc24e0da8ac1d7d68f71ba0f08e5a07c92cea4c530650c"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/support/peer.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1691,
+      "sha256": "856531164ae7a0923a59d218e7b5853200ce064db6ce54b6482c73a4fb02b28c"
+    },
+    {
+      "path": "rust/crates/work-engine-task-host/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 731,
+      "sha256": "45f1fd0ed2a8e6ed26f2deb99e6ec85fe055607434318e6e78619728c6903db4"
+    },
+    {
+      "path": "rust/crates/work-engine-task-host/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 72181,
+      "sha256": "7a9de9954f10c16e707a8921cb2c42fdd594d8b72583278e0cd4a517de5c71ec"
+    },
+    {
+      "path": "rust/crates/work-engine-task-host/src/main.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 154,
+      "sha256": "09bd3aacb3a7a6e454fdb64e447c0ac473c55356c285afecb27f3fdf35a10e9a"
+    },
+    {
+      "path": "rust/crates/work-engine-task-host/src/observation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21092,
+      "sha256": "e2cd382fd077484be761faf238f82f0760825cacb31afc498439235eb945876f"
+    },
+    {
+      "path": "rust/crates/work-engine-task-host/src/selected_startup.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 59195,
+      "sha256": "6ae3c3b71fce8dfcbfc020197c4738063b75dcb8c8582fc5bca90f60dbab7d8c"
+    },
+    {
+      "path": "rust/crates/work-engine-types/Cargo.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 300,
+      "sha256": "eddc4601fef3392d78fc47c1076112c862c30d03de01a48af90f8d7d85f937cf"
+    },
+    {
+      "path": "rust/crates/work-engine-types/src/codec.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 6055,
+      "sha256": "67c52fcd567884686f57d3263fe6504da2c45aba8f6571dc2dadc3c8e084a4af"
+    },
+    {
+      "path": "rust/crates/work-engine-types/src/identity.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1544,
+      "sha256": "9630a98a28f15ef139c019c69a5f1c81a2769f2793ac9fe52973d301339d8334"
+    },
+    {
+      "path": "rust/crates/work-engine-types/src/lib.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 220,
+      "sha256": "f8e10df2bcf5e722599c9297ae95efcd974a743f31ce5980838dfaea17c297ba"
+    },
+    {
+      "path": "rust/crates/work-engine-types/tests/codec_vectors.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 4195,
+      "sha256": "cb36d8291d603510b48637e807cff0030553ba49eaa36ed44708608c44888c05"
+    },
+    {
+      "path": "rust/crates/work-engine-types/tests/fixtures/codec-v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1768,
+      "sha256": "26fddc2537186f76fef841f6a43001e342bbb2447423337876745007fecf2ee2"
+    },
+    {
+      "path": "rust/crates/workspace-publication/Cargo.toml",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 529,
+      "sha256": "1955a3bd25b2dec5468314d3f11e168e7d2028e8fde77fcf7cd3ad0592e97916"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/codec.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 1711,
+      "sha256": "503b693202a41831d1c0b565f47dc22e392b0358b1f157efd94e957c2ee34dd8"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/contract.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 6041,
+      "sha256": "1d47f9782003546ac21dca50a6baed6545c192bf10ba9d6b51c535ea5ddbb4ef"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 12417,
+      "sha256": "55c1bdbd0a22440557c4f5fe5121cec77825b3e3ad219ba4af429cf7bb3aa99c"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lib.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 1230,
+      "sha256": "98fb849c47df0a40327cf36c1b3c35ebc6deaaf131eb3d8b28b9b967ac23410f"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lock.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 866,
+      "sha256": "e740b96afd650d632b864efda5c884fc7589976ab48446fe13193d37cd62973a"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/store.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 38614,
+      "sha256": "778d15b50689e570dcd85bd7a6924732b1dde006aced2a758b8da2df9ddbb0bf"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/validation.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 1668,
+      "sha256": "049623cb35ce68d51eaaffa65436e2316df18f2873ca342c574ad67ab6e359e4"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/publication.rs",
+      "origin": "untracked",
+      "kind": "file",
+      "size": 33757,
+      "sha256": "550f66b7471c0b8b5cb18fceb22d824020339af332dd3e0e1ab953c5a8b58fc2"
+    },
+    {
+      "path": "rust/rust-toolchain.toml",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 86,
+      "sha256": "1d76a06616a42a984bad672eeb24ca39a0496e95a8b624e21df0d420d1557734"
+    },
+    {
+      "path": "rust/tests/fixtures/s67-preparation/manifest.v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 1365,
+      "sha256": "b2ade16edc39cc54dda2eb259ecfaf8d5406b7667456aa41c822d7d04bd764fd"
+    },
+    {
+      "path": "rust/tests/fixtures/s67-preparation/recovery-matrix.v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 10740,
+      "sha256": "cf1840f7c8550a1a0a08b08bd3aff8ab235a755567b06000c4f4dd2c98063bd6"
+    },
+    {
+      "path": "rust/tests/fixtures/s67-preparation/semantic-corpus.v1.json",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 28164,
+      "sha256": "88a26383f49ca5095a56fceb82a62efb5ca6e8214437fc597a203c27a1f96bea"
+    },
+    {
+      "path": "rust/tests/s4_contract.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9210,
+      "sha256": "3aaafda8ed60ba64d1f6ae19afabb386aa1604fefbc1dc0f583bb54c0ce4aa9f"
+    },
+    {
+      "path": "rust/tests/s4_crash.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 9315,
+      "sha256": "903750712494903fbd6c3b7f7bd9bdc9e260c319841216f3c254b384da32ae14"
+    },
+    {
+      "path": "rust/tests/s4_security.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 15213,
+      "sha256": "f0ed2bd46899a5128eb205041cb6fb691db3352575c8eb706dee06ced029cabc"
+    },
+    {
+      "path": "rust/tests/s4_vertical.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 59335,
+      "sha256": "5097db7e230d01869f40156f49e39d4f47ce50cd263d1fcfe164ec82abc3d947"
+    },
+    {
+      "path": "rust/tests/s6_s7_s5_native_compat.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 21453,
+      "sha256": "83756c6b2faa613dc294c8a97d1b1f235cf0e52d2210ad74463dfa1691b0c0cf"
+    },
+    {
+      "path": "rust/tests/s6_semantic_preservation.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 81026,
+      "sha256": "a98ca69f4150e8b8a9472dd95d2bb4fd3b2f1e6a5cef4335cbd56e9ba74defa4"
+    },
+    {
+      "path": "rust/tests/support/native_binding.rs",
+      "origin": "tracked",
+      "kind": "file",
+      "size": 7184,
+      "sha256": "6608a4f947a582b2b0edaef6b7645655700492b9bf24cdd3922dfc8aa48acb20"
+    }
+  ],
+  "limit": "Exact isolated copy of current nonignored Rust source, including dirty tracked and untracked Rust files. No build or execution. Main worktree may move; freeze this copy only after owner admission and recheck required dependencies.",
+  "historical_selected_count": 150
+}

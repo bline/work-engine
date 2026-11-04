@@ -1,0 +1,17 @@
+{
+  "source_sha256": "924a6ed520f9c57218aa0127c12b1a3aa2d454287b6881642615691d6da56cc6",
+  "models": [
+    {
+      "slug": "gpt-6-astra",
+      "tool_mode": "code_mode_only",
+      "use_responses_lite": true,
+      "default_reasoning_level": "medium"
+    },
+    {
+      "slug": "gpt-6-sol",
+      "tool_mode": "code_mode_only",
+      "use_responses_lite": true,
+      "default_reasoning_level": "medium"
+    }
+  ]
+}

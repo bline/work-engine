@@ -1,0 +1,34 @@
+{
+  "schema": "s10-prospective-admission-preparation-authority-v1",
+  "at": "2026-10-21T13:18:19.466687+00:00",
+  "status": "authorized preparation; execution not authorized",
+  "authority": "User Let us proceed after proposed next step of exact execution packet and prospective fields, key, independent evaluation and fresh live-run budget. This authorizes preparation of concrete package, not a paid live launch under unspecified limits.",
+  "subject_proposal": "S10 live4: fresh disposable two-cycle completed-read semantic qualification of integrated current build",
+  "refs": [
+    {
+      "path": "/home/bline/code/work-engine/planning/s10-next-slice-scope-20261021.md",
+      "sha256": "c72e69001e3750e5c4381592703c30c289ad1f09dbb340669ba8c0b18bde56ab"
+    },
+    {
+      "path": "/home/bline/code/work-engine/metrics/probes/prospective-correspondence-trial-protocol.md",
+      "sha256": "3b8bf46f76456d88981e9e4c498f8632cb2174005386fbca1dc296ab7d91dd91"
+    }
+  ],
+  "allowed": "Read-only repository/previous evidence inspection, isolated source snapshot and packet preparation, public obligations, separately authored semantic held-out key, role/exposure registration, static packet review and budget proposal.",
+  "not_allowed": [
+    "product test/build or provider execution before obligations/key freeze and owner authorization",
+    "execution coordinator/worker/assessment arm launch",
+    "commit/push",
+    "source changes",
+    "modifying frozen protocol sections1-6,8-10",
+    "claiming final human authorization",
+    "exposing held-out key to future assessment arms"
+  ],
+  "owners": {
+    "root": "admission assembly and collection, not assessment/adjudication",
+    "retained engineering adviser": "execution packet and public obligations, not independent adjudicator or assessment arm",
+    "fresh key author": "semantic held-out key only, not arm or adjudicator",
+    "independent reviewer": "admission readiness review; if nonauthor and exposure eligibility holds may later adjudicate arms, never arm after reading key"
+  },
+  "prospective_boundary": "Preparation is experimental setup; no qualification execution has begun. No previous D/live1-3 enrollment. Recording intervention must be in authorized execution packet from first turn."
+}

@@ -1,0 +1,260 @@
+{
+  "answer_authority_ref": "operator:s8:authorized",
+  "approved_snapshot_ref": "snapshot:s8:approved",
+  "enqueue_grant_ref": "grant:s8:enqueue",
+  "executable_sha256": "@HOST_SHA256_AFTER_BUILD@",
+  "features": [
+    "controlled-proof"
+  ],
+  "lifecycle": {
+    "build_id": "build:s10:live4:pending-exact-build",
+    "context_generation": "context:s8:g0",
+    "grants": [
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:enqueue",
+        "revision": 1,
+        "scope": "enqueue_input"
+      },
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:replace",
+        "revision": 1,
+        "scope": "request_replacement"
+      },
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:native",
+        "revision": 1,
+        "scope": "native_turn"
+      },
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:snapshot",
+        "revision": 1,
+        "scope": "snapshot_read"
+      },
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:semantic",
+        "revision": 1,
+        "scope": "semantic_control"
+      },
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:question",
+        "revision": 1,
+        "scope": "task_question_open"
+      },
+      {
+        "context_generation": "context:s8:g0",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:result",
+        "revision": 1,
+        "scope": "task_result_publish"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:enqueue:g1",
+        "revision": 1,
+        "scope": "enqueue_input"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:replace:g1",
+        "revision": 1,
+        "scope": "request_replacement"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:native:g1",
+        "revision": 1,
+        "scope": "native_turn"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:snapshot:g1",
+        "revision": 1,
+        "scope": "snapshot_read"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:semantic:g1",
+        "revision": 1,
+        "scope": "semantic_control"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:question:g1",
+        "revision": 1,
+        "scope": "task_question_open"
+      },
+      {
+        "context_generation": "context:s8:g1",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:result:g1",
+        "revision": 1,
+        "scope": "task_result_publish"
+      },
+      {
+        "context_generation": "context:s8:g2",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:enqueue:g2",
+        "revision": 1,
+        "scope": "enqueue_input"
+      },
+      {
+        "context_generation": "context:s8:g2",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:native:g2",
+        "revision": 1,
+        "scope": "native_turn"
+      },
+      {
+        "context_generation": "context:s8:g2",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:snapshot:g2",
+        "revision": 1,
+        "scope": "snapshot_read"
+      },
+      {
+        "context_generation": "context:s8:g2",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:semantic:g2",
+        "revision": 1,
+        "scope": "semantic_control"
+      },
+      {
+        "context_generation": "context:s8:g2",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:question:g2",
+        "revision": 1,
+        "scope": "task_question_open"
+      },
+      {
+        "context_generation": "context:s8:g2",
+        "expires_wall_ms": 0,
+        "grant_ref": "grant:s8:result:g2",
+        "revision": 1,
+        "scope": "task_result_publish"
+      }
+    ],
+    "max_executions": 3,
+    "max_wait_ms": 1000,
+    "native": {
+      "attempt_id": "attempt:s8:domain:g0",
+      "executable": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "invocation_id": "invocation:s8:domain:g0",
+      "prompt": "Analyze the approved snapshot while preserving pending authority.",
+      "root": "@STATE@/native",
+      "same_native_session_required": false,
+      "semantic": {
+        "candidate_verify_attempt_id": "attempt:s8:candidate-verify:g0",
+        "candidate_verify_invocation_id": "invocation:s8:candidate-verify:g0",
+        "capture_id": "capture:s8:g0",
+        "challenge_id": "challenge:s8:g0",
+        "challenge_text": "Choose the next authorized analysis action; preserve the unresolved approval.",
+        "compile_attempt_id": "attempt:s8:compile:g0",
+        "compile_invocation_id": "invocation:s8:compile:g0",
+        "compile_session_id": "session:s8:compile:g0",
+        "control_grant_ref": "grant:s8:semantic",
+        "control_grant_revision": 1,
+        "successor_control_grant_ref": "grant:s8:semantic:g1",
+        "successor_control_grant_revision": 1,
+        "successor_verify_attempt_id": "attempt:s8:successor-verify:g0",
+        "successor_verify_invocation_id": "invocation:s8:successor-verify:g0",
+        "successor_verify_session_id": "session:s8:successor-verify:g0",
+        "verify_session_id": "session:s8:verify:g0"
+      },
+      "semantic_contexts": [
+        {
+          "predecessor_context": "context:s8:g1",
+          "semantic": {
+            "candidate_verify_attempt_id": "attempt:s8:candidate-verify:g1",
+            "candidate_verify_invocation_id": "invocation:s8:candidate-verify:g1",
+            "capture_id": "capture:s8:g1",
+            "challenge_id": "challenge:s8:g1",
+            "challenge_text": "Choose the next authorized analysis action for queued Q1; preserve Q2 custody.",
+            "compile_attempt_id": "attempt:s8:compile:g1",
+            "compile_invocation_id": "invocation:s8:compile:g1",
+            "compile_session_id": "session:s8:compile:g1",
+            "control_grant_ref": "grant:s8:semantic:g1",
+            "control_grant_revision": 1,
+            "successor_control_grant_ref": "grant:s8:semantic:g2",
+            "successor_control_grant_revision": 1,
+            "successor_verify_attempt_id": "attempt:s8:successor-verify:g2",
+            "successor_verify_invocation_id": "invocation:s8:successor-verify:g2",
+            "successor_verify_session_id": "session:s8:successor-verify:g2",
+            "verify_session_id": "session:s8:verify:g1"
+          }
+        }
+      ],
+      "session_id": "session:s8:g0",
+      "simulator_base_url": "",
+      "snapshot": {
+        "id": "snapshot:s8:approved",
+        "members": [
+          {
+            "bytes": [
+              79,
+              82,
+              73,
+              79,
+              78,
+              45,
+              55
+            ],
+            "id": "m1",
+            "sha256": "e9c87885a5657ba663477fc18dc9d6db3cac71c12c6cf7331351229910680e5a"
+          }
+        ],
+        "source_revision": "source:s8:approved"
+      },
+      "snapshot_grant_ref": "grant:s8:snapshot",
+      "snapshot_grant_revision": 1,
+      "turn_grant_ref": "grant:s8:native",
+      "turn_grant_revision": 1,
+      "provider_route": "openai-responses-live-v1"
+    },
+    "peer_socket_path": "@STATE@/unused-peer.sock",
+    "principal": {
+      "principal_ref": "principal:s8",
+      "producer_ref": "producer:s8",
+      "uid": 1000
+    },
+    "profile": "retained-repository-analysis-v1",
+    "proof_barrier_dir": "@STATE@/barrier",
+    "proof_run_id": "proof:s10:live4",
+    "socket_path": "@STATE@/service.sock",
+    "store_root": "@STATE@/lifecycle-store",
+    "subject_id": "subject:s8:task",
+    "trusted_issuer": "issuer:s8",
+    "verifier_executable": null,
+    "verifier_ledger_path": null
+  },
+  "lock_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/source-snapshot/rust/Cargo.lock",
+  "lock_sha256": "11ccdf8ca4ffd9626eeb9e54e89ec0a3fe301dcaf962ec4405ee8a851b2a532f",
+  "profile": "retained-repository-analysis-v1",
+  "provider_identity": "openai-responses-live-v1",
+  "replacement_grant_ref": "grant:s8:replace",
+  "socket_path": "@STATE@/host.sock",
+  "source_manifest_path": "@STATE@/selected-source-manifest.json",
+  "source_root": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/source-snapshot",
+  "source_sha256": "e256babdd277cde3d99a384da9762940661c41dfa3a1c11175a94dceb91c473a",
+  "task_store_path": "@STATE@/tasks.sqlite",
+  "toolchain_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/source-snapshot/rust/rust-toolchain.toml",
+  "toolchain_sha256": "1d76a06616a42a984bad672eeb24ca39a0496e95a8b624e21df0d420d1557734",
+  "proof_run_id": "proof:s10:live4"
+}

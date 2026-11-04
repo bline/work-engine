@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-21T14:08:17.886394+00:00",
+  "actors": [
+    {
+      "role_path": "/root/integration_prep_supervisor",
+      "runtime_session_id": "01a15e1c-9e0b-7e43-b26e-37b31e04a28e",
+      "parent_thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "rollout_path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T04-58-16-01a15e1c-9e0b-7e43-b26e-37b31e04a28e.jsonl",
+      "created_at": "2026-10-21T10:58:16.213Z",
+      "first_turn_configuration": {
+        "model": "gpt-6-sol",
+        "effort": "medium",
+        "reasoning_effort": null,
+        "cwd": "/home/bline/code/work-engine"
+      },
+      "identity_basis": "session_meta.id, not inherited session_meta.session_id or CODEX_THREAD_ID",
+      "configuration_transitions": [
+        {
+          "at": "2026-10-21T10:58:17.864Z",
+          "configuration": {
+            "model": "gpt-6-sol",
+            "effort": "medium",
+            "cwd": "/home/bline/code/work-engine"
+          }
+        }
+      ],
+      "observed_configuration_is_not_backend_attestation": true
+    },
+    {
+      "role_path": "/root/live4_key_author",
+      "runtime_session_id": "01a15ea1-4b57-7a61-9b28-a5506a22d0b4",
+      "parent_thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "rollout_path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-23-11-01a15ea1-4b57-7a61-9b28-a5506a22d0b4.jsonl",
+      "created_at": "2026-10-21T13:23:11.324Z",
+      "first_turn_configuration": {
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "reasoning_effort": null,
+        "cwd": "/home/bline/code/work-engine"
+      },
+      "identity_basis": "session_meta.id, not inherited session_meta.session_id or CODEX_THREAD_ID",
+      "configuration_transitions": [
+        {
+          "at": "2026-10-21T13:23:12.861Z",
+          "configuration": {
+            "model": "gpt-6-astra",
+            "effort": "high",
+            "cwd": "/home/bline/code/work-engine"
+          }
+        }
+      ],
+      "observed_configuration_is_not_backend_attestation": true
+    },
+    {
+      "role_path": "/root",
+      "runtime_session_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "parent_thread_id": null,
+      "rollout_path": "/home/bline/.codex/sessions/2026/10/20/rollout-2026-10-20T17-09-05-01a15b93-56c2-74f1-8c97-e471f81bc6e2.jsonl",
+      "created_at": "2026-10-20T23:09:05.100Z",
+      "first_turn_configuration": {
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "reasoning_effort": null,
+        "cwd": "/home/bline/code/work-engine"
+      },
+      "identity_basis": "session_meta.id, not inherited session_meta.session_id or CODEX_THREAD_ID",
+      "configuration_transitions": [
+        {
+          "at": "2026-10-20T23:09:17.830Z",
+          "configuration": {
+            "model": "gpt-6-astra",
+            "effort": "medium",
+            "cwd": "/home/bline/code/work-engine"
+          }
+        },
+        {
+          "at": "2026-10-21T03:38:15.218Z",
+          "configuration": {
+            "model": "gpt-6.1-sol",
+            "effort": "low",
+            "cwd": "/home/bline/code/work-engine"
+          }
+        },
+        {
+          "at": "2026-10-21T10:55:10.903Z",
+          "configuration": {
+            "model": "gpt-6-astra",
+            "effort": "high",
+            "cwd": "/home/bline/code/work-engine"
+          }
+        }
+      ],
+      "observed_configuration_is_not_backend_attestation": true
+    },
+    {
+      "role_path": "/root/live4_admission_reviewer",
+      "runtime_session_id": "01a15ea5-c4bd-75d1-bb57-782b3b5e18a8",
+      "parent_thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "rollout_path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-28-04-01a15ea5-c4bd-75d1-bb57-782b3b5e18a8.jsonl",
+      "created_at": "2026-10-21T13:28:04.549Z",
+      "first_turn_configuration": {
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "cwd": "/home/bline/code/work-engine"
+      },
+      "identity_basis": "session_meta.id",
+      "configuration_transitions": [
+        {
+          "at": "2026-10-21T13:28:06.194Z",
+          "configuration": {
+            "model": "gpt-6-astra",
+            "effort": "high",
+            "cwd": "/home/bline/code/work-engine"
+          }
+        }
+      ],
+      "observed_configuration_is_not_backend_attestation": true
+    },
+    {
+      "role_path": "/root/integration_prep_supervisor/code_mode_diagnosis",
+      "runtime_session_id": "01a15ec9-e76f-7602-a618-9ea9ac9c4be9",
+      "parent_thread_id": "01a15e1c-9e0b-7e43-b26e-37b31e04a28e",
+      "rollout_path": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T08-07-32-01a15ec9-e76f-7602-a618-9ea9ac9c4be9.jsonl",
+      "created_at": "2026-10-21T14:07:32.724Z",
+      "first_turn_configuration": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "cwd": "/home/bline/code/work-engine"
+      },
+      "identity_basis": "session_meta.id",
+      "role": "preparation-only native client diagnosis; not reserved S10 execution worker",
+      "observed_configuration_is_not_backend_attestation": true
+    }
+  ],
+  "future_execution_and_assessment_actors": "not launched; register at launch",
+  "exclusions": {
+    "/root": [
+      "assessment arms",
+      "independent adjudicator"
+    ],
+    "/root/integration_prep_supervisor": [
+      "assessment arms",
+      "independent adjudicator"
+    ],
+    "/root/live4_key_author": [
+      "assessment arms",
+      "independent adjudicator"
+    ],
+    "/root/live4_admission_reviewer": [
+      "assessment arms; key-reader, nonauthor independent adjudicator candidate"
+    ],
+    "/root/integration_prep_supervisor/code_mode_diagnosis": [
+      "assessment arms: preparation packet exposure; not selected as independent adjudicator"
+    ]
+  },
+  "exposure_details": {
+    "/root": {
+      "authored": [
+        "trial admission",
+        "subject protocol appendix",
+        "role register"
+      ],
+      "read": [
+        "public obligations",
+        "held-out semantic key",
+        "engineering packet",
+        "admission findings",
+        "historical coordination context"
+      ]
+    },
+    "/root/integration_prep_supervisor": {
+      "authored": [
+        "execution packet",
+        "public obligations",
+        "recording contract",
+        "harness drafts"
+      ],
+      "read": [
+        "historical integration engineering/review",
+        "frozen protocol",
+        "scope"
+      ],
+      "key_exposure": "not supplied by root; final actor receipt governs"
+    },
+    "/root/live4_key_author": {
+      "receipt": "heldout/author-receipt-v1.json"
+    },
+    "/root/live4_admission_reviewer": {
+      "receipt": "admission-review/eligibility-v1.json",
+      "authored_subject": false
+    }
+  }
+}

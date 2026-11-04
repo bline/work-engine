@@ -1,0 +1,483 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-21T14:28:45.445088+00:00",
+  "kind": "preexecution_admission_artifacts_not_product_build_checkpoint",
+  "frozen_design_sha256": "3b8bf46f76456d88981e9e4c498f8632cb2174005386fbca1dc296ab7d91dd91",
+  "public_obligation_count": 15,
+  "entries": [
+    {
+      "source_path": "/home/bline/code/work-engine/planning/s10-live4-execution-packet-20261021.md",
+      "repository_path": "planning/s10-live4-execution-packet-20261021.md",
+      "sha256": "23d826ea0255181bbac3f51b51393a320afae400ded548e20bfc4d7247ae4e16",
+      "bytes": 16568,
+      "role": "current_public_execution_packet",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/s10-next-slice-scope-20261021.md",
+      "repository_path": "planning/s10-next-slice-scope-20261021.md",
+      "sha256": "c72e69001e3750e5c4381592703c30c289ad1f09dbb340669ba8c0b18bde56ab",
+      "bytes": 10554,
+      "role": "accepted_scope_owner",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/metrics/probes/prospective-correspondence-trial-protocol.md",
+      "repository_path": "metrics/probes/prospective-correspondence-trial-protocol.md",
+      "sha256": "3b8bf46f76456d88981e9e4c498f8632cb2174005386fbca1dc296ab7d91dd91",
+      "bytes": 22850,
+      "role": "frozen_subject_independent_protocol",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/preparation-authority-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/preparation-authority-v1.json",
+      "sha256": "dd1ebe1901b49a6fafbc3282f2c6eb82df14c5436c2c0b1cdeac0686af826202",
+      "bytes": 2267,
+      "role": "preparation_authority",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/source-manifest-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+      "sha256": "00be6eb381ff9f47c746c88d80bc01cd3911a787f627f0729c10bdbe18a34130",
+      "bytes": 157116,
+      "role": "full_642_file_dirty_snapshot_manifest",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/selected-source-manifest-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+      "sha256": "e256babdd277cde3d99a384da9762940661c41dfa3a1c11175a94dceb91c473a",
+      "bytes": 20638,
+      "role": "selected_source_bytes_manifest",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/public-obligations-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/public-obligations-v1.json",
+      "sha256": "a71310aa223028ddb31f0e366b649e69b33a7a7a8567ba2d0125f4c365771c86",
+      "bytes": 3666,
+      "role": "public_semantic_obligations_15",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/recording-contract-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/recording-contract-v1.json",
+      "sha256": "8243bed848eb566c92648210f17108377cec671ae07cc873f39e2d07b8b31359",
+      "bytes": 2919,
+      "role": "recording_contract",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/static-admission-audit-v1.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/static-admission-audit-v1.md",
+      "sha256": "4e2993f27ad20a99b592ad15aaea5746248aaf77bd6c819e6d269403668e9a0c",
+      "bytes": 6342,
+      "role": "static_schema_and_runner_audit",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/scope-guard-plan-v1.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/scope-guard-plan-v1.md",
+      "sha256": "9202662f375dbb97fb7b2d11b396874277eac49d8a8a3c34a450dcb3dce2699b",
+      "bytes": 4967,
+      "role": "descendant_custody_plan",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/QUALITY-RUBRIC.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/QUALITY-RUBRIC.md",
+      "sha256": "45027697edd4cdc7af9f5f27e2583dc387c80a258fa855e5f43e83527993d889",
+      "bytes": 2734,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/extract_stopped.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/extract_stopped.py",
+      "sha256": "f45362ae8b0d5c2618cc6e5093c082c8d4e29a1b6f9eccd056b9e1cb28e1828b",
+      "bytes": 5697,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/initial-submit-payload.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/initial-submit-payload.json",
+      "sha256": "a4ca10ee0b29409419b18c51178605ef041ddb7b7bbb2f58dd9d26a53146856c",
+      "bytes": 1180,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/prepare_schema7_route.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/prepare_schema7_route.py",
+      "sha256": "931d24459990164cb9d875435e4816b85601cc2d664a32b98bc71c309c0fcbf4",
+      "bytes": 8681,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/run_semantic.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/run_semantic.py",
+      "sha256": "3fe337a607134499912dc6fcb8a14ceb050aa4de62b8a710eec5bbcb43d076e6",
+      "bytes": 22233,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/scope_controller.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/scope_controller.py",
+      "sha256": "82ebcd60e02cc0eb0dbc219c388dbe41b18004162d2b373aea2e18b2a59a0d76",
+      "bytes": 10411,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/packet-src/startup-template.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/startup-template.json",
+      "sha256": "9cbcfd33cc1fe3565b204f8599f980a7efb8d7c7c2e1e5fd94e458a127596942",
+      "bytes": 9221,
+      "role": "product_execution_harness_static",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/PLAN.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/PLAN.md",
+      "sha256": "65e05a828f9869d6c99f654f048f4a747ad7362f67a686d26a84a16c499f4972",
+      "bytes": 9026,
+      "role": "assessment_harness_current",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/appserver_arm.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/appserver_arm.py",
+      "sha256": "ea394ac1198c5db28309135fef081f90b567654e26af0ee2903217c1f576b01e",
+      "bytes": 14248,
+      "role": "assessment_harness_current",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/assemble_inputs.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/assemble_inputs.py",
+      "sha256": "bf138a36007a3c1d5e08a6861feece33a76a0870a5f41bd9bc81e3c035ab96fc",
+      "bytes": 2602,
+      "role": "assessment_harness_current",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/corpus_mcp.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/corpus_mcp.py",
+      "sha256": "c1e92619f2505173870f55b3119be64c8d156ccf9e6f740336caed87c950b00c",
+      "bytes": 4782,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/fake-endpoint-toolset-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/fake-endpoint-toolset-v1.json",
+      "sha256": "02510a391b96a7275a68e0ffd6ed715be16dda39367e26de1a0925e27848cc6f",
+      "bytes": 1526,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/fake_endpoint_probe.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/fake_endpoint_probe.py",
+      "sha256": "2eed449012af22c565460f1bf8de214637ff2f1dc89d3ba73d5c9eb8e0c6c4a9",
+      "bytes": 6452,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/fake_websocket_probe.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/fake_websocket_probe.py",
+      "sha256": "54d6bfc6dac2336cab42ccd63d900294ab9b65c129c7a897f2c89f1608a196ee",
+      "bytes": 3272,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/launch-arm.template.sh",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/launch-arm.template.sh",
+      "sha256": "7a9cadc00bd013d674bd28b4665922477a108ba2c1d4bda300b1b15f99074b34",
+      "bytes": 2190,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/launch-isolated-arm.template.sh",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/launch-isolated-arm.template.sh",
+      "sha256": "f90d8adf1d00ff083ed6dbaa8c36d951c8e4c7052077cf7c03eb6eec5d0fc514",
+      "bytes": 4570,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/matched-arm-toolset-candidate-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/matched-arm-toolset-candidate-v1.json",
+      "sha256": "92960190c224fdbdc124f4ca273c485c941a13d05df06e3c3a5ba63bf7de21fc",
+      "bytes": 1920,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/synthetic-appserver-boundary-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-boundary-v1.json",
+      "sha256": "11530e0571357101da937d769d953888875a1bbe619f1536c821879a1ce9efdb",
+      "bytes": 3396,
+      "role": "assessment_harness_current",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/synthetic-appserver-raw-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-raw-v1.json",
+      "sha256": "df6562ffd835b06cbe68711abba583a523a7e5a9d09f9a31189a9762ce0eee76",
+      "bytes": 88478,
+      "role": "assessment_harness_current",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/synthetic-boundary-check-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-boundary-check-v1.json",
+      "sha256": "3529ce8553b0501b3f19ac9d76d2d925c0a7deaebb26e72e0771cb76a3b127d8",
+      "bytes": 998,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/synthetic_appserver_check.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic_appserver_check.py",
+      "sha256": "ed5039e75c4b713e11d4b0e326f7cc29b04642f49d970bea7868fc2e1bdcc0ec",
+      "bytes": 5695,
+      "role": "assessment_harness_current",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/synthetic_boundary_check.py",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic_boundary_check.py",
+      "sha256": "cc9608916cd762270ae6461c131fb9256391290925e3c30dccdddc690541a6dc",
+      "bytes": 4600,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/tool-mode-diagnosis-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/tool-mode-diagnosis-v1.json",
+      "sha256": "f7bedcf09eb723a6fcaba58a23adf75fcfad684765a3603f815e620bb6472da5",
+      "bytes": 4522,
+      "role": "assessment_harness_superseded_or_diagnostic",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/diagnosis-v1.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/diagnosis-v1.md",
+      "sha256": "91a96ce6d464d7cddcc4d39110b731314e0c9cc61ede4dc07b26519c2681f24d",
+      "bytes": 8856,
+      "role": "code_mode_diagnosis_historical_correction",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/forced-sse-fixture-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/forced-sse-fixture-v1.json",
+      "sha256": "4e063bce6ed55e6d084d45c06efb7d04ac3607cdf3a61550dde7bb3978b8cb11",
+      "bytes": 1516,
+      "role": "code_mode_diagnosis_historical_correction",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/launch-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/launch-v1.json",
+      "sha256": "62eeaaf3f619f2b6ad3160bd43a655fec8cb0f470c9fdf967e206316b28c75b6",
+      "bytes": 657,
+      "role": "code_mode_diagnosis_historical_correction",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/model-mode-projection-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/model-mode-projection-v1.json",
+      "sha256": "896258ad442533feded9418eef4c0cf7ed517cd2e7fe9dfcb1e39910493915a7",
+      "bytes": 416,
+      "role": "code_mode_diagnosis_historical_correction",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/result-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/result-v1.json",
+      "sha256": "3a87ae17d5edef290ef9f953b7f9aaa75518935587ab60797219a29e22a69e6f",
+      "bytes": 865,
+      "role": "code_mode_diagnosis_historical_correction",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+      "sha256": "6bb45f036c984e3a6e62c77c475547bdb16bed31d71bb6aec1c00022ce02f252",
+      "bytes": 10391,
+      "role": "code_mode_diagnosis_historical_correction",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/s10-live4-trial-admission-20261021.md",
+      "repository_path": "planning/s10-live4-trial-admission-20261021.md",
+      "sha256": "cd8f0379c1c55c2e81a20f946a89ce4c7527fc3a087ac1ae4b7cf9250401455c",
+      "bytes": 14647,
+      "role": "coordinator_admission_proposal",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/output-manifest-v2.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/engineering/output-manifest-v2.json",
+      "sha256": "e8199b25b864365dae9072db2cd97d85487d413f539a6bf9e284700acf9f95ec",
+      "bytes": 12390,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/key-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/heldout/key-v1.json",
+      "sha256": "69e9c0f8f521aa07db49c84f6ab04a9dd6f243f7de7e1097ac473c7192dc58e9",
+      "bytes": 35000,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/semantic-key-v1.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/heldout/semantic-key-v1.md",
+      "sha256": "ad5458fdc0e3fe1c1656dc04c02c59e52d43dbf68578297b6019ab3c5a9e67ce",
+      "bytes": 33162,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/author-receipt-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/heldout/author-receipt-v1.json",
+      "sha256": "1344967698ef0806bc37b3d107940da39ff332099fd263973f8a379adff6863b",
+      "bytes": 4522,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/manifest-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/heldout/manifest-v1.json",
+      "sha256": "74ba8b1827947a657a9917bb7bfd1035099209a8face41ae7ae1e5f3572fd2bc",
+      "bytes": 4698,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/subject-protocol-v1.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/subject-protocol-v1.md",
+      "sha256": "ce06bcf751d970cd7b32092720bbc1edcb28b17d8086403836bbd8ac95beec1b",
+      "bytes": 59704,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/role-exposure-register-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+      "sha256": "0c1f099e50bb43c42d9d69eaca47c1d1e1a1ec4452a0e19de27783fa69fd25bc",
+      "bytes": 6780,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/admission-review/eligibility-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/admission-review/eligibility-v1.json",
+      "sha256": "7338ed619ff169d680145bfad1c83f6b5601eaacf76a601dcc26b2a1743126fd",
+      "bytes": 1574,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/private-freeze-authority-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/private-freeze-authority-v1.json",
+      "sha256": "b0e54312cb1c4386460122cee86ce2a7fa345fb74860c6e208455159bd1407a7",
+      "bytes": 898,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/synthetic-harness-validation-scope-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/synthetic-harness-validation-scope-v1.json",
+      "sha256": "270eb1b3419022248981b3d001937e42460658f51b69d89d9692d00abb1ca9a4",
+      "bytes": 1012,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/key-collection-validation-v1.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/key-collection-validation-v1.json",
+      "sha256": "126af531fe159d83e047cb793cb16fa2be9335073e78628a4a5cafa845bc4d00",
+      "bytes": 218,
+      "role": "preexecution_admission_binding",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/SKILL.md",
+      "repository_path": "planning/manual-orchestration-skill-candidate-v2/SKILL.md",
+      "sha256": "293a7aa61d6dd7b1993176e3a9621d359fd46de99147afe29bb7006dc24bd73f",
+      "bytes": 2424,
+      "role": "uninstalled_reviewed_manual_orchestration_v2",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/coordinator.md",
+      "repository_path": "planning/manual-orchestration-skill-candidate-v2/references/coordinator.md",
+      "sha256": "e4ee6d910c230c56652eeafeacea29ea266cfe78f02edb38efde10d7bf7e2510",
+      "bytes": 3310,
+      "role": "uninstalled_reviewed_manual_orchestration_v2",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/demonstrated-forms.md",
+      "repository_path": "planning/manual-orchestration-skill-candidate-v2/references/demonstrated-forms.md",
+      "sha256": "f124c56bdecce2f5681cdbb4474bef70f96c7ef8a81bc28582e17364ef575efa",
+      "bytes": 3619,
+      "role": "uninstalled_reviewed_manual_orchestration_v2",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/supervisor.md",
+      "repository_path": "planning/manual-orchestration-skill-candidate-v2/references/supervisor.md",
+      "sha256": "dc11eb741185aac6bc4da04d9fcb6c80cd7d986dedbcf3b1d949663d3f657501",
+      "bytes": 2747,
+      "role": "uninstalled_reviewed_manual_orchestration_v2",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/code/work-engine/planning/manual-orchestration-skill-candidate-v2/references/worker.md",
+      "repository_path": "planning/manual-orchestration-skill-candidate-v2/references/worker.md",
+      "sha256": "dc2d5009ee4232d38ffbfa52c19fb8e947bb9461fa77122fdbbce58cd4021eb4",
+      "bytes": 1390,
+      "role": "uninstalled_reviewed_manual_orchestration_v2",
+      "attribution": "validation_dependency"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-receipt-v2.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/review-receipt-v2.json",
+      "sha256": "68ec165b799a2e2894349120ca1c2b64149f12f36d83a57f0c78d7e8dc49e961",
+      "bytes": 5838,
+      "role": "previous_retained_advisory_skill_review",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-v2.md",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/review-v2.md",
+      "sha256": "90d12429eefc8011d8eca3250144263a35287ff16a6480585e18ac404ad0a69f",
+      "bytes": 3374,
+      "role": "previous_retained_advisory_skill_review",
+      "attribution": "task_owned"
+    },
+    {
+      "source_path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/manifest-v2.json",
+      "repository_path": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/manifest-v2.json",
+      "sha256": "b8132f450971a1b1de3dc0a0dc0f1c29055a537299e06291b738b7aa30e1e05d",
+      "bytes": 11015,
+      "role": "previous_retained_advisory_skill_review",
+      "attribution": "task_owned"
+    }
+  ],
+  "authority": "Candidate preparation only. No branch commit, accepted lifecycle transition, launch or owner authorization.",
+  "source_snapshot": "Exact 642-file snapshot remains under external engineering/source-snapshot, bound by included full manifest; this checkpoint does not claim its baseline tree is the dirty executable composition."
+}

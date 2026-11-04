@@ -1,0 +1,108 @@
+{
+  "schema": "s10-live4-heldout-key-manifest-v1",
+  "at": "2026-10-21T13:28:51.914924+00:00",
+  "source_files": [
+    {
+      "role": "public_obligations",
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/public-obligations-v1.json",
+      "sha256": "a71310aa223028ddb31f0e366b649e69b33a7a7a8567ba2d0125f4c365771c86",
+      "bytes": 3666,
+      "use": "Public semantic scope; proposed for owner freeze"
+    },
+    {
+      "role": "scope",
+      "path": "/home/bline/code/work-engine/planning/s10-next-slice-scope-20261021.md",
+      "sha256": "c72e69001e3750e5c4381592703c30c289ad1f09dbb340669ba8c0b18bde56ab",
+      "bytes": 10554,
+      "use": "Public bounded outcome and exclusions; not launch authority"
+    },
+    {
+      "role": "protocol",
+      "path": "/home/bline/code/work-engine/metrics/probes/prospective-correspondence-trial-protocol.md",
+      "sha256": "3b8bf46f76456d88981e9e4c498f8632cb2174005386fbca1dc296ab7d91dd91",
+      "bytes": 22850,
+      "use": "Frozen protocol at parent-specified commit e3c7c9a3bd429b6d5b702a50de9c9a751c126562"
+    },
+    {
+      "role": "accepted_contract",
+      "path": "/home/bline/.local/state/work-engine/s10-effect-implementation-20261020/accepted-contract.json",
+      "sha256": "04a8bd4fd07ce9d54081ba2d8580125fa5bb40e4e7bdc73829bca87e5ef38316",
+      "bytes": 1825,
+      "use": "Acceptance and governing user qualifications"
+    },
+    {
+      "role": "proposal",
+      "path": "/home/bline/.local/state/work-engine/s10-effect-contract-20261020/PROPOSAL-v2.md",
+      "sha256": "819c728046dd5c78a54e4c4b0c930cdb5ea8ffb9106ab1d13c72d45943ed3d35",
+      "bytes": 20469,
+      "use": "Accepted through accepted_contract; qualifications take precedence over proposal wording"
+    },
+    {
+      "role": "clarification",
+      "path": "/home/bline/.local/state/work-engine/s10-effect-contract-20261020/CLARIFICATION-v2a.md",
+      "sha256": "b012a82f3e6a0ce2333fd6468e1fb37779508a714d94477a4a829a2db7d56f0a",
+      "bytes": 1501,
+      "use": "Accepted clarification through accepted_contract"
+    },
+    {
+      "role": "design",
+      "path": "/home/bline/code/work-engine/DESIGN.md",
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+      "bytes": 41500,
+      "use": "Binding repository doctrine"
+    },
+    {
+      "role": "philosophy",
+      "path": "/home/bline/code/work-engine/PHILOSOPHY.md",
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307",
+      "bytes": 34973,
+      "use": "Non-normative rationale"
+    },
+    {
+      "role": "wind_walker",
+      "path": "/home/bline/.codex/skills/wind-walker/SKILL.md",
+      "sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+      "bytes": 1566,
+      "use": "Context lifetime skill"
+    }
+  ],
+  "output_files": [
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/key-v1.json",
+      "sha256": "69e9c0f8f521aa07db49c84f6ab04a9dd6f243f7de7e1097ac473c7192dc58e9",
+      "bytes": 35000
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/semantic-key-v1.md",
+      "sha256": "ad5458fdc0e3fe1c1656dc04c02c59e52d43dbf68578297b6019ab3c5a9e67ce",
+      "bytes": 33162
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/author-receipt-v1.json",
+      "sha256": "1344967698ef0806bc37b3d107940da39ff332099fd263973f8a379adff6863b",
+      "bytes": 4522
+    }
+  ],
+  "self_hash": "Reported externally to avoid recursive self-hashing.",
+  "coverage": {
+    "tier": "Tier 2 task-directed verification",
+    "project": "home-bline-code-work-engine",
+    "generation": "2026-10-21T13:22:24Z",
+    "paths": [
+      "DESIGN.md",
+      "PHILOSOPHY.md",
+      "planning/s10-next-slice-scope-20261021.md",
+      "metrics/probes/prospective-correspondence-trial-protocol.md"
+    ],
+    "result": "All four content_verified, no_recorded_issue, no path pagination remaining; best-effort metadata is not completeness proof. Direct non-code content reads used. External state/skill files were read directly; no code structure claims."
+  },
+  "frozen_input_hashes_verified": {
+    "public_obligations": "a71310aa223028ddb31f0e366b649e69b33a7a7a8567ba2d0125f4c365771c86",
+    "scope": "c72e69001e3750e5c4381592703c30c289ad1f09dbb340669ba8c0b18bde56ab",
+    "protocol": "3b8bf46f76456d88981e9e4c498f8632cb2174005386fbca1dc296ab7d91dd91",
+    "proposal": "819c728046dd5c78a54e4c4b0c930cdb5ea8ffb9106ab1d13c72d45943ed3d35"
+  },
+  "property_count": 15,
+  "key_is_not_exhaustive": true,
+  "role_receipt": "author-receipt-v1.json"
+}

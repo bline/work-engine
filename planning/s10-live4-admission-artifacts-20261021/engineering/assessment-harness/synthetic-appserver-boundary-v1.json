@@ -1,0 +1,65 @@
+{
+  "adapter_sha256": "ea394ac1198c5db28309135fef081f90b567654e26af0ee2903217c1f576b01e",
+  "additional_tool_names": [
+    [
+      {
+        "description_has_corpus": false,
+        "namespace": "functions",
+        "tools": [
+          "exec",
+          "wait"
+        ]
+      },
+      {
+        "description_has_corpus": false,
+        "namespace": "clock",
+        "tools": [
+          "sleep"
+        ]
+      }
+    ]
+  ],
+  "appserver_stderr": "\u001b[2m2026-10-21T14:26:09.782293Z\u001b[0m \u001b[31mERROR\u001b[0m \u001b[2mcodex_app_server\u001b[0m\u001b[2m:\u001b[0m Codex's Linux sandbox uses bubblewrap and needs access to create user namespaces.\n",
+  "mechanical_only": true,
+  "model": "gpt-6-sol",
+  "model_input_excludes_host_temp_and_arm_labels": true,
+  "neutral_model_visible_roots": [
+    "/in",
+    "/state"
+  ],
+  "no_external_model_request_observed": true,
+  "no_real_credential_or_model_response": true,
+  "probe_sha256": "ed5039e75c4b713e11d4b0e326f7cc29b04642f49d970bea7868fc2e1bdcc0ec",
+  "raw_proof_sha256": "df6562ffd835b06cbe68711abba583a523a7e5a9d09f9a31189a9762ce0eee76",
+  "read_audit": [
+    "{\"arguments\": {}, \"at\": 1792592769.8731327, \"method\": \"list_artifacts\", \"outcome\": \"listed\"}",
+    "{\"arguments\": {\"length\": 5, \"offset\": 0, \"path\": \"prompt.md\"}, \"at\": 1792592769.874903, \"method\": \"read_artifact\", \"outcome\": {\"returned_bytes\": 5, \"sha256\": \"3cedb71562fdd9cc64524e421cc16dda102a945a512b21924faa53804a1168de\"}}",
+    "{\"arguments\": {}, \"at\": 1792592769.8760684, \"method\": \"read_artifact\", \"outcome\": \"denied\"}"
+  ],
+  "request_count": 2,
+  "returncode": 0,
+  "schema": "s10-live4-synthetic-appserver-boundary-v1",
+  "session": {
+    "effort": "medium",
+    "environments": [],
+    "files": {
+      "prompt.md": {
+        "bytes": 23,
+        "sha256": "b99c9f56ad2ba671ed8b7ae3d3e525a4f61ad039c147cb14e39fd00fdef3acd6"
+      }
+    },
+    "model": "gpt-6-sol",
+    "rollout_path": "/tmp/tmpxeb_sp40/state/sessions/2026/10/21/rollout-2026-10-21T08-26-09-01a15eda-f323-7b20-91ed-a3732d0fefeb.jsonl",
+    "session_meta_id": "01a15eda-f323-7b20-91ed-a3732d0fefeb",
+    "thread_id": "01a15eda-f323-7b20-91ed-a3732d0fefeb",
+    "thread_path": "/state/sessions/2026/10/21/rollout-2026-10-21T08-26-09-01a15eda-f323-7b20-91ed-a3732d0fefeb.jsonl",
+    "turn_id": "01a15eda-f32c-7c01-815e-963a0b1eef4b",
+    "turn_status": "failed"
+  },
+  "temporary_rollout_removed_after_probe": true,
+  "tool_output": [
+    "[{'type': 'input_text', 'text': 'Script completed\\nWall time 0.0 seconds\\nOutput:\\n'}, {'type': 'input_text', 'text': '[\"clock__curr_time\",\"corpus__list_artifacts\",\"corpus__read_artifact\",\"list_mcp_resource_templates\",\"list_mcp_resources\",\"read_mcp_resource\"]'}, {'type': 'input_text', 'text': '{\"prompt.md\": {\"bytes\": 23, \"sha256\": \"b99c9f56ad2ba671ed8b7ae3d3e525a4f61ad039c147cb14e39fd00fdef3acd6\"}}'}, {'type': 'input_text', 'text': '{\"file_bytes\": 23, \"file_sha256\": \"b99c9f56ad2ba671ed8b7ae3d3e525a4f61ad039c147cb14e39fd00fdef3acd6\", \"offset\": 0, \"path\": \"prompt.md\", \"returned_bytes\": 5, \"utf8\": \"Synth\"}'}, {'type': 'input_text', 'text': 'Unavailable'}, {'type': 'input_text', 'text': '{\"resources\":[]}'}, {'type': 'input_text', 'text': '{\"resourceTemplates\":[]}'}]"
+  ],
+  "transport_tools_null": true,
+  "turn_failed_only_from_synthetic_endpoint": true
+}

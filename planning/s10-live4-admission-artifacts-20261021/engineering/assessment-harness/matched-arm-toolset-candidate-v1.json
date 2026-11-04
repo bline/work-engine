@@ -1,0 +1,43 @@
+{
+  "schema": "s10-live4-matched-arm-toolset-candidate-v1",
+  "at": "2026-10-21T14:05:06.601118+00:00",
+  "status": "mechanical_alternative_only_not_owner_selected_or_launchable",
+  "scope": "fake custom provider, fake auth, synthetic input, unshared external network; no model response/provider call",
+  "model": "gpt-5.4",
+  "effort": "medium",
+  "probe_source_sha256": "b2b4b8e9a227badd2ae0b27189a6d8b9666dc97b2c5e2e57171600643645a426",
+  "wrapper_source_sha256": "f90d8adf1d00ff083ed6dbaa8c36d951c8e4c7052077cf7c03eb6eec5d0fc514",
+  "request_count": 1,
+  "request_sha256": "92214a45ea960747a7fe768ffd5db0f71ebcd337acabe286465babd28f97153f",
+  "advertised_tools": [
+    "list_mcp_resources",
+    "list_mcp_resource_templates",
+    "read_mcp_resource",
+    "request_user_input",
+    "mcp__corpus"
+  ],
+  "mcp_handshake_methods": [
+    "protocol:initialize",
+    "protocol:tools/list"
+  ],
+  "synthetic_session_ids": [
+    "01a15ec7-aa70-78c2-9f52-3f72d32f3100"
+  ],
+  "temporary_rollout_paths": [
+    "/probe/sessions/2026/10/21/rollout-2026-10-21T14-05-06-01a15ec7-aa70-78c2-9f52-3f72d32f3100.jsonl"
+  ],
+  "temporary_rollouts_removed": true,
+  "capability_notes": {
+    "list_mcp_resources": "single corpus server; empty resources qualified synthetically",
+    "list_mcp_resource_templates": "single corpus server; empty templates qualified synthetically",
+    "read_mcp_resource": "single corpus server; resource read denied synthetically",
+    "request_user_input": "headless arm must have no human channel; any attempt stops/voids, not yet qualified",
+    "mcp__corpus": "fixed list/read artifact server in separate no-auth/no-network namespace"
+  },
+  "limitations": [
+    "not a production-provider effective-tool test",
+    "actual user-input denial and tool-call dispatch not yet exercised",
+    "no quality or cost inference from gpt-5.4 presence",
+    "\u00a77 model selection remains owner decision"
+  ]
+}

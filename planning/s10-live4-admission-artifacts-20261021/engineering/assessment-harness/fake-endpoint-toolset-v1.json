@@ -1,0 +1,28 @@
+{
+  "schema": "s10-live4-fake-endpoint-toolset-v1",
+  "at": "2026-10-21T13:57:07.598287+00:00",
+  "scope": "isolated custom synthetic provider, fake auth, no external network, no model response",
+  "probe_source_sha256": "024ed4baf75fce7ec285a40d91b379d8d7c3505ad626b334a40caed9eeac28ae",
+  "outer_exit": 0,
+  "outer_stdout_sha256": "4b88af109d32e67f851c4fbc0a3344a49c00c289433799215774aa210397a0d7",
+  "outer_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "request_count": 1,
+  "request_capture_sha256": "cb36fc5be19c1441b2f1842578d40ea1d5019e4f611c9c6a4f12272d3a1d09cf",
+  "request_path": "/v1/responses",
+  "model": "gpt-6-sol",
+  "advertised_tools": [],
+  "mcp_handshake_audit_sha256": "8173ac9870d56ded083ffb008702d8fbfdc08627845be9e03f852154d2150f06",
+  "mcp_handshake_methods": [
+    "protocol:initialize",
+    "protocol:tools/list"
+  ],
+  "synthetic_session_ids": [
+    "01a15ec0-5b5b-7c81-b92e-362e5c635150"
+  ],
+  "temporary_rollout_paths": [
+    "/probe/sessions/2026/10/21/rollout-2026-10-21T13-57-07-01a15ec0-5b5b-7c81-b92e-362e5c635150.jsonl"
+  ],
+  "temporary_rollouts_removed_with_synthetic_directory": true,
+  "codex_events_sha256": "7096bdf4a17a27912b364037b3d9304b7588129f65eea68b6195f4571d6a80b3",
+  "interpretation": "MCP initialize and tools/list succeeded, but custom fake provider request omitted tools. This does not prove the production provider toolset or a usable reader. Candidate assessment launch remains blocked pending supported effective tool route."
+}

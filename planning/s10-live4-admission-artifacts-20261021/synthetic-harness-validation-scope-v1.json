@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-21T13:45:33.057499+00:00",
+  "authority_basis": "Existing user authorization to prepare a concrete reviewable admission package; interpretation of preparation-authority-v1 product-execution prohibition, not a new human grant.",
+  "allowed": "Mechanical assessment-harness checks with synthetic evidence and fake nonsecret authentication, no model/provider/network request to an external service, no product source build/test/rehearsal or consumed live state. Static harness implementation under engineering ownership is packet preparation.",
+  "excluded": [
+    "real credential read or mount",
+    "paid model/provider calls",
+    "S10 execution coordinator or worker launch",
+    "S10 product tests/builds/rehearsals",
+    "assessment arm model execution",
+    "frozen protocol change"
+  ],
+  "measurement": "All preparation tool/model coordination charges remain experimental setup; no synthetic test result may qualify the S10 product or score either future arm."
+}

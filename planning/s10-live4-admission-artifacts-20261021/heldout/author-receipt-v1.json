@@ -1,0 +1,88 @@
+{
+  "schema": "s10-live4-key-author-receipt-v1",
+  "at": "2026-10-21T13:28:51.914924+00:00",
+  "role": "held-out semantic key author",
+  "agent_task": "/root/live4_key_author",
+  "session_id": "01a15ea1-4b57-7a61-9b28-a5506a22d0b4",
+  "session_identity_evidence": "Parent observed actual runtime session_meta.id and reported it to author; inherited CODEX_THREAD_ID was not used.",
+  "rollout": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-23-11-01a15ea1-4b57-7a61-9b28-a5506a22d0b4.jsonl",
+  "model": "gpt-6-astra",
+  "reasoning_effort": "high",
+  "model_identity_evidence": "Parent reports first turn runtime metadata; author did not independently inspect rollout.",
+  "ledger": "experimental: key and manifest",
+  "permanent_exclusions": [
+    "assessment arm control",
+    "assessment arm intervention",
+    "independent adjudicator for this subject"
+  ],
+  "exposure": {
+    "authored": [
+      "key-v1.json",
+      "semantic-key-v1.md"
+    ],
+    "read": [
+      "repository instructions",
+      "DESIGN.md",
+      "PHILOSOPHY.md",
+      "wind-walker skill",
+      "required shared chatboard read",
+      "public obligations v1",
+      "public next-slice scope",
+      "frozen prospective protocol",
+      "accepted-contract.json",
+      "accepted proposal v2",
+      "clarification v2a",
+      "parent task and coordination messages",
+      "graph metadata/coverage for doctrine, scope and protocol"
+    ],
+    "incidental_historical_exposure": "Scope, accepted proposal and mandatory shared-board output include historical diagnosis, review and integration summaries. Those were visible as contract/context; no historical implementation, test or result artifact was opened. Initial combined reads were tool-output-truncated; doctrine was reread in bounded ranges to complete it. Board output was not used as semantic key authority.",
+    "not_read": [
+      "root admission rationale",
+      "engineering implementation or test-result artifacts",
+      "current product source code",
+      "correspondence map",
+      "assessment-arm outputs"
+    ]
+  },
+  "no_execution_declaration": {
+    "product_execution": false,
+    "product_tests": false,
+    "builds": false,
+    "paid_product_provider_sends": false,
+    "subagents_spawned": false,
+    "engineering_coordinator_launched": false,
+    "git_branch_index_or_source_changes": false,
+    "writes_confined_to": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout",
+    "performed": "Read-only context/contract and graph-metadata reads; local authoring, JSON/Markdown consistency checks and SHA-256 hashing only. This model authoring session itself is experimental cost."
+  },
+  "validation": {
+    "property_count": 15,
+    "public_ids_and_verbatim_requirements_match": true,
+    "all_eight_property_fields_verbatim_in_markdown": true,
+    "json_parse": true,
+    "semantic_review": "Pending separate nonauthor review; these mechanical checks do not establish semantic adequacy."
+  },
+  "outputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/key-v1.json",
+      "sha256": "69e9c0f8f521aa07db49c84f6ab04a9dd6f243f7de7e1097ac473c7192dc58e9"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/heldout/semantic-key-v1.md",
+      "sha256": "ad5458fdc0e3fe1c1656dc04c02c59e52d43dbf68578297b6019ab3c5a9e67ce"
+    }
+  ],
+  "limitations": [
+    "Prospective semantic key only; no product outcomes or assessment scores exist in this authoring task.",
+    "The 15 public obligations define the bounded subject; the key makes no exhaustive claim about all contract failure modes.",
+    "Historical summaries were incidentally visible in mandatory doctrine-adjacent scope/contract/board reads; no historical implementation or test-result artifact was inspected.",
+    "Final subject authorization, appendix inclusion, private checkpoint, isolation realization and runtime identity binding belong to the parent admission owner."
+  ],
+  "pending_owner_actions": [
+    "independent key/admission review and any author remediation",
+    "owner freeze and verbatim restricted protocol appendix",
+    "private checkpoint and launch authorization if accepted",
+    "separate isolated assessment arms and independent adjudication only after authorized execution"
+  ],
+  "board_coordination": "Parent owns the admission claim and collection; author sends transition/result metadata to parent, with no key content published to shared board."
+}

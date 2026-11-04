@@ -1,0 +1,31 @@
+{
+  "schema": "s10-live4-prospective-recording-contract-v1",
+  "status": "proposed_preexecution_intervention",
+  "recorder": {
+    "role": "dedicated fresh Codex recorder",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "session_id": "capture_actual_at_launch",
+    "charge": "Entire recorder session, including idle, corrections, failed writes and finalization, is G_direct; never infer backend identity from model configuration."
+  },
+  "sidecar": {
+    "relative_path": "experimental/correspondence-map.json",
+    "count": 1,
+    "product_input": false,
+    "eligible_raw_corpus": false,
+    "write_rule": "Create at first evidence boundary and atomically update this same file after each event. Bind each source artifact by exact SHA-256, observation time, public obligation ID, warrant/limit, and recorder session ID. Keep earlier entries; record corrections as new dated entries rather than silently overwrite meaning."
+  },
+  "event_boundaries": [
+    "Before first authorized execution action: launch recorder, record actual session ID, create initial map entry and record source/obligation packet binding",
+    "After exact build and provider-disabled checks: record evidence before rehearsal",
+    "After rehearsal/refusal/preflight output: record before any live send",
+    "After predecessor preparation and selected-host start: record custody/readback when emitted",
+    "After read and replacement A: record committed read/owner result when raw evidence becomes available; no claim of a pause before A",
+    "After first reconciliation: runner pauses for recorder acknowledgement of map/event hash before attempting the second-window and Q1/Q2/replacement B",
+    "After second reconciliation: runner pauses for a second recorder acknowledgement before final settlement wait",
+    "After stop and raw stopped extraction: record final evidence and unresolved findings before either assessment arm"
+  ],
+  "isolation": "Product prompts/config/DB/raw model texts must not contain the map, recorder instructions or held-out key. Coordinator/recorder discourse and cost ledgers stay outside eligible raw corpus. If raw evidence inseparably contains map metadata, declare affected properties confounded; do not filter control copy.",
+  "failure": "Product refusal/failure still produces a scored corpus when informative; too-thin evidence is predeclared feasibility outcome, not retrospectively voided.",
+  "acknowledgement": "Runner writes control-plane event digest and waits for recorder-owned ack containing event SHA-256, current sole-map SHA-256 and actual recorder session ID at both reconciliation boundaries. Acks live under run-state recorder-acks, outside the eligible raw corpus. The live timing risk of losing an in-flight second window during this pause must be qualified offline before paid send; if unworkable, re-register intervention timing instead of suppressing the ack."
+}

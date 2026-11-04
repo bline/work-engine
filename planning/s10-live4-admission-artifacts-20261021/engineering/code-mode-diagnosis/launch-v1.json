@@ -1,0 +1,9 @@
+{
+  "session_id": "01a15ec9-e76f-7602-a618-9ea9ac9c4be9",
+  "agent_path": "/root/integration_prep_supervisor/code_mode_diagnosis",
+  "parent_thread_id": "01a15e1c-9e0b-7e43-b26e-37b31e04a28e",
+  "session_meta_source": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T08-07-32-01a15ec9-e76f-7602-a618-9ea9ac9c4be9.jsonl",
+  "session_started_at": "2026-10-21T14:07:32.724Z",
+  "captured_at": "2026-10-21T14:08:06.769261+00:00",
+  "scope": "Read-only code-mode host and native versus standalone tool route diagnostic; outputs only in this directory. No product build/test/rehearsal, real provider calls, secret/key reads, agents, or paid actions."
+}

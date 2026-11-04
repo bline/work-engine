@@ -1,0 +1,156 @@
+{
+  "schema": "manual-skill-refinement-advisory-review-v2",
+  "created_utc": "2026-10-21T12:00:38.062206+00:00",
+  "review": {
+    "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-v2.md",
+    "sha256": "90d12429eefc8011d8eca3250144263a35287ff16a6480585e18ac404ad0a69f",
+    "bytes": 3374
+  },
+  "prior_review": {
+    "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-v1.md",
+    "sha256": "8df3f79452c689db0880d9ee45b35e57f1da0bcdcc884808920c1e84cc9f004f",
+    "bytes": 7942
+  },
+  "subject_manifest": {
+    "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/manifest-v2.json",
+    "sha256": "b8132f450971a1b1de3dc0a0dc0f1c29055a537299e06291b738b7aa30e1e05d",
+    "bytes": 11015
+  },
+  "verification": {
+    "source_count": 27,
+    "output_count": 7,
+    "mismatches": [],
+    "v2_candidate_files_unchanged": 5,
+    "archived_note_hash_verified": true
+  },
+  "continuity": "retained_same_reviewer_no_freshness_reset",
+  "independence_claimed": false,
+  "findings": [
+    {
+      "id": "AIR-MANUAL-002",
+      "severity": "P2",
+      "status": "resolved",
+      "path": "notes/manual-orchestration-skill-refinement-20261021.md",
+      "line": 21,
+      "advisory_outcome": "retain"
+    },
+    {
+      "id": "AIR-MANUAL-003",
+      "severity": "P3",
+      "status": "resolved",
+      "path": "notes/manual-orchestration-skill-refinement-20261021.md",
+      "line": 13,
+      "advisory_outcome": "retain"
+    }
+  ],
+  "remaining_open_findings": [],
+  "new_findings": [],
+  "introduced_delta_result": "Integration status attributed to exact compact authority and supervisor result; no material issue found within bounded record comparison",
+  "cost_observation": {
+    "scope": "Reusable skill refinement review investment, separate from engineering and prospective trial",
+    "session_id": "01a15c90-615d-7a80-9879-9fbedb03694f",
+    "session_meta": {
+      "line": 1,
+      "id": "01a15c90-615d-7a80-9879-9fbedb03694f",
+      "source": {
+        "subagent": {
+          "thread_spawn": {
+            "parent_thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+            "depth": 1,
+            "agent_path": "/root/synthesis_review",
+            "agent_nickname": "Pauli",
+            "agent_role": null
+          }
+        }
+      }
+    },
+    "rollout_path": "/home/bline/.codex/sessions/2026/10/20/rollout-2026-10-20T21-45-28-01a15c90-615d-7a80-9879-9fbedb03694f.jsonl",
+    "baseline": {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement-cost-baseline-v1.json",
+      "sha256": "b7d949038f2cbf07f413d64fb31142db61f0d4b85655242114f385dad6bf4147",
+      "bytes": 1972
+    },
+    "original_start": {
+      "line": 195,
+      "timestamp": "2026-10-21T03:53:48.023Z",
+      "usage": {
+        "input_tokens": 1703416,
+        "cached_input_tokens": 1597568,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 12293,
+        "reasoning_output_tokens": 3811,
+        "total_tokens": 1715709
+      }
+    },
+    "prior_receipt": {
+      "path": "/home/bline/.local/state/work-engine/s10-d-integration-prep-20261021/skill-refinement/review-receipt-v1.json",
+      "sha256": "031cc7cb41e4ffc9d3f9f3c3f536d800aedabd2321b881ea358a42152a6ddc62",
+      "bytes": 4377
+    },
+    "prior_observed_through": {
+      "line": 260,
+      "timestamp": "2026-10-21T11:56:38.441Z",
+      "usage": {
+        "input_tokens": 2342923,
+        "cached_input_tokens": 2204544,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 19178,
+        "reasoning_output_tokens": 7566,
+        "total_tokens": 2362101
+      },
+      "prefix_bytes": 1483425,
+      "prefix_sha256": "1124b7d38bb88c056626d75ca3bc4f1f649045704984450e3f6303e705ded5c2"
+    },
+    "observed_through": {
+      "line": 304,
+      "timestamp": "2026-10-21T11:59:46.211Z",
+      "usage": {
+        "input_tokens": 3080229,
+        "cached_input_tokens": 2925440,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 22540,
+        "reasoning_output_tokens": 8434,
+        "total_tokens": 3102769
+      },
+      "prefix_bytes": 1655196,
+      "prefix_sha256": "3761d162b46f6dfad3cbdd38ca1580d39f92d172ad86365a323d7fede1e6908f"
+    },
+    "cumulative_since_refinement_baseline": {
+      "raw_cumulative_delta": {
+        "input_tokens": 1376813,
+        "cached_input_tokens": 1327872,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 10247,
+        "reasoning_output_tokens": 4623,
+        "total_tokens": 1387060
+      },
+      "uncached_input_tokens": 48941,
+      "weighted_tokens": 232963.2,
+      "Mwt": 0.2329632
+    },
+    "increment_since_prior_observation": {
+      "raw_cumulative_delta": {
+        "input_tokens": 737306,
+        "cached_input_tokens": 720896,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3362,
+        "reasoning_output_tokens": 868,
+        "total_tokens": 740668
+      },
+      "uncached_input_tokens": 16410,
+      "weighted_tokens": 105309.6,
+      "Mwt": 0.1053096
+    },
+    "declared_weighting": "uncached + cached/10 + 5*output; weighting, not dollars or quota",
+    "recorded_turn_context": {
+      "line": 285,
+      "timestamp": "2026-10-21T11:59:12.180Z",
+      "model": "gpt-6-astra",
+      "effort": "xhigh"
+    },
+    "effective_backend_identity": "unobserved",
+    "aggregation": "Cumulative amount supersedes v1 observed-through total; do not add both. Increment includes v1 reporting tail plus this reevaluation through current observation. Current final reporting and parent collection remain outside the snapshot."
+  },
+  "scope_limits": "No adoption, engineering certification, independence upgrade, trial design selection or product episode mutation",
+  "owned_processes": []
+}

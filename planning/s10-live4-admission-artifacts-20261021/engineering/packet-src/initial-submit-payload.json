@@ -1,0 +1,41 @@
+{
+  "command_id": "command:s8:d0",
+  "engineering_question": "Which approved marker appears in member m1, and what remains pending?",
+  "facts": [
+    {
+      "id": "rule",
+      "kind": "governing",
+      "text": "Use only the approved snapshot member m1."
+    },
+    {
+      "id": "decision",
+      "kind": "decision",
+      "text": "Do not revive the superseded editing proposal."
+    },
+    {
+      "id": "commitment",
+      "kind": "commitment",
+      "text": "Preserve the exact read receipt across context changes."
+    },
+    {
+      "id": "uncertainty",
+      "kind": "uncertainty",
+      "text": "The next action awaits an authorized answer."
+    },
+    {
+      "id": "reference",
+      "kind": "canonical_reference",
+      "text": "Canonical reference: snapshot:s8:approved/m1."
+    },
+    {
+      "id": "approval",
+      "kind": "human_interaction",
+      "text": "Approval for repository mutation remains pending."
+    }
+  ],
+  "kind": "repository_analysis",
+  "objective": "Analyze the approved repository snapshot and identify the marker in member m1.",
+  "snapshot_ref": "snapshot:s8:approved",
+  "subject_id": "subject:s8:task",
+  "task_id": "task:s8:analysis"
+}
