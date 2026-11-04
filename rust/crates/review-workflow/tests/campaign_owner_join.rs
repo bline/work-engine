@@ -1,4 +1,5 @@
 #![cfg(unix)]
+#![recursion_limit = "256"]
 #[path = "../../slice-campaign/tests/support/mod.rs"]
 mod support;
 
@@ -916,6 +917,28 @@ fn setup_pair_claims(
             artifacts,
         )
         .unwrap();
+        if std::env::var_os("W1_EXPORT_FIXTURE").is_some() {
+            let b = &record.provenance.binding;
+            let CheckedObservation::Present(observation) = &record.observation else {
+                panic!("W1 J2 observation absent")
+            };
+            let exported = json!({"rootId":record.reference.root_id,"recordId":record.reference.record_id,
+                "revision":record.reference.revision,"expectedReferenceSha256":record.reference.sha256,
+                "rawResult":String::from_utf8(record.raw_result.clone()).unwrap(),
+                "observationCanonicalJson":claim_evidence::codec::canonical_json(observation).unwrap(),
+                "artifactReferences":record.artifact_references,
+                "provenance":{"binding":{"campaignRootId":b.campaign_root_id,"obligationId":b.obligation_id,
+                    "candidateDigest":b.candidate_digest,"selectionDigest":b.selection_digest,
+                    "profileDigest":b.profile_digest,"executionProfileDigest":b.execution_profile_digest,
+                    "preparedRequestSha256":b.prepared_request_sha256,"reviewEpisodeId":b.review_episode_id,
+                    "attemptId":b.attempt_id},"dispatchOperationId":record.provenance.dispatch_operation_id,
+                    "dispatchRevision":record.provenance.dispatch_revision,"executionSessionId":record.provenance.execution_session_id}});
+            fs::write(
+                temp.path().join("w1-fixture-evidence.json"),
+                serde_json::to_vec(&exported).unwrap(),
+            )
+            .unwrap();
+        }
         let reference = record.reference.clone();
         let fixture = ControlledFixtureOwner::new(vec![record.clone()]).unwrap();
         let owner: Arc<dyn ExecutionEvidenceOwner> = if tamper {
@@ -1266,6 +1289,31 @@ fn finish_native_with_reader(
         transition_id: review_episode_core::codec::JsString::new("result-join"),
         content_digest: review_episode_core::identity::Revision(episode_digest(&content_value)),
     };
+    if std::env::var_os("W1_EXPORT_FIXTURE").is_some() {
+        let EpisodeReadTarget::Transition { content_digest, .. } = &target else {
+            unreachable!()
+        };
+        fs::write(
+            _temp.path().join("w1-episode-target.json"),
+            serde_json::to_vec(
+                &json!({"transitionId":"result-join","contentDigest":content_digest.0}),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        fs::write(
+            _temp.path().join("w1-episode-authority.json"),
+            episode_json(authority.value()),
+        )
+        .unwrap();
+        fs::write(
+            _temp.path().join("w1-native-selection.json"),
+            serde_json::to_vec(&json!({"root":native.root,
+            "executableSha256":native.executable_sha256,"selectionDigest":native.selection_digest}))
+            .unwrap(),
+        )
+        .unwrap();
+    }
     let scope = TrustedEpisodeReadScope::new(authority, vec![target]).unwrap();
     let mut episode = EpisodeApplication::open_read_only(
         Path::new(&native.root),
@@ -1380,6 +1428,11 @@ fn finish_native_with_reader(
     }
     if process {
         assert_eq!(fs::read(count.as_ref().unwrap()).unwrap(), result_bytes);
+    }
+    if std::env::var_os("W1_EXPORT_FIXTURE").is_some() {
+        // The export child exits immediately after this test. Keep its fixed
+        // root for the separately launched completion host to reopen.
+        std::mem::forget(_temp);
     }
 }
 
@@ -4014,6 +4067,1515 @@ fn complete_fixture_j2(
         slice_campaign::InitialOutcomeKind::Reported
     );
     assert_eq!(receipt.operation_id, "eval-j2:publish");
+}
+
+// W1's bounded test-only export hook: the existing J2 fixture supplies its
+// actual owner handles to the completion route while all roots are still live.
+#[cfg(feature = "test-faults")]
+fn w1_manifest(
+    repo: &Path,
+    parent: &str,
+    candidate: &str,
+    attribution: workspace_publication::RecordRef,
+) -> workspace_publication::AttributedManifest {
+    use std::collections::BTreeMap;
+    use workspace_publication::{AttributedManifest, BlobSide, GitOid, ManifestEntry};
+    fn tree(repo: &Path, commit: &str) -> BTreeMap<String, (u32, String)> {
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(repo)
+            .args(["ls-tree", "-r", "-z", commit])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        output
+            .stdout
+            .split(|b| *b == 0)
+            .filter(|entry| !entry.is_empty())
+            .map(|entry| {
+                let tab = entry.iter().position(|b| *b == b'\t').unwrap();
+                let meta = std::str::from_utf8(&entry[..tab])
+                    .unwrap()
+                    .split(' ')
+                    .collect::<Vec<_>>();
+                assert_eq!(meta[1], "blob");
+                (
+                    std::str::from_utf8(&entry[tab + 1..]).unwrap().to_string(),
+                    (
+                        u32::from_str_radix(meta[0], 8).unwrap(),
+                        meta[2].to_string(),
+                    ),
+                )
+            })
+            .collect()
+    }
+    fn side(repo: &Path, value: Option<&(u32, String)>) -> Option<BlobSide> {
+        value.map(|(mode, hex)| {
+            let output = Command::new("git")
+                .arg("-C")
+                .arg(repo)
+                .args(["cat-file", "blob", hex])
+                .output()
+                .unwrap();
+            assert!(output.status.success());
+            BlobSide {
+                mode: *mode,
+                blob: GitOid {
+                    algorithm: "sha1".into(),
+                    hex: hex.clone(),
+                },
+                raw_sha256: workspace_publication::codec::raw_sha256(&output.stdout),
+            }
+        })
+    }
+    let before = tree(repo, parent);
+    let after = tree(repo, candidate);
+    let paths = before
+        .keys()
+        .chain(after.keys())
+        .collect::<std::collections::BTreeSet<_>>();
+    AttributedManifest {
+        entries: paths
+            .into_iter()
+            .filter(|path| before.get(*path) != after.get(*path))
+            .map(|path| ManifestEntry {
+                path: path.clone(),
+                before: side(repo, before.get(path)),
+                after: side(repo, after.get(path)),
+                task_attribution: "sc0-controlled-task".into(),
+                attribution_evidence: attribution.clone(),
+            })
+            .collect(),
+    }
+}
+
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_joined_j2_owner_socket_accept_create_publication() {
+    use std::os::unix::net::UnixStream;
+    use std::os::unix::{ffi::OsStrExt, fs::MetadataExt};
+    use work_engine_completion_host::{
+        Application as CompletionApplication, Request as CompletionRequest,
+    };
+    use workspace_publication::{
+        AuthorityMode, OperationState, RecordRef, Workspace, WorkspaceConfig,
+    };
+    finish_native_with(
+        setup_pair_claims(false, false, false, Some(0), None, true, None),
+        false,
+        false,
+        |campaign, identity, joined, owners| {
+            let outcome = campaign
+                .finalize_initial_completion(
+                    identity,
+                    &joined.last_checked_revision,
+                    &joined.locator,
+                    "outcome-w1",
+                    owners,
+                )
+                .unwrap();
+            assert!(matches!(
+                outcome.state,
+                slice_campaign::InitialOutcomeState::Committed { .. }
+            ));
+            let snapshot = campaign.read(identity).unwrap().unwrap();
+            let checkpoint = snapshot.candidate.as_ref().unwrap();
+            let repo = Path::new(&snapshot.repository);
+            let parent_output = Command::new("git")
+                .arg("-C")
+                .arg(repo)
+                .args(["rev-parse", &format!("{}^", checkpoint.commit)])
+                .output()
+                .unwrap();
+            assert!(parent_output.status.success());
+            let parent = String::from_utf8(parent_output.stdout)
+                .unwrap()
+                .trim()
+                .to_string();
+            let target = "refs/heads/w1-canonical";
+            assert!(
+                Command::new("git")
+                    .arg("-C")
+                    .arg(repo)
+                    .args(["update-ref", target, &parent])
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            let selected = &snapshot
+                .progress
+                .attempts
+                .last()
+                .unwrap()
+                .completion_intent
+                .as_ref()
+                .unwrap()
+                .selected_claims[0];
+            let campaign_root_id = campaign.root_id().to_string();
+            let attribution = RecordRef {
+                kind: "selected-claim".into(),
+                schema_version: 1,
+                root_id: campaign_root_id.clone(),
+                record_id: selected.claim_id.clone(),
+                sha256: selected.document_sha256.clone(),
+            };
+            let manifest = w1_manifest(repo, &parent, &checkpoint.commit, attribution);
+            assert!(!manifest.entries.is_empty());
+            let root = campaign.anchored_root().parent().unwrap().to_path_buf();
+            let git_output = |at: &Path, args: &[&str]| {
+                let output = Command::new("git")
+                    .arg("-C")
+                    .arg(at)
+                    .args(args)
+                    .output()
+                    .unwrap();
+                assert!(
+                    output.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                output.stdout
+            };
+            let attached = root.join("w1-user-attached");
+            git_output(
+                repo,
+                &[
+                    "worktree",
+                    "add",
+                    "-b",
+                    "w1-user-attached",
+                    attached.to_str().unwrap(),
+                    &parent,
+                ],
+            );
+            let user_ref = "refs/heads/w1-user-attached";
+            let user_ref_before = git_output(repo, &["rev-parse", user_ref]);
+            let attached_head_before = git_output(&attached, &["symbolic-ref", "HEAD"]);
+            let index_path = String::from_utf8(git_output(
+                &attached,
+                &["rev-parse", "--path-format=absolute", "--git-path", "index"],
+            ))
+            .unwrap();
+            let index_path = Path::new(index_path.trim()).to_path_buf();
+            let index_before = fs::read(&index_path).unwrap();
+            let unrelated = attached.join("w1-unrelated.txt");
+            fs::write(&unrelated, b"unrelated exact bytes\n").unwrap();
+            let unrelated_before = fs::read(&unrelated).unwrap();
+            let attached_snapshot = || {
+                let staged = git_output(&attached, &["ls-files", "--stage", "-z"]);
+                let paths = git_output(&attached, &["ls-files", "-z"]);
+                let mut tracked = std::collections::BTreeMap::new();
+                for raw in paths.split(|b| *b == 0).filter(|raw| !raw.is_empty()) {
+                    let path = attached.join(std::ffi::OsStr::from_bytes(raw));
+                    let metadata = fs::symlink_metadata(&path).unwrap();
+                    let bytes = if metadata.file_type().is_symlink() {
+                        fs::read_link(&path)
+                            .unwrap()
+                            .as_os_str()
+                            .as_bytes()
+                            .to_vec()
+                    } else {
+                        assert!(
+                            metadata.is_file(),
+                            "tracked path is not a file: {}",
+                            path.display()
+                        );
+                        fs::read(&path).unwrap()
+                    };
+                    tracked.insert(raw.to_vec(), (metadata.mode(), bytes));
+                }
+                let untracked = git_output(
+                    &attached,
+                    &["status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                );
+                (staged, tracked, untracked)
+            };
+            let (staged_before, tracked_before, untracked_before) = attached_snapshot();
+            assert!(!tracked_before.is_empty());
+            let checkpoint_ref = "refs/checkpoints/w1-accepted";
+            git_output(repo, &["update-ref", checkpoint_ref, &checkpoint.commit]);
+            let checkpoint_ref_before = git_output(repo, &["rev-parse", checkpoint_ref]);
+            let workspace = Workspace::initialize(WorkspaceConfig {
+                root: root.join("workspace-publication-w1"),
+                repository: repo.to_path_buf(),
+                canonical_refs: vec![target.into()],
+                validation_program: vec!["/usr/bin/true".into()],
+                validation_policy_digest: "b".repeat(64),
+                authority_mode: AuthorityMode::FixtureOperator,
+            })
+            .unwrap();
+            let publication = slice_campaign::publication::CampaignPublication::initialize(
+                campaign,
+                &root.join("campaign").join("publication-w1"),
+                rustix::process::getuid().as_raw(),
+                "a".repeat(64),
+                true,
+            )
+            .unwrap();
+            let mut app = CompletionApplication {
+                campaign: publication,
+                owners,
+                workspace,
+            };
+            let (peer, _other) = UnixStream::pair().unwrap();
+            let mut wrong_manifest = manifest.clone();
+            wrong_manifest.entries[0].after.as_mut().unwrap().raw_sha256 = "0".repeat(64);
+            assert!(
+                app.execute(
+                    &peer,
+                    CompletionRequest::InspectCandidate {
+                        identity: identity.clone(),
+                        locator: outcome.locator.clone(),
+                        manifest: wrong_manifest
+                    }
+                )
+                .is_err()
+            );
+            for (kind, root_id, record_id, sha256, reason) in [
+                (
+                    "selected-claim",
+                    campaign_root_id.as_str(),
+                    "missing-selected-claim",
+                    selected.document_sha256.as_str(),
+                    "required selected claim attribution missing",
+                ),
+                (
+                    "selected-claim",
+                    "foreign-campaign-root",
+                    selected.claim_id.as_str(),
+                    selected.document_sha256.as_str(),
+                    "unsupported or foreign selected claim attribution",
+                ),
+                (
+                    "unsupported-claim",
+                    campaign_root_id.as_str(),
+                    selected.claim_id.as_str(),
+                    selected.document_sha256.as_str(),
+                    "unsupported or foreign selected claim attribution",
+                ),
+                (
+                    "selected-claim",
+                    campaign_root_id.as_str(),
+                    selected.claim_id.as_str(),
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "required selected claim attribution missing",
+                ),
+            ] {
+                let mut wrong_claim = manifest.clone();
+                let attribution = &mut wrong_claim.entries[0].attribution_evidence;
+                attribution.kind = kind.into();
+                attribution.root_id = root_id.into();
+                attribution.record_id = record_id.into();
+                attribution.sha256 = sha256.into();
+                let error = app
+                    .execute(
+                        &peer,
+                        CompletionRequest::InspectCandidate {
+                            identity: identity.clone(),
+                            locator: outcome.locator.clone(),
+                            manifest: wrong_claim,
+                        },
+                    )
+                    .unwrap_err();
+                assert!(error.to_string().contains(reason), "{error}");
+            }
+            let inspected = app
+                .execute(
+                    &peer,
+                    CompletionRequest::InspectCandidate {
+                        identity: identity.clone(),
+                        locator: outcome.locator.clone(),
+                        manifest,
+                    },
+                )
+                .unwrap();
+            assert_eq!(inspected["package"]["nativeVerdict"], "acceptable_as_is");
+            let package_ref: RecordRef =
+                serde_json::from_value(inspected["packageRef"].clone()).unwrap();
+            assert!(
+                app.execute(
+                    &peer,
+                    CompletionRequest::AcceptCheckpoint {
+                        package_ref: package_ref.clone(),
+                        displayed_digest: "0".repeat(64),
+                        request_id: "forged-accept-w1".into()
+                    }
+                )
+                .is_err()
+            );
+            let accepted = app
+                .execute(
+                    &peer,
+                    CompletionRequest::AcceptCheckpoint {
+                        package_ref: package_ref.clone(),
+                        displayed_digest: package_ref.sha256.clone(),
+                        request_id: "accept-w1".into(),
+                    },
+                )
+                .unwrap();
+            let eligibility_ref: RecordRef =
+                serde_json::from_value(accepted["eligibilityRef"].clone()).unwrap();
+            let prepared = app
+                .execute(
+                    &peer,
+                    CompletionRequest::PreparePublication {
+                        eligibility_ref: eligibility_ref.clone(),
+                        target_ref: target.into(),
+                        message: "W1 joined fixture publication".into(),
+                        request_id: "prepare-w1".into(),
+                    },
+                )
+                .unwrap();
+            let prepared_ref: RecordRef =
+                serde_json::from_value(prepared["preparedRef"].clone()).unwrap();
+            let offer = app
+                .execute(
+                    &peer,
+                    CompletionRequest::OpenOffer {
+                        prepared_ref: prepared_ref.clone(),
+                    },
+                )
+                .unwrap();
+            let cancelled_offer_ref: RecordRef =
+                serde_json::from_value(offer["offerRef"].clone()).unwrap();
+            let authorized = app
+                .campaign
+                .decide_from_peer(
+                    &peer,
+                    &cancelled_offer_ref,
+                    "create",
+                    "create-before-cancel-w1",
+                )
+                .unwrap();
+            assert_eq!(
+                app.campaign.read_decision(&authorized).unwrap().action,
+                "create"
+            );
+            let cancelled = app
+                .campaign
+                .decide_from_peer(
+                    &peer,
+                    &cancelled_offer_ref,
+                    "cancel",
+                    "cancel-before-consume-w1",
+                )
+                .unwrap();
+            assert_eq!(
+                app.campaign.read_decision(&cancelled).unwrap().action,
+                "cancel"
+            );
+            assert!(app.campaign.consume_create(&cancelled_offer_ref).is_err());
+            let stale = app.execute(
+                &peer,
+                CompletionRequest::Create {
+                    offer_ref: cancelled_offer_ref.clone(),
+                    displayed_digest: offer["offer"]["createProposalDigest"]
+                        .as_str()
+                        .unwrap()
+                        .into(),
+                    request_id: "stale-offer-w1".into(),
+                },
+            );
+            assert!(stale.unwrap_err().to_string().contains("offer stale"));
+            let prepared = app
+                .execute(
+                    &peer,
+                    CompletionRequest::PreparePublication {
+                        eligibility_ref: eligibility_ref.clone(),
+                        target_ref: target.into(),
+                        message: "W1 joined fixture publication".into(),
+                        request_id: "prepare-w1-second".into(),
+                    },
+                )
+                .unwrap();
+            let prepared_ref: RecordRef =
+                serde_json::from_value(prepared["preparedRef"].clone()).unwrap();
+            let offer = app
+                .execute(
+                    &peer,
+                    CompletionRequest::OpenOffer {
+                        prepared_ref: prepared_ref.clone(),
+                    },
+                )
+                .unwrap();
+            let offer_ref: RecordRef = serde_json::from_value(offer["offerRef"].clone()).unwrap();
+            let proposal = offer["offer"]["createProposalDigest"]
+                .as_str()
+                .unwrap()
+                .to_string();
+            assert!(
+                app.execute(
+                    &peer,
+                    CompletionRequest::Create {
+                        offer_ref: offer_ref.clone(),
+                        displayed_digest: "0".repeat(64),
+                        request_id: "forged-create-w1".into()
+                    }
+                )
+                .is_err()
+            );
+            let result = app
+                .execute(
+                    &peer,
+                    CompletionRequest::Create {
+                        offer_ref: offer_ref.clone(),
+                        displayed_digest: proposal.clone(),
+                        request_id: "create-w1".into(),
+                    },
+                )
+                .unwrap();
+            assert_eq!(
+                result["receipt"]["state"],
+                serde_json::to_value(OperationState::PublishedObserved).unwrap()
+            );
+            let commit = result["receipt"]["commit"]["hex"].as_str().unwrap();
+            let output = Command::new("git")
+                .arg("-C")
+                .arg(repo)
+                .args(["rev-parse", target])
+                .output()
+                .unwrap();
+            assert!(output.status.success());
+            assert_eq!(String::from_utf8(output.stdout).unwrap().trim(), commit);
+            assert_eq!(git_output(repo, &["rev-parse", user_ref]), user_ref_before);
+            assert_eq!(
+                git_output(&attached, &["symbolic-ref", "HEAD"]),
+                attached_head_before
+            );
+            assert_eq!(fs::read(&index_path).unwrap(), index_before);
+            let (staged_after, tracked_after, untracked_after) = attached_snapshot();
+            assert_eq!(staged_after, staged_before);
+            assert_eq!(tracked_after, tracked_before);
+            assert_eq!(untracked_after, untracked_before);
+            assert_eq!(fs::read(&unrelated).unwrap(), unrelated_before);
+            assert_eq!(
+                git_output(repo, &["rev-parse", checkpoint_ref]),
+                checkpoint_ref_before
+            );
+            let operation = result["publicationRequest"]["operationId"]
+                .as_str()
+                .unwrap();
+            assert_eq!(
+                app.workspace.inspect(operation).unwrap().state,
+                OperationState::PublishedObserved
+            );
+            let repeated = app
+                .execute(
+                    &peer,
+                    CompletionRequest::Create {
+                        offer_ref: offer_ref.clone(),
+                        displayed_digest: proposal.clone(),
+                        request_id: "create-w1".into(),
+                    },
+                )
+                .unwrap();
+            assert_eq!(repeated["receipt"], result["receipt"]);
+            // Reopen both publication owners with a different, individually
+            // readable create decision reference. It must not replace the
+            // exact decision already bound by campaign consumption.
+            let decision_ref: RecordRef =
+                serde_json::from_value(result["decisionRef"].clone()).unwrap();
+            let mut alternate = decision_ref.clone();
+            alternate.record_id = "alternate-create-decision-w1".into();
+            let sql = rusqlite::Connection::open(
+                root.join("campaign/publication-w1/campaign-publication.sqlite"),
+            )
+            .unwrap();
+            let original: Vec<u8> = sql
+                .query_row(
+                    "SELECT decision_ref FROM offers WHERE prepared_digest=?1",
+                    [&prepared_ref.sha256],
+                    |row| row.get(0),
+                )
+                .unwrap();
+            assert_eq!(
+                sql.execute(
+                    "INSERT INTO records(record_id,kind,sha256,payload) SELECT ?1,kind,sha256,payload FROM records WHERE record_id=?2",
+                    rusqlite::params![alternate.record_id, decision_ref.record_id],
+                )
+                .unwrap(),
+                1
+            );
+            sql.execute(
+                "UPDATE offers SET decision_ref=?1 WHERE prepared_digest=?2",
+                rusqlite::params![
+                    workspace_publication::codec::canonical(&alternate).unwrap(),
+                    prepared_ref.sha256,
+                ],
+            )
+            .unwrap();
+            let reopened_decisions =
+                slice_campaign::publication::CampaignPublication::open_decisions(
+                    &root.join("campaign"),
+                    &campaign_root_id,
+                    &root.join("campaign/publication-w1"),
+                    rustix::process::getuid().as_raw(),
+                    "a".repeat(64),
+                    true,
+                )
+                .unwrap();
+            let mut reopened_workspace = Workspace::open(WorkspaceConfig {
+                root: root.join("workspace-publication-w1"),
+                repository: repo.to_path_buf(),
+                canonical_refs: vec![target.into()],
+                validation_program: vec!["/usr/bin/true".into()],
+                validation_policy_digest: "b".repeat(64),
+                authority_mode: AuthorityMode::FixtureOperator,
+            })
+            .unwrap();
+            let request = serde_json::from_value(result["publicationRequest"].clone()).unwrap();
+            let error = reopened_workspace
+                .publish(&reopened_decisions, &request)
+                .unwrap_err();
+            assert!(error.to_string().contains("consumption binding"), "{error}");
+            let still = Command::new("git")
+                .arg("-C")
+                .arg(repo)
+                .args(["rev-parse", target])
+                .output()
+                .unwrap();
+            assert!(still.status.success());
+            assert_eq!(String::from_utf8(still.stdout).unwrap().trim(), commit);
+            drop(reopened_workspace);
+            drop(reopened_decisions);
+            sql.execute(
+                "UPDATE offers SET decision_ref=?1 WHERE prepared_digest=?2",
+                rusqlite::params![original, prepared_ref.sha256],
+            )
+            .unwrap();
+            drop(sql);
+            let late_cancel = app
+                .campaign
+                .decide_from_peer(&peer, &offer_ref, "cancel", "late-cancel-w1")
+                .unwrap();
+            assert_eq!(
+                app.campaign.read_decision(&late_cancel).unwrap().action,
+                "cancel-too-late"
+            );
+            let late_revoke = app
+                .campaign
+                .revoke_from_peer(&peer, &eligibility_ref, "late-revoke-w1")
+                .unwrap();
+            assert!(!late_revoke.revoked);
+            assert_eq!(
+                app.campaign
+                    .read_decision(&late_revoke.decision_ref)
+                    .unwrap()
+                    .action,
+                "revoke-too-late"
+            );
+        },
+    );
+}
+
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_incomplete_owner_review_cannot_become_inspection_package() {
+    use std::os::unix::net::UnixStream;
+    use work_engine_completion_host::{
+        Application as CompletionApplication, Request as CompletionRequest,
+    };
+    use workspace_publication::{AttributedManifest, AuthorityMode, Workspace, WorkspaceConfig};
+    finish_native_with(
+        setup_pair(true),
+        true,
+        false,
+        |campaign, identity, joined, owners| {
+            let outcome = campaign
+                .finalize_initial_completion(
+                    identity,
+                    &joined.last_checked_revision,
+                    &joined.locator,
+                    "outcome-w1-incomplete",
+                    owners,
+                )
+                .unwrap();
+            assert!(
+                matches!(outcome.state,slice_campaign::InitialOutcomeState::Committed{ref view,..}
+                if view.kind==slice_campaign::InitialOutcomeKind::EvidenceUnestablished)
+            );
+            let snapshot = campaign.read(identity).unwrap().unwrap();
+            let root = campaign.anchored_root().parent().unwrap().to_path_buf();
+            let workspace = Workspace::initialize(WorkspaceConfig {
+                root: root.join("workspace-incomplete-w1"),
+                repository: snapshot.repository.into(),
+                canonical_refs: vec!["refs/heads/w1-canonical".into()],
+                validation_program: vec!["/usr/bin/true".into()],
+                validation_policy_digest: "b".repeat(64),
+                authority_mode: AuthorityMode::FixtureOperator,
+            })
+            .unwrap();
+            let publication = slice_campaign::publication::CampaignPublication::initialize(
+                campaign,
+                &root.join("campaign/publication-incomplete-w1"),
+                rustix::process::getuid().as_raw(),
+                "a".repeat(64),
+                true,
+            )
+            .unwrap();
+            let mut app = CompletionApplication {
+                campaign: publication,
+                owners,
+                workspace,
+            };
+            let (peer, _other) = UnixStream::pair().unwrap();
+            let error = app
+                .execute(
+                    &peer,
+                    CompletionRequest::InspectCandidate {
+                        identity: identity.clone(),
+                        locator: outcome.locator,
+                        manifest: AttributedManifest { entries: vec![] },
+                    },
+                )
+                .unwrap_err();
+            assert!(
+                error
+                    .to_string()
+                    .contains("actual review owner readback incomplete"),
+                "{error}"
+            );
+        },
+    );
+}
+
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_export_joined_fixture_for_host() {
+    if std::env::var_os("W1_EXPORT_FIXTURE").is_none() {
+        return;
+    }
+    finish_native_with(
+        setup_pair_claims(false, false, false, Some(0), None, true, None),
+        false,
+        false,
+        |campaign, identity, joined, owners| {
+            let outcome = campaign
+                .finalize_initial_completion(
+                    identity,
+                    &joined.last_checked_revision,
+                    &joined.locator,
+                    "outcome-w1-host",
+                    owners,
+                )
+                .unwrap();
+            assert!(matches!(
+                outcome.state,
+                slice_campaign::InitialOutcomeState::Committed { .. }
+            ));
+            let snapshot = campaign.read(identity).unwrap().unwrap();
+            let checkpoint = snapshot.candidate.as_ref().unwrap();
+            let repo = Path::new(&snapshot.repository);
+            let parent_output = Command::new("git")
+                .arg("-C")
+                .arg(repo)
+                .args(["rev-parse", &format!("{}^", checkpoint.commit)])
+                .output()
+                .unwrap();
+            assert!(parent_output.status.success());
+            let parent = String::from_utf8(parent_output.stdout)
+                .unwrap()
+                .trim()
+                .to_string();
+            let target = "refs/heads/w1-canonical";
+            assert!(
+                Command::new("git")
+                    .arg("-C")
+                    .arg(repo)
+                    .args(["update-ref", target, &parent])
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            let selected = &snapshot
+                .progress
+                .attempts
+                .last()
+                .unwrap()
+                .completion_intent
+                .as_ref()
+                .unwrap()
+                .selected_claims[0];
+            let attribution = workspace_publication::RecordRef {
+                kind: "selected-claim".into(),
+                schema_version: 1,
+                root_id: campaign.root_id().into(),
+                record_id: selected.claim_id.clone(),
+                sha256: selected.document_sha256.clone(),
+            };
+            let manifest = w1_manifest(repo, &parent, &checkpoint.commit, attribution);
+            let root = campaign.anchored_root().parent().unwrap();
+            let gate_hashes = [
+                "f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206",
+                "d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34",
+                "c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2",
+            ];
+            let gate_paths = [
+                "w1-gate-capture.json",
+                "w1-gate-manifest.json",
+                "w1-gate-receipt.json",
+            ];
+            let pins = gate_hashes
+                .iter()
+                .zip(gate_paths.iter())
+                .map(|(hash, name)| {
+                    let path = root.join(name);
+                    let bytes = support::fixture(hash);
+                    fs::write(&path, &bytes).unwrap();
+                    json!({"path":path,"sha256":sha256_bytes(&bytes)})
+                })
+                .collect::<Vec<_>>();
+            let file_pin = |name: &str| {
+                let path = root.join(name);
+                json!({"path":path,"sha256":sha256_bytes(&fs::read(&path).unwrap())})
+            };
+            let config: Value =
+                serde_json::from_slice(&fs::read(root.join("claims-config.json")).unwrap())
+                    .unwrap();
+            let grant_sha = claim_digest(&claim_value(&config["grants"][0])).unwrap();
+            let native: Value =
+                serde_json::from_slice(&fs::read(root.join("w1-native-selection.json")).unwrap())
+                    .unwrap();
+            let transition: Value =
+                serde_json::from_slice(&fs::read(root.join("w1-episode-target.json")).unwrap())
+                    .unwrap();
+            let installed = json!({"hostBuildSha256":"0".repeat(64),"authorityMode":"fixture_operator","socket":root.join("w1-completion.sock"),
+                "campaignRoot":campaign.anchored_root(),"repository":snapshot.repository,"workspace":snapshot.workspace,
+                "identity":identity,"boundary":snapshot.accepted_boundary,"baseline":snapshot.baseline,"writerIdentity":"sc3-fixture-writer",
+                "gateCapture":pins[0],"gateManifest":pins[1],"gateReceipt":pins[2],
+                "completionRoot":campaign.anchored_root().join("publication-host-w1"),"workspaceRoot":root.join("workspace-publication-host-w1"),
+                "operatorUid":rustix::process::getuid().as_raw(),"authoritySourceDigest":"a".repeat(64),
+                "canonicalRefs":[target],"validationProgram":["/usr/bin/true"],"validationPolicyDigest":"b".repeat(64),
+                "claimsRoot":root.join("claims-root"),"claimsConfig":file_pin("claims-config.json"),"claimsSource":file_pin("claims-source.json"),
+                "claimsRootId":"claims-root","claimsProfile":"native-review-claims-v1","productionGrantId":"grant-production","productionGrantSha256":grant_sha,
+                "episodeRoot":native["root"],"episodeExecutableSha256":native["executableSha256"],"episodeSelectionDigest":native["selectionDigest"],
+                "episodeAuthority":file_pin("w1-episode-authority.json"),"episodeReadRevisions":[],"episodeReadTransition":transition,
+                "evidenceRoot":root.join("unused-evidence"),"evidenceRootId":"fixture-root","evidenceConfigurationSha256":"0".repeat(64),
+                "evidenceExecutableSha256":"0".repeat(64),"evidenceSourceSha256":"0".repeat(64),
+                "evidenceProfile":"controlled_fixture","evidenceOwner":FIXTURE_OWNER,"evidenceRecordProfile":FIXTURE_PROFILE,
+                "fixtureEvidence":file_pin("w1-fixture-evidence.json"),
+                "completionSelection":{"findingGrantId":"grant-findings","findingGrantSha256":claim_digest(&claim_value(&config["grants"][1])).unwrap(),
+                    "relianceGrantId":"grant-findings","relianceGrantSha256":claim_digest(&claim_value(&config["grants"][1])).unwrap(),
+                    "consumer":"slice-builder:j2","consumerTree":checkpoint.tree,"decisionScope":"scope-1",
+                    "authoritySources":[config["grants"][1]["authority_reference"]]}});
+            fs::write(
+                root.join("w1-installed.json"),
+                serde_json::to_vec(&installed).unwrap(),
+            )
+            .unwrap();
+            fs::write(root.join("w1-campaign-root-id.txt"), campaign.root_id()).unwrap();
+            fs::write(root.join("w1-inspect.json"),serde_json::to_vec(&json!({"command":"inspect_candidate","identity":identity,"locator":outcome.locator,"manifest":manifest})).unwrap()).unwrap();
+        },
+    );
+}
+
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_host_process_entry() {
+    let Some(config) = std::env::var_os("W1_HOST_CONFIG") else {
+        return;
+    };
+    work_engine_completion_host::fixture_host::run_fixture(config.into()).unwrap();
+}
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_decision_race_child_entry() {
+    use std::os::unix::net::UnixStream;
+    let Some(path) = std::env::var_os("W1_DECISION_CONTEXT") else {
+        return;
+    };
+    let value: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+    let root = Path::new(value["campaignRoot"].as_str().unwrap());
+    let completion = Path::new(value["completionRoot"].as_str().unwrap());
+    let campaign_id = value["campaignRootId"].as_str().unwrap();
+    let ledger = slice_campaign::publication::CampaignPublication::open_decisions(
+        root,
+        campaign_id,
+        completion,
+        rustix::process::getuid().as_raw(),
+        "a".repeat(64),
+        true,
+    )
+    .unwrap();
+    let offer: workspace_publication::RecordRef =
+        serde_json::from_value(value["offerRef"].clone()).unwrap();
+    let eligibility: workspace_publication::RecordRef =
+        serde_json::from_value(value["eligibilityRef"].clone()).unwrap();
+    let (peer, _other) = UnixStream::pair().unwrap();
+    let action = std::env::var("W1_DECISION_ACTION").unwrap();
+    if action != "authorize" {
+        let ready = std::path::PathBuf::from(std::env::var("W1_DECISION_READY").unwrap());
+        fs::write(ready, b"ready").unwrap();
+        let go = std::path::PathBuf::from(std::env::var("W1_DECISION_GO").unwrap());
+        while !go.exists() {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        let delay: u64 = std::env::var("W1_DECISION_DELAY_MS")
+            .unwrap()
+            .parse()
+            .unwrap();
+        std::thread::sleep(Duration::from_millis(delay));
+    }
+    let result = match action.as_str() {
+        "authorize" => ledger
+            .decide_from_peer(&peer, &offer, "create", "authorize-race")
+            .map(|r| json!({"decisionRef":r})),
+        "consume" => ledger
+            .consume_create(&offer)
+            .map(|r| json!({"publicationRequest":r})),
+        "revoke" => ledger
+            .revoke_from_peer(&peer, &eligibility, "revoke-race")
+            .map(|r| json!(r)),
+        "cancel" => ledger
+            .decide_from_peer(&peer, &offer, "cancel", "cancel-race")
+            .and_then(|r| {
+                let decision = ledger.read_decision(&r)?;
+                Ok(json!({"decisionRef":r,"action":decision.action}))
+            }),
+        "publish" | "close" | "close_only" | "settle" => {
+            let installed: Value = serde_json::from_slice(
+                &fs::read(value["installedPath"].as_str().unwrap()).unwrap(),
+            )
+            .unwrap();
+            let config = workspace_publication::WorkspaceConfig {
+                root: installed["workspaceRoot"].as_str().unwrap().into(),
+                repository: installed["repository"].as_str().unwrap().into(),
+                canonical_refs: serde_json::from_value(installed["canonicalRefs"].clone()).unwrap(),
+                validation_program: serde_json::from_value(installed["validationProgram"].clone())
+                    .unwrap(),
+                validation_policy_digest: installed["validationPolicyDigest"]
+                    .as_str()
+                    .unwrap()
+                    .into(),
+                authority_mode: workspace_publication::AuthorityMode::FixtureOperator,
+            };
+            let mut workspace = workspace_publication::Workspace::open(config).unwrap();
+            ledger.consume_create(&offer).and_then(|request| {
+                let result = match action.as_str() {
+                    "publish" => workspace.publish(&ledger, &request),
+                    "close" | "close_only" => workspace.close_no_effect(&ledger, &request),
+                    _ => workspace.reconcile(&ledger, &request),
+                }
+                .map_err(|e| slice_campaign::CampaignError::Contract(e.to_string()))?;
+                if action == "close" || action == "settle" {
+                    ledger.record_result(&workspace, &request)?;
+                }
+                Ok(json!({"receipt":result,"publicationRequest":request}))
+            })
+        }
+        _ => panic!("unknown decision race action"),
+    };
+    let output = match result {
+        Ok(v) => json!({"ok":true,"result":v}),
+        Err(e) => json!({"ok":false,"error":e.to_string()}),
+    };
+    fs::write(
+        std::env::var("W1_DECISION_RESULT").unwrap(),
+        serde_json::to_vec(&output).unwrap(),
+    )
+    .unwrap();
+}
+
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_reopened_actual_host_process_and_owner_records() {
+    use std::io::{Read, Write};
+    use std::os::unix::net::UnixStream;
+    let state = std::path::PathBuf::from(
+        std::env::var("WORK_ENGINE_W1_TEST_ROOT").expect("persistent W1 test root required"),
+    );
+    fs::create_dir_all(&state).unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("joined-host-")
+        .tempdir_in(state)
+        .unwrap();
+    let root = temp.path().join("fixture");
+    let executable = std::env::current_exe().unwrap();
+    let export = Command::new(&executable)
+        .args([
+            "--exact",
+            "w1_export_joined_fixture_for_host",
+            "--nocapture",
+        ])
+        .env("W1_EXPORT_FIXTURE", "1")
+        .env("P1_CORPUS_ROOT", &root)
+        .env("TMPDIR", "/run/user/1000")
+        .output()
+        .unwrap();
+    assert!(
+        export.status.success(),
+        "export: {}",
+        String::from_utf8_lossy(&export.stderr)
+    );
+    let config_path = root.join("w1-installed.json");
+    let mut installed: Value = serde_json::from_slice(&fs::read(&config_path).unwrap()).unwrap();
+    installed["hostBuildSha256"] = json!(sha256_bytes(&fs::read(&executable).unwrap()));
+    fs::write(&config_path, serde_json::to_vec(&installed).unwrap()).unwrap();
+    let evidence_path = root.join("w1-fixture-evidence.json");
+    let mut evidence: Value = serde_json::from_slice(&fs::read(&evidence_path).unwrap()).unwrap();
+    evidence["rawResult"] = json!(format!("{} ", evidence["rawResult"].as_str().unwrap()));
+    let tampered_bytes = serde_json::to_vec(&evidence).unwrap();
+    let tampered_path = root.join("w1-tampered-evidence.json");
+    fs::write(&tampered_path, &tampered_bytes).unwrap();
+    let mut tampered = installed.clone();
+    tampered["fixtureEvidence"] =
+        json!({"path":tampered_path,"sha256":sha256_bytes(&tampered_bytes)});
+    let tampered_config = root.join("w1-tampered-installed.json");
+    fs::write(&tampered_config, serde_json::to_vec(&tampered).unwrap()).unwrap();
+    let rejected = Command::new(&executable)
+        .args(["--exact", "w1_host_process_entry", "--nocapture"])
+        .env("W1_HOST_CONFIG", &tampered_config)
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(
+        String::from_utf8_lossy(&rejected.stderr).contains("fixture evidence reference differs")
+    );
+    let socket = root.join("w1-completion.sock");
+    let spawn = |cut: Option<&str>| {
+        let mut command = Command::new(&executable);
+        command
+            .args(["--exact", "w1_host_process_entry", "--nocapture"])
+            .env("W1_HOST_CONFIG", &config_path)
+            .stdout(Stdio::null())
+            .stderr(fs::File::create(root.join("w1-host-stderr.log")).unwrap());
+        if let Some(cut) = cut {
+            command
+                .env("SLICE_CAMPAIGN_FAULT_CUT", cut)
+                .env("SLICE_CAMPAIGN_FAULT_DIR", &root)
+                .env("WORK_ENGINE_COMPLETION_FAULT_CUT", cut)
+                .env("WORK_ENGINE_COMPLETION_FAULT_DIR", &root);
+        }
+        command.spawn().unwrap()
+    };
+    let mut child = spawn(None);
+    let ready = Instant::now();
+    while !socket.exists() {
+        if let Some(status) = child.try_wait().unwrap() {
+            let output = child.wait_with_output().unwrap();
+            panic!(
+                "host startup {status}: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        assert!(ready.elapsed() < Duration::from_secs(20));
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let send = |request: &Value| -> Value {
+        let mut peer = UnixStream::connect(&socket).unwrap();
+        peer.write_all(&serde_json::to_vec(request).unwrap())
+            .unwrap();
+        peer.shutdown(std::net::Shutdown::Write).unwrap();
+        let mut bytes = Vec::new();
+        peer.read_to_end(&mut bytes).unwrap();
+        let response: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            response["ok"],
+            true,
+            "{response}; host stderr: {}",
+            fs::read_to_string(root.join("w1-host-stderr.log")).unwrap_or_default()
+        );
+        response["result"].clone()
+    };
+    let cut_request = |cut: &str, wire: &Value| {
+        let mut cut_child = spawn(Some(cut));
+        let start = Instant::now();
+        while !socket.exists() {
+            assert!(start.elapsed() < Duration::from_secs(20));
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let request = wire.clone();
+        let cut_socket = socket.clone();
+        let caller = std::thread::spawn(move || {
+            if let Ok(mut peer) = UnixStream::connect(cut_socket) {
+                let _ = peer.write_all(&serde_json::to_vec(&request).unwrap());
+                let _ = peer.shutdown(std::net::Shutdown::Write);
+                let mut bytes = Vec::new();
+                let _ = peer.read_to_end(&mut bytes);
+            }
+        });
+        let ready = root.join(format!("{cut}.ready"));
+        let start = Instant::now();
+        while !ready.exists() {
+            assert!(
+                start.elapsed() < Duration::from_secs(20),
+                "missing {cut} cut"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        cut_child.kill().unwrap();
+        cut_child.wait().unwrap();
+        caller.join().unwrap();
+        fs::remove_file(&socket).unwrap();
+    };
+    let inspected =
+        send(&serde_json::from_slice(&fs::read(root.join("w1-inspect.json")).unwrap()).unwrap());
+    let package = &inspected["packageRef"];
+    let accept_request = json!({"command":"accept_checkpoint","packageRef":package,"displayedDigest":package["sha256"],"requestId":"accept-host"});
+    child.kill().unwrap();
+    child.wait().unwrap();
+    fs::remove_file(&socket).unwrap();
+    cut_request("w1_accept_before_replay", &accept_request);
+    child = spawn(None);
+    let ready = Instant::now();
+    while !socket.exists() {
+        assert!(ready.elapsed() < Duration::from_secs(20));
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let accepted = send(&accept_request);
+    let prepared = send(
+        &json!({"command":"prepare_publication","eligibilityRef":accepted["eligibilityRef"],
+        "targetRef":"refs/heads/w1-canonical","message":"W1 actual host process","requestId":"prepare-host"}),
+    );
+    let offer = send(&json!({"command":"open_offer","preparedRef":prepared["preparedRef"]}));
+    let create_request = json!({"command":"create","offerRef":offer["offerRef"],"displayedDigest":offer["offer"]["createProposalDigest"],"requestId":"create-host"});
+    child.kill().unwrap();
+    child.wait().unwrap();
+    fs::remove_file(&socket).unwrap();
+    for cut in [
+        "w1_decision_before_replay",
+        "w1_decision_after_commit",
+        "w1_consume_after_commit",
+        "w1_after_closure_before_settlement",
+    ] {
+        cut_request(cut, &create_request);
+    }
+    child = spawn(None);
+    let ready = Instant::now();
+    while !socket.exists() {
+        assert!(ready.elapsed() < Duration::from_secs(20));
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let closed = send(&create_request);
+    assert_eq!(closed["receipt"]["state"], "closedNoEffect");
+    assert_eq!(closed["settled"]["state"], "closedNoEffect");
+    let prepared = send(
+        &json!({"command":"prepare_publication","eligibilityRef":accepted["eligibilityRef"],
+        "targetRef":"refs/heads/w1-canonical","message":"W1 actual host success after closure","requestId":"prepare-host-success"}),
+    );
+    let offer = send(&json!({"command":"open_offer","preparedRef":prepared["preparedRef"]}));
+    let create_request = json!({"command":"create","offerRef":offer["offerRef"],"displayedDigest":offer["offer"]["createProposalDigest"],"requestId":"create-host-success"});
+    let created = send(&create_request);
+    let repeated = send(&create_request);
+    assert_eq!(created["receipt"], repeated["receipt"]);
+    let late_cancel = send(
+        &json!({"command":"cancel","offerRef":offer["offerRef"],"displayedDigest":offer["offer"]["createProposalDigest"],"requestId":"cancel-late-host"}),
+    );
+    assert!(late_cancel["decisionRef"].is_object());
+    let revoke_request = json!({"command":"revoke","eligibilityRef":accepted["eligibilityRef"],"requestId":"revoke-late-host"});
+    child.kill().unwrap();
+    child.wait().unwrap();
+    fs::remove_file(&socket).unwrap();
+    cut_request("w1_revoke_before_replay", &revoke_request);
+    child = spawn(None);
+    let ready = Instant::now();
+    while !socket.exists() {
+        assert!(ready.elapsed() < Duration::from_secs(20));
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let late_revoke = send(&revoke_request);
+    assert_eq!(late_revoke["revoked"], false);
+    assert_eq!(created["receipt"]["state"], "publishedObserved");
+    let operation = created["publicationRequest"]["operationId"]
+        .as_str()
+        .unwrap();
+    let target = Command::new("git")
+        .arg("-C")
+        .arg(root.join("repo"))
+        .args(["rev-parse", "refs/heads/w1-canonical"])
+        .output()
+        .unwrap();
+    assert!(target.status.success());
+    assert_eq!(
+        String::from_utf8(target.stdout).unwrap().trim(),
+        created["receipt"]["commit"]["hex"].as_str().unwrap()
+    );
+    child.kill().unwrap();
+    child.wait().unwrap();
+    fs::remove_file(&socket).unwrap();
+    let mut child = spawn(None);
+    let ready = Instant::now();
+    while !socket.exists() {
+        if let Some(status) = child.try_wait().unwrap() {
+            let output = child.wait_with_output().unwrap();
+            panic!(
+                "host reopen {status}: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        assert!(ready.elapsed() < Duration::from_secs(20));
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let reopened = send(&json!({"command":"inspect_operation","operationId":operation}));
+    assert_eq!(reopened["state"], "publishedObserved");
+    let reconciled =
+        send(&json!({"command":"reconcile","publicationRequest":created["publicationRequest"]}));
+    assert_eq!(
+        reconciled["receipt"]["commit"],
+        created["receipt"]["commit"]
+    );
+    child.kill().unwrap();
+    child.wait().unwrap();
+    fs::remove_file(&socket).unwrap();
+    let mut bad = installed.clone();
+    bad["authorityMode"] = json!("production");
+    let bad_path = root.join("w1-production-rejected.json");
+    fs::write(&bad_path, serde_json::to_vec(&bad).unwrap()).unwrap();
+    let rejected = Command::new(&executable)
+        .args(["--exact", "w1_host_process_entry", "--nocapture"])
+        .env("W1_HOST_CONFIG", &bad_path)
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(
+        String::from_utf8_lossy(&rejected.stderr)
+            .contains("production authority/custody installation is unavailable")
+    );
+}
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_two_process_stop_consume_races_both_start_orders() {
+    use std::io::{Read, Write};
+    use std::os::unix::net::UnixStream;
+    fn wire(socket: &Path, request: &Value) -> Value {
+        let mut peer = UnixStream::connect(socket).unwrap();
+        peer.write_all(&serde_json::to_vec(request).unwrap())
+            .unwrap();
+        peer.shutdown(std::net::Shutdown::Write).unwrap();
+        let mut bytes = Vec::new();
+        peer.read_to_end(&mut bytes).unwrap();
+        serde_json::from_slice(&bytes).unwrap()
+    }
+    let state = std::path::PathBuf::from(
+        std::env::var("WORK_ENGINE_W1_TEST_ROOT").expect("persistent W1 test root required"),
+    );
+    fs::create_dir_all(&state).unwrap();
+    let executable = std::env::current_exe().unwrap();
+    for (stop_action, stop_first) in [
+        ("revoke", true),
+        ("revoke", false),
+        ("cancel", true),
+        ("cancel", false),
+    ] {
+        let temp = tempfile::Builder::new()
+            .prefix("joined-race-")
+            .tempdir_in(&state)
+            .unwrap();
+        let root = temp.path().join("fixture");
+        let export = Command::new(&executable)
+            .args([
+                "--exact",
+                "w1_export_joined_fixture_for_host",
+                "--nocapture",
+            ])
+            .env("W1_EXPORT_FIXTURE", "1")
+            .env("P1_CORPUS_ROOT", &root)
+            .env("TMPDIR", "/run/user/1000")
+            .output()
+            .unwrap();
+        assert!(
+            export.status.success(),
+            "{}",
+            String::from_utf8_lossy(&export.stderr)
+        );
+        let config_a = root.join("w1-installed.json");
+        let mut installed: Value = serde_json::from_slice(&fs::read(&config_a).unwrap()).unwrap();
+        installed["hostBuildSha256"] = json!(sha256_bytes(&fs::read(&executable).unwrap()));
+        fs::write(&config_a, serde_json::to_vec(&installed).unwrap()).unwrap();
+        let socket_a = root.join("w1-completion.sock");
+        let start_host = |config: &Path| {
+            Command::new(&executable)
+                .args(["--exact", "w1_host_process_entry", "--nocapture"])
+                .env("W1_HOST_CONFIG", config)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+                .unwrap()
+        };
+        let mut host_a = start_host(&config_a);
+        let start = Instant::now();
+        while !socket_a.exists() {
+            assert!(start.elapsed() < Duration::from_secs(20));
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let inspected = wire(
+            &socket_a,
+            &serde_json::from_slice(&fs::read(root.join("w1-inspect.json")).unwrap()).unwrap(),
+        );
+        assert_eq!(inspected["ok"], true);
+        let package = &inspected["result"]["packageRef"];
+        let accepted = wire(
+            &socket_a,
+            &json!({"command":"accept_checkpoint","packageRef":package,"displayedDigest":package["sha256"],"requestId":"accept-race"}),
+        );
+        assert_eq!(accepted["ok"], true);
+        let eligibility = accepted["result"]["eligibilityRef"].clone();
+        let prepared = wire(
+            &socket_a,
+            &json!({"command":"prepare_publication","eligibilityRef":eligibility,"targetRef":"refs/heads/w1-canonical","message":"W1 race","requestId":"prepare-race"}),
+        );
+        assert_eq!(prepared["ok"], true);
+        let offer = wire(
+            &socket_a,
+            &json!({"command":"open_offer","preparedRef":prepared["result"]["preparedRef"]}),
+        );
+        assert_eq!(offer["ok"], true);
+        let offer_ref = offer["result"]["offerRef"].clone();
+        let proposal = offer["result"]["offer"]["createProposalDigest"].clone();
+        let before = Command::new("git")
+            .arg("-C")
+            .arg(root.join("repo"))
+            .args(["rev-parse", "refs/heads/w1-canonical"])
+            .output()
+            .unwrap();
+        let before = String::from_utf8(before.stdout).unwrap().trim().to_string();
+        let context = root.join("w1-race-context.json");
+        fs::write(&context,serde_json::to_vec(&json!({"campaignRoot":installed["campaignRoot"],
+            "campaignRootId":fs::read_to_string(root.join("w1-campaign-root-id.txt")).unwrap(),
+            "completionRoot":installed["completionRoot"],"offerRef":offer_ref,"eligibilityRef":eligibility})).unwrap()).unwrap();
+        let run_child = |action: &str, delay: u64| {
+            let result = root.join(format!("w1-{action}-result.json"));
+            let ready = root.join(format!("w1-{action}.ready"));
+            let go = root.join("w1-race.go");
+            let mut command = Command::new(&executable);
+            command
+                .args(["--exact", "w1_decision_race_child_entry", "--nocapture"])
+                .env("W1_DECISION_CONTEXT", &context)
+                .env("W1_DECISION_ACTION", action)
+                .env("W1_DECISION_RESULT", &result)
+                .env("W1_DECISION_READY", &ready)
+                .env("W1_DECISION_GO", &go)
+                .env("W1_DECISION_DELAY_MS", delay.to_string())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+            (command.spawn().unwrap(), ready, result)
+        };
+        let (mut authorize, _, authorize_result) = run_child("authorize", 0);
+        assert!(authorize.wait().unwrap().success());
+        let authorized: Value =
+            serde_json::from_slice(&fs::read(authorize_result).unwrap()).unwrap();
+        assert_eq!(authorized["ok"], true, "{authorized}");
+        let (mut consume, consume_ready, consume_result) =
+            run_child("consume", if stop_first { 25 } else { 0 });
+        let (mut stop, stop_ready, stop_result) =
+            run_child(stop_action, if stop_first { 0 } else { 25 });
+        let start = Instant::now();
+        while !consume_ready.exists() || !stop_ready.exists() {
+            assert!(start.elapsed() < Duration::from_secs(20));
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        fs::write(root.join("w1-race.go"), b"go").unwrap();
+        assert!(consume.wait().unwrap().success());
+        assert!(stop.wait().unwrap().success());
+        let consumed: Value = serde_json::from_slice(&fs::read(consume_result).unwrap()).unwrap();
+        let stopped: Value = serde_json::from_slice(&fs::read(stop_result).unwrap()).unwrap();
+        assert_eq!(stopped["ok"], true, "{stopped}");
+        let stop_won = if stop_action == "revoke" {
+            stopped["result"]["revoked"] == true
+        } else {
+            stopped["result"]["action"] == "cancel"
+        };
+        assert_eq!(
+            consumed["ok"] == true,
+            !stop_won,
+            "consume={consumed} stop={stopped}"
+        );
+        let created = wire(
+            &socket_a,
+            &json!({"command":"create","offerRef":offer_ref,"displayedDigest":proposal,"requestId":"authorize-race"}),
+        );
+        assert_eq!(created["ok"] == true, !stop_won, "{created}");
+        let after = Command::new("git")
+            .arg("-C")
+            .arg(root.join("repo"))
+            .args(["rev-parse", "refs/heads/w1-canonical"])
+            .output()
+            .unwrap();
+        let after = String::from_utf8(after.stdout).unwrap().trim().to_string();
+        assert_eq!(after, before);
+        if !stop_won {
+            assert_eq!(created["result"]["receipt"]["state"], "closedNoEffect");
+        }
+        host_a.kill().unwrap();
+        host_a.wait().unwrap();
+    }
+}
+#[cfg(feature = "test-faults")]
+#[test]
+fn w1_joined_delayed_publisher_and_closure_guard_orders() {
+    use std::io::{Read, Write};
+    use std::os::unix::net::UnixStream;
+    fn wire(socket: &Path, request: &Value) -> Value {
+        let mut peer = UnixStream::connect(socket).unwrap();
+        peer.write_all(&serde_json::to_vec(request).unwrap())
+            .unwrap();
+        peer.shutdown(std::net::Shutdown::Write).unwrap();
+        let mut bytes = Vec::new();
+        peer.read_to_end(&mut bytes).unwrap();
+        serde_json::from_slice(&bytes).unwrap()
+    }
+    let state = std::path::PathBuf::from(
+        std::env::var("WORK_ENGINE_W1_TEST_ROOT").expect("persistent W1 test root required"),
+    );
+    fs::create_dir_all(&state).unwrap();
+    let executable = std::env::current_exe().unwrap();
+    for (cut, closure_wins) in [("before_admission", true), ("after_attempt_started", false)] {
+        let temp = tempfile::Builder::new()
+            .prefix("joined-guard-")
+            .tempdir_in(&state)
+            .unwrap();
+        let root = temp.path().join("fixture");
+        let exported = Command::new(&executable)
+            .args([
+                "--exact",
+                "w1_export_joined_fixture_for_host",
+                "--nocapture",
+            ])
+            .env("W1_EXPORT_FIXTURE", "1")
+            .env("P1_CORPUS_ROOT", &root)
+            .env("TMPDIR", "/run/user/1000")
+            .output()
+            .unwrap();
+        assert!(
+            exported.status.success(),
+            "{}",
+            String::from_utf8_lossy(&exported.stderr)
+        );
+        let config = root.join("w1-installed.json");
+        let mut installed: Value = serde_json::from_slice(&fs::read(&config).unwrap()).unwrap();
+        installed["hostBuildSha256"] = json!(sha256_bytes(&fs::read(&executable).unwrap()));
+        fs::write(&config, serde_json::to_vec(&installed).unwrap()).unwrap();
+        let socket = root.join("w1-completion.sock");
+        let mut host = Command::new(&executable)
+            .args(["--exact", "w1_host_process_entry", "--nocapture"])
+            .env("W1_HOST_CONFIG", &config)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        let start = Instant::now();
+        while !socket.exists() {
+            assert!(start.elapsed() < Duration::from_secs(20));
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let inspected = wire(
+            &socket,
+            &serde_json::from_slice(&fs::read(root.join("w1-inspect.json")).unwrap()).unwrap(),
+        );
+        assert_eq!(inspected["ok"], true, "{inspected}");
+        let package = &inspected["result"]["packageRef"];
+        let accepted = wire(
+            &socket,
+            &json!({"command":"accept_checkpoint","packageRef":package,"displayedDigest":package["sha256"],"requestId":"accept-guard"}),
+        );
+        assert_eq!(accepted["ok"], true);
+        let eligibility = accepted["result"]["eligibilityRef"].clone();
+        let prepared = wire(
+            &socket,
+            &json!({"command":"prepare_publication","eligibilityRef":eligibility,"targetRef":"refs/heads/w1-canonical","message":"W1 guard order","requestId":"prepare-guard"}),
+        );
+        assert_eq!(prepared["ok"], true);
+        let offer = wire(
+            &socket,
+            &json!({"command":"open_offer","preparedRef":prepared["result"]["preparedRef"]}),
+        );
+        assert_eq!(offer["ok"], true);
+        let offer_ref = offer["result"]["offerRef"].clone();
+        host.kill().unwrap();
+        host.wait().unwrap();
+        fs::remove_file(&socket).unwrap();
+        let context = root.join("w1-guard-context.json");
+        fs::write(&context,serde_json::to_vec(&json!({"campaignRoot":installed["campaignRoot"],
+            "campaignRootId":fs::read_to_string(root.join("w1-campaign-root-id.txt")).unwrap(),"completionRoot":installed["completionRoot"],
+            "offerRef":offer_ref,"eligibilityRef":eligibility,"installedPath":config})).unwrap()).unwrap();
+        let spawn_actor = |action: &str, fault: Option<&str>| {
+            let result = root.join(format!("{action}.json"));
+            let ready = root.join(format!("{action}.ready"));
+            let go = root.join("actors.go");
+            let mut cmd = Command::new(&executable);
+            cmd.args(["--exact", "w1_decision_race_child_entry", "--nocapture"])
+                .env("W1_DECISION_CONTEXT", &context)
+                .env("W1_DECISION_ACTION", action)
+                .env("W1_DECISION_RESULT", &result)
+                .env("W1_DECISION_READY", &ready)
+                .env("W1_DECISION_GO", &go)
+                .env("W1_DECISION_DELAY_MS", "0")
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+            if let Some(fault) = fault {
+                cmd.env("WORKSPACE_PUBLICATION_FAULT_CUT", fault)
+                    .env("WORKSPACE_PUBLICATION_FAULT_DIR", &root);
+            }
+            (cmd.spawn().unwrap(), result)
+        };
+        let (mut authorize, authorized_file) = spawn_actor("authorize", None);
+        assert!(authorize.wait().unwrap().success());
+        let authorized: Value =
+            serde_json::from_slice(&fs::read(authorized_file).unwrap()).unwrap();
+        assert_eq!(authorized["ok"], true);
+        fs::write(root.join("actors.go"), b"go").unwrap();
+        let (mut consume, consumed_file) = spawn_actor("consume", None);
+        assert!(consume.wait().unwrap().success());
+        let consumed: Value = serde_json::from_slice(&fs::read(consumed_file).unwrap()).unwrap();
+        assert_eq!(consumed["ok"], true);
+        let before = Command::new("git")
+            .arg("-C")
+            .arg(root.join("repo"))
+            .args(["rev-parse", "refs/heads/w1-canonical"])
+            .output()
+            .unwrap();
+        let before = String::from_utf8(before.stdout).unwrap().trim().to_string();
+        let (mut publisher, publish_file) = spawn_actor("publish", Some(cut));
+        let cut_ready = root.join(format!("{cut}.ready"));
+        let start = Instant::now();
+        while !cut_ready.exists() {
+            assert!(
+                start.elapsed() < Duration::from_secs(20),
+                "publisher cut {cut}"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let (mut closer, close_file) = spawn_actor("close", None);
+        if closure_wins {
+            let start = Instant::now();
+            while !close_file.exists() {
+                assert!(start.elapsed() < Duration::from_secs(20));
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            let closed: Value = serde_json::from_slice(&fs::read(&close_file).unwrap()).unwrap();
+            assert_eq!(closed["ok"], true, "{closed}");
+            assert_eq!(closed["result"]["receipt"]["state"], "closedNoEffect");
+        } else {
+            std::thread::sleep(Duration::from_millis(250));
+            assert!(!close_file.exists(), "closure crossed held guard");
+        }
+        fs::write(root.join(format!("{cut}.release")), b"go").unwrap();
+        assert!(publisher.wait().unwrap().success());
+        assert!(closer.wait().unwrap().success());
+        let published: Value = serde_json::from_slice(&fs::read(publish_file).unwrap()).unwrap();
+        let closed: Value = serde_json::from_slice(&fs::read(close_file).unwrap()).unwrap();
+        let after = Command::new("git")
+            .arg("-C")
+            .arg(root.join("repo"))
+            .args(["rev-parse", "refs/heads/w1-canonical"])
+            .output()
+            .unwrap();
+        let after = String::from_utf8(after.stdout).unwrap().trim().to_string();
+        if closure_wins {
+            assert_eq!(published["ok"], true, "{published}");
+            assert_eq!(published["result"]["receipt"]["state"], "closedNoEffect");
+            assert_eq!(after, before);
+        } else {
+            assert_eq!(published["ok"], true, "{published}");
+            assert_eq!(published["result"]["receipt"]["state"], "publishedObserved");
+            assert_eq!(closed["ok"], false);
+            assert_ne!(after, before);
+        }
+    }
 }
 #[cfg(feature = "test-faults")]
 #[test]

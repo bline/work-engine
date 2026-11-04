@@ -34,6 +34,8 @@ members = [
   "crates/review-execution-custody",
   "crates/review-execution-evidence",
   "crates/slice-campaign",
+  "crates/workspace-publication",
+  "crates/work-engine-completion-host",
   "crates/work-engine-context-status",
   "crates/work-engine-manual-host",
   "crates/experiment-control",
@@ -61,6 +63,7 @@ ryu-js = "=1.0.3"
 tokio = { version = "=1.53.2", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time", "process", "io-util", "net", "signal"] }
 schemars = "=1.2.2"
 jsonschema = { version = "=0.58.6", default-features = false }
+gix = { version = "=0.84.0", default-features = false, features = ["sha1"] }
 
 [profile.dev]
 overflow-checks = true
