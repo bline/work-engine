@@ -1,0 +1,11 @@
+{
+  "revision": 3,
+  "plan": "/home/bline/code/work-engine/planning/connector-adapter-architecture-plan-20261104.md",
+  "frozen_subject": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r3/subject.md",
+  "subject_sha256": "360e8fee417efe52dbab03489b5ab7ff21a808e854f9e41f06694a5d69fea65e",
+  "evidence_manifest": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/evidence/manifest.json",
+  "evidence_manifest_sha256": "3e9d1ad411a14f2043bd563925f9ba02caaf28882b0eb0e3d572f1551a34ebda",
+  "status": "awaiting_re_evaluation",
+  "prior_subject_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469",
+  "authority": "User requested mandatory Web replaceability update; original Astra high selection retained."
+}

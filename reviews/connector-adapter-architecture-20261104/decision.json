@@ -1,22 +1,20 @@
 {
   "status": "reviewed_candidate_ready",
-  "plan_revision": 2,
+  "plan_revision": 3,
   "plan": "/home/bline/code/work-engine/planning/connector-adapter-architecture-plan-20261104.md",
-  "plan_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469",
+  "plan_sha256": "360e8fee417efe52dbab03489b5ab7ff21a808e854f9e41f06694a5d69fea65e",
   "review_verdict": "accept",
-  "review_report": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r2/report.json",
-  "review_report_sha256": "9016d751efd8ca70834ce300ccaeb37da30dccc629858f042e151eb969079c00",
+  "review_report": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r3/report.json",
+  "review_report_sha256": "063b4e8eb3d733359ccf1f8a62325b33e83336493dae0ef60ac6ae9e9e6f6be7",
   "reviewer_session": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
   "requested_and_observed": {
     "model": "gpt-6-astra",
     "effort": "high",
     "service_tier": "default"
   },
-  "findings_resolved": [
-    "CA-R1-001",
-    "CA-R1-002"
-  ],
-  "new_findings": [],
-  "root_disposition": "Ready for user consideration as an implementation plan. Review acceptance is not implementation, migration, connector installation or deployment approval.",
+  "findings": [],
+  "prior_accepted_decision": "r2/decision.json",
+  "prior_accepted_subject_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469",
+  "root_disposition": "User-requested Web replacement/conformance amendment is ready. Existing narrower work retains its scope; review does not authorize implementation, trust migration or deployment.",
   "implementation_performed": false
 }

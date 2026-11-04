@@ -1,0 +1,17 @@
+{
+  "request": "Make the Web UI channel replaceable through the same domain contracts and require its proof for overall plan completion.",
+  "changes": [
+    "Both current Dot and Web presentations explicitly replaceable; transport protocols can remain different.",
+    "Separate Web presentation, HTTP/mailbox/sync adapter and signer capability.",
+    "Same-scope/revision semantic parity with visible snapshot freshness and explicit unsupported capabilities.",
+    "Mandatory current/replacement Web workflow without Dot/MCP and transport substitution using local fixtures.",
+    "Actual proof verifiers with fixture trust; retain exact signed bytes, RP/origin/pinned-key/currentness/replay checks.",
+    "A4 mandatory for A5; A1-A3-only work is bounded partial, not whole plan completion.",
+    "Existing accepted narrower work retains scope; no new Pi/profile/source qualification assumed."
+  ],
+  "prior_acceptance": {
+    "path": "r2/decision.json",
+    "sha256": "abca64fd25b0755574d5ff846bbda9b5af88e56e3824d256b60d68975c464ba6",
+    "subject_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469"
+  }
+}

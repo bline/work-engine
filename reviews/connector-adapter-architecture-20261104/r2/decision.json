@@ -1,0 +1,22 @@
+{
+  "status": "reviewed_candidate_ready",
+  "plan_revision": 2,
+  "plan": "/home/bline/code/work-engine/planning/connector-adapter-architecture-plan-20261104.md",
+  "plan_sha256": "9d02d36f77fab94e6a8bd6ebbc9b66c0442d8b16fc8a84fa1bc92576e0476469",
+  "review_verdict": "accept",
+  "review_report": "/home/bline/code/work-engine/reviews/connector-adapter-architecture-20261104/r2/report.json",
+  "review_report_sha256": "9016d751efd8ca70834ce300ccaeb37da30dccc629858f042e151eb969079c00",
+  "reviewer_session": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+  "requested_and_observed": {
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "service_tier": "default"
+  },
+  "findings_resolved": [
+    "CA-R1-001",
+    "CA-R1-002"
+  ],
+  "new_findings": [],
+  "root_disposition": "Ready for user consideration as an implementation plan. Review acceptance is not implementation, migration, connector installation or deployment approval.",
+  "implementation_performed": false
+}

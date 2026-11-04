@@ -1,0 +1,48 @@
+{
+  "subject_sha256": "360e8fee417efe52dbab03489b5ab7ff21a808e854f9e41f06694a5d69fea65e",
+  "verdict": "accept",
+  "amendment_assessment": {
+    "summary": "The amendment establishes mandatory Web replaceability at the planning boundary. It requires both presentation and transport substitution, preserves the signing trust boundary, and makes Web conformance necessary for overall completion. No material contradiction or omission was identified.",
+    "presentation_replacement": "Lines 103-141 require a minimal alternative presentation using public contracts, with Dot/MCP absent. Retaining an explicit signing component is permitted, but retaining the old dashboard as a necessary domain component is not. This adequately distinguishes replacing the presentation from replacing the signer.",
+    "transport_replacement": "The separate local transport substitution must preserve domain rules, identities and owner stores. It therefore cannot be satisfied solely by changing the dashboard while retaining a required mailbox-specific backend rule. HTTP, polling and mailbox implementations remain legitimate choices; Web is not forced onto MCP.",
+    "required_capabilities_and_parity": "Lines 113-121 prevent unsupported-capability declarations from excluding the existing Web read, review and signed-answer workflow. A0 records that baseline; A4 demonstrates it; A5 requires A4. Shared-operation equivalence is appropriately defined by owned meaning, authorized scope and source revision, with snapshot age and unavailable states visible.",
+    "signing_trust": "Lines 123-141 preserve exact reviewable requests, configured RP/origin and trust pins. Actual verifiers with isolated fixture keys can establish transport-independent proof handling without real approvals or a production trust migration. Login, delivery and mailbox writes remain insufficient authority.",
+    "ownership_and_scope": "A4 assigns work to existing observation, task, approval and devwits-auth owners. It creates no competing execution or approval owner. Lines 402-406 preserve already-admitted revision-2 or narrower A0/A1 scopes while retaining the new overall completion obligation. Pi qualification and active query work remain separate."
+  },
+  "findings": [],
+  "nonblocking_observations": [
+    {
+      "section": "A0/A4 and existing Web capability baseline",
+      "observation": "The baseline should retain the existing distinctions documented in frozen task-ui.md: ordinary board questions, unsupported typed requests held rather than treated as generic approvals, complete referenced terms, and history after the open queue closes. These are applications of the amendment's existing-workflow requirement, not additional runtime qualifications."
+    },
+    {
+      "section": "Presentation and transport substitution evidence",
+      "observation": "Collection should identify which presentation, transport and signer were present in each fixture and which old components were absent. This makes both substitutions assessable without requiring an exhaustive combination matrix."
+    },
+    {
+      "section": "Signing fixtures and shared semantic results",
+      "observation": "Fixture success establishes the selected contract behavior, not production passkey availability, browser-origin deployment or provider execution. Action-time expiry and currentness checks remain applicable even when a displayed snapshot retains the same source revision."
+    },
+    {
+      "section": "Retained revision-2 conclusions",
+      "observation": "CA-R1-001 and CA-R1-002 remain resolved. Delivery invalidation, scoped replay, enriched-result ownership, exact historical codecs and recovery constraints are preserved by this amendment."
+    }
+  ],
+  "evidence_limits": {
+    "manifest_sha256": "3e9d1ad411a14f2043bd563925f9ba02caaf28882b0eb0e3d572f1551a34ebda",
+    "reviewed": "Read the complete revision-3 subject, changes.diff, amendment.json and retained r2/report.json. Subject and manifest hashes matched the assignment. Reused previously verified doctrine, signing-verifier and presentation source context; additionally read frozen devwits-auth/docs/task-ui.md.",
+    "method": "Retained Tier 2 amendment review. Coverage for the four review artifacts and additional frozen document returned no recorded issues at generation 2026-11-04T20:28:55Z, store generation u36fed8464b9e8c28g2, with no remaining pages.",
+    "limitations": "Coverage is best effort, not completeness. Acceptance applies to this plan revision, not implemented replaceability, live signing, runtime qualification or deployment. Existing private-source and attributed-handback limitations remain. No implementation, tests, mutations, services, providers, credentials, board publication or child launches were undertaken."
+  },
+  "identity_acknowledgement": {
+    "acknowledged": true,
+    "episode": "Same retained isolated read-only reviewer; amendment review, not a new independent-review claim.",
+    "session_id": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+    "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+    "collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+    "runtime_parent": null,
+    "continuation": "/home/bline/.local/state/work-engine/connector-adapter-web-parity-20261104/assignment.json",
+    "configuration": "Requested gpt-6-astra/high/default retained. Root independently verifies identity and applied settings; requested configuration does not establish backend fulfillment.",
+    "context": "Pinned context-status check at 2026-11-04T20:29:09Z reported 147933 input tokens, epoch 0 and no compaction. Retained context to finish this bounded report; no replacement was needed."
+  }
+}

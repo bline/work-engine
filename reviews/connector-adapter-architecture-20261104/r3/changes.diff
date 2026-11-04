@@ -1,0 +1,122 @@
+--- r2/subject.md
++++ r3/subject.md
+@@ -1,6 +1,6 @@
+ # Connector adapters around existing Work Engine owners
+ 
+-Date: 2026-11-04. Revision: 2.
++Date: 2026-11-04. Revision: 3.
+ 
+ Status: candidate implementation plan. This document proposes work; the user's
+ current instruction authorizes planning and an Astra high review. It does not
+@@ -14,11 +14,17 @@
+ branches to session observation, command admission, approval verification, or
+ native execution. Make another runtime possible through a separately qualified
+ runtime implementation without changing each channel. These are two different
+-extension axes.
++extension axes. Dot and the Web UI are both replaceable channel presentations;
++their MCP and HTTP/mailbox transports are adapters to the same owned application
++contracts. Neither current presentation is a required domain component.
+ 
+ The first delivered proof is a real non-MCP CLI channel, alongside the existing
+-MCP channel, using the same query and granted-input operations. A local HTTP
+-connector fixture then proves authenticated remote ingress and event egress.
++MCP channel, using the same query and granted-input operations. Overall plan
++acceptance also requires the Web path: its current and replacement presentations
++must use public queries, projections and decision transport without depending on
++Dot, MCP, or presentation-specific backend rules. A local HTTP connector fixture
++proves authenticated remote ingress and event egress; it does not substitute for
++the explicit Web replacement proof.
+ Actual Slack, Telegram, GitHub, or other account integration is a follow-on
+ selection, not an unspecified dependency of this plan.
+ 
+@@ -94,6 +100,46 @@
+ adapter can continue to use the mailbox and polling. Shared observation
+ contracts do not require it to implement MCP or receive inbound laptop traffic.
+ 
++### Web presentation, transport and approval signer
++
++Separate the Web presentation from its HTTP/mailbox/sync adapter and from the
++approval-signing function. The adapter translates public operations and owned
++projections; it has no special admission or decision authority. A different
++presentation can use it, and another transport implementation can implement
++the same contract. Replacing either must leave domain rules, identities and
++owner stores unchanged. Existing Redis/polling can remain one realization;
++forcing every client onto MCP or a new push transport is unnecessary.
++
++A0 records supported operation/profile capabilities for each channel. For
++operations supported by several channels, equal authorized inputs and the
++same source revision produce equivalent owned meaning, including Held,
++unknown, denied and unavailable. A snapshot may be older than a direct query;
++its source revision, observation time and freshness remain visible rather than
++being presented as a different current truth. Equal replaceability does not
++require every surface to expose every capability. Unsupported actions stay
++explicit; they cannot excuse omitting the Web's existing read, review and
++signed-answer workflow from conformance.
++
++Approval signing is a distinct required capability when the operation requires
++an owner proof. A replacement presentation can delegate it to a separate
++signing component or replace its presentation while preserving the existing
++proof contract. The component must present the exact reviewable request and
++produce the same verified signed-answer semantics; a chat click, browser login,
++mailbox write or successful delivery cannot replace that proof. The current
++WebAuthn keys are bound to the configured RP/origin. Moving the dashboard does
++not authorize accepting signatures from another origin or changing trust pins;
++a different signing trust binding needs its owning migration decision.
++
++A4/A5 demonstrate both presentation substitution and transport substitution
++using local browser/client fixtures: run the Web workflow without Dot/MCP,
++replace the current presentation with a minimal alternative using only public
++contracts, and substitute a local transport adapter for the mailbox path.
++An explicit signing component may remain, but the replacement cannot depend
++on the old dashboard or on old mailbox data as another authority. The proof
++uses the actual signature verifiers with isolated fixture credentials/trust
++pins and synthetic effects; it does not require real approvals, a new RP,
++production Redis migration or live provider execution.
++
+ ### Public operations and ownership
+ 
+ Begin with only operations that already have an actual consumer. Names below
+@@ -280,12 +326,12 @@
+ 
+ | Package | Concrete deliverable and ownership | Dependency and completion evidence |
+ | --- | --- | --- |
+-| A0: Bind contracts and predecessor standing | Integration owner records the exact main/dirty/private inputs, accepted predecessor portions, endpoint profiles, raw/enriched wire fixtures, composition and domain owners, and compatibility commitments. Rejects unsupported claims of Pi execution or OAuth refresh. | Planning can proceed from the pinned evidence now. Importing private source, moving state or changing a deployed release remains a separately owned integration decision. Complete when later packages have exact inputs and no ambiguous semantic owner. |
++| A0: Bind contracts and predecessor standing | Integration owner records the exact main/dirty/private inputs, accepted predecessor portions, endpoint profiles, raw/enriched wire fixtures, composition and domain owners, compatibility commitments, and supported channel/profile operations including the Web read/review/signed-answer baseline. Rejects unsupported claims of Pi execution or OAuth refresh. | Planning can proceed from the pinned evidence now. Importing private source, moving state or changing a deployed release remains a separately owned integration decision. Complete when later packages have exact inputs and no ambiguous semantic owner. |
+ | A1: First shared operation and CLI | Bridge owner exports narrow public request/result DTOs, extracts its internal Codex execution port, and exposes existing granted-input behavior. Observation owner exposes the shared enriched operation/result query. MCP adapter and a new Rust CLI use those same boundaries. Include existing read-only typed inspection only if the task candidate is accepted; it remains Held where it was Held. | A0. Provider-disabled exact fixtures demonstrate the same request identity, composed result and refusal through MCP and CLI, including missing worker/usage/closure evidence. Exact retry returns the same operation; changed payload conflicts; a lost native ACK stays unknown with no second send. No new remote exposure. |
+ | A2: Connector identity and scoped ingress | Auth/delivery owners establish trusted connector-policy ownership, verified caller/installation binding, operation/visibility checks, and persisted delivery-grant lifetime/invalidation. Keep old token issuance and legacy endpoints explicitly separated. | A0; complete before adding remote clients to a shared endpoint. Two test client bindings under one owner cannot read or mutate each other's subscriptions/replay. Wrong owner/client/audience, expired credentials, forbidden targets/destinations and stale policy are rejected or held at the owning boundaries. |
+ | A3: Observation sources and delivery composition | Observation owner extracts Codex and Claude source implementations and isolates source-neutral filtering/enrichment/delivery. Reuse existing delivery mechanics while enforcing the new profile's grant checks at observation/send/retry boundaries, ordered with invalidation. Port bounded mechanics to Rust as their owner is replaced; remove any temporary A1 compositor delegation. | A0, public query contracts, A2 for shared remote access. Replay real redacted transcript fixtures, partial lines, rotation/replacement, daemon restart, outage and independent-recipient progress. Compatibility and unknown-state results match the selected old profile; new-profile invalidation survives restart and does not rewrite retained payloads. Split parsing and delivery if one package cannot establish both coherently. |
+-| A4: Web adapter and profile review | Task/approval owners publish the accepted task projection/review contract; the devwits-auth owner adapts mailbox transport and UI validation/rendering to it. Preserve local pinned-key and action-time checks. Existing polling can remain. | Accepted task-owner source and A0 compatibility fixtures; it need not wait for full event push. Rust/JavaScript vectors bind the same request bytes, digest, answer and task/result references. Unknown profiles and missing terms hold approval visibly. Pi review support waits for its qualified contract. |
+-| A5: Connector conformance and release candidate | Integration owner exercises MCP and CLI plus a local non-MCP HTTP connector fixture against the owned interfaces; prepares one exact release/configuration candidate and state migration/import disposition. | A1-A3; include A4 only for typed-task/approval claims. The fixture uses two installations, restart/replay and denied-authority cases. It covers a queued retry after access removal, installation disablement, source/enrichment/destination grant invalidation, expiry and stale policy, restart after invalidation and renewal after scope reduction. Source readiness and live qualification are separate results. A later selected real connector requires its actual ingress/auth/callback checks before activation. |
++| A4: Replaceable Web channel and profile review | Observation/task/approval owners publish the shared query, projection and review/answer contracts; the devwits-auth owner separates presentation, transport and signer dependencies. Both the current Web presentation and a minimal replacement consume those contracts. Demonstrate an alternative local transport adapter without changing domain owners. Preserve pinned-key and action-time checks; existing polling can remain. | A0/A1 public contracts and existing board/approval contracts; accepted task-owner source for the typed profiles claimed. Web query/board conformance can proceed without a new Pi gate or full event push. Browser/client fixtures and Rust/JavaScript vectors establish exact terms, request/answer bytes, source revisions, denied/unknown outcomes, wrong-origin/key rejection and equivalent owner decisions. Unknown profiles and missing terms hold approval visibly. Pi-specific review support still waits for its qualified contract. |
++| A5: Connector conformance and release candidate | Integration owner exercises MCP, CLI and the mandatory Web path, including replacement presentation and transport fixtures, plus the local non-MCP HTTP connector fixture. Prepare one exact release/configuration candidate and state migration/import disposition. | A1-A4 for the selected existing profiles. A Web-omitting A1-A3 result is bounded partial work, not overall plan completion. The fixture uses two installations, restart/replay and denied-authority cases. It covers a queued retry after access removal, installation disablement, source/enrichment/destination grant invalidation, expiry and stale policy, restart after invalidation and renewal after scope reduction. Source readiness and live qualification are separate results. A later selected real connector requires its actual ingress/auth/callback checks before activation. |
+ 
+ An additional runtime execution profile is not necessary to prove channel
+ extensibility. After these interfaces are demonstrated, the existing Pi/S10 or
+@@ -313,6 +359,14 @@
+    their native limitations; adding a source does not require channel edits.
+ 3. Equivalent MCP and CLI requests reach the same owner semantics. Read-only
+    inspection and denied capabilities cannot acquire side effects in a wrapper.
++   The Web path is mandatory: shared operations agree at the same source
++   revision and equivalent authorized scope, with snapshot age visible. With
++   Dot/MCP absent, both current and replacement Web presentations can read
++   supported observations, review exact terms and transport signed answers
++   through public contracts. Switching the presentation or local transport
++   adapter does not change admission/decision rules or create another store.
++   A required signer remains explicit and independently verifiable; replacing
++   the UI never waives RP/origin, pinned-key, currentness or replay checks.
+ 4. Duplicate delivery, concurrent exact submissions, a crash before/after
+    durable intent and lost native acknowledgements do not duplicate execution.
+    Unknown entry/custody/usage remain unknown until the owner establishes more.
+@@ -345,6 +399,12 @@
+ Do not merge their partial checkpoint merely to make the adapter plan appear
+ complete. A1 can wrap the existing bridge independently of typed Pi execution.
+ 
++Revision 3 strengthens overall Web conformance. Existing work admitted against
++revision 2 or a narrower A0/A1 packet retains its exact accepted scope; this
++amendment does not retroactively add implementation obligations to those
++actors. Such work can be accepted as its bounded portion while mandatory A4
++and the composed A5 proof remain visible before overall plan completion.
++
+ Offline replacement is allowed by the Rust direction; continuous availability
+ and dual running are not prerequisites. The selected cutover needs one named
+ writer for each durable store, compatible readers or an explicit state

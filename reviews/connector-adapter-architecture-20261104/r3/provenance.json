@@ -1,0 +1,65 @@
+{
+  "reviewer_session": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+  "turn_id": "01a1a83f-99ce-7351-9774-f291783851e7",
+  "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+  "final_line": 261,
+  "final_event_sha256": "c246939045d09cf5e962c2a506c8756895a7e64b892412fb7fcc2674d5f0b766",
+  "final_text_sha256": "d7222a5c3e7340209fc012caac1e55c32f71f0d25d76d296da827345c76f54ae",
+  "report_sha256": "063b4e8eb3d733359ccf1f8a62325b33e83336493dae0ef60ac6ae9e9e6f6be7",
+  "requested": {
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "service_tier": "default",
+    "sandbox": "read-only"
+  },
+  "observed_settings": {
+    "limitations": [
+      "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+      "Successor settings must be observed after launch and adoption; arguments are a request.",
+      "Runtime configuration does not establish backend fulfillment or billing."
+    ],
+    "model": "gpt-6-astra",
+    "preservation": "launch_arguments_available",
+    "reasoning_effort": "high",
+    "recorded_cli_version": "0.166.0",
+    "service_tier": "default",
+    "session_id": "01a1a810-adfd-75e0-b65b-75d5ac7d1870",
+    "source": {
+      "event_sha256": "f314047f0429cf9b0ae2f2529f7ca761e48f57a0161211ae74bcc5b7ac123023",
+      "line": 223,
+      "rollout": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T12-37-08-01a1a810-adfd-75e0-b65b-75d5ac7d1870.jsonl",
+      "timestamp": "2026-11-04T20:28:22.871Z"
+    },
+    "successor_host_args": [
+      "-m",
+      "gpt-6-astra",
+      "-c",
+      "model_reasoning_effort=\"high\"",
+      "-c",
+      "service_tier=\"default\""
+    ],
+    "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+    "turn_attribution": "latest_session_observation",
+    "turn_id": null
+  },
+  "observed_turn_context": {
+    "turn_id": "01a1a83f-99ce-7351-9774-f291783851e7",
+    "line": 225,
+    "event_sha256": "6adb3c48c6c7ac27e20b6c553f8c7a43518dce7d423c3fd16273559b3b18b22d",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "sandbox_policy": {
+      "type": "read-only"
+    },
+    "approval_policy": "never"
+  },
+  "native_terminal_events": [
+    {
+      "turn_id": "01a1a83f-99ce-7351-9774-f291783851e7",
+      "type": "task_complete",
+      "line": 264,
+      "event_sha256": "36f04fddf82db3f57a622aa8055ff7d2490afcd5ae296ea6d56ffe27a7ce952b"
+    }
+  ],
+  "review_context": "Same retained isolated reviewer for bounded user-requested amendment; no new freshness or cross-provider independence claim."
+}
