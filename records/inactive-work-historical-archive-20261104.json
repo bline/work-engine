@@ -1,0 +1,1203 @@
+{
+  "record_type": "inactive-local-work-historical-archive",
+  "recorded_at": "2026-11-04T23:05:53.311617+00:00",
+  "standing": "Dated archival inventory, not current design or execution authority",
+  "authority": {
+    "user_instruction": "Let's work on these.",
+    "scope": "Four groups/84 historical files identified immediately before the instruction; preserve original bytes/status, validate references, create scoped local commits",
+    "authority_record": "/home/bline/.local/state/work-engine/inactive-work-archive-20261104-01a1a877/AUTHORITY.json"
+  },
+  "baseline": "68a056b9d97f9b33c97d7e70c8c8428204277cb1",
+  "counts": {
+    "historical_files": 84,
+    "new_archival_inventory_records": 1
+  },
+  "groups": [
+    {
+      "group_id": "manual-experiment",
+      "files": 19,
+      "original_owner_session": "5b98429e-2a67-444e-a81a-32b85a42e738",
+      "preserved_status": "historical_bounded_experiment_and_uninstalled_skill_proposals; archive_candidate",
+      "ownership_basis": [
+        "chatboard:2251",
+        "chatboard:2259",
+        "notes/manual-orchestration-operational-test-20261021.md"
+      ],
+      "session_observation": "Recorded Codex host stopped or absent; no current owner claim found at archival admission. This is not proof that no external process exists."
+    },
+    {
+      "group_id": "legacy-s10-live4",
+      "files": 54,
+      "original_owner_session": "5b98429e-2a67-444e-a81a-32b85a42e738",
+      "preserved_status": "held_immutable_trial; archived_source_evidence; no_reuse_or_paid_send",
+      "ownership_basis": [
+        "chatboard:2286",
+        "chatboard:2293",
+        "chatboard:2294"
+      ],
+      "session_observation": "Recorded Codex host stopped or absent; no current owner claim found at archival admission. This is not proof that no external process exists."
+    },
+    {
+      "group_id": "bounded-inference-planning",
+      "files": 4,
+      "original_owner_session": "01a15f02-a935-7683-a849-9e919aecfe3c",
+      "preserved_status": "owned_planning_only; exact_source_checks_before_archive_commit",
+      "ownership_basis": [
+        "chatboard:2296",
+        "chatboard:2303",
+        "chatboard:2319",
+        "chatboard:2361"
+      ],
+      "session_observation": "Recorded Codex host stopped or absent; no current owner claim found at archival admission. This is not proof that no external process exists."
+    },
+    {
+      "group_id": "executable-source-maintenance",
+      "files": 7,
+      "original_owner_session": "44c030e0-feb8-4a7c-8b15-8cb2b8f44d70",
+      "preserved_status": "historical_planning_and_review_records; ownership_confirmed; completion_scope_not_reopened",
+      "ownership_basis": [
+        "chatboard:511",
+        "chatboard:512",
+        "chatboard:513",
+        "chatboard:516"
+      ],
+      "session_observation": "Recorded Codex host stopped or absent; no current owner claim found at archival admission. This is not proof that no external process exists."
+    }
+  ],
+  "preservation": {
+    "all_84_sha256_match_prior_attribution": true,
+    "prior_attribution": "records/local-work-ownership-audit-20261104.json",
+    "paths_preserved": true,
+    "source_or_status_edits": 0,
+    "candidate_skill_installation": "none",
+    "trial_replay": "none",
+    "live_or_provider_execution": "none",
+    "W1_and_active_session_work": "excluded"
+  },
+  "history_interpretation": [
+    "These artifacts retain their original September/October dates, proposal decisions, held outcomes, funding limits and exposure records. Archival publication does not accept or reopen them.",
+    "Current user authorization covers local archival commits. Preparation-only restrictions recorded in the older trial receipts remain historical evidence and do not authorize a new trial.",
+    "S10 live4 remains held; RG01/RG02 and the original exposure register remain unchanged. Old role-specific approval, funding and runtime grants are not reusable.",
+    "Uninstalled skill candidates remain uninstalled proposals; their presence does not replace the current released manual-orchestration skill.",
+    "Historical documents currently under docs retain their original paths to preserve references and digest subjects; this inventory establishes their dated archival standing. No layout migration is performed."
+  ],
+  "validation": {
+    "json_files_parsed": 34,
+    "python_files_ast_parsed_without_execution": 11,
+    "shell_templates_syntax_checked_without_execution": 2,
+    "markdown_files": 37,
+    "syntax_failures": 0,
+    "runtime_or_campaign_tests": "Not run: this is byte-preserving archival publication, not implementation qualification",
+    "graph": {
+      "project": "home-bline-code-work-engine",
+      "store_generation": "ub9d62cd9336f66d4g2",
+      "paths_checked": 84,
+      "coverage": "All content verified with no recorded issue; best-effort signal, not semantic completeness proof"
+    }
+  },
+  "reference_check": {
+    "scope": "84 exact files; JSON/JSONL parsing, Python AST parsing without execution, Markdown inline links and JSON path-shaped values with directly associated SHA256 when present",
+    "status_counts": {
+      "local_available": 1158,
+      "external": 23,
+      "unresolved_at_checked_current_paths": 28
+    },
+    "direct_sha256_binding_counts": {
+      "historical_digest_not_matched_at_checked_current_paths": 68,
+      "matched": 800
+    },
+    "report": "/home/bline/.local/state/work-engine/inactive-work-archive-20261104-01a1a877/reference-check.json",
+    "report_sha256": "56f6a1f3d683cd0513e0f61f299729088f391c260cc22f56085b982263e1a8e4",
+    "limits": [
+      "This is current-path availability and direct hash comparison, not semantic reacceptance of historical claims or an exhaustive parser for prose/code references.",
+      "Missing current paths and unmatched historical hashes remain unresolved for their original revision unless separately established; no historical bytes or claims are rewritten.",
+      "External URLs not fetched. No archived script, model, provider, trial or skill executed.",
+      "Trial key/heldout files parsed and hashed mechanically; heldout contents were not printed for model review. Old exposure register retained unchanged."
+    ],
+    "unresolved_current_paths": [
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../docs/rust-migration-plan.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../docs/rust-compiler-implementation-plan.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md#9-current-app-server-precursors"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/docs/architecture/organizational-compilation.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/docs/architecture/implementation-contract-compilation.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/ideas/pending/service-plane-and-kernel-domain-boundary.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/ideas/pending/resolution-layered-semantic-refinement.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/docs/architecture/runtime-realization.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/docs/architecture/execution-strategy-selection.md"
+      },
+      {
+        "origin": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+        "target": "../../app-server/docs/architecture/context-lifecycle.md"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/admission-review/eligibility-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-28-04-01a15ea5-c4bd-75d1-bb57-782b3b5e18a8.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-boundary-v1.json",
+        "target": "/tmp/tmpxeb_sp40/state/sessions/2026/10/21/rollout-2026-10-21T08-26-09-01a15eda-f323-7b20-91ed-a3732d0fefeb.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-boundary-v1.json",
+        "target": "/state/sessions/2026/10/21/rollout-2026-10-21T08-26-09-01a15eda-f323-7b20-91ed-a3732d0fefeb.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-raw-v1.json",
+        "target": "/tmp/tmpxeb_sp40/state/sessions/2026/10/21/rollout-2026-10-21T08-26-09-01a15eda-f323-7b20-91ed-a3732d0fefeb.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-raw-v1.json",
+        "target": "/state/sessions/2026/10/21/rollout-2026-10-21T08-26-09-01a15eda-f323-7b20-91ed-a3732d0fefeb.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/launch-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T08-07-32-01a15ec9-e76f-7602-a618-9ea9ac9c4be9.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/startup-template.json",
+        "target": "@STATE@/selected-source-manifest.json"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/recording-contract-v1.json",
+        "target": "experimental/correspondence-map.json"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/heldout/author-receipt-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-23-11-01a15ea1-4b57-7a61-9b28-a5506a22d0b4.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/review-receipt-v2.json",
+        "target": "/home/bline/.codex/sessions/2026/10/20/rollout-2026-10-20T21-45-28-01a15c90-615d-7a80-9879-9fbedb03694f.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/review-v2.md",
+        "target": "review-v1.md"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T04-58-16-01a15e1c-9e0b-7e43-b26e-37b31e04a28e.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-23-11-01a15ea1-4b57-7a61-9b28-a5506a22d0b4.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/20/rollout-2026-10-20T17-09-05-01a15b93-56c2-74f1-8c97-e471f81bc6e2.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T07-28-04-01a15ea5-c4bd-75d1-bb57-782b3b5e18a8.jsonl"
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+        "target": "/home/bline/.codex/sessions/2026/10/21/rollout-2026-10-21T08-07-32-01a15ec9-e76f-7602-a618-9ea9ac9c4be9.jsonl"
+      }
+    ],
+    "historical_hashes_not_matched_at_current_paths": [
+      {
+        "origin": "notes/manual-decomposition-cross-effort-20261020.json",
+        "target": "notes/s2-boundary-audit-20261020.md",
+        "expected_sha256": "1d1f9b65e84827d2065d4503bc6c27dc2271fda4447f057485d768e75f3a5037",
+        "observed_sha256": [
+          "c2cc3cdaf97d605c7ece913b37661dbb5b2df08fadb56a69dee5e9336f24aed1"
+        ]
+      },
+      {
+        "origin": "notes/manual-decomposition-cross-effort-refresh-20261021.json",
+        "target": "notes/s2-boundary-audit-20261020.md",
+        "expected_sha256": "c6d2b2bc4373df72c88e1508ceff32b3932527e6347e6ac473c7be2514f70ab6",
+        "observed_sha256": [
+          "c2cc3cdaf97d605c7ece913b37661dbb5b2df08fadb56a69dee5e9336f24aed1"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+        "target": "/home/bline/code/work-engine/rust/crates/lifecycle-service/src/operations/mod.rs",
+        "expected_sha256": "d6788cd51e5703c35c11664415fdb1125973a612c6f59f98842574ec99715014",
+        "observed_sha256": [
+          "3ec02893310523b271c136dc0b44d6adc1c29fdb58d2f1900f0b2d585f5db62c"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+        "target": "/home/bline/.codex/models_cache.json",
+        "expected_sha256": "924a6ed520f9c57218aa0127c12b1a3aa2d454287b6881642615691d6da56cc6",
+        "observed_sha256": [
+          "b4521f97300f7381ed85356eb257c9ac32b858fa4b39df1ca0d920d55a6a051f"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+        "target": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/codex-package.json",
+        "expected_sha256": "5fa8533bde21972564cbb2c665c99c6d6d0e92b625fa6f4fdf1354ac5fb71a78",
+        "observed_sha256": [
+          "a734b829e73b56b59a1ed45e8669785c8e3d23290e60f40f4b5174f68e8ea7cd"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+        "target": "/home/bline/.local/state/work-engine/prospective-s10-live4-20261021/engineering/assessment-harness/fake_endpoint_probe.py",
+        "expected_sha256": "88dd707e90cb534d6e2d1a5c387b2017acb23a04745aa4f34a41fb37dc57d425",
+        "observed_sha256": [
+          "2eed449012af22c565460f1bf8de214637ff2f1dc89d3ba73d5c9eb8e0c6c4a9"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/Cargo.toml",
+        "expected_sha256": "9dbba8b1f69f7070fd83f38d7bc0ed59578853e5f08a3425ca17c14b317a3ef9",
+        "observed_sha256": [
+          "42b9ee2997f059cba83ac056faa51e120cc68b21c9eabab78bc4de6b36622fb4",
+          "eb7dc8496634eeebece17b92cdf23b7222d4fe9d5c3cf562f6289cbbf5c9956e"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/Cargo.toml",
+        "expected_sha256": "d3cfd707a60110e91113f1c751b21920601bf100d10bcf0c999b0c518b2fb478",
+        "observed_sha256": [
+          "e85b28dbaf943ff5e3ab97f383107c152ad8467badcb83f28a95c24234c85118"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/src/lib.rs",
+        "expected_sha256": "aaad0da2fee000634e90e423feeafe633f683c01498e0264ff2d8bf21b86e719",
+        "observed_sha256": [
+          "8365e9db26533df05e0a7a24e13ed029e712eae853a23094eef894067081daf7"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/src/protocol.rs",
+        "expected_sha256": "fed0c5268f980dce9c8fc0903d948edc1cd3bc11ddd4eb59136b736c11cece81",
+        "observed_sha256": [
+          "6410904bf307afd1237e1da1a5c69f89a508110dbb3fa7a582b421e0a34db103"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/src/transport.rs",
+        "expected_sha256": "4b06cd56b52d506f4728017338b4ef8a52c7b5f528daa5167ef34ea14be34742",
+        "observed_sha256": [
+          "db3eaae438648c09941ba183b5d5e009e25b281f8f058de842a733009010bfff"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-core/src/lib.rs",
+        "expected_sha256": "30b4b6ea9c8fe59de183a3d131f0e0757f35586b570168a5bca97248f8a7b987",
+        "observed_sha256": [
+          "ef2edd8f75a11dab88108482ab9604b9cbca8a25eed7cf2dab26e108535ebd55"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-core/src/reducer.rs",
+        "expected_sha256": "b1b902ef8a0a75937f7a2011a14cc965595b61e00482ef140da29b3bafda3023",
+        "observed_sha256": [
+          "2baffd648267da654f165ebed6f800ecd3d06afde8e6b505ee9f831d305398b4"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-runtime/src/native_stdio.rs",
+        "expected_sha256": "595c747e8a33755ed5f300f86e978d05b8d6e8030eaff8b0448e291f41711156",
+        "observed_sha256": [
+          "aadc4590792cd6b65cacdd94d94e3c5515ef6e11e09a2af0e29124d15ad784f1"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-semantic/src/assessment.rs",
+        "expected_sha256": "70f95e38b818050562d3a111e7f83c260a1ef43edca749eb85e8fe36060facf4",
+        "observed_sha256": [
+          "bc22608b701c0ca21091d0b4fe752ba20f26b045eb457582fcf2342467ab9177"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-semantic/src/continuation.rs",
+        "expected_sha256": "2589b5ea798dc7a0ac13cb0f247e8f583162083725a49abab133b111a86cc002",
+        "observed_sha256": [
+          "7c15601880c494cc0e57de882b8283ee53166afe15f609a8dad89984ec626527"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-semantic/src/lib.rs",
+        "expected_sha256": "26d6f5f266d0627483bd4d74c378416f0c0a25f829713a1dbff8eb977e4b8c7c",
+        "observed_sha256": [
+          "d8604effa91fbf834546e5c2b5df854738acb601f0e2d9585c8f3f2490da66e4"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/Cargo.toml",
+        "expected_sha256": "9950f246d514b1cede5e53b5b6c456207f2050d400d9f287e7032883d73a56b2",
+        "observed_sha256": [
+          "63ecce4f07ddf71418f29ca9117ab82f9b6723de7523861c23b6c9868d71fafe"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/actor.rs",
+        "expected_sha256": "be90601f1bb5d8bc38c83f1724bb728ae2b07bf89c9ea0005b268ddc621f8a8d",
+        "observed_sha256": [
+          "2010ce60ac375f12324caea46b9b80cf9661b7c71919754d73b726de968b04d0"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/engine.rs",
+        "expected_sha256": "ab0569272bf530ec268701653ff2675a3d94b7be321e9fff07e312f955d5cb37",
+        "observed_sha256": [
+          "4058d191cbb3d07935ce83359c27d2ae49b14719cd3c8844eb62b8f7565da530"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/lib.rs",
+        "expected_sha256": "6000252105f2f141265c20cd9b61e44620e6e1455fe3f3aca84255fe35cece27",
+        "observed_sha256": [
+          "2511ff45a9c031a6b1737c0dbb456f297af240f8e40a0bb5c27ced6b542692a3"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/operations/mod.rs",
+        "expected_sha256": "d6788cd51e5703c35c11664415fdb1125973a612c6f59f98842574ec99715014",
+        "observed_sha256": [
+          "3ec02893310523b271c136dc0b44d6adc1c29fdb58d2f1900f0b2d585f5db62c"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/semantic.rs",
+        "expected_sha256": "b62c9f0e4a7eb507ad703f9117790c21fbe0bed324585bd50ec4f88d3a5952bf",
+        "observed_sha256": [
+          "bb24c7995acaf179836fb1d26a0eb294212e586bc164520f426aa27fc124178f"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/semantic_control.rs",
+        "expected_sha256": "54c05723fa50e3db970aba0a8a61c5a691299bea9925914fa89e8d5d1fd5b297",
+        "observed_sha256": [
+          "44a57b05664e003ab5fff67443240980fa13ceebe513dd1af1ad03e4fb8602f2"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/socket.rs",
+        "expected_sha256": "98dd752511b35f6f0e1c8332ebf998f1b4bdb8bd59937a1465fd527dc6947e21",
+        "observed_sha256": [
+          "d6cadcc301a31eea2a0ec5f7de22fa2a6d3d2d90d9c365d7afcc352ecae160e2"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/admin.rs",
+        "expected_sha256": "9ca62051dbfc7ddbac262170713ab178110d5e456aa8988408b1e055d801cd0f",
+        "observed_sha256": [
+          "2625d2c800535fc8e50d9e7874a4f8bf8732218c2df76ae936065f19074901a6"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/lib.rs",
+        "expected_sha256": "abcb2ba47fd7e1cca26b352798f3149169cac0b4f8fefc985ab750abb442029b",
+        "observed_sha256": [
+          "d5bcde21c3cafe815118dcebb40b5c0879de064c0d2492f26b1a9ef059676e3c"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/native.rs",
+        "expected_sha256": "aaa7d513ca218c39a599830bebf18ae9f2e172898b67d9d4cf83ea0a90361ccd",
+        "observed_sha256": [
+          "617150b9672784af17ca66b0c66cc1fbc3d9d59cfa2ba88fa68a804b46bb9741"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/recovery.rs",
+        "expected_sha256": "8325d0099879163aa7c64d04206c9d6646f62d4ad6a57d2bf6cc42f982203526",
+        "observed_sha256": [
+          "87d289f4e9a185d60da0d0bd7cd3a78344647b1abe43507582abb42b36b21c46"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/semantic.rs",
+        "expected_sha256": "53b367768ffa73625839b7043c98323d950f3f4e36b0e8eb180c1fb30fe5cdf6",
+        "observed_sha256": [
+          "ed6a4c91dfe4529c87f31eb7da8429e798070327fafeb7c2f0750e97b3a0a647"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/sqlite.rs",
+        "expected_sha256": "f5c749e2575ecaf70362cbf331bac9320a3144dc730b4b62284ef933321282d7",
+        "observed_sha256": [
+          "6515bb24df9cbc7ae64c58f11aff7f92bc1d3ddaca1f3947d936df63de37caa1"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/tests/legacy_v28_held_import.rs",
+        "expected_sha256": "39126247c32f8d39fea358f06da21d39aec7e4fbd86f48df9789f0b2fced23b5",
+        "observed_sha256": [
+          "83f9a07156279d4afa3421084883f19dae4f67054a9ac0b622948e8c2a85a6b9"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/tests/schema_compat.rs",
+        "expected_sha256": "f5c5acedb7932ac7f0b4ce4c74c2cf8100e8f1aea2d7e11b91cb56abe5c445a7",
+        "observed_sha256": [
+          "7dfa2017ae4f3c5d2cf0cc402f288405205bce8acde67a31db5a7a1fa7e35858"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/work-engine-task-host/Cargo.toml",
+        "expected_sha256": "45f1fd0ed2a8e6ed26f2deb99e6ec85fe055607434318e6e78619728c6903db4",
+        "observed_sha256": [
+          "59f783fb48927a141ebd895ee41d11549724c14820710951dbf21cdcf77276bc"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/work-engine-task-host/src/lib.rs",
+        "expected_sha256": "7a9de9954f10c16e707a8921cb2c42fdd594d8b72583278e0cd4a517de5c71ec",
+        "observed_sha256": [
+          "007f6834f8af56037e06ef57315a334f8c4fcb8a3b9d0a6d1c8b7215a604ed88"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+        "target": "rust/crates/work-engine-task-host/src/selected_startup.rs",
+        "expected_sha256": "6ae3c3b71fce8dfcbfc020197c4738063b75dcb8c8582fc5bca90f60dbab7d8c",
+        "observed_sha256": [
+          "6aaac4c19673e9fa196b7d76d15af54029bc3ff5081fbd01de371e4e45b30fbf"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/Cargo.lock",
+        "expected_sha256": "11ccdf8ca4ffd9626eeb9e54e89ec0a3fe301dcaf962ec4405ee8a851b2a532f",
+        "observed_sha256": [
+          "403c3f8669afffcc3071e77a235a3a98513d1bb254d9a340299ea70d644ee31e",
+          "4e51c837d935acca6972d1c0335de98dde3f82cbbcad6fa91758bebdcd8e6646"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/Cargo.toml",
+        "expected_sha256": "9dbba8b1f69f7070fd83f38d7bc0ed59578853e5f08a3425ca17c14b317a3ef9",
+        "observed_sha256": [
+          "42b9ee2997f059cba83ac056faa51e120cc68b21c9eabab78bc4de6b36622fb4",
+          "eb7dc8496634eeebece17b92cdf23b7222d4fe9d5c3cf562f6289cbbf5c9956e"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/Cargo.toml",
+        "expected_sha256": "d3cfd707a60110e91113f1c751b21920601bf100d10bcf0c999b0c518b2fb478",
+        "observed_sha256": [
+          "e85b28dbaf943ff5e3ab97f383107c152ad8467badcb83f28a95c24234c85118"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/src/lib.rs",
+        "expected_sha256": "aaad0da2fee000634e90e423feeafe633f683c01498e0264ff2d8bf21b86e719",
+        "observed_sha256": [
+          "8365e9db26533df05e0a7a24e13ed029e712eae853a23094eef894067081daf7"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/src/protocol.rs",
+        "expected_sha256": "fed0c5268f980dce9c8fc0903d948edc1cd3bc11ddd4eb59136b736c11cece81",
+        "observed_sha256": [
+          "6410904bf307afd1237e1da1a5c69f89a508110dbb3fa7a582b421e0a34db103"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-codex/src/transport.rs",
+        "expected_sha256": "4b06cd56b52d506f4728017338b4ef8a52c7b5f528daa5167ef34ea14be34742",
+        "observed_sha256": [
+          "db3eaae438648c09941ba183b5d5e009e25b281f8f058de842a733009010bfff"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-core/src/lib.rs",
+        "expected_sha256": "30b4b6ea9c8fe59de183a3d131f0e0757f35586b570168a5bca97248f8a7b987",
+        "observed_sha256": [
+          "ef2edd8f75a11dab88108482ab9604b9cbca8a25eed7cf2dab26e108535ebd55"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-core/src/reducer.rs",
+        "expected_sha256": "b1b902ef8a0a75937f7a2011a14cc965595b61e00482ef140da29b3bafda3023",
+        "observed_sha256": [
+          "2baffd648267da654f165ebed6f800ecd3d06afde8e6b505ee9f831d305398b4"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-runtime/src/native_stdio.rs",
+        "expected_sha256": "595c747e8a33755ed5f300f86e978d05b8d6e8030eaff8b0448e291f41711156",
+        "observed_sha256": [
+          "aadc4590792cd6b65cacdd94d94e3c5515ef6e11e09a2af0e29124d15ad784f1"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-semantic/src/assessment.rs",
+        "expected_sha256": "70f95e38b818050562d3a111e7f83c260a1ef43edca749eb85e8fe36060facf4",
+        "observed_sha256": [
+          "bc22608b701c0ca21091d0b4fe752ba20f26b045eb457582fcf2342467ab9177"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-semantic/src/continuation.rs",
+        "expected_sha256": "2589b5ea798dc7a0ac13cb0f247e8f583162083725a49abab133b111a86cc002",
+        "observed_sha256": [
+          "7c15601880c494cc0e57de882b8283ee53166afe15f609a8dad89984ec626527"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-semantic/src/lib.rs",
+        "expected_sha256": "26d6f5f266d0627483bd4d74c378416f0c0a25f829713a1dbff8eb977e4b8c7c",
+        "observed_sha256": [
+          "d8604effa91fbf834546e5c2b5df854738acb601f0e2d9585c8f3f2490da66e4"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/Cargo.toml",
+        "expected_sha256": "9950f246d514b1cede5e53b5b6c456207f2050d400d9f287e7032883d73a56b2",
+        "observed_sha256": [
+          "63ecce4f07ddf71418f29ca9117ab82f9b6723de7523861c23b6c9868d71fafe"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/actor.rs",
+        "expected_sha256": "be90601f1bb5d8bc38c83f1724bb728ae2b07bf89c9ea0005b268ddc621f8a8d",
+        "observed_sha256": [
+          "2010ce60ac375f12324caea46b9b80cf9661b7c71919754d73b726de968b04d0"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/engine.rs",
+        "expected_sha256": "ab0569272bf530ec268701653ff2675a3d94b7be321e9fff07e312f955d5cb37",
+        "observed_sha256": [
+          "4058d191cbb3d07935ce83359c27d2ae49b14719cd3c8844eb62b8f7565da530"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/lib.rs",
+        "expected_sha256": "6000252105f2f141265c20cd9b61e44620e6e1455fe3f3aca84255fe35cece27",
+        "observed_sha256": [
+          "2511ff45a9c031a6b1737c0dbb456f297af240f8e40a0bb5c27ced6b542692a3"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/operations/mod.rs",
+        "expected_sha256": "d6788cd51e5703c35c11664415fdb1125973a612c6f59f98842574ec99715014",
+        "observed_sha256": [
+          "3ec02893310523b271c136dc0b44d6adc1c29fdb58d2f1900f0b2d585f5db62c"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/semantic.rs",
+        "expected_sha256": "b62c9f0e4a7eb507ad703f9117790c21fbe0bed324585bd50ec4f88d3a5952bf",
+        "observed_sha256": [
+          "bb24c7995acaf179836fb1d26a0eb294212e586bc164520f426aa27fc124178f"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/semantic_control.rs",
+        "expected_sha256": "54c05723fa50e3db970aba0a8a61c5a691299bea9925914fa89e8d5d1fd5b297",
+        "observed_sha256": [
+          "44a57b05664e003ab5fff67443240980fa13ceebe513dd1af1ad03e4fb8602f2"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-service/src/socket.rs",
+        "expected_sha256": "98dd752511b35f6f0e1c8332ebf998f1b4bdb8bd59937a1465fd527dc6947e21",
+        "observed_sha256": [
+          "d6cadcc301a31eea2a0ec5f7de22fa2a6d3d2d90d9c365d7afcc352ecae160e2"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/admin.rs",
+        "expected_sha256": "9ca62051dbfc7ddbac262170713ab178110d5e456aa8988408b1e055d801cd0f",
+        "observed_sha256": [
+          "2625d2c800535fc8e50d9e7874a4f8bf8732218c2df76ae936065f19074901a6"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/lib.rs",
+        "expected_sha256": "abcb2ba47fd7e1cca26b352798f3149169cac0b4f8fefc985ab750abb442029b",
+        "observed_sha256": [
+          "d5bcde21c3cafe815118dcebb40b5c0879de064c0d2492f26b1a9ef059676e3c"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/native.rs",
+        "expected_sha256": "aaa7d513ca218c39a599830bebf18ae9f2e172898b67d9d4cf83ea0a90361ccd",
+        "observed_sha256": [
+          "617150b9672784af17ca66b0c66cc1fbc3d9d59cfa2ba88fa68a804b46bb9741"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/recovery.rs",
+        "expected_sha256": "8325d0099879163aa7c64d04206c9d6646f62d4ad6a57d2bf6cc42f982203526",
+        "observed_sha256": [
+          "87d289f4e9a185d60da0d0bd7cd3a78344647b1abe43507582abb42b36b21c46"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/semantic.rs",
+        "expected_sha256": "53b367768ffa73625839b7043c98323d950f3f4e36b0e8eb180c1fb30fe5cdf6",
+        "observed_sha256": [
+          "ed6a4c91dfe4529c87f31eb7da8429e798070327fafeb7c2f0750e97b3a0a647"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/src/sqlite.rs",
+        "expected_sha256": "f5c749e2575ecaf70362cbf331bac9320a3144dc730b4b62284ef933321282d7",
+        "observed_sha256": [
+          "6515bb24df9cbc7ae64c58f11aff7f92bc1d3ddaca1f3947d936df63de37caa1"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/tests/legacy_v28_held_import.rs",
+        "expected_sha256": "39126247c32f8d39fea358f06da21d39aec7e4fbd86f48df9789f0b2fced23b5",
+        "observed_sha256": [
+          "83f9a07156279d4afa3421084883f19dae4f67054a9ac0b622948e8c2a85a6b9"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/lifecycle-store/tests/schema_compat.rs",
+        "expected_sha256": "f5c5acedb7932ac7f0b4ce4c74c2cf8100e8f1aea2d7e11b91cb56abe5c445a7",
+        "observed_sha256": [
+          "7dfa2017ae4f3c5d2cf0cc402f288405205bce8acde67a31db5a7a1fa7e35858"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/work-engine-task-host/Cargo.toml",
+        "expected_sha256": "45f1fd0ed2a8e6ed26f2deb99e6ec85fe055607434318e6e78619728c6903db4",
+        "observed_sha256": [
+          "59f783fb48927a141ebd895ee41d11549724c14820710951dbf21cdcf77276bc"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/work-engine-task-host/src/lib.rs",
+        "expected_sha256": "7a9de9954f10c16e707a8921cb2c42fdd594d8b72583278e0cd4a517de5c71ec",
+        "observed_sha256": [
+          "007f6834f8af56037e06ef57315a334f8c4fcb8a3b9d0a6d1c8b7215a604ed88"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+        "target": "rust/crates/work-engine-task-host/src/selected_startup.rs",
+        "expected_sha256": "6ae3c3b71fce8dfcbfc020197c4738063b75dcb8c8582fc5bca90f60dbab7d8c",
+        "observed_sha256": [
+          "6aaac4c19673e9fa196b7d76d15af54029bc3ff5081fbd01de371e4e45b30fbf"
+        ]
+      },
+      {
+        "origin": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/manifest-v2.json",
+        "target": "/home/bline/code/work-engine/AGENTS.md",
+        "expected_sha256": "9af3381a92332c5b7fdcd953851d695cdd4b335f93f2840f5410f3f7eb33e561",
+        "observed_sha256": [
+          "946db010ab78d3a070c3fd24df0c8e3e13b5ba8816139d410a56487863e04f48"
+        ]
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "docs/manual-decomposition-experiment-result-20261021.md",
+      "group_id": "manual-experiment",
+      "sha256": "e9a8b6b7599b5d2b55f24cb2c19c8951687254c22bae8da166700394a0de6e76"
+    },
+    {
+      "path": "docs/manual-decomposition-pilot.md",
+      "group_id": "manual-experiment",
+      "sha256": "3eb26e2e8975522f2a754dab6b64ec4d396433e4f8376acf50b6cd589f4af413"
+    },
+    {
+      "path": "notes/manual-decomposition-cross-effort-20261020.json",
+      "group_id": "manual-experiment",
+      "sha256": "67215b48b9b3c2bd756219ce9e317a672e6425d42dc9bfb6ede902a7e32c4a12"
+    },
+    {
+      "path": "notes/manual-decomposition-cross-effort-lineage-20261021.json",
+      "group_id": "manual-experiment",
+      "sha256": "cb9cf6d6feaa97a55fa9ce2428825f5abf7db5231e8932030bfcd0c0603bd34b"
+    },
+    {
+      "path": "notes/manual-decomposition-cross-effort-refresh-20261021.json",
+      "group_id": "manual-experiment",
+      "sha256": "d70e15ec46c412001a72743da0081b25c8b7f92b34775882de60f18ce037565e"
+    },
+    {
+      "path": "notes/manual-decomposition-measurement-correction-20261021.json",
+      "group_id": "manual-experiment",
+      "sha256": "7022f38d49aca0a96f3011e99cf847bb3d04fb038073a33ae15cc0f5aeba6d62"
+    },
+    {
+      "path": "notes/manual-orchestration-operational-test-20261021.md",
+      "group_id": "manual-experiment",
+      "sha256": "a0615d3e247103375467cd147969368915455f920a57c05b3a194323cd2216e7"
+    },
+    {
+      "path": "notes/manual-orchestration-skill-refinement-20261021.md",
+      "group_id": "manual-experiment",
+      "sha256": "09f6f383a716f91a1be16b708ffd0acbbb7e6ecbd1ac4577e1f4db3b51fb7431"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate-v2/SKILL.md",
+      "group_id": "manual-experiment",
+      "sha256": "293a7aa61d6dd7b1993176e3a9621d359fd46de99147afe29bb7006dc24bd73f"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate-v2/references/coordinator.md",
+      "group_id": "manual-experiment",
+      "sha256": "e4ee6d910c230c56652eeafeacea29ea266cfe78f02edb38efde10d7bf7e2510"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate-v2/references/demonstrated-forms.md",
+      "group_id": "manual-experiment",
+      "sha256": "f124c56bdecce2f5681cdbb4474bef70f96c7ef8a81bc28582e17364ef575efa"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate-v2/references/supervisor.md",
+      "group_id": "manual-experiment",
+      "sha256": "dc11eb741185aac6bc4da04d9fcb6c80cd7d986dedbcf3b1d949663d3f657501"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate-v2/references/worker.md",
+      "group_id": "manual-experiment",
+      "sha256": "dc2d5009ee4232d38ffbfa52c19fb8e947bb9461fa77122fdbbce58cd4021eb4"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate/SKILL.md",
+      "group_id": "manual-experiment",
+      "sha256": "293a7aa61d6dd7b1993176e3a9621d359fd46de99147afe29bb7006dc24bd73f"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate/references/coordinator.md",
+      "group_id": "manual-experiment",
+      "sha256": "d565313baa80926dc3e3664ee0df5fe8224d54aa54994c2338f70a9a4e0220c9"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate/references/demonstrated-forms.md",
+      "group_id": "manual-experiment",
+      "sha256": "f124c56bdecce2f5681cdbb4474bef70f96c7ef8a81bc28582e17364ef575efa"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate/references/supervisor.md",
+      "group_id": "manual-experiment",
+      "sha256": "952fde04639a6860c9ff5408c549016aa1e2c017aa8f9ce1a5a518609bb6735a"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-candidate/references/worker.md",
+      "group_id": "manual-experiment",
+      "sha256": "dc2d5009ee4232d38ffbfa52c19fb8e947bb9461fa77122fdbbce58cd4021eb4"
+    },
+    {
+      "path": "planning/manual-orchestration-skill-proposal-20261021.md",
+      "group_id": "manual-experiment",
+      "sha256": "11c53e6c24374ec2f6f9b759af084e13e95d8493dba3f634999312fa23c650ee"
+    },
+    {
+      "path": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_B2_OFFLINE_PLAN.md",
+      "group_id": "bounded-inference-planning",
+      "sha256": "e9c972b60186c022f820be9af9741be4b88b524f6bc393ec615639e33044c3d0"
+    },
+    {
+      "path": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_DECOMPOSITION.md",
+      "group_id": "bounded-inference-planning",
+      "sha256": "15c3d38043bb03a4f90cf88466c297a7f2def41fca9b4051cdf268ebf0a4256e"
+    },
+    {
+      "path": "experiments/context-lifecycle-rust/BOUNDED_INFERENCE_IMPLEMENTATION_PLAN.md",
+      "group_id": "bounded-inference-planning",
+      "sha256": "d2f084ea491d3183230d952271c7985fb7b57bb980efaa844f82aed3ef965f5e"
+    },
+    {
+      "path": "experiments/context-lifecycle-rust/POST_S10_BACKEND_ABSTRACTION_AMENDMENT.md",
+      "group_id": "bounded-inference-planning",
+      "sha256": "40d1285388247c79e7628d91b03335e12aca217de0d103ebe84081715bb03304"
+    },
+    {
+      "path": "planning/executable-generation-location-placement-review-disposition.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "be4fd5ce7804aa213b0a0d966172b500ddbd0bd26a9d4590ecad1adde7f43359"
+    },
+    {
+      "path": "planning/executable-generation-location-placement-review-request.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "c9f0c6b13a4f23611318519c668be5f47b2a842cf47a3a8245003734612efec1"
+    },
+    {
+      "path": "planning/executable-generation-location-plan-v2-review-disposition.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "9fd6a400d76a5c13e0a4ef4eff5385ee4685ae02a0029d818581dcbb59375c87"
+    },
+    {
+      "path": "planning/executable-generation-location-reconciliation-plan-v2.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "9a4b65e35ee9f78cdc0b3952fe50218ba919d412945d4b02123928f1353b4801"
+    },
+    {
+      "path": "planning/executable-generation-location-reconciliation-plan.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "d17f9ab7eb5fca8814bb27d43033215ad4396461d78f7eebe3c978b73569b02e"
+    },
+    {
+      "path": "planning/executable-source-maintenance-baseline-amendment-v2.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "87e213fb3b3baa5c3ceda6571cf58823aea84df7e312e1208db1f450d88bc5b6"
+    },
+    {
+      "path": "planning/executable-source-maintenance-implementation-plan.md",
+      "group_id": "executable-source-maintenance",
+      "sha256": "72d214f83bc7761f4f2920f59309e5015398eccad3b6dccb27ac616e58600203"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/admission-review/eligibility-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "7338ed619ff169d680145bfad1c83f6b5601eaacf76a601dcc26b2a1743126fd"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/PLAN.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "65e05a828f9869d6c99f654f048f4a747ad7362f67a686d26a84a16c499f4972"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/appserver_arm.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "ea394ac1198c5db28309135fef081f90b567654e26af0ee2903217c1f576b01e"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/assemble_inputs.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "bf138a36007a3c1d5e08a6861feece33a76a0870a5f41bd9bc81e3c035ab96fc"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/corpus_mcp.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "c1e92619f2505173870f55b3119be64c8d156ccf9e6f740336caed87c950b00c"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/fake-endpoint-toolset-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "02510a391b96a7275a68e0ffd6ed715be16dda39367e26de1a0925e27848cc6f"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/fake_endpoint_probe.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "2eed449012af22c565460f1bf8de214637ff2f1dc89d3ba73d5c9eb8e0c6c4a9"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/fake_websocket_probe.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "54d6bfc6dac2336cab42ccd63d900294ab9b65c129c7a897f2c89f1608a196ee"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/launch-arm.template.sh",
+      "group_id": "legacy-s10-live4",
+      "sha256": "7a9cadc00bd013d674bd28b4665922477a108ba2c1d4bda300b1b15f99074b34"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/launch-isolated-arm.template.sh",
+      "group_id": "legacy-s10-live4",
+      "sha256": "f90d8adf1d00ff083ed6dbaa8c36d951c8e4c7052077cf7c03eb6eec5d0fc514"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/matched-arm-toolset-candidate-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "92960190c224fdbdc124f4ca273c485c941a13d05df06e3c3a5ba63bf7de21fc"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-boundary-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "11530e0571357101da937d769d953888875a1bbe619f1536c821879a1ce9efdb"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-appserver-raw-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "df6562ffd835b06cbe68711abba583a523a7e5a9d09f9a31189a9762ce0eee76"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic-boundary-check-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "3529ce8553b0501b3f19ac9d76d2d925c0a7deaebb26e72e0771cb76a3b127d8"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic_appserver_check.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "ed5039e75c4b713e11d4b0e326f7cc29b04642f49d970bea7868fc2e1bdcc0ec"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/synthetic_boundary_check.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "cc9608916cd762270ae6461c131fb9256391290925e3c30dccdddc690541a6dc"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/assessment-harness/tool-mode-diagnosis-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "f7bedcf09eb723a6fcaba58a23adf75fcfad684765a3603f815e620bb6472da5"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/diagnosis-v1.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "91a96ce6d464d7cddcc4d39110b731314e0c9cc61ede4dc07b26519c2681f24d"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/forced-sse-fixture-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "4e063bce6ed55e6d084d45c06efb7d04ac3607cdf3a61550dde7bb3978b8cb11"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/launch-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "62eeaaf3f619f2b6ad3160bd43a655fec8cb0f470c9fdf967e206316b28c75b6"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/model-mode-projection-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "896258ad442533feded9418eef4c0cf7ed517cd2e7fe9dfcb1e39910493915a7"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/result-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "3a87ae17d5edef290ef9f953b7f9aaa75518935587ab60797219a29e22a69e6f"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/code-mode-diagnosis/source-manifest-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "6bb45f036c984e3a6e62c77c475547bdb16bed31d71bb6aec1c00022ce02f252"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/output-manifest-v2.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "e8199b25b864365dae9072db2cd97d85487d413f539a6bf9e284700acf9f95ec"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/QUALITY-RUBRIC.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "45027697edd4cdc7af9f5f27e2583dc387c80a258fa855e5f43e83527993d889"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/extract_stopped.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "f45362ae8b0d5c2618cc6e5093c082c8d4e29a1b6f9eccd056b9e1cb28e1828b"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/initial-submit-payload.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "a4ca10ee0b29409419b18c51178605ef041ddb7b7bbb2f58dd9d26a53146856c"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/prepare_schema7_route.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "931d24459990164cb9d875435e4816b85601cc2d664a32b98bc71c309c0fcbf4"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/run_semantic.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "3fe337a607134499912dc6fcb8a14ceb050aa4de62b8a710eec5bbcb43d076e6"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/scope_controller.py",
+      "group_id": "legacy-s10-live4",
+      "sha256": "82ebcd60e02cc0eb0dbc219c388dbe41b18004162d2b373aea2e18b2a59a0d76"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/packet-src/startup-template.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "9cbcfd33cc1fe3565b204f8599f980a7efb8d7c7c2e1e5fd94e458a127596942"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/public-obligations-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "a71310aa223028ddb31f0e366b649e69b33a7a7a8567ba2d0125f4c365771c86"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/recording-contract-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "8243bed848eb566c92648210f17108377cec671ae07cc873f39e2d07b8b31359"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/scope-guard-plan-v1.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "9202662f375dbb97fb7b2d11b396874277eac49d8a8a3c34a450dcb3dce2699b"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/selected-source-manifest-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "e256babdd277cde3d99a384da9762940661c41dfa3a1c11175a94dceb91c473a"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/source-manifest-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "00be6eb381ff9f47c746c88d80bc01cd3911a787f627f0729c10bdbe18a34130"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/engineering/static-admission-audit-v1.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "4e2993f27ad20a99b592ad15aaea5746248aaf77bd6c819e6d269403668e9a0c"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/freeze-manifest-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "97af6203bbdc8b248750ad0a3a11393077e841be5ebf65b8cce6225ced8295fd"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/heldout/author-receipt-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "1344967698ef0806bc37b3d107940da39ff332099fd263973f8a379adff6863b"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/heldout/key-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "69e9c0f8f521aa07db49c84f6ab04a9dd6f243f7de7e1097ac473c7192dc58e9"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/heldout/manifest-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "74ba8b1827947a657a9917bb7bfd1035099209a8face41ae7ae1e5f3572fd2bc"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/heldout/semantic-key-v1.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "ad5458fdc0e3fe1c1656dc04c02c59e52d43dbf68578297b6019ab3c5a9e67ce"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/key-collection-validation-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "126af531fe159d83e047cb793cb16fa2be9335073e78628a4a5cafa845bc4d00"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/preparation-authority-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "dd1ebe1901b49a6fafbc3282f2c6eb82df14c5436c2c0b1cdeac0686af826202"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/manifest-v2.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "b8132f450971a1b1de3dc0a0dc0f1c29055a537299e06291b738b7aa30e1e05d"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/review-receipt-v2.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "68ec165b799a2e2894349120ca1c2b64149f12f36d83a57f0c78d7e8dc49e961"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/previous-skill-review/review-v2.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "90d12429eefc8011d8eca3250144263a35287ff16a6480585e18ac404ad0a69f"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/private-freeze-authority-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "b0e54312cb1c4386460122cee86ce2a7fa345fb74860c6e208455159bd1407a7"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/role-exposure-register-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "0c1f099e50bb43c42d9d69eaca47c1d1e1a1ec4452a0e19de27783fa69fd25bc"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/subject-protocol-v1.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "ce06bcf751d970cd7b32092720bbc1edcb28b17d8086403836bbd8ac95beec1b"
+    },
+    {
+      "path": "planning/s10-live4-admission-artifacts-20261021/synthetic-harness-validation-scope-v1.json",
+      "group_id": "legacy-s10-live4",
+      "sha256": "270eb1b3419022248981b3d001937e42460658f51b69d89d9692d00abb1ca9a4"
+    },
+    {
+      "path": "planning/s10-live4-execution-packet-20261021.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "23d826ea0255181bbac3f51b51393a320afae400ded548e20bfc4d7247ae4e16"
+    },
+    {
+      "path": "planning/s10-live4-trial-admission-20261021.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "cd8f0379c1c55c2e81a20f946a89ce4c7527fc3a087ac1ae4b7cf9250401455c"
+    },
+    {
+      "path": "planning/s10-next-slice-scope-20261021.md",
+      "group_id": "legacy-s10-live4",
+      "sha256": "c72e69001e3750e5c4381592703c30c289ad1f09dbb340669ba8c0b18bde56ab"
+    }
+  ]
+}
