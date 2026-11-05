@@ -10,6 +10,7 @@ use std::{
 pub const PROFILE: &str = "native-review-claims-v1";
 pub const FINDING_PROFILE: &str = "revision-bound-review-finding-v1";
 pub const PRODUCTION_PATH_PROFILE: &str = "production-path-v1";
+pub const REPOSITORY_PROFILE: &str = "repository-claims-v1";
 
 /// Host-owned source and configuration files. Their expected byte hashes are
 /// selected by the trusted host startup, never by a finding request.
@@ -45,6 +46,8 @@ impl From<BootstrapFiles> for OpenFiles {
 #[derive(Clone)]
 pub(crate) struct Bootstrap {
     pub root_id: String,
+    pub profile: String,
+    pub repository_id: Option<String>,
     pub grants: Vec<JsValue>,
     pub config_sha256: String,
     pub source_sha256: String,
@@ -84,13 +87,17 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
         "bootstrap schema mismatch",
     )?;
     let v2 = version == &JsValue::Number(2.0);
+    let v3 = version == &JsValue::Number(3.0);
     ensure(
-        v2 || version == &JsValue::Number(1.0),
+        v2 || v3 || version == &JsValue::Number(1.0),
         "bootstrap schema mismatch",
     )?;
     let mut config_fields = vec!["schema_version", "profile", "root_id", "grants"];
     if v2 {
         config_fields.push("trusted_custody");
+    }
+    if v3 {
+        config_fields.push("repository_id");
     }
     exact_fields(&config, &config_fields, "bootstrap config")?;
     let mut source_fields = vec![
@@ -106,6 +113,9 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
     ];
     if v2 {
         source_fields.push("custody_config_sha256");
+    }
+    if v3 {
+        source_fields.push("repository_id");
     }
     exact_fields(&source, &source_fields, "bootstrap source")?;
     let trusted_custody = if v2 {
@@ -134,10 +144,21 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
     } else {
         None
     };
+    let profile = if v3 { REPOSITORY_PROFILE } else { PROFILE };
     ensure(
-        text_field(&config, "profile")? == PROFILE && text_field(&source, "profile")? == PROFILE,
+        text_field(&config, "profile")? == profile && text_field(&source, "profile")? == profile,
         "bootstrap profile mismatch",
     )?;
+    let repository_id = if v3 {
+        let id = text_field(&config, "repository_id")?;
+        ensure(
+            text_field(&source, "repository_id")? == id,
+            "repository source mismatch",
+        )?;
+        Some(id)
+    } else {
+        None
+    };
     let root_id = text_field(&config, "root_id")?;
     let actors = strings(&source, "actors")?;
     let scopes = strings(&source, "decision_scopes")?;
@@ -151,7 +172,12 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
     for grant in &grants {
         validate_grant(grant)?;
         ensure(
-            v2 || text_field(grant, "profile")? == FINDING_PROFILE,
+            if v3 {
+                text_field(grant, "profile")? == crate::repository_fact::REPOSITORY_FACT_PROFILE
+            } else {
+                text_field(grant, "profile")? == FINDING_PROFILE
+                    || (v2 && text_field(grant, "profile")? == PRODUCTION_PATH_PROFILE)
+            },
             "production grant requires bootstrap v2",
         )?;
         let grant_id = text_field(grant, "grant_id")?;
@@ -182,6 +208,8 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
     )?;
     Ok(Bootstrap {
         root_id,
+        profile: profile.into(),
+        repository_id,
         grants,
         config_sha256,
         source_sha256,
@@ -224,13 +252,17 @@ pub(crate) fn validate_grant(grant: &JsValue) -> ClaimResult<()> {
     }
     let profile = text_field(grant, "profile")?;
     ensure(
-        profile == FINDING_PROFILE || profile == PRODUCTION_PATH_PROFILE,
+        profile == FINDING_PROFILE
+            || profile == PRODUCTION_PATH_PROFILE
+            || profile == crate::repository_fact::REPOSITORY_FACT_PROFILE,
         "grant profile mismatch",
     )?;
     let permissions = strings(grant, "permissions")?;
     ensure(
         permissions.iter().all(|p| {
-            if profile == FINDING_PROFILE {
+            if profile == FINDING_PROFILE
+                || profile == crate::repository_fact::REPOSITORY_FACT_PROFILE
+            {
                 p == "create_claim" || p == "publish_revision" || p == "record_reliance"
             } else {
                 p == "record_observation" || p == "establish_claim" || p == "read_admission"

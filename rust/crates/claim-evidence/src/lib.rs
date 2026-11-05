@@ -10,6 +10,13 @@ mod findings;
 mod production_path;
 mod projection;
 mod reliance;
+mod repository;
+mod repository_fact;
+pub use repository::{
+    REPOSITORY_FACT_PROFILE, RepositoryAdmissionBinding, RepositoryAdmissionPort,
+    RepositoryApplication, RepositoryLease, RepositoryProducerStartup, RepositoryReadStartup,
+    RepositoryReader, repository_locator_value,
+};
 pub mod schema;
 mod store;
 

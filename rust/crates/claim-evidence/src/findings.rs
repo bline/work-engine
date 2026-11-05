@@ -115,6 +115,20 @@ pub(crate) fn validate_reference(reference: &JsValue) -> ClaimResult<()> {
 }
 
 pub(crate) fn validate_revision_payload(payload: &JsValue, scope: &str) -> ClaimResult<()> {
+    validate_common_revision_payload(payload, scope)?;
+    exact_fields(
+        field(payload, "profile_payload")?,
+        &["finding_id", "severity", "episode", "outcome"],
+        "finding payload",
+    )?;
+    for key in ["finding_id", "severity", "episode", "outcome"] {
+        legacy_text_field(field(payload, "profile_payload")?, key)?;
+    }
+    Ok(())
+}
+
+/// Validate shared revision fields; callers must also validate the profile payload.
+pub(crate) fn validate_common_revision_payload(payload: &JsValue, scope: &str) -> ClaimResult<()> {
     exact_fields(
         payload,
         &[
@@ -156,14 +170,6 @@ pub(crate) fn validate_revision_payload(payload: &JsValue, scope: &str) -> Claim
         for item in array(field(payload, key)?, key)? {
             validate_reference(item)?;
         }
-    }
-    exact_fields(
-        field(payload, "profile_payload")?,
-        &["finding_id", "severity", "episode", "outcome"],
-        "finding payload",
-    )?;
-    for key in ["finding_id", "severity", "episode", "outcome"] {
-        legacy_text_field(field(payload, "profile_payload")?, key)?;
     }
     ensure(
         matches!(field(payload, "tombstone")?, JsValue::Bool(_)),

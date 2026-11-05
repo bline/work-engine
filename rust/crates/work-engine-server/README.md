@@ -61,6 +61,70 @@ This covers orderly shutdown, not an abrupt process crash or external effects.
 Restart only reopens the same read-only profile and creates no job settlement
 or recovery claim.
 
+## Repository facts and captured evidence
+
+An optional absolute `repository_claims_profile` in the trusted server
+configuration enables native repository-fact reads. This mode composes
+`claim-evidence`'s nonmutating `RepositoryReader`; it requires an existing
+`repository-claims-v1` root with bootstrap v3. Existing native review roots and
+legacy Python claims roots retain their own adapters. The server does not
+initialize or migrate a root. Server identity includes the selected read-profile
+bytes as well as the existing query and optional command profiles.
+
+The private read-profile JSON contains `schema_version: 1`, `root`, `config`,
+`source`, `expected_config_sha256`, `expected_source_sha256`, `repository_id`
+and `decision_scope`. These are trusted startup inputs. The same process-access
+boundary governs MCP stdio; HTTP also requires the existing transport credential.
+Requests cannot supply roots, authority files, publication grants or actor
+selection.
+The existing `/ready` probes remain session-query checks; each claim read
+verifies its own selected canonical inputs.
+
+| Operation | Read consequence |
+| --- | --- |
+| `discover_repository_facts` | Bounded query and cursor in the configured repository/scope; candidates remain applicability `not_assessed`. |
+| `resolve_repository_fact` | Exact claim ID, revision ID and revision SHA-256; includes admitted authority, evidence status, historical/head status and reliance. |
+| `read_repository_evidence` | Integrity-checked UTF-8 byte pages of an immutable CBM capture from the selected artifact root. |
+| `check_repository_evidence_currency` | Current equality/change/unavailability of only the capture's source anchors. |
+
+Discovery and resolution return
+`{encoding: "claim-evidence-canonical-json-v1", canonical_projection: "..."}`
+inside `owner_result`. The string is the complete canonical owner projection,
+including its provenance and limitations. It preserves native UTF-16 JSON
+strings without coercion through Rust's Unicode scalar string model.
+Projections above 32768 UTF-8 bytes return `canonical_projection_page` instead
+of `canonical_projection`, plus `projection_sha256`, `offset`, `total_bytes`,
+`has_more` and `next_offset`. Both fact operations accept an optional
+`projection_page: {offset, max_bytes, sha256}`. Reissuing the same query/cursor
+or exact locator with the returned next offset and full projection digest
+reconstructs the complete canonical bytes; page sizes are 4–32768 bytes. A
+nonzero offset requires the digest. Canonical state changes, including new
+reliance, reject stale continuation as `claim_projection_changed`, allowing the
+consumer to restart from offset zero. This transport paging also covers large
+admitted facts and later reliance growth without removing provenance fields.
+Projection currency is relative to canonical claim state; it does not establish
+current source truth or consumer applicability.
+
+The evidence operations are available only when the read profile also contains
+`evidence: {artifacts, repository, project}` with canonical absolute artifact and
+checkout paths and the selected CBM project. Evidence reads take a capture
+SHA-256, byte offset and bounded page size, with advancing offsets and the full
+artifact digest. The currency operation does not modify a fact or decide whether
+its proposition still applies.
+Historical artifact reads use stable repository identity and selected custody;
+the current project label does not exclude an older capture. Each historical
+capture retains its own checked project/root/publication binding, and currency
+compares its relative source anchors with the selected current checkout.
+
+Publication, manual successor revisions and exact-revision reliance use the
+separate out-of-band `work-engine-claims-host`, with externally provisioned
+immutable startup/grants and exact-operation admission. They are not MCP tools.
+An admitted producer's named-consumer reliance is attributable; it does not
+authenticate direct consumer attestation. Source changes and CBM documentation
+references supply evidence/review candidates and do not automatically refresh,
+invalidate, accept or reopen claims. Context/budget pressure remains separately
+owned and may carry these exact references without becoming a claims store.
+
 ## Granted commands (offline synthetic profile)
 
 Commands are disabled unless the trusted server configuration supplies both

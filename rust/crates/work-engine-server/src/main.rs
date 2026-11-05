@@ -1,3 +1,4 @@
+mod claims;
 mod command;
 use serde::{
     Deserialize,
@@ -36,11 +37,15 @@ struct Config {
     command_profile: Option<String>,
     #[serde(default)]
     command_capability: Option<String>,
+    #[serde(default)]
+    repository_claims_profile: Option<String>,
     max_connections: usize,
     max_queries: usize,
     request_timeout_seconds: u64,
 }
 struct App {
+    repository_claims: Option<claims::Reads>,
+    _claims_profile_lock: Option<std::fs::File>,
     profile: Profile,
     credential: Vec<u8>,
     command_profile: Option<Profile>,
@@ -121,6 +126,37 @@ impl App {
     async fn call(self: &Arc<Self>, r: Request) -> Value {
         if r.schema_version != 1 || r.request_id.is_empty() || r.request_id.len() > 128 {
             return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
+        }
+        if claims::Reads::operation(&r.operation) {
+            let app = self.clone();
+            let permit = match self.slots.clone().acquire_owned().await {
+                Ok(p) => p,
+                Err(_) => {
+                    return json!({"schema_version":1,"request_id":r.request_id,"error":{"code":"owner_unavailable"}});
+                }
+            };
+            let result = tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                app.repository_claims
+                    .as_ref()
+                    .ok_or("claim_scope_unavailable")?
+                    .call(&r.operation, r.arguments)
+            })
+            .await;
+            return match result {
+                Ok(Ok(value)) if value.to_string().len() <= 1024 * 1024 => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_result":value})
+                }
+                Ok(Ok(_)) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"owner_error":{"code":"output_too_large"}})
+                }
+                Ok(Err(code)) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"owner_error":{"code":code}})
+                }
+                Err(_) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"owner_error":{"code":"claim_owner_unavailable"}})
+                }
+            };
         }
         let is_command = matches!(
             r.operation.as_str(),
@@ -255,6 +291,18 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
         } else {
             (None, None, Vec::new())
         };
+    let (claims_profile_lock, repository_claims, claims_bytes) =
+        if let Some(path) = &config.repository_claims_profile {
+            if !std::path::Path::new(path).is_absolute() {
+                return Err("invalid_claim_profile");
+            }
+            let (lock, bytes) = lock_private(path).map_err(|_| "invalid_claim_profile")?;
+            let profile = serde_json::from_slice::<claims::ReadProfile>(&bytes)
+                .map_err(|_| "invalid_claim_profile")?;
+            (Some(lock), Some(claims::Reads::load(profile)?), bytes)
+        } else {
+            (None, None, Vec::new())
+        };
     let credential = session_query::read_file(&config.credential_file, 4096, true)?;
     if credential.len() < 32
         || credential.len() > 4096
@@ -266,6 +314,7 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     hash.update(&bytes);
     hash.update(&p);
     hash.update(&command_bytes);
+    hash.update(&claims_bytes);
     let identity = format!("sha256:{:x}", hash.finalize());
     let executable = std::env::current_exe().map_err(|_| "invalid_build")?;
     let mut f = std::fs::File::open(executable).map_err(|_| "invalid_build")?;
@@ -273,6 +322,8 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     std::io::copy(&mut f, &mut hasher).map_err(|_| "invalid_build")?;
     let build = format!("sha256:{:x}", hasher.finalize());
     let app = Arc::new(App {
+        repository_claims,
+        _claims_profile_lock: claims_profile_lock,
         profile,
         command_profile,
         _command_profile_lock: command_profile_lock,
@@ -537,6 +588,12 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
             }
             "tools/list" if initialized => {
                 let mut listing = json!({"tools":[{"name":"list_sessions","description":"List sessions","inputSchema":{"type":"object","additionalProperties":false,"properties":{"query":{"type":"string"},"host":{"type":"string"},"limit":{"type":"integer"}}}},{"name":"read_session","description":"Read session","inputSchema":{"type":"object","additionalProperties":false,"properties":{"session_id":{"type":"string"},"entry_id":{"type":"string"},"before":{"type":"integer"},"after":{"type":"integer"},"tail":{"type":"integer"},"roles":{"type":"array","items":{"type":"string"}},"text_offset":{"type":"integer"},"max_chars":{"type":"integer"}},"required":["session_id"]}}]});
+                if let Some(claims) = &app.repository_claims {
+                    listing["tools"]
+                        .as_array_mut()
+                        .unwrap()
+                        .extend(claims.tools());
+                }
                 if app.command_profile.is_some() {
                     let tools = listing["tools"].as_array_mut().unwrap();
                     tools.push(json!({"name":"submit_session_request","description":"Submit an already granted exact request","inputSchema":{"type":"object","additionalProperties":false,"properties":{"request_id":{"type":"string"},"grant_credential":{"type":"string"},"session_id":{"type":"string"},"workspace":{"type":"string"},"input_text":{"type":"string"}},"required":["request_id","grant_credential","session_id","workspace","input_text"]}}));

@@ -5,6 +5,8 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+claim-evidence = { path = "../claim-evidence" }
+repository-evidence-cbm = { path = "../repository-evidence-cbm" }
 session-query = { path = "../session-query" }
 serde.workspace = true
 serde_json.workspace = true

@@ -2729,6 +2729,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "repository-evidence-cbm"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4152,6 +4164,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
+name = "work-engine-claims-host"
+version = "0.1.0"
+dependencies = [
+ "claim-evidence",
+ "libc",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "work-engine-command"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "session-query",
+ "work-engine-server",
+]
+
+[[package]]
 name = "work-engine-compiler"
 version = "0.1.0"
 dependencies = [
@@ -4218,16 +4252,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "work-engine-command"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "session-query",
- "work-engine-server",
-]
-
-[[package]]
 name = "work-engine-query"
 version = "0.1.0"
 dependencies = [
@@ -4259,7 +4283,9 @@ dependencies = [
 name = "work-engine-server"
 version = "0.1.0"
 dependencies = [
+ "claim-evidence",
  "libc",
+ "repository-evidence-cbm",
  "serde",
  "serde_json",
  "session-query",

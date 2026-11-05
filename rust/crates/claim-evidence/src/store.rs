@@ -1,6 +1,5 @@
 use crate::authority::{
-    Bootstrap, BootstrapFiles, OpenFiles, PROFILE, checked_absolute_root, grant_digest, load,
-    validate_grant,
+    Bootstrap, BootstrapFiles, OpenFiles, checked_absolute_root, grant_digest, load, validate_grant,
 };
 use crate::codec::{
     JsValue, canonical_json_unchecked as canonical_json, digest_unchecked as digest, exact_fields,
@@ -19,8 +18,9 @@ use std::{
 
 const MAX_STATE_BYTES: usize = 16 * 1024 * 1024;
 const SCHEMA: &str = "native-review-claims-sqlite-v2";
+const REPOSITORY_SCHEMA: &str = "repository-claims-sqlite-delete-v1";
 const MARKER: &str = "claim-evidence-root.json";
-const DATABASE: &str = "claim-evidence.sqlite3";
+pub(crate) const DATABASE: &str = "claim-evidence.sqlite3";
 
 pub(crate) struct Store {
     pub conn: Connection,
@@ -44,9 +44,9 @@ fn metadata(path: &Path) -> ClaimResult<(u64, u64)> {
 fn private_mode(path: &Path, mode: u32) -> ClaimResult<()> {
     fs::set_permissions(path, fs::Permissions::from_mode(mode)).map_err(io)
 }
-fn db_open(path: &Path) -> ClaimResult<Connection> {
+fn db_open(path: &Path, repository: bool) -> ClaimResult<Connection> {
     let conn = Connection::open(path).map_err(io)?;
-    conn.execute_batch("PRAGMA foreign_keys=ON; PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;").map_err(io)?;
+    conn.execute_batch(if repository { "PRAGMA foreign_keys=ON; PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=5000; PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL;" } else { "PRAGMA foreign_keys=ON; PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;" }).map_err(io)?;
     private_mode(path, 0o600)?;
     harden_sidecars(path)?;
     Ok(conn)
@@ -62,9 +62,16 @@ pub(crate) fn harden_sidecars(path: &Path) -> ClaimResult<()> {
 }
 fn marker(identity: &RootIdentity, bootstrap: &Bootstrap, dev: u64, ino: u64) -> JsValue {
     JsValue::object([
-        ("schema", JsValue::text(SCHEMA)),
+        (
+            "schema",
+            JsValue::text(if bootstrap.repository_id.is_some() {
+                REPOSITORY_SCHEMA
+            } else {
+                SCHEMA
+            }),
+        ),
         ("root_id", JsValue::text(&identity.root_id)),
-        ("profile", JsValue::text(PROFILE)),
+        ("profile", JsValue::text(&bootstrap.profile)),
         (
             "path",
             JsValue::text(&identity.absolute_path.to_string_lossy()),
@@ -120,8 +127,18 @@ fn blank_state(grants: &[JsValue]) -> JsValue {
 }
 impl Store {
     pub fn initialize(files: BootstrapFiles) -> ClaimResult<Self> {
+        Self::initialize_profile(files, false)
+    }
+    pub(crate) fn initialize_repository(files: BootstrapFiles) -> ClaimResult<Self> {
+        Self::initialize_profile(files, true)
+    }
+    fn initialize_profile(files: BootstrapFiles, repository: bool) -> ClaimResult<Self> {
         let open: OpenFiles = files.into();
         let bootstrap = load(&open)?;
+        ensure(
+            (bootstrap.repository_id.is_some()) == repository,
+            "bootstrap profile mismatch",
+        )?;
         ensure(open.root.is_absolute(), "root must be absolute")?;
         let parent = open
             .root
@@ -152,7 +169,7 @@ impl Store {
         let identity = RootIdentity {
             absolute_path: absolute.clone(),
             root_id: bootstrap.root_id.clone(),
-            profile: PROFILE.into(),
+            profile: bootstrap.profile.clone(),
         };
         let marker_json = canonical_json(&marker(&identity, &bootstrap, dev, ino));
         let marker_path = absolute.join(MARKER);
@@ -164,11 +181,13 @@ impl Store {
         fs::File::open(&absolute)
             .and_then(|f| f.sync_all())
             .map_err(io)?;
-        let conn = db_open(&absolute.join(DATABASE))?;
+        let conn = db_open(&absolute.join(DATABASE), repository)?;
         let (db_dev, db_ino) = metadata(&absolute.join(DATABASE))?;
-        conn.execute_batch(include_str!(
-            "../migrations/0002_private_production_path.sql"
-        ))
+        conn.execute_batch(if repository {
+            include_str!("../migrations/0003_repository_claims.sql")
+        } else {
+            include_str!("../migrations/0002_private_production_path.sql")
+        })
         .map_err(io)?;
         let schema_sha256 = schema_fingerprint(&conn)?;
         conn.execute(
@@ -210,13 +229,23 @@ impl Store {
     }
 
     pub fn open(files: OpenFiles) -> ClaimResult<Self> {
+        Self::open_profile(files, false, false)
+    }
+    pub(crate) fn open_repository(files: OpenFiles, read_only: bool) -> ClaimResult<Self> {
+        Self::open_profile(files, true, read_only)
+    }
+    fn open_profile(files: OpenFiles, repository: bool, read_only_only: bool) -> ClaimResult<Self> {
         let bootstrap = load(&files)?;
+        ensure(
+            (bootstrap.repository_id.is_some()) == repository,
+            "bootstrap profile mismatch",
+        )?;
         let absolute = checked_absolute_root(&files.root)?;
         let (dev, ino) = metadata(&absolute)?;
         let identity = RootIdentity {
             absolute_path: absolute.clone(),
             root_id: bootstrap.root_id.clone(),
-            profile: PROFILE.into(),
+            profile: bootstrap.profile.clone(),
         };
         let db_path = absolute.join(DATABASE);
         ensure(db_path.exists(), "claims database absent")?;
@@ -226,6 +255,32 @@ impl Store {
             fs::read(absolute.join(MARKER)).map_err(io)? == expected_marker.as_bytes(),
             "root marker mismatch",
         )?;
+        if repository && read_only_only {
+            repository_reader_preflight(&db_path)?;
+        }
+        if repository
+            && !read_only_only
+            && PathBuf::from(format!("{}-journal", db_path.display()))
+                .try_exists()
+                .map_err(io)?
+        {
+            // Only the admitted producer route may ask SQLite to recover a
+            // rollback journal. The reader rejects it before SQLite opens.
+            let conn = db_open(&db_path, true)?;
+            let store = Self {
+                conn,
+                identity,
+                bootstrap,
+                files,
+                dev,
+                ino,
+                db_dev,
+                db_ino,
+            };
+            store.check_root()?;
+            store.read_state()?;
+            return Ok(store);
+        }
         let read_only =
             Connection::open_with_flags(&db_path, OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(io)?;
         read_only
@@ -243,12 +298,15 @@ impl Store {
         };
         preliminary.check_root()?;
         preliminary.read_state()?;
+        if read_only_only {
+            return Ok(preliminary);
+        }
         drop(preliminary);
         ensure(
             metadata(&db_path)? == (db_dev, db_ino),
             "database path changed during open",
         )?;
-        let conn = db_open(&db_path)?;
+        let conn = db_open(&db_path, repository)?;
         let store = Self {
             conn,
             identity,
@@ -291,16 +349,28 @@ impl Store {
             .conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(io)?;
-        ensure(schema == 2, "claims schema version mismatch")?;
+        let repository = self.bootstrap.repository_id.is_some();
+        ensure(
+            schema == if repository { 3 } else { 2 },
+            "claims schema version mismatch",
+        )?;
         let migration: String = self
             .conn
             .query_row(
-                "SELECT name FROM schema_migrations WHERE version=2",
-                [],
+                "SELECT name FROM schema_migrations WHERE version=?",
+                [if repository { 3 } else { 2 }],
                 |r| r.get(0),
             )
             .map_err(io)?;
-        ensure(migration == SCHEMA, "claims migration history mismatch")?;
+        ensure(
+            migration
+                == if repository {
+                    REPOSITORY_SCHEMA
+                } else {
+                    SCHEMA
+                },
+            "claims migration history mismatch",
+        )?;
         let migration_count: i64 = self
             .conn
             .query_row("SELECT count(*) FROM schema_migrations", [], |r| r.get(0))
@@ -325,7 +395,33 @@ impl Store {
         Ok(())
     }
 
+    pub(crate) fn validate_state(&self, state: &JsValue) -> ClaimResult<()> {
+        validate_state_profile(
+            state,
+            &self.bootstrap.grants,
+            self.bootstrap.repository_id.as_deref(),
+        )
+    }
+    pub(crate) fn claim_profile(&self) -> &'static str {
+        if self.bootstrap.repository_id.is_some() {
+            crate::repository_fact::REPOSITORY_FACT_PROFILE
+        } else {
+            crate::authority::FINDING_PROFILE
+        }
+    }
     pub fn read_state(&self) -> ClaimResult<(i64, JsValue)> {
+        // Snapshot includes root binding, canonical state AND admission rows.
+        // A nested caller already owns its write/read transaction.
+        if !self.conn.is_autocommit() {
+            return self.read_state_inside();
+        }
+        self.conn.execute_batch("BEGIN").map_err(io)?;
+        let result = self.read_state_inside();
+        let end = self.conn.execute_batch("ROLLBACK").map_err(io);
+        end?;
+        result
+    }
+    fn read_state_inside(&self) -> ClaimResult<(i64, JsValue)> {
         self.check_root()?;
         let (revision,sha,json):(i64,String,String)=self.conn.query_row("SELECT store_revision,store_sha256,store_json FROM canonical_claim_state WHERE singleton=1",[],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(io)?;
         ensure(
@@ -337,7 +433,7 @@ impl Store {
             canonical_json(&state) == json && digest(&state) == sha,
             "canonical state integrity failure",
         )?;
-        validate_state(&state, &self.bootstrap.grants)?;
+        self.validate_state(&state)?;
         let count: i64 = self
             .conn
             .query_row("SELECT count(*) FROM operation_admissions", [], |r| {
@@ -348,6 +444,20 @@ impl Store {
             count == records(&state, "operations")?.len() as i64,
             "operation admission count mismatch",
         )?;
+        if self.bootstrap.repository_id.is_some() {
+            let count: i64 = self
+                .conn
+                .query_row(
+                    "SELECT count(*) FROM repository_admission_bindings",
+                    [],
+                    |r| r.get(0),
+                )
+                .map_err(io)?;
+            ensure(
+                count == records(&state, "operations")?.len() as i64,
+                "repository admission count mismatch",
+            )?;
+        }
         for operation in records(&state, "operations")? {
             let id = text_field(operation, "operation_id")?;
             let binding:(String,String)=self.conn.query_row("SELECT admission_sha256,grant_sha256 FROM operation_admissions WHERE operation_id=?",[id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(io)?;
@@ -368,6 +478,48 @@ impl Store {
                         .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()),
                 "operation admission binding mismatch",
             )?;
+            if let Some(repository_id) = &self.bootstrap.repository_id {
+                let id = text_field(operation, "operation_id")?;
+                let (binding_json,request_json):(String,String)=self.conn.query_row("SELECT binding_json,request_json FROM repository_admission_bindings WHERE operation_id=?",[&id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(io)?;
+                let admission = parse_json(&binding_json)?;
+                let request = parse_json(&request_json)?;
+                exact_fields(
+                    &request,
+                    &[
+                        "schema_version",
+                        "operation_id",
+                        "action",
+                        "profile",
+                        "expected_state",
+                        "payload",
+                    ],
+                    "repository operation",
+                )?;
+                let expected = crate::repository::RepositoryAdmissionBinding {
+                    root_id: self.identity.root_id.clone(),
+                    repository_id: repository_id.clone(),
+                    operation_id: id,
+                    producer: text_field(grant, "actor")?,
+                    decision_scope: text_field(grant, "decision_scope")?,
+                    request_sha256: digest(&request),
+                    authority_ref_sha256: grant_digest(grant),
+                };
+                ensure(
+                    admission == expected.to_js_value()
+                        && canonical_json(&admission) == binding_json
+                        && canonical_json(&request) == request_json
+                        && digest(&admission) == binding.0
+                        && field(&request, "operation_id")? == field(operation, "operation_id")?
+                        && field(&request, "action")? == field(operation, "action")?
+                        && field(&request, "profile")?
+                            == &JsValue::text(crate::repository::REPOSITORY_FACT_PROFILE)
+                        && digest(&JsValue::object([
+                            ("operation", request),
+                            ("admitted_grant", grant.clone()),
+                        ])) == text_field(operation, "payload_sha256")?,
+                    "repository admission binding mismatch",
+                )?;
+            }
         }
         Ok((revision, state))
     }
@@ -402,7 +554,16 @@ pub(crate) fn state_json(state: &JsValue) -> ClaimResult<String> {
     Ok(json)
 }
 
-pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult<()> {
+fn validate_state_profile(
+    state: &JsValue,
+    grants: &[JsValue],
+    repository_id: Option<&str>,
+) -> ClaimResult<()> {
+    let profile = if repository_id.is_some() {
+        crate::repository_fact::REPOSITORY_FACT_PROFILE
+    } else {
+        crate::authority::FINDING_PROFILE
+    };
     exact_fields(
         state,
         &[
@@ -478,7 +639,7 @@ pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult
         )?;
         ensure(ids.insert(id.clone()), "duplicate claim identity")?;
         ensure(
-            text_field(claim, "profile")? == crate::authority::FINDING_PROFILE,
+            text_field(claim, "profile")? == profile,
             "claim profile mismatch",
         )?;
         let authority_ref = text_field(claim, "authority_ref")?;
@@ -527,7 +688,7 @@ pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult
             "revision producer mismatch",
         )?;
         ensure(
-            text_field(grant, "profile")? == crate::authority::FINDING_PROFILE,
+            text_field(grant, "profile")? == profile,
             "revision grant profile mismatch",
         )?;
         let mut payload = rev.as_object()?.clone();
@@ -541,10 +702,24 @@ pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult
         ] {
             payload.remove(&crate::codec::JsString::new(key));
         }
-        validate_revision_payload(
-            &JsValue::Object(payload),
-            &text_field(grant, "decision_scope")?,
-        )?;
+        if let Some(repository_id) = repository_id {
+            let claim = claims
+                .get(&claim_id)
+                .ok_or_else(|| ClaimError::new("revision claim absent"))?;
+            crate::repository_fact::validate_fact(
+                repository_id,
+                field(claim, "subject")?,
+                legacy_text_field(claim, "statement_identity")?,
+                &JsValue::Object(payload),
+                &text_field(grant, "decision_scope")?,
+                None,
+            )?;
+        } else {
+            validate_revision_payload(
+                &JsValue::Object(payload),
+                &text_field(grant, "decision_scope")?,
+            )?;
+        }
         revisions.insert(id, rev);
     }
     for rev in records(state, "revisions")? {
@@ -557,6 +732,19 @@ pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult
                 }),
                 "revision predecessor absent or crossed",
             )?;
+            if repository_id.is_some() {
+                let previous = revisions
+                    .get(&predecessor)
+                    .ok_or_else(|| ClaimError::new("predecessor absent"))?;
+                ensure(
+                    field(rev, "decision_scope")? == field(previous, "decision_scope")?,
+                    "repository predecessor decision scope mismatch",
+                )?;
+                ensure(
+                    field(rev, "profile_payload")? == field(previous, "profile_payload")?,
+                    "immutable assertion identity changed",
+                )?;
+            }
         } else {
             ensure(
                 field(rev, "predecessor_revision")? == &JsValue::Null,
@@ -693,7 +881,11 @@ pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult
         )?;
         if action == "record_reliance" {
             ensure(
-                sha == reliance_operation_digest(result, grant)?,
+                sha == reliance_operation_digest(
+                    result,
+                    grant,
+                    target_for_reliance(result, &revisions)?,
+                )?,
                 "reliance operation payload mismatch",
             )?;
         }
@@ -712,7 +904,11 @@ pub(crate) fn validate_state(state: &JsValue, grants: &[JsValue]) -> ClaimResult
     Ok(())
 }
 
-fn reliance_operation_digest(reliance: &JsValue, grant: &JsValue) -> ClaimResult<String> {
+fn reliance_operation_digest(
+    reliance: &JsValue,
+    grant: &JsValue,
+    target: &JsValue,
+) -> ClaimResult<String> {
     let payload = JsValue::object([
         ("consumer", field(reliance, "consumer")?.clone()),
         (
@@ -730,6 +926,16 @@ fn reliance_operation_digest(reliance: &JsValue, grant: &JsValue) -> ClaimResult
             field(reliance, "predecessor_reliance")?.clone(),
         ),
     ]);
+    let payload = if text_field(grant, "profile")? == crate::repository::REPOSITORY_FACT_PROFILE {
+        let mut fields = payload.as_object()?.clone();
+        fields.insert(
+            "claim_revision_sha256".into(),
+            JsValue::text(&digest(target)),
+        );
+        JsValue::Object(fields)
+    } else {
+        payload
+    };
     let operation = JsValue::object([
         ("schema_version", JsValue::Number(1.0)),
         ("operation_id", field(reliance, "operation_id")?.clone()),
@@ -744,10 +950,100 @@ fn reliance_operation_digest(reliance: &JsValue, grant: &JsValue) -> ClaimResult
     ])))
 }
 
+/// Conservative pre-open guard: no read may initiate recovery or touch WAL.
+pub(crate) fn repository_reader_preflight(path: &Path) -> ClaimResult<()> {
+    use std::io::Read;
+    for suffix in ["-wal", "-shm", "-journal"] {
+        ensure(
+            !PathBuf::from(format!("{}{suffix}", path.display()))
+                .try_exists()
+                .map_err(io)?,
+            "unsupported SQLite sidecar/recovery state",
+        )?;
+    }
+    let mut header = [0u8; 100];
+    fs::File::open(path)
+        .map_err(io)?
+        .read_exact(&mut header)
+        .map_err(io)?;
+    ensure(
+        &header[..16] == b"SQLite format 3\0" && header[18] == 1 && header[19] == 1,
+        "unsupported SQLite header/WAL profile",
+    )
+}
+
+fn target_for_reliance<'a>(
+    reliance: &JsValue,
+    revisions: &std::collections::HashMap<String, &'a JsValue>,
+) -> ClaimResult<&'a JsValue> {
+    revisions
+        .get(&text_field(reliance, "claim_revision_id")?)
+        .copied()
+        .ok_or_else(|| ClaimError::new("reliance target absent"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::state_json;
     use crate::codec::JsValue;
+
+    #[test]
+    fn stored_repository_chains_cannot_cross_decision_scopes() {
+        use super::{blank_state, records_mut, validate_state_profile};
+        use crate::codec::parse_json;
+        use crate::findings::{make_revision, stable_claim_id, text_field};
+        use serde_json::json;
+        let parsed = |value: serde_json::Value| parse_json(&value.to_string()).unwrap();
+        let reference = json!({"owner":"unit-issuer","reference":"unit-authority","revision":"1","integrity_sha256":"0".repeat(64),"freshness":"exact","status":"verified"});
+        let grants = ["a", "b"].map(|scope| parsed(json!({"schema_version":1,"grant_id":format!("grant-{scope}"),"actor":format!("producer-{scope}"),"profile":"repository-fact-v1","permissions":["create_claim","publish_revision"],"decision_scope":scope,"authority_reference":reference})));
+        let subject = parsed(
+            json!({"namespace":"repository-fact:repo","subject_kind":"repository_fact","stable_subject_id":"assertion","evidence_baseline":reference,"content_set":["src"]}),
+        );
+        let claim_id = stable_claim_id(&subject).unwrap();
+        let payload = |scope| {
+            parsed(
+                json!({"proposition":"bounded assertion","support_qualification":"unit judgment","assumptions":[],"limitations":[],"confidence":{},"evidence_references":[],"sensitivity_references":[],"evidence_mode":"unit","judgment_kind":"fact","decision_scope":scope,"profile_payload":{"repository_id":"repo","assertion_key":"assertion","assertion_scope":"fixed assertion"},"reopening_conditions":[],"tombstone":false}),
+            )
+        };
+        let first = make_revision(&claim_id, None, &payload("a"), "producer-a", "grant-a").unwrap();
+        let predecessor = crate::FindingRevisionId::new(text_field(&first, "id").unwrap()).unwrap();
+        for scope in ["a", "b"] {
+            let mut state = blank_state(&grants);
+            records_mut(&mut state, "claims")
+                .unwrap()
+                .push(JsValue::object([
+                    ("id", JsValue::text(claim_id.as_str())),
+                    ("schema_version", JsValue::Number(1.0)),
+                    ("profile", JsValue::text("repository-fact-v1")),
+                    ("subject", subject.clone()),
+                    ("statement_identity", JsValue::text("assertion")),
+                    ("created_by", JsValue::text("producer-a")),
+                    ("authority_ref", JsValue::text("grant-a")),
+                ]));
+            records_mut(&mut state, "revisions")
+                .unwrap()
+                .push(first.clone());
+            records_mut(&mut state, "revisions").unwrap().push(
+                make_revision(
+                    &claim_id,
+                    Some(&predecessor),
+                    &payload(scope),
+                    &format!("producer-{scope}"),
+                    &format!("grant-{scope}"),
+                )
+                .unwrap(),
+            );
+            let result = validate_state_profile(&state, &grants, Some("repo"));
+            if scope == "a" {
+                result.unwrap();
+            } else {
+                assert_eq!(
+                    result.unwrap_err().message,
+                    "repository predecessor decision scope mismatch"
+                );
+            }
+        }
+    }
 
     #[test]
     fn final_state_must_be_readable_by_the_same_codec() {

@@ -1,0 +1,10 @@
+BEGIN EXCLUSIVE;
+CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, name TEXT NOT NULL) STRICT;
+INSERT INTO schema_migrations VALUES(3,'repository-claims-sqlite-delete-v1');
+CREATE TABLE root_binding(singleton INTEGER PRIMARY KEY CHECK(singleton=1), marker_sha256 TEXT NOT NULL, database_dev TEXT NOT NULL, database_ino TEXT NOT NULL, schema_sha256 TEXT NOT NULL) STRICT;
+CREATE TABLE canonical_claim_state(singleton INTEGER PRIMARY KEY CHECK(singleton=1), store_revision INTEGER NOT NULL CHECK(store_revision>0), store_sha256 TEXT NOT NULL, store_json TEXT NOT NULL) STRICT;
+CREATE TABLE operation_admissions(operation_id TEXT PRIMARY KEY, admission_sha256 TEXT NOT NULL, grant_sha256 TEXT NOT NULL) STRICT;
+CREATE TABLE repository_admission_bindings(operation_id TEXT PRIMARY KEY REFERENCES operation_admissions(operation_id), binding_json TEXT NOT NULL, request_json TEXT NOT NULL) STRICT;
+CREATE TABLE repository_attempts(operation_id TEXT PRIMARY KEY, locator_json TEXT NOT NULL, status TEXT NOT NULL, detail TEXT NOT NULL) STRICT;
+CREATE TABLE repository_attempt_events(sequence INTEGER PRIMARY KEY, operation_id TEXT NOT NULL, locator_json TEXT NOT NULL, status TEXT NOT NULL, detail TEXT NOT NULL) STRICT;
+PRAGMA user_version=3;

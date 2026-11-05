@@ -13,7 +13,7 @@ use crate::reliance::{
     ExactFindingRevisionRef, ExactRelianceRef, RelianceCommand, RelianceId, ReliancePublication,
     RelianceReceipt, RelianceReconciliation,
 };
-use crate::store::{Store, records, records_mut, state_json, validate_state};
+use crate::store::{Store, records, records_mut, state_json};
 use rusqlite::{OptionalExtension, params};
 const MAX_REQUEST_BYTES: usize = 1024 * 1024;
 
@@ -199,7 +199,13 @@ impl<P: FindingAdmissionPort> ClaimsApplication<P> {
                 "claims begin transaction: {e}"
             ))));
         }
-        let result = self.publish_inside(&command, &grant, &operation, &locator);
+        let result = self.store.publish_inside(
+            &command.mutation,
+            &command.operation_id,
+            &command.grant_id,
+            &grant,
+            &locator,
+        );
         match result {
             Ok((publication, _changed)) => {
                 crate::fault_cut("before_commit");
@@ -246,179 +252,6 @@ impl<P: FindingAdmissionPort> ClaimsApplication<P> {
             .find(|g| text_field(g, "grant_id").ok().as_deref() == Some(id))
             .cloned()
             .ok_or_else(|| ClaimError::new("grant is not registered"))
-    }
-
-    fn publish_inside(
-        &self,
-        command: &FindingCommand,
-        grant: &JsValue,
-        _operation: &JsValue,
-        locator: &OperationLocator,
-    ) -> ClaimResult<(Publication, bool)> {
-        let (revision, mut state) = self.store.read_state()?;
-        ensure(
-            text_field(grant, "profile")? == FINDING_PROFILE,
-            "grant profile mismatch",
-        )?;
-        ensure(
-            crate::findings::array(field(grant, "permissions")?, "permissions")?
-                .iter()
-                .any(|v| v == &JsValue::text(locator.action)),
-            "grant permission mismatch",
-        )?;
-        let prior = records(&state, "operations")?
-            .iter()
-            .find(|op| {
-                text_field(op, "operation_id").ok().as_deref()
-                    == Some(command.operation_id.as_str())
-            })
-            .cloned();
-        if let Some(prior) = prior {
-            ensure(
-                text_field(&prior, "action")? == locator.action
-                    && text_field(&prior, "payload_sha256")? == locator.payload_sha256
-                    && text_field(&prior, "authority_ref")? == command.grant_id,
-                "operation identity conflict",
-            )?;
-            let binding:(String,String)=self.store.conn.query_row("SELECT admission_sha256,grant_sha256 FROM operation_admissions WHERE operation_id=?",[command.operation_id.as_str()],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|ClaimError::new(format!("admission record absent: {e}")))?;
-            ensure(
-                binding
-                    == (
-                        locator.admission_sha256.clone(),
-                        locator.grant_sha256.clone(),
-                    ),
-                "operation admission identity conflict",
-            )?;
-            let id = FindingRevisionId::new(text_field(&prior, "result_identity")?)?;
-            let record = records(&state, "revisions")?
-                .iter()
-                .find(|r| text_field(r, "id").ok().as_deref() == Some(id.as_str()))
-                .ok_or_else(|| ClaimError::new("receipt result absent"))?;
-            let claim_id = ClaimId::new(text_field(record, "claim_id")?)?;
-            return Ok((
-                Publication::Replayed(FindingReceipt {
-                    claim_id,
-                    revision_id: id,
-                    revision_sha256: digest(record),
-                    locator: locator.clone(),
-                }),
-                false,
-            ));
-        }
-        let scope = text_field(grant, "decision_scope")?;
-        let actor = text_field(grant, "actor")?;
-        let (claim_id, record) = match &command.mutation {
-            FindingMutation::Create {
-                subject,
-                statement_identity,
-                initial_revision,
-            } => {
-                ensure(!statement_identity.0.is_empty(), "statement identity empty")?;
-                let claim_id = stable_claim_id(subject)?;
-                ensure(
-                    !records(&state, "claims")?
-                        .iter()
-                        .any(|c| text_field(c, "id").ok().as_deref() == Some(claim_id.as_str())),
-                    "claim already exists",
-                )?;
-                validate_revision_payload(initial_revision, &scope)?;
-                let claim = JsValue::object([
-                    ("id", JsValue::text(claim_id.as_str())),
-                    ("schema_version", JsValue::Number(1.0)),
-                    ("profile", JsValue::text(FINDING_PROFILE)),
-                    ("subject", subject.clone()),
-                    (
-                        "statement_identity",
-                        JsValue::String(statement_identity.clone()),
-                    ),
-                    ("created_by", JsValue::text(&actor)),
-                    ("authority_ref", JsValue::text(&command.grant_id)),
-                ]);
-                let record =
-                    make_revision(&claim_id, None, initial_revision, &actor, &command.grant_id)?;
-                records_mut(&mut state, "claims")?.push(claim);
-                (claim_id, record)
-            }
-            FindingMutation::Revise {
-                claim_id,
-                predecessor,
-                revision,
-            } => {
-                ensure(
-                    records(&state, "claims")?
-                        .iter()
-                        .any(|c| text_field(c, "id").ok().as_deref() == Some(claim_id.as_str())),
-                    "claim absent",
-                )?;
-                let predecessor_record = records(&state, "revisions")?
-                    .iter()
-                    .find(|r| text_field(r, "id").ok().as_deref() == Some(predecessor.as_str()));
-                ensure(
-                    predecessor_record.is_some_and(|r| {
-                        text_field(r, "claim_id").ok().as_deref() == Some(claim_id.as_str())
-                    }),
-                    "predecessor absent",
-                )?;
-                ensure(
-                    !records(&state, "revisions")?.iter().any(|r| {
-                        text_field(r, "predecessor_revision").ok().as_deref()
-                            == Some(predecessor.as_str())
-                    }),
-                    "conflicting predecessor",
-                )?;
-                validate_revision_payload(revision, &scope)?;
-                (
-                    claim_id.clone(),
-                    make_revision(
-                        claim_id,
-                        Some(predecessor),
-                        revision,
-                        &actor,
-                        &command.grant_id,
-                    )?,
-                )
-            }
-        };
-        let id = FindingRevisionId::new(text_field(&record, "id")?)?;
-        ensure(
-            !records(&state, "revisions")?
-                .iter()
-                .any(|r| text_field(r, "id").ok().as_deref() == Some(id.as_str())),
-            "revision identity reused",
-        )?;
-        let sha = digest(&record);
-        records_mut(&mut state, "revisions")?.push(record);
-        records_mut(&mut state, "operations")?.push(JsValue::object([
-            ("operation_id", JsValue::text(command.operation_id.as_str())),
-            ("action", JsValue::text(locator.action)),
-            ("payload_sha256", JsValue::text(&locator.payload_sha256)),
-            ("result_identity", JsValue::text(id.as_str())),
-            ("authority_ref", JsValue::text(&command.grant_id)),
-        ]));
-        validate_state(&state, &self.store.bootstrap.grants)?;
-        let json = state_json(&state)?;
-        self.store
-            .conn
-            .execute(
-                "INSERT INTO operation_admissions VALUES(?,?,?)",
-                params![
-                    command.operation_id.as_str(),
-                    locator.admission_sha256,
-                    locator.grant_sha256
-                ],
-            )
-            .map_err(|e| ClaimError::new(format!("admission insert: {e}")))?;
-        let changed=self.store.conn.execute("UPDATE canonical_claim_state SET store_revision=?,store_sha256=?,store_json=? WHERE singleton=1 AND store_revision=?",params![revision+1,digest(&state),json,revision]).map_err(|e|ClaimError::new(format!("state CAS: {e}")))?;
-        ensure(changed == 1, "state revision changed")?;
-        Ok((
-            Publication::Applied(FindingReceipt {
-                claim_id,
-                revision_id: id,
-                revision_sha256: sha,
-                locator: locator.clone(),
-            }),
-            true,
-        ))
     }
 
     pub fn reconcile(&self, locator: &OperationLocator) -> Reconciliation {
@@ -662,7 +495,9 @@ impl<P: FindingAdmissionPort> ClaimsApplication<P> {
             .map_err(|e| {
                 WriteError::NoEffect(ClaimError::new(format!("claims begin transaction: {e}")))
             })?;
-        let result = self.record_reliance_inside(&command, &grant, &locator);
+        let result =
+            self.store
+                .record_reliance_inside(&RelianceInput::from(&command), &grant, &locator);
         match result {
             Ok(publication) => {
                 crate::fault_cut("before_reliance_commit");
@@ -701,123 +536,6 @@ impl<P: FindingAdmissionPort> ClaimsApplication<P> {
                 }
             }
         }
-    }
-
-    fn record_reliance_inside(
-        &self,
-        command: &RelianceCommand,
-        grant: &JsValue,
-        locator: &OperationLocator,
-    ) -> ClaimResult<ReliancePublication> {
-        let (state_revision, mut state) = self.store.read_state()?;
-        ensure(
-            text_field(grant, "profile")? == FINDING_PROFILE
-                && text_field(grant, "decision_scope")? == command.decision_scope
-                && crate::findings::array(field(grant, "permissions")?, "permissions")?
-                    .contains(&JsValue::text("record_reliance")),
-            "reliance grant profile, scope or permission mismatch",
-        )?;
-        let claim = records(&state, "claims")?
-            .iter()
-            .find(|c| text_field(c, "id").ok().as_deref() == Some(command.claim_id.as_str()))
-            .ok_or_else(|| ClaimError::new("reliance claim absent"))?;
-        ensure(
-            text_field(claim, "profile")? == FINDING_PROFILE,
-            "reliance claim profile mismatch",
-        )?;
-        let revision = records(&state, "revisions")?
-            .iter()
-            .find(|r| text_field(r, "id").ok().as_deref() == Some(command.revision_id.as_str()))
-            .ok_or_else(|| ClaimError::new("reliance revision absent"))?;
-        ensure(
-            text_field(revision, "claim_id")? == command.claim_id.as_str()
-                && text_field(revision, "decision_scope")? == command.decision_scope,
-            "reliance revision claim or scope mismatch",
-        )?;
-        if let Some(prior) = records(&state, "operations")?.iter().find(|op| {
-            text_field(op, "operation_id").ok().as_deref() == Some(command.operation_id.as_str())
-        }) {
-            ensure(
-                text_field(prior, "action")? == "record_reliance"
-                    && text_field(prior, "payload_sha256")? == locator.payload_sha256
-                    && text_field(prior, "authority_ref")? == command.grant_id,
-                "operation identity conflict",
-            )?;
-            let binding:(String,String)=self.store.conn.query_row("SELECT admission_sha256,grant_sha256 FROM operation_admissions WHERE operation_id=?",[command.operation_id.as_str()],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|ClaimError::new(format!("admission record absent: {e}")))?;
-            ensure(
-                binding
-                    == (
-                        locator.admission_sha256.clone(),
-                        locator.grant_sha256.clone(),
-                    ),
-                "operation admission identity conflict",
-            )?;
-            return Ok(ReliancePublication::Replayed(reliance_receipt(
-                &state, prior, locator,
-            )?));
-        }
-        ensure(
-            !records(&state, "revisions")?.iter().any(|r| {
-                text_field(r, "predecessor_revision").ok().as_deref()
-                    == Some(command.revision_id.as_str())
-            }),
-            "reliance revision is not current",
-        )?;
-        let without_id = JsValue::object([
-            ("schema_version", JsValue::Number(1.0)),
-            ("consumer", JsValue::text(&command.consumer)),
-            (
-                "consumer_revision",
-                JsValue::text(&command.consumer_revision),
-            ),
-            ("decision_scope", JsValue::text(&command.decision_scope)),
-            (
-                "claim_revision_id",
-                JsValue::text(command.revision_id.as_str()),
-            ),
-            ("state", JsValue::text("active")),
-            ("predecessor_reliance", JsValue::Null),
-            ("authority_ref", JsValue::text(&command.grant_id)),
-            ("operation_id", JsValue::text(command.operation_id.as_str())),
-        ]);
-        let id = RelianceId::new(format!("reliance@{}", digest(&without_id)))?;
-        ensure(
-            !records(&state, "reliances")?
-                .iter()
-                .any(|r| text_field(r, "id").ok().as_deref() == Some(id.as_str())),
-            "reliance identity reused",
-        )?;
-        let mut fields = without_id.as_object()?.clone();
-        fields.insert("id".into(), JsValue::text(id.as_str()));
-        records_mut(&mut state, "reliances")?.push(JsValue::Object(fields));
-        records_mut(&mut state, "operations")?.push(JsValue::object([
-            ("operation_id", JsValue::text(command.operation_id.as_str())),
-            ("action", JsValue::text("record_reliance")),
-            ("payload_sha256", JsValue::text(&locator.payload_sha256)),
-            ("result_identity", JsValue::text(id.as_str())),
-            ("authority_ref", JsValue::text(&command.grant_id)),
-        ]));
-        validate_state(&state, &self.store.bootstrap.grants)?;
-        let json = state_json(&state)?;
-        self.store
-            .conn
-            .execute(
-                "INSERT INTO operation_admissions VALUES(?,?,?)",
-                params![
-                    command.operation_id.as_str(),
-                    locator.admission_sha256,
-                    locator.grant_sha256
-                ],
-            )
-            .map_err(|e| ClaimError::new(format!("admission insert: {e}")))?;
-        let changed=self.store.conn.execute("UPDATE canonical_claim_state SET store_revision=?,store_sha256=?,store_json=? WHERE singleton=1 AND store_revision=?",params![state_revision+1,digest(&state),json,state_revision]).map_err(|e|ClaimError::new(format!("state CAS: {e}")))?;
-        ensure(changed == 1, "state revision changed")?;
-        let prior = records(&state, "operations")?
-            .last()
-            .expect("just appended");
-        Ok(ReliancePublication::Applied(reliance_receipt(
-            &state, prior, locator,
-        )?))
     }
 
     pub fn reconcile_reliance(&self, locator: &OperationLocator) -> RelianceReconciliation {
@@ -859,7 +577,7 @@ impl<P: FindingAdmissionPort> ClaimsApplication<P> {
     }
 }
 
-fn reliance_receipt(
+pub(crate) fn reliance_receipt(
     state: &JsValue,
     operation: &JsValue,
     locator: &OperationLocator,
@@ -889,4 +607,338 @@ fn reliance_receipt(
         },
         locator: locator.clone(),
     })
+}
+
+// Shared mutation engine has no campaign/reviewer admission vocabulary.
+// Each public facade checks and retains its own admission before entering it.
+pub(crate) struct RelianceInput<'a> {
+    pub operation_id: &'a crate::OperationId,
+    pub grant_id: &'a str,
+    pub claim_id: &'a ClaimId,
+    pub revision_id: &'a FindingRevisionId,
+    pub consumer: &'a str,
+    pub consumer_revision: &'a str,
+    pub decision_scope: &'a str,
+}
+impl<'a> From<&'a RelianceCommand> for RelianceInput<'a> {
+    fn from(c: &'a RelianceCommand) -> Self {
+        Self {
+            operation_id: &c.operation_id,
+            grant_id: &c.grant_id,
+            claim_id: &c.claim_id,
+            revision_id: &c.revision_id,
+            consumer: &c.consumer,
+            consumer_revision: &c.consumer_revision,
+            decision_scope: &c.decision_scope,
+        }
+    }
+}
+impl Store {
+    pub(crate) fn publish_inside(
+        &self,
+        mutation: &FindingMutation,
+        operation_id: &crate::OperationId,
+        grant_id: &str,
+        grant: &JsValue,
+        locator: &OperationLocator,
+    ) -> ClaimResult<(Publication, bool)> {
+        let (revision, mut state) = self.read_state()?;
+        ensure(
+            text_field(grant, "profile")? == self.claim_profile(),
+            "grant profile mismatch",
+        )?;
+        ensure(
+            crate::findings::array(field(grant, "permissions")?, "permissions")?
+                .iter()
+                .any(|v| v == &JsValue::text(locator.action)),
+            "grant permission mismatch",
+        )?;
+        let prior = records(&state, "operations")?
+            .iter()
+            .find(|op| {
+                text_field(op, "operation_id").ok().as_deref() == Some(operation_id.as_str())
+            })
+            .cloned();
+        if let Some(prior) = prior {
+            ensure(
+                text_field(&prior, "action")? == locator.action
+                    && text_field(&prior, "payload_sha256")? == locator.payload_sha256
+                    && text_field(&prior, "authority_ref")? == grant_id,
+                "operation identity conflict",
+            )?;
+            let binding:(String,String)=self.conn.query_row("SELECT admission_sha256,grant_sha256 FROM operation_admissions WHERE operation_id=?",[operation_id.as_str()],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|ClaimError::new(format!("admission record absent: {e}")))?;
+            ensure(
+                binding
+                    == (
+                        locator.admission_sha256.clone(),
+                        locator.grant_sha256.clone(),
+                    ),
+                "operation admission identity conflict",
+            )?;
+            let id = FindingRevisionId::new(text_field(&prior, "result_identity")?)?;
+            let record = records(&state, "revisions")?
+                .iter()
+                .find(|r| text_field(r, "id").ok().as_deref() == Some(id.as_str()))
+                .ok_or_else(|| ClaimError::new("receipt result absent"))?;
+            let claim_id = ClaimId::new(text_field(record, "claim_id")?)?;
+            return Ok((
+                Publication::Replayed(FindingReceipt {
+                    claim_id,
+                    revision_id: id,
+                    revision_sha256: digest(record),
+                    locator: locator.clone(),
+                }),
+                false,
+            ));
+        }
+        let scope = text_field(grant, "decision_scope")?;
+        let actor = text_field(grant, "actor")?;
+        let (claim_id, record) = match mutation {
+            FindingMutation::Create {
+                subject,
+                statement_identity,
+                initial_revision,
+            } => {
+                ensure(!statement_identity.0.is_empty(), "statement identity empty")?;
+                let claim_id = stable_claim_id(subject)?;
+                ensure(
+                    !records(&state, "claims")?
+                        .iter()
+                        .any(|c| text_field(c, "id").ok().as_deref() == Some(claim_id.as_str())),
+                    "claim already exists",
+                )?;
+                if let Some(repository) = &self.bootstrap.repository_id {
+                    crate::repository_fact::validate_fact(
+                        repository,
+                        subject,
+                        statement_identity,
+                        initial_revision,
+                        &scope,
+                        None,
+                    )?;
+                } else {
+                    validate_revision_payload(initial_revision, &scope)?;
+                }
+                let claim = JsValue::object([
+                    ("id", JsValue::text(claim_id.as_str())),
+                    ("schema_version", JsValue::Number(1.0)),
+                    ("profile", JsValue::text(self.claim_profile())),
+                    ("subject", subject.clone()),
+                    (
+                        "statement_identity",
+                        JsValue::String(statement_identity.clone()),
+                    ),
+                    ("created_by", JsValue::text(&actor)),
+                    ("authority_ref", JsValue::text(grant_id)),
+                ]);
+                let record = make_revision(&claim_id, None, initial_revision, &actor, grant_id)?;
+                records_mut(&mut state, "claims")?.push(claim);
+                (claim_id, record)
+            }
+            FindingMutation::Revise {
+                claim_id,
+                predecessor,
+                revision,
+            } => {
+                ensure(
+                    records(&state, "claims")?
+                        .iter()
+                        .any(|c| text_field(c, "id").ok().as_deref() == Some(claim_id.as_str())),
+                    "claim absent",
+                )?;
+                let predecessor_record = records(&state, "revisions")?
+                    .iter()
+                    .find(|r| text_field(r, "id").ok().as_deref() == Some(predecessor.as_str()));
+                ensure(
+                    predecessor_record.is_some_and(|r| {
+                        text_field(r, "claim_id").ok().as_deref() == Some(claim_id.as_str())
+                    }),
+                    "predecessor absent",
+                )?;
+                ensure(
+                    !records(&state, "revisions")?.iter().any(|r| {
+                        text_field(r, "predecessor_revision").ok().as_deref()
+                            == Some(predecessor.as_str())
+                    }),
+                    "conflicting predecessor",
+                )?;
+                if let Some(repository) = &self.bootstrap.repository_id {
+                    let claim = records(&state, "claims")?
+                        .iter()
+                        .find(|c| text_field(c, "id").ok().as_deref() == Some(claim_id.as_str()))
+                        .ok_or_else(|| ClaimError::new("claim absent"))?;
+                    crate::repository_fact::validate_fact(
+                        repository,
+                        field(claim, "subject")?,
+                        field(claim, "statement_identity")?.as_text()?,
+                        revision,
+                        &scope,
+                        predecessor_record,
+                    )?;
+                } else {
+                    validate_revision_payload(revision, &scope)?;
+                }
+                (
+                    claim_id.clone(),
+                    make_revision(claim_id, Some(predecessor), revision, &actor, grant_id)?,
+                )
+            }
+        };
+        let id = FindingRevisionId::new(text_field(&record, "id")?)?;
+        ensure(
+            !records(&state, "revisions")?
+                .iter()
+                .any(|r| text_field(r, "id").ok().as_deref() == Some(id.as_str())),
+            "revision identity reused",
+        )?;
+        let sha = digest(&record);
+        records_mut(&mut state, "revisions")?.push(record);
+        records_mut(&mut state, "operations")?.push(JsValue::object([
+            ("operation_id", JsValue::text(operation_id.as_str())),
+            ("action", JsValue::text(locator.action)),
+            ("payload_sha256", JsValue::text(&locator.payload_sha256)),
+            ("result_identity", JsValue::text(id.as_str())),
+            ("authority_ref", JsValue::text(grant_id)),
+        ]));
+        self.validate_state(&state)?;
+        let json = state_json(&state)?;
+        self.conn
+            .execute(
+                "INSERT INTO operation_admissions VALUES(?,?,?)",
+                params![
+                    operation_id.as_str(),
+                    locator.admission_sha256,
+                    locator.grant_sha256
+                ],
+            )
+            .map_err(|e| ClaimError::new(format!("admission insert: {e}")))?;
+        let changed=self.conn.execute("UPDATE canonical_claim_state SET store_revision=?,store_sha256=?,store_json=? WHERE singleton=1 AND store_revision=?",params![revision+1,digest(&state),json,revision]).map_err(|e|ClaimError::new(format!("state CAS: {e}")))?;
+        ensure(changed == 1, "state revision changed")?;
+        Ok((
+            Publication::Applied(FindingReceipt {
+                claim_id,
+                revision_id: id,
+                revision_sha256: sha,
+                locator: locator.clone(),
+            }),
+            true,
+        ))
+    }
+
+    pub(crate) fn record_reliance_inside(
+        &self,
+        command: &RelianceInput<'_>,
+        grant: &JsValue,
+        locator: &OperationLocator,
+    ) -> ClaimResult<ReliancePublication> {
+        let (state_revision, mut state) = self.read_state()?;
+        ensure(
+            text_field(grant, "profile")? == self.claim_profile()
+                && text_field(grant, "decision_scope")? == command.decision_scope
+                && crate::findings::array(field(grant, "permissions")?, "permissions")?
+                    .contains(&JsValue::text("record_reliance")),
+            "reliance grant profile, scope or permission mismatch",
+        )?;
+        let claim = records(&state, "claims")?
+            .iter()
+            .find(|c| text_field(c, "id").ok().as_deref() == Some(command.claim_id.as_str()))
+            .ok_or_else(|| ClaimError::new("reliance claim absent"))?;
+        ensure(
+            text_field(claim, "profile")? == self.claim_profile(),
+            "reliance claim profile mismatch",
+        )?;
+        let revision = records(&state, "revisions")?
+            .iter()
+            .find(|r| text_field(r, "id").ok().as_deref() == Some(command.revision_id.as_str()))
+            .ok_or_else(|| ClaimError::new("reliance revision absent"))?;
+        ensure(
+            text_field(revision, "claim_id")? == command.claim_id.as_str()
+                && text_field(revision, "decision_scope")? == command.decision_scope,
+            "reliance revision claim or scope mismatch",
+        )?;
+        if let Some(prior) = records(&state, "operations")?.iter().find(|op| {
+            text_field(op, "operation_id").ok().as_deref() == Some(command.operation_id.as_str())
+        }) {
+            ensure(
+                text_field(prior, "action")? == "record_reliance"
+                    && text_field(prior, "payload_sha256")? == locator.payload_sha256
+                    && text_field(prior, "authority_ref")? == command.grant_id,
+                "operation identity conflict",
+            )?;
+            let binding:(String,String)=self.conn.query_row("SELECT admission_sha256,grant_sha256 FROM operation_admissions WHERE operation_id=?",[command.operation_id.as_str()],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|ClaimError::new(format!("admission record absent: {e}")))?;
+            ensure(
+                binding
+                    == (
+                        locator.admission_sha256.clone(),
+                        locator.grant_sha256.clone(),
+                    ),
+                "operation admission identity conflict",
+            )?;
+            return Ok(ReliancePublication::Replayed(reliance_receipt(
+                &state, prior, locator,
+            )?));
+        }
+        ensure(
+            self.bootstrap.repository_id.is_some()
+                || !records(&state, "revisions")?.iter().any(|r| {
+                    text_field(r, "predecessor_revision").ok().as_deref()
+                        == Some(command.revision_id.as_str())
+                }),
+            "reliance revision is not current",
+        )?;
+        let without_id = JsValue::object([
+            ("schema_version", JsValue::Number(1.0)),
+            ("consumer", JsValue::text(command.consumer)),
+            (
+                "consumer_revision",
+                JsValue::text(command.consumer_revision),
+            ),
+            ("decision_scope", JsValue::text(command.decision_scope)),
+            (
+                "claim_revision_id",
+                JsValue::text(command.revision_id.as_str()),
+            ),
+            ("state", JsValue::text("active")),
+            ("predecessor_reliance", JsValue::Null),
+            ("authority_ref", JsValue::text(command.grant_id)),
+            ("operation_id", JsValue::text(command.operation_id.as_str())),
+        ]);
+        let id = RelianceId::new(format!("reliance@{}", digest(&without_id)))?;
+        ensure(
+            !records(&state, "reliances")?
+                .iter()
+                .any(|r| text_field(r, "id").ok().as_deref() == Some(id.as_str())),
+            "reliance identity reused",
+        )?;
+        let mut fields = without_id.as_object()?.clone();
+        fields.insert("id".into(), JsValue::text(id.as_str()));
+        records_mut(&mut state, "reliances")?.push(JsValue::Object(fields));
+        records_mut(&mut state, "operations")?.push(JsValue::object([
+            ("operation_id", JsValue::text(command.operation_id.as_str())),
+            ("action", JsValue::text("record_reliance")),
+            ("payload_sha256", JsValue::text(&locator.payload_sha256)),
+            ("result_identity", JsValue::text(id.as_str())),
+            ("authority_ref", JsValue::text(command.grant_id)),
+        ]));
+        self.validate_state(&state)?;
+        let json = state_json(&state)?;
+        self.conn
+            .execute(
+                "INSERT INTO operation_admissions VALUES(?,?,?)",
+                params![
+                    command.operation_id.as_str(),
+                    locator.admission_sha256,
+                    locator.grant_sha256
+                ],
+            )
+            .map_err(|e| ClaimError::new(format!("admission insert: {e}")))?;
+        let changed=self.conn.execute("UPDATE canonical_claim_state SET store_revision=?,store_sha256=?,store_json=? WHERE singleton=1 AND store_revision=?",params![state_revision+1,digest(&state),json,state_revision]).map_err(|e|ClaimError::new(format!("state CAS: {e}")))?;
+        ensure(changed == 1, "state revision changed")?;
+        let prior = records(&state, "operations")?
+            .last()
+            .expect("just appended");
+        Ok(ReliancePublication::Applied(reliance_receipt(
+            &state, prior, locator,
+        )?))
+    }
 }
