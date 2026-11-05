@@ -19,6 +19,63 @@ where
     Option::<T>::deserialize(deserializer)
 }
 
+// Serde derive also accepts a positional array for a struct. The schema defines these projections
+// as JSON objects, so every adapter-owned object is read through this map-only entry point.
+fn object<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    struct MapOnly<T>(std::marker::PhantomData<T>);
+    impl<'de, T: Deserialize<'de>> serde::de::Visitor<'de> for MapOnly<T> {
+        type Value = T;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a JSON object")
+        }
+        fn visit_map<A: serde::de::MapAccess<'de>>(self, map: A) -> Result<T, A::Error> {
+            T::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+        }
+    }
+    deserializer.deserialize_map(MapOnly(std::marker::PhantomData))
+}
+
+// Serde derive also accepts `{"variant": null}` for a unit variant. The schema defines these as
+// plain strings, so each adapter-owned enum is a string-only match over its wire names.
+macro_rules! string_enum {
+    ($name:ident { $($variant:ident => $wire:literal),+ $(,)? }) => {
+        enum $name {
+            $($variant),+
+        }
+        impl<'de> Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+                struct V;
+                impl serde::de::Visitor<'_> for V {
+                    type Value = $name;
+                    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        f.write_str(concat!("one of the strings ", $($wire, " "),+))
+                    }
+                    fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<$name, E> {
+                        match v {
+                            $($wire => Ok($name::$variant),)+
+                            _ => Err(E::unknown_variant(v, &[$($wire),+])),
+                        }
+                    }
+                }
+                d.deserialize_str(V)
+            }
+        }
+    };
+}
+
+// An optional key: it may be absent, but when present its value must not be null.
+fn present<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
+
 fn hex64(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
@@ -49,11 +106,9 @@ struct Cleanup {
     reconcile: Option<Cleaned>,
 }
 
-#[derive(Deserialize)]
-enum NotEstablished {
-    #[serde(rename = "not_established")]
-    NotEstablished,
-}
+string_enum!(NotEstablished {
+    NotEstablished => "not_established",
+});
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum ObservedBool {
@@ -72,25 +127,21 @@ enum ObservedFailures {
     Value(Vec<String>),
     Unknown(NotEstablished),
 }
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum TerminalStatus {
-    ComponentPassed,
-    ComponentFailed,
-    NotEstablished,
-}
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum HostPhase {
-    Admitted,
-    CreateUnknown,
-    Created,
-    StartUnknown,
-    Running,
-    Collecting,
-    Collected,
-    NotEstablished,
-}
+string_enum!(TerminalStatus {
+    ComponentPassed => "component_passed",
+    ComponentFailed => "component_failed",
+    NotEstablished => "not_established",
+});
+string_enum!(HostPhase {
+    Admitted => "admitted",
+    CreateUnknown => "create_unknown",
+    Created => "created",
+    StartUnknown => "start_unknown",
+    Running => "running",
+    Collecting => "collecting",
+    Collected => "collected",
+    NotEstablished => "not_established",
+});
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Terminal {
@@ -110,36 +161,28 @@ struct ResultCleanup {
     removed: ObservedBool,
     daemon_exit: ObservedExit,
     tool_removed: ObservedBool,
+    #[serde(deserialize_with = "object")]
     collector: Cleanup,
 }
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum Cleaned {
-    OwnedProcessGroupCollected,
-    NotEstablished,
-}
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum State {
-    BoundNotEntered,
-    Collecting,
-    Reconciling,
-    Collected,
-    EntryUncertain,
-    HostStateUnreadable,
-}
-#[derive(Deserialize)]
-enum Entry {
-    #[serde(rename = "collector_started")]
-    Started,
-    #[serde(rename = "existing_operation")]
-    Existing,
-}
-#[derive(Deserialize)]
-enum Settlement {
-    #[serde(rename = "not_established_by_submission")]
-    NotEstablished,
-}
+string_enum!(Cleaned {
+    OwnedProcessGroupCollected => "owned_process_group_collected",
+    NotEstablished => "not_established",
+});
+string_enum!(State {
+    BoundNotEntered => "bound_not_entered",
+    Collecting => "collecting",
+    Reconciling => "reconciling",
+    Collected => "collected",
+    EntryUncertain => "entry_uncertain",
+    HostStateUnreadable => "host_state_unreadable",
+});
+string_enum!(Entry {
+    Started => "collector_started",
+    Existing => "existing_operation",
+});
+string_enum!(Settlement {
+    NotEstablished => "not_established_by_submission",
+});
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -167,10 +210,12 @@ struct Operation {
     collector_run: Option<serde_json::Map<String, Value>>,
     #[serde(deserialize_with = "required_nullable")]
     collector_reconcile: Option<serde_json::Map<String, Value>>,
+    #[serde(deserialize_with = "object")]
     process_cleanup: Cleanup,
     limitations: Vec<String>,
     settlement: Settlement,
-    /// Present on submission only.
+    /// Present on submission only; absent otherwise, never null.
+    #[serde(default, deserialize_with = "present")]
     entry: Option<Entry>,
 }
 
@@ -215,30 +260,25 @@ struct Cancel {
     settlement: NotClaimed,
     next: String,
 }
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum Cancellation {
-    Requested,
-    RequestNotRecorded,
-}
-#[derive(Deserialize)]
-enum NotClaimed {
-    #[serde(rename = "not_claimed")]
-    NotClaimed,
-}
+string_enum!(Cancellation {
+    Requested => "requested",
+    RequestNotRecorded => "request_not_recorded",
+});
+string_enum!(NotClaimed {
+    NotClaimed => "not_claimed",
+});
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Unavailable {
     schema: String,
     result: Availability,
+    #[serde(deserialize_with = "object")]
     operation: Operation,
 }
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum Availability {
-    NotAvailable,
-}
+string_enum!(Availability {
+    NotAvailable => "not_available",
+});
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct HostOutput {
@@ -246,31 +286,32 @@ struct HostOutput {
     exit_code: ObservedExit,
     note: String,
 }
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum HostAction {
-    Run,
-    Reconcile,
-}
-#[derive(Deserialize)]
-enum Available {
-    #[serde(rename = "available")]
-    Available,
-}
+string_enum!(HostAction {
+    Run => "run",
+    Reconcile => "reconcile",
+});
+string_enum!(Available {
+    Available => "available",
+});
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AvailableResult {
     schema: String,
     result: Available,
+    #[serde(deserialize_with = "object")]
     operation: Operation,
+    #[serde(deserialize_with = "object")]
     terminal: Terminal,
+    #[serde(deserialize_with = "object")]
     validation: Validation,
+    #[serde(deserialize_with = "object")]
     cleanup: ResultCleanup,
     acceptance: Value,
     domain_effect_settlement: Value,
     receipt_id: String,
     input_digest: String,
     receipt: serde_json::Map<String, Value>,
+    #[serde(deserialize_with = "object")]
     host_output: HostOutput,
 }
 
@@ -283,11 +324,11 @@ pub fn validate(
     let bad = |_| "invalid_response";
     match operation {
         "submit_coding_job" | "read_coding_job_operation" => {
-            let o: Operation = serde_json::from_value(owner_result.clone()).map_err(bad)?;
+            let o: Operation = object(owner_result).map_err(bad)?;
             o.check(arguments, operation == "submit_coding_job")
         }
         "cancel_coding_job" => {
-            let c: Cancel = serde_json::from_value(owner_result.clone()).map_err(bad)?;
+            let c: Cancel = object(owner_result).map_err(bad)?;
             // Cancellation is a request; closure is established only by the operation and Host receipt.
             if c.schema != SCHEMA
                 || !hex64(&c.operation_id)
@@ -302,15 +343,14 @@ pub fn validate(
         }
         "read_coding_job_result" => match owner_result["result"].as_str() {
             Some("not_available") => {
-                let u: Unavailable = serde_json::from_value(owner_result.clone()).map_err(bad)?;
+                let u: Unavailable = object(owner_result).map_err(bad)?;
                 if u.schema != SCHEMA || !matches!(u.result, Availability::NotAvailable) {
                     return Err("invalid_response");
                 }
                 u.operation.check(arguments, false)
             }
             Some("available") => {
-                let r: AvailableResult =
-                    serde_json::from_value(owner_result.clone()).map_err(bad)?;
+                let r: AvailableResult = object(owner_result).map_err(bad)?;
                 r.operation.check(arguments, false)?;
                 if r.schema != SCHEMA
                     || !matches!(r.result, Available::Available)
