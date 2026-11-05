@@ -1,7 +1,14 @@
-//! Closed v3 grammar over immutable raw SDK and trusted Host ingress.
+//! Closed v3 (provider-disabled) and v4 (live provider) grammars over immutable
+//! raw SDK and trusted Host ingress. v4 differs only where real inference
+//! differs from the fixture: the model's final text is provenance, and the
+//! checkpoint is derived here from the exact Host result, workspace manifest
+//! and settled history. v3 behaviour is unchanged.
 use crate::StoreError;
 use serde_json::{Value, json};
 use work_engine_types::CodecContract;
+/// Identifies the owner-derived v4 checkpoint document.
+pub(crate) const LIVE_CHECKPOINT_PROFILE: &str = "work-engine.pi-coding-live-continuity.v1";
+const MAX_CHECKPOINT_BYTES: usize = 65_536;
 fn bad<T>() -> Result<T, StoreError> {
     Err(StoreError::ClaimConflict)
 }
@@ -215,6 +222,13 @@ fn host_result(intent: &Value, e: &Value, tool: &Value) -> Result<(), StoreError
     }
     Ok(())
 }
+/// Validated outcome of one settled turn. `final_text` is always the actual
+/// assistant text. `checkpoint` exists only for a tool-bearing live (v4) turn
+/// and is derived from validated artifacts, never from model or caller text.
+pub(super) struct Validated {
+    pub final_text: String,
+    pub checkpoint: Option<String>,
+}
 #[allow(clippy::too_many_arguments)]
 pub(super) fn validate(
     values: &[Value],
@@ -224,7 +238,8 @@ pub(super) fn validate(
     prompt: &[u8],
     prompt_hash: &str,
     anchor: Option<&Value>,
-) -> Result<String, StoreError> {
+    live: bool,
+) -> Result<Validated, StoreError> {
     let intents: Vec<_> = values
         .iter()
         .filter(|v| v["type"] == "pi.coding_tool_intent")
@@ -319,10 +334,19 @@ pub(super) fn validate(
         let content = first["content"]
             .as_array()
             .ok_or(StoreError::ClaimConflict)?;
-        if content.len() != 1 {
+        // v3: exactly the toolCall. v4: real models may precede the one call with
+        // text; any other block kind or a second call is refused.
+        let calls = content.iter().filter(|c| c["type"] == "toolCall").count();
+        if calls != 1
+            || content.last().is_none_or(|c| c["type"] != "toolCall")
+            || (!live && content.len() != 1)
+            || content
+                .iter()
+                .any(|c| c["type"] != "toolCall" && c["type"] != "text")
+        {
             return bad();
         }
-        let call = &content[0];
+        let call = &content[content.len() - 1];
         let command = call["arguments"]["command"]
             .as_str()
             .ok_or(StoreError::ClaimConflict)?;
@@ -420,7 +444,7 @@ pub(super) fn validate(
     if final_text.is_empty() || final_text.len() > 65536 {
         return bad();
     }
-    if has_tool {
+    if has_tool && !live {
         let checkpoint: Value =
             serde_json::from_str(&final_text).map_err(|_| StoreError::ClaimConflict)?;
         if checkpoint["coding_result"] != results[0]["result"]
@@ -458,5 +482,38 @@ pub(super) fn validate(
     if p.i != p.v.len() {
         return bad();
     }
-    Ok(final_text)
+    if live && has_tool {
+        // Owner-derived: only validated artifacts enter. The model's text is
+        // retained solely as a digest; nothing here is caller- or model-supplied.
+        let checkpoint = json!({
+            "version": 2,
+            "profile": LIVE_CHECKPOINT_PROFILE,
+            "successor_context": "context:new",
+            "coding_result": results[0]["result"],
+            "coding_result_sha256": results[0]["artifact"]["sha256"],
+            "workspace_manifest_sha256": workspaces[0]["manifest"]["sha256"],
+            "tool_executions": 1,
+            "settled_turn": {
+                "invocation_id": inv,
+                "assistant_final_text_sha256": hash(final_text.as_bytes()),
+                "history_messages": full.len(),
+                "history_messages_sha256": hash(
+                    &serde_json::to_vec(&full).map_err(|_| StoreError::ClaimConflict)?
+                ),
+            },
+            "unanswered_human": {"authority": "human", "resolved": false},
+        })
+        .to_string();
+        if checkpoint.len() > MAX_CHECKPOINT_BYTES {
+            return bad();
+        }
+        return Ok(Validated {
+            final_text,
+            checkpoint: Some(checkpoint),
+        });
+    }
+    Ok(Validated {
+        final_text,
+        checkpoint: None,
+    })
 }

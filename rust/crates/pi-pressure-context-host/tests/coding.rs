@@ -232,6 +232,22 @@ fn process_artifact_and_foreign_result_cannot_settle_host_observation() {
 
 use pi_pressure_context_host::coding::{CodingConfig, CodingContinuity};
 fn continuity_fixture() -> (PathBuf, CodingContinuity) {
+    continuity_fixture_with(false, None)
+}
+/// `live` selects the separately versioned v4 profile and its honest budget
+/// label; `mixed` deliberately registers a v4 profile with the v3 protocol.
+fn continuity_fixture_with(live: bool, mixed: Option<()>) -> (PathBuf, CodingContinuity) {
+    let (root, c) = continuity_try(live, mixed, None);
+    (root, c.unwrap())
+}
+fn continuity_try(
+    live: bool,
+    mixed: Option<()>,
+    class: Option<&str>,
+) -> (
+    PathBuf,
+    Result<CodingContinuity, work_engine_manual_host::Error>,
+) {
     let root = std::env::temp_dir().join(format!(
         "coding-protocol-{}-{}",
         std::process::id(),
@@ -285,9 +301,17 @@ fn continuity_fixture() -> (PathBuf, CodingContinuity) {
             subject,
             ContextGeneration::parse("context:old").unwrap(),
             RuntimeIncarnation::parse("incarnation:pi:coding").unwrap(),
-            &pi_coding_profile_digest(),
+            &if live {
+                pi_coding_live_profile_digest()
+            } else {
+                pi_coding_profile_digest()
+            },
             PI_SDK_INDEX_SHA256,
-            &pi_coding_protocol_digest(),
+            &if live && mixed.is_none() {
+                pi_coding_live_protocol_digest()
+            } else {
+                pi_coding_protocol_digest()
+            },
             SnapshotId::parse("snapshot:coding").unwrap(),
             &published.digest_hex,
             false,
@@ -295,14 +319,12 @@ fn continuity_fixture() -> (PathBuf, CodingContinuity) {
         )
         .unwrap();
     let config = CodingConfig {
-        budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":"provider_disabled_fixture","available":true,"max_provider_requests":4,"max_tool_calls":1,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-root-budget","generation":"fixture:1","observed_ms":100,"max_age_ms":300000}),
+        task: live.then(|| "Fix the disposable crate so the acceptance tests pass.".to_string()),
+        budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":class.unwrap_or(if live {"live_provider_observation"} else {"provider_disabled_fixture"}),"available":true,"max_provider_requests":4,"max_tool_calls":1,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-root-budget","generation":"fixture:1","observed_ms":100,"max_age_ms":300000}),
         expires_ms: 1000,
         pressure_basis_points: 9500,
     };
-    (
-        root,
-        CodingContinuity::new(store, initial, config, clock).unwrap(),
-    )
+    (root, CodingContinuity::new(store, initial, config, clock))
 }
 fn snapshot(session: &str) -> serde_json::Value {
     json!({"sessionId":session,"idle":true,"observedMs":100,"observedAt":"2026-11-05T00:00:00Z","model":{"id":"fixture","provider":"fixture","contextWindow":32768},"usage":null})
@@ -324,6 +346,8 @@ struct SyntheticSdk {
     requests: u64,
     tool_output_bytes: usize,
     system_mutation: u8,
+    live: bool,
+    preamble: bool,
 }
 impl SyntheticSdk {
     fn new(session: &str, requests: u64) -> Self {
@@ -334,6 +358,8 @@ impl SyntheticSdk {
             requests,
             tool_output_bytes: 4096,
             system_mutation: 0,
+            live: false,
+            preamble: false,
         }
     }
     fn native(&self, c: &mut CodingContinuity, event: serde_json::Value) {
@@ -408,9 +434,14 @@ impl SyntheticSdk {
         self.message(c, user);
         let first = self.request(c, command, None);
         let response = if let Some(root) = tool_root {
-            assert_eq!(first["mode"], "tool");
+            assert_eq!(first["mode"], if self.live { "live" } else { "tool" });
             let call = json!({"type":"toolCall","id":"one","name":"workspace_exec","arguments":{"command":"bounded fixture edit"}});
-            let assistant = json!({"role":"assistant","content":[call],"stopReason":"toolUse"});
+            let content = if self.preamble {
+                json!([{"type":"text","text":"I will make the edit now."}, call])
+            } else {
+                json!([call])
+            };
+            let assistant = json!({"role":"assistant","content":content,"stopReason":"toolUse"});
             self.message(c, assistant.clone());
             generated.push(assistant.clone());
             self.native(c,json!({"type":"tool_execution_start","toolCallId":"one","toolName":"workspace_exec","args":call["arguments"]}));
@@ -454,7 +485,16 @@ impl SyntheticSdk {
         } else {
             first
         };
-        let final_message = json!({"role":"assistant","content":[{"type":"text","text":response["reply"]}],"stopReason":"stop"});
+        // Live: the provider supplies free-form text; nothing is manufactured.
+        let reply = if self.live {
+            json!(format!(
+                "Model-authored summary for {} (not a checkpoint).",
+                command["invocationId"]
+            ))
+        } else {
+            response["reply"].clone()
+        };
+        let final_message = json!({"role":"assistant","content":[{"type":"text","text":reply}],"stopReason":"stop"});
         self.message(c, final_message.clone());
         generated.push(final_message.clone());
         self.native(
@@ -644,4 +684,115 @@ fn recovery_and_continuation_reject_changed_extra_or_missing_system_input() {
             fs::remove_dir_all(root).unwrap();
         }
     }
+}
+
+fn run_complete(
+    live: bool,
+    preamble: bool,
+) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
+    let (root, mut c) = continuity_fixture_with(live, None);
+    let commands = c
+        .frame(
+            &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
+        )
+        .unwrap();
+    let original = commands[0].clone();
+    if live {
+        assert!(
+            original["prompt"]
+                .as_str()
+                .unwrap()
+                .starts_with("Fix the disposable crate")
+        );
+    }
+    control(&mut c, &original);
+    let mut sdk = SyntheticSdk::new("physical:old", 0);
+    sdk.live = live;
+    sdk.preamble = preamble;
+    let reset = sdk.turn(&mut c, &original, Some(&root))?;
+    assert_eq!(reset["type"], "bridge_replace");
+    control(&mut c, &reset);
+    let commands=c.frame(&json!({"type":"coding_replaced","sessionId":"physical:new","oldSessionId":"physical:old","result":{"cancelled":false},"messages":[],"branch":[],"header":{"type":"session","id":"physical:new"},"leafId":null,"autoCompactionEnabled":false,"tools":[],"snapshot":snapshot("physical:new")})).unwrap();
+    let recovery = commands[0].clone();
+    let text = recovery["prompt"].as_str().unwrap();
+    if live {
+        // Sole recovery input is the owner-derived checkpoint, not model text.
+        assert!(text.contains("work-engine.pi-coding-live-continuity.v1"));
+        assert!(
+            text.contains("coding_result_sha256") && text.contains("workspace_manifest_sha256")
+        );
+        assert!(!text.contains("Model-authored summary"));
+        assert!(!text.contains("fixture"));
+    }
+    control(&mut c, &recovery);
+    let mut fresh = SyntheticSdk::new("physical:new", 2);
+    fresh.live = live;
+    let continued = fresh.turn(&mut c, &recovery, None).unwrap();
+    control(&mut c, &continued);
+    let close = fresh.turn(&mut c, &continued, None).unwrap();
+    control(&mut c, &close);
+    Ok((root, c))
+}
+#[test]
+fn live_continuity_owner_derives_checkpoint_from_real_shaped_turns_and_recovers_once() {
+    let (root, c) = run_complete(true, false).unwrap();
+    let report = c.report().unwrap();
+    assert_eq!(report["mode"], "live");
+    assert!(
+        report["standing"]
+            .as_str()
+            .unwrap()
+            .contains("real inference")
+    );
+    assert_eq!(report["provider_requests"], 4);
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    let checkpoint: serde_json::Value =
+        serde_json::from_str(report["checkpoint"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        checkpoint["profile"],
+        "work-engine.pi-coding-live-continuity.v1"
+    );
+    assert_eq!(checkpoint["tool_executions"], 1);
+    assert_eq!(
+        checkpoint["coding_result"],
+        report["original_host_result"]["result"]
+    );
+    assert!(checkpoint["settled_turn"]["assistant_final_text_sha256"].is_string());
+    assert!(checkpoint.get("fixture").is_none() && checkpoint.get("canonical_budget").is_none());
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn live_profile_accepts_text_before_the_single_tool_call_but_fixture_v3_does_not() {
+    let (root, c) = run_complete(true, true).unwrap();
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+    assert!(run_complete(false, true).is_err());
+}
+#[test]
+fn live_and_fixture_budget_labels_and_mixed_identities_cannot_substitute() {
+    // A fixture label cannot stand in for a live observation, nor the reverse.
+    for (live, class) in [
+        (true, "provider_disabled_fixture"),
+        (false, "live_provider_observation"),
+    ] {
+        let (root, c) = continuity_try(live, None, Some(class));
+        assert!(c.is_err(), "live={live} class={class}");
+        fs::remove_dir_all(root).unwrap();
+    }
+    // v4 profile bound to the v3 protocol: the owner refuses the very first entry.
+    let (root, mut c) = continuity_fixture_with(true, Some(()));
+    let commands = c
+        .frame(
+            &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
+        )
+        .unwrap();
+    assert!(
+        c.dispatch(&commands[0], &mut |_| panic!(
+            "mixed identity must not enter"
+        ))
+        .is_err()
+    );
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
 }

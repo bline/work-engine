@@ -180,12 +180,17 @@ impl CodingEffectGate for CodingLifecycleGate {
 use lifecycle_core::*;
 use lifecycle_store::{
     NativeSessionEntry, NativeTurnRequest, PI_SDK_INDEX_SHA256, PiSettlementProof,
-    pi_coding_profile_digest, pi_coding_protocol_digest,
+    pi_coding_live_profile_digest, pi_coding_live_protocol_digest, pi_coding_profile_digest,
+    pi_coding_protocol_digest,
 };
 /// Pinned outside controls. These fixture controls never authorize live access.
 #[derive(Clone)]
 pub struct CodingConfig {
     pub budget: Value,
+    /// `Some` selects the separately versioned live-provider continuity mode: the
+    /// exact task bytes admitted by the Host plan. `None` is the provider-disabled
+    /// fixture. The two never share budget classification or checkpoint source.
+    pub task: Option<String>,
     pub expires_ms: i64,
     pub pressure_basis_points: u64,
 }
@@ -212,6 +217,11 @@ struct ContinuityState {
     reset_entered: bool,
     tool_result_sent: bool,
 }
+impl ContinuityState {
+    fn live(&self) -> bool {
+        self.config.task.is_some()
+    }
+}
 #[derive(Clone)]
 pub struct CodingContinuity(Rc<RefCell<ContinuityState>>);
 impl CodingContinuity {
@@ -222,7 +232,16 @@ impl CodingContinuity {
         clock: fn() -> ClockSample,
     ) -> Result<Self> {
         if config.budget["schema"] != "work-engine.coding-budget-control.v1"
-            || config.budget["classification"] != "provider_disabled_fixture"
+            || config.budget["classification"]
+                != if config.task.is_some() {
+                    "live_provider_observation"
+                } else {
+                    "provider_disabled_fixture"
+                }
+            || config
+                .task
+                .as_ref()
+                .is_some_and(|t| t.is_empty() || t.len() > 8192)
             || config.budget["available"] != true
             || config.budget["max_provider_requests"] != 4
             || config.budget["max_tool_calls"] != 1
@@ -413,10 +432,15 @@ impl ContinuityState {
                 .map_err(refused)?,
             )
             .map_err(refused)?;
-        let prompt = format!(
-            "Bounded provider-disabled coding fixture. Preserve the Host tool result. Outside canonical controls and actual SDK observation: {}",
-            json!({"authority":"observation_only","budget":self.config.budget,"sdk_context":snapshot})
-        );
+        let observation = json!({"authority":"observation_only","budget":self.config.budget,"sdk_context":snapshot});
+        let prompt = match &self.config.task {
+            Some(task) => format!(
+                "{task}\n\nBounded live-provider continuity job: the single workspace_exec command may be used exactly once, so make the whole edit and run the acceptance in that one command, then reply with a brief final summary. Outside canonical controls and actual SDK observation: {observation}"
+            ),
+            None => format!(
+                "Bounded provider-disabled coding fixture. Preserve the Host tool result. Outside canonical controls and actual SDK observation: {observation}"
+            ),
+        };
         let parent = Self::claim(
             &mut store,
             &session,
@@ -474,6 +498,10 @@ impl ContinuityState {
             self.workspace = Some(workspace.clone());
             let e = json!({"type":"pi.coding_workspace","invocationId":o.parent.invocation_id(),"manifest":workspace["manifest"],"manifest_bytes":raw});
             o.record("pi.coding_workspace", &e)?;
+        }
+        if self.provider_calls == 2 && !self.live() {
+            let workspace = self.workspace.clone().unwrap();
+            let result = self.original_result.clone().unwrap();
             let checkpoint = json!({"version":1,"successor_context":"context:new","fixture":true,"coding_result":result["result"],"coding_result_sha256":result["artifact"]["sha256"],"workspace_manifest_sha256":workspace["manifest"]["sha256"],"tool_executions":1,"unanswered_human":{"authority":"human","resolved":false},"canonical_budget":self.config.budget});
             let text = checkpoint.to_string();
             let staged = o
@@ -495,6 +523,13 @@ impl ContinuityState {
             m.remove("schema");
         }
         o.record("pi.provider_request", &request)?;
+        if self.live() {
+            // Real inference: no manufactured reply. This is only a current-grant
+            // entry to the Host-reserved provider request (consumption deadline
+            // is added when the exact IPC write is dispatched).
+            drop(o);
+            return self.queue(json!({"type":"bridge_provider","sessionId":frame["sessionId"],"id":self.provider_calls,"mode":"live"}));
+        }
         let reply = match self.provider_calls {
             1 => Value::Null,
             2 => json!(self.checkpoint.as_ref().unwrap()),
@@ -550,6 +585,26 @@ impl ContinuityState {
         store
             .settle_pi_coding(parent, &proof, (self.clock)())
             .map_err(refused)?;
+        if self.config.task.is_some() && self.phase == 0 {
+            // Owner-derived v4 checkpoint, read back from the settled turn. The
+            // model's final text is provenance only (digest inside it).
+            if self.original_result.is_none() || self.workspace.is_none() {
+                return Err(refused(
+                    "live settlement without Host tool result/workspace",
+                ));
+            }
+            let text = store.pi_coding_live_checkpoint(parent).map_err(refused)?;
+            let staged = store
+                .stage_artifact(
+                    SubjectId::parse("subject:pi:coding").map_err(refused)?,
+                    text.as_bytes(),
+                )
+                .map_err(refused)?;
+            store
+                .publish_artifact(staged, (self.clock)())
+                .map_err(refused)?;
+            self.checkpoint = Some(text);
+        }
         drop(o);
         if self.phase == 0 {
             gate.replacement_ready()?;
@@ -575,7 +630,7 @@ impl ContinuityState {
                 )
                 .map_err(refused)?;
             self.report = Some(
-                json!({"schema":"work-engine.pi-coding-continuity-result.v1","standing":"provider-disabled disposable qualification; no production/domain acceptance","context":subject.context_id,"owner":subject.owner_kind,"checkpoint":self.checkpoint,"original_host_result":self.original_result,"workspace":self.workspace,"observations":self.observations,"fresh_successor":self.fresh_successor,"predecessor_history_external_only":true,"provider_requests":self.provider_calls,"tool_executions":1,"physical_resets":1,"recovery_receipt":self.recovery_receipt,"continued_parent":o.store.native_recovery("continued").map_err(refused)?.unwrap().class}),
+                json!({"schema":"work-engine.pi-coding-continuity-result.v1","standing":if self.live() {"live-provider disposable continuity pilot; real inference; no production/domain acceptance"} else {"provider-disabled disposable qualification; no production/domain acceptance"},"mode":if self.live() {"live"} else {"fixture"},"context":subject.context_id,"owner":subject.owner_kind,"checkpoint":self.checkpoint,"original_host_result":self.original_result,"workspace":self.workspace,"observations":self.observations,"fresh_successor":self.fresh_successor,"predecessor_history_external_only":true,"provider_requests":self.provider_calls,"tool_executions":1,"physical_resets":1,"recovery_receipt":self.recovery_receipt,"continued_parent":o.store.native_recovery("continued").map_err(refused)?.unwrap().class}),
             );
             self.phase = 4;
             self.queue(json!({"type":"bridge_close","sessionId":frame["sessionId"]}))
@@ -585,7 +640,7 @@ impl ContinuityState {
     }
     fn prepare_reset(&mut self, frame: &Value) -> Result<Vec<Value>> {
         self.check()?;
-        let pressure = json!({"schemaVersion":1,"observationId":"coding-fixture:1","sequence":1,"observedAt":frame["snapshot"]["observedAt"],"pressureBasisPoints":self.config.pressure_basis_points,"source":"explicit outside fixture pressure; actual SDK observation retained separately","sourceRevision":format!("sha256:{}",digest(b"coding-pressure-fixture-v1"))});
+        let pressure = json!({"schemaVersion":1,"observationId":"coding-fixture:1","sequence":1,"observedAt":frame["snapshot"]["observedAt"],"pressureBasisPoints":self.config.pressure_basis_points,"source":if self.live() {"explicit operator-requested continuity replacement; not measured quota or context exhaustion; actual SDK observation retained separately"} else {"explicit outside fixture pressure; actual SDK observation retained separately"},"sourceRevision":format!("sha256:{}",digest(b"coding-pressure-fixture-v1"))});
         if !crate::pressure_candidate(Some(&pressure)).map_err(refused)? {
             return Err(refused("no pressure candidate"));
         }
@@ -621,11 +676,21 @@ impl ContinuityState {
                 semantic_revision: Revision::new(semantic),
             },
             TransitionFact::VerificationEstablished {
-                evidence: EvidenceId::parse("coding:fixture-checkpoint").map_err(refused)?,
+                evidence: EvidenceId::parse(if self.live() {
+                    "coding:owner-derived-live-checkpoint"
+                } else {
+                    "coding:fixture-checkpoint"
+                })
+                .map_err(refused)?,
                 checkpoint: CheckpointId::parse(format!("checkpoint:{hash}")).map_err(refused)?,
             },
             TransitionFact::SwitchAuthorized {
-                evidence: EvidenceId::parse("coding:operator-fixture-grant").map_err(refused)?,
+                evidence: EvidenceId::parse(if self.live() {
+                    "coding:operator-live-grant"
+                } else {
+                    "coding:operator-fixture-grant"
+                })
+                .map_err(refused)?,
             },
         ] {
             let rev = o
@@ -644,9 +709,17 @@ impl ContinuityState {
                 subject,
                 ContextGeneration::parse("context:new").map_err(refused)?,
                 RuntimeIncarnation::parse("incarnation:pi:coding").map_err(refused)?,
-                &pi_coding_profile_digest(),
+                &if self.live() {
+                    pi_coding_live_profile_digest()
+                } else {
+                    pi_coding_profile_digest()
+                },
                 PI_SDK_INDEX_SHA256,
-                &pi_coding_protocol_digest(),
+                &if self.live() {
+                    pi_coding_live_protocol_digest()
+                } else {
+                    pi_coding_protocol_digest()
+                },
                 SnapshotId::parse("snapshot:coding").map_err(refused)?,
                 &hash,
                 false,
@@ -958,6 +1031,7 @@ mod control_tests {
         };
         for case in 0..7 {
             let mut config = CodingConfig {
+                task: None,
                 budget: json!({"authority":"observation_only","sequence":1,"expires_ms":1000000,"source":"root-canonical-fixture","generation":"bound:1","observed_ms":500000,"max_age_ms":300000,"available":true}),
                 expires_ms: 1000000,
                 pressure_basis_points: 9500,

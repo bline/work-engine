@@ -12,6 +12,11 @@ class Refusal(Exception):
     def __init__(self, detail, status='failure'):
         super().__init__(detail); self.status=status
 
+class CompactionFailure(Refusal):
+    def __init__(self, turn):
+        super().__init__('compaction turn failed or interrupted')
+        self.turn = turn
+
 class PendingBoundary(Exception): pass
 
 def digest(path):
@@ -135,7 +140,7 @@ def compaction(turns, op):
     if not items and t.get('status')=='inProgress': return None
     if any(item.get('type')!='contextCompaction' for item in items):
         raise Refusal('intervening native input or turn superseded source','superseded')
-    if t.get('status') in ('failed','interrupted'): raise Refusal('compaction turn failed or interrupted')
+    if t.get('status') in ('failed','interrupted'): raise CompactionFailure(t)
     if len(items)!=1: raise Refusal('compaction attribution is not established')
     if t.get('status')=='completed': return t
     if t.get('status')=='inProgress': return None
@@ -148,7 +153,7 @@ def replacement_boundary(op, compact):
         raise Refusal('rollout baseline is truncated or changed')
     partial=bool(raw and not raw.endswith(b'\n'))
     complete=raw[:raw.rfind(b'\n')+1] if partial else raw
-    lines=complete.splitlines(keepends=True); offset=0; active=None; active_start=None; markers=[]; all_markers=[]; contexts=[]; completions=[]
+    lines=complete.splitlines(keepends=True); offset=0; active=None; active_start=None; markers=[]; all_markers=[]; contexts=[]; completions=[]; terminal=[]
     native_items=compact.get('items',[])
     if len(native_items)!=1 or native_items[0].get('type')!='contextCompaction' or not native_items[0].get('id'):
         raise Refusal('native compaction item identity is unestablished')
@@ -172,18 +177,26 @@ def replacement_boundary(op, compact):
                 if payload.get('turn_id')!=tid or payload.get('thread_id')!=op['sid'] or item.get('id')!=item_id:
                     raise Refusal('compaction item contradicts native identity')
                 completions.append(number)
+        if start>=baseline and typ=='event_msg':
+            attributed=payload.get('turn_id')==tid or (payload.get('turn_id') is None and active==tid)
+            if attributed and kind in ('turn_aborted','error'):
+                raise Refusal('compaction rollout records interruption or failure')
+            if kind=='task_complete' and (active==tid or payload.get('turn_id')==tid):
+                if payload.get('turn_id')!=tid: raise Refusal('compaction completion contradicts native identity')
+                terminal.append(number)
         if typ=='event_msg' and kind=='task_complete' and payload.get('turn_id')==active: active=None
-    if len(all_markers)>1 or len(markers)>1 or len(contexts)>1 or len(completions)>1 or (all_markers and not markers):
+    if len(all_markers)>1 or len(markers)>1 or len(contexts)>1 or len(completions)>1 or len(terminal)>1 or (all_markers and not markers):
         raise Refusal('compaction rollout boundary ambiguous or contradictory')
     if (contexts and not markers) or (completions and (not markers or not contexts)):
         raise Refusal('compaction rollout boundary order invalid')
     if markers and contexts and markers[0][0]>=contexts[0]: raise Refusal('compaction rollout boundary order invalid')
     if contexts and completions and contexts[0]>=completions[0]: raise Refusal('compaction rollout boundary order invalid')
-    if partial or not markers or not contexts or not completions:
+    if terminal and completions and completions[0]>=terminal[0]: raise Refusal('compaction rollout boundary order invalid')
+    if partial or not markers or not contexts or not completions or not terminal:
         raise PendingBoundary('compaction rollout evidence is not fully flushed')
     line,sha=markers[0]
     return {'line':line,'event_sha256':sha,'turn_id':tid,'item_id':item_id,
-            'turn_context_line':contexts[0],'item_completed_line':completions[0]}
+            'turn_context_line':contexts[0],'item_completed_line':completions[0],'task_complete_line':terminal[0]}
 
 def wake_input(op):
     return [{"type":"text","text":op["message"]},{"type":"skill","name":"wind-walker","path":op["wind_walker"]}]
@@ -221,6 +234,12 @@ def run(store, host, timeout, interval):
                     store.save(op,op['control']); return {'status':op['control'],'collector':op['collector']}
                 if op['phase']=='wakeup_entered':
                     return {'status':'wakeup_entered','turn_id':op.get('wakeup_turn'),'collector':op['collector']}
+                rechecking=op['phase']=='compact_intent' and bool(op.get('compact_status_disagreement'))
+                if rechecking:
+                    if op.get('compact_status_recheck_consumed'):
+                        raise Refusal('compaction status reconciliation exhausted')
+                    op['compact_status_recheck_consumed']=True
+                    store.save(op,'compaction_status_recheck_consumed')
                 with host._conn() as c:
                     turns=checked_thread(c,op); i=source_index(turns,op); source=turns[i]
                     if source.get('status') in ('failed','interrupted'): raise Refusal('source turn failed or interrupted')
@@ -233,11 +252,33 @@ def run(store, host, timeout, interval):
                             c.call('thread/compact/start',{'threadId':op['sid']})
                             store.save(op,'compact_acknowledged')
                     elif op['phase']=='compact_intent':
-                        compact=compaction(turns,op)
+                        try: compact=compaction(turns,op)
+                        except CompactionFailure as failure:
+                            # A completed rollout can precede the native history
+                            # projection. Confirm once on a fresh connection;
+                            # never resend compact or accept a negative status.
+                            if op.get('compact_status_disagreement'): raise
+                            try: boundary=replacement_boundary(op,failure.turn)
+                            except (PendingBoundary,Refusal): raise failure
+                            observation={'turn_id':failure.turn['id'],'status':failure.turn['status'],
+                                         'item_ids':[item.get('id') for item in failure.turn['items']],
+                                         'replacement_boundary':boundary}
+                            op['compact_status_disagreement']=observation
+                            store.save(op,'compaction_status_disagreement',observation=observation)
+                            compact=None
+                        if rechecking and compact is None:
+                            raise Refusal('compaction status reconciliation did not establish completion')
                         if compact:
                             try: boundary=replacement_boundary(op,compact)
                             except PendingBoundary: boundary=None
+                            if rechecking and boundary is None:
+                                raise Refusal('compaction status reconciliation lacks completed rollout evidence')
                             if boundary is not None:
+                                prior=op.get('compact_status_disagreement')
+                                if prior:
+                                    if prior['turn_id']!=compact['id'] or prior['item_ids']!=[item.get('id') for item in compact['items']]:
+                                        raise Refusal('compaction identity changed during status reconciliation','superseded')
+                                    store.save(op,'compaction_status_reconciled',turn_id=compact['id'],status=compact['status'])
                                 op['compact_turn']=compact['id']; op['phase']='compacted'; op['replacement_boundary']=boundary; op['replacement_line']=boundary['line']
                                 store.save(op,'compaction_collected',turn_id=compact['id'])
                     elif op['phase']=='compacted':

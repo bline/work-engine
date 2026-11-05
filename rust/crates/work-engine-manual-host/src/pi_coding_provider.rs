@@ -222,7 +222,7 @@ impl Host {
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
         atomic(
             &public.join("job.json"),
-            &json!({"schema":if self.signed_subscription() {super::SIGNED_SUBSCRIPTION_PROFILE} else {LIVE_PROFILE},"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
+            &json!({"schema":if self.signed_subscription() {super::SIGNED_SUBSCRIPTION_PROFILE} else if self.journal.job.coding.as_ref().is_some_and(|p| p.schema == super::LIVE_BRIDGE_PROFILE) {super::LIVE_BRIDGE_PROFILE} else {LIVE_PROFILE},"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
         )?;
         Ok(())
     }
@@ -853,5 +853,236 @@ mod signed_subscription_tests {
                 .is_none()
         );
         assert!(h.coding_provider_frame(&request).is_err());
+    }
+
+    struct RefusingGate;
+    impl super::super::CodingEffectGate for RefusingGate {
+        fn execute(
+            &mut self,
+            _: &super::super::CodingToolIntent,
+            _: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
+        ) -> Result<(bool, Vec<u8>)> {
+            refuse("test gate: no tool")
+        }
+        fn observed(
+            &mut self,
+            _: &super::super::CodingToolIntent,
+            _: &Artifact,
+            _: &ProcessRecord,
+            _: &str,
+        ) -> Result<()> {
+            Ok(())
+        }
+        fn frame(&mut self, _: &Value) -> Result<Vec<Value>> {
+            refuse("test gate refuses entry")
+        }
+        fn dispatch(&mut self, _: &Value, _: &mut dyn FnMut(i64) -> Result<()>) -> Result<()> {
+            refuse("test gate refuses dispatch")
+        }
+    }
+    fn live_bridge_host() -> (tempfile::TempDir, Host) {
+        let (dir, mut h) = super::ledger_tests::fixture();
+        {
+            let profile = h.journal.job.coding.as_mut().unwrap();
+            profile.schema = super::super::LIVE_BRIDGE_PROFILE.into();
+            profile.provider.as_mut().unwrap().max_requests = 4;
+        }
+        h.journal.session_id = Some("native".into());
+        h.coding_gate = Some(Box::new(RefusingGate));
+        (dir, h)
+    }
+    fn request(id: u64) -> Value {
+        json!({"type":"provider_request","id":id,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":1000})
+    }
+    fn line(v: Value) -> Vec<u8> {
+        let mut v = v;
+        v["schema"] = json!(super::super::LIVE_BRIDGE_PROFILE);
+        v["sessionId"] = json!("native");
+        let mut b = serde_json::to_vec(&v).unwrap();
+        b.push(b'\n');
+        b
+    }
+    #[test]
+    fn live_bridge_reserves_durably_before_lifecycle_gate_and_unknown_never_regrants() {
+        let (dir, mut h) = live_bridge_host();
+        let frame = json!({"type":"coding_provider_request","id":1,"requestModel":{"id":"gpt-6-luna","provider":"openai-codex","contextWindow":272000},"contextBytes":1000});
+        // The gate refuses, yet the unknown reservation is already durable.
+        assert!(h.coding_advance(&line(frame.clone())).is_err());
+        let record: Value =
+            serde_json::from_slice(&fs::read(dir.path().join("pi-state.json")).unwrap()).unwrap();
+        assert_eq!(
+            record["coding"]["provider_requests"]["1"]["reserved_microusd"],
+            164001
+        );
+        assert!(record["coding"]["provider_requests"]["1"]["settled_microusd"].is_null());
+        // No regrant: request 1 again or request 2 while 1 is unresolved.
+        assert!(h.coding_advance(&line(frame.clone())).is_err());
+        let mut second = frame;
+        second["id"] = json!(2);
+        assert!(h.coding_advance(&line(second)).is_err());
+        assert_eq!(
+            h.journal.coding.as_ref().unwrap().provider_requests.len(),
+            1
+        );
+    }
+    #[test]
+    fn live_bridge_refuses_bare_provider_grants_wrong_model_and_over_context() {
+        let (_dir, mut h) = live_bridge_host();
+        // A bare provider_request would bypass the lifecycle gate.
+        assert!(h.coding_advance(&line(request(1))).is_err());
+        assert!(
+            h.journal
+                .coding
+                .as_ref()
+                .unwrap()
+                .provider_requests
+                .is_empty()
+        );
+        for (model, bytes) in [("gpt-6-other", 1000), ("gpt-6-luna", 70000)] {
+            let (_d, mut h) = live_bridge_host();
+            let frame = json!({"type":"coding_provider_request","id":1,"requestModel":{"id":model,"provider":"openai-codex","contextWindow":272000},"contextBytes":bytes});
+            assert!(h.coding_advance(&line(frame)).is_err());
+            assert!(
+                h.journal
+                    .coding
+                    .as_ref()
+                    .unwrap()
+                    .provider_requests
+                    .is_empty()
+            );
+        }
+    }
+    #[test]
+    fn live_bridge_profile_requires_exact_four_requests_and_bounded_context() {
+        // Actual Profile::validate over otherwise-valid pinned inputs. Only the
+        // request count / context bound varies, and a refusal must name that
+        // exact admission rule (not any other profile/pin conflict).
+        const RULE: &str = "live continuity profile admits exactly 4 requests";
+        let admit = |requests: u32, context: u64| -> Result<()> {
+            use std::os::unix::fs::PermissionsExt;
+            let (dir, mut h) = super::super::tests::fixture();
+            let root = dir.path().canonicalize().unwrap();
+            let runtime = root.join("runtime");
+            let catalog_path = runtime.join(CATALOG);
+            fs::create_dir_all(catalog_path.parent().unwrap()).unwrap();
+            let catalog = serde_json::to_vec(&json!({"openai-codex-responses":{"chat:gpt-6-luna":{"id":"gpt-6-luna","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":272000,"maxTokens":128000,"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125}}}})).unwrap();
+            fs::write(&catalog_path, &catalog).unwrap();
+            let config = root.join("config");
+            fs::create_dir(&config).unwrap();
+            let config_bytes = serde_json::to_vec(&inventory(&config).unwrap()).unwrap();
+            fs::write(root.join("config.json"), &config_bytes).unwrap();
+            let native = root.join("native.json");
+            fs::write(&native, b"never read").unwrap();
+            fs::set_permissions(&native, fs::Permissions::from_mode(0o600)).unwrap();
+            fs::write(root.join("adapter.mjs"), ACCESS_ADAPTER).unwrap();
+            fs::write(root.join("task"), b"fixture task").unwrap();
+            fs::write(root.join("shim.mjs"), super::super::SHIM).unwrap();
+            let state = root.join("state");
+            fs::create_dir(&state).unwrap();
+            let admission = serde_json::to_vec(&json!({
+                "schema":"work-engine.pi-coding-runtime-admission.v1",
+                "job_id":h.journal.job.job_id,
+                "binary_sha256":file_digest(&std::env::current_exe().unwrap(), None).unwrap(),
+                "model":"gpt-6-luna",
+                "native_auth_source":native,
+                "pi_config_manifest_sha256":digest(&config_bytes),
+                "task_sha256":digest(b"fixture task"),
+                "catalog_sha256":digest(&catalog),
+                "max_requests":requests,
+                "budget_microusd":1_000_000u64,
+                "allow_native_access_projection":true,
+                "allow_provider":true,
+            })).unwrap();
+            fs::write(root.join("authority"), &admission).unwrap();
+            let workspace = root.join("workspace");
+            fs::create_dir_all(workspace.join("src")).unwrap();
+            fs::write(workspace.join("src/lib.rs"), b"pub fn f() {}\n").unwrap();
+            let toolchain = root.join("toolchain");
+            fs::create_dir_all(toolchain.join("bin")).unwrap();
+            fs::write(toolchain.join("bin/rustc"), b"#!/bin/sh\n").unwrap();
+            let toolchain_bytes = serde_json::to_vec(&inventory(&toolchain).unwrap()).unwrap();
+            fs::write(root.join("toolchain.json"), &toolchain_bytes).unwrap();
+            fs::write(root.join("acceptance.rs"), b"// acceptance\n").unwrap();
+            let job = &mut h.journal.job;
+            job.workspace.root = workspace;
+            job.runtime.root = runtime;
+            job.state_dir = state;
+            job.authority = Artifact {
+                path: root.join("authority"),
+                sha256: digest(&admission),
+            };
+            let profile = job.coding.as_mut().unwrap();
+            profile.schema = super::super::LIVE_BRIDGE_PROFILE.into();
+            profile.fixture_command = String::new();
+            profile.max_tool_calls = 1;
+            profile.workspace_write_boundary =
+                super::super::WorkspaceWriteBoundary::SrcLibRs;
+            profile.shim = Artifact {
+                path: root.join("shim.mjs"),
+                sha256: digest(super::super::SHIM),
+            };
+            profile.toolchain = Tree {
+                root: toolchain,
+                manifest: Artifact {
+                    path: root.join("toolchain.json"),
+                    sha256: digest(&toolchain_bytes),
+                },
+            };
+            profile.acceptance = Artifact {
+                path: root.join("acceptance.rs"),
+                sha256: digest(b"// acceptance\n"),
+            };
+            profile.provider = Some(ProviderPlan {
+                lane: auth::LaneInputs {
+                    pi_config: Tree {
+                        root: config,
+                        manifest: Artifact {
+                            path: root.join("config.json"),
+                            sha256: digest(&config_bytes),
+                        },
+                    },
+                    native_auth_source: native,
+                },
+                task: Artifact {
+                    path: root.join("task"),
+                    sha256: digest(b"fixture task"),
+                },
+                catalog: Artifact {
+                    path: catalog_path,
+                    sha256: digest(&catalog),
+                },
+                access_adapter: Artifact {
+                    path: root.join("adapter.mjs"),
+                    sha256: digest(ACCESS_ADAPTER),
+                },
+                model: "gpt-6-luna".into(),
+                max_requests: requests,
+                budget_microusd: 1_000_000,
+                max_context_bytes: context,
+            });
+            let job = h.journal.job.clone();
+            h.journal.job.coding.as_ref().unwrap().validate(&job)
+        };
+        match admit(4, 24_000) {
+            Ok(()) => {}
+            Err(e) => panic!("valid live bridge profile at the boundary was refused: {e}"),
+        }
+        for (requests, context) in [(3, 24_000), (5, 24_000), (1, 24_000), (4, 24_001), (4, 65_536)]
+        {
+            let error = admit(requests, context)
+                .expect_err(&format!("{requests} requests / {context} bytes must be refused"));
+            assert!(
+                error.to_string().contains(RULE),
+                "{requests}/{context} refused for another reason: {error}"
+            );
+        }
+        // Controls: the fixture bridge and direct live profiles are not bound by
+        // the live-bridge rule, and the classification helpers are unchanged.
+        assert!(super::super::is_bridge(super::super::LIVE_BRIDGE_PROFILE));
+        assert!(super::super::is_bridge(super::super::BRIDGE_PROFILE));
+        assert!(!super::super::is_bridge(super::LIVE_PROFILE));
+        assert!(!super::super::is_bridge(
+            super::super::SIGNED_SUBSCRIPTION_PROFILE
+        ));
     }
 }

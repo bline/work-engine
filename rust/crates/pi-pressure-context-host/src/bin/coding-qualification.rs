@@ -8,7 +8,7 @@ use work_engine_manual_host::{
     digest,
     pi_docker::{
         Host, Job,
-        coding::{BRIDGE_PROFILE, WorkspaceWriteBoundary},
+        coding::{BRIDGE_PROFILE, LIVE_BRIDGE_PROFILE, WorkspaceWriteBoundary},
     },
 };
 fn clock() -> ClockSample {
@@ -29,17 +29,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let job: Job = serde_json::from_slice(&fs::read(&args[2])?)?;
     let profile = job.coding.as_ref().ok_or("coding profile missing")?;
-    if profile.schema != BRIDGE_PROFILE
-        || profile.provider.is_some()
+    // Two separately versioned profiles; neither can be selected by the other's
+    // schema. Live additionally needs the Host's existing exact provider
+    // admission (checked again inside Host::admit) and never reuses fixture labels.
+    let live = profile.schema == LIVE_BRIDGE_PROFILE;
+    if !((profile.schema == BRIDGE_PROFILE && profile.provider.is_none())
+        || (live && profile.provider.is_some()))
         || profile.max_tool_calls != 1
         || profile.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
     {
-        return Err("bounded provider-disabled source-file profile required".into());
+        return Err("bounded source-file coding continuity profile required".into());
     }
     let own_hash = digest(&fs::read(std::env::current_exe()?)?);
     let authority: Value = serde_json::from_slice(&job.authority.verify()?)?;
-    let bounds = json!({"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":4,"physical_resets":1,"live_provider_requests":0});
-    if authority["schema"] != "work-engine.coding-continuity-runtime-admission.v1"
+    let bounds = if live {
+        json!({"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":0,"physical_resets":1,"live_provider_requests":4})
+    } else {
+        json!({"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":4,"physical_resets":1,"live_provider_requests":0})
+    };
+    if live {
+        // The Host's existing provider admission document (exact binary, job,
+        // model, auth-source path, task, catalog, requests, budget). It is not
+        // widened; bounds travel in the pinned packet below.
+        if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
+            || authority["job_id"] != job.job_id
+            || authority["binary_sha256"] != own_hash
+        {
+            return Err("exact live provider admission/binary missing".into());
+        }
+    } else if authority["schema"] != "work-engine.coding-continuity-runtime-admission.v1"
         || authority["allow_fixture_runtime"] != true
         || authority["job_id"] != job.job_id
         || authority["binary_sha256"] != own_hash
@@ -56,10 +74,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Pi SDK pin conflict".into());
     }
     let packet: Value = serde_json::from_slice(&job.packet.verify()?)?;
-    if packet["schema"] != "work-engine.coding-continuity-packet.v1" {
-        return Err("coding packet schema".into());
+    if packet["schema"]
+        != if live {
+            "work-engine.coding-live-continuity-packet.v1"
+        } else {
+            "work-engine.coding-continuity-packet.v1"
+        }
+        || (live && packet["bounds"] != bounds)
+    {
+        return Err("coding packet schema/bounds".into());
     }
     let config = CodingConfig {
+        task: if live {
+            Some(String::from_utf8(
+                profile
+                    .provider
+                    .as_ref()
+                    .ok_or("provider plan absent")?
+                    .task
+                    .verify()?,
+            )?)
+        } else {
+            None
+        },
         budget: packet["budget"].clone(),
         expires_ms: job.deadline_unix_seconds.saturating_mul(1000).try_into()?,
         pressure_basis_points: packet["pressure_basis_points"]
@@ -110,9 +147,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         subject,
         ContextGeneration::parse("context:old")?,
         RuntimeIncarnation::parse("incarnation:pi:coding")?,
-        &pi_coding_profile_digest(),
+        &if live {
+            pi_coding_live_profile_digest()
+        } else {
+            pi_coding_profile_digest()
+        },
         PI_SDK_INDEX_SHA256,
-        &pi_coding_protocol_digest(),
+        &if live {
+            pi_coding_live_protocol_digest()
+        } else {
+            pi_coding_protocol_digest()
+        },
         SnapshotId::parse("snapshot:coding")?,
         &published.digest_hex,
         false,
@@ -144,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     host.acknowledge(id)?;
     println!(
         "{}",
-        json!({"status":"bounded_fixture_passed","result":PathBuf::from(&state_dir).join("coding-continuity-result.json"),"receipt_id":id,"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"})
+        json!({"status":if live {"bounded_live_continuity_completed"} else {"bounded_fixture_passed"},"result":PathBuf::from(&state_dir).join("coding-continuity-result.json"),"receipt_id":id,"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"})
     );
     Ok(())
 }

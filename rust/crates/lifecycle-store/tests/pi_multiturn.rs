@@ -276,6 +276,28 @@ fn valid_generic_native_proof_cannot_bypass_either_pi_identifier() {
         ),
         (pi_coding_profile_digest(), generic_protocol.clone(), false),
         (generic_profile.clone(), pi_coding_protocol_digest(), false),
+        // Live continuity (v4) identities, including mixed bindings, are equally
+        // unavailable to generic native settlement.
+        (
+            pi_coding_live_profile_digest(),
+            pi_coding_live_protocol_digest(),
+            false,
+        ),
+        (
+            pi_coding_live_profile_digest(),
+            generic_protocol.clone(),
+            false,
+        ),
+        (
+            generic_profile.clone(),
+            pi_coding_live_protocol_digest(),
+            false,
+        ),
+        (
+            pi_coding_live_profile_digest(),
+            pi_coding_protocol_digest(),
+            false,
+        ),
         (pi_profile_digest(), generic_protocol, false),
         (generic_profile, pi_protocol_digest(), false),
     ];
@@ -667,4 +689,182 @@ fn coding_recovery_envelope_does_not_expand_domain_or_foreign_profile_prompts() 
         ));
         assert!(store.native_recovery("oversized-domain").unwrap().is_none());
     }
+}
+
+fn live_events(inv: &str, model: &str) -> Vec<Value> {
+    fn swap(v: &mut Value, from: &str, to: &str) {
+        match v {
+            Value::String(s) if s == from => *s = to.into(),
+            Value::Array(a) => a.iter_mut().for_each(|v| swap(v, from, to)),
+            Value::Object(o) => o.values_mut().for_each(|v| swap(v, from, to)),
+            _ => {}
+        }
+    }
+    let mut values = coding_events(inv);
+    let original = values[18]["message"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    values.iter_mut().for_each(|v| swap(v, &original, model));
+    assert_eq!(values[18]["message"]["content"][0]["text"], model);
+    values
+}
+fn open_live(root: &std::path::Path) -> (SqliteLifecycleStore, NativeSessionEntry) {
+    setup_binding(
+        root,
+        &pi_coding_live_profile_digest(),
+        &pi_coding_live_protocol_digest(),
+    )
+}
+
+#[test]
+fn v4_keeps_actual_final_text_and_owner_checkpoint_as_distinct_bound_materials_across_reopen() {
+    let model = "Done. I edited the file as requested.";
+    let root = tempdir().unwrap();
+    let (mut store, session) = open_live(root.path());
+    let values = live_events("coding", model);
+    let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+    store.settle_pi_coding(&parent, &proof, clock()).unwrap();
+    let history_messages = values[22]["messages"].clone();
+    let verify = |store: &mut SqliteLifecycleStore| -> String {
+        // Generic projection: version 1, actual model text and its digest.
+        let material = store.native_final_material("coding").unwrap().unwrap();
+        assert_eq!(material.version, 1);
+        assert_eq!(material.final_text, model.as_bytes());
+        assert_eq!(material.final_sha256, hash(model.as_bytes()));
+        // Owner checkpoint: separate bytes bound to the same invocation,
+        // the same final digest and the same validated history.
+        let checkpoint = store.pi_coding_live_checkpoint(&parent).unwrap();
+        assert_ne!(checkpoint.as_bytes(), material.final_text.as_slice());
+        let value: Value = serde_json::from_str(&checkpoint).unwrap();
+        assert_eq!(value["profile"], "work-engine.pi-coding-live-continuity.v1");
+        let turn = &value["settled_turn"];
+        assert_eq!(turn["invocation_id"], "coding");
+        assert_eq!(turn["assistant_final_text_sha256"], material.final_sha256);
+        assert_eq!(turn["history_messages"], 4);
+        assert_eq!(
+            turn["history_messages_sha256"],
+            hash(&serde_json::to_vec(&history_messages).unwrap())
+        );
+        assert_eq!(value["coding_result"], values[9]["result"]);
+        assert_eq!(value["coding_result_sha256"], values[9]["artifact"]["sha256"]);
+        assert!(!checkpoint.contains(model));
+        checkpoint
+    };
+    let first = verify(&mut store);
+    // A permitted duplicate at a new coordinate cannot extend the evidence
+    // slice committed by the settled invocation.
+    store
+        .record_native_ingress(
+            session.id(),
+            "wire",
+            values.len() as u64 + 1,
+            &serde_json::to_vec(values.last().unwrap()).unwrap(),
+            "qualified",
+            Some("pi.session_history"),
+            Some("physical:pi"),
+            Some("turn:coding"),
+            None,
+            clock(),
+        )
+        .unwrap();
+    assert_eq!(
+        store.native_recovery("coding").unwrap().unwrap().class,
+        "CompletedSettled"
+    );
+    assert_eq!(verify(&mut store), first);
+    drop(store);
+    let mut store = SqliteLifecycleStore::open(root.path(), "issuer".into()).unwrap();
+    assert_eq!(verify(&mut store), first);
+    // The slice bound does not hide genuinely conflicting late evidence:
+    // normal owner conflict fencing still invalidates dependent material.
+    assert_eq!(
+        store
+            .record_native_ingress(
+                session.id(),
+                "wire",
+                values.len() as u64 + 2,
+                br#"{"type":"turn/failed"}"#,
+                "qualified",
+                Some("turn/failed"),
+                Some("physical:pi"),
+                Some("turn:coding"),
+                None,
+                clock(),
+            )
+            .unwrap(),
+        NativeIngressApply::ConflictFenced
+    );
+    assert!(store.pi_coding_live_checkpoint(&parent).is_err());
+}
+
+#[test]
+fn v4_tool_checkpoint_requires_initial_emission_boundary() {
+    let root = tempdir().unwrap();
+    let (mut store, session) = open_live(root.path());
+    let values = live_events("coding", "Done.");
+    let (parent, proof) = record(&mut store, &session, "coding", &values, 2);
+    assert!(store.settle_pi_coding(&parent, &proof, clock()).is_err());
+    assert_eq!(
+        store.native_recovery("coding").unwrap().unwrap().class,
+        "EnteredUncertain"
+    );
+}
+
+#[test]
+fn v4_checkpoint_refuses_tampered_material_and_other_profiles_are_unchanged() {
+    let model = "Done. I edited the file as requested.";
+    // Tampering with the committed final text breaks the binding to the
+    // validated evidence; the checkpoint is refused rather than re-served.
+    let root = tempdir().unwrap();
+    let (mut store, session) = open_live(root.path());
+    let values = live_events("coding", model);
+    let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+    store.settle_pi_coding(&parent, &proof, clock()).unwrap();
+    store.pi_coding_live_checkpoint(&parent).unwrap();
+    drop(store);
+    let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+    conn.execute(
+        "UPDATE native_turns SET final_text=?1 WHERE invocation_id='coding'",
+        [b"substituted final text".as_slice()],
+    )
+    .unwrap();
+    drop(conn);
+    let mut store = SqliteLifecycleStore::open(root.path(), "issuer".into()).unwrap();
+    assert!(store.pi_coding_live_checkpoint(&parent).is_err());
+    // Tampered immutable ingress (the validated Host result) is refused too.
+    let root = tempdir().unwrap();
+    let (mut store, session) = open_live(root.path());
+    let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+    store.settle_pi_coding(&parent, &proof, clock()).unwrap();
+    drop(store);
+    let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+    conn.execute(
+        "UPDATE native_ingress SET raw=?1 WHERE sequence=10",
+        [serde_json::to_vec(&json!({"type":"tool_execution_end","toolCallId":"one","toolName":"workspace_exec","isError":true,"result":{}})).unwrap()],
+    )
+    .unwrap();
+    drop(conn);
+    let mut store = SqliteLifecycleStore::open(root.path(), "issuer".into()).unwrap();
+    assert!(store.pi_coding_live_checkpoint(&parent).is_err());
+    // v3 (fixture) keeps its contract: the final text is the checkpoint and the
+    // v4 accessor refuses it.
+    let root = tempdir().unwrap();
+    let (mut store, session) = setup_binding(
+        root.path(),
+        &pi_coding_profile_digest(),
+        &pi_coding_protocol_digest(),
+    );
+    let fixture = coding_events("coding");
+    let (parent, proof) = record(&mut store, &session, "coding", &fixture, 1);
+    store.settle_pi_coding(&parent, &proof, clock()).unwrap();
+    let material = store.native_final_material("coding").unwrap().unwrap();
+    assert_eq!(
+        material.final_text,
+        fixture[18]["message"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+    );
+    assert!(store.pi_coding_live_checkpoint(&parent).is_err());
 }
