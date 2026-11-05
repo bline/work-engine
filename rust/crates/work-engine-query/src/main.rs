@@ -40,7 +40,7 @@ fn main() {
                 );
             } else if output.service {
                 if let Some(owner) = value.get("owner_result").filter(|v| !v.is_null()) {
-                    human(&args[2], owner);
+                    service_human(&args[2], owner);
                 } else {
                     eprintln!(
                         "Query failed: {}",
@@ -113,7 +113,10 @@ fn run(args: &[String], service: &mut bool) -> Result<Output, &'static str> {
         {
             return Err("invalid_profile");
         }
-        if !matches!(args[2].as_str(), "list_sessions" | "read_session") {
+        if !matches!(
+            args[2].as_str(),
+            "list_sessions" | "read_session" | "read_session_operation" | "read_session_result"
+        ) {
             return Err("invalid_query");
         }
         Some(p)
@@ -150,7 +153,16 @@ fn run(args: &[String], service: &mut bool) -> Result<Output, &'static str> {
         let operation = args[2].clone();
         let (tx, rx) = std::sync::mpsc::sync_channel(1);
         std::thread::spawn(move || {
-            let _ = tx.send(client.query(&operation, arguments, "work-engine-query"));
+            let result = match operation.as_str() {
+                "list_sessions" | "read_session" => {
+                    client.query(&operation, arguments, "work-engine-query")
+                }
+                "read_session_operation" | "read_session_result" => {
+                    client.command(&operation, arguments, "work-engine-query")
+                }
+                _ => Err("invalid_query"),
+            };
+            let _ = tx.send(result);
         });
         let value = rx
             .recv_timeout(timeout)
@@ -178,6 +190,47 @@ fn safe_human(value: &str) -> String {
         })
         .collect()
 }
+// Render owner observations without converting a missing or partial observation
+// into a negative claim. The direct v1 presentation remains unchanged.
+fn service_human(name: &str, v: &Value) {
+    human(name, v);
+    if matches!(name, "read_session_operation" | "read_session_result") {
+        for (key, label) in [
+            ("workers", "Workers"),
+            ("usage", "Usage"),
+            ("process_closure", "Process closure"),
+        ] {
+            let observation = &v[key];
+            let state = observation
+                .get("availability")
+                .and_then(Value::as_str)
+                .map(safe_human)
+                .unwrap_or_else(
+                    || match observation.get("available").and_then(Value::as_bool) {
+                        Some(true) => "available".into(),
+                        Some(false) => "unavailable".into(),
+                        None => "unknown".into(),
+                    },
+                );
+            println!("{label}: {state}");
+        }
+        if name == "read_session_result" {
+            let completion = &v["completion"];
+            let state = completion
+                .get("status")
+                .and_then(Value::as_str)
+                .map(safe_human)
+                .unwrap_or_else(
+                    || match completion.get("available").and_then(Value::as_bool) {
+                        Some(false) => "unavailable".into(),
+                        _ => "unknown".into(),
+                    },
+                );
+            println!("Completion: {state}");
+        }
+    }
+}
+
 fn human(name: &str, v: &Value) {
     match name {
         "list_sessions" => {
@@ -223,10 +276,10 @@ fn human(name: &str, v: &Value) {
         "read_session_result" => {
             println!(
                 "Result: {}",
-                if v["result"]["available"] == true {
-                    "available"
-                } else {
-                    "unavailable"
+                match v["result"]["available"].as_bool() {
+                    Some(true) => "available",
+                    Some(false) => "unavailable",
+                    None => "unknown",
                 }
             );
             if let Some(s) = v["result"]["text"].as_str() {
@@ -260,7 +313,7 @@ mod tests {
         let text = json!({"version":1,"kind":"local-service","endpoint":listener.local_addr().unwrap().to_string(),"credential_file":"/unread/credential","timeout_seconds":1});
         fs::write(&path, text.to_string()).unwrap();
         fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
-        for name in ["read_session_operation", "read_session_result"] {
+        for name in ["submit_session_request", "unknown_method"] {
             let args = vec![
                 "query".into(),
                 path.to_string_lossy().into_owned(),

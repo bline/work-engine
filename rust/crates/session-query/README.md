@@ -30,8 +30,10 @@ For `read_session`, `text_offset` and `max_chars` count characters in the origin
 The executable is built with `cargo build -p work-engine-query` from `rust/`.
 For an explicitly local service, use an owner-only profile file such as
 `{"version":1,"kind":"local-service","endpoint":"127.0.0.1:12345","credential_file":"/absolute/private/token","timeout_seconds":10}`.
-The numeric endpoint must be loopback, the timeout is 1–60 seconds, and only
-`list_sessions` and `read_session` are available. The credential stays in its
+The numeric endpoint must be loopback, the timeout is 1–60 seconds, and the four reads are available. Granted operation and result reads require
+the original request ID and domain grant credential in protected JSON input;
+the service credential authenticates transport independently and grants no domain authority.
+Reads may reconcile and persist owner state. No submit operation is exposed. The credential stays in its
 protected file. There is no fallback to a direct owner. JSON uses
 `work-engine.session-query.service.v1`: the complete server `envelope` is
 preserved for owner success and owner/server errors, which exit nonzero; local
