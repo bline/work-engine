@@ -13,6 +13,7 @@ pub struct PiAdapter {
     sequence: u64,
     uncertain_replacement: bool,
     initialized: bool,
+    multiturn: bool,
 }
 impl PiAdapter {
     /// Trusted composition supplies the pinned executable, glue and private
@@ -24,7 +25,17 @@ impl PiAdapter {
             sequence: 0,
             uncertain_replacement: false,
             initialized: false,
+            multiturn: false,
         })
+    }
+    /// Explicit opt-in to the owner-anchored v2 proof. Default launch stays v1.
+    pub fn launch_multiturn(
+        command: &mut tokio::process::Command,
+        transport: String,
+    ) -> Result<Self, Error> {
+        let mut adapter = Self::launch(command, transport)?;
+        adapter.multiturn = true;
+        Ok(adapter)
     }
     async fn request(&mut self, value: Value) -> Result<Value, Error> {
         self.pipe.send(&serde_json::to_vec(&value)?).await?;
@@ -41,7 +52,12 @@ impl PiAdapter {
     ) -> Result<(lifecycle_store::NativeSessionEntry, Value), Error> {
         if self.initialized
             || intent.thread().is_some()
-            || intent.profile_digest() != lifecycle_store::pi_profile_digest()
+            || intent.profile_digest()
+                != if self.multiturn {
+                    lifecycle_store::pi_multiturn_profile_digest()
+                } else {
+                    lifecycle_store::pi_profile_digest()
+                }
         {
             return Err("not a fresh Pi allocation permit".into());
         }
@@ -147,7 +163,11 @@ impl PiAdapter {
         checkpoint: &str,
         successor: lifecycle_store::NativeSessionEntry,
     ) -> Result<(lifecycle_store::NativeSessionEntry, Value), Error> {
-        store.validate_pi_session_binding(&successor)?;
+        if self.multiturn {
+            store.validate_pi_multiturn_session_binding(&successor)?;
+        } else {
+            store.validate_pi_session_binding(&successor)?;
+        }
         self.replacement_ready(store, subject, transition, checkpoint)?;
         if successor.subject() != subject || successor.thread().is_some() {
             return Err("not a fresh store-minted successor allocation intent".into());
@@ -161,6 +181,14 @@ impl PiAdapter {
         self.uncertain_replacement = true;
         let response = self.request(json!({"op":"replace"})).await?;
         Ok((successor, response))
+    }
+    /// Observation only; no lifecycle admission or context replacement.
+    pub async fn observe(&mut self) -> Result<Value, Error> {
+        self.request(json!({"op":"observe"})).await
+    }
+    /// Cleanup retains uncertain effects and observes the owned wrapper exit.
+    pub async fn terminate(mut self) -> Result<lifecycle_runtime::NativeChildExit, Error> {
+        Ok(self.pipe.terminate_and_reap(Duration::from_secs(3)).await?)
     }
     pub async fn close(mut self) -> Result<lifecycle_runtime::NativeChildExit, Error> {
         let response = self.request(json!({"op":"close"})).await;
@@ -309,16 +337,20 @@ mod tests {
         let (mut store, permit, root) = setup("profile", &"b".repeat(64));
         let witness = root.join("writes");
         let mut adapter = echo(&witness);
-        let refusal=adapter
-                .replace(
-                    &mut store,
-                    &SubjectId::parse("s").unwrap(),
-                    &TransitionId::parse("tr").unwrap(),
-                    "{}",
-                    permit
-                )
-                .await.unwrap_err();
-        assert!(matches!(refusal.downcast_ref::<StoreError>(),Some(StoreError::Rejected)));
+        let refusal = adapter
+            .replace(
+                &mut store,
+                &SubjectId::parse("s").unwrap(),
+                &TransitionId::parse("tr").unwrap(),
+                "{}",
+                permit,
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            refusal.downcast_ref::<StoreError>(),
+            Some(StoreError::Rejected)
+        ));
         adapter.close().await.unwrap();
         let lines = std::fs::read_to_string(witness).unwrap();
         assert_eq!(lines.lines().count(), 1);

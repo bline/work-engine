@@ -3028,7 +3028,11 @@ impl SqliteLifecycleStore {
         let (protocol, profile): (String,String) = tx.query_row(
             "SELECT s.protocol_digest,s.profile_digest FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
             [entry.invocation_id()], |r| Ok((r.get(0)?,r.get(1)?))).map_err(|_| StoreError::ClaimConflict)?;
-        if protocol == crate::pi_settlement::pi_protocol_digest() || profile == crate::pi_settlement::pi_profile_digest() {
+        if protocol == crate::pi_settlement::pi_protocol_digest()
+            || profile == crate::pi_settlement::pi_profile_digest()
+            || protocol == crate::pi_settlement::pi_multiturn_protocol_digest()
+            || profile == crate::pi_settlement::pi_multiturn_profile_digest()
+        {
             return Err(StoreError::Rejected);
         }
         let incomplete:i64=tx.query_row("SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1 AND state!='completed_settled'",

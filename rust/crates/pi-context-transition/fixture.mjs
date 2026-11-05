@@ -6,10 +6,12 @@ import {mkdirSync,writeFileSync,appendFileSync} from 'node:fs';
 import {createAgentSessionRuntime, createAgentSessionServices, createAgentSessionFromServices, SessionManager, SettingsManager} from '/runtime/node_modules/@earendil-works/pi-coding-agent/dist/index.js';
 import {markRuntimeStreamFunction} from '/runtime/node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js';
 import {createAssistantMessageEventStream} from '/runtime/node_modules/@earendil-works/pi-ai/dist/index.js';
-const emit=v=>{ const raw=JSON.stringify(v); appendFileSync('/work/actual-sdk.jsonl',raw+'\n'); process.stdout.write(raw+'\n'); };
+const work=process.env.PI_FIXTURE_ROOT || '/work';
+if (!/^\/work(?:\/[a-z]+)?$/.test(work)) throw Error('invalid fixture root');
+const emit=v=>{ const raw=JSON.stringify(v); appendFileSync(`${work}/actual-sdk.jsonl`,raw+'\n'); process.stdout.write(raw+'\n'); };
 const model={id:'fixture-disabled',name:'fixture-disabled',api:'openai-completions',provider:'fixture',baseUrl:'http://provider.invalid',reasoning:false,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:32768,maxTokens:1024};
 let runtime, reply='',active=false,callCount=0,replacements=0,subscriptions=0;
-const agentDir='/work/agent'; mkdirSync(agentDir,{recursive:true});
+const agentDir=`${work}/agent`; mkdirSync(agentDir,{recursive:true});
 async function factory(options) {
  const settingsManager=SettingsManager.inMemory({compaction:{enabled:false},retry:{enabled:false}});
  const services=await createAgentSessionServices({...options,settingsManager,resourceLoaderOptions:{noExtensions:true,noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,systemPrompt:'Provider-disabled context transition fixture.'}});
@@ -28,16 +30,18 @@ async function factory(options) {
 let currentPrompt='',invocationId='',turnCorrelation='';
 async function bind(session) {
  subscriptions++; session.subscribe(e=>{if(active)emit(e);});
- session.subscribe(e=>{appendFileSync('/work/pressure-observations.jsonl',JSON.stringify({producer:'pi-1.5.0',sessionId:session.sessionId,eventType:e.type,sourceMessageTimestamp:e.message?.timestamp,observedAt:new Date().toISOString(),contextUsage:session.getContextUsage(),contextWindow:session.model.contextWindow})+'\n');});
+ session.subscribe(e=>{appendFileSync(`${work}/pressure-observations.jsonl`,JSON.stringify({producer:'pi-1.5.0',sessionId:session.sessionId,eventType:e.type,sourceMessageTimestamp:e.message?.timestamp,observedAt:new Date().toISOString(),contextUsage:session.getContextUsage(),contextWindow:session.model.contextWindow})+'\n');});
  session.observationBinding={sessionId:session.sessionId,contextWindow:session.model.contextWindow,pressureAtBind:session.getContextUsage(),collectionSubscriptions:1,pressureSubscriptions:1};
 }
 for await(const line of createInterface({input:process.stdin})) {
  try {
   const command=JSON.parse(line);
   if(command.op==='init') {
-   runtime=await createAgentSessionRuntime(factory,{cwd:'/work',agentDir,sessionManager:SessionManager.create('/work','/work/sessions')});
+   runtime=await createAgentSessionRuntime(factory,{cwd:work,agentDir,sessionManager:SessionManager.create(work,`${work}/sessions`)});
    runtime.setRebindSession(bind); await bind(runtime.session);
    emit({type:'pi.ready',sessionId:runtime.session.sessionId,subscriptions,observationBinding:runtime.session.observationBinding});
+  } else if(command.op==='observe') {
+   emit({type:'pi.observation',observedAt:new Date().toISOString(),sessionId:runtime.session.sessionId,idle:!active,contextUsage:runtime.session.getContextUsage(),contextWindow:runtime.session.model.contextWindow});
   } else if(command.op==='prompt') {
    currentPrompt=command.text;reply=command.fixture_reply;invocationId=command.invocationId;turnCorrelation=command.turnCorrelation;active=true;
    await runtime.session.prompt(currentPrompt);active=false;
@@ -47,7 +51,7 @@ for await(const line of createInterface({input:process.stdin})) {
    const old=runtime.session.sessionId;const result=await runtime.newSession();
    emit({type:'pi.replaced',oldSessionId:old,sessionId:runtime.session.sessionId,result,subscriptions,observationBinding:runtime.session.observationBinding,messages:runtime.session.messages});
   } else if(command.op==='close') {
-   await runtime.dispose();writeFileSync('/work/sdk-counts.json',JSON.stringify({callCount,replacements,subscriptions}));emit({type:'pi.closed',callCount,replacements,subscriptions});break;
+   await runtime.dispose();writeFileSync(`${work}/sdk-counts.json`,JSON.stringify({callCount,replacements,subscriptions}));emit({type:'pi.closed',callCount,replacements,subscriptions});break;
   } else throw Error('unsupported glue command');
  } catch(error) {active=false;emit({type:'pi.error',message:String(error),stack:error.stack});}
 }

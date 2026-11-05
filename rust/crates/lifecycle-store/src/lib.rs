@@ -6,7 +6,10 @@ mod direct_semantic;
 mod held_selection;
 mod native;
 mod pi_settlement;
-pub use pi_settlement::{PiSettlementProof, PI_SDK_INDEX_SHA256, pi_profile_digest, pi_protocol_digest};
+pub use pi_settlement::{
+    PI_SDK_INDEX_SHA256, PiSettlementProof, pi_multiturn_profile_digest,
+    pi_multiturn_protocol_digest, pi_profile_digest, pi_protocol_digest,
+};
 mod recovery;
 mod schema;
 mod semantic;
@@ -32,8 +35,9 @@ pub use native::{
 };
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
 pub use semantic::{
-    CurrentSemanticMaterialBlock, SemanticCaptureRecord, SemanticCheckpointPackage,
-    DirectAdmittedCheckpoint, DirectProofCheckpoint, SemanticMaterialRejectionRecord, SemanticResultRecord,
+    CurrentSemanticMaterialBlock, DirectAdmittedCheckpoint, DirectProofCheckpoint,
+    SemanticCaptureRecord, SemanticCheckpointPackage, SemanticMaterialRejectionRecord,
+    SemanticResultRecord,
 };
 pub use sqlite::{GrantControlHandle, SqliteLifecycleStore};
 

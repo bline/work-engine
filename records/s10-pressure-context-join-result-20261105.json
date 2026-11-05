@@ -1,0 +1,123 @@
+{
+  "schema": "s10-pressure-context-join-result-v1",
+  "standing": "Dated bounded local qualification record; no live execution or release grant",
+  "status": "accepted",
+  "at": "2026-11-05T04:32:56.909903+00:00",
+  "profile": "pi-1.5.0-runtime-anchored-turns-v2",
+  "source": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/worker/review-exclusion/final-source-manifest.json",
+      "sha256": "75225a76ba80759c65f67ad632e93f1d2f14f601d2682891e0ce75778e18907d"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/worker/review-exclusion/source-freeze-r1/subject.tar",
+      "sha256": "1f2bcf522ca3d4027700ed1653b704539d6ecf48a45875b0b5d9f3111668aa60"
+    },
+    "worker_result": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/worker/review-exclusion/worker-result.json",
+      "sha256": "3109c16dfab3daeaea36be9efd848dd4b209be05281c7b21705fdea5340e4223"
+    },
+    "paths": 13
+  },
+  "behavior": [
+    "Outer deterministic Rust host and lifecycle SQLite stay outside Docker; only Pi SDK inference harness runs inside",
+    "Exact injected external pressure/control is observed in original SDK provider input; actual SDK usage preserved separately",
+    "Lifecycle-owned checkpoint, physical fresh session, exact recovery and additional domain turn all settle in happy lane",
+    "Cancellation and fixture exhaustion durably contract grants before recovery; preissued permit cannot send, reopened fence persists",
+    "Existing v1 profile remains strict; opt-in v2 verifies retained message/branch prefix against owner-derived previously settled immutable ingress",
+    "Generic native settlement excludes all Pi profile/protocol identifiers, including mixed bindings"
+  ],
+  "validation": {
+    "new_host_tests": 4,
+    "owner": "V2 anchored-prefix negatives and v1 regressions; valid generic-native positive control and full/mixed Pi exclusions pass",
+    "adapter_tests": "Original default v1 tests pass",
+    "strict_host_all_target_clippy_fmt": "pass",
+    "owner_strict_clippy_exception": "Unchanged needless_borrow expression in native.rs; original strict failure preserved, separately labelled limited exception. Final file changes only exclusion guard; no blanket strict-owner pass.",
+    "runtime_custody": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/worker/review-exclusion/runtime-custody-r1/summary.json",
+      "sha256": "9ca72fb11d891a358721d657ddb4627e15ace12c9c1da06245f45e23ea9df74b"
+    },
+    "sdk_sqlite_readback": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/worker/review-exclusion/postcollection-custody/raw-sdk-and-durable-readback.stdout",
+      "sha256": "f4ad9e1c8911d26982495cffc9ff26512712037311c9e16e944fa8508922ed99"
+    },
+    "frozen_runtime_manifest": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/worker/review-exclusion/runtime-evidence-freeze/manifest.json",
+      "sha256": "194e0d8df5f30f444172b3ee6051dc1f0607dbcef32a42d69589c0b1f7fb160d"
+    },
+    "root_pins": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/root-exclusion-repair-pins.json",
+      "sha256": "208d6b448f86352aadb25758593a8fec295272e4e3aee5123c7ba5d6cab589cd"
+    }
+  },
+  "review": {
+    "initial": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/review-r1-collected.json",
+      "sha256": "d92ac3f99e5e36655a989ea4400e18ff509caa8987b2c08918357fbed05b8cd3"
+    },
+    "retained_recheck": {
+      "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/review-r2-collected.json",
+      "sha256": "b9c0c8cdd6397a649e7f23423f04d98255921014bf23b298b28af06677388d34"
+    },
+    "outcome": "One P2 alternate settlement bypass repaired and closed; no remaining P1/P2",
+    "grant": "Separate fresh initial Astra/xhigh/default, native readOnly/networkfalse; same isolated reviewer retained for recheck"
+  },
+  "acceptance": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/ACCEPTANCE.json",
+    "sha256": "1bf297ba149663ecb769573e118e0bb9603cade700c7f19963829a0657817cb8"
+  },
+  "cumulative_actual_effects": {
+    "containers": 3,
+    "SDK_entries": 7,
+    "fake_provider_requests": 13,
+    "resets": 7,
+    "live_provider_calls": 0,
+    "restart_sends_resets": 0
+  },
+  "collection": "All SDK wrappers, host processes and Docker daemon stop/wait/inspect/removal/absence collected; no further runtime entry",
+  "history": [
+    "First v1 join reached SDK continuation but owner rejected retained history; continued turn remains entered_uncertain/send_intent1, never replayed or resettled under v2",
+    "Earlier v2 candidate runtime evidence remains historical; corrected exact guard source qualified afresh",
+    "ENOSPC, read-only gate timeout, supplementary collection argv and baseline lint failures retained in private evidence"
+  ],
+  "limits": [
+    "Injected local fixture pressure/exhaustion, not measured quota exhaustion or model comprehension",
+    "Tools and live providers disabled; no credentials, production reset, deploy or push",
+    "No task-owner, shared MCP delivery, live semantic adequacy, fullS10/M6 or release acceptance",
+    "Selected outer-actor confinement; no claim of universal low-level stop authority"
+  ],
+  "composition": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-context-join-20261105T0324/publication-dependency-guard.json",
+    "sha256": "0a388fc2da140c9d8306dd285ab61a71e9bdd406e7ea9e49ca59076b73234c66"
+  },
+  "budget": {
+    "cap_usd": 18,
+    "cap_minutes": 90,
+    "deadline": "2026-11-05T04:54:49.506Z",
+    "observation_before_publication": {
+      "observed_at": "2026-11-05T04:29:06.695557+00:00",
+      "canonical_since_approval_usd": 9.600852400000004,
+      "fixed_planning_carry_usd": 0.08776600000000001,
+      "total_usd": 9.688618400000005,
+      "hard_usd": 18,
+      "hard_deadline": "2026-11-05T04:54:49.506000+00:00",
+      "nodes": [
+        {
+          "sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+          "usd": 2.2822116
+        },
+        {
+          "sid": "01a1a9c0-478b-79e3-9a7e-638b98214c84",
+          "usd": 3.2340187999999985
+        },
+        {
+          "sid": "01a1a9e6-b0a9-7422-8f25-bf0cb6345360",
+          "usd": 4.084622
+        }
+      ],
+      "tail": "recorded observation; future/inflight/closing cost not settled"
+    },
+    "units": "speed-adjusted API-equivalent accounting dollars; final reporting tail not settled"
+  },
+  "documentation": "This result record is non-executable and added after qualification, outside the compiled source closure."
+}
