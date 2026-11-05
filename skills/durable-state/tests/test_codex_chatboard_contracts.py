@@ -1414,5 +1414,332 @@ class ParityTest(RepoCase):
         self.assertEqual(documented, expected, "registry values are the source")
 
 
+
+class ConditionalReplyTest(RepoCase):
+    def test_ordinary_committed_git_death_is_unknown_without_retry(self):
+        from durable_state import DurableStateUnknown
+        revision = self.request()
+        marker = self.repository / "cas-count"
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,signal\nfrom pathlib import Path\n"
+            + "if sys.argv[1]=='prepared':\n with Path(" + repr(str(marker)) + ").open('a') as f: f.write('1\\n')\n"
+            + "if sys.argv[1]=='committed':\n print('revision conflict',file=sys.stderr,flush=True)\n os.kill(os.getppid(),signal.SIGKILL)\n")
+        hook.chmod(0o700)
+        candidate = self.candidate(920)
+        with self.assertRaises(DurableStateUnknown):
+            BOARD.post(self.repository, **candidate)
+        self.assertEqual(marker.read_text(), "1\n")
+        recovered = self.conditional(revision, candidate)
+        self.assertFalse(recovered["appended"])
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+        self.assertEqual(marker.read_text(), "1\n")
+
+    def test_hook_stderr_cannot_turn_storage_refusal_into_cas_retry(self):
+        marker = self.repository / "cas-count"
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport sys\nfrom pathlib import Path\n"
+            + "if sys.argv[1]=='prepared':\n with Path(" + repr(str(marker)) + ").open('a') as f: f.write('1\\n')\n"
+            + " print('revision conflict',file=sys.stderr,flush=True)\n sys.exit(1)\n")
+        hook.chmod(0o700)
+        with self.assertRaisesRegex(DurableStateError, "refused before commit"):
+            self.post()
+        self.assertEqual(marker.read_text(), "1\n")
+        self.assertEqual(self.board()[0]["messages"], [])
+
+    def test_ordinary_real_contention_retries_without_losing_either_post(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        barrier = Barrier(2)
+        class RacingStore(GitRefDurableStateStore):
+            gated = False
+            def _git(self, args, input_bytes=None, **kwargs):
+                result = super()._git(args, input_bytes, **kwargs)
+                if args[0] == "hash-object" and not self.gated:
+                    self.gated = True
+                    barrier.wait(timeout=10)
+                return result
+        with patch.object(BOARD, "GitRefDurableStateStore", RacingStore):
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                results = list(pool.map(lambda n: self.post(message_id=mid(n)), (910, 911)))
+        self.assertEqual({r["message"]["sequence"] for r in results}, {1, 2})
+        self.assertEqual({r["message_id"] for r in self.board()[0]["messages"]}, {mid(910), mid(911)})
+
+    def test_early_eof_refusal_closes_fence_holding_descendant(self):
+        import ctypes, fcntl, os, signal, time
+        from durable_state import DurableStateUnknown
+        self.assertEqual(ctypes.CDLL(None).prctl(36, 1, 0, 0, 0), 0)
+        revision = self.request()
+        marker = self.repository / "closed-pipe-descendant"
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,time\nfrom pathlib import Path\n"
+            "if sys.argv[1]=='prepared':\n child=os.fork()\n if child==0:\n"
+            "  os.close(0); os.close(1); os.close(2); time.sleep(20); os._exit(0)\n"
+            + " Path(" + repr(str(marker)) + ").write_text(str(child))\n sys.exit(1)\n")
+        hook.chmod(0o700)
+        try:
+            with (self.repository / "fence").open("w+b") as fence:
+                fcntl.flock(fence, fcntl.LOCK_EX)
+                with patch.dict(os.environ, {"WORK_ENGINE_REGISTRY_FENCE_FD": str(fence.fileno())}):
+                    with self.assertRaises(DurableStateUnknown):
+                        self.conditional(revision)
+            with (self.repository / "fence").open("r+b") as writer:
+                fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.assertEqual(len(self.board()[0]["messages"]), 1)
+        finally:
+            if marker.exists():
+                pid = int(marker.read_text())
+                try: os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError: pass
+                try: os.waitpid(pid, 0)
+                except ChildProcessError: pass
+
+    def candidate(self, n=901, disposition="answered"):
+        return dict(author="owner", session_id=SESSION_2, topic="t", body="signed answer",
+                    references=[], message_id=mid(n), observed_at="2026-11-02T00:00:00Z",
+                    kind="reply", to=[f"session:{SESSION_1}"], in_reply_to=1,
+                    data={"disposition": disposition})
+
+    def request(self):
+        self.post(kind="request", to=["role:owner"], data={"ask":"synthetic", "needed_by":"2026-11-03T00:00:00Z"})
+        return self.board()[1]
+
+    def conditional(self, revision, candidate=None):
+        return BOARD.conditional_reply(self.repository, expected_revision=revision,
+                                      max_elapsed_seconds=10, **(candidate or self.candidate()))
+
+    def test_exact_retry_is_history_even_after_supersession_and_changed_id_conflicts(self):
+        revision=self.request()
+        first=self.conditional(revision)
+        self.assertTrue(first["appended"])
+        self.post(supersedes=1)
+        second=self.conditional(revision)
+        self.assertEqual(first["message"],second["message"])
+        self.assertFalse(second["appended"])
+        changed=self.candidate(); changed["observed_at"]="2026-11-02T00:00:01Z"
+        with self.assertRaisesRegex(BOARD.ChatboardError,"different content"):
+            self.conditional(revision,changed)
+        with self.assertRaisesRegex(BOARD.ChatboardError,"superseded|already closed"):
+            self.conditional(self.board()[1],self.candidate(902))
+
+    def test_stale_revision_and_competing_closes_never_rebase(self):
+        revision=self.request()
+        self.post()
+        with self.assertRaisesRegex(BOARD.ChatboardError,"revision conflict"):
+            self.conditional(revision)
+        revision=self.board()[1]
+        self.conditional(revision)
+        with self.assertRaisesRegex(BOARD.ChatboardError,"already closed"):
+            self.conditional(self.board()[1],self.candidate(902,"declined"))
+        self.assertEqual(len(self.board()[0]["messages"]),3)
+
+    def test_all_dispositions_and_expiry_at_publication(self):
+        revision=self.request()
+        for n,d in [(902,"deferred"),(903,"partial")]:
+            self.conditional(revision,self.candidate(n,d));revision=self.board()[1]
+        with self.assertRaisesRegex(BOARD.ChatboardError,"deadline expired"):
+            BOARD.conditional_reply(self.repository,expected_revision=revision,
+                max_elapsed_seconds=10,deadline_monotonic=0,**self.candidate(904,"declined"))
+        self.conditional(revision,self.candidate(904,"declined"))
+        self.assertEqual(BOARD.requests_view(self.board()[0])["addressees"][0]["open_count"],0)
+
+    def test_actual_cas_conflict_is_not_retried(self):
+        revision=self.request()
+        real=GitRefDurableStateStore
+        case=self
+        class RacingStore(real):
+            calls=0
+            def publish(self,key,payload,expected,**kwargs):
+                RacingStore.calls+=1
+                # A real competing owner publication advances the opaque ref.
+                with patch.object(BOARD,"GitRefDurableStateStore",real): case.post()
+                return super().publish(key,payload,expected,**kwargs)
+        with patch.object(BOARD,"GitRefDurableStateStore",RacingStore):
+            with self.assertRaisesRegex(BOARD.ChatboardError,"revision conflict"):
+                self.conditional(revision)
+        self.assertEqual(RacingStore.calls,1)
+        self.assertEqual(len(self.board()[0]["messages"]),2)
+
+    def test_process_crash_before_and_after_real_publication(self):
+        revision=self.request()
+        candidate=self.candidate()
+        driver='''import sys,json,os
+sys.path.insert(0,sys.argv[1])
+import codex_chatboard as b
+from pathlib import Path
+real=b.GitRefDurableStateStore.publish
+def crash(self,*args,**kwargs):
+ if sys.argv[5]=='before': os._exit(71)
+ result=real(self,*args,**kwargs)
+ os._exit(72)
+b.GitRefDurableStateStore.publish=crash
+b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_seconds=10,**json.loads(sys.argv[4]))
+'''
+        for when,code in [("before",71),("after",72)]:
+            result=subprocess.run([sys.executable,"-I","-c",driver,str(SCRIPT.parent),str(self.repository),revision,json.dumps(candidate),when],capture_output=True,text=True,timeout=15)
+            self.assertEqual(result.returncode,code,result.stderr)
+            self.assertEqual(len(self.board()[0]["messages"]),1 if when=="before" else 2)
+        retry=self.conditional(revision,candidate)
+        self.assertEqual(retry["message"]["sequence"],2)
+        self.assertEqual(len(self.board()[0]["messages"]),2)
+
+    def test_concurrent_exact_candidates_publish_once_or_report_conflict(self):
+        from concurrent.futures import ThreadPoolExecutor
+        revision=self.request()
+        def attempt(_):
+            try: return self.conditional(revision)
+            except __import__('durable_state').DurableStateUnknown:
+                return None
+            except BOARD.ChatboardError as failure:
+                self.assertIn("revision conflict",str(failure));return None
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(attempt,range(2)))
+        self.assertTrue(any(results))
+        final=self.conditional(revision)
+        for result in filter(None,results): self.assertEqual(result["message"],final["message"])
+        self.assertEqual(len(self.board()[0]["messages"]),2)
+
+    def test_conditional_snapshot_refuses_filtered_or_gapped_rows(self):
+        self.request()
+        self.raw_rewrite(lambda board: board["messages"].append({"invalid":"row without sequence"}))
+        with self.assertRaisesRegex(BOARD.ChatboardError,"incomplete or malformed"):
+            BOARD.owner_boundary_io(self.repository,{"operation":"snapshot"})
+        with self.assertRaisesRegex(BOARD.ChatboardError,"incomplete or malformed"):
+            self.conditional(self.board()[1])
+
+    def test_elapsed_store_read_does_not_reset_deadline(self):
+        import time
+        revision=self.request()
+        real=GitRefDurableStateStore
+        class SlowRead(real):
+            def read(self,key):
+                time.sleep(.03)
+                return super().read(key)
+        with patch.object(BOARD,"GitRefDurableStateStore",SlowRead):
+            with self.assertRaisesRegex(BOARD.ChatboardError,"deadline expired"):
+                BOARD.conditional_reply(self.repository,expected_revision=revision,
+                    max_elapsed_seconds=.001,**self.candidate())
+        self.assertEqual(len(self.board()[0]["messages"]),1)
+
+    def test_ordinary_writer_races_exact_row_after_initial_read(self):
+        revision = self.request()
+        candidate = self.candidate()
+        # The caller already captured revision. An ordinary writer wins next.
+        ordinary = BOARD.post(self.repository, **candidate)
+        result = self.conditional(revision, candidate)
+        self.assertFalse(result["appended"])
+        self.assertEqual(result["message"], ordinary["message"])
+        changed = dict(candidate, observed_at="2026-11-02T00:00:01Z")
+        with self.assertRaisesRegex(BOARD.ChatboardError, "different content"):
+            self.conditional(revision, changed)
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+
+    def test_delayed_hash_and_history_preparation_refuses_final_cas(self):
+        import time
+        for delayed in ("hash-object", "history"):
+            with self.subTest(delayed=delayed):
+                # Each iteration has an open request and no reply.
+                if delayed == "hash-object":
+                    revision = self.request()
+                else:
+                    revision = self.board()[1]
+                real = GitRefDurableStateStore
+                class SlowPreparation(real):
+                    def _git(self, args, input_bytes=None, **kwargs):
+                        result = super()._git(args, input_bytes, **kwargs)
+                        if args[0] == delayed:
+                            time.sleep(.15)
+                        return result
+                    def _current(self, ref, **kwargs):
+                        result = super()._current(ref, **kwargs)
+                        if delayed == "history" and "-history/" in ref:
+                            time.sleep(.15)
+                        return result
+                with patch.object(BOARD, "GitRefDurableStateStore", SlowPreparation):
+                    with self.assertRaisesRegex(BOARD.ChatboardError, "deadline expired"):
+                        BOARD.conditional_reply(self.repository, expected_revision=revision,
+                            max_elapsed_seconds=.1, **self.candidate())
+                self.assertEqual(len(self.board()[0]["messages"]), 1)
+
+    def test_interrupted_final_cas_preserves_unknown_even_when_row_exists(self):
+        from durable_state import DurableStateUnknown
+        revision = self.request()
+        class LostResult(GitRefDurableStateStore):
+            calls = 0
+            def _git(self, args, input_bytes=None, **kwargs):
+                result = super()._git(args, input_bytes, **kwargs)
+                if args[0] == "update-ref":
+                    LostResult.calls += 1
+                    raise DurableStateUnknown("publication outcome unknown")
+                return result
+        with patch.object(BOARD, "GitRefDurableStateStore", LostResult):
+            with self.assertRaisesRegex(DurableStateUnknown, "outcome unknown"):
+                self.conditional(revision)
+        self.assertEqual(LostResult.calls, 1)
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+        self.assertFalse(self.conditional(revision)["appended"])
+
+    def test_actual_git_killed_in_committed_hook_remains_unknown(self):
+        from durable_state import DurableStateUnknown
+        revision = self.request()
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,signal\nif sys.argv[1]=='committed':\n print('revision conflict',file=sys.stderr,flush=True)\n os.kill(os.getppid(),signal.SIGKILL)\n")
+        hook.chmod(0o700)
+        with self.assertRaises(DurableStateUnknown):
+            self.conditional(revision)
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+        self.assertFalse(self.conditional(revision)["appended"])
+
+    def test_original_deadline_bounds_constructor_and_initial_blob_read(self):
+        import time
+        real = GitRefDurableStateStore
+        revision = self.request()
+        class ObserveDeadline(real):
+            seen = []
+            def _run_git(self, args, input_bytes, deadline):
+                ObserveDeadline.seen.append(self._deadline if deadline is None else deadline)
+                return super()._run_git(args, input_bytes, deadline)
+        deadline = time.monotonic()+2
+        with patch.object(BOARD, "GitRefDurableStateStore", ObserveDeadline):
+            BOARD.conditional_reply(self.repository, expected_revision=revision,
+                max_elapsed_seconds=10, deadline_monotonic=deadline, **self.candidate())
+        self.assertGreater(len(ObserveDeadline.seen), 5)
+        self.assertEqual(set(ObserveDeadline.seen), {deadline})
+
+    def test_timeout_closes_actual_git_hook_descendants_and_captured_pipes(self):
+        import ctypes, os, time
+        from durable_state import DurableStateUnknown
+        libc = ctypes.CDLL(None)
+        self.assertEqual(libc.prctl(36, 1, 0, 0, 0), 0)  # Linux child subreaper.
+        revision = self.request()
+        hook = self.repository / ".git/hooks/reference-transaction"
+        marker = self.repository / "hook-descendants"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,time\nfrom pathlib import Path\n"
+            + "if sys.argv[1]=='prepared':\n child=os.fork()\n if child==0: time.sleep(20); os._exit(0)\n"
+            + " Path(" + repr(str(marker)) + ").write_text(str(os.getpid())+' '+str(child))\n time.sleep(20)\n")
+        hook.chmod(0o700)
+        started = time.monotonic()
+        with self.assertRaises(DurableStateUnknown):
+            BOARD.conditional_reply(self.repository, expected_revision=revision,
+                max_elapsed_seconds=2, **self.candidate())
+        self.assertLess(time.monotonic()-started, 4)
+        for pid in map(int, marker.read_text().split()):
+            end = time.monotonic()+1
+            while True:
+                try:
+                    waited, status = os.waitpid(pid, os.WNOHANG)
+                    if waited:
+                        self.assertEqual(waited, pid)
+                        self.assertTrue(os.WIFSIGNALED(status))
+                        break
+                except ChildProcessError:
+                    try:
+                        os.kill(pid, 0)
+                    except ProcessLookupError:
+                        break  # Already reaped by its actual parent.
+                self.assertLess(time.monotonic(), end, "descendant remains alive/uncollected")
+                time.sleep(.005)
+        self.assertEqual(len(self.board()[0]["messages"]), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

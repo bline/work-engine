@@ -541,3 +541,60 @@ defaults to 100 (maximum 500). `total_topics`, `has_more` and `next_offset` expo
 pagination. Each page is a fresh board snapshot with its own `revision`; if that
 revision changes between pages, restart listing for consistent coverage. This
 is discovery of recorded labels, not a topic subscription or liveness registry.
+
+## Opt-in conditional replies
+
+`conditional_reply(repository, expected_revision=..., max_elapsed_seconds=...,
+**candidate)` reuses the ordinary post owner's envelope/relation/ID validation
+and durable CAS. Candidate fields are author, session_id, topic, body, references,
+message_id, observed_at, kind=reply, to, in_reply_to and data. Preserve the whole
+candidate, including observed_at, on retry. New candidates require the exact
+opaque observed revision, target an existing request and reject superseded or
+already closed requests. A CAS conflict is returned without rebasing. Ordinary
+`post` behavior remains unchanged.
+
+An exact already stored candidate is immutable history and may be returned after
+closure, supersession or expiry. That result is never renewed current authority.
+Changed reuse of message_id conflicts. The optional deadline_monotonic is an
+absolute deadline in the host's CLOCK_MONOTONIC domain; it prevents subprocess
+startup/acquisition waits from resetting the caller's remaining deadline.
+Checks immediately precede the durable owner's CAS invocation, not an atomic
+wall-clock predicate inside Git or a hard real-time scheduler guarantee.
+
+`owner-boundary-io --command-json JSON` is a fixed backend adapter surface. It
+accepts a complete canonical snapshot operation, or a conditional_reply operation
+with expected_revision, max_elapsed_seconds, deadline_monotonic and candidate.
+Snapshots encode each full row with the existing compact sorted Unicode JSON
+owner-answer codec. Explicit conditional rejection is structured; missing process
+ACK is still unknown to a caller. This operation neither verifies signatures nor
+confers human/action authority from role, data.verified or storage credentials.
+The Rust synthetic boundary owns cryptographic meaning and registry eligibility.
+
+Conditional replies return `appended: true` only for an actual append by that
+invocation. `appended: false` denotes exact existing history, including an
+ordinary writer racing after the caller's snapshot; it establishes no renewed
+eligibility. Ordinary post responses retain their existing shape. The original
+monotonic deadline is forwarded through durable hash/history/ref preparation
+and checked at final Git CAS subprocess entry, with bounded preparation waits.
+Interruption after CAS entry remains unknown; Git has no atomic real-time clock
+predicate. A protected backend may inherit a registry serialization descriptor;
+the durable owner explicitly preserves it through final Git processes, without
+giving it approval meaning or adding a semantic store.
+
+Ordinary concurrent posts retain bounded CAS retry. The publisher withholds the
+transaction's commit command until preparation acknowledges success. A changed
+head selects a retry only after the owned Git transaction has stopped and no
+commit bytes were sent. Hook stderr does not establish conflict. Once commit
+bytes might have been delivered, a failed or lost response remains unknown;
+recover the exact stored candidate through the existing history path.
+
+Conditional Git calls use a private per-command Python keeper started in a
+fresh interpreter. It owns Git independently of the original Rust and board
+Python callers, preserving their original monotonic deadline and inherited
+registry open file description. On success, error, early EOF or timeout, it
+terminates the owned process group before reaping its leader, then collects
+descendants and closes descriptors without explicitly unlocking the fence.
+Cleanup has up to one second of grace after the effect deadline; missing
+completion or cleanup evidence remains unknown. This supports cooperative
+same-group descendants on Linux, without claiming containment of group escape,
+NFS behavior or uninterruptible kernel processes.

@@ -67,6 +67,37 @@ pub(crate) fn run_bounded(
     args: &[&std::ffi::OsStr],
     duration: Duration,
 ) -> Option<Vec<u8>> {
+    run_bounded_fenced(program, args, duration, None)
+}
+fn exited_unreaped(child: &std::process::Child) -> std::io::Result<bool> {
+    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+    if unsafe {
+        libc::waitid(
+            libc::P_PID,
+            child.id(),
+            &mut info,
+            libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
+        )
+    } != 0
+    {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(unsafe { info.si_pid() } != 0)
+}
+fn finish_group(child: &mut std::process::Child) -> std::io::Result<std::process::ExitStatus> {
+    // If ownership has already been released, no group signal is permitted.
+    exited_unreaped(child)?;
+    // Every observation above is non-reaping. Reserve the leader identity until
+    // this final possible signal, then collect its actual status exactly once.
+    unsafe { libc::kill(-(child.id() as i32), libc::SIGKILL) };
+    child.wait()
+}
+pub(crate) fn run_bounded_fenced(
+    program: &Program,
+    args: &[&std::ffi::OsStr],
+    duration: Duration,
+    fence: Option<&crate::registry_fence::Fence>,
+) -> Option<Vec<u8>> {
     use std::os::{fd::AsRawFd, unix::process::CommandExt};
     if !pinned(&program.python)
         || !pinned(&program.script)
@@ -74,7 +105,21 @@ pub(crate) fn run_bounded(
     {
         return None;
     }
-    let mut child = Command::new(&program.python.path)
+    let mut command = Command::new(&program.python.path);
+    command.env_remove("WORK_ENGINE_REGISTRY_FENCE_FD");
+    if let Some(fd) = fence.and_then(crate::registry_fence::Fence::fd) {
+        command.env("WORK_ENGINE_REGISTRY_FENCE_FD", fd.to_string());
+        // Only this child inherits the description; the parent's CLOEXEC stays.
+        unsafe {
+            command.pre_exec(move || {
+                if libc::fcntl(fd, libc::F_SETFD, 0) < 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+    }
+    let mut child = command
         .arg("-I")
         .arg(&program.script.path)
         .args(args)
@@ -84,23 +129,20 @@ pub(crate) fn run_bounded(
         .process_group(0)
         .spawn()
         .ok()?;
-    let pid = child.id() as i32;
     let Some(mut stdout) = child.stdout.take() else {
-        let _ = child.kill();
-        let _ = child.wait();
+        let _ = finish_group(&mut child);
         return None;
     };
     let fd = stdout.as_raw_fd();
     let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
     if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
-        let _ = child.kill();
-        let _ = child.wait();
+        let _ = finish_group(&mut child);
         return None;
     }
     let deadline = Instant::now() + duration;
     let mut data = Vec::new();
     let mut eof = false;
-    let mut status = None;
+    let mut exited = false;
     loop {
         let mut buf = [0u8; 8192];
         match stdout.read(&mut buf) {
@@ -114,13 +156,13 @@ pub(crate) fn run_bounded(
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
             Err(_) => break,
         }
-        if status.is_none() {
-            match child.try_wait() {
-                Ok(s) => status = s,
+        if !exited {
+            match exited_unreaped(&child) {
+                Ok(s) => exited = s,
                 Err(_) => break,
             }
         }
-        if eof && status.is_some() {
+        if eof && exited {
             break;
         }
         if Instant::now() >= deadline {
@@ -128,13 +170,11 @@ pub(crate) fn run_bounded(
         }
         std::thread::sleep(Duration::from_millis(10));
     }
-    if !eof || status.is_none() || data.len() > 8 * 1024 * 1024 {
-        // Only the process group started above is targeted; no system-wide kill.
-        unsafe { libc::kill(-pid, libc::SIGKILL) };
-        let _ = child.wait();
+    let status = finish_group(&mut child).ok()?;
+    if !eof || !exited || data.len() > 8 * 1024 * 1024 {
         return None;
     }
-    if !status?.success()
+    if !status.success()
         || !pinned(&program.python)
         || !pinned(&program.script)
         || !program.dependencies.iter().all(pinned)
@@ -197,6 +237,76 @@ pub(crate) fn budget(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn exited_buffered_child_retains_identity_past_deadline_until_final_signal() {
+        use std::os::unix::process::CommandExt;
+        let mut child = Command::new("/usr/bin/python3")
+            .args(["-c", "import os; os.write(1,b'x'*4096); os._exit(7)"])
+            .stdout(Stdio::piped())
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let end = Instant::now() + Duration::from_secs(2);
+        while !exited_unreaped(&child).unwrap() {
+            assert!(Instant::now() < end);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let deadline = Instant::now() + Duration::from_millis(5);
+        let mut bytes = [0; 512];
+        assert_eq!(
+            child.stdout.as_mut().unwrap().read(&mut bytes).unwrap(),
+            512
+        );
+        std::thread::sleep(Duration::from_millis(10));
+        assert!(Instant::now() > deadline);
+        assert!(exited_unreaped(&child).unwrap());
+        assert_eq!(finish_group(&mut child).unwrap().code(), Some(7));
+        assert!(finish_group(&mut child).is_err());
+        // This proves retained waitability/actual status across the buffered
+        // deadline interleaving, not that numeric PID reuse was manufactured.
+    }
+    #[test]
+    fn real_collector_normal_error_oversize_deadline_and_setup_exits() {
+        let dir = std::env::temp_dir().join(format!("n3-source-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pin = |path: PathBuf| Pin {
+            sha256: format!("{:x}", Sha256::digest(std::fs::read(&path).unwrap())),
+            path,
+        };
+        let script = dir.join("child.py");
+        for (code, seconds, accepted) in [
+            ("print('normal')", 2.0, true),
+            ("import sys; print('buffered'); sys.exit(7)", 2.0, false),
+            (
+                "import time; print('early',flush=True); time.sleep(1)",
+                0.05,
+                false,
+            ),
+            (
+                "import sys; sys.stdout.buffer.write(b'x'*(9*1024*1024))",
+                20.0,
+                false,
+            ),
+        ] {
+            std::fs::write(&script, code).unwrap();
+            let program = Program {
+                python: pin(std::fs::canonicalize("/usr/bin/python3").unwrap()),
+                script: pin(script.clone()),
+                dependencies: vec![],
+            };
+            assert_eq!(
+                run_bounded(&program, &[], Duration::from_secs_f64(seconds)).is_some(),
+                accepted
+            );
+        }
+        let program = Program {
+            python: pin(script.clone()),
+            script: pin(script),
+            dependencies: vec![],
+        };
+        assert!(run_bounded(&program, &[], Duration::from_secs(1)).is_none());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
     #[test]
     fn acquisition_accepts_new_snapshot_but_rejects_future_and_stale() {
         let dir = std::env::temp_dir().join(format!("budget-clock-{}", std::process::id()));
