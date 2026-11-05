@@ -1,0 +1,40 @@
+{
+  "verdict": "accept",
+  "subject_sha256": "94869b782f7f880f7a0c2351726fc2fd179b535ac37b697c9878cd1b3c4ff857",
+  "subject": "/home/bline/.local/state/work-engine/a2-connector-policy-design-20261105T1545/review/subject-v2.md",
+  "review_episode": "Retained delta recheck; no new independence claim.",
+  "finding_resolutions": [
+    {
+      "id": "A2-R1",
+      "priority": "P2",
+      "status": "resolved",
+      "location": "subject-v2.md:44,52,101",
+      "basis": "Tuple reservations now cover disabled and retired history. Disablement is terminal in the first profile, and replacement requires a distinct qualified client ID and installation identity. Fresh authentication of unchanged old token bytes after replacement/restart remains bound to the retired original and denied. This closes the temporal remapping ambiguity."
+    },
+    {
+      "id": "A2-R2",
+      "priority": "P3",
+      "status": "resolved",
+      "location": "subject-v2.md:85,115",
+      "basis": "The execution host owns time assurance. SystemTime, JWT verification and a persisted timestamp are explicitly insufficient to establish elapsed downtime. Restart begins held pending an accepted current time bound. The proposed test covers actual downtime expiry followed by a plausible earlier clock, and fixture evidence is distinguished from production assurance."
+    },
+    {
+      "id": "A2-R3",
+      "priority": "P3",
+      "status": "resolved",
+      "location": "subject-v2.md:113-115",
+      "basis": "A2.1 now explicitly owns guarded response emission, both response/invalidation serial orderings and the actual response-write gate. Its allocation and first executable checkpoint include that composition, persistence consumption and the clock/restart assurance choice."
+    }
+  ],
+  "new_findings": [],
+  "consistency_assessment": "No new blocking inconsistency found in the affected prose. Creating a new grant after grant-level revocation does not override the explicit prohibition on re-enabling a disabled installation. Callback qualification remains A2.2 work; response-disclosure qualification belongs to A2.1.",
+  "budget_scope_assessment": "The original assessment stands: $30/three hours is an aggressive but defensible capped implementation attempt with the earlier-of-30-minutes-or-$6 checkpoint and stop/rebid rule. The clarified obligations must fit that bid rather than be deferred silently. The $35 callback estimate remains conditional. Acceptance here covers the design, not implementation authorization or deployment readiness.",
+  "limits": {
+    "verification": "Verified the revised SHA-256 and compared the complete v1-to-v2 prose diff. Rechecked closure and affected consistency only.",
+    "retained_evidence": "Initial bounded source evidence, graph/source-fallback qualifications and deployment assumptions remain unchanged. No implementation behavior was established by this recheck.",
+    "activity": "No writes, product builds/tests, product processes, external network access, credentials, deployment or subagents.",
+    "remaining_prerequisites": "Live issuer compatibility, actual adapter/owner composition, production time assurance, callback integration and legacy-exposure migration still require their stated evidence.",
+    "authority": "Root retains design acceptance, publication and implementation authorization decisions.",
+    "cost": "Root observes cumulative actual cost against the unchanged $4 review allowance."
+  }
+}

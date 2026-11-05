@@ -1,0 +1,52 @@
+{
+  "line": 11,
+  "event": {
+    "timestamp": "2026-11-05T16:39:25.843Z",
+    "ordinal": 10,
+    "type": "turn_context",
+    "payload": {
+      "turn_id": "01a1ac94-5287-71b1-8812-7869b91c4706",
+      "root_turn_id": "01a1ac94-5287-71b1-8812-7869b91c4706",
+      "disabled_plugin_ids": [],
+      "cwd": "/home/bline/cbm-work/wt-a2-connector-policy-20261105",
+      "approval_policy": "never",
+      "approvals_reviewer": "user",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "permission_profile": {
+        "type": "managed",
+        "file_system": {
+          "type": "restricted",
+          "entries": [
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "root"
+                }
+              },
+              "access": "read"
+            }
+          ]
+        },
+        "network": "restricted"
+      },
+      "model": "gpt-6-astra",
+      "comp_hash": "3000",
+      "collaboration_mode": {
+        "mode": "default",
+        "settings": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high",
+          "developer_instructions": null
+        }
+      },
+      "multi_agent_version": "v2",
+      "realtime_active": false,
+      "effort": "high",
+      "summary": "none"
+    }
+  },
+  "sha256": "44f2e57e39fc8fbf80fae8471290fb8d8dfdb444340b3a57d72745c205d7669b"
+}

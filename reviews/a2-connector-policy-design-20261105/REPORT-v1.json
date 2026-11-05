@@ -1,0 +1,67 @@
+{
+  "verdict": "changes_required",
+  "subject_sha256": "40436dcaa8ffa8da25f0c7194d1057020b8db1d22084a6e3664e5d41119bfd24",
+  "subject": "/home/bline/.local/state/work-engine/a2-connector-policy-design-20261105T1545/review/subject-v1.md",
+  "findings": [
+    {
+      "id": "A2-R1",
+      "priority": "P2",
+      "title": "Define caller-tuple uniqueness across installation replacement",
+      "location": "subject-v1.md:44-48,52,81,95,101",
+      "evidence": "The explicit registry restriction permits one enabled installation per issuer/project/subject/client/resource tuple. The verified token contains no installation identity or binding generation; the application constructs those from current registry state. The surrounding requirements for distinct client IDs, immutable bindings and duplicate-match rejection do not explicitly establish whether disabled or retired bindings permanently reserve their tuple.",
+      "consequence": "An implementation could disable installation A, register B with the same tuple, then map A's still-valid token to B's current generation. Testing stale caller contexts or cursors would not catch this fresh authentication with unchanged token bytes. The design needs an unambiguous temporal interpretation of its same-client isolation guarantee.",
+      "required_change": "Define the first profile's replacement rule. The smallest repair is to reserve each tuple to one installation identity across its retained history and require a distinct qualified client identity for a replacement installation. Alternatively, specify an independently established credential-generation distinction. Explicitly distinguish re-enabling the same installation from replacing it, and add an unchanged-old-token replacement/restart test.",
+      "acceptance_blocking": true
+    },
+    {
+      "id": "A2-R2",
+      "priority": "P3",
+      "title": "Make restart-time evidence an explicit implementation prerequisite",
+      "location": "subject-v1.md:79-85,102,111-115",
+      "evidence": "The design correctly requires holding on clock rollback or an unavailable trustworthy time bound. Existing mcp-auth uses SystemTime and jsonwebtoken wall-clock timestamps at rust/crates/mcp-auth/src/main.rs:107-114,157-176. Those observations alone do not establish elapsed downtime or trustworthy time after restart.",
+      "consequence": "A synthetic rollback test or persisted last-observed timestamp could be mistaken for proof that grants cannot be extended across an unobserved restart interval.",
+      "recommendation": "At the implementation checkpoint, identify the source and owner of the accepted time bound and the restart hold/revalidation behavior. Include a restart after actual expiry with the wall clock restored to a plausible earlier value. Keep synthetic-clock qualification distinct from production clock assurance.",
+      "acceptance_blocking": false
+    },
+    {
+      "id": "A2-R3",
+      "priority": "P3",
+      "title": "Allocate guarded response emission explicitly to A2.1",
+      "location": "subject-v1.md:81-83,100,111-117",
+      "evidence": "The common contract correctly includes response disclosure, but A2.1's summarized acceptance lists read/denial, disable/restart/CAS and profile isolation while A2.2 explicitly names invalidation ordering. Existing AH returns application data before transport emission: rust/crates/work-engine-server/src/main.rs:560-581 and 767-781.",
+      "consequence": "A builder could underestimate the immediate slice as ingress authorization plus a read adapter, leaving response fencing and its race evidence for the callback slice.",
+      "recommendation": "Name guarded response emission and both response/invalidation serial orderings in A2.1's acceptance and allocation. Callback ordering remains A2.2 work. This clarifies the already stated invariant rather than requiring a particular locking route.",
+      "acceptance_blocking": false
+    }
+  ],
+  "assessment": {
+    "ownership": "The proposed separation is defensible: mcp-auth owns cryptographic/profile validation; connector-policy owns installation access and grant semantics; existing domain and delivery owners retain their state machines and effect accounting.",
+    "capabilities": "The subject accurately distinguishes Boolean legacy authentication, local AH operation HTTP, stdio MCP and fixture-only native delivery from the new capabilities requiring implementation. No existing generic OAuth callback engine or live issuer compatibility is established.",
+    "trust_boundaries": "Scope intersection, namespaced caller identity, private authority construction, trusted resource/destination registration, enrichment dependencies, replay ownership and legacy-profile isolation are addressed. Issuer token-class separation and upstream consent revocation are correctly treated as separate, unestablished deployment facts.",
+    "state_and_ordering": "CAS revisions are not confused with semantic authority. Lost acknowledgements, historical reads, tombstones and catastrophic control-repository restoration have appropriate distinctions. The collection/disclosure admission invariant is sound, and the design rejects unlocked Boolean permits. The actual effect-owner composition remains proposed work.",
+    "structure_vs_routes": "The subject generally separates required outcomes from optional mechanics. Per-installation guards, holding a guard during bounded I/O and the selected persistence adapter are implementation choices; current authorization and ordering at actual effect admission are the structural requirements."
+  },
+  "budget_scope_assessment": {
+    "design": "The current $10/75-minute authority covers design and review only.",
+    "immediate_bid": "$30/three hours is a credible capped attempt for one protected read, two synthetic client identities, a bounded persistence binding and actual HTTP/MCP composition. It is aggressive because verifier extraction, policy administration, persistence integration, dispatcher adaptation, response fencing and SDK process evidence are all real work.",
+    "checkpoint": "The earlier-of-30-minutes-or-$6 checkpoint and explicit stop/rebid rule make the bid defensible. That checkpoint should resolve the real adapter/owner seam and persistence consumption, not merely demonstrate a policy function against mocks.",
+    "follow_on": "The $35 callback estimate is appropriately conditional. It cannot yet be treated as a qualified fixed bid because the selected delivery owner's guarded-effect integration remains unestablished.",
+    "authorization": "Neither proposed implementation budget is authorized by this review."
+  },
+  "unresolved_assumptions": [
+    "Actual Stytch project/client issuance, resource audience, scope availability, token-type separation and upstream revocation latency remain unestablished.",
+    "The supported HTTP MCP framing/version and its composition with the existing dispatcher require actual SDK process evidence.",
+    "A2.2 requires an accepted effect-owner interface covering observation, enrichment, callback entry and recovery.",
+    "Production activation requires trustworthy time evidence and classification or removal of overlapping legacy exposure.",
+    "The cooperative local Linux, canonical-state and stable-lock assumptions do not qualify distributed replicas or hostile destruction of the control repository."
+  ],
+  "review_limits": {
+    "evidence": "Read DESIGN.md and PHILOSOPHY.md, the exact frozen subject, all requested bounded source ranges, and supplementary durable-state public adapter code. The subject and every manifest-listed source hash matched.",
+    "graph": "Confirmed parent project home-bline-code-work-engine at generation 2026-11-05T14:54:37Z. Coverage checks reported the private worktree paths outside that project. Conclusions rely on exact source fallback; no exhaustive graph-coverage claim is made.",
+    "execution": "No source edits, product builds/tests, product processes, external network access, credentials, deployment or subagents were used.",
+    "identity": "Acknowledged session 01a1ac94-5209-7e40-b7f7-5445e81efc36 and turn 01a1ac94-5287-71b1-8812-7869b91c4706. Recorded settings show gpt-6-astra, high effort, default service tier and read-only/restricted capabilities. Root remains the collection and acceptance owner.",
+    "context": "Pinned context check reported 95768 input tokens, epoch 0 and retain_ok.",
+    "cost": "Actual cumulative billed cost was unavailable to this reviewer; Root owns measurement against the $4 cumulative review allowance.",
+    "continuation": "Available for a bounded retained delta recheck within the existing allowance and deadline."
+  }
+}
