@@ -28,6 +28,9 @@ struct Fixture {
 }
 impl Fixture {
     fn new(export: Option<PathBuf>, job: &str, exe: &str) -> Self {
+        Self::new_kind(export, job, exe, false)
+    }
+    fn new_kind(export: Option<PathBuf>, job: &str, exe: &str, subscription: bool) -> Self {
         static N: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let keep = export.is_some();
         let dir = export.unwrap_or_else(|| {
@@ -61,6 +64,13 @@ impl Fixture {
             .format(&Rfc3339)
             .unwrap()
             .into();
+        if subscription {
+            i["schema"] = "dot.task-intent/pi-coding-subscription-v1".into();
+            i["execution_profile"] = "disposable-pi-coding-subscription-v1".into();
+            i["workspace"]["profile_id"] = SUBSCRIPTION_PROFILE.into();
+            i["effects"]["network"] = true.into();
+            i["model"] = json!({"id":"gpt-6-luna","effort":"off","tier":"subscription"});
+        }
         let raw = task.to_string();
         let task_ref = crate::validate_review(&raw).unwrap();
         let i = &task["data"]["intent"];
@@ -123,7 +133,7 @@ impl Fixture {
             None
         }
         .unwrap_or(time::Duration::minutes(15));
-        let profile = json!({"schema":PROFILE,"classification":"fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker","task":task_ref,"proposal":i["proposal"],"mode":i["authority"]["mode"],"configuration":i["workspace"]["configuration"],"parent":i["prerequisites"][0],"actor":"fixture-actor","objective":"fixture-objective","job_sha256":job,"native_executable_sha256":exe,"transport_sha256":transport.sha256(),"expires_at":(now+lifetime).format(&Rfc3339).unwrap()});
+        let profile = json!({"schema":if subscription {SUBSCRIPTION_PROFILE} else {PROFILE},"classification":if subscription {SUBSCRIPTION_CLASSIFICATION} else {"fixture-signing-and-identity; fake-provider; network-none; actual-pi-sdk-and-docker"},"task":task_ref,"proposal":i["proposal"],"mode":i["authority"]["mode"],"configuration":i["workspace"]["configuration"],"parent":i["prerequisites"][0],"actor":"fixture-actor","objective":"fixture-objective","job_sha256":job,"native_executable_sha256":exe,"transport_sha256":transport.sha256(),"expires_at":(now+lifetime).format(&Rfc3339).unwrap()});
         put(&dir.join("profile.json"), profile.to_string());
         let mut f = Self {
             pin: Pin {
@@ -599,6 +609,331 @@ fn transactional_denials_retain_new_signed_head_without_action_writes() {
             o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
                 .is_err(),
             "{boundary}"
+        );
+    }
+}
+
+#[test]
+fn subscription_exact_schema_and_field_negatives() {
+    let f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+    assert!(f.owner().is_subscription());
+    assert!(crate::validate_review(&f.rows[0]).is_ok());
+    for (section, field, value) in [
+        ("effects", "network", json!(false)),
+        ("effects", "write_paths", json!(["src/lib.rs", "other"])),
+        ("model", "id", json!("fake-pi-model")),
+        ("model", "tier", json!("fixture")),
+        ("model", "effort", json!("high")),
+        ("workspace", "profile_id", json!(PROFILE)),
+    ] {
+        let mut row: Value = serde_json::from_str(&f.rows[0]).unwrap();
+        row["data"]["intent"][section][field] = value;
+        assert!(
+            crate::validate_review(&row.to_string()).is_err(),
+            "{section}.{field}"
+        );
+    }
+    for (field, value) in [
+        ("schema", "dot.task-intent/pi-coding-v1"),
+        ("provider", "codex"),
+        ("execution_profile", "disposable-pi-coding-fixture-v1"),
+    ] {
+        let mut row: Value = serde_json::from_str(&f.rows[0]).unwrap();
+        row["data"]["intent"][field] = value.into();
+        assert!(crate::validate_review(&row.to_string()).is_err());
+    }
+}
+
+#[test]
+fn subscription_unknowns_native_seal_idempotency_and_result() {
+    let f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+    let o = f.owner();
+    let before = o.admit(&"a".repeat(64), &exe()).unwrap();
+    assert_eq!(before, o.admit(&"a".repeat(64), &exe()).unwrap());
+    assert!(o.admit(&"b".repeat(64), &exe()).is_err());
+    assert!(o.enter(Effect::Initialization).is_err());
+    drop(o.enter(Effect::Allocation).unwrap());
+    let id = "00000000-0000-4000-8000-000000000001";
+    assert!(o.seal(&"b".repeat(64), id).is_err());
+    o.seal(&"a".repeat(64), id).unwrap();
+    assert!(
+        o.check_native("00000000-0000-4000-8000-000000000002")
+            .is_err()
+    );
+    assert!(o.seal(&"a".repeat(64), id).is_err());
+    for effect in [
+        Effect::Initialization,
+        Effect::Provider(1),
+        Effect::Tool("one".into()),
+    ] {
+        drop(o.enter(effect.clone()).unwrap());
+        assert!(o.enter(effect).is_err());
+    }
+    assert!(o.enter(Effect::Allocation).is_err());
+    drop(o);
+    assert!(f.owner().enter(Effect::Allocation).is_err());
+    let r = f.owner().record_result(&json!({"receipt":{"input_digest":"a".repeat(64),"session_id":id,"owner_pending":true},"classification":"synthetic signing/access/provider"})).unwrap();
+    assert_eq!(r["schema"], "dot.pi-coding-subscription-result/v1");
+    assert_eq!(r["owner_acceptance"], "not_claimed");
+    assert_eq!(r["retry_permitted"], false);
+    assert!(
+        f.owner()
+            .record_result(&json!({"input_digest":"a".repeat(64)}))
+            .is_err()
+    );
+}
+
+#[test]
+fn subscription_current_boundaries_revocation_and_monotone_observation() {
+    for effect in [
+        Effect::Initialization,
+        Effect::Provider(1),
+        Effect::Tool("one".into()),
+    ] {
+        let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+        let o = f.owner();
+        o.admit(&"a".repeat(64), &exe()).unwrap();
+        drop(o.enter(Effect::Allocation).unwrap());
+        o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+            .unwrap();
+        let lease = o.enter(effect.clone()).unwrap();
+        lease.check_current().unwrap();
+        let active = f.rows.clone();
+        f.control("revoked");
+        assert!(lease.check_current().is_err());
+        drop(lease);
+        f.rows = active;
+        f.save();
+        assert!(o.enter(effect).is_err());
+        assert!(PiOwner::open(f.pin.clone()).is_err());
+    }
+    for case in [
+        "key",
+        "task",
+        "proposal",
+        "budget",
+        "profile",
+        "transport",
+        "expiry",
+    ] {
+        let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+        let o = f.owner();
+        o.admit(&"a".repeat(64), &exe()).unwrap();
+        match case {
+            "key" => put(&f.dir.join("keys.json"), b"{\"keys\":{}}"),
+            "task" => {
+                f.db()
+                    .execute("UPDATE task_head SET state='withdrawn'", [])
+                    .unwrap();
+            }
+            "proposal" => {
+                f.db()
+                    .execute("UPDATE proposal_head SET state='withdrawn'", [])
+                    .unwrap();
+            }
+            "budget" => put(&f.dir.join("record"), b"changed"),
+            "profile" => put(&f.dir.join("profile.json"), b"{}"),
+            "transport" => put(&f.pin.path, b"{}"),
+            "expiry" => {
+                let mut l = o.enter(Effect::Allocation).unwrap();
+                l.expires = clock() - time::Duration::seconds(1);
+                assert!(l.check_current().is_err());
+                drop(l);
+            }
+            _ => unreachable!(),
+        }
+        assert!(o.enter(Effect::Allocation).is_err(), "{case}");
+        f.rows.clear();
+    }
+}
+
+#[test]
+#[ignore = "explicit synthetic subscription authority export; no provider or Docker"]
+fn export_signed_pi_subscription() {
+    let out = std::env::var_os("PI_SUBSCRIPTION_EXPORT").expect("owned output required");
+    let job = std::env::var("PI_SUBSCRIPTION_JOB_SHA").unwrap();
+    let executor = std::env::var("PI_SUBSCRIPTION_EXECUTOR_SHA").unwrap();
+    let f = Fixture::new_kind(Some(PathBuf::from(out)), &job, &executor, true);
+    put(
+        &f.dir.join("descriptor-pin.json"),
+        serde_json::to_vec(&f.pin).unwrap(),
+    );
+    put(&f.dir.join("ui-golden-vectors.json"), json!({"standing":"synthetic owner signing/identity only; subscription backend candidate; no live qualification","schema":"dot.task-intent/pi-coding-subscription-v1","persistent_write_paths":["src/lib.rs"],"network":"inference fixed subscription adapter; tool/validator none","descriptor":descriptor(&f.pin).unwrap(),"profile_json":std::fs::read_to_string(f.dir.join("profile.json")).unwrap(),"signed_rows":f.rows}).to_string());
+}
+
+#[test]
+fn consumption_deadline_is_owner_derived_precise_and_job_bounded() {
+    let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
+    let mut d = descriptor(&f.pin).unwrap();
+    let mut profile: Value =
+        serde_json::from_slice(&std::fs::read(&d.profile.path).unwrap()).unwrap();
+    let expiry = clock() + time::Duration::seconds(20) + time::Duration::nanoseconds(123456);
+    profile["expires_at"] = expiry.format(&Rfc3339).unwrap().into();
+    put(&d.profile.path, profile.to_string());
+    d.profile = pin(d.profile.path);
+    put(&f.pin.path, serde_json::to_vec(&d).unwrap());
+    f.pin = pin(f.pin.path.clone());
+    f.rows.truncate(2);
+    f.control("active");
+    let o = f.owner();
+    o.admit(&"a".repeat(64), &exe()).unwrap();
+    drop(o.enter(Effect::Allocation).unwrap());
+    o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+        .unwrap();
+    for effect in [Effect::Initialization, Effect::Provider(1)] {
+        let lease = o.enter(effect.clone()).unwrap();
+        let later_job = (clock() + time::Duration::minutes(2)).unix_timestamp() as u64;
+        let bound = lease.consumption_deadline_millis(later_job).unwrap();
+        assert_eq!(
+            i128::from(bound),
+            expiry.unix_timestamp_nanos().div_euclid(1_000_000)
+        );
+        let earlier_job = (clock() + time::Duration::seconds(10)).unix_timestamp() as u64;
+        assert_eq!(
+            lease.consumption_deadline_millis(earlier_job).unwrap(),
+            (earlier_job * 1000) as i64
+        );
+        // IPC observation is not remote execution; the unique effect remains
+        // consumed even if the receiver later refuses an expired grant.
+        lease.observed(&"b".repeat(64)).unwrap();
+        assert!(o.enter(effect).is_err());
+    }
+}
+
+#[test]
+fn deadline_projection_retains_inter_observation_revocation() {
+    // The control executes the exact old two-read sequence, including the
+    // unguarded error return. The fixed path uses the real projection method.
+    for legacy_two_reads in [true, false] {
+        let (f, o) = admitted();
+        let f = std::rc::Rc::new(std::cell::RefCell::new(f));
+        drop(o.enter(Effect::Allocation).unwrap());
+        o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+            .unwrap();
+        let snapshot = || {
+            let db = f.borrow().db();
+            let tables = ["pi_effect", "capacity_claim", "outbox"];
+            tables.map(|table| {
+                let mut statement = db
+                    .prepare(&format!("SELECT * FROM {table} ORDER BY rowid"))
+                    .unwrap();
+                let columns = statement.column_count();
+                statement
+                    .query_map([], |row| {
+                        Ok((0..columns)
+                            .map(|i| format!("{:?}", row.get_ref(i).unwrap()))
+                            .collect::<Vec<_>>())
+                    })
+                    .unwrap()
+                    .collect::<std::result::Result<Vec<_>, _>>()
+                    .unwrap()
+            })
+        };
+        let lease = o.enter(Effect::Provider(1)).unwrap();
+        // Establish the active first observation before scheduling revocation
+        // specifically inside projection, rather than before a guarded check.
+        lease.check_current().unwrap();
+        let active = f.borrow().rows.clone();
+        let reserved_before = snapshot();
+        // Read through the lease transaction: the registry write lock is held.
+        let before = {
+            let mut statement = lease
+                .db
+                .prepare("SELECT effect_key,state,evidence_sha FROM pi_effect ORDER BY effect_key")
+                .unwrap();
+            statement
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                    ))
+                })
+                .unwrap()
+                .collect::<std::result::Result<Vec<_>, _>>()
+                .unwrap()
+        };
+        let trigger = f.clone();
+        *lease.before_deadline_observation.borrow_mut() =
+            Some(Box::new(move || trigger.borrow_mut().control("revoked")));
+        let result = if legacy_two_reads {
+            lease.check_current().unwrap();
+            lease
+                .before_deadline_observation
+                .borrow_mut()
+                .take()
+                .unwrap()();
+            PiOwner::open_unchecked(lease.owner_pin.clone())
+                .unwrap()
+                .current(&lease.db)
+                .map(|_| 0)
+        } else {
+            lease.consumption_deadline_millis(
+                (clock() + time::Duration::minutes(2)).unix_timestamp() as u64,
+            )
+        };
+        assert_eq!(result, Err("pi_current_authority"));
+        assert_eq!(lease.failed.get(), !legacy_two_reads);
+        assert_eq!(lease.closed.get(), !legacy_two_reads);
+        drop(lease);
+        let reserved = snapshot();
+        assert_eq!(
+            reserved_before, reserved,
+            "projection leaves reservations unchanged"
+        );
+        let after = {
+            let db = f.borrow().db();
+            let mut statement = db
+                .prepare("SELECT effect_key,state,evidence_sha FROM pi_effect ORDER BY effect_key")
+                .unwrap();
+            statement
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                    ))
+                })
+                .unwrap()
+                .collect::<std::result::Result<Vec<_>, _>>()
+                .unwrap()
+        };
+        assert_eq!(
+            before, after,
+            "projection must not acknowledge or change effects"
+        );
+        let retained: String = f
+            .borrow()
+            .db()
+            .query_row(
+                "SELECT state FROM scoped_control ORDER BY generation DESC LIMIT 1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            retained,
+            if legacy_two_reads {
+                "active"
+            } else {
+                "revoked"
+            }
+        );
+        f.borrow_mut().rows = active;
+        f.borrow().save();
+        assert_eq!(
+            PiOwner::open(f.borrow().pin.clone()).is_ok(),
+            legacy_two_reads,
+            "only the faulty sequence forgets revocation and accepts source rollback"
+        );
+        assert!(
+            o.enter(Effect::Provider(1)).is_err(),
+            "unique effect never replays"
+        );
+        assert_eq!(
+            reserved,
+            snapshot(),
+            "effect, capacity reservation and outbox are unchanged"
         );
     }
 }

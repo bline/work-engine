@@ -2653,7 +2653,7 @@ class ObservationHelper(DeliveryHelper):
             os.close(config_fd)
         if self.settings.get("schema") != self.protocol or any(
                 not isinstance(self.settings.get(k), str) or not self.settings[k]
-                for k in (("subject", "principal", "handle", "revision", "idempotency_key") if self.protocol == "work-engine.mcp-pi-coding-fixture.v1" else ("subject", "principal", "target", "handle", "revision", "idempotency_key"))):
+                for k in (("subject", "principal", "handle", "revision", "idempotency_key") if self.protocol in {"work-engine.mcp-pi-coding-fixture.v1", "work-engine.mcp-pi-coding-subscription.v1"} else ("subject", "principal", "target", "handle", "revision", "idempotency_key"))):
             raise ValueError("complete trusted observation binding required")
 
     @classmethod
@@ -2698,11 +2698,14 @@ class CodingHelper(ObservationHelper):
     def from_environment(cls):
         values = [os.environ.get(k) for k in ("PI_CODING_BINARY", "PI_CODING_BINARY_SHA256", "PI_CODING_CONFIG", "PI_CODING_CONFIG_SHA256")]
         enabled = os.environ.get("PI_CODING_FIXTURE_ENABLED")
-        if not enabled and not any(values):
+        subscription = os.environ.get("PI_CODING_SUBSCRIPTION_ENABLED")
+        if not enabled and not subscription and not any(values):
             return None
-        if enabled != "1" or not all(values):
-            raise ValueError("explicit coding fixture switch and complete pins required")
-        return cls(*values)
+        if enabled and subscription:
+            raise ValueError("conflicting coding profile switches")
+        if (subscription or enabled) != "1" or not all(values):
+            raise ValueError("explicit coding profile switch and complete pins required")
+        return (SubscriptionCodingHelper if subscription else cls)(*values)
 
     def call(self, method, principal, arguments):
         if method not in {"submit", "status", "result"}:
@@ -2710,7 +2713,18 @@ class CodingHelper(ObservationHelper):
         return super().call(method, principal, arguments)
 
 
+class SubscriptionCodingHelper(CodingHelper):
+    """Fixed signed subscription backend candidate; no live qualification."""
+    protocol = "work-engine.mcp-pi-coding-subscription.v1"
+
+
 class Server:
+    def coding_tools(self):
+        if isinstance(self.coding, SubscriptionCodingHelper):
+            return [{**tool, "annotations": {**tool["annotations"], "openWorldHint": tool["name"] == "pi_coding_submit"}, "description": ("Submit the exact signed Pi subscription backend candidate; live qualification not claimed."
+                    if tool["name"] == "pi_coding_submit" else "Read existing subscription candidate evidence without ACK, retry or execution.")} for tool in CODING_TOOLS]
+        return CODING_TOOLS
+
     def __init__(self, homes: Homes, principal: str, policy: CallbackPolicy,
                  transport: Transport = post, clock: Callable[[], float] = time.time,
                  context: "Context | None" = None, bridge: "Bridge | None" = None,
@@ -2736,7 +2750,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS + (CODING_TOOLS if self.coding else []) + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + (self.coding_tools() if self.coding else []) + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)

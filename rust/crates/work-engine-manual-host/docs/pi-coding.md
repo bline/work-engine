@@ -170,3 +170,16 @@ session. Binding an actual session before access requires a separately implement
 pre-access native handshake and signed relation, plus authority fences in the
 existing admission owner. Until that conjunction exists, source containment and
 fixture success do not qualify a signed Pi coding request.
+
+## Signed subscription candidate
+
+`work-engine.pi-coding-signed-subscription.v1` composes the existing subscription
+adapter with the opaque signed `PiOwner`; use `Host::admit_signed_subscription`.
+It first allocates/seals the actual SDK UUID, then projects access under current
+Initialization authority and initializes the same manager. Provider reservations
+precede current Provider leases held through grant IPC; tool leases are checked
+at actual spawn. No uncertain effect replays. The legacy SDK lane and fake fixture
+remain distinct. See the domain [versioned contract](../../session-task-admission/docs/pi-subscription-v1.md)
+for exact schemas, startup opt-in, identity, result and trust boundaries. The
+synthetic test runtime preload is absent from production receiver and public
+configuration; synthetic SSE parsing does not establish live qualification.

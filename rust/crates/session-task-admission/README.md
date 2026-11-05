@@ -99,3 +99,18 @@ Only a separately approved immutable activation/trust-policy/task packet can
 supply live authority. Engineering fixtures use fake credentials and provider
 responses. A provider token count or native terminal event never manufactures a
 completed worker packet, billed usage, settled reservation or closed remote effect.
+
+The opaque Pi effect lease projects a private `consumptionDeadlineMs` for
+initialization and provider grants, bounded by the job and earliest current
+signed profile, control, approval, task and budget freshness expiries. Fractional
+milliseconds round down. The fixed receiver checks delayed initialization,
+post-await grant consumption, and fetch after asynchronous SDK preparation.
+Refusal retains the unique effect and full unsettled provider reservation, with
+no replay. `host IPC grant flushed` establishes local dispatch only; it does not
+establish remote HTTP entry, acknowledgement or completion.
+
+Provider-disabled deadline regressions run the fixed receiver with VM SDK,
+clock and IPC fixtures: `node --experimental-vm-modules --test
+rust/crates/work-engine-manual-host/tests/pi-signed-subscription.test.mjs` from
+the repository root. Without the VM flag those cases are explicitly skipped.
+Synthetic SDK/fetch evidence does not establish real provider qualification.
