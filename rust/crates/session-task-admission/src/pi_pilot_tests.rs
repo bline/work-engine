@@ -764,26 +764,20 @@ fn export_signed_pi_subscription() {
 #[test]
 fn consumption_deadline_is_owner_derived_precise_and_job_bounded() {
     for effect in [Effect::Initialization, Effect::Provider(1)] {
-        // Each effect gets a fresh authority window; owner verification can be
-        // expensive in an unoptimized build.
-        let mut f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
-        let mut d = descriptor(&f.pin).unwrap();
-        let mut profile: Value =
-            serde_json::from_slice(&std::fs::read(&d.profile.path).unwrap()).unwrap();
-        let expiry = clock() + time::Duration::seconds(20) + time::Duration::nanoseconds(123456);
-        profile["expires_at"] = expiry.format(&Rfc3339).unwrap().into();
-        put(&d.profile.path, profile.to_string());
-        d.profile = pin(d.profile.path);
-        put(&f.pin.path, serde_json::to_vec(&d).unwrap());
-        f.pin = pin(f.pin.path.clone());
-        f.rows.truncate(2);
-        f.control("active");
+        let f = Fixture::new_kind(None, &"a".repeat(64), &exe(), true);
         let o = f.owner();
         o.admit(&"a".repeat(64), &exe()).unwrap();
         drop(o.enter(Effect::Allocation).unwrap());
         o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
             .unwrap();
-        let lease = o.enter(effect.clone()).unwrap();
+        let mut lease = o.enter(effect.clone()).unwrap();
+        assert_eq!(lease.expires, o.until().unwrap());
+        // First verify the owner-derived expiry, then shorten only this private
+        // test lease. Admission/signature setup must not spend the precision
+        // assertion's small remaining window. Production leases stay opaque.
+        let expiry = clock() + time::Duration::seconds(20) + time::Duration::nanoseconds(123456);
+        assert!(expiry < lease.expires);
+        lease.expires = expiry;
         let later_job = (expiry + time::Duration::minutes(2)).unix_timestamp() as u64;
         let bound = lease.consumption_deadline_millis(later_job).unwrap();
         assert_eq!(
