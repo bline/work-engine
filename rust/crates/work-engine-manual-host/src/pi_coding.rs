@@ -26,10 +26,16 @@ pub struct PressurePacket {
 }
 impl PressurePacket {
     fn validate(&self, profile: &Profile) -> Result<()> {
-        if self.schema != PRESSURE_PROFILE || profile.schema != PROFILE || profile.provider.is_some()
-            || self.source.trim().is_empty() || self.generation.trim().is_empty()
-            || !(1000..=30000).contains(&self.max_age_ms) || self.budget.verify()?.len() > 12000
-        { return refuse("pressure packet fixture/bounds conflict"); }
+        if self.schema != PRESSURE_PROFILE
+            || profile.schema != PROFILE
+            || profile.provider.is_some()
+            || self.source.trim().is_empty()
+            || self.generation.trim().is_empty()
+            || !(1000..=30000).contains(&self.max_age_ms)
+            || self.budget.verify()?.len() > 12000
+        {
+            return refuse("pressure packet fixture/bounds conflict");
+        }
         Ok(())
     }
 }
@@ -48,27 +54,47 @@ pub struct PressureRelease {
 }
 /// One-shot transport validation; the accepted observer owns pressure derivation.
 /// No payload changes deadline, task/provider permission or recovery authority.
-pub fn validate_pressure_release(packet: &PressurePacket, release: &PressureRelease, barrier: &Value,
-    budget: &str, now_ms: u64, fenced: bool) -> Result<()> {
+pub fn validate_pressure_release(
+    packet: &PressurePacket,
+    release: &PressureRelease,
+    barrier: &Value,
+    budget: &str,
+    now_ms: u64,
+    fenced: bool,
+) -> Result<()> {
     let snapshot = &barrier["snapshot"];
-    if fenced || release.schema != PRESSURE_PROFILE || release.sequence != 1
-        || release.input_digest != barrier["input_digest"] || release.container_id != barrier["container_id"]
-        || release.session_id != barrier["sessionId"] || release.source != packet.source
-        || release.generation != packet.generation || release.pressure.len() > 24000
+    if fenced
+        || release.schema != PRESSURE_PROFILE
+        || release.sequence != 1
+        || release.input_digest != barrier["input_digest"]
+        || release.container_id != barrier["container_id"]
+        || release.session_id != barrier["sessionId"]
+        || release.source != packet.source
+        || release.generation != packet.generation
+        || release.pressure.len() > 24000
         || release.observed_ms != snapshot["observedMs"].as_u64().unwrap_or(0)
-        || release.observed_ms > now_ms || now_ms - release.observed_ms > packet.max_age_ms
-    { return refuse("pressure release binding/freshness/fence conflict"); }
+        || release.observed_ms > now_ms
+        || now_ms - release.observed_ms > packet.max_age_ms
+    {
+        return refuse("pressure release binding/freshness/fence conflict");
+    }
     let payload: Value = serde_json::from_str(&release.pressure)?;
     let input = &payload["context"]["input"];
-    if payload["schema"] != PRESSURE_PROFILE || payload["authority"] != "observation_only"
+    if payload["schema"] != PRESSURE_PROFILE
+        || payload["authority"] != "observation_only"
         || payload["budget_control"]["raw"] != budget
         || payload["sdk_usage"] != snapshot["usage"]
-        || input["identity"]["source"] != packet.source || input["identity"]["session"] != release.session_id
-        || input["identity"]["generation"] != packet.generation || input["identity"]["model"] != snapshot["model"]["id"]
+        || input["identity"]["source"] != packet.source
+        || input["identity"]["session"] != release.session_id
+        || input["identity"]["generation"] != packet.generation
+        || input["identity"]["model"] != snapshot["model"]["id"]
         || input["identity"]["window"] != snapshot["model"]["contextWindow"]
-        || input["sequence"] != release.sequence || input["observed_ms"] != release.observed_ms
+        || input["sequence"] != release.sequence
+        || input["observed_ms"] != release.observed_ms
         || input["tokens"] != snapshot["usage"]["value"]["tokens"]
-    { return refuse("pressure payload observation/budget conflict"); }
+    {
+        return refuse("pressure payload observation/budget conflict");
+    }
     Ok(())
 }
 /// Filesystem containment only; this is never signed admission or qualification.
@@ -706,51 +732,99 @@ impl Host {
                     if packet["schema"] == PRESSURE_PROFILE {
                         let packet: PressurePacket = serde_json::from_value(packet)?;
                         packet.validate(profile)?;
-                        replies.push(serde_json::to_vec(&json!({"type":"pressure_context","sessionId":session}))?);
+                        replies.push(serde_json::to_vec(
+                            &json!({"type":"pressure_context","sessionId":session}),
+                        )?);
                     } else {
                         replies.push(serde_json::to_vec(&reply)?);
                     }
                 }
                 "pressure_context" => {
                     let profile = self.journal.job.coding.as_ref().unwrap();
-                    let packet: PressurePacket = serde_json::from_slice(&self.journal.job.packet.verify()?)?;
+                    let packet: PressurePacket =
+                        serde_json::from_slice(&self.journal.job.packet.verify()?)?;
                     packet.validate(profile)?;
                     let dir = self.journal.job.state_dir.clone();
                     if dir.join("coding-pressure-ready.json").exists()
                         || frame["snapshot"]["sessionId"] != frame["sessionId"]
                         || frame["snapshot"]["idle"] != true
-                    { return refuse("pressure readiness conflict"); }
+                    {
+                        return refuse("pressure readiness conflict");
+                    }
                     let barrier = json!({"schema":PRESSURE_PROFILE,"input_digest":self.journal.input_digest,
                         "container_id":self.journal.container_id,"sessionId":frame["sessionId"],"snapshot":frame["snapshot"]});
                     atomic(&dir.join("coding-pressure-ready.json"), &barrier)?;
                     let path = dir.join("coding-pressure-release.json");
                     while !path.exists() {
-                        if self.expired() || self.cancelled() { return refuse("pressure release expired/cancelled"); }
+                        if self.expired() || self.cancelled() {
+                            return refuse("pressure release expired/cancelled");
+                        }
                         std::thread::sleep(std::time::Duration::from_millis(10));
                     }
-                    if fs::metadata(&path)?.len() > 32768 { return refuse("pressure release size"); }
+                    if fs::metadata(&path)?.len() > 32768 {
+                        return refuse("pressure release size");
+                    }
                     let release: PressureRelease = serde_json::from_slice(&fs::read(path)?)?;
-                    let budget = String::from_utf8(packet.budget.verify()?).map_err(|_|Error::Refused("budget UTF8".into()))?;
-                    validate_pressure_release(&packet, &release, &barrier, &budget, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|_|Error::Refused("host clock".into()))?.as_millis().try_into().map_err(|_|Error::Refused("host clock range".into()))?, self.expired() || self.cancelled())?;
+                    let budget = String::from_utf8(packet.budget.verify()?)
+                        .map_err(|_| Error::Refused("budget UTF8".into()))?;
+                    validate_pressure_release(
+                        &packet,
+                        &release,
+                        &barrier,
+                        &budget,
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map_err(|_| Error::Refused("host clock".into()))?
+                            .as_millis()
+                            .try_into()
+                            .map_err(|_| Error::Refused("host clock range".into()))?,
+                        self.expired() || self.cancelled(),
+                    )?;
                     atomic(&dir.join("coding-pressure-admitted.json"), &release)?;
-                    replies.push(serde_json::to_vec(&json!({"type":"fixture_start","sessionId":frame["sessionId"],
-                        "command":profile.fixture_command,"pressureCheckpoint":release}))?);
+                    replies.push(serde_json::to_vec(
+                        &json!({"type":"fixture_start","sessionId":frame["sessionId"],
+                        "command":profile.fixture_command,"pressureCheckpoint":release}),
+                    )?);
                 }
                 "pressure_inserted" | "pressure_request" => {
                     let dir = &self.journal.job.state_dir;
-                    let packet: PressurePacket = serde_json::from_slice(&self.journal.job.packet.verify()?)?;
+                    let packet: PressurePacket =
+                        serde_json::from_slice(&self.journal.job.packet.verify()?)?;
                     packet.validate(self.journal.job.coding.as_ref().unwrap())?;
-                    let admitted: PressureRelease = serde_json::from_slice(&fs::read(dir.join("coding-pressure-admitted.json"))?)?;
-                    let barrier: Value = serde_json::from_slice(&fs::read(dir.join("coding-pressure-ready.json"))?)?;
-                    let destination = dir.join(if kind == "pressure_inserted" {"coding-pressure-message.json"} else {"coding-pressure-request.json"});
-                    let messages = if kind == "pressure_inserted" { &frame["messages"] } else { &frame["context"]["messages"] };
-                    let present = messages.as_array().is_some_and(|messages| messages.iter().any(|m|
-                        m["content"].as_array().is_some_and(|content| content.iter().any(|c| c["type"] == "text" && c["text"] == admitted.pressure))));
-                    if destination.exists() || !present || frame["generation"] != admitted.generation
+                    let admitted: PressureRelease = serde_json::from_slice(&fs::read(
+                        dir.join("coding-pressure-admitted.json"),
+                    )?)?;
+                    let barrier: Value =
+                        serde_json::from_slice(&fs::read(dir.join("coding-pressure-ready.json"))?)?;
+                    let destination = dir.join(if kind == "pressure_inserted" {
+                        "coding-pressure-message.json"
+                    } else {
+                        "coding-pressure-request.json"
+                    });
+                    let messages = if kind == "pressure_inserted" {
+                        &frame["messages"]
+                    } else {
+                        &frame["context"]["messages"]
+                    };
+                    let present = messages.as_array().is_some_and(|messages| {
+                        messages.iter().any(|m| {
+                            m["content"].as_array().is_some_and(|content| {
+                                content
+                                    .iter()
+                                    .any(|c| c["type"] == "text" && c["text"] == admitted.pressure)
+                            })
+                        })
+                    });
+                    if destination.exists()
+                        || !present
+                        || frame["generation"] != admitted.generation
                         || frame["input_digest"] != admitted.input_digest
-                        || (kind == "pressure_request" && (frame["requestModel"] != barrier["snapshot"]["model"]
-                            || !dir.join("coding-pressure-message.json").exists()))
-                    { return refuse("pressure native evidence conflict"); }
+                        || (kind == "pressure_request"
+                            && (frame["requestModel"] != barrier["snapshot"]["model"]
+                                || !dir.join("coding-pressure-message.json").exists()))
+                    {
+                        return refuse("pressure native evidence conflict");
+                    }
                     atomic(&destination, &frame)?;
                 }
                 "tool_request" => {
@@ -1050,7 +1124,10 @@ mod tests {
         // pressure fixture; this fake Host must supply a genuine no-pressure pin.
         let packet_path = root.join("packet.json");
         fs::write(&packet_path, b"{}").unwrap();
-        let packet = Artifact { path: packet_path, sha256: digest(b"{}") };
+        let packet = Artifact {
+            path: packet_path,
+            sha256: digest(b"{}"),
+        };
         let job = Job {
             schema: SCHEMA.into(),
             job_id: "test".into(),

@@ -65,8 +65,8 @@ impl Profile {
         {
             return Err("invalid_profile");
         }
-        if let Some(c) = &self.context {
-            if [&c.budget_root, &c.role_ledger, &c.ledger_path]
+        if let Some(c) = &self.context
+            && ([&c.budget_root, &c.role_ledger, &c.ledger_path]
                 .into_iter()
                 .flatten()
                 .any(|s| !Path::new(s).is_absolute())
@@ -76,22 +76,20 @@ impl Profile {
                         || !s
                             .bytes()
                             .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
-                })
-            {
-                return Err("invalid_profile");
-            }
+                }))
+        {
+            return Err("invalid_profile");
         }
-        if let Some(b) = &self.bridge {
-            if !Path::new(&b.binary).is_absolute()
+        if let Some(b) = &self.bridge
+            && (!Path::new(&b.binary).is_absolute()
                 || !Path::new(&b.config).is_absolute()
                 || ![&b.binary_sha256, &b.config_sha256].iter().all(|s| {
                     s.len() == 64
                         && s.bytes()
                             .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
-                })
-            {
-                return Err("invalid_profile");
-            }
+                }))
+        {
+            return Err("invalid_profile");
         }
         Ok(())
     }
@@ -322,10 +320,7 @@ fn transport(payload: &[u8], timeout: Duration, program: &str) -> Result<Value, 
                     if matches!(
                         e.kind(),
                         std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
-                    ) =>
-                {
-                    ()
-                }
+                    ) => {}
                 Err(_) => break Err("owner_unavailable"),
             }
         }
