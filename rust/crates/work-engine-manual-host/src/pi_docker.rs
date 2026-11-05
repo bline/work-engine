@@ -606,7 +606,7 @@ impl Host {
                 .job
                 .coding
                 .as_ref()
-                .is_some_and(|p| p.schema == coding::BRIDGE_PROFILE)
+                .is_some_and(|p| coding::is_bridge(&p.schema))
         {
             let wall_ms: i64 = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -675,7 +675,7 @@ impl Host {
                                         .job
                                         .coding
                                         .as_ref()
-                                        .is_some_and(|p| p.schema == coding::BRIDGE_PROFILE)
+                                        .is_some_and(|p| coding::is_bridge(&p.schema))
                                     {
                                         if self.expired() || self.cancelled() {
                                             return refuse(
@@ -957,7 +957,7 @@ impl Host {
             .job
             .coding
             .as_ref()
-            .is_some_and(|p| p.schema == coding::BRIDGE_PROFILE)
+            .is_some_and(|p| coding::is_bridge(&p.schema))
             && self.coding_gate.is_none()
         {
             return refuse("coding lifecycle profile requires installed admission gate");

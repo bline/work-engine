@@ -69,3 +69,57 @@ admission, exact result reconciliation, unresolved/reopen fences, strict proof
 negatives, actual transition/grant logic, exact recovery, continued prefix and
 finite controls without entering SDK or Docker. They do not establish actual
 runtime compatibility, model comprehension or production/domain acceptance.
+
+## Live continuity profile (separately versioned)
+
+Status: source and offline tests only. No Docker, SDK or provider operation has
+run for it; actual runtime compatibility and real model behaviour are `not
+established`. The fixture profile above is unchanged.
+
+`work-engine.pi-coding-lifecycle-live.v1` composes the existing direct live Host
+provider route (`gpt-6-luna`, pinned catalog, existing native credential
+projection, fixed endpoint, existing exact provider admission) with this lifecycle
+bridge. It admits exactly 1 workspace command, 1 reset, 2 SDK sessions and 4
+provider requests (`max_requests == 4`, `max_context_bytes <= 24000` so each
+`coding_provider_request` frame fits the receiver's 64 KiB bound). The pinned
+packet is `work-engine.coding-live-continuity-packet.v1` and carries the exact
+bounds plus a budget classified `live_provider_observation`; the fixture label is
+refused here and the live label is refused by the fixture. The Host plan's
+provider admission document is not widened.
+
+Entry fencing per provider request: the receiver emits `coding_provider_request`;
+the Host writes its durable unknown Reservation (pinned model, finite budget,
+unknown never regranted) before the lifecycle gate records the request and checks
+the current parent/grant; the grant is written through the current-turn send fence
+with a consumption deadline. Usage settles only from raw completed provider
+evidence, as in the direct live route. A bare `provider_request` is refused. Tool
+entry and reset use the same lifecycle fences as the fixture. The stream wrapper is
+re-bound for each SDK session after `newSession()` with one counter.
+
+Real model text is provenance, not the owner checkpoint. Lifecycle profile/protocol
+v4 settlement commits the actual assistant final text and its digest in the existing
+`native_turns` final fields for every profile, so `native_final_material` version 1
+still reports the model's own bytes next to its raw history reference. The owner
+checkpoint is a separate material and is not stored in those fields. No second copy
+is persisted: it is recomputed by the same validator from the exact Host result
+artifact, workspace manifest and settled history prefix in the immutable ingress rows
+that the settled invocation references (the model text appears only as a sha256 whose
+digest must match the committed final text). `settle_pi_coding` checks, in the settling
+transaction, that this derivation equals what it validated. Reset, transition text,
+rehydration prompt equality and the receipt consume the derived checkpoint for v4
+turns (the committed final text for every other turn/profile), a caller-supplied
+checkpoint that differs from it is refused, and the Host reads it back through
+`pi_coding_live_checkpoint`. If the committed final text or the referenced evidence
+is altered, the derivation is refused rather than re-served. Generic native settlement and v3 reject v4 identifiers, including mixed profile/protocol
+pairs. v4 additionally allows text blocks before the single `toolCall`; a second
+tool call, thinking blocks, a missing tool, a non-`stop` final, an extra provider
+request or any unmatched native event fail closed (no retry, no cap increase).
+The sole recovery input is the checkpoint; tools are disabled after reset.
+
+Not claimed: that a real model performs the happy path, that the SDK re-binds the
+wrapper as expected, or any production/domain acceptance.
+
+The live profile's sole tool-bearing turn uses the initial ingress prefix from
+sequence 1 through its committed history coordinate. Derivation reads only that
+slice. Later duplicate observations preserve checkpoint availability; genuinely
+conflicting observations still fence the parent through normal owner handling.

@@ -13,6 +13,13 @@ pub const SIGNED_PROFILE: &str = "work-engine.pi-coding-signed-fixture.v1";
 pub const PROFILE: &str = "work-engine.pi-coding-fixture.v1";
 /// Opt-in composition: Host owns effects; an installed lifecycle gate owns entry.
 pub const BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-fixture.v1";
+/// Separately versioned composition of the direct live Host provider route with
+/// the lifecycle gate. Real inference; v1/v2/v3 fixture and signed profiles are
+/// unchanged and cannot be selected by this schema.
+pub const LIVE_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-live.v1";
+pub(super) fn is_bridge(schema: &str) -> bool {
+    schema == BRIDGE_PROFILE || schema == LIVE_BRIDGE_PROFILE
+}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct CodingToolIntent {
@@ -207,6 +214,8 @@ impl Profile {
             != if self.provider.is_some() {
                 if self.schema == SIGNED_SUBSCRIPTION_PROFILE {
                     SIGNED_SUBSCRIPTION_PROFILE
+                } else if self.schema == LIVE_BRIDGE_PROFILE {
+                    LIVE_BRIDGE_PROFILE
                 } else {
                     provider::LIVE_PROFILE
                 }
@@ -227,13 +236,25 @@ impl Profile {
                 !self.fixture_command.is_empty()
             }
             || !(1..=8).contains(&self.max_tool_calls)
-            || (self.schema == BRIDGE_PROFILE && self.max_tool_calls != 1)
+            || (is_bridge(&self.schema) && self.max_tool_calls != 1)
+            || (self.schema == LIVE_BRIDGE_PROFILE
+                && self.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs)
             || job.idle_seconds != 0
         {
             return refuse("coding fixture profile/pins/limits conflict");
         }
         if let Some(plan) = &self.provider {
             plan.validate(job)?;
+            // One tool turn, final text, recovery and one continued turn.
+            // Each coding_provider_request frame carries the context twice and must
+            // fit the receiver's 64 KiB frame bound.
+            if self.schema == LIVE_BRIDGE_PROFILE
+                && (plan.max_requests != 4 || plan.max_context_bytes > 24_000)
+            {
+                return refuse(
+                    "live continuity profile admits exactly 4 requests and a bounded context",
+                );
+            }
         }
         if self.workspace_write_boundary == WorkspaceWriteBoundary::SrcLibRs {
             strict_source_file(&job.workspace.root)?;
@@ -449,12 +470,7 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
                 validation::command()
             } else {
                 let mut args = command(tool);
-                if !tool
-                    && j.job
-                        .coding
-                        .as_ref()
-                        .is_some_and(|p| p.schema == BRIDGE_PROFILE)
-                {
+                if !tool && j.job.coding.as_ref().is_some_and(|p| is_bridge(&p.schema)) {
                     args.push("--lifecycle-bridge".into());
                 }
                 args
@@ -536,12 +552,10 @@ impl Host {
     /// cannot acquire lifecycle semantics by merely installing a callback.
     pub fn bind_coding_effect_gate(&mut self, gate: Box<dyn CodingEffectGate>) -> Result<()> {
         if self.journal.phase != Phase::Admitted
-            || self
-                .journal
-                .job
-                .coding
-                .as_ref()
-                .is_none_or(|p| p.schema != BRIDGE_PROFILE || p.provider.is_some())
+            || self.journal.job.coding.as_ref().is_none_or(|p| {
+                !((p.schema == BRIDGE_PROFILE && p.provider.is_none())
+                    || (p.schema == LIVE_BRIDGE_PROFILE && p.provider.is_some()))
+            })
             || self.coding_gate.is_some()
         {
             return refuse("coding lifecycle gate binding conflict");
@@ -600,7 +614,9 @@ impl Host {
         replies
             .into_iter()
             .map(|mut v| {
-                if v["type"] == "bridge_prompt" {
+                if v["type"] == "bridge_prompt"
+                    && self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE
+                {
                     v["command"] = json!(self.journal.job.coding.as_ref().unwrap().fixture_command);
                 }
                 Ok(serde_json::to_vec(&v)?)
@@ -682,7 +698,7 @@ impl Host {
         }
         args.push(j.job.image.clone());
         args.extend(command(false));
-        if j.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE {
+        if is_bridge(&j.job.coding.as_ref().unwrap().schema) {
             args.push("--lifecycle-bridge".into());
         }
         args
@@ -784,7 +800,7 @@ impl Host {
             }
             if kind != "ready"
                 && !(self.signed_pi() && kind == "allocated")
-                && !(self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE
+                && !(is_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                     && kind == "coding_replaced")
                 && (self.journal.session_id.is_none()
                     || frame["sessionId"].as_str() != self.journal.session_id.as_deref())
@@ -850,6 +866,13 @@ impl Host {
                     replies.push(serde_json::to_vec(&reply)?);
                 }
                 "provider_request" | "provider_observation" | "provider_complete" => {
+                    if kind == "provider_request"
+                        && self.journal.job.coding.as_ref().unwrap().schema == LIVE_BRIDGE_PROFILE
+                    {
+                        // Live continuity entries reserve and are fenced only via
+                        // `coding_provider_request`; a bare grant would bypass the gate.
+                        return refuse("bare provider request in live continuity profile");
+                    }
                     if let Some(reply) = self.coding_provider_frame(&frame)? {
                         replies.push(serde_json::to_vec(&reply)?);
                     }
@@ -875,7 +898,23 @@ impl Host {
                     self.journal.session_id = Some(session.into());
                     self.journal.coding.as_mut().unwrap().ready_observed = true;
                     self.save()?;
-                    if self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE {
+                    if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema) {
+                        if let Some(plan) = &self.journal.job.coding.as_ref().unwrap().provider {
+                            // Live: the native catalog model must be the pinned one.
+                            let selected = plan.selected()?;
+                            for key in [
+                                "id",
+                                "provider",
+                                "api",
+                                "contextWindow",
+                                "maxTokens",
+                                "cost",
+                            ] {
+                                if frame["model"][key] != selected[key] {
+                                    return refuse("native selected catalog model differs");
+                                }
+                            }
+                        }
                         replies.extend(self.coding_bridge_frame(&frame)?);
                         self.journal.coding.as_mut().unwrap().frames += 1;
                         self.save()?;
@@ -1124,8 +1163,20 @@ impl Host {
                     replies.push(serde_json::to_vec(&result)?);
                 }
                 "coding_provider_request" | "coding_history" | "coding_replaced" => {
-                    if self.journal.job.coding.as_ref().unwrap().schema != BRIDGE_PROFILE {
+                    if !is_bridge(&self.journal.job.coding.as_ref().unwrap().schema) {
                         return refuse("coding lifecycle frame in legacy profile");
+                    }
+                    if kind == "coding_provider_request"
+                        && self.journal.job.coding.as_ref().unwrap().schema == LIVE_BRIDGE_PROFILE
+                    {
+                        // Existing Host provider path: durable unknown Reservation
+                        // before any grant, pinned model, finite budget. The
+                        // lifecycle gate (below) then fences the exact grant write.
+                        let request = json!({"type":"provider_request","id":frame["id"],
+                            "provider":frame["requestModel"]["provider"],
+                            "model":frame["requestModel"]["id"],
+                            "contextBytes":frame["contextBytes"]});
+                        self.coding_provider_frame(&request)?;
                     }
                     replies.extend(self.coding_bridge_frame(&frame)?);
                     if kind == "coding_replaced" {
@@ -1155,12 +1206,12 @@ impl Host {
                         }
                         state.native_tool_ends += 1;
                     }
-                    if self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE {
+                    if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema) {
                         replies.extend(self.coding_bridge_frame(&frame)?);
                     }
                 }
                 "complete" => {
-                    if self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE
+                    if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                         && frame["counts"] != json!({"providerRequests":4,"resets":1})
                     {
                         return refuse("coding bridge counts mismatch");
@@ -1177,6 +1228,9 @@ impl Host {
                         || self.journal.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE)
                         && (state.provider_failed
                             || state.provider_requests.is_empty()
+                            || (self.journal.job.coding.as_ref().unwrap().schema
+                                == LIVE_BRIDGE_PROFILE
+                                && state.provider_requests.len() != 4)
                             || state
                                 .provider_requests
                                 .values()

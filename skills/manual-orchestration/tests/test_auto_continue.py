@@ -214,6 +214,91 @@ class AutoTest(unittest.TestCase):
         with self.assertRaisesRegex(a.Refusal,'intervening native input'): a.run(self.store,h,1,.001)
         self.assertEqual(sum(c[0]=='thread/compact/start' for c in h.calls),1)
         self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def status_disagreement(self, status, resolves=True, intervening=False, complete=True, aborted=False, inconclusive=False, changed_item=False, terminal_tail=None):
+        self.prep(); self.h.turns[0]['status']='completed'; h=self.h
+        class Disagreement(Conn):
+            def call(self,method,params):
+                if method=='thread/compact/start':
+                    h.calls.append((method,params))
+                    h.turns.append({'id':COMPACT,'status':status,'items':[{'id':'compact-item','type':'contextCompaction'}]})
+                    if complete:
+                        record_compact(h)
+                        if aborted:
+                            rows=h.rollout.read_text().splitlines()
+                            rows.insert(-1,json.dumps({'type':'event_msg','payload':{'type':'turn_aborted','turn_id':COMPACT}}))
+                            h.rollout.write_text('\n'.join(rows)+'\n')
+                        if terminal_tail:
+                            with h.rollout.open('a') as f: f.write(json.dumps({'type':'event_msg','payload':terminal_tail})+'\n')
+                    return {}
+                if method=='thread/turns/list' and len(h.turns)>1:
+                    h.polls=getattr(h,'polls',0)+1
+                    if h.polls==2:
+                        if intervening: h.turns.append({'id':'human','status':'completed','items':[{'type':'userMessage'}]})
+                        elif inconclusive: h.turns[-1]['status']='inProgress'
+                        elif resolves:
+                            h.turns[-1]['status']='completed'
+                            if changed_item: h.turns[-1]['items'][0]['id']='different-item'
+                    if h.polls==3 and inconclusive: h.turns[-1]['status']='completed'
+                return super().call(method,params)
+        h._conn=lambda:Disagreement(h)
+        return h
+    def test_completed_rollout_reconciles_transient_failed_status_once(self):
+        h=self.status_disagreement('failed')
+        self.assertEqual(a.run(self.store,h,1,.001)['turn_id'],WAKE)
+        self.assertEqual(sum(c[0]=='thread/compact/start' for c in h.calls),1)
+        self.assertEqual(sum(c[0]=='turn/start' for c in h.calls),1)
+        events=[x['event'] for x in self.store.read()['journal']]
+        self.assertIn('compaction_status_disagreement',events)
+        self.assertIn('compaction_status_reconciled',events)
+    def test_completed_rollout_reconciles_transient_interrupted_status_once(self):
+        h=self.status_disagreement('interrupted')
+        self.assertEqual(a.run(self.store,h,1,.001)['turn_id'],WAKE)
+        self.assertEqual(sum(c[0]=='thread/compact/start' for c in h.calls),1)
+    def test_persisting_negative_status_never_wakes_despite_completed_rollout(self):
+        h=self.status_disagreement('failed',resolves=False)
+        with self.assertRaisesRegex(a.Refusal,'failed or interrupted'): a.run(self.store,h,1,.001)
+        self.assertEqual(h.polls,2)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_negative_status_without_completion_evidence_is_terminal(self):
+        h=self.status_disagreement('interrupted',complete=False)
+        with self.assertRaises(a.Refusal): a.run(self.store,h,1,.001)
+        self.assertEqual(h.polls,1)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_human_input_during_status_reconciliation_supersedes(self):
+        h=self.status_disagreement('failed',intervening=True)
+        with self.assertRaisesRegex(a.Refusal,'superseded'): a.run(self.store,h,1,.001)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_aborted_rollout_never_overrides_interrupted_native_status(self):
+        h=self.status_disagreement('interrupted',aborted=True)
+        with self.assertRaises(a.Refusal): a.run(self.store,h,1,.001)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_inconclusive_status_recheck_is_consumed_and_cannot_resume(self):
+        h=self.status_disagreement('failed',inconclusive=True)
+        with self.assertRaisesRegex(a.Refusal,'did not establish completion'): a.run(self.store,h,1,.001)
+        self.assertEqual(h.polls,2)
+        h.turns[-1]['status']='completed'
+        with self.assertRaisesRegex(a.Refusal,'reconciliation exhausted'): a.run(self.store,h,1,.001)
+        self.assertEqual(h.polls,2)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_negative_status_recheck_exhaustion_persists_across_run(self):
+        h=self.status_disagreement('failed',resolves=False)
+        with self.assertRaisesRegex(a.Refusal,'failed or interrupted'): a.run(self.store,h,1,.001)
+        h.turns[-1]['status']='completed'
+        with self.assertRaisesRegex(a.Refusal,'reconciliation exhausted'): a.run(self.store,h,1,.001)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_status_recheck_cannot_change_compaction_item(self):
+        h=self.status_disagreement('failed',changed_item=True)
+        with self.assertRaises(a.Refusal): a.run(self.store,h,1,.001)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_post_terminal_abort_cannot_be_hidden_by_completion(self):
+        h=self.status_disagreement('interrupted',terminal_tail={'type':'turn_aborted','turn_id':COMPACT})
+        with self.assertRaises(a.Refusal): a.run(self.store,h,1,.001)
+        self.assertEqual(h.polls,1)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
+    def test_duplicate_terminal_cannot_be_hidden_by_completion(self):
+        h=self.status_disagreement('failed',terminal_tail={'type':'task_complete','turn_id':COMPACT})
+        with self.assertRaises(a.Refusal): a.run(self.store,h,1,.001)
+        self.assertFalse(any(c[0]=='turn/start' for c in h.calls))
     def test_lost_compact_reconciles_without_replay(self):
         self.prep(); self.h.turns[0]['status']='completed'; self.h.compact_loss=True
         with self.assertRaises(a.codex_app.AppServerError): a.run(self.store,self.h,.05,.001)

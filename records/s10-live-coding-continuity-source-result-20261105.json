@@ -1,0 +1,24 @@
+{
+  "status": "accepted_bounded_source_live_qualification_pending",
+  "scope": "Outer continuation status reconciliation and additive v4 live coding/context bridge; no live-provider or production claim",
+  "source_manifest_sha256": "86d4f68578406aa1a60f65599af87b7f2df05cc9ad6897c48251c85509e1bfc4",
+  "source_manifest": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/composed-subject-r3/manifest.json",
+  "base": "839b8c4ee9f2c5f83d4b5ba342997021f29b8f35",
+  "review_lineage": [
+    "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/review/composed-report.json",
+    "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/review/reconstructed-collected.json",
+    "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/review/final-report.json"
+  ],
+  "open_P1_P2": [],
+  "controller_tests": 45,
+  "final_owner_pi_tests": 11,
+  "root_custody": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/final-repair-checks/final-corrected/summary.json",
+  "prior_sdk_regression": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/runtime/OFFLINE-VERIFICATION.json",
+  "limits": [
+    "Live provider pilot is unrun; this does not qualify release/production or future retention/version changes.",
+    "The one actual provider-disabled SDK regression used r1; final repaired v4 is qualified by source and synthetic tests only.",
+    "Checkpoint derivation preserves actual native model final material; v4 tool-bearing proof uses initial emission prefix1 through committed history coordinate.",
+    "Review reconstructed after prior cost guard; no fresh whole-slice independence claim."
+  ],
+  "evidence_root": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507"
+}

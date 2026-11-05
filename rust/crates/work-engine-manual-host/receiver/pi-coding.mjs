@@ -9,15 +9,20 @@ import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync} from
 const bridge=process.argv.includes('--lifecycle-bridge');
 const fixtureSigned=existsSync('/auth/signed-fixture.json');
 const live=existsSync('/profile/job.json');
-if(bridge&&(fixtureSigned||live))throw Error('bridge is provider-disabled only');
-if(bridge)globalThis.fetch=async()=>{throw Error('network forbidden in coding bridge');};
-if(fixtureSigned&&live)throw Error('fixture/live conflict');
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
+const LIVE_BRIDGE_SCHEMA='work-engine.pi-coding-lifecycle-live.v1';
+// Only the separately versioned continuity schema may combine the lifecycle
+// bridge with the live provider route; every other profile keeps its old rule.
+const liveBridge=bridge&&live&&config.schema===LIVE_BRIDGE_SCHEMA;
+if(bridge&&(fixtureSigned||(live&&!liveBridge)))throw Error('bridge is provider-disabled only');
+if(live&&!bridge&&config.schema===LIVE_BRIDGE_SCHEMA)throw Error('live continuity schema requires lifecycle bridge');
+if(bridge&&!liveBridge)globalThis.fetch=async()=>{throw Error('network forbidden in coding bridge');};
+if(fixtureSigned&&live)throw Error('fixture/live conflict');
 const signedSubscription=live&&config.schema==='work-engine.pi-coding-signed-subscription.v1';
 const signed=fixtureSigned||signedSubscription;
 if(fixtureSigned)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
-const schema=bridge?'work-engine.pi-coding-lifecycle-fixture.v1':fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
-let runtime,operation,bridgeCalls=0,bridgeResets=0,bridgeActive=false,bridgeWake;
+const schema=bridge?(liveBridge?config.schema:'work-engine.pi-coding-lifecycle-fixture.v1'):fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
+let runtime,operation,bridgeCalls=0,bridgeResets=0,bridgeActive=false,bridgeWake,liveBridgeFailed=false;
 const bridgeQueue=[];
 const bridgeNext=()=>bridgeQueue.length?Promise.resolve(bridgeQueue.shift()):new Promise(resolve=>{bridgeWake=resolve;});
 let session,manager,signedDeadline,pressureCheckpoint,model,pressureContextRequested=false;
@@ -118,6 +123,53 @@ try {
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
   if(bridgeResets)session.setActiveToolsByName([]);
   session.subscribe(event=>{if(bridgeActive)emit({type:'native_event',event});});
+  if(liveBridge){
+   // Real inference through the same SDK stream the direct live profile wraps.
+   // Re-bound for every SDK session (the factory runs again on newSession()); one
+   // counter spans both sessions. Nothing is manufactured: tool ids, assistant
+   // text and usage come from the provider. Any deviation fails closed.
+   const original=session.agent.streamFunction;
+   const failure=message=>{
+    liveBridgeFailed=true;
+    const stream=createAssistantMessageEventStream();
+    const error={role:'assistant',content:[],api:model.api,provider:model.provider,model:model.id,usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:'aborted',errorMessage:message,timestamp:Date.now()};
+    stream.push({type:'error',reason:'aborted',error});stream.end();return stream;
+   };
+   session.agent.streamFunction=async(requestModel,context,options)=>{
+    try{
+     const id=++bridgeCalls;
+     const contextBytes=Buffer.byteLength(JSON.stringify(context));
+     if(!bridgeActive||id>config.maxRequests||id>4||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000||requestModel.id!==model.id||requestModel.provider!==model.provider)return failure('outside host admission unavailable');
+     const grant=await new Promise((resolve,reject)=>{
+      grants.set(id,resolve);
+      options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
+      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes});
+     });
+     if(grant.mode!=='live')throw Error('bridge grant mode');
+     const until=consumptionDeadline(grant,config.deadline*1000);
+     checkConsumption(until);
+     const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',fetch:(url,init)=>{checkConsumption(until);return globalThis.fetch(url,{...init,redirect:'error'});},timeoutMs:Math.max(1,Math.min(30000,until-Date.now())),
+      onResponse:response=>emit({type:'provider_observation',id,httpStatus:response.status}),
+      onProviderStreamEvent:data=>{const backendModel=data?.response?.model;const rawTerminal=rawTerminalEvidence(data);if(typeof backendModel==='string'||rawTerminal)emit({type:'provider_observation',id,...(typeof backendModel==='string'?{backendModel}:{}),...(rawTerminal?{rawTerminal}:{})});},
+     });
+     const relay=createAssistantMessageEventStream();
+     (async()=>{
+      try{
+       for await(const event of inner){
+        if(event.type==='done'||event.type==='error'){
+         const message=event.type==='done'?event.message:event.error;
+         emit({type:'provider_complete',id,stopReason:message.stopReason,usage:message.usage});
+        }
+        relay.push(event);
+       }
+       relay.end();
+      }catch{const aborted=failure('provider stream failed');for await(const event of aborted)relay.push(event);relay.end();}
+     })();
+     return relay;
+    }catch{return failure('provider entry failed');}
+   };
+   return;
+  }
   const stream=async(requestModel,context)=>{
    const id=++bridgeCalls;if(id>4)throw Error('bridge request budget');
    const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null});});
@@ -136,7 +188,7 @@ try {
  session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
  if(!bridge)session.subscribe(event=>emit({type:'native_event',event}));
  let command,turn=0;
- if(live){
+ if(live&&!bridge){
   const original=session.agent.streamFunction;
   let request=0;
   session.agent.streamFunction=async(requestModel,context,options)=>{
@@ -202,7 +254,8 @@ try {
  }
  if(bridge){
   const snapshot=()=>({sessionId:session.sessionId,idle:!session.isStreaming&&!session.isCompacting&&session.pendingMessageCount===0,observedMs:Date.now(),observedAt:new Date().toISOString(),model:{id:model.id,provider:model.provider,contextWindow:model.contextWindow},usage:session.getContextUsage()??null});
-  emit({type:'ready',tools:session.getActiveToolNames(),snapshot:snapshot()});
+  if(liveBridge)deadline=setTimeout(()=>{process.exitCode=2;session.abort();input.close();process.stdin.destroy();},Math.max(1,config.deadline*1000-Date.now()));
+  emit({type:'ready',tools:session.getActiveToolNames(),snapshot:snapshot(),...(liveBridge?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});
   for(;;){
    const op=await bridgeNext();checkConsumption(consumptionDeadline(op,Number.MAX_SAFE_INTEGER));
    if(op.type==='bridge_close')break;
@@ -213,12 +266,13 @@ try {
    }
    operation=op;bridgeActive=true;
    await session.prompt(op.prompt,{expandPromptTemplates:false});bridgeActive=false;
+   if(liveBridgeFailed)throw Error('live bridge provider failure');
    if(session.isStreaming||session.isCompacting||session.pendingMessageCount!==0||pending.size||grants.size)throw Error('bridge turn unsettled');
    const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot()};
    writeFileSync(`/export/coding-history-${op.invocationId}.json`,JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit(history);
   }
-  const history={schema,provider:'disabled_fixture',model:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
-  writeFileSync('/export/coding-native-history.json',JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit({type:'complete',provider:'disabled_fixture',counts:history.counts});
+  const history={schema,provider:liveBridge?'openai-codex':'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
+  writeFileSync('/export/coding-native-history.json',JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit({type:'complete',provider:history.provider,counts:history.counts});
  }else{
  emit({type:'ready',tools:session.getActiveToolNames(),...(live?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});
  const started=await start;command=started.command;

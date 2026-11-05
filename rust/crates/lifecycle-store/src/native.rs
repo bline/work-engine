@@ -1643,15 +1643,22 @@ impl SqliteLifecycleStore {
         if semantic_required {
             return Ok(None);
         }
+        let basis: Option<Option<String>> = self.connection.query_row(
+            "SELECT native_basis_source FROM transitions WHERE transition_id=?1",
+            [transition.as_str()], |r| r.get(0),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        let Some(Some(basis)) = basis else { return Ok(None) };
+        let Some(basis_text) = crate::pi_coding::settled_basis_text(&self.connection, &basis)? else {
+            return Ok(None);
+        };
         self.connection.query_row(
             "SELECT 'native:'||r.invocation_id FROM transitions tr \
-             JOIN native_turns p ON tr.native_basis_source=p.invocation_id \
              JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context AND s.role='successor' \
              JOIN native_turns r ON r.session_id=s.session_id AND r.thread_id=tr.successor_thread \
              WHERE tr.transition_id=?1 AND tr.stage='rehydrating' AND r.purpose='successor_rehydrate' \
-             AND r.state='completed_settled' AND r.prompt=p.final_text AND r.history_status='observed_complete' \
+             AND r.state='completed_settled' AND r.prompt=?2 AND r.history_status='observed_complete' \
              ORDER BY r.settled_wall_ms DESC,r.rowid DESC LIMIT 1",
-            [transition.as_str()], |r| r.get(0),
+            params![transition.as_str(), basis_text], |r| r.get(0),
         ).optional().map_err(|_|StoreError::Unavailable)
     }
     /// A single read transaction observes current domain ownership and the
@@ -2093,10 +2100,8 @@ impl SqliteLifecycleStore {
                              WHERE tr.transition_id=?1 AND d.state='yielded'",
                             [transition],|r|r.get(0),
                         ).optional().map_err(|_|StoreError::Unavailable)?.flatten();
-                        let final_text: Option<Vec<u8>> = self.connection.query_row(
-                            "SELECT final_text FROM native_turns WHERE invocation_id=?1 AND state='completed_settled' AND purpose='domain_work'",
-                            [source], |r| r.get(0),
-                        ).optional().map_err(|_|StoreError::Unavailable)?;
+                        let final_text: Option<Vec<u8>> =
+                            crate::pi_coding::settled_basis_text(&self.connection, &source)?;
                         final_text.is_some()
                             && if let Some(intent) = trusted_intent {
                                 intent == context.as_str()
@@ -2510,9 +2515,16 @@ impl SqliteLifecycleStore {
                     // too small; keep this extension specific to recovery under
                     // the coding contract. Exact source equality is checked below.
                     || (request.purpose == NativeInvocationPurpose::SuccessorRehydrate
-                        && session.profile_digest == crate::pi_coding_profile_digest())
+                        && (session.profile_digest == crate::pi_coding_profile_digest()
+                            || session.profile_digest == crate::pi_coding_live_profile_digest()))
                 {
                     65_536
+                } else if request.purpose == NativeInvocationPurpose::DomainWork
+                    && session.profile_digest == crate::pi_coding_live_profile_digest()
+                {
+                    // The live coding task is exact operator-admitted text plus
+                    // the observation block; the fixture's 2 KiB cap does not fit.
+                    16_384
                 } else if request.purpose == NativeInvocationPurpose::DomainWork
                     && request
                         .attempt
@@ -2535,13 +2547,15 @@ impl SqliteLifecycleStore {
             let source_text: Vec<u8> = if let Some(prompt) = semantic_prompt {
                 prompt
             } else {
-                tx.query_row(
-                "SELECT n.final_text FROM subjects sub JOIN transitions tr ON tr.transition_id=sub.owner_ref \
+                let basis: String = tx.query_row(
+                "SELECT n.invocation_id FROM subjects sub JOIN transitions tr ON tr.transition_id=sub.owner_ref \
                  JOIN native_turns n ON tr.native_basis_source=n.invocation_id \
                  WHERE sub.subject_id=?1 AND sub.owner_kind='transition' AND tr.stage='rehydrating' \
                  AND tr.successor_context=?2 AND tr.successor_thread=?3 AND n.state='completed_settled'",
                 params![session.subject.as_str(),session.context.as_str(),thread.as_str()], |r| r.get(0),
-            ).map_err(|_|StoreError::Rejected)?
+            ).map_err(|_|StoreError::Rejected)?;
+                // v4 consumes the owner-derived checkpoint, not the model text.
+                crate::pi_coding::settled_basis_text(&tx, &basis)?.ok_or(StoreError::Rejected)?
             };
             if request.prompt != source_text {
                 return Err(StoreError::Rejected);
@@ -3041,6 +3055,8 @@ impl SqliteLifecycleStore {
             || profile == crate::pi_settlement::pi_multiturn_profile_digest()
             || protocol == crate::pi_coding::pi_coding_protocol_digest()
             || profile == crate::pi_coding::pi_coding_profile_digest()
+            || protocol == crate::pi_coding::pi_coding_live_protocol_digest()
+            || profile == crate::pi_coding::pi_coding_live_profile_digest()
         {
             return Err(StoreError::Rejected);
         }
