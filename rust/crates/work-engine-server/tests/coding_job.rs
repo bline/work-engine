@@ -473,11 +473,11 @@ fn command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes() {
     let v: Value = serde_json::from_str(&out).unwrap();
     assert!(ok && v["schema"] == "work-engine.coding-job-command.service.v1" && v["ok"] == true);
     let id = v["envelope"]["owner_result"]["operation_id"].clone();
-    let (ok, out, _) = run("read_coding_job_operation", "--human", &read);
+    let (ok, out, err) = run("read_coding_job_operation", "--human", &read);
     assert!(
         ok && out.contains("Operation: ")
             && out.contains("Settlement: not established by the adapter"),
-        "{out}"
+        "stdout: {out}; stderr: {err}"
     );
     let (_, again, _) = run("submit_coding_job", "--json", &submit);
     assert_eq!(

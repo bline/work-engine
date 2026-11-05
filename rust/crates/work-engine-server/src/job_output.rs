@@ -10,6 +10,15 @@ use serde_json::Value;
 
 const SCHEMA: &str = "work-engine.coding-job.v1";
 
+// Unlike an ordinary Option field, this field must be present; only its value may be null.
+fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer)
+}
+
 fn hex64(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
@@ -34,8 +43,74 @@ fn uuid(s: &str) -> bool {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Cleanup {
+    #[serde(deserialize_with = "required_nullable")]
     run: Option<Cleaned>,
+    #[serde(deserialize_with = "required_nullable")]
     reconcile: Option<Cleaned>,
+}
+
+#[derive(Deserialize)]
+enum NotEstablished {
+    #[serde(rename = "not_established")]
+    NotEstablished,
+}
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ObservedBool {
+    Value(bool),
+    Unknown(NotEstablished),
+}
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ObservedExit {
+    Value(Option<i32>),
+    Unknown(NotEstablished),
+}
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ObservedFailures {
+    Value(Vec<String>),
+    Unknown(NotEstablished),
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum TerminalStatus {
+    ComponentPassed,
+    ComponentFailed,
+    NotEstablished,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum HostPhase {
+    Admitted,
+    CreateUnknown,
+    Created,
+    StartUnknown,
+    Running,
+    Collecting,
+    Collected,
+    NotEstablished,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Terminal {
+    status: TerminalStatus,
+    phase: HostPhase,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Validation {
+    rpc_verified: ObservedBool,
+    failures: ObservedFailures,
+    coding_completed: ObservedBool,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ResultCleanup {
+    removed: ObservedBool,
+    daemon_exit: ObservedExit,
+    tool_removed: ObservedBool,
+    collector: Cleanup,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -77,14 +152,20 @@ struct Operation {
     state_dir: String,
     job_sha256: String,
     expected_host_input_digest: String,
+    #[serde(deserialize_with = "required_nullable")]
     host_input_digest: Option<String>,
     state: State,
     entered_possible: bool,
     collector_live: bool,
-    host_phase: Option<String>,
+    #[serde(deserialize_with = "required_nullable")]
+    host_phase: Option<HostPhase>,
+    #[serde(deserialize_with = "required_nullable")]
     host_removed: Option<bool>,
+    #[serde(deserialize_with = "required_nullable")]
     host_receipt_id: Option<String>,
+    #[serde(deserialize_with = "required_nullable")]
     collector_run: Option<serde_json::Map<String, Value>>,
+    #[serde(deserialize_with = "required_nullable")]
     collector_reconcile: Option<serde_json::Map<String, Value>>,
     process_cleanup: Cleanup,
     limitations: Vec<String>,
@@ -162,7 +243,7 @@ enum Availability {
 #[serde(deny_unknown_fields)]
 struct HostOutput {
     action: HostAction,
-    exit_code: Value,
+    exit_code: ObservedExit,
     note: String,
 }
 #[derive(Deserialize)]
@@ -182,9 +263,9 @@ struct AvailableResult {
     schema: String,
     result: Available,
     operation: Operation,
-    terminal: serde_json::Map<String, Value>,
-    validation: serde_json::Map<String, Value>,
-    cleanup: serde_json::Map<String, Value>,
+    terminal: Terminal,
+    validation: Validation,
+    cleanup: ResultCleanup,
     acceptance: Value,
     domain_effect_settlement: Value,
     receipt_id: String,
@@ -242,8 +323,6 @@ pub fn validate(
                     || r.receipt.get("job_id").and_then(Value::as_str)
                         != Some(r.operation.job_id.as_str())
                     || r.host_output.note.is_empty()
-                    || !(r.host_output.exit_code.is_number()
-                        || r.host_output.exit_code == "not_established")
                     || !r.acceptance.is_string()
                     || !r.domain_effect_settlement.is_string()
                 {
@@ -256,3 +335,7 @@ pub fn validate(
         _ => Err("invalid_request"),
     }
 }
+
+#[cfg(test)]
+#[path = "job_output/tests.rs"]
+mod tests;

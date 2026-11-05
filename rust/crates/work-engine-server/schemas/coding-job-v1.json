@@ -152,9 +152,13 @@
           "type": "boolean"
         },
         "host_phase": {
-          "type": [
-            "string",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/host_phase"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "host_removed": {
@@ -480,9 +484,13 @@
           "type": "boolean"
         },
         "host_phase": {
-          "type": [
-            "string",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/host_phase"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "host_removed": {
@@ -615,13 +623,13 @@
           "$ref": "#/$defs/operation"
         },
         "terminal": {
-          "type": "object"
+          "$ref": "#/$defs/terminal_projection"
         },
         "validation": {
-          "type": "object"
+          "$ref": "#/$defs/validation_projection"
         },
         "cleanup": {
-          "type": "object"
+          "$ref": "#/$defs/cleanup_projection"
         },
         "acceptance": {
           "type": "string",
@@ -659,15 +667,150 @@
               ]
             },
             "exit_code": {
-              "type": [
-                "integer",
-                "string"
-              ]
+              "$ref": "#/$defs/observed_exit"
             },
             "note": {
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "collector_cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run",
+        "reconcile"
+      ],
+      "properties": {
+        "run": {
+          "enum": [
+            null,
+            "owned_process_group_collected",
+            "not_established"
+          ]
+        },
+        "reconcile": {
+          "enum": [
+            null,
+            "owned_process_group_collected",
+            "not_established"
+          ]
+        }
+      }
+    },
+    "host_phase": {
+      "enum": [
+        "admitted",
+        "create_unknown",
+        "created",
+        "start_unknown",
+        "running",
+        "collecting",
+        "collected",
+        "not_established"
+      ]
+    },
+    "observed_bool": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "const": "not_established"
+        }
+      ]
+    },
+    "observed_exit": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": "not_established"
+        }
+      ]
+    },
+    "observed_failures": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "const": "not_established"
+        }
+      ]
+    },
+    "terminal_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "phase"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "component_passed",
+            "component_failed",
+            "not_established"
+          ]
+        },
+        "phase": {
+          "$ref": "#/$defs/host_phase"
+        }
+      }
+    },
+    "validation_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rpc_verified",
+        "failures",
+        "coding_completed"
+      ],
+      "properties": {
+        "rpc_verified": {
+          "$ref": "#/$defs/observed_bool"
+        },
+        "failures": {
+          "$ref": "#/$defs/observed_failures"
+        },
+        "coding_completed": {
+          "$ref": "#/$defs/observed_bool"
+        }
+      }
+    },
+    "cleanup_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "removed",
+        "daemon_exit",
+        "tool_removed",
+        "collector"
+      ],
+      "properties": {
+        "removed": {
+          "$ref": "#/$defs/observed_bool"
+        },
+        "daemon_exit": {
+          "$ref": "#/$defs/observed_exit"
+        },
+        "tool_removed": {
+          "$ref": "#/$defs/observed_bool"
+        },
+        "collector": {
+          "$ref": "#/$defs/collector_cleanup"
         }
       }
     }
