@@ -3,7 +3,7 @@
 //! response per invocation. More capable profiles require their own owner contract.
 use crate::{NativeTurnEntry, SqliteLifecycleStore, StoreError};
 use lifecycle_core::ClockSample;
-use rusqlite::{TransactionBehavior, params};
+use rusqlite::{OptionalExtension, TransactionBehavior, params};
 use serde_json::Value;
 use work_engine_types::CodecContract;
 
@@ -14,6 +14,13 @@ pub fn pi_protocol_digest() -> String {
 }
 pub fn pi_profile_digest() -> String {
     digest(b"pi-1.5.0-runtime-fresh-session-v1:provider-disabled:tools-none:owner-settlement-v1")
+}
+/// Opt-in protocol: immutable settled history is owned, never caller supplied.
+pub fn pi_multiturn_protocol_digest() -> String {
+    digest(b"pi-1.5.0:raw-agent-events+provider-request+session-branch:v2:anchored-tool-free-turns")
+}
+pub fn pi_multiturn_profile_digest() -> String {
+    digest(b"pi-1.5.0-runtime-anchored-turns-v2:provider-disabled:tools-none:owner-settlement-v2")
 }
 fn digest(bytes: &[u8]) -> String {
     CodecContract::BinaryArtifactV1
@@ -52,10 +59,33 @@ impl SqliteLifecycleStore {
         &self,
         entry: &crate::NativeSessionEntry,
     ) -> Result<(), StoreError> {
+        self.validate_pi_binding_for(entry, false)
+    }
+    pub fn validate_pi_multiturn_session_binding(
+        &self,
+        entry: &crate::NativeSessionEntry,
+    ) -> Result<(), StoreError> {
+        self.validate_pi_binding_for(entry, true)
+    }
+    fn validate_pi_binding_for(
+        &self,
+        entry: &crate::NativeSessionEntry,
+        multiturn: bool,
+    ) -> Result<(), StoreError> {
         self.verify_identity()?;
-        let valid:bool=self.connection.query_row("SELECT EXISTS(SELECT 1 FROM native_sessions WHERE session_id=?1 AND subject_id=?2 AND context_id=?3 AND profile_digest=?4 AND binary_sha256=?5 AND protocol_digest=?6 AND snapshot_id=?7 AND allocation_state='intent' AND thread_id IS NULL)",params![entry.id().as_str(),entry.subject().as_str(),entry.context().as_str(),pi_profile_digest(),PI_SDK_INDEX_SHA256,pi_protocol_digest(),entry.snapshot().as_str()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
+        let profile = if multiturn {
+            pi_multiturn_profile_digest()
+        } else {
+            pi_profile_digest()
+        };
+        let protocol = if multiturn {
+            pi_multiturn_protocol_digest()
+        } else {
+            pi_protocol_digest()
+        };
+        let valid:bool=self.connection.query_row("SELECT EXISTS(SELECT 1 FROM native_sessions WHERE session_id=?1 AND subject_id=?2 AND context_id=?3 AND profile_digest=?4 AND binary_sha256=?5 AND protocol_digest=?6 AND snapshot_id=?7 AND allocation_state='intent' AND thread_id IS NULL)",params![entry.id().as_str(),entry.subject().as_str(),entry.context().as_str(),profile,PI_SDK_INDEX_SHA256,protocol,entry.snapshot().as_str()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
         if !valid
-            || entry.profile_digest() != pi_profile_digest()
+            || entry.profile_digest() != profile
             || !crate::native::native_session_current(&self.connection, entry.id())?
         {
             return Err(StoreError::Rejected);
@@ -68,6 +98,23 @@ impl SqliteLifecycleStore {
         entry: &NativeTurnEntry,
         proof: &PiSettlementProof,
         clock: ClockSample,
+    ) -> Result<(), StoreError> {
+        self.settle_pi_turn_for(entry, proof, clock, false)
+    }
+    pub fn settle_pi_multiturn(
+        &mut self,
+        entry: &NativeTurnEntry,
+        proof: &PiSettlementProof,
+        clock: ClockSample,
+    ) -> Result<(), StoreError> {
+        self.settle_pi_turn_for(entry, proof, clock, true)
+    }
+    fn settle_pi_turn_for(
+        &mut self,
+        entry: &NativeTurnEntry,
+        proof: &PiSettlementProof,
+        clock: ClockSample,
+        multiturn: bool,
     ) -> Result<(), StoreError> {
         self.verify_identity()?;
         let turn = entry.turn().ok_or(StoreError::ClaimConflict)?;
@@ -84,11 +131,21 @@ impl SqliteLifecycleStore {
         let (session, thread, profile, binary, protocol, purpose, prompt, prompt_hash, subject, last_wall): (String,String,String,String,String,String,Vec<u8>,String,String,i64) = tx.query_row(
             "SELECT s.session_id,t.thread_id,s.profile_digest,s.binary_sha256,s.protocol_digest,t.purpose,t.prompt,t.prompt_sha256,s.subject_id,sub.last_wall_ms FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id JOIN subjects sub ON sub.subject_id=s.subject_id JOIN grants g ON g.grant_id=t.grant_id WHERE t.invocation_id=?1 AND t.turn_id=?2 AND t.state='entered_uncertain' AND t.send_intent=1 AND t.profile_digest=s.profile_digest AND s.allocation_state='bound' AND g.revision=t.grant_revision AND g.revoked=0 AND g.issuer=?3 AND g.scope='native_turn' AND g.subject_id=s.subject_id AND g.context_id=s.context_id AND g.build_id=sub.build_id AND g.proof_run_id=sub.proof_run_id AND ((t.purpose='domain_work' AND sub.owner_kind='domain' AND sub.owner_ref IS NULL AND sub.context_id=s.context_id) OR (t.purpose='successor_rehydrate' AND sub.owner_kind='transition' AND EXISTS(SELECT 1 FROM transitions tr WHERE tr.transition_id=sub.owner_ref AND tr.stage='rehydrating' AND tr.successor_context=s.context_id AND tr.successor_thread=t.thread_id))) AND g.expires_ms>?4 AND EXISTS(SELECT 1 FROM admin_ownership WHERE singleton=1 AND status='active')",
             params![entry.invocation_id(),turn.as_str(),&self.trusted_issuer,clock.wall.get()], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?,r.get(8)?,r.get(9)?))).map_err(|_| StoreError::ClaimConflict)?;
+        let expected_profile = if multiturn {
+            pi_multiturn_profile_digest()
+        } else {
+            pi_profile_digest()
+        };
+        let expected_protocol = if multiturn {
+            pi_multiturn_protocol_digest()
+        } else {
+            pi_protocol_digest()
+        };
         if thread != entry.thread().as_str()
-            || profile != pi_profile_digest()
+            || profile != expected_profile
             || profile != entry.profile_digest()
             || binary != PI_SDK_INDEX_SHA256
-            || protocol != pi_protocol_digest()
+            || protocol != expected_protocol
             || digest(&prompt) != prompt_hash
             || clock.wall.get() < last_wall
         {
@@ -142,13 +199,27 @@ impl SqliteLifecycleStore {
             history_wall = history_wall.max(*wall);
             values.push(v);
         }
-        let final_text = validate(
+        let anchor = if multiturn {
+            settled_anchor(
+                &tx,
+                entry.invocation_id(),
+                &session,
+                &thread,
+                &profile,
+                &proof.transport,
+                proof.first_sequence,
+            )?
+        } else {
+            None
+        };
+        let final_text = validate_with_prefix(
             &values,
             entry.invocation_id(),
             turn.as_str(),
             &thread,
             &prompt,
             &prompt_hash,
+            anchor.as_ref(),
         )?;
         if final_text.is_empty() || final_text.len() > 65_536 {
             return reject();
@@ -172,13 +243,14 @@ impl SqliteLifecycleStore {
     }
 }
 
-fn validate(
+fn validate_with_prefix(
     v: &[Value],
     invocation: &str,
     correlation: &str,
     thread: &str,
     prompt: &[u8],
     prompt_hash: &str,
+    anchor: Option<&Value>,
 ) -> Result<String, StoreError> {
     let kinds: Vec<_> = v.iter().map(|v| v["type"].as_str().unwrap_or("")).collect();
     let system = v.get(2).is_some_and(|v| v["message"]["role"] == "system");
@@ -207,6 +279,9 @@ fn validate(
         "pi.session_history",
     ]);
     if kinds != expected {
+        return reject();
+    }
+    if anchor.is_some() && system {
         return reject();
     }
     if system
@@ -262,7 +337,16 @@ fn validate(
     }
     let normalized: Vec<_> = provider.iter().filter(|m| m["role"] != "system").collect();
     let input_visible: Vec<_> = input.iter().filter(|m| m["role"] != "system").collect();
-    if input_visible.len() != 1 || input_visible[0] != user {
+    if let Some(anchor) = anchor {
+        let mut expected = anchor["messages"]
+            .as_array()
+            .ok_or(StoreError::ClaimConflict)?
+            .clone();
+        expected.push(user.clone());
+        if *input != expected {
+            return reject();
+        }
+    } else if input_visible.len() != 1 || input_visible[0] != user {
         return reject();
     }
     if normalized.len() != input_visible.len()
@@ -278,6 +362,19 @@ fn validate(
     let branch = history["branch"]
         .as_array()
         .ok_or(StoreError::ClaimConflict)?;
+    if let Some(anchor) = anchor {
+        let prior = anchor["branch"]
+            .as_array()
+            .ok_or(StoreError::ClaimConflict)?;
+        if history["header"] != anchor["header"]
+            || branch.len() != prior.len() + 2
+            || branch[..prior.len()] != prior[..]
+            || branch[prior.len()]["type"] != "message"
+            || branch[prior.len() + 1]["type"] != "message"
+        {
+            return reject();
+        }
+    }
     if history["header"]["id"] != thread || history["header"]["type"] != "session" {
         return reject();
     }
@@ -302,4 +399,40 @@ fn validate(
         return reject();
     }
     text(assistant).ok_or(StoreError::ClaimConflict)
+}
+
+/// The latest invocation, not a caller-selected checkpoint, determines the
+/// prefix. Any unresolved earlier invocation makes continuation ineligible.
+fn settled_anchor(
+    tx: &rusqlite::Transaction<'_>,
+    invocation: &str,
+    session: &str,
+    thread: &str,
+    profile: &str,
+    transport: &str,
+    first: u64,
+) -> Result<Option<Value>, StoreError> {
+    let unresolved:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM native_turns WHERE session_id=?1 AND rowid<(SELECT rowid FROM native_turns WHERE invocation_id=?2) AND state!='completed_settled')",params![session,invocation],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
+    if unresolved {
+        return reject();
+    }
+    let prior:Option<(String,String,u64,String)>=tx.query_row("SELECT thread_id,history_transport_session,history_sequence,profile_digest FROM native_turns WHERE session_id=?1 AND rowid<(SELECT rowid FROM native_turns WHERE invocation_id=?2) AND state='completed_settled' AND history_status='observed_complete' ORDER BY rowid DESC LIMIT 1",params![session,invocation],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).optional().map_err(|_|StoreError::Unavailable)?;
+    let Some((prior_thread, prior_transport, sequence, prior_profile)) = prior else {
+        return Ok(None);
+    };
+    if prior_thread != thread
+        || prior_profile != profile
+        || (prior_transport == transport && sequence >= first)
+    {
+        return reject();
+    }
+    let (raw,hash,method,status):(Vec<u8>,String,String,String)=tx.query_row("SELECT raw,raw_sha256,method,decode_status FROM native_ingress WHERE session_id=?1 AND thread_id=?2 AND transport_session=?3 AND sequence=?4",params![session,thread,prior_transport,sequence],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).map_err(|_|StoreError::ClaimConflict)?;
+    if digest(&raw) != hash || method != "pi.session_history" || status != "qualified" {
+        return reject();
+    }
+    let value: Value = serde_json::from_slice(&raw).map_err(|_| StoreError::ClaimConflict)?;
+    if value["type"] != "pi.session_history" || value["sessionId"] != thread {
+        return reject();
+    }
+    Ok(Some(value))
 }
