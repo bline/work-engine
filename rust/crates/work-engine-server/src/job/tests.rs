@@ -21,8 +21,9 @@ fn fake_host(state: &Path, runs: &Path) -> String {
 S='{s}'; R='{r}'
 [ "$1" = pi-docker ] || exit 64
 act="$2"
-journal() {{ printf '{{"schema":"work-engine.pi-docker-custody.v1","job":{{"job_id":"job-1","state_dir":"%s"}},"input_digest":"%s","phase":"%s","removed":%s,"receipt_id":"rcpt-1"}}' "$S" "d1d1d1d1" "$1" "$2" > "$S/pi-state.json"; }}
-receipt() {{ printf '{{"receipt":{{"status":"component_passed","phase":"collected","rpc_verified":true,"failures":[],"coding":{{"completed":true,"tool_removed":true}},"removed":true,"daemon_exit":0,"acceptance":"owner_pending","domain_effect_settlement":"not_claimed","receipt_id":"rcpt-1","input_digest":"d1d1d1d1"}},"receipt_id":"rcpt-1"}}\n'; }}
+T="$(dirname "$S")"
+journal() {{ sed -e "s/@P@/$1/" -e "s/@R@/$2/" "$T/journal.tpl" > "$S/pi-state.json"; }}
+receipt() {{ cat "$T/receipt.json"; echo; }}
 case "$act" in
  run)
   echo run >> "$R"
@@ -44,6 +45,39 @@ esac
     )
 }
 
+const RECEIPT_ID: &str = "5adaf203ef0b4049b9965502bbbaa0a0739733fc62985b836ca2441a67bb9828";
+
+/// The Host's typed `Job` serialization written by hand in its struct field order and compact form:
+/// its SHA-256 is the Host input digest, independent of the adapter's mirror under test.
+fn host_job(
+    state: &Path,
+    packet: &Path,
+    packet_sha: &str,
+    deadline: u64,
+    extra_coding: &str,
+) -> String {
+    let q = |p: &Path| serde_json::to_string(&p.to_string_lossy()).unwrap();
+    let art = |path: &str, sha: &str| format!(r#"{{"path":"{path}","sha256":"{sha}"}}"#);
+    let tree = |root: &str| {
+        format!(
+            r#"{{"root":"{root}","manifest":{}}}"#,
+            art("/m/manifest.json", &"c".repeat(64))
+        )
+    };
+    format!(
+        r#"{{"schema":"work-engine.pi-docker-custody.v1","job_id":"job-1","state_dir":{state},"authority":{authority},"packet":{{"path":{packet},"sha256":"{packet_sha}"}},"docker":{docker},"image":"node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da","runtime":{runtime},"workspace":{workspace},"deadline_unix_seconds":{deadline},"command_timeout_seconds":30,"idle_seconds":0,"coding":{{"schema":"work-engine.pi-coding-fixture.v1","shim":{shim},"toolchain":{toolchain},"acceptance":{acceptance},"fixture_command":"true","max_tool_calls":1{extra_coding}}}}}"#,
+        state = q(state),
+        packet = q(packet),
+        authority = art("/a/authority.json", &"a".repeat(64)),
+        docker = art("/usr/bin/docker", &"d".repeat(64)),
+        runtime = tree("/r/runtime"),
+        workspace = tree("/w/workspace"),
+        shim = art("/s/shim.mjs", &"e".repeat(64)),
+        toolchain = tree("/t/toolchain"),
+        acceptance = art("/s/acceptance.rs", &"f".repeat(64)),
+    )
+}
+
 fn fixture(deadline: u64, provider: Option<&str>) -> Fx {
     let t = tempfile::tempdir().unwrap();
     let root = t.path().to_path_buf();
@@ -59,20 +93,36 @@ fn fixture(deadline: u64, provider: Option<&str>) -> Fx {
     let packet = root.join("packet.json");
     std::fs::write(&packet, b"{\"task\":\"fixture\"}").unwrap();
     let job_file = root.join("job.json");
-    let coding = match provider {
-        None => json!({"schema":"work-engine.pi-coding-fixture.v1","max_tool_calls":1}),
-        Some(p) => json!({"schema":"x","provider":p}),
-    };
-    let job = json!({"schema":"work-engine.pi-docker-custody.v1","job_id":"job-1",
-        "state_dir":state,"deadline_unix_seconds":now()+120,
-        "packet":{"path":packet,"sha256":hex(b"{\"task\":\"fixture\"}")},"coding":coding});
-    std::fs::write(&job_file, job.to_string()).unwrap();
+    let extra = provider.map_or(String::new(), |p| format!(r#","provider":"{p}""#));
+    let canonical = host_job(
+        &state,
+        &packet,
+        &hex(b"{\"task\":\"fixture\"}"),
+        now() + 120,
+        &extra,
+    );
+    let host_digest = hex(canonical.as_bytes());
+    // The operator's job file is pretty (and key-sorted), so its digest is not the Host digest.
+    let job: Value = serde_json::from_str(&canonical).unwrap();
+    let job_text = serde_json::to_string_pretty(&job).unwrap();
+    std::fs::write(&job_file, &job_text).unwrap();
+    // Templates for the fake Host: journal and the actual `{receipt_id, receipt}` wrapper.
+    let journal = format!(
+        r#"{{"schema":"work-engine.pi-docker-custody.v1","binary_sha256":"{b}","job":{canonical},"input_digest":"{host_digest}","container_name":"we-pi-x","phase":"@P@","removed":@R@,"receipt_id":"{RECEIPT_ID}"}}"#,
+        b = "b".repeat(64)
+    );
+    std::fs::write(root.join("journal.tpl"), journal).unwrap();
+    let wrapper = format!(
+        r#"{{"receipt_id":"{RECEIPT_ID}","receipt":{{"schema":"work-engine.pi-docker-custody.v1","job":{canonical},"job_id":"job-1","input_digest":"{host_digest}","status":"component_passed","acceptance":"owner_pending","domain_effect_settlement":"not_claimed","provider":"disabled","phase":"collected","rpc_verified":true,"daemon_exit":0,"removed":true,"failures":[],"coding":{{"completed":true,"tool_removed":true}}}}}}"#
+    );
+    std::fs::write(root.join("receipt.json"), wrapper).unwrap();
     let auth = Authorization {
         authorization_id: "auth-1".into(),
         caller: "caller-1".into(),
         credential_sha256: hex(CRED.as_bytes()),
         job_file: job_file.to_string_lossy().into(),
-        job_sha256: hex(job.to_string().as_bytes()),
+        job_sha256: hex(job_text.as_bytes()),
+        host_input_digest: host_digest,
         packet_sha256: hex(b"{\"task\":\"fixture\"}"),
         job_id: "job-1".into(),
         state_dir: state.to_string_lossy().into(),
@@ -268,7 +318,8 @@ fn submit_returns_promptly_and_repeats_observe_the_same_operation() {
         .join(fx.jobs.operation_id(&fx.auth))
         .join("job.json");
     assert_eq!(hex(&std::fs::read(snapshot).unwrap()), fx.auth.job_sha256);
-    assert_eq!(done["host_input_digest"], "d1d1d1d1");
+    assert_eq!(done["host_input_digest"], fx.auth.host_input_digest);
+    assert_ne!(fx.auth.host_input_digest, fx.auth.job_sha256);
     assert_eq!(
         done["process_cleanup"]["run"],
         "owned_process_group_collected"
@@ -278,7 +329,12 @@ fn submit_returns_promptly_and_repeats_observe_the_same_operation() {
         .call("read_coding_job_result", read_args(REQ))
         .unwrap();
     assert_eq!(result["result"], "available");
-    assert_eq!(result["receipt_id"], "rcpt-1");
+    assert_eq!(result["receipt_id"], RECEIPT_ID);
+    assert_eq!(result["operation"]["host_receipt_id"], RECEIPT_ID);
+    assert!(
+        result["receipt"].get("receipt_id").is_none(),
+        "the ID is the wrapper's, not part of the receipt body"
+    );
     assert_eq!(result["acceptance"], "owner_pending");
     assert_eq!(result["domain_effect_settlement"], "not_claimed");
     assert_eq!(result["terminal"]["status"], "component_passed");
@@ -505,4 +561,512 @@ fn schema_required_keys_match_what_the_server_accepts() {
         schema["$defs"]["profile"]["properties"]["capability"]["const"],
         CAPABILITY_OFFLINE
     );
+}
+
+#[path = "../job_output.rs"]
+mod job_output;
+
+fn submit_and_collect(fx: &Fx) {
+    fx.jobs
+        .call("submit_coding_job", submit_args(fx, REQ))
+        .unwrap();
+    wait_state(fx, "collected");
+}
+
+#[test]
+fn host_digest_follows_the_host_serialization_not_the_job_file_bytes() {
+    // A job written by the real Phase A fixture and the input_digest its actual Host journaled for it.
+    let text = include_str!("real-host-job.json");
+    let job: Value = serde_json::from_str(text).unwrap();
+    assert_eq!(
+        host_input_digest(&job).as_deref(),
+        Some("d2ad1ee8edb9824c0b3af18ea545636b6db85b027d24f56e4200e7e9f91ffd7f")
+    );
+    assert_ne!(hex(text.as_bytes()), host_input_digest(&job).unwrap());
+    // Whitespace and key order in the file do not change the Host's typed serialization.
+    let reordered: Value =
+        serde_json::from_str(&serde_json::to_string_pretty(&job).unwrap()).unwrap();
+    assert_eq!(host_input_digest(&reordered), host_input_digest(&job));
+    // Any job semantic change, other Host version, or non-offline field has another digest or none.
+    for mutate in [
+        |j: &mut Value| j["deadline_unix_seconds"] = json!(1),
+        |j: &mut Value| j["idle_seconds"] = json!(5),
+        |j: &mut Value| j["coding"]["fixture_command"] = json!("true"),
+    ] {
+        let mut j = job.clone();
+        mutate(&mut j);
+        assert_ne!(host_input_digest(&j), host_input_digest(&job));
+    }
+    for mutate in [
+        |j: &mut Value| j["schema"] = json!("work-engine.pi-docker-custody.v2"),
+        |j: &mut Value| j["coding"]["schema"] = json!("work-engine.pi-coding-fixture.v2"),
+        |j: &mut Value| j["coding"]["provider"] = json!({}),
+        |j: &mut Value| j["receiver"] = json!({}),
+        |j: &mut Value| j["unexpected"] = json!(1),
+    ] {
+        let mut j = job.clone();
+        mutate(&mut j);
+        assert_eq!(host_input_digest(&j), None);
+    }
+}
+
+#[test]
+fn wrong_expected_host_identity_is_refused_before_binding_or_entry() {
+    let fx = fixture(30, None);
+    let mut auth = fx.auth.clone();
+    auth.host_input_digest = hex(b"another job");
+    let jobs = jobs_for(&fx.root, &fx.root.join("host.sh"), &auth, 30);
+    assert_eq!(
+        jobs.call("submit_coding_job", submit_args(&fx, REQ)),
+        Err("host_identity_mismatch")
+    );
+    assert_eq!(runs(&fx), 0);
+    assert!(
+        std::fs::read_dir(fx.root.join("ops"))
+            .unwrap()
+            .next()
+            .is_none()
+    );
+    assert!(!fx.state.join("pi-state.json").exists());
+}
+
+#[test]
+fn foreign_or_altered_host_state_blocks_read_reconcile_cancel_and_result() {
+    for tamper in [
+        // Another job's identity.
+        |s: &str| s.replace("\"job_id\":\"job-1\"", "\"job_id\":\"job-2\""),
+        // A digest that is not the bound one.
+        |s: &str| s.replace("\"input_digest\":\"", "\"input_digest\":\"0"),
+    ] {
+        let fx = fixture(30, None);
+        submit_and_collect(&fx);
+        let journal = fx.state.join("pi-state.json");
+        let altered = tamper(&std::fs::read_to_string(&journal).unwrap());
+        std::fs::write(&journal, altered).unwrap();
+        for op in [
+            "read_coding_job_operation",
+            "read_coding_job_result",
+            "cancel_coding_job",
+        ] {
+            assert_eq!(
+                fx.jobs.call(op, read_args(REQ)),
+                Err("identity_conflict"),
+                "{op}"
+            );
+        }
+        assert_eq!(
+            fx.jobs.call("submit_coding_job", submit_args(&fx, REQ)),
+            Err("identity_conflict")
+        );
+        assert!(
+            !fx.root.join("cancel-marker").exists(),
+            "cancel never reached the Host"
+        );
+        assert!(!fx.root.join("reconciles").exists());
+        assert_eq!(runs(&fx), 1);
+    }
+    // The journal's digest must match its own job, not just the bound value.
+    let fx = fixture(30, None);
+    submit_and_collect(&fx);
+    let journal = fx.state.join("pi-state.json");
+    let altered = std::fs::read_to_string(&journal).unwrap().replace(
+        "\"command_timeout_seconds\":30",
+        "\"command_timeout_seconds\":29",
+    );
+    std::fs::write(&journal, altered).unwrap();
+    assert_eq!(
+        fx.jobs.call("read_coding_job_operation", read_args(REQ)),
+        Err("identity_conflict")
+    );
+}
+
+#[test]
+fn result_preserves_the_outer_host_receipt_id_and_rejects_conflicts() {
+    let fx = fixture(30, None);
+    submit_and_collect(&fx);
+    let result = fx
+        .jobs
+        .call("read_coding_job_result", read_args(REQ))
+        .unwrap();
+    assert_eq!(result["receipt_id"], RECEIPT_ID);
+    assert_eq!(result["input_digest"], fx.auth.host_input_digest);
+    let path = fx
+        .root
+        .join("ops")
+        .join(fx.jobs.operation_id(&fx.auth))
+        .join("host-run.json");
+    let original: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    let check = |edit: &dyn Fn(&mut Value), want: Result<(), &'static str>| {
+        let mut v = original.clone();
+        edit(&mut v);
+        std::fs::write(&path, v.to_string()).unwrap();
+        let got = fx
+            .jobs
+            .call("read_coding_job_result", read_args(REQ))
+            .map(|_| ());
+        assert_eq!(got, want);
+    };
+    // The old fixture shape: an ID only inside the receipt, none in the wrapper.
+    check(
+        &|v| {
+            let id = v.as_object_mut().unwrap().remove("receipt_id").unwrap();
+            v["receipt"]["receipt_id"] = id;
+        },
+        Err("custody_lost"),
+    );
+    // Wrapper ID that is not the journal's recorded receipt.
+    check(
+        &|v| v["receipt_id"] = json!("9".repeat(64)),
+        Err("identity_conflict"),
+    );
+    // Malformed ID, extra wrapper member, and receipts for another input digest or job.
+    check(&|v| v["receipt_id"] = json!("rcpt-1"), Err("custody_lost"));
+    check(&|v| v["extra"] = json!(1), Err("custody_lost"));
+    check(
+        &|v| v["receipt"]["input_digest"] = json!("1".repeat(64)),
+        Err("identity_conflict"),
+    );
+    check(
+        &|v| v["receipt"]["job_id"] = json!("job-2"),
+        Err("identity_conflict"),
+    );
+    check(
+        &|v| v["receipt"]["job"]["state_dir"] = json!("/elsewhere"),
+        Err("identity_conflict"),
+    );
+    check(&|_| {}, Ok(()));
+}
+
+#[test]
+fn overlapping_state_ownership_is_rejected_at_profile_load() {
+    let fx = fixture(30, None);
+    let profile = |mutate: &dyn Fn(&mut Vec<Authorization>)| {
+        let mut p = fx.jobs.profile.clone();
+        let mut second = fx.auth.clone();
+        second.authorization_id = "auth-2".into();
+        second.job_id = "job-2".into();
+        second.host_input_digest = hex(b"second");
+        second.state_dir = fx.root.join("state-2").to_string_lossy().into();
+        p.authorizations.push(second);
+        mutate(&mut p.authorizations);
+        Jobs::new(p).err()
+    };
+    // Disjoint authorizations are fine.
+    assert_eq!(profile(&|_| {}), None);
+    let state = fx.state.to_string_lossy().into_owned();
+    assert_eq!(
+        profile(&|a| a[1].state_dir = state.clone()),
+        Some("overlapping_state_ownership")
+    );
+    assert_eq!(
+        profile(&|a| a[1].state_dir = format!("{state}/nested")),
+        Some("overlapping_state_ownership")
+    );
+    assert_eq!(
+        profile(&|a| a[1].state_dir = fx.root.to_string_lossy().into()),
+        Some("overlapping_state_ownership")
+    );
+    assert_eq!(
+        profile(&|a| a[1].job_id = "job-1".into()),
+        Some("overlapping_state_ownership")
+    );
+    assert_eq!(
+        profile(&|a| a[1].host_input_digest = a[0].host_input_digest.clone()),
+        Some("overlapping_state_ownership")
+    );
+    // A state inside the operation root (or the root inside a state) would share custody.
+    let ops = fx.root.join("ops");
+    assert_eq!(
+        profile(&|a| a[1].state_dir = ops.join("x").to_string_lossy().into()),
+        Some("overlapping_state_ownership")
+    );
+    assert_eq!(
+        profile(&|a| a[1].state_dir = format!("{state}/../state-3")),
+        Some("invalid_job_profile")
+    );
+    assert_eq!(
+        profile(&|a| a[1].host_input_digest = "xyz".into()),
+        Some("invalid_job_profile")
+    );
+}
+
+#[test]
+fn submit_after_shutdown_cannot_enter_the_host() {
+    // A request that outlives its transport timeout can reach `start` after shutdown has drained.
+    let fx = fixture(30, None);
+    assert!(fx.jobs.shutdown(Duration::from_secs(5)));
+    assert_eq!(
+        fx.jobs.call("submit_coding_job", submit_args(&fx, REQ)),
+        Err("shutting_down")
+    );
+    let dir = fx.root.join("ops").join(fx.jobs.operation_id(&fx.auth));
+    assert!(!dir.join("entry-attempt.json").exists());
+    assert_eq!(runs(&fx), 0);
+    assert!(
+        fx.jobs.shutdown(Duration::from_secs(1)),
+        "shutdown stays idempotent and empty"
+    );
+    assert!(fx.jobs.read_collector_idle());
+}
+
+#[test]
+fn concurrent_submit_and_shutdown_never_leave_an_unowned_collector() {
+    for round in 0..12 {
+        let fx = fixture(30, None);
+        std::fs::write(fx.root.join("slow"), b"").unwrap();
+        let jobs = fx.jobs.clone();
+        let args = submit_args(&fx, REQ);
+        let late = thread::spawn(move || jobs.call("submit_coding_job", args));
+        thread::sleep(Duration::from_millis(round * 3));
+        let drained = fx.jobs.shutdown(Duration::from_secs(15));
+        let outcome = late.join().unwrap();
+        let dir = fx.root.join("ops").join(fx.jobs.operation_id(&fx.auth));
+        match outcome {
+            Ok(_) => {
+                // Admitted before the fence: owned, joined and its process status was collected.
+                assert!(drained, "round {round}: admitted collector must be drained");
+                assert!(dir.join("collector-run.json").exists(), "round {round}");
+            }
+            Err(code) => {
+                assert_eq!(code, "shutting_down", "round {round}");
+                assert!(!dir.join("entry-attempt.json").exists(), "round {round}");
+                assert_eq!(runs(&fx), 0, "round {round}");
+            }
+        }
+        // After drain no collector exists, running or unjoined.
+        assert!(fx.jobs.read_collector_idle());
+        assert!(fx.jobs.shutdown(Duration::from_secs(1)), "round {round}");
+    }
+}
+
+#[test]
+fn real_outputs_satisfy_the_strict_contract_and_malformed_ones_do_not() {
+    use job_output::validate;
+    let fx = fixture(30, None);
+    let submit = fx
+        .jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    assert_eq!(
+        validate("submit_coding_job", &submit_args(&fx, REQ), &submit),
+        Ok(())
+    );
+    wait_state(&fx, "collected");
+    let read = read_args(REQ);
+    let op = fx
+        .jobs
+        .call("read_coding_job_operation", read.clone())
+        .unwrap();
+    assert_eq!(validate("read_coding_job_operation", &read, &op), Ok(()));
+    // Submission-only `entry` is not valid on a read, and a read shape is not a submission.
+    assert_eq!(
+        validate("submit_coding_job", &read, &op),
+        Err("invalid_response")
+    );
+    assert_eq!(
+        validate("read_coding_job_operation", &read, &submit),
+        Err("invalid_response")
+    );
+    let result = fx
+        .jobs
+        .call("read_coding_job_result", read.clone())
+        .unwrap();
+    assert_eq!(validate("read_coding_job_result", &read, &result), Ok(()));
+    let cancel = fx.jobs.call("cancel_coding_job", read.clone()).unwrap();
+    assert_eq!(validate("cancel_coding_job", &read, &cancel), Ok(()));
+
+    let bad = |name: &str, value: &Value, op: &str| {
+        assert_eq!(
+            validate(op, &read, value),
+            Err("invalid_response"),
+            "{name}"
+        );
+    };
+    // The published-definition counterexample and neighbours.
+    bad(
+        "false schema",
+        &json!({"schema":false,"result":"available","operation":null}),
+        "read_coding_job_result",
+    );
+    bad(
+        "null operation",
+        &json!({"schema":"work-engine.coding-job.v1","result":"not_available","operation":null}),
+        "read_coding_job_result",
+    );
+    bad(
+        "unknown result",
+        &json!({"schema":"work-engine.coding-job.v1","result":"maybe","operation":op}),
+        "read_coding_job_result",
+    );
+    let edit = |base: &Value, f: &dyn Fn(&mut Value)| {
+        let mut v = base.clone();
+        f(&mut v);
+        v
+    };
+    bad(
+        "future schema",
+        &edit(&op, &|v| v["schema"] = json!("work-engine.coding-job.v2")),
+        "read_coding_job_operation",
+    );
+    bad(
+        "unknown field",
+        &edit(&op, &|v| v["extra"] = json!(1)),
+        "read_coding_job_operation",
+    );
+    bad(
+        "missing field",
+        &edit(&op, &|v| {
+            v.as_object_mut().unwrap().remove("job_id");
+        }),
+        "read_coding_job_operation",
+    );
+    bad(
+        "state variant",
+        &edit(&op, &|v| v["state"] = json!("done")),
+        "read_coding_job_operation",
+    );
+    bad(
+        "bad operation id",
+        &edit(&op, &|v| v["operation_id"] = json!("abc")),
+        "read_coding_job_operation",
+    );
+    bad(
+        "other request",
+        &edit(&op, &|v| v["request_id"] = json!(REQ2)),
+        "read_coding_job_operation",
+    );
+    bad(
+        "observed != expected digest",
+        &edit(&op, &|v| v["host_input_digest"] = json!("1".repeat(64))),
+        "read_coding_job_operation",
+    );
+    bad(
+        "settlement upgraded",
+        &edit(&op, &|v| v["settlement"] = json!("settled")),
+        "read_coding_job_operation",
+    );
+    bad(
+        "collected without removal",
+        &edit(&op, &|v| v["host_removed"] = json!(false)),
+        "read_coding_job_operation",
+    );
+    bad(
+        "cleanup variant",
+        &edit(&op, &|v| v["process_cleanup"]["run"] = json!("clean")),
+        "read_coding_job_operation",
+    );
+    bad(
+        "receipt id mismatch",
+        &edit(&result, &|v| v["receipt_id"] = json!("2".repeat(64))),
+        "read_coding_job_result",
+    );
+    bad(
+        "receipt id not hex",
+        &edit(&result, &|v| v["receipt_id"] = json!("rcpt-1")),
+        "read_coding_job_result",
+    );
+    bad(
+        "receipt for other job",
+        &edit(&result, &|v| v["receipt"]["job_id"] = json!("job-9")),
+        "read_coding_job_result",
+    );
+    bad(
+        "receipt digest",
+        &edit(&result, &|v| {
+            v["receipt"]["input_digest"] = json!("3".repeat(64))
+        }),
+        "read_coding_job_result",
+    );
+    bad(
+        "receipt not object",
+        &edit(&result, &|v| v["receipt"] = json!(null)),
+        "read_coding_job_result",
+    );
+    bad(
+        "acceptance missing",
+        &edit(&result, &|v| {
+            v.as_object_mut().unwrap().remove("acceptance");
+        }),
+        "read_coding_job_result",
+    );
+    bad(
+        "nested identity",
+        &edit(&result, &|v| v["operation"]["job_id"] = json!("bad id")),
+        "read_coding_job_result",
+    );
+    bad(
+        "closure claimed",
+        &edit(&cancel, &|v| {
+            v["container_closure_established"] = json!(true)
+        }),
+        "cancel_coding_job",
+    );
+    bad(
+        "cancel established",
+        &edit(&cancel, &|v| v["cancellation_established"] = json!(true)),
+        "cancel_coding_job",
+    );
+    bad(
+        "cancel variant",
+        &edit(&cancel, &|v| v["cancellation"] = json!("done")),
+        "cancel_coding_job",
+    );
+    bad(
+        "cancel settlement",
+        &edit(&cancel, &|v| v["settlement"] = json!("settled")),
+        "cancel_coding_job",
+    );
+    assert_eq!(
+        validate("list_sessions", &read, &op),
+        Err("invalid_request")
+    );
+}
+
+#[test]
+fn published_output_schema_names_exactly_the_fields_the_server_emits() {
+    let schema: Value =
+        serde_json::from_str(include_str!("../../schemas/coding-job-v1.json")).unwrap();
+    let keys = |v: &Value| -> Vec<String> {
+        let mut k: Vec<String> = v.as_object().unwrap().keys().cloned().collect();
+        k.sort();
+        k
+    };
+    let defs = &schema["$defs"];
+    let fx = fixture(30, None);
+    let submit = fx
+        .jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    wait_state(&fx, "collected");
+    let read = fx
+        .jobs
+        .call("read_coding_job_operation", read_args(REQ))
+        .unwrap();
+    let result = fx
+        .jobs
+        .call("read_coding_job_result", read_args(REQ))
+        .unwrap();
+    let cancel = fx.jobs.call("cancel_coding_job", read_args(REQ)).unwrap();
+    for (name, value) in [
+        ("submit_output", &submit),
+        ("operation", &read),
+        ("result_available", &result),
+        ("cancel", &cancel),
+    ] {
+        assert_eq!(defs[name]["additionalProperties"], false, "{name}");
+        assert_eq!(keys(&defs[name]["properties"]), keys(value), "{name}");
+        let mut required: Vec<String> = defs[name]["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|k| k.as_str().unwrap().to_string())
+            .collect();
+        required.sort();
+        assert_eq!(required, keys(value), "{name} required");
+    }
+    assert_eq!(
+        defs["operation"]["properties"]["schema"]["$ref"],
+        "#/$defs/schema_version"
+    );
+    assert_eq!(defs["schema_version"]["const"], SCHEMA);
 }

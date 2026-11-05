@@ -5,95 +5,667 @@
   "x-capability": "coding-job-offline-fixture-v1",
   "x-qualification": "offline fixture only; not a live qualification and not offline-synthetic-v1",
   "$defs": {
-    "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9._-]+$" },
-    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-    "request_id": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
-    "job_credential": { "type": "string", "minLength": 32, "maxLength": 256, "description": "Operator-provisioned for one caller and one job; its SHA-256 is pinned in the profile. Never a session-message grant or the service bearer." },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "job_credential": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 256,
+      "description": "Operator-provisioned for one caller and one job; its SHA-256 is pinned in the profile. Never a session-message grant or the service bearer."
+    },
     "submit_coding_job": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["request_id", "authorization_id", "job_credential", "job_sha256", "packet_sha256"],
+      "required": [
+        "request_id",
+        "authorization_id",
+        "job_credential",
+        "job_sha256",
+        "packet_sha256"
+      ],
       "properties": {
-        "request_id": { "$ref": "#/$defs/request_id" },
-        "authorization_id": { "$ref": "#/$defs/id" },
-        "job_credential": { "$ref": "#/$defs/job_credential" },
-        "job_sha256": { "$ref": "#/$defs/sha256" },
-        "packet_sha256": { "$ref": "#/$defs/sha256" }
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "authorization_id": {
+          "$ref": "#/$defs/id"
+        },
+        "job_credential": {
+          "$ref": "#/$defs/job_credential"
+        },
+        "job_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "packet_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
     "read_or_cancel": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["request_id", "authorization_id", "job_credential"],
+      "required": [
+        "request_id",
+        "authorization_id",
+        "job_credential"
+      ],
       "properties": {
-        "request_id": { "$ref": "#/$defs/request_id" },
-        "authorization_id": { "$ref": "#/$defs/id" },
-        "job_credential": { "$ref": "#/$defs/job_credential" }
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "authorization_id": {
+          "$ref": "#/$defs/id"
+        },
+        "job_credential": {
+          "$ref": "#/$defs/job_credential"
+        }
       }
     },
     "operation": {
       "type": "object",
-      "required": ["schema", "operation_id", "request_id", "authorization_id", "job_id", "state_dir", "job_sha256", "state", "entered_possible", "collector_live", "process_cleanup", "limitations", "settlement"],
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "operation_id",
+        "request_id",
+        "authorization_id",
+        "job_id",
+        "state_dir",
+        "job_sha256",
+        "expected_host_input_digest",
+        "host_input_digest",
+        "state",
+        "entered_possible",
+        "collector_live",
+        "host_phase",
+        "host_removed",
+        "host_receipt_id",
+        "collector_run",
+        "collector_reconcile",
+        "process_cleanup",
+        "limitations",
+        "settlement"
+      ],
       "properties": {
-        "schema": { "const": "work-engine.coding-job.v1" },
-        "state": { "enum": ["bound_not_entered", "collecting", "reconciling", "collected", "entry_uncertain", "host_state_unreadable"] },
-        "host_input_digest": { "type": ["string", "null"], "description": "Host digest, observed after admission and pinned on first sight; the pre-execution binding is job_sha256." },
-        "settlement": { "const": "not_established_by_submission" }
+        "schema": {
+          "$ref": "#/$defs/schema_version"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "authorization_id": {
+          "$ref": "#/$defs/id"
+        },
+        "job_id": {
+          "$ref": "#/$defs/id"
+        },
+        "state_dir": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "job_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "expected_host_input_digest": {
+          "$ref": "#/$defs/sha256",
+          "description": "Host serialized-Job digest (sha256 of the Host's typed Job serialization), bound before any possible entry."
+        },
+        "host_input_digest": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "state": {
+          "enum": [
+            "bound_not_entered",
+            "collecting",
+            "reconciling",
+            "collected",
+            "entry_uncertain",
+            "host_state_unreadable"
+          ]
+        },
+        "entered_possible": {
+          "type": "boolean"
+        },
+        "collector_live": {
+          "type": "boolean"
+        },
+        "host_phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "host_removed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "host_receipt_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "collector_run": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Adapter-recorded child outcome; opaque to consumers."
+        },
+        "collector_reconcile": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "process_cleanup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run",
+            "reconcile"
+          ],
+          "properties": {
+            "run": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "enum": [
+                    "owned_process_group_collected",
+                    "not_established"
+                  ]
+                }
+              ]
+            },
+            "reconcile": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "enum": [
+                    "owned_process_group_collected",
+                    "not_established"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "settlement": {
+          "const": "not_established_by_submission"
+        }
       }
     },
     "result": {
-      "type": "object",
-      "required": ["schema", "result", "operation"],
-      "properties": {
-        "result": { "enum": ["available", "not_available"] },
-        "terminal": { "type": "object" },
-        "validation": { "type": "object" },
-        "cleanup": { "type": "object" },
-        "acceptance": { "description": "Host value passed through; owner_pending is preserved." },
-        "domain_effect_settlement": { "description": "Host value passed through; not_claimed is preserved." },
-        "receipt": { "type": "object" }
-      }
+      "oneOf": [
+        {
+          "$ref": "#/$defs/result_not_available"
+        },
+        {
+          "$ref": "#/$defs/result_available"
+        }
+      ]
     },
     "cancel": {
       "type": "object",
-      "required": ["schema", "operation_id", "cancellation", "cancellation_established", "container_closure_established", "settlement"],
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "operation_id",
+        "request_id",
+        "cancellation",
+        "cancellation_established",
+        "container_closure_established",
+        "settlement",
+        "next"
+      ],
       "properties": {
-        "cancellation": { "enum": ["requested", "request_not_recorded"] },
-        "cancellation_established": { "const": false },
-        "container_closure_established": { "const": false },
-        "settlement": { "const": "not_claimed" }
+        "schema": {
+          "$ref": "#/$defs/schema_version"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "cancellation": {
+          "enum": [
+            "requested",
+            "request_not_recorded"
+          ]
+        },
+        "cancellation_established": {
+          "const": false
+        },
+        "container_closure_established": {
+          "const": false
+        },
+        "settlement": {
+          "const": "not_claimed"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "profile": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["version", "kind", "capability", "class", "host_binary", "host_binary_sha256", "operation_root", "collector_deadline_seconds", "cancel_grace_seconds", "authorizations"],
+      "required": [
+        "version",
+        "kind",
+        "capability",
+        "class",
+        "host_binary",
+        "host_binary_sha256",
+        "operation_root",
+        "collector_deadline_seconds",
+        "cancel_grace_seconds",
+        "authorizations"
+      ],
       "properties": {
-        "version": { "const": 1 },
-        "kind": { "const": "coding-job-profile" },
-        "capability": { "const": "coding-job-offline-fixture-v1" },
-        "class": { "const": "offline-fixture" },
-        "host_binary": { "type": "string" },
-        "host_binary_sha256": { "$ref": "#/$defs/sha256" },
-        "operation_root": { "type": "string" },
-        "env": { "type": "object", "additionalProperties": { "type": "string" } },
-        "collector_deadline_seconds": { "type": "integer", "minimum": 1, "maximum": 900 },
-        "cancel_grace_seconds": { "type": "integer", "minimum": 1, "maximum": 60 },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "coding-job-profile"
+        },
+        "capability": {
+          "const": "coding-job-offline-fixture-v1"
+        },
+        "class": {
+          "const": "offline-fixture"
+        },
+        "host_binary": {
+          "type": "string"
+        },
+        "host_binary_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "operation_root": {
+          "type": "string"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "collector_deadline_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 900
+        },
+        "cancel_grace_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60
+        },
         "authorizations": {
-          "type": "array", "minItems": 1, "maxItems": 4,
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["authorization_id", "caller", "credential_sha256", "job_file", "job_sha256", "packet_sha256", "job_id", "state_dir"],
+            "required": [
+              "authorization_id",
+              "caller",
+              "credential_sha256",
+              "job_file",
+              "job_sha256",
+              "packet_sha256",
+              "job_id",
+              "state_dir",
+              "host_input_digest"
+            ],
             "properties": {
-              "authorization_id": { "$ref": "#/$defs/id" },
-              "caller": { "$ref": "#/$defs/id" },
-              "credential_sha256": { "$ref": "#/$defs/sha256" },
-              "job_file": { "type": "string" },
-              "job_sha256": { "$ref": "#/$defs/sha256" },
-              "packet_sha256": { "$ref": "#/$defs/sha256" },
-              "job_id": { "$ref": "#/$defs/id" },
-              "state_dir": { "type": "string" }
+              "authorization_id": {
+                "$ref": "#/$defs/id"
+              },
+              "caller": {
+                "$ref": "#/$defs/id"
+              },
+              "credential_sha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "job_file": {
+                "type": "string"
+              },
+              "job_sha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "packet_sha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "job_id": {
+                "$ref": "#/$defs/id"
+              },
+              "state_dir": {
+                "type": "string"
+              },
+              "host_input_digest": {
+                "$ref": "#/$defs/sha256",
+                "description": "SHA-256 of the Host's typed Job serialization (serde_json::to_vec of the Host Job, struct field order, defaults emitted) for work-engine.pi-docker-custody.v1; not the job file digest."
+              }
+            }
+          }
+        }
+      }
+    },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "schema_version": {
+      "const": "work-engine.coding-job.v1",
+      "description": "Any other version is incompatible and must be rejected, not interpreted."
+    },
+    "submit_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "operation_id",
+        "request_id",
+        "authorization_id",
+        "job_id",
+        "state_dir",
+        "job_sha256",
+        "expected_host_input_digest",
+        "host_input_digest",
+        "state",
+        "entered_possible",
+        "collector_live",
+        "host_phase",
+        "host_removed",
+        "host_receipt_id",
+        "collector_run",
+        "collector_reconcile",
+        "process_cleanup",
+        "limitations",
+        "settlement",
+        "entry"
+      ],
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema_version"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "authorization_id": {
+          "$ref": "#/$defs/id"
+        },
+        "job_id": {
+          "$ref": "#/$defs/id"
+        },
+        "state_dir": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "job_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "expected_host_input_digest": {
+          "$ref": "#/$defs/sha256",
+          "description": "Host serialized-Job digest (sha256 of the Host's typed Job serialization), bound before any possible entry."
+        },
+        "host_input_digest": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "state": {
+          "enum": [
+            "bound_not_entered",
+            "collecting",
+            "reconciling",
+            "collected",
+            "entry_uncertain",
+            "host_state_unreadable"
+          ]
+        },
+        "entered_possible": {
+          "type": "boolean"
+        },
+        "collector_live": {
+          "type": "boolean"
+        },
+        "host_phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "host_removed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "host_receipt_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "collector_run": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Adapter-recorded child outcome; opaque to consumers."
+        },
+        "collector_reconcile": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "process_cleanup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run",
+            "reconcile"
+          ],
+          "properties": {
+            "run": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "enum": [
+                    "owned_process_group_collected",
+                    "not_established"
+                  ]
+                }
+              ]
+            },
+            "reconcile": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "enum": [
+                    "owned_process_group_collected",
+                    "not_established"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "settlement": {
+          "const": "not_established_by_submission"
+        },
+        "entry": {
+          "enum": [
+            "collector_started",
+            "existing_operation"
+          ]
+        }
+      }
+    },
+    "result_not_available": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "result",
+        "operation"
+      ],
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema_version"
+        },
+        "result": {
+          "const": "not_available"
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
+        }
+      }
+    },
+    "result_available": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "result",
+        "operation",
+        "terminal",
+        "validation",
+        "cleanup",
+        "acceptance",
+        "domain_effect_settlement",
+        "receipt_id",
+        "input_digest",
+        "receipt",
+        "host_output"
+      ],
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema_version"
+        },
+        "result": {
+          "const": "available"
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
+        },
+        "terminal": {
+          "type": "object"
+        },
+        "validation": {
+          "type": "object"
+        },
+        "cleanup": {
+          "type": "object"
+        },
+        "acceptance": {
+          "type": "string",
+          "description": "Host value passed through; owner_pending is preserved."
+        },
+        "domain_effect_settlement": {
+          "type": "string",
+          "description": "Host value passed through; not_claimed is preserved."
+        },
+        "receipt_id": {
+          "$ref": "#/$defs/sha256",
+          "description": "The Host wrapper's receipt_id (outside the receipt body); equals operation.host_receipt_id when the journal records one."
+        },
+        "input_digest": {
+          "$ref": "#/$defs/sha256",
+          "description": "Equals operation.expected_host_input_digest and receipt.input_digest."
+        },
+        "receipt": {
+          "type": "object",
+          "description": "Opaque Host receipt; must carry job_id and input_digest matching the operation."
+        },
+        "host_output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "exit_code",
+            "note"
+          ],
+          "properties": {
+            "action": {
+              "enum": [
+                "run",
+                "reconcile"
+              ]
+            },
+            "exit_code": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "note": {
+              "type": "string"
             }
           }
         }

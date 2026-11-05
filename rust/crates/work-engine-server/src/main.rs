@@ -892,6 +892,8 @@ async fn run(path: String) {
 async fn drain(app: Arc<App>, max_queries: usize, mcp_failed: bool) {
     // Owned coding-job collectors request Host cancellation, then actual process status is collected.
     // Unclosed collectors are reported, never assumed closed; the original operation ids stay readable.
+    // Shutdown also fences the collector registry, so a request that outlives its transport timeout
+    // cannot start a collector afterwards.
     let mut jobs_clean = true;
     if let Some(jobs) = app.jobs.clone() {
         jobs_clean = tokio::task::spawn_blocking(move || jobs.shutdown(Duration::from_secs(90)))
@@ -903,12 +905,25 @@ async fn drain(app: Arc<App>, max_queries: usize, mcp_failed: bool) {
     }
     let mcp_failed = mcp_failed || !jobs_clean;
     // A timed-out or disconnected transport can drop its join handle while the owner helper still runs.
-    match tokio::time::timeout(
+    let permits = tokio::time::timeout(
         Duration::from_secs(40),
         app.slots.clone().acquire_many_owned(max_queries as u32),
     )
-    .await
+    .await;
+    // Every request has now released its permit. The registry was fenced before the first drain, so
+    // nothing admitted after it can exist; confirm that before declaring completion.
+    if permits.as_ref().is_ok_and(|p| p.is_ok())
+        && let Some(jobs) = app.jobs.clone()
     {
+        jobs_clean = tokio::task::spawn_blocking(move || jobs.shutdown(Duration::from_secs(90)))
+            .await
+            .unwrap_or(false);
+        if !jobs_clean {
+            eprintln!("drain deadline: coding-job collector admitted during drain unresolved");
+        }
+    }
+    let mcp_failed = mcp_failed || !jobs_clean;
+    match permits {
         Ok(Ok(_)) if !mcp_failed => eprintln!("drain complete"),
         Ok(Ok(_)) => {
             eprintln!("drain complete; MCP task failed");

@@ -60,6 +60,9 @@ pub struct Authorization {
     packet_sha256: String,
     job_id: String,
     state_dir: String,
+    /// Host input digest of this exact job: SHA-256 of the Host's typed `Job` serialization
+    /// (`serde_json::to_vec`, struct field order, defaults emitted). It is not the job file digest.
+    host_input_digest: String,
 }
 #[derive(Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -95,6 +98,84 @@ struct ReadArgs {
     job_credential: String,
 }
 
+/// Host job schema (`work-engine-manual-host` `pi_docker::SCHEMA`). A different version is a
+/// different input-digest algorithm contract and is rejected rather than interpreted.
+const HOST_JOB_SCHEMA: &str = "work-engine.pi-docker-custody.v1";
+/// Host coding fixture profile schema (`pi_coding::PROFILE`).
+const HOST_CODING_SCHEMA: &str = "work-engine.pi-coding-fixture.v1";
+
+/// Serialization-only mirror of the Host's offline-fixture `Job`. The Host computes
+/// `input_digest = sha256(serde_json::to_vec(&Job))` over its typed struct, so the digest depends on
+/// field order and emitted defaults, not on the job file bytes. The mirror has the same field order
+/// and the same default/skip rules; it rejects every field outside the offline class (provider,
+/// receiver, unknown keys). The Host binary stays pinned by hash, so its algorithm is fixed for a profile.
+mod host {
+    use serde::{Deserialize, Serialize};
+    #[derive(Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub struct Artifact {
+        pub path: String,
+        pub sha256: String,
+    }
+    #[derive(Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub struct Tree {
+        pub root: String,
+        pub manifest: Artifact,
+    }
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Default)]
+    #[serde(rename_all = "snake_case")]
+    pub enum Boundary {
+        #[default]
+        LegacyWorkspace,
+        SrcLibRs,
+    }
+    #[derive(Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub struct Coding {
+        pub schema: String,
+        pub shim: Artifact,
+        pub toolchain: Tree,
+        pub acceptance: Artifact,
+        #[serde(default)]
+        pub fixture_command: String,
+        pub max_tool_calls: u32,
+        #[serde(default, skip_serializing_if = "is_legacy")]
+        pub workspace_write_boundary: Boundary,
+    }
+    fn is_legacy(b: &Boundary) -> bool {
+        *b == Boundary::LegacyWorkspace
+    }
+    #[derive(Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub struct Job {
+        pub schema: String,
+        pub job_id: String,
+        pub state_dir: String,
+        pub authority: Artifact,
+        pub packet: Artifact,
+        pub docker: Artifact,
+        pub image: String,
+        pub runtime: Tree,
+        pub workspace: Tree,
+        pub deadline_unix_seconds: u64,
+        pub command_timeout_seconds: u64,
+        #[serde(default)]
+        pub idle_seconds: u64,
+        pub coding: Coding,
+    }
+}
+
+/// The Host input digest of a job document, or `None` when it is outside the offline class or a
+/// different Host job/profile version.
+fn host_input_digest(job: &Value) -> Option<String> {
+    let typed: host::Job = serde_json::from_value(job.clone()).ok()?;
+    if typed.schema != HOST_JOB_SCHEMA || typed.coding.schema != HOST_CODING_SCHEMA {
+        return None;
+    }
+    Some(hex(&serde_json::to_vec(&typed).ok()?))
+}
+
 fn hex(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
@@ -123,6 +204,14 @@ fn now() -> u64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0)
+}
+/// Absolute with only normal components, so lexical prefix comparison cannot be bypassed by `..`.
+fn normal_absolute(path: &Path) -> bool {
+    use std::path::Component;
+    path.is_absolute()
+        && path
+            .components()
+            .all(|c| matches!(c, Component::RootDir | Component::Normal(_)))
 }
 fn private_dir(path: &Path) -> bool {
     std::fs::symlink_metadata(path)
@@ -182,12 +271,6 @@ fn write_new(path: &Path, value: &Value) -> Result<(), &'static str> {
         .and_then(|d| d.sync_all())
         .map_err(|_| "owner_unavailable")
 }
-fn receipt_doc_is_reconcile(dir: &Path) -> bool {
-    read_json(&dir.join("host-reconcile.json"))
-        .ok()
-        .flatten()
-        .is_some_and(|v| v.get("receipt").is_some() || v.get("status").is_some())
-}
 fn read_json(path: &Path) -> Result<Option<Value>, &'static str> {
     match session_query::read_file(&path.to_string_lossy(), OUTPUT_LIMIT + 4096, true) {
         Ok(b) => serde_json::from_slice(&b)
@@ -196,6 +279,21 @@ fn read_json(path: &Path) -> Result<Option<Value>, &'static str> {
         Err("file_unavailable") if !path.exists() => Ok(None),
         Err(_) => Err("custody_lost"),
     }
+}
+
+/// The Host writes its journal with its own umask (group-readable), so the private-file rule used for
+/// adapter records does not apply; the owner is still required to be this user and symlinks are refused.
+fn read_host_journal(path: &Path) -> Result<Option<Value>, &'static str> {
+    match std::fs::symlink_metadata(path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Ok(m) if m.is_file() && m.uid() == unsafe { libc::geteuid() } => {}
+        _ => return Err("custody_lost"),
+    }
+    let bytes = session_query::read_file(&path.to_string_lossy(), 4 * 1024 * 1024, false)
+        .map_err(|_| "custody_lost")?;
+    serde_json::from_slice(&bytes)
+        .map(Some)
+        .map_err(|_| "custody_lost")
 }
 
 /// Outcome of one bounded Host child, retained verbatim for truthful projection.
@@ -218,10 +316,18 @@ struct Collector {
     done: Arc<AtomicBool>,
 }
 
+/// Collector registry. `closed` and the map share one lock so a collector start and shutdown are
+/// atomic with respect to each other: after shutdown closes the registry no start can succeed, and
+/// every collector admitted before that is in the map being drained.
+struct Registry {
+    closed: bool,
+    map: HashMap<String, Collector>,
+}
+
 pub struct Jobs {
     profile: JobProfile,
     stop: Arc<AtomicBool>,
-    collectors: Mutex<HashMap<String, Collector>>,
+    collectors: Mutex<Registry>,
 }
 
 impl JobProfile {
@@ -256,15 +362,41 @@ impl JobProfile {
                 || !is_hex64(&a.credential_sha256)
                 || !is_hex64(&a.job_sha256)
                 || !is_hex64(&a.packet_sha256)
+                || !is_hex64(&a.host_input_digest)
                 || !Path::new(&a.job_file).is_absolute()
-                || !Path::new(&a.state_dir).is_absolute()
+                || !normal_absolute(Path::new(&a.state_dir))
                 || !ids.insert(a.authorization_id.clone())
             {
                 return Err("invalid_job_profile");
             }
         }
-        if !private_dir(Path::new(&self.operation_root)) {
+        // One Host state, one job identity and one container name per authorization: two
+        // authorizations must never be able to bind or act on the same Host state.
+        let root = Path::new(&self.operation_root);
+        if !normal_absolute(root) || !private_dir(root) {
             return Err("invalid_job_profile");
+        }
+        for (i, a) in self.authorizations.iter().enumerate() {
+            let state = Path::new(&a.state_dir);
+            if state.starts_with(root) || root.starts_with(state) {
+                return Err("overlapping_state_ownership");
+            }
+            // An existing path must already be canonical: the Host refuses aliased paths.
+            if std::fs::symlink_metadata(state).is_ok()
+                && std::fs::canonicalize(state).ok().as_deref() != Some(state)
+            {
+                return Err("invalid_job_profile");
+            }
+            for b in &self.authorizations[i + 1..] {
+                let other = Path::new(&b.state_dir);
+                if a.job_id == b.job_id
+                    || a.host_input_digest == b.host_input_digest
+                    || state.starts_with(other)
+                    || other.starts_with(state)
+                {
+                    return Err("overlapping_state_ownership");
+                }
+            }
         }
         Ok(())
     }
@@ -276,7 +408,10 @@ impl Jobs {
         let jobs = Self {
             profile,
             stop: Arc::new(AtomicBool::new(false)),
-            collectors: Mutex::new(HashMap::new()),
+            collectors: Mutex::new(Registry {
+                closed: false,
+                map: HashMap::new(),
+            }),
         };
         jobs.host_binary()?;
         Ok(jobs)
@@ -386,6 +521,12 @@ impl Jobs {
         if coding.get("provider").is_some_and(|p| !p.is_null()) || job.get("receiver").is_some() {
             return Err("capability_mismatch");
         }
+        // Bind the exact Host serialized Job before any entry is possible. A job outside the offline
+        // shape or a different Host job/profile version has no digest; a different job has another one.
+        let digest = host_input_digest(&job).ok_or("host_identity_mismatch")?;
+        if digest != a.host_input_digest {
+            return Err("host_identity_mismatch");
+        }
         Ok(bytes)
     }
 
@@ -423,7 +564,8 @@ impl Jobs {
                             "schema":SCHEMA,"operation_id":operation_id,"request_id":r.request_id,
                             "authorization_id":auth.authorization_id,"caller":auth.caller,
                             "job_id":auth.job_id,"state_dir":auth.state_dir,"job_sha256":auth.job_sha256,
-                            "packet_sha256":auth.packet_sha256,
+                            "packet_sha256":auth.packet_sha256,"host_input_digest":auth.host_input_digest,
+                            "host_job_schema":HOST_JOB_SCHEMA,
                             "host_binary_sha256":self.profile.host_binary_sha256,
                             "capability":self.profile.capability,"class":self.profile.class,
                             "bound_at_unix_seconds":now(),
@@ -447,6 +589,7 @@ impl Jobs {
             return Err("authorization_consumed");
         }
         self.verify_binding(&auth, &binding)?;
+        self.verify_host_state(&auth)?;
         let entered = dir.join("entry-attempt.json").exists();
         if !entered && !self.alive(&operation_id) {
             self.start(&auth, &dir, &operation_id, "run")?;
@@ -467,11 +610,34 @@ impl Jobs {
             || b["job_id"] != a.job_id
             || b["state_dir"] != a.state_dir
             || b["job_sha256"] != a.job_sha256
+            || b["packet_sha256"] != a.packet_sha256
+            || b["host_input_digest"] != a.host_input_digest
+            || b["host_job_schema"] != HOST_JOB_SCHEMA
             || b["host_binary_sha256"] != self.profile.host_binary_sha256
         {
             return Err("identity_conflict");
         }
         Ok(())
+    }
+
+    /// Verifies the Host state (when one exists) is this authorization's exact job: the journal's own
+    /// digest, recomputed from its job, must equal the digest bound before entry. Reads the journal file
+    /// without the Host lock so it also holds while the Host runs. `None` means no Host state yet.
+    fn verify_host_state(&self, a: &Authorization) -> Result<Option<Value>, &'static str> {
+        let Some(journal) = read_host_journal(&Path::new(&a.state_dir).join("pi-state.json"))?
+        else {
+            return Ok(None);
+        };
+        let digest = journal["input_digest"].as_str().ok_or("custody_lost")?;
+        if journal["schema"] != HOST_JOB_SCHEMA
+            || journal["job"]["job_id"] != a.job_id
+            || journal["job"]["state_dir"] != a.state_dir
+            || digest != a.host_input_digest
+            || host_input_digest(&journal["job"]).as_deref() != Some(digest)
+        {
+            return Err("identity_conflict");
+        }
+        Ok(Some(journal))
     }
 
     fn bound(&self, a: &Authorization, request_id: &str) -> Result<(PathBuf, Value), &'static str> {
@@ -484,12 +650,16 @@ impl Jobs {
         if binding["request_id"] != request_id {
             return Err("identity_conflict");
         }
+        // Read, reconcile, cancel and result all pass through here: none acts on a foreign Host state.
+        self.verify_host_state(a)?;
         Ok((dir, binding))
     }
 
     fn alive(&self, id: &str) -> bool {
-        let map = self.collectors.lock().unwrap();
-        map.get(id).is_some_and(|c| !c.done.load(Ordering::SeqCst))
+        let reg = self.collectors.lock().unwrap();
+        reg.map
+            .get(id)
+            .is_some_and(|c| !c.done.load(Ordering::SeqCst))
     }
 
     /// Start the one owned collector. The exclusive flock is taken before the entry marker so a
@@ -501,8 +671,17 @@ impl Jobs {
         id: &str,
         action: &'static str,
     ) -> Result<(), &'static str> {
-        let mut map = self.collectors.lock().unwrap();
-        if map.get(id).is_some_and(|c| !c.done.load(Ordering::SeqCst)) {
+        let mut reg = self.collectors.lock().unwrap();
+        // Fence: checked under the registry lock, strictly before the flock and the entry marker,
+        // so a request that outlives its transport cannot enter the Host after shutdown began.
+        if reg.closed || self.stop.load(Ordering::SeqCst) {
+            return Err("shutting_down");
+        }
+        if reg
+            .map
+            .get(id)
+            .is_some_and(|c| !c.done.load(Ordering::SeqCst))
+        {
             return Ok(());
         }
         let lock = OpenOptions::new()
@@ -531,7 +710,7 @@ impl Jobs {
             this.collect(&a, &dir, action);
             flag.store(true, Ordering::SeqCst);
         });
-        map.insert(id.to_string(), Collector { handle, done });
+        reg.map.insert(id.to_string(), Collector { handle, done });
         Ok(())
     }
 
@@ -744,32 +923,20 @@ impl Jobs {
         } else {
             self.journal(a)
         };
-        let mut limitations = vec![
-            "settlement_not_established_by_adapter",
-            "pre_execution_binding_uses_job_file_sha256_host_input_digest_observed_after_admission",
-        ];
+        let mut limitations = vec!["settlement_not_established_by_adapter"];
         let (host, digest_observed) = match &journal {
             Ok(Some(j)) => {
-                if j["job"]["job_id"] != a.job_id || j["job"]["state_dir"] != a.state_dir {
+                // The expected digest was bound before entry; the Host never supplies its own.
+                if j["job"]["job_id"] != a.job_id
+                    || j["job"]["state_dir"] != a.state_dir
+                    || j["input_digest"] != a.host_input_digest
+                {
                     return Err("identity_conflict");
                 }
-                // The Host's own input digest is pinned on first sight and must not change.
-                let digest = j["input_digest"]
-                    .as_str()
-                    .ok_or("custody_lost")?
-                    .to_string();
-                match write_new(
-                    &dir.join("host-binding.json"),
-                    &json!({"input_digest":digest}),
-                ) {
-                    Ok(()) | Err("already_exists") => {}
-                    Err(e) => return Err(e),
+                if !j["receipt_id"].is_null() && !j["receipt_id"].as_str().is_some_and(is_hex64) {
+                    return Err("custody_lost");
                 }
-                let pinned = read_json(&dir.join("host-binding.json"))?.ok_or("custody_lost")?;
-                if pinned["input_digest"] != digest {
-                    return Err("identity_conflict");
-                }
-                (Some(j.clone()), Some(digest))
+                (Some(j.clone()), Some(a.host_input_digest.clone()))
             }
             _ => (None, None),
         };
@@ -811,7 +978,8 @@ impl Jobs {
         Ok(json!({
             "schema":SCHEMA,"operation_id":id,"request_id":binding["request_id"],
             "authorization_id":a.authorization_id,"job_id":a.job_id,"state_dir":a.state_dir,
-            "job_sha256":a.job_sha256,"host_input_digest":digest_observed,
+            "job_sha256":a.job_sha256,"expected_host_input_digest":a.host_input_digest,
+            "host_input_digest":digest_observed,
             "state":state,"entered_possible":entered,"collector_live":live,
             "host_phase":phase,"host_removed":removed,
             "host_receipt_id":host.as_ref().and_then(|j| j["receipt_id"].as_str()),
@@ -829,36 +997,75 @@ impl Jobs {
         binding: &Value,
     ) -> Result<Value, &'static str> {
         let operation = self.read_operation(a, dir, binding)?;
-        let receipt_doc = read_json(&dir.join("host-reconcile.json"))?
-            .filter(|v| v.get("receipt").is_some() || v.get("status").is_some())
-            .or(read_json(&dir.join("host-run.json"))?);
-        let source = if dir.join("host-reconcile.json").exists() && receipt_doc_is_reconcile(dir) {
-            "reconcile"
-        } else {
-            "run"
+        // Reconcile output is the Host's receipt wrapper; a run that failed before a receipt writes none.
+        let (source, wrapper) = match read_json(&dir.join("host-reconcile.json"))? {
+            Some(v) => ("reconcile", Some(v)),
+            None => ("run", read_json(&dir.join("host-run.json"))?),
         };
         let source_exit = read_json(&dir.join(format!("collector-{source}.json")))?
             .map(|v| v["exit_code"].clone())
             .unwrap_or(json!("not_established"));
-        let Some(doc) = receipt_doc else {
+        let Some(wrapper) = wrapper else {
             return Ok(json!({"schema":SCHEMA,"result":"not_available","operation":operation}));
         };
-        let receipt = doc.get("receipt").cloned().unwrap_or(doc);
+        let (receipt_id, receipt) = self.host_receipt(a, &operation, &wrapper)?;
         let get = |k: &str| receipt.get(k).cloned().unwrap_or(json!("not_established"));
+        let coding = |k: &str| {
+            receipt["coding"]
+                .get(k)
+                .cloned()
+                .unwrap_or(json!("not_established"))
+        };
         Ok(json!({
             "schema":SCHEMA,"result":"available","operation":operation,
             // Independent projections; none is derived from another.
             "terminal":{"status":get("status"),"phase":get("phase")},
             "validation":{"rpc_verified":get("rpc_verified"),"failures":get("failures"),
-                "coding_completed":receipt["coding"].get("completed").cloned().unwrap_or(json!("not_established"))},
+                "coding_completed":coding("completed")},
             "cleanup":{"removed":get("removed"),"daemon_exit":get("daemon_exit"),
-                "tool_removed":receipt["coding"].get("tool_removed").cloned().unwrap_or(json!("not_established")),
+                "tool_removed":coding("tool_removed"),
                 "collector":operation["process_cleanup"].clone()},
             "acceptance":get("acceptance"),"domain_effect_settlement":get("domain_effect_settlement"),
-            "receipt_id":get("receipt_id"),"input_digest":get("input_digest"),
+            // The Host wrapper's own ID (outside the receipt body), checked against the original operation.
+            "receipt_id":receipt_id,"input_digest":a.host_input_digest,
             "receipt":receipt,
             "host_output":{"action":source,"exit_code":source_exit,"note":"verbatim Host stdout; exit code is reported separately and is not a validation result"},
         }))
+    }
+
+    /// Validates the actual Host wrapper `{receipt_id, receipt}` against this authorization and the
+    /// operation's journal. The ID lives outside the receipt body; the receipt payload stays opaque
+    /// Host data beyond identity.
+    fn host_receipt(
+        &self,
+        a: &Authorization,
+        operation: &Value,
+        wrapper: &Value,
+    ) -> Result<(String, Value), &'static str> {
+        let object = wrapper.as_object().ok_or("custody_lost")?;
+        if object.len() != 2 {
+            return Err("custody_lost");
+        }
+        let id = object
+            .get("receipt_id")
+            .and_then(Value::as_str)
+            .filter(|id| is_hex64(id))
+            .ok_or("custody_lost")?;
+        let receipt = object
+            .get("receipt")
+            .filter(|r| r.is_object())
+            .ok_or("custody_lost")?;
+        if receipt["job_id"] != a.job_id
+            || receipt["job"]["job_id"] != a.job_id
+            || receipt["job"]["state_dir"] != a.state_dir
+            || receipt["input_digest"] != a.host_input_digest
+            || host_input_digest(&receipt["job"]).as_deref() != Some(a.host_input_digest.as_str())
+            // Once the journal records a receipt it must be this one.
+            || operation["host_receipt_id"].as_str().is_some_and(|j| j != id)
+        {
+            return Err("identity_conflict");
+        }
+        Ok((id.to_string(), receipt.clone()))
     }
 
     fn cancel(
@@ -870,6 +1077,7 @@ impl Jobs {
         if !dir.join("entry-attempt.json").exists() {
             return Err("not_entered");
         }
+        // Identity was verified against the bound digest in `bound`; the Host re-checks its own binding.
         let c = self.host(&["cancel", "--state", &a.state_dir], QUICK_TIMEOUT, None)?;
         let marker = c.exit_code == Some(0);
         Ok(json!({
@@ -886,20 +1094,23 @@ impl Jobs {
         self.collectors
             .lock()
             .unwrap()
+            .map
             .values()
             .all(|c| c.done.load(Ordering::SeqCst))
     }
 
     /// Request cancellation of every owned collector, then collect actual process status.
+    ///
+    /// Closing the registry and draining it happen under one lock, so every collector ever admitted is
+    /// either joined here or was refused by `start`. Idempotent: a later call drains nothing and
+    /// reports the registry fenced and empty.
     pub fn shutdown(&self, wait: Duration) -> bool {
         self.stop.store(true, Ordering::SeqCst);
-        let handles: Vec<Collector> = self
-            .collectors
-            .lock()
-            .unwrap()
-            .drain()
-            .map(|(_, c)| c)
-            .collect();
+        let handles: Vec<Collector> = {
+            let mut reg = self.collectors.lock().unwrap();
+            reg.closed = true;
+            reg.map.drain().map(|(_, c)| c).collect()
+        };
         let deadline = Instant::now() + wait;
         let mut clean = true;
         for c in handles {

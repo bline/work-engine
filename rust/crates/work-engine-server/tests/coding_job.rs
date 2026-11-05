@@ -16,6 +16,37 @@ const CRED: &str = "job-credential-0123456789abcdefghijklmnop";
 const BEARER: &str = "service-bearer-0123456789abcdefghijklmnop";
 const REQ: &str = "33333333-3333-4333-8333-333333333333";
 const REQ2: &str = "44444444-4444-4444-8444-444444444444";
+const RECEIPT_ID: &str = "5adaf203ef0b4049b9965502bbbaa0a0739733fc62985b836ca2441a67bb9828";
+
+/// The Host's typed `Job` serialization in its struct field order and compact form; its SHA-256 is
+/// the Host input digest, independent of the adapter under test.
+fn host_job(state: &Path, packet: &Path, packet_sha: &str, deadline: u64) -> String {
+    let q = |p: &Path| serde_json::to_string(&p.to_string_lossy()).unwrap();
+    let art = |path: &str, c: char| {
+        format!(
+            r#"{{"path":"{path}","sha256":"{}"}}"#,
+            c.to_string().repeat(64)
+        )
+    };
+    let tree = |root: &str| {
+        format!(
+            r#"{{"root":"{root}","manifest":{}}}"#,
+            art("/m/manifest.json", 'c')
+        )
+    };
+    format!(
+        r#"{{"schema":"work-engine.pi-docker-custody.v1","job_id":"job-1","state_dir":{state},"authority":{authority},"packet":{{"path":{packet},"sha256":"{packet_sha}"}},"docker":{docker},"image":"node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da","runtime":{runtime},"workspace":{workspace},"deadline_unix_seconds":{deadline},"command_timeout_seconds":30,"idle_seconds":0,"coding":{{"schema":"work-engine.pi-coding-fixture.v1","shim":{shim},"toolchain":{toolchain},"acceptance":{acceptance},"fixture_command":"true","max_tool_calls":1}}}}"#,
+        state = q(state),
+        packet = q(packet),
+        authority = art("/a/authority.json", 'a'),
+        docker = art("/usr/bin/docker", 'd'),
+        runtime = tree("/r/runtime"),
+        workspace = tree("/w/workspace"),
+        shim = art("/s/shim.mjs", 'e'),
+        toolchain = tree("/t/toolchain"),
+        acceptance = art("/s/acceptance.rs", 'f'),
+    )
+}
 
 fn hex(b: &[u8]) -> String {
     format!("{:x}", Sha256::digest(b))
@@ -28,8 +59,9 @@ fn host_script(state: &Path, runs: &Path) -> String {
     format!(
         r#"#!/bin/sh
 S='{s}'; R='{r}'
-journal() {{ printf '{{"schema":"work-engine.pi-docker-custody.v1","job":{{"job_id":"job-1","state_dir":"%s"}},"input_digest":"d1d1d1d1","phase":"%s","removed":%s,"receipt_id":"rcpt-1"}}' "$S" "$1" "$2" > "$S/pi-state.json"; }}
-receipt() {{ printf '{{"receipt":{{"status":"component_passed","phase":"collected","rpc_verified":true,"failures":[],"coding":{{"completed":true,"tool_removed":true}},"removed":true,"daemon_exit":0,"acceptance":"owner_pending","domain_effect_settlement":"not_claimed","receipt_id":"rcpt-1","input_digest":"d1d1d1d1"}},"receipt_id":"rcpt-1"}}\n'; }}
+T="$(dirname "$S")"
+journal() {{ sed -e "s/@P@/$1/" -e "s/@R@/$2/" "$T/journal.tpl" > "$S/pi-state.json"; }}
+receipt() {{ cat "$T/receipt.json"; echo; }}
 case "$2" in
  run) echo run >> "$R"; [ -e "$S/pi-state.json" ] && exit 1
   journal running false
@@ -73,19 +105,39 @@ impl Fx {
         );
         let packet = b"{\"task\":\"fixture\"}";
         private(&root.join("packet.json"), packet, 0o600);
-        let job =
-            json!({"schema":"work-engine.pi-docker-custody.v1","job_id":"job-1","state_dir":state,
-            "deadline_unix_seconds":std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()+200,
-            "packet":{"path":root.join("packet.json"),"sha256":hex(packet)},
-            "coding":{"schema":"work-engine.pi-coding-fixture.v1","max_tool_calls":1}})
-            .to_string();
+        let deadline = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            + 200;
+        let canonical = host_job(&state, &root.join("packet.json"), &hex(packet), deadline);
+        let host_digest = hex(canonical.as_bytes());
+        // The operator's job file is pretty and key-sorted: its digest is not the Host digest.
+        let job = serde_json::to_string_pretty(&serde_json::from_str::<Value>(&canonical).unwrap())
+            .unwrap();
         private(&root.join("job.json"), job.as_bytes(), 0o600);
+        private(
+            &root.join("journal.tpl"),
+            format!(
+                r#"{{"schema":"work-engine.pi-docker-custody.v1","job":{canonical},"input_digest":"{host_digest}","phase":"@P@","removed":@R@,"receipt_id":"{RECEIPT_ID}"}}"#
+            )
+            .as_bytes(),
+            0o600,
+        );
+        private(
+            &root.join("receipt.json"),
+            format!(
+                r#"{{"receipt_id":"{RECEIPT_ID}","receipt":{{"schema":"work-engine.pi-docker-custody.v1","job":{canonical},"job_id":"job-1","input_digest":"{host_digest}","status":"component_passed","acceptance":"owner_pending","domain_effect_settlement":"not_claimed","phase":"collected","rpc_verified":true,"daemon_exit":0,"removed":true,"failures":[],"coding":{{"completed":true,"tool_removed":true}}}}}}"#
+            )
+            .as_bytes(),
+            0o600,
+        );
         let profile = json!({"version":1,"kind":"coding-job-profile","capability":"coding-job-offline-fixture-v1",
             "class":"offline-fixture","host_binary":host,"host_binary_sha256":hex(&std::fs::read(&host).unwrap()),
             "operation_root":root.join("ops"),"collector_deadline_seconds":20,"cancel_grace_seconds":1,
             "authorizations":[{"authorization_id":"auth-1","caller":"caller-1","credential_sha256":hex(CRED.as_bytes()),
               "job_file":root.join("job.json"),"job_sha256":hex(job.as_bytes()),"packet_sha256":hex(packet),
-              "job_id":"job-1","state_dir":state}]});
+              "job_id":"job-1","state_dir":state,"host_input_digest":host_digest}]});
         private(
             &root.join("job-profile.json"),
             profile.to_string().as_bytes(),
@@ -327,6 +379,9 @@ fn client_wait_expiry_server_stop_and_restart_keep_one_original_operation() {
     assert_eq!(result["terminal"]["status"], "component_passed");
     assert_eq!(result["acceptance"], "owner_pending");
     assert_eq!(result["domain_effect_settlement"], "not_claimed");
+    // The actual outer Host wrapper ID survives composition and ties to the operation.
+    assert_eq!(result["receipt_id"], RECEIPT_ID);
+    assert_eq!(result["operation"]["host_receipt_id"], RECEIPT_ID);
     // The server stops and restarts: reads and repeats still resolve to the original operation.
     assert!(fx.stop().success());
     fx.start();
@@ -438,4 +493,50 @@ fn command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes() {
     assert!(!ok && out.contains("invalid_invocation"));
     fx.wait_collected();
     assert_eq!(fx.runs(), 1);
+}
+
+/// A server that returns a well-formed transport envelope around an owner result that breaks the
+/// published contract must be rejected by the public client, not passed on.
+#[test]
+fn public_client_rejects_malformed_owner_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let cred = dir.path().join("bearer");
+    private(&cred, BEARER.as_bytes(), 0o600);
+    let args = json!({"request_id":REQ,"authorization_id":"auth-1","job_credential":CRED});
+    let malformed = [
+        json!({"schema":false,"result":"available","operation":null}),
+        json!({"schema":"work-engine.coding-job.v1","result":"available","operation":null}),
+        json!({"schema":"work-engine.coding-job.v9","result":"not_available","operation":{}}),
+        json!({}),
+        json!(null),
+    ];
+    for owner_result in malformed {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let body = json!({"schema_version":1,"request_id":"t","server_identity":format!("sha256:{}","1".repeat(64)),
+            "server_build":format!("sha256:{}","2".repeat(64)),"owner_result":owner_result})
+        .to_string();
+        let server = thread::spawn(move || {
+            use std::io::{Read, Write};
+            let (mut stream, _) = listener.accept().unwrap();
+            // Drain the whole request (header, then body) before answering.
+            stream
+                .set_read_timeout(Some(Duration::from_millis(300)))
+                .unwrap();
+            let mut buf = [0u8; 8192];
+            while stream.read(&mut buf).is_ok_and(|n| n > 0) {}
+            let _ = write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+        });
+        let client =
+            LocalClient::new(addr, cred.to_string_lossy().into(), Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            client.job("read_coding_job_result", args.clone(), "t"),
+            Err("invalid_response")
+        );
+        server.join().unwrap();
+    }
 }
