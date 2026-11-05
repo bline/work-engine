@@ -541,3 +541,31 @@ defaults to 100 (maximum 500). `total_topics`, `has_more` and `next_offset` expo
 pagination. Each page is a fresh board snapshot with its own `revision`; if that
 revision changes between pages, restart listing for consistent coverage. This
 is discovery of recorded labels, not a topic subscription or liveness registry.
+
+## Opt-in conditional replies
+
+`conditional_reply(repository, expected_revision=..., max_elapsed_seconds=...,
+**candidate)` reuses the ordinary post owner's envelope/relation/ID validation
+and durable CAS. Candidate fields are author, session_id, topic, body, references,
+message_id, observed_at, kind=reply, to, in_reply_to and data. Preserve the whole
+candidate, including observed_at, on retry. New candidates require the exact
+opaque observed revision, target an existing request and reject superseded or
+already closed requests. A CAS conflict is returned without rebasing. Ordinary
+`post` behavior remains unchanged.
+
+An exact already stored candidate is immutable history and may be returned after
+closure, supersession or expiry. That result is never renewed current authority.
+Changed reuse of message_id conflicts. The optional deadline_monotonic is an
+absolute deadline in the host's CLOCK_MONOTONIC domain; it prevents subprocess
+startup/acquisition waits from resetting the caller's remaining deadline.
+Checks immediately precede the durable owner's CAS invocation, not an atomic
+wall-clock predicate inside Git or a hard real-time scheduler guarantee.
+
+`owner-boundary-io --command-json JSON` is a fixed backend adapter surface. It
+accepts a complete canonical snapshot operation, or a conditional_reply operation
+with expected_revision, max_elapsed_seconds, deadline_monotonic and candidate.
+Snapshots encode each full row with the existing compact sorted Unicode JSON
+owner-answer codec. Explicit conditional rejection is structured; missing process
+ACK is still unknown to a caller. This operation neither verifies signatures nor
+confers human/action authority from role, data.verified or storage credentials.
+The Rust synthetic boundary owns cryptographic meaning and registry eligibility.

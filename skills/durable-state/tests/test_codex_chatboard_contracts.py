@@ -1414,5 +1414,131 @@ class ParityTest(RepoCase):
         self.assertEqual(documented, expected, "registry values are the source")
 
 
+
+class ConditionalReplyTest(RepoCase):
+    def candidate(self, n=901, disposition="answered"):
+        return dict(author="owner", session_id=SESSION_2, topic="t", body="signed answer",
+                    references=[], message_id=mid(n), observed_at="2026-11-02T00:00:00Z",
+                    kind="reply", to=[f"session:{SESSION_1}"], in_reply_to=1,
+                    data={"disposition": disposition})
+
+    def request(self):
+        self.post(kind="request", to=["role:owner"], data={"ask":"synthetic", "needed_by":"2026-11-03T00:00:00Z"})
+        return self.board()[1]
+
+    def conditional(self, revision, candidate=None):
+        return BOARD.conditional_reply(self.repository, expected_revision=revision,
+                                      max_elapsed_seconds=10, **(candidate or self.candidate()))
+
+    def test_exact_retry_is_history_even_after_supersession_and_changed_id_conflicts(self):
+        revision=self.request()
+        first=self.conditional(revision)
+        self.post(supersedes=1)
+        second=self.conditional(revision)
+        self.assertEqual(first["message"],second["message"])
+        changed=self.candidate(); changed["observed_at"]="2026-11-02T00:00:01Z"
+        with self.assertRaisesRegex(BOARD.ChatboardError,"different content"):
+            self.conditional(revision,changed)
+        with self.assertRaisesRegex(BOARD.ChatboardError,"superseded|already closed"):
+            self.conditional(self.board()[1],self.candidate(902))
+
+    def test_stale_revision_and_competing_closes_never_rebase(self):
+        revision=self.request()
+        self.post()
+        with self.assertRaisesRegex(BOARD.ChatboardError,"revision conflict"):
+            self.conditional(revision)
+        revision=self.board()[1]
+        self.conditional(revision)
+        with self.assertRaisesRegex(BOARD.ChatboardError,"already closed"):
+            self.conditional(self.board()[1],self.candidate(902,"declined"))
+        self.assertEqual(len(self.board()[0]["messages"]),3)
+
+    def test_all_dispositions_and_expiry_at_publication(self):
+        revision=self.request()
+        for n,d in [(902,"deferred"),(903,"partial")]:
+            self.conditional(revision,self.candidate(n,d));revision=self.board()[1]
+        with self.assertRaisesRegex(BOARD.ChatboardError,"deadline expired"):
+            BOARD.conditional_reply(self.repository,expected_revision=revision,
+                max_elapsed_seconds=10,deadline_monotonic=0,**self.candidate(904,"declined"))
+        self.conditional(revision,self.candidate(904,"declined"))
+        self.assertEqual(BOARD.requests_view(self.board()[0])["addressees"][0]["open_count"],0)
+
+    def test_actual_cas_conflict_is_not_retried(self):
+        revision=self.request()
+        real=GitRefDurableStateStore
+        case=self
+        class RacingStore(real):
+            calls=0
+            def publish(self,key,payload,expected):
+                RacingStore.calls+=1
+                # A real competing owner publication advances the opaque ref.
+                with patch.object(BOARD,"GitRefDurableStateStore",real): case.post()
+                return super().publish(key,payload,expected)
+        with patch.object(BOARD,"GitRefDurableStateStore",RacingStore):
+            with self.assertRaisesRegex(BOARD.ChatboardError,"revision conflict"):
+                self.conditional(revision)
+        self.assertEqual(RacingStore.calls,1)
+        self.assertEqual(len(self.board()[0]["messages"]),2)
+
+    def test_process_crash_before_and_after_real_publication(self):
+        revision=self.request()
+        candidate=self.candidate()
+        driver='''import sys,json,os
+sys.path.insert(0,sys.argv[1])
+import codex_chatboard as b
+from pathlib import Path
+real=b.GitRefDurableStateStore.publish
+def crash(self,*args,**kwargs):
+ if sys.argv[5]=='before': os._exit(71)
+ result=real(self,*args,**kwargs)
+ os._exit(72)
+b.GitRefDurableStateStore.publish=crash
+b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_seconds=10,**json.loads(sys.argv[4]))
+'''
+        for when,code in [("before",71),("after",72)]:
+            result=subprocess.run([sys.executable,"-I","-c",driver,str(SCRIPT.parent),str(self.repository),revision,json.dumps(candidate),when],capture_output=True,text=True,timeout=15)
+            self.assertEqual(result.returncode,code,result.stderr)
+            self.assertEqual(len(self.board()[0]["messages"]),1 if when=="before" else 2)
+        retry=self.conditional(revision,candidate)
+        self.assertEqual(retry["message"]["sequence"],2)
+        self.assertEqual(len(self.board()[0]["messages"]),2)
+
+    def test_concurrent_exact_candidates_publish_once_or_report_conflict(self):
+        from concurrent.futures import ThreadPoolExecutor
+        revision=self.request()
+        def attempt(_):
+            try: return self.conditional(revision)
+            except BOARD.ChatboardError as failure:
+                self.assertIn("revision conflict",str(failure));return None
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(attempt,range(2)))
+        self.assertTrue(any(results))
+        final=self.conditional(revision)
+        for result in filter(None,results): self.assertEqual(result["message"],final["message"])
+        self.assertEqual(len(self.board()[0]["messages"]),2)
+
+    def test_conditional_snapshot_refuses_filtered_or_gapped_rows(self):
+        self.request()
+        self.raw_rewrite(lambda board: board["messages"].append({"invalid":"row without sequence"}))
+        with self.assertRaisesRegex(BOARD.ChatboardError,"incomplete or malformed"):
+            BOARD.owner_boundary_io(self.repository,{"operation":"snapshot"})
+        with self.assertRaisesRegex(BOARD.ChatboardError,"incomplete or malformed"):
+            self.conditional(self.board()[1])
+
+    def test_elapsed_store_read_does_not_reset_deadline(self):
+        import time
+        revision=self.request()
+        real=GitRefDurableStateStore
+        class SlowRead(real):
+            def read(self,key):
+                time.sleep(.03)
+                return super().read(key)
+        with patch.object(BOARD,"GitRefDurableStateStore",SlowRead):
+            with self.assertRaisesRegex(BOARD.ChatboardError,"deadline expired"):
+                BOARD.conditional_reply(self.repository,expected_revision=revision,
+                    max_elapsed_seconds=.001,**self.candidate())
+        self.assertEqual(len(self.board()[0]["messages"]),1)
+
+
 if __name__ == "__main__":
     unittest.main()

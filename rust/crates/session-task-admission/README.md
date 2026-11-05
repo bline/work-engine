@@ -114,3 +114,8 @@ clock and IPC fixtures: `node --experimental-vm-modules --test
 rust/crates/work-engine-manual-host/tests/pi-signed-subscription.test.mjs` from
 the repository root. Without the VM flag those cases are explicitly skipped.
 Synthetic SDK/fetch evidence does not establish real provider qualification.
+
+The [synthetic owner boundary](docs/owner-boundary-v1.md) exposes real-registry
+projection, signed-answer consumption through canonical conditional board CAS,
+and exact historical reads. Its fixture-only constructor and tests do not enable
+production identity, admission, outbox or native execution.

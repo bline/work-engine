@@ -21,12 +21,14 @@ import time
 from typing import Any, Callable
 from uuid import UUID, uuid4
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from durable_state import DurableStateError, GitRefDurableStateStore
 
 
 BOARD_KEY = "work-engine/codex-chatboard/v1"
 NAMESPACE = "codex-chatboard"
 MAX_RETRIES = 20
+_UNCONDITIONAL = object()
 CONTROL_PREFIX = "control:session:"
 BUDGET_PREFIX = "control:budget:"
 RESERVED_PREFIXES = (CONTROL_PREFIX, BUDGET_PREFIX)
@@ -75,18 +77,32 @@ def encode(value: dict[str, Any]) -> bytes:
     return (json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode()
 
 
-def mutate(repository: Path, change: Callable[[dict[str, Any]], Any]) -> tuple[dict[str, Any], Any, str]:
+def mutate(repository: Path, change: Callable[[dict[str, Any]], Any], *,
+           expected_revision: Any = _UNCONDITIONAL, deadline: float | None = None) -> tuple[dict[str, Any], Any, str]:
     store = GitRefDurableStateStore(repository, NAMESPACE)
     for _ in range(MAX_RETRIES):
         current = store.read(BOARD_KEY)
         board = decode(current.payload) if current else empty_board()
+        if expected_revision is not _UNCONDITIONAL:
+            _complete_owner_rows(board)
+        before = encode(board) if expected_revision is not _UNCONDITIONAL else None
         result = change(board)
+        if expected_revision is not _UNCONDITIONAL:
+            # An exact existing candidate is immutable history, not a new grant.
+            if before == encode(board):
+                return board, result, current.revision if current else None
+            if (current.revision if current else None) != expected_revision:
+                raise ChatboardError("conditional reply revision conflict")
+        if deadline is not None and time.monotonic() >= deadline:
+            raise ChatboardError("conditional reply deadline expired")
         try:
             published = store.publish(
                 BOARD_KEY, encode(board), current.revision if current else None
             )
         except DurableStateError as failure:
             if "revision conflict" in str(failure):
+                if expected_revision is not _UNCONDITIONAL:
+                    raise ChatboardError("conditional reply revision conflict") from failure
                 continue
             raise
         return board, result, published.revision
@@ -226,7 +242,8 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
           wake: bool, registry: dict[str, Any] | None, kind: str | None, role: str | None,
           to: list[str] | None, in_reply_to: int | None, supersedes: int | None,
           effects: dict[str, Any] | None, data: dict[str, Any] | None,
-          before_append: Callable[[dict[str, Any]], None] | None = None) -> dict[str, Any]:
+          before_append: Callable[[dict[str, Any]], None] | None = None,
+          expected_revision: Any = _UNCONDITIONAL, deadline: float | None = None) -> dict[str, Any]:
     canonical_uuid(session_id, "session_id")
     canonical_uuid(message_id, "message_id")
     if not all(isinstance(value, str) and value.strip() for value in (author, topic, body)):
@@ -307,7 +324,10 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
         board["next_sequence"] += 1
         return candidate
 
-    _, message, revision = mutate(repository, change)
+    if expected_revision is _UNCONDITIONAL:
+        _, message, revision = mutate(repository, change)
+    else:
+        _, message, revision = mutate(repository, change, expected_revision=expected_revision, deadline=deadline)
     return {"revision": revision, "message": message}
 
 
@@ -328,6 +348,81 @@ def post(repository: Path, *, author: str, session_id: str, topic: str,
                  references=references, message_id=message_id, observed_at=observed_at, wake=wake,
                  registry=registry, kind=kind, role=role, to=to, in_reply_to=in_reply_to,
                  supersedes=supersedes, effects=effects, data=data)
+
+
+def conditional_reply(repository: Path, *, expected_revision: str | None,
+                      max_elapsed_seconds: float, deadline_monotonic: float | None = None,
+                      **candidate: Any) -> dict[str, Any]:
+    """Publish one stable reply using the board owner. No crypto/approval meaning.
+
+    Caller retains candidate bytes (including observed_at) across retries. Exact
+    historical retries return the stored row, even after supersession/closure.
+    New candidates never rebase. Domain deadlines are an additional caller duty.
+    """
+    if (expected_revision is not None and not isinstance(expected_revision, str)):
+        raise ChatboardError("expected_revision must be an opaque string or null")
+    if (not isinstance(max_elapsed_seconds, (int, float))
+            or isinstance(max_elapsed_seconds, bool) or not math.isfinite(max_elapsed_seconds)
+            or not 0 < max_elapsed_seconds <= 30):
+        raise ChatboardError("conditional reply requires a positive bounded lifetime")
+    deadline = time.monotonic() + max_elapsed_seconds
+    if deadline_monotonic is not None:
+        if not isinstance(deadline_monotonic, (int, float)) or not math.isfinite(deadline_monotonic):
+            raise ChatboardError("invalid monotonic deadline")
+        deadline = min(deadline, deadline_monotonic)
+    fields = {"author", "session_id", "topic", "body", "references", "message_id",
+              "observed_at", "kind", "to", "in_reply_to", "data"}
+    if set(candidate) != fields:
+        raise ChatboardError("conditional reply requires the fixed candidate envelope")
+    if candidate.get("kind") != "reply" or candidate.get("supersedes") is not None:
+        raise ChatboardError("conditional operation accepts only a reply")
+    target = candidate.get("in_reply_to")
+    if not _is_sequence(target):
+        raise ChatboardError("conditional reply requires a request sequence")
+    registry = load_registry()
+    require_kind(registry, "reply")
+    if registry["kinds"]["reply"].get("writer", "post") != "post":
+        raise ChatboardError("reply writer is not post")
+
+    def guard(board: dict[str, Any]) -> None:
+        request = next((r for r in board["messages"] if r["sequence"] == target), None)
+        if request is None or request.get("kind") != "request":
+            raise ChatboardError("conditional reply target is not a request")
+        for row in board["messages"]:
+            if row.get("supersedes") == target:
+                raise ChatboardError("conditional reply request superseded")
+            if (row.get("kind") == "reply" and row.get("in_reply_to") == target
+                    and row.get("data", {}).get("disposition") in ("answered", "declined")):
+                raise ChatboardError("conditional reply request already closed")
+
+    return _post(repository, registry=registry, before_append=guard,
+                 expected_revision=expected_revision, deadline=deadline,
+                 wake=False, role=None, supersedes=None, effects=None, **candidate)
+
+
+
+def _complete_owner_rows(board: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = board["messages"]
+    if (not isinstance(rows, list) or board["next_sequence"] != len(rows) + 1
+            or any(not isinstance(r, dict) or not _is_sequence(r.get("sequence"))
+                   or r["sequence"] != i for i, r in enumerate(rows, 1))):
+        raise ChatboardError("owner-boundary snapshot is incomplete or malformed")
+    return rows
+
+
+def owner_boundary_io(repository: Path, command: dict[str, Any]) -> dict[str, Any]:
+    """Fixed JSON surface for pinned backend adapters; never executes caller code."""
+    if command == {"operation": "snapshot"}:
+        board, revision = read_board(repository)
+        rows = _complete_owner_rows(board)
+        return {"revision": revision, "next_sequence": board["next_sequence"], "rows": [json.dumps(r, sort_keys=True,
+                separators=(",", ":"), ensure_ascii=False) for r in rows]}
+    if set(command) == {"operation", "expected_revision", "max_elapsed_seconds", "deadline_monotonic", "candidate"} and command["operation"] == "conditional_reply":
+        return conditional_reply(repository, expected_revision=command["expected_revision"],
+                                 max_elapsed_seconds=command["max_elapsed_seconds"],
+                                 deadline_monotonic=command["deadline_monotonic"],
+                                 **command["candidate"])
+    raise ChatboardError("unsupported owner-boundary operation")
 
 
 def adopt(repository: Path, *, author: str, session_id: str, body: str, role: str,
@@ -1231,6 +1326,8 @@ def parser() -> argparse.ArgumentParser:
     identity.add_argument("--handoff-path", type=Path)
     identity.add_argument("--handoff-sha256")
     handoff_status.add_argument("--session-id", help="the recovering actor, for same-session re-entry")
+    owner_cmd = commands.add_parser("owner-boundary-io", help="bounded JSON backend surface; no approval inference")
+    owner_cmd.add_argument("--command-json", required=True)
     post_cmd = commands.add_parser("post")
     for name in ("author", "session-id", "topic", "body"):
         post_cmd.add_argument(f"--{name}", required=True)
@@ -1400,6 +1497,14 @@ def main() -> int:
             view = handoff_view(board, role=args.role, digest=digest, session_id=args.session_id)
             print(json.dumps({"revision": revision, **view}, indent=2))
             return 21 if view["state"] in ("superseded", "already_adopted", "conflict") else 32 if view["state"] == "unregistered" else 0
+        elif args.command == "owner-boundary-io":
+            try:
+                result = owner_boundary_io(args.repository, json.loads(args.command_json))
+            except ChatboardError as failure:
+                result = {"status": "rejected", "code": "conflict" if
+                          ("revision conflict" in str(failure) or "different content" in str(failure))
+                          else "held", "reason": str(failure)}
+            print(json.dumps(result, ensure_ascii=False))
         elif args.command == "post":
             print(json.dumps(post(
                 args.repository, author=args.author, session_id=args.session_id,

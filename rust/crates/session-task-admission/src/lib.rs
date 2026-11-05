@@ -397,3 +397,6 @@ pub mod scoped_pilot;
 
 /// Fixture-only signed Pi composition; never qualifies the ordinary native gate.
 pub mod pi_pilot;
+
+/// Synthetic task projection and canonical signed-answer consumption only.
+pub mod owner_boundary;
