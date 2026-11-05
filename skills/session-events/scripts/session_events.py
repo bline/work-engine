@@ -33,12 +33,14 @@ import os
 import re
 import secrets
 import select
+import signal
 import socket
 import sqlite3
 import ssl
 import stat
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -2718,6 +2720,231 @@ class SubscriptionCodingHelper(CodingHelper):
     protocol = "work-engine.mcp-pi-coding-subscription.v1"
 
 
+CODING_JOB_OPERATIONS = ("submit_coding_job", "read_coding_job_operation", "read_coding_job_result", "cancel_coding_job")
+_CODING_JOB_FIELDS = {
+    "submit_coding_job": ("request_id", "authorization_id", "job_credential", "job_sha256", "packet_sha256"),
+    "read_coding_job_operation": ("request_id", "authorization_id", "job_credential"),
+    "read_coding_job_result": ("request_id", "authorization_id", "job_credential"),
+    "cancel_coding_job": ("request_id", "authorization_id", "job_credential"),
+}
+_CODING_JOB_DESCRIPTIONS = {
+    "submit_coding_job": "Forward one exact offline-fixture coding-job submission to the pinned Rust work-engine-command. The native owner decides authorization; this tool never retries or admits a second job. An unknown outcome is surfaced, not resolved.",
+    "read_coding_job_operation": "Forward a native read of the original coding-job operation. The native owner may reconcile backend custody while reading, so this is not a side-effect-free read.",
+    "read_coding_job_result": "Forward a native read of the original coding-job result and Host receipt. May reconcile backend custody. Receipt and cleanup are not execution proof or settlement.",
+    "cancel_coding_job": "Forward a native cancellation request for the original coding-job operation. A request is not an established cancellation or container closure.",
+}
+CODING_JOB_TOOLS = [
+    {"name": name, "description": _CODING_JOB_DESCRIPTIONS[name],
+     "annotations": {"readOnlyHint": False, "destructiveHint": name == "cancel_coding_job",
+                     "idempotentHint": name == "submit_coding_job", "openWorldHint": False},
+     "inputSchema": {"type": "object",
+                     "properties": {k: {"type": "string", "minLength": 1, "maxLength": 256} for k in _CODING_JOB_FIELDS[name]},
+                     "required": list(_CODING_JOB_FIELDS[name]), "additionalProperties": False}}
+    for name in CODING_JOB_OPERATIONS]
+
+
+class CodingJobBridge(DeliveryHelper):
+    """Thin transport to the existing Rust `work-engine-command` job operations.
+
+    Fixed pinned binary and pinned operator profile; fixed argv; JSON on stdin. The native
+    command and server own job authorization and strict DTO validation. This class owns no
+    job, credential, store, collector, retry or policy; the optional authorization_ids list
+    only narrows which native authorizations this one principal may name.
+    """
+    protocol = "work-engine.mcp-coding-job-bridge.v1"
+    unavailable_reason = "coding_job_unavailable"
+    settings_keys = {"schema", "subject", "principal", "client", "command_profile",
+                     "command_profile_sha256", "authorization_ids", "timeout_seconds"}
+    stdout_limit = 1536 * 1024
+    grace_seconds = 15
+    native_schema = "work-engine.coding-job-command.service.v1"
+
+    def __init__(self, binary, binary_sha, config, config_sha):
+        self.binary, self.binary_sha = binary, binary_sha
+        self.config, self.config_sha = config, config_sha
+        self.provisioning = False
+        binary_fd, config_fd = self._open_pins()
+        try:
+            data = os.read(config_fd, 16385)
+        finally:
+            os.close(binary_fd)
+            os.close(config_fd)
+        try:
+            settings = json.loads(data, object_pairs_hook=_unique_json)
+        except ValueError:
+            raise ValueError("invalid coding-job bridge config") from None
+        text = lambda k: isinstance(settings.get(k), str) and 1 <= len(settings[k]) <= 256
+        ids = settings.get("authorization_ids")
+        if (not isinstance(settings, dict) or set(settings) != self.settings_keys
+                or settings["schema"] != self.protocol
+                or not all(text(k) for k in ("subject", "principal", "client", "command_profile"))
+                or not Path(settings["command_profile"]).is_absolute()
+                or not re.fullmatch(r"[0-9a-f]{64}", str(settings["command_profile_sha256"]))
+                or not isinstance(ids, list) or not 1 <= len(ids) <= 16 or len(set(ids)) != len(ids)
+                or any(not isinstance(i, str) or not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", i) for i in ids)
+                or type(settings["timeout_seconds"]) is not int or not 1 <= settings["timeout_seconds"] <= 60):
+            raise ValueError("complete trusted coding-job binding required")
+        self.settings = settings
+        self.profile_sha = settings["command_profile_sha256"]
+        self.read_profile()
+
+    @classmethod
+    def from_environment(cls):
+        keys = ("CODING_JOB_BINARY", "CODING_JOB_BINARY_SHA256", "CODING_JOB_CONFIG", "CODING_JOB_CONFIG_SHA256")
+        values = [os.environ.get(k) for k in keys]
+        enabled = os.environ.get("CODING_JOB_BRIDGE_ENABLED")
+        if not enabled and not any(values):
+            return None
+        if enabled != "1" or not all(values):
+            raise ValueError("explicit coding-job switch and complete pins required")
+        return cls(*values)
+
+    def read_profile(self):
+        path = self.settings["command_profile"]
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        try:
+            st = os.fstat(fd)
+            if (not stat.S_ISREG(st.st_mode) or st.st_uid != os.geteuid() or st.st_mode & 0o077
+                    or st.st_size > 16384):
+                raise ValueError("unsafe command profile")
+            data = os.read(fd, 16385)
+            if hashlib.sha256(data).hexdigest() != self.profile_sha:
+                raise ValueError("command profile pin mismatch")
+            return data
+        finally:
+            os.close(fd)
+
+    def _identity(self, principal):
+        if principal != self.settings["principal"]:
+            raise invalid("coding_job_principal")
+
+    def call(self, method, principal, arguments):
+        if method not in CODING_JOB_OPERATIONS:
+            raise invalid("coding_job_method")
+        self._identity(principal)
+        fields = _CODING_JOB_FIELDS[method]
+        if set(arguments) != set(fields) or any(
+                not isinstance(arguments[k], str) or not 1 <= len(arguments[k]) <= 256 for k in fields):
+            raise invalid("coding_job_arguments")
+        if not all(33 <= ord(c) <= 126 for c in arguments["job_credential"]):
+            raise invalid("coding_job_arguments")
+        if arguments["authorization_id"] not in self.settings["authorization_ids"]:
+            raise invalid("coding_job_authorization_not_bound")
+        # Exactly one native client invocation. There is no retry path in this class.
+        return self.forward(method, arguments)
+
+    def forward(self, method, arguments):
+        # Rust deliberately refuses symlink file inputs, including /proc/self/fd/N.
+        # Give it an owner-private snapshot of the verified bytes, not the mutable
+        # operator pathname. This is temporary transport data, not an authority store.
+        try:
+            data = self.read_profile()
+        except Exception:
+            raise invalid(self.unavailable_reason) from None
+        with tempfile.TemporaryDirectory(prefix="work-engine-coding-job-") as directory:
+            profile = Path(directory) / "profile.json"
+            fd = os.open(profile, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600)
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+                os.fchmod(stream.fileno(), 0o400)
+            return self._forward_native(method, arguments, str(profile))
+
+    def _forward_native(self, method, arguments, profile):
+        identity = {"operation": method, "request_id": arguments["request_id"],
+                    "authorization_id": arguments["authorization_id"], "client": self.settings["client"]}
+        unknown = lambda why, process=None: invalid(
+            "coding_job_outcome_unknown", disposition="unknown_no_retry", cause=why, **identity,
+            client_process=process or {"status": "not_established"},
+            guidance=("Entry, cancellation and settlement are not established. Read the original operation with the same "
+                      "request_id and authorization_id. Do not submit again with a new request_id."),
+            limitation="client process closure only; backend, container and settlement not established")
+        payload = canonical({k: arguments[k] for k in _CODING_JOB_FIELDS[method]}).encode()
+        try:
+            binary_fd, config_fd = self._open_pins()
+        except Exception:
+            raise invalid(self.unavailable_reason) from None  # nothing was started
+        os.close(config_fd)
+        try:
+            proc = subprocess.Popen([f"/proc/self/fd/{binary_fd}", profile, method, "--json", "-"],
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                    close_fds=True, pass_fds=(binary_fd,), env={}, cwd="/", start_new_session=True)
+        except OSError:
+            raise invalid(self.unavailable_reason) from None  # nothing was started
+        finally:
+            os.close(binary_fd)
+        deadline = time.monotonic() + self.settings["timeout_seconds"] + self.grace_seconds
+        output, killed, over = bytearray(), False, False
+        try:
+            try:
+                proc.stdin.write(payload)
+                proc.stdin.close()
+            except OSError:
+                pass
+            os.set_blocking(proc.stdout.fileno(), False)
+            while True:
+                if time.monotonic() >= deadline:
+                    killed = True
+                    break
+                readable, _, _ = select.select([proc.stdout], [], [], 0.1)
+                if readable:
+                    chunk = os.read(proc.stdout.fileno(), 65536)
+                    if not chunk:
+                        break
+                    output.extend(chunk)
+                    if len(output) > self.stdout_limit:
+                        over = True
+                        break
+        finally:
+            forced = killed or over
+            if not forced:
+                try:
+                    code = proc.wait(timeout=max(0, deadline - time.monotonic()))
+                except subprocess.TimeoutExpired:
+                    killed, forced = True, True
+            if forced:
+                # The leader has not been reaped, so its PID still reserves this
+                # owned group. It may have exited since the deadline observation.
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                code = proc.wait()
+            proc.stdout.close()
+        process = {"exit_code": code if code >= 0 else None, "signal": -code if code < 0 else None,
+                   "killed_by_bridge": forced, "status": "collected"}
+        if killed:
+            raise unknown("client_timeout", process)
+        if over:
+            raise unknown("output_too_large", process)
+        try:
+            report = json.loads(output, object_pairs_hook=_unique_json)
+            ok = report["ok"] if isinstance(report, dict) else None
+            shape = {"schema", "ok", "envelope"} if ok is True else {"schema", "ok", "envelope"} | {"error"}
+            if (type(ok) is not bool or report.get("schema") != self.native_schema
+                    or not set(report) <= shape or ("envelope" in report) == ("error" in report)
+                    or code != (0 if ok else 1)):
+                raise ValueError
+        except (ValueError, KeyError, TypeError):
+            raise unknown("invalid_client_output", process) from None
+        if "error" in report:  # client-side failure; backend outcome unknown
+            error = report["error"]
+            code_text = error.get("code") if isinstance(error, dict) else None
+            raise unknown("client_error:" + (code_text if isinstance(code_text, str) and re.fullmatch(r"[a-z_]{1,64}", code_text) else "unreadable"), process)
+        envelope = report["envelope"]
+        if not isinstance(envelope, dict):
+            raise unknown("invalid_client_output", process)
+        if ok:
+            return {"schema": self.protocol, "disposition": "native_result", **identity,
+                    "native_envelope": envelope, "client_process": process,
+                    "limitation": "Native receipt, validation and cleanup are passed through unchanged; none is execution proof or settlement. Process exit is client process closure only."}
+        raise invalid("coding_job_native_error", disposition="native_owner_error", **identity,
+                      native_envelope=envelope, client_process=process,
+                      entry_uncertain="not_established",
+                      guidance="If the owner error is not a definite refusal, read the original operation; do not submit again with a new request_id.")
+
+
 class Server:
     def coding_tools(self):
         if isinstance(self.coding, SubscriptionCodingHelper):
@@ -2728,7 +2955,11 @@ class Server:
     def __init__(self, homes: Homes, principal: str, policy: CallbackPolicy,
                  transport: Transport = post, clock: Callable[[], float] = time.time,
                  context: "Context | None" = None, bridge: "Bridge | None" = None,
-                 delivery: "DeliveryHelper | None" = None, observation: "ObservationHelper | None" = None, coding: "CodingHelper | None" = None):
+                 delivery: "DeliveryHelper | None" = None, observation: "ObservationHelper | None" = None, coding: "CodingHelper | None" = None,
+                 coding_job: "CodingJobBridge | None" = None):
+        if coding_job and (coding_job.settings["principal"] != principal or coding or observation):
+            raise ValueError("coding-job bridge requires its own configured principal and no other helper")
+        self.coding_job = coding_job
         self.bridge = bridge
         self.observation = observation
         self.coding = coding
@@ -2750,7 +2981,7 @@ class Server:
         identifier = message["id"]
         handler = {
             "initialize": self.initialize, "ping": lambda p: {},
-            "tools/list": lambda p: {"tools": TOOLS + (self.coding_tools() if self.coding else []) + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
+            "tools/list": lambda p: {"tools": TOOLS + (self.coding_tools() if self.coding else []) + (CODING_JOB_TOOLS if self.coding_job else []) + (OBSERVATION_TOOLS if self.observation else []) + (DELIVERY_TOOLS if self.delivery else []) + ((PROVISIONED_BRIDGE_TOOLS + PROVISION_TOOLS if self.bridge.provisioning else BRIDGE_TOOLS) if self.bridge else [])}, "tools/call": self.call_tool,
             "events/list": lambda p: {"events": list(EVENT_DESCRIPTORS.values())},
             "events/subscribe": self.subscribe, "events/unsubscribe": self.unsubscribe,
         }.get(method)
@@ -2791,6 +3022,8 @@ class Server:
             tools[name] = lambda a: self.observation.call(name.removeprefix("pi_observation_"), self.principal, a)
         if self.coding and name in {t["name"] for t in CODING_TOOLS}:
             tools[name] = lambda a: self.coding.call(name.removeprefix("pi_coding_"), self.principal, a)
+        if self.coding_job and name in CODING_JOB_OPERATIONS:
+            tools[name] = lambda a: self.coding_job.call(name, self.principal, a)
         if name not in tools:
             raise invalid("unknown_tool", name=str(name)[:80])
         try:
@@ -3254,7 +3487,8 @@ def _public_http_operation(message):
 
 
 def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
-                      authenticated_read_only: bool = False, observation_only: bool = False, coding_only: bool = False):
+                      authenticated_read_only: bool = False, observation_only: bool = False, coding_only: bool = False,
+                      coding_job_only: bool = False):
     """Stateless Streamable HTTP: one JSON-RPC object per POST, a JSON reply, no MCP session id.
 
     Loopback only. A browser page could otherwise reach a local listener, so requests must
@@ -3277,6 +3511,13 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
             raise ValueError("coding requires verified fixed subject/principal and coding-only mode")
     elif coding_only:
         raise ValueError("coding-only mode requires complete coding pins")
+    if server.coding_job:
+        if (not coding_job_only or coding_only or observation_only or authenticated_read_only or auth is None or
+                server.coding or server.observation or server.coding_job.settings["principal"] != server.principal or
+                server.coding_job.settings["subject"] != auth.config.get("subject")):
+            raise ValueError("coding-job requires verified fixed subject/principal and coding-job-only mode")
+    elif coding_job_only:
+        raise ValueError("coding-job-only mode requires complete coding-job pins")
     log_path = server.store.root / "requests.log"
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -3342,7 +3583,7 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
             else:
                 parsed = True
                 reply = None
-            if auth and (authenticated_read_only or observation_only or coding_only or not _public_http_operation(message)):
+            if auth and (authenticated_read_only or observation_only or coding_only or coding_job_only or not _public_http_operation(message)):
                 if not self._authorize():
                     return
             if authenticated_read_only and not (_public_http_operation(message) or
@@ -3363,8 +3604,18 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
                 if not allowed:
                     self._reply(403, b'{"error":"coding_only"}')
                     return
+            if coding_job_only:
+                call = isinstance(message, dict) and message.get("method") == "tools/call"
+                allowed = (isinstance(message, dict) and message.get("jsonrpc") == "2.0" and (
+                    message.get("method") == "server/discover" or not call and _public_http_operation(message) or
+                    call and isinstance(message.get("params"), dict) and message["params"].get("name") in CODING_JOB_OPERATIONS))
+                if not allowed:
+                    self._reply(403, b'{"error":"coding_job_only"}')
+                    return
             if parsed:
                 reply = server.handle(message)
+                if coding_job_only and message.get("method") == "tools/list" and reply and "result" in reply:
+                    reply["result"]["tools"] = [t for t in reply["result"]["tools"] if t["name"] in CODING_JOB_OPERATIONS]
                 if coding_only and message.get("method") == "tools/list" and reply and "result" in reply:
                     reply["result"]["tools"] = [t for t in reply["result"]["tools"] if t["name"] in {x["name"] for x in CODING_TOOLS}]
                 if observation_only and message.get("method") == "tools/list" and reply and "result" in reply:
@@ -3394,7 +3645,8 @@ def make_http_handler(server: Server, path: str, auth: HttpAuth | None = None,
 
 
 def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth | None = None,
-               authenticated_read_only: bool = False, observation_only: bool = False, coding_only: bool = False) -> int:
+               authenticated_read_only: bool = False, observation_only: bool = False, coding_only: bool = False,
+               coding_job_only: bool = False) -> int:
     if authenticated_read_only and auth is None:
         raise SystemExit("serve-http: --authenticated-read-only requires --auth-config")
     if auth and urllib.parse.urlsplit(auth.config["resource"]).path != path:
@@ -3403,7 +3655,7 @@ def serve_http(server: Server, listen: str, path: str = "/mcp", auth: HttpAuth |
     host = host.strip("[]")
     if not ipaddress.ip_address(host).is_loopback:
         raise SystemExit("serve-http: --listen must be a loopback address; tunnel-client runs on this machine")
-    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only, observation_only, coding_only))
+    httpd = http.server.ThreadingHTTPServer((host, int(port_text)), make_http_handler(server, path, auth, authenticated_read_only, observation_only, coding_only, coding_job_only))
     log_request(server.store.root / "requests.log",
                 {"at": iso(utcnow()), "event": "serve_http_started", "pid": os.getpid(), "version": VERSION,
                  "listen": f"{host}:{httpd.server_address[1]}", "path": path})
@@ -4267,6 +4519,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_http_cmd.add_argument("--authenticated-read-only", action="store_true",
                                 help="require OAuth for all RPCs and deny non-read-only operations")
     serve_http_cmd.add_argument("--coding-only", action="store_true", help="fixed signed Pi fake-provider fixture operations only")
+    serve_http_cmd.add_argument("--coding-job-only", action="store_true", help="forward only the four coding-job operations to the pinned Rust command (offline fixture)")
     serve_http_cmd.add_argument("--observation-only", action="store_true",
                                 help="require OAuth for every RPC; permit only fixed Pi observation writes and authorized reads")
     serve_http_cmd.add_argument("--principal", default="tunnel",
@@ -4335,7 +4588,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "serve":
             return serve(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment()))
         if args.command == "serve-http":
-            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment(), observation=ObservationHelper.from_environment(), coding=CodingHelper.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only, args.observation_only, args.coding_only)
+            return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment(), observation=ObservationHelper.from_environment(), coding=CodingHelper.from_environment(), coding_job=CodingJobBridge.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only, args.observation_only, args.coding_only, args.coding_job_only)
         if args.command == "run":
             return run_daemon(Daemon(homes, policy, context=context), args.poll_seconds, args.max_seconds)
         if args.command == "sessions":
