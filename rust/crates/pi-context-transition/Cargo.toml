@@ -1,0 +1,14 @@
+[package]
+name = "pi-context-transition"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+publish = false
+[workspace]
+[dependencies]
+lifecycle-core = { path = "../lifecycle-core" }
+lifecycle-store = { path = "../lifecycle-store" }
+lifecycle-runtime = { path = "../lifecycle-runtime" }
+work-engine-types = { path = "../work-engine-types" }
+serde_json = "=1.0.151"
+tokio = { version = "=1.53.2", features = ["rt-multi-thread", "macros", "process", "time", "io-util"] }

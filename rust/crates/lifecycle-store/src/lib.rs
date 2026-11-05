@@ -5,6 +5,8 @@ mod artifact;
 mod direct_semantic;
 mod held_selection;
 mod native;
+mod pi_settlement;
+pub use pi_settlement::{PiSettlementProof, PI_SDK_INDEX_SHA256, pi_profile_digest, pi_protocol_digest};
 mod recovery;
 mod schema;
 mod semantic;

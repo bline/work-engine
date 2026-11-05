@@ -751,7 +751,7 @@ fn restart_intent_matches(
     Ok(count == 1)
 }
 
-fn native_session_current(
+pub(super) fn native_session_current(
     connection: &rusqlite::Connection,
     session: &NativeSessionId,
 ) -> Result<bool, StoreError> {
@@ -3025,6 +3025,12 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
+        let (protocol, profile): (String,String) = tx.query_row(
+            "SELECT s.protocol_digest,s.profile_digest FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
+            [entry.invocation_id()], |r| Ok((r.get(0)?,r.get(1)?))).map_err(|_| StoreError::ClaimConflict)?;
+        if protocol == crate::pi_settlement::pi_protocol_digest() || profile == crate::pi_settlement::pi_profile_digest() {
+            return Err(StoreError::Rejected);
+        }
         let incomplete:i64=tx.query_row("SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1 AND state!='completed_settled'",
             [entry.invocation_id.as_str()],|r|r.get(0)).map_err(|_| StoreError::Unavailable)?;
         let incomplete_task:i64=tx.query_row("SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1 AND state!='completed_settled'",
@@ -3451,25 +3457,8 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::ClaimConflict);
         }
-        let digest = sha256(final_text.as_bytes())?;
-        let changed=tx.execute("UPDATE native_turns SET state='completed_settled',terminal_status='completed',final_text=?2,final_sha256=?3,history_status=?4,history_transport_session=?8,history_sequence=?9,settled_wall_ms=?5 WHERE invocation_id=?1 AND thread_id=?6 AND turn_id=?7 AND state='entered_uncertain'",
-            params![entry.invocation_id,final_text.as_bytes(),digest,history_status,clock.wall.get(),entry.thread.as_str(),turn.as_str(),history_transport,history_sequence])
-            .map_err(|_| StoreError::Unavailable)?;
-        if changed != 1 {
-            return Err(StoreError::ClaimConflict);
-        }
-        if matches!(purpose.as_str(), "semantic_compile" | "semantic_verify") {
-            let updated=tx.execute("UPDATE semantic_attempts SET state='completed_settled',result_sha256=?2 WHERE invocation_id=?1 AND state='entered_uncertain' AND purpose=?3",
-                params![entry.invocation_id,&digest,&purpose]).map_err(|_|StoreError::Unavailable)?;
-            if updated != 1 {
-                return Err(StoreError::ClaimConflict);
-            }
-        }
-        let subject: String = tx.query_row(
-            "SELECT s.subject_id FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
-            [entry.invocation_id.as_str()], |r| r.get(0),
-        ).map_err(|_| StoreError::Unavailable)?;
-        observe_native_subject_clock(&tx, &subject, clock.wall.get().max(history_wall))?;
+        commit_native_settlement(&tx, entry, final_text, history_status, history_transport,
+            history_sequence, history_wall, &purpose, clock)?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(())
     }
@@ -5454,4 +5443,33 @@ mod tests {
         assert_eq!(recovery.children[0].result_sha256, Some(result.sha256));
         assert_eq!(recovery.history_status, "unavailable");
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn commit_native_settlement(
+    tx: &rusqlite::Transaction<'_>, entry: &NativeTurnEntry, final_text: &str,
+    history_status: &str, history_transport: &str, history_sequence: u64,
+    history_wall: i64, purpose: &str, clock: ClockSample,
+) -> Result<(), StoreError> {
+    let turn = entry.turn.as_ref().ok_or(StoreError::ClaimConflict)?;
+    let digest = sha256(final_text.as_bytes())?;
+        let changed=tx.execute("UPDATE native_turns SET state='completed_settled',terminal_status='completed',final_text=?2,final_sha256=?3,history_status=?4,history_transport_session=?8,history_sequence=?9,settled_wall_ms=?5 WHERE invocation_id=?1 AND thread_id=?6 AND turn_id=?7 AND state='entered_uncertain'",
+            params![entry.invocation_id,final_text.as_bytes(),digest,history_status,clock.wall.get(),entry.thread.as_str(),turn.as_str(),history_transport,history_sequence])
+            .map_err(|_| StoreError::Unavailable)?;
+        if changed != 1 {
+            return Err(StoreError::ClaimConflict);
+        }
+        if matches!(purpose, "semantic_compile" | "semantic_verify") {
+            let updated=tx.execute("UPDATE semantic_attempts SET state='completed_settled',result_sha256=?2 WHERE invocation_id=?1 AND state='entered_uncertain' AND purpose=?3",
+                params![entry.invocation_id,&digest,&purpose]).map_err(|_|StoreError::Unavailable)?;
+            if updated != 1 {
+                return Err(StoreError::ClaimConflict);
+            }
+        }
+        let subject: String = tx.query_row(
+            "SELECT s.subject_id FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
+            [entry.invocation_id.as_str()], |r| r.get(0),
+        ).map_err(|_| StoreError::Unavailable)?;
+        observe_native_subject_clock(&tx, &subject, clock.wall.get().max(history_wall))?;
+    Ok(())
 }
