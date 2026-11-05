@@ -569,3 +569,14 @@ owner-answer codec. Explicit conditional rejection is structured; missing proces
 ACK is still unknown to a caller. This operation neither verifies signatures nor
 confers human/action authority from role, data.verified or storage credentials.
 The Rust synthetic boundary owns cryptographic meaning and registry eligibility.
+
+Conditional replies return `appended: true` only for an actual append by that
+invocation. `appended: false` denotes exact existing history, including an
+ordinary writer racing after the caller's snapshot; it establishes no renewed
+eligibility. Ordinary post responses retain their existing shape. The original
+monotonic deadline is forwarded through durable hash/history/ref preparation
+and checked at final Git CAS subprocess entry, with bounded preparation waits.
+Interruption after CAS entry remains unknown; Git has no atomic real-time clock
+predicate. A protected backend may inherit a registry serialization descriptor;
+the durable owner explicitly preserves it through final Git processes, without
+giving it approval meaning or adding a semantic store.

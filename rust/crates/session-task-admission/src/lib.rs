@@ -400,3 +400,5 @@ pub mod pi_pilot;
 
 /// Synthetic task projection and canonical signed-answer consumption only.
 pub mod owner_boundary;
+
+mod registry_fence;

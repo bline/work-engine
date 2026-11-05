@@ -280,6 +280,7 @@ pub(crate) fn register_proposal(
     if !crate::valid_ref(reference) || !supported_state(state) {
         return Err(Error::Held);
     }
+    let _fence = crate::registry_fence::Fence::acquire(db).map_err(|_| Error::Store)?;
     let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
     let prior: Option<(i64, String, String)> = tx
         .query_row(
@@ -334,6 +335,7 @@ pub(crate) fn register_task(
     let task = crate::validate_review(raw_request).map_err(|_| Error::Held)?;
     let row: crate::Row = serde_json::from_str(raw_request).map_err(|_| Error::Held)?;
     let intent = row.data.intent;
+    let _fence = crate::registry_fence::Fence::acquire(db).map_err(|_| Error::Store)?;
     let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
     let prior: Option<(i64, String, String)> = tx
         .query_row(

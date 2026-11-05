@@ -245,6 +245,16 @@ pub(crate) fn head(c: &service::Config, pin: &Pin, now: OffsetDateTime) -> Resul
 /// Apply the signed current head under the existing registry's write ordering.
 /// Possession of the startup config/DB does not replace the signed board proof.
 pub(crate) fn synchronize(db: &Connection, pin: &Pin, h: &Head) -> Result<()> {
+    let fence = crate::registry_fence::Fence::acquire(db).map_err(|_| "scoped_registry")?;
+    synchronize_fenced(db, pin, h, &fence)
+}
+// Callers already owning the registry fence must forward it, never reacquire.
+pub(crate) fn synchronize_fenced(
+    db: &Connection,
+    pin: &Pin,
+    h: &Head,
+    _fence: &crate::registry_fence::Fence,
+) -> Result<()> {
     let old: Option<(i64,String)> = db.query_row("SELECT generation,request_sha FROM scoped_control WHERE profile_sha=?1 ORDER BY generation DESC LIMIT 1", [&pin.sha256], |r| Ok((r.get(0)?, r.get(1)?))).optional().map_err(|_| "scoped_registry")?;
     if let Some((generation, sha)) = old.as_ref() {
         if *generation > h.generation || (*generation == h.generation && sha != &h.sha) {

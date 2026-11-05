@@ -67,6 +67,14 @@ pub(crate) fn run_bounded(
     args: &[&std::ffi::OsStr],
     duration: Duration,
 ) -> Option<Vec<u8>> {
+    run_bounded_fenced(program, args, duration, None)
+}
+pub(crate) fn run_bounded_fenced(
+    program: &Program,
+    args: &[&std::ffi::OsStr],
+    duration: Duration,
+    fence: Option<&crate::registry_fence::Fence>,
+) -> Option<Vec<u8>> {
     use std::os::{fd::AsRawFd, unix::process::CommandExt};
     if !pinned(&program.python)
         || !pinned(&program.script)
@@ -74,7 +82,21 @@ pub(crate) fn run_bounded(
     {
         return None;
     }
-    let mut child = Command::new(&program.python.path)
+    let mut command = Command::new(&program.python.path);
+    command.env_remove("WORK_ENGINE_REGISTRY_FENCE_FD");
+    if let Some(fd) = fence.and_then(crate::registry_fence::Fence::fd) {
+        command.env("WORK_ENGINE_REGISTRY_FENCE_FD", fd.to_string());
+        // Only this child inherits the description; the parent's CLOEXEC stays.
+        unsafe {
+            command.pre_exec(move || {
+                if libc::fcntl(fd, libc::F_SETFD, 0) < 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+    }
+    let mut child = command
         .arg("-I")
         .arg(&program.script.path)
         .args(args)

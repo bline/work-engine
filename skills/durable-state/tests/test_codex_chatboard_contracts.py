@@ -1433,9 +1433,11 @@ class ConditionalReplyTest(RepoCase):
     def test_exact_retry_is_history_even_after_supersession_and_changed_id_conflicts(self):
         revision=self.request()
         first=self.conditional(revision)
+        self.assertTrue(first["appended"])
         self.post(supersedes=1)
         second=self.conditional(revision)
         self.assertEqual(first["message"],second["message"])
+        self.assertFalse(second["appended"])
         changed=self.candidate(); changed["observed_at"]="2026-11-02T00:00:01Z"
         with self.assertRaisesRegex(BOARD.ChatboardError,"different content"):
             self.conditional(revision,changed)
@@ -1469,11 +1471,11 @@ class ConditionalReplyTest(RepoCase):
         case=self
         class RacingStore(real):
             calls=0
-            def publish(self,key,payload,expected):
+            def publish(self,key,payload,expected,**kwargs):
                 RacingStore.calls+=1
                 # A real competing owner publication advances the opaque ref.
                 with patch.object(BOARD,"GitRefDurableStateStore",real): case.post()
-                return super().publish(key,payload,expected)
+                return super().publish(key,payload,expected,**kwargs)
         with patch.object(BOARD,"GitRefDurableStateStore",RacingStore):
             with self.assertRaisesRegex(BOARD.ChatboardError,"revision conflict"):
                 self.conditional(revision)
@@ -1538,6 +1540,64 @@ b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_
                 BOARD.conditional_reply(self.repository,expected_revision=revision,
                     max_elapsed_seconds=.001,**self.candidate())
         self.assertEqual(len(self.board()[0]["messages"]),1)
+
+    def test_ordinary_writer_races_exact_row_after_initial_read(self):
+        revision = self.request()
+        candidate = self.candidate()
+        # The caller already captured revision. An ordinary writer wins next.
+        ordinary = BOARD.post(self.repository, **candidate)
+        result = self.conditional(revision, candidate)
+        self.assertFalse(result["appended"])
+        self.assertEqual(result["message"], ordinary["message"])
+        changed = dict(candidate, observed_at="2026-11-02T00:00:01Z")
+        with self.assertRaisesRegex(BOARD.ChatboardError, "different content"):
+            self.conditional(revision, changed)
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+
+    def test_delayed_hash_and_history_preparation_refuses_final_cas(self):
+        import time
+        for delayed in ("hash-object", "history"):
+            with self.subTest(delayed=delayed):
+                # Each iteration has an open request and no reply.
+                if delayed == "hash-object":
+                    revision = self.request()
+                else:
+                    revision = self.board()[1]
+                real = GitRefDurableStateStore
+                class SlowPreparation(real):
+                    def _git(self, args, input_bytes=None, **kwargs):
+                        result = super()._git(args, input_bytes, **kwargs)
+                        if args[0] == delayed:
+                            time.sleep(.15)
+                        return result
+                    def _current(self, ref, **kwargs):
+                        result = super()._current(ref, **kwargs)
+                        if delayed == "history" and "-history/" in ref:
+                            time.sleep(.15)
+                        return result
+                with patch.object(BOARD, "GitRefDurableStateStore", SlowPreparation):
+                    with self.assertRaisesRegex(DurableStateError, "deadline expired"):
+                        BOARD.conditional_reply(self.repository, expected_revision=revision,
+                            max_elapsed_seconds=.1, **self.candidate())
+                self.assertEqual(len(self.board()[0]["messages"]), 1)
+
+    def test_interrupted_final_cas_preserves_unknown_even_when_row_exists(self):
+        from durable_state import DurableStateUnknown
+        revision = self.request()
+        class LostResult(GitRefDurableStateStore):
+            calls = 0
+            def _git(self, args, input_bytes=None, **kwargs):
+                result = super()._git(args, input_bytes, **kwargs)
+                if args[0] == "update-ref":
+                    LostResult.calls += 1
+                    raise DurableStateUnknown("publication outcome unknown")
+                return result
+        with patch.object(BOARD, "GitRefDurableStateStore", LostResult):
+            with self.assertRaisesRegex(DurableStateUnknown, "outcome unknown"):
+                self.conditional(revision)
+        self.assertEqual(LostResult.calls, 1)
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+        self.assertFalse(self.conditional(revision)["appended"])
 
 
 if __name__ == "__main__":

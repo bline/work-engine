@@ -244,11 +244,18 @@ impl SyntheticOwner {
         store::register_task(&mut self.db, raw, state, expected).map_err(map_store)
     }
     fn call(config: &SyntheticConfig, command: Value) -> Result<Value> {
+        Self::call_fenced(config, command, None)
+    }
+    fn call_fenced(
+        config: &SyntheticConfig,
+        command: Value,
+        fence: Option<&crate::registry_fence::Fence>,
+    ) -> Result<Value> {
         let cmd = compact(&command)?;
         if cmd.len() > 100_000 {
             return Err(Error::Invalid);
         }
-        let bytes = source::run_bounded(
+        let bytes = source::run_bounded_fenced(
             &config.board,
             &[
                 "--repository".as_ref(),
@@ -258,6 +265,7 @@ impl SyntheticOwner {
                 cmd.as_ref(),
             ],
             Duration::from_secs(10),
+            fence,
         )
         .ok_or(Error::Unavailable)?;
         serde_json::from_slice(&bytes).map_err(|_| Error::Unavailable)
@@ -385,6 +393,7 @@ impl SyntheticOwner {
         selection: &Selection,
         config: &SyntheticConfig,
         now: OffsetDateTime,
+        fence: &crate::registry_fence::Fence,
     ) -> Result<OffsetDateTime> {
         if let Some((config_pin, profile_pin)) = &config.scoped_control {
             let c = crate::scoped_pilot::config(config_pin).map_err(|_| Error::Held)?;
@@ -412,7 +421,8 @@ impl SyntheticOwner {
             }
             let head =
                 crate::scoped_pilot::head(&c, profile_pin, now).map_err(|_| Error::Unavailable)?;
-            crate::scoped_pilot::synchronize(db, profile_pin, &head).map_err(|_| Error::Held)?;
+            crate::scoped_pilot::synchronize_fenced(db, profile_pin, &head, fence)
+                .map_err(|_| Error::Held)?;
             if head.state != "active" {
                 return Err(Error::Held);
             }
@@ -431,6 +441,8 @@ impl SyntheticOwner {
     }
     /// Read actual registered current heads and the complete canonical board.
     pub fn project(&mut self, task_id: &str) -> Result<Projection> {
+        let fence =
+            crate::registry_fence::Fence::acquire(&self.db).map_err(|_| Error::Unavailable)?;
         let tx = self
             .db
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -449,7 +461,8 @@ impl SyntheticOwner {
             standing = Standing::Expired;
         }
         if standing == Standing::Current {
-            match Self::control_deadline(&tx, &snapshot, &s, &self.config, self.clock.now()) {
+            match Self::control_deadline(&tx, &snapshot, &s, &self.config, self.clock.now(), &fence)
+            {
                 Ok(d) if self.clock.now() < d => {}
                 Ok(_) => standing = Standing::Expired,
                 Err(Error::Held) => standing = Standing::Revoked,
@@ -567,6 +580,8 @@ impl SyntheticOwner {
     }
     /// Immutable exact reconciliation. Absence is unknown, never no-effect proof.
     pub fn read_exact(&mut self, request: &Consume) -> Result<Decision> {
+        let fence =
+            crate::registry_fence::Fence::acquire(&self.db).map_err(|_| Error::Unavailable)?;
         let tx = self
             .db
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -582,9 +597,11 @@ impl SyntheticOwner {
             &self.config,
             self.clock.now(),
             self.policy_expires,
+            &fence,
         )?;
         Ok(d)
     }
+    #[allow(clippy::too_many_arguments)]
     fn historical_standing(
         db: &Connection,
         snapshot: &Snapshot,
@@ -593,6 +610,7 @@ impl SyntheticOwner {
         config: &SyntheticConfig,
         now: OffsetDateTime,
         policy_expires: OffsetDateTime,
+        fence: &crate::registry_fence::Fence,
     ) -> Result<Standing> {
         let clock = source::AcquisitionTime::new(now);
         let mut standing = Self::standing(db, snapshot, &request.selection, raw, config, now)?;
@@ -605,7 +623,7 @@ impl SyntheticOwner {
         {
             return Ok(Standing::Expired);
         }
-        match Self::control_deadline(db, snapshot, &request.selection, config, now) {
+        match Self::control_deadline(db, snapshot, &request.selection, config, now, fence) {
             Ok(d) if clock.now() < d => {}
             Ok(_) => standing = Standing::Expired,
             Err(Error::Held) => standing = Standing::Revoked,
@@ -622,6 +640,8 @@ impl SyntheticOwner {
         Ok(standing)
     }
     pub fn consume(&mut self, request: &Consume) -> Result<Decision> {
+        let fence =
+            crate::registry_fence::Fence::acquire(&self.db).map_err(|_| Error::Unavailable)?;
         let tx = self
             .db
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -636,6 +656,7 @@ impl SyntheticOwner {
                 &self.config,
                 self.clock.now(),
                 self.policy_expires,
+                &fence,
             )?;
             return Ok(d);
         }
@@ -661,6 +682,7 @@ impl SyntheticOwner {
             &request.selection,
             &self.config,
             self.clock.now(),
+            &fence,
         )?);
         let policy = proof::KeyPolicy {
             owner: &self.config.owner,
@@ -680,6 +702,7 @@ impl SyntheticOwner {
         .map_err(|_| Error::Invalid)?;
         deadline = deadline.min(verified.expires_at);
         let remaining = (deadline - self.clock.now()).as_seconds_f64().min(9.0);
+        let deadline_monotonic = monotonic() + remaining;
         if remaining <= 0.0 {
             return Err(Error::Held);
         }
@@ -696,7 +719,7 @@ impl SyntheticOwner {
         let candidate = json!({"author":self.config.owner,"session_id":self.config.session_id,"topic":original["topic"],"body":"Synthetic signed owner answer; execution admission unavailable","references":[],"message_id":verified.answer_id,"observed_at":answer["created_at"],"kind":"reply","to":[format!("session:{}",original["session_id"].as_str().ok_or(Error::Invalid)?)],"in_reply_to":request.selection.request_sequence,"data":{"disposition":disposition,"decision":verified.decision,"comment":verified.comment,"answer_id":verified.answer_id,"signed_answer":{"format":"work-engine.owner-answer/v1","answer_json":request.signed.answer_json,"credential_id":request.signed.credential_id,"authenticator_data":request.signed.authenticator_data,"client_data_json":request.signed.client_data_json,"signature":request.signed.signature},"owner_boundary":{"task":request.selection.task,"proposal":request.selection.proposal,"task_generation":request.selection.task_generation,"proposal_generation":request.selection.proposal_generation,"request_sha256":hash(&raw),"policy_sha256":self.config.policy.sha256,"source_sha256":self.config.board.script.sha256}}});
         // Any failure after entering publication is unknown. Do not create a new
         // ID, retry automatically, or let SQLite rollback negate board history.
-        let published=Self::call(&self.config,json!({"operation":"conditional_reply","expected_revision":snapshot.revision,"max_elapsed_seconds":remaining,"deadline_monotonic":monotonic()+remaining,"candidate":candidate})).map_err(|_|Error::Unknown)?;
+        let published=Self::call_fenced(&self.config,json!({"operation":"conditional_reply","expected_revision":snapshot.revision,"max_elapsed_seconds":remaining,"deadline_monotonic":deadline_monotonic,"candidate":candidate}), Some(&fence)).map_err(|_|Error::Unknown)?;
         if published["status"] == "rejected" {
             return Err(if published["code"] == "conflict" {
                 Error::Conflict
@@ -704,18 +727,32 @@ impl SyntheticOwner {
                 Error::Held
             });
         }
-        let snapshot = Self::snapshot(&self.config).map_err(|_| Error::Unknown)?;
-        let mut d = Self::exact(&snapshot, request, &raw, &self.config, &self.key)?
-            .ok_or(Error::Unknown)?;
-        d.historical = false;
-        d.current_standing = Self::standing(
-            &tx,
-            &snapshot,
-            &request.selection,
-            &raw,
-            &self.config,
-            self.clock.now(),
-        )?;
+        // The owner's exact receipt establishes durable success even if acquiring
+        // current state subsequently fails. Never turn that into permission.
+        let receipt = Snapshot {
+            revision: published["revision"].as_str().ok_or(Error::Unknown)?.into(),
+            rows: vec![compact(&published["message"])?],
+        };
+        let mut d =
+            Self::exact(&receipt, request, &raw, &self.config, &self.key)?.ok_or(Error::Unknown)?;
+        d.historical = match published["appended"].as_bool() {
+            Some(appended) => !appended,
+            None => return Err(Error::Unknown),
+        };
+        d.current_standing = match Self::snapshot(&self.config) {
+            Ok(snapshot) => Self::historical_standing(
+                &tx,
+                &snapshot,
+                request,
+                &raw,
+                &self.config,
+                self.clock.now(),
+                self.policy_expires,
+                &fence,
+            )
+            .unwrap_or(Standing::Unavailable),
+            Err(_) => Standing::Unavailable,
+        };
         // No local decision row/receipt, admission or effect is written.
         Ok(d)
     }

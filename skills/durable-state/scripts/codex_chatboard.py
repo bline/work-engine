@@ -97,7 +97,8 @@ def mutate(repository: Path, change: Callable[[dict[str, Any]], Any], *,
             raise ChatboardError("conditional reply deadline expired")
         try:
             published = store.publish(
-                BOARD_KEY, encode(board), current.revision if current else None
+                BOARD_KEY, encode(board), current.revision if current else None,
+                **({"deadline": deadline} if deadline is not None else {}),
             )
         except DurableStateError as failure:
             if "revision conflict" in str(failure):
@@ -261,8 +262,10 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
         if kind is not None:
             contract_version = registry["version"]
 
+    publication = {"appended": False}
     def change(board: dict[str, Any]) -> dict[str, Any]:
         existing = next((row for row in board["messages"] if row["message_id"] == message_id), None)
+        publication["appended"] = existing is None
         candidate = {
             "message_id": message_id,
             "sequence": existing["sequence"] if existing else board["next_sequence"],
@@ -328,7 +331,10 @@ def _post(repository: Path, *, author: str, session_id: str, topic: str,
         _, message, revision = mutate(repository, change)
     else:
         _, message, revision = mutate(repository, change, expected_revision=expected_revision, deadline=deadline)
-    return {"revision": revision, "message": message}
+    result = {"revision": revision, "message": message}
+    if expected_revision is not _UNCONDITIONAL:
+        result.update(publication)
+    return result
 
 
 def post(repository: Path, *, author: str, session_id: str, topic: str,

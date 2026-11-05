@@ -43,10 +43,10 @@ class DurableStateTest(unittest.TestCase):
                 store.list_revisions("campaign/slice", "0" * 40, 1)
             original_git = store._git
 
-            def fail_transaction(args, input_bytes=None):
+            def fail_transaction(args, input_bytes=None, **kwargs):
                 if args == ["update-ref", "--stdin"]:
                     raise STORE.DurableStateError("simulated disk failure")
-                return original_git(args, input_bytes)
+                return original_git(args, input_bytes, **kwargs)
 
             store._git = fail_transaction
             with self.assertRaisesRegex(ValueError, "simulated disk failure"):

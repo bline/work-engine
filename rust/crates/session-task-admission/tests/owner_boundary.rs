@@ -561,7 +561,20 @@ fn owner_boundary_process_child() {
     let request: Consume =
         serde_json::from_slice(&std::fs::read(root.join("consume-input.json")).unwrap()).unwrap();
     let mut owner = SyntheticOwner::open_synthetic(config).unwrap();
-    if std::env::var("OWNER_BOUNDARY_CRASH_PHASE").unwrap() == "before" {
+    let phase = std::env::var("OWNER_BOUNDARY_CRASH_PHASE").unwrap();
+    if phase == "writer" {
+        std::fs::write(root.join("writer-started"), b"yes").unwrap();
+        owner
+            .register_task_fixture(
+                &std::fs::read_to_string(root.join("raw-task.json")).unwrap(),
+                "withdrawn",
+                Some(1),
+            )
+            .unwrap();
+        std::fs::write(root.join("writer-done"), b"yes").unwrap();
+        return;
+    }
+    if phase == "before" {
         std::fs::write(root.join("child-ready"), b"before").unwrap();
         loop {
             std::thread::park();
@@ -690,5 +703,263 @@ fn later_board_supersession_and_proof_expiry_preserve_history() {
         t.join().unwrap(),
         Err(Error::Invalid) | Err(Error::Held)
     ));
+    f.empty_effects();
+}
+
+// A pinned fixture-only interpreter adapter. It invokes the real board owner;
+// no production hook or caller-selected executable is added to the API.
+impl Fixture {
+    fn interleaving_config(&self, mode: &str) -> SyntheticConfig {
+        use std::os::unix::fs::PermissionsExt;
+        let wrapper = self.root.join("interleaving-python");
+        let body = format!(
+            r##"#!/usr/bin/python3
+import sys,json,time,os
+from pathlib import Path
+script=sys.argv[2]
+sys.path.insert(0,str(Path(script).parent))
+import codex_chatboard as b
+args=sys.argv[3:]
+root=Path({root:?})
+mode={mode:?}
+command=json.loads(args[args.index('--command-json')+1])
+if command['operation']=='conditional_reply':
+ if mode=='race': b.post(root,**command['candidate'])
+ result=b.owner_boundary_io(root,command)
+ (root/'publication-returned').write_text('yes')
+ print(json.dumps(result))
+else:
+ if (root/'publication-returned').exists():
+  if mode=='unavailable': sys.exit(73)
+  (root/'snapshot-paused').write_text('yes')
+  end=time.monotonic()+7
+  while not (root/'snapshot-release').exists() and time.monotonic()<end: time.sleep(.005)
+ print(json.dumps(b.owner_boundary_io(root,command)))
+"##,
+            root = self.root.to_string_lossy(),
+            mode = mode
+        );
+        std::fs::write(&wrapper, body).unwrap();
+        std::fs::set_permissions(&wrapper, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let mut cfg = self.config.clone();
+        cfg.board.python = Pin {
+            sha256: hash(std::fs::read(&wrapper).unwrap()),
+            path: wrapper,
+        };
+        cfg
+    }
+}
+fn wait_file(path: &std::path::Path) {
+    let end = std::time::Instant::now() + std::time::Duration::from_secs(8);
+    while !path.is_file() && std::time::Instant::now() < end {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(path.is_file(), "missing {}", path.display());
+}
+#[test]
+fn raced_ordinary_exact_row_is_historical_in_rust() {
+    let f = Fixture::new();
+    let cfg = f.interleaving_config("race");
+    let mut o = SyntheticOwner::open_synthetic(cfg).unwrap();
+    let request = f.request(&mut o, 9020, "defer");
+    std::fs::write(f.root.join("snapshot-release"), b"yes").unwrap();
+    let decision = o.consume(&request).unwrap();
+    assert!(decision.historical);
+    assert_eq!(decision.signed, request.signed);
+    let mut changed = request.clone();
+    changed.signed.signature.push('A');
+    assert!(matches!(o.consume(&changed), Err(Error::Conflict)));
+    assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 2);
+    f.empty_effects();
+}
+#[test]
+fn fresh_defer_and_ask_expire_during_post_publication_acquisition() {
+    for disposition in ["defer", "ask"] {
+        let f = Fixture::new();
+        let cfg = f.interleaving_config("pause");
+        let mut o = SyntheticOwner::open_synthetic(cfg).unwrap();
+        let mut request = f.request(&mut o, 9021, disposition);
+        let mut answer: Value = serde_json::from_str(&request.signed.answer_json).unwrap();
+        answer["expires_at"] = "2026-11-02T01:00:01Z".into();
+        request.signed = sign(answer.to_string());
+        let original = request.signed.clone();
+        let thread = std::thread::spawn(move || o.consume(&request));
+        wait_file(&f.root.join("snapshot-paused"));
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        std::fs::write(f.root.join("snapshot-release"), b"yes").unwrap();
+        let d = thread.join().unwrap().unwrap();
+        assert!(!d.historical);
+        assert_eq!(d.current_standing, Standing::Expired);
+        assert_eq!(d.signed, original);
+        assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 2);
+        f.empty_effects();
+    }
+}
+#[test]
+fn fresh_control_revocation_during_post_publication_acquisition() {
+    let f = Fixture::new();
+    let (mut cfg, _, pp) = f.scoped();
+    let prior = f.control(&pp, "active", 1, None);
+    cfg.board.python = f.interleaving_config("pause").board.python;
+    let mut o = SyntheticOwner::open_synthetic(cfg).unwrap();
+    let request = f.request(&mut o, 9022, "defer");
+    let t = std::thread::spawn(move || o.consume(&request));
+    wait_file(&f.root.join("snapshot-paused"));
+    f.control(&pp, "revoked", 2, Some(prior));
+    std::fs::write(f.root.join("snapshot-release"), b"yes").unwrap();
+    let d = t.join().unwrap().unwrap();
+    assert!(!d.historical);
+    assert_eq!(d.current_standing, Standing::Revoked);
+    f.empty_effects();
+}
+
+#[test]
+fn final_git_survives_rust_and_python_and_fences_real_registry_writer() {
+    use std::{os::unix::fs::PermissionsExt, time::Duration};
+    // Adopt only descendants orphaned by this fixture, so each is collected.
+    assert_eq!(unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) }, 0);
+    let f = Fixture::new();
+    let mut o = f.owner();
+    let request = f.request(&mut o, 9023, "defer");
+    std::fs::write(
+        f.root.join("consume-input.json"),
+        serde_json::to_vec(&request).unwrap(),
+    )
+    .unwrap();
+    std::fs::write(f.root.join("raw-task.json"), &f.raw).unwrap();
+    let hook = f.root.join(".git/hooks/reference-transaction");
+    std::fs::write(&hook, format!(r##"#!/usr/bin/python3
+import os,sys,json,time
+from pathlib import Path
+root=Path({root:?})
+if sys.argv[1]=='prepared':
+ fd=int(os.environ['WORK_ENGINE_REGISTRY_FENCE_FD'])
+ os.fstat(fd)
+ git=os.getppid()
+ python=int(next(l.split()[1] for l in Path('/proc/'+str(git)+'/status').read_text().splitlines() if l.startswith('PPid:')))
+ (root/'git-paused').write_text(json.dumps([git,python,fd]))
+ end=time.monotonic()+7
+ while not (root/'git-release').exists() and time.monotonic()<end: time.sleep(.005)
+ if not (root/'git-release').exists(): sys.exit(1)
+if sys.argv[1]=='committed': (root/'git-committed').write_text('yes')
+"##,root=f.root.to_string_lossy())).unwrap();
+    std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let launch = |phase: &str| {
+        Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "owner_boundary_process_child", "--nocapture"])
+            .env("OWNER_BOUNDARY_CHILD_ROOT", &f.root)
+            .env("OWNER_BOUNDARY_CRASH_PHASE", phase)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap()
+    };
+    let mut consumer = launch("inflight");
+    wait_file(&f.root.join("git-paused"));
+    let ids: Vec<i32> =
+        serde_json::from_slice(&std::fs::read(f.root.join("git-paused")).unwrap()).unwrap();
+    // Retain a passive reader for Git's protocol output. Without a reader,
+    // killing Python would make Git die from SIGPIPE before its final effect.
+    let _git_output_reader = std::fs::File::open(format!("/proc/{}/fd/1", ids[0])).unwrap();
+    consumer.kill().unwrap();
+    let consumer_status = consumer.wait().unwrap();
+    assert!(!consumer_status.success());
+    // The real final Git and its prepared hook survive both ancestors.
+    assert_eq!(unsafe { libc::kill(ids[1], libc::SIGKILL) }, 0);
+    let mut status = 0;
+    assert_eq!(unsafe { libc::waitpid(ids[1], &mut status, 0) }, ids[1]);
+    let python_status = status;
+    assert_eq!(unsafe { libc::kill(ids[0], 0) }, 0);
+    let mut writer = launch("writer");
+    wait_file(&f.root.join("writer-started"));
+    std::thread::sleep(Duration::from_millis(150));
+    assert!(!f.root.join("writer-done").exists());
+    let db = rusqlite::Connection::open(&f.config.database).unwrap();
+    let state: String = db
+        .query_row("SELECT state FROM task_head", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(state, "live");
+    std::fs::write(f.root.join("git-release"), b"yes").unwrap();
+    assert_eq!(unsafe { libc::waitpid(ids[0], &mut status, 0) }, ids[0]);
+    assert!(libc::WIFEXITED(status));
+    assert_eq!(libc::WEXITSTATUS(status), 0);
+    wait_file(&f.root.join("git-committed"));
+    let git_status = status;
+    let writer_status = writer.wait().unwrap();
+    assert!(writer_status.success());
+    assert!(f.root.join("writer-done").exists());
+    let historical = o.read_exact(&request).unwrap();
+    assert!(historical.historical);
+    assert_eq!(historical.current_standing, Standing::Revoked);
+    let snapshot = f.snapshot();
+    assert_eq!(snapshot["rows"].as_array().unwrap().len(), 2);
+    f.empty_effects();
+    if let Ok(out) = std::env::var("OWNER_BOUNDARY_FIXTURE_DIR") {
+        use std::os::unix::process::ExitStatusExt;
+        let out = PathBuf::from(out);
+        std::fs::write(out.join("f1-process-evidence.json"), serde_json::to_vec_pretty(&json!({
+            "synthetic":true,"real_git_update_ref":true,"real_sqlite_transaction_owner_killed":true,
+            "consumer_wait_status":consumer_status.into_raw(),"python_wait_status":python_status,
+            "git_wait_status":git_status,"writer_wait_status":writer_status.into_raw(),
+            "git_pid":ids[0],"python_pid":ids[1],"inherited_fd_in_actual_git_hook":ids[2],
+            "registry_state_while_git_paused":state,"writer_finished_while_paused":false,
+            "registry_after_publication":historical.current_standing,"snapshot":snapshot,
+            "decision":historical,"input":request,"all_orphaned_processes_reaped":true
+        })).unwrap()).unwrap();
+        copy_fixture(&f.root, &out.join("f1-real-store"));
+    }
+}
+
+fn copy_fixture(from: &std::path::Path, to: &std::path::Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_fixture(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+#[test]
+fn final_git_failure_releases_fence_without_append() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = Fixture::new();
+    let mut o = f.owner();
+    let request = f.request(&mut o, 9024, "defer");
+    let hook = f.root.join(".git/hooks/reference-transaction");
+    std::fs::write(
+        &hook,
+        "#!/usr/bin/python3\nimport sys\nsys.exit(1 if sys.argv[1]=='prepared' else 0)\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o700)).unwrap();
+    // Failure after CAS entry cannot be rewritten as known no-effect by Rust.
+    assert!(matches!(o.consume(&request), Err(Error::Unknown)));
+    assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        o.register_task_fixture(&f.raw, "withdrawn", Some(1))
+            .unwrap(),
+        2
+    );
+    assert_eq!(
+        o.register_proposal_fixture(&f.proposal, "withdrawn", Some(1))
+            .unwrap(),
+        2
+    );
+    f.empty_effects();
+}
+
+#[test]
+fn durable_receipt_survives_unavailable_post_publication_snapshot() {
+    let f = Fixture::new();
+    let mut o = SyntheticOwner::open_synthetic(f.interleaving_config("unavailable")).unwrap();
+    let request = f.request(&mut o, 9025, "defer");
+    let d = o.consume(&request).unwrap();
+    assert!(!d.historical);
+    assert_eq!(d.current_standing, Standing::Unavailable);
+    assert_eq!(d.signed, request.signed);
+    assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 2);
     f.empty_effects();
 }

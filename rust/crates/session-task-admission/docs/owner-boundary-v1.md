@@ -34,7 +34,9 @@ its epoch again and is not a persistent production clock.
   exact references, request bytes/digest, owner-source and policy identities.
 - `consume(Consume { selection, signed })` holds the existing SQLite IMMEDIATE
   transaction through registry validation, verification and conditional board
-  CAS. All five signed strings are preserved exactly. The board publication is
+  CAS. An operational inherited file-description fence on the protected registry
+  inode remains owned by surviving Python/Git publishers after Rust death.
+  All five signed strings are preserved exactly. The board publication is
   the only durable consumption point. No SQLite decision journal or receipt is
   added. The transaction may roll back after board success without undoing it.
 - `read_exact` reconciles a stable answer UUID against immutable row bytes in a
@@ -85,8 +87,31 @@ Persisted sticky revocation is checked too. The fixture's default disposable
 profile has no scoped control; other profiles without a binding are held. This
 adds no control state machine and does not change current admission behavior.
 
-Time checks occur immediately before invoking the durable owner's CAS. They do
-not establish an atomic wall-clock predicate inside Git itself or a hard real-time
+The board response distinguishes `appended=true` from exact historical reuse
+(`appended=false`), including ordinary writers winning after the initial read.
+Rust preserves that distinction. Both fresh and historical standing include
+proof/policy/task/control expiry, current registry and board state, and elapsed
+acquisition time. A verified publication receipt survives subsequent acquisition
+failure as durable success with unavailable standing.
+
+The fence is mechanics only. `register_task`, `register_proposal` and the shared
+`scoped_pilot::synchronize` writer participate. Control synchronization inside
+an existing transaction acquires the fence around its INSERT; that transaction
+continues to exclude consumer validation until commit/rollback. The owner
+forwards its already-held fence to avoid reacquisition. A bounded opposing lock
+order may refuse a caller, but cannot authorize publication or wait forever.
+The protected registry inode must remain stable; direct SQL or external database
+replacement outside the existing owner contract is not a supported writer.
+Rust closes its descriptor without explicit unlock. Its child clears CLOEXEC
+only in the child, Python explicitly passes the descriptor through every Git
+subprocess, and final Git processes and hooks inherit it. Closing an ancestor's
+copy cannot release another surviving copy. No approval journal is added.
+
+Time checks occur after hash/history/ref preparation immediately before entering
+the durable owner's final CAS subprocess, using the original monotonic deadline.
+Preparation subprocess waits are bounded by that deadline. Ordinary durable and
+board calls retain their default behavior. An interrupted final CAS remains
+unknown; an expiry refusal before entry performs no append. These checks do not establish an atomic wall-clock predicate inside Git itself or a hard real-time
 scheduling guarantee. Source/file pins likewise do not establish protection
 against a hostile replacement during execution. These are synthetic qualification
 limits for independent review, not live deployment promises.
@@ -96,8 +121,8 @@ limits for independent review, not live deployment promises.
 Run offline with an isolated target:
 
 ```
-CARGO_TARGET_DIR=/tmp/private-owner-target cargo test --offline -p session-task-admission
-cargo clippy --offline -p session-task-admission --all-targets -- -D warnings
+CARGO_TARGET_DIR=/tmp/private-owner-target cargo test --locked --offline -p session-task-admission
+cargo clippy --locked --offline -p session-task-admission --all-targets -- -D warnings
 python3 -m unittest discover -s skills/durable-state/tests -p test_codex_chatboard_contracts.py
 ```
 
@@ -109,10 +134,15 @@ revocation. It executes a child consumer that loses its answer ACK through a
 process kill, then reopens and reconciles without a replacement ID/effect.
 The board tests crash a process immediately before and after actual durable
 publication, and exercise real CAS conflicts and exact concurrent candidates.
-The consumer crash test is before consumption or after consume returns but before
-client ACK; it does not claim an injected Rust crash at every instruction inside
-publication. Together these tests cover actual store/process behavior at their
-stated boundaries, not an exhaustive distributed crash model.
+The repair fixture additionally pauses a real final Git update-ref in its
+reference-transaction hook, kills the Rust transaction owner and Python parent,
+then attempts an actual registry task withdrawal. The withdrawal cannot change
+eligibility while Git survives. Releasing the hook completes the Git effect,
+then the real writer proceeds. The fixture adopts and reaps orphaned processes.
+Other interleavings cover raced-in ordinary history, defer/ask expiry and signed
+control revocation during post-publication acquisition, plus delayed hash and
+history preparation. These are bounded synthetic observations, not an exhaustive
+distributed crash model or live qualification.
 
 `examples/owner_boundary_snapshot.py` is a fixed read-only synthetic source
 adapter for the existing scoped-control fixture. It invokes the canonical board

@@ -6,6 +6,8 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
+import time
 import subprocess
 from pathlib import Path
 from typing import NamedTuple, Protocol
@@ -13,6 +15,10 @@ from typing import NamedTuple, Protocol
 
 class DurableStateError(ValueError):
     pass
+
+
+class DurableStateUnknown(DurableStateError):
+    """Final publication entry was interrupted; never reinterpret as CAS refusal."""
 
 
 class DurableValue(NamedTuple):
@@ -50,17 +56,33 @@ class GitRefDurableStateStore:
         if not namespace or any(part in {"", ".", ".."} for part in namespace.split("/")):
             raise DurableStateError("namespace must contain nonempty safe path components")
         self.namespace = namespace
+        # Protected backend process inheritance; no semantic meaning or DTO knob.
+        inherited = os.environ.get("WORK_ENGINE_REGISTRY_FENCE_FD")
+        self._pass_fds = () if inherited is None else (int(inherited),)
+        for fd in self._pass_fds:
+            os.fstat(fd)  # Refuse a broken handoff rather than silently dropping it.
         self._git(["rev-parse", "--git-dir"])
         self._git(["check-ref-format", f"refs/work-engine/{namespace}/{'0' * 64}"])
         self._git(["check-ref-format",
                    f"refs/work-engine/{namespace}-history/{'0' * 64}/{'0' * 40}"])
 
-    def _git(self, args: list[str], input_bytes: bytes | None = None) -> bytes:
+    def _git(self, args: list[str], input_bytes: bytes | None = None,
+             *, deadline: float | None = None) -> bytes:
+        # This is the last owned entry check, including after hash/ref preparation.
+        # Git has no atomic real-time predicate. Interruption after spawn is unknown.
+        timeout = None if deadline is None else deadline - time.monotonic()
+        if timeout is not None and timeout <= 0:
+            raise DurableStateError("conditional reply deadline expired")
         try:
             result = subprocess.run(
                 ["git", "-C", str(self.repository), *args], input=input_bytes,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+                pass_fds=self._pass_fds, timeout=timeout,
             )
+        except subprocess.TimeoutExpired as error:
+            if args[0] == "update-ref":
+                raise DurableStateUnknown("git deadline interrupted; publication outcome unknown") from error
+            raise DurableStateError("conditional reply deadline expired during preparation") from error
         except OSError as error:
             raise DurableStateError(f"unable to execute git: {error}") from error
         if result.returncode:
@@ -76,12 +98,18 @@ class GitRefDurableStateStore:
         key_digest = hashlib.sha256(key.encode()).hexdigest()
         return f"refs/work-engine/{self.namespace}-history/{key_digest}/{revision}"
 
-    def _current(self, ref: str) -> str | None:
+    def _current(self, ref: str, *, deadline: float | None = None) -> str | None:
+        timeout = None if deadline is None else deadline - time.monotonic()
+        if timeout is not None and timeout <= 0:
+            raise DurableStateError("conditional reply deadline expired")
         try:
             result = subprocess.run(
                 ["git", "-C", str(self.repository), "rev-parse", "--verify", "--quiet", ref],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False,
+                pass_fds=self._pass_fds, timeout=timeout,
             )
+        except subprocess.TimeoutExpired as error:
+            raise DurableStateError("conditional reply deadline expired during preparation") from error
         except OSError as error:
             raise DurableStateError(f"unable to execute git: {error}") from error
         if result.returncode == 0:
@@ -164,21 +192,21 @@ class GitRefDurableStateStore:
         return DurableHistoryPage(tuple(values), next_cursor)
 
     def publish(self, key: str, payload: bytes,
-                expected_revision: str | None) -> DurableValue:
+                expected_revision: str | None, *, deadline: float | None = None) -> DurableValue:
         if not isinstance(payload, bytes):
             raise DurableStateError("payload must be bytes")
         ref = self._ref(key)
-        if self._current(ref) != expected_revision:
+        if self._current(ref, deadline=deadline) != expected_revision:
             raise DurableStateError("durable state revision conflict")
         digest = hashlib.sha256(payload).hexdigest()
         envelope = canonical({"schema_version": 2, "key": key,
                               "payload_base64": base64.b64encode(payload).decode(),
                               "payload_sha256": digest,
                               "predecessor_revision": expected_revision})
-        revision = self._git(["hash-object", "-w", "--stdin"], envelope).decode().strip()
+        revision = self._git(["hash-object", "-w", "--stdin"], envelope, deadline=deadline).decode().strip()
         commands = ["start", f"create {self._history_ref(key, revision)} {revision}"]
         if (expected_revision is not None
-                and self._current(self._history_ref(key, expected_revision)) is None):
+                and self._current(self._history_ref(key, expected_revision), deadline=deadline) is None):
             # A schema-v1 head predates retention refs. Adopt it atomically with
             # the first linked publication instead of fabricating earlier ancestry.
             commands.append(
@@ -188,7 +216,9 @@ class GitRefDurableStateStore:
             "prepare", "commit", "",
         ])
         try:
-            self._git(["update-ref", "--stdin"], "\n".join(commands).encode())
+            self._git(["update-ref", "--stdin"], "\n".join(commands).encode(), deadline=deadline)
+        except DurableStateUnknown:
+            raise
         except DurableStateError as error:
             if self._current(ref) != expected_revision:
                 raise DurableStateError("durable state revision conflict") from error
