@@ -5,7 +5,10 @@ mod artifact;
 mod direct_semantic;
 mod held_selection;
 mod native;
+mod pi_coding;
+mod pi_coding_proof;
 mod pi_settlement;
+pub use pi_coding::{pi_coding_profile_digest, pi_coding_protocol_digest};
 pub use pi_settlement::{
     PI_SDK_INDEX_SHA256, PiSettlementProof, pi_multiturn_profile_digest,
     pi_multiturn_protocol_digest, pi_profile_digest, pi_protocol_digest,

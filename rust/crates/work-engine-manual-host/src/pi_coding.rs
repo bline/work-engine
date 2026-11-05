@@ -11,6 +11,46 @@ use std::os::unix::fs::PermissionsExt;
 pub const SIGNED_SUBSCRIPTION_PROFILE: &str = "work-engine.pi-coding-signed-subscription.v1";
 pub const SIGNED_PROFILE: &str = "work-engine.pi-coding-signed-fixture.v1";
 pub const PROFILE: &str = "work-engine.pi-coding-fixture.v1";
+/// Opt-in composition: Host owns effects; an installed lifecycle gate owns entry.
+pub const BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-fixture.v1";
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct CodingToolIntent {
+    pub job_id: String,
+    pub input_digest: String,
+    pub session_id: String,
+    pub call_id: String,
+    pub command_sha256: String,
+}
+/// Trusted composition, not an inference capability. Implementations serialize
+/// current lifecycle admission with the supplied existing Host actuator.
+/// A gate error leaves the already-durable Host intent unresolved. Reopen never
+/// reinstalls a gate or reexecutes the effect.
+pub trait CodingEffectGate {
+    fn execute(
+        &mut self,
+        intent: &CodingToolIntent,
+        actuator: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
+    ) -> Result<(bool, Vec<u8>)>;
+    fn frame(&mut self, _frame: &Value) -> Result<Vec<Value>> {
+        refuse("coding lifecycle control unavailable")
+    }
+    fn dispatch(
+        &mut self,
+        _command: &Value,
+        _send: &mut dyn FnMut(i64) -> Result<()>,
+    ) -> Result<()> {
+        refuse("coding lifecycle IPC unavailable")
+    }
+    /// Called only after the exact result artifact is persisted in the journal.
+    fn observed(
+        &mut self,
+        intent: &CodingToolIntent,
+        result: &Artifact,
+        process: &ProcessRecord,
+        tool_container: &str,
+    ) -> Result<()>;
+}
 pub const TOOL_IMAGE: &str = "cbm-doc-claims-lint-tidy@sha256:dda6d32b2c2df1064f056db0db4cff894c833089ccf92862331359c0e6072754";
 pub const SHIM: &[u8] = include_bytes!("../receiver/pi-coding.mjs");
 /// Private provider-disabled pressure qualification; never a provider/task grant.
@@ -128,6 +168,8 @@ pub struct Profile {
 }
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct State {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bridge_workspace_manifest: Option<Artifact>,
     pub tool_create_intent: bool,
     pub tool_id: Option<String>,
     pub tool_removed: bool,
@@ -168,6 +210,8 @@ impl Profile {
                 } else {
                     provider::LIVE_PROFILE
                 }
+            } else if self.schema == BRIDGE_PROFILE {
+                BRIDGE_PROFILE
             } else if self.schema == SIGNED_PROFILE {
                 SIGNED_PROFILE
             } else {
@@ -183,6 +227,7 @@ impl Profile {
                 !self.fixture_command.is_empty()
             }
             || !(1..=8).contains(&self.max_tool_calls)
+            || (self.schema == BRIDGE_PROFILE && self.max_tool_calls != 1)
             || job.idle_seconds != 0
         {
             return refuse("coding fixture profile/pins/limits conflict");
@@ -403,7 +448,16 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
             != json!(if validation {
                 validation::command()
             } else {
-                command(tool)
+                let mut args = command(tool);
+                if !tool
+                    && j.job
+                        .coding
+                        .as_ref()
+                        .is_some_and(|p| p.schema == BRIDGE_PROFILE)
+                {
+                    args.push("--lifecycle-bridge".into());
+                }
+                args
             })
         || v["Config"]["Entrypoint"]
             != if tool {
@@ -478,6 +532,114 @@ pub(super) fn verify_inference(j: &Journal, v: &Value) -> Result<()> {
     verify(j, v, false, false)
 }
 impl Host {
+    /// Gate binding is explicit, fresh and non-recoverable. Existing profiles
+    /// cannot acquire lifecycle semantics by merely installing a callback.
+    pub fn bind_coding_effect_gate(&mut self, gate: Box<dyn CodingEffectGate>) -> Result<()> {
+        if self.journal.phase != Phase::Admitted
+            || self
+                .journal
+                .job
+                .coding
+                .as_ref()
+                .is_none_or(|p| p.schema != BRIDGE_PROFILE || p.provider.is_some())
+            || self.coding_gate.is_some()
+        {
+            return refuse("coding lifecycle gate binding conflict");
+        }
+        self.coding_gate = Some(gate);
+        Ok(())
+    }
+    pub(super) fn coding_bridge_frame(&mut self, frame: &Value) -> Result<Vec<Vec<u8>>> {
+        let mut frame = frame.clone();
+        if frame["type"] == "coding_provider_request" && frame["id"] == 2 {
+            self.coding_collect_tool()?;
+            if !self.journal.coding.as_ref().unwrap().tool_removed {
+                return refuse("coding checkpoint writers not excluded");
+            }
+            let path = self
+                .journal
+                .job
+                .state_dir
+                .join("coding-bridge-workspace.json");
+            atomic(
+                &path,
+                &inventory(&self.journal.job.state_dir.join("coding-workspace"))?,
+            )?;
+            self.journal
+                .coding
+                .as_mut()
+                .unwrap()
+                .bridge_workspace_manifest = Some(Artifact {
+                sha256: file_digest(&path, None)?,
+                path,
+            });
+            self.save()?;
+        }
+        if let Some(manifest) = &self
+            .journal
+            .coding
+            .as_ref()
+            .unwrap()
+            .bridge_workspace_manifest
+        {
+            let bytes = manifest.verify()?;
+            if serde_json::from_slice::<Value>(&bytes)?
+                != serde_json::to_value(inventory(
+                    &self.journal.job.state_dir.join("coding-workspace"),
+                )?)?
+            {
+                return refuse("coding checkpoint workspace changed");
+            }
+            frame["host_workspace"] = json!({"manifest":manifest,"manifest_bytes":String::from_utf8(bytes).map_err(|_|Error::Refused("manifest UTF8".into()))?});
+        }
+        let replies = self
+            .coding_gate
+            .as_mut()
+            .ok_or_else(|| Error::Refused("coding lifecycle gate missing".into()))?
+            .frame(&frame)?;
+        replies
+            .into_iter()
+            .map(|mut v| {
+                if v["type"] == "bridge_prompt" {
+                    v["command"] = json!(self.journal.job.coding.as_ref().unwrap().fixture_command);
+                }
+                Ok(serde_json::to_vec(&v)?)
+            })
+            .collect()
+    }
+    pub(super) fn coding_bridge_dispatch(
+        &mut self,
+        raw: &[u8],
+        send: &mut dyn FnMut(&[u8]) -> Result<()>,
+    ) -> Result<()> {
+        let command: Value = serde_json::from_slice(raw)?;
+        let gate = self
+            .coding_gate
+            .as_mut()
+            .ok_or_else(|| Error::Refused("coding lifecycle gate missing".into()))?;
+        let deadline: i64 = self
+            .journal
+            .job
+            .deadline_unix_seconds
+            .saturating_mul(1000)
+            .try_into()
+            .map_err(|_| Error::Refused("deadline range".into()))?;
+        gate.dispatch(&command, &mut |expires| {
+            let until = expires.min(deadline);
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|_| Error::Refused("clock".into()))?
+                .as_millis() as i64;
+            if now >= until {
+                return refuse("coding IPC expired");
+            }
+            let mut command = command.clone();
+            command["consumptionDeadlineMs"] = json!(until);
+            let mut bytes = serde_json::to_vec(&command)?;
+            bytes.push(b'\n');
+            send(&bytes)
+        })
+    }
     pub(super) fn signed_pi(&self) -> bool {
         self.journal.job.coding.as_ref().is_some_and(|p| {
             matches!(
@@ -520,6 +682,9 @@ impl Host {
         }
         args.push(j.job.image.clone());
         args.extend(command(false));
+        if j.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE {
+            args.push("--lifecycle-bridge".into());
+        }
         args
     }
     fn coding_inspect_tool(&mut self) -> Result<Value> {
@@ -619,6 +784,8 @@ impl Host {
             }
             if kind != "ready"
                 && !(self.signed_pi() && kind == "allocated")
+                && !(self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE
+                    && kind == "coding_replaced")
                 && (self.journal.session_id.is_none()
                     || frame["sessionId"].as_str() != self.journal.session_id.as_deref())
             {
@@ -708,6 +875,12 @@ impl Host {
                     self.journal.session_id = Some(session.into());
                     self.journal.coding.as_mut().unwrap().ready_observed = true;
                     self.save()?;
+                    if self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE {
+                        replies.extend(self.coding_bridge_frame(&frame)?);
+                        self.journal.coding.as_mut().unwrap().frames += 1;
+                        self.save()?;
+                        continue;
+                    }
                     let profile = self.journal.job.coding.as_ref().unwrap();
                     let reply = if let Some(plan) = &profile.provider {
                         let selected = plan.selected()?;
@@ -858,20 +1031,48 @@ impl Host {
                             .check_current()
                             .map_err(|e| Error::Refused(e.into()))?;
                     }
-                    let (ok, output) = self.command_with_lease(
-                        "coding-tool-exec",
-                        vec![
-                            "exec".into(),
-                            "--workdir".into(),
-                            "/workspace".into(),
-                            tool_name(&self.journal),
-                            "/bin/sh".into(),
-                            "-c".into(),
-                            command,
-                        ],
-                        false,
-                        effect_lease.as_ref(),
-                    )?;
+                    let intent = CodingToolIntent {
+                        job_id: self.journal.job.job_id.clone(),
+                        input_digest: self.journal.input_digest.clone(),
+                        session_id: self.journal.session_id.clone().unwrap(),
+                        call_id: id.clone(),
+                        command_sha256: digest(command.as_bytes()),
+                    };
+                    let mut gate = self.coding_gate.take();
+                    let mut entered = false;
+                    let executed = {
+                        let mut actuator = |deadline_ms| {
+                            if std::mem::replace(&mut entered, true) {
+                                return refuse("coding actuator already consumed");
+                            }
+                            self.coding_gate_deadline_ms = Some(deadline_ms);
+                            self.command_with_lease(
+                                "coding-tool-exec",
+                                vec![
+                                    "exec".into(),
+                                    "--workdir".into(),
+                                    "/workspace".into(),
+                                    tool_name(&self.journal),
+                                    "/bin/sh".into(),
+                                    "-c".into(),
+                                    command.clone(),
+                                ],
+                                false,
+                                effect_lease.as_ref(),
+                            )
+                        };
+                        if let Some(gate) = &mut gate {
+                            gate.execute(&intent, &mut actuator)
+                        } else {
+                            actuator(i64::MAX)
+                        }
+                    };
+                    self.coding_gate_deadline_ms = None;
+                    self.coding_gate = gate;
+                    if executed.is_ok() && !entered {
+                        return refuse("coding gate returned without actuator evidence");
+                    }
+                    let (ok, output) = executed?;
                     if let Some(lease) = effect_lease {
                         lease
                             .observed(&digest(&output))
@@ -898,15 +1099,45 @@ impl Host {
                         .state_dir
                         .join(format!("coding-result-{}.json", digest(id.as_bytes())));
                     atomic(&path, &result)?;
-                    self.journal.coding.as_mut().unwrap().tool_requests.insert(
-                        id,
-                        Some(Artifact {
-                            sha256: file_digest(&path, None)?,
-                            path,
-                        }),
-                    );
+                    let artifact = Artifact {
+                        sha256: file_digest(&path, None)?,
+                        path,
+                    };
+                    self.journal
+                        .coding
+                        .as_mut()
+                        .unwrap()
+                        .tool_requests
+                        .insert(id, Some(artifact.clone()));
                     self.save()?;
+                    if let Some(gate) = &mut self.coding_gate {
+                        let state = self.journal.coding.as_ref().unwrap();
+                        gate.observed(
+                            &intent,
+                            &artifact,
+                            self.journal.processes.last().unwrap(),
+                            state.tool_id.as_deref().ok_or_else(|| {
+                                Error::Refused("tool container identity absent".into())
+                            })?,
+                        )?;
+                    }
                     replies.push(serde_json::to_vec(&result)?);
+                }
+                "coding_provider_request" | "coding_history" | "coding_replaced" => {
+                    if self.journal.job.coding.as_ref().unwrap().schema != BRIDGE_PROFILE {
+                        return refuse("coding lifecycle frame in legacy profile");
+                    }
+                    replies.extend(self.coding_bridge_frame(&frame)?);
+                    if kind == "coding_replaced" {
+                        self.journal.session_id = Some(
+                            frame["sessionId"]
+                                .as_str()
+                                .ok_or_else(|| {
+                                    Error::Refused("replacement native identity".into())
+                                })?
+                                .into(),
+                        );
+                    }
                 }
                 "native_event" => {
                     if frame["event"]["type"] == "tool_execution_end" {
@@ -924,8 +1155,16 @@ impl Host {
                         }
                         state.native_tool_ends += 1;
                     }
+                    if self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE {
+                        replies.extend(self.coding_bridge_frame(&frame)?);
+                    }
                 }
                 "complete" => {
+                    if self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE
+                        && frame["counts"] != json!({"providerRequests":4,"resets":1})
+                    {
+                        return refuse("coding bridge counts mismatch");
+                    }
                     let state = self.journal.coding.as_mut().unwrap();
                     if state.completed
                         || state.tool_requests.is_empty()
@@ -1109,6 +1348,51 @@ impl Host {
 #[cfg(test)]
 mod tests {
     use super::*;
+    struct FixtureGate;
+    impl CodingEffectGate for FixtureGate {
+        fn execute(
+            &mut self,
+            _: &CodingToolIntent,
+            action: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
+        ) -> Result<(bool, Vec<u8>)> {
+            action(1)
+        }
+        fn observed(
+            &mut self,
+            _: &CodingToolIntent,
+            _: &Artifact,
+            _: &ProcessRecord,
+            _: &str,
+        ) -> Result<()> {
+            Ok(())
+        }
+    }
+    #[test]
+    fn lifecycle_gate_is_opt_in_and_expired_admission_cannot_spawn() {
+        let (dir, mut h) = fixture();
+        assert!(h.bind_coding_effect_gate(Box::new(FixtureGate)).is_err());
+        h.journal.job.coding.as_mut().unwrap().schema = BRIDGE_PROFILE.into();
+        assert!(h.run().is_err());
+        assert!(h.journal.processes.is_empty());
+        h.bind_coding_effect_gate(Box::new(FixtureGate)).unwrap();
+        assert!(h.bind_coding_effect_gate(Box::new(FixtureGate)).is_err());
+        h.journal.job.docker = Artifact {
+            path: "/bin/sh".into(),
+            sha256: digest(&fs::read("/bin/sh").unwrap()),
+        };
+        h.coding_gate_deadline_ms = Some(1);
+        let marker = dir.path().join("must-not-enter");
+        let result = h.command(
+            "coding-tool-exec",
+            vec!["-c".into(), format!("touch {}", marker.display())],
+            false,
+        );
+        assert!(
+            matches!(result, Err(Error::Refused(ref s)) if s.contains("dispatch expired/cancelled/unadmitted"))
+        );
+        assert!(!marker.exists());
+        assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
+    }
     pub(super) fn fixture() -> (tempfile::TempDir, Host) {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
@@ -1177,6 +1461,8 @@ mod tests {
         };
         let host = Host {
             journal,
+            coding_gate: None,
+            coding_gate_deadline_ms: None,
             pi_owner: None,
             allocation_lease: None,
             reply_leases: vec![],

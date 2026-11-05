@@ -61,6 +61,17 @@ impl Host {
         }
         let workspace = self.journal.job.state_dir.join("coding-workspace");
         let entries = inventory(&workspace)?;
+        if let Some(manifest) = &self
+            .journal
+            .coding
+            .as_ref()
+            .unwrap()
+            .bridge_workspace_manifest
+            && serde_json::from_slice::<Value>(&manifest.verify()?)?
+                != serde_json::to_value(&entries)?
+        {
+            return refuse("validator workspace differs from recovered checkpoint");
+        }
         boundary(&inventory(&self.journal.job.workspace.root)?, &entries)?;
         let snapshot = self.journal.job.state_dir.join("validation-workspace");
         fs::create_dir(&snapshot)?;
