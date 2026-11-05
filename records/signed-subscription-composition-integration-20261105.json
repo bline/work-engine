@@ -1,0 +1,59 @@
+{
+  "schema": "signed-subscription-composition-integration-v1",
+  "recorded_at": "2026-11-05T01:20:23.302974+00:00",
+  "status": "validated_private_candidate_pending_separate_composition_review",
+  "prepared_on_parent": "eabdfcc67a4b718e7cd5c191844e39343c9c8e7e",
+  "accepted_component_commit": "1711e7c626468b02f719aaf3f162b6bab788c708",
+  "tested_source_commit": "bef76a51a31b51cf14a6eab16b343ff50a136986",
+  "scope": "Compose accepted signed-subscription backend with shared CLI and existing provider-disabled pressure receiver; local integration only.",
+  "resolution": "Preserve both signed initialization/deadline checks and provider-disabled pressure handshake; add receiverVM regression. Normalize inherited lint/format issues; make deadlineprecision unit test independent of expensive admission setup without production clock changes.",
+  "source_paths": {
+    "rust/crates/session-query/README.md": "7f0c36104b97ef486e34bb4c027edbb4aa026c64a78983b281d01317cc008969",
+    "rust/crates/session-query/src/lib.rs": "6a429840e8a6d9169061fb432821c166dbbdf3acf096086dab2f950cc7efa24c",
+    "rust/crates/session-task-admission/README.md": "20a7bb01221a9326cd8f57867a55e0a92ffba1a8d3b49a1c9a4f0db090dd7d60",
+    "rust/crates/session-task-admission/docs/pi-subscription-v1.md": "283e1025252c1024bacfd81980fa810467586211f4dde1af38e80a6fe13c9cd9",
+    "rust/crates/session-task-admission/src/lib.rs": "0fc96672b47d2d11b3d5c480368f3c812adb2027cdea63f4963ac654d250dff6",
+    "rust/crates/session-task-admission/src/pi_pilot.rs": "202c8a5e8b82b780803e4d6bcd900c7f5ed3c7eb314ba160f932771a159c1c79",
+    "rust/crates/session-task-admission/src/pi_pilot_tests.rs": "ca773527bd505e28d66ed07199fd86477bbeae03f98657ff7a6ac4f2cb97c57f",
+    "rust/crates/work-engine-manual-host/docs/pi-coding.md": "0dacdf426a4be1292185fa3ca39e418be314038e9cd0f244414f6efaec16a94c",
+    "rust/crates/work-engine-manual-host/examples/mcp_pi_coding.rs": "01dd66359888bdf92c84f75d5a77b8c06f3f79e00fa788e9b41a8e04042ec4b6",
+    "rust/crates/work-engine-manual-host/receiver/pi-coding.mjs": "27c6f617b667506158ef7a584e0f8a14f3de8315245eda90651d5133dac2c73a",
+    "rust/crates/work-engine-manual-host/src/pi_coding.rs": "603ebb75876399a5af26f594fb2fe290b40f29cff1a331c207f40ff3888624d6",
+    "rust/crates/work-engine-manual-host/src/pi_coding_provider.rs": "f4500f05cb7b55e77b9d38e6f560fab2b81ad6eecb8f8e566331c3b215998a2a",
+    "rust/crates/work-engine-manual-host/src/pi_docker.rs": "7f5e62d118a86b96f6708b2e37edf25243789a0f23007fa80ef87e49ff9394a4",
+    "rust/crates/work-engine-manual-host/tests/fixtures/pi-subscription-command.txt": "b34106d44486b00f6c58fdf40e1d8eeeeee26e845e6a6bc433fcdbd8fe336106",
+    "rust/crates/work-engine-manual-host/tests/fixtures/pi-subscription-preload.mjs": "f32e3949bd619dc0961bbe7b0f5b34d77333b90efc844dd9ee85074a6cbe3384",
+    "rust/crates/work-engine-manual-host/tests/pi-signed-subscription.test.mjs": "aa021d094a55fb82c16a64e9c688a94bfaf0087191e2a776d4d59e48bc3dafb5",
+    "rust/crates/work-engine-manual-host/tests/pi_signed_subscription.rs": "4e23b3d7d5365e94a1c6cd83b42355f3c37fc59d9c5b031a330269e22d10ad15",
+    "skills/session-events/scripts/session_events.py": "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d",
+    "skills/session-events/tests/test_pi_subscription.py": "f4bfdf5b314bb8166609d895b97daece6c1fe640708afdf9d413e4942d51272e"
+  },
+  "validation": {
+    "affected_Rust_passed": 150,
+    "affected_Rust_ignored": 8,
+    "pressure_Rust_passed": 6,
+    "precision_regression": "passed in both default unoptimized and optimized profiles",
+    "core_Python_passed": 85,
+    "actual_synthetic_subscription_and_legacy_jobs": 2,
+    "pinned_SDK_Node_passed": 17,
+    "strict_no_deps_Clippy": "pass four affected packages/alltargets",
+    "fmt": "pass four affected packages"
+  },
+  "validation_applicability": "Full affected suite and pressure checks usedd654ffc6. The only later source edit is the precision unit test; its final body passed both profiles inv5. Production source is identical betweenv4/current. Joined checks exercise current19sourcepaths and four frozen binaries. A4docs-onlyparent update preservesallruntime/Cargobytes.",
+  "limitations": [
+    "Synthetic identities/signatures/access/provider stream; actual SDK/Host/Docker/MCP. No real-provider or live qualification.",
+    "S10pressure checks are six component cases and receiverVM regression, not a new physical pressure-stop qualification. SeparateS10owner retains that scope.",
+    "Owner acceptance remainsnot_claimed; no retry semantics changed.",
+    "Ordinary trusted local nonhermeticbuild. No comprehensiveprebuildclosure/productionUIDseparation/hostilemutator claim."
+  ],
+  "failures_preserved": [
+    "Barehost SDK importfailure",
+    "Original deadline moving-clock assertion failure",
+    "First test repair still expired during setup",
+    "Missing pressure observer env",
+    "Inherited fmt/Clippy warnings"
+  ],
+  "source_acceptance": "Existing initial/R1/freshreplacementR2 review chain for1711; not a fresh comprehensive component audit. New composition review pending at this dated record.",
+  "local_evidence_directory": "/home/bline/.local/state/work-engine/backend-composition-20261105-01a1a877",
+  "publication": "Not yet published when this record was written. Detailed final review/publication decision retained in local ROOT-RESULT receipt."
+}
