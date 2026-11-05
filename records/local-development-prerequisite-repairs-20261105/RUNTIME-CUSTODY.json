@@ -1,0 +1,45 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "seeded-runtime",
+  "argv": [
+    "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/runtime/assets/coding-qualification-r3",
+    "--execute",
+    "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/admitted/job.json"
+  ],
+  "cwd": "/home/bline/code/work-engine",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 17120,
+  "inputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/admitted/job.json",
+      "type": "file",
+      "mode": 384,
+      "length": 4307,
+      "sha256": "2224afe56181687415ab12893ddd614d78e4cc4253dc3d6acfca7ea518816ed2"
+    }
+  ],
+  "timeout_s": 300.0,
+  "pid": 17506,
+  "pgid": 17506,
+  "started_at": "2026-11-05T22:02:14.080937Z",
+  "ended_at": "2026-11-05T22:03:04.164327Z",
+  "duration_s": 50.083,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/entry-custody/seeded-runtime.stdout",
+    "length": 352,
+    "sha256": "58fe867ddd80fae0c104564f5f9de62b8b543a91c09a2ece959d5de5e9edf4eb"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/entry-custody/seeded-runtime.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

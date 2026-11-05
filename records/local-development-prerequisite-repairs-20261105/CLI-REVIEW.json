@@ -1,0 +1,44 @@
+{
+  "session_id": "01a1adaf-2b72-7c51-a915-1b0241b53794",
+  "source_commit": "09b2fc72612568ff7b95dc5b05962e9e3548ae51",
+  "verdict": "accept",
+  "findings": [],
+  "evidence_checked": [
+    {
+      "subject": "Exact source and diff",
+      "result": "Verified the commit against base 263402b3aa6a130df3aa49470358dc4f0c9b88af. Only rust/crates/work-engine-server/tests/coding_job.rs changes. Its bytes match SHA256 fd08beba343dbc79a63bc3ddf0656e138be69474e86c74e638d92637f6090981 and CHANGE.patch matches the Git diff."
+    },
+    {
+      "subject": "Publication and failure semantics",
+      "result": "The fixture stages journal output in a unique file in the destination directory and renames only after successful output. Creation, output/redirection, rename and barrier-timeout failures exit 70; publication failures do not fall through to a success receipt. The previous complete journal remains available during staging."
+    },
+    {
+      "subject": "Owner checks and identity assertions",
+      "result": "Read read_host_journal, Jobs.submit, binding/state verification and CLI exit handling. Production checks remain unchanged. Repeat submission now explicitly requires CLI success. The regression requires a string operation ID, preservation of that ID, existing_operation, one Host run and a complete running journal."
+    },
+    {
+      "subject": "Controlled before/after evidence",
+      "result": "Verified ROOT-CAUSAL-PROOF.json, capture hashes and native stdout consistency. Before repair, the paused live-file writer produces an empty journal, CLI exit 1 and custody_lost without an operation ID. After repair, CLI exit is 0 and the repeat preserves its original operation ID with one Host run. The regression body is byte-identical before/after; the Events test function is byte-identical to baseline."
+    },
+    {
+      "subject": "Gate custody and cleanup",
+      "result": "Verified all ten referenced gate-record hashes, log hashes, source pins and successful exits. Composition and bounded parallel runs each pass eight tests; saved-output validation passes seven tests covering 209 responses. The before regression fails at the intended CLI-success assertion after releasing the barrier and collecting the Host. Custody records report no remaining processes. Reviewed fixture shutdown and the bounded barrier."
+    }
+  ],
+  "limitations": [
+    "This accepts the bounded fixture repair for review purposes only; implementation acceptance, integration and publication remain root-owned.",
+    "No builds or tests were executed by this reviewer. Execution conclusions rely on inspected root custody and captures.",
+    "The command-unit gate executes zero tests. Server library and owner binary default runs each leave one test ignored; the separate saved-output gate includes its ignored test.",
+    "Build and postfix custody pin the server binary before Cargo execution; those pins differ from the subsequently rebuilt binary. Captures report the same server build identity before/after, matching later gate pins. Pre-execution pins alone do not attest the executed binary.",
+    "Graph coverage is content-verified but contains unresolved calls; exact source governed material conclusions. No exhaustive graph claim is made.",
+    "Historical intermittent failure remains UNATTRIBUTED. The separately preserved builder loopback permission failure is not causal evidence.",
+    "This review establishes no live provider, Docker, OAuth or product-runtime readiness, and no provider independence.",
+    "The first turn was interrupted at observed cost $1.506578. Completion used the prospectively authorized cumulative $2.00 review cap; final billed cost is unavailable here."
+  ],
+  "identity_binding_acknowledged": {
+    "collector": "01a1a84f-3760-7ce0-b46a-ad5b2f520c20",
+    "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T14-48-21-01a1adaf-2b72-7c51-a915-1b0241b53794.jsonl",
+    "binding": "Acknowledged and session metadata checked.",
+    "observed_settings": "gpt-6-astra / high / default; read-only filesystem, restricted network, approval policy never. Recorded configuration does not establish backend fulfillment."
+  }
+}

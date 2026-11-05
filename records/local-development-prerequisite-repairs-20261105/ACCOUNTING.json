@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-05T22:09:18.233412+00:00",
+  "inference_proxy_usd": 14.830628000000004,
+  "product_reservation_usd": 0.7,
+  "conservative_combined_usd": 15.530628000000004,
+  "root_direct_usd": 5.697028599999998,
+  "components": {
+    "01a1a84f-3760-7ce0-b46a-ad5b2f520c20": 6.520710999999999,
+    "01a1a2c0-7191-76f2-afa1-16d32d5c4883": 2.6128884
+  },
+  "checkpoint_clock_reached": true,
+  "productive_clock_reached": false,
+  "hard_clock_reached": false,
+  "issues": [],
+  "tail": "In-flight and closing calls remain attributable; this is not settled billing."
+}

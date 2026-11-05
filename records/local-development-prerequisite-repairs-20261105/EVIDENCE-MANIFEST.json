@@ -1,0 +1,63 @@
+{
+  "status": "dated_source_bound_local_evidence",
+  "root": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110",
+  "files": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/AUTHORITY.json",
+      "sha256": "3ca5e660a4d7bad0afc3acf234b46aedb7be567860e247b6ee3a1d8efefa16be"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/BUDGET-REBALANCE-APPROVED.json",
+      "sha256": "3a7b1d0e82256eb0ec26243e337758ea4691ed51b63ed82d3c719df64200008f"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/CLI-EXACT-COLLECTION.json",
+      "sha256": "2cfffc669ff5f7d83a057414328c169e831ef24d1102f50ae6590a548d9253da"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/LIVE-ENTRY-ADMISSION.json",
+      "sha256": "2db33e8d6aa61602324967e4b1cf23056328fab0be45c1c7559b7ad34455243d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/EFFECTIVE-ACTIVATION-BINDING.json",
+      "sha256": "00090b520e9ff64f01c2af63522c082ed4870dfc48756b59cf92c6e1f20dd213"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/PREENTRY-CONTROL-INCIDENT.json",
+      "sha256": "da9d28a5bdcebd9b520107bb2b279e00f10630364e840b03b628458d2ea1d6e8"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/PREPARED-MANIFEST.json",
+      "sha256": "9b599536cfda31d5b6fbe2eee3d1075ee0a565d07886c7977ea8934dd3f3de63"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/entry-custody/seeded-runtime.json",
+      "sha256": "8684e763c563d31684af200d719db6d8e61ec70d81a6c0ceea67ed9966219320"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/coding-continuity-result.json",
+      "sha256": "58d47ea44e1cbf50363299b5bec246a46d120aa6fd474b7309ad5220e335467a"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/pi-state.json",
+      "sha256": "a564e35ff7cf1fca045eb7cef5514a5444cf3459d5494635e18a74c04d8f474d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/receipts/454ecac0450f5b42734434e9037a80bb3dcd388ce44169eafdc5340b58a586d0.json",
+      "sha256": "454ecac0450f5b42734434e9037a80bb3dcd388ce44169eafdc5340b58a586d0"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/RUNTIME-TERMINAL-VALIDATION.json",
+      "sha256": "8f5720a3d032c8fd40b4cd2330d620336fec65022ecccc14449c050a9e23e3fe"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/RUNTIME-EXACT-COLLECTION.json",
+      "sha256": "ff3e25a715db110ea461a61f46458709914d906bdaa79318349820d3446b3274"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/AMENDMENT-COST-BOUNDARY.json",
+      "sha256": "81c4b82b79f132ac5b6adc9cffe22280b49248bac73e00a1d26ed875f55f6c28"
+    }
+  ],
+  "credential_contents_included": false
+}

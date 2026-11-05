@@ -1,0 +1,225 @@
+{
+  "schema": "runtime-seeded-terminal-validation/v1",
+  "status": "bounded_live_component_passed",
+  "at": "2026-11-05T22:06:35.416244+00:00",
+  "runtime_owner": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "launch_collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+  "validation_only": true,
+  "admission": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/LIVE-ENTRY-ADMISSION.json",
+    "sha256": "2db33e8d6aa61602324967e4b1cf23056328fab0be45c1c7559b7ad34455243d"
+  },
+  "effective_activation": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/EFFECTIVE-ACTIVATION-BINDING.json",
+    "sha256": "00090b520e9ff64f01c2af63522c082ed4870dfc48756b59cf92c6e1f20dd213"
+  },
+  "approved_rebalance": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/BUDGET-REBALANCE-APPROVED.json",
+    "sha256": "3a7b1d0e82256eb0ec26243e337758ea4691ed51b63ed82d3c719df64200008f"
+  },
+  "custody": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/entry-custody/seeded-runtime.json",
+    "sha256": "8684e763c563d31684af200d719db6d8e61ec70d81a6c0ceea67ed9966219320"
+  },
+  "host_report": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/coding-host-result.json",
+    "sha256": "40028ab1886c4c8d5e031b2c638b2f936381dd6a683b232ac59dffbb9d68d114"
+  },
+  "continuity_report": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/coding-continuity-result.json",
+    "sha256": "58d47ea44e1cbf50363299b5bec246a46d120aa6fd474b7309ad5220e335467a"
+  },
+  "journal": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/pi-state.json",
+    "sha256": "a564e35ff7cf1fca045eb7cef5514a5444cf3459d5494635e18a74c04d8f474d"
+  },
+  "receipt": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/receipts/454ecac0450f5b42734434e9037a80bb3dcd388ce44169eafdc5340b58a586d0.json",
+    "sha256": "454ecac0450f5b42734434e9037a80bb3dcd388ce44169eafdc5340b58a586d0"
+  },
+  "raw_rpc": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/0005-rpc-0.stdout",
+    "sha256": "62bcad1ded73da585c48f42a952f725bb1aeb71f6f70f9b5316442f2e10bc419"
+  },
+  "checks": {
+    "custody_completed": true,
+    "admission_exact": true,
+    "amendment_exact": true,
+    "effective_activation_exact": true,
+    "producer_exact": true,
+    "sole_intended_edit": true,
+    "workspace_only_lib": true,
+    "original_acceptance_pin": true,
+    "independent_validator_passed": true,
+    "workspace_tool_passed": true,
+    "four_actual_completed_requests": true,
+    "raw_usage_matches": true,
+    "provider_model_status": true,
+    "one_physical_reset": true,
+    "two_actual_sessions": true,
+    "fresh_context_no_tools_no_autocompaction": true,
+    "exact_continuity_checkpoint": true,
+    "receipt_integrity_and_ack": true,
+    "artifact_integrity": true,
+    "process_stream_integrity": true,
+    "owned_container_cleanup_recorded": true,
+    "projection_removed": true,
+    "three_containers_only": true,
+    "no_process_leftovers_recorded": true,
+    "semantic_acceptance_stays_pending": true,
+    "no_failures_recorded": true,
+    "rebalance_native_approval": true
+  },
+  "check_count": 27,
+  "artifact_count": 38,
+  "process_count": 25,
+  "source_result": {
+    "original_seed": {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-packet/seed-lib.rs",
+      "sha256": "c5130b950fa4bb12f295bd4801463e8f3e5b1b60679cf7c91a76a95bc2c65b82"
+    },
+    "changed_source": {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/coding-workspace/src/lib.rs",
+      "sha256": "95945425406fb9f85ca46b88d0a9860b3109f10bffff76f29702c7c1e3076ec7"
+    },
+    "validated_source": {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/runtime-seeded-state-01/validation-workspace/src/lib.rs",
+      "sha256": "95945425406fb9f85ca46b88d0a9860b3109f10bffff76f29702c7c1e3076ec7"
+    },
+    "only_change": "Minute suffix scale1000 becomes60000; all other bytes unchanged",
+    "original_validator": {
+      "path": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/runtime/assets/acceptance.rs",
+      "sha256": "e201dd4f4a8cc668f48ecff8c9e7a2208be7e93d3c532ea6965e8832548a0bc7"
+    },
+    "workspace_tests": 3,
+    "independent_validator_tests": 3,
+    "failed_tests": 0
+  },
+  "continuity": {
+    "physical_resets": 1,
+    "sessions": [
+      "01a1adbc-4e14-7214-9875-4c87db80fa42",
+      "01a1adbc-88bb-7214-9875-4c8d0c223fa2"
+    ],
+    "successor_messages_before_recovery": 0,
+    "auto_compaction": false,
+    "tools_after_reset": 0,
+    "recovery_receipt": "native:rehydrate",
+    "continued_parent": "CompletedSettled",
+    "checkpoint_sha256": "e1c46fc112c4fad877fe00d31e8347e66dd7b820d5e1a2f612b81dc52f608e0a",
+    "predecessor_history_external_only": true
+  },
+  "provider": {
+    "provider": "openai-codex",
+    "harness": "Pi SDK1.5.0",
+    "model": "gpt-6-luna",
+    "actual_requests": 4,
+    "raw_completed_responses": 4,
+    "http_statuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "usage": [
+      {
+        "id": 1,
+        "raw": {
+          "input_tokens": 1382,
+          "output_tokens": 148,
+          "total_tokens": 1530
+        }
+      },
+      {
+        "id": 2,
+        "raw": {
+          "input_tokens": 1604,
+          "output_tokens": 33,
+          "total_tokens": 1637
+        }
+      },
+      {
+        "id": 3,
+        "raw": {
+          "input_tokens": 728,
+          "output_tokens": 19,
+          "total_tokens": 747
+        }
+      },
+      {
+        "id": 4,
+        "raw": {
+          "input_tokens": 768,
+          "output_tokens": 5,
+          "total_tokens": 773
+        }
+      }
+    ],
+    "reservation_microusd": 700000,
+    "conservative_catalog_settled_microusd": 1280,
+    "subscription_billing_or_quota": "not measured"
+  },
+  "receipt_delivery": {
+    "receipt_id": "454ecac0450f5b42734434e9037a80bb3dcd388ce44169eafdc5340b58a586d0",
+    "acknowledged": true,
+    "ack_route": "Successful producing process existing Host.acknowledge path, no validation-time mutation",
+    "acceptance": "owner_pending",
+    "domain_effect_settlement": "not_claimed"
+  },
+  "cleanup": {
+    "three_recorded_containers_absent": true,
+    "receipt_bound_absence_process_indices": [
+      13,
+      20,
+      24
+    ],
+    "projected_access_files_absent": true,
+    "empty_private_access_directory_remains": true,
+    "all_recorded_processes_collected": true,
+    "tool_container_exit": 137,
+    "tool_exit_note": "Idle tool container was explicitly stopped after successful exec; its final exit137 is preserved. Workspace command/independent validator/producer each exited0.",
+    "live_docker_reinspection_performed": false
+  },
+  "limits": {
+    "one_new_live_trial": 1,
+    "workspace_calls": 1,
+    "resets": 1,
+    "sdk_sessions": 2,
+    "provider_requests": 4,
+    "containers": 3,
+    "implicit_retries": 0,
+    "observed_seconds": 50.083,
+    "job_seconds_cap": 240,
+    "context_bytes_cap": 24000
+  },
+  "historical_failed_receipt": {
+    "journal": {
+      "path": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/runtime/live-state-admitted/pi-state.json",
+      "sha256": "d879682327791d713adfc101178b84345cbe7a53ce63d1cf5f22c9e74036f1af"
+    },
+    "receipt_id": "aab4b8dfbff7333fec37f0c4424489128ec186002495c9ada90f01fbbe004710",
+    "acknowledged": [],
+    "standing": "Old failed receipt remains pending, untouched. This new success does not close it."
+  },
+  "budget": {
+    "global_cap": 25,
+    "cli_cap": 8,
+    "runtime_cap": 10,
+    "integration_cap": 7,
+    "runtime_inference_node": 3,
+    "runtime_inference_observed_before_validation": 2.3659268,
+    "validation_target_incremental": 0.45,
+    "actual_inference_cost": "Integration canonical ledger; completion tail unsettled",
+    "productive_stop": "2026-11-05T22:24:51.931Z",
+    "hard_stop": "2026-11-05T23:09:51.931Z"
+  },
+  "claim_limits": [
+    "Prescribed seeded single-line edit and continuity qualification, not autonomous coding competence.",
+    "Pressure action was packet-controlled; observed predecessor usage1637/272000, not naturally full context.",
+    "Pi SDK/API hard reset only; no Codex CLI new_context compatibility claim.",
+    "Recorded owned absence/cleanup was verified by hashes; no fresh Docker query during validation.",
+    "No production/domain acceptance, arbitrary workload or release-readiness claim."
+  ],
+  "mutation_this_validation": "Validation report, own continuation and terminal coordination post only; no new product jobs/containers/provider calls/ACK mutation/children/source publication.",
+  "next": "Integration collects exact component validation turn and owns combined readiness, accounting and permitted source publication. Sole live trial is spent; no retries."
+}

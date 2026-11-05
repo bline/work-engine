@@ -1,0 +1,7 @@
+{
+  "at": "2026-11-05T22:00:45.387Z",
+  "root_direct_proxy_usd": 5.188568599999999,
+  "original_integration_cap": 5,
+  "excess_before_amendment": 0.1885685999999991,
+  "basis": "Completed transcript-call events by approval timestamp; no retrospective cap change. Closing/in-flight billing tails are not measured settled dollars."
+}

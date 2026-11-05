@@ -1,0 +1,119 @@
+{
+  "status": "ACCEPTED_PRIVATE_COMMIT_READY_FOR_INTEGRATION_OWNER",
+  "at": "2026-11-05T21:59:52.057334+00:00",
+  "component_owner": "01a1a84f-3760-7ce0-b46a-ad5b2f520c20",
+  "integration_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+  "authority": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/AUTHORITY.json",
+  "parent_authority": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/AUTHORITY.json",
+  "candidate_commit": "09b2fc72612568ff7b95dc5b05962e9e3548ae51",
+  "base_commit": "263402b3aa6a130df3aa49470358dc4f0c9b88af",
+  "workspace": "/home/bline/cbm-work/wt-cli-journal-publication-20261105",
+  "changed_paths": [
+    "rust/crates/work-engine-server/tests/coding_job.rs"
+  ],
+  "candidate_source_sha256": {
+    "rust/crates/work-engine-server/tests/coding_job.rs": "fd08beba343dbc79a63bc3ddf0656e138be69474e86c74e638d92637f6090981"
+  },
+  "bounded_acceptance": "Confirmed fake Host fixture atomic publication, preserved complete journal and repeat-operation identity; stronger repeat-submit diagnostics and deterministic actual-writer regression. Production source and Events test body unchanged.",
+  "validation": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/ROOT-VALIDATION-VERIFIED.json",
+  "review": {
+    "session_id": "01a1adaf-2b72-7c51-a915-1b0241b53794",
+    "actual_model": "gpt-6-astra",
+    "actual_effort": "high",
+    "actual_tier": "default",
+    "grant": "readOnly/networkfalse",
+    "fresh_initial_history": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/review/FRESH-HISTORY.json",
+    "first_turn_status": "interrupted_cost_guard_no_verdict",
+    "completion_turn": "01a1adb7-897c-79d0-b8b4-0ae460a96835",
+    "completion_status": "completed",
+    "report": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/review/REPORT.json",
+    "verdict": "accept",
+    "findings": [],
+    "settings": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/review/completion/SETTINGS-OBSERVED.json",
+    "continuity": "Same isolated reviewer through one completion turn; not a new independence claim. No provider independence."
+  },
+  "builder": {
+    "session_id": "01a1ada0-864c-72d0-afc0-5f9ae6b4ec63",
+    "actual_model": "gpt-6.1-sol",
+    "actual_effort": "medium",
+    "actual_tier": "default",
+    "turns_collected": 2,
+    "grant": "workspaceWrite/networkfalse, private source/reports/cache only",
+    "collections": [
+      "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/builder/COLLECTION.json",
+      "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/builder/turn2/COLLECTION.json"
+    ]
+  },
+  "root": {
+    "session_id": "01a1a84f-3760-7ce0-b46a-ad5b2f520c20",
+    "actual_model": "gpt-6.1-sol",
+    "actual_effort": "xhigh",
+    "actual_tier": "default",
+    "automatic_compaction_recovered": true,
+    "acceptance_context": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/ROOT-CONTEXT-ACCEPTANCE.json",
+    "capacity_decision": "Retain120622 tokens for <=5000-token bounded acceptance/handback, below H2 warning/band; no root transfer or new scope."
+  },
+  "cost": {
+    "canonical_record": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/budget.json",
+    "observed_at": "2026-11-05T22:00:43.664302+00:00",
+    "CLI_inclusive_proxy_usd_observed": 6.480118999999998,
+    "CLI_cap": 8,
+    "builder_observed": 0.3711492,
+    "review_observed": 1.665652,
+    "initial_review_cap": 1.5,
+    "initial_review_guard_observed": 1.506578,
+    "initial_review_allocation_excess_preserved": 0.006578,
+    "prospective_review_cap": 2,
+    "initial_cost_and_preparation_included_once": true,
+    "root_closing_tail": "not settled; belongs to same canonical objective and CLI cap",
+    "units": "Speed-adjusted API-equivalent USD cost proxy, not measured subscription quota or actual bill.",
+    "parent_budget_not_closed": true,
+    "handback_control": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/CONTROL-HANDBACK.json"
+  },
+  "limitations": [
+    "This accepts the bounded fixture repair for review purposes only; implementation acceptance, integration and publication remain root-owned.",
+    "No builds or tests were executed by this reviewer. Execution conclusions rely on inspected root custody and captures.",
+    "The command-unit gate executes zero tests. Server library and owner binary default runs each leave one test ignored; the separate saved-output gate includes its ignored test.",
+    "Build and postfix custody pin the server binary before Cargo execution; those pins differ from the subsequently rebuilt binary. Captures report the same server build identity before/after, matching later gate pins. Pre-execution pins alone do not attest the executed binary.",
+    "Graph coverage is content-verified but contains unresolved calls; exact source governed material conclusions. No exhaustive graph claim is made.",
+    "Historical intermittent failure remains UNATTRIBUTED. The separately preserved builder loopback permission failure is not causal evidence.",
+    "This review establishes no live provider, Docker, OAuth or product-runtime readiness, and no provider independence.",
+    "The first turn was interrupted at observed cost $1.506578. Completion used the prospectively authorized cumulative $2.00 review cap; final billed cost is unavailable here.",
+    "All root execution custody is collected. Command-unit gate has zero tests and ignored tests are disclosed in reviewer report. No failed or blocked evidence has been converted into pass.",
+    "No shared branch/index publication, push, provider, Docker, credential entry or ACK mutation by this CLI lane. Integration owner must rebind destination bytes and own any publication."
+  ],
+  "historical_failure_attribution": "UNATTRIBUTED",
+  "clocks": {
+    "checkpoint": "2026-11-05T21:49:00Z",
+    "checkpoint_sent_before_due": true,
+    "productive_stop": "2026-11-05T22:24:51.931Z",
+    "hard": "2026-11-05T23:09:51.931Z",
+    "no_reset": true
+  },
+  "quiescence": {
+    "all_builder_turns_collected": true,
+    "review_interruption_and_completion_collected": true,
+    "owned_root_test_runners_collected": [
+      48516,
+      53230,
+      68100
+    ],
+    "review_collectors_collected": [
+      57233,
+      8242
+    ],
+    "no_remaining_owned_processes_observed": true,
+    "no_paid_ACK_or_readiness_turn_owed": true,
+    "component_claims_released": true
+  },
+  "next_owner_action": "Integration root collects exact accepted private commit/evidence, binds current destination HEAD and overlapping source, then owns any shared publication under existing user authority. CLI lane stops new dispatch.",
+  "handback": {
+    "at": "2026-11-05T22:01:08.941509+00:00",
+    "board_sequence": 4701,
+    "topic": "implementation:cli-coding-job-adapter:20261105",
+    "direct_destination": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+    "direct_delivery_tool_returned": true,
+    "actual_shared_publication_not_claimed": true,
+    "no_ACK_requested": true
+  }
+}

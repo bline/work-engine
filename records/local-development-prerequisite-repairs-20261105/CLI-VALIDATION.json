@@ -1,0 +1,124 @@
+{
+  "at": "2026-11-05T21:59:52.057083+00:00",
+  "subject": "09b2fc72612568ff7b95dc5b05962e9e3548ae51",
+  "gates": [
+    {
+      "name": "build",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/build.json",
+      "custody_sha256": "9bb62fdfe8fefdbf396679cf2bca47cdd4c5e4d6e2eda4161a1596f57204320a",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "postfix",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/postfix.json",
+      "custody_sha256": "1e5becc923eb98c021b4e7e5e8d4292d29f3daad0492bfbff2f056106fcdcb89",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "composition",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/composition.json",
+      "custody_sha256": "23a6384488d51aa186f0a8cc35a0d16e5efb905506c961f7a6033890d39938a0",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "bounded-parallel",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/bounded-parallel.json",
+      "custody_sha256": "ac12e7cabcfa9a04734381f714d58df34f88e4019cfe842b55fcabab167aea3b",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "server-unit",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/server-unit.json",
+      "custody_sha256": "aa287f518bccbaf81326e9f8845c31d3857d86edc32d6649cf6e56929fc7d011",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "command-unit",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/command-unit.json",
+      "custody_sha256": "e27718f5a255657d758e08cfb35accab0eb82ce08e3c61ded73b64e319e7c1b2",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "fmt",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/fmt.json",
+      "custody_sha256": "892e8e9d2c14aeb3f6cdef08996f10f74d82b2d35b4c8b2bbf2aa47afec0e029",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "clippy",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/gates/clippy.json",
+      "custody_sha256": "06b706c55c1c7e386a07a17728559d96f46475eacd34dca8f4f41a297486a02f",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "job-owner-unit",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/extra/gates/job-owner-unit.json",
+      "custody_sha256": "309b345c782917282a8c15fa4620d0a0de24e84c3600bbc2b82d848e47203c51",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    },
+    {
+      "name": "saved-output-contract",
+      "custody": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/extra/gates/saved-output-contract.json",
+      "custody_sha256": "ef73eec01eb9d2df10752bd853bb7fabfa42d4b0252407f826e3fbee0a8a71dd",
+      "returncode": 0,
+      "source_pins_verified_current": 16,
+      "logs_verified": true,
+      "no_remaining_processes_observed": true
+    }
+  ],
+  "captures": {
+    "before": {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/before/NATIVE-REPLY.json",
+      "sha256": "ba97f0674c1f57ab0b127e01a63b3742869ffd11785abcd6d1e8c6f0dd75666d",
+      "exit": 1,
+      "server_build": "sha256:2fce3e63d3a7bac105a707189293e7424b3df7dcae23602ce203be856e760a71",
+      "command_sha256": "93500a77e26d4506b530f166ccdc9a6db62cb1e0749474444c8a84faf8c52337"
+    },
+    "postfix": {
+      "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/root-execution/postfix/NATIVE-REPLY.json",
+      "sha256": "c43d5b81904f30612f496a57c0020bd8bc4ef4738907be18f40e475133eb0f73",
+      "exit": 0,
+      "server_build": "sha256:2fce3e63d3a7bac105a707189293e7424b3df7dcae23602ce203be856e760a71",
+      "command_sha256": "93500a77e26d4506b530f166ccdc9a6db62cb1e0749474444c8a84faf8c52337"
+    }
+  },
+  "current_binary_sha256": {
+    "work-engine-server": "2fce3e63d3a7bac105a707189293e7424b3df7dcae23602ce203be856e760a71",
+    "work-engine-command": "93500a77e26d4506b530f166ccdc9a6db62cb1e0749474444c8a84faf8c52337"
+  },
+  "prebuild_pin_limitation": "Build/postfix custody inputs are pre-execution snapshots, not executed-binary attestation. Before and after native captures independently report the same server build SHA and captured command SHA; both match current rebuilt binaries and later gate pins. This supplies the run identity used for bounded fixture comparison; no live-runtime inference.",
+  "review": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/review/REPORT.json",
+    "sha256": "a7af607f559675f70819f7d94406597c085df59c96c9670d94f643db9a3ab2db",
+    "verdict": "accept",
+    "findings": []
+  },
+  "review_completion_settings": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/cli-journal-publication/review/completion/SETTINGS-OBSERVED.json"
+}

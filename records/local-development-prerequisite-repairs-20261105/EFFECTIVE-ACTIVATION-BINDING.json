@@ -1,0 +1,10 @@
+{
+  "base_manifest": "9b599536cfda31d5b6fbe2eee3d1075ee0a565d07886c7977ea8934dd3f3de63",
+  "original_activation": "5480f341dc9b2af47078ec61bd38d2adf34031bdb8c9253bdc2bc18e78333467",
+  "effective_activation": {
+    "path": "/home/bline/.local/state/work-engine/local-development-prerequisite-repairs-20261105T2110/activate-effective-cap.py",
+    "sha256": "a8c257d38c02ca709545b141ca8bd941d280e101d2998c96999c166b0cb947d3"
+  },
+  "amendment": "3a7b1d0e82256eb0ec26243e337758ea4691ed51b63ed82d3c719df64200008f",
+  "change": "Only stricter runtime12 to10 guard plus exact amendment/program binding; packet, source, producer and live bounds unchanged."
+}
