@@ -1,4 +1,5 @@
 //! Caller-owned composition of existing context evidence and opaque budget output.
+pub mod stop_cases;
 use serde_json::{Value, json};
 use std::{
     io::Write,
