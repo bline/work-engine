@@ -46,15 +46,15 @@ struct Config {
 struct App {
     repository_claims: Option<claims::Reads>,
     _claims_profile_lock: Option<std::fs::File>,
-    profile: Profile,
+    profile: Option<Profile>,
     credential: Vec<u8>,
     command_profile: Option<Profile>,
     _command_profile_lock: Option<std::fs::File>,
     identity: String,
     build: String,
     slots: Arc<Semaphore>,
-    _lock: std::fs::File,
-    _profile_lock: std::fs::File,
+    _lock: Option<std::fs::File>,
+    _profile_lock: Option<std::fs::File>,
 }
 
 // Reject duplicate keys at every nesting depth before interpreting any request.
@@ -158,6 +158,10 @@ impl App {
                 }
             };
         }
+        // No session or command owner is reachable from claims-only startup.
+        if self.profile.is_none() {
+            return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
+        }
         let is_command = matches!(
             r.operation.as_str(),
             "submit_session_request" | "read_session_operation" | "read_session_result"
@@ -188,7 +192,7 @@ impl App {
             let profile = if is_command {
                 app.command_profile.as_ref().unwrap()
             } else {
-                &app.profile
+                app.profile.as_ref().unwrap()
             };
             if submit {
                 command::submit(profile, r.arguments)
@@ -216,6 +220,12 @@ impl App {
     }
 }
 fn lock_private(path: &str) -> Result<(std::fs::File, Vec<u8>), &'static str> {
+    lock_private_mode(path, libc::LOCK_EX)
+}
+fn lock_private_mode(
+    path: &str,
+    mode: libc::c_int,
+) -> Result<(std::fs::File, Vec<u8>), &'static str> {
     let mut lock = std::fs::OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK)
@@ -225,7 +235,7 @@ fn lock_private(path: &str) -> Result<(std::fs::File, Vec<u8>), &'static str> {
     if !meta.is_file()
         || meta.uid() != unsafe { libc::geteuid() }
         || meta.mode() & 0o077 != 0
-        || unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0
+        || unsafe { libc::flock(lock.as_raw_fd(), mode | libc::LOCK_NB) } != 0
     {
         return Err("invalid_config");
     }
@@ -316,25 +326,51 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     hash.update(&command_bytes);
     hash.update(&claims_bytes);
     let identity = format!("sha256:{:x}", hash.finalize());
-    let executable = std::env::current_exe().map_err(|_| "invalid_build")?;
-    let mut f = std::fs::File::open(executable).map_err(|_| "invalid_build")?;
-    let mut hasher = Sha256::new();
-    std::io::copy(&mut f, &mut hasher).map_err(|_| "invalid_build")?;
-    let build = format!("sha256:{:x}", hasher.finalize());
+    let build = build_identity()?;
     let app = Arc::new(App {
         repository_claims,
         _claims_profile_lock: claims_profile_lock,
-        profile,
+        profile: Some(profile),
         command_profile,
         _command_profile_lock: command_profile_lock,
         credential,
         identity,
         build,
         slots: Arc::new(Semaphore::new(config.max_queries)),
-        _lock: lock,
-        _profile_lock: profile_lock,
+        _lock: Some(lock),
+        _profile_lock: Some(profile_lock),
     });
     Ok((config, app))
+}
+fn build_identity() -> Result<String, &'static str> {
+    let executable = std::env::current_exe().map_err(|_| "invalid_build")?;
+    let mut f = std::fs::File::open(executable).map_err(|_| "invalid_build")?;
+    let mut hasher = Sha256::new();
+    std::io::copy(&mut f, &mut hasher).map_err(|_| "invalid_build")?;
+    Ok(format!("sha256:{:x}", hasher.finalize()))
+}
+fn load_claims_stdio(path: &str) -> Result<Arc<App>, &'static str> {
+    if !std::path::Path::new(path).is_absolute() {
+        return Err("invalid_claim_profile");
+    }
+    let (lock, bytes) =
+        lock_private_mode(path, libc::LOCK_SH).map_err(|_| "invalid_claim_profile")?;
+    let profile = serde_json::from_slice::<claims::ReadProfile>(&bytes)
+        .map_err(|_| "invalid_claim_profile")?;
+    let reads = claims::Reads::load(profile)?;
+    Ok(Arc::new(App {
+        repository_claims: Some(reads),
+        _claims_profile_lock: Some(lock),
+        profile: None,
+        credential: Vec::new(),
+        command_profile: None,
+        _command_profile_lock: None,
+        identity: format!("sha256:{:x}", Sha256::digest(&bytes)),
+        build: build_identity()?,
+        slots: Arc::new(Semaphore::new(1)),
+        _lock: None,
+        _profile_lock: None,
+    }))
 }
 async fn http(mut stream: TcpStream, addr: SocketAddr, app: Arc<App>, timeout: Duration) {
     let result = tokio::time::timeout(timeout, async {
@@ -401,9 +437,10 @@ async fn http(mut stream: TcpStream, addr: SocketAddr, app: Arc<App>, timeout: D
             return Ok((401, json!({"error":"unauthorized"})));
         }
         if request == "GET /ready HTTP/1.1" {
-            let owner = session_query::read_file(&app.profile.owner, 512 * 1024, false);
+            let profile = app.profile.as_ref().unwrap();
+            let owner = session_query::read_file(&profile.owner, 512 * 1024, false);
             let pinned = owner
-                .is_ok_and(|b| format!("{:x}", Sha256::digest(b)) == app.profile.owner_sha256)
+                .is_ok_and(|b| format!("{:x}", Sha256::digest(b)) == profile.owner_sha256)
                 && std::path::Path::new("/usr/bin/python3").is_file();
             let ready = if pinned {
                 app.call(Request {
@@ -561,19 +598,26 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
         if method == "notifications/initialized" && id.is_none() {
             continue;
         }
-        let valid_params = match method {
-            "initialize" => v["params"].as_object().is_some_and(|p| {
-                p.keys().all(|k| {
-                    ["protocolVersion", "capabilities", "clientInfo"].contains(&k.as_str())
-                }) && p.get("protocolVersion").and_then(Value::as_str).is_some()
-                    && p.get("capabilities").is_some_and(Value::is_object)
-                    && p.get("clientInfo").is_some_and(Value::is_object)
-            }),
-            "tools/list" => v
-                .get("params")
-                .is_none_or(|p| p.as_object().is_some_and(|o| o.is_empty())),
-            _ => true,
-        };
+        // MCP request metadata is transport context only. Never merge it into
+        // application arguments or use it to select startup authority.
+        let valid_metadata = !matches!(method, "initialize" | "tools/list" | "tools/call")
+            || v["params"].get("_meta").is_none_or(Value::is_object);
+        let valid_params = valid_metadata
+            && match method {
+                "initialize" => v["params"].as_object().is_some_and(|p| {
+                    p.keys().all(|k| {
+                        ["protocolVersion", "capabilities", "clientInfo", "_meta"]
+                            .contains(&k.as_str())
+                    }) && p.get("protocolVersion").and_then(Value::as_str).is_some()
+                        && p.get("capabilities").is_some_and(Value::is_object)
+                        && p.get("clientInfo").is_some_and(Value::is_object)
+                }),
+                "tools/list" => v.get("params").is_none_or(|p| {
+                    p.as_object()
+                        .is_some_and(|o| o.keys().all(|k| k == "_meta"))
+                }),
+                _ => true,
+            };
         if !valid_params {
             if let Some(id) = id {
                 let resp = json!({"jsonrpc":"2.0","id":id,"error":{"code":-32602,"message":"Invalid params"}});
@@ -581,13 +625,22 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
             }
             continue;
         }
+        // Stdio negotiates our supported protocol; the client decides whether it
+        // can use the returned version. Preserve the legacy entry's exact match.
         let result = match method {
-            "initialize" if !initialized && v["params"]["protocolVersion"] == "2025-06-18" => {
+            "initialize"
+                if !initialized
+                    && (app.profile.is_none()
+                        || v["params"]["protocolVersion"] == "2025-06-18") =>
+            {
                 initialized = true;
                 json!({"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"work-engine-server","version":"0.1.0"}})
             }
             "tools/list" if initialized => {
                 let mut listing = json!({"tools":[{"name":"list_sessions","description":"List sessions","inputSchema":{"type":"object","additionalProperties":false,"properties":{"query":{"type":"string"},"host":{"type":"string"},"limit":{"type":"integer"}}}},{"name":"read_session","description":"Read session","inputSchema":{"type":"object","additionalProperties":false,"properties":{"session_id":{"type":"string"},"entry_id":{"type":"string"},"before":{"type":"integer"},"after":{"type":"integer"},"tail":{"type":"integer"},"roles":{"type":"array","items":{"type":"string"}},"text_offset":{"type":"integer"},"max_chars":{"type":"integer"}},"required":["session_id"]}}]});
+                if app.profile.is_none() {
+                    listing["tools"] = json!([]);
+                }
                 if let Some(claims) = &app.repository_claims {
                     listing["tools"]
                         .as_array_mut()
@@ -608,7 +661,7 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
                     || p.as_object()
                         .unwrap()
                         .keys()
-                        .any(|k| !["name", "arguments"].contains(&k.as_str()))
+                        .any(|k| !["name", "arguments", "_meta"].contains(&k.as_str()))
                     || !p["name"].is_string()
                 {
                     if let Some(id) = id {
@@ -648,10 +701,21 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
     }
 }
 fn main() {
-    let Some(path) = env::args().nth(1) else {
+    let mut args = env::args().skip(1);
+    let Some(entry) = args.next() else {
         eprintln!("configuration required");
         std::process::exit(1);
     };
+    let claims_only = entry == "claims-stdio";
+    let path = if claims_only {
+        args.next().unwrap_or_default()
+    } else {
+        entry
+    };
+    if claims_only && (path.is_empty() || args.next().is_some()) {
+        eprintln!("usage: work-engine-server [claims-stdio] /absolute/profile.json");
+        std::process::exit(1);
+    }
     // The query owner spawns its own helper. Clear ambient profile and provider
     // variables before creating any threads so that helper inherits no broad profile.
     for (name, _) in env::vars_os() {
@@ -662,9 +726,40 @@ fn main() {
         .enable_all()
         .build()
         .expect("runtime");
-    runtime.block_on(run(path));
+    runtime.block_on(async {
+        if claims_only {
+            run_claims_stdio(path).await;
+        } else {
+            run(path).await;
+        }
+    });
 }
 
+async fn run_claims_stdio(path: String) {
+    let app = match load_claims_stdio(&path) {
+        Ok(app) => app,
+        Err(e) => {
+            eprintln!("startup: {e}");
+            std::process::exit(1);
+        }
+    };
+    let (stop_tx, stop_rx) = watch::channel(false);
+    let mut task = tokio::spawn(mcp(app.clone(), stop_rx));
+    let mut term =
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).expect("signal");
+    let failed = tokio::select! {
+        result = &mut task => result.is_err(),
+        _ = tokio::signal::ctrl_c() => {
+            let _ = stop_tx.send(true);
+            task.await.is_err()
+        },
+        _ = term.recv() => {
+            let _ = stop_tx.send(true);
+            task.await.is_err()
+        },
+    };
+    drain(app, 1, failed).await;
+}
 async fn run(path: String) {
     let (config, app) = match load(&path) {
         Ok(v) => v,
@@ -706,12 +801,13 @@ async fn run(path: String) {
         mcp_failed = t.await.is_err();
     }
     while tasks.join_next().await.is_some() {}
+    drain(app, config.max_queries, mcp_failed).await;
+}
+async fn drain(app: Arc<App>, max_queries: usize, mcp_failed: bool) {
     // A timed-out or disconnected transport can drop its join handle while the owner helper still runs.
     match tokio::time::timeout(
         Duration::from_secs(40),
-        app.slots
-            .clone()
-            .acquire_many_owned(config.max_queries as u32),
+        app.slots.clone().acquire_many_owned(max_queries as u32),
     )
     .await
     {
@@ -725,7 +821,7 @@ async fn run(path: String) {
             let _ = app
                 .slots
                 .clone()
-                .acquire_many_owned(config.max_queries as u32)
+                .acquire_many_owned(max_queries as u32)
                 .await;
             std::process::exit(2)
         }

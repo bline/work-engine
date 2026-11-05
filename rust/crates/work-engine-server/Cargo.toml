@@ -13,3 +13,7 @@ serde_json.workspace = true
 sha2.workspace = true
 libc = "=0.2.190"
 tokio = { workspace = true, features = ["io-std"] }
+
+[dev-dependencies]
+work-engine-claims-host = { path = "../work-engine-claims-host" }
+tempfile = "=3.27.0"

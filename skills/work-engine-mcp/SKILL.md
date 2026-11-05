@@ -9,6 +9,31 @@ Use this repository-local MCP adapter when an external model needs to inspect
 already-owned Work Engine state without receiving filesystem or mutation
 authority.
 
+## Native repository facts
+
+`work-engine-server claims-stdio /absolute/read-profile.json` provides the Rust
+repository-fact read surface. The launcher fixes the private profile and its
+repository, root and decision scope; the caller cannot select these in a tool
+request. This entry serves only claims reads, without HTTP, session-query or
+command capabilities, and permits concurrent readers of one profile.
+
+`discover_repository_facts` returns candidates; `resolve_repository_fact`
+selects an exact revision and SHA-256. Configured evidence custody additionally
+provides exact artifact reads and selected-source currency checks. Large
+canonical projections and artifacts have digest-bound byte pages; fragments
+need complete assembly before they support a judgment about the full record.
+Freshness, integrity and source-byte equality do not establish applicability.
+
+Publication and exact-revision reliance remain with the separately admitted
+producer host. This entry admits no grants, initializes no roots, and creates
+no canonical or projection files while reading. Its Rust owner DTO is distinct
+from the filesystem adapter's claim projection. See
+[native repository facts](../claim-evidence/references/repository-facts.md) for
+profile and encoding details. The HTTP/query server can also compose these
+reads through its optional `repository_claims_profile` configuration.
+
+## Slice and retained-review adapter
+
 The adapter is a consumer projection. It does not own slice state, claim
 meaning, transition validity, authority, or completeness. It exposes only:
 

@@ -284,6 +284,16 @@ impl Reads {
             tools.push(json!({"name":"read_repository_evidence","description":"Read an integrity-checked immutable CBM capture in UTF-8 byte pages. Capture verification does not establish proposition truth or applicability. Read-only.","inputSchema":{"type":"object","additionalProperties":false,"required":["sha256"],"properties":{"sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"offset":{"type":"integer","minimum":0},"max_bytes":{"type":"integer","minimum":4,"maximum":32768}}}}));
             tools.push(json!({"name":"check_repository_evidence_currency","description":"Compare only the captured source anchors with the startup-selected checkout. Reports byte equality, change or unavailability; semantic applicability remains not_assessed. Read-only.","inputSchema":{"type":"object","additionalProperties":false,"required":["sha256"],"properties":{"sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}}}}));
         }
+        // These descriptors cover only local, nonmutating repository reads.
+        // Hints describe behavior; startup custody still owns access and scope.
+        for tool in &mut tools {
+            tool["annotations"] = json!({
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false
+            });
+        }
         tools
     }
 }

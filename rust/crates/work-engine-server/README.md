@@ -61,6 +61,43 @@ This covers orderly shutdown, not an abrupt process crash or external effects.
 Restart only reopens the same read-only profile and creates no job settlement
 or recovery claim.
 
+## Claims-only MCP stdio
+
+```text
+work-engine-server claims-stdio /absolute/private/read-profile.json
+```
+
+This entry reads the closed `schema_version: 1` repository read profile described
+below directly. It opens no HTTP listener and needs no server configuration,
+transport credential, session-query profile, command profile or producer grant.
+Only the configured repository read tools are advertised. Their MCP annotations
+identify local, read-only, nondestructive, idempotent behavior; these hints confer
+no authority. Session, command and
+publication calls are refused before reaching their owners. Roots, repository
+identity and decision scope remain fixed startup inputs.
+
+The profile must be an absolute, owner-owned private regular file, with no final
+symlink and within the existing input bound. Each process retains a shared lock
+on that profile through drain, allowing independent clients to use the same
+immutable profile concurrently. Existing HTTP configuration and profile locks
+remain exclusive. Operators control profile bytes and parent-directory custody;
+a profile digest identifies loaded bytes and does not attest authority.
+`server_identity` in this mode hashes the exact read-profile bytes, and
+`server_build` still hashes the executable.
+
+This entry uses the existing newline JSON-RPC parser, claim projection paging,
+errors and shutdown drain. Initialize, tools/list and tools/call accept optional
+object `_meta` transport metadata. Metadata is never merged into application
+arguments and cannot select a root, scope or authority. Unknown request fields,
+nonobject metadata and duplicate keys remain refused.
+Initialization negotiates the server-supported
+`2025-06-18` protocol even when a client offers another version; the client must
+support the returned version to continue. The legacy HTTP/MCP entry retains its
+exact-version initialization behavior. EOF, SIGINT and SIGTERM request shutdown.
+The nonmutating reader refuses missing, invalid or recovery-requiring roots; a
+selected scope cannot discover or resolve facts in another scope. It creates no
+root, projection or recovery files.
+
 ## Repository facts and captured evidence
 
 An optional absolute `repository_claims_profile` in the trusted server

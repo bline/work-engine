@@ -4290,7 +4290,9 @@ dependencies = [
  "serde_json",
  "session-query",
  "sha2",
+ "tempfile",
  "tokio",
+ "work-engine-claims-host",
 ]
 
 [[package]]
