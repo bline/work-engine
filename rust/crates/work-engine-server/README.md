@@ -203,3 +203,62 @@ check/use race is not a hostile-mutator guarantee. Treat the referenced files
 and their parent directories as privately controlled. Result enrichment is from
 the session-events owner; unavailable completion, workers, usage or closure
 remain unavailable rather than inferred from an admission receipt.
+
+## Synthetic task-answer owner (tasks-only checkpoint)
+
+A trusted startup config may set `task_profile` (absolute private file) and
+`task_capability: "synthetic-owner-v1"`, with no `query_profile`. The profile
+selects the database, repository, pinned board program, key policy and actor for
+the accepted `session_task_admission::owner_boundary::SyntheticOwner`; callers
+can never select any of these. HTTP (`POST /v1/session-queries`), MCP tools and
+`LocalClient::task` share one dispatcher with three operations:
+
+- `project_owner_task` `{task_id}` returns the owner projection.
+- `consume_owner_answer` `{selection, signed}` durably consumes an exact signed
+  answer; exact retry returns the identical owner decision.
+- `read_owner_answer` `{selection, signed}` is the immutable reconciliation read;
+  absence is `owner_unknown`, never a no-effect proof. Consume is never retried
+  automatically.
+
+Owner errors surface as `owner_unavailable|owner_invalid|owner_conflict|owner_held|owner_unknown`.
+Synthetic fixed policy and cooperative local Linux only; transport authentication
+never creates approval. Evidence: `tests/task_owner.rs`.
+
+### Task capability limits and unsupported combinations
+
+- `task_profile` with `command_profile`/`command_capability` is rejected at startup
+  (`invalid_config`). The command capability carries native-session submission
+  authority; the task capability is a synthetic, fixed-policy owner. Composing
+  them in one process has no accepted authority model, so it is refused rather
+  than silently combined. Existing command configurations (without a task
+  profile) and session-query configurations are unchanged; a query profile may
+  be combined with a task profile and was tested (`tests/task_owner.rs`).
+- Without a task profile the task operations are disabled: HTTP returns
+  `error.code = invalid_request`, MCP `tools/list` does not advertise them.
+- Task readiness (`GET /ready`, authenticated; `/live` stays liveness only). The
+  accepted owner has no nonmutating availability probe (`project` and `consume`
+  write; `read_exact` needs a real signed selection), and this transport does
+  not invent one. A constructed owner therefore proves only that the profile
+  parsed and the owner opened, so `/ready` never reports the task capability as
+  ready: it returns `task_owner: false` plus
+  `task_owner_readiness: {state, reason, capability}`. `state` is `unavailable`
+  with `reason: board_executable_missing` when the profile's `board.python.path`
+  is not a file, otherwise `unestablished` with
+  `reason: no_nonmutating_owner_probe`. The file-presence check refutes only; it
+  does not verify the pin, script, dependencies, database or repository, so
+  `unestablished` also covers other possible failures. Real operations report
+  their own attributed `owner_*` errors (e.g. `owner_unavailable`). With a query
+  profile, `/ready` returns the query booleans (`list_sessions`, `read_session`)
+  and the task fields together; a healthy query probe does not stand in for the
+  task owner. Configurations without a task profile keep their prior `/ready`
+  bodies. No live readiness claim is made. Evidence: `tests/task_owner.rs`.
+- Task requests share the existing connection, body, output and
+  `max_queries` limits, duplicate-key rejection and envelope identity. A single
+  mutex serialises owner calls inside the process; concurrent exact retries
+  return one decision, only one of which is `historical:false`.
+- `consume_owner_answer` is never retried by the server. A consume that ends
+  `owner_unknown`/`owner_unavailable`, or whose connection dies, is reconciled
+  with `read_owner_answer` on the identical input.
+- Synthetic fixed policy and cooperative local Linux only. Transport
+  authentication never creates approval: the owner re-verifies the signature,
+  deadlines, revocation and replay on every consume.

@@ -8,12 +8,18 @@ publish.workspace = true
 claim-evidence = { path = "../claim-evidence" }
 repository-evidence-cbm = { path = "../repository-evidence-cbm" }
 session-query = { path = "../session-query" }
+session-task-admission = { path = "../session-task-admission" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 libc = "=0.2.190"
+time = { version = "=0.3.55", features = ["parsing"] }
 tokio = { workspace = true, features = ["io-std"] }
 
 [dev-dependencies]
 work-engine-claims-host = { path = "../work-engine-claims-host" }
 tempfile = "=3.27.0"
+base64.workspace = true
+p256 = { version = "=0.13.2", features = ["ecdsa", "pkcs8"] }
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
+time = { version = "=0.3.55", features = ["parsing", "macros"] }

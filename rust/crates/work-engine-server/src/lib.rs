@@ -74,6 +74,24 @@ impl LocalClient {
         self.call(operation, arguments, request_id)
     }
 
+    /// Calls the synthetic task-answer owner through the same public envelope.
+    /// `consume_owner_answer` is never retried here: an unavailable or unknown
+    /// result is reconciled by `read_owner_answer` with the identical input.
+    pub fn task(
+        &self,
+        operation: &str,
+        arguments: Value,
+        request_id: &str,
+    ) -> Result<Value, &'static str> {
+        if !matches!(
+            operation,
+            "project_owner_task" | "consume_owner_answer" | "read_owner_answer"
+        ) {
+            return Err("invalid_request");
+        }
+        self.call(operation, arguments, request_id)
+    }
+
     fn call(
         &self,
         operation: &str,

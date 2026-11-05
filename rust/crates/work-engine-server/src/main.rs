@@ -1,5 +1,6 @@
 mod claims;
 mod command;
+mod task;
 use serde::{
     Deserialize,
     de::{self, MapAccess, SeqAccess, Visitor},
@@ -31,7 +32,8 @@ struct Config {
     version: u8,
     listen: SocketAddr,
     mcp: bool,
-    query_profile: String,
+    #[serde(default)]
+    query_profile: Option<String>,
     credential_file: String,
     #[serde(default)]
     command_profile: Option<String>,
@@ -39,6 +41,10 @@ struct Config {
     command_capability: Option<String>,
     #[serde(default)]
     repository_claims_profile: Option<String>,
+    #[serde(default)]
+    task_profile: Option<String>,
+    #[serde(default)]
+    task_capability: Option<String>,
     max_connections: usize,
     max_queries: usize,
     request_timeout_seconds: u64,
@@ -50,6 +56,8 @@ struct App {
     credential: Vec<u8>,
     command_profile: Option<Profile>,
     _command_profile_lock: Option<std::fs::File>,
+    task_owner: Option<task::Owner>,
+    _task_profile_lock: Option<std::fs::File>,
     identity: String,
     build: String,
     slots: Arc<Semaphore>,
@@ -158,6 +166,40 @@ impl App {
                 }
             };
         }
+        if task::operation(&r.operation) {
+            let Some(_) = self.task_owner.as_ref() else {
+                return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
+            };
+            let app = self.clone();
+            let permit = match self.slots.clone().acquire_owned().await {
+                Ok(p) => p,
+                Err(_) => {
+                    return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":"owner_unavailable"}});
+                }
+            };
+            let result = tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                app.task_owner
+                    .as_ref()
+                    .ok_or("owner_unavailable")?
+                    .call(&r.operation, r.arguments)
+            })
+            .await;
+            return match result {
+                Ok(Ok(value)) if value.to_string().len() <= 1024 * 1024 => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_result":value})
+                }
+                Ok(Ok(_)) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":"output_too_large"}})
+                }
+                Ok(Err(code)) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":code}})
+                }
+                Err(_) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":"owner_unavailable"}})
+                }
+            };
+        }
         // No session or command owner is reachable from claims-only startup.
         if self.profile.is_none() {
             return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
@@ -256,7 +298,18 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     let (lock, bytes) = lock_private(path)?;
     let config: Config = serde_json::from_slice(&bytes).map_err(|_| "invalid_config")?;
     if !std::path::Path::new(path).is_absolute()
-        || !std::path::Path::new(&config.query_profile).is_absolute()
+        || config
+            .query_profile
+            .as_deref()
+            .is_some_and(|p| !std::path::Path::new(p).is_absolute())
+        || config.query_profile.is_none() && config.task_profile.is_none()
+        || config.task_profile.is_some() != config.task_capability.is_some()
+        || config
+            .task_capability
+            .as_deref()
+            .is_some_and(|c| c != task::CAPABILITY)
+        || config.task_profile.is_some()
+            && (config.command_profile.is_some() || config.command_capability.is_some())
         || !std::path::Path::new(&config.credential_file).is_absolute()
         || config.version != 1
         || !matches!(config.listen.ip(), IpAddr::V4(ip) if ip.is_loopback())
@@ -270,12 +323,28 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     {
         return Err("invalid_config");
     }
-    let (profile_lock, p) = lock_private(&config.query_profile).map_err(|_| "invalid_profile")?;
-    let profile: Profile = serde_json::from_slice(&p).map_err(|_| "invalid_profile")?;
-    profile.validate()?;
-    if profile.bridge.is_some() {
-        return Err("invalid_profile");
-    }
+    let (profile_lock, profile, p) = if let Some(path) = &config.query_profile {
+        let (lock, p) = lock_private(path).map_err(|_| "invalid_profile")?;
+        let profile: Profile = serde_json::from_slice(&p).map_err(|_| "invalid_profile")?;
+        profile.validate()?;
+        if profile.bridge.is_some() {
+            return Err("invalid_profile");
+        }
+        (Some(lock), Some(profile), p)
+    } else {
+        (None, None, Vec::new())
+    };
+    let (task_profile_lock, task_owner, task_bytes) = if let Some(path) = &config.task_profile {
+        if !std::path::Path::new(path).is_absolute() {
+            return Err("invalid_task_profile");
+        }
+        let (lock, bytes) = lock_private(path).map_err(|_| "invalid_task_profile")?;
+        let parsed: task::Profile =
+            serde_json::from_slice(&bytes).map_err(|_| "invalid_task_profile")?;
+        (Some(lock), Some(task::Owner::open(parsed)?), bytes)
+    } else {
+        (None, None, Vec::new())
+    };
     if !matches!(
         (&config.command_capability, &config.command_profile),
         (None, None) | (Some(_), Some(_))
@@ -325,20 +394,23 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     hash.update(&p);
     hash.update(&command_bytes);
     hash.update(&claims_bytes);
+    hash.update(&task_bytes);
     let identity = format!("sha256:{:x}", hash.finalize());
     let build = build_identity()?;
     let app = Arc::new(App {
         repository_claims,
         _claims_profile_lock: claims_profile_lock,
-        profile: Some(profile),
+        profile,
         command_profile,
         _command_profile_lock: command_profile_lock,
+        task_owner,
+        _task_profile_lock: task_profile_lock,
         credential,
         identity,
         build,
         slots: Arc::new(Semaphore::new(config.max_queries)),
         _lock: Some(lock),
-        _profile_lock: Some(profile_lock),
+        _profile_lock: profile_lock,
     });
     Ok((config, app))
 }
@@ -365,6 +437,8 @@ fn load_claims_stdio(path: &str) -> Result<Arc<App>, &'static str> {
         credential: Vec::new(),
         command_profile: None,
         _command_profile_lock: None,
+        task_owner: None,
+        _task_profile_lock: None,
         identity: format!("sha256:{:x}", Sha256::digest(&bytes)),
         build: build_identity()?,
         slots: Arc::new(Semaphore::new(1)),
@@ -437,7 +511,10 @@ async fn http(mut stream: TcpStream, addr: SocketAddr, app: Arc<App>, timeout: D
             return Ok((401, json!({"error":"unauthorized"})));
         }
         if request == "GET /ready HTTP/1.1" {
-            let profile = app.profile.as_ref().unwrap();
+            let task = app.task_owner.as_ref().map(task::Owner::readiness);
+            let Some(profile) = app.profile.as_ref() else {
+                return Ok((200, task.unwrap_or_else(|| json!({"task_owner":false}))));
+            };
             let owner = session_query::read_file(&profile.owner, 512 * 1024, false);
             let pinned = owner
                 .is_ok_and(|b| format!("{:x}", Sha256::digest(b)) == profile.owner_sha256)
@@ -455,7 +532,11 @@ async fn http(mut stream: TcpStream, addr: SocketAddr, app: Arc<App>, timeout: D
             } else {
                 false
             };
-            return Ok((200, json!({"list_sessions":ready,"read_session":ready})));
+            let mut body = json!({"list_sessions":ready,"read_session":ready});
+            if let (Some(Value::Object(task)), Some(object)) = (task, body.as_object_mut()) {
+                object.extend(task);
+            }
+            return Ok((200, body));
         }
         if request != "POST /v1/session-queries HTTP/1.1"
             || typ.as_deref() != Some("application/json")
@@ -646,6 +727,12 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
                         .as_array_mut()
                         .unwrap()
                         .extend(claims.tools());
+                }
+                if app.task_owner.is_some() {
+                    listing["tools"]
+                        .as_array_mut()
+                        .unwrap()
+                        .extend(task::tools());
                 }
                 if app.command_profile.is_some() {
                     let tools = listing["tools"].as_array_mut().unwrap();

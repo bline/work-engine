@@ -4295,14 +4295,19 @@ dependencies = [
 name = "work-engine-server"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "claim-evidence",
  "libc",
+ "p256",
  "repository-evidence-cbm",
+ "rusqlite",
  "serde",
  "serde_json",
  "session-query",
+ "session-task-admission",
  "sha2",
  "tempfile",
+ "time",
  "tokio",
  "work-engine-claims-host",
 ]
