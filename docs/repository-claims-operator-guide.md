@@ -196,3 +196,40 @@ sample. An unresolved reference does not establish absent implementation or
 false behavior, and documentation-reference change rows do not provide general
 code-impact analysis. Cleanup stops only the fixture's private CBM daemon and
 retains its evidence.
+
+## Exact handoff across context replacement
+
+`rust/crates/repository-claims-handoff` carries exact claim references through a
+checkpoint and verifies them again through the read-only `claims-stdio` profile.
+It is out of band: it publishes nothing, selects no newest revision and makes no
+applicability decision. The selecting actor chooses the exact claim ID, revision
+ID, revision SHA-256 and, optionally, evidence digests:
+
+```text
+repository-claims-handoff emit --selected-by ROLE --basis "why this exact revision" \
+  --ref CLAIM_ID,REVISION_ID,REVISION_SHA256,EVIDENCE_SHA256
+```
+
+The printed `CLAIMS_HANDOFF_V1` line (under 4096 bytes) is placed in the tool
+output that the checkpoint owner preserves. After recovery,
+`repository-claims-handoff verify --continuity-result FILE --server PATH
+--server-sha256 H --profile PATH --profile-sha256 H` recovers the single line and
+resolves every reference with framed, digest-checked pages. The trusted server
+and profile come from the operator's deployment record (`deployment.json`), never
+from the checkpoint. A historical reference reports `current_head: false` when a
+successor exists; that is not a failure. A wrong digest, missing or ambiguous
+line, unavailable claim or artifact, or corrupt page refuses without fallback and
+without changing the registry. Beyond page assembly, the verifier recomputes the
+returned revision's native digest and request binding, requires the canonical
+encoding and the native envelope, admission, authority and head fields, and
+refuses a missing or mistyped one instead of defaulting it. The report
+(`repository-claims-handoff-resolution-v2`) carries the complete verified native
+owner projection per reference under `owner_projection` (proposition, limitations,
+authority, admission, reliances, baseline and head metadata) next to
+`projection_sha256`; recanonicalising it with the claim-evidence codec reproduces
+that digest. `selection.selected_by` and `basis` are unauthenticated descriptive
+data. Input files must be regular files within the owner's size caps and the
+reader holds at most about two 1 MiB response frames. The result is still `not_assessed`: the consumer
+decides whether to rely, and reassessment of a changed source remains an explicit
+operator action.
+

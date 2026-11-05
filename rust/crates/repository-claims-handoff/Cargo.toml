@@ -1,0 +1,22 @@
+[package]
+name = "repository-claims-handoff"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "repository_claims_handoff"
+
+[[bin]]
+name = "repository-claims-handoff"
+path = "src/main.rs"
+
+[dependencies]
+claim-evidence = { path = "../claim-evidence" }
+serde_json.workspace = true
+
+[dev-dependencies]
+repository-evidence-cbm = { path = "../repository-evidence-cbm" }
+work-engine-claims-host = { path = "../work-engine-claims-host" }
+tempfile = "=3.27.0"
