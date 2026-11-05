@@ -116,6 +116,56 @@ publish a manual successor, while historical revisions and existing exact
 reliances remain resolvable. Change-driven refresh, claim invalidation and
 downstream reopening require separately owned lifecycle behavior.
 
+## Reassessment worklists
+
+The out-of-band claims host can assemble observations for an explicit set of
+exact fact revisions. The command verifies the trusted startup, reads the
+selected canonical revisions and CBM artifacts, and compares captured anchors
+with the checkout selected by the capture binding:
+
+```text
+<claims-host> reassess <producer-startup> <startup-sha256> --binding <capture-binding> --artifacts <artifact-directory> < selections.json
+```
+
+For example, `selections.json` can name one historical revision and a separately
+captured new observation:
+
+```json
+{
+  "schema_version": 1,
+  "selections": [
+    {
+      "claim_id": "<exact-claim-id>",
+      "revision_id": "<exact-revision-id>",
+      "revision_sha256": "<exact-revision-sha256>",
+      "new_capture_sha256": "<optional-new-capture-sha256>"
+    }
+  ]
+}
+```
+
+Omit `new_capture_sha256` when checking existing evidence alone. Input selects
+one to sixteen exact revisions; newer heads are reported rather than followed.
+The binding's repository ID must match the trusted startup. The command reads
+captures already in custody and does not run CBM or capture new observations.
+
+Each item retains the exact claim, projection and evidence identity. Changed
+or unavailable selected anchors can nominate review even when a documentation
+change query returns no rows. Unresolved references, stale new captures and
+partial or unrequested documentation coverage remain visible. An unreadable
+selection or invalid evidence produces an explicit failure, rather than an
+empty result that could look complete. Completeness covers the explicit
+selections only.
+
+Exit status zero means a worklist was produced, including a worklist with
+blocked items. Its completeness and item dispositions carry the observation
+outcome. Invalid startup, binding or request input fails the command.
+
+`no_nomination_observed` is not a semantic all-clear. The consumer judges the
+assertion against its current task and evidence. Publication and reliance stay
+with the separately authorized producer; producing a worklist changes no
+canonical claim, reliance or workflow state.
+
 ## Documentation/code qualification
 
 The `claims_documentation` example creates a private fixture, separate claims

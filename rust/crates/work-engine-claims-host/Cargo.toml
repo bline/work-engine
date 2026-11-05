@@ -10,6 +10,7 @@ test-faults = ["claim-evidence/test-faults"]
 
 [dependencies]
 claim-evidence = { path = "../claim-evidence" }
+repository-evidence-cbm = { path = "../repository-evidence-cbm" }
 serde.workspace = true
 serde_json.workspace = true
 libc = "=0.2.190"

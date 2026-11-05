@@ -45,6 +45,9 @@ Historical reads select the stable repository ID and artifact custody; a later
 CBM project rename or checkout relocation does not change their authorization.
 Each capture still validates its own project, root and publication consistency.
 
+The selected-byte comparison is implemented by
+`rust/crates/repository-evidence-cbm/src/lib.rs::source_currency`.
+
 The `repository-evidence-cbm` executable provides `capture`, `read` and
 `currency` entries with `--binding FILE` and `--artifacts ROOT`. Capture also
 takes `--request FILE`; reads take `--sha256 DIGEST`. The Rust `Binding` and
@@ -65,3 +68,8 @@ The explicit local integration test in
 real CBM, trusted native claims host and two fresh MCP clients. Its required
 binary and private cache/runtime bindings are supplied by the qualification
 launcher; it requires no model/provider job or production claim root.
+
+The claims host's read-only
+[reassessment worklist](../work-engine-claims-host/src/reassessment.rs) reads these
+artifacts and `source_currency` to nominate exact claim revisions for review; it
+neither captures nor edits claims.

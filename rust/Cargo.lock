@@ -4169,6 +4169,7 @@ version = "0.1.0"
 dependencies = [
  "claim-evidence",
  "libc",
+ "repository-evidence-cbm",
  "rusqlite",
  "serde",
  "serde_json",

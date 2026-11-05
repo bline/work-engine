@@ -4,6 +4,7 @@ use claim_evidence::{
     ClaimError, ClaimResult, OpenFiles, RepositoryAdmissionBinding, RepositoryAdmissionPort,
     RepositoryLease, RepositoryProducerStartup, RepositoryReadStartup, sha256_bytes,
 };
+pub mod reassessment;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, File, OpenOptions},
