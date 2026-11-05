@@ -502,6 +502,223 @@ fn command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes() {
     assert_eq!(fx.runs(), 1);
 }
 
+/// Actual Events HTTP MCP -> command process -> server job owner -> existing fake Host.
+/// The unconditional verifier and Host are fixtures; this does not qualify OAuth or live coding.
+#[test]
+#[ignore = "requires COMMAND_BINARY pointing at work-engine-command"]
+fn events_http_mcp_preserves_the_real_job_operation_across_server_restart() {
+    use std::io::{Read, Write};
+
+    struct Events(Child);
+    impl Drop for Events {
+        fn drop(&mut self) {
+            unsafe { libc::kill(self.0.id() as i32, libc::SIGTERM) };
+            let _ = self.0.wait();
+        }
+    }
+    fn rpc(addr: SocketAddr, name: &str, args: Value, authenticated: bool) -> (u16, Value) {
+        let body = json!({"jsonrpc":"2.0","id":1,"method":name,"params":args}).to_string();
+        let mut stream = std::net::TcpStream::connect(addr).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(15)))
+            .unwrap();
+        let authorization = if authenticated {
+            "Authorization: Bearer fixture-token\r\n"
+        } else {
+            ""
+        };
+        write!(stream, "POST /mcp HTTP/1.1\r\nHost: {addr}\r\nContent-Type: application/json\r\n{authorization}Content-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).unwrap();
+        let (headers, body) = response.split_once("\r\n\r\n").unwrap();
+        let status = headers.split_whitespace().nth(1).unwrap().parse().unwrap();
+        (
+            status,
+            if body.is_empty() {
+                Value::Null
+            } else {
+                serde_json::from_str(body).unwrap()
+            },
+        )
+    }
+    fn call(addr: SocketAddr, name: &str, arguments: Value) -> Value {
+        let (status, reply) = rpc(
+            addr,
+            "tools/call",
+            json!({"name":name,"arguments":arguments}),
+            true,
+        );
+        assert_eq!(status, 200, "{reply}");
+        if reply["result"]["isError"] == true {
+            let failure: Value =
+                serde_json::from_str(reply["result"]["content"][0]["text"].as_str().unwrap())
+                    .unwrap();
+            return failure["error"].clone();
+        }
+        reply["result"]["structuredContent"].clone()
+    }
+    fn native(reply: &Value) -> &Value {
+        assert_eq!(reply["disposition"], "native_result", "{reply}");
+        &reply["native_envelope"]["owner_result"]
+    }
+
+    let binary =
+        std::env::var("COMMAND_BINARY").expect("COMMAND_BINARY must name work-engine-command");
+    let mut fx = Fx::new();
+    // Cargo's executable can be hard-linked to its deps entry. Match the existing
+    // bridge fixtures: stage a private single-link copy before pinning it.
+    let staged_binary = fx.root.join("work-engine-command");
+    std::fs::copy(&binary, &staged_binary).unwrap();
+    std::fs::set_permissions(&staged_binary, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let binary = staged_binary;
+    let command_profile = fx.root.join("mcp-command-profile.json");
+    private(
+        &command_profile,
+        json!({"version":1,"kind":"local-service","endpoint":fx.addr.to_string(),
+        "credential_file":fx.cred_file,"timeout_seconds":5})
+        .to_string()
+        .as_bytes(),
+        0o600,
+    );
+    let bridge_profile = fx.root.join("mcp-bridge-profile.json");
+    private(&bridge_profile, json!({"schema":"work-engine.mcp-coding-job-bridge.v1",
+        "subject":"fixture-subject","principal":"fixture-principal","client":"fixture-caller",
+        "command_profile":command_profile,"command_profile_sha256":hex(&std::fs::read(&command_profile).unwrap()),
+        "authorization_ids":["auth-1"],"timeout_seconds":10}).to_string().as_bytes(), 0o600);
+    let verifier = fx.root.join("fixture-verifier.sh");
+    private(&verifier, b"#!/bin/sh\nprintf 'allow\\n'\n", 0o700);
+    let auth = fx.root.join("mcp-auth.json");
+    private(&auth, json!({"resource":"https://mcp.fixture.invalid/mcp","issuer":"https://issuer.fixture.invalid",
+        "write_scope":"events.write","verifier":verifier,"subject":"fixture-subject"}).to_string().as_bytes(), 0o600);
+    let port = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
+    let mut events = Events(
+        Command::new("/usr/bin/python3")
+            .arg(fx.root.join("owner.py"))
+            .args([
+                "--codex-home",
+                fx.root.join("codex").to_str().unwrap(),
+                "--claude-home",
+                fx.root.join("claude").to_str().unwrap(),
+                "--state-dir",
+                fx.root.join("mcp-state").to_str().unwrap(),
+                "serve-http",
+                "--listen",
+                &addr.to_string(),
+                "--path",
+                "/mcp",
+                "--auth-config",
+                auth.to_str().unwrap(),
+                "--coding-job-only",
+                "--principal",
+                "fixture-principal",
+            ])
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .env("CODING_JOB_BRIDGE_ENABLED", "1")
+            .env("CODING_JOB_BINARY", &binary)
+            .env(
+                "CODING_JOB_BINARY_SHA256",
+                hex(&std::fs::read(&binary).unwrap()),
+            )
+            .env("CODING_JOB_CONFIG", &bridge_profile)
+            .env(
+                "CODING_JOB_CONFIG_SHA256",
+                hex(&std::fs::read(&bridge_profile).unwrap()),
+            )
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let until = Instant::now() + Duration::from_secs(10);
+    loop {
+        if std::net::TcpStream::connect(addr).is_ok() {
+            break;
+        }
+        if let Some(status) = events.0.try_wait().unwrap() {
+            let mut error = String::new();
+            events
+                .0
+                .stderr
+                .take()
+                .unwrap()
+                .read_to_string(&mut error)
+                .unwrap();
+            panic!("Events exited {status}: {error}");
+        }
+        assert!(Instant::now() < until, "Events startup timed out");
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(rpc(addr, "tools/list", json!({}), false).0, 401);
+    let (status, initialized) = rpc(
+        addr,
+        "initialize",
+        json!({"protocolVersion":"2025-06-18",
+        "capabilities":{},"clientInfo":{"name":"job-composition-test","version":"1"}}),
+        true,
+    );
+    assert_eq!(status, 200, "{initialized}");
+    assert!(
+        initialized["result"]["protocolVersion"].is_string(),
+        "{initialized}"
+    );
+    let (_, listed) = rpc(addr, "tools/list", json!({}), true);
+    let mut names: Vec<_> = listed["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|tool| tool["name"].as_str().unwrap())
+        .collect();
+    names.sort_unstable();
+    assert_eq!(
+        names,
+        [
+            "cancel_coding_job",
+            "read_coding_job_operation",
+            "read_coding_job_result",
+            "submit_coding_job"
+        ]
+    );
+    let read = json!({"request_id":REQ,"authorization_id":"auth-1","job_credential":CRED});
+    let submit = json!({"request_id":REQ,"authorization_id":"auth-1","job_credential":CRED,
+        "job_sha256":fx.job_sha,"packet_sha256":fx.packet_sha});
+    let first = call(addr, "submit_coding_job", submit.clone());
+    let id = native(&first)["operation_id"].clone();
+    assert!(id.is_string(), "{first}");
+    fx.wait_collected();
+    // Repeat only after collection: this test does not settle the separately recorded parallel race.
+    let again = call(addr, "submit_coding_job", submit);
+    assert_eq!(native(&again)["operation_id"], id);
+    assert_eq!(native(&again)["entry"], "existing_operation");
+    assert!(fx.stop().success());
+    fx.start();
+    let observed = call(addr, "read_coding_job_operation", read.clone());
+    assert_eq!(native(&observed)["operation_id"], id);
+    let result = call(addr, "read_coding_job_result", read);
+    assert_eq!(native(&result)["operation"]["operation_id"], id);
+    assert_eq!(native(&result)["acceptance"], "owner_pending");
+    assert_eq!(native(&result)["domain_effect_settlement"], "not_claimed");
+    let denied = call(
+        addr,
+        "read_coding_job_operation",
+        json!({"request_id":REQ,
+        "authorization_id":"auth-1","job_credential":"wrong-credential-0123456789abcdefghijklmnop"}),
+    );
+    assert_eq!(denied["disposition"], "native_owner_error", "{denied}");
+    assert_eq!(denied["entry_uncertain"], "not_established");
+    assert_eq!(
+        fx.runs(),
+        1,
+        "MCP retry and server restart must not launch another Host"
+    );
+}
+
 /// A server that returns a well-formed transport envelope around an owner result that breaks the
 /// published contract must be rejected by the public client, not passed on.
 #[test]

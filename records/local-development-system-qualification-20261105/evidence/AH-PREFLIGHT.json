@@ -1,0 +1,7 @@
+{
+  "freeze_entries_verified": 102,
+  "frozen_root": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate",
+  "original_plan_sha256": "f4c415e04c40ba0287279c3c77b02b4a01560b5b2c3ee6578f6c9f25a2a6bd92",
+  "new_plan": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/ah-offline-plan.json",
+  "difference": "Only select common-disabled/common-mcp and replace each output path with a new private path. No historical stores or answers used."
+}

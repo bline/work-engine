@@ -1,0 +1,58 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "events-http-job-owner",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-server",
+    "--test",
+    "coding_job",
+    "events_http_mcp_preserves_the_real_job_operation_across_server_restart",
+    "--",
+    "--ignored",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/local-development-integration-target",
+    "COMMAND_BINARY": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3824670,
+  "inputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/PRE-RUN-SOURCE.json",
+      "type": "file",
+      "mode": 436,
+      "length": 708436,
+      "sha256": "fe8b5f482629e3c0e7cc80126d78c8c5400975ca9711ff9805a036b0d3fa0183"
+    }
+  ],
+  "timeout_s": 180.0,
+  "pid": 3824671,
+  "pgid": 3824671,
+  "started_at": "2026-11-05T19:32:05.273844Z",
+  "ended_at": "2026-11-05T19:32:11.550351Z",
+  "duration_s": 6.277,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/joined/events-http-job-owner.stdout",
+    "length": 300,
+    "sha256": "0bc455c7763480b4ee1ead43b2e32f7661aff4b72a423a5dd2ba1b6e0ff38cec"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/joined/events-http-job-owner.stderr",
+    "length": 2660,
+    "sha256": "52296ef86e8133fb5f984f70eb1e6eda27883751154d0413b76ebed7bbc231ea"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

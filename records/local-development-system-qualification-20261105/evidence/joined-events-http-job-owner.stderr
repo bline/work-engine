@@ -1,0 +1,34 @@
+   Compiling bitflags v2.13.2
+   Compiling rustix v1.1.5
+   Compiling getrandom v0.4.3
+   Compiling linux-raw-sys v0.12.1
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling rusqlite v0.37.0
+   Compiling claim-evidence v0.1.0 (/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/claim-evidence)
+   Compiling session-task-admission v0.1.0 (/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/session-task-admission)
+   Compiling tempfile v3.27.0
+   Compiling work-engine-claims-host v0.1.0 (/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/work-engine-claims-host)
+   Compiling work-engine-server v0.1.0 (/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/work-engine-server)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.08s
+     Running tests/coding_job.rs (/home/bline/cbm-work/local-development-integration-target/debug/deps/coding_job-d5b5b2dd1e8b5852)
+
+thread 'events_http_mcp_preserves_the_real_job_operation_across_server_restart' (3825898) panicked at crates/work-engine-server/tests/coding_job.rs:641:13:
+Events exited exit status: 1: Traceback (most recent call last):
+  File "/tmp/.tmpWCatoG/owner.py", line 4654, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/tmp/.tmpWCatoG/owner.py", line 4591, in main
+    return serve_http(Server(homes, args.principal, policy, context=context, bridge=Bridge.from_environment(), delivery=DeliveryHelper.from_environment(), observation=ObservationHelper.from_environment(), coding=CodingHelper.from_environment(), coding_job=CodingJobBridge.from_environment()), args.listen, args.path, HttpAuth(args.auth_config) if args.auth_config else None, args.authenticated_read_only, args.observation_only, args.coding_only, args.coding_job_only)
+                                                                                                                                                                                                                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/tmp/.tmpWCatoG/owner.py", line 2800, in from_environment
+    return cls(*values)
+  File "/tmp/.tmpWCatoG/owner.py", line 2766, in __init__
+    binary_fd, config_fd = self._open_pins()
+                           ~~~~~~~~~~~~~~~^^
+  File "/tmp/.tmpWCatoG/owner.py", line 2482, in _open_pins
+    raise ValueError("unsafe delivery pin")
+ValueError: unsafe delivery pin
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p work-engine-server --test coding_job`

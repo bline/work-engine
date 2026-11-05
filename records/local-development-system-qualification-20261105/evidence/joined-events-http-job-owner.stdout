@@ -1,0 +1,11 @@
+
+running 1 test
+test events_http_mcp_preserves_the_real_job_operation_across_server_restart ... FAILED
+
+failures:
+
+failures:
+    events_http_mcp_preserves_the_real_job_operation_across_server_restart
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 1.11s
+

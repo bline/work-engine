@@ -1,0 +1,12 @@
+
+running 7 tests
+test startup_refuses_other_capabilities_and_half_configured_jobs ... ok
+test job_capability_is_distinct_and_authority_is_not_the_bearer ... ok
+test public_client_rejects_malformed_owner_results ... ok
+test command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes ... ok
+test server_stop_during_a_running_job_cancels_collects_and_reconciles_the_same_state ... ok
+test client_wait_expiry_server_stop_and_restart_keep_one_original_operation ... ok
+test events_http_mcp_preserves_the_real_job_operation_across_server_restart ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.32s
+

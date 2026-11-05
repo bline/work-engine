@@ -1,0 +1,211 @@
+{
+  "schema": "local-development-qualification-candidate/v1",
+  "standing": "Joined offline process test and baseline checks passed; actual development acceptance held",
+  "at": "2026-11-05T19:19:41.059750+00:00",
+  "source_baseline": "d44b1bbfafa9f78e4ab65ae732c2597501518da4",
+  "integration_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+  "live_run_authorized": false,
+  "components": {
+    "server_web": {
+      "server_commit": "839b8c4ee9f2c5f83d4b5ba342997021f29b8f35",
+      "web_commit": "285638858097d656797709fb376aecc41d5b0240",
+      "server_sha256": "587c24a0d387906b29174043ad3178ec4e035031fc1ce0bcac40f1efda97b5b4",
+      "qualification": "Fresh synthetic task/query browser+HTTP/MCP/CLI/Rust scenarios; original selected binaries only"
+    },
+    "events_consumer": {
+      "commit": "d44b1bbfafa9f78e4ab65ae732c2597501518da4",
+      "qualification": "17 tests: real private command binary against fake local HTTP backend; no native runtime"
+    },
+    "coding_cli": {
+      "commit": "b7ddfd4c8c4c63f293aa3418a0202a687196ea04",
+      "qualification": "Published source and compatibility-pin integration; final offline7/7 here passes. Prior parallel failure remains unexplained; live activation not established.",
+      "published_commit": "4463033789c905f80b59c6c59d4cbbe6e22192fd"
+    },
+    "coding_continuity": {
+      "commit": "ea337a46fdefd6eb3a262e6acdf6a0ca28b7031e",
+      "merge": "d5666c9305d495768f65c5c465dc08e85e6d7169",
+      "qualification": "Reviewed source; actual live reset/recovery passed, coding task failed, validator not entered, receipt ACK unresolved"
+    }
+  },
+  "checks": [
+    {
+      "name": "events-mcp-real-cli",
+      "custody": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/events-mcp/events-mcp-real-cli.json",
+      "custody_sha256": "2437a31099587fc9cb53916716fe837885e76e12202b71d2d594e38ceaf52b67",
+      "exit_code": 0,
+      "leftover_processes": [],
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/events-mcp/events-mcp-real-cli.stdout",
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/events-mcp/events-mcp-real-cli.stderr",
+        "length": 2744,
+        "sha256": "410e584f9f4f2fb67859f14f8868bafc8d8a1b423f00a7913eca216598d6ec26"
+      },
+      "input_count": 3
+    },
+    {
+      "name": "common-disabled",
+      "custody": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-disabled.json",
+      "custody_sha256": "d3eac62248bcecc0a79a45375b791a3eb978b1a3b54e2d287b2467fc8d95f67d",
+      "exit_code": 0,
+      "leftover_processes": [],
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-disabled.stdout",
+        "length": 2387,
+        "sha256": "0f883d3c25248a41ed5d1842e36af6c098c2045bee65e910715725da8208a3dc"
+      },
+      "stderr": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-disabled.stderr",
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "input_count": 72
+    },
+    {
+      "name": "common-mcp",
+      "custody": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-mcp.json",
+      "custody_sha256": "679d387f81f01e253186fba704c4b86684ac59ae414b59743e5b71eddab1d3e5",
+      "exit_code": 0,
+      "leftover_processes": [],
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-mcp.stdout",
+        "length": 2387,
+        "sha256": "0f883d3c25248a41ed5d1842e36af6c098c2045bee65e910715725da8208a3dc"
+      },
+      "stderr": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-mcp.stderr",
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "input_count": 72
+    },
+    {
+      "name": "all-job-composition",
+      "custody": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/all-job-composition.json",
+      "custody_sha256": "bdf27289f465e71e179cadf0ece79f9d36f99a7206c9ce021fab64e28ed2ecba",
+      "exit_code": 0,
+      "leftover_processes": [],
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/all-job-composition.stdout",
+        "length": 657,
+        "sha256": "a31ccc4c38aae332930f9aa26b15247c4ade42ea6c90e69bb372543271d613b4"
+      },
+      "stderr": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/all-job-composition.stderr",
+        "length": 340,
+        "sha256": "357a6856831caa368d0f997cdec4d54d80fff3a2f19164ed03b8d5a4cd8d2e4c"
+      }
+    },
+    {
+      "name": "server-clippy",
+      "custody": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-clippy.json",
+      "custody_sha256": "08b73ffd8b5709075155a63d7cd3c418a9bdfce4b032b36816bdaa243e3f271e",
+      "exit_code": 0,
+      "leftover_processes": [],
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-clippy.stdout",
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-clippy.stderr",
+        "length": 207,
+        "sha256": "ebd26212e3bde8e305a2703fbf9fd766a450f3ed542bdd9361c291b518fae6a9"
+      }
+    },
+    {
+      "name": "server-fmt",
+      "custody": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-fmt.json",
+      "custody_sha256": "d58b9070e326af11367ebb678698c9da409d1a6801b861a397cb6d697612bbb2",
+      "exit_code": 0,
+      "leftover_processes": [],
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-fmt.stdout",
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-fmt.stderr",
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "blocking_gates": [
+    {
+      "id": "D1",
+      "owner": "01a1a84f-3760-7ce0-b46a-ad5b2f520c20",
+      "outcome": "Publication completed at44630337. Earlier parallel repeated-submit failure still needs classification or repair with raw response and owner acceptance; another passing run does not explain it."
+    },
+    {
+      "id": "D2",
+      "owner": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "outcome": "Supported producing-binary receipt acknowledgement/reconciliation route and a new exact admitted seeded-source coding+validator trial. Current producer has --execute only; historical ACK stays pending."
+    },
+    {
+      "id": "D3",
+      "owner": "01a195d4-b7a7-77f2-ba65-277669c0ec97",
+      "outcome": "Accepted task/authorization-to-selected-real-coding-job contract and supported Host profile. Current Events/CLI profile is offline-fixture-only."
+    },
+    {
+      "id": "D4",
+      "owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+      "outcome": "One useful actual Work Engine task fits the supported workspace/tool/recovery contract; tests, independent review, explicit acceptance and guarded publication consume its exact outputs."
+    }
+  ],
+  "later_daily_use": {
+    "owner": "01a1a3dc-57d5-7273-bd12-86ae25aed635",
+    "dependency": "Separate opt-in versioned tool/claims-after-reset contract; preserve existing one-tool v4 profile and lifecycle authority"
+  },
+  "previous_failed_live_pilot": "/home/bline/.local/state/work-engine/s10-live-continuity-resume-20261105T1507/completion/RUNTIME-RESULT.json",
+  "limits": [
+    "Existing synthetic browser/signature evidence does not qualify deployed identity or native execution authority.",
+    "Fresh baseline scenarios are separate compositions, not one accepted live development system.",
+    "No Stytch issuance/refresh, remote activation, new installation policy or user-state migration is qualified.",
+    "Private worktrees, binaries and existing browser caches remain reproduction prerequisites."
+  ],
+  "admitted_source_baseline": "4463033789c905f80b59c6c59d4cbbe6e22192fd",
+  "updated_at": "2026-11-05T19:40:50.916821+00:00",
+  "test_change": {
+    "path": "rust/crates/work-engine-server/tests/coding_job.rs",
+    "sha256": "b01d3a261e73cedc3a91e984380a0ce2de443d4c694169f66f7a2c97ad05e01f",
+    "test": "events_http_mcp_preserves_the_real_job_operation_across_server_restart",
+    "production_changes": false
+  },
+  "joined_scope": {
+    "events_http_mcp": "actual process",
+    "rust_command": "actual process built from admitted source",
+    "rust_job_owner": "actual server process built from admitted source",
+    "host": "existing fake Host fixture",
+    "token_verifier": "unconditional fixture",
+    "live_provider": false,
+    "real_coding_acceptance": false
+  },
+  "final_checks": {
+    "events_bridge_tests": 17,
+    "ah_web_scenarios": 2,
+    "job_composition_tests": 7,
+    "strict_server_clippy": "passed",
+    "server_fmt": "passed",
+    "leftover_processes": 0
+  },
+  "review": {
+    "mode": "root source review and executable functional checks",
+    "independent_review": false,
+    "acceptance": "Bounded test addition and dated integration plan only"
+  },
+  "runtime_owner_decision": "S10-OWNER-DECISION.json",
+  "initial_harness_failures": [
+    {
+      "record": "offline/joined/events-http-job-owner.json",
+      "cause": "Cargo executable has hardlinks; staged a private single-link copy as the existing bridge fixture does."
+    },
+    {
+      "record": "offline/joined/events-http-job-owner-staged.json",
+      "cause": "Test decoded the success envelope for a native error; corrected test to use the MCP error content envelope."
+    }
+  ]
+}

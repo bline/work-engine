@@ -1,0 +1,72 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "server-fmt",
+  "argv": [
+    "cargo",
+    "fmt",
+    "-p",
+    "work-engine-server",
+    "--",
+    "--check"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/local-development-integration-target",
+    "COMMAND_BINARY": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3839573,
+  "inputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/FINAL-SOURCE-v2.json",
+      "type": "file",
+      "mode": 436,
+      "length": 708436,
+      "sha256": "212c097acef2c3cda6fd1a2b999e90deed412e2eeb2d4fed17b4d9c8a869b530"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/work-engine-server/tests/coding_job.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 31687,
+      "sha256": "b01d3a261e73cedc3a91e984380a0ce2de443d4c694169f66f7a2c97ad05e01f"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 247911,
+      "sha256": "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd"
+    },
+    {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command",
+      "type": "file",
+      "mode": 509,
+      "length": 10316824,
+      "sha256": "72bbf8e31e0678a7eabe2b350f088d1181d19b2534d976db599635abde9a7d3c"
+    }
+  ],
+  "timeout_s": 60,
+  "pid": 3840404,
+  "pgid": 3840404,
+  "started_at": "2026-11-05T19:37:01.157412Z",
+  "ended_at": "2026-11-05T19:37:01.422182Z",
+  "duration_s": 0.265,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-fmt.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/server-fmt.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,13 @@
+{"ah_delivery_receipts": [{"state": "owner_verified_decision", "standing": "held", "answer_retained": true, "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH held/unavailable: {\"owner_error\": {\"code\": \"owner_invalid\"}}", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH held/unavailable: {\"owner_error\": {\"code\": \"owner_invalid\"}}", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH held/unavailable: {\"owner_error\": {\"code\": \"owner_invalid\"}}", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH held/unavailable: {\"owner_error\": {\"code\": \"owner_invalid\"}}", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH held/unavailable: {\"owner_error\": {\"code\": \"owner_invalid\"}}", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH exact published selection unavailable or ambiguous", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "fixture lost ACK after actual owner commit", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "owner_verified_decision", "standing": "held", "answer_retained": true, "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH configuration changed; original delivery remains held", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH configuration changed; original delivery remains held", "execution_admission": "untested"}]}
+{"ah_delivery_receipts": [{"state": "held_or_unknown", "answer_retained": true, "reason": "AH transport unavailable or uncertain: URLError", "execution_admission": "untested"}]}
+PASS actual AH composed queryCLI/publicRust/MCPoptional rendered consumer views, signed negatives, lost ACK/restart/read-only reconciliation, held retention and outage; execution untested

@@ -1,0 +1,52 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build-command-and-server",
+  "argv": [
+    "cargo",
+    "build",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-command",
+    "-p",
+    "work-engine-server"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/local-development-integration-target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3819562,
+  "inputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/PRE-RUN-SOURCE.json",
+      "type": "file",
+      "mode": 436,
+      "length": 708436,
+      "sha256": "fe8b5f482629e3c0e7cc80126d78c8c5400975ca9711ff9805a036b0d3fa0183"
+    }
+  ],
+  "timeout_s": 360.0,
+  "pid": 3819563,
+  "pgid": 3819563,
+  "started_at": "2026-11-05T19:31:05.957370Z",
+  "ended_at": "2026-11-05T19:31:18.311549Z",
+  "duration_s": 12.354,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/joined/build-command-and-server.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/joined/build-command-and-server.stderr",
+    "length": 3221,
+    "sha256": "76e229a0dca5859387454a6572ca8fdb7a02a96cce2fe0431573bb91ab83fc5d"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

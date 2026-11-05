@@ -1,0 +1,22 @@
+test_extra_missing_and_unbound_arguments_never_start_the_command (test_coding_job_bridge.Arguments.test_extra_missing_and_unbound_arguments_never_start_the_command) ... ok
+test_default_off_discovery_is_unchanged (test_coding_job_bridge.DisabledAndPins.test_default_off_discovery_is_unchanged) ... ok
+test_enabled_tools_annotations_and_no_issuance_surface (test_coding_job_bridge.DisabledAndPins.test_enabled_tools_annotations_and_no_issuance_surface) ... ok
+test_pin_and_binding_failures_fail_closed (test_coding_job_bridge.DisabledAndPins.test_pin_and_binding_failures_fail_closed) ... ok
+test_principal_and_helper_binding (test_coding_job_bridge.DisabledAndPins.test_principal_and_helper_binding) ... ok
+test_job_only_http_requires_auth_and_lists_only_job_tools (test_coding_job_bridge.HttpSurface.test_job_only_http_requires_auth_and_lists_only_job_tools) ... ok
+test_exact_native_input_and_result_projection (test_coding_job_bridge.RealCommand.test_exact_native_input_and_result_projection) ... ok
+test_invalid_backend_shapes_are_unknown_and_never_resubmitted (test_coding_job_bridge.RealCommand.test_invalid_backend_shapes_are_unknown_and_never_resubmitted) ... ok
+test_native_owner_error_is_passed_through_not_reinterpreted (test_coding_job_bridge.RealCommand.test_native_owner_error_is_passed_through_not_reinterpreted) ... ok
+test_profile_replacement_after_verification_cannot_redirect_the_cli (test_coding_job_bridge.RealCommand.test_profile_replacement_after_verification_cannot_redirect_the_cli) ... ok
+test_profile_swap_after_pinning_is_refused_before_execution (test_coding_job_bridge.RealCommand.test_profile_swap_after_pinning_is_refused_before_execution) ... ok
+test_repeat_read_result_and_cancel_projections_keep_nulls_and_unknowns (test_coding_job_bridge.RealCommand.test_repeat_read_result_and_cancel_projections_keep_nulls_and_unknowns) ... ok
+test_timeout_surfaces_uncertainty_then_original_operation_is_readable (test_coding_job_bridge.RealCommand.test_timeout_surfaces_uncertainty_then_original_operation_is_readable) ... ok
+test_hanging_client_is_killed_and_reported_unknown (test_coding_job_bridge.StubProtocol.test_hanging_client_is_killed_and_reported_unknown) ... ok
+test_oversize_and_malformed_output_are_unknown (test_coding_job_bridge.StubProtocol.test_oversize_and_malformed_output_are_unknown) ... ok
+test_stdin_is_exactly_the_fixed_operation_arguments (test_coding_job_bridge.StubProtocol.test_stdin_is_exactly_the_fixed_operation_arguments) ... ok
+test_stdout_eof_allows_a_natural_exit_before_the_deadline (test_coding_job_bridge.StubProtocol.test_stdout_eof_allows_a_natural_exit_before_the_deadline) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 10.846s
+
+OK

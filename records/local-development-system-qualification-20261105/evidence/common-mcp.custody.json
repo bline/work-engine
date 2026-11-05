@@ -1,0 +1,551 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "common-mcp",
+  "argv": [
+    "python3",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_composition.py",
+    "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/common-mcp/output",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/synthetic-fixture-producer",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/work-engine-server"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-ah3-web-20261105T1550",
+  "env_clear": false,
+  "env_set": {
+    "A42_OWNER_SOURCE": "/home/bline/cbm-work/wt-ah3-qualification-20261105T1550",
+    "A42_SIGN_ADAPTER": "mailbox",
+    "AH3_WEB_SOURCE": "/home/bline/cbm-work/wt-ah3-web-20261105T1550",
+    "AH3_MCP": "1",
+    "AH3_CLIENT_BINARY": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/ah3_client",
+    "AH3_QUERY_BINARY": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/work-engine-query"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3768632,
+  "inputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_client.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 872,
+      "sha256": "022e39c041da40f2f05bfdd4174bde2c87cb662e3abfefebebb612c9562b67da"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_profiles.py",
+      "type": "file",
+      "mode": 436,
+      "length": 3636,
+      "sha256": "6bae3a5f101513107cf177d0d1ef5ddfc1861c2adc5ffa0790accd7dc97aa470"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/accepted-fixture-producer.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 7337,
+      "sha256": "87eec0facbc30d3d23c6353a1d5e9e7f5c8957c81cbc2dfb8a8a24e0a187bf39"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/owner-inputs.accepted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5357,
+      "sha256": "9d0dd086f4920d00b4c2e25ef079a67da52bb8d81856f52bdc07ee4306cb4091"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/owner-input-differences.json",
+      "type": "file",
+      "mode": 436,
+      "length": 526,
+      "sha256": "b38d51007e27fee5764f78f0bc9ffe8ef64da1d83c9bfb757a2ec8f9fefb3378"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_composition.py",
+      "type": "file",
+      "mode": 436,
+      "length": 14784,
+      "sha256": "236d6ba165ee069c9e535e79ea6bfd0875b4885e7a98c14ba7e0b21179daaa73"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/accepted-web-checkpoint.diff",
+      "type": "file",
+      "mode": 436,
+      "length": 5788,
+      "sha256": "70b7937d07c700e3d74cc514758a04d8d38f08a9e6e99b1416d25a749425bf75"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_queries.py",
+      "type": "file",
+      "mode": 436,
+      "length": 11031,
+      "sha256": "f42d2165cda037e84ff1997785ffc4e04e299cfd8246d7f3e5fcb6cdb8cc41b8"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/work-engine-server",
+      "type": "file",
+      "mode": 509,
+      "length": 50895360,
+      "sha256": "587c24a0d387906b29174043ad3178ec4e035031fc1ce0bcac40f1efda97b5b4"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/work-engine-query",
+      "type": "file",
+      "mode": 509,
+      "length": 9706576,
+      "sha256": "a994c4bb7a5200d9b9c47b944a436dcd10e13b2f3adc949662c66089e1d92d4d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/ah3_client",
+      "type": "file",
+      "mode": 509,
+      "length": 7848184,
+      "sha256": "566c395f706edc8c2d994b6848672cd828b5f8b66738b92f77ec718c333bea63"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/bin/synthetic-fixture-producer",
+      "type": "file",
+      "mode": 509,
+      "length": 26715224,
+      "sha256": "843dbd098329a37ffd23e361445da25f595bfba36349af8d8190663ab693c1de"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/use-browser-application.js",
+      "type": "file",
+      "mode": 436,
+      "length": 1369,
+      "sha256": "2c1969ca5e680caa015dc026ae92ec72030fa96cca385dffccec6fac5e3e8d4a"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/App.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 9124,
+      "sha256": "cafb283e40cc849688b77021838c60a72389fa471778ced9f188ae8cd257ed66"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/main.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 471,
+      "sha256": "11e6f773e5991b05695cdc46a7c94d8b64555f44c2c18f9968634b5ef92adc83"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/task-review.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 3709,
+      "sha256": "c4d770e495368877dccecb74338bfdf001697d895a7f0484eb65a9e7a611d5d3"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/task-contract.js",
+      "type": "file",
+      "mode": 436,
+      "length": 8474,
+      "sha256": "7a77015c955b532e47b0c1a7eed3aa1a3a448e7f7bd41a1698cad6b3510580bd"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/config.js",
+      "type": "file",
+      "mode": 436,
+      "length": 529,
+      "sha256": "b664d7d1cc0ac72897afa1f675deb70511b488c09ea384b01ad5cb7ccc9153ff"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/ui.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 3482,
+      "sha256": "d5efd8caaf28bf3c26d9101386a81fe5c5030272a0d9eca77995efd13e79f573"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/style.css",
+      "type": "file",
+      "mode": 436,
+      "length": 36500,
+      "sha256": "18835a1c6e5acb3f96f5b8bfba9d2a1bccf9132beb4f39cdb0f4a0354a695910"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/task-history.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 5189,
+      "sha256": "fdaa6b8b2b7600a0437e46f51cb3d3e043051d48fadcc432ee57194345074d79"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/approvals.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 26857,
+      "sha256": "5f44726d4e3815161f90f890fd3191caaf3027a3fd68e804fd12d2d76ad2b9b9"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/auth.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 4132,
+      "sha256": "96a901036646f4703f1fde1c845fb085e784ee89fa9b2c6be8824ad6aa1e9551"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/work-dashboard.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 11264,
+      "sha256": "049600f0e318a3808af7db1e4c442f6e6009726f4019fb8e16f4d4fb5b4eaa59"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/view-url.js",
+      "type": "file",
+      "mode": 436,
+      "length": 469,
+      "sha256": "417c091fcaef528918373a1fd02a16f87019963372e3de9298a92e319f19f688"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/browser-application.js",
+      "type": "file",
+      "mode": 436,
+      "length": 5032,
+      "sha256": "a73676f8276e5e2b00f5ab6bef4a444240fab9acaf4948bb4b95ed4cc3223334"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/task-projection.js",
+      "type": "file",
+      "mode": 436,
+      "length": 6436,
+      "sha256": "7bfdfca270a0a2838a5b520946869ce80ecd023561d0023339d87cdd4a8e90ea"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/src/work-dashboard-data.js",
+      "type": "file",
+      "mode": 436,
+      "length": 1100,
+      "sha256": "72551972548c9d950c13d8b18a30f99629147379ca22eeef9a3d5c2b0c727a0e"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/test_owner_answer.py",
+      "type": "file",
+      "mode": 436,
+      "length": 7745,
+      "sha256": "9d1c73481eda64292facc35e91c3929a09ad53858d1f4da2df40daed7fe84a7d"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/test_ah_consumer.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2570,
+      "sha256": "b3f10c312d89154f6ef2ef9a514f4bc57e13c61abd0f58cea6795bb16bfc9877"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/test_approval_sync.py",
+      "type": "file",
+      "mode": 436,
+      "length": 8004,
+      "sha256": "4bd2ee821642102e86a54cca183457b0bb9a2cc8e76020a6d20bd74cb58e4d4e"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/owner_answer.py",
+      "type": "file",
+      "mode": 436,
+      "length": 7111,
+      "sha256": "7b786b3d3652e8d36324f9a3a3779b7075fe9ca76297f6f65b1d49d61a2cd13f"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/approval_sync.py",
+      "type": "file",
+      "mode": 509,
+      "length": 31446,
+      "sha256": "b7ba1d905c48f8daf3a9295a4c94c3af9e00bd166ae96b05cc9e00873f580e14"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/test_ah_routing.py",
+      "type": "file",
+      "mode": 436,
+      "length": 5452,
+      "sha256": "338b2cefb97edec456c5ac9d23d569b83569448f71ed164fd5fe2a34a0aab191"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/systemd/devwits-approval-sync.timer",
+      "type": "file",
+      "mode": 436,
+      "length": 197,
+      "sha256": "9b11e56cd9d31616aa0b5554e36c52c91b0e10fa7042e4b023db6ce3088b3e7a"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/systemd/devwits-approval-sync.service",
+      "type": "file",
+      "mode": 436,
+      "length": 320,
+      "sha256": "87c782a383047561261ea665db3cdeae0202be7d9378c41c588923e3830a11c6"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/api-auth.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 3399,
+      "sha256": "7b86fe4fefc71b314c519ee6aa3595f741e64ce61c21408ba317759d53536e0e"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/backend-interface.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 2178,
+      "sha256": "74872865f8b74d23f80a41972edeef614682101c904962750db5400da438cd88"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/redis-storage.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 4441,
+      "sha256": "7458b2f80ef9fe665551bef349805e5011c05576f30035aa1fd88c4f7906b579"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/browser-application.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 4244,
+      "sha256": "b9c9b9823e2ccf47820d43c04ddcdc5a824d6f633bb5dd05e99bcc0a1358db99"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-browser-checkpoint.mjs",
+      "type": "file",
+      "mode": 436,
+      "length": 5714,
+      "sha256": "23fd0f799b5d72dad4a30661e0ce66c54e6028d6db6db3ec24a785e52386d6c8"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/work-dashboard.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 1661,
+      "sha256": "a36f0acf1162eabb7ba55defbfded2800863fd670d2df013caed0a4e32df8f2f"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ui-tasks.smoke.mjs",
+      "type": "file",
+      "mode": 436,
+      "length": 8867,
+      "sha256": "22dc12b261f20260ae341c10509deaecccda1df554ab2d2f6d34629d5a5c6b33"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ui-frontend-flow.smoke.mjs",
+      "type": "file",
+      "mode": 436,
+      "length": 13487,
+      "sha256": "53c6bb965f0bb87e37b4766cf45a0e9d9556ca066c5b45ab39508d973e8d88f0"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/prepare-ah-fixture.py",
+      "type": "file",
+      "mode": 436,
+      "length": 1162,
+      "sha256": "1a11875a2c1caad4407068f0b90b355a38f350dfcbee36cb145eaa61c9bf6a75"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ui-work-dashboard.smoke.mjs",
+      "type": "file",
+      "mode": 436,
+      "length": 15521,
+      "sha256": "db4169d359dba148768427e2861830a42c1632c0557aada8b9313f92dd831fd0"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ui-adapter.smoke.mjs",
+      "type": "file",
+      "mode": 436,
+      "length": 3950,
+      "sha256": "09a992bf2feb8b13be980b7664c7b2fe6e9d64eda40adbc3fad3cd6b1134a3e7"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/task-contract.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 6185,
+      "sha256": "874cc27a8980f14c7a14a730d7d2a45c73a30b3798adbc960f2bd8ad83b12d2a"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/task-projection.test.js",
+      "type": "file",
+      "mode": 436,
+      "length": 4002,
+      "sha256": "7cd7d4a8c22861458d4100afa12fe7fd14863bbcfc7bbcc9626e71595b406453"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-checkpoint.py",
+      "type": "file",
+      "mode": 436,
+      "length": 14295,
+      "sha256": "31a865203eea125a41000108518d8f025cdd6e5d2a0583ec867e092e4789a12b"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/adapter-preview/index.html",
+      "type": "file",
+      "mode": 436,
+      "length": 181,
+      "sha256": "d89acd6d709c06384e16143da34b237a65e5bdcd4e8acebd0a833958296e9c7e"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/adapter-preview/main.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 2106,
+      "sha256": "a82ee1c182a1be203ee0cb07ffa6d792a42b55dbdb07d157ed705f366dd3455e"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/adapter-preview/replacement.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 2048,
+      "sha256": "790204fcd1c1674cb802c5a864b7a3427fd14464413d3a0f0e7c5200ec9c3977"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/adapter-preview/fixture-adapter.js",
+      "type": "file",
+      "mode": 436,
+      "length": 409,
+      "sha256": "ca58e9ebe4150bdc6f67f05ca2c7f36a0e31152c4983a8fbdb2e3579cacac911"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-fixture-producer/Cargo.lock",
+      "type": "file",
+      "mode": 436,
+      "length": 23219,
+      "sha256": "9ec7a350185e806e44102627f5ba9da61864a9c3a8cc6a92f8837cd806f56734"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-fixture-producer/owner-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5357,
+      "sha256": "9d0dd086f4920d00b4c2e25ef079a67da52bb8d81856f52bdc07ee4306cb4091"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-fixture-producer/Cargo.toml.in",
+      "type": "file",
+      "mode": 436,
+      "length": 346,
+      "sha256": "cdc1ea550f500e27a482da65e826326743542234874291d8c6e2d5a6559ce1a8"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-preview/index.html",
+      "type": "file",
+      "mode": 436,
+      "length": 282,
+      "sha256": "527ab7a1dd17e4e513a3a9617177d0f5b5b83babd32d1b180d15d26faa667b1c"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-preview/app.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 1007,
+      "sha256": "388aca63b3e3f1f85102489d69700eeecc00667ff6fc40ae96f098517a4b1f8c"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/backend-projection-v3.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6253,
+      "sha256": "4ffbc008a05eb7152d86486bb8a253e8199f067ada4294666be841ff1ae3453b"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/browser-task-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3886,
+      "sha256": "a0cd0c21e56b005a32f8bc7e78fec6154d27ba6960257c52e8fbd55bac77cdb9"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/backend-projection-v4.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6264,
+      "sha256": "d3a1fc4fbfe20079542504585662774a6c72dffc4d1b4baf24e699cc4508ab56"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/rust-observed-projection.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5507,
+      "sha256": "97db5bfea376ed44cc0170568ccfcb08ee61f99a8e0e675368d0ab6c3787a314"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/rust-held-projection.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4548,
+      "sha256": "571d1b42706d05da7ee5f70d333a769ec38dd1cceda52d1754e7cdb748acc575"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/browser-answer-vector.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1360,
+      "sha256": "d6acf9d9d79ea4fbde8ef56f7ca8365b8b7ca57abd662b508536721f5117dc2d"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/fixtures/task.js",
+      "type": "file",
+      "mode": 436,
+      "length": 4717,
+      "sha256": "5f020cd493242519d0ded884eede3036c2577328e08c6517aeabd8d1b28c1ca2"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/tests/ah-fixture-producer/src/main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 7337,
+      "sha256": "87eec0facbc30d3d23c6353a1d5e9e7f5c8957c81cbc2dfb8a8a24e0a187bf39"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/package.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1345,
+      "sha256": "d179f34f90aae763c52f9c23abed03b5a4fbfaba376a4d2a843d85cd68ba13a8"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/package-lock.json",
+      "type": "file",
+      "mode": 436,
+      "length": 55323,
+      "sha256": "8aa5d66854cbbe63dde658accc3c1de3d6a4389ef70a2a1896878462bf783170"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/docs/ui-gallery/preview/stytch.jsx",
+      "type": "file",
+      "mode": 436,
+      "length": 2229,
+      "sha256": "37f9d9b6191ddbab95e087049bc5edebd49649befee045e851821e8f8d307bee"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-web-20261105T1550/docs/ui-gallery/preview/webauthn.js",
+      "type": "file",
+      "mode": 436,
+      "length": 561,
+      "sha256": "9eb5689bc60c38e4949137477e2bb98263a87c352080c03ddc9a28922491c184"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-ah3-qualification-20261105T1550/skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 232743,
+      "sha256": "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d"
+    }
+  ],
+  "timeout_s": 180,
+  "pid": 3769655,
+  "pgid": 3769655,
+  "started_at": "2026-11-05T19:13:35.552511Z",
+  "ended_at": "2026-11-05T19:13:48.743600Z",
+  "duration_s": 13.191,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-mcp.stdout",
+    "length": 2387,
+    "sha256": "0f883d3c25248a41ed5d1842e36af6c098c2045bee65e910715725da8208a3dc"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/ah/common-mcp.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "events-http-job-owner-staged",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-server",
+    "--test",
+    "coding_job",
+    "events_http_mcp_preserves_the_real_job_operation_across_server_restart",
+    "--",
+    "--ignored",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/local-development-integration-target",
+    "COMMAND_BINARY": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3827356,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/work-engine-server/tests/coding_job.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 30921,
+      "sha256": "0f087ea132e260b22169f6a09813f5d1c8de5586bf045573d01309225f9b3a6b"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 247911,
+      "sha256": "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd"
+    },
+    {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command",
+      "type": "file",
+      "mode": 509,
+      "length": 10316824,
+      "sha256": "72bbf8e31e0678a7eabe2b350f088d1181d19b2534d976db599635abde9a7d3c"
+    }
+  ],
+  "timeout_s": 180.0,
+  "pid": 3827357,
+  "pgid": 3827357,
+  "started_at": "2026-11-05T19:32:37.048572Z",
+  "ended_at": "2026-11-05T19:32:41.524982Z",
+  "duration_s": 4.476,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/joined/events-http-job-owner-staged.stdout",
+    "length": 300,
+    "sha256": "ced8e51529d0bbed1cf6144558afbb8bc0602b8617e93af26858e1f9fa2c98db"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/joined/events-http-job-owner-staged.stderr",
+    "length": 731,
+    "sha256": "f6e928e380f7e2ba6040834d7d680feaf563f45e75f8f66607304560bf6242e7"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

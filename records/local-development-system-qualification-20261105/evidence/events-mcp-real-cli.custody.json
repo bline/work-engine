@@ -1,0 +1,67 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "events-mcp-real-cli",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "skills/session-events/tests",
+    "-p",
+    "test_coding_job_bridge.py",
+    "-v"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-integration-20261105",
+  "env_clear": false,
+  "env_set": {
+    "CODING_JOB_COMMAND_BINARY": "/home/bline/cbm-work/cli-job-adapter-target/debug/work-engine-command"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3764465,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 247911,
+      "sha256": "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/skills/session-events/tests/test_coding_job_bridge.py",
+      "type": "file",
+      "mode": 436,
+      "length": 29808,
+      "sha256": "4697352a7415dccb85cfdc1bb177af096f6f7b144b6c4490b91139ec05c01ea5"
+    },
+    {
+      "path": "/home/bline/cbm-work/cli-job-adapter-target/debug/work-engine-command",
+      "type": "file",
+      "mode": 509,
+      "length": 10319256,
+      "sha256": "2bc5f6df1dab4459b59874c691c504725f95b52f989635a4d9b3f53425c3a3bb"
+    }
+  ],
+  "timeout_s": 180.0,
+  "pid": 3764466,
+  "pgid": 3764466,
+  "started_at": "2026-11-05T19:12:45.989949Z",
+  "ended_at": "2026-11-05T19:12:57.030500Z",
+  "duration_s": 11.041,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/events-mcp/events-mcp-real-cli.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/events-mcp/events-mcp-real-cli.stderr",
+    "length": 2744,
+    "sha256": "410e584f9f4f2fb67859f14f8868bafc8d8a1b423f00a7913eca216598d6ec26"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

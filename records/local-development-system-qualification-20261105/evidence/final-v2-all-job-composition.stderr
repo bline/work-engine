@@ -1,0 +1,3 @@
+   Compiling work-engine-server v0.1.0 (/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/work-engine-server)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+     Running tests/coding_job.rs (/home/bline/cbm-work/local-development-integration-target/debug/deps/coding_job-d5b5b2dd1e8b5852)

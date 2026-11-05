@@ -1,0 +1,76 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "all-job-composition",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-server",
+    "--test",
+    "coding_job",
+    "--",
+    "--include-ignored"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/local-development-integration-target",
+    "COMMAND_BINARY": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3839573,
+  "inputs": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/FINAL-SOURCE-v2.json",
+      "type": "file",
+      "mode": 436,
+      "length": 708436,
+      "sha256": "212c097acef2c3cda6fd1a2b999e90deed412e2eeb2d4fed17b4d9c8a869b530"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/rust/crates/work-engine-server/tests/coding_job.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 31687,
+      "sha256": "b01d3a261e73cedc3a91e984380a0ce2de443d4c694169f66f7a2c97ad05e01f"
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-integration-20261105/skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 247911,
+      "sha256": "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd"
+    },
+    {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command",
+      "type": "file",
+      "mode": 509,
+      "length": 10316824,
+      "sha256": "72bbf8e31e0678a7eabe2b350f088d1181d19b2534d976db599635abde9a7d3c"
+    }
+  ],
+  "timeout_s": 180,
+  "pid": 3839620,
+  "pgid": 3839620,
+  "started_at": "2026-11-05T19:36:55.966573Z",
+  "ended_at": "2026-11-05T19:37:00.791778Z",
+  "duration_s": 4.825,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/all-job-composition.stdout",
+    "length": 657,
+    "sha256": "a31ccc4c38aae332930f9aa26b15247c4ade42ea6c90e69bb372543271d613b4"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-integration-20261105T1907/offline/final-v2/all-job-composition.stderr",
+    "length": 340,
+    "sha256": "357a6856831caa368d0f997cdec4d54d80fff3a2f19164ed03b8d5a4cd8d2e4c"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}
