@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
   "crates/work-engine-query",
+  "crates/work-engine-command",
   "crates/session-task-admission",
   "crates/session-delivery",
   "crates/session-query",

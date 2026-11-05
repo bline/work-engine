@@ -7,7 +7,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-const OWNER_SHA: &str = "d5d51ab3a870a6efa82f5824a4e3cb9ba5468263724f6068c0d46b5ec586b8a2";
+const OWNER_SHA: &str = "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d";
 const OWNER_LIMIT: usize = 512 * 1024;
 const OUTPUT_LIMIT: usize = 1024 * 1024;
 const HELPER: &str = include_str!("../command_owner.py");
