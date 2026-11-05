@@ -74,6 +74,27 @@ impl LocalClient {
         self.call(operation, arguments, request_id)
     }
 
+    /// Calls the distinct coding-job capability. Submission returns durable identity promptly;
+    /// the reads reconcile the same original operation. Job authority is the explicit job
+    /// credential in the arguments, never the service bearer.
+    pub fn job(
+        &self,
+        operation: &str,
+        arguments: Value,
+        request_id: &str,
+    ) -> Result<Value, &'static str> {
+        if !matches!(
+            operation,
+            "submit_coding_job"
+                | "read_coding_job_operation"
+                | "read_coding_job_result"
+                | "cancel_coding_job"
+        ) {
+            return Err("invalid_request");
+        }
+        self.call(operation, arguments, request_id)
+    }
+
     fn call(
         &self,
         operation: &str,
