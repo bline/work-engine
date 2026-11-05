@@ -60,7 +60,23 @@ fn host_script(state: &Path, runs: &Path) -> String {
         r#"#!/bin/sh
 S='{s}'; R='{r}'
 T="$(dirname "$S")"
-journal() {{ sed -e "s/@P@/$1/" -e "s/@R@/$2/" "$T/journal.tpl" > "$S/pi-state.json"; }}
+journal() {{
+  J="$(mktemp "$S/.pi-state.json.XXXXXX")" || exit 70
+  {{
+    if [ "$1" = collected ] && [ -e "$T/pause-publication" ]; then
+      : > "$T/publication-open"
+      n=0
+      while [ -e "$T/pause-publication" ]; do
+        n=$((n + 1)); [ "$n" -lt 200 ] || {{ rm -f "$J"; exit 70; }}
+        sleep 0.05
+      done
+    fi
+    sed -e "s/@P@/$1/" -e "s/@R@/$2/" "$T/journal.tpl"
+  }} > "$J" && mv "$J" "$S/pi-state.json" || {{
+    rm -f "$J"
+    exit 70
+  }}
+}}
 receipt() {{ cat "$T/receipt.json"; echo; }}
 case "$2" in
  run) echo run >> "$R"; [ -e "$S/pi-state.json" ] && exit 1
@@ -470,6 +486,12 @@ fn command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes() {
             .args([profile.to_str().unwrap(), op, mode, file.to_str().unwrap()])
             .output()
             .unwrap();
+        eprintln!(
+            "CLI {op} {mode}: exit={:?}; stdout={}; stderr={}",
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
         (
             out.status.success(),
             String::from_utf8(out.stdout).unwrap(),
@@ -486,7 +508,11 @@ fn command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes() {
             && out.contains("Settlement: not established by the adapter"),
         "stdout: {out}; stderr: {err}"
     );
-    let (_, again, _) = run("submit_coding_job", "--json", &submit);
+    let (again_ok, again, again_err) = run("submit_coding_job", "--json", &submit);
+    assert!(
+        again_ok,
+        "repeat submit failed: stdout: {again}; stderr: {again_err}"
+    );
     assert_eq!(
         serde_json::from_str::<Value>(&again).unwrap()["envelope"]["owner_result"]["operation_id"],
         id
@@ -500,6 +526,96 @@ fn command_cli_submits_and_reads_the_same_operation_in_json_and_human_modes() {
     assert!(!ok && out.contains("invalid_invocation"));
     fx.wait_collected();
     assert_eq!(fx.runs(), 1);
+}
+
+/// Pause the actual Host writer after opening its output, before producing collected JSON.
+/// This proves publication behavior in the fixture, not the cause of a historical failure.
+#[test]
+#[ignore = "requires COMMAND_BINARY pointing at work-engine-command"]
+fn command_repeat_during_host_journal_publication_preserves_identity() {
+    let binary = std::env::var("COMMAND_BINARY").expect("COMMAND_BINARY is required");
+    let fx = Fx::new();
+    let profile = fx.root.join("cli-profile.json");
+    private(
+        &profile,
+        json!({"version":1,"kind":"local-service",
+        "endpoint":fx.addr.to_string(),"credential_file":fx.cred_file,
+        "timeout_seconds":5})
+        .to_string()
+        .as_bytes(),
+        0o600,
+    );
+    let submit = fx.root.join("submit.json");
+    private(
+        &submit,
+        json!({"request_id":REQ,"authorization_id":"auth-1",
+        "job_credential":CRED,"job_sha256":fx.job_sha,
+        "packet_sha256":fx.packet_sha})
+        .to_string()
+        .as_bytes(),
+        0o600,
+    );
+    let run = || {
+        Command::new(&binary)
+            .args([
+                profile.to_str().unwrap(),
+                "submit_coding_job",
+                "--json",
+                submit.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap()
+    };
+    let pause = fx.root.join("pause-publication");
+    std::fs::write(&pause, b"").unwrap();
+    let first = run();
+    assert!(first.status.success(), "first submit: {first:?}");
+    let first_reply: Value = serde_json::from_slice(&first.stdout).unwrap();
+    let id = first_reply["envelope"]["owner_result"]["operation_id"].clone();
+    assert!(id.is_string(), "{first_reply}");
+    let journal = fx.root.join("state/pi-state.json");
+    let until = Instant::now() + Duration::from_secs(8);
+    while !fx.root.join("publication-open").exists() {
+        assert!(
+            Instant::now() < until,
+            "Host writer never reached publication barrier"
+        );
+        thread::sleep(Duration::from_millis(10));
+    }
+    let observed = std::fs::read(&journal).unwrap();
+    let again = run();
+    let reply: Value = serde_json::from_slice(&again.stdout).unwrap();
+    let capture = json!({"original_operation_id":id,"host_runs":fx.runs(),
+        "first_exit":first.status.code(),"first_stdout":String::from_utf8_lossy(&first.stdout),
+        "first_stderr":String::from_utf8_lossy(&first.stderr),
+        "exit":again.status.code(),"stdout":String::from_utf8_lossy(&again.stdout),
+        "stderr":String::from_utf8_lossy(&again.stderr),"native_reply":reply,
+        "journal_while_writer_paused":String::from_utf8_lossy(&observed),
+        "host_script":std::fs::read_to_string(fx.root.join("host.sh")).unwrap(),
+        "journal_template":std::fs::read_to_string(fx.root.join("journal.tpl")).unwrap(),
+        "command_sha256":hex(&std::fs::read(&binary).unwrap())});
+    println!("publication capture: {capture}");
+    if let Ok(path) = std::env::var("JOURNAL_PUBLICATION_CAPTURE") {
+        std::fs::write(path, serde_json::to_vec_pretty(&capture).unwrap()).unwrap();
+    }
+    // Release before assertions so even the expected before-fix failure collects the Host.
+    std::fs::remove_file(pause).unwrap();
+    let done = fx.wait_collected();
+    assert_eq!(fx.runs(), 1, "{capture}");
+    assert_eq!(done["owner_result"]["operation_id"], id, "{capture}");
+    assert!(again.status.success(), "{capture}");
+    let visible: Value =
+        serde_json::from_slice(&observed).expect("last valid journal stays visible");
+    assert_eq!(visible["phase"], "running");
+    assert_eq!(visible["removed"], false);
+    assert_eq!(
+        reply["envelope"]["owner_result"]["operation_id"], id,
+        "{capture}"
+    );
+    assert_eq!(
+        reply["envelope"]["owner_result"]["entry"],
+        "existing_operation"
+    );
 }
 
 /// Actual Events HTTP MCP -> command process -> server job owner -> existing fake Host.
