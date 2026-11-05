@@ -1,0 +1,108 @@
+{
+  "schema": "s10-context-adapter-qualification-result-v1",
+  "standing": "dated bounded qualification record; not a release or live-runtime grant",
+  "status": "accepted",
+  "at": "2026-11-05T03:19:58.042291+00:00",
+  "profile": "pi-1.5.0-runtime-fresh-session-v1",
+  "source_manifest": {
+    "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/worker/repair/owned-source-manifest.json",
+    "sha256": "9a3b8e8a9abc6d023306bfb6178f1f6f2e3f5b33a20507be93fe107d9509d3b9"
+  },
+  "source_archive": {
+    "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/worker/repair/owned-source-freeze/subject.tar",
+    "sha256": "be1163a9d7df1f7772574026ccd59d9f5b8f9ef9d512f644faed064bf6ab8e2b"
+  },
+  "repair_result": {
+    "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/worker/repair/repair-result.json",
+    "sha256": "4b84275b36e1f0d39be12079522217248abe366f4249c0a4ffeffdbccdd9e1bd"
+  },
+  "independent_review": {
+    "first": {
+      "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/review-r1-collected.json",
+      "sha256": "645901476e1158473552b5f22f531075ff3a84b76a00396ba66b47c9cc98b92a"
+    },
+    "retained_recheck": {
+      "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/review-r2-collected.json",
+      "sha256": "c697bc5bc0748b504e131e877025a7bbb1c8d09e082bebbc4859cf4f53c35f68"
+    },
+    "outcome": "All3P2 closed; no remainingP1/P2; native readOnly/networkfalse"
+  },
+  "qualification": {
+    "actual": "Pi1.5SDK newSession in disposable networknone Docker, labelled fakeprovider only",
+    "result": {
+      "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/worker/repair/runtime/qualification-result.json",
+      "sha256": "1332c5ac4e7910dd4aedb6d3f12e678fa078e6ffa12d1cb2ec7b0eca54dedff4"
+    },
+    "properties": [
+      "old conversation canary absent from actual successor provider input",
+      "exact durable checkpoint rehydrated under original lifecycle owner",
+      "same logical subject and fresh physical session lineage",
+      "queued input order and unanswered human fixture preserved",
+      "pressure and collection subscriptions rebound before recovery",
+      "reconciled same-state reopen denies another reset"
+    ],
+    "cumulative_counts": {
+      "entries": 3,
+      "fake_responses": 5,
+      "actual_replacements": 2,
+      "live_calls": 0
+    },
+    "processes": "all child and container exit/absence collected; no further entry authorized"
+  },
+  "validation": {
+    "owner_tests": "protocol table and existing owner regression evidence pass;2 existing ignored",
+    "boundary_tests": "2 transport witness tests pass",
+    "lint": "strict all-target Clippy passes",
+    "build_custody": {
+      "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/worker/repair/build-final-custody/summary.json",
+      "sha256": "74e2b912e215c6c6ccdfda28418bcb5c812bc00d299b28dbf88b738bcac602ac"
+    },
+    "runtime_custody": {
+      "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/worker/repair/runtime-custody/summary.json",
+      "sha256": "d98cec90d3d06b998ee97c3b10ec2ce63c31024864c9e5222e8fc1b07985ec79"
+    },
+    "source_pins": {
+      "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/root-repair-pins.json",
+      "sha256": "7e74af5e580d874965cd1add5c12d3ddd48919af49dba7add648656b225c4c12"
+    }
+  },
+  "composition": {
+    "path": "/home/bline/.local/state/work-engine/s10-context-adapter-20261105/shared-dependency-guard.json",
+    "sha256": "6d5a90240cd461353ce3fae724b821cb5bf815dd2f5103f6e4a3b14540caff24"
+  },
+  "history": "Original r4 remains entered_uncertain, never replayed or settled by later lane; prior failures and initial review preserved. One authorized fresh repair qualification only.",
+  "limits": [
+    "Pinned local provider-disabled profile only",
+    "No live semantic adequacy, production reset, fullS10/M6, release or task-owner acceptance",
+    "SDK internals/full dependency corpus not independently audited",
+    "Qualification record added after freeze; non-executable documentation only"
+  ],
+  "budget": {
+    "hard_usd": 15,
+    "hard_deadline": "2026-11-05T03:26:27.165Z",
+    "observation": {
+      "observed_at": "2026-11-05T03:19:07.946672+00:00",
+      "canonical_since_approval_usd": 13.872271599999994,
+      "fixed_planning_carry_usd": 0.3716686,
+      "total_usd": 14.243940199999994,
+      "hard_usd": 15,
+      "hard_deadline": "2026-11-05T03:26:27.165000+00:00",
+      "nodes": [
+        {
+          "sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+          "usd": 6.427154799999999
+        },
+        {
+          "sid": "01a1a97c-fae4-7423-9c28-fd81dfbe02c5",
+          "usd": 2.8711588
+        },
+        {
+          "sid": "01a1a9a2-f2e1-7833-a90c-814033157397",
+          "usd": 4.573958
+        }
+      ],
+      "tail": "recorded observation; future/inflight/closing cost not settled"
+    },
+    "reviewer_node_exception": "Retained recheck ended at4.573958 cumulative versus4.2 node cap despite stop steer at3.906392;0.373958 node overrun retained, aggregate cap unchanged. No further inference admitted."
+  }
+}
