@@ -1,0 +1,70 @@
+{
+  "status": "review_ready_private_qualification_candidate",
+  "created_at": "2026-11-05T16:06:08.440823+00:00",
+  "packet": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/BUILDER-PACKET.md",
+  "source": {
+    "AH_commit": "839b8c4ee9f2c5f83d4b5ba342997021f29b8f35",
+    "AH_tree": "150656892c1a17756ada6d98cbf2d00cb89c097f",
+    "Web_commit": "285638858097d656797709fb376aecc41d5b0240",
+    "Web_tree": "51291774fcad56745840863957176beee3124dea",
+    "AH_manifest": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/AH-source-manifest.json",
+    "Web_manifest": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/Web-source-manifest.json",
+    "upstream_tracked_diff": "none"
+  },
+  "binaries": {
+    "work-engine-server": "587c24a0d387906b29174043ad3178ec4e035031fc1ce0bcac40f1efda97b5b4",
+    "work-engine-query": "a994c4bb7a5200d9b9c47b944a436dcd10e13b2f3adc949662c66089e1d92d4d",
+    "ah3_client": "566c395f706edc8c2d994b6848672cd828b5f8b66738b92f77ec718c333bea63",
+    "synthetic-fixture-producer": "843dbd098329a37ffd23e361445da25f595bfba36349af8d8190663ab693c1de"
+  },
+  "freeze": {
+    "manifest": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/freeze/manifest.json",
+    "manifest_sha256": "b587ef6a14a426b2f1eb9da7e9764d171540a665e78da5efda264022f37592c6",
+    "archive": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/freeze/subject.tar",
+    "archive_sha256": "5f14c4893aa802b7993a47bee04e4feae47528b7791926908189d7b2b242ecdb",
+    "entries_sha256": "88458d9f2e1f0d787c2a80e4e4b0ffd33e9683ddb119db507bb4e23ac83ea3d0",
+    "entry_count": 102
+  },
+  "profile_config_schema_binding": {
+    "actual_profiles": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/observed",
+    "preexecution_manifest_recipe": "Each final case has pre-server-inputs; common cases also pre-consumers and pre-restart",
+    "source_schemas": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/schema",
+    "MCP_tool_schemas": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/schema/observed-mcp-discovery.json",
+    "fresh_recipe": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/REPRODUCE.txt",
+    "exact_plan": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/run-plan.json"
+  },
+  "proof": {
+    "final_summary": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/summary.json",
+    "final_summary_sha256": "4ff785370c382164291e626db8c8631715bc87835238d23e1f93eeb4e08e823e",
+    "final_cases": 5,
+    "accepted_Web_remaining_summary": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/summary.json",
+    "accepted_Web_remaining_summary_sha256": "81827100a2e3c870dabcc33941eac02313917a990e010f0a6eb30f392c839a06",
+    "accepted_Web_remaining_cases": 6,
+    "all_gate_records": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/gates.json",
+    "gates": 13,
+    "actual_common_profile": "final/common-disabled/output/common-profile.json and final/common-mcp/output/common-profile.json",
+    "exact_five_string_bindings": "final/{common-disabled,common-mcp}/output/decision.json plus final/{protocol-rust,protocol-mcp}/output/protocol-result.json"
+  },
+  "limitations": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/limitations.json",
+  "ownership": {
+    "worker": "01a1ac67-bf29-7992-9d9a-509bb9150352",
+    "parent_collector": "01a1ac61-2153-7271-b6cd-51551c318a78",
+    "processes": "all custody gates collected, no leftover processes",
+    "private_changes": [
+      "rust/crates/work-engine-server/examples/ah3_client.rs",
+      "rust/crates/work-engine-server/tests/ah3_composition.py",
+      "rust/crates/work-engine-server/tests/ah3_queries.py",
+      "rust/crates/work-engine-server/tests/ah3_profiles.py"
+    ],
+    "Web_cache": "private untracked node_modules symlink to accepted Web cache; no production edits"
+  },
+  "acceptance": "separate native Astra review and Root disposition required; no worker self-review/acceptance",
+  "prohibited_claims": [
+    "positive task readiness",
+    "live provider/passkey/mailbox",
+    "execution admission",
+    "Pi",
+    "task+command support",
+    "A5/global completion"
+  ]
+}

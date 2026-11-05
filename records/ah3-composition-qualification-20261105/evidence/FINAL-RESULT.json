@@ -1,0 +1,56 @@
+{
+  "status": "complete_accepted_private_qualification",
+  "at": "2026-11-05T16:46:43.231382+00:00",
+  "authority": "AUTHORITY.json",
+  "acceptance": "ACCEPTANCE.json",
+  "release_candidate": "builder/RELEASE-CANDIDATE.json",
+  "source": {
+    "AH_commit": "839b8c4ee9f2c5f83d4b5ba342997021f29b8f35",
+    "Web_commit": "285638858097d656797709fb376aecc41d5b0240",
+    "server_sha256": "587c24a0d387906b29174043ad3178ec4e035031fc1ce0bcac40f1efda97b5b4",
+    "CLI_sha256": "a994c4bb7a5200d9b9c47b944a436dcd10e13b2f3adc949662c66089e1d92d4d"
+  },
+  "validation": {
+    "final_composed_scenarios": 5,
+    "additional_Web_scenarios": 6,
+    "custody_gates": 13,
+    "all_passed": true,
+    "all_leftovers": 0,
+    "frozen_candidate_entries": 102
+  },
+  "review": {
+    "verdict": "accept",
+    "open_findings": 0,
+    "report": "review/REPORT.json",
+    "collection": "review/EXACT-COLLECTION.json",
+    "observed_model": "gpt-6-astra",
+    "observed_effort": "high",
+    "observed_tier": "default",
+    "continuity": "same retained initial reviewer after interrupted no-output turn; native readOnly/networkfalse independently observed"
+  },
+  "accounting": {
+    "at": "2026-11-05T16:46:42.268959+00:00",
+    "units": "speed-adjusted API-equivalent dollars, not subscription quota",
+    "closed_window_observed_usd": 6.0301972,
+    "closed_window": "15:46:13.502 to16:44:34UTC2026-11-05",
+    "attributed_closing_tail_usd": 0.1139796,
+    "attribution": "All three bound Root calls afterclose through16:45:29 are this objective closure/reporting only, counted once; no new task reused this Root",
+    "observed_total_usd": 6.1441768,
+    "aggregate_cap_usd": 20,
+    "elapsed_to_scope_close_minutes": 58.3416333333,
+    "first_interrupted_review_charge": "unavailable: no usage counters captured, never inferred zero; reserve4 forecast retained in history",
+    "further_reporting_tail": "unsettled and attributable once; no future monitor activated",
+    "sources": [
+      "FINAL-USAGE.json",
+      "FINAL-CONTROL.json"
+    ],
+    "coverage": "Readerpartial due same-parent binding/native lineage duplicate warning; sameSID counts once; no omitted expected actor or doublecharge inferred",
+    "settlement": "not established"
+  },
+  "collection": "COLLECTION.json",
+  "claims": "both released",
+  "pending_authorized_work": "none",
+  "standing": "synthetic fixedpolicy/cooperative localLinux; taskreadinessfalse/unestablished; no live/provider/executionadmission/Pi/A5/globalrelease/deployment or existingstate migration claim",
+  "publication": "no source changes/commit/merge/push/deploy performed or owed; exact private candidate accepted",
+  "new_work": "requires its own user authority; no automatic AH4/A2/MCP/CLI/S10 work or peer funds"
+}

@@ -1,0 +1,106 @@
+[
+  {
+    "name": "common-disabled",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/common-disabled.json",
+    "sha256": "305781c52e60f36859830f08747346214db95e351340cd605fb9c290f5021f73",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 72
+  },
+  {
+    "name": "common-mcp",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/common-mcp.json",
+    "sha256": "aea5f2618a7e576d2c48b5d7eb76fcb0525c88e47c6d6a2226c3353a59eb7ab0",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 72
+  },
+  {
+    "name": "protocol-rust",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/protocol-rust.json",
+    "sha256": "d3b6a65acfc943df5bb55503e44256a048493d6a3fc3beca88493fcfef170484",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 72
+  },
+  {
+    "name": "protocol-mcp",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/protocol-mcp.json",
+    "sha256": "bb6c258d753521e73bf879f843fb4f14164bfa36e521eab513b12064e281aa4e",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 72
+  },
+  {
+    "name": "profile-negatives",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/profile-negatives.json",
+    "sha256": "a9278cecf3e8fed897c94c8771752cdfd0c9f7a1f62a7983a34ba575adffba24",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 72
+  },
+  {
+    "name": "web-local",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-local.json",
+    "sha256": "3d5098cd0829c19828a7f30f30d0631b8d77ff49891af1f7c85a138bb27c05ed",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "web-reject",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-reject.json",
+    "sha256": "f9f9b94c3075944341e2f32faf20f4d10ae99c13b6735cd410c1454b9de3120a",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "web-withdraw",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-withdraw.json",
+    "sha256": "239a83344b50b8bf86be9d19889a505e13eca9da05b4235a5c517131f5fbaebb",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "web-replace",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-replace.json",
+    "sha256": "0d438ab04fef60ad22cbb62bee385298ad03a5182d6ad8e802e69ef67fe1e6a0",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "web-disabled",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-disabled.json",
+    "sha256": "856cce57433dec5f6aeff8433996488ef32cd5c9cfa974afbab44f18919d7b7e",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "web-first-scope",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-first-scope.json",
+    "sha256": "8a66f637545ba00c013744a662b2f45ad8449063a20f6f5a5eee51564a6354b7",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "published839-web285-mailbox",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/first-proof/published839-web285-mailbox.json",
+    "sha256": "ac53f75b7d51b7ff2d66f2f2c1f81ce328900d067373931d432c231281839784",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 102
+  },
+  {
+    "name": "build-consumers",
+    "custody": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/build-consumers/build-consumers.json",
+    "sha256": "5d7655a7d1cad61af30cf12055ef0c0483f84a2e9de779039c39edd4ca8e9c45",
+    "returncode": 0,
+    "leftovers": 0,
+    "input_count": 18
+  }
+]

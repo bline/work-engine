@@ -1,0 +1,17 @@
+{
+  "scope": "cooperative local Linux fresh synthetic fixtures only",
+  "task_readiness": "false/unestablished",
+  "execution_admission": null,
+  "unsupported": "task+command config rejected; selected queryCLI has no task invocation",
+  "prior_failed_attempts": [
+    "common:syntax indentation before runtime",
+    "protocol:dict index before consume",
+    "protocol-r2:historical reconciliation mistaken full-object equality",
+    "protocol-r3:startup expected exit2 instead actual1",
+    "profiles-r4:existing outputdir before runtime"
+  ],
+  "historical_evidence_limit": "Custody and failed logs retained. Several early retry output directories were reused; failed dynamic fixture manifests were overwritten. Final candidate cases use distinct final output paths and before-execution input manifests. Do not claim complete failed-attempt runtime snapshots.",
+  "graph": "Tier2 project home-bline-code-work-engine generation uc64a51d74338ddecg2; unresolved_calls source fallback for material CLI run/LocalClient/load/task/read_exact. Runtime observations carry consumer claims; no exhaustive graph claim. New qualification files absent from shared index read directly; accepted Web285 files direct source/digest evidence; no current Web-root graph registered in full project listing.",
+  "source_edits": "Only private AH qualification files; upstream tracked source unchanged. Private Web node_modules symlink points to accepted existing build cache.",
+  "review": "Root separate native Astra review and acceptance outstanding"
+}

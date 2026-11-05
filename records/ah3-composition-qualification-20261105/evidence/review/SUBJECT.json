@@ -1,0 +1,73 @@
+{
+  "schema": "ah3.review-subject.v1",
+  "at": "2026-11-05T16:07:44.996279+00:00",
+  "source": {
+    "AH_commit": "839b8c4ee9f2c5f83d4b5ba342997021f29b8f35",
+    "AH_tree": "150656892c1a17756ada6d98cbf2d00cb89c097f",
+    "Web_commit": "285638858097d656797709fb376aecc41d5b0240",
+    "Web_tree": "51291774fcad56745840863957176beee3124dea",
+    "AH_manifest": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/AH-source-manifest.json",
+    "Web_manifest": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/Web-source-manifest.json",
+    "upstream_tracked_diff": "none"
+  },
+  "binaries": {
+    "work-engine-server": "587c24a0d387906b29174043ad3178ec4e035031fc1ce0bcac40f1efda97b5b4",
+    "work-engine-query": "a994c4bb7a5200d9b9c47b944a436dcd10e13b2f3adc949662c66089e1d92d4d",
+    "ah3_client": "566c395f706edc8c2d994b6848672cd828b5f8b66738b92f77ec718c333bea63",
+    "synthetic-fixture-producer": "843dbd098329a37ffd23e361445da25f595bfba36349af8d8190663ab693c1de"
+  },
+  "references": [
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/RELEASE-CANDIDATE.json",
+      "sha256": "cba4219e1cae1daaecb62bf91b5411fcabf32c7f0992cbd47ef55dd1a70c6b46"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/RESULT.json",
+      "sha256": "5a7d5d57a091abc7f5c84fce239f69acf7a8cc23ffd11377eadc95b75533c76e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/freeze/manifest.json",
+      "sha256": "b587ef6a14a426b2f1eb9da7e9764d171540a665e78da5efda264022f37592c6"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/freeze/subject.tar",
+      "sha256": "5f14c4893aa802b7993a47bee04e4feae47528b7791926908189d7b2b242ecdb"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/summary.json",
+      "sha256": "4ff785370c382164291e626db8c8631715bc87835238d23e1f93eeb4e08e823e"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/summary.json",
+      "sha256": "81827100a2e3c870dabcc33941eac02313917a990e010f0a6eb30f392c839a06"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/gates.json",
+      "sha256": "1be4e24e150ce23a3d0edd65b84455d4c72de48a61621ddee4d6fc2f5bc68246"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/limitations.json",
+      "sha256": "f84e39e636dff13d89ea764d9a7c5a8279a7952e2c03ab88386b478ffa3aa053"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/REPRODUCE.txt",
+      "sha256": "ce3174be2e26a4cb4e044a6c0ac41b8b985c55e6d581248eeb912896374ef82b"
+    }
+  ],
+  "frozen_entries_current": 102,
+  "decision": "review_ready; no acceptance inferred",
+  "worker_collection": "native spawned worker completed; no gates reported running",
+  "capacity": {
+    "root_context": "root-context-review.json",
+    "input": 174031,
+    "next_scope_estimate": 35000,
+    "decision": "retain; sum209031 below235000; no replacement required"
+  },
+  "budget": {
+    "total_observed_usd": 2.1377332000000004,
+    "aggregate_cap": 20,
+    "reviewer_cap": 4,
+    "guard": 3.5,
+    "hard_deadline": "2026-11-05T17:46:13.502Z"
+  }
+}

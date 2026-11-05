@@ -1,0 +1,86 @@
+{
+  "status": "accepted_private_selected_composition",
+  "accepted_at": "2026-11-05T16:43:50.858465+00:00",
+  "owner": "Root01a1ac61-2153-7271-b6cd-51551c318a78",
+  "authority": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/AUTHORITY.json",
+  "subject": {
+    "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/review/SUBJECT.json",
+    "sha256": "50fc0c69aa7e88404e943e50cb4f57b576ffc9f8f1a0003d32a89912556a0988"
+  },
+  "release_candidate": {
+    "path": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/RELEASE-CANDIDATE.json",
+    "sha256": "cba4219e1cae1daaecb62bf91b5411fcabf32c7f0992cbd47ef55dd1a70c6b46"
+  },
+  "review": {
+    "report": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/review/REPORT.json",
+    "sha256": "6d9cc9a8d38e82a6919c095819068644716331a5eb71e38163a597f11625b73d",
+    "exact_collection": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/review/EXACT-COLLECTION.json",
+    "verdict": "accept",
+    "findings": [],
+    "session_id": "01a1ac6f-8e16-7290-bf87-802bcf54f221",
+    "turn_id": "01a1ac91-c884-74a0-a941-1505d9b5cd24",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "tier": "default",
+    "grant": "observed native readOnly/networkfalse before inference; same retained initial review after interrupted no-output attempt",
+    "evidence_class": "same provider different model; separate initial native context; no cross-provider/statistical independence assertion"
+  },
+  "accepted_outcomes": [
+    {
+      "item": "selected actual published server and accepted consumers",
+      "evidence": "builder/final common-disabled/common-mcp; selected real queryCLI/publicRust/HTTP/MCP/Web and task+query same process"
+    },
+    {
+      "item": "MCP-disabled substitution",
+      "evidence": "common-disabled actual CLI/HTTP/Web, local+mailbox presentations"
+    },
+    {
+      "item": "outage/restart/unknown reconciliation",
+      "evidence": "first-proof and final exact read/firstconsume protocol cases; owner historical distinction preserved, no blind consume retry"
+    },
+    {
+      "item": "denied/disabled/currentness",
+      "evidence": "profile-negatives and six remaining-web cases incl reject/withdraw/replace/disabled/first-scope"
+    },
+    {
+      "item": "one exact private release/config candidate",
+      "evidence": "RELEASE-CANDIDATE cba4219e/freeze b587ef6a/entries88458d9f2; observed configs/schemas/fresh recipe bound"
+    }
+  ],
+  "validation": {
+    "final_composed_cases": 5,
+    "additional_web_cases": 6,
+    "custody_gates": 13,
+    "gate_records_all_exit0": true,
+    "gate_leftovers": 0,
+    "candidate_entries": 102,
+    "root_verified_current_subject_refs": 9
+  },
+  "standing": {
+    "synthetic_fixed_policy_cooperative_local_linux": true,
+    "task_readiness": "false/unestablished",
+    "task_command_combination": "rejected; not qualified",
+    "no_live_provider_execution_admission_Pi_A5_or_deployment": true,
+    "migration": "fresh disposable synthetic stores only; existing user-state migration not qualified",
+    "production_source_publication": "none requested or performed; original AH839/Web285 accepted sources unchanged"
+  },
+  "material_limits": [
+    "Read-only source and existing-artifact review only. No tests, product runtimes, agents, network requests or mutations were performed.",
+    "Scope remains cooperative local Linux with synthetic fixed policy, mailbox, authenticator and clock. Task readiness remains false/unestablished; live providers, deployed passkeys, execution admission, Pi, A5 and global release readiness remain unestablished.",
+    "Existing domain-owner implementations retain their accepted standing. This review checked material composition boundaries and evidence, not every unchanged owner implementation.",
+    "Tier 2 graph verification used project home-bline-cbm-work-wt-ah3-qualification-20261105T1550, indexed 2026-11-05T16:10:22Z, store generation uf4e5717c4924ea4bg2. Rust call metadata has unresolved or unreliable relationships. Material paths were checked directly; frozen artifacts and Web files were outside this project. No exhaustive call-graph claim is made.",
+    "Some early failed attempts lack complete dynamic snapshots because output directories were reused. Original failure logs remain. The distinct final runs, matching source/input bindings and corrected assertions provide sufficient evidence for this candidate; they do not reconstruct the missing historical snapshots.",
+    "The altered post-consume input returned owner_conflict. Separate fresh, valid pre-consume inputs returned owner_unknown, so unknown-before-consume coverage does not depend on treating those errors as equivalent.",
+    "Reproduction depends on the referenced source worktrees and existing build/browser caches. Fresh disposable stores are the accepted migration disposition; existing user-state migration is not qualified.",
+    "This is the same retained initial review after interruption. Recorded Astra/high/default configuration and read-only grant are observed properties, not cross-provider or statistical independence claims."
+  ],
+  "budget": {
+    "approved_aggregate_usd": 20,
+    "hard_deadline": "2026-11-05T17:46:13.502Z",
+    "observed_preclosure_usd": 6.0301972,
+    "first_interrupted_native_charge": "unavailable: no captured usage counters, not established zero; conservative reserve4 retained",
+    "reporting_tail": "unsettled and attributable once",
+    "allocation_revision": "review10 incl unknownfirst4, builder3 incl boundedremediation, root3,closure4 within total20; no budget/clock reset"
+  },
+  "next": "collect own reviewer/listener/claims and final account; no further productive phase is authorized"
+}

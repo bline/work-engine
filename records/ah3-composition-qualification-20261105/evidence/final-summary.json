@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/run-plan.json",
+  "plan_sha256": "f4c415e04c40ba0287279c3c77b02b4a01560b5b2c3ee6578f6c9f25a2a6bd92",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "common-disabled",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/common-disabled.json",
+      "record_sha256": "305781c52e60f36859830f08747346214db95e351340cd605fb9c290f5021f73",
+      "leftovers": 0
+    },
+    {
+      "name": "common-mcp",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/common-mcp.json",
+      "record_sha256": "aea5f2618a7e576d2c48b5d7eb76fcb0525c88e47c6d6a2226c3353a59eb7ab0",
+      "leftovers": 0
+    },
+    {
+      "name": "protocol-rust",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/protocol-rust.json",
+      "record_sha256": "d3b6a65acfc943df5bb55503e44256a048493d6a3fc3beca88493fcfef170484",
+      "leftovers": 0
+    },
+    {
+      "name": "protocol-mcp",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/protocol-mcp.json",
+      "record_sha256": "bb6c258d753521e73bf879f843fb4f14164bfa36e521eab513b12064e281aa4e",
+      "leftovers": 0
+    },
+    {
+      "name": "profile-negatives",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/profile-negatives.json",
+      "record_sha256": "a9278cecf3e8fed897c94c8771752cdfd0c9f7a1f62a7983a34ba575adffba24",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

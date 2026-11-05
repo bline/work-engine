@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web-plan.json",
+  "plan_sha256": "666ce7c41b608e08d844c8ea470a68a0fd02e56a8773b3537caea1f9d03e859b",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "web-local",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-local.json",
+      "record_sha256": "3d5098cd0829c19828a7f30f30d0631b8d77ff49891af1f7c85a138bb27c05ed",
+      "leftovers": 0
+    },
+    {
+      "name": "web-reject",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-reject.json",
+      "record_sha256": "f9f9b94c3075944341e2f32faf20f4d10ae99c13b6735cd410c1454b9de3120a",
+      "leftovers": 0
+    },
+    {
+      "name": "web-withdraw",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-withdraw.json",
+      "record_sha256": "239a83344b50b8bf86be9d19889a505e13eca9da05b4235a5c517131f5fbaebb",
+      "leftovers": 0
+    },
+    {
+      "name": "web-replace",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-replace.json",
+      "record_sha256": "0d438ab04fef60ad22cbb62bee385298ad03a5182d6ad8e802e69ef67fe1e6a0",
+      "leftovers": 0
+    },
+    {
+      "name": "web-disabled",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-disabled.json",
+      "record_sha256": "856cce57433dec5f6aeff8433996488ef32cd5c9cfa974afbab44f18919d7b7e",
+      "leftovers": 0
+    },
+    {
+      "name": "web-first-scope",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/web-first-scope.json",
+      "record_sha256": "8a66f637545ba00c013744a662b2f45ad8449063a20f6f5a5eee51564a6354b7",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

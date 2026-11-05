@@ -1,0 +1,120 @@
+{
+  "record": "AH3 selected-composition qualification, 2026-11-05",
+  "projection": "selected byte-identical proof and evidence snapshots; full private candidate not packaged",
+  "original_state": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547",
+  "original_review_subject_sha256": "50fc0c69aa7e88404e943e50cb4f57b576ffc9f8f1a0003d32a89912556a0988",
+  "entries": [
+    {
+      "path": "evidence/ACCEPTANCE.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/ACCEPTANCE.json",
+      "sha256": "08b6acf7efc33f40dc6356dd155b8ef8e939c2c608925e1014ca16c232ef2784",
+      "bytes": 5769,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/FINAL-RESULT.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/FINAL-RESULT.json",
+      "sha256": "b830af9e04daf2c9c72221d6d3911b6460eeee28f7ca1def64d0a873075d0213",
+      "bytes": 2742,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/RELEASE-CANDIDATE.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/RELEASE-CANDIDATE.json",
+      "sha256": "cba4219e1cae1daaecb62bf91b5411fcabf32c7f0992cbd47ef55dd1a70c6b46",
+      "bytes": 4499,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/REPRODUCE.txt",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/REPRODUCE.txt",
+      "sha256": "ce3174be2e26a4cb4e044a6c0ac41b8b985c55e6d581248eeb912896374ef82b",
+      "bytes": 2736,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/final-summary.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/summary.json",
+      "sha256": "4ff785370c382164291e626db8c8631715bc87835238d23e1f93eeb4e08e823e",
+      "bytes": 1800,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/freeze-manifest.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/freeze/manifest.json",
+      "sha256": "b587ef6a14a426b2f1eb9da7e9764d171540a665e78da5efda264022f37592c6",
+      "bytes": 22275,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/gates.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/gates.json",
+      "sha256": "1be4e24e150ce23a3d0edd65b84455d4c72de48a61621ddee4d6fc2f5bc68246",
+      "bytes": 4004,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/limitations.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/limitations.json",
+      "sha256": "f84e39e636dff13d89ea764d9a7c5a8279a7952e2c03ab88386b478ffa3aa053",
+      "bytes": 1532,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/review/REPORT.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/review/REPORT.json",
+      "sha256": "6d9cc9a8d38e82a6919c095819068644716331a5eb71e38163a597f11625b73d",
+      "bytes": 5746,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/review/SUBJECT.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/review/SUBJECT.json",
+      "sha256": "50fc0c69aa7e88404e943e50cb4f57b576ffc9f8f1a0003d32a89912556a0988",
+      "bytes": 3495,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/run-plan.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/run-plan.json",
+      "sha256": "f4c415e04c40ba0287279c3c77b02b4a01560b5b2c3ee6578f6c9f25a2a6bd92",
+      "bytes": 39491,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "evidence/web-summary.json",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/summary.json",
+      "sha256": "81827100a2e3c870dabcc33941eac02313917a990e010f0a6eb30f392c839a06",
+      "bytes": 2123,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "qualification/ah3_client.rs",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_client.rs",
+      "sha256": "022e39c041da40f2f05bfdd4174bde2c87cb662e3abfefebebb612c9562b67da",
+      "bytes": 872,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "qualification/ah3_composition.py",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_composition.py",
+      "sha256": "236d6ba165ee069c9e535e79ea6bfd0875b4885e7a98c14ba7e0b21179daaa73",
+      "bytes": 14784,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "qualification/ah3_profiles.py",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_profiles.py",
+      "sha256": "6bae3a5f101513107cf177d0d1ef5ddfc1861c2adc5ffa0790accd7dc97aa470",
+      "bytes": 3636,
+      "copy": "byte-identical"
+    },
+    {
+      "path": "qualification/ah3_queries.py",
+      "source": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_queries.py",
+      "sha256": "f42d2165cda037e84ff1997785ffc4e04e299cfd8246d7f3e5fcb6cdb8cc41b8",
+      "bytes": 11031,
+      "copy": "byte-identical"
+    }
+  ]
+}

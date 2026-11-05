@@ -1,0 +1,37 @@
+{
+  "verdict": "accept",
+  "subject_sha256": "50fc0c69aa7e88404e943e50cb4f57b576ffc9f8f1a0003d32a89912556a0988",
+  "findings": [],
+  "acceptance_scope": "Accept the exact private AH3 qualification candidate for the selected published AH839 server, Web285 consumer, AH839 queryCLI and public Rust LocalClient composition under fresh synthetic fixtures. Evidence supports common task+query operation with MCP enabled and disabled; task-only Web operation; preserved request text, selection, five signed strings, owner decision references and server identities; lost-ack/restart reconciliation without blind consume retry; and the observed denial, disabled-capability, currentness and routing cases. Task+command remains startup-rejected. This verdict recommends bounded qualification acceptance to Root; it does not authorize publication, deployment or execution admission.",
+  "limitations": [
+    "Read-only source and existing-artifact review only. No tests, product runtimes, agents, network requests or mutations were performed.",
+    "Scope remains cooperative local Linux with synthetic fixed policy, mailbox, authenticator and clock. Task readiness remains false/unestablished; live providers, deployed passkeys, execution admission, Pi, A5 and global release readiness remain unestablished.",
+    "Existing domain-owner implementations retain their accepted standing. This review checked material composition boundaries and evidence, not every unchanged owner implementation.",
+    "Tier 2 graph verification used project home-bline-cbm-work-wt-ah3-qualification-20261105T1550, indexed 2026-11-05T16:10:22Z, store generation uf4e5717c4924ea4bg2. Rust call metadata has unresolved or unreliable relationships. Material paths were checked directly; frozen artifacts and Web files were outside this project. No exhaustive call-graph claim is made.",
+    "Some early failed attempts lack complete dynamic snapshots because output directories were reused. Original failure logs remain. The distinct final runs, matching source/input bindings and corrected assertions provide sufficient evidence for this candidate; they do not reconstruct the missing historical snapshots.",
+    "The altered post-consume input returned owner_conflict. Separate fresh, valid pre-consume inputs returned owner_unknown, so unknown-before-consume coverage does not depend on treating those errors as equivalent.",
+    "Reproduction depends on the referenced source worktrees and existing build/browser caches. Fresh disposable stores are the accepted migration disposition; existing user-state migration is not qualified.",
+    "This is the same retained initial review after interruption. Recorded Astra/high/default configuration and read-only grant are observed properties, not cross-provider or statistical independence claims."
+  ],
+  "evidence_checked": [
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/review/PACKET.md and SUBJECT.json: subject digest and all nine referenced artifact digests matched.",
+    "/home/bline/cbm-work/wt-ah3-qualification-20261105T1550/AGENTS.md, DESIGN.md and PHILOSOPHY.md.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/qualification/ah3_composition.py, ah3_queries.py, ah3_profiles.py and ah3_client.rs: actual caller paths, assertions, negative cases and reconciliation logic.",
+    "/home/bline/cbm-work/wt-ah3-qualification-20261105T1550/rust/crates/work-engine-server/src/lib.rs, main.rs and task.rs; rust/crates/work-engine-query/src/main.rs: LocalClient transport, common dispatch, profile rejection and domain-owner delegation.",
+    "/home/bline/cbm-work/wt-ah3-web-20261105T1550/laptop/approval_sync.py, tests/ah-browser-checkpoint.mjs and tests/ah-preview/app.jsx: pinned envelopes, persist-before-consume journal, exact reconciliation and actual presentation/signing flow with declared fixtures.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/{common-disabled,common-mcp,protocol-rust,protocol-mcp}/output: directly compared signed strings, selections, request text, decision references, query results, correlation IDs, server identities and build identities.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/final/profile-negatives/output: observed startup refusals, disabled operations and actual CLI task rejection.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/remaining-web/summary.json and referenced web-local, web-reject, web-withdraw, web-replace, web-disabled and web-first-scope custody/output artifacts: current AH839 binary bindings and observed outcomes.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/gates.json: all 13 custody-record hashes matched; all 72 recorded inputs in each final case matched current bytes.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/observed: pre-server config/profile bindings matched; configured board interpreter, script and dependency pins matched.",
+    "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate/AH-source-manifest.json, Web-source-manifest.json, REPRODUCE.txt, run-plan.json and limitations.json; build-consumers custody and retained early failure logs.",
+    "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T08-59-15-01a1ac6f-8e16-7290-bf87-802bcf54f221.jsonl: applied model, effort, service tier and restricted read-only configuration."
+  ],
+  "provenance": {
+    "model": "gpt-6-astra (recorded configuration)",
+    "effort": "high",
+    "tier": "default",
+    "initial_entry": "fresh native thread",
+    "continuity": "initial"
+  }
+}

@@ -1,0 +1,727 @@
+{
+  "schema": "manual-orchestration.custody.freeze.v1",
+  "label": "ah3-published839-web285-querycli-qualification",
+  "root": "/home/bline/.local/state/work-engine/ah3-composition-20261105T1547/builder/candidate",
+  "excludes": [
+    "**/__pycache__/**"
+  ],
+  "frozen_at": "2026-11-05T16:05:11.018842Z",
+  "entry_count": 102,
+  "entries_sha256": "88458d9f2e1f0d787c2a80e4e4b0ffd33e9683ddb119db507bb4e23ac83ea3d0",
+  "entries": [
+    {
+      "path": "AH-source-manifest.json",
+      "type": "file",
+      "mode": 436,
+      "length": 701847,
+      "sha256": "1d736b36bdbe217865894c1b3611071466f3ea49f94c2184506b81520705cd1b"
+    },
+    {
+      "path": "REPRODUCE.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 2736,
+      "sha256": "ce3174be2e26a4cb4e044a6c0ac41b8b985c55e6d581248eeb912896374ef82b"
+    },
+    {
+      "path": "Web-source-manifest.json",
+      "type": "file",
+      "mode": 436,
+      "length": 34605,
+      "sha256": "6e063e06381bd630280d70bb9d8dec3bc3a8fdeb900604ccadb7c5bcd8465395"
+    },
+    {
+      "path": "bin/ah3_client",
+      "type": "file",
+      "mode": 509,
+      "length": 7848184,
+      "sha256": "566c395f706edc8c2d994b6848672cd828b5f8b66738b92f77ec718c333bea63"
+    },
+    {
+      "path": "bin/synthetic-fixture-producer",
+      "type": "file",
+      "mode": 509,
+      "length": 26715224,
+      "sha256": "843dbd098329a37ffd23e361445da25f595bfba36349af8d8190663ab693c1de"
+    },
+    {
+      "path": "bin/work-engine-query",
+      "type": "file",
+      "mode": 509,
+      "length": 9706576,
+      "sha256": "a994c4bb7a5200d9b9c47b944a436dcd10e13b2f3adc949662c66089e1d92d4d"
+    },
+    {
+      "path": "bin/work-engine-server",
+      "type": "file",
+      "mode": 509,
+      "length": 50895360,
+      "sha256": "587c24a0d387906b29174043ad3178ec4e035031fc1ce0bcac40f1efda97b5b4"
+    },
+    {
+      "path": "gates.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4004,
+      "sha256": "1be4e24e150ce23a3d0edd65b84455d4c72de48a61621ddee4d6fc2f5bc68246"
+    },
+    {
+      "path": "limitations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1532,
+      "sha256": "f84e39e636dff13d89ea764d9a7c5a8279a7952e2c03ab88386b478ffa3aa053"
+    },
+    {
+      "path": "observations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2230,
+      "sha256": "db7159ffa33611e3235fbf5d50d3bef5a8a9af7b08e9555fb6db223424219d5c"
+    },
+    {
+      "path": "observed/common-disabled/SYNTHETIC-private-key.der",
+      "type": "file",
+      "mode": 384,
+      "length": 138,
+      "sha256": "4798b5961696aaee08a9f2639ed0e2d76564107e447f369743ed3bf4009cd3ef"
+    },
+    {
+      "path": "observed/common-disabled/cli-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 137,
+      "sha256": "d24a67a53fa46826be0c8ac8ff32958ca4f2595787f26988fefafc334c7e0a3d"
+    },
+    {
+      "path": "observed/common-disabled/common-profile.json",
+      "type": "file",
+      "mode": 436,
+      "length": 523,
+      "sha256": "5726f145800dade3bb83b682441de7a84834fb6c5d191a459b75ad6c709d2bac"
+    },
+    {
+      "path": "observed/common-disabled/config.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1189,
+      "sha256": "50813e7f5a24972a9b67ca74c549bd82f8df78f06961e8ef483deab12d79d113"
+    },
+    {
+      "path": "observed/common-disabled/consumer.json",
+      "type": "file",
+      "mode": 436,
+      "length": 505,
+      "sha256": "bb513d06ef3859a27cf6a9e1dd129f1f1f964dd314f9fbf2258addb433f30e2e"
+    },
+    {
+      "path": "observed/common-disabled/decision.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11377,
+      "sha256": "01dc80e0972595489abd4f1e94372357b808398731d522673f66553ff930fa51"
+    },
+    {
+      "path": "observed/common-disabled/negative-results.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1828,
+      "sha256": "d9c6c46778fc191797feb84dcae7d20b2af0499df11b29a9b3e45e261e79b0a4"
+    },
+    {
+      "path": "observed/common-disabled/policy.json",
+      "type": "file",
+      "mode": 384,
+      "length": 382,
+      "sha256": "985ebcb88fd3432d821e34d8f12b399860db7978f88df165d287fde3496da460"
+    },
+    {
+      "path": "observed/common-disabled/pre-consumers-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6086,
+      "sha256": "5721088cfcaa665287307ba10ef037bc65bba890a1067d9bc7b0218b5103b915"
+    },
+    {
+      "path": "observed/common-disabled/pre-restart-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7394,
+      "sha256": "57de9c69b6a79513d06dae6c704aed8dc3800b0ddce7278a8585da04460baa26"
+    },
+    {
+      "path": "observed/common-disabled/pre-server-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5777,
+      "sha256": "58442e4a16cf7a4019f6c3d1bf0c6e8e7ed2dc03511fb8e7e322b20665496227"
+    },
+    {
+      "path": "observed/common-disabled/query-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 298,
+      "sha256": "3dcb16713c2d87166944bbf036dba3a77d477227cee350739ea9659b88e6356b"
+    },
+    {
+      "path": "observed/common-disabled/raw-task.json",
+      "type": "file",
+      "mode": 384,
+      "length": 3171,
+      "sha256": "35e108cc58e8fdc67333ca1dab0ee5581435d1bcbc335370a8332e2da22a4f08"
+    },
+    {
+      "path": "observed/common-disabled/ready.json",
+      "type": "file",
+      "mode": 436,
+      "length": 220,
+      "sha256": "d5e3cc3a29799fb959f686a934bba8679265e2d1afca94beff113774b6c73662"
+    },
+    {
+      "path": "observed/common-disabled/server.json",
+      "type": "file",
+      "mode": 384,
+      "length": 321,
+      "sha256": "983ef223f44b0f9a8f135b73e5677f0e26f18109ba36013daa0af7323f99a529"
+    },
+    {
+      "path": "observed/common-disabled/task-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 1253,
+      "sha256": "f2f5b914ba4ebd4ebfc1a30e1a434a412de6d81f205e8f1af3f306194a77eab1"
+    },
+    {
+      "path": "observed/common-disabled/token",
+      "type": "file",
+      "mode": 384,
+      "length": 42,
+      "sha256": "85491c95609d7ff76ae4a3ca732ef4a39c24cdbdd2b9cf2fc2fa48cf665f02d7"
+    },
+    {
+      "path": "observed/common-mcp/SYNTHETIC-private-key.der",
+      "type": "file",
+      "mode": 384,
+      "length": 138,
+      "sha256": "4798b5961696aaee08a9f2639ed0e2d76564107e447f369743ed3bf4009cd3ef"
+    },
+    {
+      "path": "observed/common-mcp/cli-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 137,
+      "sha256": "5475c6d8fd8a48d1f647f5c9f4983b3debc9d56858244e926c36d6097a7b0e33"
+    },
+    {
+      "path": "observed/common-mcp/common-profile.json",
+      "type": "file",
+      "mode": 436,
+      "length": 522,
+      "sha256": "d53e2cf7c2dccc153b9c4689950cf74c24be8fc671e229777ae305ed1e36e5c1"
+    },
+    {
+      "path": "observed/common-mcp/config.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1188,
+      "sha256": "22d2c4a20c788a0986ef6b92adb10c03f199c7387c84645403f54fd15f92d399"
+    },
+    {
+      "path": "observed/common-mcp/consumer.json",
+      "type": "file",
+      "mode": 436,
+      "length": 505,
+      "sha256": "5f9f7869b9172ca7068b1cb6481716f6ae01fb9d6de148471befcb8020603aa5"
+    },
+    {
+      "path": "observed/common-mcp/decision.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11381,
+      "sha256": "b28f09017c56e92fc9d7520f3ed3ac102281656a1dc9683121c3f3df34f6bc73"
+    },
+    {
+      "path": "observed/common-mcp/negative-results.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1828,
+      "sha256": "d9c6c46778fc191797feb84dcae7d20b2af0499df11b29a9b3e45e261e79b0a4"
+    },
+    {
+      "path": "observed/common-mcp/policy.json",
+      "type": "file",
+      "mode": 384,
+      "length": 382,
+      "sha256": "985ebcb88fd3432d821e34d8f12b399860db7978f88df165d287fde3496da460"
+    },
+    {
+      "path": "observed/common-mcp/pre-consumers-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6086,
+      "sha256": "c69111c5144d85fbeee69874eadeec607121a8173ad428808f886451fa8f32d6"
+    },
+    {
+      "path": "observed/common-mcp/pre-restart-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7394,
+      "sha256": "ad6d8d48d33ebc7555734310daff03b075b3b483945f6afb3f7c051203207152"
+    },
+    {
+      "path": "observed/common-mcp/pre-server-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5777,
+      "sha256": "827a55cb654877f69e8dd98f6957b2cf6c35d94b12a6813adb1cd3ca54d4062f"
+    },
+    {
+      "path": "observed/common-mcp/query-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 298,
+      "sha256": "30f7c02f992a3a6e077b976e729ecec11f14941f4c5bb1772aa4088d0d6f7d3d"
+    },
+    {
+      "path": "observed/common-mcp/raw-task.json",
+      "type": "file",
+      "mode": 384,
+      "length": 3171,
+      "sha256": "6a45ef9705ae68da1c3f384e0526abedc76e6cab50cbdba98350cd0dd4f22e52"
+    },
+    {
+      "path": "observed/common-mcp/ready.json",
+      "type": "file",
+      "mode": 436,
+      "length": 220,
+      "sha256": "d5e3cc3a29799fb959f686a934bba8679265e2d1afca94beff113774b6c73662"
+    },
+    {
+      "path": "observed/common-mcp/server.json",
+      "type": "file",
+      "mode": 384,
+      "length": 320,
+      "sha256": "0a645c3c73b58d009d155deefd55005a4ad0ee2c4127d204f8922ba3a2b35185"
+    },
+    {
+      "path": "observed/common-mcp/task-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 1253,
+      "sha256": "afaed9842922f9bfe418d12db20a50d6bfc39048729fc40f257599d5ff4aacbd"
+    },
+    {
+      "path": "observed/common-mcp/token",
+      "type": "file",
+      "mode": 384,
+      "length": 42,
+      "sha256": "85491c95609d7ff76ae4a3ca732ef4a39c24cdbdd2b9cf2fc2fa48cf665f02d7"
+    },
+    {
+      "path": "observed/profile-negatives/SYNTHETIC-private-key.der",
+      "type": "file",
+      "mode": 384,
+      "length": 138,
+      "sha256": "4798b5961696aaee08a9f2639ed0e2d76564107e447f369743ed3bf4009cd3ef"
+    },
+    {
+      "path": "observed/profile-negatives/before-capability-without-task-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6123,
+      "sha256": "25f1c0ca63ed0c66f5bba2d1af49b8c82ebe54d8cc189c12b6069e1845a30806"
+    },
+    {
+      "path": "observed/profile-negatives/before-no-owner-profile-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6456,
+      "sha256": "386bc0d5d4d4451201600f3d501b13450c0f60dfd67562114332d487a6d95ac8"
+    },
+    {
+      "path": "observed/profile-negatives/before-query-only-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6786,
+      "sha256": "e36beb32a8dfc51939c6f2c340509eaf1c6ed2db72e5e5226e853cff24d9ec59"
+    },
+    {
+      "path": "observed/profile-negatives/before-task-and-command-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5787,
+      "sha256": "cca282a8f125fbc6348804f24ec66b9b0ec8be641fb88e0d2c527ca184e9d682"
+    },
+    {
+      "path": "observed/profile-negatives/before-task-without-capability-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5955,
+      "sha256": "87140299f128715612e69d8c3d9503cc4a5f6f15585ce0a7da73aa8456bae40e"
+    },
+    {
+      "path": "observed/profile-negatives/before-unsupported-command-capability-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6631,
+      "sha256": "63c933484c53939d9826f1f601465b2efe306a8558fa749215b86f76f6e80b04"
+    },
+    {
+      "path": "observed/profile-negatives/before-unsupported-task-capability-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6295,
+      "sha256": "1623eba9f2952ca0c2ab3c67f72e575e9af5ee1ac811fde90e12a07d537f8f6e"
+    },
+    {
+      "path": "observed/profile-negatives/policy.json",
+      "type": "file",
+      "mode": 384,
+      "length": 382,
+      "sha256": "985ebcb88fd3432d821e34d8f12b399860db7978f88df165d287fde3496da460"
+    },
+    {
+      "path": "observed/profile-negatives/query-only.json",
+      "type": "file",
+      "mode": 384,
+      "length": 227,
+      "sha256": "ef87177bead3be923bdf8f8d0f86f6cf0f020fa99344a74221eb190428690fb2"
+    },
+    {
+      "path": "observed/profile-negatives/query-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 298,
+      "sha256": "38016464e7acad3035eba51e96373dbf606fdde27151b61f48d533dc2692b00c"
+    },
+    {
+      "path": "observed/profile-negatives/raw-task.json",
+      "type": "file",
+      "mode": 384,
+      "length": 3171,
+      "sha256": "da3eeecd2de407ee1adaaf58c0f68912d7dc4d101a6862e4eb566fc72f1a5b6f"
+    },
+    {
+      "path": "observed/profile-negatives/result.json",
+      "type": "file",
+      "mode": 436,
+      "length": 300,
+      "sha256": "eb759ee507cef22c38909ec9819280a0fdb0bfed2c4894b82e80e6d033faa247"
+    },
+    {
+      "path": "observed/profile-negatives/task-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 1253,
+      "sha256": "f25a75aede615e70aff3ac4300e017a30c3b408523748cbdaeb2884b2b87e55e"
+    },
+    {
+      "path": "observed/profile-negatives/token",
+      "type": "file",
+      "mode": 384,
+      "length": 42,
+      "sha256": "85491c95609d7ff76ae4a3ca732ef4a39c24cdbdd2b9cf2fc2fa48cf665f02d7"
+    },
+    {
+      "path": "observed/protocol-mcp/SYNTHETIC-private-key.der",
+      "type": "file",
+      "mode": 384,
+      "length": 138,
+      "sha256": "4798b5961696aaee08a9f2639ed0e2d76564107e447f369743ed3bf4009cd3ef"
+    },
+    {
+      "path": "observed/protocol-mcp/cli-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 137,
+      "sha256": "c692a722deb7d6fcae21aee336bee4e6aa4c4f8e612a4c9e05057a0042c915dd"
+    },
+    {
+      "path": "observed/protocol-mcp/common-profile.json",
+      "type": "file",
+      "mode": 436,
+      "length": 522,
+      "sha256": "39d4d9182f3ae0db874566e77330763a96c7a298f195f531da550e1b65d80279"
+    },
+    {
+      "path": "observed/protocol-mcp/consumer.json",
+      "type": "file",
+      "mode": 436,
+      "length": 505,
+      "sha256": "86f732f702340d0606644860e0274a8e1de5a8e5623c916981c4a25c03978b8b"
+    },
+    {
+      "path": "observed/protocol-mcp/policy.json",
+      "type": "file",
+      "mode": 384,
+      "length": 382,
+      "sha256": "985ebcb88fd3432d821e34d8f12b399860db7978f88df165d287fde3496da460"
+    },
+    {
+      "path": "observed/protocol-mcp/pre-consumers-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6086,
+      "sha256": "a27370bc7542bf68f29f6f9397e5cec370702dbc2bdc046237fd45e87fbf4264"
+    },
+    {
+      "path": "observed/protocol-mcp/pre-server-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5777,
+      "sha256": "85258922fbdf1f41fcdc0eedf3945f7a81bca345f00f810ae991894f7a92de90"
+    },
+    {
+      "path": "observed/protocol-mcp/protocol-result.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7555,
+      "sha256": "bd83427f6d2518330e38a2083341f230e774ad59fea0cf07d17e2b73b095840e"
+    },
+    {
+      "path": "observed/protocol-mcp/query-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 298,
+      "sha256": "250a6880bc44de179ded053bf783992481f67c2843c40c268637f99513be9ac5"
+    },
+    {
+      "path": "observed/protocol-mcp/raw-task.json",
+      "type": "file",
+      "mode": 384,
+      "length": 3171,
+      "sha256": "757971c780baba8e94cff4d9978bdbd6c40f467b4e3363a96eb54e4f820e049c"
+    },
+    {
+      "path": "observed/protocol-mcp/ready.json",
+      "type": "file",
+      "mode": 436,
+      "length": 220,
+      "sha256": "d5e3cc3a29799fb959f686a934bba8679265e2d1afca94beff113774b6c73662"
+    },
+    {
+      "path": "observed/protocol-mcp/server.json",
+      "type": "file",
+      "mode": 384,
+      "length": 320,
+      "sha256": "13654a9fdc5e2cedcc7883dcd5bb36583ce75e92f87d2ab05d82a8a5e59b3e9c"
+    },
+    {
+      "path": "observed/protocol-mcp/task-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 1253,
+      "sha256": "df0229a76e3637aab2ceea3cb8e92255ac46eecd09c72cb99d093068313e2653"
+    },
+    {
+      "path": "observed/protocol-mcp/token",
+      "type": "file",
+      "mode": 384,
+      "length": 42,
+      "sha256": "85491c95609d7ff76ae4a3ca732ef4a39c24cdbdd2b9cf2fc2fa48cf665f02d7"
+    },
+    {
+      "path": "observed/protocol-rust/SYNTHETIC-private-key.der",
+      "type": "file",
+      "mode": 384,
+      "length": 138,
+      "sha256": "4798b5961696aaee08a9f2639ed0e2d76564107e447f369743ed3bf4009cd3ef"
+    },
+    {
+      "path": "observed/protocol-rust/cli-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 137,
+      "sha256": "5aa2b40cebbb0aecf31e81330f25826e1495ff58ee7e7ee219844073ab5233b8"
+    },
+    {
+      "path": "observed/protocol-rust/common-profile.json",
+      "type": "file",
+      "mode": 436,
+      "length": 523,
+      "sha256": "d875f036cc0b75292475aa466e7670d2e574538c25920fd80e61882210f49f62"
+    },
+    {
+      "path": "observed/protocol-rust/consumer.json",
+      "type": "file",
+      "mode": 436,
+      "length": 505,
+      "sha256": "3cf578804318a4570cd3164ef56372e2d166c58e44c13c503b144ed645530aab"
+    },
+    {
+      "path": "observed/protocol-rust/policy.json",
+      "type": "file",
+      "mode": 384,
+      "length": 382,
+      "sha256": "985ebcb88fd3432d821e34d8f12b399860db7978f88df165d287fde3496da460"
+    },
+    {
+      "path": "observed/protocol-rust/pre-consumers-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6086,
+      "sha256": "675ddc5ce86c966794c323ea2933fa4301730761512040cb2bf468ac249a1318"
+    },
+    {
+      "path": "observed/protocol-rust/pre-server-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5777,
+      "sha256": "0d75acd0328e1624d8eb17c0953946f69638c8c8fc5bf89dd80979ea934e8e5b"
+    },
+    {
+      "path": "observed/protocol-rust/protocol-result.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7578,
+      "sha256": "8d53c4c3cb0a50f85cedc36710c31be0d61f32b660d17bbaee9c90d6a20727eb"
+    },
+    {
+      "path": "observed/protocol-rust/query-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 298,
+      "sha256": "5b909e4d988e77fe4aea7448b6a85371b65ce1ca8967a14cb7bef693299d3ef6"
+    },
+    {
+      "path": "observed/protocol-rust/raw-task.json",
+      "type": "file",
+      "mode": 384,
+      "length": 3171,
+      "sha256": "8c99c7641d06e37c1a5be58a2ee44f99da31938b4f4178360583a03f71285df9"
+    },
+    {
+      "path": "observed/protocol-rust/ready.json",
+      "type": "file",
+      "mode": 436,
+      "length": 220,
+      "sha256": "d5e3cc3a29799fb959f686a934bba8679265e2d1afca94beff113774b6c73662"
+    },
+    {
+      "path": "observed/protocol-rust/server.json",
+      "type": "file",
+      "mode": 384,
+      "length": 321,
+      "sha256": "e5f486d8bf2e3fdc0d480c81ff366d810297bb66e4eafb7b4f1f8b526850285d"
+    },
+    {
+      "path": "observed/protocol-rust/task-profile.json",
+      "type": "file",
+      "mode": 384,
+      "length": 1253,
+      "sha256": "b966f30d4846eb871963f3263b345d87d29a7b12a40018da1ba824ab403adaa0"
+    },
+    {
+      "path": "observed/protocol-rust/token",
+      "type": "file",
+      "mode": 384,
+      "length": 42,
+      "sha256": "85491c95609d7ff76ae4a3ca732ef4a39c24cdbdd2b9cf2fc2fa48cf665f02d7"
+    },
+    {
+      "path": "qualification-inputs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1132,
+      "sha256": "6d8ae22830d5d21c164cf164a0601a60ac0bf08dbac9bcd7b984c4e851374b92"
+    },
+    {
+      "path": "qualification/accepted-fixture-producer.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 7337,
+      "sha256": "87eec0facbc30d3d23c6353a1d5e9e7f5c8957c81cbc2dfb8a8a24e0a187bf39"
+    },
+    {
+      "path": "qualification/accepted-web-checkpoint.diff",
+      "type": "file",
+      "mode": 436,
+      "length": 5788,
+      "sha256": "70b7937d07c700e3d74cc514758a04d8d38f08a9e6e99b1416d25a749425bf75"
+    },
+    {
+      "path": "qualification/ah3_client.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 872,
+      "sha256": "022e39c041da40f2f05bfdd4174bde2c87cb662e3abfefebebb612c9562b67da"
+    },
+    {
+      "path": "qualification/ah3_composition.py",
+      "type": "file",
+      "mode": 436,
+      "length": 14784,
+      "sha256": "236d6ba165ee069c9e535e79ea6bfd0875b4885e7a98c14ba7e0b21179daaa73"
+    },
+    {
+      "path": "qualification/ah3_profiles.py",
+      "type": "file",
+      "mode": 436,
+      "length": 3636,
+      "sha256": "6bae3a5f101513107cf177d0d1ef5ddfc1861c2adc5ffa0790accd7dc97aa470"
+    },
+    {
+      "path": "qualification/ah3_queries.py",
+      "type": "file",
+      "mode": 436,
+      "length": 11031,
+      "sha256": "f42d2165cda037e84ff1997785ffc4e04e299cfd8246d7f3e5fcb6cdb8cc41b8"
+    },
+    {
+      "path": "qualification/owner-input-differences.json",
+      "type": "file",
+      "mode": 436,
+      "length": 526,
+      "sha256": "b38d51007e27fee5764f78f0bc9ffe8ef64da1d83c9bfb757a2ec8f9fefb3378"
+    },
+    {
+      "path": "qualification/owner-inputs.accepted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5357,
+      "sha256": "9d0dd086f4920d00b4c2e25ef079a67da52bb8d81856f52bdc07ee4306cb4091"
+    },
+    {
+      "path": "release.json",
+      "type": "file",
+      "mode": 436,
+      "length": 903,
+      "sha256": "b7a28fb76173eaafbb18694a7eaae726a7d1440d3b9095a7ecb8b3dfae82d393"
+    },
+    {
+      "path": "run-plan.json",
+      "type": "file",
+      "mode": 436,
+      "length": 39491,
+      "sha256": "f4c415e04c40ba0287279c3c77b02b4a01560b5b2c3ee6578f6c9f25a2a6bd92"
+    },
+    {
+      "path": "schema/observed-mcp-discovery.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8889,
+      "sha256": "12a13b1620af3cc23139dff84b250b93ad3b6c5f5f34c04d4597e83fb08c09aa"
+    },
+    {
+      "path": "schema/query-cli-main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 12224,
+      "sha256": "7a70b947df65d6cc4b0911fb48a700b5aef721ec743b2c39d108bab4a120ba8a"
+    },
+    {
+      "path": "schema/server-main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 39572,
+      "sha256": "e511d7cdf442d3d802f7066daf4f7f37d40ce87ca54b91d1856f5e3f2e0d0483"
+    },
+    {
+      "path": "schema/server-task.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 7051,
+      "sha256": "5c0ca7353054a84e23e746f24f6cc4769384dd8e7d3d688d1b0aedee436a119d"
+    }
+  ]
+}
