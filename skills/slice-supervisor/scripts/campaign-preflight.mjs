@@ -16,7 +16,7 @@ const defaults = {
   work_source: null,
   builder: {
     skill: "slice-builder",
-    model: "gpt-6.1-terra", // docs/model-selection.md
+    model: "gpt-6.1-sol", // docs/model-selection.md
     reasoning_effort: "medium",
     context: {
       repository_evidence: { skill: "repo-search", provider: "codex-codebase-memory" },

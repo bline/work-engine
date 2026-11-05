@@ -79,7 +79,7 @@ test("campaign preflight routes comparative definitions without changing kindles
   assert.equal(engineering.engineConfig.objective, "test");
   assert.equal(engineering.engineConfig.source, "engineering.yaml");
   assert.equal(engineering.engineConfig.builder.skill, "slice-builder");
-  assert.equal(engineering.engineConfig.builder.model, "gpt-6.1-terra");
+  assert.equal(engineering.engineConfig.builder.model, "gpt-6.1-sol");
   assert.equal(engineering.engineConfig.builder.reasoning_effort, "medium");
   assert.deepEqual(engineering.engineConfig.slice_completion_commit, { prompt: "enabled" });
   assert.deepEqual(engineering.engineConfig.explicit_fields, ["version", "objective"]);

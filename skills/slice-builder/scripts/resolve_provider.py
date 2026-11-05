@@ -250,7 +250,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config-version", type=int)
     parser.add_argument("--context-json", required=True)
-    parser.add_argument("--builder-model", default="gpt-6.1-terra")  # docs/model-selection.md
+    parser.add_argument("--builder-model", default="gpt-6.1-sol")  # docs/model-selection.md
     parser.add_argument("--builder-reasoning-effort", default="medium")
     args = parser.parse_args()
     try:

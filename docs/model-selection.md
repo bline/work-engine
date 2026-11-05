@@ -1,6 +1,6 @@
 # Model selection for engineering work
 
-Current guidance: 2026-10-28. This is the single place for model and effort
+Current guidance: 2026-11-04. This is the single place for model and effort
 choices. It replaces the 2026-10-20 version, which covered only `gpt-6-astra`
 and `gpt-6-sol`, and the role choices that skills stated for themselves (see
 [Where choices are encoded](#where-choices-are-encoded)).
@@ -21,7 +21,9 @@ coordination, operator attention and maintenance.
   and review and coordination were the rest
   ([experiment plan §1](../metrics/experiment-plan-20261026.md)).
 - **A cheaper builder pays off only if its first attempt is good enough.** Every
-  extra repair round repeats review and coordination.
+  extra repair round repeats review and coordination. In dogfood round 2 a
+  first review cost a median four times the build it reviewed
+  ([round 2 outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md)).
 - **A larger model is not automatically useful for every step.**
 
 Contracts constrain the result; model selection stays judgment wherever the
@@ -35,8 +37,8 @@ review, not for supervising, coordinating, planning or building.
 
 | Role | Default | Effort | Status and evidence |
 | --- | --- | --- | --- |
-| **Builder** for implementation, integration, tests and ordinary remediation under a clear contract | `gpt-6.1-terra` | `medium` | **Owner decision 2026-10-27, provisional.** Usage-export task: 3 first-version failures in the four-builder trial (n = 1), the cheapest arm; In [E1a-Terra](../metrics/probes/e1a-terra-result-20261027.md) (n = 3, $0.13–0.15 per run), 0 failures in all three runs on the 12 battery cases that trace to the packet. The full battery gives 7, 7 and 11, but most of its cases do not trace to the packet ([traceability check](../metrics/probes/e1a-result-20261027.md#battery-traceability-post-hoc-not-pre-registered)). The fixed interface derives from Terra's own earlier design. Its tests are thinner than the Claude builders' (2–4 against 10–14). |
-| **Builder** whose remaining assignment requires substantial unresolved reasoning about concurrency, durability, compatibility, protocols, lifecycle, recovery or ownership across components | `gpt-6.1-sol` | `medium` | **Recommendation clarified 2026-10-28, owner may change.** Select for concrete decisions and risks still owned by the builder. Evidence for Terra on complex work remains limited; a domain label alone does not establish that the assignment needs Sol. |
+| **Builder** for implementation, integration, tests and ordinary remediation under a clear contract | `gpt-6.1-sol` | `medium` | **Owner decision 2026-11-04.** In randomized dogfood round 2 ([outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md), n = 9 Sol, 10 Terra), Sol needed 0.44 repair rounds per task against Terra's 1.00, and passed first review 5 of 9 times against 3 of 9. Neither difference is significant at this n (p = 0.15 and 0.32). Sol's builds cost no more: median $0.93 per builder session against Terra's $1.08, because Terra made more calls. A first review cost a median four times the build. |
+| **Builder** for a small, mechanical, fully specified change (rename, configuration, fixture or documentation edit) with focused validation | `gpt-6.1-terra` | `medium` | **Narrowed 2026-11-04** from the provisional default of 2026-10-27. [E1a-Terra](../metrics/probes/e1a-terra-result-20261027.md) (n = 3, $0.13–0.15 per run): 0 failures in all three runs on the 12 battery cases that trace to the packet; the full battery gives 7, 7 and 11, but most of its cases do not trace to the packet ([traceability check](../metrics/probes/e1a-result-20261027.md#battery-traceability-post-hoc-not-pre-registered)). Usage-export task: 3 first-version failures in the four-builder trial (n = 1), the cheapest arm. Its tests were thinner than the Claude builders' (2–4 against 10–14). In round 2 it took 1.00 repair rounds per task, and one task drew three P1 findings at first review. |
 | Builder on the Claude host, with a fully specified packet | `claude-sonnet-5-5` | `high` | Matched Opus on gates and defect incidence at 38% of the cost ([S2 builder probe](../metrics/probes/claude-s2-builder-20261020-protocol.md), lines 467–560, n = 1). At `medium` in [E1a](../metrics/probes/e1a-result-20261027.md) (n = 3, $0.67–0.73 per run), Sonnet failed 2, 0 and 0 of the 12 traced cases; the full battery gives 11–15. |
 | Builder on the Claude host, where unresolved reasoning or complexity warrants it | `claude-opus-5-5` | `high` | In E1a at `medium` (n = 1, $2.35), Opus failed 0 of the 12 traced cases; the full battery gives 9. |
 | Successor after a Claude builder refusal | the default builder above | as above | The refusal is recorded; the successor gets a fresh packet. |
@@ -45,7 +47,7 @@ review, not for supervising, coordinating, planning or building.
 | Adversarial review, where an OpenAI reviewer is permitted | separate `gpt-6-astra` | `high`; `xhigh` when the subject is architecture, an ownership contract, or planning with unresolved design questions | Challenge the composed result from a separately established context. No measured review comparison of `high` and `xhigh` exists; on supervisor calls `xhigh` used about 14% more weighted tokens per call ([experiment plan §1](../metrics/experiment-plan-20261026.md)). Partitioned Sol review is planned as experiment O1. |
 | Tier-1 reviewer, verifier or assessor on the Claude host | `claude-opus-5-5` | `high` | No matched Sonnet review comparison yet. |
 | Tier-2 reviewer on the Claude host | `claude-fable-5-1`, fresh context | default | **Scarce.** One contract review cost 2% of the weekly Fable meter (n = 1), and Fable also draws the main Claude meter at Fable prices. Use it only for a shared contract, the final acceptance of a workstream, or an unresolved P1 between builder and tier-1 reviewer. Give it a small input (contract, diff, tier-1 findings, with paths), and never a retained follow-up. |
-| Reconnaissance, routine documentation, straightforward edits | the default builder | `medium` or `high` | Match effort to the remaining uncertainty and consequence. |
+| Reconnaissance | the default builder | `medium` or `high` | Match effort to the remaining uncertainty and consequence. Routine documentation and straightforward edits follow the Terra row above. |
 | Experiment arms | as pre-registered | as pre-registered | An arm's model and effort come from its pre-registration, never from this table. |
 
 These are project recommendations, not performance guarantees or mandatory
@@ -53,41 +55,46 @@ phases. A small change need not visit every role. A builder can plan a
 well-bounded implementation.
 
 **Select for the work remaining after discovery and contract formation.**
-Terra at `medium` remains the default for bounded implementation with settled
-behavior and focused validation, including ordinary changes to persistence,
-schemas, protocols, lifecycle code or several packages. For example, adding a
-call to an existing API with specified failure behavior does not by itself
-require a stronger builder. Consider the actual implementation difficulty and
-consequences, not just the subsystem's name.
+Sol at `medium` is the default for implementation under a clear contract,
+including ordinary changes to persistence, schemas, protocols, lifecycle code or
+several packages. Choose Terra only when what remains is mechanical: a small,
+fully specified change checked by focused validation, where a first-review
+failure is unlikely and cheap to repair. Consider the actual implementation
+difficulty and consequences, not just the subsystem's name.
 
-Sol may resolve an open design question during planning while Terra implements
-the resulting clear packet. The builder does not inherit the planner's model
-selection. Choose Sol upfront when concrete remaining uncertainty or risk
-supports the lower expected cost to acceptance; a failed Terra attempt is not
-a prerequisite. Record that reason in the existing assignment.
+Open design questions belong in planning (Sol at `xhigh`, row above), not in a
+builder's effort level. The builder does not inherit the planner's model
+selection. Record the reason for a non-default builder in the existing
+assignment.
 
-**The provisional Terra default** stays under watch in its first real slices.
-Watch, through the existing receipts and the dogfood records:
+**Why the default changed.** The 2026-10-27 Terra default was provisional: the
+guide said to revisit it if review findings or repair rounds exceeded those of
+the previous builder default on comparable slices. Dogfood round 2 made that
+comparison, randomized on production slices. Terra took 10 repair rounds over
+10 tasks against Sol's 4 over 9, and its builds were not cheaper
+([round 2 outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md)).
+
+Keep watching both choices, through the existing receipts and the dogfood
+records:
 - independent review findings;
 - repair rounds;
 - total cost to acceptance;
 - test adequacy.
 
-Review and acceptance requirements are unchanged. Revisit the default if review
-findings or repair rounds exceed those of the previous builder default on
-comparable slices.
+Review and acceptance requirements are unchanged. Revisit if Sol's repair
+rounds or review findings rise on comparable slices, or if changes chosen as
+mechanical for Terra start needing repair rounds.
 
 ## Escalation
 
 - **Effort:** escalate one level at a time, `low` → `medium` → `high`. Stop for
   human judgment before `xhigh` unless configuration or the user authorizes it.
   Record replaced workers, efforts, evidence and reasons.
-- **Builder model:** reconsider Terra when evidence exposes substantial
-  unresolved decisions still delegated to the builder, or repeated failures
-  on clear requirements support a model-capability explanation. Merely
-  touching a risk-bearing subsystem or reaching a repair-round count is
-  insufficient. Diagnose missing contract facts, validation gaps and harness
-  failures before attributing the problem to the model.
+- **Builder model:** move a Terra assignment to Sol when the work turns out not
+  to be mechanical, or when repeated failures on clear requirements support a
+  model-capability explanation. Reaching a repair-round count is insufficient on
+  its own. Diagnose missing contract facts, validation gaps and harness failures
+  before attributing the problem to the model.
 
   A review finding that reopens design goes to the appropriate decision owner;
   select the builder again for the work remaining once that question is settled.
@@ -115,10 +122,11 @@ fit (Terra, Sol 6.1, Fable).
 
 ## Session defaults versus assignments
 
-Sessions started without an explicit selection run their client's default. Today
-those are `gpt-6.1-sol` at `xhigh` in `~/.codex/config.toml`, and Opus at `xhigh`
-in `~/.claude/settings.json`. Those defaults suit roots and coordinators.
-Delegated assignments always select model and effort explicitly, from this guide.
+Sessions started without an explicit selection run their client's default. As
+read on 2026-11-04, those are `gpt-6.1-sol` at `high` in `~/.codex/config.toml`,
+and Opus at `xhigh` in `~/.claude/settings.json`. The supervisor row above names
+`xhigh`. Delegated assignments always select model and effort explicitly, from
+this guide.
 
 For Codex manual orchestration, use `/fast` for the root's
 supervisor/builder tree and separate top-level Astra reviewers at the standard
@@ -188,24 +196,27 @@ authorized work.
 These carry this guide's choices and must match it. Where they differ, this
 guide states the intended choice and the copy is stale.
 
-| Location | What it encodes | State on 2026-10-27 |
+| Location | What it encodes | State on 2026-11-04 |
 | --- | --- | --- |
-| `skills/slice-builder/scripts/resolve_provider.py`: CLI defaults (`--builder-model`, `--builder-reasoning-effort`) and the `CURRENT_CODEX_MODELS` allowlist | campaign builder default; which builder and reviewer models are accepted | aligned: `gpt-6.1-terra` / `medium`; the allowlist is `gpt-6.1-terra`, `gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra` |
-| `skills/slice-supervisor/scripts/campaign-preflight.mjs`: `defaults.builder` and the `currentBuilderModels` allowlist | campaign builder default; preflight rejects a builder model not on its list | aligned: `gpt-6.1-terra` / `medium`; same allowlist |
-| `skills/slice-supervisor/references/work-engine-config.md` | documented campaign defaults | aligned: `gpt-6.1-terra` / `medium` |
+| `skills/slice-builder/scripts/resolve_provider.py`: CLI defaults (`--builder-model`, `--builder-reasoning-effort`) and the `CURRENT_CODEX_MODELS` allowlist | campaign builder default; which builder and reviewer models are accepted | aligned: `gpt-6.1-sol` / `medium`; the allowlist is `gpt-6.1-terra`, `gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra` |
+| `skills/slice-supervisor/scripts/campaign-preflight.mjs`: `defaults.builder` and the `currentBuilderModels` allowlist | campaign builder default; preflight rejects a builder model not on its list | aligned: `gpt-6.1-sol` / `medium`; same allowlist |
+| `skills/slice-supervisor/references/work-engine-config.md` | documented campaign defaults | aligned: `gpt-6.1-sol` / `medium` |
 | `skills/slice-builder/SKILL.md` | default statement and effort ladder | points to this guide |
 | `skills/claude-builder/SKILL.md` and `references/astra-review.md`, `references/native-session.md` | Claude builder, successor and reviewer choices | point to this guide |
 | `skills/manual-orchestration/references/anthropic-host.md` | Claude-host role table | points to this guide; the host mapping (`Agent` `model`, observed `message.model`) stays there |
 | `resolve_builder_context()` signature default in `resolve_provider.py` | internal default for callers that omit the model | stays `gpt-6-sol` / `high` on purpose: production paths pass the model explicitly, and tests use the default to build same-model review cases |
 | `skills/slice-supervisor/scripts/append_metrics.py`, `.get("model", "gpt-6-sol")` and `.get("reasoning_effort", "high")` | how a receipt with no recorded builder model is read | stays as is on purpose: receipts written without an explicit model ran under the earlier default |
 | `~/.codex/config.toml`, `~/.claude/settings.json` | session defaults | see above |
+| `rust/crates/session-bridge/src/provision.rs` admission check and its README | the fixed profile of a read-only diagnostic session | stays `gpt-6.1-terra` / `medium`: a provisioning contract for a read-only diagnostic session, not a builder default; this guide does not change it |
 
-The alignment and pointer edits were applied on 2026-10-27, and the
-slice-builder, slice-supervisor, campaign-preflight and manual-orchestration
-suites pass on that tree.
+The alignment and pointer edits were applied on 2026-10-27 and moved to the Sol
+default on 2026-11-04. On that tree the slice-builder (26 tests, 1 skipped),
+slice-supervisor (105), campaign-preflight (6) and manual-orchestration (193)
+suites pass.
 
 None of the 9 slice-supervisor campaign files sets `builder.model` or
-`builder.reasoning_effort`, so all take the default above; all 9 pass preflight.
+`builder.reasoning_effort`, so all take the default above. On 2026-11-04 all 9
+pass preflight and resolve `gpt-6.1-sol` / `medium`.
 7 of them named `gpt-5.6-sol` at `low` until 2026-10-27, when that model left the
 allowlists; each records the removal as an amendment. The 4 with a Codex
 adversarial reviewer (`agent-instruction-review`, `code-change-characterization-baseline`,
@@ -220,12 +231,13 @@ configuration with no builder.
 | Date | Decision | By |
 | --- | --- | --- |
 | 2026-10-20 | `gpt-6-sol` at `medium` for builders (superseded) | owner |
-| 2026-10-27 | `gpt-6.1-terra` at `medium` as the default builder, provisional | owner |
-| 2026-10-27 | `gpt-6.1-sol` at `medium` for hazard-class builder work until Terra is measured there | recommendation; owner may change |
+| 2026-10-27 | `gpt-6.1-terra` at `medium` as the default builder, provisional (superseded 2026-11-04) | owner |
+| 2026-10-27 | `gpt-6.1-sol` at `medium` for hazard-class builder work until Terra is measured there (superseded 2026-11-04) | recommendation; owner may change |
 | 2026-10-27 | Campaign builder defaults align to this guide | owner |
 | 2026-10-27 | Supervisor moves to `gpt-6.1-sol` at `xhigh` at the next Codex reset, after O2 and as a monitored pilot (superseded 2026-10-28) | owner |
 | 2026-10-27 | Adversarial review: `gpt-6-astra` at `high`, `xhigh` for architecture, ownership-contract or open-design subjects | owner |
 | 2026-10-28 | The supervisor change follows O2 and a real-slice validation (O4 or E5), not the Codex reset date (superseded the same day) | owner |
 | 2026-10-28 | Supervisors and coordinators run `gpt-6.1-sol` at `xhigh`, and so do architecture and open-design planning; `gpt-6-astra` is used only for review | owner |
 | 2026-10-28 | Codex manual roots use `/fast` for supervisors and builders; Astra reviewers launch as separate top-level threads with an explicit standard-tier override. The live probe found `/fast` also persists a shared Fast default, so top-level launch alone is insufficient. Campaign supervisors keep `/fast` off pending separate reviewer launch/binding support. | owner; [observed probe](../metrics/probes/codex-manual-service-tier-20261028.json) |
-| 2026-10-28 | Clarify Terra/medium as the default for bounded implementation after discovery: select Sol for concrete residual decisions and risk, not domain labels, the planner's model, or a repair-round count alone. | guidance clarification following owner feedback |
+| 2026-10-28 | Clarify Terra/medium as the default for bounded implementation after discovery: select Sol for concrete residual decisions and risk, not domain labels, the planner's model, or a repair-round count alone. (Superseded 2026-11-04.) | guidance clarification following owner feedback |
+| 2026-11-04 | `gpt-6.1-sol` at `medium` is the default builder; `gpt-6.1-terra` at `medium` narrows to small, mechanical, fully specified changes. Campaign defaults align. | owner; [round 2 outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md) |

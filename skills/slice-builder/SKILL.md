@@ -43,7 +43,7 @@ Spawn with:
 - the configured `builder.model` and `builder.reasoning_effort`;
 - a task name unique to the run and slice.
 
-When omitted, the work-engine defaults are the builder default in [model selection](../../docs/model-selection.md): `gpt-6.1-terra` at `medium` as of 2026-10-27. These are current selection defaults, not evidence that a runtime used that model or effort. Preserve requested and observed identities separately, and do not substitute a model after a capacity failure without the owning authority.
+When omitted, the work-engine defaults are the builder default in [model selection](../../docs/model-selection.md): `gpt-6.1-sol` at `medium` as of 2026-11-04. These are current selection defaults, not evidence that a runtime used that model or effort. Preserve requested and observed identities separately, and do not substitute a model after a capacity failure without the owning authority.
 
 Give the builder only:
 
