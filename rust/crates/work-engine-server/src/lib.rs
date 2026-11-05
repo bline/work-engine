@@ -1,4 +1,5 @@
 //! Local client for the application server HTTP envelope.
+mod job_output;
 use serde_json::{Value, json};
 use std::{
     io::{Read, Write},
@@ -90,6 +91,33 @@ impl LocalClient {
             return Err("invalid_request");
         }
         self.call(operation, arguments, request_id)
+    }
+
+    /// Calls the distinct coding-job capability. Submission returns durable identity promptly;
+    /// the reads reconcile the same original operation. Job authority is the explicit job
+    /// credential in the arguments, never the service bearer.
+    pub fn job(
+        &self,
+        operation: &str,
+        arguments: Value,
+        request_id: &str,
+    ) -> Result<Value, &'static str> {
+        if !matches!(
+            operation,
+            "submit_coding_job"
+                | "read_coding_job_operation"
+                | "read_coding_job_result"
+                | "cancel_coding_job"
+        ) {
+            return Err("invalid_request");
+        }
+        // The envelope is returned unchanged; an owner result that breaks the published contract is
+        // rejected here instead of being passed to consumers as if it were valid.
+        let envelope = self.call(operation, arguments.clone(), request_id)?;
+        if let Some(result) = envelope.get("owner_result") {
+            job_output::validate(operation, &arguments, result)?;
+        }
+        Ok(envelope)
     }
 
     fn call(

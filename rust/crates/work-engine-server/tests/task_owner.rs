@@ -1901,6 +1901,34 @@ fn session_query_coexists_and_task_capability_is_disabled_without_its_profile() 
         "{}",
         String::from_utf8_lossy(&status.stderr)
     );
+    // The coding-job capability also carries native submission authority. Keep its
+    // combination with the synthetic task owner closed, including half configurations.
+    for fields in [
+        json!({"coding_job_profile": command_path}),
+        json!({"coding_job_capability": "coding-job-offline-fixture-v1"}),
+        json!({"coding_job_profile": command_path,
+            "coding_job_capability": "coding-job-offline-fixture-v1"}),
+    ] {
+        let mut combined = both.clone();
+        for (key, value) in fields.as_object().unwrap() {
+            combined[key] = value.clone();
+        }
+        let path = base.join("combined-job.json");
+        private(&path, combined.to_string().as_bytes());
+        let out = Command::new(env!("CARGO_BIN_EXE_work-engine-server"))
+            .arg(&path)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(1));
+        assert!(
+            String::from_utf8_lossy(&out.stderr).contains("invalid_config"),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
     // Query-only server: the task capability is disabled and never advertised.
     let port_q = free_port();
     let addr_q: SocketAddr = format!("127.0.0.1:{port_q}").parse().unwrap();

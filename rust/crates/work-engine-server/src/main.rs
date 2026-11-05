@@ -1,5 +1,6 @@
 mod claims;
 mod command;
+mod job;
 mod task;
 use serde::{
     Deserialize,
@@ -45,6 +46,10 @@ struct Config {
     task_profile: Option<String>,
     #[serde(default)]
     task_capability: Option<String>,
+    #[serde(default)]
+    coding_job_profile: Option<String>,
+    #[serde(default)]
+    coding_job_capability: Option<String>,
     max_connections: usize,
     max_queries: usize,
     request_timeout_seconds: u64,
@@ -54,6 +59,8 @@ struct App {
     _claims_profile_lock: Option<std::fs::File>,
     profile: Option<Profile>,
     credential: Vec<u8>,
+    jobs: Option<Arc<job::Jobs>>,
+    _job_profile_lock: Option<std::fs::File>,
     command_profile: Option<Profile>,
     _command_profile_lock: Option<std::fs::File>,
     task_owner: Option<task::Owner>,
@@ -200,6 +207,37 @@ impl App {
                 }
             };
         }
+        if job::operation(&r.operation) {
+            let Some(jobs) = self.jobs.clone() else {
+                return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
+            };
+            let permit = match self.slots.clone().acquire_owned().await {
+                Ok(p) => p,
+                Err(_) => {
+                    return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":"owner_unavailable"}});
+                }
+            };
+            // The permit bounds only this short request; the owned collector outlives it.
+            let result = tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                jobs.call(&r.operation, r.arguments)
+            })
+            .await;
+            return match result {
+                Ok(Ok(value)) if value.to_string().len() <= 1024 * 1024 => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_result":value})
+                }
+                Ok(Ok(_)) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":"output_too_large"}})
+                }
+                Ok(Err(code)) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":code}})
+                }
+                Err(_) => {
+                    json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"owner_error":{"code":"owner_unavailable"}})
+                }
+            };
+        }
         // No session or command owner is reachable from claims-only startup.
         if self.profile.is_none() {
             return json!({"schema_version":1,"request_id":r.request_id,"server_identity":self.identity,"server_build":self.build,"error":{"code":"invalid_request"}});
@@ -309,7 +347,10 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
             .as_deref()
             .is_some_and(|c| c != task::CAPABILITY)
         || config.task_profile.is_some()
-            && (config.command_profile.is_some() || config.command_capability.is_some())
+            && (config.command_profile.is_some()
+                || config.command_capability.is_some()
+                || config.coding_job_profile.is_some()
+                || config.coding_job_capability.is_some())
         || !std::path::Path::new(&config.credential_file).is_absolute()
         || config.version != 1
         || !matches!(config.listen.ip(), IpAddr::V4(ip) if ip.is_loopback())
@@ -370,6 +411,25 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
         } else {
             (None, None, Vec::new())
         };
+    if config.coding_job_profile.is_some() != config.coding_job_capability.is_some()
+        || config
+            .coding_job_capability
+            .as_deref()
+            .is_some_and(|c| c != job::CAPABILITY_OFFLINE)
+    {
+        return Err("invalid_job_profile");
+    }
+    let (job_profile_lock, jobs, job_bytes) = if let Some(path) = &config.coding_job_profile {
+        if !std::path::Path::new(path).is_absolute() {
+            return Err("invalid_job_profile");
+        }
+        let (lock, bytes) = lock_private(path).map_err(|_| "invalid_job_profile")?;
+        let profile: job::JobProfile =
+            serde_json::from_slice(&bytes).map_err(|_| "invalid_job_profile")?;
+        (Some(lock), Some(Arc::new(job::Jobs::new(profile)?)), bytes)
+    } else {
+        (None, None, Vec::new())
+    };
     let (claims_profile_lock, repository_claims, claims_bytes) =
         if let Some(path) = &config.repository_claims_profile {
             if !std::path::Path::new(path).is_absolute() {
@@ -395,12 +455,15 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
     hash.update(&command_bytes);
     hash.update(&claims_bytes);
     hash.update(&task_bytes);
+    hash.update(&job_bytes);
     let identity = format!("sha256:{:x}", hash.finalize());
     let build = build_identity()?;
     let app = Arc::new(App {
         repository_claims,
         _claims_profile_lock: claims_profile_lock,
         profile,
+        jobs,
+        _job_profile_lock: job_profile_lock,
         command_profile,
         _command_profile_lock: command_profile_lock,
         task_owner,
@@ -434,6 +497,8 @@ fn load_claims_stdio(path: &str) -> Result<Arc<App>, &'static str> {
         repository_claims: Some(reads),
         _claims_profile_lock: Some(lock),
         profile: None,
+        jobs: None,
+        _job_profile_lock: None,
         credential: Vec::new(),
         command_profile: None,
         _command_profile_lock: None,
@@ -740,6 +805,30 @@ async fn mcp(app: Arc<App>, mut stop: watch::Receiver<bool>) {
                     tools.push(json!({"name":"read_session_operation","description":"Read and reconcile an exact granted request","inputSchema":{"type":"object","additionalProperties":false,"properties":{"request_id":{"type":"string"},"grant_credential":{"type":"string"}},"required":["request_id","grant_credential"]}}));
                     tools.push(json!({"name":"read_session_result","description":"Read enriched result of an exact granted request","inputSchema":{"type":"object","additionalProperties":false,"properties":{"request_id":{"type":"string"},"grant_credential":{"type":"string"},"text_offset":{"type":"integer"},"max_chars":{"type":"integer"}},"required":["request_id","grant_credential"]}}));
                 }
+                if app.jobs.is_some() {
+                    let tools = listing["tools"].as_array_mut().unwrap();
+                    let auth = json!({"request_id":{"type":"string"},"authorization_id":{"type":"string"},"job_credential":{"type":"string"}});
+                    let mut submit = auth.clone();
+                    submit["job_sha256"] = json!({"type":"string"});
+                    submit["packet_sha256"] = json!({"type":"string"});
+                    tools.push(json!({"name":"submit_coding_job","description":"Submit one operator-pinned exact coding job; returns durable operation identity","inputSchema":{"type":"object","additionalProperties":false,"properties":submit,"required":["request_id","authorization_id","job_credential","job_sha256","packet_sha256"]}}));
+                    for (name, text) in [
+                        (
+                            "read_coding_job_operation",
+                            "Read and reconcile the original coding-job operation",
+                        ),
+                        (
+                            "read_coding_job_result",
+                            "Read the original Host receipt with separate terminal, validation and cleanup projections",
+                        ),
+                        (
+                            "cancel_coding_job",
+                            "Request bounded cancellation; does not establish cancellation or closure",
+                        ),
+                    ] {
+                        tools.push(json!({"name":name,"description":text,"inputSchema":{"type":"object","additionalProperties":false,"properties":auth,"required":["request_id","authorization_id","job_credential"]}}));
+                    }
+                }
                 listing
             }
             "tools/call" if initialized => {
@@ -891,13 +980,40 @@ async fn run(path: String) {
     drain(app, config.max_queries, mcp_failed).await;
 }
 async fn drain(app: Arc<App>, max_queries: usize, mcp_failed: bool) {
+    // Owned coding-job collectors request Host cancellation, then actual process status is collected.
+    // Unclosed collectors are reported, never assumed closed; the original operation ids stay readable.
+    // Shutdown also fences the collector registry, so a request that outlives its transport timeout
+    // cannot start a collector afterwards.
+    let mut jobs_clean = true;
+    if let Some(jobs) = app.jobs.clone() {
+        jobs_clean = tokio::task::spawn_blocking(move || jobs.shutdown(Duration::from_secs(90)))
+            .await
+            .unwrap_or(false);
+        if !jobs_clean {
+            eprintln!("drain deadline: coding-job collector custody unresolved");
+        }
+    }
+    let mcp_failed = mcp_failed || !jobs_clean;
     // A timed-out or disconnected transport can drop its join handle while the owner helper still runs.
-    match tokio::time::timeout(
+    let permits = tokio::time::timeout(
         Duration::from_secs(40),
         app.slots.clone().acquire_many_owned(max_queries as u32),
     )
-    .await
+    .await;
+    // Every request has now released its permit. The registry was fenced before the first drain, so
+    // nothing admitted after it can exist; confirm that before declaring completion.
+    if permits.as_ref().is_ok_and(|p| p.is_ok())
+        && let Some(jobs) = app.jobs.clone()
     {
+        jobs_clean = tokio::task::spawn_blocking(move || jobs.shutdown(Duration::from_secs(90)))
+            .await
+            .unwrap_or(false);
+        if !jobs_clean {
+            eprintln!("drain deadline: coding-job collector admitted during drain unresolved");
+        }
+    }
+    let mcp_failed = mcp_failed || !jobs_clean;
+    match permits {
         Ok(Ok(_)) if !mcp_failed => eprintln!("drain complete"),
         Ok(Ok(_)) => {
             eprintln!("drain complete; MCP task failed");

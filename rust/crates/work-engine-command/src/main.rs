@@ -27,6 +27,58 @@ struct Arguments {
     workspace: String,
     input_text: String,
 }
+const JOB_OPERATIONS: [&str; 4] = [
+    "submit_coding_job",
+    "read_coding_job_operation",
+    "read_coding_job_result",
+    "cancel_coding_job",
+];
+const JOB_READ_KEYS: [&str; 3] = ["request_id", "authorization_id", "job_credential"];
+const JOB_SUBMIT_KEYS: [&str; 5] = [
+    "request_id",
+    "authorization_id",
+    "job_credential",
+    "job_sha256",
+    "packet_sha256",
+];
+/// Strict client-side shape check. The server repeats it and owns the authority decision.
+fn job_arguments(operation: &str, bytes: &[u8]) -> Result<Value, &'static str> {
+    let value: Value = serde_json::from_slice(bytes).map_err(|_| "invalid_arguments")?;
+    let keys: &[&str] = if operation == "submit_coding_job" {
+        &JOB_SUBMIT_KEYS
+    } else {
+        &JOB_READ_KEYS
+    };
+    let object = value.as_object().ok_or("invalid_arguments")?;
+    if object.len() != keys.len()
+        || !keys
+            .iter()
+            .all(|k| object.get(*k).is_some_and(Value::is_string))
+    {
+        return Err("invalid_arguments");
+    }
+    Ok(value)
+}
+fn job_human(owner: &Value) {
+    for (label, key) in [
+        ("Operation", "operation_id"),
+        ("Entry", "entry"),
+        ("State", "state"),
+        ("Job", "job_id"),
+        ("Host receipt", "host_receipt_id"),
+        ("Cancellation", "cancellation"),
+        ("Result", "result"),
+        ("Terminal", "terminal"),
+        ("Validation", "validation"),
+        ("Cleanup", "cleanup"),
+        ("Process cleanup", "process_cleanup"),
+        ("Acceptance", "acceptance"),
+        ("Domain effect settlement", "domain_effect_settlement"),
+    ] {
+        println!("{label}: {}", observation(owner.get(key)));
+    }
+    println!("Settlement: not established by the adapter");
+}
 fn safe(s: &str) -> String {
     s.chars()
         .flat_map(|c| {
@@ -59,7 +111,10 @@ fn observation(value: Option<&Value>) -> String {
         _ => "unknown".into(),
     }
 }
-fn human_owner(owner: &Value) {
+fn human_owner(operation: &str, owner: &Value) {
+    if JOB_OPERATIONS.contains(&operation) {
+        return job_human(owner);
+    }
     for (label, key) in [
         ("Operation", "operation_id"),
         ("Entry", "entry_state"),
@@ -97,11 +152,12 @@ fn ambiguous_owner_error(code: &str) -> bool {
 }
 fn run(args: &[String]) -> Result<Value, &'static str> {
     if args.len() != 5
-        || args[2] != "submit_session_request"
+        || !(args[2] == "submit_session_request" || JOB_OPERATIONS.contains(&args[2].as_str()))
         || !matches!(args[3].as_str(), "--json" | "--human")
     {
         return Err("invalid_invocation");
     }
+    let job = JOB_OPERATIONS.contains(&args[2].as_str());
     let p: Profile = serde_json::from_slice(&session_query::read_file(&args[1], 16384, true)?)
         .map_err(|_| "invalid_profile")?;
     if p.version != 1
@@ -126,8 +182,20 @@ fn run(args: &[String]) -> Result<Value, &'static str> {
     if bytes.len() > session_query::INPUT_LIMIT {
         return Err("input_too_large");
     }
-    let a: Arguments = serde_json::from_slice(&bytes).map_err(|_| "invalid_arguments")?;
-    let id = a.request_id.as_bytes();
+    let (request_id, arguments) = if job {
+        let value = job_arguments(&args[2], &bytes)?;
+        (
+            value["request_id"].as_str().unwrap_or_default().to_string(),
+            value,
+        )
+    } else {
+        let a: Arguments = serde_json::from_slice(&bytes).map_err(|_| "invalid_arguments")?;
+        (
+            a.request_id.clone(),
+            serde_json::to_value(a).map_err(|_| "invalid_arguments")?,
+        )
+    };
+    let id = request_id.as_bytes();
     if id.len() != 36
         || !id.iter().enumerate().all(|(i, b)| {
             if [8, 13, 18, 23].contains(&i) {
@@ -139,29 +207,38 @@ fn run(args: &[String]) -> Result<Value, &'static str> {
     {
         return Err("invalid_arguments");
     }
-    let arguments = serde_json::to_value(a).map_err(|_| "invalid_arguments")?;
     let timeout = Duration::from_secs(p.timeout_seconds);
     let client = work_engine_server::LocalClient::new(p.endpoint, p.credential_file, timeout)?;
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let operation = args[2].clone();
     std::thread::spawn(move || {
-        let _ = tx.send(client.command("submit_session_request", arguments, "work-engine-command"));
+        let _ = tx.send(if job {
+            client.job(&operation, arguments, "work-engine-command")
+        } else {
+            client.command(&operation, arguments, "work-engine-command")
+        });
     });
     rx.recv_timeout(timeout).map_err(|_| "transport_timeout")?
 }
 fn main() {
     let args: Vec<String> = env::args().collect();
     let json_mode = args.get(3).is_some_and(|s| s == "--json");
+    let schema = if args
+        .get(2)
+        .is_some_and(|op| JOB_OPERATIONS.contains(&op.as_str()))
+    {
+        "work-engine.coding-job-command.service.v1"
+    } else {
+        "work-engine.session-command.service.v1"
+    };
     match run(&args) {
         Ok(envelope) => {
             let owner = envelope.get("owner_result").filter(|v| !v.is_null());
             let ok = owner.is_some();
             if json_mode {
-                println!(
-                    "{}",
-                    json!({"schema":"work-engine.session-command.service.v1","ok":ok,"envelope":envelope})
-                );
+                println!("{}", json!({"schema":schema,"ok":ok,"envelope":envelope}));
             } else if let Some(owner) = owner {
-                human_owner(owner);
+                human_owner(&args[2], owner);
             } else {
                 let code = envelope
                     .get("owner_error")
@@ -183,7 +260,7 @@ fn main() {
             if json_mode {
                 println!(
                     "{}",
-                    json!({"schema":"work-engine.session-command.service.v1","ok":false,"error":{"code":code}})
+                    json!({"schema":schema,"ok":false,"error":{"code":code}})
                 );
             } else {
                 eprintln!("Command failed: {}", safe(code));

@@ -91,3 +91,7 @@ Admission to a later live run requires these owned facts and explicit live autho
 The source design received fresh separate Astra/xhigh/default native readOnly/network-disabled review and root acceptance, as recorded in the dated decision. Publication changes only its heading, standing and evidence links; the operator examples and capability boundaries retain that reviewed meaning. Review is same-provider, not provider independence.
 
 For any later implementation/qualification: use meaningful exact-byte vectors (Unicode/trailing newline/header changes), altered target/request/wire refusal, expired first admission versus existing-operation reads, revoked reads, wrong bearer role, rejected extra fields, partial/truncated/unavailable results, timeout/disconnect then original-identity reconciliation without another entry, and separate native closure/usage evidence. Existing synthetic tests retain bounded standing; the design and documentation publication performed no runtime tests, preview, issuer or native calls.
+
+## Coding jobs
+
+Coding jobs are a separate capability with their own authority, DTOs and operator contract. A session-message grant does not authorize them. See the [coding-job operating guide](coding-job-operating-guide.md).

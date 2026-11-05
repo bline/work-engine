@@ -1,0 +1,381 @@
+//! Strict public contract for coding-job owner results, checked at the client boundary.
+//!
+//! Variants mirror `schemas/coding-job-v1.json`. Adapter-owned fields are typed and unknown fields
+//! are rejected; Host-owned payload (`receipt`, collector records) stays opaque beyond the
+//! identity fields that tie it to the original operation.
+// Typed fields exist to be rejected on mismatch; several are never read afterwards.
+#![allow(dead_code)]
+use serde::Deserialize;
+use serde_json::Value;
+
+const SCHEMA: &str = "work-engine.coding-job.v1";
+
+// Unlike an ordinary Option field, this field must be present; only its value may be null.
+fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer)
+}
+
+// Serde derive also accepts a positional array for a struct. The schema defines these projections
+// as JSON objects, so every adapter-owned object is read through this map-only entry point.
+fn object<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    struct MapOnly<T>(std::marker::PhantomData<T>);
+    impl<'de, T: Deserialize<'de>> serde::de::Visitor<'de> for MapOnly<T> {
+        type Value = T;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a JSON object")
+        }
+        fn visit_map<A: serde::de::MapAccess<'de>>(self, map: A) -> Result<T, A::Error> {
+            T::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+        }
+    }
+    deserializer.deserialize_map(MapOnly(std::marker::PhantomData))
+}
+
+// Serde derive also accepts `{"variant": null}` for a unit variant. The schema defines these as
+// plain strings, so each adapter-owned enum is a string-only match over its wire names.
+macro_rules! string_enum {
+    ($name:ident { $($variant:ident => $wire:literal),+ $(,)? }) => {
+        enum $name {
+            $($variant),+
+        }
+        impl<'de> Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+                struct V;
+                impl serde::de::Visitor<'_> for V {
+                    type Value = $name;
+                    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        f.write_str(concat!("one of the strings ", $($wire, " "),+))
+                    }
+                    fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<$name, E> {
+                        match v {
+                            $($wire => Ok($name::$variant),)+
+                            _ => Err(E::unknown_variant(v, &[$($wire),+])),
+                        }
+                    }
+                }
+                d.deserialize_str(V)
+            }
+        }
+    };
+}
+
+// An optional key: it may be absent, but when present its value must not be null.
+fn present<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
+
+fn hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+}
+fn id(s: &str) -> bool {
+    !s.is_empty()
+        && s.len() <= 64
+        && s.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+}
+fn uuid(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 36
+        && b.iter().enumerate().all(|(i, c)| {
+            if [8, 13, 18, 23].contains(&i) {
+                *c == b'-'
+            } else {
+                c.is_ascii_hexdigit()
+            }
+        })
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Cleanup {
+    #[serde(deserialize_with = "required_nullable")]
+    run: Option<Cleaned>,
+    #[serde(deserialize_with = "required_nullable")]
+    reconcile: Option<Cleaned>,
+}
+
+string_enum!(NotEstablished {
+    NotEstablished => "not_established",
+});
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ObservedBool {
+    Value(bool),
+    Unknown(NotEstablished),
+}
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ObservedExit {
+    Value(Option<i32>),
+    Unknown(NotEstablished),
+}
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ObservedFailures {
+    Value(Vec<String>),
+    Unknown(NotEstablished),
+}
+string_enum!(TerminalStatus {
+    ComponentPassed => "component_passed",
+    ComponentFailed => "component_failed",
+    NotEstablished => "not_established",
+});
+string_enum!(HostPhase {
+    Admitted => "admitted",
+    CreateUnknown => "create_unknown",
+    Created => "created",
+    StartUnknown => "start_unknown",
+    Running => "running",
+    Collecting => "collecting",
+    Collected => "collected",
+    NotEstablished => "not_established",
+});
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Terminal {
+    status: TerminalStatus,
+    phase: HostPhase,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Validation {
+    rpc_verified: ObservedBool,
+    failures: ObservedFailures,
+    coding_completed: ObservedBool,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ResultCleanup {
+    removed: ObservedBool,
+    daemon_exit: ObservedExit,
+    tool_removed: ObservedBool,
+    #[serde(deserialize_with = "object")]
+    collector: Cleanup,
+}
+string_enum!(Cleaned {
+    OwnedProcessGroupCollected => "owned_process_group_collected",
+    NotEstablished => "not_established",
+});
+string_enum!(State {
+    BoundNotEntered => "bound_not_entered",
+    Collecting => "collecting",
+    Reconciling => "reconciling",
+    Collected => "collected",
+    EntryUncertain => "entry_uncertain",
+    HostStateUnreadable => "host_state_unreadable",
+});
+string_enum!(Entry {
+    Started => "collector_started",
+    Existing => "existing_operation",
+});
+string_enum!(Settlement {
+    NotEstablished => "not_established_by_submission",
+});
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Operation {
+    schema: String,
+    operation_id: String,
+    request_id: String,
+    authorization_id: String,
+    job_id: String,
+    state_dir: String,
+    job_sha256: String,
+    expected_host_input_digest: String,
+    #[serde(deserialize_with = "required_nullable")]
+    host_input_digest: Option<String>,
+    state: State,
+    entered_possible: bool,
+    collector_live: bool,
+    #[serde(deserialize_with = "required_nullable")]
+    host_phase: Option<HostPhase>,
+    #[serde(deserialize_with = "required_nullable")]
+    host_removed: Option<bool>,
+    #[serde(deserialize_with = "required_nullable")]
+    host_receipt_id: Option<String>,
+    #[serde(deserialize_with = "required_nullable")]
+    collector_run: Option<serde_json::Map<String, Value>>,
+    #[serde(deserialize_with = "required_nullable")]
+    collector_reconcile: Option<serde_json::Map<String, Value>>,
+    #[serde(deserialize_with = "object")]
+    process_cleanup: Cleanup,
+    limitations: Vec<String>,
+    settlement: Settlement,
+    /// Present on submission only; absent otherwise, never null.
+    #[serde(default, deserialize_with = "present")]
+    entry: Option<Entry>,
+}
+
+impl Operation {
+    fn check(&self, arguments: &Value, submission: bool) -> Result<(), &'static str> {
+        if self.schema != SCHEMA
+            || !hex64(&self.operation_id)
+            || !uuid(&self.request_id)
+            || !id(&self.authorization_id)
+            || !id(&self.job_id)
+            || !self.state_dir.starts_with('/')
+            || !hex64(&self.job_sha256)
+            || !hex64(&self.expected_host_input_digest)
+            || self.host_input_digest.as_ref().is_some_and(|d| {
+                !hex64(d) || *d != self.expected_host_input_digest
+            })
+            || self.host_receipt_id.as_ref().is_some_and(|r| !hex64(r))
+            || self.entry.is_some() != submission
+            // The response must describe the operation the caller named.
+            || arguments["request_id"] != self.request_id.as_str()
+            || arguments["authorization_id"] != self.authorization_id.as_str()
+            // State, entry and liveness must not contradict each other.
+            || (matches!(self.state, State::BoundNotEntered) && self.entered_possible)
+            || matches!(self.state, State::Collecting) != self.collector_live
+            || (matches!(self.state, State::Collected) && self.host_removed != Some(true))
+        {
+            return Err("invalid_response");
+        }
+        Ok(())
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Cancel {
+    schema: String,
+    operation_id: String,
+    request_id: String,
+    cancellation: Cancellation,
+    cancellation_established: bool,
+    container_closure_established: bool,
+    settlement: NotClaimed,
+    next: String,
+}
+string_enum!(Cancellation {
+    Requested => "requested",
+    RequestNotRecorded => "request_not_recorded",
+});
+string_enum!(NotClaimed {
+    NotClaimed => "not_claimed",
+});
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Unavailable {
+    schema: String,
+    result: Availability,
+    #[serde(deserialize_with = "object")]
+    operation: Operation,
+}
+string_enum!(Availability {
+    NotAvailable => "not_available",
+});
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HostOutput {
+    action: HostAction,
+    exit_code: ObservedExit,
+    note: String,
+}
+string_enum!(HostAction {
+    Run => "run",
+    Reconcile => "reconcile",
+});
+string_enum!(Available {
+    Available => "available",
+});
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AvailableResult {
+    schema: String,
+    result: Available,
+    #[serde(deserialize_with = "object")]
+    operation: Operation,
+    #[serde(deserialize_with = "object")]
+    terminal: Terminal,
+    #[serde(deserialize_with = "object")]
+    validation: Validation,
+    #[serde(deserialize_with = "object")]
+    cleanup: ResultCleanup,
+    acceptance: Value,
+    domain_effect_settlement: Value,
+    receipt_id: String,
+    input_digest: String,
+    receipt: serde_json::Map<String, Value>,
+    #[serde(deserialize_with = "object")]
+    host_output: HostOutput,
+}
+
+/// Validates one owner result for `operation`. `arguments` are the caller's own request arguments.
+pub fn validate(
+    operation: &str,
+    arguments: &Value,
+    owner_result: &Value,
+) -> std::result::Result<(), &'static str> {
+    let bad = |_| "invalid_response";
+    match operation {
+        "submit_coding_job" | "read_coding_job_operation" => {
+            let o: Operation = object(owner_result).map_err(bad)?;
+            o.check(arguments, operation == "submit_coding_job")
+        }
+        "cancel_coding_job" => {
+            let c: Cancel = object(owner_result).map_err(bad)?;
+            // Cancellation is a request; closure is established only by the operation and Host receipt.
+            if c.schema != SCHEMA
+                || !hex64(&c.operation_id)
+                || c.request_id != arguments["request_id"]
+                || c.cancellation_established
+                || c.container_closure_established
+                || c.next.is_empty()
+            {
+                return Err("invalid_response");
+            }
+            Ok(())
+        }
+        "read_coding_job_result" => match owner_result["result"].as_str() {
+            Some("not_available") => {
+                let u: Unavailable = object(owner_result).map_err(bad)?;
+                if u.schema != SCHEMA || !matches!(u.result, Availability::NotAvailable) {
+                    return Err("invalid_response");
+                }
+                u.operation.check(arguments, false)
+            }
+            Some("available") => {
+                let r: AvailableResult = object(owner_result).map_err(bad)?;
+                r.operation.check(arguments, false)?;
+                if r.schema != SCHEMA
+                    || !matches!(r.result, Available::Available)
+                    || !hex64(&r.receipt_id)
+                    || r.input_digest != r.operation.expected_host_input_digest
+                    // The wrapper ID must be the one the operation's Host journal recorded, if any.
+                    || r.operation.host_receipt_id.as_ref().is_some_and(|j| *j != r.receipt_id)
+                    || r.receipt.get("input_digest").and_then(Value::as_str)
+                        != Some(r.input_digest.as_str())
+                    || r.receipt.get("job_id").and_then(Value::as_str)
+                        != Some(r.operation.job_id.as_str())
+                    || r.host_output.note.is_empty()
+                    || !r.acceptance.is_string()
+                    || !r.domain_effect_settlement.is_string()
+                {
+                    return Err("invalid_response");
+                }
+                Ok(())
+            }
+            _ => Err("invalid_response"),
+        },
+        _ => Err("invalid_request"),
+    }
+}
+
+#[cfg(test)]
+#[path = "job_output/tests.rs"]
+mod tests;

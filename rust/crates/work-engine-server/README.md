@@ -226,8 +226,9 @@ never creates approval. Evidence: `tests/task_owner.rs`.
 
 ### Task capability limits and unsupported combinations
 
-- `task_profile` with `command_profile`/`command_capability` is rejected at startup
-  (`invalid_config`). The command capability carries native-session submission
+- `task_profile` with `command_profile`/`command_capability` or
+  `coding_job_profile`/`coding_job_capability` is rejected at startup
+  (`invalid_config`). These capabilities carry native-session or coding-job submission
   authority; the task capability is a synthetic, fixed-policy owner. Composing
   them in one process has no accepted authority model, so it is refused rather
   than silently combined. Existing command configurations (without a task
@@ -262,3 +263,17 @@ never creates approval. Evidence: `tests/task_owner.rs`.
 - Synthetic fixed policy and cooperative local Linux only. Transport
   authentication never creates approval: the owner re-verifies the signature,
   deadlines, revocation and replay on every consume.
+
+## Coding jobs (offline fixture profile)
+
+With `"coding_job_profile":"/absolute/private/job-profile.json"` and
+`"coding_job_capability":"coding-job-offline-fixture-v1"` the server also serves
+`submit_coding_job`, `read_coding_job_operation`, `read_coding_job_result` and
+`cancel_coding_job` (HTTP envelope, MCP tools, `LocalClient::job`, and
+`work-engine-command PROFILE OPERATION --json|--human ARGS|-`). This capability is
+distinct from the session-message `offline-synthetic-v1` command profile: separate
+config fields, a separate job credential pinned by hash in the operator profile,
+and no session grant or bearer authorizes a job. The Pi Host remains the owner of
+admission, effects, custody and receipts. See the
+[coding-job operating guide](../../../docs/coding-job-operating-guide.md) and
+[schema](schemas/coding-job-v1.json). Qualification is offline only.

@@ -16,7 +16,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-const OWNER_SHA: &str = "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d";
+// Approved query owner and its accepted disabled coding-job consumer extension (d44b1bbf).
+// Keep existing operator profiles valid; each invocation still verifies its selected exact pin.
+const OWNER_SHAS: &[&str] = &[
+    "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d",
+    "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd",
+];
 const HELPER: &str = include_str!("../owner.py");
 const OWNER_LIMIT: usize = 512 * 1024;
 pub const INPUT_LIMIT: usize = 256 * 1024;
@@ -53,7 +58,7 @@ pub struct Profile {
 impl Profile {
     pub fn validate(&self) -> Result<(), &'static str> {
         if self.version != 1
-            || self.owner_sha256 != OWNER_SHA
+            || !OWNER_SHAS.contains(&self.owner_sha256.as_str())
             || [
                 &self.owner,
                 &self.codex_home,
@@ -252,7 +257,7 @@ pub fn query(profile: &Profile, query: &Query) -> Result<Value, &'static str> {
         return Err("bridge_unavailable");
     }
     let owner = read_file(&profile.owner, OWNER_LIMIT, false).map_err(|_| "owner_unavailable")?;
-    if format!("{:x}", Sha256::digest(&owner)) != OWNER_SHA {
+    if format!("{:x}", Sha256::digest(&owner)) != profile.owner_sha256 {
         return Err("owner_pin_mismatch");
     }
     let source = String::from_utf8(owner).map_err(|_| "owner_unavailable")?;
@@ -381,6 +386,26 @@ fn transport(payload: &[u8], timeout: Duration, program: &str) -> Result<Value, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn both_approved_owner_pins_preserve_profile_compatibility() {
+        let mut profile = Profile {
+            version: 1,
+            owner: "/private/owner.py".into(),
+            owner_sha256: String::new(),
+            codex_home: "/private/codex".into(),
+            claude_home: "/private/claude".into(),
+            state_dir: "/private/events".into(),
+            bridge: None,
+            context: None,
+        };
+        for pin in OWNER_SHAS {
+            profile.owner_sha256 = (*pin).into();
+            assert!(profile.validate().is_ok());
+        }
+        profile.owner_sha256 = "a".repeat(64);
+        assert_eq!(profile.validate(), Err("invalid_profile"));
+    }
+
     #[test]
     fn protocol_limits_and_cleanup() {
         assert_eq!(
