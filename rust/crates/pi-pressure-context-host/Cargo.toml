@@ -12,5 +12,6 @@ lifecycle-runtime = { path = "../lifecycle-runtime" }
 pi-context-transition = { path = "../pi-context-transition" }
 context-pressure = { path = "../context-pressure" }
 work-engine-types = { path = "../work-engine-types" }
+work-engine-manual-host = { path = "../work-engine-manual-host" }
 serde_json = "=1.0.151"
 tokio = { version = "=1.53.2", features = ["rt-multi-thread", "macros", "process", "time", "io-util"] }

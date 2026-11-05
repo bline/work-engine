@@ -1,0 +1,195 @@
+{
+  "schema": "work-engine.s10-coding-lifecycle-bridge-result.v1",
+  "status": "accepted_bounded_source",
+  "date": "2026-11-05",
+  "scope": "Bounded provider-disabled coding Host/lifecycle/Pi continuity; source acceptance and integration pending",
+  "base": "41d47209a107d2230b3228ef3b624dcf20dc3a06",
+  "source_manifest": "/home/bline/.local/state/work-engine/s10-coding-lifecycle-bridge-20261105T0516/repair/runtime-ready-source-manifest-r5.json",
+  "source_manifest_sha256": "eeaa0b25a049109e2626e863d83caffe85d18835507282f6c068efbe4f8c9d1c",
+  "ready": "/home/bline/.local/state/work-engine/s10-coding-lifecycle-bridge-20261105T0516/repair/runtime-ready-r5.json",
+  "changes": [
+    "Existing Host owns tool intent/custody/exact results; lifecycle owns parent/current grants/replacement.",
+    "Versioned coding profile/protocol verifies exact native/tool/result/workspace/history linkage and excludes generic settlement under either identifier.",
+    "Existing coding receiver performs actual SDK newSession, disables automatic compaction, rehydrates the exact checkpoint, then continues without repeated tool entry.",
+    "Current grant and expiry checks serialize at actual IPC/actuator entry. Unknown effects remain uncertain across reopen.",
+    "Complete ordered model-visible system input, including Pi sections, is verified against native-owned history."
+  ],
+  "tests": {
+    "bridge": 12,
+    "lifecycle_pi": 9,
+    "host": 28,
+    "host_ignored": 5,
+    "strict_bridge_and_host": "passed",
+    "receiver_syntax_and_frozen_build": "passed",
+    "strict_lifecycle_owner": "unchanged native.rs needless_borrow baseline remains; no blanket strict pass"
+  },
+  "historical_attempts": "/home/bline/.local/state/work-engine/s10-coding-lifecycle-bridge-20261105T0516/cumulative-runtime-effects.json",
+  "limitations": [
+    "Fake provider responses and injected pressure; actual SDK runtime/context observations do not establish model comprehension or subscription quota.",
+    "Pi SDK adapter only; Codex CLI target-agent new_context/token_budget compatibility remains a separate integration seam.",
+    "Production/domain acceptance remains owner_pending/not_claimed. No task-answer, MCP, UI, AH, CLI, claims, live-provider or deployment integration is asserted.",
+    "Old failed/uncertain r2/r3b parents remain historical and were not replayed or manually settled."
+  ],
+  "authority": {
+    "approved_at": "2026-11-05T05:16:20.046Z",
+    "approval_line": 12491,
+    "hard_usd": 30,
+    "hard_deadline": "2026-11-05T08:16:20.046Z",
+    "cost_basis": "speed-adjusted API-equivalent dollars, not measured subscription quota"
+  },
+  "evidence_root": "/home/bline/.local/state/work-engine/s10-coding-lifecycle-bridge-20261105T0516",
+  "accepted_at": "2026-11-05T07:11:18.301143+00:00",
+  "acceptance_owner": "Root01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "integration": "Separate destination-ref guarded publication journal; this record does not claim broader product acceptance",
+  "review": {
+    "sid": "01a1aa76-85fc-7dc2-8616-021ab77af3b5",
+    "initial_report_sha256": "3a92c735f0bf0982a1440a5670fb686fd6df932645d10b79b704f705f346eb5d",
+    "final_report_sha256": "86d464804dbceac513f48107cec91275dc90f15d1bd1b2d7c7df9af306fe464b",
+    "final_report": "/home/bline/.local/state/work-engine/s10-coding-lifecycle-bridge-20261105T0516/review/report-r5.json",
+    "verdict": "accept",
+    "open_p1_p2": [],
+    "configuration": "gpt-6-astra/xhigh/default, fresh separate native readOnly/networkfalse; same retained recheck, no compaction",
+    "persistence": "Immutable external attributed reports; no review-state MCP episode linkage is claimed"
+  },
+  "qualification": {
+    "status": "bounded_fixture_verified",
+    "at_unix": 1793862405.422395,
+    "source_manifest_sha256": "eeaa0b25a049109e2626e863d83caffe85d18835507282f6c068efbe4f8c9d1c",
+    "binary_sha256": "bc6474c1d94744f2d594d7d783fc708ddc688713d2fbbae75e7e66a10a9d9775",
+    "custody_summary_sha256": "e7d640eda48051a1fadb81bba197ff7121c9d0f162708e3b37e55a5dddefb4df",
+    "reports": {
+      "coding-host-result.json": "2c8a206e5466cf4809aedbbf2f126fc81c1d17460fe339481b8f2383837f5ff2",
+      "coding-continuity-result.json": "936719eee6e0d3f7389557da8f7168127d2c83f93cde9c8a22ee9ce1777402c9",
+      "pi-state.json": "dd39641232aa16e1bd857ea5d6476bb280acc634aa987a4fb63ee85170361a81",
+      "0005-rpc-0.stdout": "bbbe4d9fbbd8308dffc824cdce533d8743c0fd44aa79285df42998bd8d6d2b37"
+    },
+    "receipt_artifacts_verified": 35,
+    "system_projection": "all4 provider system objects equal captured agent and native system objects",
+    "recovery_input": "standing system boilerplate plus one byte-exact owner checkpoint user message; no inherited conversation/compaction summary",
+    "fresh_messages": 0,
+    "fresh_tools": 0,
+    "auto_compaction": false,
+    "old_sdk": "01a1aa87-17ec-7128-9b82-9603424bee4b",
+    "new_sdk": "01a1aa87-4c35-7128-9b82-9605c291dfdb",
+    "counts": {
+      "tool_executions": 1,
+      "physical_resets": 1,
+      "fake_provider_requests": 4,
+      "sdk_sessions": 2,
+      "live_provider_requests": 0
+    },
+    "continued_parent": "CompletedSettled",
+    "validator_exit": 0,
+    "collected": true,
+    "receipt_acknowledged": true,
+    "domain_acceptance": "owner_pending/not_claimed"
+  },
+  "cumulative_effects": {
+    "lanes": [
+      {
+        "lane": "r2",
+        "fake_provider_requests": 1,
+        "physical_resets_observed": 0,
+        "sdk_sessions_observed": 1,
+        "tool_exec_processes": 1,
+        "inference_containers": 1,
+        "tool_containers": 1,
+        "validator_containers": 0,
+        "collected": true,
+        "inference_removed": true,
+        "tool_removed": true,
+        "validator_removed": false,
+        "status": "failed; uncertainty preserved"
+      },
+      {
+        "lane": "r3b",
+        "fake_provider_requests": 2,
+        "physical_resets_observed": 1,
+        "sdk_sessions_observed": 2,
+        "tool_exec_processes": 1,
+        "inference_containers": 1,
+        "tool_containers": 1,
+        "validator_containers": 0,
+        "collected": true,
+        "inference_removed": true,
+        "tool_removed": true,
+        "validator_removed": false,
+        "status": "failed; uncertainty preserved"
+      },
+      {
+        "lane": "r4",
+        "fake_provider_requests": 4,
+        "physical_resets_observed": 1,
+        "sdk_sessions_observed": 2,
+        "tool_exec_processes": 1,
+        "inference_containers": 1,
+        "tool_containers": 1,
+        "validator_containers": 1,
+        "collected": true,
+        "inference_removed": true,
+        "tool_removed": true,
+        "validator_removed": true,
+        "status": "passed old source; later verifier defect found"
+      },
+      {
+        "lane": "r5",
+        "fake_provider_requests": 4,
+        "physical_resets_observed": 1,
+        "sdk_sessions_observed": 2,
+        "tool_exec_processes": 1,
+        "inference_containers": 1,
+        "tool_containers": 1,
+        "validator_containers": 1,
+        "collected": true,
+        "inference_removed": true,
+        "tool_removed": true,
+        "validator_removed": true,
+        "status": "passed final source"
+      }
+    ],
+    "r3_preentry_refusal": "Host state directory absent; zero runtime realizations; record retained",
+    "totals": {
+      "fake_provider_requests": 11,
+      "physical_resets_observed": 3,
+      "sdk_sessions_observed": 7,
+      "tool_exec_processes": 4,
+      "inference_containers": 4,
+      "tool_containers": 4,
+      "validator_containers": 2
+    },
+    "live_provider_requests": 0
+  },
+  "budget_observation": {
+    "observed_at": "2026-11-05T07:09:57.798181+00:00",
+    "canonical_since_approval_usd": 18.224236,
+    "fixed_planning_carry_usd": 0.11641520000000001,
+    "total_usd": 18.3406512,
+    "hard_usd": 30,
+    "hard_deadline": "2026-11-05T08:16:20.046000+00:00",
+    "nodes": [
+      {
+        "sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "usd": 6.023700400000002
+      },
+      {
+        "sid": "01a1aa15-1c3f-7ec3-b330-1e1972ad9fd9",
+        "usd": 4.850519200000001
+      },
+      {
+        "sid": "01a1aa65-d92d-7722-9d1b-f8031279cc34",
+        "usd": 1.5240044000000001
+      },
+      {
+        "sid": "01a1aa76-85fc-7dc2-8616-021ab77af3b5",
+        "usd": 5.826012000000001
+      }
+    ],
+    "tail": "recorded observation; future/inflight/closing cost not settled"
+  },
+  "roles": {
+    "root": "gpt-6.1-sol/xhigh/default",
+    "builders": "gpt-6.1-sol/medium/default",
+    "reviewer": "gpt-6-astra/xhigh/default"
+  },
+  "process_disposition": "All owned foreground wrappers collected; all realized inference/tool/validator containers removed. No live lane remains. Historical uncertain semantic parents remain preserved."
+}

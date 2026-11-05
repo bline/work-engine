@@ -269,6 +269,13 @@ fn valid_generic_native_proof_cannot_bypass_either_pi_identifier() {
             pi_multiturn_protocol_digest(),
             false,
         ),
+        (
+            pi_coding_profile_digest(),
+            pi_coding_protocol_digest(),
+            false,
+        ),
+        (pi_coding_profile_digest(), generic_protocol.clone(), false),
+        (generic_profile.clone(), pi_coding_protocol_digest(), false),
         (pi_profile_digest(), generic_protocol, false),
         (generic_profile, pi_protocol_digest(), false),
     ];
@@ -333,5 +340,331 @@ fn valid_generic_native_proof_cannot_bypass_either_pi_identifier() {
             assert_eq!(pending.class, "EnteredUncertain");
             assert!(pending.send_intent);
         }
+    }
+}
+
+#[test]
+fn coding_effect_is_serialized_and_parent_uncertainty_survives_reopen() {
+    let root = tempdir().unwrap();
+    let (mut store, session) = setup_binding(
+        root.path(),
+        &pi_coding_profile_digest(),
+        &pi_coding_protocol_digest(),
+    );
+    let mut parent = claim(&mut store, &session, "coding").unwrap();
+    store.mark_native_send_intent(&parent).unwrap();
+    store
+        .bind_native_turn(&mut parent, ProviderTurnId::parse("turn:coding").unwrap())
+        .unwrap();
+    let intent = json!({"job_id":"job","input_digest":"1".repeat(64),"session_id":"physical:pi","call_id":"call:1","command_sha256":"2".repeat(64)});
+    let raw = json!({"type":"pi.coding_tool_intent","invocationId":"coding","intent":intent});
+    store
+        .record_native_ingress(
+            session.id(),
+            "host-wire",
+            1,
+            &serde_json::to_vec(&raw).unwrap(),
+            "qualified",
+            Some("pi.coding_tool_intent"),
+            Some("physical:pi"),
+            Some("turn:coding"),
+            None,
+            clock(),
+        )
+        .unwrap();
+    let mut entries = 0;
+    let result = store
+        .with_pi_coding_effect(&parent, "host-wire", 1, &intent, clock(), |_expires| {
+            // A concurrent invalidator cannot pass the exact effect boundary while
+            // this already-admitted actuator owns the write transaction.
+            let other = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
+            other.busy_timeout(std::time::Duration::ZERO).unwrap();
+            assert!(
+                other
+                    .execute("UPDATE grants SET revoked=1 WHERE grant_id='g'", [])
+                    .is_err()
+            );
+            entries += 1;
+            Ok::<_, ()>(b"actual local fixture result".to_vec())
+        })
+        .unwrap()
+        .unwrap();
+    assert_eq!(entries, 1);
+    assert_eq!(result, b"actual local fixture result");
+    assert_eq!(
+        store.native_recovery("coding").unwrap().unwrap().class,
+        "EnteredUncertain"
+    );
+    assert!(claim(&mut store, &session, "next").is_err());
+    drop(store);
+    let mut reopened = SqliteLifecycleStore::open(root.path(), "issuer".into()).unwrap();
+    assert_eq!(
+        reopened.native_recovery("coding").unwrap().unwrap().class,
+        "EnteredUncertain"
+    );
+    assert!(claim(&mut reopened, &session, "after-reopen").is_err());
+}
+
+#[test]
+fn coding_effect_refuses_unbound_changed_expired_revoked_and_wrong_profile() {
+    for case in 0..7 {
+        let root = tempdir().unwrap();
+        let profile = if case == 6 {
+            pi_multiturn_profile_digest()
+        } else {
+            pi_coding_profile_digest()
+        };
+        let protocol = if case == 6 {
+            pi_multiturn_protocol_digest()
+        } else {
+            pi_coding_protocol_digest()
+        };
+        let (mut store, session) = setup_binding(root.path(), &profile, &protocol);
+        let mut parent = claim(&mut store, &session, "coding").unwrap();
+        if case == 0 {
+            let intent = json!({});
+            let mut entered = false;
+            assert!(
+                store
+                    .with_pi_coding_effect(&parent, "host-wire", 1, &intent, clock(), |_expires| {
+                        entered = true;
+                        Ok::<_, ()>(())
+                    })
+                    .is_err()
+            );
+            assert!(!entered);
+            continue;
+        }
+        store.mark_native_send_intent(&parent).unwrap();
+        store
+            .bind_native_turn(&mut parent, ProviderTurnId::parse("turn:coding").unwrap())
+            .unwrap();
+        let mut intent = json!({"job_id":"job","input_digest":"1".repeat(64),"session_id":"physical:pi","call_id":"call:1","command_sha256":"2".repeat(64)});
+        let raw = json!({"type":"pi.coding_tool_intent","invocationId":"coding","intent":intent});
+        store
+            .record_native_ingress(
+                session.id(),
+                "host-wire",
+                1,
+                &serde_json::to_vec(&raw).unwrap(),
+                "qualified",
+                Some("pi.coding_tool_intent"),
+                Some("physical:pi"),
+                Some("turn:coding"),
+                None,
+                clock(),
+            )
+            .unwrap();
+        if case == 1 {
+            intent["command_sha256"] = json!("3".repeat(64));
+        }
+        if case == 2 {
+            intent["session_id"] = json!("foreign");
+        }
+        if case == 5 {
+            store
+                .contract_grant_command(
+                    "cancel",
+                    &SubjectId::parse("s").unwrap(),
+                    "operator",
+                    &GrantId::parse("g").unwrap(),
+                    Revision::new(1),
+                    b"cancel",
+                    clock(),
+                )
+                .unwrap();
+        }
+        let mut sample = clock();
+        if case == 3 {
+            sample.wall = WallTimeMs::new(1000);
+        }
+        if case == 4 {
+            sample.wall = WallTimeMs::new(99);
+        }
+        let mut entered = false;
+        assert!(
+            store
+                .with_pi_coding_effect(&parent, "host-wire", 1, &intent, sample, |_expires| {
+                    entered = true;
+                    Ok::<_, ()>(())
+                })
+                .is_err(),
+            "case {case}"
+        );
+        assert!(!entered, "case {case}");
+        assert_eq!(
+            store.native_recovery("coding").unwrap().unwrap().class,
+            "EnteredUncertain"
+        );
+    }
+}
+
+fn coding_events(inv: &str) -> Vec<Value> {
+    let command = "bounded fixture edit";
+    let id = "one";
+    let output = "Host command success: true\nedited\n[stderr]\n";
+    let result = json!({"type":"tool_result","id":id,"ok":true,"output":output});
+    let artifact_bytes = serde_json::to_string_pretty(&result).unwrap() + "\n";
+    let intent = json!({"job_id":"job","input_digest":"1".repeat(64),"session_id":"physical:pi","call_id":id,"command_sha256":hash(command.as_bytes())});
+    let owned = json!({"type":"pi.coding_tool_result","invocationId":inv,"intent":intent,"result":result,"artifact":{"path":"/fixture/result.json","sha256":hash(artifact_bytes.as_bytes())},"artifact_bytes":artifact_bytes,"stdout_bytes":b"edited".to_vec(),"stderr_bytes":[],"process":{"argv":["/fixture/docker","exec","--workdir","/workspace","tool","/bin/sh","-c",command],"pid":1,"start":"fixture","status":0,"timed_out":false,"leftovers":[],"stdout_sha256":hash(b"edited"),"stderr_sha256":hash(b"")},"tool_container":"f".repeat(64)});
+    let workspace = json!({"type":"pi.coding_workspace","invocationId":inv,"manifest":{"path":"/fixture/workspace.json","sha256":hash(b"{}")},"manifest_bytes":"{}"});
+    let checkpoint=json!({"successor_context":"context:new","coding_result":result,"coding_result_sha256":owned["artifact"]["sha256"],"workspace_manifest_sha256":workspace["manifest"]["sha256"],"tool_executions":1}).to_string();
+    let user = json!({"role":"user","content":[{"type":"text","text":inv}]});
+    let call =
+        json!({"type":"toolCall","id":id,"name":"workspace_exec","arguments":{"command":command}});
+    let assistant = json!({"role":"assistant","content":[call],"stopReason":"toolUse"});
+    let tool = json!({"role":"toolResult","toolCallId":id,"toolName":"workspace_exec","content":[{"type":"text","text":output}],"details":{"hostReportedSuccess":true},"isError":false});
+    let final_message = json!({"role":"assistant","content":[{"type":"text","text":checkpoint}],"stopReason":"stop"});
+    let full = vec![
+        user.clone(),
+        assistant.clone(),
+        tool.clone(),
+        final_message.clone(),
+    ];
+    let request = |input: Vec<Value>| json!({"type":"pi.provider_request","producer":"pi-1.5.0","sessionId":"physical:pi","invocationId":inv,"turnCorrelation":format!("turn:{inv}"),"prompt_sha256":hash(inv.as_bytes()),"messages":input,"agentMessages":input});
+    let mut branch = vec![];
+    let mut parent = Value::Null;
+    for (i, message) in full.iter().enumerate() {
+        let id = format!("{inv}:{i}");
+        branch.push(json!({"type":"message","id":id,"parentId":parent,"message":message}));
+        parent = json!(id);
+    }
+    vec![
+        json!({"type":"agent_start"}),
+        json!({"type":"turn_start"}),
+        json!({"type":"message_start","message":user}),
+        json!({"type":"message_end","message":user}),
+        request(vec![user.clone()]),
+        json!({"type":"message_start","message":{"role":"assistant"}}),
+        json!({"type":"message_end","message":assistant}),
+        json!({"type":"tool_execution_start","toolCallId":id,"toolName":"workspace_exec","args":{"command":command}}),
+        json!({"type":"pi.coding_tool_intent","invocationId":inv,"intent":intent}),
+        owned,
+        json!({"type":"tool_execution_end","toolCallId":id,"toolName":"workspace_exec","isError":false,"result":{"content":tool["content"],"details":tool["details"]}}),
+        json!({"type":"message_start","message":tool}),
+        json!({"type":"message_end","message":tool}),
+        json!({"type":"turn_end","message":assistant,"toolResults":[tool]}),
+        json!({"type":"turn_start"}),
+        workspace,
+        request(vec![user.clone(), assistant, tool]),
+        json!({"type":"message_start","message":{"role":"assistant"}}),
+        json!({"type":"message_end","message":final_message}),
+        json!({"type":"turn_end","message":final_message,"toolResults":[]}),
+        json!({"type":"agent_end","messages":full,"willRetry":false}),
+        json!({"type":"agent_settled","aborted":false}),
+        json!({"type":"pi.session_history","producer":"pi-1.5.0","sessionId":"physical:pi","header":{"type":"session","id":"physical:pi"},"messages":full,"branch":branch,"leafId":parent}),
+    ]
+}
+#[test]
+fn v3_tool_proof_requires_exact_host_custody_and_sdk_result_and_anchors_next_turn() {
+    for case in 0..14 {
+        let root = tempdir().unwrap();
+        let (mut store, session) = setup_binding(
+            root.path(),
+            &pi_coding_profile_digest(),
+            &pi_coding_protocol_digest(),
+        );
+        let mut values = coding_events("coding");
+        match case {
+            1 => values[9]["artifact"]["sha256"] = json!("0".repeat(64)),
+            2 => values[9]["process"]["timed_out"] = json!(true),
+            3 => values[9]["stdout_bytes"] = json!([0]),
+            4 => values[10]["result"]["content"] = json!([]),
+            5 => values[8]["intent"]["command_sha256"] = json!("0".repeat(64)),
+            6 => {
+                values.remove(15);
+            }
+            7 => {
+                values.remove(9);
+            }
+            8 => {
+                values.insert(9, values[8].clone());
+            }
+            9 => values[16]["agentMessages"] = json!([]),
+            10 => values[22]["branch"][1]["parentId"] = json!("foreign"),
+            11 => values[15]["manifest_bytes"] = json!("{\"changed\":true}"),
+            12 => values[9]["process"]["argv"][7] = json!("different command"),
+            13 => {
+                fn alter(v: &mut Value) {
+                    if v["role"] == "assistant" && v["stopReason"] == "stop" {
+                        let mut checkpoint: Value =
+                            serde_json::from_str(v["content"][0]["text"].as_str().unwrap())
+                                .unwrap();
+                        checkpoint["coding_result_sha256"] = json!("0".repeat(64));
+                        v["content"][0]["text"] = json!(checkpoint.to_string());
+                        return;
+                    }
+                    match v {
+                        Value::Array(a) => {
+                            for v in a {
+                                alter(v)
+                            }
+                        }
+                        Value::Object(o) => {
+                            for v in o.values_mut() {
+                                alter(v)
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                for v in &mut values {
+                    alter(v);
+                }
+            }
+
+            _ => {}
+        }
+        let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+        let outcome = store.settle_pi_coding(&parent, &proof, clock());
+        if case == 0 {
+            outcome.unwrap();
+            assert!(store.settle_pi_coding(&parent, &proof, clock()).is_err());
+            let next = events("next", values.last());
+            let (parent, proof) =
+                record(&mut store, &session, "next", &next, values.len() as u64 + 1);
+            store.settle_pi_coding(&parent, &proof, clock()).unwrap();
+            assert_eq!(
+                store.native_recovery("next").unwrap().unwrap().class,
+                "CompletedSettled"
+            );
+        } else {
+            assert!(outcome.is_err(), "case {case}");
+            assert_eq!(
+                store.native_recovery("coding").unwrap().unwrap().class,
+                "EnteredUncertain"
+            );
+        }
+    }
+}
+
+#[test]
+fn coding_recovery_envelope_does_not_expand_domain_or_foreign_profile_prompts() {
+    for (profile, protocol) in [
+        (pi_coding_profile_digest(), pi_coding_protocol_digest()),
+        (
+            pi_multiturn_profile_digest(),
+            pi_multiturn_protocol_digest(),
+        ),
+    ] {
+        let root = tempdir().unwrap();
+        let (mut store, session) = setup_binding(root.path(), &profile, &protocol);
+        assert!(matches!(
+            store.claim_native_turn(
+                &session,
+                NativeTurnRequest {
+                    invocation_id: "oversized-domain".into(),
+                    attempt: AttemptId::parse("attempt:oversized").unwrap(),
+                    grant: GrantId::parse("g").unwrap(),
+                    grant_revision: 1,
+                    purpose: NativeInvocationPurpose::DomainWork,
+                    prompt: vec![b'x'; 2049],
+                },
+                "operator",
+                clock()
+            ),
+            Err(StoreError::Rejected)
+        ));
+        assert!(store.native_recovery("oversized-domain").unwrap().is_none());
     }
 }

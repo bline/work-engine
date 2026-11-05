@@ -3,6 +3,7 @@ use lifecycle_core::*;
 use lifecycle_store::*;
 use pi_context_transition::{Error, PiAdapter};
 use serde_json::{Value, json};
+pub mod coding;
 
 const GRANTS: [&str; 3] = ["grant:old", "grant:new", "grant:replace"];
 const STOP_BYTES: &[u8] = b"provider-disabled-fixture-stop-v1";

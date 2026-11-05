@@ -177,6 +177,8 @@ pub struct Journal {
 
 pub struct Host {
     journal: Journal,
+    coding_gate: Option<Box<dyn coding::CodingEffectGate>>,
+    coding_gate_deadline_ms: Option<i64>,
     pi_owner: Option<session_task_admission::pi_pilot::PiOwner>,
     allocation_lease: Option<session_task_admission::pi_pilot::EffectLease>,
     reply_leases: Vec<session_task_admission::pi_pilot::EffectLease>,
@@ -452,6 +454,8 @@ impl Host {
         };
         let host = Self {
             journal,
+            coding_gate: None,
+            coding_gate_deadline_ms: None,
             _lock: lock,
             pi_owner: owner,
             allocation_lease: None,
@@ -488,6 +492,8 @@ impl Host {
         verify_executable(&journal.job.docker)?;
         Ok(Self {
             journal,
+            coding_gate: None,
+            coding_gate_deadline_ms: None,
             _lock: lock,
             pi_owner: None,
             allocation_lease: None,
@@ -594,6 +600,29 @@ impl Host {
         {
             return refuse("signed fixture dispatch expired/cancelled");
         }
+        if label == "coding-tool-exec"
+            && self
+                .journal
+                .job
+                .coding
+                .as_ref()
+                .is_some_and(|p| p.schema == coding::BRIDGE_PROFILE)
+        {
+            let wall_ms: i64 = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|_| Error::Refused("coding effect clock unavailable".into()))?
+                .as_millis()
+                .try_into()
+                .map_err(|_| Error::Refused("coding effect clock range".into()))?;
+            if self.expired()
+                || self.cancelled()
+                || self
+                    .coding_gate_deadline_ms
+                    .is_none_or(|deadline| wall_ms >= deadline)
+            {
+                return refuse("coding lifecycle dispatch expired/cancelled/unadmitted");
+            }
+        }
         let mut child = OwnedChild(cmd.spawn()?);
         if rpc {
             drop(self.allocation_lease.take());
@@ -641,8 +670,28 @@ impl Host {
                             }
                             for command in commands {
                                 if let Some(input) = stdin.as_mut() {
-                                    write_result =
-                                        input.write_all(&command).and_then(|_| input.flush());
+                                    if self
+                                        .journal
+                                        .job
+                                        .coding
+                                        .as_ref()
+                                        .is_some_and(|p| p.schema == coding::BRIDGE_PROFILE)
+                                    {
+                                        if self.expired() || self.cancelled() {
+                                            return refuse(
+                                                "coding lifecycle IPC expired/cancelled",
+                                            );
+                                        }
+                                        self.coding_bridge_dispatch(&command, &mut |bytes| {
+                                            input.write_all(bytes)?;
+                                            input.flush()?;
+                                            Ok(())
+                                        })?;
+                                        write_result = Ok(());
+                                    } else {
+                                        write_result =
+                                            input.write_all(&command).and_then(|_| input.flush());
+                                    }
                                     if write_result.is_err() {
                                         break;
                                     }
@@ -902,6 +951,16 @@ impl Host {
     pub fn run(&mut self) -> Result<Value> {
         if self.journal.phase != Phase::Admitted {
             return refuse("existing realization must reconcile; launch is not replayable");
+        }
+        if self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| p.schema == coding::BRIDGE_PROFILE)
+            && self.coding_gate.is_none()
+        {
+            return refuse("coding lifecycle profile requires installed admission gate");
         }
         if self.signed_pi() && self.pi_owner.is_none() {
             return refuse("signed fixture cannot resume allocation");

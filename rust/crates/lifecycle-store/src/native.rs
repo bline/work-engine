@@ -2504,7 +2504,14 @@ impl SqliteLifecycleStore {
         };
         if request.prompt.is_empty()
             || request.prompt.len()
-                > if semantic_prompt.is_some() {
+                > if semantic_prompt.is_some()
+                    // Coding recovery carries the exact owner-settled Host result
+                    // and workspace checkpoint. The generic 2 KiB prompt cap is
+                    // too small; keep this extension specific to recovery under
+                    // the coding contract. Exact source equality is checked below.
+                    || (request.purpose == NativeInvocationPurpose::SuccessorRehydrate
+                        && session.profile_digest == crate::pi_coding_profile_digest())
+                {
                     65_536
                 } else if request.purpose == NativeInvocationPurpose::DomainWork
                     && request
@@ -3032,6 +3039,8 @@ impl SqliteLifecycleStore {
             || profile == crate::pi_settlement::pi_profile_digest()
             || protocol == crate::pi_settlement::pi_multiturn_protocol_digest()
             || profile == crate::pi_settlement::pi_multiturn_profile_digest()
+            || protocol == crate::pi_coding::pi_coding_protocol_digest()
+            || profile == crate::pi_coding::pi_coding_profile_digest()
         {
             return Err(StoreError::Rejected);
         }

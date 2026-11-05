@@ -403,7 +403,7 @@ fn validate_with_prefix(
 
 /// The latest invocation, not a caller-selected checkpoint, determines the
 /// prefix. Any unresolved earlier invocation makes continuation ineligible.
-fn settled_anchor(
+pub(super) fn settled_anchor(
     tx: &rusqlite::Transaction<'_>,
     invocation: &str,
     session: &str,
