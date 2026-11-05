@@ -533,7 +533,7 @@ fn owner_boundary_process_child() {
     };
     let key = SigningKey::from_slice(&[7; 32]).unwrap();
     let spki = key.verifying_key().to_public_key_der().unwrap();
-    let config = SyntheticConfig {
+    let mut config = SyntheticConfig {
         database: root.join("registry.sqlite"),
         repository: root.clone(),
         board: Program {
@@ -560,8 +560,11 @@ fn owner_boundary_process_child() {
     };
     let request: Consume =
         serde_json::from_slice(&std::fs::read(root.join("consume-input.json")).unwrap()).unwrap();
-    let mut owner = SyntheticOwner::open_synthetic(config).unwrap();
     let phase = std::env::var("OWNER_BOUNDARY_CRASH_PHASE").unwrap();
+    if phase == "prepare" {
+        config.board.python = pin(root.join("interleaving-python"));
+    }
+    let mut owner = SyntheticOwner::open_synthetic(config).unwrap();
     if phase == "writer" {
         std::fs::write(root.join("writer-started"), b"yes").unwrap();
         owner
@@ -725,6 +728,13 @@ mode={mode:?}
 command=json.loads(args[args.index('--command-json')+1])
 if command['operation']=='conditional_reply':
  if mode=='race': b.post(root,**command['candidate'])
+ if mode=='initial-read':
+  revision=command['expected_revision']
+  blob=root/'.git/objects'/revision[:2]/revision[2:]
+  blob.rename(str(blob)+'.saved')
+  os.mkfifo(blob)
+  (root/'preparation-python').write_text(str(os.getpid()))
+  (root/'original-deadline').write_text(str(command['deadline_monotonic']))
  result=b.owner_boundary_io(root,command)
  (root/'publication-returned').write_text('yes')
  print(json.dumps(result))
@@ -962,4 +972,130 @@ fn durable_receipt_survives_unavailable_post_publication_snapshot() {
     assert_eq!(d.signed, request.signed);
     assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 2);
     f.empty_effects();
+}
+
+#[test]
+fn actual_committed_git_death_is_unknown_and_reconciles_without_republication() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = Fixture::new();
+    let mut o = f.owner();
+    let request = f.request(&mut o, 9030, "defer");
+    let hook = f.root.join(".git/hooks/reference-transaction");
+    std::fs::write(
+        &hook,
+        format!(
+            r##"#!/usr/bin/python3
+import os,sys,signal
+from pathlib import Path
+root=Path({root:?})
+if sys.argv[1]=='prepared':
+ with (root/'cas-count').open('a') as f: f.write('1\n')
+if sys.argv[1]=='committed':
+ (root/'committed-git-pid').write_text(str(os.getppid()))
+ os.kill(os.getppid(),signal.SIGKILL)
+"##,
+            root = f.root.to_string_lossy()
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o700)).unwrap();
+    assert!(matches!(o.consume(&request), Err(Error::Unknown)));
+    let d = o.read_exact(&request).unwrap();
+    assert!(d.historical);
+    assert_eq!(d.signed, request.signed);
+    assert_eq!(d.selection, request.selection);
+    let again = o.consume(&request).unwrap();
+    assert!(again.historical);
+    assert_eq!(again.decision, d.decision);
+    assert_eq!(
+        std::fs::read_to_string(f.root.join("cas-count")).unwrap(),
+        "1\n"
+    );
+    assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 2);
+    f.empty_effects();
+    if let Ok(out) = std::env::var("OWNER_BOUNDARY_FIXTURE_DIR") {
+        copy_fixture(&f.root, &PathBuf::from(&out).join("r1-real-store"));
+        std::fs::write(PathBuf::from(out).join("r1-evidence.json"),serde_json::to_vec_pretty(&json!({"actual_committed_hook_kills_git":true,"rust_result":"unknown","cas_count":1,"decision":d,"input":request})).unwrap()).unwrap();
+    }
+}
+
+#[test]
+fn rust_death_during_real_initial_git_read_closes_within_original_deadline() {
+    use std::time::{Duration, Instant};
+    assert_eq!(unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) }, 0);
+    let f = Fixture::new();
+    let cfg = f.interleaving_config("initial-read");
+    let mut o = SyntheticOwner::open_synthetic(cfg).unwrap();
+    let mut request = f.request(&mut o, 9031, "defer");
+    let mut answer: Value = serde_json::from_str(&request.signed.answer_json).unwrap();
+    answer["expires_at"] = "2026-11-02T01:00:03Z".into();
+    request.signed = sign(answer.to_string());
+    std::fs::write(
+        f.root.join("consume-input.json"),
+        serde_json::to_vec(&request).unwrap(),
+    )
+    .unwrap();
+    std::fs::write(f.root.join("raw-task.json"), &f.raw).unwrap();
+    let launch = |phase: &str| {
+        Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "owner_boundary_process_child", "--nocapture"])
+            .env("OWNER_BOUNDARY_CHILD_ROOT", &f.root)
+            .env("OWNER_BOUNDARY_CRASH_PHASE", phase)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap()
+    };
+    let started = Instant::now();
+    let mut consumer = launch("prepare");
+    wait_file(&f.root.join("preparation-python"));
+    let python: i32 = std::fs::read_to_string(f.root.join("preparation-python"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    let mut git = 0;
+    let end = Instant::now() + Duration::from_secs(2);
+    while Instant::now() < end {
+        let children = std::fs::read_to_string(format!("/proc/{python}/task/{python}/children"))
+            .unwrap_or_default();
+        for child in children.split_whitespace() {
+            let cmd = std::fs::read(format!("/proc/{child}/cmdline")).unwrap_or_default();
+            if String::from_utf8_lossy(&cmd).contains("cat-file") {
+                git = child.parse::<i32>().unwrap();
+            }
+        }
+        if git != 0 {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert_ne!(git, 0);
+    assert!(
+        std::fs::read_link(format!("/proc/{git}/exe"))
+            .unwrap()
+            .to_string_lossy()
+            .ends_with("/git")
+    );
+    consumer.kill().unwrap();
+    assert!(!consumer.wait().unwrap().success());
+    let mut writer = launch("writer");
+    wait_file(&f.root.join("writer-started"));
+    std::thread::sleep(Duration::from_millis(100));
+    assert!(!f.root.join("writer-done").exists());
+    let mut status = 0;
+    assert_eq!(unsafe { libc::waitpid(python, &mut status, 0) }, python);
+    assert!(started.elapsed() < Duration::from_secs(6));
+    assert_eq!(unsafe { libc::kill(git, 0) }, -1);
+    assert!(writer.wait().unwrap().success());
+    let rev = &request.selection.board_revision;
+    let blob = f.root.join(".git/objects").join(&rev[..2]).join(&rev[2..]);
+    std::fs::remove_file(&blob).unwrap();
+    std::fs::rename(format!("{}.saved", blob.display()), &blob).unwrap();
+    assert_eq!(f.snapshot()["rows"].as_array().unwrap().len(), 1);
+    assert!(matches!(o.read_exact(&request), Err(Error::Unknown)));
+    f.empty_effects();
+    if let Ok(out) = std::env::var("OWNER_BOUNDARY_FIXTURE_DIR") {
+        copy_fixture(&f.root, &PathBuf::from(&out).join("r2-real-store"));
+        std::fs::write(PathBuf::from(out).join("r2-evidence.json"),serde_json::to_vec_pretty(&json!({"rust_ancestor_killed":true,"actual_native_git_cat_file_pid":git,"python_pid":python,"python_wait_status":status,"elapsed_seconds":started.elapsed().as_secs_f64(),"original_deadline":std::fs::read_to_string(f.root.join("original-deadline")).unwrap(),"fault":"fixture replaces actual loose Git object with FIFO; real native Git blocks reading it; no fake Git executable","no_append":true,"writer_progress_after_closure":true})).unwrap()).unwrap();
+    }
 }

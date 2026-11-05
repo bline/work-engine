@@ -1510,6 +1510,8 @@ b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_
         revision=self.request()
         def attempt(_):
             try: return self.conditional(revision)
+            except __import__('durable_state').DurableStateUnknown:
+                return None
             except BOARD.ChatboardError as failure:
                 self.assertIn("revision conflict",str(failure));return None
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -1576,7 +1578,7 @@ b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_
                             time.sleep(.15)
                         return result
                 with patch.object(BOARD, "GitRefDurableStateStore", SlowPreparation):
-                    with self.assertRaisesRegex(DurableStateError, "deadline expired"):
+                    with self.assertRaisesRegex(BOARD.ChatboardError, "deadline expired"):
                         BOARD.conditional_reply(self.repository, expected_revision=revision,
                             max_elapsed_seconds=.1, **self.candidate())
                 self.assertEqual(len(self.board()[0]["messages"]), 1)
@@ -1598,6 +1600,68 @@ b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_
         self.assertEqual(LostResult.calls, 1)
         self.assertEqual(len(self.board()[0]["messages"]), 2)
         self.assertFalse(self.conditional(revision)["appended"])
+
+    def test_actual_git_killed_in_committed_hook_remains_unknown(self):
+        from durable_state import DurableStateUnknown
+        revision = self.request()
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,signal\nif sys.argv[1]=='committed':\n print('revision conflict',file=sys.stderr,flush=True)\n os.kill(os.getppid(),signal.SIGKILL)\n")
+        hook.chmod(0o700)
+        with self.assertRaises(DurableStateUnknown):
+            self.conditional(revision)
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+        self.assertFalse(self.conditional(revision)["appended"])
+
+    def test_original_deadline_bounds_constructor_and_initial_blob_read(self):
+        import time
+        real = GitRefDurableStateStore
+        revision = self.request()
+        class ObserveDeadline(real):
+            seen = []
+            def _run_git(self, args, input_bytes, deadline):
+                ObserveDeadline.seen.append(self._deadline if deadline is None else deadline)
+                return super()._run_git(args, input_bytes, deadline)
+        deadline = time.monotonic()+2
+        with patch.object(BOARD, "GitRefDurableStateStore", ObserveDeadline):
+            BOARD.conditional_reply(self.repository, expected_revision=revision,
+                max_elapsed_seconds=10, deadline_monotonic=deadline, **self.candidate())
+        self.assertGreater(len(ObserveDeadline.seen), 5)
+        self.assertEqual(set(ObserveDeadline.seen), {deadline})
+
+    def test_timeout_closes_actual_git_hook_descendants_and_captured_pipes(self):
+        import ctypes, os, time
+        from durable_state import DurableStateUnknown
+        libc = ctypes.CDLL(None)
+        self.assertEqual(libc.prctl(36, 1, 0, 0, 0), 0)  # Linux child subreaper.
+        revision = self.request()
+        hook = self.repository / ".git/hooks/reference-transaction"
+        marker = self.repository / "hook-descendants"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,time\nfrom pathlib import Path\n"
+            + "if sys.argv[1]=='prepared':\n child=os.fork()\n if child==0: time.sleep(20); os._exit(0)\n"
+            + " Path(" + repr(str(marker)) + ").write_text(str(os.getpid())+' '+str(child))\n time.sleep(20)\n")
+        hook.chmod(0o700)
+        started = time.monotonic()
+        with self.assertRaises(DurableStateUnknown):
+            BOARD.conditional_reply(self.repository, expected_revision=revision,
+                max_elapsed_seconds=.5, **self.candidate())
+        self.assertLess(time.monotonic()-started, 3)
+        for pid in map(int, marker.read_text().split()):
+            end = time.monotonic()+1
+            while True:
+                try:
+                    waited, status = os.waitpid(pid, os.WNOHANG)
+                    if waited:
+                        self.assertEqual(waited, pid)
+                        self.assertTrue(os.WIFSIGNALED(status))
+                        break
+                except ChildProcessError:
+                    try:
+                        os.kill(pid, 0)
+                    except ProcessLookupError:
+                        break  # Already reaped by its actual parent.
+                self.assertLess(time.monotonic(), end, "descendant remains alive/uncollected")
+                time.sleep(.005)
+        self.assertEqual(len(self.board()[0]["messages"]), 1)
 
 
 if __name__ == "__main__":

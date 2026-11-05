@@ -22,7 +22,7 @@ from typing import Any, Callable
 from uuid import UUID, uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from durable_state import DurableStateError, GitRefDurableStateStore
+from durable_state import DurableStateError, DurableStateDeadline, DurableStateUnknown, GitRefDurableStateStore
 
 
 BOARD_KEY = "work-engine/codex-chatboard/v1"
@@ -79,9 +79,16 @@ def encode(value: dict[str, Any]) -> bytes:
 
 def mutate(repository: Path, change: Callable[[dict[str, Any]], Any], *,
            expected_revision: Any = _UNCONDITIONAL, deadline: float | None = None) -> tuple[dict[str, Any], Any, str]:
-    store = GitRefDurableStateStore(repository, NAMESPACE)
+    try:
+        store = GitRefDurableStateStore(repository, NAMESPACE,
+                                       **({"deadline": deadline} if deadline is not None else {}))
+    except DurableStateDeadline as failure:
+        raise ChatboardError(str(failure)) from failure
     for _ in range(MAX_RETRIES):
-        current = store.read(BOARD_KEY)
+        try:
+            current = store.read(BOARD_KEY)
+        except DurableStateDeadline as failure:
+            raise ChatboardError(str(failure)) from failure
         board = decode(current.payload) if current else empty_board()
         if expected_revision is not _UNCONDITIONAL:
             _complete_owner_rows(board)
@@ -100,6 +107,10 @@ def mutate(repository: Path, change: Callable[[dict[str, Any]], Any], *,
                 BOARD_KEY, encode(board), current.revision if current else None,
                 **({"deadline": deadline} if deadline is not None else {}),
             )
+        except DurableStateUnknown:
+            raise
+        except DurableStateDeadline as failure:
+            raise ChatboardError(str(failure)) from failure
         except DurableStateError as failure:
             if "revision conflict" in str(failure):
                 if expected_revision is not _UNCONDITIONAL:

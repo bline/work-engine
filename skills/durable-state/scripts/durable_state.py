@@ -7,6 +7,7 @@ import base64
 import hashlib
 import json
 import os
+import signal
 import time
 import subprocess
 from pathlib import Path
@@ -15,6 +16,10 @@ from typing import NamedTuple, Protocol
 
 class DurableStateError(ValueError):
     pass
+
+
+class DurableStateDeadline(DurableStateError):
+    """Conditional preparation expired before final publication entry."""
 
 
 class DurableStateUnknown(DurableStateError):
@@ -51,11 +56,13 @@ def canonical(value: object) -> bytes:
 class GitRefDurableStateStore:
     adapter = "git-ref-v1"
 
-    def __init__(self, repository: Path, namespace: str = "live-state") -> None:
+    def __init__(self, repository: Path, namespace: str = "live-state", *,
+                 deadline: float | None = None) -> None:
         self.repository = repository.resolve()
         if not namespace or any(part in {"", ".", ".."} for part in namespace.split("/")):
             raise DurableStateError("namespace must contain nonempty safe path components")
         self.namespace = namespace
+        self._deadline = deadline
         # Protected backend process inheritance; no semantic meaning or DTO knob.
         inherited = os.environ.get("WORK_ENGINE_REGISTRY_FENCE_FD")
         self._pass_fds = () if inherited is None else (int(inherited),)
@@ -66,27 +73,62 @@ class GitRefDurableStateStore:
         self._git(["check-ref-format",
                    f"refs/work-engine/{namespace}-history/{'0' * 64}/{'0' * 40}"])
 
+    def _run_git(self, args: list[str], input_bytes: bytes | None,
+                 deadline: float | None) -> subprocess.CompletedProcess:
+        deadline = self._deadline if deadline is None else deadline
+        argv = ["git", "-C", str(self.repository), *args]
+        if deadline is None:
+            return subprocess.run(argv, input=input_bytes, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, check=False, pass_fds=self._pass_fds)
+        if time.monotonic() >= deadline:
+            raise DurableStateDeadline("conditional reply deadline expired")
+        # Only conditional calls own a process group. Killing just Git can leave
+        # hook descendants holding both captured pipes and the inherited fence.
+        child = subprocess.Popen(argv, stdin=subprocess.PIPE if input_bytes is not None else subprocess.DEVNULL,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              pass_fds=self._pass_fds, start_new_session=True)
+        try:
+            try:
+                stdout, stderr = child.communicate(input_bytes, timeout=max(0, deadline-time.monotonic()))
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                # Qualified Git/hooks retain this group. No unbounded pipe drain.
+                try:
+                    child.communicate(timeout=1)
+                except subprocess.TimeoutExpired:
+                    child.stdout.close()
+                    child.stderr.close()
+                    child.kill()
+                    child.wait(timeout=1)
+                raise
+            return subprocess.CompletedProcess(argv, child.returncode, stdout, stderr)
+        finally:
+            # Do not let Popen.__exit__ introduce an unbounded implicit wait.
+            for stream in (child.stdin, child.stdout, child.stderr):
+                if stream is not None:
+                    stream.close()
+
     def _git(self, args: list[str], input_bytes: bytes | None = None,
              *, deadline: float | None = None) -> bytes:
-        # This is the last owned entry check, including after hash/ref preparation.
-        # Git has no atomic real-time predicate. Interruption after spawn is unknown.
-        timeout = None if deadline is None else deadline - time.monotonic()
-        if timeout is not None and timeout <= 0:
-            raise DurableStateError("conditional reply deadline expired")
+        # Last owned entry check follows all preparation, never a Git clock predicate.
         try:
-            result = subprocess.run(
-                ["git", "-C", str(self.repository), *args], input=input_bytes,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
-                pass_fds=self._pass_fds, timeout=timeout,
-            )
+            result = self._run_git(args, input_bytes, deadline)
         except subprocess.TimeoutExpired as error:
             if args[0] == "update-ref":
                 raise DurableStateUnknown("git deadline interrupted; publication outcome unknown") from error
-            raise DurableStateError("conditional reply deadline expired during preparation") from error
+            raise DurableStateDeadline("conditional reply deadline expired during preparation") from error
         except OSError as error:
             raise DurableStateError(f"unable to execute git: {error}") from error
         if result.returncode:
-            raise DurableStateError(result.stderr.decode(errors="replace").strip())
+            detail = result.stderr.decode(errors="replace").strip()
+            if args[0] == "update-ref":
+                # A committed hook can die after the refs already changed. Neither
+                # a changed head nor a failed ACK establishes refusal by this CAS.
+                raise DurableStateUnknown("final git failure; publication outcome unknown: " + detail)
+            raise DurableStateError(detail)
         return result.stdout
 
     def _ref(self, key: str) -> str:
@@ -99,24 +141,17 @@ class GitRefDurableStateStore:
         return f"refs/work-engine/{self.namespace}-history/{key_digest}/{revision}"
 
     def _current(self, ref: str, *, deadline: float | None = None) -> str | None:
-        timeout = None if deadline is None else deadline - time.monotonic()
-        if timeout is not None and timeout <= 0:
-            raise DurableStateError("conditional reply deadline expired")
         try:
-            result = subprocess.run(
-                ["git", "-C", str(self.repository), "rev-parse", "--verify", "--quiet", ref],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False,
-                pass_fds=self._pass_fds, timeout=timeout,
-            )
+            result = self._run_git(["rev-parse", "--verify", "--quiet", ref], None, deadline)
         except subprocess.TimeoutExpired as error:
-            raise DurableStateError("conditional reply deadline expired during preparation") from error
+            raise DurableStateDeadline("conditional reply deadline expired during preparation") from error
         except OSError as error:
             raise DurableStateError(f"unable to execute git: {error}") from error
         if result.returncode == 0:
-            return result.stdout.strip()
+            return result.stdout.decode().strip()
         if result.returncode == 1:
             return None
-        raise DurableStateError(result.stderr.strip() or "unable to inspect durable state ref")
+        raise DurableStateError(result.stderr.decode(errors="replace").strip() or "unable to inspect durable state ref")
 
     def read(self, key: str) -> DurableValue | None:
         ref = self._ref(key)
@@ -130,6 +165,8 @@ class GitRefDurableStateStore:
             raise DurableStateError("revision must be a nonempty string")
         try:
             raw = self._git(["cat-file", "blob", revision])
+        except DurableStateDeadline:
+            raise
         except DurableStateError as error:
             raise DurableStateError("durable state revision is unavailable") from error
         try:
@@ -215,13 +252,6 @@ class GitRefDurableStateStore:
             f"update {ref} {revision} {expected_revision or '0' * len(revision)}",
             "prepare", "commit", "",
         ])
-        try:
-            self._git(["update-ref", "--stdin"], "\n".join(commands).encode(), deadline=deadline)
-        except DurableStateUnknown:
-            raise
-        except DurableStateError as error:
-            if self._current(ref) != expected_revision:
-                raise DurableStateError("durable state revision conflict") from error
-            raise
+        self._git(["update-ref", "--stdin"], "\n".join(commands).encode(), deadline=deadline)
         return DurableValue(key, revision, payload, digest, self.adapter, ref,
                             expected_revision)
