@@ -580,3 +580,21 @@ Interruption after CAS entry remains unknown; Git has no atomic real-time clock
 predicate. A protected backend may inherit a registry serialization descriptor;
 the durable owner explicitly preserves it through final Git processes, without
 giving it approval meaning or adding a semantic store.
+
+Ordinary concurrent posts retain bounded CAS retry. The publisher withholds the
+transaction's commit command until preparation acknowledges success. A changed
+head selects a retry only after the owned Git transaction has stopped and no
+commit bytes were sent. Hook stderr does not establish conflict. Once commit
+bytes might have been delivered, a failed or lost response remains unknown;
+recover the exact stored candidate through the existing history path.
+
+Conditional Git calls use a private per-command Python keeper started in a
+fresh interpreter. It owns Git independently of the original Rust and board
+Python callers, preserving their original monotonic deadline and inherited
+registry open file description. On success, error, early EOF or timeout, it
+terminates the owned process group before reaping its leader, then collects
+descendants and closes descriptors without explicitly unlocking the fence.
+Cleanup has up to one second of grace after the effect deadline; missing
+completion or cleanup evidence remains unknown. This supports cooperative
+same-group descendants on Linux, without claiming containment of group escape,
+NFS behavior or uninterruptible kernel processes.

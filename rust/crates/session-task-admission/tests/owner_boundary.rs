@@ -790,12 +790,14 @@ fn fresh_defer_and_ask_expire_during_post_publication_acquisition() {
         let mut o = SyntheticOwner::open_synthetic(cfg).unwrap();
         let mut request = f.request(&mut o, 9021, disposition);
         let mut answer: Value = serde_json::from_str(&request.signed.answer_json).unwrap();
-        answer["expires_at"] = "2026-11-02T01:00:01Z".into();
+        // Leave room for actual process bootstrap under parallel suite load;
+        // expiry must occur at the post-publication barrier, not before CAS.
+        answer["expires_at"] = "2026-11-02T01:00:04Z".into();
         request.signed = sign(answer.to_string());
         let original = request.signed.clone();
         let thread = std::thread::spawn(move || o.consume(&request));
         wait_file(&f.root.join("snapshot-paused"));
-        std::thread::sleep(std::time::Duration::from_millis(1100));
+        std::thread::sleep(std::time::Duration::from_millis(4100));
         std::fs::write(f.root.join("snapshot-release"), b"yes").unwrap();
         let d = thread.join().unwrap().unwrap();
         assert!(!d.historical);
@@ -846,8 +848,9 @@ if sys.argv[1]=='prepared':
  fd=int(os.environ['WORK_ENGINE_REGISTRY_FENCE_FD'])
  os.fstat(fd)
  git=os.getppid()
- python=int(next(l.split()[1] for l in Path('/proc/'+str(git)+'/status').read_text().splitlines() if l.startswith('PPid:')))
- (root/'git-paused').write_text(json.dumps([git,python,fd]))
+ keeper=int(next(l.split()[1] for l in Path('/proc/'+str(git)+'/status').read_text().splitlines() if l.startswith('PPid:')))
+ python=int(next(l.split()[1] for l in Path('/proc/'+str(keeper)+'/status').read_text().splitlines() if l.startswith('PPid:')))
+ (root/'git-paused').write_text(json.dumps([git,python,fd,keeper]))
  end=time.monotonic()+7
  while not (root/'git-release').exists() and time.monotonic()<end: time.sleep(.005)
  if not (root/'git-release').exists(): sys.exit(1)
@@ -868,9 +871,10 @@ if sys.argv[1]=='committed': (root/'git-committed').write_text('yes')
     wait_file(&f.root.join("git-paused"));
     let ids: Vec<i32> =
         serde_json::from_slice(&std::fs::read(f.root.join("git-paused")).unwrap()).unwrap();
-    // Retain a passive reader for Git's protocol output. Without a reader,
-    // killing Python would make Git die from SIGPIPE before its final effect.
-    let _git_output_reader = std::fs::File::open(format!("/proc/{}/fd/1", ids[0])).unwrap();
+    // Collect the independent keeper's actual completion even after its board
+    // caller dies. Git's captured streams are owned/drained by that keeper.
+    use std::io::Read;
+    let mut keeper_output = std::fs::File::open(format!("/proc/{}/fd/1", ids[3])).unwrap();
     consumer.kill().unwrap();
     let consumer_status = consumer.wait().unwrap();
     assert!(!consumer_status.success());
@@ -890,11 +894,17 @@ if sys.argv[1]=='committed': (root/'git-committed').write_text('yes')
         .unwrap();
     assert_eq!(state, "live");
     std::fs::write(f.root.join("git-release"), b"yes").unwrap();
-    assert_eq!(unsafe { libc::waitpid(ids[0], &mut status, 0) }, ids[0]);
+    let mut report = String::new();
+    keeper_output.read_to_string(&mut report).unwrap();
+    let report: Value = serde_json::from_str(&report).unwrap();
+    assert_eq!(report["returncode"], 0);
+    assert_eq!(report["cleaned"], true);
+    assert_eq!(unsafe { libc::waitpid(ids[3], &mut status, 0) }, ids[3]);
     assert!(libc::WIFEXITED(status));
     assert_eq!(libc::WEXITSTATUS(status), 0);
     wait_file(&f.root.join("git-committed"));
-    let git_status = status;
+    let keeper_status = status;
+    assert_eq!(unsafe { libc::kill(ids[0], 0) }, -1);
     let writer_status = writer.wait().unwrap();
     assert!(writer_status.success());
     assert!(f.root.join("writer-done").exists());
@@ -910,8 +920,8 @@ if sys.argv[1]=='committed': (root/'git-committed').write_text('yes')
         std::fs::write(out.join("f1-process-evidence.json"), serde_json::to_vec_pretty(&json!({
             "synthetic":true,"real_git_update_ref":true,"real_sqlite_transaction_owner_killed":true,
             "consumer_wait_status":consumer_status.into_raw(),"python_wait_status":python_status,
-            "git_wait_status":git_status,"writer_wait_status":writer_status.into_raw(),
-            "git_pid":ids[0],"python_pid":ids[1],"inherited_fd_in_actual_git_hook":ids[2],
+            "git_returncode":report["returncode"],"keeper_wait_status":keeper_status,"keeper_report":report,"writer_wait_status":writer_status.into_raw(),
+            "git_pid":ids[0],"python_pid":ids[1],"inherited_fd_in_actual_git_hook":ids[2],"keeper_pid":ids[3],
             "registry_state_while_git_paused":state,"writer_finished_while_paused":false,
             "registry_after_publication":historical.current_standing,"snapshot":snapshot,
             "decision":historical,"input":request,"all_orphaned_processes_reaped":true
@@ -959,6 +969,149 @@ fn final_git_failure_releases_fence_without_append() {
         2
     );
     f.empty_effects();
+}
+
+#[test]
+fn closed_pipe_descendants_close_on_success_refusal_timeout_and_ancestor_death() {
+    use std::{
+        os::unix::fs::PermissionsExt,
+        time::{Duration, Instant},
+    };
+    assert_eq!(unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) }, 0);
+    let mut evidence = Vec::new();
+    for mode in ["success", "refused", "timeout", "ancestor-refused"] {
+        let f = Fixture::new();
+        let mut o = f.owner();
+        let mut request = f.request(&mut o, 9040, "defer");
+        if mode == "timeout" {
+            let mut answer: Value = serde_json::from_str(&request.signed.answer_json).unwrap();
+            answer["expires_at"] = "2026-11-02T01:00:08Z".into();
+            request.signed = sign(answer.to_string());
+        }
+        std::fs::write(
+            f.root.join("consume-input.json"),
+            serde_json::to_vec(&request).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(f.root.join("raw-task.json"), &f.raw).unwrap();
+        let hook = f.root.join(".git/hooks/reference-transaction");
+        std::fs::write(&hook, format!(r##"#!/usr/bin/python3
+import os,sys,time,json
+from pathlib import Path
+root=Path({root:?})
+mode={mode:?}
+if sys.argv[1]=='prepared':
+ fd=int(os.environ['WORK_ENGINE_REGISTRY_FENCE_FD']); os.fstat(fd)
+ git=os.getppid()
+ parent=lambda pid:int(next(l.split()[1] for l in Path('/proc/'+str(pid)+'/status').read_text().splitlines() if l.startswith('PPid:')))
+ keeper=parent(git); python=parent(keeper)
+ child=os.fork()
+ if child==0:
+  os.close(0); os.close(1); os.close(2)
+  time.sleep(20); os._exit(0)
+ (root/'closed-pipe-ready').write_text(json.dumps([git,keeper,python,child,fd]))
+ if mode=='timeout': time.sleep(20)
+ if mode=='ancestor-refused':
+  end=time.monotonic()+6
+  while not (root/'hook-release').exists() and time.monotonic()<end: time.sleep(.005)
+ if mode!='success': sys.exit(1)
+"##, root=f.root.to_string_lossy())).unwrap();
+        std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let started = Instant::now();
+        let mut keeper_report = Value::Null;
+        let mut ancestor_statuses = Value::Null;
+        if mode == "ancestor-refused" {
+            let launch = |phase: &str| {
+                Command::new(std::env::current_exe().unwrap())
+                    .args(["--exact", "owner_boundary_process_child", "--nocapture"])
+                    .env("OWNER_BOUNDARY_CHILD_ROOT", &f.root)
+                    .env("OWNER_BOUNDARY_CRASH_PHASE", phase)
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null())
+                    .spawn()
+                    .unwrap()
+            };
+            let mut consumer = launch("inflight");
+            wait_file(&f.root.join("closed-pipe-ready"));
+            let ids: Vec<i32> =
+                serde_json::from_slice(&std::fs::read(f.root.join("closed-pipe-ready")).unwrap())
+                    .unwrap();
+            consumer.kill().unwrap();
+            let rust_status = consumer.wait().unwrap();
+            assert!(!rust_status.success());
+            assert_eq!(unsafe { libc::kill(ids[2], libc::SIGKILL) }, 0);
+            let mut python_status = 0;
+            assert_eq!(
+                unsafe { libc::waitpid(ids[2], &mut python_status, 0) },
+                ids[2]
+            );
+            let mut writer = launch("writer");
+            wait_file(&f.root.join("writer-started"));
+            std::thread::sleep(Duration::from_millis(100));
+            assert!(!f.root.join("writer-done").exists());
+            std::fs::write(f.root.join("hook-release"), b"yes").unwrap();
+            // No replacement reader keeps the dead caller's ACK pipe alive.
+            // Actual process closure and writer progress establish cleanup;
+            // the lost publication response remains unavailable/unknown.
+            keeper_report =
+                json!({"unavailable":"original Python caller killed; no extra ACK reader"});
+            let mut keeper_status = 0;
+            assert_eq!(
+                unsafe { libc::waitpid(ids[1], &mut keeper_status, 0) },
+                ids[1]
+            );
+            let writer_status = writer.wait().unwrap();
+            assert!(writer_status.success());
+            use std::os::unix::process::ExitStatusExt;
+            ancestor_statuses = json!({"rust":rust_status.into_raw(),"python":python_status,"keeper":keeper_status,"writer":writer_status.into_raw()});
+        } else {
+            let result = o.consume(&request);
+            if mode == "success" {
+                assert!(!result.unwrap().historical);
+            } else {
+                assert!(matches!(result, Err(Error::Unknown)), "{mode}: {result:?}");
+            }
+            if mode == "timeout" {
+                assert!(started.elapsed() < Duration::from_secs(10));
+            }
+            assert_eq!(
+                o.register_task_fixture(&f.raw, "withdrawn", Some(1))
+                    .unwrap(),
+                2
+            );
+        }
+        let ids: Vec<i32> =
+            serde_json::from_slice(&std::fs::read(f.root.join("closed-pipe-ready")).unwrap())
+                .unwrap();
+        // The keeper, not a fixture fallback kill, must already have collected
+        // both the actual Git and the closed-stream fence holder.
+        assert_eq!(unsafe { libc::kill(ids[0], 0) }, -1);
+        assert_eq!(unsafe { libc::kill(ids[3], 0) }, -1);
+        assert_eq!(
+            o.register_proposal_fixture(&f.proposal, "withdrawn", Some(1))
+                .unwrap(),
+            2
+        );
+        let snapshot = f.snapshot();
+        assert_eq!(
+            snapshot["rows"].as_array().unwrap().len(),
+            if mode == "success" { 2 } else { 1 }
+        );
+        f.empty_effects();
+        evidence.push(
+            json!({"mode":mode,"ids_git_keeper_python_descendant_fd":ids,
+            "elapsed_seconds":started.elapsed().as_secs_f64(),"keeper_report":keeper_report,
+            "ancestor_wait_statuses":ancestor_statuses,"snapshot":snapshot,"input":request,
+            "managed_task_and_proposal_writer_progress":true,"no_fixture_fallback_kill":true}),
+        );
+    }
+    if let Ok(out) = std::env::var("OWNER_BOUNDARY_FIXTURE_DIR") {
+        std::fs::write(
+            PathBuf::from(out).join("n2-closed-pipe-evidence.json"),
+            serde_json::to_vec_pretty(&evidence).unwrap(),
+        )
+        .unwrap();
+    }
 }
 
 #[test]
@@ -1059,9 +1212,15 @@ fn rust_death_during_real_initial_git_read_closes_within_original_deadline() {
         let children = std::fs::read_to_string(format!("/proc/{python}/task/{python}/children"))
             .unwrap_or_default();
         for child in children.split_whitespace() {
-            let cmd = std::fs::read(format!("/proc/{child}/cmdline")).unwrap_or_default();
-            if String::from_utf8_lossy(&cmd).contains("cat-file") {
-                git = child.parse::<i32>().unwrap();
+            // Conditional Git belongs to the independent per-command keeper.
+            let grandchildren =
+                std::fs::read_to_string(format!("/proc/{child}/task/{child}/children"))
+                    .unwrap_or_default();
+            for candidate in std::iter::once(child).chain(grandchildren.split_whitespace()) {
+                let cmd = std::fs::read(format!("/proc/{candidate}/cmdline")).unwrap_or_default();
+                if String::from_utf8_lossy(&cmd).contains("cat-file") {
+                    git = candidate.parse::<i32>().unwrap();
+                }
             }
         }
         if git != 0 {

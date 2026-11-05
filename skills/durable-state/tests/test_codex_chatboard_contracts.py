@@ -1416,6 +1416,83 @@ class ParityTest(RepoCase):
 
 
 class ConditionalReplyTest(RepoCase):
+    def test_ordinary_committed_git_death_is_unknown_without_retry(self):
+        from durable_state import DurableStateUnknown
+        revision = self.request()
+        marker = self.repository / "cas-count"
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,signal\nfrom pathlib import Path\n"
+            + "if sys.argv[1]=='prepared':\n with Path(" + repr(str(marker)) + ").open('a') as f: f.write('1\\n')\n"
+            + "if sys.argv[1]=='committed':\n print('revision conflict',file=sys.stderr,flush=True)\n os.kill(os.getppid(),signal.SIGKILL)\n")
+        hook.chmod(0o700)
+        candidate = self.candidate(920)
+        with self.assertRaises(DurableStateUnknown):
+            BOARD.post(self.repository, **candidate)
+        self.assertEqual(marker.read_text(), "1\n")
+        recovered = self.conditional(revision, candidate)
+        self.assertFalse(recovered["appended"])
+        self.assertEqual(len(self.board()[0]["messages"]), 2)
+        self.assertEqual(marker.read_text(), "1\n")
+
+    def test_hook_stderr_cannot_turn_storage_refusal_into_cas_retry(self):
+        marker = self.repository / "cas-count"
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport sys\nfrom pathlib import Path\n"
+            + "if sys.argv[1]=='prepared':\n with Path(" + repr(str(marker)) + ").open('a') as f: f.write('1\\n')\n"
+            + " print('revision conflict',file=sys.stderr,flush=True)\n sys.exit(1)\n")
+        hook.chmod(0o700)
+        with self.assertRaisesRegex(DurableStateError, "refused before commit"):
+            self.post()
+        self.assertEqual(marker.read_text(), "1\n")
+        self.assertEqual(self.board()[0]["messages"], [])
+
+    def test_ordinary_real_contention_retries_without_losing_either_post(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        barrier = Barrier(2)
+        class RacingStore(GitRefDurableStateStore):
+            gated = False
+            def _git(self, args, input_bytes=None, **kwargs):
+                result = super()._git(args, input_bytes, **kwargs)
+                if args[0] == "hash-object" and not self.gated:
+                    self.gated = True
+                    barrier.wait(timeout=10)
+                return result
+        with patch.object(BOARD, "GitRefDurableStateStore", RacingStore):
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                results = list(pool.map(lambda n: self.post(message_id=mid(n)), (910, 911)))
+        self.assertEqual({r["message"]["sequence"] for r in results}, {1, 2})
+        self.assertEqual({r["message_id"] for r in self.board()[0]["messages"]}, {mid(910), mid(911)})
+
+    def test_early_eof_refusal_closes_fence_holding_descendant(self):
+        import ctypes, fcntl, os, signal, time
+        from durable_state import DurableStateUnknown
+        self.assertEqual(ctypes.CDLL(None).prctl(36, 1, 0, 0, 0), 0)
+        revision = self.request()
+        marker = self.repository / "closed-pipe-descendant"
+        hook = self.repository / ".git/hooks/reference-transaction"
+        hook.write_text("#!/usr/bin/python3\nimport os,sys,time\nfrom pathlib import Path\n"
+            "if sys.argv[1]=='prepared':\n child=os.fork()\n if child==0:\n"
+            "  os.close(0); os.close(1); os.close(2); time.sleep(20); os._exit(0)\n"
+            + " Path(" + repr(str(marker)) + ").write_text(str(child))\n sys.exit(1)\n")
+        hook.chmod(0o700)
+        try:
+            with (self.repository / "fence").open("w+b") as fence:
+                fcntl.flock(fence, fcntl.LOCK_EX)
+                with patch.dict(os.environ, {"WORK_ENGINE_REGISTRY_FENCE_FD": str(fence.fileno())}):
+                    with self.assertRaises(DurableStateUnknown):
+                        self.conditional(revision)
+            with (self.repository / "fence").open("r+b") as writer:
+                fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.assertEqual(len(self.board()[0]["messages"]), 1)
+        finally:
+            if marker.exists():
+                pid = int(marker.read_text())
+                try: os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError: pass
+                try: os.waitpid(pid, 0)
+                except ChildProcessError: pass
+
     def candidate(self, n=901, disposition="answered"):
         return dict(author="owner", session_id=SESSION_2, topic="t", body="signed answer",
                     references=[], message_id=mid(n), observed_at="2026-11-02T00:00:00Z",
@@ -1643,8 +1720,8 @@ b.conditional_reply(Path(sys.argv[2]),expected_revision=sys.argv[3],max_elapsed_
         started = time.monotonic()
         with self.assertRaises(DurableStateUnknown):
             BOARD.conditional_reply(self.repository, expected_revision=revision,
-                max_elapsed_seconds=.5, **self.candidate())
-        self.assertLess(time.monotonic()-started, 3)
+                max_elapsed_seconds=2, **self.candidate())
+        self.assertLess(time.monotonic()-started, 4)
         for pid in map(int, marker.read_text().split()):
             end = time.monotonic()+1
             while True:

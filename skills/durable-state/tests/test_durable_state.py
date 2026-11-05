@@ -3,9 +3,12 @@ from __future__ import annotations
 import importlib.util
 import base64
 import hashlib
+import json
 import subprocess
 import tempfile
 import unittest
+import sys
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -16,6 +19,43 @@ spec.loader.exec_module(STORE)
 
 
 class DurableStateTest(unittest.TestCase):
+    def test_experiment_consumer_never_reduces_or_emits_again_after_publication_failure(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import experiment_control as control
+        from durable_state import DurableStateUnknown, GitRefDurableStateStore
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            binary = repository / "reducer"
+            binary.write_bytes(b"not executed: exact reducer seam only")
+            real_run = subprocess.run
+            for committed in (False, True):
+                calls = {"reducer": 0, "publish": 0, "emit": 0}
+                experiment = "consumer-" + str(committed)
+                class LostStore(GitRefDurableStateStore):
+                    def publish(self, *args, **kwargs):
+                        calls["publish"] += 1
+                        if committed:
+                            super().publish(*args, **kwargs)
+                            raise DurableStateUnknown("lost publication response")
+                        raise control.DurableStateError("known storage refusal")
+                def reducer(argv, **kwargs):
+                    if str(argv[0]).startswith("/proc/self/fd/"):
+                        calls["reducer"] += 1
+                        return subprocess.CompletedProcess(argv, 0, json.dumps({
+                            "state": {"experiment": experiment}, "result": {}, "changed": True
+                        }).encode(), b"")
+                    return real_run(argv, **kwargs)
+                def emit(_):
+                    calls["emit"] += 1
+                with patch.object(control, "GitRefDurableStateStore", LostStore), patch.object(subprocess, "run", reducer):
+                    with self.assertRaises(control.DurableStateError):
+                        control.execute(repository, experiment, binary,
+                            hashlib.sha256(binary.read_bytes()).hexdigest(), b"{}", None, emit)
+                self.assertEqual(calls, {"reducer": 1, "publish": 1, "emit": 0})
+                stored = GitRefDurableStateStore(repository, control.NAMESPACE).read(experiment)
+                self.assertEqual(stored is not None, committed)
+
     def test_atomic_read_integrity_and_stale_revision(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
