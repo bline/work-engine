@@ -1,0 +1,101 @@
+{
+  "status": "accepted_bounded_qualification",
+  "recorded_at": "2026-11-05T01:44:58.465259+00:00",
+  "qualified_base": "c7fe3d27e1584a826b66afd44ecccb3c24eb9630",
+  "dependency_tree": "a942846ff66eba66a6e55b757f8f77b5acd41ea8",
+  "source_manifest": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/worker/qualification/final-freeze/manifest.json",
+    "sha256": "8fea4a0b8c0e3a2491aef2248ec1620b65b92e629c33b84215c19510e5c76852"
+  },
+  "source_archive": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/worker/qualification/final-freeze/subject.tar",
+    "sha256": "b0761a622a81bc6ee51f263c0bc91bcd9f356c69256cf44e1721b57dbd5c920f"
+  },
+  "source_delta": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/worker/qualification/final-freeze/subject.diff",
+    "sha256": "03511bfa2282ea9c5b873be33c6fa6d99168893353fe1253e54cd9714acb76f2"
+  },
+  "executable": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/worker/qualification/bin/pi-runtime-pressure",
+    "sha256": "6c4b1aaf546ea53939628f36cba9f38069854b46b01210aac1154fd300b9234e"
+  },
+  "prebuild_gate": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/worker/qualification/gate-custody/prebuild-gate.json",
+    "sha256": "3038b6fbdfbf47666ddccc690db71720334b9f41c183f3508d09e307c42da206"
+  },
+  "required_inputs": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/prebuild-required-inputs.json",
+    "sha256": "35ed2e4925a3fa759ef7012e8fb8c2e3144b6c113fd758313f3bceb8ca8e8fe7"
+  },
+  "ordering": {
+    "gate_ended": "2026-11-05T01:30:53.094117Z",
+    "build_started": "2026-11-05T01:32:07.016760Z",
+    "emitted_copy_digest_ended": "2026-11-05T01:33:36.680646Z",
+    "cancel_started": "2026-11-05T01:34:19.987393Z",
+    "deadline_started": "2026-11-05T01:34:49.687678Z"
+  },
+  "tests_passed": 10,
+  "cases": {
+    "cancel": {
+      "session": "01a1a957-c7b0-76f8-9d20-53ba65e03a93",
+      "deadline_unix_seconds": 1793842699,
+      "observed_ms": 1793842464972,
+      "cancel_requested_ms": 1793842464975,
+      "tool_exit_age_seconds": null,
+      "inference_exit": 2,
+      "tool_exit": 137,
+      "receipt_status": "not_established",
+      "acknowledgement": {
+        "acceptance": "owner_pending",
+        "delivery": "acknowledged",
+        "receipt_id": "3bdf0aef894f8fb86b95aed644922adf7e14fd2271dfacd6247dd52dc0125166"
+      },
+      "recovery_process_counts": [
+        18,
+        18
+      ],
+      "leftover_processes": []
+    },
+    "deadline": {
+      "session": "01a1a958-442c-7773-b5a9-a40f6d21b403",
+      "deadline_unix_seconds": 1793842539,
+      "observed_ms": 1793842514414,
+      "cancel_requested_ms": null,
+      "tool_exit_age_seconds": 24.76702590700006,
+      "inference_exit": 2,
+      "tool_exit": 137,
+      "receipt_status": "not_established",
+      "acknowledgement": {
+        "acceptance": "owner_pending",
+        "delivery": "acknowledged",
+        "receipt_id": "6296264a953c080f75ed026bcce32d75eda7e262c89ffb02cb87073f28941650"
+      },
+      "recovery_process_counts": [
+        18,
+        18
+      ],
+      "leftover_processes": []
+    }
+  },
+  "selected_inputs_unchanged": 49675,
+  "review": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/review-collected-final.json",
+    "sha256": "9ccdb6e90d920b5525ff91a0c2babb141d4817b8a9c6fb16af3b18c58287d730",
+    "verdict": "accept, no open P1/P2; retained read-only independent review"
+  },
+  "root_acceptance": {
+    "path": "/home/bline/.local/state/work-engine/s10-pressure-qualification-merge-20261105/ACCEPTANCE.json",
+    "sha256": "fbf163b1e87dfe0df8a4ea0dd5fd3b9234075c339283b01d4dedab15dac8c33c"
+  },
+  "human_authority": {
+    "line": 9570,
+    "at": "2026-11-05T00:53:57.130Z",
+    "event_sha256": "cc7564762ab743d4d97fb89877f9588760d605011bdf2179016bfcb562528e4f",
+    "text": "Are all your current changes committed and merged?\nApproved next steps",
+    "rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl",
+    "turn_id": "01a1a932-bc9f-7580-9727-d536787c6ac9"
+  },
+  "limits": "No task-owner/live/reset/shared-delivery/comprehension/wholeOS or oldjournal settlement; unseen integration not accepted",
+  "history": "Earlier held attempts and their cost overruns remain historical; this new attempt closes the prebuild gap without relabelling old runs.",
+  "documentation": "This result record is nonexecuted and written after qualification; it is outside the compiled nine-file package."
+}
