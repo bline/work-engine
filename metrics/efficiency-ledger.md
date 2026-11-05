@@ -400,6 +400,7 @@ did not operate.
 | Codex configuration trim: drop MCP servers and plugins whose tools are never invoked, so every session's standing tool-schema surface shrinks | M8, M19, M4, M21 | predicted ~2.7% of a round per 5K removed; **measured −2,333 tokens, 1.25%** | first call's `input_tokens` for a fresh root against the frozen pre-trim 19.8–20.6K starts | applied 2026-10-14T22:57Z, **measured 2026-10-15 on 2 fresh roots**: floor 20,056 → 17,723, attributed to a shorter harness base prompt (−3,383 bytes) and skills index (−2,813 bytes); the 4 unused MCP servers contributed a few hundred tokens at most | `metrics/experiments/codex-config-trim-20261014/` |
 | ~~Clear stale approval rules~~ **retracted** | — | **zero** | — | **disproved 2026-10-15.** Five `codex-tui` sessions identical in every other standing component measured 18,348 first-call tokens with 31,627 bytes of approval rules and 18,344–18,348 with 248 bytes: **−2 tokens for 31,379 bytes removed**. `world_state` is the client's state snapshot in the rollout, not prompt input. The rules are still stale and were deleted, but they were never a cost | `metrics/experiments/codex-config-trim-20261014/` README, Retracted |
 | Plan IR and execution-strategy model routing | M12, M14 | ~6 points from routing, ~2 from compression (central estimate) | routed attempts by model and effort | hypothesis, pilot planned | Plan IR idea §13, §20 |
+| Objective scope budgets: hours and cost limits in the assignment record, spend observed from transcripts by `usage_ledger.py tree`/`control` | M3, M14, spend per objective | bounded objectives; scope growth and spend visible to the supervisor without model self-monitoring | objectives with a record; share of all spend inside an objective tree; root calls running budget commands | **adopted 2026-10-30, measured 2026-11-04** (138 closed objectives): median spend 0.49 of the tightest $ limit; 51% of spend since 10-30 inside budgeted objectives; root calls running budget commands 5–13% of root spend; half the not-accepted objectives stopped below half their limit; no treatment effect established | [`budget-effectiveness-20261104.md`](budget-effectiveness-20261104.md) |
 
 Central estimates come from the scenario model recorded with the baseline
 (structural ~40%, with ideas ~56% of today's estimated spend). They are
@@ -430,6 +431,7 @@ overlap.
 | 2026-10-18 | 44 `gpt-6-sol` builder threads, 2026-10-07 to 10-17, 37,628 calls and 582.0 Mweighted replayed against earlier-handoff policies | M22, M8, M19, cost model | break-even total restart **~75K**; at the measured 116K floor every threshold loses ~30%; at a 40K restart a 70K trigger is worth **+29.6%**. Codex replaces context at median 207,819 and resets to median 29,410 | tables and caveats in "What an earlier handoff is worth". **The first reading, taken hours earlier, omitted rediscovery on the resets a policy adds and reported a flat "+35% at 70-80K" with break-even framed as a property of the brief.** Charging the measured 36K doctrine re-read per reset makes the result conditional on the floor instead, which is the same conclusion the one-supervisor projection reached in the other direction. The replay holds the work stream constant, so it prices carrying context and not redoing work |
 | 2026-10-27 | E1a: usage-export first artifacts, builder only, fixed interface, frozen production harness in a sandbox; Sonnet 5.5 medium ×3, Haiku 5.5 high ×1, Opus 5.5 medium ×1 | battery confirmed failures and families (F3.1), cost, calls, wall time, own checks | Sonnet 15/7, 11/5, 13/6 (range **4** failures, 2 families); Haiku 14/7; Opus 9/5; $0.67–0.73 per Sonnet run, Haiku $0.78, Opus $2.35; all own tests/fmt/clippy green | n=3+1+1, one task. Which cases fail varies more than the count: 16 distinct cases in the Sonnet union, 10 in common. Pre-registered E1b replication trigger applies. **Post hoc:** only 12 of the 34 cases trace to the packet (independent check). 58 of the 62 failures fall on over-constraining or out-of-packet cases. On traced cases: Sonnet 2/0/0, Haiku 2, Opus 0, and Terra (E1a-Terra) 0/0/0. The battery counts measure agreement with review-derived and historical choices more than contract compliance. [`e1a-result-20261027.md`](probes/e1a-result-20261027.md) |
 | 2026-10-27 | E1a-Terra: same packet, interface and F3.1 scoring as E1a, Codex CLI harness (strategy comparison); Terra 6.1 medium ×3, run one at a time on the last Codex quota | battery confirmed failures and families (F3.1), cost, calls, wall time, own checks, model guard | Terra **7/5, 7/5, 11/6**; $0.13–0.15 per run ($0.42 total), 98–120 s, 17–23 calls; all `verified_exact`; own tests, fmt and clippy pass; quota 99.0% before and after | Builder-qualification evidence for the provisional Terra default ([`../docs/model-selection.md`](../docs/model-selection.md)), not a ranking. n = 3, one task; model and harness confounded; 2–4 tests added against 10–14 for the Claude arms; [`probes/e1a-terra-result-20261027.md`](probes/e1a-terra-result-20261027.md) |
+| 2026-11-04 | Every discovered `scope_budget` record, 2026-10-30 to 11-04: 291 files, 159 canonical objectives, 138 closed with a plausible end time; ledger since 10-23 | M3, spend per objective, budget calibration and coverage | spend / tightest $ limit median **0.49** (IQR 0.32–0.69, p90 0.88); 9 of 131 reached 95%; 51 of 138 not accepted, 24 of 48 with a $ limit below half of it; root setup+closeout **18.5%** of objective spend (29% for the smallest third, 10% for the largest); budget roots 46% of spend outside objective windows; **51%** of all spend inside any objective | observational, no comparison group; types and outcome mapping by one rater; 85 of 159 end times from file modification time, bounded by three subsets. A first budget-command pattern gave 16–36%; sampling showed it matched development work on the budget tools, and the invocation-only figure is 5–13%. [`budget-effectiveness-20261104.md`](budget-effectiveness-20261104.md) |
 
 **Reading Codex rollout logs.** Two mistakes have produced wrong values here and
 are now guarded against in
@@ -611,3 +613,20 @@ failure. Sixteen non-scored actor calls across both attempts cost $0.3538476 in
 the canonical proxy; total exploration cost includes the root, worker and reviews.
 This establishes mechanics feasibility only: **0 controlled trial episodes**,
 no host-efficiency estimate, and no production-isolation acceptance.
+
+## Objective budgets, 2026-10-30 to 11-04
+
+The [budget effectiveness observation](budget-effectiveness-20261104.md)
+covers every discovered scope-budget record. Limits work as ceilings, not
+forecasts: the median closed objective spent 49% of its tightest dollar limit
+and 43% of its hours limit. Failures were mostly blockers rather than
+exhausted budgets. The controllable costs found are:
+
+- fixed root setup and closeout, 18.5% of objective spend;
+- root work between objectives, 46% of budget roots' spend;
+- uncovered spend: only 51% of all spend since 10-30 falls inside any budgeted
+  objective.
+
+No treatment effect of budgeting is established, and the proposed changes
+(fewer, larger objectives; host-side observation; feasibility checks before
+live work) are untested.
