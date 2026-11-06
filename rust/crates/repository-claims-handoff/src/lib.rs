@@ -75,6 +75,8 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 type Result<T> = std::result::Result<T, Error>;
 
+pub mod consumer;
+
 fn is_sha(value: &str) -> bool {
     value.len() == 64
         && value
@@ -692,6 +694,22 @@ fn read_projection(
     r: &ExactRef,
     page_bytes: usize,
 ) -> Result<(String, String, usize)> {
+    read_paged(
+        s,
+        "resolve_repository_fact",
+        json!({"claim_id":r.claim_id,"revision_id":r.revision_id,"revision_sha256":r.revision_sha256}),
+        page_bytes,
+    )
+}
+
+/// Read one framed, digest-bound owner projection from `tool` (resolve or
+/// discover) by `base` arguments plus a `projection_page`.
+fn read_paged(
+    s: &mut Session,
+    tool: &str,
+    base: Value,
+    page_bytes: usize,
+) -> Result<(String, String, usize)> {
     let mut assembled = String::new();
     let mut digest: Option<String> = None;
     let mut total: Option<usize> = None;
@@ -701,7 +719,9 @@ fn read_projection(
         if let Some(d) = &digest {
             page["sha256"] = json!(d);
         }
-        let o = s.tool("resolve_repository_fact", json!({"claim_id":r.claim_id,"revision_id":r.revision_id,"revision_sha256":r.revision_sha256,"projection_page":page}))?;
+        let mut args = base.clone();
+        args["projection_page"] = page;
+        let o = s.tool(tool, args)?;
         pages += 1;
         let corrupt = |d: &str| Error::new("projection_corrupt", d.to_string());
         if pages > MAX_PAGES || o["encoding"] != "claim-evidence-canonical-json-v1" {
@@ -753,6 +773,16 @@ fn read_projection(
 }
 
 fn read_evidence(s: &mut Session, sha: &str, page_bytes: usize) -> Result<EvidenceRead> {
+    let (bytes, pages) = read_evidence_bytes(s, sha, page_bytes)?;
+    Ok(EvidenceRead {
+        sha256: sha.into(),
+        total_bytes: bytes.len(),
+        pages,
+    })
+}
+
+/// Read and digest-verify one complete evidence artifact; returns its exact bytes.
+fn read_evidence_bytes(s: &mut Session, sha: &str, page_bytes: usize) -> Result<(Vec<u8>, usize)> {
     let corrupt = |d: &str| Error::new("evidence_corrupt", d.to_string());
     let mut bytes: Vec<u8> = Vec::new();
     let mut total: Option<usize> = None;
@@ -797,11 +827,7 @@ fn read_evidence(s: &mut Session, sha: &str, page_bytes: usize) -> Result<Eviden
     if Some(bytes.len()) != total || sha256_bytes(&bytes) != sha {
         return Err(corrupt("assembled evidence does not match its digest"));
     }
-    Ok(EvidenceRead {
-        sha256: sha.into(),
-        total_bytes: bytes.len(),
-        pages,
-    })
+    Ok((bytes, pages))
 }
 
 fn text_of(v: Option<&JsValue>) -> Option<String> {
