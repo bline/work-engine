@@ -1,0 +1,27 @@
+{
+  "status": "approved_readiness_gate_active",
+  "approval": "Approved",
+  "received_utc": "2026-11-06T21:06:51+00:00",
+  "checkpoint_utc": "2026-11-06T21:21:51+00:00",
+  "feature_stop_utc": "2026-11-06T21:56:51+00:00",
+  "hard_end_utc": "2026-11-06T23:06:51+00:00",
+  "cap_usd": 12,
+  "canonical_cap_usd": 11.5,
+  "planning_hold_usd": 0.5,
+  "aggregate_cap_usd": 35,
+  "prior_closed_observed_usd": 9.2202516,
+  "prior_preparation_holds_usd": 4,
+  "prior_slice_conservative_usd": 8,
+  "aggregate_conservative_max_usd": 33.2202516,
+  "root_sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "root_rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl",
+  "baseline": "8de3f897bf85632974f3b4c209b1d555e6b95e99",
+  "approved_plan": "planning/rust-loop-qualification-and-first-proof-budget-20261106.md",
+  "approved_plan_sha256": "667d41d993c527db4a6e596d59773bed48628e2f969d0a5c245d0ebeb9f6efb4",
+  "boundaries": [
+    "one new coding job and one genuine productreview at most; diagnostic inference counted",
+    "exact policy issuance/install and actual acceptance/publication offers require operator decisions on concretebytes",
+    "no pausedpeer operation, backend/authority/compiler redesign or automatic extension"
+  ],
+  "budget": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/budget.json"
+}

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "decision": "HELD",
+  "subject": "8de3f897bf85632974f3b4c209b1d555e6b95e99",
+  "authority": "Opening readiness only; Root accepted held dependency and ordered no further exploration/implementation/provider work",
+  "blockingOwner": {
+    "path": "rust/crates/workspace-publication/src/store.rs",
+    "sha256": "778d15b50689e570dcd85bd7a6924732b1dde006aced2a758b8da2df9ddbb0bf",
+    "materialLines": "Workspace::publish 656-665"
+  },
+  "blocker": "Workspace::publish unconditionally returns production repository custody is not installed for AuthorityMode::Production. An ordinary caller cannot resolve this owner refusal. FixtureOperator would substitute fixture standing and is not permitted.",
+  "supportingSource": [
+    {
+      "path": "rust/crates/work-engine-completion-host/src/main.rs",
+      "sha256": "04b18f754920c85045d7c82716c80004c44c1b4d5ed201eedeea385f8a983b5b",
+      "materialLines": "1-16 fixture-only executable"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/fixture_host.rs",
+      "sha256": "9b0958d1f5e8221d148b458825959ce2d991c897334fdf30f34349f490b496a2",
+      "materialLines": "167-199 production refusal and fixture bootstrap; 274-343 owner composition"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/lib.rs",
+      "sha256": "0c20af3c3d0697e3ead8f39571c960c303f94c8d8b234d7afdb97072dd281cbd",
+      "materialLines": "116-121 Application owner handles; 122+ execute/285 serve_connection"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/startup.rs",
+      "sha256": "e7c2c1843727bbd56866bb8918d5e8e3b74feaf4e15dc15ef8d05977465e01fc",
+      "materialLines": "833-875 literal compiler mode/requirements checks; 927-987 selected authority grants"
+    },
+    {
+      "path": "rust/crates/review-execution-custody/src/claude/profile.rs",
+      "sha256": "d03cdc53e8aef01bb7cfe3a7d5abd03e8d02bbb22d70e9a74a42da719de978f6",
+      "materialLines": "189-275 load_installed/load_checked"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/credentials.rs",
+      "sha256": "0112009bd60d200697523d7109729a5a25004d4dbd7a8a91e4cc02b3bb3784f9",
+      "materialLines": "32-146 existing credential owner; 211-225 sanitized accessor"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/launch_guard.rs",
+      "sha256": "a460191a40f55d69b786d38773bd6fb46ecdd07a9e14fa266c78fc1ed87e3712",
+      "materialLines": "359-448 in-sandbox resource/mount handshake and exact launch"
+    }
+  ],
+  "positiveEvidence": {
+    "nativeVersion": "2.1.318 (Claude Code)",
+    "nativeCliFlags": [
+      "--model accepts aliases/full names",
+      "--effort high supported",
+      "--json-schema",
+      "--output-format json/stream-json"
+    ],
+    "nativeAuthSanitized": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/AUTH-STATUS-SANITIZED.json",
+      "sha256": "77f3897f1f5beece8656a4ebb55d0a80e47922ec14bbd71f21af4d1dfda96672"
+    },
+    "authStanding": "loggedIn true, claude.ai, firstParty, max; no inference or account quota/headroom claim",
+    "existingCredentialOwner": "CredentialSource::new then read_access_only(now,600000) succeeded; metadata-only digest and expiry printed, token never printed or copied by adapter",
+    "profile": "TrustedClaudeProfile::load_installed current exact program/guard/catalog succeeded; digest3738af246c7b5259e889c97748471ed86211a9251fedf188ca76ba5e8707c763; integrity/codec validation only, not live qualification",
+    "compiler": "Qualified startup explicitly permits manifest-only-unverified when requirements pin absent and projected role/skills runtimeRequirements absent. Existing acceptance can bind exact prompt digest with this literal mode; no verified-compiler standing asserted and no new compiler contract needed for declared no-requirements test patch.",
+    "catalog": "Historical descriptive subject/config mismatch remains. Existing profile hashes arbitrary valid catalog JSON; fresh candidate/profile/catalog selections must be explicitly reconciled and operator approved. Native CLI does not establish available/observed provider model or quota headroom."
+  },
+  "existingOwnerRoute": {
+    "review": "fixed installed JobReviewPolicy -> admit/reopen InstalledAcceptancePin -> TrustedStartup::load_for_job -> Workflow::initialize/open/run existing initial review route",
+    "claimsIssuance": "Trusted protected job policy binds source/config hashes and completion consumer; startup checks exact proposed grant/source records. ClaimsApplication::initialize(BootstrapFiles, port) registers selected records when actual owner initializes. Protected installation/operator issuance still pending; data hashes do not grant authority.",
+    "completionHandles": [
+      "Campaign::open(TrustedConfig::qualified_initial_v4(...,&InstalledAcceptancePin))",
+      "Campaign::open_initial_claims(OpenFiles, InitialJoinSelection, Arc<dyn ExecutionEvidenceOwner>)",
+      "review_episode::Application::open_read_only with native selection/TrustedEpisodeReadScope",
+      "InitialCompletionOwners::new(&mut claims,Some(&mut episode))",
+      "CampaignPublication::initialize/open(&mut Campaign,completionRoot,operatorUid,authoritySourceDigest,false)",
+      "Workspace::initialize/open(WorkspaceConfig { authority_mode:Production,.. })",
+      "work_engine_completion_host::Application { campaign,owners,workspace } -> execute/serve_connection"
+    ],
+    "completionLimitation": "Library composition exists; executable only exposes fixture bootstrap. Workflow fields and campaign_config are private. Small production startup caller would still reach unconditional Workspace production-publication refusal.",
+    "operatorInstall": "After real candidate and explicit exact grant/policy approval, root operator installs/readbacks fixed /etc/work-engine/review-host/job-policy.json with protected ancestry/ownership/modes; no such approval/install occurred."
+  },
+  "minimumMissingCapability": "Independently installed production repository custody/authority boundary recognized and enforced by workspace-publication, plus production completion startup composing existing actual qualified campaign/claims/episode/evidence/workspace handles and authenticated operator decisions. Removing guard or relabeling FixtureOperator does not establish custody.",
+  "forecast": {
+    "finishWithinApprovedAttempt": "not credible through current supported production publication route; stop before coding",
+    "estimate": "No implementation estimate established; separate bounded contract/placement investigation and implementation+independent review+qualification proposal needed. No exploration performed solely to price it."
+  },
+  "custody": {
+    "nativeVersionHelp": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/native/summary.json",
+      "sha256": "6b78f9cd4583d4b9887d8bb1f0be4a491aaca821fff0166db7505a321955f073"
+    },
+    "nativeAuthStatus": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/auth-status/native-auth-status.json",
+      "sha256": "14b71727c91884a9b28845f8fa4645d640be07e9dd9dd99bfdb2d2538b42ba6b"
+    },
+    "nativeCliHelp": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/claude-help/native-cli-help.json",
+      "sha256": "4b79e4a05864c83d182eb6f66c69d9a052696249755acac500538edf0deaf90d"
+    },
+    "privateHarness": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/harness2/summary.json",
+      "sha256": "ea03a2b917728935230976d28aee5b1e5ca8f5e3ccee83f2daa62a059198b930"
+    },
+    "preservedFailedHarnessBuild": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/harness/summary.json",
+      "sha256": "51b8e904c32feadb8634f636d84330e093641490bad4ee6beae2e6dcc76aed46"
+    }
+  },
+  "adapter": {
+    "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/readiness-harness",
+    "standing": "private readiness-only Rust adapter composing existing public owners; no production source change, issued grant or entry capability",
+    "source": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/readiness-harness/src/main.rs",
+      "sha256": "fd7c41339560c07e312f2ede031efafb8cc3fc242012515dd3647041d238d86a"
+    },
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/readiness-harness/Cargo.toml",
+      "sha256": "631e1817749fc775304a84a174d8f89de6ad031c58f57c9d802430594ffc2b6a"
+    }
+  },
+  "graph": {
+    "tier": 2,
+    "project": "home-bline-code-work-engine",
+    "generation": "2026-11-06T21:04:51Z",
+    "store": "u3882598172b46030g2",
+    "coverage": "metadata_match/content_verified; completion-host main and workspace contract no_recorded_issue; material credentials/guard/workflow/claims/publication/store/fixture-host have unresolved_calls. Exact relied ranges read directly. Best effort, no exhaustive absence claim.",
+    "trace": "accept_checkpoint_from_peer inbound Application::execute -> serve_connection -> run_fixture; callers total relation unknown",
+    "fallback": "Targeted source reads after graph insufficient result/missed call coverage; string/config literal searches used for exact refusal and CLI flags."
+  },
+  "binding": {
+    "sid": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "context": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/context.json",
+      "sha256": "e3e4aae2bae3d827f3319416c516463c7b051333337c592f1093d16a16552f50"
+    },
+    "settings": {
+      "path": "/home/bline/.local/state/work-engine/rust-loop-first-proof-20261106T2106/builder/settings.json",
+      "sha256": "bb936b6efe886bf908c7225d9dcf68ce41090524a22bfd6ae92b26ec9e74a276"
+    },
+    "freshActiveInput": 105092,
+    "epoch": 3,
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "tier": "default"
+  },
+  "effects": {
+    "repositorySourceChanged": false,
+    "providerInference": false,
+    "privilegedOrProtectedWrites": false,
+    "pausedPeerOperationTouched": false,
+    "extraActors": 0,
+    "ownedProcessesRunning": 0,
+    "leftovers": 0,
+    "claimsHeld": []
+  },
+  "accounting": "Root owns measured aggregate/budget collection; native checks and private build are not provider entries. Opening <=1USD allowance, no further work after held dependency."
+}

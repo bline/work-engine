@@ -1,0 +1,11 @@
+{
+  "observed_checkpoint_usd": 1.0435476000000004,
+  "planning_hold_usd": 0.5,
+  "closing_tail_hold_usd": 0.2,
+  "checkpoint_plus_holds_usd": 1.7435476000000003,
+  "approved_cap_usd": 12,
+  "opening_gate_cap_usd": 2,
+  "aggregate_cap_usd": 35,
+  "standing": "API-equivalent proxy, partial lineage multiple_parents retains explicitbinding; unpriced0/unknownspendfalse; no nested totals added",
+  "disposition": "fullproof unfulfilled; stopped at firstgate beforecoding; remainingallowanceunspent"
+}
