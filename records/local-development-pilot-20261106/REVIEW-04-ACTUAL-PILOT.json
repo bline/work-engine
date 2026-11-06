@@ -1,0 +1,46 @@
+{
+  "subject_sha256": "97152ccf7a6631b20985770ff1dda9eea52447df78c5a13149984b888f5f9c18",
+  "commit": "3a6c4c4df1a195b6002d681a3919da20e2026f03",
+  "production_base": "a77732cd74d1b952012fce669471742a6a814f1b",
+  "episode": "retained_same_isolated_review",
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "id": "LIVE-REVIEW-002",
+      "severity": "medium",
+      "path": "rust/crates/work-engine-server/src/job.rs:1005",
+      "symbols": [
+        "Jobs::collect",
+        "Jobs::read_result"
+      ],
+      "observed": "Decimal-preserving comparison confirms all four disclosed numeric differences already exist in persisted host-run.json and remain in caller and restart results. Stored receipt and coding-host-result.json agree. read_result nevertheless labels the projection 'verbatim Host stdout' and attaches the original receipt ID.",
+      "violated_consequence": "The adapter must preserve native receipt payload provenance. Numerically altered content cannot be represented as the unchanged payload identified by the original receipt hash.",
+      "inferred": "The first observed divergence is at the server capture/persistence boundary, which parses stdout into serde_json::Value and serializes it again. The precise numeric conversion mechanism was not independently reproduced.",
+      "impact": "Raw receipt integrity, task output, integer settlement and operation identity remain supported. Exact receipt passthrough is false; small monetary magnitude does not resolve the provenance defect.",
+      "requested_change": "Integration/backend should preserve receipt numeric values through capture, persistence and caller projection, or obtain explicit owner approval for a separately identified normalized projection contract. Correct the misleading verbatim claim.",
+      "focused_proof": "Use the existing raw receipt in an offline regression through actual capture/readback/command serialization boundaries, including restart. Assert preservation of all four values and receipt identity. Preserve the historical failed comparison and original producer/job/journal pins; no second provider run is needed for this proof."
+    }
+  ],
+  "patch_assessment": {
+    "verdict": "accept",
+    "sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+    "evidence": "Immutable commit changes only timestamp.rs: 919 appended bytes, original prefix byte-identical, two test functions covering exactly the eight frozen cases.",
+    "validation": "Verified source-bound custody/log hashes: 37 crate tests and formatting pass. Candidate passes; both exact specified mutants retain the original UTC test pass and fail added tests with expected exit 101."
+  },
+  "pilot_assessment": {
+    "supported": [
+      "Actual original operation persists across exact repeat and server restart.",
+      "Raw receipt SHA256 matches receipt ID 42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6.",
+      "Bound runtime-owner evidence reports four completed provider responses, one workspace call, one reset, original validator success and delivery-only automatic ACK.",
+      "Verified outer collection records and fresh container-inspection logs show all three named containers absent."
+    ],
+    "not_accepted": "Complete pilot qualification under the unchanged-receipt-payload contract."
+  },
+  "limitations": [
+    "Runtime component conclusions additionally rely on the attributed, hash-bound runtime-owner validation; this reviewer did not independently replay every runtime check.",
+    "No OAuth qualification, actual SDK output-cap fault injection, billing/quota measurement or broad coding-competence claim.",
+    "Retained configuration and graph limitations remain; no new independence or backend-fulfillment claim.",
+    "No writes, tests, builds, children or provider operations performed."
+  ],
+  "authority": "Root owns remediation or explicit qualification changes, final task/pilot acceptance and publication."
+}

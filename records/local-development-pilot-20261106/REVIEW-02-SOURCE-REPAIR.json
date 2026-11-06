@@ -1,0 +1,31 @@
+{
+  "subject_sha256": "0208f7eb4879df26eb5c2844cc392afbea21513301fd1ce1b182dff211e6a6ff",
+  "commit": "a77732cd74d1b952012fce669471742a6a814f1b",
+  "prior_commit": "c436de8b54edaa12571b3be06203cdeaec79426b",
+  "episode": "retained_same_isolated_source_review",
+  "verdict": "accept",
+  "findings": [],
+  "resolved": [
+    {
+      "id": "LIVE-REVIEW-001",
+      "path": "rust/crates/work-engine-server/tests/coding_job.rs:696",
+      "observed": "The only commit delta adds the required ignore marker. Hash-verified execution logs show 5 passed/4 ignored without COMMAND_BINARY and 9 passed/0 ignored with the pinned command binary and --include-ignored.",
+      "status": "resolved"
+    }
+  ],
+  "inspected_evidence": {
+    "bindings": "Subject and all hash-bearing references match; candidate file hashes match the immutable commit.",
+    "execution": "All four remediation records and their stdout/stderr hashes verified. Each reports exit 0, no timeout and no leftover processes; recorded candidate inputs match.",
+    "freshness": "Fresh Events execution covers final production source, resolving the prior Events evidence limitation. Production code and all three binary hashes remain unchanged.",
+    "task": "Frozen task hash remains unchanged."
+  },
+  "configuration": "Retained Astra/high/default read-only episode and root01a1a7ed collection binding acknowledged; no new configuration-freshness or backend-fulfillment claim.",
+  "limitations": [
+    "Acceptance covers this source subject only.",
+    "Events live-class checks remain shell fixtures; producer checks remain synthetic-journal evidence, not provider/Docker qualification.",
+    "Prior graph-coverage and independence limitations remain.",
+    "Actual pilot evidence and returned patch require separately bound retained review and acceptance.",
+    "Reviewer performed no writes, tests, builds, provider operations or child launches."
+  ],
+  "authority": "Root may make its next decision; this acceptance does not authorize automatic live entry, task acceptance or publication."
+}

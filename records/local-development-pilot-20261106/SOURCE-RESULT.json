@@ -1,0 +1,130 @@
+{
+  "schema": "local-live-builder-result/v1",
+  "status": "private_candidate_tested_not_accepted_or_live_qualified",
+  "at": "2026-11-06T00:39:50.262731+00:00",
+  "packet": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/BUILDER.md",
+  "binding": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/BUILDER-BINDING.json",
+  "session_id": "01a1ae38-0bfe-7401-af9e-1b3036aba7c0",
+  "source": {
+    "commit": "a77732cd74d1b952012fce669471742a6a814f1b",
+    "branch": "pilot/local-development-live-20261106",
+    "worktree": "/home/bline/cbm-work/wt-local-development-live-20261106",
+    "changed_files": [
+      "docs/coding-job-operating-guide.md",
+      "rust/Cargo.lock",
+      "rust/crates/pi-pressure-context-host/README-coding.md",
+      "rust/crates/pi-pressure-context-host/src/bin/coding-qualification.rs",
+      "rust/crates/pi-pressure-context-host/tests/coding_driver.rs",
+      "rust/crates/work-engine-server/Cargo.toml",
+      "rust/crates/work-engine-server/README.md",
+      "rust/crates/work-engine-server/src/job.rs",
+      "rust/crates/work-engine-server/src/job/tests.rs",
+      "rust/crates/work-engine-server/src/main.rs",
+      "rust/crates/work-engine-server/tests/coding_job.rs"
+    ],
+    "clean": true
+  },
+  "candidate_manifest": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/CANDIDATE.json",
+    "sha256": "55634d860b9f758cbb99c2f98c53349f1420e92bf95ffb5686bef58935c63513"
+  },
+  "behavior": [
+    "separate strict version2 local-live capability/class matching config/profile",
+    "live Host digest uses public canonical Job including defaults/unknown-field rejection; offline mirror remains strict",
+    "fresh live startup/submit/pre-spawn validates immutable job and public source/authority/model/provider/budget/deadline bindings",
+    "same producing executable serves fixed run/inspect/reconcile/cancel and legacy --execute",
+    "run retains original CodingContinuity lifecycle/Host execution and delivery-only autoACK; native wrapper is returned unchanged",
+    "readback/reconcile reopen same binary-bound journal with no new gate/provider execution; cancel stays deliverable while run holds lock",
+    "existing bound operation recovery survives original artifact/deadline expiry; unknown entry refuses replacement"
+  ],
+  "tests": {
+    "initial": {
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/initial/summary.json",
+      "sha256": "219ecd2066448f1fae1107b9589f5be863f3cd47c9db9e1ec4ed44812470574d"
+    },
+    "focused": {
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/focused/summary.json",
+      "sha256": "9abe816891a223e667b39abe8625c529557f875fa4c72a827730d23b7dcf92eb"
+    },
+    "verification": {
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/verification/summary.json",
+      "sha256": "1f554f3db5c659dd0c43a92d75fa4f27a39acd60a77c966727e78c60b6548726"
+    },
+    "final-checks": {
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/final-checks/summary.json",
+      "sha256": "4b113cee8e00bc7d9fb85352a4bbec789c5153a986e0201f530dc95a6bc917f3"
+    },
+    "repair-checks": {
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/repair-checks/summary.json",
+      "sha256": "6faa5c638500344eecda80be1065329247534b9021e699ad51f8cb414b16e5a1"
+    },
+    "candidate-checks": {
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/candidate-checks/summary.json",
+      "sha256": "4a755e96c5d3968fdf213b1460724863babfc1aa04ea7ec5fbab1902027fa8f6"
+    }
+  },
+  "test_results": {
+    "server_units": [
+      "test result: ok. 29 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 11.96s"
+    ],
+    "events_and_cli": [
+      "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.67s"
+    ],
+    "producer_driver": [
+      "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.39s"
+    ],
+    "server_clippy": "candidate-checks PASS all-targets -D warnings",
+    "producer_clippy": "final-checks PASS all-targets -D warnings",
+    "format": "candidate-checks PASS",
+    "producer_suite": "verification PASS entire crate offline",
+    "builds": "candidate-checks server-build PASS; final-checks producer-build PASS"
+  },
+  "preserved_failure": {
+    "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/final-checks/server-unit.json",
+    "observed": "existing unit fake Host directly truncated pi-state.json; concurrent read saw custody_lost",
+    "repair": "owned unit fixture now uses temporary file and atomic mv, matching accepted integration fixture behavior; repaired and final server suites pass",
+    "limit": "not evidence for historical intermittent CLI failure cause"
+  },
+  "evidence_limits": [
+    "all implementation-run tests offline; live-class Events/timeout/interruption use labeled shell fixtures",
+    "actual producing executable tested against synthetic collected journals and missing/malformed inputs; no Docker/provider realization",
+    "native incomplete/summary wrapper rejection tested; actual SDK generation output-cap fault injection not performed",
+    "receipt acceptance remains owner_pending; producer ACK remains delivery only",
+    "additional public coverage generation2026-11-05T22:09:29Z content_verified metadata_match with unresolved_calls for auth/provider; exact relied-on source fields/methods read; private worktree outside graph; no exhaustive callchain claim"
+  ],
+  "inert_templates": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/templates/README.json",
+  "task_source_unchanged": true,
+  "authority_observed": {
+    "provider_operations": 0,
+    "docker_operations": 0,
+    "credential_projection": 0,
+    "ack_operations": 0,
+    "children": 0,
+    "shared_merge_push": 0
+  },
+  "process_disposition": "all custody plans terminal; every recorded step leftovers0; no owned processes or children outstanding",
+  "usage": {
+    "requested": "gpt-6.1-sol/medium/default",
+    "observed": "gpt-6.1-sol/medium/default per root native binding",
+    "cost": "root canonical attribution including final reporting tail; unavailable here",
+    "last_context_input": 148174,
+    "decision": "retain_ok; no compaction/replacement"
+  },
+  "next_owner": "Root: independent source review, exact fresh packet/admission, actual Events\u2192command/server\u2192producer trial, exported timestamp patch review and guarded local publication. No worker acceptance claim.",
+  "source_review_remediation": {
+    "finding": "LIVE-REVIEW-001",
+    "previous_commit": "c436de8b54edaa12571b3be06203cdeaec79426b",
+    "changed_path": "rust/crates/work-engine-server/tests/coding_job.rs",
+    "change": "Add explicit COMMAND_BINARY opt-in ignore marker to new live Events fixture test, matching existing counterpart.",
+    "evidence": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/remediation-checks/summary.json",
+    "sha256": "4329f99d84993e7b9a351ceed232eabceff7a3f1ddd74e64848af03b2fd5afd7",
+    "ordinary_without_command_binary": [
+      "test result: ok. 5 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 4.31s"
+    ],
+    "all_included_with_pinned_command": [
+      "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.19s"
+    ],
+    "unchanged_gate_applicability": "Production source and binaries unchanged from c436. Server final unit/Clippy, producer tests/Clippy and builds retain byte-identical inputs; changed integration target rerun on final source.",
+    "prior_artifacts": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/revisions/c436de8b"
+  }
+}

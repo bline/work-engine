@@ -1,0 +1,35 @@
+{
+  "at": "2026-11-06T01:23:09.484045+00:00",
+  "inference_proxy_usd": 16.858319600000005,
+  "product_reservation_usd": 1.4,
+  "conservative_combined_usd": 18.258319600000004,
+  "root_direct_usd": 5.741142400000001,
+  "actors": {
+    "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3": {
+      "direct": 5.741142400000001,
+      "inclusive": 16.8583196
+    },
+    "01a195d4-b7a7-77f2-ba65-277669c0ec97": {
+      "direct": 1.6802784,
+      "inclusive": 1.6802784
+    },
+    "01a1a2c0-7191-76f2-afa1-16d32d5c4883": {
+      "direct": 1.1171408,
+      "inclusive": 1.1171408
+    },
+    "01a1ae3b-bc53-7a51-835b-cb5bd5678e7c": {
+      "direct": 5.920274,
+      "inclusive": 5.920274
+    },
+    "01a1ae38-0bfe-7401-af9e-1b3036aba7c0": {
+      "direct": 2.3994840000000006,
+      "inclusive": 2.3994840000000006
+    }
+  },
+  "first_gate_clock_reached": true,
+  "productive_clock_reached": true,
+  "hard_clock_reached": false,
+  "issues": [],
+  "unpriced_calls": 0,
+  "tail": "Completed-call speed-adjusted API proxy; in-flight and closing costs remain attributable, final subscription billing/quota not measured."
+}

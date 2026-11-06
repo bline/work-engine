@@ -1,0 +1,42 @@
+{
+  "subject_sha256": "bdc4498e6533de0cc045e351f038040d7eba10298331c1a230061fdf3039d492",
+  "commit": "c436de8b54edaa12571b3be06203cdeaec79426b",
+  "base": "98eaf66c4f173132d4503faacaf18306220a34e6",
+  "phase": "source_and_frozen_task_before_live_entry",
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "id": "LIVE-REVIEW-001",
+      "severity": "medium",
+      "path": "rust/crates/work-engine-server/tests/coding_job.rs:696",
+      "symbol": "events_http_mcp_live_class_fixture_preserves_the_original_operation_across_restart",
+      "evidence": "The new test is unconditional and invokes events_job_bridge(true). That helper requires std::env::var(\"COMMAND_BINARY\").expect(...). The existing equivalent offline test explicitly carries #[ignore = \"requires COMMAND_BINARY pointing at work-engine-command\"].",
+      "violated_consequence": "Preserve existing deterministic gate usability and distinguish specially configured fixture evidence from ordinary test coverage.",
+      "observed": "The new test lacks the prerequisite guard present on its existing counterpart.",
+      "inferred": "Without COMMAND_BINARY, an ordinary cargo test invocation selecting this integration target panics before exercising the bridge. No test was executed by this reviewer.",
+      "requested_change": "Make the external-binary test explicitly opt-in, consistently with its counterpart, or supply its prerequisite automatically. Root should verify ordinary tests without COMMAND_BINARY and explicitly execute the bridge test with the pinned command binary."
+    }
+  ],
+  "inspected_evidence": {
+    "binding": "Subject hash and all five hash-bearing subject references verified.",
+    "source": "All 11 candidate file hashes match both the immutable commit and inspected worktree bytes. Relevant existing Host, coding, validation, continuity and receiver files remain identical to the base.",
+    "binaries": "Current server, command and coding-qualification binaries match all three candidate SHA256 pins.",
+    "implementation": "Inspected profile/class matching, typed live Job digest, public admission checks, durable pre-spawn entry marker, collector ownership, producer lifecycle installation, same-binary journal reopening, reconciliation and native receipt projection.",
+    "task": "TASK.json, seed, instructions and acceptance-source hashes match. Original timestamp source remains cd8cf0deda977422ad7b54947d781e5ae0e9508d10b1f8c739dd0b27c96c03cb. Frozen acceptance preserves original bytes; later mutation checks and exact patch review remain required.",
+    "execution": "Referenced custody-record hashes match. Final candidate unit, Clippy, build and formatting records report exit 0 with matching candidate input hashes. Inspected fixture source and actual-producer synthetic-journal tests; preserved earlier unit-fixture failure remains disclosed."
+  },
+  "configuration": {
+    "session_id": "01a1ae3b-bc53-7a51-835b-cb5bd5678e7c",
+    "collection_owner": "01a1a7ed",
+    "observed": "Bound rollout thread_settings_applied records show gpt-6-astra/high/default, read-only filesystem, restricted network and approval_policy never.",
+    "limit": "Applied configuration is not backend fulfillment or provider-independence proof."
+  },
+  "limitations": [
+    "Events integration evidence predates the final job.rs and job/tests.rs hashes; it is not execution evidence for the exact final server revision. Final candidate unit evidence does match.",
+    "Live-class Events and cancellation controls use shell fixtures. Actual producer tests use synthetic journals. Neither establishes provider/Docker execution.",
+    "Parent graph generation 2026-11-05T22:09:29Z and store u1a05e87adb1ea3d1g2 confirmed. Coverage reports unresolved calls; the new producer test is absent from that indexed root. Private candidate conclusions use direct source, not complete graph verification.",
+    "No builds, tests, mutations, children, provider operations or runtime admission were performed.",
+    "Actual returned patch, runtime evidence, settlement and task acceptance are not established by this source review."
+  ],
+  "authority": "Root retains remediation, acceptance, live admission and publication decisions. This review does not preapprove unseen pilot output."
+}

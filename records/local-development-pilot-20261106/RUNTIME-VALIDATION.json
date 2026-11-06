@@ -1,0 +1,265 @@
+{
+  "schema": "local-development-runtime-pilot-validation/v1",
+  "status": "runtime_component_passed_projection_precision_difference_disclosed",
+  "at": "2026-11-06T00:59:34.764344+00:00",
+  "owner": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+  "validation_only": true,
+  "admission": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/admission.json",
+    "sha256": "1c177c650e0db54ec27fd3d8832d9f280bf3932327bc31acf21d461992409f78"
+  },
+  "source_acceptance": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/source-acceptance.json",
+    "sha256": "2dce2c6aeeea939d37799a6fd4add96b85270e26eb5f9f84b669400f3a8c2bca"
+  },
+  "custody": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/entry-custody/full-path-pilot.json",
+    "sha256": "55519e6b4b00b7df302186ed025dc07d6e8fe09501d147eae8c718184dc2f274"
+  },
+  "flow": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/flow-result.json",
+    "sha256": "0f2406aa446b1825f511cb27e28130409172c1ced7ac9e6f88ce1233f2c1f5e9"
+  },
+  "native_result": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/native-result.json",
+    "sha256": "2d1134dd3d679b515522711157f91a81a5bc1e4411f6cbce75dbd63b31a41740"
+  },
+  "host_report": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/coding-host-result.json",
+    "sha256": "dd91221cbf6ec86b04a84b4ea51445e7d78d90c5d2b0110b1692a4b3c8c416ab"
+  },
+  "continuity_report": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/coding-continuity-result.json",
+    "sha256": "8844724c185987c5f22343e618a9057cafac826ec9b8d3eaea2e0ccb84952f25"
+  },
+  "journal": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/pi-state.json",
+    "sha256": "ac626df8fe3eb220b811c2740da68bd68384495e752ed6f587c0aa41221b0da6"
+  },
+  "receipt": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/receipts/42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6.json",
+    "sha256": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6"
+  },
+  "raw_rpc": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/0005-rpc-0.stdout",
+    "sha256": "53cbde177f3581229a2f2676c623aa040dd7b35ff6593f0abe98a2d5147f0ebd"
+  },
+  "task": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/TASK.json",
+    "sha256": "5762c0e6b1b0efafbd587f493ff226298418943234d2de9f828536a6fd55086d"
+  },
+  "checks": {
+    "outer_custody_zero_no_leftovers": true,
+    "admission_pins": true,
+    "operator_source_revision_pins": true,
+    "producer_binary_pin": true,
+    "original_repo_bytes_preserved": true,
+    "named_cases_added": true,
+    "only_src_lib_exported": true,
+    "validated_bytes_match": true,
+    "original_validator_immutable": true,
+    "original_validator_5_pass": true,
+    "workspace_5_pass": true,
+    "four_raw_completed_provider_responses": true,
+    "http_usage_backend_identity": true,
+    "request_model_context_limits": true,
+    "one_workspace_call": true,
+    "one_reset_two_sessions": true,
+    "fresh_successor_empty_no_tools_compaction": true,
+    "checkpoint_and_recovery": true,
+    "stored_receipt_integrity": true,
+    "autoack_delivery": true,
+    "semantic_acceptance_pending": true,
+    "all_snapshot_artifact_integrity": true,
+    "all_process_stream_integrity": true,
+    "three_owned_containers_absent_recorded": true,
+    "projection_files_absent": true,
+    "all_native_processes_collected": true,
+    "no_native_failures_recorded": true,
+    "projection_variance_only_four_catalog_float_fields": true
+  },
+  "check_count": 28,
+  "all_listed_checks_passed": true,
+  "task_result": {
+    "repository_path": "rust/crates/context-pressure/src/timestamp.rs",
+    "base_commit": "98eaf66c4f173132d4503faacaf18306220a34e6",
+    "seed": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/seed-lib.rs",
+      "sha256": "cd8cf0deda977422ad7b54947d781e5ae0e9508d10b1f8c739dd0b27c96c03cb"
+    },
+    "exported_source": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/coding-workspace/src/lib.rs",
+      "sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684"
+    },
+    "validated_source": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/validation-workspace/src/lib.rs",
+      "sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684"
+    },
+    "original_bytes": 5847,
+    "returned_bytes": 6766,
+    "change": "Append-only offset_regressions module; two actual repository tests/eight requested cases, all original parser/test bytes preserved.",
+    "workspace_tests_passed": 5,
+    "independent_validator_tests_passed": 5,
+    "validator": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/acceptance.rs",
+      "sha256": "c3e91c48bb8850a62a66e34e9829389e6fe2c1ef19edf2f2207170529b607980"
+    },
+    "validator_output": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/0016-coding-validation-start-0.stdout",
+      "sha256": "5c086da00f0a8151b74927b3545656a31b9df1d4f4534e37f494625ce630c663"
+    }
+  },
+  "runtime": {
+    "source_commit": "a77732cd74d1b952012fce669471742a6a814f1b",
+    "producer": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/bin/coding-qualification",
+      "sha256": "223b4c56fba64d7c201af1a78a7b6ac0c8865288e305fc58d2482faafb883149"
+    },
+    "harness": "Pi1.5.0 SDK API; no Codex CLI",
+    "provider": "openai-codex",
+    "model": "gpt-6-luna",
+    "workspace_calls": 1,
+    "physical_resets": 1,
+    "sdk_sessions": [
+      "01a1ae57-cd3d-753b-967b-942d5bb54786",
+      "01a1ae58-2315-753b-967b-94337b410b03"
+    ],
+    "fresh_messages": 0,
+    "auto_compaction": false,
+    "tools_after_reset": 0,
+    "recovery": "native:rehydrate",
+    "continued_parent": "CompletedSettled",
+    "checkpoint_sha256": "9e2b31708aafc423283195b1a04192c58762b6a46ddb06d4238338da8eb2229f"
+  },
+  "provider": {
+    "actual_requests": 4,
+    "raw_usage": [
+      {
+        "id": 1,
+        "usage": {
+          "input_tokens": 3224,
+          "output_tokens": 411,
+          "total_tokens": 3635
+        }
+      },
+      {
+        "id": 2,
+        "usage": {
+          "input_tokens": 3761,
+          "output_tokens": 41,
+          "total_tokens": 3802
+        }
+      },
+      {
+        "id": 3,
+        "usage": {
+          "input_tokens": 787,
+          "output_tokens": 17,
+          "total_tokens": 804
+        }
+      },
+      {
+        "id": 4,
+        "usage": {
+          "input_tokens": 825,
+          "output_tokens": 5,
+          "total_tokens": 830
+        }
+      }
+    ],
+    "http_statuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "context_bytes": [
+      12345,
+      14902,
+      3058,
+      3923
+    ],
+    "reservation_microusd": 700000,
+    "conservative_catalog_settled_microusd": 2510,
+    "subscription_billing_or_quota": "unmeasured"
+  },
+  "receipt_delivery": {
+    "receipt_id": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+    "acknowledged": true,
+    "route": "Existing same-producer automatic ACK; no validation-time ACK",
+    "semantic_acceptance": "owner_pending",
+    "domain_effect_settlement": "not_claimed"
+  },
+  "projection_precision_observation": {
+    "exact_native_receipt_payload_equality": false,
+    "differences": [
+      {
+        "path": "/coding/provider_requests/1/usage/cost/output",
+        "stored": 0.00020549999999999998,
+        "projected": 0.0002055
+      },
+      {
+        "path": "/coding/provider_requests/2/usage/cost/input",
+        "stored": 0.00037610000000000003,
+        "projected": 0.0003761
+      },
+      {
+        "path": "/coding/provider_requests/2/usage/cost/total",
+        "stored": 0.00039660000000000004,
+        "projected": 0.0003966
+      },
+      {
+        "path": "/coding/provider_requests/4/usage/cost/output",
+        "stored": 2.4999999999999998e-06,
+        "projected": 2.5e-06
+      }
+    ],
+    "unchanged": "Raw stored receipt bytes/hash and host report agree; receipt ID, input digest, provider raw usage, integer catalog settlement and all other projected fields agree.",
+    "inference": "Differences are consistent with JSON floating-point parse/serialization. Causal code path was not diagnosed in this read-only component validation.",
+    "owner_consequence": "Integration/backend owns projection contract and overall acceptance. This report establishes raw runtime integrity; it does not claim byte-identical/verbatim caller projection. No retry or source repair is authorized here.",
+    "historical_check_failure_preserved": "Initial exact receipt payload comparison failed on these four floats; not suppressed as a pass."
+  },
+  "integrity_cleanup": {
+    "snapshot_artifacts": 38,
+    "artifact_hash_mismatches": 0,
+    "native_process_records": 25,
+    "stream_hash_mismatches": 0,
+    "containers": 3,
+    "recorded_absence_indices": [
+      13,
+      20,
+      24
+    ],
+    "projected_native_access_files_absent": true,
+    "empty_private_access_directory_remains": true,
+    "native_outer_leftovers": 0,
+    "idle_tool_final_exit": 137,
+    "idle_tool_note": "Idle container explicitly stopped after successful exec; exit137 preserved. Workspace exec/RPC/validator operations0.",
+    "fresh_docker_observation": false
+  },
+  "scope_limits": [
+    "Root separately owns actual MCP caller/retry/restart proof, mutation/Cargo gates, source review and publication.",
+    "Transport identity local-random-token fixture only; no OAuth onboarding claim.",
+    "Actual small repository test patch, not broad autonomous coding competence or tools after reset.",
+    "One observed ordinal; no ordinal2 or implicit retry admitted.",
+    "Historical failed receipt and closed prior budgets unchanged."
+  ],
+  "context": {
+    "entry_input_tokens": 189690,
+    "pre_result_input_tokens": 196760,
+    "epoch": 13,
+    "headroom_to_235k_band": 38240,
+    "decision": "Retain for bounded report/closure; remaining forecast3500. No replacement or root transfer.",
+    "settings": "Retained gpt-6.1-sol/xhigh/default"
+  },
+  "budget": {
+    "parent": 45,
+    "native_node": 1.5,
+    "prior_consultation_observed": 0.417,
+    "incremental_target": 0.65,
+    "actual": "Parent canonical ledger; current completion tail unsettled"
+  },
+  "operations": "Artifact reads and this report/terminal board post only. No new jobs/provider/Docker/ACK/children/builds/tests/source/publication.",
+  "next": "Parent exact-turn collection and integration acceptance decision; no outstanding runtime-owner processes or children."
+}

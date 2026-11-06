@@ -1,0 +1,48 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "format",
+  "argv": [
+    "cargo",
+    "fmt",
+    "--manifest-path",
+    "rust/crates/context-pressure/Cargo.toml",
+    "--",
+    "--check"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-local-development-pilot-acceptance-20261106",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 505694,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/wt-local-development-pilot-acceptance-20261106/rust/crates/context-pressure/src/timestamp.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 6766,
+      "sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684"
+    }
+  ],
+  "timeout_s": 60.0,
+  "pid": 505695,
+  "pgid": 505695,
+  "started_at": "2026-11-06T00:59:37.092065Z",
+  "ended_at": "2026-11-06T00:59:37.256668Z",
+  "duration_s": 0.165,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/format-check/format.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/format-check/format.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

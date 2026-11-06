@@ -1,0 +1,28 @@
+{
+  "schema": "live-receipt-precision-candidate/v1",
+  "commit": "4be395fd2f2bbbf58d8093c9c4457ab3e47509e9",
+  "base": "a77732cd74d1b952012fce669471742a6a814f1b",
+  "files": {
+    "rust/crates/work-engine-command/Cargo.toml": "02a5fa071d5bbf375322152cbd89b745f6970e7358d7b5f84dafb2ca56bbbda7",
+    "rust/crates/work-engine-server/Cargo.toml": "615e6662cf4745546c370d5510dfbb2a4c0c319fa8fb668fe56fbfcd913839d0",
+    "rust/crates/work-engine-server/src/job.rs": "81182a2cd4877ea2c5ed9d294e82af988157fc1dcda254727cbaa39066db232e",
+    "rust/crates/work-engine-server/tests/coding_job.rs": "4533ed849fda7203ec0acf805e076c6641527a63217f75476e32a5d6458c7305"
+  },
+  "binaries": {
+    "work-engine-server": {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-server",
+      "sha256": "5ddf227f7d145f9e3dd91dcc71cc9460ddecefeccbd2b7cbf04d2c58635e4457"
+    },
+    "work-engine-command": {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/work-engine-command",
+      "sha256": "3cf0e9b5ba70ef55f27d001ad7805e3f334b5dcf144ca8d181bb881008ab1009"
+    },
+    "coding-qualification": {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/coding-qualification",
+      "sha256": "223b4c56fba64d7c201af1a78a7b6ac0c8865288e305fc58d2482faafb883149"
+    }
+  },
+  "unchanged_producer_sha256": "223b4c56fba64d7c201af1a78a7b6ac0c8865288e305fc58d2482faafb883149",
+  "original_receipt_id": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+  "record": "Consumer-only feature+note repair; original producer/source/SDK/task and historical records unchanged."
+}

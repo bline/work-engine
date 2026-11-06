@@ -1,0 +1,26 @@
+{
+  "subject_sha256": "a0e5afafaf6d39e2ebc36f7bb53546eb83e199cf509d60ee10e4790ad294856d",
+  "source_commit": "a77732cd74d1b952012fce669471742a6a814f1b",
+  "episode": "retained_same_isolated_review",
+  "verdict": "accept",
+  "scope": "Frozen operator program and static admission/dataflow boundaries only",
+  "findings": [],
+  "inspected_evidence": {
+    "binding": "Subject, referenced artifacts, MANIFEST and PREPARED file hashes verified. Events source matches its template pin.",
+    "helper": "Helper uses existing owner Job serialization/digest and inventory APIs without Host admission. Binary hash matches; build record and output hashes verified, exit 0, no timeout or leftovers.",
+    "admission": "Runner checks externally supplied admission hash, accepted source, candidate/binary/task pins, attributed account/accounting observations, 60-second freshness and fixed clocks. Exclusive ordinal reservation precedes materialization; freshness is checked again before submission.",
+    "identity": "Profile caller equals configured principal. Events separately checks configured principal and authenticated subject; client is a reporting label. The random-token verifier matches HttpAuth's input/output contract. These are operator-configured fixture bindings, not independently established OAuth identity.",
+    "dataflow": "Submit/read/repeat/restart use Events MCP through the pinned command and server. Native envelope and result fields match inspected owner shapes. No direct-producer execution substitute appears in the runner.",
+    "custody": "Unknown submission is retained without automatic replacement. Unresolved submission attempts MCP cancellation; finalization collects tracked service/helper processes. Successful collection remains distinct from validation, settlement and semantic acceptance."
+  },
+  "limitations": [
+    "No runner activation or actual end-to-end behavior was observed; static compatibility does not establish runtime success.",
+    "Fresh Root admission, account and accounting records are not part of this subject. Their truth and authorization remain Root-owned.",
+    "Cleanup code and process exits do not establish container absence, provider settlement or credential-projection cleanup; actual Host evidence remains required.",
+    "Prior source-review graph and independence limitations remain. Newly consulted graph paths report unresolved calls; material boundaries were read directly.",
+    "Actual returned bytes, mutation gates and pilot evidence still require separately bound retained review.",
+    "No writes, builds, tests, children or provider operations were performed."
+  ],
+  "configuration": "Retained Astra/high/default read-only binding acknowledged; no new configuration-freshness or backend-fulfillment claim.",
+  "authority": "This accepts the bounded operator subject for Root's next decision; it does not itself admit live execution or accept pilot output."
+}

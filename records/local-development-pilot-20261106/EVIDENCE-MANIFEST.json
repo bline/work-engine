@@ -1,0 +1,81 @@
+{
+  "schema": "local-development-pilot-evidence/v1",
+  "status": "dated_exact_local_evidence",
+  "source_final_commit": "9a731e57a213242ba7f325a28cd33181bf3bba54",
+  "local_owner_root": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004",
+  "files": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/AUTHORITY.json",
+      "sha256": "018a4ce8b39ef7286e1af0b6d834e7ee1590f8a4bb8e8d5132cd1196eab59aba"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/FIRST-GATE-GO.json",
+      "sha256": "2aae17ecf59e982c43aebcffca91db9a2d530be3dee61fb1bc37680bacfd9830"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/BUILDER-BINDING.json",
+      "sha256": "2dcb2bd31e6d4b006a91422ed34bc9cda9dc2004450aebca9862eac7c42f191b"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/ROOT-SOURCE-VERIFICATION.json",
+      "sha256": "b5681d61fcdb55a3879f514fe8803fe2e9ef7117d4fbd44cac6e6f68031da107"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/REVIEW-SUBJECT-v2.json",
+      "sha256": "0208f7eb4879df26eb5c2844cc392afbea21513301fd1ce1b182dff211e6a6ff"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/OPERATOR-REVIEW-SUBJECT.json",
+      "sha256": "a0e5afafaf6d39e2ebc36f7bb53546eb83e199cf509d60ee10e4790ad294856d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/FINAL-REVIEW-SUBJECT.json",
+      "sha256": "97152ccf7a6631b20985770ff1dda9eea52447df78c5a13149984b888f5f9c18"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/FINAL-REVIEW-SUBJECT-v2.json",
+      "sha256": "beaa740def0bc54ada9e7410bd1204a965fa58c6103a5e3918450e6aa129f798"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/admission.json",
+      "sha256": "1c177c650e0db54ec27fd3d8832d9f280bf3932327bc31acf21d461992409f78"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/MANIFEST.json",
+      "sha256": "babf384c0cfb84af3ffecef0211e5adb3f61bdda57227e1e043f91d5d3a89022"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/PREPARED.json",
+      "sha256": "7521e7f5a7531d1ca6448a4adc480e2216b376f63b1ebd4057b3b0bea25120ed"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/RUNTIME-PILOT-VALIDATION.json",
+      "sha256": "7eac11989bb52e9476a77c18df130e4ca49b5a6c43f07d803b69177ce2a00fd6"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/ROOT-FLOW-VALIDATION.json",
+      "sha256": "7f0254fd8e41ccd965ad252d40d80f8a701db8a10089a65bdc8e139523030099"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/TASK.json",
+      "sha256": "5762c0e6b1b0efafbd587f493ff226298418943234d2de9f828536a6fd55086d"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/SUMMARY.json",
+      "sha256": "3f2e08c1554e37421123a81a3bc25420574de4ed5ff050e5136c0e507832cd23"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/review/FINAL-REPORT-v2.json",
+      "sha256": "276a366fc09351b4c7b3aad6086c703d5dfc9ddc713e31768a893de65c5c5be2"
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/ROOT-ACCEPTANCE.json",
+      "sha256": "41d3d2a4aa438c686b571c2f97ab92bf438d7eff71c77424b34fa176aa5bde6d"
+    }
+  ],
+  "published_raw_receipt_sha256": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+  "credential_material_included": false,
+  "limitation": "Local records may name absolute evidence paths. Raw receipt and wrapper are copied byte-identically; generated private service/job/MCP secrets and native provider credentials are excluded.",
+  "publication_receipt_path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/PUBLICATION.json",
+  "standing": "Direct referent hashes are recorded. Nested paths in historical records may refer to older mutable build/control paths; original execution pins and archived subject/Git/effect evidence retain their dated meaning."
+}

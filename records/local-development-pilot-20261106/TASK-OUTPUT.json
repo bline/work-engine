@@ -1,0 +1,16 @@
+{
+  "schema": "actual-repository-output/v1",
+  "source": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/snapshots/589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+    "sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684"
+  },
+  "source_receipt": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+  "workspace_export_sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+  "repository_path": "rust/crates/context-pressure/src/timestamp.rs",
+  "base_sha256": "cd8cf0deda977422ad7b54947d781e5ae0e9508d10b1f8c739dd0b27c96c03cb",
+  "original_prefix_unchanged": true,
+  "new_bytes": 919,
+  "append_review": "Root read full appended module: only two table-driven assert_eq tests, exact8 cases, no extra effects/unsafe/source changes. Independent final review remains owed.",
+  "acceptance_worktree": "/home/bline/cbm-work/wt-local-development-pilot-acceptance-20261106",
+  "source_base": "a77732cd74d1b952012fce669471742a6a814f1b"
+}

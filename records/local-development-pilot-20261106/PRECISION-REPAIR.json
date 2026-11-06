@@ -1,0 +1,124 @@
+{
+  "schema": "live-receipt-precision-result/v1",
+  "status": "tested_private_repair_pending_root_integration_and_retained_review",
+  "finding": "LIVE-REVIEW-002",
+  "at": "2026-11-06T01:14:42.523178+00:00",
+  "candidate": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/CANDIDATE.json",
+    "sha256": "2acd25f2b333c9b68e3f78d43a133b7794d54a6b6ba1d66ee42a9d597c3cff75"
+  },
+  "commit": "4be395fd2f2bbbf58d8093c9c4457ab3e47509e9",
+  "base": "a77732cd74d1b952012fce669471742a6a814f1b",
+  "worktree": "/home/bline/cbm-work/wt-local-development-live-20261106",
+  "clean": true,
+  "changed_paths": [
+    "rust/crates/work-engine-command/Cargo.toml",
+    "rust/crates/work-engine-server/Cargo.toml",
+    "rust/crates/work-engine-server/src/job.rs",
+    "rust/crates/work-engine-server/tests/coding_job.rs"
+  ],
+  "repair": "Enable serde_json float_roundtrip in server and command consumers, preserving native f64 number values through Value parse/serialize. Replace inaccurate verbatim-stdout label with numeric-preserving receipt projection. Existing DTO, authorization, receipt identity and producing runtime contracts remain.",
+  "exact_original_inputs": {
+    "host_wrapper": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/coding-host-result.json",
+      "sha256": "dd91221cbf6ec86b04a84b4ea51445e7d78d90c5d2b0110b1692a4b3c8c416ab"
+    },
+    "receipt": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/receipts/42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6.json",
+      "sha256": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6"
+    },
+    "receipt_id": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6"
+  },
+  "regression_scope": "Real server Jobs capture/persistence, LocalClient and real command JSON serialization, then full server restart readback. Full original wrapper/receipt payload and ID unmodified; only private prebound operator record/shell stdout are fixtures. Original job/journal referenced read-only, fixture shell prohibits reconcile/cancel, no Host/provider realization. Test checks original receipt hash and asserts receipt/journal bytes unchanged after run.",
+  "control": {
+    "record": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/control/pre-fix-control.json",
+      "sha256": "a8f447c859e9a3b0074c4285141ad32aaedc6d36a115f6a88e6d63a11ae09e7e"
+    },
+    "outcome": "Expected exit101: persisted /coding/provider_requests/1/usage/cost/output was0.0002055 instead of exact raw0.00020549999999999998. Failure preserved.",
+    "log": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/control/pre-fix-control.stdout",
+      "sha256": "aa478357f0c19df2ed392c229b3d34046a3efbf1c91c9192942a63be0f66d129"
+    }
+  },
+  "fixed_checks": {
+    "summary": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/fixed/summary.json",
+      "sha256": "8623d4959dfc596e2df7e9ddadbaa769f87dbba457c7cdaa8566486198480977"
+    },
+    "regression": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/fixed/exact-receipt-regression.json",
+      "sha256": "751730f29dff2b5e76b58e90b977e750b7eebf421733ac408bd622f42d9667b3"
+    },
+    "ordinary": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/fixed/coding-job-ordinary.json",
+      "sha256": "784ff831c61da015135386bbdb1f63aa0b55385399bdc8406b600d07e3b734dd"
+    },
+    "all_included": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/fixed/coding-job-all.json",
+      "sha256": "8ae4fa13e85c3db3d10f4c3f61f335bb7bf50329ba4e843819a8e69547af95ed"
+    },
+    "clippy": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/fixed/server-command-clippy.json",
+      "sha256": "9b7f5b7a72c28a352be4a69c51efcc0315160f1b5c961cbdc7c7a89fd5c2ec85"
+    },
+    "format": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/fixed/format.json",
+      "sha256": "5f7c6bb75326cdbd4f269c8330e55eed1eeb5bc9333a4fbd0e10e829235777db"
+    },
+    "unit": {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/builder/precision/unit/summary.json",
+      "sha256": "414e6715de2f100252ac6ff3ff8267bb48dd5f46a43b4f65a533076bddf3226b"
+    }
+  },
+  "outcomes": {
+    "original_full_receipt_regression": "PASS; all four exact numeric strings, full payload, receipt ID at capture/command and restart",
+    "ordinary": [
+      "test result: ok. 5 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 13.53s"
+    ],
+    "included": [
+      "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 18.54s"
+    ],
+    "server_command_units": [
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+      "test result: ok. 29 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 12.09s"
+    ],
+    "clippy": "PASS all-targets server+command -D warnings",
+    "format": "PASS",
+    "build": "PASS server+command"
+  },
+  "unmodified": {
+    "producer_binary": {
+      "path": "/home/bline/cbm-work/local-development-integration-target/debug/coding-qualification",
+      "sha256": "223b4c56fba64d7c201af1a78a7b6ac0c8865288e305fc58d2482faafb883149"
+    },
+    "producer_source": "No changes; separate producer workspace unchanged",
+    "timestamp_sha256": "cd8cf0deda977422ad7b54947d781e5ae0e9508d10b1f8c739dd0b27c96c03cb",
+    "original_raw_receipt": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+    "historical_projected_records": "Not rewritten. Already rounded old host-run/caller/restart records remain defective historical observations; lost numeric precision is not reconstructed from them."
+  },
+  "processes": "All custody steps terminal, every leftover count0; no owned processes or children remain.",
+  "authority_limits": {
+    "new_provider_runs": 0,
+    "docker_operations": 0,
+    "native_credential_read_projection": 0,
+    "ack_operations": 0,
+    "runtime_retries": 0,
+    "children": 0,
+    "shared_publication": 0
+  },
+  "limitations": [
+    "Offline replay proves repaired consumer handling of exact original receipt, not a second actual provider run",
+    "No producing Host reconcile numeric behavior claim; regression requires no reconciliation after collected restart",
+    "Semantic acceptance and complete pilot judgment remain Root/retained Astra decisions",
+    "Actual timestamp patch remains exclusively Root-owned; worker base timestamp unchanged"
+  ],
+  "usage": {
+    "actor_ceiling_usd": 5,
+    "cost": "Root canonical accounting owns attribution; final tail not measured here",
+    "context_input_tokens": 222202,
+    "decision": "retain_ok below275735 trigger; no compaction/replacement"
+  },
+  "next": "Root cherry-picks only this commit onto actual task3a6, rebinds destination source/binary applicability, and collects same Astra remediation review. Preserve original receipt42ba and old failed projections."
+}

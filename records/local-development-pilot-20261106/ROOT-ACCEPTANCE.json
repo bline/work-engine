@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-06T01:19:51.032804+00:00",
+  "source_commit": "9a731e57a213242ba7f325a28cd33181bf3bba54",
+  "review_report": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/review/FINAL-REPORT-v2.json",
+  "review_sha256": "276a366fc09351b4c7b3aad6086c703d5dfc9ddc713e31768a893de65c5c5be2",
+  "task_accepted": true,
+  "bounded_pilot_accepted": true,
+  "native_receipt_acceptance": "owner_pending unchanged",
+  "qualification": "Original actual full-path execution/task proof plus separately established exact-raw offline correction of consumer numeric preservation; historical rounded projections not retroactively corrected; no second provider effect."
+}

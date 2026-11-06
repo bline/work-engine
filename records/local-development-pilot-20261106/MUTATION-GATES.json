@@ -1,0 +1,79 @@
+{
+  "schema": "actual-task-mutation-gates/v1",
+  "status": "passed",
+  "candidate_sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+  "steps": [
+    {
+      "name": "candidate-compile",
+      "expected_exit": 0,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/candidate-compile.json"
+    },
+    {
+      "name": "candidate-all",
+      "expected_exit": 0,
+      "actual_exit": 0,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/candidate-all.json",
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/candidate-all.stdout",
+        "length": 270,
+        "sha256": "249b16ade72aa365cac07aa2ffb9e4a728fbb68fe8ad0d50f53a2009a6bddb1c"
+      }
+    },
+    {
+      "name": "offset_sign-compile",
+      "expected_exit": 0,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/offset_sign-compile.json"
+    },
+    {
+      "name": "offset_sign-old",
+      "expected_exit": 0,
+      "actual_exit": 0,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/offset_sign-old.json",
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/offset_sign-old.stdout",
+        "length": 149,
+        "sha256": "acdff7ce29ca77961208184f96f170bfcb234d37828c46308728134466d9a192"
+      }
+    },
+    {
+      "name": "offset_sign-added",
+      "expected_exit": 101,
+      "actual_exit": 101,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/offset_sign-added.json",
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/offset_sign-added.stdout",
+        "length": 1174,
+        "sha256": "d8d160ed49701eb7eefc78f4d5f1af1a1f065f7245430ee41355edd544001649"
+      }
+    },
+    {
+      "name": "lower_timeclip_bound-compile",
+      "expected_exit": 0,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/lower_timeclip_bound-compile.json"
+    },
+    {
+      "name": "lower_timeclip_bound-old",
+      "expected_exit": 0,
+      "actual_exit": 0,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/lower_timeclip_bound-old.json",
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/lower_timeclip_bound-old.stdout",
+        "length": 149,
+        "sha256": "acdff7ce29ca77961208184f96f170bfcb234d37828c46308728134466d9a192"
+      }
+    },
+    {
+      "name": "lower_timeclip_bound-added",
+      "expected_exit": 101,
+      "actual_exit": 101,
+      "custody": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/lower_timeclip_bound-added.json",
+      "stdout": {
+        "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/task/output-gates/custody/lower_timeclip_bound-added.stdout",
+        "length": 765,
+        "sha256": "080135f8946f7888388d6bb25dd93f67a9a7ac098b918b2e8bedda0d3128f6fe"
+      }
+    }
+  ],
+  "claim": "Candidate all3 embedded tests pass. Original UTC test passes both mutants; new offset tests reject reversed offset sign and missing lower TimeClip bound. Expected mutant failures are positive controls, not production test failures.",
+  "preexecution_collector_issue": "Initial ad-hoc collector had Python syntax error before any gate execution; corrected without changing source or expected results."
+}

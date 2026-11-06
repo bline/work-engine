@@ -1,0 +1,30 @@
+{
+  "subject_sha256": "beaa740def0bc54ada9e7410bd1204a965fa58c6103a5e3918450e6aa129f798",
+  "commit": "9a731e57a213242ba7f325a28cd33181bf3bba54",
+  "episode": "retained_same_isolated_review",
+  "verdict": "accept",
+  "resolved": [
+    {
+      "id": "LIVE-REVIEW-002",
+      "status": "resolved_for_corrected_consumers",
+      "evidence": "Exact final diff enables float_roundtrip in both consumers and corrects the verbatim label. The regression consumes the unchanged original wrapper/receipt, asserts all four numeric values, full payload and receipt ID through capture, command and restart. Preserved pre-fix control fails on the first rounded value; fixed regression passes.",
+      "historical_status": "The original live-run rounded projections remain defective historical evidence; this repair does not retroactively correct them."
+    }
+  ],
+  "findings": [],
+  "verified": [
+    "Subject, candidate, repair report, seven passing custody records and their output hashes match.",
+    "Affected source hashes match the final commit; all three candidate binary hashes match.",
+    "All seven checks exit 0 without timeout or leftovers. Ordinary integration tests: 5 passed/5 ignored; explicitly enabled tests: 10 passed.",
+    "Original raw receipt and wrapper remain unchanged. The regression verifies original receipt/journal preservation and no reconciliation.",
+    "Timestamp patch remains 589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684; prior patch acceptance, 37 tests and mutation evidence remain applicable."
+  ],
+  "pilot_acceptance": "Accepted as a bounded pilot supported by the original actual execution and task evidence, plus separately established offline correction of consumer receipt handling.",
+  "limitations": [
+    "The corrected consumers were qualified offline against the exact original receipt, not through a second provider run.",
+    "No claim that historical caller projections now preserve exact values, or that producing-Host reconciliation numeric behavior was qualified.",
+    "Prior OAuth, SDK output-cap fault-injection, billing/quota, graph and configuration limitations remain.",
+    "Reviewer performed no writes, tests, builds, provider operations or child launches."
+  ],
+  "authority": "Root retains final acceptance and publication decisions; no additional runtime entry is authorized by this review."
+}

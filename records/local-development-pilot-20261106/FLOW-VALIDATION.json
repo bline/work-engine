@@ -1,0 +1,81 @@
+{
+  "status": "full_caller_path_collected_and_cross_checked",
+  "at": "2026-11-06T00:59:37.781148+00:00",
+  "checks": {
+    "outer_exit0": true,
+    "first_operation": true,
+    "exact_repeat": true,
+    "restart_same_collected_operation": true,
+    "native_receipt_restored": true,
+    "receipt_bytes": true,
+    "native_component_passed": true,
+    "pending_acceptance_preserved": true,
+    "one_operation_dir": true,
+    "entry_records_unchanged": true,
+    "producer_auto_ack": true,
+    "actual_test_output_prefix": true
+  },
+  "operation_id": "190638c1e851ba397245f606384b9ed7a392407779b80b6627622b86e800de27",
+  "receipt_id": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+  "source_commit": "a77732cd74d1b952012fce669471742a6a814f1b",
+  "outer_custody": {
+    "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/entry-custody/full-path-pilot.json",
+    "sha256": "55519e6b4b00b7df302186ed025dc07d6e8fe09501d147eae8c718184dc2f274"
+  },
+  "outer_process_collection": [
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/events-collected.json",
+      "sha256": "1bb204c2a99a53cce374159cfd05b963be1fd2c3c5bbe442b30ef98c1fe8c82d",
+      "name": "events",
+      "exit_code": -15
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/helper-input-digest-collected.json",
+      "sha256": "fae78c8c4b75eb0a1a68c730f01c4dd575751b8cf743b70c45f6c087fa32edc6",
+      "name": "helper-input-digest",
+      "exit_code": 0
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/helper-inventory-collected.json",
+      "sha256": "4abbe75c313e3764fe31e076e4e9b9ac32d0449a8f817d88d2f0ceb52deea11a",
+      "name": "helper-inventory",
+      "exit_code": 0
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/server-collected.json",
+      "sha256": "c02c70e841e538f8e6d90be607b77fd467e325e0baea4ccd5a8ef591b5560adb",
+      "name": "server",
+      "exit_code": 0
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/server-restart-collected.json",
+      "sha256": "1f5ae2d97c2dcca50e6c43a561d73de9213868ab0f6c3d42c48063731a7eb5d3",
+      "name": "server-restart",
+      "exit_code": 0
+    }
+  ],
+  "fresh_container_absence": [
+    {
+      "container_id": "a34612847dd823b12aa7fbf4747f10b0f45b1b4ba88585577adcf455e41edaaa",
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/fresh-cleanup/container-1.json",
+      "sha256": "e50e12c1c488394bcb2e8ee8c5ad8562167d1c086a7e7d63bea06536c7f4dcac",
+      "fresh_absent": true
+    },
+    {
+      "container_id": "0b43928fd5ea96b265074bd567071dd40e362c2b02eaa22d40867ba46eb8cfc4",
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/fresh-cleanup/container-2.json",
+      "sha256": "b413773ee35a2f6578988a17ffceddfeccb6545377f6ef0cf03092245f236a50",
+      "fresh_absent": true
+    },
+    {
+      "container_id": "c48f8e2d3ef3c09e343d992ee1aa4bd1f44908f3743d31d4f092e8fda27c9f6f",
+      "record": "/home/bline/.local/state/work-engine/local-development-pilot-20261106T0004/fresh-cleanup/container-3.json",
+      "sha256": "2e97643a2349de11a9b1ae491a260b971bdbfe26664aebc7d068ef2076d26530",
+      "fresh_absent": true
+    }
+  ],
+  "projected_access_files_absent": true,
+  "recorded_cleanup_consistent": true,
+  "identity": "Exact local random-token verifier only; no OAuth onboarding/independent principal identity claim",
+  "limits": "Root cross-check of actual saved records plus fresh owned-container inspection; runtime owner validation, task mutation and final review still separate. No inference from exit0 alone."
+}
