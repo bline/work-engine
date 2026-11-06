@@ -268,6 +268,7 @@ impl QualifiedRuntime {
         inputs: QualifiedInputs,
         offline: bool,
         prompt_template: Vec<u8>,
+        job_pin: Option<InstalledAcceptancePin>,
     ) -> Result<Self> {
         if !matches!(
             inputs.resource_policy.as_str(),
@@ -392,8 +393,14 @@ impl QualifiedRuntime {
                 return Err(refuse("unsupported", "offline acceptance unavailable"));
             }
         } else {
-            let deployment = HostDeploymentPin::open_installed_host()?;
-            QualifiedPin::Installed(InstalledAcceptancePin::open_production(&deployment)?)
+            QualifiedPin::Installed(if let Some(pin) = job_pin {
+                pin.revalidate()?;
+                pin.validate_job_paths(&d.repository, &d.roots.campaign)?;
+                pin
+            } else {
+                let deployment = HostDeploymentPin::open_installed_host()?;
+                InstalledAcceptancePin::open_production(&deployment)?
+            })
         };
         let selected = AcceptedExecutionSelection {
             claude_profile_digest: profile.profile_digest(),
@@ -477,9 +484,28 @@ pub struct TrustedStartup {
     pub(crate) selection: Value,
     gate: [Vec<u8>; 3],
     pub(crate) qualified: Option<QualifiedRuntime>,
+    job_admission: Option<slice_campaign::job_admission::JobAdmissionRef>,
 }
 impl TrustedStartup {
     pub fn load(path: &Path) -> Result<Self> {
+        Self::load_selected(path, None)
+    }
+    /// A job descriptor is data, authorized only by the independently opened
+    /// installed policy and exact rederived admission. Wire commands cannot
+    /// choose this constructor or supply a policy path.
+    pub fn load_for_job(path: &Path, pin: InstalledAcceptancePin) -> Result<Self> {
+        if pin.job_admission().is_none() {
+            return Err(refuse(
+                "startup",
+                "job startup requires derived job admission",
+            ));
+        }
+        pin.revalidate()?;
+        pin.validate_job_child(path, "startup.json")?;
+        Self::load_selected(path, Some(pin))
+    }
+    fn load_selected(path: &Path, job_pin: Option<InstalledAcceptancePin>) -> Result<Self> {
+        let job_admission = job_pin.as_ref().and_then(|pin| pin.job_admission());
         if !path.is_absolute() || fs::canonicalize(path)? != path {
             return Err(refuse(
                 "startup",
@@ -531,7 +557,13 @@ impl TrustedStartup {
             return Err(refuse("startup", "startup changed while reading"));
         }
         let header: Value = serde_json::from_slice(&bytes)?;
-        if header["profile"] == QUALIFIED_PROFILE {
+        if job_pin.is_some() && header["profile"] != QUALIFIED_PROFILE {
+            return Err(refuse(
+                "startup",
+                "job admission requires qualified installed profile",
+            ));
+        }
+        if header["profile"] == QUALIFIED_PROFILE && job_pin.is_none() {
             if metadata.uid() != 0 || !matches!(metadata.mode() & 0o777, 0o644 | 0o444) {
                 return Err(refuse(
                     "startup",
@@ -584,6 +616,17 @@ impl TrustedStartup {
                     || document.evidence_profile != "controlled-process-v1"))
         {
             return Err(refuse("unsupported", "startup profile unsupported"));
+        }
+        if let Some(pin) = &job_pin {
+            pin.validate_job_paths(&document.repository, &document.roots.campaign)?;
+            for (path, child) in [
+                (&document.workspace, "workspace"),
+                (&document.roots.episode, "episode"),
+                (&document.roots.claims, "claims"),
+                (&document.roots.evidence, "evidence"),
+            ] {
+                pin.validate_job_child(path, child)?;
+            }
         }
         document.identity.validate()?;
         for id in [
@@ -956,7 +999,9 @@ impl TrustedStartup {
         let prompt_template =
             qualified_prompt_template_from_parts(&document, &projection, &request_input);
         let qualified = qualified_inputs
-            .map(|inputs| QualifiedRuntime::load(&document, inputs, offline, prompt_template))
+            .map(|inputs| {
+                QualifiedRuntime::load(&document, inputs, offline, prompt_template, job_pin)
+            })
             .transpose()?;
         let value = Self {
             document,
@@ -970,6 +1015,7 @@ impl TrustedStartup {
             selection,
             gate,
             qualified,
+            job_admission,
         };
         value.campaign_config()?;
         value.validate_native_identifiers()?;
@@ -998,7 +1044,11 @@ impl TrustedStartup {
         &self.document
     }
     pub(crate) fn revalidate(&self) -> Result<()> {
-        let actual = Self::load(&self.path)?;
+        let actual = if let Some(job) = &self.job_admission {
+            Self::load_for_job(&self.path, job.reopen()?)?
+        } else {
+            Self::load(&self.path)?
+        };
         if actual.digest != self.digest {
             return Err(refuse("startup", "installed startup changed"));
         }

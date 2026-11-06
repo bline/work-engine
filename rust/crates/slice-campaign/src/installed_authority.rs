@@ -53,7 +53,7 @@ impl HostDeploymentPin {
     }
 }
 
-fn read_protected(path: &Path) -> Result<Vec<u8>> {
+pub(crate) fn read_protected(path: &Path) -> Result<Vec<u8>> {
     if !path.is_absolute() || fs::canonicalize(path).ok().as_deref() != Some(path) {
         return Err(CampaignError::Root(
             "protected pin path not canonical".into(),
@@ -139,7 +139,7 @@ pub(crate) struct AcceptanceRecord {
     pub(crate) attempt_horizon_millis: u64,
 }
 impl AcceptanceRecord {
-    fn parse(raw: &[u8]) -> Result<Self> {
+    pub(crate) fn parse(raw: &[u8]) -> Result<Self> {
         if raw.len() > PIN_LIMIT {
             return Err(CampaignError::Contract("acceptance exceeds limit".into()));
         }
@@ -252,6 +252,7 @@ fn matches_execution(
 
 /// Checked acceptance from the independent protected deployment pin.
 pub struct InstalledAcceptancePin {
+    pub(crate) job: Option<Box<crate::job_admission::JobAdmissionRef>>,
     pub(crate) digest: String,
     pub(crate) record: AcceptanceRecord,
 }
@@ -269,6 +270,7 @@ impl InstalledAcceptancePin {
         }
         Ok(Self {
             digest,
+            job: None,
             record: AcceptanceRecord::parse(raw)?,
         })
     }
@@ -279,7 +281,29 @@ impl InstalledAcceptancePin {
         &self.record.reference
     }
     pub fn validate_execution(&self, selected: &AcceptedExecutionSelection<'_>) -> Result<()> {
+        self.revalidate()?;
         matches_execution(&self.record, selected)
+    }
+    pub fn revalidate(&self) -> Result<()> {
+        if let Some(job) = &self.job {
+            job.verify(&self.digest)?;
+        }
+        Ok(())
+    }
+    pub fn job_admission(&self) -> Option<crate::job_admission::JobAdmissionRef> {
+        self.job.as_deref().cloned()
+    }
+    pub fn validate_job_child(&self, path: &Path, child: &str) -> Result<()> {
+        if let Some(job) = &self.job {
+            job.validate_child(path, child)?;
+        }
+        Ok(())
+    }
+    pub fn validate_job_paths(&self, repository: &Path, campaign: &Path) -> Result<()> {
+        if let Some(job) = &self.job {
+            job.validate_paths(repository, campaign)?;
+        }
+        Ok(())
     }
 }
 
@@ -306,6 +330,7 @@ impl OfflineAcceptancePin {
 }
 
 pub struct InstalledProfileAuthority {
+    job: Option<Box<crate::job_admission::JobAdmissionRef>>,
     record: AcceptanceRecord,
     digest: String,
 }
@@ -444,6 +469,12 @@ impl InitialEntryBinding {
     }
 }
 impl FreshInitialEntry {
+    pub fn revalidate(&self) -> Result<()> {
+        self._authority.revalidate()
+    }
+    pub fn is_fixture(&self) -> bool {
+        self._authority.job.as_ref().is_some_and(|j| j.fixture())
+    }
     pub fn binding(&self) -> &InitialEntryBinding {
         &self.binding
     }
@@ -456,10 +487,17 @@ impl OfflineInitialEntry {
 }
 
 impl InstalledProfileAuthority {
+    pub(crate) fn revalidate(&self) -> Result<()> {
+        if let Some(job) = &self.job {
+            job.verify(&self.digest)?;
+        }
+        Ok(())
+    }
     pub(crate) fn from_pin(pin: InstalledAcceptancePin) -> Self {
         Self {
             record: pin.record,
             digest: pin.digest,
+            job: pin.job,
         }
     }
     pub(crate) fn record(&self) -> &AcceptanceRecord {

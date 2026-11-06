@@ -817,6 +817,9 @@ impl TrustedConfig {
         gate_receipt: Vec<u8>,
         pin: &InstalledAcceptancePin,
     ) -> Result<Self> {
+        pin.revalidate()?;
+        pin.validate_job_paths(&repository, &root)?;
+        pin.validate_job_child(&workspace, "workspace")?;
         if pin.record.identity != identity
             || pin.record.accepted_boundary_sha256 != accepted_boundary.sha256
         {
@@ -2154,6 +2157,9 @@ impl CampaignInner {
         Ok(())
     }
     fn install_qualified_initial_authority(&mut self, pin: InstalledAcceptancePin) -> Result<()> {
+        pin.revalidate()?;
+        pin.validate_job_paths(&self.config.repository, &self.config.root)?;
+        pin.validate_job_child(&self.config.workspace, "workspace")?;
         if self.config.profile != crate::contract::QUALIFIED_INITIAL_PROFILE
             || self.config.acceptance_digest.as_deref() != Some(pin.digest())
             || self.installed_authority.is_some()
@@ -2233,6 +2239,7 @@ impl CampaignInner {
             .installed_authority
             .as_ref()
             .ok_or_else(|| CampaignError::Unsupported("installed entry authority absent".into()))?;
+        authority.revalidate()?;
         let binding =
             self.checked_initial_entry_binding(permit, authority.record(), authority.digest())?;
         Ok(self.installed_authority.take().unwrap().issue(binding))

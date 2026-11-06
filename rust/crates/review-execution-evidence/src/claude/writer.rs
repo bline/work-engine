@@ -280,12 +280,40 @@ impl QualifiedWriter {
         Ok(InitialEntryPermit::applied(&self.scope, !installed))
     }
 
+    /// Fixture-only consumer check: consumes the same exact Applied binding
+    /// against an offline scope, without launching any executable or treating
+    /// fixture authority as qualified-provider evidence.
+    #[cfg(feature = "test-support")]
+    pub fn check_fixture_job_entry(
+        &self,
+        entry: FreshInitialEntry,
+    ) -> Result<(), EvidenceReadError> {
+        if !entry.is_fixture() {
+            return Err(EvidenceReadError::Unsupported(
+                "fixture check requires fixture job policy",
+            ));
+        }
+        entry
+            .revalidate()
+            .map_err(|_| EvidenceReadError::Conflicting("job admission no longer current"))?;
+        self.validate_and_consume_entry(entry.binding(), false)
+            .map(|_| ())
+    }
+
     /// The campaign-owned fresh Applied capability is consumed before E1
     /// creates its private one-time launch permit.
     pub async fn execute_applied_initial(
         &mut self,
         entry: FreshInitialEntry,
     ) -> Result<ExecutionPublication, EvidenceReadError> {
+        entry
+            .revalidate()
+            .map_err(|_| EvidenceReadError::Conflicting("job admission no longer current"))?;
+        if entry.is_fixture() {
+            return Err(EvidenceReadError::Unsupported(
+                "fixture job admission cannot launch qualified provider",
+            ));
+        }
         let permit = self.validate_and_consume_entry(entry.binding(), true)?;
         self.execute_initial(permit).await
     }

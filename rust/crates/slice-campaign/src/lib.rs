@@ -9,6 +9,7 @@ pub mod codec;
 mod completion;
 pub mod contract;
 mod installed_authority;
+pub mod job_admission;
 pub mod publication;
 mod publication_ingress;
 mod publication_store;

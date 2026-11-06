@@ -206,7 +206,7 @@ fn text<'a>(value: &'a Value, field: &str) -> Result<&'a str> {
         .filter(|v| !v.trim().is_empty())
         .ok_or_else(|| CampaignError::Contract(format!("{field} must be nonempty text")))
 }
-fn claim_digest(value: &Value) -> Result<String> {
+pub(crate) fn claim_digest(value: &Value) -> Result<String> {
     let raw = serde_json::to_string(value).map_err(|e| CampaignError::Contract(e.to_string()))?;
     let claim = claim_evidence::codec::parse_json(&raw)
         .map_err(|e| CampaignError::Contract(e.to_string()))?;
