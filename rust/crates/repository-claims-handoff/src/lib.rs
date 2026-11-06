@@ -75,6 +75,8 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 type Result<T> = std::result::Result<T, Error>;
 
+pub mod consumer;
+
 fn is_sha(value: &str) -> bool {
     value.len() == 64
         && value
@@ -496,6 +498,22 @@ impl Drop for ReaderGuard {
 /// two frames of `MAX_RESPONSE_LINE` plus the pipe, whatever the server emits. An
 /// oversized frame is rejected here, before it is queued. Dropping the receiver
 /// releases a reader blocked on a full queue.
+fn spawn_writer(stdin: Option<ChildStdin>) -> (mpsc::SyncSender<Vec<u8>>, mpsc::Receiver<bool>) {
+    let (tx, rx) = mpsc::sync_channel::<Vec<u8>>(1);
+    let (ack_tx, ack_rx) = mpsc::sync_channel::<bool>(1);
+    std::thread::spawn(move || {
+        let mut stdin = stdin;
+        while let Ok(line) = rx.recv() {
+            let ok = stdin
+                .as_mut()
+                .is_some_and(|w| w.write_all(&line).and_then(|_| w.flush()).is_ok());
+            if ack_tx.send(ok).is_err() || !ok {
+                break;
+            }
+        }
+    });
+    (tx, ack_rx)
+}
 fn spawn_reader<R: Read + Send + 'static>(out: R) -> (mpsc::Receiver<Frame>, JoinHandle<()>) {
     let (tx, lines) = mpsc::sync_channel(1);
     LIVE_READERS.fetch_add(1, Ordering::SeqCst);
@@ -525,7 +543,11 @@ fn spawn_reader<R: Read + Send + 'static>(out: R) -> (mpsc::Receiver<Frame>, Joi
 
 struct Session {
     child: Child,
-    input: Option<ChildStdin>,
+    /// Requests go to a dedicated writer thread so a server that stops reading
+    /// stdin can never block the caller past its deadline.
+    writer: Option<mpsc::SyncSender<Vec<u8>>>,
+    acks: Option<mpsc::Receiver<bool>>,
+    poisoned: bool,
     lines: Option<mpsc::Receiver<Frame>>,
     reader: Option<JoinHandle<()>>,
     deadline: Instant,
@@ -533,7 +555,7 @@ struct Session {
 }
 impl Drop for Session {
     fn drop(&mut self) {
-        self.input.take();
+        self.writer.take();
         let _ = self.child.kill();
         let _ = self.child.wait();
         // Dropping the receiver wakes a reader blocked on a full queue; the dead
@@ -581,7 +603,8 @@ impl Session {
             .stderr(Stdio::null())
             .spawn()
             .map_err(|_| unavailable("server did not start"))?;
-        let input = child.stdin.take();
+        let stdin = child.stdin.take();
+        let (writer, acks) = spawn_writer(stdin);
         let Some(out) = child.stdout.take() else {
             let _ = child.kill();
             let _ = child.wait();
@@ -590,7 +613,9 @@ impl Session {
         let (lines, reader) = spawn_reader(out);
         let mut s = Self {
             child,
-            input,
+            writer: Some(writer),
+            acks: Some(acks),
+            poisoned: false,
             lines: Some(lines),
             reader: Some(reader),
             deadline: Instant::now() + deadline,
@@ -602,20 +627,63 @@ impl Session {
         }
         Ok(s)
     }
+    /// Terminal transport failure: no later call may reuse this child, so a late
+    /// response can never be mistaken for a later reply and nothing queues into
+    /// a server that stopped draining stdin.
+    fn poison(&mut self) {
+        self.poisoned = true;
+        self.writer.take();
+        self.acks.take();
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+        self.lines.take();
+    }
     fn rpc(&mut self, method: &str, params: Value) -> Result<Value> {
+        if self.poisoned {
+            return Err(Error::new(
+                "server_unavailable",
+                "transport closed after an earlier failure",
+            ));
+        }
+        let r = self.rpc_once(method, params);
+        // Owner refusals are recoverable; every other failure is terminal.
+        if let Err(e) = &r
+            && e.code != "owner_refused"
+        {
+            self.poison();
+        }
+        r
+    }
+    pub(crate) fn is_poisoned(&self) -> bool {
+        self.poisoned
+    }
+    fn rpc_once(&mut self, method: &str, params: Value) -> Result<Value> {
         self.sequence += 1;
         let id = self.sequence;
-        let input = self
-            .input
-            .as_mut()
+        let mut line = json!({"jsonrpc":"2.0","id":id,"method":method,"params":params})
+            .to_string()
+            .into_bytes();
+        line.push(b'\n');
+        let writer = self
+            .writer
+            .as_ref()
             .ok_or_else(|| Error::new("server_unavailable", "server input closed"))?;
-        writeln!(
-            input,
-            "{}",
-            json!({"jsonrpc":"2.0","id":id,"method":method,"params":params})
-        )
-        .and_then(|_| input.flush())
-        .map_err(|_| Error::new("server_unavailable", "server closed input"))?;
+        writer
+            .try_send(line)
+            .map_err(|_| Error::new("server_unavailable", "server input not draining"))?;
+        let acks = self
+            .acks
+            .as_ref()
+            .ok_or_else(|| Error::new("server_unavailable", "server input closed"))?;
+        match acks.recv_timeout(self.deadline.saturating_duration_since(Instant::now())) {
+            Ok(true) => {}
+            Ok(false) | Err(mpsc::RecvTimeoutError::Disconnected) => {
+                return Err(Error::new("server_unavailable", "server closed input"));
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                return Err(Error::new("server_unavailable", "server write deadline"));
+            }
+        }
         let remaining = self.deadline.saturating_duration_since(Instant::now());
         let receiver = self
             .lines
@@ -692,6 +760,22 @@ fn read_projection(
     r: &ExactRef,
     page_bytes: usize,
 ) -> Result<(String, String, usize)> {
+    read_paged(
+        s,
+        "resolve_repository_fact",
+        json!({"claim_id":r.claim_id,"revision_id":r.revision_id,"revision_sha256":r.revision_sha256}),
+        page_bytes,
+    )
+}
+
+/// Read one framed, digest-bound owner projection from `tool` (resolve or
+/// discover) by `base` arguments plus a `projection_page`.
+fn read_paged(
+    s: &mut Session,
+    tool: &str,
+    base: Value,
+    page_bytes: usize,
+) -> Result<(String, String, usize)> {
     let mut assembled = String::new();
     let mut digest: Option<String> = None;
     let mut total: Option<usize> = None;
@@ -701,7 +785,9 @@ fn read_projection(
         if let Some(d) = &digest {
             page["sha256"] = json!(d);
         }
-        let o = s.tool("resolve_repository_fact", json!({"claim_id":r.claim_id,"revision_id":r.revision_id,"revision_sha256":r.revision_sha256,"projection_page":page}))?;
+        let mut args = base.clone();
+        args["projection_page"] = page;
+        let o = s.tool(tool, args)?;
         pages += 1;
         let corrupt = |d: &str| Error::new("projection_corrupt", d.to_string());
         if pages > MAX_PAGES || o["encoding"] != "claim-evidence-canonical-json-v1" {
@@ -753,6 +839,16 @@ fn read_projection(
 }
 
 fn read_evidence(s: &mut Session, sha: &str, page_bytes: usize) -> Result<EvidenceRead> {
+    let (bytes, pages) = read_evidence_bytes(s, sha, page_bytes)?;
+    Ok(EvidenceRead {
+        sha256: sha.into(),
+        total_bytes: bytes.len(),
+        pages,
+    })
+}
+
+/// Read and digest-verify one complete evidence artifact; returns its exact bytes.
+fn read_evidence_bytes(s: &mut Session, sha: &str, page_bytes: usize) -> Result<(Vec<u8>, usize)> {
     let corrupt = |d: &str| Error::new("evidence_corrupt", d.to_string());
     let mut bytes: Vec<u8> = Vec::new();
     let mut total: Option<usize> = None;
@@ -797,11 +893,7 @@ fn read_evidence(s: &mut Session, sha: &str, page_bytes: usize) -> Result<Eviden
     if Some(bytes.len()) != total || sha256_bytes(&bytes) != sha {
         return Err(corrupt("assembled evidence does not match its digest"));
     }
-    Ok(EvidenceRead {
-        sha256: sha.into(),
-        total_bytes: bytes.len(),
-        pages,
-    })
+    Ok((bytes, pages))
 }
 
 fn text_of(v: Option<&JsValue>) -> Option<String> {
