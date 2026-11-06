@@ -822,12 +822,12 @@ impl Workspace {
             )));
         }
         let p = self.verify_prepared(&op, request)?;
-        if let Some(custody) = &self.custody {
-            if self.managed_binding(&p.operation_id)?.as_ref() != Some(&custody.binding()) {
-                return Err(Error::Unresolved(
-                    "prepared custody epoch changed; no new attempt".into(),
-                ));
-            }
+        if let Some(custody) = &self.custody
+            && self.managed_binding(&p.operation_id)?.as_ref() != Some(&custody.binding())
+        {
+            return Err(Error::Unresolved(
+                "prepared custody epoch changed; no new attempt".into(),
+            ));
         }
         let candidate = authority.read_candidate(&eligibility.candidate_digest)?;
         if self.inspect_candidate(&candidate)? != eligibility.candidate_digest

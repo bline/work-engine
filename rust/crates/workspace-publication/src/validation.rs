@@ -27,13 +27,11 @@ pub fn run(
             .env("PATH", "/usr/bin:/bin")
             .env("LC_ALL", "C")
             .env("HOME", "/");
-        let output = cmd
-            .args(args)
+        cmd.args(args)
             .current_dir(worktree)
             .env("WORK_ENGINE_VALIDATED_TREE", &tree.hex)
             .output()
-            .map_err(|e| Error::Io(e.to_string()))?;
-        output
+            .map_err(|e| Error::Io(e.to_string()))?
     };
     let receipt = ValidationReceipt {
         schema_version: 1,
