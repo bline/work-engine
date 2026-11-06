@@ -1,0 +1,18 @@
+# Review route source evidence
+
+Baseline HEAD: `780fcc61eb740a1e936493108e26d45e38b6cdc5`. This is source feasibility, not live qualification or acceptance.
+
+- `rust/crates/review-workflow/src/startup.rs:28-31,266-437,439-452,482-585,825-860`: concrete profile names, resource/model bounds, frozen boundary, Claude program/guard/catalog and credential metadata, protected deployment acceptance, protected startup ancestry and fixed custody verifier/profile selection.
+- `rust/crates/review-workflow/src/protocol.rs:6-24`, `src/lib.rs:89-141`: public API admits ExecuteInitial/RecoverInitial/InspectInitial with exact campaign scope/revision; no provider selector in protocol commands.
+- `rust/crates/review-workflow/src/initial.rs:119-277,344-395,490-550,680-715`: fresh permit only, episode begin readback, qualified reader/provenance comparison, claims and completion joins, truthful pending/conflicting/unresolved outcomes.
+- `rust/crates/review-workflow/src/provider.rs:25-149`: qualified scope binds candidate, CBM generation, request/selection/physical/execution identities; installed launch consumes FreshInitialEntry and persists evidence reference.
+- `rust/crates/review-execution-evidence/src/claude/writer.rs:37-48,285-355,375-430`: private evidence store, one-shot capability consumption, credential projection, guarded launch and immutable event capture boundary. Checked code path alone does not establish successful evidence custody for a new execution.
+- `rust/crates/review-execution-custody/src/claude/profile.rs:136-266`, `transport_validation.rs:27-100`: installed Claude profile; low/medium/high effort; catalog and observed-model list pinned; actual envelope/session/model/modelUsage/structured ReviewResult checked.
+- `rust/crates/review-execution-evidence/src/claude/credentials.rs:33-137,198-207`: uid-private canonical credential file and Claude OAuth access-only projection with sufficient expiry. Investigation never read a credential file.
+- `rust/crates/review-execution-evidence/src/claude/isolation.rs:375-450,1240-1305`: fresh namespaces, cleared environment, read-only candidate and hidden Git administration, private scratch/session, guard and quota. Network is available for real review; local probe alone adds network unshare.
+- `rust/crates/slice-campaign/src/installed_authority.rs:11-109,113-140,213-282,490-515`: protected deployment registry plus exact accepted execution/campaign/candidate selection. Existing registry is real and root:0444; it points to old opus/candidate/session admission, not fresh Pi authority.
+- `rust/crates/slice-campaign/src/publication.rs:210-290,389-440`: inspection requires committed Reported review, checked join and selected claim attribution; authenticated operator acceptance repeats owner readback and stale-package checks. Reported is not accepted.
+
+Graph generation `2026-11-06T05:38:17Z`, store `u219d4ade44a71edbg2`; candidate discovery complete for targeted queries, one-hop call totals unknown. Coverage was queried for all cited source paths; unresolved_calls required direct material source observation, performed for the above ranges. No full call graph or whole-repository absence claim. Some exploratory guessed filenames were absent; no conclusions depend on them. No product/native/provider operation was run.
+
+Identity binding acknowledged from parent: SID `01a1af65-ab56-7630-b23b-29520ff77c74`; rollout and context binary are preserved in ROUTE-RESULT.json. Parent owns collection and continuation. This terminal investigation leaves no child/process obligation. Cost is unknown locally and remains with parent's canonical observer.

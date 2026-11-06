@@ -1,0 +1,57 @@
+{
+  "schema": "review-route-feasibility-addendum-v1",
+  "parent_correction": "Astra was a restriction added by the investigation packet, not by the approved plan. Existing qualified Claude may be selected within actual authority. Original result retained unchanged as requested.",
+  "decision": "no_go_for_fresh_private_job_admission_without_new_protected_deployment_selection",
+  "answer": "The inspected supported production initial route still requires an InstalledAcceptancePin from the fixed protected /etc registry. A current local/offline constructor cannot grant that production entry. The installed record is exact-candidate/session/attempt admission, not a reusable blanket reviewer qualification.",
+  "callable_owner": {
+    "production": [
+      "HostDeploymentPin::open_installed_host() reads /etc/work-engine/review-host/deployment-pin.json",
+      "InstalledAcceptancePin::open_production(&deployment) reads/hash-checks protected acceptance",
+      "Campaign::install_qualified_initial_authority(pin) checks configured profile/digest and exact accepted state",
+      "Campaign::consume_qualified_initial(fresh DispatchPermit) returns FreshInitialEntry only after matching accepted campaign/candidate/selection/session bindings",
+      "QualifiedWriter::execute_applied_initial(FreshInitialEntry) consumes production capability"
+    ],
+    "offline": [
+      "OfflineAcceptancePin::test_owned(bytes) [test-support]",
+      "Campaign::install_offline_initial_authority(pin) [test-support]",
+      "Campaign::consume_offline_initial(permit) -> OfflineInitialEntry [test-support]",
+      "QualifiedWriter::execute_offline_applied(OfflineInitialEntry) [test-support]",
+      "InitialEntryPermit::offline_peer(scope) [test-support]"
+    ],
+    "offline_standing": "Offline constructors produce distinct offline authority and provenance, never FreshInitialEntry. QualifiedScope::bind_offline_guarded_peer rejects installed profiles; InitialEntryPermit::offline_peer asserts the scope is not installed. These callable test-support seams do not authorize a genuine qualified-provider launch. Using a real binary under an offline label would not turn that admission into accepted production authority."
+  },
+  "precise_blocker": "For this exact supported qualified path, protected deployment owner must select an acceptance matching the new campaign identity, candidate tree, selection/physical/boundary digests, session/attempt and execution configuration. Current registry points to rp3-linked-r1-acceptance-v1 / opus / tree e49beb9b6788c81920cd276c5e630372503a813e / old session+attempt. Public startup/protocol data cannot create or redirect InstalledAcceptancePin. No existing private supervised-job grant constructor was established in the bounded inspected owner path. Reusing old identities would not satisfy the fresh actual candidate objective.",
+  "unavoidable_scope": "Per exact new candidate identity for this production route, fresh protected accepted selection is necessary. This is not a claim that all possible future review routes must require /etc or privilege.",
+  "smallest_next_decision": "Root may record the privilege/deployment-admission prerequisite as a first-checkpoint blocker. An unprivileged private supervised-job authority seam would be new bounded implementation/contract work, not an invocation of the current supported production route. No installer or source mutation is authorized by this addendum.",
+  "source_evidence": [
+    "rust/crates/slice-campaign/src/installed_authority.rs:11-109,254-315,490-515",
+    "rust/crates/slice-campaign/src/application.rs:2156-2249",
+    "rust/crates/review-workflow/src/startup.rs:378-415,439-451,534-585",
+    "rust/crates/review-execution-evidence/src/claude/qualified.rs:150-171,456-487",
+    "rust/crates/review-execution-evidence/src/claude/writer.rs:192-212,285-299"
+  ],
+  "coverage": {
+    "project": "home-bline-code-work-engine",
+    "prior_generation": "2026-11-06T05:38:17Z",
+    "additional_paths_generation": "2026-11-06T05:51:59Z",
+    "additional_paths": [
+      "rust/crates/slice-campaign/src/application.rs",
+      "rust/crates/review-execution-evidence/src/claude/qualified.rs"
+    ],
+    "status": "content_verified; unresolved_calls; material owner methods read directly; no exhaustive repository-wide absence claim"
+  },
+  "actions": {
+    "source_writes": 0,
+    "credential_reads": 0,
+    "provider_calls": 0,
+    "product_native_execution": 0,
+    "registry_writes": 0,
+    "acceptance_or_publication": 0,
+    "original_result_modified": false
+  },
+  "identity": {
+    "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "/root"
+  },
+  "measured_additional_proxy_cost_usd": null
+}

@@ -1,0 +1,68 @@
+{
+  "status": "first_checkpoint_held",
+  "original_goal": "one Rust-owned coding/review/acceptance/publication job",
+  "full_goal_accepted": false,
+  "scope_amendment_pending": true,
+  "accounting_snapshot_at": "2026-11-06T05:57:09.330128+00:00",
+  "active_window_proxy_usd": 1.5717860000000001,
+  "preparation_proxy_usd": 1.9493392,
+  "conservative_observed_combined_proxy_usd": 3.5211252,
+  "accounting_status": "partial",
+  "nodes": [
+    {
+      "session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "direct": {
+        "calls": 20,
+        "quota_usd_high": 0.6336516000000001,
+        "quota_usd_low": 0.6336516000000001,
+        "unpriced_calls": 0,
+        "usd_high": 0.6336516000000001,
+        "usd_low": 0.6336516000000001
+      },
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "tiers": [
+        "default"
+      ]
+    },
+    {
+      "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "direct": {
+        "calls": 21,
+        "quota_usd_high": 0.45295599999999997,
+        "quota_usd_low": 0.45295599999999997,
+        "unpriced_calls": 0,
+        "usd_high": 0.45295599999999997,
+        "usd_low": 0.45295599999999997
+      },
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "tiers": [
+        "default"
+      ]
+    }
+  ],
+  "accounting_report": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/final-checkpoint-cost-tree.json",
+  "preparation_report": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/preparation-cost-tree.json",
+  "tails": "Unknown closing tails; no billing or subscription quota inference. Separate actor values and conservative all-window totals are not additive to each other.",
+  "source_mutations": 0,
+  "product_provider_calls": 0,
+  "agents_running": 0,
+  "pressure_listener": "Root stopped owned exec session67648 after collection; no monitoring claim while awaiting direction. Rearm from saved cursors on continued work.",
+  "root_settings": "gpt-6.1-sol/xhigh/default",
+  "child_settings": "gpt-6.1-sol/medium/default observed in terminal source report; native identity bound",
+  "claim_id": "d01b6ce3-863d-4a32-ae01-5c090814c548",
+  "hard_deadline": "2026-11-06T09:32:10Z",
+  "evidence": {
+    "ROUTE-RESULT.json": "67671f8f7aa0a97b514ac5ac2c52c1c37f3c1f7722de7b57b265e43f41b2422d",
+    "ROUTE-ADDENDUM.json": "0078f837da7858da67d9838334560fe4773786d9ea08bee30bc9e6aa6d78cf4d",
+    "source-evidence.md": "4e34c2136fafd2189db0322fd26d092d2285c3925098c4b2f8cd4dc46a8b4054"
+  },
+  "cost_scope_caveat": "Conservative all-window totals include calls outside bound objective nodes; they are not exact objective attribution. Unknown closing tails and side calls remain separate.",
+  "source_evidence_copy_normalization": {
+    "original_sha256": "7f93857dd3aed7b2d073d971ef3e15f1bb1b9372a4786219cba666c1f43fa14f",
+    "change": "Removed trailing blank line for repository whitespace check; private worker original remains unchanged."
+  }
+}

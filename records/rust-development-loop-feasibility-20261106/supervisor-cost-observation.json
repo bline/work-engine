@@ -1,0 +1,30 @@
+{
+  "cutoff": "2026-11-06T05:57:09.330128+00:00",
+  "source_reports": [
+    "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/preparation-cost-tree.json",
+    "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/final-checkpoint-cost-tree.json"
+  ],
+  "root_preparation": null,
+  "root_active": {
+    "calls": 20,
+    "quota_usd_high": 0.6336516000000001,
+    "quota_usd_low": 0.6336516000000001,
+    "unpriced_calls": 0,
+    "usd_high": 0.6336516000000001,
+    "usd_low": 0.6336516000000001
+  },
+  "worker_active": {
+    "calls": 21,
+    "quota_usd_high": 0.45295599999999997,
+    "quota_usd_low": 0.45295599999999997,
+    "unpriced_calls": 0,
+    "usd_high": 0.45295599999999997,
+    "usd_low": 0.45295599999999997
+  },
+  "basis": "Observed speed-adjusted API-equivalent direct actor costs; partial accounting and unknown closing tails",
+  "causal_effect": "Not established: one uncontrolled checkpoint; root setup and control-binding corrections included",
+  "context_delivery": "Owned chatboard wait with exact SID/rollout, epoch14/window475000, collected normal telemetry and budget events; stopped before awaiting human direction",
+  "wait_behavior": "Two long collaboration waits released by worker results; no model status polling while worker investigated",
+  "preparation_attribution": "Not established per actor by this tree: canonical root binding starts05:43:05; earlier dated calls remain outside the objective node. A zero node count is not zero preparation spend.",
+  "conservative_all_window_preparation_proxy_usd": 1.9493392
+}

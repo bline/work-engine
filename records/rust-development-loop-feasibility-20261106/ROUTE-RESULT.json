@@ -1,0 +1,200 @@
+{
+  "schema": "review-route-feasibility-v1",
+  "decision": "no_go_for_current_objective_and_Astra_selection",
+  "completed_at": "2026-11-06T05:49:07Z",
+  "packet": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/review-route-discovery.md",
+  "baseline": "780fcc61eb740a1e936493108e26d45e38b6cdc5",
+  "identity": {
+    "acknowledged": true,
+    "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+    "verified_by": "parent lineage and session_meta",
+    "collector": "/root",
+    "parent_session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "continuation_owner": "parent /home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/continuation.json",
+    "context_binary": "/home/bline/.local/state/work-engine/tools/context-status/d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204/work-engine-context-status",
+    "context_binary_sha256": "d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204"
+  },
+  "summary": "Existing Rust owners have a genuine qualified Claude initial-review path and checked campaign/publication joins. They do not establish an Astra review route for this objective. The currently installed protected admission is bound to an older exact candidate/session/attempt and opus model; it cannot admit a fresh actual Pi candidate by changing startup descriptors.",
+  "callable_profile": {
+    "startup": "review-host-qualified-initial-v1",
+    "evidence": "claude-qualified-v1",
+    "api": [
+      "TrustedStartup::load(absolute protected startup path)",
+      "Workflow::initialize(startup)",
+      "Workflow::open(startup)",
+      "Workflow::run(Command { version: 1, operation: ExecuteInitial, exact obligation_id, operation_id, expected_revision, request_id })"
+    ],
+    "private_call_chain": "Workflow::execute_initial -> fresh campaign prepare/authorize -> consume_qualified_initial -> checked episode begin -> Workflow::launch_qualified -> QualifiedWriter::execute_applied_initial(FreshInitialEntry) -> execute_initial -> QualifiedReader checked readback -> claims/completion/outcome join",
+    "standing": "Supported code path, not executed or qualified for the fresh subject by this investigation. Controlled and test-support offline/fixture paths are not equivalent to genuine provider review.",
+    "requirements": [
+      "Root-owned protected startup and deployment-pin ancestry; pinned executable/source/toolchain/lockfile/runtime dependencies; protected independent deployment-owner acceptance.",
+      "Acceptance exactly binds campaign/obligation/candidate tree/selection/physical profile/boundary, Claude profile/program/guard/CBM/catalog, credential metadata, model, session/attempt, prompt and horizon.",
+      "Frozen candidate boundary plus private CBM index and coverage; Bubblewrap read-only candidate, hidden Git administration, fresh private session, cleared environment and cgroup quotas/guard. Production transport needs network; only local_probe adds unshare-net.",
+      "Canonical Claude OAuth credential owner file owned by executing uid with no group/other permissions; access-only token and expiry beyond selected horizon. No token read by investigation.",
+      "Requested model is descriptive catalog/profile data, observed model must match accepted list and response modelUsage must name one model. Effort supported by this profile is low/medium/high. Current acceptance requests opus, not Astra.",
+      "Initial route needs fresh in-process Applied dispatch capability; replay/recovery cannot re-launch. Review evidence and claims are checked before campaign outcome; publication acceptance remains a separate authenticated operator action."
+    ]
+  },
+  "installed_pin_observation": {
+    "registry": "/etc/work-engine/review-host/deployment-pin.json",
+    "registry_mode": "root 0444",
+    "acceptance": "/etc/work-engine/review-host/rp3-linked-replacement-20261028-r1/acceptance.json",
+    "acceptance_sha256": "2d8111e6fb4714be4971d2f65d884695d30bc36f71688e14038943b25d3a81bb",
+    "digest_matches": true,
+    "revision": "rp3-linked-r1-acceptance-v1",
+    "run_id": "rp3-first-live-initial-20261018",
+    "candidate_tree": "e49beb9b6788c81920cd276c5e630372503a813e",
+    "requested_model": "opus",
+    "session_id": "bf6b3412-fe3d-45d1-8fb9-f65009504d1b",
+    "attempt_id": "c9a20951-90de-444a-925c-7ce8469babc8",
+    "resource_policy": "session64mib_combined1g_zero_swap_v2",
+    "horizon_millis": 300000,
+    "limitation": "Metadata and acceptance document read only; no startup/executable/credential/live-deployment validation."
+  },
+  "missing_seam": [
+    "Provider-owned Astra execution/custody adapter and independently observed isolation/model/session provenance consumable by selected review claim owners are not established by the inspected qualified workflow, which hard-selects Claude transport and custody.",
+    "Fresh exact deployment-owner admission and candidate/startup/index/grant bundle are required even if the operator explicitly chooses existing Claude route. Existing protected acceptance is not reusable authority for a fresh candidate.",
+    "External manual Astra review text or fixture results cannot become qualified execution evidence by relabeling."
+  ],
+  "smallest_plausible_affected_write_set": {
+    "existing_Claude_if_explicitly_chosen": "Potentially no Rust source changes: authorized deployment owner supplies fresh protected admission/startup and pinned candidate/index/claim/completion inputs. This does not meet selected Astra requirement and live readiness remains unestablished.",
+    "Astra_selected": "At minimum review-workflow startup/provider routing, a provider-specific review-execution-evidence/review-execution-custody adapter, and campaign installed-authority profile/admission bindings plus owning evidence verifier/schema registration as required. Exact filenames and size require a separately authorized bounded implementation investigation; not represented as a four-hour patch.",
+    "publication": "Existing inspect_candidate/accept_checkpoint_from_peer consume checked Reported outcome and revalidate exact owner readback; no demonstrated publication source change required. Immutable custody receipts remain pending at their owner boundary."
+  },
+  "evidence_would_change_conclusion": [
+    "An existing supported Astra adapter with exact callable API, independently attested execution envelope and checked claim/campaign consumer integration, verified against this subject.",
+    "Explicit operator revision choosing Claude plus deployment-owner admission for fresh exact candidate and independently checked live review/readback; this would change the selected route, not validate Astra.",
+    "Successful genuine execution then restart/recovery readback across evidence, claims, campaign outcome and separate publication acceptance, with immutable receipts at their actual boundary."
+  ],
+  "graph": {
+    "project": "home-bline-code-work-engine",
+    "tier": 2,
+    "generation": "2026-11-06T05:38:17Z",
+    "coverage": [
+      {
+        "path": "rust/crates/review-workflow/src/startup.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-workflow/src/initial.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-workflow/src/provider.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-workflow/src/lib.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-execution-evidence/src/claude/mod.rs",
+        "status": "no_recorded_issue",
+        "content_verified": true,
+        "coverage_kinds": []
+      },
+      {
+        "path": "rust/crates/review-execution-custody/src/claude/profile.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/slice-campaign/src/installed_authority.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-execution-evidence/src/claude/writer.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-execution-evidence/src/claude/credentials.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-execution-evidence/src/claude/isolation.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-execution-custody/src/claude/transport_validation.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/slice-campaign/src/publication.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      },
+      {
+        "path": "rust/crates/review-workflow/src/protocol.rs",
+        "status": "unresolved_calls",
+        "content_verified": true,
+        "coverage_kinds": [
+          "unresolved_calls"
+        ]
+      }
+    ],
+    "limitations": "All referenced code except facade mod had unresolved_calls despite content_verified. Material methods and calls were read directly. One-hop execute_applied_initial trace found launch_qualified inbound and validate_and_consume_entry/execute_initial/binding outbound; totals unknown. No exhaustive repository-wide absence claim or live runtime qualification."
+  },
+  "execution": {
+    "source_writes": 0,
+    "provider_calls": 0,
+    "native_product_execution": 0,
+    "credential_reads": 0,
+    "children_spawned": 0,
+    "acceptance_or_publication": 0,
+    "processes_left": 0,
+    "tests": "Not run: read-only source feasibility; no implementation authorized.",
+    "context_check": {
+      "at": "2026-11-06T05:48:33Z",
+      "input_tokens": 79390,
+      "context_window_tokens": 475000,
+      "status": "retain_ok",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "medium"
+    },
+    "measured_proxy_cost_usd": null,
+    "cost_note": "Unknown locally; parent canonical budget owner collects actual usage."
+  }
+}
