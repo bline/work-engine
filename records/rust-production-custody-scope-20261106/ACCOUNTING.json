@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "basis": "speed_adjusted_api_equivalent_usd",
+  "approved_cap_usd": 3,
+  "canonical_cap_usd": 2.75,
+  "canonical_closed_at": "2026-11-06T21:34:36Z",
+  "canonical_snapshot_at": "2026-11-06T21:34:36.772769+00:00",
+  "canonical_observed_usd": 1.6362523999999998,
+  "setup_hold_usd": 0.25,
+  "closing_hold_usd": 0.25,
+  "conservative_booked_usd": 2.1362524,
+  "within_cap": true,
+  "closing_hold_meaning": "Conservative allowance for local commit, claim release, board terminal and final response after the canonical budget closes; not measured exact cost",
+  "canonical_record": "/home/bline/.local/state/work-engine/rust-production-custody-scope-20261106T2118/budget.json",
+  "canonical_record_sha256": "4bf0fa9273b760911558d1f4cad71b31d9dd551c6f5eb3420ef349aae554f159",
+  "closed_tree": "/home/bline/.local/state/work-engine/rust-production-custody-scope-20261106T2118/scoping-cost-tree-closed.json",
+  "closed_tree_sha256": "ed5afea106ef7c0c5f3698261c22cba4f09f72b9907a32fc6ec4a114afede701",
+  "status": "partial",
+  "issues": [
+    {
+      "kind": "multiple_parents",
+      "node_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "parent_node_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "rejected": "codex_parent",
+      "retained": "binding"
+    }
+  ],
+  "known_gaps": [
+    "Claude Code title and other side calls are not in transcripts"
+  ],
+  "unpriced_calls": 0,
+  "unattributed_exclusion": "No Claude actor was launched in this scoped task. Unattributed concurrent sessions are not charged without task lineage; global window spend is not this objective total.",
+  "nested_totals_additive": false,
+  "aggregate": {
+    "approved_cap_usd": 35,
+    "prior_conservative_usd": 23.2202516,
+    "after_full_scope_cap_usd": 26.2202516,
+    "headroom_using_full_scope_cap_usd": 8.7797484,
+    "proposed_next_A_cap_usd": 18,
+    "new_aggregate_cap_proposal_usd": 45,
+    "next_funding_status": "not_approved"
+  }
+}

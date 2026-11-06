@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "status": "SCOPED_PROPOSAL_ONLY_NO_IMPLEMENTATION_AUTHORITY",
+  "baseline": "827a119d11eba29cd3c34b06cad0e59df395bed8",
+  "placement": "Root candidate owner split supported; installed capability alone insufficient without independent process/filesystem enforcement and validator confinement",
+  "proposal": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-scope-20261106T2118/builder/proposed-plan.md",
+    "sha256": "f83fd826ad2224a62d5c1ec55e24a04fcf0c5234acce46c131738b30da433acb"
+  },
+  "decisiveFindings": [
+    "Existing W0 already requires production operator/state isolation and excludes canonical-write authority from validator children",
+    "Existing cooperative fence/CAS/ledger reusable; unmanaged checkout/ABA tests explicitly show limits",
+    "Workspace repository identity currently hashes common-dir path; production replacement/currentness needs stronger anchored binding",
+    "Current validation child inherits publisher filesystem authority; confinement is required, not optional hardening",
+    "Standalone completion executable fails native episode current_exe selection; prefer same installed executable composition or price a new read-delegation contract",
+    "Distinct runtime principal requires real credential provisioning; UID1000 readiness cannot be transferred",
+    "W0 is checkpoint-publication-only; final server/job owner acceptance join remains unestablished, so no full-loop sufficiency claim"
+  ],
+  "reuse": [
+    "codecs and existing SQLite identity/records/operations/generation",
+    "permanent lock and single repository-owner binding",
+    "exact manifest/integration/validation/prepared commit",
+    "authenticated socket peer and offer decision/consumption owner",
+    "in-process expected-old Git CAS",
+    "unknown-effect/no-effect/cold reopen semantics"
+  ],
+  "newStructure": [
+    "protected non-request-constructible custody selection/currentness",
+    "independent filesystem/process writer exclusion and validator confinement",
+    "production completion trusted startup/owner composition",
+    "production custody realization/readback; no same-UID fixture promotion"
+  ],
+  "estimate": {
+    "A": {
+      "targetUsd": "12-15",
+      "capUsd": 18,
+      "hours": "3-4"
+    },
+    "B": {
+      "targetUsd": "12-15",
+      "capUsd": 18,
+      "hours": "3-4"
+    },
+    "combined": {
+      "targetUsd": "24-28",
+      "capUsd": 32,
+      "hours": "6-7"
+    },
+    "confidence": "medium-low; principal/provisioning/final job consumer unknowns can expand scope",
+    "remainingAggregate": "Root supplied9-10 headroom insufficient; new funding/cap approval required"
+  },
+  "evidence": [
+    {
+      "path": "records/rust-workspace-w0-contract.md",
+      "sha256": "fb6b9a4c34e3c1e54db74f2fc100180f0798b389f4ad088155b03afe43092f54",
+      "ranges": "8-35,37-67,125-142,202-251,253-268,326-342"
+    },
+    {
+      "path": "records/rust-workspace-w1-result.md",
+      "sha256": "23e5180ed29a72ddbb739cf5da62ec32a0fbf85678efd1b30237d6bcb3c00107",
+      "ranges": "1-19,65-78"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/store.rs",
+      "sha256": "778d15b50689e570dcd85bd7a6924732b1dde006aced2a758b8da2df9ddbb0bf",
+      "ranges": "14-94,140-238,250-262,402-492,656-801,835-909"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "sha256": "55c1bdbd0a22440557c4f5fe5121cec77825b3e3ad219ba4af429cf7bb3aa99c",
+      "ranges": "11-94,120-136,275-304,340-368"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lock.rs",
+      "sha256": "e740b96afd650d632b864efda5c884fc7589976ab48446fe13193d37cd62973a",
+      "ranges": "1-34"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/validation.rs",
+      "sha256": "049623cb35ce68d51eaaffa65436e2316df18f2873ca342c574ad67ab6e359e4",
+      "ranges": "1-53"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/publication.rs",
+      "sha256": "550f66b7471c0b8b5cb18fceb22d824020339af332dd3e0e1ab953c5a8b58fc2",
+      "ranges": "758-800; test names228-887"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/installed_authority.rs",
+      "sha256": "71dfc51c89e61996bd9d075a2bac4416901697c4bb052167a5c7987fb09b90dc",
+      "ranges": "41-111"
+    },
+    {
+      "path": "rust/crates/review-episode-store/src/sqlite.rs",
+      "sha256": "7a02104a8d9dc24cd654e0e8eb6f0d7f0a4d7c364af391829303d0921161ad3a",
+      "ranges": "87-112,433-464,535-582"
+    },
+    {
+      "path": "rust/crates/review-episode/src/in_process_admission.rs",
+      "sha256": "a29c0b86a78ce5b826d34604b550176aa3d7c02b84338168a221b1a071512ce6",
+      "ranges": "268-299"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/publication.rs",
+      "sha256": "fa70e862ae528b1403f6574cb52512680a5b7a0cf611a04d484fbc4f313c201e",
+      "ranges": "96-154,389-430,601-640,842-909"
+    },
+    {
+      "path": "rust/crates/work-engine-completion-host/src/fixture_host.rs",
+      "sha256": "9b0958d1f5e8221d148b458825959ce2d991c897334fdf30f34349f490b496a2",
+      "ranges": "167-205,231-343"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/startup.rs",
+      "sha256": "e7c2c1843727bbd56866bb8918d5e8e3b74feaf4e15dc15ef8d05977465e01fc",
+      "ranges": "475-505,833-875,1067-1120"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/credentials.rs",
+      "sha256": "0112009bd60d200697523d7109729a5a25004d4dbd7a8a91e4cc02b3bb3784f9",
+      "ranges": "193-205"
+    },
+    {
+      "path": "planning/rust-development-loop-closure-budget-20261106.md",
+      "sha256": "7bd140a137200f66d201d4aebcd50b9139f922cc780a5b0952f22503f8317379",
+      "ranges": "24-42"
+    }
+  ],
+  "graph": {
+    "tier": 2,
+    "project": "home-bline-code-work-engine",
+    "generation": "2026-11-06T21:16:57Z",
+    "store": "ufd998934756c57cfg2",
+    "coverage": "parent supplied core contract/store/campaign/host coverage; new Git/lock/validation/publication-tests/installed-authority and episode paths metadata_match/content_verified unresolved_calls. Material exact ranges read directly. Best effort, not completeness.",
+    "supplementalSearch": "one bounded positive structural query read_protected/HostDeploymentPin/repository_owner/compare_and_swap/check_create_consumption; returned9of11 with pagination remaining, no absence/exhaustive claim",
+    "fallback": "exact source/literal/doc reads for material mechanics, known current limitations and accepted W0 rationale"
+  },
+  "binding": {
+    "sid": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "context": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-scope-20261106T2118/builder/context.json",
+      "sha256": "85951581cbc5466fbb5822c935942eed283d029e99fb491d65da491e4b38ec79"
+    },
+    "settings": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-scope-20261106T2118/builder/settings.json",
+      "sha256": "bb936b6efe886bf908c7225d9dcf68ce41090524a22bfd6ae92b26ec9e74a276"
+    },
+    "inputAtEntry": 180427,
+    "epoch": 3,
+    "requested": "Sol/medium/default",
+    "appliedSettings": "matching19:39:30 event retained, stale relative current turn; no forced refresh"
+  },
+  "effects": {
+    "sourceEdits": 0,
+    "tests": 0,
+    "providerCalls": 0,
+    "credentialAccess": 0,
+    "protectedWrites": 0,
+    "peerPausedOperationTouches": 0,
+    "extraActors": 0,
+    "runningOwnedProcesses": 0,
+    "claimsHeld": []
+  },
+  "authority": "Root forms final human proposal; this pass establishes no binding new contract, installation grant or automatic follow-on"
+}

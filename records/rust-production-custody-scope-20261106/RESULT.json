@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "ACCEPTED_SCOPING_ONLY_IMPLEMENTATION_PENDING",
+  "as_of_utc": "2026-11-06T21:34:36.595840+00:00",
+  "baseline": "827a119d11eba29cd3c34b06cad0e59df395bed8",
+  "authority": {
+    "status": "approved_scoping_only",
+    "approval": "approved",
+    "received_utc": "2026-11-06T21:18:43+00:00",
+    "evidence_stop_utc": "2026-11-06T21:38:43+00:00",
+    "hard_end_utc": "2026-11-06T21:48:43+00:00",
+    "cap_usd": 3,
+    "canonical_cap_usd": 2.75,
+    "setup_hold_usd": 0.25,
+    "root_sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "root_rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl",
+    "baseline": "827a119d11eba29cd3c34b06cad0e59df395bed8",
+    "deliverable": "Bounded production repository custody+completion startup contract/implementation plan and honest budget, no implementation/live/protected effects",
+    "budget": "/home/bline/.local/state/work-engine/rust-production-custody-scope-20261106T2118/budget.json",
+    "prior_attempt_closed": "rust-loop-first-proof-20261106T2106",
+    "aggregate_cap_usd": 35,
+    "prior_conservative_usd": 23.2202516,
+    "aggregate_after_scoping_max_usd": 26.2202516
+  },
+  "proposal": {
+    "path": "planning/rust-production-custody-and-loop-closure-20261106.md",
+    "sha256": "4158c30930570fa9d9da2f8fa38fa308e6e35a99c73f74acf3034bf2da05198b",
+    "recommended_next": "A only: real repository custody and validator confinement, provider-free production-mode publication qualification",
+    "target_usd": [
+      12,
+      15
+    ],
+    "cap_usd": 18,
+    "hard_hours": 4,
+    "new_aggregate_cap_usd": 45,
+    "funding_status": "not_approved",
+    "B": "production completion startup remains separate",
+    "C": "job-level semantic settlement contract and consumer remain separate"
+  },
+  "root_decision": {
+    "existing_contract": "W0 requires operator channel and owner state outside agent authority; distinct runtime/operator UIDs are not mandatory",
+    "minimal_candidate": "Existing trusted host identity plus independently enforced agent/validator confinement; equivalence requires real negative proof, not a label",
+    "alternatives": "Dedicated runtime UID and credential/root migration only if necessary and separately accepted",
+    "preserve_receipts": "Host execution receipt/delivery ACK remain immutable; W0 checkpoint settlement is not whole-job acceptance",
+    "release_claim": "No complete coding loop or unattended operating boundary qualified"
+  },
+  "collection": {
+    "builder_task": "/root/review_route_feasibility",
+    "builder_sid": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "artifacts_sha256": {
+      "SCOPING.json": "6e9dc7076b0f49e0ddc4ab73d1ccdb3aa46215ae808a1de73bc382d0353e89ea",
+      "proposed-plan.md": "f83fd826ad2224a62d5c1ec55e24a04fcf0c5234acce46c131738b30da433acb",
+      "TERMINAL-CONSUMER-SUPPLEMENT.json": "c711d0cc1b07644f42dcaa4126e53073106670d09129bcee3a02388c9d3ffde5"
+    },
+    "original_final_collected": true,
+    "supplement_final_collected": true,
+    "child_processes_outstanding": 0,
+    "foreground_listener": {
+      "session_id": 77664,
+      "owner": "sameRoot",
+      "wrapper_exit": 0,
+      "listener_interrupted_exit": 130,
+      "both_recorded_pids_gone": true
+    },
+    "recovery": {
+      "wind_walker_invoked": true,
+      "own_sid_matches_environment": true,
+      "latest_context": "root-context-recovered.json",
+      "epoch": 18,
+      "input_tokens": 44502,
+      "window_tokens": 475000,
+      "requested_model": "gpt-6.1-sol",
+      "recorded_effort": "xhigh",
+      "no_eligible_auto_continue": true
+    }
+  },
+  "effects": {
+    "implementation_source_writes": 0,
+    "tests": 0,
+    "provider_product_calls": 0,
+    "credential_content_reads": 0,
+    "protected_installation": 0,
+    "peer_pause_changed": false,
+    "local_plan_records_commit": "owned files only; exact commit in repository history/terminal board"
+  },
+  "limitations": [
+    "Bounded Tier2 graph verification; unresolved coverage directly read in material ranges; no exhaustive absence claim",
+    "No independent adversarial review commissioned for this scoping-only proposal",
+    "Forecast medium-low confidence pending actual OS feasibility",
+    "Partial budget lineage conflict retains explicit binding; nested actor totals overlap"
+  ],
+  "pending_human": [
+    "Implementation funding for A and proposed aggregate increase",
+    "Later exact installation, real canonical destination/ref, task acceptance and publication decisions"
+  ],
+  "automatic_follow_on": false
+}

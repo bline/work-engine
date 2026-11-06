@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "status": "BOUNDED_TERMINAL_CONSUMER_SEAM_IDENTIFIED_PROPOSAL_ONLY",
+  "baseline": "827a119d11eba29cd3c34b06cad0e59df395bed8",
+  "currentOwners": [
+    {
+      "symbol": "work_engine_manual_host::pi_docker::Host::receipt",
+      "meaning": "Execution/component receipt remains acceptance=owner_pending and domain_effect_settlement=not_claimed; content-addressed receipt stored under original job state_dir/receipts. Component pass/final validation is not semantic task acceptance.",
+      "evidence": {
+        "path": "rust/crates/work-engine-manual-host/src/pi_docker.rs",
+        "sha256": "1bce7c879e6d44b0be94f315e53a4e18301dce8e306718fa547d9152f80997e0",
+        "lines": "1236-1313"
+      }
+    },
+    {
+      "symbol": "work_engine_manual_host::pi_docker::Host::acknowledge",
+      "meaning": "Receipt delivery acknowledgement verifies ID/job/artifacts, persists acknowledged set, returns acceptance=owner_pending. It must never be repurposed as task acceptance.",
+      "evidence": {
+        "path": "rust/crates/work-engine-manual-host/src/pi_docker.rs",
+        "sha256": "1bce7c879e6d44b0be94f315e53a4e18301dce8e306718fa547d9152f80997e0",
+        "lines": "1317-1344"
+      }
+    },
+    {
+      "symbol": "work_engine_server::job::Jobs::{call,read_result,host_receipt}",
+      "meaning": "read_coding_job_result selects original Host wrapper, checks job/input/receipt identity, projects acceptance and settlement directly from opaque Host receipt; no downstream publication result is consumed in this material route.",
+      "evidence": {
+        "path": "rust/crates/work-engine-server/src/job.rs",
+        "sha256": "a6430c47382a2d69b22557efc0db9fa51129670cafe968782c395e5fab6f8a3f",
+        "lines": "551-575,1161-1251"
+      }
+    },
+    {
+      "symbol": "slice_campaign::publication::CampaignPublication::record_result",
+      "meaning": "Persists campaign-publication-result binding exact PublicationRequest and workspace result, then transactionally CASes consumed offer to settled. Existing authoritative checkpoint-publication settlement already exists.",
+      "evidence": {
+        "path": "rust/crates/slice-campaign/src/publication.rs",
+        "sha256": "fa70e862ae528b1403f6574cb52512680a5b7a0cf611a04d484fbc4f313c201e",
+        "lines": "733-785"
+      }
+    },
+    {
+      "symbol": "work_engine_completion_host::Application::execute(Request::Create)",
+      "meaning": "Uses existing one-shot consumption, physical owner publish/reconcile, then campaign record_result; returns both actual publication receipt and settled owner result. Does not write coding-job terminal state.",
+      "evidence": {
+        "path": "rust/crates/work-engine-completion-host/src/lib.rs",
+        "sha256": "0c20af3c3d0697e3ead8f39571c960c303f94c8d8b234d7afdb97072dd281cbd",
+        "lines": "175-221"
+      }
+    }
+  ],
+  "minimumBridge": {
+    "proposedOwner": "work-engine-server job application (job outcome consumer), not Pi execution/acknowledgement owner and not workspace Git owner",
+    "proposedTransition": "A new typed settle_coding_job_completion operation (proposed name, no existing implementation claimed) persists one exact job-level completion binding after independently reading accepted checkpoint and settled publication through trusted owner APIs. read_coding_job_result then exposes this checked job outcome alongside the immutable component receipt.",
+    "bind": [
+      "authorization ID/job ID/request ID/original operation identity and input digest",
+      "original immutable Host receipt ID and exact exported candidate artifact identities",
+      "exact checkpoint/candidate/attribution chain selected from those exports, plan/scope and actual review owner result",
+      "explicit semantic acceptance covering this original job task, or an accepted job policy declaring exactly which independently owned checkpoint decision suffices",
+      "W0 acceptance/eligibility, prepared offer/create consumption and campaign-publication-result references",
+      "production workspace result with PublishedObserved and exact allowed repository/ref/commit/tree/parent; custody standing and currentness policy"
+    ],
+    "invalidStates": [
+      "caller-provided accepted/published booleans or arbitrary result paths",
+      "different job/export/candidate or foreign owner root",
+      "component pass/Host delivery ACK substituted for task acceptance",
+      "W0 publication-only decision silently widened to whole-task/campaign acceptance",
+      "unsettled, revoked or uncertain publication promoted to terminal success",
+      "duplicate request with changed bytes, old receipt rewritten, or a read polling operation manufacturing completion"
+    ],
+    "persistence": "Reuse the job operation ownership and existing durable identity/CAS patterns; exact schema/record placement is a proposed seam requiring contract acceptance, not a request to add a second publication ledger. An implementation must cold-reopen and re-read owner-backed references, not trust saved JSON alone.",
+    "terminalMeaning": "Keep historical component receipt acceptance=owner_pending immutable. NEW job-level accepted/published outcome may be established only by an explicitly authorized consuming contract. W0 itself remains publication-only."
+  },
+  "existingVersusMissing": "Existing W0 campaign/workspace settlement is callable after custody/startup work. The inspected production coding-job result route has no join to it. This is an additional owner-level consumer/acceptance contract and bridge; changing read_result to copy a verdict or clearing Pi owner_pending would be invalid. No repository-wide absence claim.",
+  "proofNeeded": [
+    "one new original job -> exact export/checkpoint -> real review -> authenticated task/checkpoint acceptance -> exact offer/create -> production publication -> job-level settlement",
+    "cold read_coding_job_result shows separately checked terminal accepted/published outcome and unchanged original Host receipt",
+    "wrong job/export/candidate/root/receipt, absent acceptance, uncertain publication, revocation policy, changed replay and restart failures refuse terminal success"
+  ],
+  "forecastImpact": {
+    "A": "unchanged prerequisite-only custody/validation scope and estimate",
+    "B": "same-binary completion composition can prove accepted checkpoint/local publication, but its current estimate cannot be advertised as full coding-job terminalization",
+    "additionalC": "price/approve this explicit job consumer contract and bridge separately before promising full loop. Preliminary low-confidence 1-2 implementation hours plus independent review/qualification, roughly6-10USD incremental; no implementation authorization, no reliable firm cap established in this narrow lookup.",
+    "aggregate": "Do not absorb additional seam into Root9-10 headroom or A-only release claim."
+  },
+  "graph": {
+    "project": "home-bline-code-work-engine",
+    "tier": 2,
+    "generation": "2026-11-06T21:16:57Z",
+    "store": "ufd998934756c57cfg2",
+    "lookup": "initial filtered graph query returned0, then positive read_result lookup found Jobs.read_result1161-1202; page5of9/has_more so no exhaustive claim",
+    "coverage": "all four material paths metadata_match/content_verified/unresolved_calls; exact relied ranges directly read as fallback; best effort only"
+  },
+  "effects": {
+    "sourceWrites": 0,
+    "tests": 0,
+    "providers": 0,
+    "credentials": 0,
+    "protectedWrites": 0,
+    "extraActors": 0,
+    "pausedPeerOperationTouches": 0,
+    "outstandingProcesses": 0,
+    "claimsHeld": []
+  },
+  "binding": {
+    "sid": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883"
+  },
+  "scope": "Same3USD scoping window; <=0.35USD/5min supplement only; Root owns actual accounting and final plan."
+}
