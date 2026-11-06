@@ -327,6 +327,25 @@ impl ManagedCustody {
                 return Err(invalid("external/partial object topology is not supported"));
             }
         }
+        let replacements = s.repository.join("refs/replace");
+        if replacements.exists() && fs::read_dir(replacements).map_err(io)?.next().is_some() {
+            return Err(invalid(
+                "replacement objects are unsupported in managed custody",
+            ));
+        }
+        let packed = s.repository.join("packed-refs");
+        if packed.exists() {
+            let text = fs::read_to_string(packed).map_err(io)?;
+            if text.lines().any(|line| {
+                line.split_whitespace()
+                    .nth(1)
+                    .is_some_and(|name| name.starts_with("refs/replace/"))
+            }) {
+                return Err(invalid(
+                    "packed replacement objects are unsupported in managed custody",
+                ));
+            }
+        }
         match (&*s.phase, &s.marker_identity, &s.ledger_identity) {
             ("active", Some(marker), Some(ledger)) => {
                 marker.verify(&s.root.join(".workspace-publication-v1"))?;

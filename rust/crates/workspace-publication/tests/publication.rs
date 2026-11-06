@@ -452,6 +452,14 @@ fn child_entry() {
             "refs/heads/main",
             &ctx.root.join("managed-checkouts").join("checkout-child"),
         );
+    } else if std::env::var("W1_CHILD_ACTION").ok().as_deref() == Some("prepare") {
+        let _ = workspace.prepare(
+            &ctx,
+            &ctx.eligibility_ref,
+            "refs/heads/main",
+            "child preparation",
+            "prepare-child",
+        );
     } else if std::env::var("W1_CHILD_ACTION").ok().as_deref() == Some("poisoned-prepare") {
         workspace
             .prepare(
@@ -1145,4 +1153,176 @@ fn replaced_selection_during_attempt_cannot_cross_cas() {
         OperationState::Unresolved
     );
     assert!(reopened.publish(&ctx, &ctx.request).is_err());
+}
+
+#[test]
+#[cfg(feature = "test-faults")]
+fn preparation_helpers_retain_guard_after_parent_death() {
+    use std::os::unix::fs::PermissionsExt;
+    for helper in ["worktree", "apply", "write-tree", "commit-tree"] {
+        println!("preparation helper case: {helper}");
+        let (temp, ctx, workspace, _) = setup();
+        drop(workspace);
+        let ready = temp.path().join("prepare-helper.ready");
+        let release = temp.path().join("prepare-helper.release");
+        let wrapper = temp.path().join("prepare-helper.py");
+        fs::write(&wrapper,format!("#!/usr/bin/python3\nimport os,sys,time\nif {:?} in sys.argv[1:]:\n open({:?},'wb').write(b'ready')\n while not os.path.exists({:?}): time.sleep(0.01)\n sink=os.open('/dev/null',os.O_WRONLY)\n os.dup2(sink,1)\n os.dup2(sink,2)\nos.execv('/usr/bin/git',['git']+sys.argv[1:])\n",helper,ready.to_string_lossy(),release.to_string_lossy())).unwrap();
+        fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o700)).unwrap();
+        let context = temp.path().join("preparing-parent.json");
+        fs::write(&context, serde_json::to_vec(&ctx).unwrap()).unwrap();
+        let mut parent = Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "child_entry", "--nocapture"])
+            .env("W1_CHILD_CONTEXT", context)
+            .env("W1_CHILD_ACTION", "prepare")
+            .env("WORKSPACE_PUBLICATION_GUARDED_GIT_FIXTURE", wrapper)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        wait_ready(&ready);
+        parent.kill().unwrap();
+        parent.wait().unwrap();
+        // Independent open file description: this is a causal kernel-lock
+        // assertion, not merely a publisher that happened to start slowly.
+        use std::os::fd::AsRawFd;
+        let probe = fs::File::open(ctx.repo.join(".work-engine-publication.lock")).unwrap();
+        assert_eq!(
+            unsafe { libc::flock(probe.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) },
+            -1,
+            "preparation {helper} released its guard after parent death"
+        );
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::EWOULDBLOCK)
+        );
+        let mut publisher = child_action(&ctx, temp.path(), "publisher");
+        std::thread::sleep(Duration::from_millis(250));
+        assert!(
+            publisher.try_wait().unwrap().is_none(),
+            "publisher crossed preparation {helper} child's guard"
+        );
+        fs::write(release, b"continue").unwrap();
+        assert!(publisher.wait().unwrap().success());
+    }
+}
+
+#[test]
+fn unchanged_blob_replacement_cannot_diverge_validation_from_tree() {
+    let (_temp, mut ctx, _) = setup_subject();
+    let original = id(run(
+        &ctx.repo,
+        &["hash-object", "-w", "--stdin"],
+        Some(b"immutable unchanged\n"),
+    ));
+    let replacement = id(run(
+        &ctx.repo,
+        &["hash-object", "-w", "--stdin"],
+        Some(b"replacement illusion\n"),
+    ));
+    let before = &ctx.candidate.manifest.entries[0]
+        .before
+        .as_ref()
+        .unwrap()
+        .blob
+        .hex;
+    let after = &ctx.candidate.manifest.entries[0]
+        .after
+        .as_ref()
+        .unwrap()
+        .blob
+        .hex;
+    let old_tree = id(run(
+        &ctx.repo,
+        &["mktree"],
+        Some(
+            format!(
+                "100644 blob {before}\ta.txt\n100644 blob {}\tb.txt\n",
+                original.hex
+            )
+            .as_bytes(),
+        ),
+    ));
+    let new_tree = id(run(
+        &ctx.repo,
+        &["mktree"],
+        Some(
+            format!(
+                "100644 blob {after}\ta.txt\n100644 blob {}\tb.txt\n",
+                original.hex
+            )
+            .as_bytes(),
+        ),
+    ));
+    let parent = id(run(
+        &ctx.repo,
+        &["commit-tree", &old_tree.hex],
+        Some(b"baseline with unchanged file\n"),
+    ));
+    let candidate = id(run(
+        &ctx.repo,
+        &["commit-tree", &new_tree.hex, "-p", &parent.hex],
+        Some(b"unrelated accepted a.txt delta\n"),
+    ));
+    run(
+        &ctx.repo,
+        &["update-ref", "refs/heads/main", &parent.hex],
+        None,
+    );
+    ctx.candidate.checkpoint_parent = parent;
+    ctx.candidate.checkpoint_tree = new_tree.clone();
+    ctx.candidate.checkpoint_commit = candidate;
+    ctx.eligibility.candidate_digest =
+        codec::digest("publication-candidate", &ctx.candidate).unwrap();
+    run(
+        &ctx.repo,
+        &[
+            "update-ref",
+            &format!("refs/replace/{}", original.hex),
+            &replacement.hex,
+        ],
+        None,
+    );
+    assert_eq!(
+        run(&ctx.repo, &["cat-file", "blob", &original.hex], None),
+        "replacement illusion"
+    );
+    let mut config = ctx.config();
+    config.validation_program = vec![
+        "/usr/bin/python3".into(),
+        "-I".into(),
+        "-c".into(),
+        format!(
+            "import os; assert open('a.txt').read()=='new\\n'; assert open('b.txt').read()=='immutable unchanged\\n'; assert os.environ['WORK_ENGINE_VALIDATED_TREE']=={:?}",
+            new_tree.hex
+        ),
+    ];
+    let mut workspace = Workspace::initialize(config).unwrap();
+    let (prepared_ref, prepared) = workspace
+        .prepare(
+            &ctx,
+            &ctx.eligibility_ref,
+            "refs/heads/main",
+            "validate actual immutable objects",
+            "replacement-regression",
+        )
+        .unwrap();
+    assert_eq!(prepared.integrated_tree, new_tree);
+    ctx.request.prepared_ref = prepared_ref;
+    ctx.request.operation_id = prepared.operation_id.clone();
+    let receipt = workspace.publish(&ctx, &ctx.request).unwrap();
+    assert_eq!(receipt.state, OperationState::PublishedObserved);
+    assert_eq!(receipt.tree, new_tree);
+    assert_eq!(
+        run(
+            &ctx.repo,
+            &["--no-replace-objects", "cat-file", "blob", &original.hex],
+            None
+        ),
+        "immutable unchanged"
+    );
+    assert_eq!(
+        run(&ctx.repo, &["cat-file", "blob", &original.hex], None),
+        "replacement illusion",
+        "control replacement remains present, but owner ignored it"
+    );
 }

@@ -352,3 +352,61 @@ fn canonical_symlink_hard_link_and_alternate_topology_refuse() {
     .unwrap();
     assert!(ManagedCustody::load_fixture_selection(&f.path).is_err());
 }
+
+#[test]
+fn managed_custody_refuses_loose_and_packed_replacement_objects() {
+    let f = Fixture::new();
+    fn blob(repo: &std::path::Path, text: &[u8]) -> String {
+        use std::io::Write;
+        use std::process::Stdio;
+        let mut child = Command::new("/usr/bin/git")
+            .arg("-C")
+            .arg(repo)
+            .args(["hash-object", "-w", "--stdin"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child.stdin.take().unwrap().write_all(text).unwrap();
+        let out = child.wait_with_output().unwrap();
+        assert!(out.status.success());
+        String::from_utf8(out.stdout).unwrap().trim().into()
+    }
+    let original = blob(&f.policy.repository, b"unchanged baseline blob\n");
+    let replacement = blob(&f.policy.repository, b"substituted blob\n");
+    assert!(
+        Command::new("/usr/bin/git")
+            .arg("-C")
+            .arg(&f.policy.repository)
+            .args([
+                "update-ref",
+                &format!("refs/replace/{original}"),
+                &replacement
+            ])
+            .status()
+            .unwrap()
+            .success()
+    );
+    assert!(ManagedCustody::load_fixture_selection(&f.path).is_err());
+    assert!(
+        Command::new("/usr/bin/git")
+            .arg("-C")
+            .arg(&f.policy.repository)
+            .args(["pack-refs", "--all", "--prune"])
+            .status()
+            .unwrap()
+            .success()
+    );
+    assert!(
+        !f.policy
+            .repository
+            .join(format!("refs/replace/{original}"))
+            .exists()
+    );
+    assert!(
+        fs::read_to_string(f.policy.repository.join("packed-refs"))
+            .unwrap()
+            .contains("refs/replace/")
+    );
+    assert!(ManagedCustody::load_fixture_selection(&f.path).is_err());
+}

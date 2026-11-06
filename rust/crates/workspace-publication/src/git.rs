@@ -25,7 +25,9 @@ fn controlled(cmd: &mut Command) {
         .env("LC_ALL", "C")
         .env("GIT_CONFIG_NOSYSTEM", "1")
         .env("GIT_CONFIG_GLOBAL", "/dev/null")
-        .env("HOME", "/");
+        .env("HOME", "/")
+        .env("GIT_NO_REPLACE_OBJECTS", "1")
+        .arg("--no-replace-objects");
 }
 // Git must never interpret a canonical repository's config as an untrusted
 // executable grant (filters, fsmonitor, hooks, external diff, includes, etc.).
@@ -99,6 +101,24 @@ fn safe_config(repo: &Path) -> Result<()> {
     }
     Ok(())
 }
+fn retain_guard(cmd: &mut Command, guard_fd: Option<RawFd>) {
+    if let Some(fd) = guard_fd {
+        // The child holds the same open file description and flock until its
+        // topology mutation exits, even if the caller is killed.
+        unsafe {
+            cmd.pre_exec(move || {
+                let inherited = libc::fcntl(fd, libc::F_DUPFD, 100);
+                if inherited < 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                if libc::fcntl(inherited, libc::F_SETFD, 0) < 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+    }
+}
 fn command_inner(
     repo: &Path,
     args: &[&str],
@@ -138,22 +158,7 @@ fn command_inner(
         })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    if let Some(fd) = guard_fd {
-        // The child holds the same open file description and flock until its
-        // topology mutation exits, even if the caller is killed.
-        unsafe {
-            cmd.pre_exec(move || {
-                let inherited = libc::fcntl(fd, libc::F_DUPFD, 100);
-                if inherited < 0 {
-                    return Err(std::io::Error::last_os_error());
-                }
-                if libc::fcntl(inherited, libc::F_SETFD, 0) < 0 {
-                    return Err(std::io::Error::last_os_error());
-                }
-                Ok(())
-            });
-        }
-    }
+    retain_guard(&mut cmd, guard_fd);
     let mut child = cmd.spawn().map_err(|e| Error::Io(e.to_string()))?;
     if let Some(data) = input {
         child
@@ -361,6 +366,7 @@ pub fn integrate(
     artifact: &Path,
     parent: &GitOid,
     candidate: &PublicationCandidate,
+    guard_fd: RawFd,
 ) -> Result<GitOid> {
     if artifact.exists() {
         return Err(Error::Conflict("operation artifact already exists".into()));
@@ -368,10 +374,11 @@ pub fn integrate(
     let target = artifact
         .to_str()
         .ok_or_else(|| Error::Invalid("artifact path encoding".into()))?;
-    command(
+    command_guarded(
         repo,
         &["worktree", "add", "--detach", target, &parent.hex],
         None,
+        guard_fd,
     )?;
     let patch = command(
         repo,
@@ -384,14 +391,36 @@ pub fn integrate(
         ],
         None,
     )?;
-    command(artifact, &["apply", "--index", "--3way", "-"], Some(&patch))?;
-    oid(text(artifact, &["write-tree"])?)
+    command_guarded(
+        artifact,
+        &["apply", "--index", "--3way", "-"],
+        Some(&patch),
+        guard_fd,
+    )?;
+    oid(
+        String::from_utf8(command_guarded(artifact, &["write-tree"], None, guard_fd)?)
+            .map_err(|e| Error::Integrity(e.to_string()))?
+            .trim()
+            .into(),
+    )
 }
-pub fn create_commit(repo: &Path, tree: &GitOid, parent: &GitOid, message: &str) -> Result<GitOid> {
+pub fn create_commit(
+    repo: &Path,
+    tree: &GitOid,
+    parent: &GitOid,
+    message: &str,
+    guard_fd: RawFd,
+) -> Result<GitOid> {
     safe_config(repo)?;
-    let mut cmd = Command::new("/usr/bin/git");
+    #[cfg(feature = "test-faults")]
+    let program = std::env::var("WORKSPACE_PUBLICATION_GUARDED_GIT_FIXTURE")
+        .unwrap_or_else(|_| "/usr/bin/git".into());
+    #[cfg(not(feature = "test-faults"))]
+    let program = "/usr/bin/git";
+    let mut cmd = Command::new(program);
     controlled(&mut cmd);
     crate::custody::trusted_program("/usr/bin/git", crate::custody::GIT_SHA256)?;
+    retain_guard(&mut cmd, Some(guard_fd));
     let mut child = cmd
         .args([
             "-c",

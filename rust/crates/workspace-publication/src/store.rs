@@ -565,7 +565,13 @@ impl Workspace {
         let expected = git::ref_oid(&self.config.repository, target)?;
         let artifact = self.config.root.join("operations").join(&operation_id);
         fs::create_dir_all(artifact.parent().unwrap()).map_err(|e| Error::Io(e.to_string()))?;
-        let tree = git::integrate(&self.config.repository, &artifact, &expected, &candidate)?;
+        let tree = git::integrate(
+            &self.config.repository,
+            &artifact,
+            &expected,
+            &candidate,
+            _guard.raw_fd(),
+        )?;
         let expected_tree = git::commit_tree(&self.config.repository, &expected)?;
         git::verify_manifest(
             &self.config.repository,
@@ -605,7 +611,13 @@ impl Workspace {
         let full_message = format!(
             "{message}\n\nWork-Engine-Operation: {operation_id}\nWork-Engine-Preparation: {preparation_digest}\n"
         );
-        let commit = git::create_commit(&self.config.repository, &tree, &expected, &full_message)?;
+        let commit = git::create_commit(
+            &self.config.repository,
+            &tree,
+            &expected,
+            &full_message,
+            _guard.raw_fd(),
+        )?;
         let prepared = PreparedPublication {
             operation_id: operation_id.clone(),
             preparation_digest,
