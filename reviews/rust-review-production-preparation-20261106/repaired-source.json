@@ -1,0 +1,17 @@
+{
+  "commit": "7fd3d6abe6b149975c07dfc05f4e77e0e649ba9b",
+  "baseline": "94e79dc95492a1c8d5cb90473e22dee0c519fb25",
+  "delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-repair2.diff",
+    "sha256": "4f6e724ed5ba81eaf9bb8bf2caf065e8b849a13c3fba876173a73ca9fdeb9605",
+    "mode": 436,
+    "ownerUid": 1000
+  },
+  "sourceArchive": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-repair2/subject.tar",
+    "sha256": "2514f65b2d954ff3ee447f25f4d6c54e2a5671aba45cb720d07eb348d7a5d5b4",
+    "mode": 292,
+    "ownerUid": 1000
+  },
+  "standing": "frozen R1/R2 remediation; no installed authority"
+}

@@ -1,10 +1,16 @@
 # Proposed use of the remaining runtime-entry allowance
 
-Status: **pending human approval**. This changes the productive-work cutoff in
-the [approved plan](rust-loop-runtime-entry-and-live-budget-20261106.md), whose
-approved bytes are in commit `a1551c02d24e8fa17504fd43dcf2a8f86e65c769`.
-It adds no money and resets no clock. The aggregate remains **$35**, including
-preparation and every actor, with hard end **18:25:15 UTC on 2026-11-06**.
+Status: **approved; source and uninstalled preparation completed**. The original
+18:25:15 UTC clock expired without extension. The human separately renewed a
+90-minute window received at **19:07:00 UTC on 2026-11-06** for the same $8
+slice within the unchanged $35 aggregate: feature stop 20:07, hard end 20:37.
+Accepted repaired source is `7fd3d6abe6b149975c07dfc05f4e77e0e649ba9b`;
+[closure](../records/rust-review-production-preparation-20261106/README.md) records
+qualification, separate review, accounting and remaining production gates.
+
+The original proposal below retains its historical timing; the explicit renewal
+above is the authority for the completed attempt. No installation or live
+execution was performed or authorized by this preparation result.
 
 ## Completed prerequisite and remaining gap
 

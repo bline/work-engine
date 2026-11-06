@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "standing": "frozen source candidate; independent review pending",
+  "baseline": "78f00c15e5f5cc8bb23ab2294707af345a60de8b",
+  "commit": "94e79dc95492a1c8d5cb90473e22dee0c519fb25",
+  "worktree": "/home/bline/code/work-engine-worktrees/review-production-preparation-20261106",
+  "diff": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source.diff",
+    "sha256": "004332adddf39c746ebf4ea8354c76dbcc74f3998d58cae52505d2ffa02a4846",
+    "mode": 436,
+    "ownerUid": 1000
+  },
+  "archive": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-final/subject.tar",
+    "sha256": "c8d4e27998b7415a68beaa83ba8c51126522a18ffe1a67c7e25c8f0b7c0a55bc",
+    "mode": 292,
+    "ownerUid": 1000
+  },
+  "custodyManifest": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-final/manifest.json",
+    "sha256": "273f115b8f4eb71b4265e76f64ab4dd2c7c930b4fe81e38e209dbd40cc272a8b",
+    "mode": 292,
+    "ownerUid": 1000
+  },
+  "qualification": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/qualification/summary.json",
+    "sha256": "47bdc26b085131fc6e4d55b7e471fc3e2b34f93778e247ddfa868f5b5e04f962",
+    "mode": 436,
+    "ownerUid": 1000
+  },
+  "finalBuild": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/final-build/summary.json",
+    "sha256": "84740aa9b5c55cf035be666f1c862dccc6b8687fb49deb8e98c8513df563ad7c",
+    "mode": 436,
+    "ownerUid": 1000
+  },
+  "settings": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "medium",
+    "tier": "default",
+    "observed": "2026-11-06T19:39:30.673Z",
+    "epoch": 3,
+    "input": 35710
+  },
+  "limitations": [
+    "First gate HELD preserved",
+    "No installed/provider/credential/protected effects",
+    "Actual final package qualification pending"
+  ]
+}

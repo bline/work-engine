@@ -38,3 +38,14 @@ Failure can leave partial private preparation/checkpoint artifacts; never overwr
 silently relabel these as admission/provider attempts. Same-UID preparation does not prove
 production operator/agent isolation. Independent source/package review, exact operator
 selections, credential/profile qualification and protected installation/readback remain pending.
+
+
+## Root closure
+
+Accepted and locally integrated repaired source `7fd3d6abe6b149975c07dfc05f4e77e0e649ba9b`. Separate native Astra review found launcher authority and stale policy-template defects in the initial proposal; retained review accepted both exact repairs and the regenerated package. Original artifacts remain sealed. [Final review](../../reviews/rust-review-production-preparation-20261106/final-review.json), [result](RESULT.json) and [Root acceptance](ROOT-ACCEPTANCE.json) bind the accepted subject.
+
+The actual repaired provider-free command passed in 88.2 seconds. Replacement-helper refusals, complete existing-policy-loader positive and identity-negative checks, 31-pin readback, 12 library regressions, build, formatting and lint passed. All actor results and processes were collected; the reviewer was released idle and the foreground pressure listener stopped.
+
+This accepts source and an **uninstalled, unissued preparation package**. It does not establish production installability, product review, acceptance, publication or clearance of `owner_pending`. Remaining gates are current Claude/catalog/compiler/credential qualification, authority-owner issuance or explicit exact operator decisions, protected policy installation/readback and separately funded supervised execution. No provider or protected-write effect occurred. The other session's human pause remains preserved.
+
+[Budget authority](BUDGET-AUTHORITY.json) records the expressly renewed 90-minute clock. [Accounting](ACCOUNTING.json) distinguishes the whole $8 slice from overlapping nested review costs and preserves nested overruns. No automatic extension, monitoring or continuation remains active.

@@ -1,0 +1,36 @@
+{
+  "subject_commit": "7fd3d6abe6b149975c07dfc05f4e77e0e649ba9b",
+  "baseline_commit": "94e79dc95492a1c8d5cb90473e22dee0c519fb25",
+  "package_manifest_sha256": "4d83e185055a2a619bf8ea316c338c562be1d6f5e93e5395641147304cf5c938",
+  "decision": "accepted",
+  "scope": "Retained R1/R2 remediation review; UNINSTALLED preparation only.",
+  "dispositions": {
+    "R1": {
+      "status": "resolved",
+      "evidence": "preparation.rs:97–134 validates compiled reviewed bwrap/CBM/launcher/client pins and fixed Python/Git pins. Invocation at line 320 precedes output creation and execution. Replacement-helper negatives require the independent-pin refusal and absent output."
+    },
+    "R2": {
+      "status": "resolved",
+      "evidence": "preparation.rs:501 assigns the derived selection to review_selection_template. Line 531 invokes the complete validator shared with the installed loader. Verified emitted template equals selection.json; exact custody records report loader-positive and identity-negative checks passing."
+    }
+  },
+  "findings": [],
+  "validation": [
+    "Frozen HEAD and clean worktree verified.",
+    "Exact delta digest and Git diff equality verified.",
+    "Package manifest, startup, policy, request and custody digests verified; all 47 custody file digests matched.",
+    "Qualification summary and step-record digests verified; build/lint, negatives, regression, preparation and readback recorded successful outcomes with zero leftovers."
+  ],
+  "limitations": [
+    "No tests rerun or full archives reread; unchanged review conclusions retained.",
+    "Graph reported unresolved calls; decisive changed source was read directly.",
+    "Authority issuance, program/catalog/compiler/credential qualification, protected installation and separately authorized execution remain pending.",
+    "Acceptance is advisory preparation acceptance, not installability or full-loop acceptance."
+  ],
+  "binding": {
+    "session": "01a1b266-14b6-7383-848e-ab706ab64227",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "settings": "Retained gpt-6-astra/xhigh/default; fresh native readOnly/networkfalse observation attributed to Root.",
+    "authority": "No writes, new actors, provider calls or protected effects initiated. Parent Root retains collection, acceptance and integration."
+  }
+}

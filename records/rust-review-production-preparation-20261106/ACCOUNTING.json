@@ -1,0 +1,14 @@
+{
+  "observed_checkpoint_usd": 7.4903824,
+  "conservative_setup_hold_usd": 0.25,
+  "closing_tail_hold_usd": 0.15,
+  "checkpoint_plus_holds_usd": 7.8903824,
+  "slice_cap_usd": 8,
+  "aggregate_cap_usd": 35,
+  "prior_closed_observed_usd": 9.2202516,
+  "prior_conservative_hold_usd": 4,
+  "accounting": "API-equivalent proxy; global partial lineage multiple_parents retained binding, unpriced0, unknownspendfalse; nested review overlaps and MUST NOT be added",
+  "nested_review": "Initial forecast2.5, realloc3 then3.8; final nested4.409798 includes Root coordination and in-flight finals, exceeding nested allocation. Whole slice remains below8; no retroactive limit change. This overrun is preserved.",
+  "complete_forecast": "source/caller accepted; original full product loop unfulfilled",
+  "window": "19:07 renewal, feature20:07, hard20:37, ended beforehard"
+}

@@ -1,0 +1,470 @@
+{
+  "authorityInputs": {
+    "claimsConfiguration": "5ee440ab557f87b987598c6505832472c4d308f7b49fb095cd6684d2fc019e7d",
+    "claimsSource": "bcffd80c0f5812b376b62f6e44090a18893e8154c46cfbec45946db599a1bbab",
+    "completionConsumer": "campaign",
+    "status": "proposed records require explicit operator/authority-owner review"
+  },
+  "candidate": {
+    "commit": "d11f7e473319e204577af454f34d198b6d61df74",
+    "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+    "physicalProfileSha256": "9b334636220f2dc5997f8b8e00e9550bf7ed722440c8f3c7dfaaa91c7c195703",
+    "receiptSha256": "c5579fe3b1d33c8626d08e3559c994ab49c99793072bfdcf7fc2e913c17cae34",
+    "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+  },
+  "coverageComplete": false,
+  "credentialEligibility": "unchecked; metadata selection only; no credential contents read",
+  "fixedRuntimePolicyTarget": "/etc/work-engine/review-host/job-policy.json",
+  "limitations": [
+    "No original full-repository index or new coding job claimed",
+    "Same UID preparation is not production operator/agent isolation",
+    "No campaign/episode/claims/evidence stores or InstalledAcceptancePin created"
+  ],
+  "operatorGates": [
+    "independent source/package review",
+    "exact program/profile/catalog and credential eligibility qualification",
+    "approve exact policy/claims/episode selections",
+    "root installs exact policy with protected ancestry and readback"
+  ],
+  "policy": {
+    "mode": 256,
+    "ownerUid": 1000,
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/job-policy.proposed.json",
+    "sha256": "1e1b38f9b42cb7bf07059da45a25b4f2e515fe78e61ae8b715552b254cbd1d9a"
+  },
+  "proposedPolicy": {
+    "active": true,
+    "admittedUid": 1000,
+    "executionTemplate": {
+      "acceptedBoundarySha256": "65e5bf433643c24fa92e52d8dd8282e974148af40a164b45477974c38090ca12",
+      "attemptHorizonMillis": 300000,
+      "attemptId": "proposal-001",
+      "builderClaimId": "production-path-claim-v1@44f3b85a990e51d5fdbe616339faa0e7400084f20cdee8c923e90e893df9f771",
+      "campaignClaimId": "production-path-claim-v1@2a364ab2b9e3b355b0de72837d87877b9692434f3e0e82b6c1bd06a47626b298",
+      "candidateTree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474",
+      "catalogSha256": "ea84ae8b8e7d396b1343f44635097359befbb94d099d7f6dbda869174fbbd213",
+      "cbmStoreSha256": "beb4aa8ce905a119d210dc34d81a262fe212d71506cc69fc488eca06a64392a4",
+      "claudeProfileDigest": "3738af246c7b5259e889c97748471ed86211a9251fedf188ca76ba5e8707c763",
+      "credentialSourceMetadataSha256": "79a87c23915b7a7f6af76169a538d7a2150a7d3ac9d85294896e1f1e4551fcde",
+      "decision": "accepted",
+      "guardSha256": "cd77a49505cfa28cc07530ab2fe0d1046c9d43ba93d96153806e915d3c87bc68",
+      "identity": {
+        "attemptId": "proposal-001",
+        "planVersion": "proposal-projection-v1",
+        "runId": "rust-review-preparation-20261106",
+        "sliceNumber": 1
+      },
+      "obligationId": "rp3-initial-implementation-review",
+      "physicalProfileDigest": "2aeeb51ea03b68b046330cbae7f3d4216cd45d797749f88b4f360eb79a77a95f",
+      "programSha256": "708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd",
+      "promptTemplateSha256": "952023f6461cd493fc926228f68a327522eb0871b44d4bc07c1b4e2b602ca333",
+      "reference": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/acceptance.proposed.json",
+      "requestedModel": "opus",
+      "resourcePolicy": "session64mib_combined1g_zero_swap_v2",
+      "revision": "unissued-preparation-proposal-v1",
+      "schemaVersion": 1,
+      "selectionDigest": "77e9273ff0888cfb2b98e46db938265315d7cb1a684702ef02365877719cac2e",
+      "sessionId": "proposed-timestamp-review-20261106"
+    },
+    "expiresAtMillis": 1794081600000,
+    "jobsRoot": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2",
+    "policyId": "proposed-timestamp-review-20261106",
+    "repository": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/candidate-projection",
+    "reviewSelectionTemplate": {
+      "owner": "slice-supervisor",
+      "schemaVersion": 2,
+      "selectionId": "proposed-timestamp-review-selection",
+      "specialists": [
+        {
+          "obligationId": "rp3-initial-implementation-review",
+          "requiredClaims": [
+            {
+              "acceptance": {
+                "owner": "rp3-campaign-acceptance-owner",
+                "source": "/etc/work-engine/review-host/rp3-first-live-20261018/accepted-boundary.json",
+                "unestablishedRoute": "hold-consumption-for-owner-disposition"
+              },
+              "claimId": "production-path-claim-v1@44f3b85a990e51d5fdbe616339faa0e7400084f20cdee8c923e90e893df9f771",
+              "consumer": "slice-builder:rust-review-preparation-20261106:1:proposal-001:proposal-projection-v1",
+              "consumptionBoundary": "builder_projection",
+              "coveredState": "review-result",
+              "profile": {
+                "admissibleObservers": [
+                  "review-execution-evidence"
+                ],
+                "allowedMechanisms": [
+                  "claude-cli-json-v1"
+                ],
+                "continuity": "fresh_initial",
+                "id": "production-path-v1",
+                "integrityRequired": true,
+                "requiredCapabilities": [],
+                "requiredRealization": "rp0-guarded-claude-v1",
+                "revision": "production-path-profile-v1"
+              },
+              "proposition": "The initial RP3 implementation review result for the pinned candidate was produced by a fresh guarded Claude reviewer under a read-only capability envelope and verified execution-evidence custody, before the builder consumes it.",
+              "revision": "production-path-claim-revision-v1@6b111e2b67f68b8f4793d64645045a6e38c470b013ff41e6cb717e7943126709",
+              "schemaVersion": 1,
+              "subject": {
+                "candidate": {
+                  "commit": "d11f7e473319e204577af454f34d198b6d61df74",
+                  "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+                  "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+                },
+                "reviewEpisodeId": "774f538dcc333c7f012d05bf040c807c"
+              }
+            },
+            {
+              "acceptance": {
+                "owner": "rp3-campaign-acceptance-owner",
+                "source": "/etc/work-engine/review-host/rp3-first-live-20261018/accepted-boundary.json",
+                "unestablishedRoute": "hold-consumption-for-owner-disposition"
+              },
+              "claimId": "production-path-claim-v1@2a364ab2b9e3b355b0de72837d87877b9692434f3e0e82b6c1bd06a47626b298",
+              "consumer": "slice-campaign:rust-review-preparation-20261106:1:proposal-001:proposal-projection-v1",
+              "consumptionBoundary": "campaign_terminalization",
+              "coveredState": "review-result",
+              "profile": {
+                "admissibleObservers": [
+                  "review-execution-evidence"
+                ],
+                "allowedMechanisms": [
+                  "claude-cli-json-v1"
+                ],
+                "continuity": "fresh_initial",
+                "id": "production-path-v1",
+                "integrityRequired": true,
+                "requiredCapabilities": [],
+                "requiredRealization": "rp0-guarded-claude-v1",
+                "revision": "production-path-profile-v1"
+              },
+              "proposition": "The initial RP3 implementation review result for the pinned candidate was produced by a fresh guarded Claude reviewer under a read-only capability envelope and verified execution-evidence custody, before the campaign terminalizes it.",
+              "revision": "production-path-claim-revision-v1@3ee7de2ac4e7eed0bf4c791e6ef018360462d112883ac3586c769bc9aba59f63",
+              "schemaVersion": 1,
+              "subject": {
+                "candidate": {
+                  "commit": "d11f7e473319e204577af454f34d198b6d61df74",
+                  "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+                  "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+                },
+                "reviewEpisodeId": "774f538dcc333c7f012d05bf040c807c"
+              }
+            }
+          ],
+          "selection": "selected",
+          "skill": "implementation-review"
+        }
+      ],
+      "subject": {
+        "commit": "d11f7e473319e204577af454f34d198b6d61df74",
+        "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+        "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+      }
+    },
+    "revision": "unissued-proposal-1",
+    "schemaVersion": 1,
+    "startupAuthority": {
+      "claimsConfigurationSha256": "5ee440ab557f87b987598c6505832472c4d308f7b49fb095cd6684d2fc019e7d",
+      "claimsSourceSha256": "bcffd80c0f5812b376b62f6e44090a18893e8154c46cfbec45946db599a1bbab",
+      "completionConsumer": "campaign"
+    }
+  },
+  "proposedStartup": {
+    "base": {
+      "acceptedBoundary": {
+        "reference": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/candidate-input-selection.json",
+        "sha256": "65e5bf433643c24fa92e52d8dd8282e974148af40a164b45477974c38090ca12"
+      },
+      "baseline": {
+        "acceptedCommit": "60b3b4f3b7f9f01fc0e21f7e9ad00a3c486154a8",
+        "acceptedTree": "db3817b4bd322c955f6c42a33d58b1eb318b0697",
+        "interSliceCommit": "60b3b4f3b7f9f01fc0e21f7e9ad00a3c486154a8"
+      },
+      "candidate": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/candidate.json",
+        "sha256": "c5579fe3b1d33c8626d08e3559c994ab49c99793072bfdcf7fc2e913c17cae34"
+      },
+      "claims": {
+        "configuration": {
+          "mode": 256,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/claims-configuration.json",
+          "sha256": "5ee440ab557f87b987598c6505832472c4d308f7b49fb095cd6684d2fc019e7d"
+        },
+        "productionGrantId": "proposed-timestamp-production",
+        "productionGrantSha256": "3ccd2d521057d69880a0e9228ff658e262b58936a45c6777ab2201abfa546d91",
+        "rootId": "proposed-timestamp-claims",
+        "source": {
+          "mode": 256,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/claims-source.json",
+          "sha256": "bcffd80c0f5812b376b62f6e44090a18893e8154c46cfbec45946db599a1bbab"
+        }
+      },
+      "compiler": {
+        "document": {
+          "mode": 384,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rp0-coverage-boundary-fix-20261018/compiler-document-rp0-v2-proposed.json",
+          "sha256": "126f0f9846172f90968184d41b92934e4c6b8ca4ec30f5cabf943486268f50e5"
+        },
+        "mode": "manifest-only-unverified",
+        "options": {
+          "mode": 256,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/compiler-options.repair2-proposed.json",
+          "sha256": "4e50fcd1c0379623ba4ef12b6555c68cbea5c1df4e7eaf16ac385dc22fb95eab"
+        },
+        "requirements": null,
+        "role": "reviewer"
+      },
+      "episodeAuthority": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/episode-authority.json",
+        "sha256": "90b09540026dfc3ce5fce660b71f4e6b7ca61c4b7a9fccb47396cd2f423d5d43"
+      },
+      "evidenceProfile": "claude-qualified-v1",
+      "gateCapture": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/gate-capture.json",
+        "sha256": "4f3a118d433894e27750669c37287b6d950bf8afd7a88ebbbbb8b1466643a724"
+      },
+      "gateManifest": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/gate-manifest.json",
+        "sha256": "f5c9df7d2aaae65698bf334a0a5e88db2d57f83d959a5d4300c8631579d846c8"
+      },
+      "gateReceipt": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/gate-receipt.json",
+        "sha256": "067fe902f7b5cc4d91eb8db0a0843d94f2636175660ef81b3ac321877ab04607"
+      },
+      "host": {
+        "executable": {
+          "mode": 509,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/target/debug/work-engine-review-host",
+          "sha256": "3986b05427a414f40c794ba2d5cd54271cf5b454006a418168ffe24b6b3ba2fc"
+        },
+        "features": [],
+        "lockfile": {
+          "mode": 436,
+          "ownerUid": 1000,
+          "path": "/home/bline/code/work-engine-worktrees/review-production-preparation-20261106/rust/Cargo.lock",
+          "sha256": "725ace32e45d34af24fc88525e93b9c7ea38f8c249a725104b0b3c62f7b5c5c4"
+        },
+        "runtimeDependencies": [
+          {
+            "mode": 493,
+            "ownerUid": 0,
+            "path": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+            "sha256": "bda779ea9e9ad234f60315477d7cfd0bdde861cd8ddd9df8cdaf62f18c4cec14"
+          },
+          {
+            "mode": 493,
+            "ownerUid": 0,
+            "path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "sha256": "85e64f97e348786a8fb4d9f3d52fec289e2fb86bba20f0731dfe61990525e0f7"
+          },
+          {
+            "mode": 420,
+            "ownerUid": 0,
+            "path": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+            "sha256": "9d339ecb409578d6a5d587e6c537a8f9589b8a13fefba30d167433a4b5758bee"
+          },
+          {
+            "mode": 420,
+            "ownerUid": 0,
+            "path": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+            "sha256": "1c488db6f4fe8cecb72456bc018de000b7a9b539c2994864b0416b5e8371b3d8"
+          }
+        ],
+        "sourceArchive": {
+          "mode": 292,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-repair2/subject.tar",
+          "sha256": "2514f65b2d954ff3ee447f25f4d6c54e2a5671aba45cb720d07eb348d7a5d5b4"
+        },
+        "target": "x86_64-unknown-linux-gnu",
+        "toolchain": {
+          "mode": 256,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/toolchain.txt",
+          "sha256": "358ef29d0d4b7d39865cc1241eb8adfc91101126da32264ca711bf962e57d395"
+        }
+      },
+      "identity": {
+        "attemptId": "proposal-001",
+        "planVersion": "proposal-projection-v1",
+        "runId": "rust-review-preparation-20261106",
+        "sliceNumber": 1
+      },
+      "obligationId": "rp3-initial-implementation-review",
+      "operationId": "projected-timestamp-initial",
+      "peer": {
+        "arguments": [],
+        "evidenceRootId": "proposed-timestamp-evidence",
+        "executable": {
+          "mode": 493,
+          "ownerUid": 1000,
+          "path": "/home/bline/.local/share/claude/versions/2.1.318",
+          "sha256": "708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd"
+        },
+        "session": "proposed-timestamp-review-20261106",
+        "source": {
+          "mode": 292,
+          "ownerUid": 0,
+          "path": "/etc/work-engine/review-host/rp3-first-live-20261018/installed-cli-source.json",
+          "sha256": "a86cee65a8f604e618bc05796a4446ef8dfaf433a15655195a77b95c1b0ab592"
+        }
+      },
+      "physicalProfile": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/physical-profile.json",
+        "sha256": "9b334636220f2dc5997f8b8e00e9550bf7ed722440c8f3c7dfaaa91c7c195703"
+      },
+      "profile": "review-host-qualified-initial-v1",
+      "repository": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/candidate-projection",
+      "requestInput": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/request-input.proposed.json",
+        "sha256": "78212f0883181bfbad274be8b1cecff16a55cb0a26acf55bab2e8fe56d3be115"
+      },
+      "roots": {
+        "campaign": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/campaign",
+        "claims": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/claims",
+        "episode": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/episode",
+        "evidence": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/evidence"
+      },
+      "schemaVersion": 1,
+      "selection": {
+        "mode": 256,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/selection.json",
+        "sha256": "aeca9c8f5205288bfcfa5dfacd137f9ebca6e0a20f5d818f19ff9cd096095f1c"
+      },
+      "workspace": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/workspace"
+    },
+    "profile": "review-host-qualified-initial-v1",
+    "qualified": {
+      "acceptedObservedModels": [
+        "claude-opus-4-6"
+      ],
+      "attemptHorizonMillis": 300000,
+      "boundaryManifestSha256": "27655e8a1523a1a30e73db9dd437aca71a0b353192d237d74631cb99a2565ce9",
+      "boundaryRoot": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/native-boundary",
+      "bwrap": {
+        "mode": 493,
+        "ownerUid": 0,
+        "path": "/usr/bin/bwrap",
+        "sha256": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6"
+      },
+      "catalog": {
+        "mode": 436,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rp3-live-preparation-20261018/catalog-proposal.json",
+        "sha256": "ea84ae8b8e7d396b1343f44635097359befbb94d099d7f6dbda869174fbbd213"
+      },
+      "cbm": {
+        "mode": 493,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/bin/codebase-memory-mcp",
+        "sha256": "a8a5ddabb74decbf9c5275600efd6a5507ee00bd9bbb974c7b4a90096e841c39"
+      },
+      "cbmClient": {
+        "mode": 493,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rp3-offline-rebuild-20261026/successor-boundary/helpers/claude_cbm_client",
+        "sha256": "7adf05d6f5507e65f96c5cc9003c6c48f7332b22bd65e823759e5d8a07aac77c"
+      },
+      "cbmLauncher": {
+        "mode": 493,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rp3-offline-rebuild-20261026/successor-boundary/helpers/claude_cbm_restricted",
+        "sha256": "b32e489b94d42b7f188c47500203426f55f47cb4ec4b61db2e38eea7456530c6"
+      },
+      "completionAuthoritySource": {
+        "freshness": "unissued proposal requires operator approval",
+        "integrity_sha256": "bcffd80c0f5812b376b62f6e44090a18893e8154c46cfbec45946db599a1bbab",
+        "owner": "proposed-authority-owner-pending",
+        "reference": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/claims-source.input.json",
+        "revision": "unissued-proposal-20261106",
+        "status": "verified"
+      },
+      "completionConsumer": "campaign",
+      "completionDecisionScope": "projected-timestamp-test-append-919-proposed-review",
+      "completionGrantId": "proposed-timestamp-completion",
+      "completionGrantSha256": "b4e66b8cbd95b10ba8895b86bb8d671c0d1eb6df529fd5b0b097d5b3a8dd57aa",
+      "credentialSource": "/home/bline/.claude/.credentials.json",
+      "credentialSourceMetadataSha256": "79a87c23915b7a7f6af76169a538d7a2150a7d3ac9d85294896e1f1e4551fcde",
+      "guard": {
+        "mode": 493,
+        "ownerUid": 1000,
+        "path": "/home/bline/.local/state/work-engine/rp3-offline-rebuild-20261026/release-default/claude_launch_guard",
+        "sha256": "cd77a49505cfa28cc07530ab2fe0d1046c9d43ba93d96153806e915d3c87bc68"
+      },
+      "requestedEffort": "high",
+      "requestedModel": "opus",
+      "resourcePolicy": "session64mib_combined1g_zero_swap_v2"
+    },
+    "schemaVersion": 2
+  },
+  "provenance": {
+    "actual_source_receipt": "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6",
+    "append_bytes": 919,
+    "authority": "Root ordinary input selection within approved caller scope; future operator policy approval separate",
+    "candidate_file_sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+    "candidate_source_commit": "3a6c4c4df1a195b6002d681a3919da20e2026f03",
+    "limits": [
+      "Git/repository immutable evidence read only; no paused operation/state access or mutation",
+      "No new coding execution, product review, owner_pending clearance or old operation reuse asserted",
+      "Any projection/reconstruction must preserve original provenance and distinguish new proposed review identity; never relabel old receipts or fixture standing",
+      "Bounded current native boundary/index feasibility required before broad expensive preparation"
+    ],
+    "repository_path": "rust/crates/context-pressure/src/timestamp.rs",
+    "root_acceptance_record_sha256": "41d3d2a4aa438c686b571c2f97ab92bf438d7eff71c77424b34fa176aa5bde6d",
+    "selection": "immutable accepted pilot output as genuine candidate INPUT DATA for new uninstalled preparation proposal",
+    "source_base": "a77732cd74d1b952012fce669471742a6a814f1b",
+    "source_base_sha256": "cd8cf0deda977422ad7b54947d781e5ae0e9508d10b1f8c739dd0b27c96c03cb",
+    "standing": "proposed inputs, not installed authority",
+    "task_output_record_sha256": "fb6d6c7dbddb5cae75ed183c0efbc6f69237f88f31baddb9b9171531512388a8"
+  },
+  "readback": {
+    "initialize": [
+      "initialize",
+      "--startup",
+      "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/startup.json",
+      "--job-request",
+      "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/job-request.json"
+    ],
+    "serve": [
+      "serve",
+      "--startup",
+      "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/startup.json",
+      "--job-request",
+      "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/job-request.json"
+    ]
+  },
+  "request": {
+    "mode": 384,
+    "ownerUid": 1000,
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/job-request.json",
+    "sha256": "660300cf45b71f3090751003997c25bc5329663dee0b9784e369a1e6cf5ee099"
+  },
+  "schemaVersion": 1,
+  "standing": "UNINSTALLED PROPOSAL; no issued grants, admission, provider qualification or operator approval",
+  "startup": {
+    "mode": 256,
+    "ownerUid": 1000,
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/startup.json",
+    "sha256": "dae12cb562168516028b796578bff96a97d84e24868ba1058ff0410b5c36bb22"
+  }
+}

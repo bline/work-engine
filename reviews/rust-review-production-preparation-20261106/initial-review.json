@@ -1,0 +1,72 @@
+{
+  "baseline_commit": "78f00c15e5f5cc8bb23ab2294707af345a60de8b",
+  "decision": "changes_requested",
+  "findings": [
+    {
+      "consequence": "Preparation can execute a caller-selected replacement isolation launcher before independent qualification. Matching a caller-supplied path and hash establishes byte integrity, not authority; a replacement launcher can perform effects outside the promised provider-free preparation boundary.",
+      "evidence": [
+        "pinned_program at lines 91–93 accepts the input FilePin's path and SHA.",
+        "TrustedRp0Profile::load/verify only verifies those supplied program pins (review-execution-custody/src/claude/profile.rs:108–130).",
+        "CandidateBoundary::prepare executes base_command; isolation.rs:1177 constructs Command::new(profile.bwrap.path()).",
+        "No independent launcher selection check precedes this execution. This is a source-established path; no exploit was executed."
+      ],
+      "file": "rust/crates/review-workflow/src/preparation.rs",
+      "line": 347,
+      "severity": "P1"
+    },
+    {
+      "consequence": "The emitted policy cannot pass the existing installed-policy loader even after approval. Preparation updates executionTemplate.identity and writes the projected selection separately, but retains the historical reviewSelectionTemplate.",
+      "evidence": [
+        "Frozen policy b176e995c8ceeed63217dc2c7403354d05608348733061e5ae963c55e6a1509b has execution identity rust-review-preparation-20261106/proposal-001 but template claims retain the rp3-first-live-initial-20261018 consumer and episode e955752d625610fc1777defcf5716e97.",
+        "The separately emitted selection derives episode 774f538dcc333c7f012d05bf040c807c.",
+        "job_admission.rs:237 validates the retained template against executionTemplate.identity; contract.rs:368–381 rejects the episode/consumer mismatch."
+      ],
+      "file": "rust/crates/review-workflow/src/preparation.rs",
+      "line": 459,
+      "severity": "P2"
+    }
+  ],
+  "identity": {
+    "authority": "Advisory source/package review only; Parent Root retains collection, acceptance and integration.",
+    "binding_acknowledged": true,
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "continuation": "Context retained for bounded remediation; no automatic continuation.",
+    "observed": "Rollout records gpt-6-astra/xhigh/default, approval never, native read-only sandbox and restricted network. An explicit networkfalse boolean was not independently observed.",
+    "operation": "preparation-source-package-review-1",
+    "requested": "gpt-6-astra/xhigh/default; native readOnly/networkfalse",
+    "session": "01a1b266-14b6-7383-848e-ab706ab64227",
+    "skills_invoked": [
+      "manual-orchestration reviewer role",
+      "wind-walker"
+    ],
+    "turn": "01a1b266-1ce0-78d3-8f17-9a353ab7b81d"
+  },
+  "package_review": {
+    "assessment": "Qualification and issuance blockers are explicitly disclosed. They do not themselves prevent acceptance of an inert proposal, but the observed defects do. No installation or full-loop acceptance is established.",
+    "manifest_sha256": "35b58c59ee8aef46c2c25d5f211064ed07a713b63e488c2eaba1c73e1e9957a0",
+    "preserved_boundaries": [
+      "Fixed protected runtime policy path and installed-policy loading remain.",
+      "Pure selection projection does not construct InstalledAcceptancePin.",
+      "Historical Git gate pins remain; dynamic checks allow only the historical and explicitly approved current hashes."
+    ],
+    "standing": "UNINSTALLED and UNISSUED; changes required before acceptance as preparation"
+  },
+  "subject_commit": "94e79dc95492a1c8d5cb90473e22dee0c519fb25",
+  "validation": {
+    "limitations": [
+      "No tests, provider calls, writes, protected changes or new actors were initiated.",
+      "Builder-reported 69.9-second preparation and focused tests were not rerun.",
+      "Graph coverage reported unresolved calls; relevant conclusions use direct source verification, without an exhaustive graph claim.",
+      "Original provenance receipt contents were not independently resolved.",
+      "Remaining exploration stopped at Root's budget instruction."
+    ],
+    "performed": [
+      "Read required doctrine and reviewer-role context.",
+      "Verified frozen HEAD, clean worktree and exact source.diff equality.",
+      "Verified 44 absolute referenced file digests.",
+      "Verified all 47 package custody entries and corresponding archive contents.",
+      "Verified referenced final-build, preparation, readback and regression custody record digests and recorded successful outcomes.",
+      "Inspected changed preparation code, selection projection, Git compatibility checks, targeted tests and relevant loader paths."
+    ]
+  }
+}

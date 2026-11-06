@@ -1,0 +1,98 @@
+{
+  "status": "R1_R2_REPAIRED_READY_FOR_RETAINED_REVIEW",
+  "commit": "7fd3d6ab",
+  "fullSource": {
+    "commit": "7fd3d6abe6b149975c07dfc05f4e77e0e649ba9b",
+    "baseline": "94e79dc95492a1c8d5cb90473e22dee0c519fb25",
+    "delta": {
+      "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-repair2.diff",
+      "sha256": "4f6e724ed5ba81eaf9bb8bf2caf065e8b849a13c3fba876173a73ca9fdeb9605",
+      "mode": 436,
+      "ownerUid": 1000
+    },
+    "sourceArchive": {
+      "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/source-repair2/subject.tar",
+      "sha256": "2514f65b2d954ff3ee447f25f4d6c54e2a5671aba45cb720d07eb348d7a5d5b4",
+      "mode": 292,
+      "ownerUid": 1000
+    },
+    "standing": "frozen R1/R2 remediation; no installed authority"
+  },
+  "package": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/manifest.json",
+    "sha256": "4d83e185055a2a619bf8ea316c338c562be1d6f5e93e5395641147304cf5c938"
+  },
+  "archive": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/package-repair2/subject.tar",
+    "sha256": "190291091396f0491dc626b8a7945a09983b3348b074c42ff2c8b1fc12be082b"
+  },
+  "custody": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/package-repair2/manifest.json",
+    "sha256": "8b0bfdef2aad5760a0c06ae631cf378f49702b6eeccbe37605a9961301510ec9"
+  },
+  "qualifications": {
+    "buildLint": {
+      "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/repair2-build/summary.json",
+      "sha256": "5031cf8b4bb480cd9416bdd89c29457946ee8051b58acafd8008e82537d9c104"
+    },
+    "negativeRegression": {
+      "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/repair2-test/summary.json",
+      "sha256": "56d58090884f84765c88e7a8f89bfb5c3322957b9d8378614d0cbeda79475243"
+    },
+    "actualPreparation": {
+      "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/prepare-repair2/summary.json",
+      "sha256": "c54bbc97c1b55665844484ff870bf81e5b75b9b91ddfbca4d18a64fdea7ed931"
+    },
+    "existingLoaderAndReadback": {
+      "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/repair2-readback/summary.json",
+      "sha256": "58578a2cf494c43fecf5a405e5ffca4ea93f87772aeef1adbfac09b1885caf04"
+    }
+  },
+  "changes": [
+    "R1 exact independently Root-selected compiled pins verified before execution for bwrap, CBM, launcher, client, Python and Git; caller matching path/hash cannot replace these",
+    "R2 emitted derived selection is also policy template; same complete owner validator extracted and used by installed loader and proposal path"
+  ],
+  "tests": {
+    "replacementHelpers": "four internally consistent replacement path/hash/mode inputs refused before proposal output; no replacement executed",
+    "authorityStandingNegativeVariants": 15,
+    "sliceCampaignLibPassed": 12,
+    "existingLoaderPolicyPositive": true,
+    "loaderIdentityMismatchNegative": true,
+    "actualPreparationSeconds": 88.2,
+    "packagePinsChecked": 31,
+    "allProcessesCollected": true,
+    "leftovers": 0
+  },
+  "startup": {
+    "mode": 256,
+    "ownerUid": 1000,
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposed-jobs-repair2/e3e2a64fe8119f21d6995b9837e7862bfb831cb9a912e1ef2520914c73fc0204/startup.json",
+    "sha256": "dae12cb562168516028b796578bff96a97d84e24868ba1058ff0410b5c36bb22"
+  },
+  "policy": {
+    "mode": 256,
+    "ownerUid": 1000,
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/job-policy.proposed.json",
+    "sha256": "1e1b38f9b42cb7bf07059da45a25b4f2e515fe78e61ae8b715552b254cbd1d9a"
+  },
+  "request": {
+    "mode": 384,
+    "ownerUid": 1000,
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/proposal-repair2/job-request.json",
+    "sha256": "660300cf45b71f3090751003997c25bc5329663dee0b9784e369a1e6cf5ee099"
+  },
+  "candidate": {
+    "commit": "d11f7e473319e204577af454f34d198b6d61df74",
+    "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+    "physicalProfileSha256": "9b334636220f2dc5997f8b8e00e9550bf7ed722440c8f3c7dfaaa91c7c195703",
+    "receiptSha256": "c5579fe3b1d33c8626d08e3559c994ab49c99793072bfdcf7fc2e913c17cae34",
+    "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+  },
+  "standing": "UNINSTALLED/UNISSUED, no InstalledAcceptancePin/stores/provider/protected/credential-content effects; original provenance unchanged; native boundary only, Claude/catalog/compiler/credential qualification and operator gates remain pending",
+  "oldArtifacts": "SOURCE.json/source.diff/RESULT.json/proposal-final/package-final/source-final unchanged; separate repair2 paths only",
+  "telemetry": {
+    "path": "/home/bline/.local/state/work-engine/rust-review-production-preparation-20261106T1906/builder/repair2-context.json",
+    "sha256": "653e0ba569d8f6f49e7a85c502793a999e6afa5d5527d9aa7e75e5852a4b3a4b"
+  },
+  "scope": "three existing approved source/test paths; no authority store, backend or policy semantics added; same8USD/time and <=0.50 builder allowance; Parent owns measured budget collection"
+}
