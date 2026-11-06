@@ -782,9 +782,9 @@ class RefChanges:
         self.close()
 
 
-LEVELS_REQUIRED = ("control needs --context-trigger-percent with --context-band-floor-percent "
-                   "(shares of the recorded window), or --context-trigger-tokens with "
-                   "--context-band-floor-tokens (Claude, which records no window)")
+LEVELS_REQUIRED = ("control needs --context-trigger-tokens with --context-band-floor-tokens "
+                   "(fixed levels; required for Claude, which records no window), or "
+                   "--context-trigger-percent with --context-band-floor-percent (shares of the recorded window)")
 
 
 class ContextControl:
@@ -1309,7 +1309,8 @@ def parser() -> argparse.ArgumentParser:
     wait.add_argument("--context-trigger-percent", type=float,
                       help="planning level as a percent of the window recorded with each reading")
     wait.add_argument("--context-band-floor-percent", type=float)
-    wait.add_argument("--context-trigger-tokens", type=int, help="fixed level; for Claude, which records no window")
+    wait.add_argument("--context-trigger-tokens", type=int,
+                      help="fixed planning level; Codex under a configured compaction limit, and Claude")
     wait.add_argument("--context-band-floor-tokens", type=int)
     wait.add_argument("--context-step-percent", type=float,
                       help="in band, report again at each further multiple of this percent of the window (default 5)")

@@ -39,42 +39,66 @@ def assess(rep, next_task=None):
     return CHILD.assess(
         rep,
         next_task_tokens=next_task,
-        trigger_fraction=CHILD.DEFAULT_TRIGGER_FRACTION,
-        band_floor_fraction=CHILD.DEFAULT_BAND_FLOOR_FRACTION,
+        trigger_tokens=CHILD.CODEX_TRIGGER_TOKENS,
+        band_floor_tokens=CHILD.CODEX_BAND_FLOOR_TOKENS,
     )
 
 
 class AssessTests(unittest.TestCase):
-    def test_defaults_reproduce_reference_levels(self) -> None:
+    def test_defaults_are_the_documented_token_levels(self) -> None:
         record = assess(report(100_000))
-        self.assertEqual(record["trigger_tokens"], 150_000)
-        self.assertEqual(record["band_floor_tokens"], 171_267)
+        self.assertEqual(record["trigger_tokens"], 200_000)
+        self.assertEqual(record["band_floor_tokens"], 235_000)
+        self.assertEqual(record["levels_basis"], "tokens")
 
     def test_below_trigger_retains(self) -> None:
         record = assess(report(100_000))
         self.assertEqual(record["recommendation"], "retain_ok")
         self.assertEqual(record["next_task_basis"], "not estimated")
 
-    def test_auth_worker_case_recommends_fresh(self) -> None:
-        # 190,902 of 258,400 when the retained follow-up was dispatched.
-        record = assess(report(190_902))
+    def test_auth_worker_case_needs_the_next_task_estimate(self) -> None:
+        # 190,902 of 258,400 when the retained follow-up was dispatched on
+        # 2026-10-21. Current models compact higher, so the estimate decides;
+        # 61K is the largest remediation growth recorded (2026-10-22).
+        self.assertEqual(assess(report(190_902))["recommendation"], "retain_ok")
+        record = assess(report(190_902), next_task=61_000)
+        self.assertEqual(record["recommendation"], "fresh")
+        self.assertIn("band floor", record["reasons"][0])
+
+    def test_inside_band_recommends_fresh(self) -> None:
+        record = assess(report(240_000))
         self.assertEqual(record["recommendation"], "fresh")
         self.assertIn("compaction band", record["reasons"][0])
 
     def test_between_trigger_and_band_recommends_fresh(self) -> None:
-        record = assess(report(160_000))
+        record = assess(report(210_000))
         self.assertEqual(record["recommendation"], "fresh")
 
     def test_next_task_estimate_can_tip_to_fresh(self) -> None:
-        self.assertEqual(assess(report(120_000))["recommendation"], "retain_ok")
-        record = assess(report(120_000), next_task=60_000)
+        self.assertEqual(assess(report(180_000))["recommendation"], "retain_ok")
+        record = assess(report(180_000), next_task=60_000)
         self.assertEqual(record["recommendation"], "fresh")
         self.assertEqual(record["next_task_basis"], "parent estimate")
 
-    def test_levels_scale_with_window(self) -> None:
-        record = assess(report(200_000, window=475_000))
+    def test_token_levels_stay_under_the_250k_limit_on_a_large_window(self) -> None:
+        # Shares of a 475,000 window (58%, 66%) sat above the 250,000 limit.
+        record = assess(report(240_000, window=475_000))
+        self.assertEqual(record["recommendation"], "fresh")
+        self.assertEqual(record["band_floor_tokens"], 235_000)
+        self.assertEqual(record["fraction_of_window"], round(240_000 / 475_000, 4))
+
+    def test_explicit_fractions_scale_with_window(self) -> None:
+        record = CHILD.assess(report(200_000, window=475_000), next_task_tokens=None,
+                              trigger_fraction=0.58, band_floor_fraction=0.66)
+        self.assertEqual(record["levels_basis"], "window_fraction")
+        self.assertEqual(record["trigger_tokens"], 275_500)
         self.assertEqual(record["recommendation"], "retain_ok")
-        self.assertGreater(record["trigger_tokens"], 200_000)
+
+    def test_incomplete_levels_are_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            CHILD.assess(report(1), next_task_tokens=None, trigger_tokens=1)
+        with self.assertRaises(ValueError):
+            CHILD.assess(report(1), next_task_tokens=None, trigger_fraction=0.5)
 
     def test_missing_counters_are_unavailable_not_zero(self) -> None:
         rep = report(None)
@@ -112,7 +136,7 @@ class BinaryTests(unittest.TestCase):
     def setUp(self) -> None:
         self.directory = Path(tempfile.mkdtemp())
         self.binary = self.directory / "work-engine-context-status"
-        payload = json.dumps(report(190_902))
+        payload = json.dumps(report(240_000))
         self.binary.write_text(f"#!/bin/sh\necho '{payload}'\n")
         self.binary.chmod(self.binary.stat().st_mode | stat.S_IXUSR)
         self.digest = hashlib.sha256(self.binary.read_bytes()).hexdigest()
@@ -134,6 +158,23 @@ class BinaryTests(unittest.TestCase):
         )
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(out.read_text())["recommendation"], "fresh")
+
+    def test_check_token_override_and_fraction_pair(self) -> None:
+        out = self.directory / "override.json"
+        base = ["--binary", str(self.binary), "--sha256", self.digest]
+        code = CHILD.main(base + ["check", "--session", "s", "--rollout", "/r.jsonl",
+                                  "--trigger-tokens", "245000", "--band-floor-tokens", "250000", "--out", str(out)])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out.read_text())["recommendation"], "retain_ok")
+        code = CHILD.main(base + ["--trigger-fraction", "0.58", "--band-floor-fraction", "0.66",
+                                  "check", "--session", "s", "--rollout", "/r.jsonl", "--out", str(out)])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out.read_text())["levels_basis"], "window_fraction")
+
+    def test_half_a_fraction_pair_is_a_usage_error(self) -> None:
+        code = CHILD.main(["--binary", str(self.binary), "--sha256", self.digest,
+                           "--trigger-fraction", "0.58", "check", "--session", "s", "--rollout", "/r.jsonl"])
+        self.assertEqual(code, 2)
 
     def test_documented_form_out_after_subcommand(self) -> None:
         # The form context-boundary.md documents: --out after `check`.

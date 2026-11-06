@@ -28,11 +28,15 @@ and counters do not establish monitoring for the successor.
 Use the pinned context-status binary from `provision_context_status.sh`; it must
 support `control --help`. Bind the actual session ID and absolute transcript
 path. For a Claude child, also bind its agent ID within that session. Do not use
-an inherited environment variable as proof of identity. For Codex, give levels as
-shares of the window (`--context-trigger-percent`, `--context-band-floor-percent`)
-so they follow the model's window: token levels set for a 258,400-token window
-put a 475,000-token session in band at 36%. Claude transcripts record no window
-and take token levels. The levels in `context-boundary.md` and
+an inherited environment variable as proof of identity. For Codex, give token
+levels: `--context-trigger-tokens 200000 --context-band-floor-tokens 235000`.
+The configured auto-compaction limit (250,000 since 2026-11-05), not the
+window, decides where a new Sol 6.1 session compacts. Shares of the window
+(`--context-trigger-percent 58 --context-band-floor-percent 66`) put both
+warnings above that limit on a 475,000 window, so they never fired
+([measured basis](context-boundary.md#measured-basis)). Use shares only for a
+session whose compaction point follows its window. Claude transcripts record no
+window and take their own token levels. The levels in `context-boundary.md` and
 `anthropic-host.md` remain hypotheses.
 
 Start the [board wait](../../../docs/codex-chatboard.md#session-control-subscription)

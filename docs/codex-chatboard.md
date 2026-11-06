@@ -300,20 +300,25 @@ python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
   --session-id '<verified-id>' --context-rollout /absolute/rollout.jsonl \
   --context-binary /absolute/pinned/work-engine-context-status \
   --context-sha256 '<sha256>' \
-  --context-trigger-percent 58 --context-band-floor-percent 66 \
+  --context-trigger-tokens 200000 --context-band-floor-tokens 235000 \
   --follow --timeout-seconds 300
 ```
 
-Percent levels are shares of the context window recorded with each reading, so
-one binding fits Sol 6's 258,400-token window and Sol 6.1's 475,000. The values
-above restate the planning hypothesis (150,000 of 258,400) and the lowest
-compaction observed on 2026-10-21 (171,267 of 258,400) as shares; they are not
-provider limits. In band, another event arrives at each further multiple of
-`--context-step-percent` of the window (default 5), so the listener does not go
-quiet for the rest of the window. `--context-trigger-tokens` and
-`--context-band-floor-tokens` remain for Claude transcripts, which record no
-window. Token levels chosen for one window misplace warnings on another: 171,267
-is 36% of a 475,000-token window.
+Give one pair of levels: tokens, or percent shares of the context window
+recorded with each reading. The token values above are the manual-orchestration
+planning hypothesis H2: a trigger at 200,000 and a band floor just under the
+lowest automatic compaction observed
+([measured basis](../skills/manual-orchestration/references/context-boundary.md#measured-basis)).
+They are not provider limits. Tokens fit Codex sessions now because
+`model_auto_compact_token_limit = 250000` (since 2026-11-05), not the window,
+decides where a new Sol 6.1 session compacts. Astra compacts from about 239K on
+its 258,400 window. Shares follow the window instead
+(`--context-trigger-percent`, `--context-band-floor-percent`). They suit a
+session whose compaction point follows its window: 58% and 66% of 475,000 land
+above the 250,000 limit. Claude transcripts record no window and take tokens
+only. In band, another event arrives at each further multiple of
+`--context-step-percent` of a recorded window (default 5), so the listener does
+not go quiet for the rest of the window.
 `--context-host claude` uses Claude's telemetry reader; a child also needs
 `--context-agent <agent-id>`, and its topic is
 `control:session:<session-id>/agent:<agent-id>`. The reader checks both identities.

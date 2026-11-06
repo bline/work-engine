@@ -41,7 +41,11 @@ the underlying telemetry or imply a provider limit.
 Percent levels are resolved against the window recorded with each reading, so
 they follow a model change. A reading without a window is `unavailable` under
 percent levels. Claude transcripts record no window, so a Claude binding uses
-`--trigger-tokens N --band-floor-tokens N`; the two forms cannot be mixed. In
+`--trigger-tokens N --band-floor-tokens N`; the two forms cannot be mixed. A
+Codex binding can use either form. Manual orchestration uses tokens for Codex
+because a configured auto-compaction limit, not the window, decides where a new
+Sol 6.1 session compacts
+([measured basis](../skills/manual-orchestration/references/context-boundary.md#measured-basis)). In
 band, the listener also reports each further multiple of `--step-percent` of
 the window (default 5), so a binding does not go quiet for the rest of the
 window. Events carry `level_basis`, the resolved token and percent levels,

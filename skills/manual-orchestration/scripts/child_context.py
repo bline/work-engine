@@ -6,18 +6,23 @@ Usage:
       --session ID --rollout PATH [--next-task-tokens N] [--out FILE]
   python3 -I child_context.py --binary BIN --sha256 DIGEST tree \
       --parent-thread ID [--recursive] [--sessions-dir DIR] [--out FILE]
+  (check and tree also take --trigger-tokens N --band-floor-tokens N; or give
+   both global --trigger-fraction F --band-floor-fraction F for window shares)
   python3 -I child_context.py claude --transcript PATH \
       [--next-task-tokens N] [--out FILE]
 
 `check` reads one session through the pinned work-engine-context-status binary
-and compares its latest input with two levels on the same window:
+and compares its latest input with two fixed levels:
 
   trigger     where a chosen boundary should prefer a fresh context
-              (default 150,000 of 258,400, the brief's planning level)
-  band floor  the lowest pre-compaction reading observed
-              (default 171,267 of 258,400: 42 compactions, 2026-10-21)
+              (default 200,000, hypothesis H2)
+  band floor  just under the lowest automatic compaction observed
+              (default 235,000: Astra from 239,130 and Sol 6.1 under the
+              250,000 auto-compaction limit at 248,987, 2026-11-05)
 
-Both scale with the session's own window. `claude` reads a Claude Code
+The levels are tokens, not shares of the window, because the configured
+auto-compaction limit, not the 475,000 window, now decides where Sol 6.1
+compacts (metrics/probes/compaction-points-20261105.md). `claude` reads a Claude Code
 subagent transcript (~/.claude/projects/<project>/<session>/subagents/
 agent-<id>.jsonl) instead, where context is input + cache-creation +
 cache-read tokens of the latest assistant call and no window is recorded, so
@@ -38,12 +43,16 @@ import subprocess
 import sys
 from pathlib import Path
 
-REFERENCE_WINDOW = 258_400
 MAX_COUNTER = (1 << 64) - 1
+CODEX_TRIGGER_TOKENS = 200_000
+CODEX_BAND_FLOOR_TOKENS = 235_000
 CLAUDE_TRIGGER_TOKENS = 150_000
 CLAUDE_BAND_FLOOR_TOKENS = 202_533
-DEFAULT_TRIGGER_FRACTION = 150_000 / REFERENCE_WINDOW
-DEFAULT_BAND_FLOOR_FRACTION = 171_267 / REFERENCE_WINDOW
+# H1's levels as window shares (150,000 and 171,267 of 258,400). They are not
+# the defaults: auto_continue.py's recovery admission passes them because a
+# fraction assessment also requires a recorded positive window.
+DEFAULT_TRIGGER_FRACTION = 150_000 / 258_400
+DEFAULT_BAND_FLOOR_FRACTION = 171_267 / 258_400
 
 
 class UsageError(Exception):
@@ -85,12 +94,18 @@ def assess(
     report: dict,
     *,
     next_task_tokens: int | None,
-    trigger_fraction: float,
-    band_floor_fraction: float,
+    trigger_fraction: float | None = None,
+    band_floor_fraction: float | None = None,
     trigger_tokens: int | None = None,
     band_floor_tokens: int | None = None,
 ) -> dict:
-    """Turn one context-status report into a retained-versus-fresh record."""
+    """Turn one context-status report into a retained-versus-fresh record.
+
+    Give either both token levels or both window fractions.
+    """
+    if (trigger_tokens is None) != (band_floor_tokens is None) or (
+            trigger_tokens is None and (trigger_fraction is None or band_floor_fraction is None)):
+        raise ValueError("assess needs both token levels or both window fractions")
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     record = {
         "schema": "manual-orchestration-context-check-v1",
@@ -153,6 +168,7 @@ def assess(
         band_floor = round(window * band_floor_fraction)
     record.update(
         status="observed",
+        levels_basis="tokens" if absolute else "window_fraction",
         trigger_tokens=trigger,
         band_floor_tokens=band_floor,
         headroom_to_trigger=trigger - current,
@@ -252,21 +268,28 @@ def claude_report(path: str) -> dict:
     }
 
 
-def check(binary: Path, args: argparse.Namespace) -> dict:
+def levels(args: argparse.Namespace) -> dict:
+    """Fixed token levels, unless both window fractions are given."""
+    fractions = (args.trigger_fraction, args.band_floor_fraction)
+    if fractions != (None, None):
+        if None in fractions or not 0 < fractions[0] < fractions[1] <= 1:
+            raise UsageError("give both --trigger-fraction and --band-floor-fraction, trigger below band floor, at most 1")
+        return {"trigger_fraction": fractions[0], "band_floor_fraction": fractions[1]}
+    if not 0 < args.trigger_tokens < args.band_floor_tokens:
+        raise UsageError("--trigger-tokens must be positive and below --band-floor-tokens")
+    return {"trigger_tokens": args.trigger_tokens, "band_floor_tokens": args.band_floor_tokens}
+
+
+def check(binary: Path, args: argparse.Namespace, chosen: dict) -> dict:
     command = ["--session", args.session, "--json"]
     if args.rollout:
         command += ["--rollout", args.rollout]
     if args.sessions_dir:
         command += ["--sessions-dir", args.sessions_dir]
-    return assess(
-        run_json(binary, command),
-        next_task_tokens=args.next_task_tokens,
-        trigger_fraction=args.trigger_fraction,
-        band_floor_fraction=args.band_floor_fraction,
-    )
+    return assess(run_json(binary, command), next_task_tokens=args.next_task_tokens, **chosen)
 
 
-def tree(binary: Path, args: argparse.Namespace) -> dict:
+def tree(binary: Path, args: argparse.Namespace, chosen: dict) -> dict:
     command = ["agents", "--parent-thread", args.parent_thread, "--json"]
     if args.recursive:
         command.append("--recursive")
@@ -278,12 +301,7 @@ def tree(binary: Path, args: argparse.Namespace) -> dict:
     children = []
     for agent in listing.get("agents", []):
         report = run_json(binary, ["--session", agent["thread_id"], "--rollout", agent["rollout"], "--json"])
-        record = assess(
-            report,
-            next_task_tokens=None,
-            trigger_fraction=args.trigger_fraction,
-            band_floor_fraction=args.band_floor_fraction,
-        )
+        record = assess(report, next_task_tokens=None, **chosen)
         record["agent_path"] = agent.get("agent_path")
         children.append(record)
     return {
@@ -299,8 +317,8 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--binary", help="pinned work-engine-context-status path (check, tree)")
     p.add_argument("--sha256", help="expected binary SHA-256 (check, tree)")
-    p.add_argument("--trigger-fraction", type=float, default=DEFAULT_TRIGGER_FRACTION)
-    p.add_argument("--band-floor-fraction", type=float, default=DEFAULT_BAND_FLOOR_FRACTION)
+    p.add_argument("--trigger-fraction", type=float, help="window share; with --band-floor-fraction, replaces token levels (check, tree)")
+    p.add_argument("--band-floor-fraction", type=float, help="window share (check, tree)")
     p.add_argument("--out", help="also write the JSON record here")
     sub = p.add_subparsers(dest="command", required=True)
     c = sub.add_parser("check", help="assess one session")
@@ -308,11 +326,15 @@ def parser() -> argparse.ArgumentParser:
     c.add_argument("--rollout")
     c.add_argument("--sessions-dir")
     c.add_argument("--next-task-tokens", type=int, help="parent's estimate of the next task's growth")
+    c.add_argument("--trigger-tokens", type=int, default=CODEX_TRIGGER_TOKENS)
+    c.add_argument("--band-floor-tokens", type=int, default=CODEX_BAND_FLOOR_TOKENS)
     c.add_argument("--out", dest="sub_out", help="also write the JSON record here")
     t = sub.add_parser("tree", help="assess every child of a parent thread")
     t.add_argument("--parent-thread", required=True)
     t.add_argument("--recursive", action="store_true")
     t.add_argument("--sessions-dir")
+    t.add_argument("--trigger-tokens", type=int, default=CODEX_TRIGGER_TOKENS)
+    t.add_argument("--band-floor-tokens", type=int, default=CODEX_BAND_FLOOR_TOKENS)
     t.add_argument("--out", dest="sub_out", help="also write the JSON record here")
     a = sub.add_parser("claude", help="assess a Claude Code subagent transcript")
     a.add_argument("--transcript", required=True)
@@ -329,8 +351,6 @@ def main(argv: list[str] | None = None) -> int:
         result = assess(
             claude_report(args.transcript),
             next_task_tokens=args.next_task_tokens,
-            trigger_fraction=args.trigger_fraction,
-            band_floor_fraction=args.band_floor_fraction,
             trigger_tokens=args.trigger_tokens,
             band_floor_tokens=args.band_floor_tokens,
         )
@@ -339,11 +359,12 @@ def main(argv: list[str] | None = None) -> int:
         try:
             if not args.binary or not args.sha256:
                 raise UsageError("--binary and --sha256 are required for check and tree")
+            chosen = levels(args)
             binary = verify_binary(args.binary, args.sha256)
         except UsageError as error:
             print(json.dumps({"status": "usage_unavailable", "unavailable_class": "launch_or_tool_failure", "detail": str(error)}))
             return 2
-        result = check(binary, args) if args.command == "check" else tree(binary, args)
+        result = check(binary, args, chosen) if args.command == "check" else tree(binary, args, chosen)
     text = json.dumps(result, indent=2)
     out = args.sub_out or args.out
     if out:

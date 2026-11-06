@@ -123,10 +123,13 @@ fit (Terra, Sol 6.1, Fable).
 ## Session defaults versus assignments
 
 Sessions started without an explicit selection run their client's default. As
-read on 2026-11-04, those are `gpt-6.1-sol` at `high` in `~/.codex/config.toml`,
-and Opus at `xhigh` in `~/.claude/settings.json`. The supervisor row above names
-`xhigh`. Delegated assignments always select model and effort explicitly, from
-this guide.
+read on 2026-11-05, those are `gpt-6.1-sol` at `xhigh` in `~/.codex/config.toml`
+(changed from `high` at 04:58Z), and Opus at `xhigh` in `~/.claude/settings.json`.
+The same Codex change set `model_auto_compact_token_limit = 250000`, which
+applies to sessions started after it and to their children
+([context boundary](../skills/manual-orchestration/references/context-boundary.md#measured-basis)).
+Delegated assignments always select model and effort explicitly, from this
+guide.
 
 For Codex manual orchestration, use `/fast` for the root's
 supervisor/builder tree and separate top-level Astra reviewers at the standard
