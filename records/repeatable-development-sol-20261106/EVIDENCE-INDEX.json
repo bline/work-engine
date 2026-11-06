@@ -1,0 +1,306 @@
+{
+  "schema": "work-engine.builder-evidence-index.v1",
+  "source_base": "2f27de2bd7503190d24e3188c04bf8aa3f8db451",
+  "source_artifacts": [
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/lifecycle-store/src/lib.rs",
+      "sha256": "5e2108858b525c5b1421c81da89541440e5b44e5aa1ee0e193cc1cb3bcce1818",
+      "bytes": 6968
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/lifecycle-store/src/native.rs",
+      "sha256": "3f70488de3424cdd34de36301cf074bd2975b385a1d38145d5b210fddc0121c3",
+      "bytes": 243922
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/lifecycle-store/src/pi_coding.rs",
+      "sha256": "7bbc5c596e33ae824ccd9c8274d451b4b3e1ff5fed01caadd822c73a29c7e78e",
+      "bytes": 27102
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/lifecycle-store/src/pi_coding_proof.rs",
+      "sha256": "f9285c41e7591eceb26d73adbeb1d0afb5e8cb9cbd864180076d065a8db72e02",
+      "bytes": 18917
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/lifecycle-store/tests/pi_multiturn.rs",
+      "sha256": "cdbb36b93ab676d6127a306d99577e51ae675f103b0d39d33e19a664f8fb9b2c",
+      "bytes": 37638
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/pi-pressure-context-host/src/bin/coding-qualification.rs",
+      "sha256": "9da64afadf5db0a8d2238129640ad1210b634006e98ffd1ae2fbb8067fe2135e",
+      "bytes": 9954
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/pi-pressure-context-host/src/coding.rs",
+      "sha256": "08ecb5ccdaee148826cc2299e55b774c9a253b8d12653f3f6cd5f1056dd07c28",
+      "bytes": 44514
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/pi-pressure-context-host/tests/coding.rs",
+      "sha256": "fb070c7ca5b6a8365e99717b90e3ffe59f0983bfe9ee674b34bae11253700b30",
+      "bytes": 33399
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs",
+      "sha256": "993d2c2dcc09a55cb1545e504ef8ba09e865588173fc9e5e93c50c73f2d96e4f",
+      "bytes": 25722
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/receiver/pi-native-access.mjs",
+      "sha256": "b55978d8b6d2d7ee634e11850de82eeacd561b7e5d3bc7b9083f1d1cb0f1dfce",
+      "bytes": 2219
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/src/pi_coding.rs",
+      "sha256": "168ec3846f1fe2daffbcbf8cab7f52e93477ace40fb50de2c53d8550ed0f809c",
+      "bytes": 75610
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/src/pi_coding_auth.rs",
+      "sha256": "03bc01c743b9b274c7f1ede9aace42316c38cf32fb20fffb2fc7ee2446c9ad8e",
+      "bytes": 9283
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs",
+      "sha256": "215ab3ddc59eb7c0c2726c8e326b33e5323d7ade950df9e28ee6f89619920d49",
+      "bytes": 55696
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/tests/fixtures/sol-wire.mjs",
+      "sha256": "ae99f5f30a2217d1d774b78dfff697d569a649bb2df03c33e2496eca689e950b",
+      "bytes": 2812
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-manual-host/tests/sol_wire.rs",
+      "sha256": "30016b52c18185955d36814e675785f0530b5328b674c312d8b76937860cba5e",
+      "bytes": 1089
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/README.md",
+      "sha256": "385f4e1e1d7501ffbbd1748085b50f8fd10cc3d62854151e9f32f3e4c3f659c3",
+      "bytes": 18406
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/docs/coding-preparation.md",
+      "sha256": "3b987ae2f88a5be469b746175ccaa2891aedbddd38db20263570470ee1e43fe6",
+      "bytes": 7515
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs",
+      "sha256": "37bd5739c884a450919519b92a7acf89e32ac51c942eb5953b239ebb49ed82ac",
+      "bytes": 15521
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/src/job.rs",
+      "sha256": "a6430c47382a2d69b22557efc0db9fa51129670cafe968782c395e5fab6f8a3f",
+      "bytes": 53706
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/tests/coding_job.rs",
+      "sha256": "7245268559ab981e933bde358e627cf66bb4b317c87de2a67fd1e2486e117e1e",
+      "bytes": 64959
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/tests/fixtures/owned-host.rs",
+      "sha256": "3c22c5f69a2797bda826f4352358f51f24aa3482992843dcfd575a6343cb37ef",
+      "bytes": 2705
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/crates/work-engine-server/tests/preparation.rs",
+      "sha256": "9301d262e7a561ac10b852461adf808148e64a126e694f98ef31c256da3e46c0",
+      "bytes": 5719
+    }
+  ],
+  "actual_cases": [
+    {
+      "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-Qld9NF",
+      "artifacts": [
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-Qld9NF/exact-result.json",
+          "sha256": "f28a0b903dc513bdea1d538c6b8235cd55b095a72f03678dccc52168e01e17ea",
+          "bytes": 39041
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-Qld9NF/preparation-result.json",
+          "sha256": "d3ddb9bf4a3637fcb01650575a7edaad1753d75898dbe78a4d5ae674fa48746a",
+          "bytes": 812
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-Qld9NF/prepared-bundle/job.json",
+          "sha256": "5d718190b41eb67a261e5b46608df82081ed696ceca8469c34b3a6eed0497a05",
+          "bytes": 2789
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-Qld9NF/prepared-bundle/job-profile.json",
+          "sha256": "1f084497a7c7fbc3867bdcdf3ca39ca5c26705fda92b492235747b4e59f38d5d",
+          "bytes": 1266
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-Qld9NF/pinned-host",
+          "sha256": "f614581af3782e3cea359afff873b8a25b56295563fdbd0fed6b178691885d8e",
+          "bytes": 42324064
+        }
+      ]
+    },
+    {
+      "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-o9pLLL",
+      "artifacts": [
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-o9pLLL/exact-result.json",
+          "sha256": "2e9eda7003355bc48ccdc9f67b3eb5cc17efb8c95e59ac903ecc810d02894809",
+          "bytes": 39059
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-o9pLLL/preparation-result.json",
+          "sha256": "ed1bce4c15e9d7bbaadd7b0894f11f7201e634550cfbc59c7700ddc3af81de8f",
+          "bytes": 812
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-o9pLLL/prepared-bundle/job.json",
+          "sha256": "c63239dd2ccf99aa4531c513ee3a2cf3889f2b1bb55ac43113995c03ccbb3552",
+          "bytes": 2798
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-o9pLLL/prepared-bundle/job-profile.json",
+          "sha256": "8b4dcf807083aeb5bce2536e1ae12f18e69a3392fa449dbecdaddfd24068f241",
+          "bytes": 1266
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-o9pLLL/pinned-host",
+          "sha256": "f614581af3782e3cea359afff873b8a25b56295563fdbd0fed6b178691885d8e",
+          "bytes": 42324064
+        }
+      ]
+    },
+    {
+      "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-DgL9AC",
+      "artifacts": [
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-DgL9AC/exact-fault-result.json",
+          "sha256": "69ef03118e3e1910b543bb5403453439713b8bfaf531ec7d274d7c5eb3c86d90",
+          "bytes": 39014
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-DgL9AC/preparation-result.json",
+          "sha256": "ac6fe2a0fc2138b7bb2086203c77779ba75c03b09ad2c36d63ca07886d31a14e",
+          "bytes": 812
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-DgL9AC/prepared-bundle/job.json",
+          "sha256": "66739f7f9530e2578668748177d16f5d1ea42d1082925e08c18e2b2e6d8a2d88",
+          "bytes": 2835
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-DgL9AC/prepared-bundle/job-profile.json",
+          "sha256": "bb9fe20be3dec936895a7a3f24d0eb26bc5e75cd30a187dc7aa106f1cbe33bd6",
+          "bytes": 1266
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-DgL9AC/pinned-host",
+          "sha256": "f614581af3782e3cea359afff873b8a25b56295563fdbd0fed6b178691885d8e",
+          "bytes": 42324064
+        }
+      ]
+    },
+    {
+      "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-XPbPgj",
+      "artifacts": [
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-XPbPgj/exact-result.json",
+          "sha256": "5d4d20889ce989ae4b67d8bcfb52a86b8081a44490ecc3b6808a6a1db1636f58",
+          "bytes": 5267
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-XPbPgj/exact-operation.json",
+          "sha256": "a0ee5bed25bbd5fab463c8d768ea6a37963b3fb18d9e4c06a63d132eb214be7b",
+          "bytes": 2317
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-XPbPgj/effects",
+          "sha256": "be91f7644f03cc4976431d2001387209fb097540e3c994bf3e8ba4a99efa1457",
+          "bytes": 8
+        }
+      ]
+    },
+    {
+      "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-5DLPCc",
+      "artifacts": [
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-5DLPCc/exact-result.json",
+          "sha256": "17a1e30e92c00cb319fd1caa1fa19a76aa01a4f7cc9f541570a554002f79ccb5",
+          "bytes": 6627
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-5DLPCc/exact-operation.json",
+          "sha256": "52afb8c2a1effc19a5020960a86f0a04ada041644b4eacfb8c5896134b5c680f",
+          "bytes": 3644
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-5DLPCc/effects",
+          "sha256": "be91f7644f03cc4976431d2001387209fb097540e3c994bf3e8ba4a99efa1457",
+          "bytes": 8
+        }
+      ]
+    },
+    {
+      "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-B7Cvp9",
+      "artifacts": [
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-B7Cvp9/exact-result.json",
+          "sha256": "0cdece9a37d1903f7fededf1590a45bd80c897bc89bcd373686ee6f49d5167b5",
+          "bytes": 6627
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-B7Cvp9/exact-operation.json",
+          "sha256": "89d750b5d6c899748913d6e1ee81a41f4da5d93a44c743f11a546a2f27d09459",
+          "bytes": 3644
+        },
+        {
+          "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/actual/coding-job-B7Cvp9/effects",
+          "sha256": "be91f7644f03cc4976431d2001387209fb097540e3c994bf3e8ba4a99efa1457",
+          "bytes": 8
+        }
+      ]
+    }
+  ],
+  "wire": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/remaining-1/wire.stdout",
+    "sha256": "91d9a92518d978d5f115ffd825f75f1780f95090d697a542810cee65d633fbb4",
+    "bytes": 1423
+  },
+  "producer_binaries": [
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/target/debug/work-engine-manual-host",
+      "sha256": "f614581af3782e3cea359afff873b8a25b56295563fdbd0fed6b178691885d8e",
+      "bytes": 42324064
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/target/debug/work-engine-command",
+      "sha256": "e2338f24dbc8fd2318eebfd6f70eafd61a9a55cdc4df92fff61bf7710a22c38c",
+      "bytes": 10745688
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/target/debug/work-engine-server",
+      "sha256": "200633d0af9ca272b0ca53d679280540ff7352d2788a8e16faac9da8e4bacaa4",
+      "bytes": 64812136
+    },
+    {
+      "path": "/home/bline/cbm-work/wt-repeatable-sol-20261106/rust/target/debug/coding-job-prepare",
+      "sha256": "c5f5a4e1e5c6e286989e65e53dda54c6f624d90949b496581989aaef0a3778d6",
+      "bytes": 32551384
+    }
+  ],
+  "risk_map": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/RISK-EVIDENCE.md",
+    "sha256": "6936e1e3c3ef5ad6b31c7128efdd1cd650ef1726cf7ef4596e33702e6b64a265",
+    "bytes": 4032
+  },
+  "coverage": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/coverage-final.json",
+    "sha256": "484364c7d3655cfc9c2c902a2a27d8eaa1116a4af4ae2494c14ca227a0855b7c",
+    "bytes": 3990
+  },
+  "subject": "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba"
+}

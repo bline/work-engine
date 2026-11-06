@@ -1,0 +1,87 @@
+[
+  {
+    "path": "ACCOUNTING.json",
+    "sha256": "18121c1a0dd0a7ca4082f826506d5542bf9dfa467ac2d84625a7e920083778dc",
+    "bytes": 1616
+  },
+  {
+    "path": "AUTHORITY.json",
+    "sha256": "317e56466ed296309388c85028a6b579ec745bf9d64c576d30a382f2883390a8",
+    "bytes": 1153
+  },
+  {
+    "path": "EVIDENCE-INDEX.json",
+    "sha256": "960cbe30a3c0d7ed425971f50a5e32846bcf13f0f3b4769cd921c54e843d6c81",
+    "bytes": 14935
+  },
+  {
+    "path": "EXACT-JOB-1.json",
+    "sha256": "f28a0b903dc513bdea1d538c6b8235cd55b095a72f03678dccc52168e01e17ea",
+    "bytes": 39041
+  },
+  {
+    "path": "EXACT-JOB-2.json",
+    "sha256": "2e9eda7003355bc48ccdc9f67b3eb5cc17efb8c95e59ac903ecc810d02894809",
+    "bytes": 39059
+  },
+  {
+    "path": "EXACT-WORKSPACE-TIMEOUT.json",
+    "sha256": "69ef03118e3e1910b543bb5403453439713b8bfaf531ec7d274d7c5eb3c86d90",
+    "bytes": 39014
+  },
+  {
+    "path": "README.md",
+    "sha256": "afab95d035cdfa0fa39a9370a7a57274f39d4b7e6e1d57a30a9760319269080f",
+    "bytes": 4323
+  },
+  {
+    "path": "REPAIR-RESULT.json",
+    "sha256": "d117bab10b6132470468eba1b34aa84dd438f54cff464e0e02aa1533ff3b8b30",
+    "bytes": 2379
+  },
+  {
+    "path": "REVIEW-01.json",
+    "sha256": "3c31bbc30f3a1a8bfc5fd07f740fca5661c2fff04a0d8cefdffa935418edf038",
+    "bytes": 5336
+  },
+  {
+    "path": "REVIEW-02.json",
+    "sha256": "5b8086ff754416444ed3db68d25ca62951c133c09fce8f18c40009c2b4a14081",
+    "bytes": 3122
+  },
+  {
+    "path": "REVIEW-GRANT-01.json",
+    "sha256": "a05cd208934d103d361858d7b767db57d371045924a8cb3312a2cd5af71c2484",
+    "bytes": 2390
+  },
+  {
+    "path": "REVIEW-GRANT-02.json",
+    "sha256": "9836b02e984d67a7add70a118b1f0f103b53af31804602ef43de55ced2a1c618",
+    "bytes": 697023
+  },
+  {
+    "path": "RISK-EVIDENCE.md",
+    "sha256": "6936e1e3c3ef5ad6b31c7128efdd1cd650ef1726cf7ef4596e33702e6b64a265",
+    "bytes": 4032
+  },
+  {
+    "path": "ROOT-ACCEPTANCE.json",
+    "sha256": "b40f510260b612b70df0cef36d408f2d6638f2e5adb69a1494322d4bf329dd34",
+    "bytes": 3398
+  },
+  {
+    "path": "ROOT-CONTAINER-CHECK.json",
+    "sha256": "51e84d07578f0f0dd1a2342514d26c8eb662f350d9184935eaf9e28cc3281112",
+    "bytes": 424
+  },
+  {
+    "path": "SOURCE-RESULT.json",
+    "sha256": "14d39eac8f9d6464ac3dad7d770fa1a7c85e45bc9682606f490074ce991fbd88",
+    "bytes": 9014
+  },
+  {
+    "path": "VALIDATION.json",
+    "sha256": "6a28d7cca7d9565b0dd1d86a02b3a151d4463e80aee50099c95f331c1ee56b1c",
+    "bytes": 11065
+  }
+]

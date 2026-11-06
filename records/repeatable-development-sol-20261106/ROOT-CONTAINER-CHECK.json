@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-06T04:16:22.056952+00:00",
+  "recorded_container_ids": 21,
+  "scope": "Exact IDs from retained owned prepared-state create stdout across all builder actual attempts",
+  "custody": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/root-container-check/recorded-container-absence.json",
+  "returncode": 0,
+  "stdout_bytes": 0,
+  "leftovers_after_kill": null,
+  "absent": true
+}

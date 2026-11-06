@@ -1,0 +1,45 @@
+{
+  "observed_at": "2026-11-06T04:25:10.646412+00:00",
+  "objective_proxy": {
+    "high": 10.834267599999997,
+    "kind": "proxy",
+    "low": 10.834267599999997
+  },
+  "api_equivalent": {
+    "high": 10.834267599999997,
+    "low": 10.834267599999997
+  },
+  "unpriced_calls": 0,
+  "issues": [],
+  "quota": {
+    "account_wide": true,
+    "age_seconds": 35.820496,
+    "last_reported_remaining_percent": 23.0,
+    "limit_id": "codex",
+    "max_age_seconds": 300,
+    "observed_at": "2026-11-06T04:24:34.438Z",
+    "plan_type": "prolite",
+    "pool": "codex",
+    "reason": null,
+    "remaining_percent": 23.0,
+    "resets_at": 1794435190,
+    "source": "/home/bline/.codex/sessions/2026/11/04/rollout-2026-11-04T11-58-27-01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3.jsonl",
+    "status": "observed",
+    "used_percent": 77.0
+  },
+  "schema": "bounded-round-accounting-observation/v1",
+  "approved_cap_usd": 45,
+  "approval_clock": "2026-11-06T03:20:44.413Z",
+  "cost_window_start": "2026-11-06T02:33:14.231Z",
+  "product_provider_requests": 0,
+  "product_provider_reservation_authorized_usd": 0,
+  "closing_call_reserve_usd": 1.5,
+  "tail_status": "Closing Root calls remain unreported at this observation; actual billing/subscription attribution not established. Final private TERMINAL.json owns collected closure observations.",
+  "clocks": {
+    "first_gate": "03:45:44.413Z/$8; GO03:34",
+    "productive_stop": "05:00:44.413Z/$30",
+    "hard_stop": "05:50:44.413Z/$45"
+  },
+  "actual_bill": false,
+  "subscription_quota_consumption": "unmeasured; account percentage is shared and cannot be attributed to this objective"
+}

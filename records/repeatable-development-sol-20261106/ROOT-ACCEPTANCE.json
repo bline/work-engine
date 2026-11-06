@@ -1,0 +1,52 @@
+{
+  "schema": "manual-root-bounded-acceptance/v1",
+  "at": "2026-11-06T04:26:20.447259+00:00",
+  "decision": "accepted_bounded_implementation_and_deterministic_qualification",
+  "accepted_source": "20a74393d6485deeafd53fcb495db2e0a725905a",
+  "source_lineage": [
+    "2f27de2bd7503190d24e3188c04bf8aa3f8db451",
+    "a451f3e8489d19672fbbf84784cbe8903a590433",
+    "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba",
+    "20a74393d6485deeafd53fcb495db2e0a725905a"
+  ],
+  "authority": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/AUTHORITY.json",
+  "plan": "planning/repeatable-development-sol-and-risk-budget-v2-20261106.md@2f27de2b",
+  "review": {
+    "initial": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/review/REPORT-01.json",
+    "final": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/review/REPORT-02.json",
+    "episode": "01a1af0f-421a-7230-9f7d-cf4b0baae1f8",
+    "actual": "gpt-6-astra/xhigh/default",
+    "grant": "readOnly/networkAccess:false independently observed before both turns",
+    "all_findings_resolved": [
+      "SOL-REVIEW-001"
+    ]
+  },
+  "outcomes": [
+    "Versioned Sol6.1/high admission, payer, full17.680004USD hold and actual pinned-adapter synthetic wire capture",
+    "Thinking-capable lifecycle v5 with synthetic full reset/reopen, legacy compatibility",
+    "Repository Rust operator preparation, exact trusted authority and two separately authorized deterministic Pi/Docker jobs",
+    "Resistant workspace command timeout with partial evidence and direct cleanup; separate quiet/collector interruption/restart/replay counters",
+    "Exact raw receipt numeric compatibility, native owner_pending and unclaimed domain settlement preserved",
+    "Risk mapping with exact tested layers and open IDs"
+  ],
+  "custody": {
+    "builder_result": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/RESULT.json",
+    "repair": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/REPAIR-RESULT.json",
+    "final_processes": [],
+    "children": [],
+    "containers": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/ROOT-CONTAINER-CHECK.json"
+  },
+  "carry_forward": "Only operator verb/arity guard and regression tests differ from original reviewed source; valid preparation path and Host/receiver/lifecycle/collector bytes remain unchanged. Original actual runs/binaries retain981ddc3a attribution; repair tests bind20a74393.",
+  "limits": [
+    "No product-provider calls/native credential reads/projections or live authority",
+    "No actual Sol/account/model eligibility or backend thinking response",
+    "No engineering-quality/A-B/withheld-acceptance result",
+    "No actual Pi SIGKILL at tool/receipt handoff, periodic-output/detached-descendant/long-context/full risk matrix",
+    "No unattended readiness, domain effect settlement or task owner acceptance",
+    "Affected lint passes with two explicit pre-existing native.rs lint classes allowed; unrestricted strict lint failure retained"
+  ],
+  "publication_decision": "Prepare only owned dated record then guarded local fast-forward with expected destination2f27de2b and scoped source/index/WIP checks; no push/deploy/global activation",
+  "pending": [
+    "local publication and budget/process/claim closure"
+  ]
+}

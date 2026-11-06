@@ -1,0 +1,40 @@
+{
+  "schema": "manual-worker-repair-result/v1",
+  "finding": "SOL-REVIEW-001",
+  "review": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/review/REPORT-01.json",
+  "base": "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba",
+  "subject": "20a74393d6485deeafd53fcb495db2e0a725905a",
+  "worktree": "/home/bline/cbm-work/wt-repeatable-sol-20261106",
+  "working_tree": "clean",
+  "changed_files": [
+    "rust/crates/work-engine-server/src/bin/coding-job-prepare.rs",
+    "rust/crates/work-engine-server/tests/preparation.rs"
+  ],
+  "behavior": "Strict verb/argument-count dispatch happens before reading SPEC: inspect requires exactly SPEC, prepare requires SPEC AUTHORITY. All other combinations refuse without preparation.",
+  "regression": "Otherwise valid offline and Sol synthetic preparation inputs/authority invoke inspect SPEC AUTHORITY and require exit2 plus absent output/state/operation dirs. Existing positive inspect/prepare and authority denial/reuse checks remain.",
+  "validation": {
+    "red": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/repair-red/preparation.json",
+    "green": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/repair-green/summary.json",
+    "format": "repair-green/format.json and git diff --check passed",
+    "lint": "repair-green/lint.json: focused server preparation bin/test -Dwarnings with only baseline dependency needless-borrow allowed"
+  },
+  "source_evidence": [
+    {
+      "path": "rust/crates/work-engine-server/src/bin/coding-job-prepare.rs",
+      "sha256": "5958dd0280bd2871c66757080ff17d97921bde5106848b97e3a027f1142c3a59"
+    },
+    {
+      "path": "rust/crates/work-engine-server/tests/preparation.rs",
+      "sha256": "ae15b8669cb795a098010633a08e4df1516cf76b49afa2e6b6ed261831411fa5"
+    }
+  ],
+  "provider_execution": false,
+  "docker_execution": false,
+  "native_credential_access": false,
+  "pending_processes": [],
+  "pending_tool_sessions": [],
+  "children": [],
+  "review_status": "Root to collect and bind same retained Astra re-review; repair not self-accepted",
+  "original_result": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/RESULT.json",
+  "continuation": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/CONTINUATION.json"
+}

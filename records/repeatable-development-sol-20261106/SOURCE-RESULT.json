@@ -1,0 +1,109 @@
+{
+  "schema": "manual-worker-result/v1",
+  "status": "implementation_complete_pending_independent_review",
+  "packet": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/BUILDER.md",
+  "authority": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/AUTHORITY.json",
+  "go": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/FIRST-GATE-GO.json",
+  "binding": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/BUILDER-BINDING.json",
+  "source": {
+    "worktree": "/home/bline/cbm-work/wt-repeatable-sol-20261106",
+    "base": "2f27de2bd7503190d24e3188c04bf8aa3f8db451",
+    "subject": "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba",
+    "commits": [
+      "a451f3e8489d19672fbbf84784cbe8903a590433",
+      "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba"
+    ],
+    "working_tree": "clean",
+    "changed_files": [
+      "rust/crates/lifecycle-store/src/lib.rs",
+      "rust/crates/lifecycle-store/src/native.rs",
+      "rust/crates/lifecycle-store/src/pi_coding.rs",
+      "rust/crates/lifecycle-store/src/pi_coding_proof.rs",
+      "rust/crates/lifecycle-store/tests/pi_multiturn.rs",
+      "rust/crates/pi-pressure-context-host/src/bin/coding-qualification.rs",
+      "rust/crates/pi-pressure-context-host/src/coding.rs",
+      "rust/crates/pi-pressure-context-host/tests/coding.rs",
+      "rust/crates/work-engine-manual-host/receiver/pi-coding.mjs",
+      "rust/crates/work-engine-manual-host/receiver/pi-native-access.mjs",
+      "rust/crates/work-engine-manual-host/src/pi_coding.rs",
+      "rust/crates/work-engine-manual-host/src/pi_coding_auth.rs",
+      "rust/crates/work-engine-manual-host/src/pi_coding_provider.rs",
+      "rust/crates/work-engine-manual-host/tests/fixtures/sol-wire.mjs",
+      "rust/crates/work-engine-manual-host/tests/sol_wire.rs",
+      "rust/crates/work-engine-server/README.md",
+      "rust/crates/work-engine-server/docs/coding-preparation.md",
+      "rust/crates/work-engine-server/src/bin/coding-job-prepare.rs",
+      "rust/crates/work-engine-server/src/job.rs",
+      "rust/crates/work-engine-server/tests/coding_job.rs",
+      "rust/crates/work-engine-server/tests/fixtures/owned-host.rs",
+      "rust/crates/work-engine-server/tests/preparation.rs"
+    ]
+  },
+  "outcomes": [
+    "Versioned Sol/high tuple through existing Host/server/receiver owners; explicit payer and v2 runtime admission; full17_680_004 microUSD four-request reservation preserved.",
+    "Actual pinned Pi adapter compressed request capture with receiver session-options helper, synthetic JWT and substituted fetch; no network/provider call.",
+    "Separate lifecycle v5 reasoning/signature proof, checkpoint, full reset/rehydrate/continued/reopen; legacy v3/v4 remain separately tested.",
+    "Rust coding-job-prepare inspect/prepare builds new exact bundle from separately trusted authority and explicit inputs, no inference or permission mint.",
+    "Two fresh separately authorized actual deterministic Pi/Docker jobs through current command/server/read operations, independent source marker once and restart/exact replay.",
+    "Real workspace command ignores graceful TERM, hits Host tool deadline; partial output/timeout/not_established/rawreceipt and exact selected container absence retained.",
+    "Actual server plus Rust owned child proves quiet healthy control, ignored SIGTERM, hard collector termination and controlled server interruption/restart/replay with independent effect marker; exact stdout/stderr retained.",
+    "Current command/MCP fixture transport and original pilot raw numeric receipt compatibility pass."
+  ],
+  "validation": {
+    "tuple_legacy_wire_initial": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/unit1/summary.json",
+    "actual_sdk_wire": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/remaining-1/wire.json",
+    "host_lib": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/remaining-1/host.json",
+    "server_regression": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/final-2/server.json",
+    "lifecycle_thinking_legacy": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/lifecycle.json",
+    "sol_full_reset_reopen_and_pressure_lint": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/pressure-final-2/summary.json",
+    "preparation_and_affected_lint": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/summary.json",
+    "actual_two_jobs_restart_replay": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/final-2/direct.json",
+    "actual_workspace_hang_deadline_containers": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/final-2/workspace-fault.json",
+    "resistant_collector_quiet_interruption_replay": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/collector-final/summary.json",
+    "command_mcp_bridge": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-final-2/summary.json",
+    "original_raw_receipt_precision": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/raw-receipt-final/receipt.json",
+    "unintended_filter_cleanup": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-cleanup/summary.json"
+  },
+  "evidence_index": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/EVIDENCE-INDEX.json",
+  "risk_evidence": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/RISK-EVIDENCE.md",
+  "coverage": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/coverage-final.json",
+  "formatting": "rustfmt --edition2024 --check --config skip_children=true on all changed Rust files and git diff --check passed; final changed test/bin individually formatted",
+  "lint_limits": [
+    "Strict -Dwarnings exposed baseline lifecycle-store/native.rs items_after_test_module and needless_borrow; exact baseline verified, source untouched. Final affected-target lint permits only those two classes.",
+    "Final actual Docker evidence precedes semantics-preserving clippy simplification of two preparation expressions; preparation tests and affected lint rerun after those edits."
+  ],
+  "preserved_failures": [
+    "check-1 wrong standalone package selection",
+    "tests-1 helper compile error and tuple-tests-1 zero-match filter",
+    "wire-1 attempted plain parse of compressed wire; fixedactual zstd decode",
+    "prep-tests-1/2 canonical binary symlink mismatch, prep-tests-3 launch cwd typo",
+    "collector-1 partial lookup and final-1 stale owned fixture binary stderr mismatch",
+    "direct-1 missing operation root, direct-2 observation bound too short; originalHost reconciled in direct-2-cleanup",
+    "remaining-1 strict baseline lint; pressure-final-1 unused-mut; final-2/lint-final own clippy style findings fixed",
+    "transport-final broad filter selected unintended actualDocker+rawfixture tests: missing rawenv plus120s timeout; first Docker job completed, second killed during preparation before bundle/state creation; completed originalHost reconciled and exact three container absences observed in transport-cleanup"
+  ],
+  "limits": {
+    "product_provider_requests": 0,
+    "native_credential_reads": 0,
+    "credential_projections": 0,
+    "children_launched": 0,
+    "shared_publication": false,
+    "provider_reservation_authorized": 0,
+    "cost": "Root owns canonical accounting; worker does not invent billing/quota measures"
+  },
+  "unestablished": [
+    "Actual Sol/account/route eligibility, native credential projection and backend thinking responses; request capture is preparation only.",
+    "Actual engineering quality, Pi/native model comparison and withheld acceptance.",
+    "Actual Pi SIGKILL between tool effect and receipt or model/tool-handoff restart; collector interruption is a distinct observed layer.",
+    "Periodic-output infinite commands, detached descendants/orphan streams and other open risk IDs in RISK-EVIDENCE.md.",
+    "Full uninterrupted unattended readiness and final owner acceptance."
+  ],
+  "pending_review": "Root-owned separate Astra and acceptance/integration remain required",
+  "process_disposition": {
+    "pending_processes": [],
+    "pending_tool_sessions": [],
+    "children": [],
+    "custody": "Every launched command collected; all custody leftovers zero. Actual selected container closure belongs to direct Host receipts/absence evidence, separately from collector process-group results."
+  },
+  "continuation": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/CONTINUATION.json"
+}

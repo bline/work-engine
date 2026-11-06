@@ -1,0 +1,84 @@
+{
+  "schema": "manual-exact-review-report/v1",
+  "subject": {
+    "commit": "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba",
+    "base": "2f27de2bd7503190d24e3188c04bf8aa3f8db451",
+    "diff_sha256": "811c077a184b8e6960da62b6be3ea60a57748c6ad65c9951f1cfcd0f707652f1",
+    "identity_verified": true
+  },
+  "reviewer": {
+    "session_id": "01a1af0f-421a-7230-9f7d-cf4b0baae1f8",
+    "collection_owner": "01a1a7ed-45f5-7041-9db5-a6c9aa1cd3f3",
+    "observed_model": "gpt-6-astra",
+    "observed_effort": "xhigh",
+    "tier_and_capability_grant": "default/readOnly/networkAccess:false independently observed by Root per supplied binding",
+    "mutations_tests_builds_children_or_external_execution": false
+  },
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "id": "SOL-REVIEW-001",
+      "severity": "P2",
+      "title": "Reject extra arguments to inspect before entering preparation",
+      "path": "rust/crates/work-engine-server/src/bin/coding-job-prepare.rs",
+      "lines": [
+        182,
+        190
+      ],
+      "trigger": "coding-job-prepare inspect SPEC AUTHORITY, with valid matching inputs and authority",
+      "observed": "The inspect branch returns only when args.len() == 3. With four arguments, execution passes the remaining length check and enters the preparation path without requiring args[1] == \"prepare\". Lines 274–283 create directories and begin writing the bundle.",
+      "impact": "An inspection invocation unexpectedly creates output, state and possibly operation directories. It also consumes the fresh-directory precondition, causing a subsequent intended preparation to fail.",
+      "violated_outcome": "The operator entry must preserve the distinction between observation-only inspection and explicitly selected preparation.",
+      "status": "Control flow observed in immutable source; runtime consequence inferred, not executed under the review grant.",
+      "requested_change": "Dispatch strictly on command and argument count: inspect requires three arguments; prepare requires four. Reject other combinations before mutation.",
+      "validation_requested": "Using otherwise valid preparation inputs, invoke inspect with an authority argument and assert refusal with no output, state or operation directory creation; retain positive inspect and prepare coverage."
+    }
+  ],
+  "inspected_evidence": {
+    "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320",
+    "contracts": [
+      "REVIEW-CONTRACT.md",
+      "REVIEW-SUBJECT.json",
+      "AUTHORITY.json"
+    ],
+    "source": "Scoped immutable diffs and relevant admission, receiver, lifecycle, preparation, collector and test branches; working tree was clean at the reviewed commit.",
+    "records": [
+      "builder/EVIDENCE-INDEX.json",
+      "builder/RISK-EVIDENCE.md",
+      "builder/remaining-1/wire.stdout",
+      "builder/final-2/server.json",
+      "builder/final-2/direct.json",
+      "builder/final-2/workspace-fault.json",
+      "builder/collector-final/summary.json",
+      "builder/pressure-final-2/summary.json",
+      "builder/lint-final-2/lint.json",
+      "builder/transport-final-2/summary.json",
+      "builder/raw-receipt-final/receipt.json",
+      "builder/transport-cleanup/summary.json"
+    ],
+    "direct_checks": [
+      "Nine selected exact result/operation artifacts matched their indexed hashes.",
+      "Two fresh Docker jobs had distinct operation IDs, one retained effect marker each and owner_pending acceptance.",
+      "Workspace fault retained timed_out, not_established, matching partial-output digest and three empty recorded container-absence outputs.",
+      "Hanging and interrupted collector cases retained matching exact stdout/stderr artifacts and one independent effect marker each.",
+      "Final affected lint explicitly permits only items-after-test-module and needless-borrow; it is not an unrestricted strict-lint pass."
+    ]
+  },
+  "material_limitations": [
+    "Tier 2 graph generation 2026-11-06T04:13:03Z covered all 22 changed paths with content verification. Most code paths have unresolved call edges; exact source checks governed material conclusions. This was not exhaustive graph verification.",
+    "Validation runs were inspected, not rerun.",
+    "Wire capture exercises the pinned adapter with substituted transport. It does not establish live account/model eligibility or backend thinking responses.",
+    "Synthetic lifecycle and collector evidence does not establish actual Pi handoff-crash recovery, coding quality or unattended readiness.",
+    "Recorded container absence is historical evidence; Root retains the independent final absence check and publication decision.",
+    "Failed attempts and the documented pre-final Docker evidence timing remain part of the evidence history."
+  ],
+  "continuation": {
+    "owner": "Root",
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/review/CONTINUATION.json",
+    "next_action": "Repair SOL-REVIEW-001, bind the new immutable subject and focused validation, then return to this retained reviewer.",
+    "last_observed_input_tokens": 141412,
+    "context_decision": "Finish this bounded report; recheck headroom before retained remediation.",
+    "pending_owned_processes": [],
+    "cost": "Unknown to reviewer; Root owns accounting."
+  }
+}

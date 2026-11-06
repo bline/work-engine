@@ -1,0 +1,252 @@
+{
+  "tuple_legacy_wire_initial": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/unit1/summary.json",
+    "sha256": "a52536a4d31a88948df474a70388d4aa186723f12d9a3b664669819849dc0e57",
+    "schema": "manual-orchestration.custody.summary.v1",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "tuple",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/unit1/tuple.json",
+        "record_sha256": "0528b1ba272fafb1c542033a3f791c0d42b5610eb184794dda96f928d3257647"
+      },
+      {
+        "name": "lifecycle",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/unit1/lifecycle.json",
+        "record_sha256": "dd2f514929ee50aaa3326abd3a607d21cfdde8b6185627027f979f97d453d452"
+      },
+      {
+        "name": "wire",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/unit1/wire.json",
+        "record_sha256": "1bea7c89fce86b49d99a4e6fc41a91da863a6793a36cef1826734c3cd6fadd97"
+      },
+      {
+        "name": "pressure",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/unit1/pressure.json",
+        "record_sha256": "47cded39c0502393ca0d04daa215af397690a58e9fafe2f02ea6751d0ac587c2"
+      }
+    ],
+    "not_run": []
+  },
+  "actual_sdk_wire": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/remaining-1/wire.json",
+    "sha256": "120c4b8a52360bbb06f786ea8e1c419494ca9ec30c6f5f3e01e7aa173c6458d5",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "host_lib": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/remaining-1/host.json",
+    "sha256": "7a4abed9b5cb2feb08ec9c00674157b1bc2b5e885e38eba8a7be6d3c94fbea15",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "server_regression": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/final-2/server.json",
+    "sha256": "14a54ac7982c5c51c143ab94ddc82526ededf4c1baedad681785cdd050343c4a",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "lifecycle_thinking_legacy": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/lifecycle.json",
+    "sha256": "f2cfcc511a318e685d6d69a834a3e85a0ca1c4d99ab9f88ac397f27158389a68",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "sol_full_reset_reopen_and_pressure_lint": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/pressure-final-2/summary.json",
+    "sha256": "9b73a5676d00bc6e428f4e1c601be11ef9c3745d991c0cfb3063af969e004cf1",
+    "schema": "manual-orchestration.custody.summary.v1",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "test",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/pressure-final-2/test.json",
+        "record_sha256": "4ee035b1c6eb6d63d154d00b7b3e5c7fa43989d852bad303ae7a6c1a5932de48"
+      },
+      {
+        "name": "lint",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/pressure-final-2/lint.json",
+        "record_sha256": "885b611685665ce036196d11e92fbcc4164f4ed75525bcbc7b3d8b0790e3cb6d"
+      }
+    ],
+    "not_run": []
+  },
+  "preparation_and_affected_lint": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/summary.json",
+    "sha256": "b5a11f4bd246268c64fe6ed2b7bdd7135013aecfe6c33bef312314d02b6174b4",
+    "schema": "manual-orchestration.custody.summary.v1",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "preparation",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/preparation.json",
+        "record_sha256": "54706ffc2e87867a0c2784b853057676d0f46f3faa05aa13c1367b7ed2893c6e"
+      },
+      {
+        "name": "lifecycle",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/lifecycle.json",
+        "record_sha256": "f2cfcc511a318e685d6d69a834a3e85a0ca1c4d99ab9f88ac397f27158389a68"
+      },
+      {
+        "name": "lint",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/lint-final-2/lint.json",
+        "record_sha256": "bb6d866f81af5f9e241ee159118920a511cb0608fb191c06ca3d9037e6bd3fd7"
+      }
+    ],
+    "not_run": []
+  },
+  "actual_two_jobs_restart_replay": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/final-2/direct.json",
+    "sha256": "8992c822b3839c2c98a6afcbef7237dea8274c4fb0351e7e3e72ebd1a2803a1f",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "actual_workspace_hang_deadline_containers": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/final-2/workspace-fault.json",
+    "sha256": "7e7d92f29fe6db42288a37deb6808be3eee3fc49b7966da4b4b0c58d1cbc0ced",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "resistant_collector_quiet_interruption_replay": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/collector-final/summary.json",
+    "sha256": "b3c78b30d04e5bfe1f537efe519030f83c7c2f6af275f62c5e684cbcd28eabea",
+    "schema": "manual-orchestration.custody.summary.v1",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "collector",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/collector-final/collector.json",
+        "record_sha256": "e4f9b93b49daf7246d2bca03f0e0817888b71d2e33df25ab01abac78ea226d51"
+      }
+    ],
+    "not_run": []
+  },
+  "command_mcp_bridge": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-final-2/summary.json",
+    "sha256": "1f23d7b1e9b1fd56fb9d75eee4fd74738fa47f85e1f57ad448450e17e5212267",
+    "schema": "manual-orchestration.custody.summary.v1",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "command",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-final-2/command.json",
+        "record_sha256": "dc259edb4106d03e7c05396a59a90b80a27e3821928e0054d7650b36d50f1c3e"
+      },
+      {
+        "name": "command-publication",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-final-2/command-publication.json",
+        "record_sha256": "7e7dd38bb2b242db4988c073ef3e5e459f6f454a5746c85155754ba126ca568b"
+      },
+      {
+        "name": "mcp",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-final-2/mcp.json",
+        "record_sha256": "0d62e61d352a02a6dcff95ce50046dd6d895e9dd085a4c7fc4995522a4b888da"
+      },
+      {
+        "name": "mcp-live-fixture",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-final-2/mcp-live-fixture.json",
+        "record_sha256": "70ac20b694dbb611ddc52849fb84f9f63f6959f3bac08872dd1a8a3d91063454"
+      }
+    ],
+    "not_run": []
+  },
+  "original_raw_receipt_precision": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/raw-receipt-final/receipt.json",
+    "sha256": "5de7a717c455ba84c197d5a42c447c9481c1e5a10674bb1bcb173d5c300ddae6",
+    "schema": "manual-orchestration.custody.run.v1",
+    "returncode": 0,
+    "timed_out": false,
+    "leftover_processes": [],
+    "leftovers_killed": false,
+    "leftovers_after_kill": null
+  },
+  "unintended_filter_cleanup": {
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-cleanup/summary.json",
+    "sha256": "17643a0552561dcfb3d41d1724f9c650e11abd5d6b718d382b1504135e0f99a2",
+    "schema": "manual-orchestration.custody.summary.v1",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "reconcile",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-cleanup/reconcile.json",
+        "record_sha256": "9587bf99d43cd68eb64159242e30f508e13f59382e2dae7141ade8a284bd4db5"
+      },
+      {
+        "name": "inference",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-cleanup/inference.json",
+        "record_sha256": "e20d0a7bab936b7e6dceda99f5a7f59dadd15180e7272f5db65ffd615f699cd3"
+      },
+      {
+        "name": "tool",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-cleanup/tool.json",
+        "record_sha256": "f2992ec7d890565cdb32247b4d412b980957546efac03896b9dc3e9c5a1b3c06"
+      },
+      {
+        "name": "validation",
+        "outcome": "0",
+        "leftovers": 0,
+        "record": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/builder/transport-cleanup/validation.json",
+        "record_sha256": "ca369e953084cf7b7668a755f60f653b378d827466e789b20c083f308a6d22df"
+      }
+    ],
+    "not_run": []
+  }
+}

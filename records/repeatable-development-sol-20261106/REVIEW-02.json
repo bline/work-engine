@@ -1,0 +1,50 @@
+{
+  "schema": "manual-exact-review-report/v1",
+  "subject": {
+    "commit": "20a74393d6485deeafd53fcb495db2e0a725905a",
+    "prior_commit": "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba",
+    "repair_diff_sha256": "0e84c63ee471c8a745e3ed47b4e8906948550056c22eb740a8d7b9453a1dc35b"
+  },
+  "episode": {
+    "session_id": "01a1af0f-421a-7230-9f7d-cf4b0baae1f8",
+    "mode": "same retained read-only remediation review",
+    "new_independence_claim": false
+  },
+  "verdict": "accept",
+  "prior_finding_dispositions": [
+    {
+      "id": "SOL-REVIEW-001",
+      "disposition": "resolved",
+      "basis": "Exact command/arity dispatch now precedes input reads. Only inspect SPEC and prepare SPEC AUTHORITY are accepted. The malformed inspect invocation cannot enter preparation.",
+      "validation": "The regression failed against the original implementation because inspect exited 0. It passes after repair and checks that bundle, state and operation directories remain absent. Existing positive inspect/prepare coverage runs for both offline and synthetic Sol inputs."
+    }
+  ],
+  "remaining_or_new_findings": [],
+  "evidence": {
+    "root": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320",
+    "inspected": [
+      "REVIEW-SUBJECT-v2.json",
+      "builder/REPAIR-RESULT.json",
+      "review/repair.diff",
+      "builder/repair-red/preparation.json",
+      "builder/repair-green/summary.json",
+      "ROOT-CONTAINER-CHECK.json"
+    ],
+    "verification": "Repair diff and both source hashes matched. All eight inspected custody output hashes matched. Preparation, formatting and focused lint passed; lint retains the explicit baseline needless-borrow allowance.",
+    "carry_forward": "The complete Git delta contains only the dispatch guard and regression assertions. Valid preparation follows the unchanged implementation after dispatch. Original Host, receiver, lifecycle and collector evidence remains applicable to those unchanged components; original Docker runs and producing binaries remain attributed to pre-repair source.",
+    "container_observation": "Root's inspected record reports 21 exact recorded container IDs absent; reviewer performed no Docker operation."
+  },
+  "limitations": [
+    "Acceptance covers this bounded implementation and supplied evidence; Root retains acceptance and publication authority.",
+    "All REPORT-01 readiness limits remain: no live account/model eligibility, backend thinking-response, coding-quality or unattended-readiness acceptance.",
+    "Tests were inspected, not rerun. No edits, builds, children, provider, credential or ACK operations occurred.",
+    "Graph coverage reported metadata changes and unresolved calls for both repair files. Immutable source diff and direct checks governed the delta review."
+  ],
+  "continuation": {
+    "owner": "Root",
+    "path": "/home/bline/.local/state/work-engine/repeatable-development-sol-20261106T0320/review/CONTINUATION.json",
+    "observed_input_tokens": 156411,
+    "decision": "Completed the authorized bounded retained review; no context replacement.",
+    "pending_owned_processes": []
+  }
+}

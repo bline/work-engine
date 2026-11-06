@@ -1,0 +1,82 @@
+{
+  "thread": {
+    "id": "01a1af0f-421a-7230-9f7d-cf4b0baae1f8",
+    "environments": [
+      {
+        "environmentId": "local",
+        "cwd": "/home/bline/cbm-work/wt-repeatable-sol-20261106",
+        "runtimeWorkspaceRoots": [
+          "/home/bline/cbm-work/wt-repeatable-sol-20261106"
+        ]
+      }
+    ],
+    "extra": null,
+    "sessionId": "01a1af0f-421a-7230-9f7d-cf4b0baae1f8",
+    "forkedFromId": null,
+    "parentThreadId": null,
+    "preview": "",
+    "ephemeral": false,
+    "section": null,
+    "sectionEnteredAt": null,
+    "projectId": null,
+    "historyMode": "paginated",
+    "modelProvider": "openai",
+    "model": "gpt-6-astra",
+    "reasoningEffort": "xhigh",
+    "createdAt": 1793938376,
+    "updatedAt": 1793938489,
+    "recencyAt": 1793938376,
+    "status": {
+      "type": "idle"
+    },
+    "path": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T21-12-56-01a1af0f-421a-7230-9f7d-cf4b0baae1f8.jsonl",
+    "cwd": "/home/bline/cbm-work/wt-repeatable-sol-20261106",
+    "cliVersion": "0.167.0",
+    "originator": "codex-tui",
+    "source": "vscode",
+    "canAcceptDirectInput": true,
+    "threadSource": null,
+    "agentNickname": null,
+    "agentRole": null,
+    "gitInfo": {
+      "sha": "981ddc3a33c051ead2ac1ee9d72f10d3b8ebe4ba",
+      "branch": "qualify/repeatable-sol-20261106",
+      "originUrl": "git@github.com:bline/work-engine.git"
+    },
+    "name": "repeatable-sol-astra-review-20261106",
+    "daybreakEnabled": null,
+    "turns": []
+  },
+  "model": "gpt-6-astra",
+  "modelProvider": "openai",
+  "serviceTier": "default",
+  "disabledPluginIds": [],
+  "cwd": "/home/bline/cbm-work/wt-repeatable-sol-20261106",
+  "runtimeWorkspaceRoots": [
+    "/home/bline/cbm-work/wt-repeatable-sol-20261106"
+  ],
+  "instructionSources": [
+    "/home/bline/.codex/AGENTS.md",
+    "/home/bline/cbm-work/wt-repeatable-sol-20261106/AGENTS.md"
+  ],
+  "approvalPolicy": "never",
+  "approvalsReviewer": "user",
+  "sandbox": {
+    "type": "readOnly",
+    "networkAccess": false
+  },
+  "activePermissionProfile": null,
+  "reasoningEffort": "xhigh",
+  "collaborationMode": {
+    "mode": "default",
+    "settings": {
+      "model": "gpt-6-astra",
+      "reasoning_effort": "xhigh",
+      "developer_instructions": null
+    }
+  },
+  "multiAgentMode": "explicitRequestOnly",
+  "initialTurnsPage": null,
+  "turnsBackwardsCursor": null,
+  "itemsBackwardsCursor": null
+}
