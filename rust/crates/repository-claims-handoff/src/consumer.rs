@@ -125,6 +125,17 @@ fn exact_of(o: &serde_json::Map<String, Value>) -> Result<ExactRef> {
 
 /// Return one page of `bytes` at a character boundary; refuses an offset past
 /// the end, off a boundary, or a page size outside the bound.
+/// Static page-size bound, checked before any owner I/O.
+fn page_arg(o: &serde_json::Map<String, Value>) -> Result<usize> {
+    let n = arg_uint(o, "max_bytes", DEFAULT_PAGE_BYTES)?;
+    if !(4..=MAX_PAGE_BYTES).contains(&n) {
+        return Err(Error::new(
+            "invalid_arguments",
+            "max_bytes outside 4..=8192",
+        ));
+    }
+    Ok(n)
+}
 fn page_of(bytes: &[u8], offset: usize, max_bytes: usize) -> Result<(String, Option<usize>)> {
     if !(4..=MAX_PAGE_BYTES).contains(&max_bytes) {
         return Err(Error::new(
@@ -261,6 +272,12 @@ impl ClaimsConsumer {
                 "claims call budget exhausted",
             ));
         }
+        if self.session.is_poisoned() {
+            return Err(Error::new(
+                "server_unavailable",
+                "transport closed after an earlier failure",
+            ));
+        }
         self.arm(until)?;
         self.calls += 1;
         match tool {
@@ -288,7 +305,7 @@ impl ClaimsConsumer {
             return Err(Error::new("invalid_arguments", "query or limit bound"));
         }
         let offset = arg_uint(o, "offset", 0)?;
-        let max_bytes = arg_uint(o, "max_bytes", DEFAULT_PAGE_BYTES)?;
+        let max_bytes = page_arg(o)?;
         let mut base = json!({"query": query, "limit": limit});
         if let Some(c) = o.get("cursor") {
             base["cursor"] = c.clone();
@@ -365,7 +382,7 @@ impl ClaimsConsumer {
         )?;
         let r = exact_of(o)?;
         let offset = arg_uint(o, "offset", 0)?;
-        let max_bytes = arg_uint(o, "max_bytes", DEFAULT_PAGE_BYTES)?;
+        let max_bytes = page_arg(o)?;
         let key = self.ensure_resolved(&r)?;
         let v = &self.resolved[&key];
         let (page, next) = page_of(v.text.as_bytes(), offset, max_bytes)?;
@@ -430,7 +447,7 @@ impl ClaimsConsumer {
             ],
         )?;
         let offset = arg_uint(o, "offset", 0)?;
-        let max_bytes = arg_uint(o, "max_bytes", DEFAULT_PAGE_BYTES)?;
+        let max_bytes = page_arg(o)?;
         let (_, sha) = self.listed_evidence(o)?;
         if !self.evidence.contains_key(&sha) {
             let (bytes, _) = read_evidence_bytes(&mut self.session, &sha, self.page_bytes)?;
