@@ -127,7 +127,15 @@ fn actual_rust_launcher_denies_host_authority_and_descendants() {
     for fd in fds {
         assert_eq!(unsafe { libc::fcntl(fd, libc::F_SETFD, 0) }, 0);
     }
-    let selection = serde_json::json!({"paths":[f.policy.repository.join("refs/heads/escape"),f.policy.repository.join("worktrees/escape"),f.policy.repository.join(".work-engine-publication.lock"),f.policy.root.join("workspace-publication.sqlite"),f.path],"socket":socket,"fds":fds,"hostPid":std::process::id()});
+    use std::os::unix::fs::MetadataExt;
+    let fd_identities: Vec<_> = fds
+        .iter()
+        .map(|fd| {
+            let metadata = fs::metadata(format!("/proc/self/fd/{fd}")).unwrap();
+            serde_json::json!([fd, metadata.dev(), metadata.ino()])
+        })
+        .collect();
+    let selection = serde_json::json!({"paths":[f.policy.repository.join("refs/heads/escape"),f.policy.repository.join("worktrees/escape"),f.policy.repository.join(".work-engine-publication.lock"),f.policy.root.join("workspace-publication.sqlite"),f.path],"socket":socket,"fds":fd_identities,"hostPid":std::process::id()});
     let script = format!(
         r#"import os,socket,sys,subprocess,ctypes,errno,json
 c=json.loads({selection:?})
@@ -136,7 +144,11 @@ def denied(fn):
  except OSError:return
  raise AssertionError('host authority escaped')
 for p in c['paths']:denied(lambda p=p:os.open(p,os.O_WRONLY|os.O_CREAT,0o600))
-for fd in c['fds']:denied(lambda fd=fd:os.fstat(fd))
+for fd,device,inode in c['fds']:
+ try:s=os.fstat(fd)
+ except OSError:continue
+ assert (s.st_dev,s.st_ino)!=(device,inode),'protected host descriptor survived'
+ print('descriptor slot reused:',fd,os.readlink('/proc/self/fd/'+str(fd)))
 denied(lambda:socket.socket(socket.AF_UNIX).connect(c['socket']))
 denied(lambda:os.open('/proc/'+str(c['hostPid'])+'/root',os.O_RDONLY))
 denied(lambda:os.kill(c['hostPid'],0))
@@ -164,6 +176,7 @@ print('confined')
             ],
         )
         .unwrap();
+    println!("{}", String::from_utf8_lossy(&output.stdout));
     assert!(
         output.status.success(),
         "{}",

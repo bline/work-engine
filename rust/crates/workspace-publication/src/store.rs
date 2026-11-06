@@ -171,7 +171,9 @@ impl Workspace {
         }
         if custody.is_none() {
             fs::create_dir(&config.root).map_err(|e| Error::Io(e.to_string()))?;
-        } else if config.root.join(MARKER).exists() || config.root.join(DB).exists() {
+        } else if fs::symlink_metadata(config.root.join(MARKER)).is_ok()
+            || fs::symlink_metadata(config.root.join(DB)).is_ok()
+        {
             return Err(Error::Conflict(
                 "managed owner state already initialized".into(),
             ));
@@ -181,6 +183,10 @@ impl Workspace {
                 .map_err(|e| Error::Io(e.to_string()))?;
         }
         let _guard = Guard::acquire(&common_dir)?;
+        _guard.verify(&common_dir)?;
+        if let Some(custody) = &custody {
+            custody.check_lock(_guard.file())?;
+        }
         if common_dir.join(REPOSITORY_OWNER).exists() {
             return Err(Error::Conflict(
                 "repository already has workspace owner".into(),
@@ -277,6 +283,10 @@ impl Workspace {
             ));
         }
         let _guard = Guard::acquire(&common_dir)?;
+        _guard.verify(&common_dir)?;
+        if let Some(custody) = &custody {
+            custody.check_lock(_guard.file())?;
+        }
         repository_owner(
             &common_dir,
             &config.root,
