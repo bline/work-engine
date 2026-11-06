@@ -171,21 +171,20 @@ fn prepared_tree(root: &Path, out: &Path, name: &str, value: &Value) -> Result<T
 }
 fn run() -> Result<Value> {
     let args: Vec<_> = std::env::args().collect();
-    if args.len() < 3 || !matches!(args[1].as_str(), "inspect" | "prepare") {
-        return Err("coding-job-prepare inspect SPEC | prepare SPEC AUTHORITY".into());
-    }
+    let inspect = match (args.get(1).map(String::as_str), args.len()) {
+        (Some("inspect"), 3) => true,
+        (Some("prepare"), 4) => false,
+        _ => return Err("coding-job-prepare inspect SPEC | prepare SPEC AUTHORITY".into()),
+    };
     let raw = read(Path::new(&args[2]), 65536)?;
     let spec: Spec = serde_json::from_slice(&raw)?;
     let inputs = inputs(&spec)?;
     let spec_sha = digest(&raw);
     let input_sha = digest(&serde_json::to_vec(&inputs)?);
-    if args[1] == "inspect" && args.len() == 3 {
+    if inspect {
         return Ok(
             json!({"schema":"work-engine.coding-preparation-inspection.v1","spec_sha256":spec_sha,"inputs_sha256":input_sha,"job_id":spec.job_id,"provider_execution":false,"authority":"observation_only"}),
         );
-    }
-    if args.len() != 4 {
-        return Err("separately trusted operator preparation authority required".into());
     }
     let authority_path = Path::new(&args[3]);
     let auth_raw = read(authority_path, 16384)?;

@@ -59,6 +59,12 @@ fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
         assert!(!r.join("bundle").exists());
         auth["allow_provider"] = json!(false);
         fs::write(&ap, auth.to_string()).unwrap();
+        // Valid authority must not turn observation-only inspect into preparation.
+        let extra = call(&["inspect", sp.to_str().unwrap(), ap.to_str().unwrap()]);
+        assert_eq!(extra.status.code(), Some(2));
+        for name in ["bundle", "state", "ops"] {
+            assert!(!r.join(name).exists(), "inspect created {name}");
+        }
         let prepared = call(&["prepare", sp.to_str().unwrap(), ap.to_str().unwrap()]);
         assert!(
             prepared.status.success(),
