@@ -693,6 +693,7 @@ fn events_http_mcp_preserves_the_real_job_operation_across_server_restart() {
     events_job_bridge(false);
 }
 #[test]
+#[ignore = "requires COMMAND_BINARY pointing at work-engine-command"]
 fn events_http_mcp_live_class_fixture_preserves_the_original_operation_across_restart() {
     events_job_bridge(true);
 }
