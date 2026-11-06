@@ -1,0 +1,195 @@
+{
+  "candidate": "227daaeb639210750af9ec825acd6d0bafe7f222",
+  "baseline": "5a3f47dd2216baf27e77eb45b58adc0aa34644ba",
+  "status": "incomplete_and_preexisting_failures_preserved",
+  "source_unchanged_at_collection": true,
+  "records": [
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/joined-qualification/joined.json",
+      "sha256": "698913c86a69a5416ba6abd5587ca347cba8e805e4ffcbc2a25699e0ae3e4c78",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--no-fail-fast",
+        "-p",
+        "slice-campaign",
+        "-p",
+        "review-workflow",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support,test-faults",
+        "--",
+        "--test-threads=2"
+      ],
+      "returncode": 101,
+      "signal": null,
+      "timed_out": false,
+      "completed_test_binary_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      "individual_test_status_lines": {
+        "ok": 0,
+        "FAILED": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/joined-qualification2/baseline-fault-compile.json",
+      "sha256": "432c72a8bab2bedc0a76f1b6c7510c242260b51b5f275d7279db2f4eb252f72f",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support,test-faults",
+        "--test",
+        "claude_guarded",
+        "--no-run"
+      ],
+      "returncode": 101,
+      "signal": null,
+      "timed_out": false,
+      "completed_test_binary_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      "individual_test_status_lines": {
+        "ok": 0,
+        "FAILED": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/joined-qualification2/fault-owner-workflow.json",
+      "sha256": "3a17386957ba6f79019a035cc15e3cc167de32a1888b437da9df6192c3ef6073",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--no-fail-fast",
+        "-p",
+        "slice-campaign",
+        "-p",
+        "review-workflow",
+        "--features",
+        "test-support,test-faults",
+        "--",
+        "--test-threads=2"
+      ],
+      "returncode": null,
+      "signal": 15,
+      "timed_out": false,
+      "completed_test_binary_totals": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      "individual_test_status_lines": {
+        "ok": 5,
+        "FAILED": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/joined-qualification2/fixtures.json",
+      "sha256": "8cd3ac41bea2cdab74f4d898693f6cfb06905796179a11e396db174116323c13",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--no-fail-fast",
+        "-p",
+        "slice-campaign",
+        "-p",
+        "review-workflow",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support",
+        "--",
+        "--test-threads=2"
+      ],
+      "returncode": null,
+      "signal": 15,
+      "timed_out": true,
+      "completed_test_binary_totals": {
+        "passed": 47,
+        "failed": 10,
+        "ignored": 1,
+        "measured": 0,
+        "filtered": 0
+      },
+      "individual_test_status_lines": {
+        "ok": 59,
+        "FAILED": 10
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/joined-qualification3/baseline-fixture-failures.json",
+      "sha256": "57c3438f4fc7fa1e888883341b3a89fc88d2fd3ea5978a23a39644915634bd17",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--no-fail-fast",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support",
+        "--test",
+        "claude_boundary",
+        "--test",
+        "claude_custody",
+        "--test",
+        "claude_guarded",
+        "--",
+        "--test-threads=2"
+      ],
+      "returncode": 101,
+      "signal": null,
+      "timed_out": false,
+      "completed_test_binary_totals": {
+        "passed": 10,
+        "failed": 10,
+        "ignored": 1,
+        "measured": 0,
+        "filtered": 0
+      },
+      "individual_test_status_lines": {
+        "ok": 10,
+        "FAILED": 10
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null
+    }
+  ],
+  "limitations": [
+    "Full three-crate fault suite compile fails identically at baseline: claude_guarded.rs:57 missing Fixture and QualifiedScope types.",
+    "Full non-fault joined suite timed out at600seconds in slow campaign_owner_join; slice-campaign tests not reached.",
+    "Pending fault owner/workflow suite canceled through owned group SIGTERM to prioritize Root-assigned R1-R3 repairs; no leftovers.",
+    "Ten existing evidence test failures reproduce exactly at baseline: eight ProgramDrift and two UnsafeCredential; no source fixes performed.",
+    "Default ignored performance and installed CLI workloads excluded.",
+    "No real credential reads, provider/live execution or protected installation.",
+    "No source/fixture evidence establishes production operator/agent isolation; original full loop remains unqualified."
+  ]
+}

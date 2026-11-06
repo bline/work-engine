@@ -1,0 +1,23 @@
+{
+  "expected_ref": "refs/heads/rescue-detached-20260911",
+  "expected_head": "5a3f47dd2216baf27e77eb45b58adc0aa34644ba",
+  "accepted_candidate": "8144a70878c9187cf3b04b7b2aee0f947d41a852",
+  "authority": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/amendment-authority.json",
+  "independent_review": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/repair-review-binding.json",
+  "custody": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/final-custody-verification.json",
+  "foreign_status_before": "?? .claude/\n",
+  "mechanism": "Git prepared ref transaction binds expected old HEAD before read-tree; branch commit only after protected index/worktree fast-forward",
+  "at": "2026-11-06T08:07:44.413398+00:00",
+  "status": "integrated",
+  "destination_head": "8144a70878c9187cf3b04b7b2aee0f947d41a852",
+  "foreign_status_after": "?? .claude/\n",
+  "native_ref_transaction": [
+    "start: ok",
+    "prepare: ok",
+    "commit: ok"
+  ],
+  "completed_at": "2026-11-06T08:07:44.475871+00:00",
+  "push": false,
+  "deployment": false,
+  "protected_writes": false
+}

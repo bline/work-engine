@@ -1,0 +1,12 @@
+{
+  "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+  "turn_id": "01a1afdc-0f90-72f1-ac83-618dbc4b1296",
+  "native_item_id": "msg_004a3dddf2b8a1fc016aed88a7e4a887d095b54065c88e751a",
+  "turn_sha256": "cb69899a79e42d1226e3c825aaa43b434b9245344e38c8b2c5aefcc636d74c2c",
+  "report_sha256": "21d554de408d539762bf0f4f6181dc5a7df5adec4a5b9483570f475e62aabd04",
+  "realized_grant": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/repair-review-realized-grant.json",
+  "selected_settings": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/repair-review-selected-settings.json",
+  "same_session": true,
+  "compactions_reported": 0,
+  "collector": "same Root"
+}

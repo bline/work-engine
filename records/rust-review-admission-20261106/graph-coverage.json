@@ -1,0 +1,83 @@
+{
+  "project": "home-bline-code-work-engine",
+  "generation": "2026-11-06T06:02:33Z",
+  "shared_root_only": true,
+  "paths": [
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/writer.rs",
+      "status": "unresolved_calls",
+      "freshness": "metadata_match",
+      "content_verified": true,
+      "recommended_action": "read_source_and_verify_calls"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/job_admission.rs",
+      "status": "no_recorded_issue",
+      "freshness": "missing",
+      "content_verified": false,
+      "recommended_action": "read_source_and_reindex"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/startup.rs",
+      "status": "unresolved_calls",
+      "freshness": "metadata_match",
+      "content_verified": true,
+      "recommended_action": "read_source_and_verify_calls"
+    },
+    {
+      "path": "rust/crates/review-workflow/tests/job_startup_authority.rs",
+      "status": "no_recorded_issue",
+      "freshness": "missing",
+      "content_verified": false,
+      "recommended_action": "read_source_and_reindex"
+    },
+    {
+      "path": "rust/crates/slice-campaign/docs/job-review-admission.md",
+      "status": "no_recorded_issue",
+      "freshness": "missing",
+      "content_verified": false,
+      "recommended_action": "read_source_and_reindex"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/application.rs",
+      "status": "unresolved_calls",
+      "freshness": "metadata_match",
+      "content_verified": true,
+      "recommended_action": "read_source_and_verify_calls"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/contract.rs",
+      "status": "unresolved_calls",
+      "freshness": "metadata_match",
+      "content_verified": true,
+      "recommended_action": "read_source_and_verify_calls"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/installed_authority.rs",
+      "status": "unresolved_calls",
+      "freshness": "metadata_match",
+      "content_verified": true,
+      "recommended_action": "read_source_and_verify_calls"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/job_admission.rs",
+      "status": "no_recorded_issue",
+      "freshness": "missing",
+      "content_verified": false,
+      "recommended_action": "read_source_and_reindex"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/lib.rs",
+      "status": "unresolved_calls",
+      "freshness": "metadata_match",
+      "content_verified": true,
+      "recommended_action": "read_source_and_verify_calls"
+    }
+  ],
+  "pagination": {
+    "path_total": 10,
+    "path_returned": 10,
+    "has_more": false
+  },
+  "fallback": "Private candidate unindexed. Builder and retained reviewer read exact implementation and consumer bytes, including material unresolved relationships; no exhaustive call-graph claim."
+}

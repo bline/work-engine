@@ -1,0 +1,182 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "7fef045d-2dd8-4544-b6fb-1bd8a16e61ad",
+    "sessions": [
+      {
+        "session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "provider": "codex",
+        "from": "2026-11-06T05:43:05Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [
+      {
+        "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+        "provider": "codex",
+        "parent_session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "bound_at": "2026-11-06T05:48:10Z",
+        "bound_by": "supervisor",
+        "reason": "Verified native child lineage and session_meta; one read-only review-route feasibility assignment"
+      },
+      {
+        "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+        "provider": "codex",
+        "parent_session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "bound_at": "2026-11-06T07:31:30Z",
+        "bound_by": "supervisor",
+        "reason": "Verified native independent reviewer; configured review subbudget6 existed before launch, nested inside phase20 and parent60"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 56.0,
+        "marks_usd": [
+          2.0,
+          36.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-06T05:43:46Z",
+        "reason": "Preserve approved total60 including conservative4USD pre-init preparation carry; first gate6 therefore remaining2; no price or quota conversion",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "codex:01a1af65-ab56-7630-b23b-29520ff77c74",
+        "max_usd": 1.25,
+        "marks_usd": [
+          0.9
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-06T05:48:10Z",
+        "reason": "Bounded first-gate child; aggregate control existed before spawn; role control recorded after verified native identity, not retroactive",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1af65-ab56-7630-b23b-29520ff77c74",
+        "max_usd": 8.5,
+        "marks_usd": [
+          6.5
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-06T06:55:37Z",
+        "reason": "Approved amendment builder8 plus observed prior discovery0.453; separate phase cap8 applies to new work only",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "rust-development-loop-closure-20261106",
+    "original_items": [
+      "One Rust-owned admitted coding, independent review, acceptance and local publication job",
+      "Restart and exact-retry readback with negative authority and uncertainty cases",
+      "Independent implementation review, local source integration and collected closure"
+    ],
+    "started_at": "2026-11-06T05:43:05Z",
+    "weekly_at_start": {
+      "used_percent": 79.0,
+      "observed_at": "2026-11-06T05:42:39.019Z",
+      "resets_at": 1794435190,
+      "window_minutes": 10080,
+      "limit_id": "codex",
+      "plan_type": "prolite",
+      "source": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl"
+    },
+    "limits": {
+      "max_hours": 3.818056,
+      "reconsider_after_additions": 1
+    },
+    "limits_set_by": "user",
+    "limits_reason": "User approved 60USD/four hours; reduced remaining duration preserves 09:32:10 UTC hard deadline including preparation since 05:32:10 UTC",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 56.0,
+          "marks_usd": [
+            2.0,
+            36.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T05:43:46Z",
+          "reason": "Preserve approved total60 including conservative4USD pre-init preparation carry; first gate6 therefore remaining2; no price or quota conversion",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "codex:01a1af65-ab56-7630-b23b-29520ff77c74",
+          "max_usd": 1.25,
+          "marks_usd": [
+            0.9
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T05:48:10Z",
+          "reason": "Bounded first-gate child; aggregate control existed before spawn; role control recorded after verified native identity, not retroactive",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1af65-ab56-7630-b23b-29520ff77c74",
+          "max_usd": 1.25,
+          "marks_usd": [
+            0.9
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T05:52:50Z",
+          "reason": "Use actual usage-owner node ID; previous prefixed selector did not match the observed node; small clarification fits original child cap",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1af65-ab56-7630-b23b-29520ff77c74",
+          "max_usd": 8.5,
+          "marks_usd": [
+            6.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T06:55:37Z",
+          "reason": "Approved amendment builder8 plus observed prior discovery0.453; separate phase cap8 applies to new work only",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1af65-ab56-7630-b23b-29520ff77c74",
+          "max_usd": 1.25,
+          "marks_usd": [
+            0.9
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T05:52:50Z",
+          "reason": "Use actual usage-owner node ID; previous prefixed selector did not match the observed node; small clarification fits original child cap",
+          "basis": "speed_adjusted_api_usd"
+        }
+      }
+    ],
+    "additions": [
+      {
+        "at": "2026-11-06T06:54:15Z",
+        "item": "Approved amendment: bounded fresh job review-admission seam; full loop remains open",
+        "reason": "Human approved planning/rust-development-loop-review-admission-amendment-20261106.md; large scope revision explicitly accepted, source/fixture only; no original clock or cap change"
+      }
+    ],
+    "closed_at": "2026-11-06T08:17:39Z",
+    "close": {
+      "at": "2026-11-06T08:17:39Z",
+      "disposition": "abandoned",
+      "reason": "Original complete Rust-owned coding/review/acceptance/publication loop not achieved. Approved source/fixture review-admission prerequisite is accepted and locally integrated; protected installation/live proof remain unperformed. No unspent allowance transfer or automatic continuation; collected actors/listener, reserved bounded closing tail.",
+      "set_by": "supervisor"
+    }
+  }
+}

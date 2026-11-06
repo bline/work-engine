@@ -1,0 +1,30 @@
+{
+  "review-raw-inspection.json": {
+    "source_sha256": "f1f66fedf60dc7baefc80772677cad1f2478b2830434ab3aa0f74b962c68eed9",
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "tier": "default",
+    "sandbox": {
+      "networkAccess": false,
+      "type": "readOnly"
+    },
+    "approval_policy": "never",
+    "cwd": "/home/bline/code/work-engine-worktrees/admission-review-20261106",
+    "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+    "claim_scope": "Reported native filesystem grant only; no connector authority or production isolation attestation."
+  },
+  "repair-review-realized-grant.json": {
+    "source_sha256": "88da7f8a3db89a047e8aa7869bf35c6aaacbcc59a5f16558ca18d883b9a0040e",
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "tier": "default",
+    "sandbox": {
+      "type": "readOnly",
+      "networkAccess": false
+    },
+    "approval_policy": "never",
+    "cwd": "/home/bline/code/work-engine-worktrees/admission-review-20261106",
+    "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+    "claim_scope": "Reported native filesystem grant only; no connector authority or production isolation attestation."
+  }
+}

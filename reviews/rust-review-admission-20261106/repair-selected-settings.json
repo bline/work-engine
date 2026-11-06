@@ -1,0 +1,42 @@
+{
+  "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+  "turn_id": "01a1afdc-0f90-72f1-ac83-618dbc4b1296",
+  "turn_attribution": "exact_turn_interval",
+  "model": "gpt-6-astra",
+  "reasoning_effort": "xhigh",
+  "service_tier": "default",
+  "recorded_cli_version": "0.167.0",
+  "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+  "source": {
+    "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T00-30-55-01a1afc4-88c5-7481-a742-ea65d6b069ff.jsonl",
+    "line": 186,
+    "timestamp": "2026-11-06T07:56:37.155Z",
+    "event_sha256": "0595c075b5b8f9aaa442cad6bea3c1df1bc423afcbdc815e0e057a2adcd7da61",
+    "task_started": {
+      "line": 187,
+      "turn_id": "01a1afdc-0f90-72f1-ac83-618dbc4b1296",
+      "event_sha256": "8611efa32c89208267a2258dc0985413e9e5b124531b2f7e76070c79e88e3abb"
+    },
+    "turn_context": {
+      "line": 188,
+      "event_sha256": "b05051adf18c2cd845a99f331289bf6e36c648b8e6304a38bdce39e6bd1d5763",
+      "turn_id": "01a1afdc-0f90-72f1-ac83-618dbc4b1296",
+      "model": "gpt-6-astra",
+      "effort": "xhigh"
+    }
+  },
+  "successor_host_args": [
+    "-m",
+    "gpt-6-astra",
+    "-c",
+    "model_reasoning_effort=\"xhigh\"",
+    "-c",
+    "service_tier=\"default\""
+  ],
+  "preservation": "launch_arguments_available",
+  "limitations": [
+    "Selected-turn settings require an attributed matching turn_context/interval; later session events are excluded.",
+    "Successor settings must be observed after launch and adoption; arguments are a request.",
+    "Runtime configuration does not establish backend fulfillment or billing."
+  ]
+}

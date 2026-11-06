@@ -1,0 +1,136 @@
+{
+  "baseline": "5a3f47dd2216baf27e77eb45b58adc0aa34644ba",
+  "candidate": "227daaeb639210750af9ec825acd6d0bafe7f222",
+  "capability_observation": {
+    "boundary": "Native filesystem restrictions do not establish connector authority or production operator/agent isolation. No connected-application mutation or write probe was performed.",
+    "native_filesystem": "Managed restricted read-only grant observed in runtime instructions and applied settings.",
+    "network": "Restricted; no external network or product/provider requests performed.",
+    "tools_used": "Read-only native commands, local graph reads and pinned context observation."
+  },
+  "evidence_reviewed": {
+    "authority": [
+      "DESIGN.md and PHILOSOPHY.md",
+      "manual-orchestration SKILL.md and reviewer-applicable worker, call-cost and Codex-host references",
+      "wind-walker SKILL.md",
+      "/home/bline/code/work-engine/planning/rust-development-loop-review-admission-amendment-20261106.md",
+      "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/amendment-authority.json"
+    ],
+    "graph": {
+      "coverage": "Relied-on indexed paths reported unresolved calls; new candidate paths were missing. Material conclusions use exact checkout source. No exhaustive graph absence claim.",
+      "generation": "2026-11-06T06:02:33Z",
+      "project": "home-bline-code-work-engine",
+      "scope": "Shared baseline only; candidate is unindexed.",
+      "tier": 2
+    },
+    "positive_observations": [
+      "Production policy opens from a fixed protected path; fixture standing remains explicit and provider entry refuses it.",
+      "Reopen rederives complete admission bytes from current policy; replacement, removal, inactivity and expiry fence subsequent checks.",
+      "Claim identity derivation preserves policy claim contracts and uses the existing codecs.",
+      "With intact campaign state, replay returns descriptive records rather than a fresh dispatch permit; ordinary reopen does not recreate spent entry.",
+      "Historical installed and offline entry types retain their separate routes."
+    ],
+    "qualification": {
+      "adequacy": "Fixtures cover policy mutation, forged admission, weakened claims, session mismatch, publication uncertainty, ordinary reopen and fixture launch refusal. They do not exercise load_for_job or the three failure cases above. The supplied final plan does not enable the test-faults process-cut suite.",
+      "artifacts": [
+        "admission-builder/CONTRACT.md",
+        "admission-builder/RESULT.json",
+        "admission-builder/qualification-plan.json",
+        "admission-builder/qualification5/summary.json"
+      ],
+      "reported_results": "33 passing tests plus production compilation, lint and scoped formatting. Root's supplied verification of seven custody records was retained as attributed evidence.",
+      "reviewer_execution": "No Cargo operations or provider execution.",
+      "summary_sha256_verified": "5f96a3c85451e7facd687ff64d4839df3f3fb52dd25011506fc6e076575dcace"
+    },
+    "subject": {
+      "additional_material_source": [
+        "slice-campaign/src/store.rs: campaign initialization, reopening and durable identity",
+        "slice-campaign/src/owner_readback.rs: claims bootstrap and admission installation",
+        "slice-campaign/src/subject_binding.rs: exact candidate artifact hashes",
+        "review-workflow/src/initial.rs: owner initialization and downstream authority consumers",
+        "claim-evidence/src/authority.rs: bootstrap trust and grant validation",
+        "slice-campaign/tests/qualified_initial.rs",
+        "review-workflow/tests/startup_binding.rs",
+        "review-workflow/tests/authority_boundary.rs"
+      ],
+      "all_nine_changed_file_hashes_match_builder_result": true,
+      "changed_paths_inspected": [
+        "rust/crates/slice-campaign/src/job_admission.rs",
+        "rust/crates/slice-campaign/src/installed_authority.rs",
+        "rust/crates/slice-campaign/src/application.rs",
+        "rust/crates/slice-campaign/src/contract.rs",
+        "rust/crates/slice-campaign/src/lib.rs",
+        "rust/crates/slice-campaign/docs/job-review-admission.md",
+        "rust/crates/review-workflow/src/startup.rs",
+        "rust/crates/review-execution-evidence/src/claude/writer.rs",
+        "rust/crates/review-execution-evidence/tests/job_admission.rs"
+      ],
+      "checkout": "/home/bline/code/work-engine-worktrees/admission-review-20261106",
+      "diff_check": "passed",
+      "head_matches_candidate": true,
+      "unexpected_dirty_state": false
+    }
+  },
+  "findings": [
+    {
+      "concrete_failure": "The job constructor bypasses protected-descriptor ownership, but the installed policy does not bind the descriptor's claims source, production/completion grants, decision scope or completion consumer. Lines 865–968 validate these values against other caller-selected values and hashes, including constructing an authority reference with status 'verified'. initial.rs:504–532 passes them into claims bootstrap and completion installation. claim-evidence/src/authority.rs:61–203 trusts the supplied expected hashes and checks internal consistency. A valid job admission therefore permits private descriptor files to supply downstream authority that was neither selected nor derived by the protected policy.",
+      "file": "rust/crates/review-workflow/src/startup.rs",
+      "id": "R1",
+      "line": 566,
+      "required_consequence": "Bind or derive these authority-bearing inputs from installed policy, or retain an independently protected bootstrap authority. Add a no-provider fixture exercising load_for_job and rejecting changed source identity, grants, decision scope and completion consumer despite internally consistent replacement hashes.",
+      "severity": "P1"
+    },
+    {
+      "concrete_failure": "The admission retains the complete requested CandidateRef, but consumption never compares its receipt_sha256 or physical_profile_sha256 with the campaign candidate. Derivation transfers tree, selection digest and semantic profile digest into AcceptanceRecord; application.rs:2120–2128 and 2211–2217 check only those projections. A request with different receipt/profile artifact hashes can consequently authorize the unchanged actual campaign artifacts. Revalidating the admission only reproduces the originally requested hashes; it does not join them to the consumed candidate.",
+      "file": "rust/crates/slice-campaign/src/job_admission.rs",
+      "id": "R2",
+      "line": 340,
+      "required_consequence": "For job admissions, compare the complete admitted CandidateRef with the selected campaign and dispatched request before issuing entry. Preserve historical codec meaning. Add negative fixtures changing each artifact hash while retaining commit, tree, patch identity and semantic profile digest.",
+      "severity": "P2"
+    },
+    {
+      "concrete_failure": "The public job-entry consumer revalidates admission and execution bindings without checking the writer's actual evidence root against the admitted job directory. QualifiedWriter::create accepts an arbitrary root, and validate_and_consume_entry has no path comparison. Confinement exists only in the optional TrustedStartup path. The new positive fixture itself creates the writer at temp/fixture-evidence (tests/job_admission.rs:395), outside the admitted attempt's evidence child, and successfully consumes the entry.",
+      "file": "rust/crates/review-execution-evidence/src/claude/writer.rs",
+      "id": "R3",
+      "line": 309,
+      "required_consequence": "Enforce the admitted evidence path at the execution owner boundary before job-authorized execution effects. Ensure the public composition path cannot bypass it, and add a negative fixture using an otherwise matching writer at a different root.",
+      "severity": "P2"
+    }
+  ],
+  "identity": {
+    "manual_operation": "admission-review-1",
+    "parent_collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T00-30-55-01a1afc4-88c5-7481-a742-ea65d6b069ff.jsonl",
+    "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+    "status": "verified",
+    "turn_id": "01a1afc4-8f0a-7033-96df-9ee78a2657a0",
+    "verification": "Host binding acknowledged and matched against host state and rollout session_meta; no inherited environment identity used."
+  },
+  "limitations": [
+    "This verdict concerns source and fixture authority only. It does not qualify deployment, live review, production isolation or the full development loop.",
+    "One-shot behavior depends on preserving campaign owner state. Same-UID deletion or restoration of the private campaign store can remove spent-dispatch history; deterministic paths and admission rederivation provide no independent rollback fence.",
+    "Restoring identical previously valid protected policy bytes can make an old admission current again while unexpired. No monotonic policy-revocation history is established.",
+    "Policy revalidation does not establish cancellation of work already admitted into execution.",
+    "Findings are source-derived; reproducing them through mutating fixtures remains builder work.",
+    "Last observed review-budget proxy was $4.0046556 of $6. Final response and collection tails were not yet measured."
+  ],
+  "process_disposition": {
+    "continuation_owner": "Root retains continuation, result capture, semantic acceptance and integration.",
+    "owned_processes_remaining": 0,
+    "provider_or_product_executions": 0,
+    "repository_or_private_state_mutations_requested": 0,
+    "result_file_written": false,
+    "status": "review_complete_returned_to_collector",
+    "subagents_launched": 0
+  },
+  "settings_observed": {
+    "approval_policy": "never",
+    "context": "Latest pinned-reader observation: 153551/258400 input tokens, epoch 0, no compaction. Completed the bounded final report without context replacement.",
+    "model": "gpt-6-astra",
+    "provider": "openai",
+    "qualification": "Recorded runtime settings, not independent backend-fulfillment or billing verification.",
+    "reasoning_effort": "xhigh",
+    "service_tier": "default",
+    "source": "Matching thread_settings_applied rollout records"
+  },
+  "verdict": "changes_required"
+}

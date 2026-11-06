@@ -1,0 +1,13 @@
+# Deployment-owner handoff, 2026-11-06
+
+The reviewed source prerequisite is integrated at `8144a70878c9187cf3b04b7b2aee0f947d41a852`. It does not install policy or complete the original Rust-owned development loop. The [component contract](../../rust/crates/slice-campaign/docs/job-review-admission.md) describes the API.
+
+The deployment owner must independently authorize and install the reusable policy at `/etc/work-engine/review-host/job-policy.json` under the existing protected ownership/ancestry contract. The policy fixes delegation, repository/jobs scope, required claims contracts, execution identity/resource/prompt settings, horizon and exact claims-source/configuration hashes plus completion consumer. Credential metadata remains distinct from token access. No protected policy or credential was changed in this deliverable.
+
+A private request supplies the exact candidate/session/attempt and artifact digests. The Rust owner derives and reopens its admission; policy selection and grants cannot come from that request. The resulting independently obtained pin feeds the existing campaign/workflow/execution owners. Public wire input cannot choose the trusted constructor or provide a policy pin.
+
+Before a later supervised live proof, establish the actual installed policy, operator/agent separation and account/runtime preconditions. Use the supported qualified Claude review path; implementation review by Astra is separate evidence. Then qualify one exact coding job through genuine independent review, explicit operator acceptance and publication, persisted/read back by the actual Rust owners. Preserve pending/refused/uncertain states and test restart/idempotence. Product-result publication has not occurred here.
+
+One-shot behavior assumes intact campaign owner state. Same-UID restoration/deletion of the owner store has no independent rollback fence. Restoring identical old protected policy bytes while unexpired is not fenced by monotonic revocation history. Revalidation does not cancel work already entered. Those are operational-boundary limitations, not established production guarantees.
+
+The startup positive control exercises the new authority guard, then deliberately stops at missing runtime artifacts; it does not prove a successful complete startup. Broad compatibility remains qualified by baseline fixture/setup failures and a preexisting guarded fault-target compile blocker. The full development-loop objective remains open; continuity usefulness and unattended identity/egress qualification remain later priorities. Unspent allowance is not new authorization.

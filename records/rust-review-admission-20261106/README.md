@@ -1,0 +1,29 @@
+# Fresh Rust review admission: bounded result
+
+Recorded 2026-11-06 UTC. **Accepted source/fixture prerequisite; original development loop remains open.** Source is integrated locally at `8144a70878c9187cf3b04b7b2aee0f947d41a852` on `rescue-detached-20260911`, preserving the earlier reviewed candidate `227daaeb639210750af9ec825acd6d0bafe7f222` and baseline `5a3f47dd2216baf27e77eb45b58adc0aa34644ba`. No remote push, protected installation or production activation occurred.
+
+The human approved the [review-admission amendment](../../planning/rust-development-loop-review-admission-amendment-20261106.md): up to $20/120 minutes inside the original $60/four-hour objective. The dated proposal keeps its original proposed wording; the approval binding and this result record the later decision. Amendment setup06:50:22UTC, hard end08:50:22UTC; original hard end09:32:10UTC was not reset.
+
+The existing Rust admission owner now derives fresh exact job admission under a reusable protected policy, persists/reopens it and feeds the existing campaign and qualified execution consumer. Policy-selected startup authority, complete candidate artifacts and the actual evidence child are checked at their consuming owners. Requests cannot supply approval or choose policy/grants. Historical installed and offline routes retain separate standing. See the [component contract](../../rust/crates/slice-campaign/docs/job-review-admission.md).
+
+## Review and qualification
+
+One separate native Astra/xhigh/default reviewer started fresh and retained its own context for repair review. Its [first report](../../reviews/rust-review-admission-20261106/initial-review.json) found three blockers: startup downstream authority, incomplete candidate comparison and writer root confinement. All three were repaired; the [retained review](../../reviews/rust-review-admission-20261106/repair-review.json) accepted the exact final source/fixture subject with no remaining findings. Native readOnly/networkfalse was observed before both prompts; selected-turn settings and exact native report bindings are retained. This establishes the reported filesystem grant, not connector authority, cross-provider independence or production isolation.
+
+The first outer-host mechanical collection was abandoned because Root supplied a custody summary where a run record was required. The exact native final capture was independently matched, its findings preserved and the host task/objective closed and acknowledged. Repair review used the existing native adapter with a fresh explicit read-only resume realization before starting its one selected turn. No host success or stronger attestation is inferred from the abandoned collection.
+
+Repair-specific qualification passes: full slice-campaign test-support/test-faults suite reported47 passing statuses/1ignored including doctests; job-admission consumer10; startup/authority10; production compilation, all-target lint, doctests and exact-file formatting. Counts overlap and are not a unique-test total. Root checked source blob identities,10 final qualification records and7 summary hashes; no custody mismatches or leftover processes. The reviewer inspected implementation, negative fixtures and material custody evidence.
+
+Broad compatibility is qualified, not green. The full workflow run had34passes/8failures; all8 failures reproduced on the complete baseline helper snapshot before the relevant Rust behavior, at analyzer-version binding. Selected evidence fault fixtures had54passes/6setup failures matching baseline ProgramDrift/UnsafeCredential failures. The guarded fault target has an unchanged E0412 compile blocker. Earlier incomplete baseline exports, timeouts and canceled work remain in [worker evidence](worker-result.json) and [prior joined qualification](prior-joined-qualification.json); they are not successful comparisons.
+
+The shared graph covered the baseline, not these private candidate bytes. Reported unresolved relationships and missing new paths were handled through exact-source review/compiler/tests; [coverage](graph-coverage.json) makes no exhaustive graph claim. Source integration used a prepared Git ref transaction bound to the expected destination HEAD, then a checked index/worktree fast-forward. Foreign `.claude/` remained unchanged.
+
+## Limits and continuation
+
+The startup positive control passes the new authority guard and then deliberately stops at missing runtime artifacts. No full successful startup, genuine product review, product acceptance/publication, production isolation or completed original development loop is claimed. One-shot behavior assumes intact campaign state; same-UID store rollback and identical old policy restoration are not independently fenced. Revalidation does not cancel already entered work.
+
+All builder results/processes were collected. The reviewer was released idle. Root stopped and collected its foreground chatboard context/budget listener; no continuing monitor or automatic paid resumption was installed. It recovered an unavailable post-compaction reading to a positive epoch15/window475000 observation and preserved Sol/xhigh/default. Retaining the reviewer through its bounded pressured delta was an explicit capacity decision; it finished without compaction.
+
+[RESULT.json](RESULT.json) contains canonical accounting snapshots, conservative preparation/tail holds and the bounded disposition. Dollar figures are API-equivalent proxies, not billing or subscription consumption; nested objectives are not summed. Actor cost is an observation of this attempt, not evidence that the supervisor change caused savings.
+
+The [operator handoff](OPERATOR-HANDOFF.md) owns next-step boundaries. Deployment-owner policy installation and a fresh supervised Rust-owned end-to-end run remain required. The original full objective is closed unfulfilled; this prerequisite alone is accepted. No unspent allowance authorizes another attempt.

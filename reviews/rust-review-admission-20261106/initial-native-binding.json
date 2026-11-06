@@ -1,0 +1,13 @@
+{
+  "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+  "turn_id": "01a1afc4-8f0a-7033-96df-9ee78a2657a0",
+  "native_item_id": "msg_004a3dddf2b8a1fc016aed843e558087d09b708e574c448171",
+  "turn_file": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/review-native-turn.json",
+  "turn_sha256": "d8cd69cf3cd3c8095b5c00f38a6d409f676362a8df613959e2c6c1cf0cab7b2a",
+  "captured_report": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-review/RESULT.json",
+  "report_sha256": "4f047ec7a4aae0c91fa3c61f1f53e141c5721f2c8e1223b39473b000aa475896",
+  "parsed_native_final_equals_capture": true,
+  "host_staging_and_result_same_inode": true,
+  "verdict": "changes_required",
+  "host_collection": "abandoned due Root custody summary schema; independent native report binding preserved; not host success"
+}

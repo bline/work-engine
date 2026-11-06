@@ -1,0 +1,178 @@
+{
+  "schema": "rust-review-admission-bounded-result.v1",
+  "recorded_at": "2026-11-06T08:17:40.342396+00:00",
+  "status": "accepted_source_fixture_prerequisite_integrated_locally",
+  "source_commit": "8144a70878c9187cf3b04b7b2aee0f947d41a852",
+  "previous_candidate": "227daaeb639210750af9ec825acd6d0bafe7f222",
+  "baseline": "5a3f47dd2216baf27e77eb45b58adc0aa34644ba",
+  "branch": "refs/heads/rescue-detached-20260911",
+  "approval": {
+    "amendment": "planning/rust-development-loop-review-admission-amendment-20261106.md",
+    "binding_sha256": "36a096b804fcfe59a6fc750e82aa79fc38cce33ae8cfbc7c98212c87ef4f9edf",
+    "human_reply": "approved"
+  },
+  "full_original_objective": "unfulfilled; parent budget closed abandoned, prerequisite phase closed accepted",
+  "independent_review": "same separately launched native Astra/xhigh/default episode; R1-R3 resolved; exact repaired subject accepted; source/fixture standing only",
+  "qualification": "Repair-specific suites, production compilation, lint/docs/scoped formatting pass. Broad workflow/evidence fixture failures baseline-reproduced, guarded target compile blocker remains. Counts overlap. See worker result and reports.",
+  "deployment_and_live_calls": false,
+  "operator_handoff": "OPERATOR-HANDOFF.md",
+  "pressure": "Foreground chatboard context/budget wait, same Root collector; stopped/collected exit130. No continuing monitor.",
+  "collection": {
+    "worker_final_collected": true,
+    "reviewer_final_collected": true,
+    "reviewer_retired": "idle_released",
+    "owned_processes_remaining": 0,
+    "listener_session": 72620,
+    "listener_terminal_exit": 130,
+    "outer_host_initial_collection": "abandoned unsupported Root custody-summary schema; exact native report independently matched; receipts acknowledged"
+  },
+  "accounting": {
+    "basis": "speed-adjusted API-equivalent proxy; not billing or subscription quota",
+    "snapshot_at": "2026-11-06T08:17:39.234494+00:00",
+    "phase_canonical_usd": 10.7474636,
+    "phase_preinit_setup_usd": 0.1550444,
+    "phase_observed_including_setup_usd": 10.902508,
+    "phase_setup_window": [
+      "2026-11-06T06:50:22Z",
+      "2026-11-06T06:54:15Z"
+    ],
+    "phase_setup_already_in_parent": true,
+    "phase_actor_usd": {
+      "01a1a2c0-7191-76f2-afa1-16d32d5c4883": 2.0878951999999993,
+      "01a1af65-ab56-7630-b23b-29520ff77c74": 3.3360504,
+      "01a1afc4-88c5-7481-a742-ea65d6b069ff": 5.323518
+    },
+    "parent_canonical_usd": 12.587863600000002,
+    "parent_preinit_preparation_hold_usd": 4,
+    "closing_tail_reserve_usd": 0.75,
+    "phase_control_usd": 20,
+    "parent_human_cap_usd": 60,
+    "parent_canonical_control_usd": 56,
+    "nested_totals_are_not_additive": true,
+    "coverage_status": "partial",
+    "coverage_issues": [
+      {
+        "kind": "multiple_parents",
+        "node_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+        "parent_node_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "rejected": "codex_parent",
+        "retained": "binding"
+      }
+    ],
+    "known_gaps": [
+      "Claude Code title and other side calls are not in transcripts"
+    ],
+    "undated": {
+      "counts": {
+        "claude_all_models": 0,
+        "claude_fable": 0,
+        "codex": 0
+      },
+      "sessions": []
+    },
+    "unpriced_observed_calls": 0,
+    "no_future_calls_assumed_zero": true,
+    "reports": {
+      "final-phase-cost-tree.json": {
+        "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/final-phase-cost-tree.json",
+        "sha256": "03820c4d1fe34c33251210f35482482884c2167a902498c178e61bffcc0ba656"
+      },
+      "final-parent-cost-tree.json": {
+        "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/final-parent-cost-tree.json",
+        "sha256": "6c41fd73db511a5f31f612b3bb194480e76013f33485fdf9027d693fce5c9a08"
+      },
+      "phase-preparation-cost-tree.json": {
+        "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/phase-preparation-cost-tree.json",
+        "sha256": "ae6047c9b10d31078c70c818390f4a324f9557d351a4fbad993da40b8be9f1ce"
+      }
+    }
+  },
+  "limits": [
+    "No protected policy installation, production activation, product-result acceptance/publication or completed live development loop.",
+    "No production isolation, complete successful startup, store-rollback fence, monotonic policy revocation or cancellation guarantee.",
+    "Native readOnly/networkfalse is not connector authority or cross-provider independence.",
+    "All qualification failures and uncertain/incomplete evidence are preserved; no broad green claim."
+  ],
+  "record_artifacts": [
+    {
+      "path": "records/rust-review-admission-20261106/OPERATOR-HANDOFF.md",
+      "sha256": "ab3f433e5837de06b80f3b737656e62aac9bbf87e015725e36646112dab59278"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/README.md",
+      "sha256": "060c74c71963bd9d619bf91f159887ab5fd98c444e33c0aa9722b3cae91d8619"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/custody-verification.json",
+      "sha256": "594ea3143296ccedb6a9d748274a310e1b036ee061153f0b0238189e50476250"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/graph-coverage.json",
+      "sha256": "8dd61b7fdcf096bdaa2971d18292a104903136250d322b8249fe4614a81ccdf1"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/parent-budget-snapshot.json",
+      "sha256": "8a3834de0712a7ff10129d8379a454a6c65936346249ce4c43a391819f418ef0"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/phase-budget-snapshot.json",
+      "sha256": "fbed224705ba2237b66799b53ca4401213c69aa194d962221e64977ec1c29fa1"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/pressure-listener-completion.json",
+      "sha256": "3960251929ffa5fa7d820bacad4080f5340ad4dc1abbee0a3305ae9341139c50"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/prior-joined-qualification.json",
+      "sha256": "2b41c3361b7b0429c9d296210459d4779b8274f5bba4a43cab884d75beab7ee6"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/reviewer-retirement.json",
+      "sha256": "2ed354802f5365b7162488c1ac499c338fa62bf501f258433b0b0dc6148f167d"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/source-integration.json",
+      "sha256": "88ab4db526b1a99a2fd29befe5f8aef84f2eac8b60c6f3935d28814d9143d69d"
+    },
+    {
+      "path": "records/rust-review-admission-20261106/worker-result.json",
+      "sha256": "d1fef2b27e8cbc5df8f888e6cf5c13973234885b6e17ab32792d8f825d9e4a3b"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/README.md",
+      "sha256": "15b78b63a1b891eb1a7fff2815233032490234a162a99baf475ce49ad804ad9d"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/capability-observations.json",
+      "sha256": "4e6bce3b25ae217390e2da09a0e8682bf3a25073b3172e61871250b0f34eae2e"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/initial-native-binding.json",
+      "sha256": "3aa2ef4e422e86cc5e704e8fec6fa6bd75654f4d2d01c67165ad4a7ca33ed0fb"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/initial-review.json",
+      "sha256": "4f047ec7a4aae0c91fa3c61f1f53e141c5721f2c8e1223b39473b000aa475896"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/initial-subject.patch.gz",
+      "sha256": "b8f281406e3558b91404742d7f1c34809ce5307ff77a4b74366a5d53bf653892"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/repair-native-binding.json",
+      "sha256": "6c6c12a21c7aaa958fb4ec15dc9c978ba121bd51f4c6ab0a226a1888d2190612"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/repair-review.json",
+      "sha256": "21d554de408d539762bf0f4f6181dc5a7df5adec4a5b9483570f475e62aabd04"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/repair-selected-settings.json",
+      "sha256": "28587a7f52a3726a70afc0e37bb45ffde3d45a49f3c73904956a847457bff55c"
+    },
+    {
+      "path": "reviews/rust-review-admission-20261106/repair-subject.patch.gz",
+      "sha256": "5b62a618b310959d5dc5049a3a1ec7ebbce701957b40473ce280631d4f47fc8f"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "9366941f-9150-4159-8ff2-04cb18be8a37",
+    "sessions": [
+      {
+        "session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "provider": "codex",
+        "from": "2026-11-06T06:54:15Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [
+      {
+        "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+        "provider": "codex",
+        "parent_session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "bound_at": "2026-11-06T06:54:15Z",
+        "bound_by": "supervisor",
+        "reason": "Retained investigation worker; verified lineage and previously collected final; new phase window excludes old discovery cost"
+      },
+      {
+        "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+        "provider": "codex",
+        "parent_session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "bound_at": "2026-11-06T07:31:30Z",
+        "bound_by": "supervisor",
+        "reason": "Verified native independent reviewer; configured review subbudget6 existed before launch, nested inside phase20 and parent60"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 20.0,
+        "marks_usd": [
+          8.0,
+          14.0,
+          17.0
+        ],
+        "set_by": "user",
+        "set_at": "2026-11-06T06:54:15Z",
+        "reason": "Approved amendment allowance; cumulative parent60 includes this phase, never add nested totals twice",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1af65-ab56-7630-b23b-29520ff77c74",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-06T06:54:15Z",
+        "reason": "Amendment builder allowance, preserved review6 and repairs/root6",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+        "max_usd": 6.0,
+        "marks_usd": [
+          4.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-06T07:31:30Z",
+        "reason": "Reviewer SID now observed; prelaunch six-dollar review objective remains governing for earlier calls",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "rust-review-admission-seam-20261106",
+    "original_items": [
+      "Rust-owned fresh per-job review admission under trusted installed test policy",
+      "Existing qualified consumer integration, one-shot/replay and negative-authority qualification",
+      "Independent authority review, repairs, private checkpoint and operator handoff"
+    ],
+    "started_at": "2026-11-06T06:54:15Z",
+    "weekly_at_start": {
+      "used_percent": 80.0,
+      "observed_at": "2026-11-06T06:53:21.102Z",
+      "resets_at": 1794435190,
+      "window_minutes": 10080,
+      "limit_id": "codex",
+      "plan_type": "prolite",
+      "source": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl"
+    },
+    "limits": {
+      "max_hours": 1.935278,
+      "reconsider_after_additions": 1
+    },
+    "limits_set_by": "user",
+    "limits_reason": "Approved amendment20USD/120min within original60; amendment setup06:50:22 UTC, hard phase end08:50:22 UTC; original deadline09:32:10 unchanged",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 20.0,
+          "marks_usd": [
+            8.0,
+            14.0,
+            17.0
+          ],
+          "set_by": "user",
+          "set_at": "2026-11-06T06:54:15Z",
+          "reason": "Approved amendment allowance; cumulative parent60 includes this phase, never add nested totals twice",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1af65-ab56-7630-b23b-29520ff77c74",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T06:54:15Z",
+          "reason": "Amendment builder allowance, preserved review6 and repairs/root6",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-06T07:31:30Z",
+          "reason": "Reviewer SID now observed; prelaunch six-dollar review objective remains governing for earlier calls",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": [],
+    "closed_at": "2026-11-06T08:17:39Z",
+    "close": {
+      "at": "2026-11-06T08:17:39Z",
+      "disposition": "accepted",
+      "reason": "Reviewed source/fixture admission prerequisite integrated at8144a708; three findings repaired and retained reviewer accepted; targeted qualification passed, broad baseline limitations preserved; all actors/processes collected, listener stopped. Mechanical dated record commit and final communication covered by reserved closing tail. No operational/full-loop acceptance.",
+      "set_by": "supervisor"
+    }
+  }
+}

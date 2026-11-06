@@ -1,0 +1,149 @@
+{
+  "candidate": "8144a70878c9187cf3b04b7b2aee0f947d41a852",
+  "qualification_records_checked": 10,
+  "records": [
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/owner.json",
+      "sha256": "bae1249b9b1a1f5e131dac3b1cd54806bb1866d714f66cd44876d2b2b3c24e8b",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 47,
+        "failed": 0,
+        "ignored": 1,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/consumer.json",
+      "sha256": "313acf792e936d82cb74edd6c49ba268213803a36cfd46ee8b36c434c7434f77",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation2/startup.json",
+      "sha256": "2f8a4a943961e7178bf74136ecb7596aa22c4bbd254f077b213333a64aa8c306",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/production-check.json",
+      "sha256": "0ff54d47ce56763f66f41c01aa8f538ab68c6711ab81772806871a295a5c1163",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation2/lint.json",
+      "sha256": "1728f2a6268abd8259fa163967089d94a4d3e6bb34e93e13cd72c70a9d07f976",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/docs.json",
+      "sha256": "e6cf00380c6fbc183aaf8bf0a76fde0b3442d2d7a702dc5d054b8109e235c277",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 16,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation-joined/workflow-full.json",
+      "sha256": "1ea3c72598688a1492aa6a217cbf7694d2b6b3ae9451ce793264f1a0954a2d1b",
+      "returncode": 101,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 34,
+        "failed": 8,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation-joined/evidence-fault-fixtures.json",
+      "sha256": "955cf5d163853e9ddd2010d6ceec96a59ce19bea46fb465d84172dd158e842fe",
+      "returncode": 101,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 54,
+        "failed": 6,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 48
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation-joined/format-check.json",
+      "sha256": "92a10a5bc884b7aa2442faa8197bf0cfdbf81cb5db10732545c2d383cc375cd3",
+      "returncode": 0,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/baseline-workflow4/baseline-workflow-schema-four.json",
+      "sha256": "b2664dd0ae5bab432618ecdb063d64d60b1c2ab5b354f7c208be76ab7b94b55d",
+      "returncode": 101,
+      "timed_out": false,
+      "leftovers": 0,
+      "counts": {
+        "passed": 1,
+        "failed": 8,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 18
+      }
+    }
+  ],
+  "summary_hashes_checked": 7,
+  "mismatches": [],
+  "scope": "Repair-specific qualification passes; broad compatibility failures remain recorded and baseline-attributed, not green. Counts overlap."
+}

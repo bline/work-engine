@@ -1,0 +1,94 @@
+{
+  "verdict": "accept",
+  "candidate": "8144a70878c9187cf3b04b7b2aee0f947d41a852",
+  "reviewed_delta_base": "227daaeb639210750af9ec825acd6d0bafe7f222",
+  "original_baseline": "5a3f47dd2216baf27e77eb45b58adc0aa34644ba",
+  "scope": "Retained review of source/fixture authority. Root retains semantic acceptance and integration.",
+  "dispositions": {
+    "R1": {
+      "status": "resolved",
+      "source": [
+        "rust/crates/slice-campaign/src/job_admission.rs:34",
+        "rust/crates/slice-campaign/src/job_admission.rs:494",
+        "rust/crates/review-workflow/src/startup.rs:621",
+        "rust/crates/review-workflow/tests/job_startup_authority.rs:140"
+      ],
+      "assessment": "Protected policy now selects exact claims-source and configuration hashes plus the completion consumer. Startup compares them before downstream authority processing; existing file and bootstrap checks validate the selected bytes. Negative fixtures reject internally consistent substitutions of source identity, production/completion grants, decision scope and consumer."
+    },
+    "R2": {
+      "status": "resolved",
+      "source": [
+        "rust/crates/slice-campaign/src/application.rs:2172",
+        "rust/crates/slice-campaign/src/application.rs:2240",
+        "rust/crates/slice-campaign/src/job_admission.rs:486",
+        "rust/crates/review-execution-evidence/tests/job_admission.rs:326"
+      ],
+      "assessment": "Installation and entry now compare the complete admitted CandidateRef with campaign state, and entry also checks the dispatched candidate. Separate negative fixtures reject receipt and physical-profile artifact hash substitutions. Historical codec meaning remains unchanged."
+    },
+    "R3": {
+      "status": "resolved",
+      "source": [
+        "rust/crates/slice-campaign/src/installed_authority.rs:484",
+        "rust/crates/review-execution-evidence/src/claude/writer.rs:299",
+        "rust/crates/review-execution-evidence/src/claude/writer.rs:322",
+        "rust/crates/review-execution-evidence/tests/job_admission.rs:428"
+      ],
+      "assessment": "Both fixture checking and production entry validate the actual writer root against the admitted evidence child before execution. The positive fixture uses that child; an otherwise matching writer outside it is refused without session creation."
+    }
+  },
+  "findings": [],
+  "evidence_reviewed": {
+    "source": "All eight repair-delta paths inspected directly in the immutable repair checkout. HEAD matches the candidate; no dirty state; diff whitespace check passed.",
+    "qualification": [
+      "remediation1/owner.json and output: 47 passed, 1 ignored, including enabled fault tests and doctests.",
+      "remediation1/consumer.json and output: 10 passed.",
+      "remediation1/production-check.json: exit 0.",
+      "remediation2/startup.json and output: 10 passed.",
+      "remediation2/lint.json and format.json: exit 0."
+    ],
+    "binding": "Owner, consumer and production-check inputs match repaired implementation bytes; their differing inputs are the subsequently changed documentation and startup test. Remediation2 startup, lint and format inputs match final bytes. Inspected records report no leftovers.",
+    "summary_sha256_verified": "ea40bc75a5848136b54187221deab5685f634007788ff81df9209b1b18292cc4",
+    "summary_record_hashes": "All three linked custody-record hashes verified.",
+    "graph": "Coverage checked against shared baseline generation 2026-11-06T06:02:33Z. Candidate/new paths remain unindexed and baseline paths report unresolved calls; conclusions rely on exact candidate source."
+  },
+  "limitations": [
+    "No deployment, live provider execution, production isolation or full-development-loop qualification.",
+    "The startup positive control passes the repaired authority guard and then fails on deliberately missing runtime artifacts; it is not a complete successful startup.",
+    "Broader suites still under baseline comparison are not treated as green.",
+    "One-shot guarantees depend on intact campaign owner state. Same-UID store rollback and restoration of identical previously valid protected policy bytes remain outside the established guarantee.",
+    "No tests or mutating Cargo operations were run by this reviewer. Qualification results are inspected custody evidence.",
+    "Final cumulative cost and collection tail remain with Root's budget observer."
+  ],
+  "identity": {
+    "session_id": "01a1afc4-88c5-7481-a742-ea65d6b069ff",
+    "continuity": "Same retained independent-review episode; no builder conversation supplied.",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883"
+  },
+  "settings_observed": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "xhigh",
+    "service_tier": "default",
+    "approval_policy": "never",
+    "evidence": "Fresh thread_settings_applied record at 2026-11-06T07:56:37.155Z."
+  },
+  "context_observation": {
+    "input_tokens": 175889,
+    "window_tokens": 258400,
+    "epoch": 0,
+    "compaction_markers": 0,
+    "disposition": "Pressure observed; bounded delta completed without replacement, consistent with Root's explicit retention decision."
+  },
+  "capability_observation": {
+    "native_filesystem": "Fresh applied settings confirm managed read-only filesystem access.",
+    "network": "Restricted in applied settings; no network or provider operations performed.",
+    "boundary": "Native filesystem restrictions do not establish connector authority or production isolation."
+  },
+  "process_disposition": {
+    "status": "bounded_review_complete",
+    "owned_processes_remaining": 0,
+    "subagents_launched": 0,
+    "repository_or_connected_service_mutations": 0,
+    "result_file_written": false,
+    "collection_owner": "Root"
+  }
+}

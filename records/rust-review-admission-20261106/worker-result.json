@@ -1,0 +1,613 @@
+{
+  "schema": "review-job-admission-remediation-result-v1",
+  "created_at": "2026-11-06T08:04:23.729856+00:00",
+  "status": "repairs_implemented_private_commit_ready_for_root_re_review",
+  "worker_session": "01a1af65-ab56-7630-b23b-29520ff77c74",
+  "collector": "/root",
+  "packet": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/PACKET.md",
+  "review_findings": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-review/RESULT.json",
+  "worktree": "/home/bline/code/work-engine-worktrees/review-admission-20261106",
+  "baseline": "5a3f47dd2216baf27e77eb45b58adc0aa34644ba",
+  "reviewed_candidate_preserved": "227daaeb639210750af9ec825acd6d0bafe7f222",
+  "repair_commit": "8144a70878c9187cf3b04b7b2aee0f947d41a852",
+  "repair_parent": "227daaeb639210750af9ec825acd6d0bafe7f222",
+  "worktree_clean": true,
+  "repair_diff_stat": ".../review-execution-evidence/src/claude/writer.rs |  10 ++\n .../tests/job_admission.rs                         |  63 ++++++-\n rust/crates/review-workflow/src/startup.rs         |  10 ++\n .../review-workflow/tests/job_startup_authority.rs | 187 +++++++++++++++++++++\n .../slice-campaign/docs/job-review-admission.md    |  14 +-\n rust/crates/slice-campaign/src/application.rs      |  21 +++\n .../slice-campaign/src/installed_authority.rs      |  22 +++\n rust/crates/slice-campaign/src/job_admission.rs    |  45 +++++\n 8 files changed, 361 insertions(+), 11 deletions(-)",
+  "source_files": [
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/writer.rs",
+      "sha256": "d1603726a1e9f0ceaed21d3e68500ecefbfa071caea0ee5775a780d61c8505ef",
+      "git_blob_oid": "cc909e13104ac808b7279bd99874062a510b2447"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/tests/job_admission.rs",
+      "sha256": "53a46be59ecf232da803e0b1b0b78440b2be8041b97ff60bd4073830e419fafe",
+      "git_blob_oid": "7d08c7fab6870d04e722496e3539fd137469fa6b"
+    },
+    {
+      "path": "rust/crates/review-workflow/src/startup.rs",
+      "sha256": "e7c2c1843727bbd56866bb8918d5e8e3b74feaf4e15dc15ef8d05977465e01fc",
+      "git_blob_oid": "0237b7bb7e7deaf5607442148d25134d373a3c93"
+    },
+    {
+      "path": "rust/crates/review-workflow/tests/job_startup_authority.rs",
+      "sha256": "b57df0ed0287302b0db8827abc94d90aa6a771711560dc6d9c2e151836d6fb5b",
+      "git_blob_oid": "dfa03b0d652a7858de74e9a76a95fe62922b8b80"
+    },
+    {
+      "path": "rust/crates/slice-campaign/docs/job-review-admission.md",
+      "sha256": "2a7725c39811cc758ec781e3a402327e3fb3c366e9606a08fc03acab9c9c9d5c",
+      "git_blob_oid": "5af6a377c610a27d8d070a30b5130414d5bc1da1"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/application.rs",
+      "sha256": "e773b741b5df693acbe7d26cc5ef5676166a0c1c9a9568d7fd61bd711bea47e8",
+      "git_blob_oid": "d398bdc4e856a9623cc030fbb85874cac28d73ab"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/contract.rs",
+      "sha256": "b4799b2b65af06ea55cdc65adce68501ab9cc857eb72f8e15a94d4ca3a911199",
+      "git_blob_oid": "ccc03959c64c6235690f459c257dff04b94c4390"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/installed_authority.rs",
+      "sha256": "71dfc51c89e61996bd9d075a2bac4416901697c4bb052167a5c7987fb09b90dc",
+      "git_blob_oid": "f00dbd220ed3720847c5df0ba3f452d3b3671e5f"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/job_admission.rs",
+      "sha256": "d3f0e26e2240fa114c8bdac3cfa50f0dbc4e6898cee45ab4e1dfd7a4b69f5a9e",
+      "git_blob_oid": "e8765eaf86925ee88e40eb23bf1b1d3a755474e7"
+    },
+    {
+      "path": "rust/crates/slice-campaign/src/lib.rs",
+      "sha256": "4679536c6f0db4374a409874667b6328c1de4d4cc4483e11ff2fac73d35d7470",
+      "git_blob_oid": "93368cead70ca7dc64a29c798a460de98900b791"
+    }
+  ],
+  "finding_repairs": {
+    "R1": {
+      "owner": "slice-campaign policy + review-workflow startup",
+      "change": "Mandatory installed-policy startupAuthority binds exact claims source/configuration byte hashes and completion consumer. Existing exact claims document validation binds source identity/root, production and completion grants, decision scopes and authority references. load_for_job compares before loading authority or owner effects; reopen revalidates current policy.",
+      "fixture": "Public load_for_job rejects internally consistent substituted source identity, production grant, completion grant, decision scope and completion consumer. Matching policy bytes pass this guard and refuse at intentionally missing independent runtime artifacts; this is not a full qualified startup/provider success test."
+    },
+    "R2": {
+      "owner": "slice-campaign application",
+      "change": "Complete admitted CandidateRef compared against current campaign candidate at installation and immediately before consumption, then dispatched request before entry issue; legacy acceptance/claim codec unchanged.",
+      "fixture": "Changed receipt artifact hash and physical-profile artifact hash independently refuse campaign installation while commit/tree/patch/semantic-profile remain unchanged."
+    },
+    "R3": {
+      "owner": "review-execution-evidence writer / FreshInitialEntry",
+      "change": "Both installed and fixture job-entry consumers compare actual store root against admitted evidence child before execution permit/effects.",
+      "fixture": "Positive composition now uses admitted evidence child; otherwise-matching writer outside it refuses with no session-live effect."
+    }
+  },
+  "qualification_records": [
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/owner.json",
+      "sha256": "bae1249b9b1a1f5e131dac3b1cd54806bb1866d714f66cd44876d2b2b3c24e8b",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--no-fail-fast",
+        "-p",
+        "slice-campaign",
+        "--features",
+        "test-support,test-faults",
+        "--",
+        "--test-threads=8"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 47,
+        "failed": 0,
+        "ignored": 1,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": false,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/consumer.json",
+      "sha256": "313acf792e936d82cb74edd6c49ba268213803a36cfd46ee8b36c434c7434f77",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support,test-faults",
+        "--test",
+        "job_admission",
+        "--",
+        "--test-threads=4"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": false,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation2/startup.json",
+      "sha256": "2f8a4a943961e7178bf74136ecb7596aa22c4bbd254f077b213333a64aa8c306",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "review-workflow",
+        "--features",
+        "test-support,test-faults",
+        "--test",
+        "job_startup_authority",
+        "--test",
+        "startup_binding",
+        "--test",
+        "authority_boundary",
+        "--",
+        "--test-threads=4"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": true
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/production-check.json",
+      "sha256": "0ff54d47ce56763f66f41c01aa8f538ab68c6711ab81772806871a295a5c1163",
+      "argv": [
+        "cargo",
+        "check",
+        "--offline",
+        "-p",
+        "slice-campaign",
+        "-p",
+        "review-workflow",
+        "-p",
+        "review-execution-evidence"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": false,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation2/lint.json",
+      "sha256": "1728f2a6268abd8259fa163967089d94a4d3e6bb34e93e13cd72c70a9d07f976",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "-p",
+        "slice-campaign",
+        "-p",
+        "review-workflow",
+        "-p",
+        "review-execution-evidence",
+        "--all-targets",
+        "--features",
+        "test-support",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": true
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation1/docs.json",
+      "sha256": "e6cf00380c6fbc183aaf8bf0a76fde0b3442d2d7a702dc5d054b8109e235c277",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "slice-campaign",
+        "-p",
+        "review-workflow",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support",
+        "--doc"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 16,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": false,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation-joined/workflow-full.json",
+      "sha256": "1ea3c72598688a1492aa6a217cbf7694d2b6b3ae9451ce793264f1a0954a2d1b",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--no-fail-fast",
+        "-p",
+        "review-workflow",
+        "--features",
+        "test-support",
+        "--",
+        "--test-threads=8"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 101,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 34,
+        "failed": 8,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": true
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation-joined/evidence-fault-fixtures.json",
+      "sha256": "955cf5d163853e9ddd2010d6ceec96a59ce19bea46fb465d84172dd158e842fe",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--no-fail-fast",
+        "-p",
+        "review-execution-evidence",
+        "--features",
+        "test-support,test-faults",
+        "--lib",
+        "--test",
+        "claude_boundary",
+        "--test",
+        "claude_custody",
+        "--test",
+        "claude_execution",
+        "--test",
+        "claude_recovery",
+        "--test",
+        "controlled_process",
+        "--test",
+        "crash_recovery",
+        "--test",
+        "custody_readback",
+        "--test",
+        "e0_contract",
+        "--",
+        "--test-threads=8"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 101,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 54,
+        "failed": 6,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 48
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": true
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/remediation-joined/format-check.json",
+      "sha256": "92a10a5bc884b7aa2442faa8197bf0cfdbf81cb5db10732545c2d383cc375cd3",
+      "argv": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs",
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs"
+      ],
+      "cwd": "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust",
+      "returncode": 0,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 0
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/src/claude/writer.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-execution-evidence/tests/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/src/startup.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/docs/job-review-admission.md": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/application.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/contract.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/installed_authority.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/job_admission.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/slice-campaign/src/lib.rs": true,
+        "/home/bline/code/work-engine-worktrees/review-admission-20261106/rust/crates/review-workflow/tests/job_startup_authority.rs": true
+      }
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/baseline-workflow4/baseline-workflow-schema-four.json",
+      "sha256": "b2664dd0ae5bab432618ecdb063d64d60b1c2ab5b354f7c208be76ab7b94b55d",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--no-fail-fast",
+        "-p",
+        "review-workflow",
+        "--features",
+        "test-support",
+        "--test",
+        "campaign_owner_join",
+        "schema_four",
+        "--",
+        "--test-threads=2"
+      ],
+      "cwd": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/baseline-export/rust",
+      "returncode": 101,
+      "signal": null,
+      "timed_out": false,
+      "test_status_totals": {
+        "passed": 1,
+        "failed": 8,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_statuses_including_subprocesses": 18
+      },
+      "leftover_processes": [],
+      "leftovers_after_kill": null,
+      "final_input_match": {
+        "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/baseline-export/rust/crates/review-workflow/tests/campaign_owner_join.rs": true
+      }
+    }
+  ],
+  "qualification_summary": {
+    "repair_specific": "All pass: full slice-campaign test-support,test-faults47 test statuses including doctests,1 ignored; job-admission consumer10; workflow startup/authority10; production check; all-target clippy -Dwarnings; docs16; final exact Rust formatting. Counts overlap and must not be summed as unique tests.",
+    "joined_workflow": "Full no-fault workflow completed34passed8failed; exact same8schema_four failures and diagnostic reproduced at baseline in baseline-workflow4 (1passed8failed18filtered), helper/analyzer binding mismatch before relevant Rust remediation flow.",
+    "joined_evidence_faults": "Selected all meaningful non-guarded fault fixture targets completed54passed6failed; all6 failure identities/locations match previously baseline-reproduced ProgramDrift/UnsafeCredential setup failures. claude_guarded test-faults target remains baseline-proven E0412 compile blocker.",
+    "prior_joined": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/JOINED-QUALIFICATION.json",
+    "retained_failures": [
+      "remediation1 startup/lint compile failure in new fixture test: inaccessible internal test_support; fixed by including existing fixture support, remediation2 passes.",
+      "Initial baseline-workflow exports missed non-Rust compile/runtime fixture dependencies. Attempts1-3 retained as incomplete harness evidence; only baseline-workflow4 establishes workflow attribution.",
+      "Original joined full suite timed out600seconds; redundant pending fault workflow canceled to prioritize Root-assigned fixes."
+    ]
+  },
+  "baseline_helper_hashes": [
+    {
+      "path": "skills/slice-builder/scripts/run_gate.py",
+      "sha256": "c8fee4d50fc5689c253fb1ef76a4b86159a3c8a916b76db9a764fbe5c0ed0dba",
+      "matches_candidate_bytes": true
+    },
+    {
+      "path": "skills/slice-checkpoint/scripts/checkpoint.py",
+      "sha256": "398086bbf33022d9bcdb467484b0733f362301a6634eb3478f52dcdbfc7f34c9",
+      "matches_candidate_bytes": true
+    },
+    {
+      "path": "skills/code-change-profile/scripts/code_change_profile.py",
+      "sha256": "47e486ce1539bbfe1ab466d77650d9bb3e0338222478ae445fe6a07ba95e2003",
+      "matches_candidate_bytes": true
+    }
+  ],
+  "custody_summary_hashes": {
+    "remediation1": "83fbce33a7e0964645d200365e5b6d7e7fecb6757ab594838b244030e7864f00",
+    "remediation2": "ea40bc75a5848136b54187221deab5685f634007788ff81df9209b1b18292cc4",
+    "remediation-joined": "53ac48a5adc7343037eb1472e5f024f8aeaa6aefa8d0be03b92c1bbfcc8037a3",
+    "baseline-workflow": "25753b6cceb66a924711dc28af73e8c6c5dd16c08ea0285196207cab38e4cd1a",
+    "baseline-workflow2": "a31bad5d3110547afd45edc696c171671f557b6f3f8b84acbc11c57f0c2cb848",
+    "baseline-workflow3": "d35f9f9b91d325b427dce7f1732986d751203e14c035bfc097b6255c3578bad3",
+    "baseline-workflow4": "dd2391ab6708d30cad5b5f9c5e5649b338bcc76808f56aa17cf86fc6fe3bead8"
+  },
+  "process_disposition": {
+    "owned_processes_remaining": 0,
+    "all_launched_sessions_collected": true,
+    "custody_records_report_no_leftovers": true,
+    "provider_or_product_live_calls": 0,
+    "real_credential_reads": 0,
+    "protected_writes": 0,
+    "extra_agents": 0
+  },
+  "limits": [
+    "No protected installation, production activation, genuine independent review execution or acceptance/publication performed. Root owns separate re-review and integration.",
+    "Same-UID fixtures do not establish production operator/agent isolation. One-shot replay assumes campaign owner state is preserved; no independent rollback fence.",
+    "Identical previously valid policy bytes can become current again while unexpired; no monotonic revocation history or cancellation of work already entered is established.",
+    "Broad compatibility is not green: baseline-proven fixture/setup failures and guarded fault-target compile blocker remain.",
+    "Existing original full Rust development loop remains unqualified/open.",
+    "Successful records before the fixture-import correction include a noncompiled workflow test input hash and earlier documentation hash; final_input_match discloses those differences. Compiled implementation bytes are unchanged; final startup/lint/full-workflow/format records bind final source."
+  ],
+  "context": {
+    "schema": "manual-orchestration-context-check-v1",
+    "checked_at": "2026-11-06T08:04:23.644763+00:00",
+    "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+    "next_task_tokens": null,
+    "next_task_basis": "not estimated",
+    "observed_at": "2026-11-06T08:03:14.050Z",
+    "freshness": "recent_file_modification",
+    "recorded_model": "gpt-6.1-sol",
+    "recorded_effort": "medium",
+    "input_tokens": 145992,
+    "context_window_tokens": 475000,
+    "epoch": 1,
+    "compaction_markers": 1,
+    "lineage": [
+      "compaction marker at line 657"
+    ],
+    "limitations": [
+      "token_count line 661 has no request input; current context unavailable"
+    ],
+    "status": "observed",
+    "trigger_tokens": 275735,
+    "band_floor_tokens": 314829,
+    "headroom_to_trigger": 129743,
+    "headroom_to_band_floor": 168837,
+    "fraction_of_window": 0.3074,
+    "recommendation": "retain_ok",
+    "reasons": [
+      "input 145992 is below the trigger 275735",
+      "next-task size not estimated; headroom to band floor is the margin",
+      "session has compacted 1 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+    ]
+  },
+  "continuation": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-builder/JOINED-CONTINUATION.md"
+}

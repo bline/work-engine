@@ -1,0 +1,9 @@
+{
+  "session_id": 72620,
+  "exit_code": 130,
+  "terminal": true,
+  "collector": "same Root write_stdin",
+  "termination": "Root sent SIGINT via owned foreground PTY after all work/results collected",
+  "event_log": "/home/bline/.local/state/work-engine/rust-development-loop-20261106T0540/admission-pressure-events.jsonl",
+  "monitoring_continues": false
+}
