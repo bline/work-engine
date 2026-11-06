@@ -1,0 +1,50 @@
+{
+  "at": "2026-11-06T15:31:20.159886+00:00",
+  "source": "d14bedc4c6987d5906cd014e4bfcfc3c5c6258cf",
+  "caller_uid": 1000,
+  "job_policy": "/etc/work-engine/review-host/job-policy.json",
+  "job_policy_present": false,
+  "protected_parent_uid": 0,
+  "protected_parent_mode": "0755",
+  "privileged_install": "sudo -n -l refused: interactive authentication required; no root command run",
+  "entrypoints": {
+    "initialize": "work-engine-review-host/src/main.rs:23 calls TrustedStartup::load",
+    "serve_worker": "work-engine-review-host/src/worker.rs:43 calls TrustedStartup::load",
+    "new_api": "review-workflow/src/startup.rs:496 load_for_job requires independently derived InstalledAcceptancePin"
+  },
+  "graph": {
+    "tier": 2,
+    "project": "home-bline-code-work-engine",
+    "generation": "2026-11-06T08:17:47Z",
+    "trace": "load_for_job indexed callers revalidate/test; main/worker literal source confirms historical loader; no exhaustive repository absence claim",
+    "coverage": "All seven relied paths checked, complete page. Unresolved calls verified through exact material source; docs/config read directly."
+  },
+  "current_authority": "Human proceed authorizes preparation of next step. No fresh dollar cap for product/live work or installation packet approved. No old budget reopening.",
+  "credential_files_read": 0,
+  "product_provider_calls": 0,
+  "protected_writes": 0,
+  "docker_executable": "/usr/bin/docker",
+  "paid_worker_agents_started": 0,
+  "owned_processes_remaining": 0,
+  "docker_server_version": "29.7.2",
+  "proposed_phase_budget_usd": 35,
+  "proposed_budget_approval": "pending",
+  "proposed_plan": "planning/rust-loop-runtime-entry-and-live-budget-20261106.md",
+  "preparation_budget": {
+    "self_limit_usd": 3,
+    "canonical_limit_usd": 2.25,
+    "preinit_reserve_usd": 0.75,
+    "canonical_observed_usd": 0.22651480000000002,
+    "coverage": "complete",
+    "budget_status": "closed accepted preparation only",
+    "human_35_dollar_approval": "pending"
+  },
+  "controls_probe": {
+    "mode": "bounded nonstreaming chatboard wait",
+    "terminal_status": "timeout",
+    "exit_code": 2,
+    "context_or_budget_observations_returned": false,
+    "ongoing_listener": false,
+    "next_funded_admission": "establish current positive controls via streaming follow; do not infer health from timeout"
+  }
+}
