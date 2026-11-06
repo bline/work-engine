@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "status": "SOURCE_FIXTURE_ACCEPTED_MERGED_FULL_A_PRODUCTION_UNFULFILLED",
+  "source_acceptance": {
+    "subject": "66fd35a0582f918a835dedf192d0704d03f4281d",
+    "status": "Rootaccepted SOURCE/FIXTURE ONLY, no open P1/P2",
+    "whole_A_status": "unfulfilled production qualification pending B startup/install",
+    "review_lineage": "initialcompletefreshAstra/xhigh plus reconstructedfreshAstra/high boundedrepair; no continuouscontext/crossproviderclaim",
+    "integration": "fast-forwarded exactsubject into rescue-detached-20260911, no push"
+  },
+  "approval": {
+    "status": "approved_A_custody_only",
+    "approval": "approved",
+    "clock_basis": "first current UTC observation after human approval",
+    "started_utc": "2026-11-06T21:44:05+00:00",
+    "gate_stop_utc": "2026-11-06T22:14:05+00:00",
+    "feature_stop_utc": "2026-11-06T23:59:05+00:00",
+    "hard_end_utc": "2026-11-07T01:44:05+00:00",
+    "cap_usd": 18,
+    "canonical_cap_usd": 17.5,
+    "setup_hold_usd": 0.5,
+    "opening_gate_all_in_cap_usd": 2,
+    "opening_gate_builder_cap_usd": 1,
+    "feature_stop_all_in_usd": 10,
+    "aggregate_cap_usd": 45,
+    "prior_conservative_full_scope_booking_usd": 26.2202516,
+    "proposed_total_max_usd": 44.2202516,
+    "root_sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "root_rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl",
+    "baseline": "3cf8fc48e2bd71eb9dc5f920ba09c430870710b2",
+    "plan": "planning/rust-production-custody-and-loop-closure-20261106.md",
+    "owner": "Root",
+    "boundary": "A only, no B/C/startup/job settlement/live provider, no protected installation without concrete reviewed packet/exact operator approval; previous peer pause unchanged",
+    "budget": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/budget.json"
+  },
+  "review_lineage": {
+    "initial": {
+      "sid": "01a1b2f5-c38f-7360-b7f8-44c37dd00adc",
+      "turn": "01a1b2f5-cd4f-7743-b51d-cb8a55b00734",
+      "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T15-23-33-01a1b2f5-c38f-7360-b7f8-44c37dd00adc.jsonl",
+      "exec_session_id": null,
+      "owner": "sameRoot foreground actual collection, not wait_agent",
+      "state": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/source-review-host",
+      "budget": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/source-review-budget.json",
+      "inspection": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/source-review-inspection-launch.json",
+      "status": "initial exact final collected, changes_required; all initial host foreground waits collected",
+      "first_receipt_acknowledged": "05f6cba33df1a3c27e30acf54f999e85b337c93e62fd910ca70dcda1166150d8",
+      "nested_cap_usd": 8,
+      "last_nested_observed_usd": 3.1316684,
+      "initial_result_sha256": "f77d2551c025f40fb084dd69640c4845665b63d28fa4586082713bdbd64d59bd",
+      "last_receipt": "a81c743d7784c19a3f5b57c6f7bad23225077b4a6ecf8964564fc05ae4f1f88b",
+      "initial_receipt_acknowledged": true,
+      "continuation_choice": "Prefer fresh read-only remediation reviewer if retained require_read_only attestation is unsupported by pinned host; initial161989 tokens also near170544 band. Preserve initial findings and disclose reconstructed continuation, never renewed whole-source freshness.",
+      "initial_task_closed": true,
+      "all_initial_receipts_acknowledged": true,
+      "initial_reviewer_status": "idle released, no further work assigned",
+      "replacement_reason": "Pinned host cannot establish required read-only realization for retained dispatch; new fresh read-only target preserves old report as reconstructed remediation. Initial context161989 also near170544 planning band. No full-source renewed freshness claim.",
+      "replacement_selection": "gpt-6-astra/high/default for bounded two-finding delta; not yet launched",
+      "nested_overrun_preserved": {
+        "prior_cap_usd": 6,
+        "observed_usd": 6.4574316,
+        "at": "2026-11-06T22:44:38.265943Z",
+        "reason": "in-flight review observation lag; not a retroactive priorcap compliance claim",
+        "revision": "8USD fromunusedbuilder/qualification allowance, global18 unchanged; no automatic further extension"
+      }
+    },
+    "remediation": {
+      "selection": "fresh native Astra/high/default filesystemread-only",
+      "lineage": "reconstructed bounded remediation preserving initial findings, not continuous reviewer",
+      "status": "exactfinalacceptedforboundedrepair, all native hostwork/receipts collected and closed",
+      "sid": "01a1b307-a832-7d31-9fb9-1cd362fe88f0",
+      "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T15-43-05-01a1b307-a832-7d31-9fb9-1cd362fe88f0.jsonl",
+      "turn": "01a1b307-b193-7951-8ad6-016110d4e4ef",
+      "exec_session_id": null,
+      "owner": "sameRoot foreground actual wait/capture",
+      "last_nested_snapshot_usd": 5.1152528,
+      "dispatch_receipt_acknowledged": "c8057a7bc21e50b3d54af0fc7b563e348525a0600270dcd31e228a2873b2940c",
+      "result_sha256": "ff94aeb9983d06d186c96d147293a4032e33402c27ee246e162f48446c9a6728"
+    },
+    "findings": [
+      {
+        "id": "CUSTODY-A-001",
+        "severity": "P2",
+        "status": "resolved on66fd35a0 withsource/test evidence and replacement reviewerconfirmation",
+        "meaning": "Preparation trusted mutating Git helpers must retain permanent guard after parent death"
+      },
+      {
+        "id": "CUSTODY-A-002",
+        "severity": "P2",
+        "status": "resolved on66fd35a0 withsource/test evidence and replacement reviewerconfirmation",
+        "meaning": "Replacement object interpretation breaks exact immutable tree validation binding"
+      }
+    ],
+    "initial_receipts_closed_acknowledged": true,
+    "final_receipts_closed_acknowledged": true,
+    "native_host_state": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/source-review-host",
+    "realization_evidence": [
+      "source-review-inspection-launch.json",
+      "remediation-review-inspection-launch.json"
+    ],
+    "not_claimed": [
+      "continuous reviewer context",
+      "renewed whole-source review in remediation",
+      "cross-provider or statistical independence",
+      "wider connector/tool grant attestation"
+    ]
+  },
+  "qualification": {
+    "final_steps_passed": 6,
+    "custody_cases": 11,
+    "publication_harness_cases": 28,
+    "targeted_repair_steps_passed": 4,
+    "leftovers": 0,
+    "standing": "explicit fixture_managed_custody only",
+    "consumers": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/CONSUMER-CHECK.json",
+      "sha256": "dcbe462bdaa9a5492879ebd219d50f6855ff99f5cbd83bd53bc0897c12bd3a47",
+      "result": "completion-host and server default production compile offline pass,53seconds,zero leftovers",
+      "standing": "compile/link only"
+    },
+    "no_repeated_consumer_build_after_private_only_delta": true
+  },
+  "unfinished": {
+    "original_finish_line": "Actual independently installed production-mode publication and cold reopen",
+    "dependency": "B production startup/caller composition and exact operator-issued installation remain unissued",
+    "planning_correction": "A/B split placed the full production proof in A before its production startup prerequisite; do not label original A complete",
+    "installation_packet": "inert incomplete skeleton, no exact executable install approval requested",
+    "C_job_settlement": "not implemented; original execution receipts and owner_pending unchanged"
+  },
+  "collection": {
+    "builder_sid": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "all_exact_builder_finals_collected": true,
+    "all_native_selected_turns_collected": true,
+    "native_readers": "all foreground exec wait sessions actually collected, no unknown create/start effects",
+    "listener": {
+      "exec_session_id": 65471,
+      "wrapper_exit": 0,
+      "child_interrupted_exit": 130,
+      "both_recorded_pids_gone": true
+    },
+    "outstanding_processes": 0,
+    "outstanding_results": 0,
+    "active_monitoring": false
+  },
+  "effects": {
+    "local_source_fast_forward": "66fd35a0582f918a835dedf192d0704d03f4281d",
+    "push": false,
+    "protected_installation": false,
+    "provider_product_calls": 0,
+    "credential_content_reads": 0,
+    "peer_pause_changed": false,
+    "foreign_claude_preserved": true,
+    "peer_notes_preserved": true
+  },
+  "automatic_follow_on": false,
+  "pending_human_questions": [],
+  "accounting": "ACCOUNTING.json",
+  "closed_recorded_at": "2026-11-06T22:49:23.001989+00:00"
+}

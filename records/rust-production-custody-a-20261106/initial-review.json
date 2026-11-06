@@ -1,0 +1,57 @@
+{
+  "baseline": "3cf8fc48e2bd71eb9dc5f920ba09c430870710b2",
+  "findings": [
+    {
+      "bounded_remedy": "Carry the held guard into preparation's trusted mutating Git helpers, preserving intentional inheritance separately from untrusted descriptor exclusion. Add a process test that pauses a preparation helper, kills its parent, and proves another owner remains excluded until that helper terminates.",
+      "consequence": "If the preparing parent dies while its Git helper remains alive, the permanent lock becomes available while the helper can still mutate canonical worktree topology or Git artifacts. Another owner can enter publication while those earlier mutations continue, violating the continuously held resource fence. The existing checkout-child crash test exercises the protected fixture-checkout route and does not cover this preparation window.",
+      "id": "CUSTODY-A-001",
+      "line": 371,
+      "observed_defect": "Preparation's mutating Git helpers do not inherit the permanent guard. Workspace::prepare holds the guard at store.rs:541, but integrate calls command for worktree add, apply --index and write-tree. command passes no guard descriptor; the lock is close-on-exec. The separate managed_checkout_fixture route correctly uses command_guarded, but that protection does not cover preparation.",
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "severity": "P2"
+    },
+    {
+      "bounded_remedy": "Disable replacement-object interpretation consistently for Git inspection, integration, verification and commit creation. For the supported custody profile, also refuse replacement refs if their presence is unsupported, covering both loose and packed refs. Add a regression with an unchanged baseline blob replacement and an unrelated accepted delta.",
+      "consequence": "An admitted bare repository can contain refs/replace/X pointing to blob Y for an unchanged baseline file. Checkout and cat-file X then expose Y, so verify_worktree accepts Y and validation tests Y, while the integrated tree and prepared commit still name X. An unrelated accepted patch does not expose this through its changed-path manifest. The validation receipt can therefore claim an immutable tree whose actual object bytes were not validated.",
+      "id": "CUSTODY-A-002",
+      "line": 514,
+      "observed_defect": "The new physical-worktree verification compares checkout bytes with cat-file output while Git replacement objects remain enabled. controlled and command_inner do not disable replacements, and custody.rs:320-329 rejects alternates/grafts/shallow state but permits refs/replace, including packed replacement refs.",
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "severity": "P2"
+    }
+  ],
+  "model_effort_observed": {
+    "basis": "Own rollout thread_settings_applied records and pinned context-status observation; recorded configuration, not backend fulfillment attestation.",
+    "cost": "Unknown to this reviewer; Root owns canonical metering.",
+    "effort": "xhigh",
+    "model": "gpt-6-astra",
+    "service_tier": "default",
+    "session_id": "01a1b2f5-c38f-7360-b7f8-44c37dd00adc"
+  },
+  "no_external_effects": true,
+  "remaining_limitations": [
+    "The implementation provides useful installed-selection, activation, confinement and recovery seams, but the two P2 findings require repair before bounded source acceptance.",
+    "Shared graph generation 2026-11-06T21:43:50Z, store ue3f617598630fffdg2, has unresolved calls and does not verify the private additions. Coverage was checked; exact private source supplied the relevant fallback evidence. No exhaustive graph claim is made.",
+    "The original A production finish line remains unestablished. B's installed runtime/caller, exact operator installation and actual production confinement remain unissued. The installation packet remains an incomplete inert skeleton.",
+    "B startup and C job settlement were not reviewed as completed implementations.",
+    "Recorded filesystem restrictions do not establish every connector/tool grant or wider isolation. No cross-provider or statistical independence claim is made.",
+    "This result is review evidence; Root retains acceptance and integration authority."
+  ],
+  "source_read_only": true,
+  "subject": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+  "validation_assessed": {
+    "affected_consumer_compile": "Separately owned by Root; no result asserted.",
+    "existing_execution_evidence": "Verified recorded qualification summary, six step records, output digests and test-binary digests. All six steps report exit 0, no timeout and no leftover processes. Logs report 10 custody tests and 26 publication harness cases passing.",
+    "qualification_scope": "Positive executable evidence uses fixture_managed_custody. Production evidence is default owner-library compilation, not installed runtime qualification.",
+    "review": "Read DESIGN.md and PHILOSOPHY.md completely, the manual-orchestration reviewer references, W0, proposal A, all changed source and tests, and material owner implementation and caller ranges.",
+    "reviewer_execution": "No builds, tests requiring writes, installation or new reproduction artifacts were performed. Findings are source-derived; Git replacement semantics were checked against the installed Git manual.",
+    "source_identity": {
+      "all_changed_file_hashes_match_source_manifest": true,
+      "head_matches_subject": true,
+      "result_manifest_sha256": "71e0aeca5794678cecb0a63da89dddbc799429cad7c5dc8afab041a47f6d4c36",
+      "source_manifest_sha256": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd"
+    }
+  },
+  "verdict": "changes_required",
+  "worktree": "/home/bline/code/work-engine-worktrees/production-custody-a-review-20261106"
+}

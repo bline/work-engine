@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "standing": "INERT_UNISSUED_NOT_AN_INSTALLATION_APPROVAL",
+  "scope": "A library owner and provider-free qualification only; B production startup/caller and exact installation remain required",
+  "protectedSelection": "/etc/work-engine/workspace-publication/custody.json",
+  "requiredInputs": [
+    {
+      "input": "production installed executable/caller",
+      "owner": "Root/B startup composition plus operator",
+      "status": "UNISSUED",
+      "requirement": "One root-owned installed binary with root-owned non-group/other-writable ancestry; exact current_exe SHA256 selected in protected policy; no test-faults feature. Existing A library is not a startup CLI."
+    },
+    {
+      "input": "runtime UID",
+      "owner": "operator",
+      "status": "PROPOSED_ONLY",
+      "proposal": 1000,
+      "requirement": "Nonroot trusted deterministic host may retain operator identity; every untrusted process/descendant confined, no unrestricted same-UID agent grant."
+    },
+    {
+      "input": "managed repository/root/ref and initial objects",
+      "owner": "Root exact bounded destination/subject selection plus operator",
+      "status": "UNISSUED",
+      "proposal": {
+        "root": "/var/lib/work-engine/custody-a-disposable-20261106/ledger",
+        "repository": "/var/lib/work-engine/custody-a-disposable-20261106/canonical.git",
+        "ref": "refs/heads/main"
+      },
+      "requirement": "Fresh disposable private bare repository; exact genuine baseline/candidate objects/provenance and explicit authority are separate inputs, not fixtures or old receipts relabeled."
+    },
+    {
+      "input": "trusted executable pins",
+      "owner": "reviewed A compiled constants",
+      "status": "SOURCE_PINNED",
+      "git": {
+        "path": "/usr/bin/git",
+        "sha256": "ed8b2df973b28c0fb773b9c0dc0816d3ee2b3835bb932d9153c21417bb51b362"
+      },
+      "bwrap": {
+        "path": "/usr/bin/bwrap",
+        "sha256": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6"
+      },
+      "requirement": "Root-owned protected executable resolution, hashes checked before trusted helper execution. No caller-chosen alternative."
+    },
+    {
+      "input": "validator policy",
+      "owner": "operator/existing validation-policy owner",
+      "status": "UNISSUED",
+      "requirement": "Exact argv beneath /usr, independently selected program digest, policy digest, 1..300 second bound. Source at /candidate, writable /scratch, no Git-owner/control/credential grants. Test fixture Python/true policies are not production material."
+    },
+    {
+      "input": "filesystem readback",
+      "owner": "trusted operator after approved allocation",
+      "status": "UNISSUED",
+      "requirement": "Exact FileIdentity observations of root, bare repository, permanent lock, then initialized marker/database. Root/repo0700, lock/marker/database0600, all owned by selected runtime UID. No symlink/hardlink/alternate/mounted canonical escape."
+    },
+    {
+      "input": "epoch and initialize/active selection",
+      "owner": "trusted operator",
+      "status": "UNISSUED",
+      "requirement": "Fresh explicit epoch. initialize has null marker/ledger identities and grants allocation only; active separately seals actual resulting identities and exact same owner config. Install selection root-owned mode0600 with protected canonical ancestry."
+    },
+    {
+      "input": "campaign eligibility/create consumption",
+      "owner": "existing production AuthorityReadback/campaign owner through future B caller",
+      "status": "NOT_REPLACED_BY_A",
+      "requirement": "Actual campaign readback remains required. Test-owner authority has fixture standing only."
+    },
+    {
+      "input": "provider/native program/credentials/network",
+      "owner": "future separately authorized runtime preparation",
+      "status": "NOT_GRANTED",
+      "requirement": "A adds no provider access, native program mount or credential grant; /usr-only provider-disabled process qualification does not establish live eligibility."
+    }
+  ],
+  "commandSkeleton": {
+    "status": "INCOMPLETE_AND_NOT_AUTHORIZED_TO_EXECUTE",
+    "precondition": "Root supplies exact reviewed B runtime/caller, fresh destination and genuine baseline/candidate, validator, and operator approves complete immutable inputs. Do not run this skeleton with fixture data.",
+    "commands": [
+      "/usr/bin/install -d -o root -g root -m 0755 /etc/work-engine/workspace-publication",
+      "/usr/bin/install -d -o root -g root -m 0755 /var/lib/work-engine/custody-a-disposable-20261106",
+      "/usr/bin/install -d -o 1000 -g 1000 -m 0700 /var/lib/work-engine/custody-a-disposable-20261106/ledger",
+      "Approved operator, as selected runtime UID: initialize the exact fresh bare repository with pinned Git; import only approved baseline/candidate objects; verify exact ref/object identities and force repository0700.",
+      "/usr/bin/install -o 1000 -g 1000 -m 0600 /dev/null /var/lib/work-engine/custody-a-disposable-20261106/canonical.git/.work-engine-publication.lock",
+      "Observe exact current_exe digest and root/repository/lock FileIdentity using reviewed trusted startup, construct complete initialize policy as DATA, independently approve it.",
+      "Operator installs approved initialize selection atomically at fixed protected path, root:root0600; read back exact bytes/digest/stat/ancestry.",
+      "UNISSUED CALLER invokes ManagedCustody::load_installed then Workspace::initialize_managed; no prepare/publication permitted.",
+      "Observe initialized marker/database exact FileIdentity and owner/root IDs, approve fresh active selection, atomically install/read back root:root0600.",
+      "UNISSUED CALLER invokes ManagedCustody::load_installed then Workspace::open_managed; prove actual untrusted launch/descriptor/mount grants and cold readback before accepting installed production standing."
+    ]
+  },
+  "rollback": {
+    "beforeAttempt": "Revoke/remove protected selection using trusted operator; stop and collect runtime/children. Preserve ledger, marker, canonical repository, policy bytes and exact epoch history; do not overwrite a root with fixtures.",
+    "afterAdmissionOrUnknownAttempt": "Do not retry, delete state, reset refs, regenerate marker or recreate permanent lock to recover. Restore only independently approved identical custody or issue explicitly new epoch preserving original ledger; reconcile unknown history under owner contract, potentially unconfirmed/unresolved."
+  },
+  "readbackRequired": [
+    "Exact selected executable hash/UID/mode and actual process identity; no test-fault build",
+    "Root-owned policy/ancestry exact bytes/inode/epoch; root/common-dir/lock/ledger/marker device/inode/UID/mode",
+    "Actual deployed agent and validator namespaces/mounts/stdio/FDs/session/descendant lifecycle, not source or JSON attestation alone",
+    "Actual integrated source validation and intended managed ref CAS plus cold owner readback",
+    "No inference/validation access to canonical state, policy, control sockets or credentials; no full-loop claim from fixtures"
+  ],
+  "notPerformed": [
+    "No protected file writes or installation",
+    "No credential content access, provider/native product calls or live qualification",
+    "No B/C implementation, host CLI addition or peer-session operation"
+  ]
+}

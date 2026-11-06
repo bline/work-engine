@@ -1,0 +1,57 @@
+{
+  "initial_subject": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+  "limitations": [
+    "This is reconstructed remediation review, not continuous reviewer context or renewed whole-source review. No cross-provider or statistical independence claim is made.",
+    "Graph generation 2026-11-06T22:43:14Z, store u77527cb2d56dcc79g2, reports unresolved calls across the relied-on source and tests. Exact source supplied the affected-boundary evidence; graph completeness is not claimed.",
+    "The helper regression proves lock retention and exclusion; its publisher child ignores the publication result, so child exit success alone does not establish successful publication.",
+    "Executable positives retain explicit fixture standing. The original production finish line remains unmet; B startup and operator installation remain unissued.",
+    "Root's initial-subject consumer compilation was not independently reassessed. This delta changes private helpers and tests, with no public interface change.",
+    "Review acceptance is evidence for the bounded repair only, not Root acceptance, installation or activation."
+  ],
+  "model_effort_observed": {
+    "basis": "Own rollout session_meta and thread_settings_applied records; pinned context reader corroborates model and effort. Recorded configuration is not backend fulfillment attestation.",
+    "cost": "Unknown to reviewer; Root owns canonical collection and budget decisions.",
+    "effort": "high",
+    "model": "gpt-6-astra",
+    "service_tier": "default",
+    "session_id": "01a1b307-a832-7d31-9fb9-1cd362fe88f0"
+  },
+  "new_findings": [],
+  "prior_findings": [
+    {
+      "evidence": [
+        "src/store.rs:541,568-574,614-620 retains the permanent guard and passes its descriptor into integration and commit creation.",
+        "src/git.rs:104-121,161,374-401,423 duplicates the held descriptor in each trusted child before exec. Worktree add, apply --index, write-tree and commit-tree therefore retain the same flock after parent death.",
+        "src/lock.rs releases through descriptor lifetime without an explicit unlock that would invalidate the child's shared lock.",
+        "tests/publication.rs:1159-1212 pauses each of the four helpers, kills its parent, checks EWOULDBLOCK through an independently opened descriptor, checks publisher exclusion, then releases the helper.",
+        "src/custody.rs:504-521 separately scrubs untrusted descriptors with CLOSE_RANGE_CLOEXEC; trusted inheritance does not modify that path."
+      ],
+      "id": "CUSTODY-A-001",
+      "severity": "P2",
+      "status": "resolved"
+    },
+    {
+      "evidence": [
+        "src/git.rs:22-30 disables replacement interpretation through both GIT_NO_REPLACE_OBJECTS=1 and --no-replace-objects. Both Git command constructors use this setup, covering inspection, integration, physical verification and commit creation.",
+        "src/custody.rs:330-348 refuses nonempty loose replacement-ref directories and packed refs/replace entries.",
+        "tests/custody.rs:357-412 exercises loose replacement refusal and then packed-only replacement refusal.",
+        "tests/publication.rs:1216-1328 retains a replacement for unchanged baseline b.txt while the accepted delta changes only a.txt. Validation asserts immutable original bytes and the exact tree; preparation and publication return that tree while raw Git still exposes the replacement."
+      ],
+      "id": "CUSTODY-A-002",
+      "severity": "P2",
+      "status": "resolved"
+    }
+  ],
+  "scope": "Bounded remediation of CUSTODY-A-001 and CUSTODY-A-002 and material regressions within their affected boundary.",
+  "subject": "66fd35a0582f918a835dedf192d0704d03f4281d",
+  "validation_assessed": {
+    "evidence_base": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/",
+    "other_checks": "Final evidence includes offline production-default compilation, formatting and warnings-denied lint. Frozen repaired binary hashes match the build-selected binaries.",
+    "path_base": "rust/crates/workspace-publication/",
+    "preserved_failure": "The earlier preparation regression failure remains recorded with exit 101 and zero leftovers; subsequent targeted and final runs pass.",
+    "recorded_execution": "Verified targeted 4/4 and final 6/6 step records and output hashes. Records report exit 0, no timeout and zero leftovers. Final logs report 11 custody and 28 publication cases passing. Targeted output identifies all four preparation-helper cases.",
+    "reviewer_execution": "Read-only source and evidence inspection; no builds, tests, writes, posts, child actors or external actions.",
+    "source_identity": "Clean HEAD matches the repaired subject. All five changed-file hashes and the exact Git delta match REMEDIATION-SOURCE.json. All four assignment-pinned evidence hashes match."
+  },
+  "verdict": "accept"
+}

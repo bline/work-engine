@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "status": "GO_FEASIBILITY_ONLY_PENDING_ROOT_ADMISSION",
+  "createdAt": "2026-11-06T21:53:13.010289+00:00",
+  "binding": {
+    "session": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "continuation": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/CONTINUATION.md",
+    "requested": "gpt-6.1-sol / medium / default",
+    "appliedSettings": "matching historical event19:39:30.673Z; not fresh backend fulfillment",
+    "activeTelemetry": {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-06T21:52:25.234730+00:00",
+      "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-06T21:52:00.289Z",
+      "freshness": "recent_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "medium",
+      "input_tokens": 78943,
+      "context_window_tokens": 475000,
+      "epoch": 4,
+      "compaction_markers": 4,
+      "lineage": [
+        "compaction marker at line 657",
+        "compaction marker at line 1688",
+        "compaction marker at line 2900",
+        "compaction marker at line 3669"
+      ],
+      "limitations": [
+        "token_count line 661 has no request input; current context unavailable",
+        "token_count line 1692 has no request input; current context unavailable",
+        "token_count line 2904 has no request input; current context unavailable",
+        "token_count line 3673 has no request input; current context unavailable"
+      ],
+      "status": "observed",
+      "trigger_tokens": 275735,
+      "band_floor_tokens": 314829,
+      "headroom_to_trigger": 196792,
+      "headroom_to_band_floor": 235886,
+      "fraction_of_window": 0.1662,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 78943 is below the trigger 275735",
+        "next-task size not estimated; headroom to band floor is the margin",
+        "session has compacted 4 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+      ]
+    },
+    "uncontrolledCompactionRecovered": true
+  },
+  "packet": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/GATE-PACKET.md",
+  "decision": "Existing unprivileged bwrap supports the proposed provider-disabled same-UID host/isolated-untrusted-process route here. Proceed only after Root admits the exact manifest. No product source mutation performed.",
+  "actualProof": {
+    "successfulCustody": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary4/boundary-canary4.json",
+      "sha256": "82a250e142d9ab5b19dec0d88396d15b40929b6ea4e4b9c8e47086a32ccb9441",
+      "returncode": 0,
+      "leftovers": 0
+    },
+    "roles": [
+      "inference-canary",
+      "validator-canary"
+    ],
+    "eachRoleAlsoExecutesDescendant": true,
+    "denied": [
+      "canonical ref creation",
+      "Git worktree topology creation",
+      "permanent lock write",
+      "ledger write",
+      "policy write",
+      "operator socket connect",
+      "inherited lock/directory/socket descriptors",
+      "host process root access",
+      "host parent PID signal visibility",
+      "candidate source mutation",
+      "nested user namespace creation",
+      "mount remount"
+    ],
+    "positive": [
+      "selected source readable",
+      "private scratch writable",
+      "distinct PID and network namespaces",
+      "protected regular-file bytes unchanged"
+    ],
+    "boundary": "Pinned root-owned bwrap, explicit --unshare-user plus --unshare-all, disabled nested userns, new session, separate proc/dev/tmp/scratch, only /usr and selected candidate read-only, clear environment, null stdin, trusted-launcher close_fds=True. Canonical/ledger/policy/socket host mounts absent.",
+    "images": "No Docker/container image needed or inspected; no pulls.",
+    "tools": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/source-tools.json"
+  },
+  "preservedFailures": [
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary/boundary-canary.json",
+        "sha256": "dbf06deeb835f1b6f830f784bf3d159e6acd2bbf741d926eaded3d5a49fe7cc4",
+        "returncode": 1,
+        "leftovers": 0
+      },
+      "cause": "AF_UNIX pathname exceeded kernel bound before confinement; shorter private fixture paths repair only."
+    },
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary2/boundary-canary2.json",
+        "sha256": "e956c108c726a6c8e97dd3b74e79a42febd8a9b78d63cef4885f477846c8a0b7",
+        "returncode": 1,
+        "leftovers": 0
+      },
+      "cause": "bwrap requires explicit --unshare-user with --disable-userns; unshare-all alone insufficient."
+    },
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary3/boundary-canary3.json",
+        "sha256": "fe9eb1d8494fedcc608c7389b98186c1168dddafb6a5e0fbcedeafbeb9093b75",
+        "returncode": 1,
+        "leftovers": 0
+      },
+      "cause": "Deliberately pass_fds inherited a protected descriptor through bwrap. This invalidates bubblewrap-alone descriptor isolation. Passing run uses trusted host explicit FD closure; product must implement and qualify equivalent closure before exec."
+    }
+  ],
+  "limits": [
+    "Disposable canary evidence is not installed production authority, actual model inference, full confinement security audit or complete product qualification.",
+    "Current Codex builder retains unrestricted host access and is not represented as confined. Supported deployment must launch every untrusted process under the enforced boundary; an unrestricted same-UID agent remains unsupported.",
+    "Read-only bind of operator socket directory would not revoke connect authority: socket is omitted entirely. No host control sockets or network authority granted in provider-disabled A.",
+    "No claim of provider eligibility, live invocation, credential provisioning, B completion startup or C terminal coding-job consumer.",
+    "Executable pins must be independently trusted before execution; request-supplied expected hashes cannot create authority.",
+    "Production must reject policy/runtime/root/topology/lock replacement or revocation on reopen/recovery; marker consistency alone cannot establish managed custody.",
+    "Existing trusted Git helpers deliberately inherit guard FD; scrub untrusted launch only and preserve this separate trusted lifecycle contract."
+  ],
+  "proposedManifest": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/PROPOSED-MANIFEST.json",
+  "qualificationPlan": [
+    "Actual Rust launcher positive read/scratch and malicious writes/socket/proc/fd/namespace/descendant negatives; preserve no-scrub control.",
+    "Managed publication positive using explicit test installed-owner authority, validate integrated tree, CAS, cold reopen/readback; remain provider-free.",
+    "Reject forged request custody, swapped policy/program, replaced/symlinked root/common-dir/lock, revoked selection and stale session before effect.",
+    "Validator attempts direct canonical write, lock unlink/replace, worktree registration, control socket connect and descriptor escape denied; candidate selected-tree identity remains exact.",
+    "Crash/descendant kill collection, trusted guard inheritance regression, managed recovery/currentness, relevant full workspace-publication fixture suite and separate Root review."
+  ],
+  "forecast": {
+    "confidence": "medium for A boundary and provider-free qualification; production activation remains separate operator gate",
+    "targetUSD": "12-15 all A actors including gate, review and remediation",
+    "capUSD": 18,
+    "time": "3-4 hours from21:44:05; feature cutoff23:59:05 and hard01:44:05 unchanged",
+    "reserve": "Protect roughly3USD separate review plus remediation; stop feature work at10USD aggregate or23:59:05. No B/C promise.",
+    "gateActualCost": "unknown to worker; Root owns canonical accounting, worker ceiling1USD unchanged"
+  },
+  "graph": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/coverage-current.json",
+  "sourceFallback": {
+    "tier": 2,
+    "inheritedSource": "prior sealed SCOPING.json exact ranges",
+    "currentReads": [
+      "contract1-130",
+      "store140-238 and656-705",
+      "validation1-53",
+      "lock1-34",
+      "git11-94",
+      "publication758-800"
+    ],
+    "limitation": "Current coverage diagnostics internally truncate store/tests. Material ranges directly read; no exhaustive caller or absence claim. Source paths/hashes and exact baseline in source-tools.json."
+  },
+  "effects": {
+    "productSourceChanged": false,
+    "providerCalls": 0,
+    "credentialReads": 0,
+    "protectedInstallation": false,
+    "extraActors": 0,
+    "ownedProcesses": "All four custody runs collected, each zero leftovers; fixture sockets closed, no background listeners or claims owned by worker."
+  },
+  "custody": [
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary/boundary-canary.json",
+      "sha256": "dbf06deeb835f1b6f830f784bf3d159e6acd2bbf741d926eaded3d5a49fe7cc4",
+      "returncode": 1,
+      "leftovers": 0
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary2/boundary-canary2.json",
+      "sha256": "e956c108c726a6c8e97dd3b74e79a42febd8a9b78d63cef4885f477846c8a0b7",
+      "returncode": 1,
+      "leftovers": 0
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary3/boundary-canary3.json",
+      "sha256": "fe9eb1d8494fedcc608c7389b98186c1168dddafb6a5e0fbcedeafbeb9093b75",
+      "returncode": 1,
+      "leftovers": 0
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary4/boundary-canary4.json",
+      "sha256": "82a250e142d9ab5b19dec0d88396d15b40929b6ea4e4b9c8e47086a32ccb9441",
+      "returncode": 0,
+      "leftovers": 0
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "status": "FROZEN_REPAIR_PENDING_REREVIEW",
+  "reviewedSubject": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+  "originalBaseline": "3cf8fc48e2bd71eb9dc5f920ba09c430870710b2",
+  "commit": "66fd35a0582f918a835dedf192d0704d03f4281d",
+  "tree": "ef7cc455dc4e1186043a623a732e3bab9c27e35d",
+  "worktree": "/home/bline/code/work-engine-worktrees/production-custody-a-20261106",
+  "branch": "private/production-custody-a-20261106",
+  "clean": true,
+  "changed": [
+    {
+      "path": "rust/crates/workspace-publication/src/custody.rs",
+      "sha256": "bc8efb81502d51652099034ddebf36c352d684dacbb6ebcd0cc8e45ad4a205c1"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "sha256": "b1982180abf86217bf2f874ae6867cd14e30b06e7bc823c79bb9015eebd60010"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/store.rs",
+      "sha256": "c14b51a84fee90166098e462e7bb0b43aecabe4923b8a79c716d0740d1bfe348"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/custody.rs",
+      "sha256": "339a6d34ebc1b83130eb53c2432c0525568b1cda0df2fc0d41f8094102020676"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/publication.rs",
+      "sha256": "fe9d28987a90d8b205946ac882d2d0ebc2192f12e113a104360163c2b2b68ccb"
+    }
+  ],
+  "delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/remediation.diff",
+    "sha256": "2f98b900b3afe533219ef8dd37b0609ca08bd8b51c43967953be24e9eafdcbfa"
+  },
+  "scope": "CUSTODY-A-001 trusted preparation-helper guard lifetime and CUSTODY-A-002 immutable-object interpretation/replacement refusal; no public interface/B/C/installation changes",
+  "originalSealedSource": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/SOURCE.json",
+    "sha256": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd"
+  },
+  "qualification": "repair-final pending; targeted repair-targeted2 passed4/4. Final suite additionally includes publication of replacement-control candidate."
+}

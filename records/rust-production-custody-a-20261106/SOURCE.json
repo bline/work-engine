@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "status": "FROZEN_SOURCE_REVIEW_PENDING",
+  "baseline": "3cf8fc48e2bd71eb9dc5f920ba09c430870710b2",
+  "commit": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+  "tree": "7e31240083d297bfed629bc03e4b9e19d8c3c650",
+  "worktree": "/home/bline/code/work-engine-worktrees/production-custody-a-20261106",
+  "branch": "private/production-custody-a-20261106",
+  "clean": true,
+  "manifest": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/PROPOSED-MANIFEST.json",
+  "changed": [
+    {
+      "path": "records/rust-production-custody-a-20261106.md",
+      "sha256": "a36ed667bbe0a2e380b9f978f92452a83e39b3d082ae8834371d685cbe1136c7"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/contract.rs",
+      "sha256": "88ffffffe64d3b92357c4cc1e033f90f3d6b9212b09b3087cb7409027ba39783"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/custody.rs",
+      "sha256": "89e1a027809476e0d05462cf33b67d6ca367f3ffb275c06dfdb8b831280faf31"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/git.rs",
+      "sha256": "d866aa1ca9af220e0090c2badcbcdbba9ebb428ad29d30a7bf82e484cf561bf8"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lib.rs",
+      "sha256": "a72ebb3c86e9a971762c613e293fe574771ece88c999f8a716c19ffcdce96bd7"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/lock.rs",
+      "sha256": "426803977db9acb3f08343dca072ae1961b3435bacfaf04c63275439f4d2cbef"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/store.rs",
+      "sha256": "a2334db49c548ba30fa572947ee839a0816a4121fec32d375300866d80b89ddf"
+    },
+    {
+      "path": "rust/crates/workspace-publication/src/validation.rs",
+      "sha256": "f39a9dab8b39be7da3ce26a178587388c74a5fd3fa26fc9d3de8f4f0abb28684"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/custody.rs",
+      "sha256": "cd7989b87f3fcec2da5749c511fc682d9b669222bcd23c290b5470a1a8b403a8"
+    },
+    {
+      "path": "rust/crates/workspace-publication/tests/publication.rs",
+      "sha256": "6b658d7251971ba91a3227779eca5c7a79f1a92871f371204bfffa5404cfe395"
+    }
+  ],
+  "diff": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/source.diff",
+    "sha256": "3fe9174921605c892c814c02fc0e0521640de6d65053c95fc0e1e628a713ca21"
+  },
+  "cargoLockChanged": false,
+  "cargoManifestChanged": false,
+  "standing": "A source with explicit fixture-owner mechanics; no installed production startup, native/provider grant or complete loop qualification",
+  "binaries": "qualification-final3/build.json binds exact Cargo test executables, compiled with test-faults; production-check compiles default owner library only"
+}

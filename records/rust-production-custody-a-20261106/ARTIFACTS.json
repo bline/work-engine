@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "source_subject": "66fd35a0582f918a835dedf192d0704d03f4281d",
+  "copied_byte_identical": [
+    {
+      "path": "FIRST-GATE.json",
+      "sha256": "d1b15cfa6ff31bcaeaf72acc528206e10b55c7a52b8833bc9e699527fa2d355f",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/FIRST-GATE.json"
+    },
+    {
+      "path": "SOURCE.json",
+      "sha256": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/SOURCE.json"
+    },
+    {
+      "path": "BUILDER-RESULT.json",
+      "sha256": "71e0aeca5794678cecb0a63da89dddbc799429cad7c5dc8afab041a47f6d4c36",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/RESULT.json"
+    },
+    {
+      "path": "REMEDIATION-SOURCE.json",
+      "sha256": "854fcd3132867b4f487ead174f1b33e79e95935c636ece2ab9226d660a56e7e2",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/REMEDIATION-SOURCE.json"
+    },
+    {
+      "path": "REMEDIATION-RESULT.json",
+      "sha256": "0f4dbc3f35271ad66184b6d3be488257b91aaf7c76055a2d5b2c3a219ca65ef2",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/REMEDIATION-RESULT.json"
+    },
+    {
+      "path": "CONSUMER-CHECK.json",
+      "sha256": "dcbe462bdaa9a5492879ebd219d50f6855ff99f5cbd83bd53bc0897c12bd3a47",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/CONSUMER-CHECK.json"
+    },
+    {
+      "path": "INSTALLATION-PACKET.json",
+      "sha256": "727a174bd173e7526190f778b1238272ec3483399ea082ab8e79996fff3f263e",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/INSTALLATION-PACKET.json"
+    },
+    {
+      "path": "initial-review.json",
+      "sha256": "f77d2551c025f40fb084dd69640c4845665b63d28fa4586082713bdbd64d59bd",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/source-review/RESULT.json"
+    },
+    {
+      "path": "remediation-review.json",
+      "sha256": "ff94aeb9983d06d186c96d147293a4032e33402c27ee246e162f48446c9a6728",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/remediation-review/RESULT.json"
+    },
+    {
+      "path": "AUTHORITY.json",
+      "sha256": "53b249695d41405a3ad016e7085d91fe0d1b4c8f738fd3468f812681f617f74e",
+      "original": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/authority.json"
+    }
+  ],
+  "binary_and_process_evidence": "Original source/result manifests retain exact frozen binary and custody paths/digests; binaries are not copied into Git."
+}

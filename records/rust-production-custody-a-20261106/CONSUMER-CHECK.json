@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_DEFAULT_CONSUMER_COMPILE_ONLY",
+  "createdAt": "2026-11-06T22:25:37.313001+00:00",
+  "input": {
+    "commit": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+    "worktree": "/home/bline/code/work-engine-worktrees/production-custody-a-20261106",
+    "branch": "private/production-custody-a-20261106",
+    "privateSourceClean": true,
+    "sourceManifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/SOURCE.json",
+      "sha256": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd"
+    },
+    "sealedArtifactsUnchanged": {
+      "RESULT.json": "71e0aeca5794678cecb0a63da89dddbc799429cad7c5dc8afab041a47f6d4c36",
+      "SOURCE.json": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd",
+      "INSTALLATION-PACKET.json": "727a174bd173e7526190f778b1238272ec3483399ea082ab8e79996fff3f263e"
+    }
+  },
+  "qualification": {
+    "packages": [
+      "work-engine-completion-host",
+      "work-engine-server"
+    ],
+    "command": [
+      "cargo",
+      "build",
+      "--offline",
+      "--locked",
+      "-p",
+      "work-engine-completion-host",
+      "-p",
+      "work-engine-server"
+    ],
+    "flags": "Existing package defaults; no added feature flags, test-faults or test targets. Existing completion-host dependency enables review-execution-custody/test-support as declared; unchanged.",
+    "custody": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/consumer-check/default-consumers.json",
+      "sha256": "62f16201d420f38458cc371acfc30f144b3fe994b50cdc2f11f176e5a58d7c69"
+    },
+    "returncode": 0,
+    "durationSeconds": 52.974,
+    "stdout": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/consumer-check/default-consumers.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/consumer-check/default-consumers.stderr",
+      "sha256": "348fcf36ca0522ed643bef4b6c72650cbf2ee8ec314d17eb51c2fefd2bd181d3"
+    },
+    "target": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/target",
+    "offline": true,
+    "locked": true,
+    "jobs": 2,
+    "baselineComparison": "Not needed: candidate consumer compilation passed. No baseline build run."
+  },
+  "standing": "Compilation/link compatibility only. No runtime product, installed custody, startup composition, provider or full production qualification inferred. Original source/fixture standing unchanged.",
+  "effects": {
+    "sourceChanges": false,
+    "sealedArtifactChanges": false,
+    "providerCalls": 0,
+    "credentialReads": 0,
+    "protectedEffects": false,
+    "extraActors": 0,
+    "processes": "Custody command completed and collected, exit0; zero leftover processes; no listeners or worker claims."
+  },
+  "identity": {
+    "session": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "requested": "Sol/medium/default unchanged",
+    "context": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/context-consumer.json"
+  },
+  "budget": "Inside existing bounded follow-up; canonical cost remains Root-owned, not independently measured by worker."
+}

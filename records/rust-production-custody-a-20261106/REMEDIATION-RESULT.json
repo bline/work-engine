@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "status": "WORKER_REPAIR_READY_PENDING_ROOT_REREVIEW",
+  "createdAt": "2026-11-06T22:41:53.389808+00:00",
+  "packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/REMEDIATION-PACKET.md",
+    "sha256": "139d849cb037508ff017ef53b95f3b30376847379a8e8af4ea769527868bd3f1"
+  },
+  "source": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/REMEDIATION-SOURCE.json",
+    "sha256": "854fcd3132867b4f487ead174f1b33e79e95935c636ece2ab9226d660a56e7e2",
+    "commit": "66fd35a0582f918a835dedf192d0704d03f4281d",
+    "reviewedSubject": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+    "worktree": "/home/bline/code/work-engine-worktrees/production-custody-a-20261106",
+    "clean": true,
+    "delta": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/remediation.diff",
+      "sha256": "2f98b900b3afe533219ef8dd37b0609ca08bd8b51c43967953be24e9eafdcbfa"
+    },
+    "changedPaths": 5
+  },
+  "findingsAddressed": [
+    {
+      "id": "CUSTODY-A-001",
+      "change": "Pass the held guard into worktree add, apply --index, write-tree and commit-tree. Reuse the existing intentional trusted-helper inheritance mechanism, separate from untrusted close-on-exec scrub.",
+      "regression": "preparation_helpers_retain_guard_after_parent_death: pause each of four helpers, kill its parent, prove independent LOCK_NB returns EWOULDBLOCK, prove another publisher remains excluded until helper exits.",
+      "proof": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-targeted2/preparation-parent-death.json"
+    },
+    {
+      "id": "CUSTODY-A-002",
+      "change": "All controlled Git helpers set GIT_NO_REPLACE_OBJECTS=1 and --no-replace-objects. Managed custody refuses nonempty loose refs/replace and packed replacement refs.",
+      "regression": "Unchanged baseline b.txt blob X has replacement Y, while accepted delta only changes a.txt. Raw Git control still exposes Y; owner validation checks immutable X and exact tree, preparation/publication return that tree. Separate managed-custody case proves loose and packed replacement refs both refuse.",
+      "proof": [
+        "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-targeted2/immutable-tree-replacement.json",
+        "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-targeted2/managed-replacement-refusal.json",
+        "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/publication-tests.json"
+      ]
+    }
+  ],
+  "qualification": {
+    "finalSummary": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/summary.json",
+      "sha256": "a8afd17ceca2747f365cb028bb55165f39304aa52f34e1dffb198433fb8d3af0"
+    },
+    "stepsPassed": 6,
+    "stepsNotRun": 0,
+    "counts": {
+      "custody-tests": 11,
+      "publication-tests": 28
+    },
+    "totalHarnessTestsPassed": 39,
+    "targetedSummary": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-targeted2/summary.json",
+      "sha256": "c466ac9a1de9fce008a136079287199deef66214a2387da4a211e55f34dba364"
+    },
+    "targetedStepsPassed": 4,
+    "records": [
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/production-check.json",
+        "sha256": "a475e330552cf097cf66925cb6ea23ad8d271964dc4eac1682bf997a59e64dbe"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/format.json",
+        "sha256": "1e0bd7f931ce8b9c072a1ef4c0dcfdc2fc9995a9fc5720e70445fb1e9c6af1e2"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/lint.json",
+        "sha256": "8b501238db42965c27192574da70dcc22f1406a1bce71a10d15b5127509cfa9a"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/build.json",
+        "sha256": "641fc1f81399615c76cb9db3803002a465e7960856123c9350a2a505c6de9c07"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/custody-tests.json",
+        "sha256": "6fefa7872d1bc2afe7246ab51df04e3ea3a3f77cb7a84417552b1b02bb4b6875"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-final/publication-tests.json",
+        "sha256": "a9aa3115a1b67ae1ff97ae0442c10e89e642a2f346e70c5cbf80a2dbd72cbe48"
+      }
+    ],
+    "productionDefaultCompile": true,
+    "scopedFormatAndWarningsDeniedLint": true,
+    "consumerCompile": "Not repeated: private helper signatures/checks and tests changed, with no public consumer interface change. Original successful CONSUMER-CHECK.json remains unchanged.",
+    "preservedFailure": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/repair-targeted/preparation-parent-death.json",
+      "cause": "Fixture wrapper discarded stdout from non-paused write-tree before commit-tree case, so the child never reached that cut. Fixed fixture forwarding; subsequent all-four cases pass with causal kernel-lock probes.",
+      "leftovers": 0
+    }
+  },
+  "binarySubject": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/remediation-binary-subject/manifest.json",
+      "sha256": "c6278284b0b5d9609f38f479d0cd34b40172ba8bac6b3a86cfee77f5bde9158a"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/remediation-binary-subject/subject.tar",
+      "sha256": "2d6714943de0653e68d98726f46d52329b372b966ab18bf02d8495703cff632d"
+    },
+    "entries": 3,
+    "note": "Exact repaired Cargo executables copied from final build-selected inputs and independently frozen. The authorized reused private Cargo target is mutable build cache: original recorded binary hashes remain historical evidence, not a claim that current cache paths still contain old bytes. Original source/JSON/diff custody bytes remain unchanged."
+  },
+  "sealedOriginalsUnchanged": {
+    "RESULT.json": "71e0aeca5794678cecb0a63da89dddbc799429cad7c5dc8afab041a47f6d4c36",
+    "SOURCE.json": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd",
+    "INSTALLATION-PACKET.json": "727a174bd173e7526190f778b1238272ec3483399ea082ab8e79996fff3f263e",
+    "CONSUMER-CHECK.json": "dcbe462bdaa9a5492879ebd219d50f6855ff99f5cbd83bd53bc0897c12bd3a47",
+    "CONTINUATION.md": "2b3bf2094b08b4d79d1dc388a2fd6f484b9e9ac9ba9597a86dc8e2bba4f2262f"
+  },
+  "standing": "Fixture-managed executable qualification only. No installed production startup/caller, operator activation, live provider eligibility, B/C or complete-loop claim. Root retains source re-review, acceptance and collection.",
+  "effects": {
+    "sourceScopeExpanded": false,
+    "sharedSourceWrites": false,
+    "providerCalls": 0,
+    "credentialReads": 0,
+    "protectedInstallation": false,
+    "extraActors": 0,
+    "pausedPeerEffects": false,
+    "processes": "All targeted and final custody commands collected; zero leftovers, no worker listener/claims.",
+    "cost": "Canonical cost Root-owned; bounded repair remains within existing allowance, not independently measured by worker."
+  },
+  "binding": {
+    "session": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "requested": "Sol/medium/default unchanged",
+    "context": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/context-repair-final.json",
+    "continuation": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/REMEDIATION-CONTINUATION.md"
+  }
+}

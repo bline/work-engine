@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "status": "WORKER_SOURCE_READY_FIXTURE_QUALIFIED_REVIEW_AND_INSTALLATION_PENDING",
+  "createdAt": "2026-11-06T22:21:24.256513+00:00",
+  "packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/IMPLEMENTATION-PACKET.md",
+    "sha256": "7bc95f8937d18bf039edd6942574f90f1aa2ee4939d723fa39e7483d357d2a45"
+  },
+  "source": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/SOURCE.json",
+    "sha256": "874c27702fbda8ed91a414c4f80166cb9ee8453643e681dc9f66fa07aea39acd",
+    "commit": "e71aae5e40f5aa1091e82e29a318f129247d92fb",
+    "baseline": "3cf8fc48e2bd71eb9dc5f920ba09c430870710b2",
+    "worktree": "/home/bline/code/work-engine-worktrees/production-custody-a-20261106",
+    "branch": "private/production-custody-a-20261106",
+    "clean": true,
+    "pathsChanged": 10,
+    "withinAdmittedManifest": true,
+    "cargoLockChanged": false,
+    "diff": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/source.diff",
+      "sha256": "3fe9174921605c892c814c02fc0e0521640de6d65053c95fc0e1e628a713ca21"
+    }
+  },
+  "outcome": "A owner implementation with independently protected installed selection, staged bootstrap/activation, live filesystem/epoch checks, explicit descriptor scrub plus bwrap confinement, integrated-tree validation, and preserved one-shot publication/recovery semantics. No production startup CLI or B/C scope added.",
+  "qualification": {
+    "summary": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/summary.json",
+      "sha256": "0c0d02bd110229f98a29257e86d239cb8ef837859ab980f3276b4f65927a607e"
+    },
+    "stepsPassed": 6,
+    "stepsNotRun": 0,
+    "testsPassed": 36,
+    "testsFailed": 0,
+    "counts": {
+      "custody-tests": 10,
+      "publication-tests": 26
+    },
+    "note": "26 publication harness cases include the existing child-entry helper test. New managed crash test exercises3 separate cuts.",
+    "production": "Default/no-default-features owner library compilation passed; no installed production executable was built or activated.",
+    "lint": "Affected crate all targets with test-faults, warnings denied, passed.",
+    "format": "Affected crate scoped format check passed.",
+    "actualRustEvidence": [
+      "Host canonical refs/topology/lock/ledger/policy/socket/process/descriptor authority denied; selected source readable and scratch writable; descendant checks and timeout collection pass.",
+      "FD exclusion verifies protected descriptor device/inode, allowing harmless descriptor-number reuse by isolated libraries.",
+      "Socket/hardlink source, canonical symlink/hardlink/alternate topology, forged program/hash fields, wrong runtime/validator, changed/replaced/revoked selection and sealed marker/database/lock replacement refuse.",
+      "Managed exact integrated-tree validation and CAS settle; cold reopen readback and repeat-attempt refusal pass.",
+      "Crash after admission allows closure only, crash after AttemptStarted remains unresolved without retry, crash after CAS reconciles once.",
+      "Changed epoch prevents a new physical attempt and preserves unfinalized CAS history as PublishedUnconfirmed. Mid-attempt revocation prevents CAS.",
+      "Existing trusted Git guard inheritance, peer exclusion, poisoned environment, expected-old CAS, user-state preservation and documented unmanaged/ABA limitations pass."
+    ],
+    "records": [
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/production-check.json",
+        "sha256": "031539e152a663657087d52b8b60447b40cfd6c4e48eb71889d08df1a8478ced"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/format.json",
+        "sha256": "2b656abd20f9f0186748b88b83a71b3a59677862365d94081d743402ef8cc560"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/lint.json",
+        "sha256": "2aa4bfd16ce7b2508ee8bd1b60f16a628c85bb227411892764f253fc6da559fc"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/build.json",
+        "sha256": "b56a02bcaff24baa02e3343fe64741ec066c68b0529862c52f16e92873224b7b"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/custody-tests.json",
+        "sha256": "30a25fe8eb696e040238f245a888069c5c3a984dc05bb472e993bc6885370cca"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final3/publication-tests.json",
+        "sha256": "5598afcf4bbe6dee29489d10ee5cb83257e2d6f62cd134c3a55d02e6062d22d9"
+      }
+    ],
+    "testBinaries": [
+      {
+        "name": "workspace_publication",
+        "kind": [
+          "lib"
+        ],
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/target/debug/deps/workspace_publication-7cb092bb3cef15a9",
+        "sha256": "daa13329662d44b4efab19c574e5478f23492cc8888c641058effba4f5ff8806"
+      },
+      {
+        "name": "custody",
+        "kind": [
+          "test"
+        ],
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/target/debug/deps/custody-3f9162a837f19eb4",
+        "sha256": "b163329045a762c8f5b9d57a07c733be3db5b0eb5836be8b0d9c71490fdd2652"
+      },
+      {
+        "name": "publication",
+        "kind": [
+          "test"
+        ],
+        "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/target/debug/deps/publication-9ef28746d1a7a3fb",
+        "sha256": "6e205f4971a99e020ee56c46808541cb94755238004523f182f051abe834cc63"
+      }
+    ]
+  },
+  "preservedFailures": [
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification2/full-fixture.json",
+      "cause": "Fixture directories inherited group-write umask; installed directory custody correctly refused. Fixed explicit private fixture permissions; no boundary weakening."
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification3/full-fixture.json",
+      "cause": "One new test expected terminal NoEffect replay to error, but existing owner correctly returns the immutable closure receipt. Corrected assertion, preserving existing semantics."
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final/custody-tests.json",
+      "cause": "Numeric descriptor3 reused inside namespace for libffi. Protected original descriptor identities were absent; corrected test to compare device/inode. Exact diagnostic proof in qualification-fd-diagnosis."
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/qualification-final2/lint.json",
+      "cause": "Two newly introduced style lints; corrected in final frozen commit."
+    },
+    {
+      "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/canary3/boundary-canary3.json",
+      "cause": "Load-bearing no-scrub negative: deliberately inherited descriptor survived bwrap. Explicit trusted-launcher close-on-exec is required; preserved unchanged."
+    }
+  ],
+  "standing": {
+    "fixture": "All executable positive publication/confinement qualification uses explicit test-owner selection and fixture_managed_custody receipts, never installed production standing. test-faults builds cannot load production installed custody.",
+    "production": "SOURCE ONLY: fixed protected-selection constructor and default-library compilation. Original full production-mode qualification claim is withheld as Root instructed. Actual installed grant, trusted startup, deployed agent confinement and source-independent review remain unestablished.",
+    "unissued": [
+      "B production startup/installed binary/caller composing the A APIs",
+      "Exact operator-approved active/initialize policies, selected runtime UID and independently read-back managed root/repository/lock/marker/ledger identities",
+      "Exact disposable destination/ref, genuine baseline/candidate and campaign authority inputs, actual validator argv/policy",
+      "Actual installed boundary and cold production-mode qualification; any native program/credential/provider grants remain separate"
+    ],
+    "notClaimed": [
+      "No current unrestricted Codex worker confinement claim",
+      "No live provider eligibility or invocation",
+      "No genuine complete coding/review/completion loop or C terminal job settlement",
+      "No adversarial trusted-operator erase/restore history detection"
+    ]
+  },
+  "installationPacket": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/INSTALLATION-PACKET.json",
+    "sha256": "727a174bd173e7526190f778b1238272ec3483399ea082ab8e79996fff3f263e",
+    "status": "INERT_UNISSUED_INCOMPLETE_COMMAND_SKELETON; no fixture policy promoted"
+  },
+  "graph": {
+    "sharedGeneration": "2026-11-06T21:43:50Z",
+    "storeGeneration": "ue3f617598630fffdg2",
+    "evidence": [
+      "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/coverage-current.json",
+      "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/coverage-private-additions.json"
+    ],
+    "limitation": "Shared graph has unresolved calls and no content verification for new private paths. Exact private source, direct ranges and compiled executable custody govern these bounded claims; no exhaustive graph conclusion."
+  },
+  "binding": {
+    "session": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+    "collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "requested": "gpt-6.1-sol/medium/default",
+    "appliedSettings": "Latest matching historical event19:39:30.673Z, not fresh backend tier fulfillment",
+    "activeContext": {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-06T22:21:24.082148+00:00",
+      "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-06T22:20:24.446Z",
+      "freshness": "recent_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "medium",
+      "input_tokens": 188484,
+      "context_window_tokens": 475000,
+      "epoch": 4,
+      "compaction_markers": 4,
+      "lineage": [
+        "compaction marker at line 657",
+        "compaction marker at line 1688",
+        "compaction marker at line 2900",
+        "compaction marker at line 3669"
+      ],
+      "limitations": [
+        "token_count line 661 has no request input; current context unavailable",
+        "token_count line 1692 has no request input; current context unavailable",
+        "token_count line 2904 has no request input; current context unavailable",
+        "token_count line 3673 has no request input; current context unavailable"
+      ],
+      "status": "observed",
+      "trigger_tokens": 275735,
+      "band_floor_tokens": 314829,
+      "headroom_to_trigger": 87251,
+      "headroom_to_band_floor": 126345,
+      "fraction_of_window": 0.3968,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 188484 is below the trigger 275735",
+        "next-task size not estimated; headroom to band floor is the margin",
+        "session has compacted 4 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+      ]
+    },
+    "continuation": "/home/bline/.local/state/work-engine/rust-production-custody-20261106T2144/builder/CONTINUATION.md"
+  },
+  "effects": {
+    "sharedSourceWrites": false,
+    "protectedInstallation": false,
+    "providerCalls": 0,
+    "credentialContentReads": 0,
+    "extraActors": 0,
+    "pausedPeerEffects": false,
+    "ownedProcesses": "All custody runs collected. Final six steps have zero leftovers; no owned background listener or resource claim.",
+    "cost": "Worker cannot independently report canonical dollars; Root owns metering. Existing builder5USD including gate, A18USD, fixed clocks unchanged."
+  }
+}
