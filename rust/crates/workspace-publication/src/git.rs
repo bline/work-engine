@@ -27,6 +27,78 @@ fn controlled(cmd: &mut Command) {
         .env("GIT_CONFIG_GLOBAL", "/dev/null")
         .env("HOME", "/");
 }
+// Git must never interpret a canonical repository's config as an untrusted
+// executable grant (filters, fsmonitor, hooks, external diff, includes, etc.).
+fn safe_config(repo: &Path) -> Result<()> {
+    let dot = repo.join(".git");
+    let mut dir = if dot.is_file() {
+        let text = std::fs::read_to_string(&dot).map_err(|e| Error::Io(e.to_string()))?;
+        let value = text
+            .strip_prefix("gitdir: ")
+            .ok_or_else(|| Error::Integrity("invalid worktree link".into()))?
+            .trim();
+        repo.join(value)
+            .canonicalize()
+            .map_err(|e| Error::Io(e.to_string()))?
+    } else if dot.is_dir() {
+        dot
+    } else {
+        repo.into()
+    };
+    let common = dir.join("commondir");
+    if common.exists() {
+        let value = std::fs::read_to_string(common).map_err(|e| Error::Io(e.to_string()))?;
+        dir = dir
+            .join(value.trim())
+            .canonicalize()
+            .map_err(|e| Error::Io(e.to_string()))?;
+    }
+    let path = dir.join("config");
+    if std::fs::symlink_metadata(&path)
+        .map_err(|e| Error::Io(e.to_string()))?
+        .file_type()
+        .is_symlink()
+    {
+        return Err(Error::Integrity("Git config symlink refused".into()));
+    }
+    let text = std::fs::read_to_string(path).map_err(|e| Error::Io(e.to_string()))?;
+    let mut core = false;
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') || line.starts_with(';') {
+            continue;
+        }
+        if line.starts_with('[') {
+            core = line.eq_ignore_ascii_case("[core]");
+            if !core {
+                return Err(Error::Integrity(
+                    "executable-capable Git configuration refused".into(),
+                ));
+            }
+            continue;
+        }
+        let (key, value) = line
+            .split_once('=')
+            .ok_or_else(|| Error::Integrity("unsupported Git config syntax".into()))?;
+        let key = key.trim().to_ascii_lowercase();
+        let value = value.trim();
+        if !core
+            || !matches!(
+                key.as_str(),
+                "repositoryformatversion" | "filemode" | "bare" | "logallrefupdates"
+            )
+            || !matches!(value, "0" | "true" | "false")
+        {
+            return Err(Error::Integrity(
+                "unsupported Git configuration refused".into(),
+            ));
+        }
+    }
+    if dir.join("config.worktree").exists() {
+        return Err(Error::Integrity("worktree config refused".into()));
+    }
+    Ok(())
+}
 fn command_inner(
     repo: &Path,
     args: &[&str],
@@ -42,8 +114,20 @@ fn command_inner(
     };
     #[cfg(not(feature = "test-faults"))]
     let program = "/usr/bin/git";
+    safe_config(repo)?;
     let mut cmd = Command::new(program);
     controlled(&mut cmd);
+    crate::custody::trusted_program("/usr/bin/git", crate::custody::GIT_SHA256)?;
+    cmd.args([
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.attributesFile=/dev/null",
+        "-c",
+        "protocol.ext.allow=never",
+    ]);
     cmd.arg("-C")
         .arg(repo)
         .args(args)
@@ -304,9 +388,21 @@ pub fn integrate(
     oid(text(artifact, &["write-tree"])?)
 }
 pub fn create_commit(repo: &Path, tree: &GitOid, parent: &GitOid, message: &str) -> Result<GitOid> {
+    safe_config(repo)?;
     let mut cmd = Command::new("/usr/bin/git");
     controlled(&mut cmd);
+    crate::custody::trusted_program("/usr/bin/git", crate::custody::GIT_SHA256)?;
     let mut child = cmd
+        .args([
+            "-c",
+            "core.hooksPath=/dev/null",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.attributesFile=/dev/null",
+            "-c",
+            "protocol.ext.allow=never",
+        ])
         .arg("-C")
         .arg(repo)
         .args(["commit-tree", &tree.hex, "-p", &parent.hex])
@@ -340,6 +436,7 @@ pub fn create_commit(repo: &Path, tree: &GitOid, parent: &GitOid, message: &str)
 pub fn compare_and_swap(repo: &Path, name: &str, old: &GitOid, new: &GitOid) -> Result<()> {
     check_oid(old)?;
     check_oid(new)?;
+    safe_config(repo)?;
     // The ref transaction is in-process, so child Command::env_clear() does
     // not protect it. Bind this open to the explicit path and repository-local
     // configuration, then clear even a locally configured ref namespace.
@@ -364,5 +461,61 @@ pub fn compare_and_swap(repo: &Path, name: &str, old: &GitOid, new: &GitOid) -> 
             "work-engine canonical publication",
         )
         .map_err(|e| Error::Conflict(format!("expected-old ref transaction: {e}")))?;
+    Ok(())
+}
+
+/// Refuse checkout transforms before treating validator input as the actual tree.
+pub fn verify_worktree(repo: &Path, artifact: &Path, tree: &GitOid) -> Result<()> {
+    use std::io::Read;
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+    let entries = command(repo, &["ls-tree", "-rz", "--full-tree", &tree.hex], None)?;
+    for entry in entries.split(|b| *b == 0).filter(|e| !e.is_empty()) {
+        let tab = entry
+            .iter()
+            .position(|b| *b == b'\t')
+            .ok_or_else(|| Error::Integrity("tree entry format".into()))?;
+        let header =
+            std::str::from_utf8(&entry[..tab]).map_err(|e| Error::Integrity(e.to_string()))?;
+        let parts: Vec<_> = header.split(' ').collect();
+        let path =
+            std::str::from_utf8(&entry[tab + 1..]).map_err(|e| Error::Integrity(e.to_string()))?;
+        if parts.len() != 3
+            || parts[1] != "blob"
+            || Path::new(path)
+                .components()
+                .any(|c| !matches!(c, std::path::Component::Normal(_)))
+        {
+            return Err(Error::Integrity("unsupported tree entry".into()));
+        }
+        let file = artifact.join(path);
+        let metadata = std::fs::symlink_metadata(&file).map_err(|e| Error::Io(e.to_string()))?;
+        let actual = match parts[0] {
+            "120000" if metadata.file_type().is_symlink() => std::fs::read_link(&file)
+                .map_err(|e| Error::Io(e.to_string()))?
+                .as_os_str()
+                .as_bytes()
+                .to_vec(),
+            "100644" | "100755" if metadata.is_file() => {
+                if (metadata.mode() & 0o111 != 0) != (parts[0] == "100755") {
+                    return Err(Error::Integrity("checkout executable mode differs".into()));
+                }
+                let mut bytes = Vec::new();
+                std::fs::OpenOptions::new()
+                    .read(true)
+                    .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+                    .open(&file)
+                    .and_then(|mut f| f.read_to_end(&mut bytes))
+                    .map_err(|e| Error::Io(e.to_string()))?;
+                bytes
+            }
+            _ => return Err(Error::Integrity("checkout entry type differs".into())),
+        };
+        if actual != command(repo, &["cat-file", "blob", parts[2]], None)? {
+            return Err(Error::Integrity(
+                "validator checkout bytes differ from integrated Git tree".into(),
+            ));
+        }
+    }
     Ok(())
 }

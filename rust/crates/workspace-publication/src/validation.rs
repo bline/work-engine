@@ -10,6 +10,7 @@ pub fn run(
     tree: &GitOid,
     root_id: &str,
     record_id: &str,
+    custody: Option<&crate::custody::ManagedCustody>,
 ) -> Result<ValidationReceipt> {
     let (program, args) = config
         .validation_program
@@ -18,17 +19,22 @@ pub fn run(
     if !Path::new(program).is_absolute() {
         return Err(Error::Invalid("validator must be absolute".into()));
     }
-    let mut cmd = Command::new(program);
-    cmd.env_clear()
-        .env("PATH", "/usr/bin:/bin")
-        .env("LC_ALL", "C")
-        .env("HOME", "/");
-    let output = cmd
-        .args(args)
-        .current_dir(worktree)
-        .env("WORK_ENGINE_VALIDATED_TREE", &tree.hex)
-        .output()
-        .map_err(|e| Error::Io(e.to_string()))?;
+    let output = if let Some(custody) = custody {
+        custody.run(worktree, &config.validation_program, Some(&tree.hex))?
+    } else {
+        let mut cmd = Command::new(program);
+        cmd.env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .env("LC_ALL", "C")
+            .env("HOME", "/");
+        let output = cmd
+            .args(args)
+            .current_dir(worktree)
+            .env("WORK_ENGINE_VALIDATED_TREE", &tree.hex)
+            .output()
+            .map_err(|e| Error::Io(e.to_string()))?;
+        output
+    };
     let receipt = ValidationReceipt {
         schema_version: 1,
         root_id: root_id.into(),

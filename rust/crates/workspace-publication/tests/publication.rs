@@ -123,7 +123,7 @@ impl AuthorityReadback for FixtureContext {
         })
     }
 }
-fn setup() -> (tempfile::TempDir, FixtureContext, Workspace, String) {
+fn setup_subject() -> (tempfile::TempDir, FixtureContext, String) {
     let temp = temp_root();
     let repo = temp.path().join("repo.git");
     fs::create_dir(&repo).unwrap();
@@ -195,7 +195,7 @@ fn setup() -> (tempfile::TempDir, FixtureContext, Workspace, String) {
         revision: 1,
     };
     let root = temp.path().join("workspace");
-    let mut ctx = FixtureContext {
+    let ctx = FixtureContext {
         repo: repo.clone(),
         root,
         eligibility_ref: eligibility_ref.clone(),
@@ -210,6 +210,10 @@ fn setup() -> (tempfile::TempDir, FixtureContext, Workspace, String) {
         decision_ref: rf("decision", "create"),
         consumption_ref: rf("consumption", "consume"),
     };
+    (temp, ctx, base.hex)
+}
+fn setup() -> (tempfile::TempDir, FixtureContext, Workspace, String) {
+    let (temp, mut ctx, base) = setup_subject();
     let mut workspace = Workspace::initialize(ctx.config()).unwrap();
     let (p_ref, p) = workspace
         .prepare(
@@ -222,7 +226,7 @@ fn setup() -> (tempfile::TempDir, FixtureContext, Workspace, String) {
         .unwrap();
     ctx.request.prepared_ref = p_ref;
     ctx.request.operation_id = p.operation_id;
-    (temp, ctx, workspace, base.hex)
+    (temp, ctx, workspace, base)
 }
 #[test]
 fn publishes_exact_prepared_commit_and_reopens_without_replay() {
@@ -429,6 +433,19 @@ fn child_entry() {
         return;
     };
     let ctx: FixtureContext = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+    #[cfg(feature = "test-faults")]
+    let mut workspace = if let Ok(path) = std::env::var("W1_CHILD_MANAGED_SELECTION") {
+        Workspace::open_managed(
+            workspace_publication::custody::ManagedCustody::load_fixture_selection(Path::new(
+                &path,
+            ))
+            .unwrap(),
+        )
+        .unwrap()
+    } else {
+        Workspace::open(ctx.config()).unwrap()
+    };
+    #[cfg(not(feature = "test-faults"))]
     let mut workspace = Workspace::open(ctx.config()).unwrap();
     if std::env::var("W1_CHILD_ACTION").ok().as_deref() == Some("checkout") {
         let _ = workspace.managed_checkout_fixture(
@@ -906,4 +923,226 @@ fn in_process_expected_old_cas_rejects_unmanaged_parent_change() {
     let receipt = reopened.reconcile(&ctx, &ctx.request).unwrap();
     assert_eq!(receipt.state, OperationState::Unresolved);
     assert_eq!(receipt.observed_target.unwrap().hex, other);
+}
+
+#[cfg(feature = "test-faults")]
+fn managed_policy(
+    ctx: &FixtureContext,
+    phase: &str,
+) -> workspace_publication::custody::CustodySelection {
+    use workspace_publication::custody::{CustodySelection, FileIdentity};
+    let mut selection=CustodySelection {schema_version:1,epoch:"managed-fixture-epoch-1".into(),phase:phase.into(),runtime_uid:unsafe{libc::geteuid()},runtime_sha256:codec::raw_sha256(&fs::read(std::env::current_exe().unwrap()).unwrap()),root:ctx.root.clone(),repository:ctx.repo.clone(),root_identity:FileIdentity::observe(&ctx.root).unwrap(),repository_identity:FileIdentity::observe(&ctx.repo).unwrap(),lock_identity:FileIdentity::observe(&ctx.repo.join(".work-engine-publication.lock")).unwrap(),marker_identity:if phase=="active"{Some(FileIdentity::observe(&ctx.root.join(".workspace-publication-v1")).unwrap())}else{None},ledger_identity:if phase=="active"{Some(FileIdentity::observe(&ctx.root.join("workspace-publication.sqlite")).unwrap())}else{None},canonical_refs:vec!["refs/heads/main".into()],validation_program:vec!["/usr/bin/python3".into(),"-I".into(),"-c".into(),"import os; assert open('/candidate/a.txt').read()=='new\\n'; assert len(os.environ['WORK_ENGINE_VALIDATED_TREE'])==40; open('/scratch/validated','w').write('allowed')".into()],validation_program_sha256:codec::raw_sha256(&fs::read("/usr/bin/python3").unwrap()),validation_policy_digest:"b".repeat(64),timeout_seconds:5};
+    let paths = serde_json::to_string(&vec![
+        ctx.repo.join("refs/heads/escape"),
+        ctx.repo.join("worktrees/escape"),
+        ctx.repo.join(".work-engine-publication.lock"),
+        ctx.root.join("workspace-publication.sqlite"),
+    ])
+    .unwrap();
+    selection.validation_program[3].push_str(&format!("\nimport json\nfor p in json.loads({paths:?}):\n try: os.open(p,os.O_WRONLY|os.O_CREAT,0o600)\n except OSError: pass\n else: raise AssertionError('validator acquired canonical authority')\n"));
+    selection
+}
+#[cfg(feature = "test-faults")]
+fn save_managed_policy(path: &Path, policy: &workspace_publication::custody::CustodySelection) {
+    use std::os::unix::fs::PermissionsExt;
+    fs::write(path, serde_json::to_vec(policy).unwrap()).unwrap();
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+}
+#[cfg(feature = "test-faults")]
+fn setup_managed() -> (tempfile::TempDir, FixtureContext, Workspace, PathBuf) {
+    use std::os::unix::fs::PermissionsExt;
+    use workspace_publication::custody::ManagedCustody;
+    let (temp, mut ctx, _base) = setup_subject();
+    fs::create_dir(&ctx.root).unwrap();
+    fs::set_permissions(&ctx.root, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::set_permissions(&ctx.repo, fs::Permissions::from_mode(0o700)).unwrap();
+    let lock = ctx.repo.join(".work-engine-publication.lock");
+    fs::write(&lock, b"permanent fixture lock").unwrap();
+    fs::set_permissions(&lock, fs::Permissions::from_mode(0o600)).unwrap();
+    let path = temp.path().join("managed-selection.json");
+    let policy = managed_policy(&ctx, "initialize");
+    save_managed_policy(&path, &policy);
+    let initialized =
+        Workspace::initialize_managed(ManagedCustody::load_fixture_selection(&path).unwrap())
+            .unwrap();
+    drop(initialized);
+    let policy = managed_policy(&ctx, "active");
+    save_managed_policy(&path, &policy);
+    let mut workspace =
+        Workspace::open_managed(ManagedCustody::load_fixture_selection(&path).unwrap()).unwrap();
+    let (r, p) = workspace
+        .prepare(
+            &ctx,
+            &ctx.eligibility_ref,
+            "refs/heads/main",
+            "managed fixture publish",
+            "managed-prepare",
+        )
+        .unwrap();
+    ctx.request.prepared_ref = r;
+    ctx.request.operation_id = p.operation_id;
+    (temp, ctx, workspace, path)
+}
+#[test]
+#[cfg(feature = "test-faults")]
+fn managed_publication_validates_exact_tree_settles_and_cold_reopens() {
+    use workspace_publication::custody::ManagedCustody;
+    let (_temp, ctx, mut workspace, path) = setup_managed();
+    let receipt = workspace.publish(&ctx, &ctx.request).unwrap();
+    assert_eq!(receipt.state, OperationState::PublishedObserved);
+    assert_eq!(receipt.authority_mode, "fixture_managed_custody");
+    assert!(
+        receipt
+            .limitation
+            .contains("no installed production authority")
+    );
+    drop(workspace);
+    let mut reopened =
+        Workspace::open_managed(ManagedCustody::load_fixture_selection(&path).unwrap()).unwrap();
+    assert_eq!(reopened.reconcile(&ctx, &ctx.request).unwrap(), receipt);
+    assert!(reopened.publish(&ctx, &ctx.request).is_err());
+}
+#[test]
+#[cfg(feature = "test-faults")]
+fn managed_epoch_change_does_not_authorize_a_new_physical_attempt() {
+    use workspace_publication::custody::{CustodySelection, ManagedCustody};
+    let (_temp, ctx, mut workspace, path) = setup_managed();
+    let old = run(&ctx.repo, &["rev-parse", "refs/heads/main"], None);
+    let mut policy: CustodySelection = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    policy.epoch = "managed-fixture-epoch-2".into();
+    save_managed_policy(&path, &policy);
+    assert!(workspace.publish(&ctx, &ctx.request).is_err());
+    drop(workspace);
+    let mut reopened =
+        Workspace::open_managed(ManagedCustody::load_fixture_selection(&path).unwrap()).unwrap();
+    assert!(reopened.publish(&ctx, &ctx.request).is_err());
+    assert_eq!(run(&ctx.repo, &["rev-parse", "refs/heads/main"], None), old);
+    assert_eq!(
+        reopened.inspect(&ctx.request.operation_id).unwrap().state,
+        OperationState::Prepared
+    );
+}
+#[test]
+#[cfg(feature = "test-faults")]
+fn executable_git_config_is_refused_before_candidate_code_runs() {
+    let (_temp, ctx, mut workspace, _path) = setup_managed();
+    let marker = ctx.root.join("hook-ran");
+    run(
+        &ctx.repo,
+        &["config", "core.hooksPath", ctx.root.to_str().unwrap()],
+        None,
+    );
+    fs::write(
+        ctx.root.join("post-checkout"),
+        format!("#!/bin/sh\ntouch {}\n", marker.display()),
+    )
+    .unwrap();
+    assert!(workspace.publish(&ctx, &ctx.request).is_err());
+    assert!(!marker.exists());
+}
+
+#[cfg(feature = "test-faults")]
+fn managed_child(ctx: &FixtureContext, dir: &Path, path: &Path, cut: &str) -> std::process::Child {
+    let context = dir.join("managed-context.json");
+    fs::write(&context, serde_json::to_vec(ctx).unwrap()).unwrap();
+    Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "child_entry", "--nocapture"])
+        .env("W1_CHILD_CONTEXT", context)
+        .env("W1_CHILD_MANAGED_SELECTION", path)
+        .env("WORKSPACE_PUBLICATION_FAULT_CUT", cut)
+        .env("WORKSPACE_PUBLICATION_FAULT_DIR", dir)
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap()
+}
+#[test]
+#[cfg(feature = "test-faults")]
+fn managed_crash_boundaries_preserve_one_shot_and_cold_recovery() {
+    use workspace_publication::custody::ManagedCustody;
+    for cut in ["after_admission", "after_attempt_started", "after_ref_cas"] {
+        let (temp, ctx, workspace, path) = setup_managed();
+        drop(workspace);
+        let mut process = managed_child(&ctx, temp.path(), &path, cut);
+        wait_ready(&temp.path().join(format!("{cut}.ready")));
+        process.kill().unwrap();
+        process.wait().unwrap();
+        let mut reopened =
+            Workspace::open_managed(ManagedCustody::load_fixture_selection(&path).unwrap())
+                .unwrap();
+        if cut == "after_admission" {
+            assert!(reopened.reconcile(&ctx, &ctx.request).is_err());
+            assert_eq!(
+                reopened.close_no_effect(&ctx, &ctx.request).unwrap().state,
+                OperationState::ClosedNoEffect
+            );
+        } else if cut == "after_attempt_started" {
+            assert_eq!(
+                reopened.reconcile(&ctx, &ctx.request).unwrap().state,
+                OperationState::Unresolved
+            );
+            assert!(reopened.close_no_effect(&ctx, &ctx.request).is_err());
+        } else {
+            assert_eq!(
+                reopened.reconcile(&ctx, &ctx.request).unwrap().state,
+                OperationState::PublishedObserved
+            );
+        }
+        if cut == "after_admission" {
+            assert_eq!(
+                reopened.publish(&ctx, &ctx.request).unwrap().state,
+                OperationState::ClosedNoEffect
+            );
+        } else {
+            assert!(reopened.publish(&ctx, &ctx.request).is_err());
+        }
+    }
+}
+#[test]
+#[cfg(feature = "test-faults")]
+fn changed_epoch_after_cas_preserves_unknown_history_instead_of_relabeling() {
+    use workspace_publication::custody::{CustodySelection, ManagedCustody};
+    let (temp, ctx, workspace, path) = setup_managed();
+    drop(workspace);
+    let mut process = managed_child(&ctx, temp.path(), &path, "after_ref_cas");
+    wait_ready(&temp.path().join("after_ref_cas.ready"));
+    process.kill().unwrap();
+    process.wait().unwrap();
+    let mut policy: CustodySelection = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    policy.epoch = "fixture-new-epoch".into();
+    save_managed_policy(&path, &policy);
+    let mut reopened =
+        Workspace::open_managed(ManagedCustody::load_fixture_selection(&path).unwrap()).unwrap();
+    assert_eq!(
+        reopened.reconcile(&ctx, &ctx.request).unwrap().state,
+        OperationState::PublishedUnconfirmed
+    );
+    assert!(reopened.publish(&ctx, &ctx.request).is_err());
+}
+#[test]
+#[cfg(feature = "test-faults")]
+fn replaced_selection_during_attempt_cannot_cross_cas() {
+    use workspace_publication::custody::{CustodySelection, ManagedCustody};
+    let (temp, ctx, workspace, path) = setup_managed();
+    drop(workspace);
+    let old = run(&ctx.repo, &["rev-parse", "refs/heads/main"], None);
+    let mut process = managed_child(&ctx, temp.path(), &path, "after_attempt_started");
+    wait_ready(&temp.path().join("after_attempt_started.ready"));
+    let mut policy: CustodySelection = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    policy.epoch = "fixture-revoked-epoch".into();
+    save_managed_policy(&path, &policy);
+    fs::write(
+        temp.path().join("after_attempt_started.release"),
+        b"release",
+    )
+    .unwrap();
+    assert!(process.wait().unwrap().success());
+    assert_eq!(run(&ctx.repo, &["rev-parse", "refs/heads/main"], None), old);
+    let mut reopened =
+        Workspace::open_managed(ManagedCustody::load_fixture_selection(&path).unwrap()).unwrap();
+    assert_eq!(
+        reopened.reconcile(&ctx, &ctx.request).unwrap().state,
+        OperationState::Unresolved
+    );
+    assert!(reopened.publish(&ctx, &ctx.request).is_err());
 }

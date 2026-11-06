@@ -1,6 +1,7 @@
 //! Fresh, local Git publication owner. Saved references are evidence, never authority.
 pub mod codec;
 pub mod contract;
+pub mod custody;
 mod git;
 mod lock;
 mod store;

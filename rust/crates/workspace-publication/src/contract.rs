@@ -173,12 +173,15 @@ pub struct WorkspaceConfig {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AuthorityMode {
     FixtureOperator,
+    /// Actual managed boundary exercised under explicit test-owner selection.
+    FixtureManagedCustody,
     Production,
 }
 impl AuthorityMode {
     pub fn label(&self) -> &'static str {
         match self {
             Self::FixtureOperator => "fixture_operator",
+            Self::FixtureManagedCustody => "fixture_managed_custody",
             Self::Production => "production",
         }
     }

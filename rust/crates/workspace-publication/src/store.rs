@@ -1,5 +1,6 @@
 use crate::codec::{canonical, digest, raw_sha256};
 use crate::contract::*;
+use crate::custody::ManagedCustody;
 use crate::{Error, Result, git, lock::Guard, validation};
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -95,6 +96,7 @@ pub struct Workspace {
     repository_id: String,
     common_dir: PathBuf,
     conn: Connection,
+    custody: Option<ManagedCustody>,
 }
 fn random_id() -> Result<String> {
     let mut bytes = [0u8; 16];
@@ -138,6 +140,19 @@ fn cfg_digest(config: &WorkspaceConfig, repository_id: &str) -> Result<String> {
 }
 impl Workspace {
     pub fn initialize(config: WorkspaceConfig) -> Result<Self> {
+        if config.authority_mode != AuthorityMode::FixtureOperator {
+            return Err(Error::Integrity(
+                "managed startup requires independently installed custody".into(),
+            ));
+        }
+        Self::initialize_inner(config, None)
+    }
+    /// Trusted startup only: the initialize phase never permits publication.
+    pub fn initialize_managed(custody: ManagedCustody) -> Result<Self> {
+        custody.check_initialize()?;
+        Self::initialize_inner(custody.config(), Some(custody))
+    }
+    fn initialize_inner(config: WorkspaceConfig, custody: Option<ManagedCustody>) -> Result<Self> {
         if !config.root.is_absolute()
             || !config.repository.is_absolute()
             || config.canonical_refs.is_empty()
@@ -149,9 +164,22 @@ impl Workspace {
         }
         let repository_id = git::repository_id(&config.repository)?;
         let common_dir = git::common_dir(&config.repository)?;
-        fs::create_dir(&config.root).map_err(|e| Error::Io(e.to_string()))?;
-        fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700))
-            .map_err(|e| Error::Io(e.to_string()))?;
+        if custody.is_some() && common_dir != config.repository {
+            return Err(Error::Integrity(
+                "managed common directory differs from installed bare repository".into(),
+            ));
+        }
+        if custody.is_none() {
+            fs::create_dir(&config.root).map_err(|e| Error::Io(e.to_string()))?;
+        } else if config.root.join(MARKER).exists() || config.root.join(DB).exists() {
+            return Err(Error::Conflict(
+                "managed owner state already initialized".into(),
+            ));
+        }
+        if custody.is_none() {
+            fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700))
+                .map_err(|e| Error::Io(e.to_string()))?;
+        }
         let _guard = Guard::acquire(&common_dir)?;
         if common_dir.join(REPOSITORY_OWNER).exists() {
             return Err(Error::Conflict(
@@ -194,15 +222,31 @@ impl Workspace {
             &repository_id,
             true,
         )?;
+        if let Some(custody) = &custody {
+            custody.check()?;
+        }
         Ok(Self {
             config,
             root_id: marker.root_id,
             repository_id,
             common_dir,
             conn,
+            custody,
         })
     }
     pub fn open(config: WorkspaceConfig) -> Result<Self> {
+        if config.authority_mode != AuthorityMode::FixtureOperator {
+            return Err(Error::Integrity(
+                "managed reopen requires independently installed custody".into(),
+            ));
+        }
+        Self::open_inner(config, None)
+    }
+    pub fn open_managed(custody: ManagedCustody) -> Result<Self> {
+        custody.check_active()?;
+        Self::open_inner(custody.config(), Some(custody))
+    }
+    fn open_inner(config: WorkspaceConfig, custody: Option<ManagedCustody>) -> Result<Self> {
         let bytes = fs::read(config.root.join(MARKER)).map_err(|e| Error::Io(e.to_string()))?;
         let marker: Marker =
             serde_json::from_slice(&bytes).map_err(|e| Error::Integrity(e.to_string()))?;
@@ -227,6 +271,11 @@ impl Workspace {
             return Err(Error::Integrity("workspace identity differs".into()));
         }
         let common_dir = git::common_dir(&config.repository)?;
+        if custody.is_some() && common_dir != config.repository {
+            return Err(Error::Integrity(
+                "managed common directory differs from installed bare repository".into(),
+            ));
+        }
         let _guard = Guard::acquire(&common_dir)?;
         repository_owner(
             &common_dir,
@@ -235,12 +284,16 @@ impl Workspace {
             &repository_id,
             false,
         )?;
+        if let Some(custody) = &custody {
+            custody.check()?;
+        }
         Ok(Self {
             config,
             root_id: marker.root_id,
             repository_id,
             common_dir,
             conn,
+            custody,
         })
     }
     pub fn root_id(&self) -> &str {
@@ -249,7 +302,60 @@ impl Workspace {
     pub fn repository_id(&self) -> &str {
         &self.repository_id
     }
+    fn managed_binding(&self, operation: &str) -> Result<Option<serde_json::Value>> {
+        if self.custody.is_none() {
+            return Ok(None);
+        }
+        let id = format!("custody-{operation}");
+        let sha: String = sql(self.conn.query_row(
+            "SELECT sha256 FROM records WHERE record_id=?1 AND kind='managed-custody'",
+            [&id],
+            |r| r.get(0),
+        ))?;
+        self.read_record(&RecordRef {
+            kind: "managed-custody".into(),
+            schema_version: 1,
+            root_id: self.root_id.clone(),
+            record_id: id,
+            sha256: sha,
+        })
+        .map(Some)
+    }
+    fn bind_saved_custody(
+        &self,
+        mut value: serde_json::Value,
+        operation: &str,
+    ) -> Result<serde_json::Value> {
+        if let Some(binding) = self.managed_binding(operation)? {
+            value["managedCustody"] = binding;
+        }
+        Ok(value)
+    }
+    fn check_custody(&self) -> Result<()> {
+        match (&self.custody, &self.config.authority_mode) {
+            (Some(custody), _) => {
+                custody.check_active()?;
+                if git::common_dir(&self.config.repository)? != self.common_dir
+                    || git::command(
+                        &self.config.repository,
+                        &["rev-parse", "--is-bare-repository"],
+                        None,
+                    )? != b"true\n"
+                {
+                    return Err(Error::Integrity(
+                        "installed bare Git topology changed".into(),
+                    ));
+                }
+                Ok(())
+            }
+            (None, AuthorityMode::FixtureOperator) => Ok(()),
+            _ => Err(Error::Integrity(
+                "production repository custody is not installed".into(),
+            )),
+        }
+    }
     fn guard(&self) -> Result<Guard> {
+        self.check_custody()?;
         let guard = Guard::acquire(&self.common_dir)?;
         repository_owner(
             &self.common_dir,
@@ -258,6 +364,10 @@ impl Workspace {
             &self.repository_id,
             false,
         )?;
+        if let Some(custody) = &self.custody {
+            custody.check_lock(guard.file())?;
+        }
+        guard.verify(&self.common_dir)?;
         Ok(guard)
     }
     /// Fixture-only enrolled checkout actor. It shares the Git common-directory
@@ -299,6 +409,7 @@ impl Workspace {
         Ok(())
     }
     pub fn checkpoint_parent(&self, commit: &str) -> Result<String> {
+        self.check_custody()?;
         Ok(git::commit_parent(
             &self.config.repository,
             &GitOid {
@@ -309,6 +420,7 @@ impl Workspace {
         .hex)
     }
     pub fn inspect_candidate(&self, candidate: &PublicationCandidate) -> Result<String> {
+        self.check_custody()?;
         git::verify_candidate(&self.config.repository, candidate)?;
         if candidate.review_outcomes.is_empty() || candidate.gate_receipts.is_empty() {
             return Err(Error::Conflict("review or gate evidence missing".into()));
@@ -394,6 +506,7 @@ impl Workspace {
         message: &str,
         request_id: &str,
     ) -> Result<(RecordRef, PreparedPublication)> {
+        self.check_custody()?;
         if !self.config.canonical_refs.iter().any(|r| r == target)
             || message.trim().is_empty()
             || request_id.trim().is_empty()
@@ -450,6 +563,9 @@ impl Workspace {
             &tree,
             &candidate.manifest,
         )?;
+        if self.custody.is_some() {
+            git::verify_worktree(&self.config.repository, &artifact, &tree)?;
+        }
         let manifest_digest = digest("attributed-manifest", &candidate.manifest)?;
         let validation = validation::run(
             &self.config,
@@ -457,15 +573,24 @@ impl Workspace {
             &tree,
             &self.root_id,
             &format!("validation-{operation_id}"),
+            self.custody.as_ref(),
         )?;
+        self.check_custody()?;
         let validation_ref =
             self.put_record("tree-validation", &validation.record_id, &validation)?;
+        if let Some(custody) = &self.custody {
+            self.put_record(
+                "managed-custody",
+                &format!("custody-{operation_id}"),
+                &custody.binding(),
+            )?;
+        }
         let preparation_digest = digest(
             "preparation-binding",
-            &serde_json::json!({"profile":PROFILE,"version":1,"rootId":self.root_id,"operationId":operation_id,
+            &self.bind_saved_custody(serde_json::json!({"profile":PROFILE,"version":1,"rootId":self.root_id,"operationId":operation_id,
           "eligibility":eligibility_ref,"repositoryId":self.repository_id,"canonicalRef":target,"expectedParent":expected,
           "manifestDigest":manifest_digest,"integratedTree":tree,"validationPolicyDigest":self.config.validation_policy_digest,
-          "treeValidation":validation_ref,"message":message}),
+          "treeValidation":validation_ref,"message":message}), &operation_id)? ,
         )?;
         let full_message = format!(
             "{message}\n\nWork-Engine-Operation: {operation_id}\nWork-Engine-Preparation: {preparation_digest}\n"
@@ -568,10 +693,10 @@ impl Workspace {
         }
         let binding = digest(
             "preparation-binding",
-            &serde_json::json!({"profile":PROFILE,"version":1,"rootId":self.root_id,"operationId":p.operation_id,
+            &self.bind_saved_custody(serde_json::json!({"profile":PROFILE,"version":1,"rootId":self.root_id,"operationId":p.operation_id,
           "eligibility":p.eligibility_ref,"repositoryId":self.repository_id,"canonicalRef":p.canonical_ref,"expectedParent":p.expected_parent,
           "manifestDigest":p.manifest_digest,"integratedTree":p.integrated_tree,"validationPolicyDigest":p.validation_policy_digest,
-          "treeValidation":p.validation_ref,"message":p.proposed_message}),
+          "treeValidation":p.validation_ref,"message":p.proposed_message}), &p.operation_id)? ,
         )?;
         let full = format!(
             "{}\n\nWork-Engine-Operation: {}\nWork-Engine-Preparation: {}\n",
@@ -658,11 +783,7 @@ impl Workspace {
         authority: &A,
         request: &PublicationRequest,
     ) -> Result<PublicationReceipt> {
-        if self.config.authority_mode == AuthorityMode::Production {
-            return Err(Error::Conflict(
-                "production repository custody is not installed".into(),
-            ));
-        }
+        self.check_custody()?;
         // This read may race closure. Admission rechecks the tombstone after taking the same OS guard.
         authority.check_create_consumption(request)?;
         #[cfg(feature = "test-faults")]
@@ -691,6 +812,13 @@ impl Workspace {
             )));
         }
         let p = self.verify_prepared(&op, request)?;
+        if let Some(custody) = &self.custody {
+            if self.managed_binding(&p.operation_id)?.as_ref() != Some(&custody.binding()) {
+                return Err(Error::Unresolved(
+                    "prepared custody epoch changed; no new attempt".into(),
+                ));
+            }
+        }
         let candidate = authority.read_candidate(&eligibility.candidate_digest)?;
         if self.inspect_candidate(&candidate)? != eligibility.candidate_digest
             || digest("attributed-manifest", &candidate.manifest)? != p.manifest_digest
@@ -732,9 +860,9 @@ impl Workspace {
         sql(tx.commit())?;
         let admission_digest = digest(
             "admission-binding",
-            &serde_json::json!({"operationId":p.operation_id,"preparationDigest":p.preparation_digest,"prepared":request.prepared_ref,
+            &self.bind_saved_custody(serde_json::json!({"operationId":p.operation_id,"preparationDigest":p.preparation_digest,"prepared":request.prepared_ref,
           "offer":request.offer_ref,"createDecision":create.decision_ref,"campaignConsumption":create.consumption_ref,
-          "resources":[p.canonical_ref,self.repository_id,p.artifact_identity],"generation":generation}),
+          "resources":[p.canonical_ref,self.repository_id,p.artifact_identity],"generation":generation}), &p.operation_id)? ,
         )?;
         let admission=self.put_record("admission-binding",&format!("admission-{}",p.operation_id),&serde_json::json!({"digest":admission_digest,"request":request,"decision":create.decision_ref,"consumption":create.consumption_ref,"generation":generation}))?;
         self.update_state(
@@ -765,6 +893,11 @@ impl Workspace {
         )?;
         #[cfg(feature = "test-faults")]
         crate::fault_cut("after_attempt_started");
+        self.check_custody()?;
+        _guard.verify(&self.common_dir)?;
+        if let Some(custody) = &self.custody {
+            custody.check_lock(_guard.file())?;
+        }
         let effect = git::compare_and_swap(
             &self.config.repository,
             &p.canonical_ref,
@@ -773,6 +906,9 @@ impl Workspace {
         );
         #[cfg(feature = "test-faults")]
         crate::fault_cut("after_ref_cas");
+        // An identity change after AttemptStarted leaves uncertainty, never a retry.
+        self.check_custody()?;
+        _guard.verify(&self.common_dir)?;
         if let Err(effect) = effect {
             return Err(Error::Unresolved(format!(
                 "physical ref attempt uncertain: {}",
@@ -855,11 +991,18 @@ impl Workspace {
             (Ok(create), Some(saved), Some(generation)) => {
                 let expected = digest(
                     "admission-binding",
-                    &serde_json::json!({"operationId":p.operation_id,"preparationDigest":p.preparation_digest,"prepared":request.prepared_ref,
+                    &self.bind_saved_custody(serde_json::json!({"operationId":p.operation_id,"preparationDigest":p.preparation_digest,"prepared":request.prepared_ref,
                   "offer":request.offer_ref,"createDecision":create.decision_ref,"campaignConsumption":create.consumption_ref,
-                  "resources":[p.canonical_ref,self.repository_id,p.artifact_identity],"generation":generation}),
+                  "resources":[p.canonical_ref,self.repository_id,p.artifact_identity],"generation":generation}), &p.operation_id)? ,
                 )?;
-                saved["digest"] == expected
+                let custody_current = match &self.custody {
+                    Some(custody) => {
+                        self.managed_binding(&p.operation_id)?.as_ref() == Some(&custody.binding())
+                    }
+                    None => true,
+                };
+                custody_current
+                    && saved["digest"] == expected
                     && saved["request"]
                         == serde_json::to_value(request)
                             .map_err(|e| Error::Integrity(e.to_string()))?
@@ -893,7 +1036,10 @@ impl Workspace {
             None,
             Some(current),
             if state == OperationState::PublishedObserved {
-                "observed under enrolled fixture custody only"
+                if self.custody.is_some() {
+                    if self.config.authority_mode == AuthorityMode::Production { "observed under installed managed custody; trusted operator administration excluded" }
+                    else { "observed under fixture-managed custody only; no installed production authority" }
+                } else { "observed under enrolled fixture custody only" }
             } else {
                 "historical effect uncertain; no retry"
             },
