@@ -319,6 +319,7 @@ fn continuity_try(
         )
         .unwrap();
     let config = CodingConfig {
+        sol_high: false,
         task: live.then(|| "Fix the disposable crate so the acceptance tests pass.".to_string()),
         budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":class.unwrap_or(if live {"live_provider_observation"} else {"provider_disabled_fixture"}),"available":true,"max_provider_requests":4,"max_tool_calls":1,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-root-budget","generation":"fixture:1","observed_ms":100,"max_age_ms":300000}),
         expires_ms: 1000,

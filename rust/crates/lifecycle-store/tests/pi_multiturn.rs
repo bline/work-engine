@@ -747,7 +747,10 @@ fn v4_keeps_actual_final_text_and_owner_checkpoint_as_distinct_bound_materials_a
             hash(&serde_json::to_vec(&history_messages).unwrap())
         );
         assert_eq!(value["coding_result"], values[9]["result"]);
-        assert_eq!(value["coding_result_sha256"], values[9]["artifact"]["sha256"]);
+        assert_eq!(
+            value["coding_result_sha256"],
+            values[9]["artifact"]["sha256"]
+        );
         assert!(!checkpoint.contains(model));
         checkpoint
     };
@@ -867,4 +870,68 @@ fn v4_checkpoint_refuses_tampered_material_and_other_profiles_are_unchanged() {
             .as_bytes()
     );
     assert!(store.pi_coding_live_checkpoint(&parent).is_err());
+}
+
+#[test]
+fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_blocks() {
+    fn inject(v: &mut Value, malformed: bool) {
+        match v {
+            Value::Array(a) => a.iter_mut().for_each(|v| inject(v, malformed)),
+            Value::Object(o) => {
+                if o.get("role").is_some_and(|r| r == "assistant") {
+                    if let Some(Value::Array(a)) = o.get_mut("content") {
+                        a.insert(0, json!({"type":"thinking","thinking":"fixture reasoning", "thinkingSignature":if malformed {"not-json"} else {"{\"type\":\"reasoning\",\"id\":\"r-fixture\",\"encrypted_content\":\"fixture\"}"}}));
+                    }
+                }
+                o.values_mut().for_each(|v| inject(v, malformed));
+            }
+            _ => {}
+        }
+    }
+    for (sol, malformed) in [(true, false), (false, false), (true, true)] {
+        let root = tempdir().unwrap();
+        let (mut store, session) = if sol {
+            setup_binding(
+                root.path(),
+                &pi_coding_sol_high_profile_digest(),
+                &pi_coding_sol_high_protocol_digest(),
+            )
+        } else {
+            open_live(root.path())
+        };
+        let mut values = live_events("coding", "Actual final text.");
+        values.iter_mut().for_each(|v| inject(v, malformed));
+        let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+        let settled = store.settle_pi_coding(&parent, &proof, clock());
+        if !sol || malformed {
+            assert!(settled.is_err());
+            assert!(store.native_final_material("coding").unwrap().is_none());
+        } else {
+            settled.unwrap();
+            assert_eq!(
+                store
+                    .native_final_material("coding")
+                    .unwrap()
+                    .unwrap()
+                    .final_text,
+                b"Actual final text."
+            );
+            let checkpoint = store.pi_coding_live_checkpoint(&parent).unwrap();
+            let value: Value = serde_json::from_str(&checkpoint).unwrap();
+            assert_eq!(
+                value["profile"],
+                "work-engine.pi-coding-sol-high-continuity.v1"
+            );
+            assert_eq!(
+                value["settled_turn"]["history_messages_sha256"],
+                hash(&serde_json::to_vec(&values[22]["messages"]).unwrap())
+            );
+            drop(store);
+            let mut reopened = SqliteLifecycleStore::open(root.path(), "issuer".into()).unwrap();
+            assert_eq!(
+                reopened.pi_coding_live_checkpoint(&parent).unwrap(),
+                checkpoint
+            );
+        }
+    }
 }

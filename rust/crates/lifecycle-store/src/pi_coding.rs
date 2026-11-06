@@ -24,12 +24,20 @@ pub fn pi_coding_live_protocol_digest() -> String {
         b"pi-1.5.0:raw-agent-events+host-intent-result+session-branch+owner-derived-checkpoint:v4",
     )
 }
+/// Sol/high v5 preserves native thinking blocks under a distinct grammar.
+pub fn pi_coding_sol_high_profile_digest() -> String {
+    digest(b"pi-1.5.0-coding-sol-high-v5:openai-codex:gpt-6.1-sol:high:thinking-history:owner-derived-checkpoint")
+}
+pub fn pi_coding_sol_high_protocol_digest() -> String {
+    digest(b"pi-1.5.0:raw-agent-events+host-intent-result+thinking-history+owner-derived-checkpoint:v5")
+}
 /// Profile and protocol must come from the same version; mixed bindings are
 /// refused rather than interpreted.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PiCodingKind {
     Fixture,
     Live,
+    SolHigh,
 }
 pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKind> {
     if profile == pi_coding_profile_digest() && protocol == pi_coding_protocol_digest() {
@@ -38,6 +46,10 @@ pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKi
         && protocol == pi_coding_live_protocol_digest()
     {
         Some(PiCodingKind::Live)
+    } else if profile == pi_coding_sol_high_profile_digest()
+        && protocol == pi_coding_sol_high_protocol_digest()
+    {
+        Some(PiCodingKind::SolHigh)
     } else {
         None
     }
@@ -240,6 +252,11 @@ impl SqliteLifecycleStore {
                 pi_coding_live_profile_digest(),
                 pi_coding_live_protocol_digest(),
             )
+        } else if successor.profile_digest() == pi_coding_sol_high_profile_digest() {
+            (
+                pi_coding_sol_high_profile_digest(),
+                pi_coding_sol_high_protocol_digest(),
+            )
         } else {
             return Err(StoreError::Rejected);
         };
@@ -328,7 +345,9 @@ impl SqliteLifecycleStore {
         if values.len() as u64 != proof.history_sequence - proof.first_sequence + 1 {
             return Err(StoreError::ClaimConflict);
         }
-        let profile_digest = if b.kind == PiCodingKind::Live {
+        let profile_digest = if b.kind == PiCodingKind::SolHigh {
+            pi_coding_sol_high_profile_digest()
+        } else if b.kind == PiCodingKind::Live {
             pi_coding_live_profile_digest()
         } else {
             pi_coding_profile_digest()
@@ -347,7 +366,7 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::ClaimConflict);
         }
-        let validated = crate::pi_coding_proof::validate(
+        let validated = crate::pi_coding_proof::validate_with_thinking(
             &values,
             parent.invocation_id(),
             parent.turn().unwrap().as_str(),
@@ -355,12 +374,13 @@ impl SqliteLifecycleStore {
             &b.prompt,
             &b.prompt_hash,
             anchor.as_ref(),
-            b.kind == PiCodingKind::Live,
+            b.kind != PiCodingKind::Fixture,
+            b.kind == PiCodingKind::SolHigh,
         )?;
         // This bounded live profile's sole tool-bearing turn is the initial
         // emission prefix. Together with the committed end coordinate, this
         // fixes both slice boundaries without adding another material store.
-        if b.kind == PiCodingKind::Live
+        if b.kind != PiCodingKind::Fixture
             && validated.checkpoint.is_some()
             && proof.first_sequence != 1
         {
@@ -381,7 +401,7 @@ impl SqliteLifecycleStore {
             &b.purpose,
             clock,
         )?;
-        if b.kind == PiCodingKind::Live {
+        if b.kind != PiCodingKind::Fixture {
             // Atomic self-check: what any later reader derives from the
             // committed rows must equal what this settlement validated.
             let committed = live_checkpoint_of(&tx, parent.invocation_id())?;
@@ -412,7 +432,8 @@ impl SqliteLifecycleStore {
         if !bound {
             return Err(StoreError::ClaimConflict);
         }
-        live_checkpoint_of(&self.connection, parent.invocation_id())?.ok_or(StoreError::ClaimConflict)
+        live_checkpoint_of(&self.connection, parent.invocation_id())?
+            .ok_or(StoreError::ClaimConflict)
     }
 }
 
@@ -426,7 +447,19 @@ pub(crate) fn live_checkpoint_of(
     conn: &rusqlite::Connection,
     invocation: &str,
 ) -> Result<Option<String>, StoreError> {
-    type Row = (String, String, String, String, Vec<u8>, String, String, String, Vec<u8>, String, u64);
+    type Row = (
+        String,
+        String,
+        String,
+        String,
+        Vec<u8>,
+        String,
+        String,
+        String,
+        Vec<u8>,
+        String,
+        u64,
+    );
     let row: Option<Row> = conn
         .query_row(
             "SELECT t.session_id,t.thread_id,t.turn_id,t.purpose,t.prompt,t.prompt_sha256,t.profile_digest,s.protocol_digest,t.final_text,t.history_transport_session,t.history_sequence FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1 AND t.state='completed_settled' AND t.history_status='observed_complete' AND t.final_text IS NOT NULL AND t.turn_id IS NOT NULL AND t.history_transport_session IS NOT NULL AND t.history_sequence IS NOT NULL",
@@ -435,10 +468,25 @@ pub(crate) fn live_checkpoint_of(
         )
         .optional()
         .map_err(|_| StoreError::Unavailable)?;
-    let Some((session, thread, turn, purpose, prompt, profile, protocol, prompt_hash, final_text, transport, last)) = row else {
+    let Some((
+        session,
+        thread,
+        turn,
+        purpose,
+        prompt,
+        profile,
+        protocol,
+        prompt_hash,
+        final_text,
+        transport,
+        last,
+    )) = row
+    else {
         return Ok(None);
     };
-    if pi_coding_kind(&profile, &protocol) != Some(PiCodingKind::Live) || purpose != "domain_work" {
+    let kind = pi_coding_kind(&profile, &protocol);
+    if !matches!(kind, Some(PiCodingKind::Live | PiCodingKind::SolHigh)) || purpose != "domain_work"
+    {
         return Ok(None);
     }
     let mut stmt = conn
@@ -446,7 +494,13 @@ pub(crate) fn live_checkpoint_of(
         .map_err(|_| StoreError::Unavailable)?;
     let rows = stmt
         .query_map(params![session, thread, turn, transport, last], |r| {
-            Ok((r.get::<_, u64>(0)?, r.get::<_, Vec<u8>>(1)?, r.get::<_, String>(2)?, r.get::<_, String>(3)?, r.get::<_, String>(4)?))
+            Ok((
+                r.get::<_, u64>(0)?,
+                r.get::<_, Vec<u8>>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, String>(3)?,
+                r.get::<_, String>(4)?,
+            ))
         })
         .map_err(|_| StoreError::Unavailable)?;
     let mut values: Vec<Value> = Vec::new();
@@ -456,7 +510,8 @@ pub(crate) fn live_checkpoint_of(
         if values.is_empty() {
             first = sequence;
         }
-        if sequence != first + values.len() as u64 || digest(&raw) != hash || status != "qualified" {
+        if sequence != first + values.len() as u64 || digest(&raw) != hash || status != "qualified"
+        {
             return Err(StoreError::ClaimConflict);
         }
         let v: Value = serde_json::from_slice(&raw).map_err(|_| StoreError::ClaimConflict)?;
@@ -469,8 +524,20 @@ pub(crate) fn live_checkpoint_of(
         return Err(StoreError::ClaimConflict);
     }
     drop(stmt);
-    let anchor = crate::pi_settlement::settled_anchor(conn, invocation, &session, &thread, &profile, &transport, first)?;
-    let validated = crate::pi_coding_proof::validate(&values, invocation, &turn, &thread, &prompt, &prompt_hash, anchor.as_ref(), true)?;
+    let anchor = crate::pi_settlement::settled_anchor(
+        conn, invocation, &session, &thread, &profile, &transport, first,
+    )?;
+    let validated = crate::pi_coding_proof::validate_with_thinking(
+        &values,
+        invocation,
+        &turn,
+        &thread,
+        &prompt,
+        &prompt_hash,
+        anchor.as_ref(),
+        true,
+        kind == Some(PiCodingKind::SolHigh),
+    )?;
     if validated.final_text.as_bytes() != final_text.as_slice()
         || (validated.checkpoint.is_some() && first != 1)
     {

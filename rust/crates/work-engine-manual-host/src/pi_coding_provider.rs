@@ -4,6 +4,23 @@ use std::os::unix::fs::OpenOptionsExt;
 pub const LIVE_PROFILE: &str = "work-engine.pi-coding-sdk.v1";
 pub const ACCESS_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-access.mjs");
 const CATALOG: &str = "node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json";
+/// Explicit opt-in tuple. Absence retains the historical Luna contract and bytes.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SolHighContract {
+    pub schema: String,
+    pub reasoning_effort: String,
+    pub payer_account_id: String,
+}
+impl SolHighContract {
+    pub fn valid(&self) -> bool {
+        self.schema == "work-engine.sol-high.v1"
+            && self.reasoning_effort == "high"
+            && !self.payer_account_id.is_empty()
+            && self.payer_account_id.len() <= 512
+            && !self.payer_account_id.chars().any(char::is_control)
+    }
+}
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProviderPlan {
@@ -12,6 +29,8 @@ pub struct ProviderPlan {
     pub catalog: Artifact,
     pub access_adapter: Artifact,
     pub model: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sol_high: Option<SolHighContract>,
     pub max_requests: u32,
     pub budget_microusd: u64,
     pub max_context_bytes: u64,
@@ -41,6 +60,8 @@ struct Admission {
     job_id: String,
     binary_sha256: String,
     model: String,
+    #[serde(default)]
+    sol_high: Option<SolHighContract>,
     native_auth_source: PathBuf,
     pi_config_manifest_sha256: String,
     task_sha256: String,
@@ -64,10 +85,25 @@ impl ProviderPlan {
         Ok(selected)
     }
     pub(super) fn validate(&self, job: &Job) -> Result<()> {
-        if self.model != "gpt-6-luna"
-            || !(1..=6).contains(&self.max_requests)
-            || !(1..=1_000_000).contains(&self.budget_microusd)
-            || !(1024..=65536).contains(&self.max_context_bytes)
+        let sol = self.sol_high.is_some();
+        if if let Some(tuple) = &self.sol_high {
+            !tuple.valid()
+                || self.model != "gpt-6.1-sol"
+                || job
+                    .coding
+                    .as_ref()
+                    .is_none_or(|p| p.schema != super::SOL_HIGH_BRIDGE_PROFILE)
+                || self.max_requests != 4
+                || self.budget_microusd != 17_680_004
+        } else {
+            self.model != "gpt-6-luna"
+                || !(1..=6).contains(&self.max_requests)
+                || !(1..=1_000_000).contains(&self.budget_microusd)
+                || job
+                    .coding
+                    .as_ref()
+                    .is_some_and(|p| p.schema == super::SOL_HIGH_BRIDGE_PROFILE)
+        } || !(1024..=65536).contains(&self.max_context_bytes)
             || self.catalog.path != job.runtime.root.join(CATALOG)
             || self.access_adapter.verify()? != ACCESS_ADAPTER
             || !self.access_adapter.path.is_absolute()
@@ -128,7 +164,13 @@ impl ProviderPlan {
         }
         let admission: Admission = serde_json::from_slice(&job.authority.verify()?)
             .map_err(|_| Error::Refused("exact provider runtime admission required".into()))?;
-        if admission.schema != "work-engine.pi-coding-runtime-admission.v1"
+        if admission.schema
+            != if sol {
+                "work-engine.pi-coding-runtime-admission.v2"
+            } else {
+                "work-engine.pi-coding-runtime-admission.v1"
+            }
+            || admission.sol_high != self.sol_high
             || admission.job_id != job.job_id
             || admission.binary_sha256 != file_digest(&std::env::current_exe()?, None)?
             || admission.model != self.model
@@ -222,8 +264,14 @@ impl Host {
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
         atomic(
             &public.join("job.json"),
-            &json!({"schema":if self.signed_subscription() {super::SIGNED_SUBSCRIPTION_PROFILE} else if self.journal.job.coding.as_ref().is_some_and(|p| p.schema == super::LIVE_BRIDGE_PROFILE) {super::LIVE_BRIDGE_PROFILE} else {LIVE_PROFILE},"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
+            &json!({"schema":if self.signed_subscription() {super::SIGNED_SUBSCRIPTION_PROFILE} else if self.journal.job.coding.as_ref().is_some_and(|p| super::is_live_bridge(&p.schema)) {self.journal.job.coding.as_ref().unwrap().schema.as_str()} else {LIVE_PROFILE},"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
         )?;
+        if let Some(tuple) = &plan.sol_high {
+            let path = public.join("job.json");
+            let mut value: Value = serde_json::from_slice(&fs::read(&path)?)?;
+            value["solHigh"] = serde_json::to_value(tuple)?;
+            atomic(&path, &value)?;
+        }
         Ok(())
     }
     // Caller must hold current Initialization lease for signed jobs. This
@@ -288,6 +336,13 @@ impl Host {
                 .check_current()
                 .map_err(|e| Error::Refused(e.into()))?;
         }
+        if plan
+            .sol_high
+            .as_ref()
+            .is_some_and(|tuple| !grant.matches_account(&tuple.payer_account_id))
+        {
+            return refuse("admitted payer account mismatch");
+        }
         grant.stage(&private)?;
         Ok(())
     }
@@ -323,6 +378,10 @@ impl Host {
                         .provider_requests
                         .values()
                         .any(|r| r.settled_microusd.is_none())
+                    || plan.sol_high.as_ref().is_some_and(|tuple| {
+                        frame["reasoningEffort"] != tuple.reasoning_effort
+                            || frame["payerAccountId"] != tuple.payer_account_id
+                    })
                     || frame["model"] != plan.model
                     || frame["provider"] != "openai-codex"
                     || frame["contextBytes"]
@@ -501,6 +560,7 @@ mod ledger_tests {
             catalog: pin.clone(),
             access_adapter: pin,
             model: "gpt-6-luna".into(),
+            sol_high: None,
             max_requests: 6,
             budget_microusd: 1_000_000,
             max_context_bytes: 65536,
@@ -642,6 +702,7 @@ mod admission_tests {
                 sha256: digest(ACCESS_ADAPTER),
             },
             model: "gpt-6-luna".into(),
+            sol_high: None,
             max_requests: 6,
             budget_microusd: 1000000,
             max_context_bytes: 65536,
@@ -958,7 +1019,7 @@ mod signed_subscription_tests {
         // request count / context bound varies, and a refusal must name that
         // exact admission rule (not any other profile/pin conflict).
         const RULE: &str = "live continuity profile admits exactly 4 requests";
-        let admit = |requests: u32, context: u64| -> Result<()> {
+        let admit = |requests: u32, context: u64, sol_case: u8| -> Result<()> {
             use std::os::unix::fs::PermissionsExt;
             let (dir, mut h) = super::super::tests::fixture();
             let root = dir.path().canonicalize().unwrap();
@@ -992,7 +1053,8 @@ mod signed_subscription_tests {
                 "budget_microusd":1_000_000u64,
                 "allow_native_access_projection":true,
                 "allow_provider":true,
-            })).unwrap();
+            }))
+            .unwrap();
             fs::write(root.join("authority"), &admission).unwrap();
             let workspace = root.join("workspace");
             fs::create_dir_all(workspace.join("src")).unwrap();
@@ -1015,8 +1077,7 @@ mod signed_subscription_tests {
             profile.schema = super::super::LIVE_BRIDGE_PROFILE.into();
             profile.fixture_command = String::new();
             profile.max_tool_calls = 1;
-            profile.workspace_write_boundary =
-                super::super::WorkspaceWriteBoundary::SrcLibRs;
+            profile.workspace_write_boundary = super::super::WorkspaceWriteBoundary::SrcLibRs;
             profile.shim = Artifact {
                 path: root.join("shim.mjs"),
                 sha256: digest(super::super::SHIM),
@@ -1056,24 +1117,83 @@ mod signed_subscription_tests {
                     sha256: digest(ACCESS_ADAPTER),
                 },
                 model: "gpt-6-luna".into(),
+                sol_high: None,
                 max_requests: requests,
                 budget_microusd: 1_000_000,
                 max_context_bytes: context,
             });
+            if sol_case != 0 {
+                let tuple = SolHighContract {
+                    schema: "work-engine.sol-high.v1".into(),
+                    reasoning_effort: "high".into(),
+                    payer_account_id: "fixture-payer".into(),
+                };
+                let model = json!({"id":"gpt-6.1-sol","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":500000,"maxTokens":128000,"cost":{"input":2,"output":10,"cacheRead":0.1,"cacheWrite":2.5,"tiers":[{"input":4,"output":15,"cacheRead":0.2,"cacheWrite":5}]}});
+                assert_eq!(full_reservation(&model).unwrap(), 4_420_001);
+                let catalog = serde_json::to_vec(
+                    &json!({"openai-codex-responses":{"chat:gpt-6.1-sol":model}}),
+                )
+                .unwrap();
+                let profile = h.journal.job.coding.as_mut().unwrap();
+                profile.schema = super::super::SOL_HIGH_BRIDGE_PROFILE.into();
+                let plan = profile.provider.as_mut().unwrap();
+                assert!(
+                    serde_json::to_value(&*plan)
+                        .unwrap()
+                        .get("sol_high")
+                        .is_none()
+                );
+                fs::write(&plan.catalog.path, &catalog).unwrap();
+                plan.catalog.sha256 = digest(&catalog);
+                plan.model = "gpt-6.1-sol".into();
+                plan.sol_high = Some(tuple.clone());
+                plan.budget_microusd = 17_680_004;
+                let mut authority: Value = serde_json::from_slice(&admission).unwrap();
+                authority["schema"] = json!("work-engine.pi-coding-runtime-admission.v2");
+                authority["model"] = json!(plan.model);
+                authority["sol_high"] = serde_json::to_value(tuple).unwrap();
+                authority["budget_microusd"] = json!(plan.budget_microusd);
+                authority["catalog_sha256"] = json!(plan.catalog.sha256);
+                match sol_case {
+                    2 => plan.model = "gpt-6-luna".into(),
+                    3 => plan.sol_high.as_mut().unwrap().reasoning_effort = "medium".into(),
+                    4 => authority["sol_high"]["payer_account_id"] = json!("other-payer"),
+                    5 => authority["schema"] = json!("work-engine.pi-coding-runtime-admission.v1"),
+                    6 => plan.budget_microusd -= 1,
+                    7 => profile.schema = super::super::LIVE_BRIDGE_PROFILE.into(),
+                    _ => {}
+                }
+                let bytes = serde_json::to_vec(&authority).unwrap();
+                fs::write(&h.journal.job.authority.path, &bytes).unwrap();
+                h.journal.job.authority.sha256 = digest(&bytes);
+            }
             let job = h.journal.job.clone();
             h.journal.job.coding.as_ref().unwrap().validate(&job)
         };
-        match admit(4, 24_000) {
+        match admit(4, 24_000, 0) {
             Ok(()) => {}
             Err(e) => panic!("valid live bridge profile at the boundary was refused: {e}"),
         }
-        for (requests, context) in [(3, 24_000), (5, 24_000), (1, 24_000), (4, 24_001), (4, 65_536)]
-        {
-            let error = admit(requests, context)
-                .expect_err(&format!("{requests} requests / {context} bytes must be refused"));
+        for (requests, context) in [
+            (3, 24_000),
+            (5, 24_000),
+            (1, 24_000),
+            (4, 24_001),
+            (4, 65_536),
+        ] {
+            let error = admit(requests, context, 0).expect_err(&format!(
+                "{requests} requests / {context} bytes must be refused"
+            ));
             assert!(
                 error.to_string().contains(RULE),
                 "{requests}/{context} refused for another reason: {error}"
+            );
+        }
+        admit(4, 24_000, 1).expect("Sol/high exact versioned tuple");
+        for case in 2..=7 {
+            assert!(
+                admit(4, 24_000, case).is_err(),
+                "mutated Sol contract {case}"
             );
         }
         // Controls: the fixture bridge and direct live profiles are not bound by

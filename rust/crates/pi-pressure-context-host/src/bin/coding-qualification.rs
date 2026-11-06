@@ -8,7 +8,7 @@ use work_engine_manual_host::{
     digest,
     pi_docker::{
         Host, Job, Journal,
-        coding::{BRIDGE_PROFILE, LIVE_BRIDGE_PROFILE, WorkspaceWriteBoundary},
+        coding::{BRIDGE_PROFILE, SOL_HIGH_BRIDGE_PROFILE, WorkspaceWriteBoundary, is_live_bridge},
         request_cancel,
     },
 };
@@ -68,7 +68,8 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
     // Two separately versioned profiles; neither can be selected by the other's
     // schema. Live additionally needs the Host's existing exact provider
     // admission (checked again inside Host::admit) and never reuses fixture labels.
-    let live = profile.schema == LIVE_BRIDGE_PROFILE;
+    let live = is_live_bridge(&profile.schema);
+    let sol_high = profile.schema == SOL_HIGH_BRIDGE_PROFILE;
     if !((profile.schema == BRIDGE_PROFILE && profile.provider.is_none())
         || (live && profile.provider.is_some()))
         || profile.max_tool_calls != 1
@@ -87,7 +88,12 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         // The Host's existing provider admission document (exact binary, job,
         // model, auth-source path, task, catalog, requests, budget). It is not
         // widened; bounds travel in the pinned packet below.
-        if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
+        if authority["schema"]
+            != if sol_high {
+                "work-engine.pi-coding-runtime-admission.v2"
+            } else {
+                "work-engine.pi-coding-runtime-admission.v1"
+            }
             || authority["job_id"] != job.job_id
             || authority["binary_sha256"] != own_hash
         {
@@ -121,6 +127,7 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         return Err("coding packet schema/bounds".into());
     }
     let config = CodingConfig {
+        sol_high,
         task: if live {
             Some(String::from_utf8(
                 profile
@@ -183,13 +190,17 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         subject,
         ContextGeneration::parse("context:old")?,
         RuntimeIncarnation::parse("incarnation:pi:coding")?,
-        &if live {
+        &if sol_high {
+            pi_coding_sol_high_profile_digest()
+        } else if live {
             pi_coding_live_profile_digest()
         } else {
             pi_coding_profile_digest()
         },
         PI_SDK_INDEX_SHA256,
-        &if live {
+        &if sol_high {
+            pi_coding_sol_high_protocol_digest()
+        } else if live {
             pi_coding_live_protocol_digest()
         } else {
             pi_coding_protocol_digest()

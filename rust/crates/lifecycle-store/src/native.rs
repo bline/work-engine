@@ -1643,12 +1643,20 @@ impl SqliteLifecycleStore {
         if semantic_required {
             return Ok(None);
         }
-        let basis: Option<Option<String>> = self.connection.query_row(
-            "SELECT native_basis_source FROM transitions WHERE transition_id=?1",
-            [transition.as_str()], |r| r.get(0),
-        ).optional().map_err(|_|StoreError::Unavailable)?;
-        let Some(Some(basis)) = basis else { return Ok(None) };
-        let Some(basis_text) = crate::pi_coding::settled_basis_text(&self.connection, &basis)? else {
+        let basis: Option<Option<String>> = self
+            .connection
+            .query_row(
+                "SELECT native_basis_source FROM transitions WHERE transition_id=?1",
+                [transition.as_str()],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some(Some(basis)) = basis else {
+            return Ok(None);
+        };
+        let Some(basis_text) = crate::pi_coding::settled_basis_text(&self.connection, &basis)?
+        else {
             return Ok(None);
         };
         self.connection.query_row(
@@ -2516,11 +2524,12 @@ impl SqliteLifecycleStore {
                     // the coding contract. Exact source equality is checked below.
                     || (request.purpose == NativeInvocationPurpose::SuccessorRehydrate
                         && (session.profile_digest == crate::pi_coding_profile_digest()
-                            || session.profile_digest == crate::pi_coding_live_profile_digest()))
+                            || (session.profile_digest == crate::pi_coding_live_profile_digest() || session.profile_digest == crate::pi_coding_sol_high_profile_digest())))
                 {
                     65_536
                 } else if request.purpose == NativeInvocationPurpose::DomainWork
-                    && session.profile_digest == crate::pi_coding_live_profile_digest()
+                    && (session.profile_digest == crate::pi_coding_live_profile_digest()
+                        || session.profile_digest == crate::pi_coding_sol_high_profile_digest())
                 {
                     // The live coding task is exact operator-admitted text plus
                     // the observation block; the fixture's 2 KiB cap does not fit.
@@ -3057,6 +3066,8 @@ impl SqliteLifecycleStore {
             || profile == crate::pi_coding::pi_coding_profile_digest()
             || protocol == crate::pi_coding::pi_coding_live_protocol_digest()
             || profile == crate::pi_coding::pi_coding_live_profile_digest()
+            || protocol == crate::pi_coding::pi_coding_sol_high_protocol_digest()
+            || profile == crate::pi_coding::pi_coding_sol_high_profile_digest()
         {
             return Err(StoreError::Rejected);
         }
@@ -3486,8 +3497,17 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::ClaimConflict);
         }
-        commit_native_settlement(&tx, entry, final_text, history_status, history_transport,
-            history_sequence, history_wall, &purpose, clock)?;
+        commit_native_settlement(
+            &tx,
+            entry,
+            final_text,
+            history_status,
+            history_transport,
+            history_sequence,
+            history_wall,
+            &purpose,
+            clock,
+        )?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(())
     }
@@ -5476,29 +5496,35 @@ mod tests {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn commit_native_settlement(
-    tx: &rusqlite::Transaction<'_>, entry: &NativeTurnEntry, final_text: &str,
-    history_status: &str, history_transport: &str, history_sequence: u64,
-    history_wall: i64, purpose: &str, clock: ClockSample,
+    tx: &rusqlite::Transaction<'_>,
+    entry: &NativeTurnEntry,
+    final_text: &str,
+    history_status: &str,
+    history_transport: &str,
+    history_sequence: u64,
+    history_wall: i64,
+    purpose: &str,
+    clock: ClockSample,
 ) -> Result<(), StoreError> {
     let turn = entry.turn.as_ref().ok_or(StoreError::ClaimConflict)?;
     let digest = sha256(final_text.as_bytes())?;
-        let changed=tx.execute("UPDATE native_turns SET state='completed_settled',terminal_status='completed',final_text=?2,final_sha256=?3,history_status=?4,history_transport_session=?8,history_sequence=?9,settled_wall_ms=?5 WHERE invocation_id=?1 AND thread_id=?6 AND turn_id=?7 AND state='entered_uncertain'",
+    let changed=tx.execute("UPDATE native_turns SET state='completed_settled',terminal_status='completed',final_text=?2,final_sha256=?3,history_status=?4,history_transport_session=?8,history_sequence=?9,settled_wall_ms=?5 WHERE invocation_id=?1 AND thread_id=?6 AND turn_id=?7 AND state='entered_uncertain'",
             params![entry.invocation_id,final_text.as_bytes(),digest,history_status,clock.wall.get(),entry.thread.as_str(),turn.as_str(),history_transport,history_sequence])
             .map_err(|_| StoreError::Unavailable)?;
-        if changed != 1 {
+    if changed != 1 {
+        return Err(StoreError::ClaimConflict);
+    }
+    if matches!(purpose, "semantic_compile" | "semantic_verify") {
+        let updated=tx.execute("UPDATE semantic_attempts SET state='completed_settled',result_sha256=?2 WHERE invocation_id=?1 AND state='entered_uncertain' AND purpose=?3",
+                params![entry.invocation_id,&digest,&purpose]).map_err(|_|StoreError::Unavailable)?;
+        if updated != 1 {
             return Err(StoreError::ClaimConflict);
         }
-        if matches!(purpose, "semantic_compile" | "semantic_verify") {
-            let updated=tx.execute("UPDATE semantic_attempts SET state='completed_settled',result_sha256=?2 WHERE invocation_id=?1 AND state='entered_uncertain' AND purpose=?3",
-                params![entry.invocation_id,&digest,&purpose]).map_err(|_|StoreError::Unavailable)?;
-            if updated != 1 {
-                return Err(StoreError::ClaimConflict);
-            }
-        }
-        let subject: String = tx.query_row(
+    }
+    let subject: String = tx.query_row(
             "SELECT s.subject_id FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
             [entry.invocation_id.as_str()], |r| r.get(0),
         ).map_err(|_| StoreError::Unavailable)?;
-        observe_native_subject_clock(&tx, &subject, clock.wall.get().max(history_wall))?;
+    observe_native_subject_clock(&tx, &subject, clock.wall.get().max(history_wall))?;
     Ok(())
 }

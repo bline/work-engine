@@ -17,8 +17,12 @@ pub const BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-fixture.v1";
 /// the lifecycle gate. Real inference; v1/v2/v3 fixture and signed profiles are
 /// unchanged and cannot be selected by this schema.
 pub const LIVE_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-live.v1";
+pub const SOL_HIGH_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-sol-high.v1";
+pub fn is_live_bridge(schema: &str) -> bool {
+    schema == LIVE_BRIDGE_PROFILE || schema == SOL_HIGH_BRIDGE_PROFILE
+}
 pub(super) fn is_bridge(schema: &str) -> bool {
-    schema == BRIDGE_PROFILE || schema == LIVE_BRIDGE_PROFILE
+    schema == BRIDGE_PROFILE || is_live_bridge(schema)
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -214,8 +218,8 @@ impl Profile {
             != if self.provider.is_some() {
                 if self.schema == SIGNED_SUBSCRIPTION_PROFILE {
                     SIGNED_SUBSCRIPTION_PROFILE
-                } else if self.schema == LIVE_BRIDGE_PROFILE {
-                    LIVE_BRIDGE_PROFILE
+                } else if is_live_bridge(&self.schema) {
+                    self.schema.as_str()
                 } else {
                     provider::LIVE_PROFILE
                 }
@@ -237,7 +241,7 @@ impl Profile {
             }
             || !(1..=8).contains(&self.max_tool_calls)
             || (is_bridge(&self.schema) && self.max_tool_calls != 1)
-            || (self.schema == LIVE_BRIDGE_PROFILE
+            || (is_live_bridge(&self.schema)
                 && self.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs)
             || job.idle_seconds != 0
         {
@@ -248,7 +252,7 @@ impl Profile {
             // One tool turn, final text, recovery and one continued turn.
             // Each coding_provider_request frame carries the context twice and must
             // fit the receiver's 64 KiB frame bound.
-            if self.schema == LIVE_BRIDGE_PROFILE
+            if is_live_bridge(&self.schema)
                 && (plan.max_requests != 4 || plan.max_context_bytes > 24_000)
             {
                 return refuse(
@@ -554,7 +558,7 @@ impl Host {
         if self.journal.phase != Phase::Admitted
             || self.journal.job.coding.as_ref().is_none_or(|p| {
                 !((p.schema == BRIDGE_PROFILE && p.provider.is_none())
-                    || (p.schema == LIVE_BRIDGE_PROFILE && p.provider.is_some()))
+                    || (is_live_bridge(&p.schema) && p.provider.is_some()))
             })
             || self.coding_gate.is_some()
         {
@@ -867,7 +871,7 @@ impl Host {
                 }
                 "provider_request" | "provider_observation" | "provider_complete" => {
                     if kind == "provider_request"
-                        && self.journal.job.coding.as_ref().unwrap().schema == LIVE_BRIDGE_PROFILE
+                        && is_live_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                     {
                         // Live continuity entries reserve and are fenced only via
                         // `coding_provider_request`; a bare grant would bypass the gate.
@@ -1167,7 +1171,7 @@ impl Host {
                         return refuse("coding lifecycle frame in legacy profile");
                     }
                     if kind == "coding_provider_request"
-                        && self.journal.job.coding.as_ref().unwrap().schema == LIVE_BRIDGE_PROFILE
+                        && is_live_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                     {
                         // Existing Host provider path: durable unknown Reservation
                         // before any grant, pinned model, finite budget. The
@@ -1175,7 +1179,7 @@ impl Host {
                         let request = json!({"type":"provider_request","id":frame["id"],
                             "provider":frame["requestModel"]["provider"],
                             "model":frame["requestModel"]["id"],
-                            "contextBytes":frame["contextBytes"]});
+                            "contextBytes":frame["contextBytes"],"reasoningEffort":frame["reasoningEffort"],"payerAccountId":frame["payerAccountId"]});
                         self.coding_provider_frame(&request)?;
                     }
                     replies.extend(self.coding_bridge_frame(&frame)?);
@@ -1228,8 +1232,7 @@ impl Host {
                         || self.journal.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE)
                         && (state.provider_failed
                             || state.provider_requests.is_empty()
-                            || (self.journal.job.coding.as_ref().unwrap().schema
-                                == LIVE_BRIDGE_PROFILE
+                            || (is_live_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                                 && state.provider_requests.len() != 4)
                             || state
                                 .provider_requests

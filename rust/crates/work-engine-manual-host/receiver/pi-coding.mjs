@@ -13,9 +13,10 @@ const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
 const LIVE_BRIDGE_SCHEMA='work-engine.pi-coding-lifecycle-live.v1';
 // Only the separately versioned continuity schema may combine the lifecycle
 // bridge with the live provider route; every other profile keeps its old rule.
-const liveBridge=bridge&&live&&config.schema===LIVE_BRIDGE_SCHEMA;
+const solHigh=live&&config.schema==='work-engine.pi-coding-lifecycle-sol-high.v1';
+const liveBridge=bridge&&live&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh);
 if(bridge&&(fixtureSigned||(live&&!liveBridge)))throw Error('bridge is provider-disabled only');
-if(live&&!bridge&&config.schema===LIVE_BRIDGE_SCHEMA)throw Error('live continuity schema requires lifecycle bridge');
+if(live&&!bridge&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh))throw Error('live continuity schema requires lifecycle bridge');
 if(bridge&&!liveBridge)globalThis.fetch=async()=>{throw Error('network forbidden in coding bridge');};
 if(fixtureSigned&&live)throw Error('fixture/live conflict');
 const signedSubscription=live&&config.schema==='work-engine.pi-coding-signed-subscription.v1';
@@ -89,11 +90,12 @@ try {
  await resourceLoader.reload();
  let modelRuntime,rawTerminalEvidence;
  if(live){
-  if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
+  if(config.schema!==schema||config.provider!=='openai-codex'||(solHigh?(config.model!=='gpt-6.1-sol'||config.solHigh?.schema!=='work-engine.sol-high.v1'||config.solHigh?.reasoning_effort!=='high'||typeof config.solHigh?.payer_account_id!=='string'||!config.solHigh.payer_account_id):config.model!=='gpt-6-luna'))throw Error('provider configuration rejected');
   const nativeAccess=await import('/receiver/pi-native-access.mjs');
   if(signed)checkConsumption(signedDeadline);
   const {createNativeAccessStore}=nativeAccess;rawTerminalEvidence=nativeAccess.rawTerminalEvidence;
   const grant=JSON.parse(readFileSync('/auth/access.json','utf8'));
+  if(solHigh&&grant.account_id!==config.solHigh.payer_account_id)throw Error('payer account mismatch');
   const credentials=createNativeAccessStore(grant);
   modelRuntime=await ModelRuntime.create({credentials,modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
   if(signed)checkConsumption(signedDeadline);
@@ -117,7 +119,7 @@ try {
    });
    return {content:[{type:'text',text:result.output}],details:{hostReportedSuccess:result.ok}};
   }};
- const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,thinkingLevel:'off',noTools:'builtin',tools:['workspace_exec'],customTools:[tool]};
+ const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,thinkingLevel:solHigh?'high':'off',noTools:'builtin',tools:['workspace_exec'],customTools:[tool]};
  function bindBridge(selected,services){
   session=selected;
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
@@ -143,7 +145,7 @@ try {
      const grant=await new Promise((resolve,reject)=>{
       grants.set(id,resolve);
       options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
-      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes});
+      emit({type:'coding_provider_request',id,...(solHigh?{reasoningEffort:'high',payerAccountId:config.solHigh.payer_account_id}:{}),producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes});
      });
      if(grant.mode!=='live')throw Error('bridge grant mode');
      const until=consumptionDeadline(grant,config.deadline*1000);
@@ -172,7 +174,7 @@ try {
   }
   const stream=async(requestModel,context)=>{
    const id=++bridgeCalls;if(id>4)throw Error('bridge request budget');
-   const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null});});
+   const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'coding_provider_request',id,...(solHigh?{reasoningEffort:'high',payerAccountId:config.solHigh.payer_account_id}:{}),producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null});});
    checkConsumption(consumptionDeadline(grant,Number.MAX_SAFE_INTEGER));
    if((id===1)!==(grant.mode==='tool'))throw Error('bridge tool profile conflict');
    const message={role:'assistant',content:id===1?[{type:'toolCall',id:'fixture-tool-1',name:'workspace_exec',arguments:{command:operation.command}}]:[{type:'text',text:grant.reply}],api:model.api,provider:model.provider,model:model.id,usage:{input:1,output:1,cacheRead:0,cacheWrite:0,totalTokens:2,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:id===1?'toolUse':'stop',timestamp:Date.now()};

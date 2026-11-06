@@ -230,7 +230,7 @@ pub(super) struct Validated {
     pub checkpoint: Option<String>,
 }
 #[allow(clippy::too_many_arguments)]
-pub(super) fn validate(
+pub(super) fn validate_with_thinking(
     values: &[Value],
     inv: &str,
     correlation: &str,
@@ -239,7 +239,11 @@ pub(super) fn validate(
     prompt_hash: &str,
     anchor: Option<&Value>,
     live: bool,
+    thinking: bool,
 ) -> Result<Validated, StoreError> {
+    if thinking && !live {
+        return bad();
+    }
     let intents: Vec<_> = values
         .iter()
         .filter(|v| v["type"] == "pi.coding_tool_intent")
@@ -340,9 +344,9 @@ pub(super) fn validate(
         if calls != 1
             || content.last().is_none_or(|c| c["type"] != "toolCall")
             || (!live && content.len() != 1)
-            || content
-                .iter()
-                .any(|c| c["type"] != "toolCall" && c["type"] != "text")
+            || content.iter().any(|c| {
+                c["type"] != "toolCall" && c["type"] != "text" && !(thinking && valid_thinking(c))
+            })
         {
             return bad();
         }
@@ -440,7 +444,22 @@ pub(super) fn validate(
     if final_message["stopReason"] != "stop" {
         return bad();
     }
-    let final_text = text(&final_message)?;
+    let final_text = if thinking {
+        let mut m = final_message.clone();
+        let blocks = m["content"]
+            .as_array_mut()
+            .ok_or(StoreError::ClaimConflict)?;
+        if blocks
+            .iter()
+            .any(|v| v["type"] != "text" && !valid_thinking(v))
+        {
+            return bad();
+        }
+        blocks.retain(|v| v["type"] == "text");
+        text(&m)?
+    } else {
+        text(&final_message)?
+    };
     if final_text.is_empty() || final_text.len() > 65536 {
         return bad();
     }
@@ -487,7 +506,7 @@ pub(super) fn validate(
         // retained solely as a digest; nothing here is caller- or model-supplied.
         let checkpoint = json!({
             "version": 2,
-            "profile": LIVE_CHECKPOINT_PROFILE,
+            "profile": if thinking { "work-engine.pi-coding-sol-high-continuity.v1" } else { LIVE_CHECKPOINT_PROFILE },
             "successor_context": "context:new",
             "coding_result": results[0]["result"],
             "coding_result_sha256": results[0]["artifact"]["sha256"],
@@ -516,4 +535,21 @@ pub(super) fn validate(
         final_text,
         checkpoint: None,
     })
+}
+
+// Closed native SDK reasoning shape; retain the original block in history.
+fn valid_thinking(v: &Value) -> bool {
+    v["type"] == "thinking"
+        && v["thinking"].as_str().is_some()
+        && v.as_object().is_some_and(|o| {
+            o.keys()
+                .all(|k| matches!(k.as_str(), "type" | "thinking" | "thinkingSignature"))
+        })
+        && match v.get("thinkingSignature") {
+            None => true,
+            Some(sig) => sig
+                .as_str()
+                .and_then(|s| serde_json::from_str::<Value>(s).ok())
+                .is_some_and(|item| item.is_object() && item["type"] == "reasoning"),
+        }
 }

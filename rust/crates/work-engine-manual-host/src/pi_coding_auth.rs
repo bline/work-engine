@@ -60,6 +60,9 @@ pub struct AccessGrant {
     account_id: String,
 }
 impl AccessGrant {
+    pub(super) fn matches_account(&self, account: &str) -> bool {
+        self.account_id == account
+    }
     /// Write access-only data into an explicitly private, non-exported staging
     /// directory. Never returns a credential digest or includes values in errors.
     pub fn stage(&self, directory: &Path) -> Result<PathBuf> {

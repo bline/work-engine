@@ -195,20 +195,26 @@ fn host_input_digest(job: &Value) -> Option<String> {
 fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
     use work_engine_manual_host::pi_docker::{
         Job,
-        coding::{LIVE_BRIDGE_PROFILE, WorkspaceWriteBoundary},
+        coding::{SOL_HIGH_BRIDGE_PROFILE, WorkspaceWriteBoundary, is_live_bridge},
     };
     let job: Job = serde_json::from_value(value.clone()).map_err(|_| "host_identity_mismatch")?;
     let coding = job.coding.as_ref().ok_or("capability_mismatch")?;
     let provider = coding.provider.as_ref().ok_or("capability_mismatch")?;
-    if coding.schema != LIVE_BRIDGE_PROFILE
+    let sol = coding.schema == SOL_HIGH_BRIDGE_PROFILE;
+    if !is_live_bridge(&coding.schema)
         || coding.max_tool_calls != 1
         || coding.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
         || !coding.fixture_command.is_empty()
         || job.receiver.is_some()
-        || provider.model != "gpt-6-luna"
+        || if sol {
+            provider.model != "gpt-6.1-sol" || provider.sol_high.as_ref().is_none_or(|t| !t.valid())
+        } else {
+            provider.model != "gpt-6-luna" || provider.sol_high.is_some()
+        }
         || provider.max_requests != 4
         || provider.budget_microusd == 0
-        || provider.budget_microusd > 700_000
+        || provider.budget_microusd > if sol { 17_680_004 } else { 700_000 }
+        || (sol && provider.budget_microusd != 17_680_004)
         || !(1024..=24_000).contains(&provider.max_context_bytes)
         || !(1..=30).contains(&job.command_timeout_seconds)
         || job.idle_seconds != 0
@@ -218,7 +224,15 @@ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
     let authority: Value =
         serde_json::from_slice(&job.authority.verify().map_err(|_| "job_mismatch")?)
             .map_err(|_| "job_mismatch")?;
-    if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
+    if authority["schema"]
+        != if sol {
+            "work-engine.pi-coding-runtime-admission.v2"
+        } else {
+            "work-engine.pi-coding-runtime-admission.v1"
+        }
+        || (sol
+            && authority["sol_high"]
+                != serde_json::to_value(&provider.sol_high).map_err(|_| "job_mismatch")?)
         || authority["binary_sha256"] != binary
         || authority["job_id"] != job.job_id
         || authority["model"] != provider.model
