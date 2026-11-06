@@ -5,7 +5,6 @@ use std::{
     fs::File,
     io::{Read, Write},
     os::fd::FromRawFd,
-    path::PathBuf,
     time::Duration,
 };
 use tokio::{io::unix::AsyncFd, sync::mpsc};
@@ -69,13 +68,13 @@ fn bounded(value: Value) -> Vec<u8> {
     bytes
 }
 
-pub async fn serve(path: PathBuf) -> Result<(), String> {
+pub async fn serve(startup: crate::admission::StartupInput) -> Result<(), String> {
     let input = Pipe::standard(0).map_err(|e| e.to_string())?;
     let output = Pipe::standard(1).map_err(|e| e.to_string())?;
     let (replies, mut output_queue) = mpsc::channel::<Value>(OUTPUT_SLOTS);
     let (events_tx, mut events) = mpsc::channel(2);
     let (commands, commands_rx) = mpsc::channel(1);
-    let worker = worker::spawn(path, commands_rx, events_tx);
+    let worker = worker::spawn(startup, commands_rx, events_tx);
     let (output_failure, mut output_failed) = mpsc::channel(1);
     let writer = tokio::spawn(async move {
         while let Some(value) = output_queue.recv().await {

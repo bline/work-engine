@@ -1970,7 +1970,13 @@ fn build_coverage_ledger(
                 .ok_or(Rp0Error::IncompleteStore)?;
             if !matches!(
                 status,
-                "no_recorded_issue" | "partial" | "excluded" | "unusable" | "skipped" | "unknown"
+                "no_recorded_issue"
+                    | "partial"
+                    | "excluded"
+                    | "unusable"
+                    | "skipped"
+                    | "unknown"
+                    | "unresolved_calls"
             ) || !matches!(
                 freshness,
                 "metadata_match"
@@ -2087,4 +2093,51 @@ fn candidate_all_relative_paths(root: &Path) -> Result<Vec<String>, Rp0Error> {
     }
     paths.sort();
     Ok(paths)
+}
+
+#[cfg(test)]
+mod coverage_status_tests {
+    use super::*;
+    #[test]
+    fn unresolved_calls_requires_exact_direct_source_fallback() {
+        let root = tempfile::tempdir().unwrap();
+        let source = b"def caller():\n    dynamic_call()\n";
+        fs::write(root.path().join("sample.py"), source).unwrap();
+        let batch = json!({
+            "project":"fixture", "indexed_at":"generation", "path_total":1,
+            "path_returned":1,"path_has_more":false,"has_more":false,
+            "metadata":{"store_generation":"store-generation","generation_matches":true,
+                "hash_records_complete":true,"recording_status":"complete","generation":"generation"},
+            "paths":[{"requested_path":"sample.py","path":"sample.py",
+                "status":"unresolved_calls","freshness":"metadata_match","content_verified":true,
+                "coverage":[{"kind":"unresolved_calls","match":"exact","path":"sample.py"}]}]
+        });
+        let build = |batch| {
+            build_coverage_ledger(
+                root.path(),
+                "fixture",
+                "tree",
+                "store",
+                "generation",
+                vec![batch],
+            )
+        };
+        let ledger = build(batch.clone()).unwrap();
+        assert_eq!(ledger["coverage_complete"], false);
+        assert_eq!(ledger["fallback_accounted"], true);
+        assert_eq!(ledger["source_hashes"][0]["source_sha256"], sha256(source));
+        assert_eq!(ledger["fallback"][0]["source_sha256"], sha256(source));
+        assert_eq!(
+            ledger["fallback"][0]["disposition"],
+            "direct_source_required"
+        );
+        assert_eq!(ledger["fallback"][0]["scope"], json!({"whole_file":true}));
+        assert_eq!(
+            ledger["fallback"][0]["reported_coverage"],
+            batch["paths"][0]["coverage"]
+        );
+        let mut unknown = batch;
+        unknown["paths"][0]["status"] = json!("future_unrecognized_status");
+        assert!(matches!(build(unknown), Err(Rp0Error::IncompleteStore)));
+    }
 }

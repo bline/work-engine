@@ -1,6 +1,6 @@
-use review_workflow::{Workflow, protocol::Command, startup::TrustedStartup};
+use crate::admission::StartupInput;
+use review_workflow::{Workflow, protocol::Command};
 use serde_json::{Value, json};
-use std::path::PathBuf;
 use tokio::sync::mpsc;
 
 pub struct Work {
@@ -30,7 +30,7 @@ macro_rules! selected_attempt_status {
     };
 }
 pub fn spawn(
-    path: PathBuf,
+    input: StartupInput,
     mut commands: mpsc::Receiver<Work>,
     events: mpsc::Sender<Event>,
 ) -> std::thread::JoinHandle<()> {
@@ -40,7 +40,7 @@ pub fn spawn(
             .build()
             .expect("workflow runtime");
         runtime.block_on(async move {
-            let startup = match TrustedStartup::load(&path) {
+            let startup = match input.load(false) {
                 Ok(v) => v,
                 Err(e) => {
                     let _ = events.send(Event::Failed(json!(e))).await;

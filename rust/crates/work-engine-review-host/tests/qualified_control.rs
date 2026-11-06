@@ -90,6 +90,9 @@ fn diagnostic_e1_events(root: &Path) -> Vec<(String, String)> {
     rows.flatten().collect()
 }
 fn offline_fixture() -> (Fixture, PathBuf) {
+    offline_fixture_with_accounted_gaps(false)
+}
+fn offline_fixture_with_accounted_gaps(allow_accounted_gaps: bool) -> (Fixture, PathBuf) {
     let mut f = Fixture::new(0, "result");
     let base = f.temp.path();
     // The historical Git subject is kept exact while the candidate path gains
@@ -161,15 +164,38 @@ fn offline_fixture() -> (Fixture, PathBuf) {
         !refused_root.exists(),
         "wrong tree sealed a private boundary"
     );
-    let boundary = CandidateBoundary::prepare_selected(
+    let boundary = match CandidateBoundary::prepare_selected(
         rp0,
         &working,
         base.join("candidate-private"),
         "rp2_fixture",
         candidate_value["checkpoint_tree_oid"].as_str().unwrap(),
-    )
-    .unwrap();
-    assert!(boundary.index().coverage_complete());
+    ) {
+        Ok(boundary) => boundary,
+        Err(error) => {
+            if std::env::var_os("RUNTIME_ENTRY_RETAIN_FAILED_FIXTURE").is_some() {
+                eprintln!("retained failed fixture: {}", f.temp.keep().display());
+            }
+            panic!("complete boundary fixture refused: {error:?}");
+        }
+    };
+    if !boundary.index().coverage_complete() {
+        assert!(
+            allow_accounted_gaps,
+            "historical fixture requires complete coverage"
+        );
+        let ledger: Value = serde_json::from_slice(
+            &fs::read(base.join("candidate-private/session/coverage.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(ledger["coverage_complete"], false);
+        assert_eq!(ledger["fallback_accounted"], true);
+        for gap in ledger["fallback"].as_array().unwrap() {
+            assert_eq!(gap["disposition"], "direct_source_required");
+            let source = fs::read(working.join(gap["path"].as_str().unwrap())).unwrap();
+            assert_eq!(gap["source_sha256"], sha256_bytes(&source));
+        }
+    }
     let (boundary, manifest_sha) = boundary.publish_manifest().unwrap();
     let catalog = captured(base, "catalog.json", br#"{"offline":true}"#);
     let profile = TrustedClaudeProfile::load_offline_guarded_peer(
@@ -924,4 +950,297 @@ fn qualified_episode_begin_cut_cold_recovery_cannot_reenter() {
         "cold recovery or replay entered the peer"
     );
     cold.finish();
+}
+
+struct JobFixture {
+    fixture: Fixture,
+    request: PathBuf,
+    policy: PathBuf,
+    directory: PathBuf,
+}
+impl JobFixture {
+    fn command(&self, mode: &str) -> Command {
+        let mut command = Command::new(&self.fixture.host);
+        command
+            .args([mode, "--startup"])
+            .arg(&self.fixture.startup)
+            .arg("--job-request")
+            .arg(&self.request)
+            .arg("--fixture-job-policy")
+            .arg(&self.policy);
+        command
+    }
+    fn initialize(&self) -> Value {
+        let output = self.command("initialize").output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        serde_json::from_slice(&output.stdout).unwrap()
+    }
+    fn start(&self) -> Client {
+        use std::{
+            io::{BufRead, BufReader},
+            process::Stdio,
+            sync::mpsc,
+        };
+        let mut child = self
+            .command("serve")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()
+            .unwrap();
+        let input = child.stdin.take().unwrap();
+        let output = child.stdout.take().unwrap();
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            for line in BufReader::new(output).lines() {
+                let Ok(line) = line else { break };
+                if tx.send(serde_json::from_str(&line).unwrap()).is_err() {
+                    break;
+                }
+            }
+        });
+        Client {
+            child,
+            input: Some(input),
+            rx,
+        }
+    }
+}
+fn job_fixture() -> JobFixture {
+    use review_workflow::startup::QUALIFIED_PROFILE;
+    use slice_campaign::job_admission::{
+        JobReviewPolicy, JobReviewPolicyDocument, JobReviewRequest, JobStartupAuthority,
+    };
+    let (mut f, _) = offline_fixture_with_accounted_gaps(true);
+    fs::set_permissions(f.temp.path(), fs::Permissions::from_mode(0o700)).unwrap();
+    let mut envelope: QualifiedStartupDocument =
+        serde_json::from_slice(&fs::read(&f.startup).unwrap()).unwrap();
+    let mut accepted: Value = serde_json::from_slice(
+        &fs::read(&envelope.qualified.offline_acceptance.as_ref().unwrap().path).unwrap(),
+    )
+    .unwrap();
+    envelope.profile = QUALIFIED_PROFILE.into();
+    envelope.base.profile = QUALIFIED_PROFILE.into();
+    envelope.base.evidence_profile = "claude-qualified-v1".into();
+    envelope.qualified.offline_acceptance = None;
+    envelope.qualified.offline_witness = None;
+    let profile = TrustedClaudeProfile::load_installed(
+        PinnedProgram::load(
+            &envelope.base.peer.executable.path,
+            &envelope.base.peer.executable.sha256,
+        )
+        .unwrap(),
+        PinnedProgram::load(
+            &envelope.qualified.guard.path,
+            &envelope.qualified.guard.sha256,
+        )
+        .unwrap(),
+        &envelope.qualified.requested_model,
+        &envelope.qualified.requested_effort,
+        envelope.qualified.accepted_observed_models.clone(),
+        &fs::read(&envelope.qualified.catalog.path).unwrap(),
+    )
+    .unwrap();
+    accepted["claudeProfileDigest"] = json!(profile.profile_digest());
+    let base = f.temp.path();
+    let mut config: Value =
+        serde_json::from_slice(&fs::read(&envelope.base.claims.configuration.path).unwrap())
+            .unwrap();
+    let mut source: Value =
+        serde_json::from_slice(&fs::read(&envelope.base.claims.source.path).unwrap()).unwrap();
+    config["trusted_custody"]["verifier"] = json!("review-execution-evidence-claude-v1");
+    config["trusted_custody"]["profile"] = json!("claude-qualified-v1");
+    source["custody_config_sha256"] = json!(claim_digest(&config["trusted_custody"]));
+    let mut source_pin = data(base, "job-claims-source.json", &source);
+    own(&mut source_pin);
+    let authority = json!({"owner":source["owner"],"reference":source["reference"],"revision":source["revision"],"freshness":source["freshness"],"integrity_sha256":source_pin.sha256,"status":"verified"});
+    for grant in config["grants"].as_array_mut().unwrap() {
+        grant["authority_reference"] = authority.clone();
+    }
+    let mut config_pin = data(base, "job-claims-config.json", &config);
+    own(&mut config_pin);
+    envelope.base.claims.source = source_pin;
+    envelope.base.claims.configuration = config_pin;
+    envelope.base.claims.production_grant_sha256 = claim_digest(&config["grants"][0]);
+    envelope.qualified.completion_grant_sha256 = claim_digest(&config["grants"][1]);
+    envelope.qualified.completion_authority_source = authority;
+    let gate = [
+        &envelope.base.gate_capture,
+        &envelope.base.gate_manifest,
+        &envelope.base.gate_receipt,
+    ];
+    let candidate = fs::read(&envelope.base.candidate.path).unwrap();
+    let physical = fs::read(&envelope.base.physical_profile.path).unwrap();
+    let checked = verify_existing_subject(
+        &envelope.base.repository,
+        &envelope.base.identity,
+        &envelope.base.baseline,
+        &candidate,
+        &physical,
+        &fs::read(&gate[0].path).unwrap(),
+        &fs::read(&gate[1].path).unwrap(),
+        &fs::read(&gate[2].path).unwrap(),
+    )
+    .unwrap();
+    let request = JobReviewRequest {
+        identity: envelope.base.identity.clone(),
+        candidate: checked.reference,
+        physical_profile_digest: checked.profile_digest,
+        cbm_store_sha256: accepted["cbmStoreSha256"].as_str().unwrap().into(),
+        session_id: envelope.base.peer.session.clone(),
+    };
+    let directory = base.join(request.directory_name().unwrap());
+    fs::create_dir(&directory).unwrap();
+    fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::rename(&envelope.base.workspace, directory.join("workspace")).unwrap();
+    envelope.base.workspace = directory.join("workspace");
+    envelope.base.roots = review_workflow::startup::Roots {
+        campaign: directory.join("campaign"),
+        episode: directory.join("episode"),
+        claims: directory.join("claims"),
+        evidence: directory.join("evidence"),
+    };
+    accepted["promptTemplateSha256"] = json!(sha256_bytes(
+        &review_workflow::startup::qualified_prompt_template_for_document(&envelope.base).unwrap()
+    ));
+    let selection: Value =
+        serde_json::from_slice(&fs::read(&envelope.base.selection.path).unwrap()).unwrap();
+    let policy_document = JobReviewPolicyDocument {
+        schema_version: 1,
+        policy_id: "host-job-fixture".into(),
+        revision: "1".into(),
+        active: true,
+        expires_at_millis: u64::MAX,
+        admitted_uid: fs::metadata(base).unwrap().uid(),
+        repository: envelope.base.repository.clone(),
+        jobs_root: base.to_path_buf(),
+        execution_template: accepted,
+        review_selection_template: selection,
+        startup_authority: JobStartupAuthority {
+            claims_source_sha256: envelope.base.claims.source.sha256.clone(),
+            claims_configuration_sha256: envelope.base.claims.configuration.sha256.clone(),
+            completion_consumer: envelope.qualified.completion_consumer.clone(),
+        },
+    };
+    let policy = base.join("job-policy.json");
+    fs::write(&policy, serde_json::to_vec(&policy_document).unwrap()).unwrap();
+    fs::set_permissions(&policy, fs::Permissions::from_mode(0o600)).unwrap();
+    let selected = JobReviewPolicy::open_fixture(&policy)
+        .unwrap()
+        .review_selection(&request)
+        .unwrap();
+    let mut selection_pin = data(base, "job-selection.json", &selected);
+    own(&mut selection_pin);
+    envelope.base.selection = selection_pin;
+    let request_path = base.join("job-request.json");
+    fs::write(&request_path, serde_json::to_vec(&request).unwrap()).unwrap();
+    fs::set_permissions(&request_path, fs::Permissions::from_mode(0o600)).unwrap();
+    f.startup = directory.join("startup.json");
+    f.document = envelope.base.clone();
+    fs::write(&f.startup, serde_json::to_vec(&envelope).unwrap()).unwrap();
+    fs::set_permissions(&f.startup, fs::Permissions::from_mode(0o400)).unwrap();
+    JobFixture {
+        fixture: f,
+        request: request_path,
+        policy,
+        directory,
+    }
+}
+#[test]
+fn job_runtime_initializes_serves_inspects_and_reopens_complete_inputs() {
+    eprintln!("JOB_RUNTIME_STAGE=fixture");
+    let job = job_fixture();
+    eprintln!("JOB_RUNTIME_STAGE=initialize");
+    let first = job.initialize();
+    let revision = first["campaign"]["revision"].as_str().unwrap();
+    let admission = fs::read(job.directory.join("review-admission.json")).unwrap();
+    eprintln!("JOB_RUNTIME_STAGE=replay_initialize");
+    let replay = job.initialize();
+    assert_eq!(first, replay);
+    eprintln!("JOB_RUNTIME_STAGE=serve");
+    let mut host = job.start();
+    qualified_ready(&mut host);
+    host.domain("inspect", revision);
+    let inspected = host.receive();
+    assert!(inspected["error"].is_null(), "{inspected}");
+    host.finish();
+    eprintln!("JOB_RUNTIME_STAGE=cold_reopen");
+    let mut cold = job.start();
+    qualified_ready(&mut cold);
+    cold.domain("inspect", revision);
+    assert_eq!(inspected, cold.receive());
+    cold.finish();
+    assert_eq!(
+        admission,
+        fs::read(job.directory.join("review-admission.json")).unwrap()
+    );
+    assert_eq!(job.fixture.entries(), 0);
+    assert!(!job.directory.join("evidence").exists());
+    eprintln!("JOB_RUNTIME_STAGE=provider_refusal");
+    let mut refusing = job.start();
+    qualified_ready(&mut refusing);
+    refusing.domain("execute_initial", revision);
+    let refused = refusing.receive();
+    assert!(
+        refused
+            .to_string()
+            .contains("fixture job admission cannot launch qualified provider"),
+        "{refused}"
+    );
+    refusing.finish();
+    assert_eq!(job.fixture.entries(), 0);
+    assert!(!job.directory.join("evidence/session-live").exists());
+}
+#[test]
+fn job_runtime_refuses_request_authority_before_admission() {
+    let job = job_fixture();
+    let mut request: Value = serde_json::from_slice(&fs::read(&job.request).unwrap()).unwrap();
+    let original_request = fs::read(&job.request).unwrap();
+    request["approved"] = json!(true);
+    fs::write(&job.request, serde_json::to_vec(&request).unwrap()).unwrap();
+    let refused = job.command("initialize").output().unwrap();
+    assert!(!refused.status.success());
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("unknown field"));
+    assert!(!job.directory.join("review-admission.json").exists());
+    fs::write(&job.request, original_request).unwrap();
+    let pending = job.directory.join("review-admission.pending");
+    fs::write(&pending, b"uncertain fixture publication").unwrap();
+    let uncertain = job.command("initialize").output().unwrap();
+    assert!(!uncertain.status.success());
+    assert!(String::from_utf8_lossy(&uncertain.stderr).contains("admission_unknown"));
+    assert_eq!(
+        fs::read(&pending).unwrap(),
+        b"uncertain fixture publication"
+    );
+    assert!(!job.directory.join("review-admission.json").exists());
+    assert!(!job.directory.join("campaign").exists());
+}
+#[test]
+fn job_runtime_reopen_refuses_revoked_policy() {
+    let job = job_fixture();
+    job.initialize();
+    let mut policy: Value = serde_json::from_slice(&fs::read(&job.policy).unwrap()).unwrap();
+    policy["active"] = json!(false);
+    fs::write(&job.policy, serde_json::to_vec(&policy).unwrap()).unwrap();
+    let mut host = job.start();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        host.send(json!({"version":1,"requestId":"s","operation":"status"}));
+        let response = host.receive();
+        if response["result"]["busy"] == false {
+            assert!(
+                !response["result"]["lastObservation"]["startupError"].is_null(),
+                "{response}"
+            );
+            break;
+        }
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    host.finish();
+    assert!(!job.directory.join("evidence").exists());
 }
