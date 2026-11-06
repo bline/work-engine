@@ -1,0 +1,40 @@
+{
+  "commit": "a8fde5299fde83891df1ff83b21fb9d74a85ac1d",
+  "supersedes": "8f8f8aaaaa1aab543059c3f689682c625c16af58",
+  "base": "a1551c02d24e8fa17504fd43dcf2a8f86e65c769",
+  "worktree": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106",
+  "paths": [
+    {
+      "path": "rust/crates/work-engine-review-host/Cargo.toml",
+      "sha256": "b2b0b290e36e1750dddd4ac659170026062d51158dc5a3a5651929b6f599d92e"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/main.rs",
+      "sha256": "74aa84b8e35ac3bfdf3f908cef391f87e7e84aecb4f52a790eca320543a60216"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/worker.rs",
+      "sha256": "e9d35cbca0879a54ae8d6b5137e2b794ef26b95ea5352aded6943f2d8e1cbdbf"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/control.rs",
+      "sha256": "e0b54a885f458db7e792f9777f48c461d04cade88d5e0ca6a372791dfaefa5b5"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/src/admission.rs",
+      "sha256": "0cf57a5a404db5b64cee9ef7f9daf2497ccedc877d60140c8223bf5ee9390b19"
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/qualified_control.rs",
+      "sha256": "e414dd54f101af932fb5bcf1ef123fa800d08d01964c2915ebaedabe534d2825"
+    },
+    {
+      "path": "records/rust-review-runtime-entry-20261106/README.md",
+      "sha256": "9551562450cb02f7e8aa969e9720bea3ef219fa653bd23ef6acd6683f0d233b1"
+    },
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/isolation.rs",
+      "sha256": "c900f596abd7e72060602d00bfc3931962bc1420d89c00378ab6220c8d547f34"
+    }
+  ]
+}

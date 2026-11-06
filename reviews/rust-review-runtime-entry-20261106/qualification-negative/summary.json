@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-negative-plan.json",
+  "plan_sha256": "559709956e5f1a7c8d38215a4c0bd5cf84792b9ab7a041524f5d7da326baa154",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "request-authority",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-negative/request-authority.json",
+      "record_sha256": "3a82227c1a78a84507bd7cd4d75fc2f0e0315726532adace79117724b13cc3b0",
+      "leftovers": 0
+    },
+    {
+      "name": "revoked-policy",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-negative/revoked-policy.json",
+      "record_sha256": "83122c72ceac49161b5f83f1ee05ddc323000ab2180285387ed67a955f67c4f8",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

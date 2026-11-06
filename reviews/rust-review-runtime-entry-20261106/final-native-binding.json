@@ -1,0 +1,12 @@
+{
+  "source": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/source-review-repair-native-turn.json",
+  "source_sha256": "ec838c8cc55685957aadcb14014125adb223845fb68af515807975f05e212b71",
+  "session_id": "01a1b1c4-54ca-78d1-8aa0-b7b8ecc4b5dc",
+  "turn_id": "01a1b1d1-5eb4-7581-869c-95b41262c040",
+  "item_id": "msg_04c40ea0f1aa4797016aee08f9fa0887d096b4d1ff3d1ffa18",
+  "phase": "final_answer",
+  "native_status": "completed",
+  "result": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/source-review-repair-RESULT.json",
+  "result_sha256": "820ae30ca97d224e71e34bc0180fcd80616991d475dea60a2dd23c8da5f7c98c",
+  "capture": "Root exact native final JSON, not reviewer filesystem write"
+}

@@ -1,0 +1,60 @@
+{
+  "base": "a1551c02d24e8fa17504fd43dcf2a8f86e65c769",
+  "candidate": "8f8f8aaaaa1aab543059c3f689682c625c16af58",
+  "checks_performed": [
+    {
+      "check": "Exact subject",
+      "result": "Clean checkout matched the candidate. All eight manifest hashes matched working files and candidate Git objects. SOURCE.json SHA-256 matched 629b1929cf8b52b734ef431732619a28c26bf9ff74b7afc9f6017f64a555ab89. source.diff matched the base-to-candidate Git diff."
+    },
+    {
+      "check": "Doctrine and reviewer authority",
+      "result": "Read DESIGN.md, PHILOSOPHY.md, manual-orchestration reviewer references, startup recovery guidance and coordination board. Investigation remained read-only; no delegation, provider calls, credentials, policy changes, Git mutations or result-file writes."
+    },
+    {
+      "check": "Executable admission composition",
+      "result": "Production selects JobReviewPolicy::open_installed; initialize handles Committed, Replayed and OutcomeUnknown explicitly; serve uses reopen. Both pass the derived pin to load_for_job. The historical loader remains selected without a job request. The fixture selector is compile-time excluded from production parsing."
+    },
+    {
+      "check": "Affected authority contracts",
+      "result": "Directly inspected protected-policy loading, exact admission rederivation, startup-authority hashes, job layout constraints, current-policy revalidation, full candidate binding, dispatch consumption and evidence-writer checks. No new trust-boundary bypass identified. Fixture admission is refused before qualified provider execution."
+    },
+    {
+      "check": "CBM compatibility repair",
+      "result": "unresolved_calls enters only the nonclean direct_source_required fallback. The clean predicate remains no_recorded_issue plus metadata_match plus verified content plus empty gaps. Unknown statuses still refuse. Actual-source hashes and reported gap evidence remain retained; the current range-less unresolved-call record produces whole-file fallback."
+    },
+    {
+      "check": "Test discrimination",
+      "result": "Reviewed actual-executable initialization/replay, serving/inspection/cold-reopen and fixture-provider refusal assertions, request-authority injection and uncertain-publication controls, and revoked-policy reopening. The focused coverage test distinguishes accepted nonclean fallback from unknown-status refusal and checks hashes, retained gaps and whole-file scope."
+    },
+    {
+      "check": "Existing validation custody",
+      "result": "Inspected successful production build, two production parser tests, focused coverage unit and scoped lint records and logs. Production source hashes match this candidate; the production records precede the final integration-test helper edit. Final lint records bind all eight candidate paths. No tests were executed by this reviewer."
+    }
+  ],
+  "findings": [],
+  "material_limitations": [
+    "Tier 2 bounded review, not an exhaustive repository audit. The shared graph indexes another worktree at generation u64ecc3757da67ebbg2; private candidate changes were checked directly. Relevant coverage queries reported unresolved calls or missing files, so no graph-completeness claim is made.",
+    "New executable negative tests were inspected as source; this review does not establish their completed execution.",
+    "Same-UID fixtures do not establish production operator/agent isolation.",
+    "Prior accepted admission API source8144a708 was treated as baseline, not as the current verdict.",
+    "Native host identity/settings evidence does not establish connector grants, general independence, backend fulfillment or genuine qualified Claude product-review standing."
+  ],
+  "reviewer_identity": {
+    "observed_native_settings": "gpt-6-astra / xhigh / default",
+    "operation": "runtime-entry-source-review-1",
+    "parent_collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "session": "01a1b1c4-54ca-78d1-8aa0-b7b8ecc4b5dc",
+    "turn": "01a1b1c4-653e-7cc1-b32f-813008402a58"
+  },
+  "schema": "runtime-entry-source-review-v1",
+  "unresolved_positive_fixture_runtime_standing": {
+    "evidence_that_would_change_this_conclusion": "Root-collected completed custody bound to this candidate and executable, demonstrating initialization, identical replay, successful serve/inspect, cold reopen, unchanged admission bytes and fixture-provider refusal without provider entry. Production or live qualification additionally requires its separately owned installation, input-binding and genuine runtime evidence.",
+    "historical_suite": "Historical-host custody timed out; no broad-green claim.",
+    "owner_pending": "Unchanged; this source review cannot clear it.",
+    "positive_fixture": "Complete actual-executable positive qualification remained pending in inspected custody. qualification7 had no completed summary; its partial log reached initialization. Earlier initialization/replay observations and the readiness-helper change do not establish serve/inspect/cold-reopen completion.",
+    "production_and_live": "No protected installation, current production policy/config/job pins or live qualification was established. The absent historical Claude program and changed CBM digest remain unresolved operational prerequisites.",
+    "verdict": "not_established"
+  },
+  "verdict": "accepted",
+  "verdict_scope": "Bounded source-review recommendation only. Root retains semantic acceptance, collection and publication authority."
+}

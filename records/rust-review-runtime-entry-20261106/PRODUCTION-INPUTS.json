@@ -1,0 +1,97 @@
+{
+  "status": "operator_inputs_pending_not_installable",
+  "authority": "Builder has no live/protected-write authority; Root/operator owns genuine selections and installation",
+  "required_inputs": [
+    {
+      "selection": "policy installation identity/active/expiry/admittedUid",
+      "owner": "Deployment/operator owner",
+      "source": "Explicit reviewed installation decision; JobReviewPolicyDocument",
+      "status": "pending"
+    },
+    {
+      "selection": "repository/jobsRoot/run/plan/slice/obligation/objective boundary",
+      "owner": "Campaign + deployment owners",
+      "source": "Accepted intended live coding objective and canonical confined job layout",
+      "status": "pending"
+    },
+    {
+      "selection": "genuine Claude program SHA/version/owner/mode",
+      "owner": "Deployment + qualified execution owner",
+      "source": "../current-claude-command-metadata.json; prior selected2.1.300 is absent; current2.1.318 is metadata-only, not substituted qualification",
+      "status": "requires new exact selection and qualification"
+    },
+    {
+      "selection": "guard/bwrap/cbmLauncher/cbmClient/catalog pins",
+      "owner": "Qualified execution owner",
+      "source": "../selected-qualified-tool-metadata.json; individually matching metadata retained by Root",
+      "status": "must bind exact approved profile"
+    },
+    {
+      "selection": "CBM executable/index/coverage/native boundary",
+      "owner": "Candidate boundary owner",
+      "source": "Current CBM digest drift from installed selection; actual fixture IncompleteStore evidence in qualification2",
+      "status": "requires owner-compatible qualification"
+    },
+    {
+      "selection": "model/effort/acceptedObservedModels/resourcePolicy/horizon",
+      "owner": "Qualified execution + campaign owners",
+      "source": "Explicit bounded genuine-review route and authoritative catalog/profile",
+      "status": "pending"
+    },
+    {
+      "selection": "credential source metadata digest and horizon eligibility",
+      "owner": "Credential/execution owner",
+      "source": "Root lstat only uid1000/mode0600; no content read or eligibility established",
+      "status": "pending owner qualification; never infer eligibility"
+    },
+    {
+      "selection": "host executable/source archive/toolchain/lock/features/runtime dependencies",
+      "owner": "Host release owner",
+      "source": "New exact source candidate and production build custody, actual executable hash",
+      "status": "pending frozen release"
+    },
+    {
+      "selection": "compiler document/options/role/request input/prompt template",
+      "owner": "Compiler + campaign owner",
+      "source": "Exact complete qualified startup; selected-role coverage guidance for schema2; recomputed prompt digest",
+      "status": "pending live candidate"
+    },
+    {
+      "selection": "candidate commit/tree/patch/receipt artifact/profile artifact/semantic profile",
+      "owner": "Checkpoint + code-change-profile owners",
+      "source": "Exact intended candidate receipts and gate capture/manifest/receipt with verified path/tree causality",
+      "status": "pending"
+    },
+    {
+      "selection": "reviewSelectionTemplate and required claim contracts",
+      "owner": "Campaign selection owner",
+      "source": "Accepted independent-review requirements; existing codecs derive fresh per-job claims",
+      "status": "pending live selection"
+    },
+    {
+      "selection": "episode authority/source/writer/session/readers",
+      "owner": "Native episode/operator owner",
+      "source": "Exact typed native authority bound to candidate/attempt/session and accepted boundary",
+      "status": "pending"
+    },
+    {
+      "selection": "claims source/configuration/grants/decision scope/completion consumer",
+      "owner": "Claim authority/deployment owner",
+      "source": "Exact independently authorized documents; startupAuthority binds both byte hashes and consumer",
+      "status": "pending"
+    },
+    {
+      "selection": "JobReviewRequest session/attempt/index/candidate fields",
+      "owner": "Campaign owner; request is data",
+      "source": "Exact intended fresh job, complete candidate refs and current boundary/profile digests; no authority or policy path fields",
+      "status": "pending"
+    },
+    {
+      "selection": "canonical private startup and confined workspace/campaign/episode/claims/evidence paths",
+      "owner": "Host/deployment + each existing store owner",
+      "source": "Deterministic JobReviewRequest.directory_name children, fixed policy admission/reopen readback",
+      "status": "pending exact job"
+    }
+  ],
+  "fixture_separation": "Any retained fixture policy/startup/config selects an inert offline peer under explicit fixture standing and must never be installed as production authority."
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-plan7.json",
+  "plan_sha256": "f2e7d0bba9e66b7829558c6451624938161b9c5d0ba994237b58aa8b7287c1a8",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "format",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7/format.json",
+      "record_sha256": "62fb8bc990e9448aa592e0ec451e2b5df3685de2c9886844b8eddc032713a1bf",
+      "leftovers": 0
+    },
+    {
+      "name": "job-positive",
+      "outcome": "0",
+      "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7/job-positive.json",
+      "record_sha256": "a2ea021903ae73db0ad6a088be3f289b1679dee36f61a88ac8ac95ce1b431a04",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

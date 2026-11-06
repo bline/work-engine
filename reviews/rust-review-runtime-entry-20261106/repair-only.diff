@@ -1,0 +1,44 @@
+diff --git a/records/rust-review-runtime-entry-20261106/README.md b/records/rust-review-runtime-entry-20261106/README.md
+index 7ad2bf55..c94efb94 100644
+--- a/records/rust-review-runtime-entry-20261106/README.md
++++ b/records/rust-review-runtime-entry-20261106/README.md
+@@ -22,13 +22,15 @@ expectations are unchanged.
+ ## Validation and operational status
+ 
+ Actual executable initialization and its idempotent replay succeeded with the
+-complete fixture. Complete serve/inspect/cold-reopen qualification remains
+-pending in private custody. The first focused run exposed the existing CBM
++complete fixture. Serving readiness also succeeded; complete inspect/cold-reopen qualification
++remains pending in private custody. The first focused run exposed the existing CBM
+ status incompatibility, now covered by a passing owner test for exact fallback
+ and unknown-status refusal. A subsequent run exposed a synthetic jobsRoot mode
+ mismatch, corrected to0700. The next run initialized twice but reached the
+ generic fixture's30-second serving deadline; the job fixture now uses the
+-existing qualified-fixture readiness bound. These failed runs are preserved.
++existing qualified-fixture readiness bound. The next run reached serve-ready and caught a test command typo (`inspect`
++instead of `inspect_initial`), corrected within the fixture. These failed runs
++are preserved.
+ 
+ Production compilation and both production parser tests passed. Scoped lint
+ passed with the coverage repair. The older controlled-host suite exceeded its
+diff --git a/rust/crates/work-engine-review-host/tests/qualified_control.rs b/rust/crates/work-engine-review-host/tests/qualified_control.rs
+index 90edad98..ca8e4d18 100644
+--- a/rust/crates/work-engine-review-host/tests/qualified_control.rs
++++ b/rust/crates/work-engine-review-host/tests/qualified_control.rs
+@@ -1164,14 +1164,14 @@ fn job_runtime_initializes_serves_inspects_and_reopens_complete_inputs() {
+     eprintln!("JOB_RUNTIME_STAGE=serve");
+     let mut host = job.start();
+     qualified_ready(&mut host);
+-    host.domain("inspect", revision);
++    host.domain("inspect_initial", revision);
+     let inspected = host.receive();
+     assert!(inspected["error"].is_null(), "{inspected}");
+     host.finish();
+     eprintln!("JOB_RUNTIME_STAGE=cold_reopen");
+     let mut cold = job.start();
+     qualified_ready(&mut cold);
+-    cold.domain("inspect", revision);
++    cold.domain("inspect_initial", revision);
+     assert_eq!(inspected, cold.receive());
+     cold.finish();
+     assert_eq!(

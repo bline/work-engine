@@ -1,0 +1,204 @@
+{
+  "schema": "runtime-entry-root-source-acceptance-v1",
+  "accepted_utc": "2026-11-06T17:08:14.312228+00:00",
+  "candidate": "a8fde5299fde83891df1ff83b21fb9d74a85ac1d",
+  "base": "a1551c02d24e8fa17504fd43dcf2a8f86e65c769",
+  "decision": "accepted_source_and_bounded_provider_free_fixture",
+  "scope": "existing executable job admission and nonclean coverage status compatibility; exact source8paths; not production/live/full-loop acceptance",
+  "independent_source_review": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/source-review-repair-final-binding.json",
+  "worker_final_refs": {
+    "RESULT.json": "6878ecc707b9485645a450eafc5733b7500f5652779da20eeffc247c5447b85a",
+    "RESULT-NEGATIVE.json": "774747c8bdfb656728885e533e9dbb3a3a612007868cfc40bb3d540875a232f6",
+    "qualification7/summary.json": "108fd587863c72c2bd891d206c3d787c6987ff6f7b1e46f7ce6ba058953403cc",
+    "qualification-negative/summary.json": "59f26f4e347866545ad637d47a98af09ec403ca3d852421b632f931fe059eeb2"
+  },
+  "source_hashes_verified": 8,
+  "custody_summaries_verified": [
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification1",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification2",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification3",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification4",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification5",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification6",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/production",
+      "status": "passed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/production-final",
+      "status": "passed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/lint",
+      "status": "passed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/lint-final",
+      "status": "passed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/lint-repair",
+      "status": "passed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/joined-final",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/diagnostic",
+      "status": "failed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/diagnostic-coverage-exact",
+      "status": "passed"
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7",
+      "status": "passed"
+    }
+  ],
+  "positive": {
+    "initialize": true,
+    "replayed_initialize": true,
+    "serve_ready": true,
+    "inspect_initial": true,
+    "cold_reopen_and_identical_inspect": true,
+    "fixture_provider_refusal_before_entry": true,
+    "admission_bytes_unchanged": true,
+    "test_command": "cargo test --offline -p work-engine-review-host --features test-peer,test-support --test qualified_control job_runtime_initializes_serves_inspects_and_reopens_complete_inputs -- --exact --nocapture",
+    "passed": 1,
+    "elapsed_seconds": 411.8,
+    "summary_sha256": "108fd587863c72c2bd891d206c3d787c6987ff6f7b1e46f7ce6ba058953403cc"
+  },
+  "negatives": {
+    "status": "passed",
+    "candidate": "a8fde5299fde83891df1ff83b21fb9d74a85ac1d",
+    "authority": "Root test-only follow-up within same35USD cap;15min/1.50USD proxy maximum; no retry/source/helper/provider/protected/credential-content action",
+    "passed_tests": 2,
+    "cases": [
+      {
+        "name": "job_runtime_refuses_request_authority_before_admission",
+        "elapsed_seconds": 58.3,
+        "proves": [
+          "request approved flag rejected before admission",
+          "pending publication returns admission_unknown",
+          "pending bytes preserved without final admission/campaign"
+        ]
+      },
+      {
+        "name": "job_runtime_reopen_refuses_revoked_policy",
+        "elapsed_seconds": 94.2,
+        "proves": [
+          "initialization succeeds",
+          "inactive selected policy refuses serving reconstruction",
+          "no evidence root created"
+        ]
+      }
+    ],
+    "custody_summary": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-negative/summary.json",
+    "custody_summary_sha256": "59f26f4e347866545ad637d47a98af09ec403ca3d852421b632f931fe059eeb2",
+    "custody_steps": [
+      {
+        "name": "request-authority",
+        "outcome": "0",
+        "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-negative/request-authority.json",
+        "record_sha256": "3a82227c1a78a84507bd7cd4d75fc2f0e0315726532adace79117724b13cc3b0",
+        "leftovers": 0
+      },
+      {
+        "name": "revoked-policy",
+        "outcome": "0",
+        "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification-negative/revoked-policy.json",
+        "record_sha256": "83122c72ceac49161b5f83f1ee05ddc323000ab2180285387ed67a955f67c4f8",
+        "leftovers": 0
+      }
+    ],
+    "commands": "Each case run once using cargo test --offline -p work-engine-review-host --features test-peer,test-support --test qualified_control CASE -- --exact --nocapture; exact argv/environment/source digests in custody records.",
+    "processes_collected": true,
+    "leftovers": 0,
+    "source_clean": true,
+    "preserved_artifacts": {
+      "RESULT.json": "6878ecc707b9485645a450eafc5733b7500f5652779da20eeffc247c5447b85a",
+      "SOURCE.json": "629b1929cf8b52b734ef431732619a28c26bf9ff74b7afc9f6017f64a555ab89",
+      "SOURCE-repair.json": "2ea9dc9a94e6a39cb869ba2c466f2412f9ceb795151c6e16e2f3ee41c1d64a2b"
+    },
+    "telemetry": {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-06T17:02:27.451480+00:00",
+      "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-06T17:02:05.847Z",
+      "freshness": "recent_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "medium",
+      "input_tokens": 111526,
+      "context_window_tokens": 475000,
+      "epoch": 2,
+      "compaction_markers": 2,
+      "lineage": [
+        "compaction marker at line 657",
+        "compaction marker at line 1688"
+      ],
+      "limitations": [
+        "token_count line 661 has no request input; current context unavailable",
+        "token_count line 1692 has no request input; current context unavailable"
+      ],
+      "status": "observed",
+      "trigger_tokens": 275735,
+      "band_floor_tokens": 314829,
+      "headroom_to_trigger": 164209,
+      "headroom_to_band_floor": 203303,
+      "fraction_of_window": 0.2348,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 111526 is below the trigger 275735",
+        "next-task size not estimated; headroom to band floor is the margin",
+        "session has compacted 2 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+      ]
+    },
+    "settings": {
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "tier": "default",
+      "latest_applied_event": "2026-11-06T16:34:23.355Z",
+      "event_sha256": "43fce07f4f3422bd6b6660975a59b3f7f54a65ac172c81b81bea8d30c938bb06",
+      "limitation": "Latest matching applied settings event predates this follow-up; fresh own-turn token telemetry confirms model/effort, no tier change requested."
+    },
+    "cost_proxy_usd": null,
+    "cost_owner": "Root aggregate collection; not inferred from elapsed time",
+    "limitations": [
+      "Same-UID provider-refusing fixtures do not establish production operator/agent isolation.",
+      "Source review and genuine operational inputs/installation/live review remain separately owned."
+    ]
+  },
+  "production_and_live": "held; no installed new policy or genuine product review/acceptance/publication",
+  "historical_suite": "timeout retained; no broad green",
+  "inflight_view": "historical uncertainty preserved, reconciled by retained exact-delta review",
+  "operator_gates": "unresolved, no unseen policy authority inferred",
+  "source_status": "accepted_integrated",
+  "destination_ref": "refs/heads/rescue-detached-20260911",
+  "integrated_commit": "a8fde5299fde83891df1ff83b21fb9d74a85ac1d",
+  "live_status": "held_pending_fresh_production_preparation_and_operator_gates",
+  "budget_status": "open; reserve amendment pending human decision",
+  "budget_amendment": "planning/rust-loop-production-packet-reserve-amendment-20261106.md"
+}

@@ -1,0 +1,52 @@
+{
+  "status": "checkpoint_not_final",
+  "snapshot_at": "2026-11-06T17:13:15.694627+00:00",
+  "canonical_observed_proxy_usd": 8.6956112,
+  "actors": [
+    {
+      "session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "direct_proxy_usd": 1.7200336000000003
+    },
+    {
+      "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "direct_proxy_usd": 3.438855600000002
+    },
+    {
+      "session_id": "01a1b1c4-54ca-78d1-8aa0-b7b8ecc4b5dc",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "direct_proxy_usd": 3.536722
+    }
+  ],
+  "carry_holds_usd": {
+    "prior_readiness": 3,
+    "approval_to_init": 1
+  },
+  "conservative_observed_plus_holds_usd": 12.6956112,
+  "aggregate_cap_usd": 35,
+  "hard_end_utc": "2026-11-06T18:25:15Z",
+  "canonical_coverage": "partial",
+  "issues": [
+    {
+      "kind": "multiple_parents",
+      "node_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+      "parent_node_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "rejected": "codex_parent",
+      "retained": "binding"
+    }
+  ],
+  "limitations": [
+    "Claude Code title and other side calls are not in transcripts"
+  ],
+  "nested_review_total": "5.8017024 at nested review close; overlapping Root window, do not add to aggregate",
+  "standing": "speed-adjusted API-equivalent proxy, not billing or subscription quota; holds are not observed spend",
+  "remaining_work": "Root records/collection, pending amendment decision; no automatic extension",
+  "actor_scope": "actors with priced calls in the canonical objective window; zero-cost historical nodes omitted"
+}

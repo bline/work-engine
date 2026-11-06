@@ -1,0 +1,339 @@
+{
+  "status": "source_frozen_complete_positive_fixture_proven",
+  "candidate": "a8fde5299fde83891df1ff83b21fb9d74a85ac1d",
+  "reviewed_original": "8f8f8aaaaa1aab543059c3f689682c625c16af58",
+  "source_manifest": "SOURCE-repair.json",
+  "source_manifest_sha256": "2ea9dc9a94e6a39cb869ba2c466f2412f9ceb795151c6e16e2f3ee41c1d64a2b",
+  "original_manifest_sha256": "629b1929cf8b52b734ef431732619a28c26bf9ff74b7afc9f6017f64a555ab89",
+  "custody": [
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification1",
+      "summary_sha256": "82b29a42fba6d8931dbd075e549f775224ad7afd2bd06f0b48b0b18dcc45bb4a",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "fixture-binaries",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "job-runtime",
+          "outcome": "101",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification2",
+      "summary_sha256": "fdd78bf0790793fb4ef20c54b4767c2f9c8ed2dbe59abc98df0cb69810b4e2dc",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "job-runtime",
+          "outcome": "101",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification3",
+      "summary_sha256": "2bec5495c208fb294b220547dab379dd959cdb397cc7a85735a63cf50feee040",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "coverage-status",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "job-runtime",
+          "outcome": "101",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification4",
+      "summary_sha256": "e530dbc5b94dae0aeaec11efeb07ebd6e16571c3192afe5467d8233026aad6fb",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "job-positive",
+          "outcome": "timeout",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification5",
+      "summary_sha256": "f2c53f8c65c2e0d63531ef6fdb05c1f9ccd2a680b7a22928054370367bffdf02",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "job-positive",
+          "outcome": "101",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification6",
+      "summary_sha256": "7661a9827e820cd04fddb0dfca5d18e57e0159eef1cd1542c596f358ba7643b7",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "job-positive",
+          "outcome": "101",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/production",
+      "summary_sha256": "614ead485445ca10f7d50daf7ada9b534700e72a8e7f8064a0474a72dc96279b",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "production-build",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "production-tests",
+          "outcome": "0",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/production-final",
+      "summary_sha256": "e8adb52092be103a0b969b8884727ab79506851666e68f7f7134f240c9757ef0",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "production-build",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "production-tests",
+          "outcome": "0",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/lint",
+      "summary_sha256": "a3c292970bbeae11377ce9b51633770de63db266dc96076d8162228f32847782",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "lint",
+          "outcome": "0",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/lint-final",
+      "summary_sha256": "ffba58f15849502894487a1faa1332f5423734e21ef01a62dd97aee8c20905a5",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "lint",
+          "outcome": "0",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/lint-repair",
+      "summary_sha256": "50b63d0528619371af2d638d57d4bed1fb62aef051a2bb8c712ef4e75d8b1d8c",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "lint",
+          "outcome": "0",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/joined-final",
+      "summary_sha256": "7699a6df338a35c75e339014af028af943dd94da4e249686b1ccf5ac58f0cf3e",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "lint",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "historical-host",
+          "outcome": "timeout",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/diagnostic",
+      "summary_sha256": "0bab5134150c7991053277564a6d769fb2c541f58a68369b19b11cfd6f41ffa0",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "leftovers": 0
+        },
+        {
+          "name": "diagnose-boundary",
+          "outcome": "101",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/diagnostic-coverage-exact",
+      "summary_sha256": "54b2613a3b012246543dfd0c9936869e41135d560c3afbb3b155400c9e017f80",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "actual-selected-coverage",
+          "outcome": "0",
+          "leftovers": 0
+        }
+      ]
+    },
+    {
+      "directory": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7",
+      "summary_sha256": "108fd587863c72c2bd891d206c3d787c6987ff6f7b1e46f7ce6ba058953403cc",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "format",
+          "outcome": "0",
+          "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7/format.json",
+          "record_sha256": "62fb8bc990e9448aa592e0ec451e2b5df3685de2c9886844b8eddc032713a1bf",
+          "leftovers": 0
+        },
+        {
+          "name": "job-positive",
+          "outcome": "0",
+          "record": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7/job-positive.json",
+          "record_sha256": "a2ea021903ae73db0ad6a088be3f289b1679dee36f61a88ac8ac95ce1b431a04",
+          "leftovers": 0
+        }
+      ]
+    }
+  ],
+  "positive_proof": {
+    "initialize": true,
+    "replayed_initialize": true,
+    "serve_ready": true,
+    "inspect_initial": true,
+    "cold_reopen_and_identical_inspect": true,
+    "fixture_provider_refusal_before_entry": true,
+    "admission_bytes_unchanged": true,
+    "test_command": "cargo test --offline -p work-engine-review-host --features test-peer,test-support --test qualified_control job_runtime_initializes_serves_inspects_and_reopens_complete_inputs -- --exact --nocapture",
+    "passed": 1,
+    "elapsed_seconds": 411.8,
+    "summary_sha256": "108fd587863c72c2bd891d206c3d787c6987ff6f7b1e46f7ce6ba058953403cc"
+  },
+  "test_counts": {
+    "production_parser_passed": 2,
+    "coverage_status_owner_passed": 1,
+    "focused_job_negative_cases_compiled_unqualified": 2,
+    "historical_host_selected": 11,
+    "historical_host_completed": 0,
+    "job_runtime_positive_passed": 1
+  },
+  "owned_process": null,
+  "limitations": [
+    "No full-suite pass; historical host first case exceeded180s.",
+    "Same-UID provider-refusing fixtures do not prove production operator/agent isolation.",
+    "Genuine live tool/profile/catalog/credential eligibility/job/operator inputs pending; fixture bytes are never installation material."
+  ],
+  "production_inputs": "PRODUCTION-INPUTS.json",
+  "install_skeleton": "INSTALL-PACKET.md",
+  "settings": {
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "tier": "default",
+    "observed_at": "2026-11-06T16:34:23.355Z",
+    "event_sha256": "43fce07f4f3422bd6b6660975a59b3f7f54a65ac172c81b81bea8d30c938bb06",
+    "context_epoch": 2
+  },
+  "authority": "Root owns independent source review, acceptance, operational installation and collection; no live/protected effect performed.",
+  "no_leftovers": true,
+  "final_context": {
+    "schema": "manual-orchestration-context-check-v1",
+    "checked_at": "2026-11-06T16:58:35.605352+00:00",
+    "session_id": "01a1af65-ab56-7630-b23b-29520ff77c74",
+    "rollout": "/home/bline/.codex/sessions/2026/11/05/rollout-2026-11-05T22-47-18-01a1af65-ab56-7630-b23b-29520ff77c74.jsonl",
+    "next_task_tokens": null,
+    "next_task_basis": "not estimated",
+    "observed_at": "2026-11-06T16:58:08.618Z",
+    "freshness": "recent_file_modification",
+    "recorded_model": "gpt-6.1-sol",
+    "recorded_effort": "medium",
+    "input_tokens": 101286,
+    "context_window_tokens": 475000,
+    "epoch": 2,
+    "compaction_markers": 2,
+    "lineage": [
+      "compaction marker at line 657",
+      "compaction marker at line 1688"
+    ],
+    "limitations": [
+      "token_count line 661 has no request input; current context unavailable",
+      "token_count line 1692 has no request input; current context unavailable"
+    ],
+    "status": "observed",
+    "trigger_tokens": 275735,
+    "band_floor_tokens": 314829,
+    "headroom_to_trigger": 174449,
+    "headroom_to_band_floor": 213543,
+    "fraction_of_window": 0.2132,
+    "recommendation": "retain_ok",
+    "reasons": [
+      "input 101286 is below the trigger 275735",
+      "next-task size not estimated; headroom to band floor is the margin",
+      "session has compacted 2 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+    ]
+  }
+}

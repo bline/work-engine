@@ -1,0 +1,65 @@
+{
+  "schema": "runtime-entry-source-review-repair-v1",
+  "candidate": "a8fde5299fde83891df1ff83b21fb9d74a85ac1d",
+  "original_review_ref": {
+    "candidate": "8f8f8aaaaa1aab543059c3f689682c625c16af58",
+    "turn": "01a1b1c4-653e-7cc1-b32f-813008402a58",
+    "schema": "runtime-entry-source-review-v1"
+  },
+  "verdict": "accepted",
+  "verdict_scope": "The prior source-review recommendation holds for the exact repaired candidate. Completed custody now establishes the bounded provider-free executable fixture.",
+  "findings": [],
+  "evidence_checked": [
+    {
+      "check": "Exact delta and source binding",
+      "result": "Clean HEAD matches the candidate. The complete two-commit diff changes only two inspect commands to inspect_initial and the dated README. Production source is byte-identical to the original reviewed commit. All eight repair-manifest hashes match current files and candidate Git objects; repair-only.diff matches Git.",
+      "manifest_sha256": "2ea9dc9a94e6a39cb869ba2c466f2412f9ceb795151c6e16e2f3ee41c1d64a2b"
+    },
+    {
+      "check": "In-flight view reconciliation",
+      "result": "Read review-view-reconciliation.json. Verified original SOURCE.json and source.diff are restored exactly. The original review alone did not cover the repaired candidate; this retained review independently checks its immutable delta and final custody. Restoration does not retroactively eliminate the historical view uncertainty."
+    },
+    {
+      "check": "Repair correctness",
+      "result": "inspect_initial matches the existing snake_case InspectInitial protocol operation. The assertions remain intact: successful inspection, identical cold-reopen response, unchanged admission bytes, zero provider entries and explicit fixture-provider refusal."
+    },
+    {
+      "check": "Completed executable custody",
+      "result": "Verified summary-to-plan, summary-to-run-record and run-record-to-log hashes. All seven recorded source inputs match the repaired candidate. The exact selected test passed with return code 0, no timeout and no recorded leftover processes; custody duration was 411.821 seconds. Logs reach initialization, replay, serving, cold reopening and provider refusal. The fixture launches a copy of Cargo's actual host executable.",
+      "summary_sha256": "108fd587863c72c2bd891d206c3d787c6987ff6f7b1e46f7ce6ba058953403cc",
+      "run_record_sha256": "a2ea021903ae73db0ad6a088be3f289b1679dee36f61a88ac8ac95ce1b431a04"
+    },
+    {
+      "check": "Result attribution",
+      "result": "Verified RESULT.json identity and hash; its positive-proof claims agree with the inspected test assertions and completed custody, rather than serving as independent proof.",
+      "sha256": "6878ecc707b9485645a450eafc5733b7500f5652779da20eeffc247c5447b85a"
+    },
+    {
+      "check": "Graph coverage",
+      "result": "Confirmed the private-worktree project and generation uaf6de42affc8e1f9g2. Coverage returned all ten requested paths. Code paths reported unresolved calls; exact Git comparisons and direct material-source reads underpin this bounded conclusion."
+    }
+  ],
+  "limits": [
+    "The two additional authority-negative executable cases remain outside this completed proof; Root owns their collection.",
+    "Historical suite timeout remains unresolved. No broad-green claim.",
+    "The passing test uses test-support and same-UID fixture authority. It establishes neither production operator/agent isolation nor genuine qualified Claude product review.",
+    "Custody records source inputs and test execution; the inspected run record does not separately retain an executable digest or every transitive build input.",
+    "No production installation, live qualification or owner_pending clearance is established. Root retains semantic acceptance, publication and operator gates.",
+    "No writes, test execution, provider calls, credential access, delegation or connector mutations were performed during this review."
+  ],
+  "identity": {
+    "session": "01a1b1c4-54ca-78d1-8aa0-b7b8ecc4b5dc",
+    "turn": "01a1b1d1-5eb4-7581-869c-95b41262c040",
+    "parent_collector": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+    "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T09-49-57-01a1b1c4-54ca-78d1-8aa0-b7b8ecc4b5dc.jsonl"
+  },
+  "settings": {
+    "observed_model": "gpt-6-astra",
+    "observed_effort": "xhigh",
+    "observed_service_tier": "default",
+    "observed_approval_policy": "never",
+    "observed_native_permissions": "Read-only filesystem; restricted network",
+    "evidence": "Fresh thread_settings_applied at rollout line 143 and current turn_context at line 145.",
+    "scope": "Native realization only; no connector-grant or general independence claim."
+  }
+}

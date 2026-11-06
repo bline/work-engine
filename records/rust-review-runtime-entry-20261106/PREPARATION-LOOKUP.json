@@ -1,0 +1,63 @@
+{
+  "status": "historical_recipe_found_fresh_complete_preparation_caller_unestablished",
+  "scope": "Three-minute read-only lookup; no scripts executed, no source/helper/protected/provider/credential-content actions; paused pilot operation/state untouched",
+  "historical_caller": {
+    "path": "/home/bline/.local/state/work-engine/rp3-root-successor-20261028-01a18390/offline-qualification-package-001/proposal-correction-001/worker/proposal/prepare-unissued-v3.py",
+    "sha256": "4d6a69d6bc8044e0e828c7ce933163b9593e4824b5335c1408decfa31f9155d4",
+    "lines": 68,
+    "invocation_shape": "python3 SCRIPT, no CLI parameters; module body immediately creates hardcoded output directory",
+    "inputs": [
+      "hardcoded prior credential-binding-repair replacement package startup/acceptance/claims/selection/episode docs",
+      "sibling unissued-identity.json and episode_derivation module",
+      "hardcoded builder package-production-clear-env package and frozen old host/guard/source pins"
+    ],
+    "emits": [
+      "campaign-selection.json",
+      "episode-authority.json",
+      "claim-evidence-source.json",
+      "claim-evidence-configuration.json",
+      "acceptance.json",
+      "startup.json",
+      "deployment-pin.json",
+      "request-templates.json",
+      "manifest.json"
+    ],
+    "limits": [
+      "Copies prior startup then changes identity/session/host/guard and selected hashes; retains prior candidate/native boundary/CBM and Claude program/catalog selections.",
+      "No fresh CandidateBoundary preparation call; no current JobReviewPolicyDocument/job-policy output.",
+      "Hardcoded old exact host/guard SHA assertions and protected/runtime roots.",
+      "Output standing explicitly UNISSUED proposal, not operational authority; cannot simply run for current genuine candidate."
+    ]
+  },
+  "related_package_tool": {
+    "path": "/home/bline/.local/state/work-engine/rp3-root-successor-20261028-01a18390/offline-qualification-package-001/builder/support/package_clear_env.py",
+    "sha256": "bdf70b344a742a37e2d738c4adbf5ca858c14a18fd1bc52f743ca6b7e87a96cd",
+    "behavior": "Copies and pins historical release host/guard/lock/toolchain/runtime dependencies into a package; does not create fresh genuine candidate/native boundary or policy; compatibility explicitly unestablished."
+  },
+  "false_positive": {
+    "path": "/home/bline/.local/state/work-engine/rp3-implementation-20261017/worktree/experiments/context-lifecycle-rust/src/bin/prepare-live-profile.rs",
+    "reason": "Creates disposable Codex context-lifecycle native profile, not Claude review policy/startup/boundary/claims bundle."
+  },
+  "minimum_fresh_parameters": [
+    "Explicit current Claude program path+SHA, guard/catalog and bwrap/CBM/launcher/client pins; selected model/effort/accepted observed models/resource policy/horizon.",
+    "Exact genuine coding candidate receipts/profile/repository/tree and fresh native boundary root/project/store/coverage manifest.",
+    "Campaign identity/selection/obligation/session/attempt; canonical jobs root/admitted UID.",
+    "Authorized claims source/configuration/grants/scopes/completion consumer and episode authority; no inference of authorization from copied hashes.",
+    "Reviewed production host/source/toolchain/lock/runtime pins; compiler/input/options/prompt; credential metadata/eligibility under its existing owner.",
+    "Fixed-path policy revision/active/expiry/delegation and operator-approved installation/readback targets."
+  ],
+  "precise_gap": "No currently callable parameterized owner that produces the complete fresh genuine bundle was established. Public Rust APIs and the historical one-time data recipe exist, but adapting the recipe to fresh candidate/native boundary/current pins/new policy is preparation implementation and qualification, beyond frozen feature authority. This is not evidence of provider redesign or a new authority contract requirement.",
+  "bounded_follow_on_estimate": {
+    "basis": "Judgment only; not authorized and not a guaranteed readiness forecast",
+    "preparation_adapter_and_exact_input_qualification": "20\u201340 minutes / approximately2\u20134USD proxy, excluding operator latency, native indexing duration and any provider trial",
+    "first_gate": "First5\u201310minutes should bind exact genuine candidate and existing grants and decide whether current boundary preparation can be invoked without broader scope; stop if not.",
+    "authority": "Root must reconcile any post-feature-stop preparation change with original scope/time/budget before implementation."
+  },
+  "evidence_limits": [
+    "Tier2 project home-bline-code-work-engine current indexed2026-11-06T15:37:10Z generationu64ecc3757da67ebbg2; rp3-filtered graph search returned no rows, not an absence proof.",
+    "Historical external scripts are outside graph; targeted source/AST reads provided positive evidence.",
+    "Bounded exact-string searches for CandidateBoundary::prepare(_selected) in two historical Rust trees returned only qualified_control/claude_boundary/claude_guarded tests; not an exhaustive repository/global caller claim.",
+    "A broad review-workflow coverage response was truncated and is not relied upon; exact prepare-live-profile source read identified the unrelated tool."
+  ],
+  "owned_processes": []
+}

@@ -1,0 +1,104 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "job-positive",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-host",
+    "--features",
+    "test-peer,test-support",
+    "--test",
+    "qualified_control",
+    "job_runtime_initializes_serves_inspects_and_reopens_complete_inputs",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust",
+  "env_clear": true,
+  "env_set": {
+    "PATH": "/home/bline/.cargo/bin:/usr/bin:/bin",
+    "RUSTUP_HOME": "/home/bline/.rustup",
+    "CARGO_HOME": "/home/bline/.cargo",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/target",
+    "RP0_HOST_TEST_TMPDIR": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/fixtures"
+  },
+  "env_inherited": false,
+  "wrapper_pid": 1547203,
+  "inputs": [
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/work-engine-review-host/Cargo.toml",
+      "type": "file",
+      "mode": 436,
+      "length": 1141,
+      "sha256": "b2b0b290e36e1750dddd4ac659170026062d51158dc5a3a5651929b6f599d92e"
+    },
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/work-engine-review-host/src/main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 912,
+      "sha256": "74aa84b8e35ac3bfdf3f908cef391f87e7e84aecb4f52a790eca320543a60216"
+    },
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/work-engine-review-host/src/worker.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 3391,
+      "sha256": "e9d35cbca0879a54ae8d6b5137e2b794ef26b95ea5352aded6943f2d8e1cbdbf"
+    },
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/work-engine-review-host/src/control.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 7609,
+      "sha256": "e0b54a885f458db7e792f9777f48c461d04cade88d5e0ca6a372791dfaefa5b5"
+    },
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/work-engine-review-host/src/admission.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 6767,
+      "sha256": "0cf57a5a404db5b64cee9ef7f9daf2497ccedc877d60140c8223bf5ee9390b19"
+    },
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/work-engine-review-host/tests/qualified_control.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 50463,
+      "sha256": "e414dd54f101af932fb5bcf1ef123fa800d08d01964c2915ebaedabe534d2825"
+    },
+    {
+      "path": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106/rust/crates/review-execution-evidence/src/claude/isolation.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 79396,
+      "sha256": "c900f596abd7e72060602d00bfc3931962bc1420d89c00378ab6220c8d547f34"
+    }
+  ],
+  "timeout_s": 600,
+  "pid": 1547218,
+  "pgid": 1547218,
+  "started_at": "2026-11-06T16:51:16.768891Z",
+  "ended_at": "2026-11-06T16:58:08.590038Z",
+  "duration_s": 411.821,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7/job-positive.stdout",
+    "length": 304,
+    "sha256": "5dcb6f864b106d1abd9a0ee59eeba0148de7386f634b00a33811598574cb76de"
+  },
+  "stderr": {
+    "path": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/runtime-builder/qualification7/job-positive.stderr",
+    "length": 804,
+    "sha256": "5572b2c5ef0f9c555b1ca853a4dacab2b5ffacab7e69eb95f87ac03a7ce42e5a"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

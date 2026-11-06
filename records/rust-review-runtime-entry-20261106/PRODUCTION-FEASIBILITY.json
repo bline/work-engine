@@ -1,0 +1,45 @@
+{
+  "status": "existing_owner_composition_feasible_with_explicit_selections",
+  "scope": "manifest only; no new source/helper/native/provider/protected/credential-content action",
+  "deterministically_assemblable": [
+    {
+      "material": "Current program/guard/catalog profile digest",
+      "existing_owner": "review-execution-custody TrustedClaudeProfile::load_installed; PinnedProgram::load",
+      "inputs": "Root-selected current Claude2.1.318 exact SHA, guard/catalog pins, model/effort/accepted observed models",
+      "limit": "inert checks/digest construction are not live qualification or deployment approval"
+    },
+    {
+      "material": "Candidate receipt, physical profile, subject verification, CBM boundary/store/coverage manifest",
+      "existing_owner": "checkpoint/code-change-profile owners; verify_existing_subject; CandidateBoundary::prepare_selected/publish_manifest",
+      "inputs": "genuine coding candidate and current exact bwrap/CBM/launcher/client pins",
+      "limit": "candidate-specific preparation/qualification still required; the new compatibility fix preserves incomplete coverage fallback"
+    },
+    {
+      "material": "Compiler options, prompt-template digest, typed startup pins, exact request/job directory",
+      "existing_owner": "startup::qualified_prompt_template_for_document; JobReviewRequest::directory_name; existing artifact codecs",
+      "inputs": "complete genuine candidate documents, selected role/options, session/attempt, pinned host/toolchain/source/config bytes",
+      "limit": "fixture documents cannot be relabelled production inputs"
+    },
+    {
+      "material": "Job policy JSON and per-job selection/admission",
+      "existing_owner": "JobReviewPolicyDocument/JobStartupAuthority; JobReviewPolicy::review_selection/admit/reopen",
+      "inputs": "explicit operator delegation and existing independently authorized claims/episode/selection documents",
+      "limit": "review_selection/admit/reopen revalidate the selected policy; request-supplied paths or hashes confer no authority"
+    }
+  ],
+  "actual_pending_decisions_or_qualification": [
+    "Root/operator selection and qualification of current Claude program/profile/catalog/observed-model contract and current CBM boundary; old binary absence alone is not provider redesign.",
+    "Exact genuine coding candidate, run/plan/slice/attempt/session and review requirements.",
+    "Claims/episode authority owners must confirm existing source/grant/decision-scope/completion-consumer records cover that objective; otherwise those owners must issue the required documents. Hashing cannot supply their decision.",
+    "Credential owner eligibility/horizon checks remain required through the existing qualified execution owner; lstat metadata is not eligibility and builder reads no content.",
+    "Operator approval and protected installation/readback of exact policy bytes; existing host runtime then derives/reopens admission."
+  ],
+  "shortest_route": [
+    "Root selects genuine candidate and proposed current pins/route.",
+    "Existing owners derive exact candidate/profile/CBM boundary/compiler/prompt artifacts; retain direct-source-required fallback where coverage is incomplete.",
+    "Bind authorized claims/episode/selection and startupAuthority into exact JobReviewPolicyDocument plus private startup/request; review the resulting byte/digest/mode manifest.",
+    "Operator installs/readbacks approved fixed-path policy; Root runs initialize then serve/inspect/reopen.",
+    "Only after source/operational gates, invoke the single genuine qualified review; acceptance/publication remain separate."
+  ],
+  "missing_contract_assessment": "No additional provider backend, authority store or per-candidate root-owned acceptance mechanism is required by the demonstrated source composition. I have not established an already callable whole-packet production assembler; the verified public APIs provide the deterministic parts, but this is not a claim that a CLI can emit all production inputs unchanged. If Root lacks an existing preparation caller, that is an executable preparation/tooling gap to resolve explicitly within remaining authority, not permission for this builder to add helpers after feature stop."
+}

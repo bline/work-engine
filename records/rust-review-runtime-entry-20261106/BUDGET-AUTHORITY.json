@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "status": "approved_active",
+  "plan": "planning/rust-loop-runtime-entry-and-live-budget-20261106.md",
+  "plan_sha256": "60e26f9da9683db151883fcebc7c61741d27eb5a92e96368e81bf273a26eb711",
+  "human_direction": "ok, budget approved",
+  "approval_bound_utc": "2026-11-06T15:45:15Z",
+  "checkpoint_utc": "2026-11-06T15:55:15Z",
+  "feature_stop_utc": "2026-11-06T16:55:15Z",
+  "hard_end_utc": "2026-11-06T18:25:15Z",
+  "aggregate_usd": 35,
+  "canonical_usd": 31,
+  "carry_holds_usd": {
+    "readiness": 3,
+    "approval_to_init": 1
+  },
+  "root_sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "builder_sid": "01a1af65-ab56-7630-b23b-29520ff77c74",
+  "source_base": "a1551c02d24e8fa17504fd43dcf2a8f86e65c769",
+  "worktree": "/home/bline/code/work-engine-worktrees/review-runtime-entry-20261106",
+  "budget": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/funded-budget.json",
+  "pending_human_gates": [
+    "review exact policy bytes and perform privileged installation",
+    "exact live product acceptance/publication decisions"
+  ],
+  "live_job_limit": 1,
+  "retention_evidence": "/home/bline/.local/state/work-engine/rust-loop-runtime-entry-20261106T1521/builder-retention-before-runtime.json",
+  "collection_owner": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "old_budgets": "closed; do not reopen",
+  "peer_pause": "preserved"
+}
