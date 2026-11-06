@@ -958,3 +958,151 @@ fn public_client_rejects_malformed_owner_results() {
         server.join().unwrap();
     }
 }
+
+/// Replay immutable actual producer stdout through the real consumer processes only.
+/// The prebound operator record and shell producer are fixtures: admission/provider execution
+/// is not repeated. The original job/journal/receipt are read only and retain their identities.
+#[test]
+#[ignore = "requires COMMAND_BINARY and RAW_CODING_HOST_RESULT from the immutable pilot"]
+fn actual_receipt_numbers_survive_capture_command_and_restart() {
+    let binary = std::env::var("COMMAND_BINARY").expect("COMMAND_BINARY");
+    let original =
+        PathBuf::from(std::env::var("RAW_CODING_HOST_RESULT").expect("RAW_CODING_HOST_RESULT"));
+    let raw = std::fs::read(&original).unwrap();
+    let wrapper: Value = serde_json::from_slice(&raw).unwrap();
+    let receipt_id = "42ba964cb7c9f0430fb16828fdb94de18cfa1fc58d199cdf1b7ece9b8e6b26c6";
+    assert_eq!(wrapper["receipt_id"], receipt_id);
+    let original_state = PathBuf::from(wrapper["receipt"]["job"]["state_dir"].as_str().unwrap());
+    let receipt_path = original_state
+        .join("receipts")
+        .join(format!("{receipt_id}.json"));
+    let receipt_bytes = std::fs::read(&receipt_path).unwrap();
+    assert_eq!(hex(&receipt_bytes), receipt_id);
+    let original_journal = std::fs::read(original_state.join("pi-state.json")).unwrap();
+    let mut fx = Fx::new();
+    fx.stop();
+    let host = fx.root.join("host.sh");
+    private(&fx.root.join("raw-host-result.json"), &raw, 0o600);
+    private(
+        &fx.root.join("original-journal.json"),
+        &original_journal,
+        0o600,
+    );
+    private(
+        &host,
+        format!(
+            "#!/bin/sh\ncase \"$2\" in\nrun) cat '{}';;\ninspect) cat '{}';;\n*) exit 64;;\nesac\n",
+            fx.root.join("raw-host-result.json").display(),
+            fx.root.join("original-journal.json").display()
+        )
+        .as_bytes(),
+        0o700,
+    );
+    let job = &wrapper["receipt"]["job"];
+    let job_bytes = std::fs::read(original_state.parent().unwrap().join("job.json")).unwrap();
+    private(&fx.root.join("original-job.json"), &job_bytes, 0o600);
+    let job_sha = hex(&job_bytes);
+    let host_sha = hex(&std::fs::read(&host).unwrap());
+    let input = wrapper["receipt"]["input_digest"].as_str().unwrap();
+    let packet_sha = job["packet"]["sha256"].as_str().unwrap();
+    let operation_id = hex(format!(
+        "work-engine.coding-job.operation.v1\0auth-1\0{job_sha}\0{host_sha}"
+    )
+    .as_bytes());
+    let opdir = fx.root.join("ops").join(&operation_id);
+    std::fs::create_dir(&opdir).unwrap();
+    std::fs::set_permissions(&opdir, std::fs::Permissions::from_mode(0o700)).unwrap();
+    private(&opdir.join("job.json"), &job_bytes, 0o600);
+    private(&opdir.join("binding.json"), json!({"schema":"work-engine.coding-job.v1","operation_id":operation_id,"request_id":REQ,"authorization_id":"auth-1","caller":"caller-1","job_id":job["job_id"],"state_dir":original_state,"job_sha256":job_sha,"packet_sha256":packet_sha,"host_input_digest":input,"host_job_schema":"work-engine.pi-docker-custody.v1","host_binary_sha256":host_sha,"capability":"coding-job-offline-fixture-v1","class":"offline-fixture","bound_at_unix_seconds":0}).to_string().as_bytes(), 0o600);
+    let mut profile: Value =
+        serde_json::from_slice(&std::fs::read(fx.root.join("job-profile.json")).unwrap()).unwrap();
+    profile["host_binary_sha256"] = json!(host_sha);
+    let auth = &mut profile["authorizations"][0];
+    auth["job_file"] = json!(fx.root.join("original-job.json"));
+    auth["job_sha256"] = json!(job_sha);
+    auth["packet_sha256"] = json!(packet_sha);
+    auth["job_id"] = job["job_id"].clone();
+    auth["state_dir"] = json!(original_state);
+    auth["host_input_digest"] = json!(input);
+    private(
+        &fx.root.join("job-profile.json"),
+        profile.to_string().as_bytes(),
+        0o600,
+    );
+    fx.job_sha = job_sha;
+    fx.packet_sha = packet_sha.into();
+    fx.start();
+    fx.submit(REQ);
+    fx.wait_collected();
+    let profile = fx.root.join("cli-profile.json");
+    private(&profile, json!({"version":1,"kind":"local-service","endpoint":fx.addr.to_string(),"credential_file":fx.cred_file,"timeout_seconds":5}).to_string().as_bytes(), 0o600);
+    let args = fx.root.join("read.json");
+    private(
+        &args,
+        json!({"request_id":REQ,"authorization_id":"auth-1","job_credential":CRED})
+            .to_string()
+            .as_bytes(),
+        0o600,
+    );
+    let assert_numbers = |receipt: &Value| {
+        for (pointer, expected) in [
+            (
+                "/coding/provider_requests/1/usage/cost/output",
+                "0.00020549999999999998",
+            ),
+            (
+                "/coding/provider_requests/2/usage/cost/input",
+                "0.00037610000000000003",
+            ),
+            (
+                "/coding/provider_requests/2/usage/cost/total",
+                "0.00039660000000000004",
+            ),
+            (
+                "/coding/provider_requests/4/usage/cost/output",
+                "2.4999999999999998e-6",
+            ),
+        ] {
+            assert_eq!(
+                receipt.pointer(pointer).unwrap().to_string(),
+                expected,
+                "{pointer}"
+            );
+        }
+    };
+    for restart in [false, true] {
+        if restart {
+            assert!(fx.stop().success());
+            fx.start();
+        }
+        let captured: Value =
+            serde_json::from_slice(&std::fs::read(opdir.join("host-run.json")).unwrap()).unwrap();
+        assert_eq!(captured["receipt_id"], receipt_id);
+        assert_numbers(&captured["receipt"]);
+        let output = Command::new(&binary)
+            .args([
+                profile.to_str().unwrap(),
+                "read_coding_job_result",
+                "--json",
+                args.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let response: Value = serde_json::from_slice(&output.stdout).unwrap();
+        let result = &response["envelope"]["owner_result"];
+        assert_eq!(result["receipt_id"], receipt_id);
+        assert_numbers(&result["receipt"]);
+        assert_eq!(result["receipt"], wrapper["receipt"]);
+    }
+    assert_eq!(std::fs::read(&receipt_path).unwrap(), receipt_bytes);
+    assert_eq!(
+        std::fs::read(original_state.join("pi-state.json")).unwrap(),
+        original_journal
+    );
+    assert!(!opdir.join("collector-reconcile.json").exists());
+}

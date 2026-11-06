@@ -1143,7 +1143,7 @@ impl Jobs {
             // The Host wrapper's own ID (outside the receipt body), checked against the original operation.
             "receipt_id":receipt_id,"input_digest":a.host_input_digest,
             "receipt":receipt,
-            "host_output":{"action":source,"exit_code":source_exit,"note":"verbatim Host stdout; exit code is reported separately and is not a validation result"},
+            "host_output":{"action":source,"exit_code":source_exit,"note":"Host receipt projection with numeric values preserved; exit code is reported separately and is not a validation result"},
         }))
     }
 
