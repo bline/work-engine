@@ -2169,6 +2169,9 @@ impl CampaignInner {
             ));
         }
         self.checked_acceptance_state(&pin.record)?;
+        if let Some(job) = pin.job.as_deref() {
+            self.checked_job_candidate(job)?;
+        }
         self.installed_authority = Some(InstalledProfileAuthority::from_pin(pin));
         Ok(())
     }
@@ -2234,14 +2237,32 @@ impl CampaignInner {
             &receipt_digest,
         ))
     }
+    fn checked_job_candidate(&self, job: &crate::job_admission::JobAdmissionRef) -> Result<()> {
+        let state = self
+            .store
+            .read(&self.config.identity)?
+            .ok_or_else(|| CampaignError::Conflict("accepted campaign absent".into()))?;
+        job.validate_candidate(
+            state
+                .candidate
+                .as_ref()
+                .ok_or_else(|| CampaignError::Conflict("candidate absent".into()))?,
+        )
+    }
     fn consume_qualified_initial(&mut self, permit: DispatchPermit) -> Result<FreshInitialEntry> {
         let authority = self
             .installed_authority
             .as_ref()
             .ok_or_else(|| CampaignError::Unsupported("installed entry authority absent".into()))?;
         authority.revalidate()?;
+        if let Some(job) = authority.job() {
+            self.checked_job_candidate(job)?;
+        }
         let binding =
             self.checked_initial_entry_binding(permit, authority.record(), authority.digest())?;
+        if let Some(job) = authority.job() {
+            job.validate_candidate(&binding.dispatched_request.candidate)?;
+        }
         Ok(self.installed_authority.take().unwrap().issue(binding))
     }
     #[cfg(feature = "test-support")]

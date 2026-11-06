@@ -37,6 +37,18 @@ async fn replaced_policy_is_refused_by_consumer() {
 async fn caller_cannot_weaken_policy_claim_contracts() {
     run("weaker-selection").await;
 }
+#[tokio::test]
+async fn receipt_artifact_mismatch_refuses_campaign_installation() {
+    run("receipt-mismatch").await;
+}
+#[tokio::test]
+async fn physical_profile_artifact_mismatch_refuses_campaign_installation() {
+    run("profile-artifact-mismatch").await;
+}
+#[tokio::test]
+async fn matching_writer_outside_admitted_evidence_root_is_refused() {
+    run("wrong-evidence-root").await;
+}
 async fn run(mode: &str) {
     use std::os::unix::fs::PermissionsExt;
     let temp = tempfile::tempdir_in(std::env::current_dir().unwrap()).unwrap();
@@ -155,19 +167,30 @@ async fn run(mode: &str) {
         admitted_uid: std::fs::metadata(temp.path()).unwrap().uid(),
         repository: repo.clone(),
         jobs_root: temp.path().to_path_buf(),
+        startup_authority: slice_campaign::job_admission::JobStartupAuthority {
+            claims_source_sha256: "b".repeat(64),
+            claims_configuration_sha256: "c".repeat(64),
+            completion_consumer: "fixture-completion".into(),
+        },
         execution_template: accepted.clone(),
         review_selection_template: selection.clone(),
     };
     fs::write(&policy_path, serde_json::to_vec(&policy_doc).unwrap()).unwrap();
     fs::set_permissions(&policy_path, fs::Permissions::from_mode(0o600)).unwrap();
     let policy = JobReviewPolicy::open_fixture(&policy_path).unwrap();
-    let job = JobReviewRequest {
+    let mut job = JobReviewRequest {
         identity: identity.clone(),
         candidate: checked.reference.clone(),
         physical_profile_digest: checked.profile_digest.clone(),
         cbm_store_sha256: "d".repeat(64),
         session_id: "session-rp2".into(),
     };
+    if mode == "receipt-mismatch" {
+        job.candidate.receipt_sha256 = "1".repeat(64);
+    }
+    if mode == "profile-artifact-mismatch" {
+        job.candidate.physical_profile_sha256 = "2".repeat(64);
+    }
     let job_dir = temp.path().join(job.directory_name().unwrap());
     fs::create_dir(&job_dir).unwrap();
     fs::set_permissions(&job_dir, fs::Permissions::from_mode(0o700)).unwrap();
@@ -300,6 +323,16 @@ async fn run(mode: &str) {
         );
         return;
     }
+    if mode == "receipt-mismatch" || mode == "profile-artifact-mismatch" {
+        let error = app
+            .install_qualified_initial_authority(policy.reopen(&job).unwrap())
+            .unwrap_err();
+        assert!(
+            error.to_string().contains("job candidate artifacts differ"),
+            "{error}"
+        );
+        return;
+    }
     app.install_qualified_initial_authority(policy.reopen(&job).unwrap())
         .unwrap();
     assert!(
@@ -392,7 +425,21 @@ async fn run(mode: &str) {
     .unwrap()
     .with_applied_request(template, prepared_request)
     .unwrap();
-    let mut writer = QualifiedWriter::create(&temp.path().join("fixture-evidence"), scope).unwrap();
+    let evidence_root = if mode == "wrong-evidence-root" {
+        temp.path().join("fixture-evidence")
+    } else {
+        job_dir.join("evidence")
+    };
+    let mut writer = QualifiedWriter::create(&evidence_root, scope).unwrap();
+    if mode == "wrong-evidence-root" {
+        let error = writer.check_fixture_job_entry(entry).unwrap_err();
+        assert!(
+            error.to_string().contains("job evidence root differs"),
+            "{error}"
+        );
+        assert!(!evidence_root.join("session-live").exists());
+        return;
+    }
     if mode == "forged" {
         let path = job_dir.join("review-admission.json");
         let mut forged: serde_json::Value =
@@ -400,7 +447,7 @@ async fn run(mode: &str) {
         forged["acceptance"]["requestedModel"] = json!("caller-forged-model");
         fs::write(&path, serde_json::to_vec(&forged).unwrap()).unwrap();
         assert!(writer.check_fixture_job_entry(entry).is_err());
-        assert!(!temp.path().join("fixture-evidence/session-live").exists());
+        assert!(!evidence_root.join("session-live").exists());
         return;
     }
     if mode == "policy-replaced" {
@@ -408,7 +455,7 @@ async fn run(mode: &str) {
         replaced.revision = "replacement-v2".into();
         fs::write(&policy_path, serde_json::to_vec(&replaced).unwrap()).unwrap();
         assert!(writer.check_fixture_job_entry(entry).is_err());
-        assert!(!temp.path().join("fixture-evidence/session-live").exists());
+        assert!(!evidence_root.join("session-live").exists());
         return;
     }
     if mode == "revoked" {
@@ -416,23 +463,23 @@ async fn run(mode: &str) {
         revoked.active = false;
         fs::write(&policy_path, serde_json::to_vec(&revoked).unwrap()).unwrap();
         assert!(writer.check_fixture_job_entry(entry).is_err());
-        assert!(!temp.path().join("fixture-evidence/session-live").exists());
+        assert!(!evidence_root.join("session-live").exists());
         return;
     }
     if mode == "launch-refused" {
         assert!(writer.execute_applied_initial(entry).await.is_err());
-        assert!(!temp.path().join("fixture-evidence/session-live").exists());
+        assert!(!evidence_root.join("session-live").exists());
         return;
     }
     if mode == "session-mismatch" {
         assert!(writer.check_fixture_job_entry(entry).is_err());
-        assert!(!temp.path().join("fixture-evidence/session-live").exists());
+        assert!(!evidence_root.join("session-live").exists());
         return;
     }
     writer.check_fixture_job_entry(entry).unwrap();
     // The consumer checked the real exact binding; no execute method or process
     // was invoked, and no result/evidence was manufactured.
-    assert!(!temp.path().join("fixture-evidence/session-live").exists());
+    assert!(!evidence_root.join("session-live").exists());
     drop(app);
     let mut reopened = Campaign::open(config()).unwrap();
     reopened

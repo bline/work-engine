@@ -30,6 +30,17 @@ pub struct JobReviewPolicyDocument {
     pub jobs_root: PathBuf,
     pub execution_template: serde_json::Value,
     pub review_selection_template: serde_json::Value,
+    pub startup_authority: JobStartupAuthority,
+}
+
+/// Exact claims bootstrap selected by the deployment owner. Source/configuration
+/// hashes bind source identity, root, both grants and their decision scopes.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct JobStartupAuthority {
+    pub claims_source_sha256: String,
+    pub claims_configuration_sha256: String,
+    pub completion_consumer: String,
 }
 
 /// No policy path, approved flag, executable or model can be supplied here.
@@ -192,6 +203,18 @@ impl JobReviewPolicy {
         }
         crate::require_text(&document.policy_id, "job policy id")?;
         crate::require_text(&document.revision, "job policy revision")?;
+        crate::require_sha(
+            &document.startup_authority.claims_source_sha256,
+            "job claims source",
+        )?;
+        crate::require_sha(
+            &document.startup_authority.claims_configuration_sha256,
+            "job claims configuration",
+        )?;
+        crate::require_text(
+            &document.startup_authority.completion_consumer,
+            "job completion consumer",
+        )?;
         canonical(&document.repository)?;
         private_directory(&document.jobs_root)?;
         let template = AcceptanceRecord::parse(
@@ -460,6 +483,23 @@ impl JobReviewPolicy {
     }
 }
 impl JobAdmissionRef {
+    pub(crate) fn validate_candidate(&self, candidate: &crate::CandidateRef) -> Result<()> {
+        if candidate != &self.request.candidate {
+            return Err(CampaignError::Conflict(
+                "job candidate artifacts differ from admission".into(),
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) fn validate_startup_authority(&self, selected: &JobStartupAuthority) -> Result<()> {
+        self.reopen()?;
+        if selected != &self.policy.document.startup_authority {
+            return Err(CampaignError::Conflict(
+                "job startup authority differs from policy".into(),
+            ));
+        }
+        Ok(())
+    }
     pub fn reopen(&self) -> Result<InstalledAcceptancePin> {
         self.policy.reopen(&self.request)
     }
@@ -536,6 +576,11 @@ mod tests {
             admitted_uid: rustix::process::geteuid().as_raw(),
             repository: repo,
             jobs_root: temp.path().into(),
+            startup_authority: JobStartupAuthority {
+                claims_source_sha256: "b".repeat(64),
+                claims_configuration_sha256: "c".repeat(64),
+                completion_consumer: "fixture-completion".into(),
+            },
             execution_template: template,
             review_selection_template: {
                 let subject = json!({"commit":"1".repeat(40),"tree":"1".repeat(40),"patchIdentity":"1".repeat(64)});

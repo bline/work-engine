@@ -296,6 +296,11 @@ impl QualifiedWriter {
         entry
             .revalidate()
             .map_err(|_| EvidenceReadError::Conflicting("job admission no longer current"))?;
+        entry
+            .validate_evidence_root(&self.store.root)
+            .map_err(|_| {
+                EvidenceReadError::Conflicting("job evidence root differs from admission")
+            })?;
         self.validate_and_consume_entry(entry.binding(), false)
             .map(|_| ())
     }
@@ -314,6 +319,11 @@ impl QualifiedWriter {
                 "fixture job admission cannot launch qualified provider",
             ));
         }
+        entry
+            .validate_evidence_root(&self.store.root)
+            .map_err(|_| {
+                EvidenceReadError::Conflicting("job evidence root differs from admission")
+            })?;
         let permit = self.validate_and_consume_entry(entry.binding(), true)?;
         self.execute_initial(permit).await
     }

@@ -299,6 +299,16 @@ impl InstalledAcceptancePin {
         }
         Ok(())
     }
+    pub fn validate_job_startup_authority(
+        &self,
+        selected: &crate::job_admission::JobStartupAuthority,
+    ) -> Result<()> {
+        let job = self
+            .job
+            .as_ref()
+            .ok_or_else(|| CampaignError::Unsupported("job admission absent".into()))?;
+        job.validate_startup_authority(selected)
+    }
     pub fn validate_job_paths(&self, repository: &Path, campaign: &Path) -> Result<()> {
         if let Some(job) = &self.job {
             job.validate_paths(repository, campaign)?;
@@ -469,6 +479,15 @@ impl InitialEntryBinding {
     }
 }
 impl FreshInitialEntry {
+    /// Job execution may write only beneath the policy-derived evidence child.
+    /// Historical installed entries retain their independently selected layout.
+    pub fn validate_evidence_root(&self, root: &Path) -> Result<()> {
+        self.revalidate()?;
+        if let Some(job) = &self._authority.job {
+            job.validate_child(root, "evidence")?;
+        }
+        Ok(())
+    }
     pub fn revalidate(&self) -> Result<()> {
         self._authority.revalidate()
     }
@@ -487,6 +506,9 @@ impl OfflineInitialEntry {
 }
 
 impl InstalledProfileAuthority {
+    pub(crate) fn job(&self) -> Option<&crate::job_admission::JobAdmissionRef> {
+        self.job.as_deref()
+    }
     pub(crate) fn revalidate(&self) -> Result<()> {
         if let Some(job) = &self.job {
             job.verify(&self.digest)?;

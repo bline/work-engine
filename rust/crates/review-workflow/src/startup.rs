@@ -618,6 +618,16 @@ impl TrustedStartup {
             return Err(refuse("unsupported", "startup profile unsupported"));
         }
         if let Some(pin) = &job_pin {
+            let q = qualified_inputs
+                .as_ref()
+                .ok_or_else(|| refuse("startup", "job qualified inputs absent"))?;
+            pin.validate_job_startup_authority(
+                &slice_campaign::job_admission::JobStartupAuthority {
+                    claims_source_sha256: document.claims.source.sha256.clone(),
+                    claims_configuration_sha256: document.claims.configuration.sha256.clone(),
+                    completion_consumer: q.completion_consumer.clone(),
+                },
+            )?;
             pin.validate_job_paths(&document.repository, &document.roots.campaign)?;
             for (path, child) in [
                 (&document.workspace, "workspace"),

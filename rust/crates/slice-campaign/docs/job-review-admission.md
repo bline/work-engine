@@ -9,7 +9,11 @@ This change does not install policy or activate a provider.
 and ancestry checks. Version-1 policy fixes delegated UID, repository, private
 jobs parent, run/plan/slice/obligation, accepted objective boundary, required claim
 contracts, Claude profile/program/guard/model/catalog, credential metadata, prompt
-template, resource policy and horizon. Its `executionTemplate` uses the existing
+template, resource policy and horizon. Required `startupAuthority` fixes the exact
+claims source and configuration byte hashes plus the completion consumer. Those
+bytes bind source identity, claims root, production/completion grants and their
+decision scopes; private descriptors cannot select substitute bootstrap authority.
+Its `executionTemplate` uses the existing
 exact acceptance schema. Subject/session/attempt and candidate/index/profile
 digests vary per job. Current active unexpired policy is required at admission,
 reopen and entry checks. Policy replacement, removal, expiry or revocation fences
@@ -30,10 +34,14 @@ the entire admission again: presence, plausible hash or same UID grants nothing.
 The returned `InstalledAcceptancePin` feeds
 `TrustedConfig::qualified_initial_v4` and
 `Campaign::install_qualified_initial_authority`. Consumers check exact paths and
-current derivation. Existing campaign prepare/dispatch owns one-shot
+current derivation. Installation and entry compare the complete admitted
+CandidateRef with the selected campaign and dispatched request, including receipt
+and physical-profile artifact hashes. Existing campaign prepare/dispatch owns one-shot
 `FreshInitialEntry`; recovery cannot recreate it.
 `QualifiedWriter::execute_applied_initial` revalidates admission before consuming
-entry. Credential, isolation, custody, response and claims contracts retain their
+entry and checks its actual store root against the admitted evidence child.
+This execution-owner check also applies to public composition without workflow
+startup. Credential, isolation, custody, response and claims contracts retain their
 existing owners. Admission permits an attempt; it does not imply provider success,
 independent-review establishment, review acceptance or publication.
 
