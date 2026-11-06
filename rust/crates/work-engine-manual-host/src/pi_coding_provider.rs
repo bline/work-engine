@@ -992,7 +992,8 @@ mod signed_subscription_tests {
                 "budget_microusd":1_000_000u64,
                 "allow_native_access_projection":true,
                 "allow_provider":true,
-            })).unwrap();
+            }))
+            .unwrap();
             fs::write(root.join("authority"), &admission).unwrap();
             let workspace = root.join("workspace");
             fs::create_dir_all(workspace.join("src")).unwrap();
@@ -1015,8 +1016,7 @@ mod signed_subscription_tests {
             profile.schema = super::super::LIVE_BRIDGE_PROFILE.into();
             profile.fixture_command = String::new();
             profile.max_tool_calls = 1;
-            profile.workspace_write_boundary =
-                super::super::WorkspaceWriteBoundary::SrcLibRs;
+            profile.workspace_write_boundary = super::super::WorkspaceWriteBoundary::SrcLibRs;
             profile.shim = Artifact {
                 path: root.join("shim.mjs"),
                 sha256: digest(super::super::SHIM),
@@ -1067,10 +1067,16 @@ mod signed_subscription_tests {
             Ok(()) => {}
             Err(e) => panic!("valid live bridge profile at the boundary was refused: {e}"),
         }
-        for (requests, context) in [(3, 24_000), (5, 24_000), (1, 24_000), (4, 24_001), (4, 65_536)]
-        {
-            let error = admit(requests, context)
-                .expect_err(&format!("{requests} requests / {context} bytes must be refused"));
+        for (requests, context) in [
+            (3, 24_000),
+            (5, 24_000),
+            (1, 24_000),
+            (4, 24_001),
+            (4, 65_536),
+        ] {
+            let error = admit(requests, context).expect_err(&format!(
+                "{requests} requests / {context} bytes must be refused"
+            ));
             assert!(
                 error.to_string().contains(RULE),
                 "{requests}/{context} refused for another reason: {error}"
