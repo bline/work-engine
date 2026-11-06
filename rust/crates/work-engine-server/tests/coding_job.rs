@@ -106,7 +106,14 @@ struct Fx {
 }
 impl Fx {
     fn new() -> Self {
-        let t = tempfile::tempdir().unwrap();
+        let t = if let Ok(root) = std::env::var("WORK_ENGINE_EVIDENCE_ROOT") {
+            tempfile::Builder::new()
+                .prefix("coding-job-")
+                .tempdir_in(root)
+                .unwrap()
+        } else {
+            tempfile::tempdir().unwrap()
+        };
         let root = t.path().to_path_buf();
         for d in ["state", "ops", "codex", "claude", "events"] {
             std::fs::create_dir(root.join(d)).unwrap();
@@ -207,6 +214,9 @@ impl Fx {
     }
     /// Live-class collector fixture. No provider, credentials or Docker are entered.
     fn enable_live_fixture(&mut self) {
+        self.enable_live_fixture_with(false);
+    }
+    fn enable_live_fixture_with(&mut self, sol: bool) {
         self.stop();
         let mut job: Value =
             serde_json::from_slice(&std::fs::read(self.root.join("job.json")).unwrap()).unwrap();
@@ -217,9 +227,17 @@ impl Fx {
         let public = self.root.join("public");
         private(&public, b"public fixture", 0o600);
         let artifact = json!({"path":public,"sha256":hex(b"public fixture")});
-        let provider = json!({"lane":{"pi_config":{"root":self.root.join("config"),"manifest":artifact},"native_auth_source":self.root.join("unopened-native-source")},"task":artifact,"catalog":artifact,"access_adapter":artifact,"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
-        job["coding"]["schema"] =
-            json!(work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE);
+        let mut provider = json!({"lane":{"pi_config":{"root":self.root.join("config"),"manifest":artifact},"native_auth_source":self.root.join("unopened-native-source")},"task":artifact,"catalog":artifact,"access_adapter":artifact,"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
+        if sol {
+            provider["model"] = json!("gpt-6.1-sol");
+            provider["budget_microusd"] = json!(17_680_004u64);
+            provider["sol_high"] = json!({"schema":"work-engine.sol-high.v1","reasoning_effort":"high","payer_account_id":"fixture-payer"});
+        }
+        job["coding"]["schema"] = json!(if sol {
+            work_engine_manual_host::pi_docker::coding::SOL_HIGH_BRIDGE_PROFILE
+        } else {
+            work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE
+        });
         job["coding"]["workspace_write_boundary"] = json!("src_lib_rs");
         job["coding"]["fixture_command"] = json!("");
         job["coding"]["provider"] = provider.clone();
@@ -232,7 +250,14 @@ impl Fx {
         let mut profile: Value =
             serde_json::from_slice(&std::fs::read(self.root.join("job-profile.json")).unwrap())
                 .unwrap();
-        let auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":profile["host_binary_sha256"],"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"native_auth_source":provider["lane"]["native_auth_source"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"allow_native_access_projection":true}).to_string();
+        let mut auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":profile["host_binary_sha256"],"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"native_auth_source":provider["lane"]["native_auth_source"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"allow_native_access_projection":true});
+        if sol {
+            auth["schema"] = json!("work-engine.pi-coding-runtime-admission.v2");
+            auth["model"] = provider["model"].clone();
+            auth["budget_microusd"] = provider["budget_microusd"].clone();
+            auth["sol_high"] = provider["sol_high"].clone();
+        }
+        let auth = auth.to_string();
         private(&self.root.join("authority.json"), auth.as_bytes(), 0o600);
         job["authority"] =
             json!({"path":self.root.join("authority.json"),"sha256":hex(auth.as_bytes())});
@@ -328,8 +353,11 @@ impl Fx {
         std::fs::read_to_string(self.root.join("runs")).map_or(0, |s| s.lines().count())
     }
     fn wait_collected(&self) -> Value {
-        for _ in 0..300 {
-            let v = self.read("read_coding_job_operation", REQ);
+        self.wait_request(REQ)
+    }
+    fn wait_request(&self, request: &str) -> Value {
+        for _ in 0..1200 {
+            let v = self.read("read_coding_job_operation", request);
             if v["owner_result"]["state"] == "collected" {
                 return v;
             }
@@ -1105,4 +1133,377 @@ fn actual_receipt_numbers_survive_capture_command_and_restart() {
         original_journal
     );
     assert!(!opdir.join("collector-reconcile.json").exists());
+}
+
+#[test]
+#[ignore = "requires explicit custody-built WORK_ENGINE_OWNED_HOST fixture"]
+fn resistant_owned_child_deadline_quiet_control_and_restart_keep_independent_effect_count() {
+    let host = std::env::var("WORK_ENGINE_OWNED_HOST").unwrap();
+    for (hanging, interrupted) in [(false, false), (true, false), (true, true)] {
+        let mut fx = Fx::new();
+        fx._t.disable_cleanup(true);
+        println!("retained_collector_case={}", fx.root.display());
+        assert!(fx.stop().success());
+        let profile_path = fx.root.join("job-profile.json");
+        let mut p: Value = serde_json::from_slice(&std::fs::read(&profile_path).unwrap()).unwrap();
+        p["host_binary"] = json!(host);
+        p["host_binary_sha256"] = json!(hex(&std::fs::read(&host).unwrap()));
+        p["env"] = json!({"FIXTURE_ROOT":fx.root});
+        p["collector_deadline_seconds"] = json!(if interrupted {
+            20
+        } else if hanging {
+            2
+        } else {
+            5
+        });
+        private(&profile_path, &serde_json::to_vec(&p).unwrap(), 0o600);
+        if hanging {
+            std::fs::write(fx.root.join("hang"), b"").unwrap();
+        }
+        fx.start();
+        let id = fx.submit(REQ)["owner_result"]["operation_id"].clone();
+        if hanging {
+            let until = Instant::now() + Duration::from_secs(2);
+            while !fx.root.join("owned-pid").exists() {
+                assert!(Instant::now() < until);
+                thread::sleep(Duration::from_millis(10));
+            }
+            let pid: i32 = std::fs::read_to_string(fx.root.join("owned-pid"))
+                .unwrap()
+                .parse()
+                .unwrap();
+            assert_eq!(unsafe { libc::kill(pid, libc::SIGTERM) }, 0);
+            thread::sleep(Duration::from_millis(100));
+            assert_eq!(
+                unsafe { libc::kill(pid, 0) },
+                0,
+                "fixture resists actual graceful signal"
+            );
+        }
+        if interrupted {
+            assert!(fx.stop().success());
+            fx.start();
+        }
+        let done = fx.wait_collected();
+        assert_eq!(done["owner_result"]["operation_id"], id);
+        let op = fx.read("read_coding_job_operation", REQ)["owner_result"].clone();
+        std::fs::write(
+            fx.root.join("exact-operation.json"),
+            serde_json::to_vec(&op).unwrap(),
+        )
+        .unwrap();
+        let result = fx.read("read_coding_job_result", REQ);
+        std::fs::write(
+            fx.root.join("exact-result.json"),
+            serde_json::to_vec(&result).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            op["collector_run"]["collector_deadline_exceeded"],
+            hanging && !interrupted
+        );
+        assert_eq!(op["collector_run"]["server_stop_requested"], interrupted);
+        assert_eq!(op["collector_run"]["killed_after_grace"], hanging);
+        assert_eq!(op["collector_run"]["status_collected"], true);
+        assert_eq!(
+            op["collector_run"]["process_cleanup"],
+            "owned_process_group_collected"
+        );
+        assert_eq!(
+            std::fs::read_to_string(fx.root.join("effects")).unwrap(),
+            "entered\n"
+        );
+        if hanging {
+            let artifact = &op["collector_run"]["stdout_artifact"];
+            let bytes = std::fs::read(artifact["path"].as_str().unwrap()).unwrap();
+            assert_eq!(hex(&bytes), artifact["sha256"]);
+            assert_eq!(bytes, b"partial-before-deadline\n");
+            let artifact = &op["collector_run"]["stderr_artifact"];
+            let bytes = std::fs::read(artifact["path"].as_str().unwrap()).unwrap();
+            assert_eq!(hex(&bytes), artifact["sha256"]);
+            assert_eq!(bytes, b"partial-stderr-before-deadline\n");
+        }
+        assert!(fx.stop().success());
+        fx.start();
+        assert_eq!(fx.submit(REQ)["owner_result"]["operation_id"], id);
+        assert_eq!(
+            std::fs::read_to_string(fx.root.join("effects")).unwrap(),
+            "entered\n"
+        );
+        assert_eq!(fx.runs(), 1);
+    }
+}
+
+/// Fresh operator-authored inputs and authority, prepared without editing generated JSON.
+fn prepared_docker_fixture(
+    fx: &mut Fx,
+    ordinal: u8,
+    command: &str,
+    timeout: u64,
+) -> (PathBuf, PathBuf) {
+    assert!(fx.stop().success());
+    let runtime = std::env::var("WORK_ENGINE_PI_ROOT").unwrap();
+    let toolchain = std::env::var("WORK_ENGINE_RUSTC_ROOT").unwrap();
+    let source_host = std::env::var("WORK_ENGINE_HOST_BINARY").unwrap();
+    // Keep this exact producing binary available after later repository rebuilds.
+    let host = fx.root.join("pinned-host");
+    std::fs::copy(source_host, &host).unwrap();
+    std::fs::set_permissions(&host, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let work = fx.root.join("prepared-workspace");
+    std::fs::create_dir_all(work.join("src")).unwrap();
+    std::fs::write(work.join("src/lib.rs"), b"// independent effect counter\n").unwrap();
+    let task = fx.root.join("task.txt");
+    std::fs::write(
+        &task,
+        b"Deterministically append the answer function once; no inference.",
+    )
+    .unwrap();
+    let validator = fx.root.join("acceptance.rs");
+    std::fs::write(&validator,b"#[path=\"/workspace/src/lib.rs\"] mod task; #[test] fn answer(){assert_eq!(task::answer(),42);}").unwrap();
+    let state = fx.root.join("prepared-state");
+    let out = fx.root.join("prepared-bundle");
+    let spec = json!({"schema":"work-engine.coding-preparation.v1","job_id":format!("prepared-{ordinal}"),"output_dir":out,"state_dir":state,"operation_root":fx.root.join("prepared-ops"),"host_binary":host,"task":task,"workspace":work,"validator":validator,"runtime":runtime,"toolchain":toolchain,"docker":"/usr/bin/docker","image":"node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da","deadline_unix_seconds":std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()+180,"command_timeout_seconds":timeout,"collector_deadline_seconds":120,"cancel_grace_seconds":3,"fixture_command":command});
+    let spec_path = fx.root.join("preparation.json");
+    private(&spec_path, &serde_json::to_vec(&spec).unwrap(), 0o600);
+    let prepare = env!("CARGO_BIN_EXE_coding-job-prepare");
+    let inspected = Command::new(prepare)
+        .args(["inspect", spec_path.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        inspected.status.success(),
+        "{}",
+        String::from_utf8_lossy(&inspected.stderr)
+    );
+    let inspected: Value = serde_json::from_slice(&inspected.stdout).unwrap();
+    // This fixture acts as a separately trusted operator; preparation never writes this grant.
+    let authority = json!({"schema":"work-engine.coding-preparation-authority.v1","spec_sha256":inspected["spec_sha256"],"inputs_sha256":inspected["inputs_sha256"],"job_id":spec["job_id"],"authorization_id":"auth-1","caller":"caller-1","credential_sha256":hex(CRED.as_bytes()),"allow_prepare":true,"allow_provider":false});
+    let authority_path = fx.root.join("preparation-authority.json");
+    private(
+        &authority_path,
+        &serde_json::to_vec(&authority).unwrap(),
+        0o600,
+    );
+    // Mutation after inspection must fail without producing a bundle.
+    std::fs::write(&task, b"changed input").unwrap();
+    let denied = Command::new(prepare)
+        .args([
+            "prepare",
+            spec_path.to_str().unwrap(),
+            authority_path.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!denied.status.success());
+    assert!(!out.exists());
+    std::fs::write(
+        &task,
+        b"Deterministically append the answer function once; no inference.",
+    )
+    .unwrap();
+    let prepared = Command::new(prepare)
+        .args([
+            "prepare",
+            spec_path.to_str().unwrap(),
+            authority_path.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        prepared.status.success(),
+        "{}",
+        String::from_utf8_lossy(&prepared.stderr)
+    );
+    let prepared: Value = serde_json::from_slice(&prepared.stdout).unwrap();
+    assert_eq!(prepared["provider_execution"], false);
+    let job: work_engine_manual_host::pi_docker::Job =
+        serde_json::from_slice(&std::fs::read(out.join("job.json")).unwrap()).unwrap();
+    assert!(job.coding.as_ref().unwrap().provider.is_none());
+    assert_eq!(
+        hex(&serde_json::to_vec(&job).unwrap()),
+        prepared["host_input_digest"]
+    );
+    fx.job_sha = prepared["job"]["sha256"].as_str().unwrap().into();
+    fx.packet_sha = prepared["packet_sha256"].as_str().unwrap().into();
+    let mut config: Value = serde_json::from_slice(&std::fs::read(&fx.config).unwrap()).unwrap();
+    config["coding_job_profile"] = prepared["job_profile"]["path"].clone();
+    private(&fx.config, &serde_json::to_vec(&config).unwrap(), 0o600);
+    std::fs::write(
+        fx.root.join("preparation-result.json"),
+        serde_json::to_vec(&prepared).unwrap(),
+    )
+    .unwrap();
+    fx.start();
+    (out, state)
+}
+
+#[test]
+#[ignore = "requires explicit pinned existing Docker/Pi/rustc assets and Host/command binaries"]
+fn two_fresh_prepared_docker_jobs_quiet_control_and_exact_command_replay() {
+    let mut operations = Vec::new();
+    for ordinal in 0..2 {
+        let request = if ordinal == 0 { REQ } else { REQ2 };
+        let mut fx = Fx::new();
+        fx._t.disable_cleanup(true);
+        println!("retained_actual_case={}", fx.root.display());
+        let edit = "printf 'pub fn answer() -> u32 { 42 } // EFFECT-ONCE\\n' >> src/lib.rs";
+        let command = if ordinal == 1 {
+            format!("sleep 2; {edit}")
+        } else {
+            edit.into()
+        };
+        let (_bundle, state) = prepared_docker_fixture(&mut fx, ordinal, &command, 10);
+        let cli = std::env::var("COMMAND_BINARY").unwrap();
+        let cli_profile = fx.root.join("prepared-cli.json");
+        private(&cli_profile,json!({"version":1,"kind":"local-service","endpoint":fx.addr.to_string(),"credential_file":fx.cred_file,"timeout_seconds":5}).to_string().as_bytes(),0o600);
+        let submit = fx.root.join("prepared-submit.json");
+        private(&submit,json!({"request_id":request,"authorization_id":"auth-1","job_credential":CRED,"job_sha256":fx.job_sha,"packet_sha256":fx.packet_sha}).to_string().as_bytes(),0o600);
+        let submitted = Command::new(&cli)
+            .args([
+                cli_profile.to_str().unwrap(),
+                "submit_coding_job",
+                "--json",
+                submit.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            submitted.status.success(),
+            "{}",
+            String::from_utf8_lossy(&submitted.stdout)
+        );
+        let value: Value = serde_json::from_slice(&submitted.stdout).unwrap();
+        let id = value["owner"]["operation_id"].clone();
+        fx.wait_request(request);
+        let result = fx.read("read_coding_job_result", request);
+        std::fs::write(
+            fx.root.join("exact-result.json"),
+            serde_json::to_vec(&result).unwrap(),
+        )
+        .unwrap();
+        println!("actual_result={result}");
+        assert_eq!(
+            result["owner_result"]["terminal"]["status"],
+            "component_passed"
+        );
+        assert_eq!(result["owner_result"]["acceptance"], "owner_pending");
+        let source = state.join("coding-workspace/src/lib.rs");
+        let counter = std::fs::read_to_string(&source).unwrap();
+        assert_eq!(counter.matches("EFFECT-ONCE").count(), 1);
+        assert!(fx.stop().success());
+        fx.start();
+        let repeated = fx.submit(request);
+        assert_eq!(
+            repeated["owner_result"]["operation_id"],
+            result["owner_result"]["operation"]["operation_id"]
+        );
+        assert_eq!(std::fs::read_to_string(&source).unwrap(), counter);
+        operations.push(result["owner_result"]["operation"]["operation_id"].clone());
+        let _ = id;
+    }
+    assert_ne!(
+        operations[0], operations[1],
+        "fresh isolated jobs have distinct operation identities"
+    );
+}
+
+#[test]
+#[ignore = "requires explicit pinned existing Docker/Pi/rustc assets and Host binary"]
+fn prepared_workspace_hang_deadline_retains_partial_output_and_closes_exact_containers() {
+    let mut fx = Fx::new();
+    fx._t.disable_cleanup(true);
+    println!("retained_workspace_fault={}", fx.root.display());
+    let command = "trap '' TERM; printf '// EFFECT-ONCE\\n' >> src/lib.rs; printf 'partial-workspace-hang\\n'; while :; do sleep 1; done";
+    let (_bundle, state) = prepared_docker_fixture(&mut fx, 2, command, 2);
+    let first = fx.submit(REQ)["owner_result"].clone();
+    let id = first["operation_id"].clone();
+    fx.wait_collected();
+    let result = fx.read("read_coding_job_result", REQ);
+    std::fs::write(
+        fx.root.join("exact-fault-result.json"),
+        serde_json::to_vec(&result).unwrap(),
+    )
+    .unwrap();
+    let result = &result["owner_result"];
+    assert_eq!(result["terminal"]["status"], "not_established");
+    assert_eq!(result["cleanup"]["removed"], true);
+    assert_eq!(result["cleanup"]["tool_removed"], true);
+    assert_eq!(result["acceptance"], "owner_pending");
+    let processes = result["receipt"]["processes"].as_array().unwrap();
+    let execution = processes
+        .iter()
+        .find(|p| {
+            p["stdout"]
+                .as_str()
+                .is_some_and(|s| s.contains("-coding-tool-exec-"))
+        })
+        .unwrap();
+    assert_eq!(
+        execution["timed_out"], true,
+        "workspace command deadline observed directly"
+    );
+    let bytes = std::fs::read(execution["stdout"].as_str().unwrap()).unwrap();
+    assert!(String::from_utf8_lossy(&bytes).contains("partial-workspace-hang"));
+    assert_eq!(hex(&bytes), execution["stdout_sha256"]);
+    let journal: Value =
+        serde_json::from_slice(&std::fs::read(state.join("pi-state.json")).unwrap()).unwrap();
+    let name = journal["container_name"].as_str().unwrap();
+    for suffix in ["", "-tool", "-validation"] {
+        let filter = format!("name=^/{name}{suffix}$");
+        let observed = Command::new("/usr/bin/docker")
+            .args([
+                "ps",
+                "--all",
+                "--no-trunc",
+                "--filter",
+                &filter,
+                "--format",
+                "{{.ID}}",
+            ])
+            .output()
+            .unwrap();
+        assert!(observed.status.success());
+        assert!(
+            observed.stdout.is_empty(),
+            "exact selected container remains"
+        );
+        std::fs::write(
+            fx.root.join(format!("absence{suffix}.stdout")),
+            observed.stdout,
+        )
+        .unwrap();
+    }
+    let source = state.join("coding-workspace/src/lib.rs");
+    let counter = std::fs::read_to_string(&source).unwrap();
+    assert_eq!(counter.matches("EFFECT-ONCE").count(), 1);
+    assert!(fx.stop().success());
+    fx.start();
+    assert_eq!(fx.submit(REQ)["owner_result"]["operation_id"], id);
+    assert_eq!(std::fs::read_to_string(source).unwrap(), counter);
+}
+
+#[test]
+fn sol_high_frontend_preserves_exact_profile_identity_and_original_receipt() {
+    let mut fx = Fx::new();
+    fx.enable_live_fixture_with(true);
+    let id = fx.submit(REQ)["owner_result"]["operation_id"].clone();
+    assert!(id.is_string());
+    fx.wait_collected();
+    let result = fx.read("read_coding_job_result", REQ);
+    assert_eq!(
+        result["owner_result"]["receipt"]["job"]["coding"]["schema"],
+        work_engine_manual_host::pi_docker::coding::SOL_HIGH_BRIDGE_PROFILE
+    );
+    assert_eq!(
+        result["owner_result"]["receipt"]["job"]["coding"]["provider"]["sol_high"]["reasoning_effort"],
+        "high"
+    );
+    assert_eq!(
+        result["owner_result"]["receipt"]["job"]["coding"]["provider"]["budget_microusd"],
+        17_680_004u64
+    );
+    assert_eq!(result["owner_result"]["acceptance"], "owner_pending");
+    assert!(fx.stop().success());
+    fx.start();
+    assert_eq!(fx.submit(REQ)["owner_result"]["operation_id"], id);
 }

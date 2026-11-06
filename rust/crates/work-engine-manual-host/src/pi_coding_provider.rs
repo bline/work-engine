@@ -84,6 +84,18 @@ impl ProviderPlan {
         }
         Ok(selected)
     }
+    /// Pure preparation check over the pinned public catalog; grants no entry
+    /// and neither inspects nor opens native credential references.
+    pub fn reservation_microusd(&self) -> Result<u64> {
+        let reserve = full_reservation(&self.selected()?)?;
+        let total = reserve
+            .checked_mul(self.max_requests.into())
+            .ok_or_else(|| Error::Refused("catalog reservation overflow".into()))?;
+        if total > self.budget_microusd {
+            return refuse("full catalog request reservations exceed runtime proxy budget");
+        }
+        Ok(total)
+    }
     pub(super) fn validate(&self, job: &Job) -> Result<()> {
         let sol = self.sol_high.is_some();
         if if let Some(tuple) = &self.sol_high {
@@ -154,14 +166,7 @@ impl ProviderPlan {
         if self.task.verify()?.len() > 32768 {
             return refuse("provider task input exceeded bound");
         }
-        let selected = self.selected()?;
-        let reserve = full_reservation(&selected)?;
-        if reserve
-            .checked_mul(self.max_requests.into())
-            .is_none_or(|v| v > self.budget_microusd)
-        {
-            return refuse("full catalog request reservations exceed runtime proxy budget");
-        }
+        self.reservation_microusd()?;
         let admission: Admission = serde_json::from_slice(&job.authority.verify()?)
             .map_err(|_| Error::Refused("exact provider runtime admission required".into()))?;
         if admission.schema

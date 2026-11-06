@@ -248,6 +248,17 @@ fn continuity_try(
     PathBuf,
     Result<CodingContinuity, work_engine_manual_host::Error>,
 ) {
+    continuity_try_mode(live, mixed, class, false)
+}
+fn continuity_try_mode(
+    live: bool,
+    mixed: Option<()>,
+    class: Option<&str>,
+    sol: bool,
+) -> (
+    PathBuf,
+    Result<CodingContinuity, work_engine_manual_host::Error>,
+) {
     let root = std::env::temp_dir().join(format!(
         "coding-protocol-{}-{}",
         std::process::id(),
@@ -301,13 +312,17 @@ fn continuity_try(
             subject,
             ContextGeneration::parse("context:old").unwrap(),
             RuntimeIncarnation::parse("incarnation:pi:coding").unwrap(),
-            &if live {
+            &if sol {
+                pi_coding_sol_high_profile_digest()
+            } else if live {
                 pi_coding_live_profile_digest()
             } else {
                 pi_coding_profile_digest()
             },
             PI_SDK_INDEX_SHA256,
-            &if live && mixed.is_none() {
+            &if sol {
+                pi_coding_sol_high_protocol_digest()
+            } else if live && mixed.is_none() {
                 pi_coding_live_protocol_digest()
             } else {
                 pi_coding_protocol_digest()
@@ -319,7 +334,7 @@ fn continuity_try(
         )
         .unwrap();
     let config = CodingConfig {
-        sol_high: false,
+        sol_high: sol,
         task: live.then(|| "Fix the disposable crate so the acceptance tests pass.".to_string()),
         budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":class.unwrap_or(if live {"live_provider_observation"} else {"provider_disabled_fixture"}),"available":true,"max_provider_requests":4,"max_tool_calls":1,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-root-budget","generation":"fixture:1","observed_ms":100,"max_age_ms":300000}),
         expires_ms: 1000,
@@ -349,6 +364,7 @@ struct SyntheticSdk {
     system_mutation: u8,
     live: bool,
     preamble: bool,
+    thinking: bool,
 }
 impl SyntheticSdk {
     fn new(session: &str, requests: u64) -> Self {
@@ -361,7 +377,14 @@ impl SyntheticSdk {
             system_mutation: 0,
             live: false,
             preamble: false,
+            thinking: false,
         }
+    }
+    fn assistant(&self, mut m: serde_json::Value) -> serde_json::Value {
+        if self.thinking {
+            m["content"].as_array_mut().unwrap().insert(0,json!({"type":"thinking","thinking":"synthetic high reasoning","thinkingSignature":"{\"type\":\"reasoning\",\"id\":\"fixture\"}"}));
+        }
+        m
     }
     fn native(&self, c: &mut CodingContinuity, event: serde_json::Value) {
         assert!(
@@ -442,7 +465,8 @@ impl SyntheticSdk {
             } else {
                 json!([call])
             };
-            let assistant = json!({"role":"assistant","content":content,"stopReason":"toolUse"});
+            let assistant = self
+                .assistant(json!({"role":"assistant","content":content,"stopReason":"toolUse"}));
             self.message(c, assistant.clone());
             generated.push(assistant.clone());
             self.native(c,json!({"type":"tool_execution_start","toolCallId":"one","toolName":"workspace_exec","args":call["arguments"]}));
@@ -495,7 +519,7 @@ impl SyntheticSdk {
         } else {
             response["reply"].clone()
         };
-        let final_message = json!({"role":"assistant","content":[{"type":"text","text":reply}],"stopReason":"stop"});
+        let final_message = self.assistant(json!({"role":"assistant","content":[{"type":"text","text":reply}],"stopReason":"stop"}));
         self.message(c, final_message.clone());
         generated.push(final_message.clone());
         self.native(
@@ -691,7 +715,16 @@ fn run_complete(
     live: bool,
     preamble: bool,
 ) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
-    let (root, mut c) = continuity_fixture_with(live, None);
+    run_complete_mode(live, preamble, false)
+}
+fn run_complete_mode(
+    live: bool,
+    preamble: bool,
+    sol: bool,
+) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
+    let (root, c) = continuity_try_mode(live, None, None, sol);
+    let mut c = c?;
+
     let commands = c
         .frame(
             &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
@@ -709,6 +742,7 @@ fn run_complete(
     control(&mut c, &original);
     let mut sdk = SyntheticSdk::new("physical:old", 0);
     sdk.live = live;
+    sdk.thinking = sol;
     sdk.preamble = preamble;
     let reset = sdk.turn(&mut c, &original, Some(&root))?;
     assert_eq!(reset["type"], "bridge_replace");
@@ -718,7 +752,11 @@ fn run_complete(
     let text = recovery["prompt"].as_str().unwrap();
     if live {
         // Sole recovery input is the owner-derived checkpoint, not model text.
-        assert!(text.contains("work-engine.pi-coding-live-continuity.v1"));
+        assert!(text.contains(if sol {
+            "work-engine.pi-coding-sol-high-continuity.v1"
+        } else {
+            "work-engine.pi-coding-live-continuity.v1"
+        }));
         assert!(
             text.contains("coding_result_sha256") && text.contains("workspace_manifest_sha256")
         );
@@ -728,6 +766,7 @@ fn run_complete(
     control(&mut c, &recovery);
     let mut fresh = SyntheticSdk::new("physical:new", 2);
     fresh.live = live;
+    fresh.thinking = sol;
     let continued = fresh.turn(&mut c, &recovery, None).unwrap();
     control(&mut c, &continued);
     let close = fresh.turn(&mut c, &continued, None).unwrap();
@@ -795,5 +834,32 @@ fn live_and_fixture_budget_labels_and_mixed_identities_cannot_substitute() {
         .is_err()
     );
     drop(c);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn sol_high_thinking_profile_resets_rehydrates_and_continues_exactly_once() {
+    let (root, c) = run_complete_mode(true, true, true).unwrap();
+    let report = c.report().unwrap();
+    assert_eq!(report["provider_requests"], 4);
+    assert_eq!(report["physical_resets"], 1);
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    let checkpoint: serde_json::Value =
+        serde_json::from_str(report["checkpoint"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        checkpoint["profile"],
+        "work-engine.pi-coding-sol-high-continuity.v1"
+    );
+    drop(c);
+    let reopened = SqliteLifecycleStore::open(&root, "fixture-root".into()).unwrap();
+    assert_eq!(
+        reopened
+            .native_recovery("continued")
+            .unwrap()
+            .unwrap()
+            .class,
+        "CompletedSettled"
+    );
+    drop(reopened);
     fs::remove_dir_all(root).unwrap();
 }

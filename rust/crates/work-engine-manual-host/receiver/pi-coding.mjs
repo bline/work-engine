@@ -88,14 +88,14 @@ try {
  const agentDir=live?'/config':'/tmp/pi-empty';
  const resourceLoader=new DefaultResourceLoader({cwd:'/workspace',agentDir,settingsManager,noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true});
  await resourceLoader.reload();
- let modelRuntime,rawTerminalEvidence;
+ let modelRuntime,rawTerminalEvidence,providerOptions={thinkingLevel:'off'};
  if(live){
   if(config.schema!==schema||config.provider!=='openai-codex'||(solHigh?(config.model!=='gpt-6.1-sol'||config.solHigh?.schema!=='work-engine.sol-high.v1'||config.solHigh?.reasoning_effort!=='high'||typeof config.solHigh?.payer_account_id!=='string'||!config.solHigh.payer_account_id):config.model!=='gpt-6-luna'))throw Error('provider configuration rejected');
   const nativeAccess=await import('/receiver/pi-native-access.mjs');
   if(signed)checkConsumption(signedDeadline);
   const {createNativeAccessStore}=nativeAccess;rawTerminalEvidence=nativeAccess.rawTerminalEvidence;
   const grant=JSON.parse(readFileSync('/auth/access.json','utf8'));
-  if(solHigh&&grant.account_id!==config.solHigh.payer_account_id)throw Error('payer account mismatch');
+  providerOptions=nativeAccess.codingSessionOptions(config,grant);
   const credentials=createNativeAccessStore(grant);
   modelRuntime=await ModelRuntime.create({credentials,modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
   if(signed)checkConsumption(signedDeadline);
@@ -119,7 +119,7 @@ try {
    });
    return {content:[{type:'text',text:result.output}],details:{hostReportedSuccess:result.ok}};
   }};
- const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,thinkingLevel:solHigh?'high':'off',noTools:'builtin',tools:['workspace_exec'],customTools:[tool]};
+ const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:['workspace_exec'],customTools:[tool]};
  function bindBridge(selected,services){
   session=selected;
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);

@@ -878,10 +878,10 @@ fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_block
         match v {
             Value::Array(a) => a.iter_mut().for_each(|v| inject(v, malformed)),
             Value::Object(o) => {
-                if o.get("role").is_some_and(|r| r == "assistant") {
-                    if let Some(Value::Array(a)) = o.get_mut("content") {
-                        a.insert(0, json!({"type":"thinking","thinking":"fixture reasoning", "thinkingSignature":if malformed {"not-json"} else {"{\"type\":\"reasoning\",\"id\":\"r-fixture\",\"encrypted_content\":\"fixture\"}"}}));
-                    }
+                if o.get("role").is_some_and(|r| r == "assistant")
+                    && let Some(Value::Array(a)) = o.get_mut("content")
+                {
+                    a.insert(0, json!({"type":"thinking","thinking":"fixture reasoning", "thinkingSignature":if malformed {"not-json"} else {"{\"type\":\"reasoning\",\"id\":\"r-fixture\",\"encrypted_content\":\"fixture\"}"}}));
                 }
                 o.values_mut().for_each(|v| inject(v, malformed));
             }

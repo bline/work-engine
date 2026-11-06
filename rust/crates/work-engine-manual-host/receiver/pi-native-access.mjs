@@ -21,3 +21,13 @@ export function rawTerminalEvidence(data){
  const response=data.response;
  return {eventType:data.type,status:response?.status,usage:{input_tokens:response?.usage?.input_tokens,output_tokens:response?.usage?.output_tokens,total_tokens:response?.usage?.total_tokens}};
 }
+
+// Shared by actual receiver session construction and provider-free wire qualification.
+export function codingSessionOptions(config, grant) {
+ if(config.schema!=='work-engine.pi-coding-lifecycle-sol-high.v1')return {thinkingLevel:'off'};
+ const tuple=config.solHigh;
+ if(config.model!=='gpt-6.1-sol'||!tuple||Object.keys(tuple).sort().join(',')!=='payer_account_id,reasoning_effort,schema'
+   ||tuple.schema!=='work-engine.sol-high.v1'||tuple.reasoning_effort!=='high'
+   ||typeof tuple.payer_account_id!=='string'||!tuple.payer_account_id||tuple.payer_account_id!==grant.account_id)throw Error('Sol/high session tuple or payer mismatch');
+ return {thinkingLevel:'high'};
+}

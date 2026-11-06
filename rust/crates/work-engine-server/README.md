@@ -284,3 +284,10 @@ It uses the existing lifecycle-live Host profile and canonical public Job DTO;
 version 1 offline profiles retain provider refusal. The config capability must
 match the profile. See the operating guide for exact pins, limits, the producer
 facade and the separate live admission/acceptance obligations.
+
+The Rust `coding-job-prepare` operator entry prepares fresh exact bundles from
+explicit task/workspace/validator/limits and separately trusted authority inputs.
+Its [operating reference](docs/coding-preparation.md) covers provider-disabled
+submission, separately versioned Sol/high preparation, compatibility and the
+limits of collector, workspace and container evidence. Preparation executes no
+inference and grants no provider permission.

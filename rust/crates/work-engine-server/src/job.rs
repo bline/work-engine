@@ -172,7 +172,10 @@ mod host {
 /// Host job/profile versions and unknown fields have no supported digest.
 fn host_input_digest(job: &Value) -> Option<String> {
     // The live class uses the owner's public versioned DTO, including emitted defaults.
-    if job["coding"]["schema"] == work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE {
+    if job["coding"]["schema"]
+        .as_str()
+        .is_some_and(work_engine_manual_host::pi_docker::coding::is_live_bridge)
+    {
         let typed: work_engine_manual_host::pi_docker::Job =
             serde_json::from_value(job.clone()).ok()?;
         if typed.schema != HOST_JOB_SCHEMA
@@ -317,6 +320,9 @@ fn private_dir(path: &Path) -> bool {
         .is_ok_and(|m| m.is_dir() && m.uid() == unsafe { libc::geteuid() } && m.mode() & 0o077 == 0)
 }
 fn write_atomic(path: &Path, value: &Value) -> Result<(), &'static str> {
+    write_atomic_bytes(path, value.to_string().as_bytes())
+}
+fn write_atomic_bytes(path: &Path, bytes: &[u8]) -> Result<(), &'static str> {
     let tmp = path.with_extension("tmp");
     let mut f = OpenOptions::new()
         .write(true)
@@ -326,7 +332,7 @@ fn write_atomic(path: &Path, value: &Value) -> Result<(), &'static str> {
         .custom_flags(libc::O_NOFOLLOW)
         .open(&tmp)
         .map_err(|_| "owner_unavailable")?;
-    f.write_all(value.to_string().as_bytes())
+    f.write_all(bytes)
         .and_then(|_| f.sync_all())
         .map_err(|_| "owner_unavailable")?;
     std::fs::rename(&tmp, path).map_err(|_| "owner_unavailable")?;
@@ -407,6 +413,10 @@ struct Child {
     stdout: Vec<u8>,
     stdout_truncated: bool,
     stderr_bytes: usize,
+    stderr: Vec<u8>,
+    stderr_truncated: bool,
+    stdout_collected: bool,
+    stderr_collected: bool,
     readers_joined: bool,
 }
 
@@ -902,6 +912,10 @@ impl Jobs {
             stdout: Vec::new(),
             stdout_truncated: false,
             stderr_bytes: 0,
+            stderr: Vec::new(),
+            stderr_truncated: false,
+            stdout_collected: false,
+            stderr_collected: false,
             readers_joined: false,
         };
         let mut grace_until: Option<Instant> = None;
@@ -958,10 +972,14 @@ impl Jobs {
         let e = join(err_reader);
         result.readers_joined = o.is_some() && e.is_some();
         if let Some((kept, total)) = o {
+            result.stdout_collected = true;
             result.stdout_truncated = total > kept.len();
             result.stdout = kept;
         }
-        if let Some((_, total)) = e {
+        if let Some((kept, total)) = e {
+            result.stderr_collected = true;
+            result.stderr_truncated = total > kept.len();
+            result.stderr = kept;
             result.stderr_bytes = total;
         }
         Ok(result)
@@ -999,14 +1017,36 @@ impl Jobs {
             Duration::from_secs(self.profile.collector_deadline_seconds),
             Some(a),
         );
+        // Keep the bounded exact prefix even when a child hangs, is interrupted,
+        // or emits malformed/non-JSON output. A digest alone cannot recover it.
+        let stdout_artifact = outcome
+            .as_ref()
+            .ok()
+            .filter(|c| c.stdout_collected)
+            .and_then(|c| {
+                let path = dir.join(format!("collector-{action}.stdout"));
+                write_atomic_bytes(&path, &c.stdout)
+                    .ok()
+                    .map(|()| json!({"path":path,"sha256":hex(&c.stdout),"bytes":c.stdout.len()}))
+            });
+        let stderr_artifact = outcome
+            .as_ref()
+            .ok()
+            .filter(|c| c.stderr_collected)
+            .and_then(|c| {
+                let path = dir.join(format!("collector-{action}.stderr"));
+                write_atomic_bytes(&path, &c.stderr)
+                    .ok()
+                    .map(|()| json!({"path":path,"sha256":hex(&c.stderr),"bytes":c.stderr.len()}))
+            });
         let record = match &outcome {
             Ok(c) => json!({
                 "schema":SCHEMA,"action":action,"started_unix_seconds":started,"ended_unix_seconds":now(),
                 "exit_code":c.exit_code,"exit_signal":c.exit_signal,"collector_deadline_exceeded":c.timed_out,
                 "server_stop_requested":c.stopped,"cancel_marker_requested":c.cancel_marker_requested,
                 "killed_after_grace":c.killed,"status_collected":c.waited,
-                "stdout_sha256":hex(&c.stdout),"stdout_truncated":c.stdout_truncated,
-                "stderr_bytes":c.stderr_bytes,"readers_joined":c.readers_joined,
+                "stdout_sha256":hex(&c.stdout),"stdout_truncated":c.stdout_truncated,"stdout_artifact":stdout_artifact,
+                "stderr_bytes":c.stderr_bytes,"stderr_sha256":if c.stderr_collected {Some(hex(&c.stderr))} else {None},"stderr_truncated":c.stderr_truncated,"stderr_artifact":stderr_artifact,"stdout_collected":c.stdout_collected,"stderr_collected":c.stderr_collected,"readers_joined":c.readers_joined,
                 "process_cleanup":if c.waited && c.readers_joined {"owned_process_group_collected"} else {"not_established"},
             }),
             Err(code) => json!({
