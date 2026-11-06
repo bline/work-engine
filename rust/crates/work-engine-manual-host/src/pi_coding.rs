@@ -263,6 +263,10 @@ pub struct State {
     pub final_acceptance: Option<validation::Proof>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub claims_requests: BTreeMap<String, Option<Artifact>>,
+    /// Requested tool per claims call id, retained so a native completion must
+    /// name the same tool (a different claims tool cannot satisfy a request).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub claims_tools: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub native_claims_ids: BTreeSet<String>,
     #[serde(default, skip_serializing_if = "is_zero")]
@@ -1280,11 +1284,7 @@ impl Host {
                         return refuse("duplicate or excess claims request");
                     }
                     state.claims_requests.insert(id.clone(), None);
-                    if state.replaced {
-                        state.claims_after_replacement += 1;
-                    } else {
-                        state.claims_before_replacement += 1;
-                    }
+                    state.claims_tools.insert(id.clone(), tool.clone());
                     self.save()?; // intent precedes the read; None stays unknown
                     let deadline_ms = self.journal.job.deadline_unix_seconds.saturating_mul(1000);
                     let now_ms = std::time::SystemTime::now()
@@ -1323,12 +1323,18 @@ impl Host {
                         sha256: file_digest(&path, None)?,
                         path,
                     };
-                    self.journal
-                        .coding
-                        .as_mut()
-                        .unwrap()
-                        .claims_requests
-                        .insert(id, Some(artifact));
+                    let delivered_ok = result["ok"] == true;
+                    let state = self.journal.coding.as_mut().unwrap();
+                    state.claims_requests.insert(id, Some(artifact));
+                    // Only successful owner deliveries count as recovered bytes;
+                    // completed refusals are retained but never counted.
+                    if delivered_ok {
+                        if state.replaced {
+                            state.claims_after_replacement += 1;
+                        } else {
+                            state.claims_before_replacement += 1;
+                        }
+                    }
                     self.save()?;
                     replies.push(bytes);
                 }
@@ -1373,8 +1379,30 @@ impl Host {
                             .as_str()
                             .ok_or_else(|| Error::Refused("native claims id absent".into()))?;
                         let state = self.journal.coding.as_mut().unwrap();
+                        let delivered: Option<Value> = state
+                            .claims_requests
+                            .get(id)
+                            .and_then(Option::as_ref)
+                            .and_then(|a| a.verify().ok())
+                            .and_then(|b| serde_json::from_slice(&b).ok());
+                        let Some(delivered) = delivered else {
+                            return refuse("native claims completion mismatch");
+                        };
+                        let ok = delivered["ok"] == true;
+                        let expected = if ok {
+                            delivered["result"].clone()
+                        } else {
+                            json!({"error":delivered["error"]})
+                        };
+                        let native_text = event["result"]["content"][0]["text"]
+                            .as_str()
+                            .and_then(|t| serde_json::from_str::<Value>(t).ok());
                         if event["isError"] != false
-                            || !state.claims_requests.get(id).is_some_and(Option::is_some)
+                            || state.claims_tools.get(id).map(String::as_str)
+                                != event["toolName"].as_str()
+                            || event["result"]["content"].as_array().map(Vec::len) != Some(1)
+                            || native_text.as_ref() != Some(&expected)
+                            || event["result"]["details"]["hostReportedSuccess"] != json!(ok)
                             || !state.native_claims_ids.insert(id.into())
                         {
                             return refuse("native claims completion mismatch");
@@ -2144,9 +2172,17 @@ mod tests {
     fn claims_completion_needs_native_evidence_before_and_after_replacement() {
         let (_d, mut h, _) = claims_host(false);
         let mut acc: Vec<u8> = Vec::new();
-        let native = |id: &str, name: &str| {
+        let native_with = |id: &str, name: &str, text: &str, ok: bool| {
             frame(
-                json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"native_event","event":{"type":"tool_execution_end","toolCallId":id,"toolName":name,"isError":false}}),
+                json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"native_event","event":{"type":"tool_execution_end","toolCallId":id,"toolName":name,"isError":false,"result":{"content":[{"type":"text","text":text}],"details":{"hostReportedSuccess":ok}}}}),
+            )
+        };
+        let native = |id: &str, name: &str| {
+            native_with(
+                id,
+                name,
+                &json!({"schema":"claims-consumer-page-v1","text":"owner bytes"}).to_string(),
+                true,
             )
         };
         // Native completion for a never-requested claims id refuses.
@@ -2157,6 +2193,30 @@ mod tests {
             claims_frame("c1", "claims_discover", json!({"query":"a"})),
         )
         .unwrap();
+        // A completion naming another claims tool, different result bytes or a
+        // different outcome cannot satisfy the request.
+        assert!(
+            adv(&mut h, &mut acc, native("c1", "claims_currency")).is_err(),
+            "different tool"
+        );
+        assert!(
+            adv(
+                &mut h,
+                &mut acc,
+                native_with("c1", "claims_discover", "{\"text\":\"other\"}", true)
+            )
+            .is_err(),
+            "different result"
+        );
+        assert!(
+            adv(
+                &mut h,
+                &mut acc,
+                native_with("c1", "claims_discover", "{\"error\":\"x\"}", false)
+            )
+            .is_err(),
+            "wrong outcome"
+        );
         adv(&mut h, &mut acc, native("c1", "claims_discover")).unwrap();
         assert!(
             adv(&mut h, &mut acc, native("c1", "claims_discover")).is_err(),
@@ -2201,6 +2261,48 @@ mod tests {
         assert!(adv(&mut h, &mut acc, native("c2", "bash")).is_err());
         adv(&mut h, &mut acc, complete.clone()).unwrap();
         assert!(h.journal.coding.as_ref().unwrap().completed);
+    }
+    #[test]
+    fn completed_refusals_do_not_count_as_successful_claims_delivery() {
+        let (_d, mut h, _) = claims_host(true); // gate refuses every read
+        let mut acc: Vec<u8> = Vec::new();
+        let replies = adv(
+            &mut h,
+            &mut acc,
+            claims_frame("r1", "claims_resolve", json!({"claim_id":"a"})),
+        )
+        .unwrap();
+        let reply: Value = serde_json::from_slice(&replies[0]).unwrap();
+        assert_eq!(reply["ok"], false);
+        let text = json!({"error":reply["error"]}).to_string();
+        adv(
+            &mut h,
+            &mut acc,
+            frame(
+                json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"native_event","event":{"type":"tool_execution_end","toolCallId":"r1","toolName":"claims_resolve","isError":false,"result":{"content":[{"type":"text","text":text}],"details":{"hostReportedSuccess":false}}}}),
+            ),
+        )
+        .unwrap();
+        let st = h.journal.coding.as_mut().unwrap();
+        assert_eq!(
+            (st.claims_before_replacement, st.claims_after_replacement),
+            (0, 0),
+            "a refusal is retained but is not delivery evidence"
+        );
+        st.replaced = true;
+        st.tool_requests.insert(
+            "w".into(),
+            Some(Artifact {
+                path: "/unused".into(),
+                sha256: "0".repeat(64),
+            }),
+        );
+        st.native_tool_ends = 1;
+        st.native_tool_ids.insert("w".into());
+        let complete = frame(
+            json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"complete","counts":{"providerRequests":4,"resets":1}}),
+        );
+        assert!(adv(&mut h, &mut acc, complete).is_err(), "all-refused");
     }
     #[test]
     fn claims_profile_ready_tool_set_is_exact_and_legacy_sets_are_unchanged() {
