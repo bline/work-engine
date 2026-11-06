@@ -168,3 +168,32 @@ mod tests {
         assert!(!is_es_iso_timestamp("-000000-01-01T00:00:00Z"));
     }
 }
+
+#[cfg(test)]
+mod offset_regressions {
+    use super::is_es_iso_timestamp;
+
+    #[test]
+    fn upper_timeclip_with_offsets() {
+        for (input, expected) in [
+            ("+275760-09-13T01:00:00.000+01:00", true),
+            ("+275760-09-12T23:00:00.000-01:00", true),
+            ("+275760-09-13T01:00:00.001+01:00", false),
+            ("+275760-09-12T23:00:00.001-01:00", false),
+        ] {
+            assert_eq!(is_es_iso_timestamp(input), expected, "input: {input}");
+        }
+    }
+
+    #[test]
+    fn lower_timeclip_with_offsets() {
+        for (input, expected) in [
+            ("-271821-04-20T01:00:00.000+01:00", true),
+            ("-271821-04-19T23:00:00.000-01:00", true),
+            ("-271821-04-20T00:59:59.999+01:00", false),
+            ("-271821-04-19T22:59:59.999-01:00", false),
+        ] {
+            assert_eq!(is_es_iso_timestamp(input), expected, "input: {input}");
+        }
+    }
+}
