@@ -74,6 +74,8 @@ The `v1.5.0` tag, rather than just `main`, was checked. [S1, S14–S16]
 | Print mode final truncated assistant response | Detects `stopReason === "length"`, prints an error and sets process exit code 1 when final message is assistant. | Machine-friendly failure signal, but Work Engine must still inspect events/outcome and not equate generic exit `0` with accepted work. |
 | Context compaction                            | Pi has built-in policy and recovery hooks, but policy quality on Work Engine's workload is unproven.             | Pin/configure and benchmark; do not assume compaction restores all decision-relevant evidence.                                         |
 | Permissions/isolation                         | No built-in Codex-equivalent default sandbox/approval mechanism.                                                 | Keep execution in Work Engine's OS/Docker/authority boundary.                                                                          |
+| Native tool batches                          | Multiple calls per response; parallel default, with whole-batch sequential override. [S15, S21]                 | Measure model batching separately from dispatch concurrency; our custom receiver currently selects sequential tools.                  |
+| Optional Codemode                            | JavaScript can call tools and filter results; no default script deadline or rollback of completed calls. [S20] | Qualify nested admission, bounded execution, recoverable evidence and independent acceptance before enabling the surface.               |
 
 Version warning: Both the 66-configuration study (`0.84.4`) and FrontierHarness (`0.84.2`) used older Pi. Their measured failures are evidence about those versions and workloads; source inspection establishes which implementation hazards persist in `v1.5.0`. It does not establish the same failure frequency in `v1.5.0`.
 
@@ -94,6 +96,7 @@ Severity: P0 must pass before any unattended execution; P1 before sustained codi
 | E07 / P0      | Partial side effects / cancellation race (H). Kill after write but before receipt; duplicate retry could repeat effect.                  | Kill at command start, after partial write, before receipt persistence.                | Idempotency key, durable intent + outcome, hashes, conflict/ownership checks, restore/repair path; default fail-closed on unknown effects.                                                                |
 | E08 / P1      | Host/Pi restart, compaction, and session resume mismatch (H). Persisted transcript may not reproduce executable state or tool authority. | SIGKILL Pi; restart with pinned session; repeat at compaction boundary.                | Work Engine stores authoritative task/authority/receipts outside Pi, validates session identity, rehydrates only safe context, and reconciles running effects.                                            |
 | E09 / P1      | Model/transient service failure (H). 429, 5xx, dropped stream, timeout, authentication expiry.                                           | Inject each error at token-stream and tool-result boundaries.                          | Classify retryable/nonretryable; bounded backoff; no implicit payer/provider switching; preserve exact call/usage evidence.                                                                               |
+| E10 / P0      | Batch fan-out and stale preflight (V/H). The native parallel dispatch path has no general concurrency limiter; authority can expire while work waits. | Oversized batch, delayed preflight/queue, mixed denial, cancellation and restart. | Host bounds active and queued work, cumulative resources and deadlines; revalidates at dispatch and preserves each call's outcome. Applies before admitting this surface. |
 
 ### 4B. Safety, authority, tool surface and extension boundaries
 
@@ -105,6 +108,7 @@ Severity: P0 must pass before any unattended execution; P1 before sustained codi
 | S04 / P1      | Extension supply-chain and drift (H). Packages are executable code and may change, or silently replace built-in tools.        | Verify exact versions/hash, load precedence, install failure, upgrade diff.                                | Pinned lockfile, audited source, isolated install, checksums, reproducible image; CI requalification after upgrades.                                                |
 | S05 / P1      | Prompt injection/context contamination (H). Repository instructions/skills leak into supposedly isolated benchmark or policy. | Plant hostile `AGENTS.md`, `CLAUDE.md`, user home skills, retrieved tool output.                           | Explicit context-file inventory; isolated `HOME`/workspace; distinguish untrusted repo material from policy; no secrets in model-visible env.                       |
 | S06 / P1      | Security of OAuth/access tokens (official docs). Agent or tool might print/copy credentials.                                  | Check logs, crash reports, proxy requests, env visibility, exposed files.                                  | Protected credential broker; do not mount tokens into writable agent workspace; redact logs and URLs; separate trusted inference process from untrusted tools. [S6] |
+| S07 / P0      | Codemode expands nested tool/inference entrypoints (V/H). A script could bypass accounting or hide failed/partial operations. | Attempt unadmitted tools/model helpers; fail after a completed call; suppress an error in projected output. | Runtime owner checks every nested entry and collects owned execution; evidence owner retains raw outcomes; acceptance never relies only on the script summary. Applies before enabling Codemode. |
 
 ### 4C. Inference, quota and subscription/API paths
 
@@ -131,6 +135,7 @@ Critical official limitation for `openai` + ChatGPT OAuth (as of this date): Res
 | Q04 / P0      | Model self-certification is unreliable (B). Failed task may end with “everything verified.”                                           | Deliberately fail hidden acceptance test while agent reports success.                    | Independent verifier must check predeclared acceptance criteria, artifacts, hashes, exit codes and scope. Never promote model claim to accepted receipt.   |
 | Q05 / P1      | Long-run degradation, work loops and failed handoff (H). Multi-hour repository work untested by published benchmarks.                 | Real Rust slice with architecture exploration, tests, edits, restart, forced compaction. | Bounded milestones, host-observed progress and independent review; resumable state and escalation.                                                         |
 | Q06 / P1      | Review/repair cost hidden by “first pass” measurements (B/H). Fast cheap run can fail gates repeatedly.                               | Require reviewer and repair loop for both harnesses.                                     | Primary outcome is cost/time per independently accepted change including all failed attempts and repairs.                                                  |
+| Q07 / P2      | Filtering loses decisive evidence or merely shifts retrieval cost (H). Smaller output may hide counterexamples or cause repeated reads. | Matched full/filtered read tasks with errors, distractors, truncation and planted counterevidence. | Preserve retrievable source digests/ranges and omissions; measure total tokens, retrieval, review and independently accepted quality. |
 
 ### 4E. CLI interoperability if proprietary CLIs are retained temporarily
 
@@ -245,6 +250,18 @@ Definition of observable progress: not merely output or token activity. Examples
 
 Proposed first run: Keep the existing Pi-in-Docker real Rust coding fix as supporting evidence, but do not treat it as an A/B result. Run one pinned model/prompt in Pi and Codex on the same fresh Rust task with identical review gates. Pair that with F01, F05, F06 and F07. This obtains the highest-value go/no-go evidence before funding a long campaign.
 
+### 6.6 Tool batching and result filtering
+
+The [2026-11-06 workstream](../planning/pi-tool-batching-and-result-filtering-qualification-20261106.md)
+adds a focused same-Pi comparison: native sequential and bounded parallel calls,
+then Codemode with full and filtered results. Both native cells allow batching;
+record actual calls per model response. Distinguish round-trip savings, dispatch
+latency and returned-context reduction. Start with deterministic Host/SDK cases
+and read-only tasks; extend to writes only with independent acceptance and
+recovery checks. Risk cases E10, S07 and Q07 remain open, with no runtime
+activation or new live budget implied. Installed support is not qualification
+of our custom receiver; the linked plan pins the inspected sources and limits.
+
 ## 7. Auth, quota and billing test plan (do not conflate)
 
 Three distinct inference routes must be represented as different budget types:
@@ -290,6 +307,7 @@ Quota telemetry caveat: Some third-party Pi usage extensions state that the new 
 ### P2 — broader quality/performance research
 
 - Compare Pi stock vs changed tool schema, prompt size and compaction policy, one independent variable at a time.
+- Qualify batching, bounded dispatch and result filtering under [§6.6](#66-tool-batching-and-result-filtering); pass applicable E10/S07 controls before exposing those capabilities.
 - Test additional model–harness tuples rather than extrapolating GPT results to Claude/Kimi.
 - Benchmark concurrency, quota consumption vs token ledger, and behavior at context and weekly app limits.
 - Review/upgrade third-party packages only after pinned regression suites pass.
@@ -339,6 +357,8 @@ Sources are linked directly so this file remains self-contained. “Verified” 
 - [S17] OAuth proxy problem: [Pi issue #11022](https://github.com/earendil-works/pi/issues/11022?utm_source=chatgpt.com). Issue report, not proof all configurations remain broken.
 - [S18] Temporary timeout extension: [`cad0p/pi-bash-timeout`](https://github.com/cad0p/pi-bash-timeout?utm_source=chatgpt.com), [Pi package page](https://pi.dev/packages/@cad0p/pi-bash-timeout?utm_source=chatgpt.com). Extension behavior and limitations documented.
 - [S19] Usage telemetry compatibility: [Pi subscription-usage extension notes](https://pi.dev/packages/@specode/pi-subscription-usage?utm_source=chatgpt.com). Third-party monitoring report, not an official quota endpoint guarantee.
+- [S20] Tagged Codemode documentation: [`codemode.md` v1.5.0](https://github.com/earendil-works/pi/blob/v1.5.0/packages/coding-agent/docs/codemode.md). Inspected 2026-11-06 together with installed 1.5.0 documentation; script projection, deadline and partial-effect behavior. No execution qualification claimed.
+- [S21] Tagged agent defaults: [`agent.ts` v1.5.0](https://github.com/earendil-works/pi/blob/v1.5.0/packages/agent/src/agent.ts), with installed `pi-agent-core/dist/agent.js` and `agent-loop.js` inspected 2026-11-06. Installed parallel default and batch override/dispatch confirmed; exact hashes and current receiver differences are in the §6.6 workstream.
 
 ### Document maintenance rule
 
