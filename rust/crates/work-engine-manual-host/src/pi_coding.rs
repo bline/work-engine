@@ -1299,7 +1299,7 @@ impl Host {
                         return refuse("claims deadline expired");
                     }
                     let until = std::time::Instant::now()
-                        + std::time::Duration::from_millis((deadline_ms - now_ms) as u64);
+                        + std::time::Duration::from_millis(deadline_ms - now_ms);
                     let mut gate = self
                         .coding_gate
                         .take()
@@ -1990,8 +1990,9 @@ mod tests {
     }
 
     /// Test gate: lifecycle methods are inert; `claims` answers from a closure.
+    type ClaimsCalls = std::sync::Arc<std::sync::Mutex<Vec<(String, Value)>>>;
     struct ClaimsStub {
-        calls: std::sync::Arc<std::sync::Mutex<Vec<(String, Value)>>>,
+        calls: ClaimsCalls,
         fail: bool,
     }
     impl CodingEffectGate for ClaimsStub {
@@ -2023,13 +2024,7 @@ mod tests {
             Ok(json!({"schema":"claims-consumer-page-v1","text":"owner bytes"}))
         }
     }
-    fn claims_host(
-        fail: bool,
-    ) -> (
-        tempfile::TempDir,
-        Host,
-        std::sync::Arc<std::sync::Mutex<Vec<(String, Value)>>>,
-    ) {
+    fn claims_host(fail: bool) -> (tempfile::TempDir, Host, ClaimsCalls) {
         let (dir, mut h) = fixture();
         let calls = std::sync::Arc::new(std::sync::Mutex::new(vec![]));
         h.journal.job.coding.as_mut().unwrap().schema = CLAIMS_BRIDGE_PROFILE.into();
