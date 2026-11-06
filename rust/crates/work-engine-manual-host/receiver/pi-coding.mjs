@@ -9,6 +9,10 @@ import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync} from
 const bridge=process.argv.includes('--lifecycle-bridge');
 const fixtureSigned=existsSync('/auth/signed-fixture.json');
 const live=existsSync('/profile/job.json');
+const claimsTools=process.argv.includes('--claims-tools');
+const CLAIMS_SCHEMA='work-engine.pi-coding-lifecycle-claims.v1';
+const CLAIMS_NAMES=['claims_discover','claims_resolve','claims_evidence','claims_currency'];
+if(claimsTools&&(!process.argv.includes('--lifecycle-bridge')||existsSync('/profile/job.json')||existsSync('/auth/signed-fixture.json')))throw Error('claims tools require the provider-disabled lifecycle fixture bridge');
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
 const LIVE_BRIDGE_SCHEMA='work-engine.pi-coding-lifecycle-live.v1';
 // Only the separately versioned continuity schema may combine the lifecycle
@@ -22,7 +26,7 @@ if(fixtureSigned&&live)throw Error('fixture/live conflict');
 const signedSubscription=live&&config.schema==='work-engine.pi-coding-signed-subscription.v1';
 const signed=fixtureSigned||signedSubscription;
 if(fixtureSigned)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
-const schema=bridge?(liveBridge?config.schema:'work-engine.pi-coding-lifecycle-fixture.v1'):fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
+const schema=bridge?(liveBridge?config.schema:(claimsTools?CLAIMS_SCHEMA:'work-engine.pi-coding-lifecycle-fixture.v1')):fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
 let runtime,operation,bridgeCalls=0,bridgeResets=0,bridgeActive=false,bridgeWake,liveBridgeFailed=false;
 const bridgeQueue=[];
 const bridgeNext=()=>bridgeQueue.length?Promise.resolve(bridgeQueue.shift()):new Promise(resolve=>{bridgeWake=resolve;});
@@ -63,6 +67,7 @@ input.on('line',line=>{
   else if(value.type===(live?'task_start':'fixture_start')&&startResolve&&value.sessionId===session?.sessionId){startResolve(value);startResolve=null;}
   else if(bridge&&['bridge_prompt','bridge_replace','bridge_close'].includes(value.type)&&value.sessionId===session?.sessionId&&!bridgeActive&&bridgeQueue.length===0){if(bridgeWake){const wake=bridgeWake;bridgeWake=null;wake(value);}else bridgeQueue.push(value);}
   else if(bridge&&value.type==='bridge_provider'&&grants.has(value.id)&&value.sessionId===session?.sessionId){grants.get(value.id)(value);grants.delete(value.id);}
+  else if(value.type==='claims_result'&&claimsTools&&pending.has(value.id)&&value.sessionId===undefined){pending.get(value.id)(value);pending.delete(value.id);}
   else if(value.type==='tool_result'&&pending.has(value.id)&&(!signed||value.sessionId===manager?.getSessionId())){pending.get(value.id)(value);pending.delete(value.id);}
   else if(value.type==='provider_grant'&&grants.has(value.id)&&(!signed||(value.sessionId===manager?.getSessionId()&&(!fixtureSigned||value.classification==='fake_fixture')))){grants.get(value.id)(value);grants.delete(value.id);}
   else throw Error('unexpected host frame');
@@ -119,11 +124,27 @@ try {
    });
    return {content:[{type:'text',text:result.output}],details:{hostReportedSuccess:result.ok}};
   }};
- const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:['workspace_exec'],customTools:[tool]};
+ // Read-only claims tools: the schemas below carry no server, profile, scope or
+ // producer parameter; Rust validates every request and holds the trusted pins.
+ const claimsDescriptions={claims_discover:'Read-only discovery of repository fact candidates in the Host-selected claims scope. Pages of native owner JSON; repeat with offset and blob_sha256 to page one result.',claims_resolve:'Read-only exact resolution of one selected claim revision (claim_id, revision_id, revision_sha256; never latest). Pages of the complete native projection.',claims_evidence:'Read-only paging of one evidence artifact listed by the exact selected revision.',claims_currency:'Read-only source-currency comparison for a listed evidence artifact; reports equality, change or unavailability.'};
+ const idText=Type.String({minLength:1,maxLength:200}),shaText=Type.String({pattern:'^[0-9a-f]{64}$'}),offsetInt=Type.Optional(Type.Integer({minimum:0})),pageInt=Type.Optional(Type.Integer({minimum:4,maximum:8192}));
+ const exactProps={claim_id:idText,revision_id:idText,revision_sha256:shaText};
+ const claimsParameters={claims_discover:Type.Object({query:Type.String({minLength:1,maxLength:512}),limit:Type.Optional(Type.Integer({minimum:1,maximum:20})),cursor:Type.Optional(Type.Object({})),offset:offsetInt,blob_sha256:Type.Optional(shaText),max_bytes:pageInt}),claims_resolve:Type.Object({...exactProps,offset:offsetInt,max_bytes:pageInt}),claims_evidence:Type.Object({...exactProps,sha256:shaText,offset:offsetInt,max_bytes:pageInt}),claims_currency:Type.Object({...exactProps,sha256:shaText})};
+ const claimsCustom=claimsTools?CLAIMS_NAMES.map(name=>({name,label:name,description:claimsDescriptions[name],promptSnippet:claimsDescriptions[name],parameters:claimsParameters[name],executionMode:'sequential',
+  execute:async(id,args,signal)=>{
+   const result=await new Promise((resolve,reject)=>{
+    pending.set(id,resolve);
+    signal?.addEventListener('abort',()=>{pending.delete(id);reject(Error('claims cancelled'));},{once:true});
+    emit({type:'claims_request',id,tool:name,arguments:args});
+   });
+   return {content:[{type:'text',text:JSON.stringify(result.ok?result.result:{error:result.error})}],details:{hostReportedSuccess:result.ok}};
+  }})):[];
+ const activeNames=['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
+ const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:[tool,...claimsCustom]};
  function bindBridge(selected,services){
   session=selected;
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
-  if(bridgeResets)session.setActiveToolsByName([]);
+  if(bridgeResets)session.setActiveToolsByName(claimsTools?activeNames:[]);
   session.subscribe(event=>{if(bridgeActive)emit({type:'native_event',event});});
   if(liveBridge){
    // Real inference through the same SDK stream the direct live profile wraps.
@@ -172,12 +193,38 @@ try {
    };
    return;
   }
+  // Derive an exact-reference call from the owner checkpoint text in the
+  // successor's prompt; refuses rather than guessing.
+  const checkpointCall=c=>{
+   const marker='CLAIMS_HANDOFF_V1 ';const at=operation.prompt.indexOf(marker);
+   if(at<0)throw Error('checkpoint handoff absent');
+   const rest=operation.prompt.slice(at+marker.length);
+   const ends=[rest.indexOf('\n'),rest.indexOf('\\n')].filter(n=>n>=0);
+   const body=rest.slice(0,ends.length?Math.min(...ends):rest.length);
+   let handoff;try{handoff=JSON.parse(body);}catch{handoff=JSON.parse(body.replaceAll('\\"','"').replaceAll('\\\\','\\'));}
+   const ref=handoff.refs?.[c.ref??0];if(!ref)throw Error('checkpoint reference absent');
+   const exact={claim_id:ref.claim_id,revision_id:ref.revision_id,revision_sha256:ref.revision_sha256};
+   if(c.name==='claims_resolve')return exact;
+   const sha=ref.evidence_sha256?.[c.evidence??0];if(!sha)throw Error('checkpoint evidence absent');
+   return {...exact,sha256:sha};
+  };
   const stream=async(requestModel,context)=>{
    const id=++bridgeCalls;if(id>4)throw Error('bridge request budget');
    const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'coding_provider_request',id,...(solHigh?{reasoningEffort:'high',payerAccountId:config.solHigh.payer_account_id}:{}),producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null});});
    checkConsumption(consumptionDeadline(grant,Number.MAX_SAFE_INTEGER));
-   if((id===1)!==(grant.mode==='tool'))throw Error('bridge tool profile conflict');
-   const message={role:'assistant',content:id===1?[{type:'toolCall',id:'fixture-tool-1',name:'workspace_exec',arguments:{command:operation.command}}]:[{type:'text',text:grant.reply}],api:model.api,provider:model.provider,model:model.id,usage:{input:1,output:1,cacheRead:0,cacheWrite:0,totalTokens:2,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:id===1?'toolUse':'stop',timestamp:Date.now()};
+   let scripted=null;
+   if(claimsTools){
+    // Fake-provider script (routing and exact-byte recovery only; no model
+    // comprehension). Calls are limited to the five admitted tool names.
+    if(grant.mode!=='script'||!Array.isArray(grant.calls)||grant.calls.length>4||(grant.calls.length===0&&typeof grant.reply!=='string'))throw Error('claims script conflict');
+    scripted=grant.calls.map((c,i)=>{
+     if(c.name==='workspace_exec')return {type:'toolCall',id:`fixture-${id}-${i}`,name:'workspace_exec',arguments:{command:c.command??operation.command}};
+     if(!CLAIMS_NAMES.includes(c.name))throw Error('claims script tool refused');
+     return {type:'toolCall',id:`fixture-${id}-${i}`,name:c.name,arguments:c.fromCheckpoint?checkpointCall(c):c.arguments};
+    });
+   }else if((id===1)!==(grant.mode==='tool'))throw Error('bridge tool profile conflict');
+   const calls=claimsTools?scripted:(id===1?[{type:'toolCall',id:'fixture-tool-1',name:'workspace_exec',arguments:{command:operation.command}}]:[]);
+   const message={role:'assistant',content:calls.length?calls:[{type:'text',text:grant.reply}],api:model.api,provider:model.provider,model:model.id,usage:{input:1,output:1,cacheRead:0,cacheWrite:0,totalTokens:2,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:calls.length?'toolUse':'stop',timestamp:Date.now()};
    const out=createAssistantMessageEventStream();out.push({type:'done',reason:message.stopReason,message});out.end();return out;
   };
   markRuntimeStreamFunction(stream,services.modelRuntime);session.agent.streamFunction=stream;

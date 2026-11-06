@@ -3,6 +3,8 @@
 use super::*;
 #[path = "pi_coding_auth.rs"]
 pub mod auth;
+#[path = "pi_coding_claims.rs"]
+pub mod claims;
 #[path = "pi_coding_provider.rs"]
 pub mod provider;
 #[path = "pi_coding_validation.rs"]
@@ -21,8 +23,49 @@ pub const SOL_HIGH_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-sol-h
 pub fn is_live_bridge(schema: &str) -> bool {
     schema == LIVE_BRIDGE_PROFILE || schema == SOL_HIGH_BRIDGE_PROFILE
 }
+/// Opt-in, versioned fixture composition that additionally admits the four
+/// read-only claims tools before and after SDK context replacement. Provider-
+/// disabled; the existing v1-v4 schemas cannot select it and it cannot select
+/// them. Trusted claims configuration is bound only through the installed gate.
+pub const CLAIMS_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-claims.v1";
+/// Finite per-job bound on read-only claims calls (not a workspace effect).
+pub const MAX_CLAIMS_CALLS: usize = 12;
 pub(super) fn is_bridge(schema: &str) -> bool {
-    schema == BRIDGE_PROFILE || is_live_bridge(schema)
+    schema == BRIDGE_PROFILE || is_live_bridge(schema) || schema == CLAIMS_BRIDGE_PROFILE
+}
+fn is_fixture_bridge(schema: &str) -> bool {
+    schema == BRIDGE_PROFILE || schema == CLAIMS_BRIDGE_PROFILE
+}
+/// The advertised tool set must equal the profile's exact set (order-free for
+/// the claims profile, whose SDK registry order is not part of the contract).
+fn tools_match(advertised: &Value, schema: &str) -> bool {
+    let sorted = |v: &Value| -> Option<Vec<String>> {
+        let mut names: Vec<String> = v
+            .as_array()?
+            .iter()
+            .map(|n| n.as_str().map(String::from))
+            .collect::<Option<_>>()?;
+        names.sort();
+        Some(names)
+    };
+    let expected = ready_tools(schema);
+    if schema == CLAIMS_BRIDGE_PROFILE {
+        sorted(advertised).is_some() && sorted(advertised) == sorted(&expected)
+    } else {
+        *advertised == expected
+    }
+}
+fn ready_tools(schema: &str) -> Value {
+    if schema == CLAIMS_BRIDGE_PROFILE {
+        json!(
+            ["workspace_exec"]
+                .into_iter()
+                .chain(claims::TOOLS)
+                .collect::<Vec<_>>()
+        )
+    } else {
+        json!(["workspace_exec"])
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -43,6 +86,17 @@ pub trait CodingEffectGate {
         intent: &CodingToolIntent,
         actuator: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
     ) -> Result<(bool, Vec<u8>)>;
+    /// Read-only claims access composed by the trusted embedder (see
+    /// `claims::ClaimsGate`). Absent by default: no claims capability exists
+    /// unless the installed gate provides it.
+    fn claims(
+        &mut self,
+        _tool: &str,
+        _arguments: &Value,
+        _until: std::time::Instant,
+    ) -> Result<Value> {
+        refuse("coding claims access unavailable")
+    }
     fn frame(&mut self, _frame: &Value) -> Result<Vec<Value>> {
         refuse("coding lifecycle control unavailable")
     }
@@ -211,6 +265,23 @@ pub struct State {
     pub validation_snapshot: Option<Tree>,
     #[serde(default)]
     pub final_acceptance: Option<validation::Proof>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub claims_requests: BTreeMap<String, Option<Artifact>>,
+    /// Requested tool per claims call id, retained so a native completion must
+    /// name the same tool (a different claims tool cannot satisfy a request).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub claims_tools: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub native_claims_ids: BTreeSet<String>,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub claims_before_replacement: u32,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub claims_after_replacement: u32,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub replaced: bool,
+}
+fn is_zero(v: &u32) -> bool {
+    *v == 0
 }
 impl Profile {
     pub(super) fn validate(&self, job: &Job) -> Result<()> {
@@ -225,6 +296,8 @@ impl Profile {
                 }
             } else if self.schema == BRIDGE_PROFILE {
                 BRIDGE_PROFILE
+            } else if self.schema == CLAIMS_BRIDGE_PROFILE {
+                CLAIMS_BRIDGE_PROFILE
             } else if self.schema == SIGNED_PROFILE {
                 SIGNED_PROFILE
             } else {
@@ -240,7 +313,13 @@ impl Profile {
                 !self.fixture_command.is_empty()
             }
             || !(1..=8).contains(&self.max_tool_calls)
-            || (is_bridge(&self.schema) && self.max_tool_calls != 1)
+            || (is_bridge(&self.schema)
+                && self.max_tool_calls
+                    != if self.schema == CLAIMS_BRIDGE_PROFILE {
+                        2
+                    } else {
+                        1
+                    })
             || (is_live_bridge(&self.schema)
                 && self.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs)
             || job.idle_seconds != 0
@@ -476,6 +555,13 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
                 let mut args = command(tool);
                 if !tool && j.job.coding.as_ref().is_some_and(|p| is_bridge(&p.schema)) {
                     args.push("--lifecycle-bridge".into());
+                    if j.job
+                        .coding
+                        .as_ref()
+                        .is_some_and(|p| p.schema == CLAIMS_BRIDGE_PROFILE)
+                    {
+                        args.push("--claims-tools".into());
+                    }
                 }
                 args
             })
@@ -557,7 +643,7 @@ impl Host {
     pub fn bind_coding_effect_gate(&mut self, gate: Box<dyn CodingEffectGate>) -> Result<()> {
         if self.journal.phase != Phase::Admitted
             || self.journal.job.coding.as_ref().is_none_or(|p| {
-                !((p.schema == BRIDGE_PROFILE && p.provider.is_none())
+                !((is_fixture_bridge(&p.schema) && p.provider.is_none())
                     || (is_live_bridge(&p.schema) && p.provider.is_some()))
             })
             || self.coding_gate.is_some()
@@ -619,7 +705,7 @@ impl Host {
             .into_iter()
             .map(|mut v| {
                 if v["type"] == "bridge_prompt"
-                    && self.journal.job.coding.as_ref().unwrap().schema == BRIDGE_PROFILE
+                    && is_fixture_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                 {
                     v["command"] = json!(self.journal.job.coding.as_ref().unwrap().fixture_command);
                 }
@@ -704,6 +790,9 @@ impl Host {
         args.extend(command(false));
         if is_bridge(&j.job.coding.as_ref().unwrap().schema) {
             args.push("--lifecycle-bridge".into());
+            if j.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE {
+                args.push("--claims-tools".into());
+            }
         }
         args
     }
@@ -886,7 +975,10 @@ impl Host {
                         || (!self.signed_pi() && self.journal.session_id.is_some())
                         || (self.signed_pi()
                             && self.journal.session_id.as_deref() != frame["sessionId"].as_str())
-                        || frame["tools"] != json!(["workspace_exec"])
+                        || !tools_match(
+                            &frame["tools"],
+                            &self.journal.job.coding.as_ref().unwrap().schema,
+                        )
                     {
                         return refuse("coding ready mismatch");
                     }
@@ -1166,6 +1258,90 @@ impl Host {
                     }
                     replies.push(serde_json::to_vec(&result)?);
                 }
+                "claims_request" => {
+                    if self.journal.job.coding.as_ref().unwrap().schema != CLAIMS_BRIDGE_PROFILE {
+                        return refuse("claims request outside the claims profile");
+                    }
+                    if self.expired() || self.cancelled() {
+                        return refuse("claims admission expired/cancelled");
+                    }
+                    let id = frame["id"]
+                        .as_str()
+                        .filter(|s| !s.is_empty() && s.len() < 128)
+                        .ok_or_else(|| Error::Refused("claims id absent".into()))?
+                        .to_string();
+                    let tool = frame["tool"]
+                        .as_str()
+                        .filter(|t| claims::TOOLS.contains(t))
+                        .ok_or_else(|| Error::Refused("unknown claims tool".into()))?
+                        .to_string();
+                    let arguments = frame["arguments"].clone();
+                    if !arguments.is_object()
+                        || arguments.to_string().len() > claims::MAX_ARGUMENT_BYTES
+                    {
+                        return refuse("claims arguments bound");
+                    }
+                    let state = self.journal.coding.as_mut().unwrap();
+                    if state.claims_requests.contains_key(&id)
+                        || state.claims_requests.len() >= MAX_CLAIMS_CALLS
+                    {
+                        return refuse("duplicate or excess claims request");
+                    }
+                    state.claims_requests.insert(id.clone(), None);
+                    state.claims_tools.insert(id.clone(), tool.clone());
+                    self.save()?; // intent precedes the read; None stays unknown
+                    let deadline_ms = self.journal.job.deadline_unix_seconds.saturating_mul(1000);
+                    let now_ms = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_err(|_| Error::Refused("clock".into()))?
+                        .as_millis() as u64;
+                    if now_ms >= deadline_ms {
+                        return refuse("claims deadline expired");
+                    }
+                    let until = std::time::Instant::now()
+                        + std::time::Duration::from_millis((deadline_ms - now_ms) as u64);
+                    let mut gate = self
+                        .coding_gate
+                        .take()
+                        .ok_or_else(|| Error::Refused("coding lifecycle gate missing".into()))?;
+                    let outcome = gate.claims(&tool, &arguments, until);
+                    self.coding_gate = Some(gate);
+                    let result = match outcome {
+                        Ok(v) => json!({"type":"claims_result","id":id,"ok":true,"result":v}),
+                        Err(Error::Refused(detail)) => {
+                            json!({"type":"claims_result","id":id,"ok":false,"error":detail})
+                        }
+                        Err(e) => return Err(e),
+                    };
+                    let bytes = serde_json::to_vec(&result)?;
+                    if bytes.len() > 100_000 {
+                        return refuse("claims result exceeded frame bound");
+                    }
+                    let path = self
+                        .journal
+                        .job
+                        .state_dir
+                        .join(format!("coding-claims-{}.json", digest(id.as_bytes())));
+                    atomic(&path, &result)?;
+                    let artifact = Artifact {
+                        sha256: file_digest(&path, None)?,
+                        path,
+                    };
+                    let delivered_ok = result["ok"] == true;
+                    let state = self.journal.coding.as_mut().unwrap();
+                    state.claims_requests.insert(id, Some(artifact));
+                    // Only successful owner deliveries count as recovered bytes;
+                    // completed refusals are retained but never counted.
+                    if delivered_ok {
+                        if state.replaced {
+                            state.claims_after_replacement += 1;
+                        } else {
+                            state.claims_before_replacement += 1;
+                        }
+                    }
+                    self.save()?;
+                    replies.push(bytes);
+                }
                 "coding_provider_request" | "coding_history" | "coding_replaced" => {
                     if !is_bridge(&self.journal.job.coding.as_ref().unwrap().schema) {
                         return refuse("coding lifecycle frame in legacy profile");
@@ -1184,6 +1360,7 @@ impl Host {
                     }
                     replies.extend(self.coding_bridge_frame(&frame)?);
                     if kind == "coding_replaced" {
+                        self.journal.coding.as_mut().unwrap().replaced = true;
                         self.journal.session_id = Some(
                             frame["sessionId"]
                                 .as_str()
@@ -1195,7 +1372,46 @@ impl Host {
                     }
                 }
                 "native_event" => {
-                    if frame["event"]["type"] == "tool_execution_end" {
+                    if frame["event"]["type"] == "tool_execution_end"
+                        && self.journal.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE
+                        && frame["event"]["toolName"]
+                            .as_str()
+                            .is_some_and(|t| claims::TOOLS.contains(&t))
+                    {
+                        let event = &frame["event"];
+                        let id = event["toolCallId"]
+                            .as_str()
+                            .ok_or_else(|| Error::Refused("native claims id absent".into()))?;
+                        let state = self.journal.coding.as_mut().unwrap();
+                        let delivered: Option<Value> = state
+                            .claims_requests
+                            .get(id)
+                            .and_then(Option::as_ref)
+                            .and_then(|a| a.verify().ok())
+                            .and_then(|b| serde_json::from_slice(&b).ok());
+                        let Some(delivered) = delivered else {
+                            return refuse("native claims completion mismatch");
+                        };
+                        let ok = delivered["ok"] == true;
+                        let expected = if ok {
+                            delivered["result"].clone()
+                        } else {
+                            json!({"error":delivered["error"]})
+                        };
+                        let native_text = event["result"]["content"][0]["text"]
+                            .as_str()
+                            .and_then(|t| serde_json::from_str::<Value>(t).ok());
+                        if event["isError"] != false
+                            || state.claims_tools.get(id).map(String::as_str)
+                                != event["toolName"].as_str()
+                            || event["result"]["content"].as_array().map(Vec::len) != Some(1)
+                            || native_text.as_ref() != Some(&expected)
+                            || event["result"]["details"]["hostReportedSuccess"] != json!(ok)
+                            || !state.native_claims_ids.insert(id.into())
+                        {
+                            return refuse("native claims completion mismatch");
+                        }
+                    } else if frame["event"]["type"] == "tool_execution_end" {
                         let event = &frame["event"];
                         let id = event["toolCallId"]
                             .as_str()
@@ -1240,6 +1456,17 @@ impl Host {
                                 .any(|r| r.settled_microusd.is_none()))
                     {
                         return refuse("coding provider completion unestablished");
+                    }
+                    if self.journal.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE
+                        && (state.claims_requests.values().any(Option::is_none)
+                            || state.native_claims_ids.len() != state.claims_requests.len()
+                            || state.claims_before_replacement == 0
+                            || state.claims_after_replacement == 0
+                            || !state.replaced)
+                    {
+                        return refuse(
+                            "claims completion lacks native tool evidence before and after replacement",
+                        );
                     }
                     state.completed = true;
                 }
@@ -1760,5 +1987,356 @@ mod tests {
         assert!(h.journal.processes[0].stdout.exists());
         assert!(h.journal.processes[0].stderr.exists());
         assert!(h.journal.processes[0].pid.is_none(), "no child started");
+    }
+
+    /// Test gate: lifecycle methods are inert; `claims` answers from a closure.
+    struct ClaimsStub {
+        calls: std::sync::Arc<std::sync::Mutex<Vec<(String, Value)>>>,
+        fail: bool,
+    }
+    impl CodingEffectGate for ClaimsStub {
+        fn execute(
+            &mut self,
+            _: &CodingToolIntent,
+            action: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
+        ) -> Result<(bool, Vec<u8>)> {
+            action(1)
+        }
+        fn frame(&mut self, _: &Value) -> Result<Vec<Value>> {
+            Ok(vec![])
+        }
+        fn observed(
+            &mut self,
+            _: &CodingToolIntent,
+            _: &Artifact,
+            _: &ProcessRecord,
+            _: &str,
+        ) -> Result<()> {
+            Ok(())
+        }
+        fn claims(&mut self, tool: &str, args: &Value, until: std::time::Instant) -> Result<Value> {
+            assert!(until > std::time::Instant::now());
+            self.calls.lock().unwrap().push((tool.into(), args.clone()));
+            if self.fail {
+                return refuse("claims evidence_not_listed: stub refusal");
+            }
+            Ok(json!({"schema":"claims-consumer-page-v1","text":"owner bytes"}))
+        }
+    }
+    fn claims_host(
+        fail: bool,
+    ) -> (
+        tempfile::TempDir,
+        Host,
+        std::sync::Arc<std::sync::Mutex<Vec<(String, Value)>>>,
+    ) {
+        let (dir, mut h) = fixture();
+        let calls = std::sync::Arc::new(std::sync::Mutex::new(vec![]));
+        h.journal.job.coding.as_mut().unwrap().schema = CLAIMS_BRIDGE_PROFILE.into();
+        h.journal.job.coding.as_mut().unwrap().max_tool_calls = 2;
+        h.journal.session_id = Some("native".into());
+        h.coding_gate = Some(Box::new(ClaimsStub {
+            calls: calls.clone(),
+            fail,
+        }));
+        (dir, h, calls)
+    }
+    fn claims_frame(id: &str, tool: &str, args: Value) -> Vec<u8> {
+        frame(
+            json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"claims_request","id":id,"tool":tool,"arguments":args}),
+        )
+    }
+    /// `coding_advance` consumes one cumulative stream and skips frames it
+    /// already processed, so tests append to an accumulated buffer; a refused
+    /// frame is not retained, matching the Host's unchanged frame count.
+    fn adv(h: &mut Host, acc: &mut Vec<u8>, f: Vec<u8>) -> Result<Vec<Vec<u8>>> {
+        let mut next = acc.clone();
+        next.extend(f);
+        let r = h.coding_advance(&next);
+        if r.is_ok() {
+            *acc = next;
+        }
+        r
+    }
+    #[test]
+    fn claims_requests_exist_only_in_the_claims_profile_with_exact_tools_and_bounds() {
+        // Legacy and v4-style profiles refuse the frame before any gate call.
+        for schema in [PROFILE, BRIDGE_PROFILE] {
+            let (_d, mut h) = fixture();
+            h.journal.session_id = Some("native".into());
+            h.journal.job.coding.as_mut().unwrap().schema = schema.into();
+            let req = frame(
+                json!({"schema":schema,"sessionId":"native","type":"claims_request","id":"c","tool":"claims_discover","arguments":{"query":"x"}}),
+            );
+            assert!(h.coding_advance(&req).is_err(), "{schema}");
+        }
+        let (_d, mut h, calls) = claims_host(false);
+        let mut acc: Vec<u8> = Vec::new();
+        // Unknown tool, workspace tool name, non-object and oversized arguments.
+        for (tool, args) in [
+            ("workspace_exec", json!({"command":"id"})),
+            ("claims_publish", json!({})),
+            ("claims_resolve", json!("not an object")),
+            ("claims_discover", json!({"query":"x".repeat(3000)})),
+        ] {
+            assert!(
+                adv(&mut h, &mut acc, claims_frame("bad", tool, args)).is_err(),
+                "{tool}"
+            );
+            h.journal.coding.as_mut().unwrap().claims_requests.clear();
+        }
+        assert!(calls.lock().unwrap().is_empty(), "refused before the gate");
+        // Foreign session never reaches the gate.
+        let req = frame(
+            json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"foreign","type":"claims_request","id":"c","tool":"claims_discover","arguments":{"query":"x"}}),
+        );
+        assert!(h.coding_advance(&req).is_err());
+        // Valid request: routed once, result persisted and returned verbatim.
+        let replies = adv(
+            &mut h,
+            &mut acc,
+            claims_frame("c1", "claims_discover", json!({"query":"assertion"})),
+        )
+        .unwrap();
+        let reply: Value = serde_json::from_slice(&replies[0]).unwrap();
+        assert_eq!(reply["type"], "claims_result");
+        assert_eq!(reply["ok"], true);
+        assert_eq!(reply["result"]["text"], "owner bytes");
+        assert_eq!(calls.lock().unwrap().len(), 1);
+        let st = h.journal.coding.as_ref().unwrap();
+        assert!(st.claims_requests["c1"].is_some());
+        assert_eq!(
+            (st.claims_before_replacement, st.claims_after_replacement),
+            (1, 0)
+        );
+        // Duplicate ids and the finite budget refuse.
+        assert!(
+            adv(
+                &mut h,
+                &mut acc,
+                claims_frame("c1", "claims_discover", json!({"query":"a"}))
+            )
+            .is_err()
+        );
+        for i in 0..MAX_CLAIMS_CALLS {
+            let r = adv(
+                &mut h,
+                &mut acc,
+                claims_frame(&format!("n{i}"), "claims_discover", json!({"query":"a"})),
+            );
+            assert_eq!(r.is_ok(), i + 1 < MAX_CLAIMS_CALLS, "call {i}");
+        }
+        assert!(calls.lock().unwrap().len() <= MAX_CLAIMS_CALLS);
+    }
+    #[test]
+    fn claims_gate_refusal_is_a_recorded_tool_failure_and_missing_gate_refuses() {
+        let (_d, mut h, _) = claims_host(true);
+        let mut acc: Vec<u8> = Vec::new();
+        let replies = adv(
+            &mut h,
+            &mut acc,
+            claims_frame("c1", "claims_evidence", json!({"sha256":"0"})),
+        )
+        .unwrap();
+        let reply: Value = serde_json::from_slice(&replies[0]).unwrap();
+        assert_eq!(reply["ok"], false);
+        assert!(
+            reply["error"]
+                .as_str()
+                .unwrap()
+                .contains("evidence_not_listed")
+        );
+        assert!(h.journal.coding.as_ref().unwrap().claims_requests["c1"].is_some());
+        let (_d, mut h, _) = claims_host(false);
+        let mut acc: Vec<u8> = Vec::new();
+        h.coding_gate = None;
+        assert!(
+            adv(
+                &mut h,
+                &mut acc,
+                claims_frame("c1", "claims_discover", json!({"query":"a"}))
+            )
+            .is_err()
+        );
+        // An installed gate without claims composition refuses by default.
+        let (_d, mut h, _) = claims_host(false);
+        let mut acc: Vec<u8> = Vec::new();
+        h.coding_gate = Some(Box::new(FixtureGate));
+        let replies = adv(
+            &mut h,
+            &mut acc,
+            claims_frame("c1", "claims_discover", json!({"query":"a"})),
+        )
+        .unwrap();
+        let reply: Value = serde_json::from_slice(&replies[0]).unwrap();
+        assert_eq!(reply["ok"], false);
+    }
+    #[test]
+    fn claims_completion_needs_native_evidence_before_and_after_replacement() {
+        let (_d, mut h, _) = claims_host(false);
+        let mut acc: Vec<u8> = Vec::new();
+        let native_with = |id: &str, name: &str, text: &str, ok: bool| {
+            frame(
+                json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"native_event","event":{"type":"tool_execution_end","toolCallId":id,"toolName":name,"isError":false,"result":{"content":[{"type":"text","text":text}],"details":{"hostReportedSuccess":ok}}}}),
+            )
+        };
+        let native = |id: &str, name: &str| {
+            native_with(
+                id,
+                name,
+                &json!({"schema":"claims-consumer-page-v1","text":"owner bytes"}).to_string(),
+                true,
+            )
+        };
+        // Native completion for a never-requested claims id refuses.
+        assert!(adv(&mut h, &mut acc, native("ghost", "claims_resolve")).is_err());
+        adv(
+            &mut h,
+            &mut acc,
+            claims_frame("c1", "claims_discover", json!({"query":"a"})),
+        )
+        .unwrap();
+        // A completion naming another claims tool, different result bytes or a
+        // different outcome cannot satisfy the request.
+        assert!(
+            adv(&mut h, &mut acc, native("c1", "claims_currency")).is_err(),
+            "different tool"
+        );
+        assert!(
+            adv(
+                &mut h,
+                &mut acc,
+                native_with("c1", "claims_discover", "{\"text\":\"other\"}", true)
+            )
+            .is_err(),
+            "different result"
+        );
+        assert!(
+            adv(
+                &mut h,
+                &mut acc,
+                native_with("c1", "claims_discover", "{\"error\":\"x\"}", false)
+            )
+            .is_err(),
+            "wrong outcome"
+        );
+        adv(&mut h, &mut acc, native("c1", "claims_discover")).unwrap();
+        assert!(
+            adv(&mut h, &mut acc, native("c1", "claims_discover")).is_err(),
+            "replayed native end"
+        );
+        // Mark a workspace tool as satisfied, then try to complete without any
+        // successor claims call: refused.
+        let st = h.journal.coding.as_mut().unwrap();
+        st.tool_requests.insert(
+            "w".into(),
+            Some(Artifact {
+                path: "/unused".into(),
+                sha256: "0".repeat(64),
+            }),
+        );
+        st.native_tool_ends = 1;
+        st.native_tool_ids.insert("w".into());
+        st.replaced = true;
+        let complete = frame(
+            json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"complete","counts":{"providerRequests":4,"resets":1}}),
+        );
+        assert!(
+            adv(&mut h, &mut acc, complete.clone()).is_err(),
+            "no claims call after replacement"
+        );
+        assert!(!h.journal.coding.as_ref().unwrap().completed);
+        adv(
+            &mut h,
+            &mut acc,
+            claims_frame("c2", "claims_resolve", json!({"claim_id":"a"})),
+        )
+        .unwrap();
+        assert_eq!(
+            h.journal.coding.as_ref().unwrap().claims_after_replacement,
+            1
+        );
+        assert!(
+            adv(&mut h, &mut acc, complete.clone()).is_err(),
+            "second claims call lacks native completion"
+        );
+        adv(&mut h, &mut acc, native("c2", "claims_resolve")).unwrap();
+        assert!(adv(&mut h, &mut acc, native("c2", "bash")).is_err());
+        adv(&mut h, &mut acc, complete.clone()).unwrap();
+        assert!(h.journal.coding.as_ref().unwrap().completed);
+    }
+    #[test]
+    fn completed_refusals_do_not_count_as_successful_claims_delivery() {
+        let (_d, mut h, _) = claims_host(true); // gate refuses every read
+        let mut acc: Vec<u8> = Vec::new();
+        let replies = adv(
+            &mut h,
+            &mut acc,
+            claims_frame("r1", "claims_resolve", json!({"claim_id":"a"})),
+        )
+        .unwrap();
+        let reply: Value = serde_json::from_slice(&replies[0]).unwrap();
+        assert_eq!(reply["ok"], false);
+        let text = json!({"error":reply["error"]}).to_string();
+        adv(
+            &mut h,
+            &mut acc,
+            frame(
+                json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"native_event","event":{"type":"tool_execution_end","toolCallId":"r1","toolName":"claims_resolve","isError":false,"result":{"content":[{"type":"text","text":text}],"details":{"hostReportedSuccess":false}}}}),
+            ),
+        )
+        .unwrap();
+        let st = h.journal.coding.as_mut().unwrap();
+        assert_eq!(
+            (st.claims_before_replacement, st.claims_after_replacement),
+            (0, 0),
+            "a refusal is retained but is not delivery evidence"
+        );
+        st.replaced = true;
+        st.tool_requests.insert(
+            "w".into(),
+            Some(Artifact {
+                path: "/unused".into(),
+                sha256: "0".repeat(64),
+            }),
+        );
+        st.native_tool_ends = 1;
+        st.native_tool_ids.insert("w".into());
+        let complete = frame(
+            json!({"schema":CLAIMS_BRIDGE_PROFILE,"sessionId":"native","type":"complete","counts":{"providerRequests":4,"resets":1}}),
+        );
+        assert!(adv(&mut h, &mut acc, complete).is_err(), "all-refused");
+    }
+    #[test]
+    fn claims_profile_ready_tool_set_is_exact_and_legacy_sets_are_unchanged() {
+        assert!(tools_match(&json!(["workspace_exec"]), PROFILE));
+        assert!(!tools_match(
+            &json!(["workspace_exec", "claims_discover"]),
+            BRIDGE_PROFILE
+        ));
+        let all = json!([
+            "claims_currency",
+            "claims_discover",
+            "claims_evidence",
+            "claims_resolve",
+            "workspace_exec"
+        ]);
+        assert!(tools_match(&all, CLAIMS_BRIDGE_PROFILE));
+        assert!(!tools_match(
+            &json!(["workspace_exec"]),
+            CLAIMS_BRIDGE_PROFILE
+        ));
+        assert!(!tools_match(
+            &json!([
+                "workspace_exec",
+                "claims_discover",
+                "claims_resolve",
+                "claims_evidence",
+                "bash"
+            ]),
+            CLAIMS_BRIDGE_PROFILE
+        ));
+        assert!(is_bridge(CLAIMS_BRIDGE_PROFILE) && is_fixture_bridge(CLAIMS_BRIDGE_PROFILE));
+        assert!(!is_fixture_bridge(LIVE_BRIDGE_PROFILE));
     }
 }
