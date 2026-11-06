@@ -1,0 +1,94 @@
+{
+  "source_commit": "893a3d62f41824eb3140b0148bf93c58d2ccf489",
+  "composition_base": "d824a35f9defd33eb05e6a1adbf1fb1b735b89a3",
+  "root_composition": {
+    "schema": "manual-orchestration.custody.summary.v1",
+    "plan": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/ROOT-INTEGRATION-PLAN.json",
+    "plan_sha256": "0f8a2a21719c8ba40d5789fe24a92565c3f201bac31153fe06a94d1ae71ff20a",
+    "status": "passed",
+    "steps": [
+      {
+        "name": "preparation",
+        "outcome": "0",
+        "record": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/root-integration/preparation.json",
+        "record_sha256": "1446c90eda07a5566b1d58050ac2c887eaa63c7e6ebbdb7401ef6ace56233819",
+        "leftovers": 0
+      },
+      {
+        "name": "format",
+        "outcome": "0",
+        "record": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/root-integration/format.json",
+        "record_sha256": "5df3092a7a234eb89c0cc953732497caaa6cc7c7a1c661273d3976d2372a7dd9",
+        "leftovers": 0
+      },
+      {
+        "name": "lint",
+        "outcome": "0",
+        "record": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/root-integration/lint.json",
+        "record_sha256": "5848f32a6979d61c60fce0ddcefd68f5360062dc3ebcfef066560a82a369f4c8",
+        "leftovers": 0
+      }
+    ],
+    "not_run": []
+  },
+  "builder_repair_result": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/REPAIR-RESULT.json",
+  "builder_red_green_index": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/REPAIR-INDEX.json",
+  "root_original_run_verification": {
+    "at": "2026-11-06T05:25:20.504221+00:00",
+    "matched_result_hashes": 25,
+    "exact_readback_bytes_equal": true,
+    "exact_repeat_bytes_equal": true,
+    "original_receipt_sha256": "fb21afebaed0e946b44de48ab54f1749fe105bb50771578f0a1538a7514bd56a",
+    "original_input_source_sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+    "no_exported_candidate": "Worker result records zero exported files and zero provider/tool requests; no model result accepted.",
+    "pending_root_fresh_container_witness": false,
+    "raw_receipt_observations": {
+      "status": "not_established",
+      "provider_request_map_count": 0,
+      "tool_request_map_count": 0,
+      "exported_file_map_count": 0,
+      "removed": true,
+      "completed": false,
+      "ready_observed": false,
+      "tool_create_intent": false,
+      "validation_intent": false,
+      "acceptance": "owner_pending",
+      "domain_effect_settlement": "not_claimed"
+    },
+    "root_check_correction": "First assertion expected numeric request counters and failed; actual maps were read directly and their exact zero lengths verified. Original report unchanged.",
+    "root_fresh_container_witness": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/ROOT-CONTAINER-WITNESS.json"
+  },
+  "root_container_witness": {
+    "at": "2026-11-06T05:26:28.345203+00:00",
+    "names": [
+      "we-pi-1d01245fd9c4b48fdc76cd9b",
+      "we-pi-1d01245fd9c4b48fdc76cd9b-tool",
+      "we-pi-1d01245fd9c4b48fdc76cd9b-validation",
+      "we-sol-high-preflight-one-test-20261106",
+      "we-sol-high-preflight-validator-20261106",
+      "we-sol-high-preflight-validator-v2-20261106"
+    ],
+    "names_sources": [
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/POST-EXPORT-VALIDATION-ROUTE.json",
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/final-cleanup-plan.json",
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/isolated-controls-plan.json",
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/isolated-controls-v2-plan.json",
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/isolated-controls-v3-plan.json",
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/isolated-controls-v4-plan.json",
+      "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/builder/isolated-one-test-plan.json"
+    ],
+    "query": [
+      "/usr/bin/docker",
+      "ps",
+      "--all",
+      "--no-trunc",
+      "--format",
+      "{{.Names}}"
+    ],
+    "owned_matches": [],
+    "scope": "All exact Docker names recorded in private root-level custody plans. Foreign containers untouched.",
+    "job_label": "work-engine.pi-job=sol-high-fraction-20261106-01",
+    "job_label_matches": []
+  },
+  "lint_allowance": "Only pre-existing dependency clippy::needless_borrow; no strict clean-baseline claim"
+}

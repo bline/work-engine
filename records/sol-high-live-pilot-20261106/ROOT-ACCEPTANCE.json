@@ -1,0 +1,36 @@
+{
+  "at": "2026-11-06T05:35:56.628753+00:00",
+  "accepted": "Only two-file preparation guard repair and truthful failed-operation record",
+  "source_commit": "893a3d62f41824eb3140b0148bf93c58d2ccf489",
+  "actual_source_parent": "1a4888453a2de9c24cc4c75329a54fe88c2d3c80",
+  "declared_source_comparison_base": "20a74393d6485deeafd53fcb495db2e0a725905a",
+  "base_limitation": "Declared-base diff includes earlier records; Rust source identical between actual parent and declared base; only two repair files reviewed/integrated.",
+  "integration_base": "d824a35f9defd33eb05e6a1adbf1fb1b735b89a3",
+  "source_file_sha256": {
+    "rust/crates/work-engine-server/src/bin/coding-job-prepare.rs": "3771f56214e5d26f099f16551c35c443352fb24e1a25aad74c252e0cd4a666e8",
+    "rust/crates/work-engine-server/tests/preparation.rs": "63ba70128b828ae8bc63f2a419f7e7928452e360b5542c252fbbc519ff3780bf"
+  },
+  "review_session": "01a1af46-1cee-7240-86ad-94cf53a3a3b3",
+  "review_turn": "01a1af55-1aa0-7102-a5fd-77c96832ceaa",
+  "review_sha256": "2bcd6421654c4f4fac5f8abcd4dc0a256e9361b1ec439f0db7f09c887529cbd7",
+  "realized_grant": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/review-realized-before-turn.json",
+  "reviewer_retirement": {
+    "retired": "already_not_loaded",
+    "session_id": "01a1af46-1cee-7240-86ad-94cf53a3a3b3",
+    "state": "stopped"
+  },
+  "p3_deferred": [
+    "SOL-PREP-001: exact exit/stdout/diagnostic assertions are optional strengthening; source and semantic refusal/no-output-directory evidence accepted."
+  ],
+  "original_live_operation": "83ed5f9dfc10c0a76fbc923cf46251613e2775527c61d93298408238d9cc6051",
+  "original_receipt": "fb21afebaed0e946b44de48ab54f1749fe105bb50771578f0a1538a7514bd56a",
+  "original_live_status": "not_established",
+  "native_acceptance": "owner_pending",
+  "domain_effect_settlement": "not_claimed",
+  "live_qualification": "held; zero model/tool requests; no Sol eligibility/response/reset or actual timestamp-task acceptance",
+  "no_second_live_job": true,
+  "timestamp_original_sha256": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684",
+  "owned_processes_pending": [],
+  "actors_pending": [],
+  "publication": "Pending atomic local publication; TERMINAL.json binds final commit/claims/budget"
+}

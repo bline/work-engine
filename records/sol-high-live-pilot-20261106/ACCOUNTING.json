@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-06T05:35:56.628634+00:00",
+  "scope": "Approved45USD/120min; original live job failed and no second job authorized",
+  "units": "API-equivalent USD adjusted for subscription speed, proxy only",
+  "preparation_from": "2026-11-06T04:43:55.259Z",
+  "observed_through": "2026-11-06T05:35:10.497505+00:00",
+  "observed_proxy_usd": 8.0559272,
+  "closing_reserve_usd": 2,
+  "observed_plus_closing_reserve_usd": 10.0559272,
+  "product_hold_initial_usd": 17.680004,
+  "product_hold_disposition": "Released planning reservation after original operation terminal, zero provider/tool request maps, no exports, expired admission, collected processes and exact container absence; no subsequent live grant. No billing/account settlement claim.",
+  "product_recorded_requests": 0,
+  "product_inference_observed": false,
+  "actual_subscription_quota_for_objective": null,
+  "unpriced_calls": 0,
+  "usage_issues": [],
+  "closing_tails_settled": false,
+  "source": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/usage-closing.json"
+}

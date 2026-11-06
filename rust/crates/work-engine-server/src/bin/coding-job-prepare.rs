@@ -131,6 +131,45 @@ fn inputs(s: &Spec) -> Result<Inputs> {
     {
         return Err("preparation schema/mode/limits conflict".into());
     }
+    if let Some(sol) = &s.sol_high {
+        // Mirror the current server admission window and continuity owner's
+        // observation contract. This checks preparation, never grants entry.
+        let now_ms: i64 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_millis()
+            .try_into()?;
+        let deadline_ms: i64 = s
+            .deadline_unix_seconds
+            .checked_mul(1000)
+            .ok_or("Sol deadline overflow")?
+            .try_into()?;
+        let b = &sol.budget_control;
+        let observed = b["observed_ms"]
+            .as_i64()
+            .ok_or("Sol budget observation missing")?;
+        let age = b["max_age_ms"]
+            .as_i64()
+            .filter(|n| *n > 0 && *n <= 300000)
+            .ok_or("Sol budget age invalid")?;
+        if s.deadline_unix_seconds <= (now_ms / 1000) as u64 + 5
+            || s.deadline_unix_seconds > (now_ms / 1000) as u64 + 240
+            || b["schema"] != "work-engine.coding-budget-control.v1"
+            || b["authority"] != "observation_only"
+            || b["classification"] != "live_provider_observation"
+            || b["sequence"] != 1
+            || b["source"].as_str().is_none_or(str::is_empty)
+            || b["generation"].as_str().is_none_or(str::is_empty)
+            || b["expires_ms"] != deadline_ms
+            || b["available"] != true
+            || b["max_provider_requests"] != 4
+            || b["max_tool_calls"] != 1
+            || observed > now_ms
+            || now_ms.saturating_sub(observed) > age
+            || now_ms >= deadline_ms
+        {
+            return Err("Sol live deadline/canonical budget not current".into());
+        }
+    }
     read(&s.task, 8192)?;
     Ok(Inputs {
         task: pin(&s.task)?,

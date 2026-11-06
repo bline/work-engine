@@ -1,0 +1,44 @@
+{
+  "session_id": "01a1af46-1cee-7240-86ad-94cf53a3a3b3",
+  "turn_id": "01a1af55-1aa0-7102-a5fd-77c96832ceaa",
+  "review": {
+    "verdict": "accept",
+    "subject": {
+      "manifest": "/home/bline/.local/state/work-engine/sol-high-live-pilot-budget-20261106T0444/REVIEW-SUBJECT.json",
+      "manifest_sha256": "0e800c38ce339f599b2187db00258e8ccd5558af0f2fc6aa3c2fa7548a1a245b",
+      "source_base": "20a74393d6485deeafd53fcb495db2e0a725905a",
+      "source_commit": "893a3d62f41824eb3140b0148bf93c58d2ccf489",
+      "source_files": [
+        "rust/crates/work-engine-server/src/bin/coding-job-prepare.rs",
+        "rust/crates/work-engine-server/tests/preparation.rs"
+      ],
+      "record": "records/sol-high-live-pilot-20261106/README.md",
+      "record_sha256": "5c335ffa5c44bb1d4281979b5b61813e3f8ab999ff735ed094c3a4a41bd95815",
+      "scope": "Bounded preparation repair and truthful failed-pilot record only."
+    },
+    "findings": [
+      {
+        "id": "SOL-PREP-001",
+        "severity": "P3",
+        "location": "rust/crates/work-engine-server/tests/preparation.rs:121",
+        "consequence": "The refusal cases check unsuccessful exit and absent output directories, but would not detect accidental stdout output or an unrelated failure replacing the intended validation error. Source inspection currently establishes correct timing and empty stdout.",
+        "fix": "Strengthen these cases to assert exit code 2, empty stdout, and the intended preparation-refusal diagnostic."
+      }
+    ],
+    "assessment": [
+      "The added checks agree with the original CodingContinuity::new, budget_current and live server deadline constraints. They run before input hashing, inspection output and preparation writes. They neither modify authority nor refresh observations; offline preparation bypasses the new Sol-only checks.",
+      "Retained red logs demonstrate original acceptance of sequence 2 and an overlong deadline. Green custody records demonstrate the focused preparation regression, formatting and lint passing, with the documented needless-borrow allowance. Positive offline/Sol preparation and authority-denial checks remain.",
+      "Independently matched all 25 indexed result artifacts and the repair index hashes. Raw receipt fb21afebaed0e946b44de48ab54f1749fe105bb50771578f0a1538a7514bd56a retains not_established, owner_pending, empty provider/tool request maps and empty exports. Collector timing and the pinned packet support sequence 2 as the concrete refusal cause.",
+      "Before/after-restart read and repeat outputs are byte-identical. Earlier deadline and UUID refusals, failed validation routes and the timed-out restart remain preserved. Cleanup evidence supports the specifically recorded processes and container names.",
+      "The product validation mount contains smoke.rs. Private verifier controls demonstrate local one-test and three-test mutation detection; they establish no actual candidate acceptance. The dated record preserves that distinction."
+    ],
+    "limitations": [
+      "No tests, providers, children, network operations, board mutations or credential reads were performed by this reviewer.",
+      "The two-file repair is relative to direct parent 1a4888453a2de9c24cc4c75329a54fe88c2d3c80. The broader declared-base diff also contains 18 earlier record files, excluded from this review; Rust source is identical between that parent and the declared base.",
+      "Graph coverage reported unresolved calls. Relevant claims were checked against exact pinned source; no exhaustive caller or test coverage is claimed.",
+      "Preparation validation is time-sensitive and does not guarantee later admission. Existing live owners must still revalidate.",
+      "Live MCP, actual Sol/high access and responses, workspace coding, SDK reset/recovery and timestamp-task acceptance remain unestablished. New code does not alter the original failed proof.",
+      "Root retains acceptance/publication, final accounting and actor retirement. This verdict does not certify completed campaign closure."
+    ]
+  }
+}
