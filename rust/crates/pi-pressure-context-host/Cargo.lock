@@ -64,6 +64,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "claim-evidence"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "ryu-js",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -630,6 +640,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "repository-claims-handoff"
+version = "0.1.0"
+dependencies = [
+ "claim-evidence",
+ "serde_json",
+]
+
+[[package]]
 name = "rfc6979"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1188,6 +1206,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "libc",
+ "repository-claims-handoff",
  "schemars",
  "serde",
  "serde_json",

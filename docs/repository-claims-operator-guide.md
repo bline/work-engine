@@ -233,3 +233,48 @@ reader holds at most about two 1 MiB response frames. The result is still `not_a
 decides whether to rely, and reassessment of a changed source remains an explicit
 operator action.
 
+
+## Agent consumption tools (opt-in Pi profile)
+
+`repository_claims_handoff::consumer::ClaimsConsumer` is the bounded read-only API
+an agent uses after its context was replaced. The Host exposes it as four tools
+(`claims_discover`, `claims_resolve`, `claims_evidence`, `claims_currency`) only
+under the separately versioned fixture profile
+`work-engine.pi-coding-lifecycle-claims.v1` (`CLAIMS_BRIDGE_PROFILE`). The v1 to v4
+profiles are unchanged: they refuse the `claims_request` frame and do not
+advertise the tools. This profile admits two workspace calls (one before and one
+after replacement) and at most 12 claims calls per job, plus the job deadline.
+
+- **Trusted configuration.** The server executable and read-profile paths and
+  SHA-256 pins are given by the embedding Host when it builds the
+  `ClaimsConsumer` and installs `claims::ClaimsGate` around the lifecycle gate.
+  They are not Job or model fields. Tool arguments cannot name a server, profile,
+  scope or producer (unknown arguments refuse); oversized or malformed arguments,
+  unknown tools, an exhausted call budget and an expired deadline refuse before any
+  read.
+- **Exactness.** `claims_resolve` requires claim, revision and revision digest and
+  returns the complete native projection in digest-verified pages (at most 8192
+  bytes each) with the owner's `current_head`/`head_revision_ids`; it never falls
+  back to the latest revision. `claims_evidence` and `claims_currency` work only
+  for an evidence digest listed by the exact selected revision, and evidence is
+  digest-checked as a whole before any page is returned. Currency is the owner's
+  result unmodified; changed or unavailable evidence is never reported as current.
+  `applicability`, `source_currency` and `semantic_acceptance` stay
+  `not_assessed`.
+- **Reliance.** Reading or selecting is not reliance. The consumer states a
+  decision explicitly as one `CLAIMS_RELIANCE_DECISION_V1` line
+  (`RelianceDecision`: exact subject revision, `relied_for_task` / `declined` /
+  `needs_more_evidence`, bounded basis). It is task-local checkpoint data: no
+  grant, no write to the claims reliance records, and no effect on lifecycle
+  admission. `check_subject` requires the subject to be one of the selected exact
+  references.
+- **Evidence of use.** The Host records each claims request and its result
+  artifact; it completes the job only with a native SDK tool completion for every
+  claims request and at least one before and one after `coding_replaced`. A fake
+  provider script (receiver `grant.mode: "script"`) proves routing and exact-byte
+  recovery, not model comprehension or semantic truth.
+
+Status of this tree is recorded in the builder REPORT; the lifecycle gate side
+(checkpoint carrying exact references and the decision, the script that drives the
+four-request flow) and the fake-provider qualification binary are not part of this
+change.
