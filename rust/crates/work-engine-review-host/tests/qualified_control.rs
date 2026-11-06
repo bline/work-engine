@@ -1164,14 +1164,14 @@ fn job_runtime_initializes_serves_inspects_and_reopens_complete_inputs() {
     eprintln!("JOB_RUNTIME_STAGE=serve");
     let mut host = job.start();
     qualified_ready(&mut host);
-    host.domain("inspect", revision);
+    host.domain("inspect_initial", revision);
     let inspected = host.receive();
     assert!(inspected["error"].is_null(), "{inspected}");
     host.finish();
     eprintln!("JOB_RUNTIME_STAGE=cold_reopen");
     let mut cold = job.start();
     qualified_ready(&mut cold);
-    cold.domain("inspect", revision);
+    cold.domain("inspect_initial", revision);
     assert_eq!(inspected, cold.receive());
     cold.finish();
     assert_eq!(

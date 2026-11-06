@@ -22,13 +22,15 @@ expectations are unchanged.
 ## Validation and operational status
 
 Actual executable initialization and its idempotent replay succeeded with the
-complete fixture. Complete serve/inspect/cold-reopen qualification remains
-pending in private custody. The first focused run exposed the existing CBM
+complete fixture. Serving readiness also succeeded; complete inspect/cold-reopen qualification
+remains pending in private custody. The first focused run exposed the existing CBM
 status incompatibility, now covered by a passing owner test for exact fallback
 and unknown-status refusal. A subsequent run exposed a synthetic jobsRoot mode
 mismatch, corrected to0700. The next run initialized twice but reached the
 generic fixture's30-second serving deadline; the job fixture now uses the
-existing qualified-fixture readiness bound. These failed runs are preserved.
+existing qualified-fixture readiness bound. The next run reached serve-ready and caught a test command typo (`inspect`
+instead of `inspect_initial`), corrected within the fixture. These failed runs
+are preserved.
 
 Production compilation and both production parser tests passed. Scoped lint
 passed with the coverage repair. The older controlled-host suite exceeded its
