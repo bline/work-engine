@@ -92,6 +92,46 @@ fn pinned_program(pin: &FilePin) -> Result<PinnedProgram> {
     pin.read(512 * 1024 * 1024)?;
     PinnedProgram::load(&pin.path, &pin.sha256).map_err(|e| error(e.to_string()))
 }
+// Root-reviewed exact current helper bytes. Caller-supplied expected hashes
+// cannot authorize executable replacement before native isolation is entered.
+fn trusted_preparation_helpers(input: &PreparationInput) -> Result<()> {
+    let q = &input.startup.qualified;
+    for (pin, expected) in [
+        (
+            &q.bwrap,
+            "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
+        ),
+        (
+            &q.cbm,
+            "a8a5ddabb74decbf9c5275600efd6a5507ee00bd9bbb974c7b4a90096e841c39",
+        ),
+        (
+            &q.cbm_launcher,
+            "b32e489b94d42b7f188c47500203426f55f47cb4ec4b61db2e38eea7456530c6",
+        ),
+        (
+            &q.cbm_client,
+            "7adf05d6f5507e65f96c5cc9003c6c48f7332b22bd65e823759e5d8a07aac77c",
+        ),
+    ] {
+        if pin.sha256 != expected {
+            return Err(error(
+                "preparation helper lacks independently reviewed executable pin",
+            ));
+        }
+        pinned_program(pin)?;
+    }
+    for (path, expected) in [
+        (
+            "/usr/bin/git",
+            "ed8b2df973b28c0fb773b9c0dc0816d3ee2b3835bb932d9153c21417bb51b362",
+        ),
+        ("/usr/bin/python3.14", subject_binding::PYTHON_EXE_SHA256),
+    ] {
+        PinnedProgram::load(path, expected).map_err(|e| error(e.to_string()))?;
+    }
+    Ok(())
+}
 fn snapshot(repo: &Path, paths: &[String]) -> Result<Value> {
     let mut hashes = serde_json::Map::new();
     for path in paths {
@@ -277,6 +317,7 @@ pub fn prepare(input_path: &Path, output: &Path) -> Result<Value> {
             "only explicit qualified uninstalled proposal data is supported; fixture/control standing refused",
         ));
     }
+    trusted_preparation_helpers(&input)?;
     let provenance_raw = input.provenance.read(1024 * 1024)?;
     let provenance: Value = serde_json::from_slice(&provenance_raw)?;
     let origin = provenance["repository_path"]
@@ -457,6 +498,7 @@ pub fn prepare(input_path: &Path, output: &Path) -> Result<Value> {
         a[key] = value;
     }
     let selection = input.policy.proposed_review_selection(&request)?;
+    input.policy.review_selection_template = selection.clone();
     d.selection = data(&output.join("selection.json"), &selection)?;
     input.policy.execution_template["selectionDigest"] = json!(
         slice_campaign::contract::validate_selection(
@@ -486,6 +528,7 @@ pub fn prepare(input_path: &Path, output: &Path) -> Result<Value> {
         &serde_json::to_vec_pretty(&request)?,
         0o600,
     )?;
+    input.policy.validate_proposal()?;
     let policy_pin = data(
         &output.join("job-policy.proposed.json"),
         &serde_json::to_value(&input.policy)?,

@@ -192,64 +192,7 @@ impl JobReviewPolicy {
         };
         let document: JobReviewPolicyDocument =
             serde_json::from_slice(&raw).map_err(|e| CampaignError::Contract(e.to_string()))?;
-        if document.schema_version != 1
-            || !document.active
-            || document.expires_at_millis <= now()?
-            || document.admitted_uid != rustix::process::geteuid().as_raw()
-        {
-            return Err(CampaignError::Unsupported(
-                "job policy inactive, expired or wrong uid".into(),
-            ));
-        }
-        crate::require_text(&document.policy_id, "job policy id")?;
-        crate::require_text(&document.revision, "job policy revision")?;
-        crate::require_sha(
-            &document.startup_authority.claims_source_sha256,
-            "job claims source",
-        )?;
-        crate::require_sha(
-            &document.startup_authority.claims_configuration_sha256,
-            "job claims configuration",
-        )?;
-        crate::require_text(
-            &document.startup_authority.completion_consumer,
-            "job completion consumer",
-        )?;
-        canonical(&document.repository)?;
-        private_directory(&document.jobs_root)?;
-        let template = AcceptanceRecord::parse(
-            &serde_json::to_vec(&document.execution_template)
-                .map_err(|e| CampaignError::Contract(e.to_string()))?,
-        )?;
-        let text = |key: &str| -> Result<String> {
-            document.review_selection_template["subject"][key]
-                .as_str()
-                .map(str::to_owned)
-                .ok_or_else(|| CampaignError::Contract("policy selection subject absent".into()))
-        };
-        let candidate = crate::CandidateRef {
-            commit: text("commit")?,
-            tree: text("tree")?,
-            patch_identity: text("patchIdentity")?,
-            receipt_sha256: String::new(),
-            physical_profile_sha256: String::new(),
-        };
-        crate::contract::validate_selection(
-            &document.review_selection_template,
-            &template.identity,
-            &candidate,
-        )?;
-        if document.review_selection_template["specialists"]
-            .as_array()
-            .map(Vec::len)
-            != Some(1)
-            || document.review_selection_template["specialists"][0]["obligationId"]
-                != template.obligation_id
-        {
-            return Err(CampaignError::Contract(
-                "policy selection must own one exact obligation".into(),
-            ));
-        }
+        document.validate_proposal()?;
         Ok(Self {
             path: path.into(),
             digest: raw_sha256(&raw),
@@ -698,6 +641,70 @@ mod tests {
 }
 
 impl JobReviewPolicyDocument {
+    /// Validate proposed bytes through the same checks used by the installed
+    /// loader. Success supplies no installed-policy or admission capability.
+    pub fn validate_proposal(&self) -> Result<()> {
+        if self.schema_version != 1
+            || !self.active
+            || self.expires_at_millis <= now()?
+            || self.admitted_uid != rustix::process::geteuid().as_raw()
+        {
+            return Err(CampaignError::Unsupported(
+                "job policy inactive, expired or wrong uid".into(),
+            ));
+        }
+        crate::require_text(&self.policy_id, "job policy id")?;
+        crate::require_text(&self.revision, "job policy revision")?;
+        crate::require_sha(
+            &self.startup_authority.claims_source_sha256,
+            "job claims source",
+        )?;
+        crate::require_sha(
+            &self.startup_authority.claims_configuration_sha256,
+            "job claims configuration",
+        )?;
+        crate::require_text(
+            &self.startup_authority.completion_consumer,
+            "job completion consumer",
+        )?;
+        canonical(&self.repository)?;
+        private_directory(&self.jobs_root)?;
+        let template = AcceptanceRecord::parse(
+            &serde_json::to_vec(&self.execution_template)
+                .map_err(|e| CampaignError::Contract(e.to_string()))?,
+        )?;
+        let text = |key: &str| -> Result<String> {
+            self.review_selection_template["subject"][key]
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| CampaignError::Contract("policy selection subject absent".into()))
+        };
+        let candidate = crate::CandidateRef {
+            commit: text("commit")?,
+            tree: text("tree")?,
+            patch_identity: text("patchIdentity")?,
+            receipt_sha256: String::new(),
+            physical_profile_sha256: String::new(),
+        };
+        crate::contract::validate_selection(
+            &self.review_selection_template,
+            &template.identity,
+            &candidate,
+        )?;
+        if self.review_selection_template["specialists"]
+            .as_array()
+            .map(Vec::len)
+            != Some(1)
+            || self.review_selection_template["specialists"][0]["obligationId"]
+                != template.obligation_id
+        {
+            return Err(CampaignError::Contract(
+                "policy selection must own one exact obligation".into(),
+            ));
+        }
+        Ok(())
+    }
+
     /// Proposed data only. This projection cannot install policy, admit a job,
     /// or construct an InstalledAcceptancePin.
     pub fn proposed_review_selection(
