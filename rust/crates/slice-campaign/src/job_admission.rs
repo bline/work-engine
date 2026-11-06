@@ -266,66 +266,10 @@ impl JobReviewPolicy {
         }
         Ok(current)
     }
-    /// Preserve the installed claim contracts, changing only their exact
-    /// subject/episode/consumer identities through the owning selection codec.
+    /// Revalidate installed policy before using its deterministic projection.
     pub fn review_selection(&self, request: &JobReviewRequest) -> Result<serde_json::Value> {
         self.current()?;
-        let template = AcceptanceRecord::parse(
-            &serde_json::to_vec(&self.document.execution_template)
-                .map_err(|e| CampaignError::Contract(e.to_string()))?,
-        )?;
-        let mut selection = self.document.review_selection_template.clone();
-        let subject = serde_json::json!({"commit":request.candidate.commit,"tree":request.candidate.tree,"patchIdentity":request.candidate.patch_identity});
-        selection["subject"] = subject.clone();
-        let specialists = selection["specialists"]
-            .as_array_mut()
-            .ok_or_else(|| CampaignError::Contract("job policy specialists absent".into()))?;
-        if specialists.len() != 1
-            || specialists[0]["obligationId"] != template.obligation_id
-            || specialists[0]["selection"] != "selected"
-        {
-            return Err(CampaignError::Contract(
-                "job policy requires one exact selected obligation".into(),
-            ));
-        }
-        let episode = crate::contract::episode_digest(
-            &serde_json::json!({"identity":request.identity,"obligationId":template.obligation_id}),
-        )?;
-        let claims = specialists[0]["requiredClaims"]
-            .as_array_mut()
-            .ok_or_else(|| CampaignError::Contract("job policy claim contracts absent".into()))?;
-        for claim in claims {
-            claim["subject"] =
-                serde_json::json!({"candidate":subject,"reviewEpisodeId":episode[..32]});
-            let consumer = match claim["consumptionBoundary"].as_str() {
-                Some("builder_projection") => format!("slice-builder:{}", request.identity.key()),
-                Some("campaign_terminalization") => {
-                    format!("slice-campaign:{}", request.identity.key())
-                }
-                _ => {
-                    return Err(CampaignError::Contract(
-                        "job policy claim boundary unsupported".into(),
-                    ));
-                }
-            };
-            claim["consumer"] = serde_json::json!(consumer);
-            let id_body = serde_json::json!({"proposition":claim["proposition"],"subject":claim["subject"],"coveredState":claim["coveredState"],"consumptionBoundary":claim["consumptionBoundary"],"consumer":claim["consumer"]});
-            claim["claimId"] = serde_json::json!(format!(
-                "production-path-claim-v1@{}",
-                crate::contract::claim_digest(&id_body)?
-            ));
-            let mut revision_body = claim.clone();
-            revision_body
-                .as_object_mut()
-                .ok_or_else(|| CampaignError::Contract("job policy claim malformed".into()))?
-                .remove("revision");
-            claim["revision"] = serde_json::json!(format!(
-                "production-path-claim-revision-v1@{}",
-                crate::contract::claim_digest(&revision_body)?
-            ));
-        }
-        crate::contract::validate_selection(&selection, &request.identity, &request.candidate)?;
-        Ok(selection)
+        self.document.proposed_review_selection(request)
     }
     fn derive(&self, request: &JobReviewRequest) -> Result<(PathBuf, Vec<u8>)> {
         request.identity.validate()?;
@@ -750,5 +694,71 @@ mod tests {
         let mut other = request;
         other.identity.plan_version = "wrong-plan".into();
         assert!(policy.admit(&other).is_err());
+    }
+}
+
+impl JobReviewPolicyDocument {
+    /// Proposed data only. This projection cannot install policy, admit a job,
+    /// or construct an InstalledAcceptancePin.
+    pub fn proposed_review_selection(
+        &self,
+        request: &JobReviewRequest,
+    ) -> Result<serde_json::Value> {
+        let template = AcceptanceRecord::parse(
+            &serde_json::to_vec(&self.execution_template)
+                .map_err(|e| CampaignError::Contract(e.to_string()))?,
+        )?;
+        let mut selection = self.review_selection_template.clone();
+        let subject = serde_json::json!({"commit":request.candidate.commit,"tree":request.candidate.tree,"patchIdentity":request.candidate.patch_identity});
+        selection["subject"] = subject.clone();
+        let specialists = selection["specialists"]
+            .as_array_mut()
+            .ok_or_else(|| CampaignError::Contract("job policy specialists absent".into()))?;
+        if specialists.len() != 1
+            || specialists[0]["obligationId"] != template.obligation_id
+            || specialists[0]["selection"] != "selected"
+        {
+            return Err(CampaignError::Contract(
+                "job policy requires one exact selected obligation".into(),
+            ));
+        }
+        let episode = crate::contract::episode_digest(
+            &serde_json::json!({"identity":request.identity,"obligationId":template.obligation_id}),
+        )?;
+        let claims = specialists[0]["requiredClaims"]
+            .as_array_mut()
+            .ok_or_else(|| CampaignError::Contract("job policy claim contracts absent".into()))?;
+        for claim in claims {
+            claim["subject"] =
+                serde_json::json!({"candidate":subject,"reviewEpisodeId":episode[..32]});
+            let consumer = match claim["consumptionBoundary"].as_str() {
+                Some("builder_projection") => format!("slice-builder:{}", request.identity.key()),
+                Some("campaign_terminalization") => {
+                    format!("slice-campaign:{}", request.identity.key())
+                }
+                _ => {
+                    return Err(CampaignError::Contract(
+                        "job policy claim boundary unsupported".into(),
+                    ));
+                }
+            };
+            claim["consumer"] = serde_json::json!(consumer);
+            let id_body = serde_json::json!({"proposition":claim["proposition"],"subject":claim["subject"],"coveredState":claim["coveredState"],"consumptionBoundary":claim["consumptionBoundary"],"consumer":claim["consumer"]});
+            claim["claimId"] = serde_json::json!(format!(
+                "production-path-claim-v1@{}",
+                crate::contract::claim_digest(&id_body)?
+            ));
+            let mut revision_body = claim.clone();
+            revision_body
+                .as_object_mut()
+                .ok_or_else(|| CampaignError::Contract("job policy claim malformed".into()))?
+                .remove("revision");
+            claim["revision"] = serde_json::json!(format!(
+                "production-path-claim-revision-v1@{}",
+                crate::contract::claim_digest(&revision_body)?
+            ));
+        }
+        crate::contract::validate_selection(&selection, &request.identity, &request.candidate)?;
+        Ok(selection)
     }
 }

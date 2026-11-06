@@ -30,6 +30,10 @@ pub const SC0_GATE_RECEIPT_SHA256: &str =
 pub const PYTHON_EXE_SHA256: &str =
     "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41";
 pub const GIT_EXE_SHA256: &str = "5516c9f362c29376ab9a499a33082f9f611941d8c75930c880e30ad109e39c9a";
+// Reviewed root-owned /usr/bin/git2.53.0. Dynamic captures retain exact tool
+// identity; frozen historical captures keep their original byte-level pins.
+const CURRENT_GIT_EXE_SHA256: &str =
+    "ed8b2df973b28c0fb773b9c0dc0816d3ee2b3835bb932d9153c21417bb51b362";
 
 #[derive(Clone, Debug)]
 pub struct VerifiedGate {
@@ -496,7 +500,10 @@ pub(crate) fn verify_gate_dynamic(
         || str_at(&capture, "producer_sha256_before_after")? != GATE_RUNNER_SOURCE_SHA256
         || capture["argv_manifest_sha256"] != manifest_digest
         || capture["child_interpreter_sha256"] != PYTHON_EXE_SHA256
-        || capture["git_runtime_before_after"]["executable_sha256"] != GIT_EXE_SHA256
+        || !matches!(
+            capture["git_runtime_before_after"]["executable_sha256"].as_str(),
+            Some(GIT_EXE_SHA256 | CURRENT_GIT_EXE_SHA256)
+        )
         || capture["python_runtime_before_after"]["executable_sha256"] != PYTHON_EXE_SHA256
         || capture["exit_status"] != 0
         || capture["stderr"] != ""
@@ -935,8 +942,10 @@ fn verify_profile(candidate: &Value, profile: &Value) -> Result<()> {
             != json!({"use_state":"used","identity":{"baseline_tree_oid":candidate["baseline_tree_oid"],"result_tree_oid":candidate["checkpoint_tree_oid"],"task_patch_digest":candidate["task_patch_digest"]}})
         || sources["checkpoint_validator"]
             != json!({"use_state":"used","identity":{"sha256":CHECKPOINT_SOURCE_SHA256}})
-        || sources["git_runtime"]
+        || (sources["git_runtime"]
             != json!({"use_state":"used","identity":{"executable_sha256":GIT_EXE_SHA256,"version":"git version 2.53.0"}})
+            && sources["git_runtime"]
+                != json!({"use_state":"used","identity":{"executable_sha256":CURRENT_GIT_EXE_SHA256,"version":"git version 2.53.0"}}))
         || sources["python_runtime"]
             != json!({"use_state":"used","identity":{"executable_sha256":PYTHON_EXE_SHA256,"implementation":"CPython","version":"3.14.4"}})
     {
@@ -1145,6 +1154,46 @@ mod tests {
             .join("tests/fixtures")
             .join(file);
         serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn reviewed_git_pin_preserves_frozen_gate_and_refuses_unknown() {
+        let capture = crate::test_support::fixture(SC0_GATE_CAPTURE_SHA256);
+        let manifest = crate::test_support::fixture(SC0_GATE_MANIFEST_SHA256);
+        let receipt = crate::test_support::fixture(SC0_GATE_RECEIPT_SHA256);
+        assert!(verify_gate(&capture, &manifest, &receipt).is_ok());
+        let mut value: Value = serde_json::from_slice(&capture).unwrap();
+        value["git_runtime_before_after"]["executable_sha256"] = json!(CURRENT_GIT_EXE_SHA256);
+        let current = serde_json::to_vec(&value).unwrap();
+        assert!(verify_gate_dynamic(&current, &manifest, &receipt).is_ok());
+        assert!(verify_gate(&current, &manifest, &receipt).is_err());
+        value["git_runtime_before_after"]["executable_sha256"] = json!("0".repeat(64));
+        assert!(
+            verify_gate_dynamic(&serde_json::to_vec(&value).unwrap(), &manifest, &receipt).is_err()
+        );
+    }
+
+    #[test]
+    fn reviewed_git_profile_pin_refuses_unknown_even_with_valid_digest() {
+        let candidate = fixture(
+            "vectors/4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd.json",
+        );
+        let original = fixture(
+            "vectors/5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db.json",
+        );
+        assert!(verify_profile(&candidate, &original).is_ok());
+        for (hash, accepted) in [
+            (CURRENT_GIT_EXE_SHA256.to_owned(), true),
+            ("0".repeat(64), false),
+        ] {
+            let mut profile = original.clone();
+            profile["provenance"]["derivation_sources"]["git_runtime"]["identity"]["executable_sha256"] =
+                json!(hash);
+            profile.as_object_mut().unwrap().remove("profile_digest");
+            let digest = historical_digest(&profile).unwrap();
+            profile["profile_digest"] = json!(digest);
+            assert_eq!(verify_profile(&candidate, &profile).is_ok(), accepted);
+        }
     }
 
     #[test]

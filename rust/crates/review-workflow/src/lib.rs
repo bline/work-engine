@@ -9,6 +9,7 @@
 //! let _: review_workflow::initial::InitialLaunch = serde_json::from_str("{}").unwrap();
 //! ```
 mod initial;
+pub mod preparation;
 pub mod protocol;
 mod provider;
 mod recovery;
