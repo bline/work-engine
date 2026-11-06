@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "strategic_objective": "Close one genuine development loop through the actual Rust owners before expanding continuity or unattended execution",
+  "evidence_cutoff": {
+    "roadmap_revision": "planning/rust-loop-runtime-entry-and-live-budget-20261106.md@adbef5c8a634c8cc311aae9804034a1565f11557",
+    "repository_revision": "adbef5c8a634c8cc311aae9804034a1565f11557",
+    "campaign_terminals": [
+      {
+        "run_id": "rust-review-production-preparation-20261106T1906",
+        "status": "accepted_source_and_uninstalled_preparation_only"
+      }
+    ]
+  },
+  "continuity": "retained",
+  "verdict": "continue",
+  "current_rationale": "Accepted preparation removes a known implementation prerequisite. The full Rust-owned loop remains unfulfilled; current qualification and genuine authority must be established before further live investment.",
+  "assumptions": {
+    "confirmed": [
+      "records/rust-review-production-preparation-20261106/ROOT-ACCEPTANCE.json: source7fd3d6ab and regenerated uninstalled package accepted after separate review; do not repeat that implementation."
+    ],
+    "changed": [
+      "records/rust-review-production-preparation-20261106/RESULT.json: actual preparation and complete policy validation now pass; prioritize current runtime/authority qualification over another preparation feature."
+    ],
+    "invalidated": [
+      "records/rust-review-production-preparation-20261106/README.md: metadata pinning and package presence alone do not establish installability or clear owner_pending."
+    ]
+  },
+  "route_changes": {
+    "priorities": [],
+    "dependencies": [
+      "Accepted preparation receipt leaves qualification and issuance open; readiness must establish a supported route before a new coding job."
+    ],
+    "newly_important": [
+      "Previous nested review exceeded its allocations while the global cap held, per records/rust-review-production-preparation-20261106/ACCOUNTING.json; preserve whole-objective reservations and avoid adding overlapping subtotals."
+    ],
+    "deferred": [
+      "The original user priority order keeps continuity and unattended operational-boundary qualification after the genuine development-loop proof; this receipt has not established those release claims."
+    ]
+  },
+  "recommended_campaign": {
+    "disposition": "start_new",
+    "objective": "Current qualification and at most one supervised Rust-owned development-loop attempt",
+    "work_source": "planning/rust-loop-qualification-and-first-proof-budget-20261106.md",
+    "reason": "Previous objective and clock are closed; the proposal requires fresh approval and preserves the unchanged35 aggregate ceiling."
+  },
+  "open_uncertainties": [
+    "Current Claude/catalog/compiler/credential eligibility and the ordinary issuance route remain unestablished.",
+    "A complete genuine accepted/published job and owner_pending clearance remain unproven."
+  ],
+  "authority_required": [
+    "Human approval of proposed12USD/120minute attempt within aggregate35.",
+    "Exact authority issuance and operator policy installation/readback after concrete candidate-bound bytes exist.",
+    "Operator decisions on actual acceptance and publication offers."
+  ],
+  "revisit_when": [
+    "Readiness exposes an unsupported runtime or missing authority/compiler contract.",
+    "A provider reservation or remaining clock cannot cover outstanding review and closure.",
+    "The actual Rust-owned loop is accepted and published, enabling the next priority."
+  ]
+}
