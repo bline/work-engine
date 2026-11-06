@@ -415,7 +415,7 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
         || config
             .coding_job_capability
             .as_deref()
-            .is_some_and(|c| c != job::CAPABILITY_OFFLINE)
+            .is_some_and(|c| ![job::CAPABILITY_OFFLINE, job::CAPABILITY_LIVE].contains(&c))
     {
         return Err("invalid_job_profile");
     }
@@ -426,6 +426,9 @@ fn load(path: &str) -> Result<(Config, Arc<App>), &'static str> {
         let (lock, bytes) = lock_private(path).map_err(|_| "invalid_job_profile")?;
         let profile: job::JobProfile =
             serde_json::from_slice(&bytes).map_err(|_| "invalid_job_profile")?;
+        if Some(profile.capability()) != config.coding_job_capability.as_deref() {
+            return Err("invalid_job_profile");
+        }
         (Some(lock), Some(Arc::new(job::Jobs::new(profile)?)), bytes)
     } else {
         (None, None, Vec::new())

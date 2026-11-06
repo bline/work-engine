@@ -22,7 +22,10 @@ S='{s}'; R='{r}'
 [ "$1" = pi-docker ] || exit 64
 act="$2"
 T="$(dirname "$S")"
-journal() {{ sed -e "s/@P@/$1/" -e "s/@R@/$2/" "$T/journal.tpl" > "$S/pi-state.json"; }}
+journal() {{
+  J="$(mktemp "$S/.pi-state.json.XXXXXX")" || exit 70
+  sed -e "s/@P@/$1/" -e "s/@R@/$2/" "$T/journal.tpl" > "$J" && mv "$J" "$S/pi-state.json" || {{ rm -f "$J"; exit 70; }}
+}}
 receipt() {{ cat "$T/receipt.json"; echo; }}
 case "$act" in
  run)
@@ -1069,4 +1072,209 @@ fn published_output_schema_names_exactly_the_fields_the_server_emits() {
         "#/$defs/schema_version"
     );
     assert_eq!(defs["schema_version"]["const"], SCHEMA);
+}
+
+/// Public-file-only live descriptor; the executable is deliberately still a shell fixture.
+/// This qualifies the server class/collector, never a provider or Docker realization.
+fn live_fixture(deadline: u64) -> Fx {
+    let mut fx = fixture(deadline, None);
+    let mut job: Value =
+        serde_json::from_slice(&std::fs::read(&fx.auth.job_file).unwrap()).unwrap();
+    let public = fx.root.join("public");
+    std::fs::write(&public, b"public fixture").unwrap();
+    let artifact = json!({"path":public,"sha256":hex(b"public fixture")});
+    let provider = json!({"lane":{"pi_config":{"root":fx.root.join("config"),"manifest":artifact},"native_auth_source":fx.root.join("unopened-native-source")},"task":artifact,"catalog":artifact,"access_adapter":artifact,"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
+    job["coding"]["schema"] =
+        json!(work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE);
+    job["coding"]["workspace_write_boundary"] = json!("src_lib_rs");
+    job["coding"]["fixture_command"] = json!("");
+    job["coding"]["provider"] = provider.clone();
+    for key in ["shim", "acceptance"] {
+        job["coding"][key] = artifact.clone();
+    }
+    job["coding"]["toolchain"]["manifest"] = artifact.clone();
+    job["runtime"]["manifest"] = artifact.clone();
+    job["workspace"]["manifest"] = artifact.clone();
+    let authority = fx.root.join("authority.json");
+    let auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":fx.jobs.profile.host_binary_sha256,"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"native_auth_source":provider["lane"]["native_auth_source"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"allow_native_access_projection":true}).to_string();
+    std::fs::write(&authority, &auth).unwrap();
+    job["authority"] = json!({"path":authority,"sha256":hex(auth.as_bytes())});
+    let packet = json!({"schema":"work-engine.coding-live-continuity-packet.v1","bounds":{"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":0,"physical_resets":1,"live_provider_requests":4}}).to_string();
+    std::fs::write(fx.root.join("packet.json"), &packet).unwrap();
+    job["packet"]["sha256"] = json!(hex(packet.as_bytes()));
+    let typed: work_engine_manual_host::pi_docker::Job =
+        serde_json::from_value(job.clone()).unwrap();
+    let canonical = serde_json::to_string(&typed).unwrap();
+    let host_digest = hex(canonical.as_bytes());
+    assert_eq!(host_input_digest(&job), Some(host_digest.clone()));
+    let old: Value = serde_json::from_slice(&std::fs::read(&fx.auth.job_file).unwrap()).unwrap();
+    let old_canonical =
+        serde_json::to_string(&serde_json::from_value::<host::Job>(old).unwrap()).unwrap();
+    for name in ["journal.tpl", "receipt.json"] {
+        let path = fx.root.join(name);
+        let text = std::fs::read_to_string(&path)
+            .unwrap()
+            .replace(&old_canonical, &canonical)
+            .replace(&fx.auth.host_input_digest, &host_digest);
+        std::fs::write(path, text).unwrap();
+    }
+    let bytes = serde_json::to_vec_pretty(&job).unwrap();
+    std::fs::write(&fx.auth.job_file, &bytes).unwrap();
+    fx.auth.job_sha256 = hex(&bytes);
+    fx.auth.host_input_digest = host_digest;
+    fx.auth.packet_sha256 = hex(packet.as_bytes());
+    let mut profile = fx.jobs.profile.clone();
+    profile.version = 2;
+    profile.capability = CAPABILITY_LIVE.into();
+    profile.class = CLASS_LIVE.into();
+    profile.authorizations = vec![fx.auth.clone()];
+    fx.jobs = Arc::new(Jobs::new(profile).unwrap());
+    fx
+}
+
+#[test]
+fn live_class_requires_exact_version_pins_and_canonical_owner_serialization() {
+    let fx = live_fixture(30);
+    let original = fx.jobs.profile.clone();
+    for mutate in [
+        |p: &mut JobProfile| p.version = 1,
+        |p: &mut JobProfile| p.class = CLASS_OFFLINE.into(),
+        |p: &mut JobProfile| p.capability = CAPABILITY_OFFLINE.into(),
+        |p: &mut JobProfile| p.authorizations[0].host_input_digest = "0".repeat(64),
+        |p: &mut JobProfile| p.host_binary_sha256 = "0".repeat(64),
+    ] {
+        let mut profile = original.clone();
+        mutate(&mut profile);
+        assert!(Jobs::new(profile).is_err());
+    }
+    let mut job: Value =
+        serde_json::from_slice(&std::fs::read(&fx.auth.job_file).unwrap()).unwrap();
+    for mutate in [
+        |v: &mut Value| v["coding"]["provider"]["unknown"] = json!(true),
+        |v: &mut Value| v["coding"]["provider"] = Value::Null,
+        |v: &mut Value| v["coding"]["schema"] = json!(HOST_CODING_SCHEMA),
+    ] {
+        let mut v = job.clone();
+        mutate(&mut v);
+        assert_eq!(host_input_digest(&v), None);
+    }
+    job.as_object_mut().unwrap().remove("idle_seconds");
+    job["coding"]
+        .as_object_mut()
+        .unwrap()
+        .remove("fixture_command");
+    assert_eq!(
+        host_input_digest(&job),
+        Some(fx.auth.host_input_digest.clone())
+    );
+    // Immutable artifact drift after startup is caught before request binding/entry.
+    std::fs::write(fx.root.join("public"), b"drift").unwrap();
+    assert_eq!(
+        fx.jobs
+            .call("submit_coding_job", submit_args(&fx, REQ))
+            .unwrap_err(),
+        "job_mismatch"
+    );
+    assert_eq!(runs(&fx), 0);
+}
+
+#[test]
+fn live_fixture_repeat_restart_reconcile_and_incomplete_output_preserve_one_effect() {
+    let mut fx = live_fixture(30);
+    std::fs::write(fx.root.join("crash"), b"").unwrap();
+    fx.jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    wait_state(&fx, "collected");
+    assert_eq!(runs(&fx), 1);
+    assert!(
+        fx.jobs
+            .call("read_coding_job_result", read_args(REQ))
+            .unwrap()["receipt"]
+            .is_object()
+    );
+    let profile = fx.jobs.profile.clone();
+    assert!(fx.jobs.shutdown(Duration::from_secs(3)));
+    std::fs::remove_file(fx.root.join("authority.json")).unwrap();
+    fx.jobs = Arc::new(Jobs::new(profile).unwrap());
+    fx.jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    assert_eq!(runs(&fx), 1);
+    std::fs::write(
+        fx.jobs.op_dir(&fx.auth).join("host-reconcile.json"),
+        br#"{"status":"completed","receipt_id":"summary-is-not-a-receipt"}"#,
+    )
+    .unwrap();
+    assert!(
+        fx.jobs
+            .call("read_coding_job_result", read_args(REQ))
+            .is_err()
+    );
+}
+
+#[test]
+fn live_fixture_deadline_collects_without_a_second_run() {
+    let fx = live_fixture(1);
+    std::fs::write(fx.root.join("hang"), b"").unwrap();
+    fx.jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    wait_state(&fx, "collected");
+    assert_eq!(runs(&fx), 1);
+    let outcome = read_json(&fx.jobs.op_dir(&fx.auth).join("collector-run.json"))
+        .unwrap()
+        .unwrap();
+    assert_eq!(outcome["collector_deadline_exceeded"], true);
+    assert_eq!(outcome["process_cleanup"], "owned_process_group_collected");
+    assert!(fx.jobs.shutdown(Duration::from_secs(3)));
+}
+
+#[test]
+fn live_fresh_admission_rejects_missing_authority_model_budget_and_expiry_before_entry() {
+    let fx = live_fixture(30);
+    let original: Value =
+        serde_json::from_slice(&std::fs::read(&fx.auth.job_file).unwrap()).unwrap();
+    for mutate in [
+        |v: &mut Value| v["coding"]["provider"]["model"] = json!("another-model"),
+        |v: &mut Value| v["coding"]["provider"]["budget_microusd"] = json!(700001),
+        |v: &mut Value| v["coding"]["provider"]["max_requests"] = json!(5),
+        |v: &mut Value| v["coding"]["provider"]["task"]["sha256"] = json!("0".repeat(64)),
+        |v: &mut Value| v["authority"]["path"] = json!("/missing/authority.json"),
+        |v: &mut Value| v["deadline_unix_seconds"] = json!(1),
+        |v: &mut Value| v["deadline_unix_seconds"] = json!(now() + 241),
+    ] {
+        let mut value = original.clone();
+        mutate(&mut value);
+        let bytes = serde_json::to_vec(&value).unwrap();
+        std::fs::write(&fx.auth.job_file, &bytes).unwrap();
+        let mut profile = fx.jobs.profile.clone();
+        profile.authorizations[0].job_sha256 = hex(&bytes);
+        profile.authorizations[0].host_input_digest = host_input_digest(&value).unwrap();
+        assert!(Jobs::new(profile).is_err());
+        assert_eq!(runs(&fx), 0);
+    }
+}
+
+#[test]
+fn live_unknown_entry_refuses_replacement_across_restart() {
+    let mut fx = live_fixture(30);
+    std::fs::write(fx.root.join("nostate"), b"").unwrap();
+    fx.jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    wait_state(&fx, "entry_uncertain");
+    assert_eq!(runs(&fx), 1);
+    let profile = fx.jobs.profile.clone();
+    assert!(fx.jobs.shutdown(Duration::from_secs(3)));
+    fx.jobs = Arc::new(Jobs::new(profile).unwrap());
+    fx.jobs
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    assert_eq!(
+        wait_state(&fx, "entry_uncertain")["state"],
+        "entry_uncertain"
+    );
+    assert_eq!(runs(&fx), 1);
+    assert!(!fx.root.join("reconciles").exists());
 }

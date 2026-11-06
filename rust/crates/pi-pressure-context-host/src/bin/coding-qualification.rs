@@ -7,8 +7,9 @@ use std::{fs, path::PathBuf};
 use work_engine_manual_host::{
     digest,
     pi_docker::{
-        Host, Job,
+        Host, Job, Journal,
         coding::{BRIDGE_PROFILE, LIVE_BRIDGE_PROFILE, WorkspaceWriteBoundary},
+        request_cancel,
     },
 };
 fn clock() -> ClockSample {
@@ -23,11 +24,46 @@ fn clock() -> ClockSample {
     }
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    work_engine_manual_host::install_signals();
     let args: Vec<_> = std::env::args().collect();
+    if args.get(1).is_some_and(|v| v == "pi-docker") {
+        if args.len() != 5 {
+            return Err("fixed pi-docker action and one path required".into());
+        }
+        let output = match (args[2].as_str(), args[3].as_str()) {
+            ("run", "--request") => execute(&args[4])?,
+            ("inspect", "--state") => {
+                serde_json::to_value(Host::open(&PathBuf::from(&args[4]))?.journal())?
+            }
+            ("reconcile", "--state") => Host::open(&PathBuf::from(&args[4]))?.reconcile()?,
+            ("cancel", "--state") => {
+                // Cancellation remains deliverable while run owns the Host lock, but it
+                // must still name this producing binary's original journal.
+                let state = PathBuf::from(&args[4]);
+                let journal: Journal =
+                    serde_json::from_slice(&fs::read(state.join("pi-state.json"))?)?;
+                if journal.binary_sha256 != digest(&fs::read(std::env::current_exe()?)?) {
+                    return Err("producer journal binary conflict".into());
+                }
+                request_cancel(&state)?
+            }
+            _ => return Err("unsupported fixed producer action".into()),
+        };
+        println!("{}", output);
+        return Ok(());
+    }
     if args.len() != 3 || args[1] != "--execute" {
         return Err("explicit --execute <pinned-job.json> required; no runtime entered".into());
     }
-    let job: Job = serde_json::from_slice(&fs::read(&args[2])?)?;
+    let result = execute(&args[2])?;
+    println!(
+        "{}",
+        json!({"status":if result["receipt"]["provider"] == "disabled" {"bounded_fixture_passed"} else {"bounded_live_continuity_completed"},"result":PathBuf::from(result["receipt"]["job"]["state_dir"].as_str().ok_or("state absent")?).join("coding-continuity-result.json"),"receipt_id":result["receipt_id"],"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"})
+    );
+    Ok(())
+}
+fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
+    let job: Job = serde_json::from_slice(&fs::read(path)?)?;
     let profile = job.coding.as_ref().ok_or("coding profile missing")?;
     // Two separately versioned profiles; neither can be selected by the other's
     // schema. Live additionally needs the Host's existing exact provider
@@ -187,9 +223,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .as_str()
         .ok_or("receipt identity absent")?;
     host.acknowledge(id)?;
-    println!(
-        "{}",
-        json!({"status":if live {"bounded_live_continuity_completed"} else {"bounded_fixture_passed"},"result":PathBuf::from(&state_dir).join("coding-continuity-result.json"),"receipt_id":id,"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"})
-    );
-    Ok(())
+    Ok(result)
 }

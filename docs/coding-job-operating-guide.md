@@ -1,6 +1,6 @@
 # Coding-job operating guide
 
-This guide covers the `coding-job-offline-fixture-v1` capability of the local server and command. It is qualified only offline, with a provider-disabled Pi Host fixture. It does not qualify a live provider job, relabel `offline-synthetic-v1`, or add an issuer, login, credential-minting API or deployment permission. The session-message capability, its grants and the claims and query reads are unchanged. Wire shapes are in [coding-job-v1.json](../rust/crates/work-engine-server/schemas/coding-job-v1.json); the server entry is documented in the [server README](../rust/crates/work-engine-server/README.md).
+This guide covers the separately provisioned `coding-job-offline-fixture-v1` and `coding-job-local-live-v1` capabilities of the local server and command. Deterministic tests use fixtures; those tests do not establish a live provider execution. Neither capability adds an issuer, login, credential-minting API or deployment permission. The session-message capability, its grants and the claims and query reads are unchanged. Wire shapes are in [coding-job-v1.json](../rust/crates/work-engine-server/schemas/coding-job-v1.json); the server entry is documented in the [server README](../rust/crates/work-engine-server/README.md).
 
 ## Ownership
 
@@ -15,7 +15,7 @@ The adapter never builds a job, never accepts a path, executable, job JSON or ha
 
 ## Authority contract
 
-The operator writes a private (`0600`, caller-owned) job profile, referenced by the server config as `coding_job_profile` together with `"coding_job_capability":"coding-job-offline-fixture-v1"` (both or neither; any other capability string, including live ones, is refused at startup). The profile pins:
+The operator writes a private (`0600`, caller-owned) job profile, referenced by the server config as `coding_job_profile` together with `"coding_job_capability":"coding-job-offline-fixture-v1"` (both or neither; the configuration capability must exactly match the profile capability). The profile pins:
 
 - the Host binary path and SHA-256, re-hashed before every Host invocation;
 - a private `operation_root` (`0700`) holding one directory per operation;
@@ -36,6 +36,56 @@ At submit the adapter reads the pinned job file itself and checks, before anythi
 7. `state_dir` is a private directory without `pi-state.json`; otherwise `state_not_fresh`.
 
 Prepare the job file immediately before submission; the Host only admits a fresh deadline within 300 seconds. A refusal at steps 1 to 7 leaves nothing bound and the authorization usable.
+
+## Opt-in local live profile
+
+The live class uses profile `version:2`, `kind:"coding-job-profile"`,
+`capability:"coding-job-local-live-v1"`, and `class:"local-live"`. All other
+profile fields and strict request shapes are the same. Its `host_binary` is the
+newly built `coding-qualification` producing executable, pinned by SHA-256.
+Version 1 remains the offline class and continues to refuse provider fields.
+The two classes cannot select each other's capability or version.
+
+The exact job uses `work-engine.pi-coding-lifecycle-live.v1`, the existing
+provider plan and `src_lib_rs` write boundary, one tool call, four provider
+requests, `gpt-6-luna`, at most 700000 microUSD reservation and 24000 context
+bytes, no fixture command or receiver, at most 8192 task bytes and a fresh
+deadline within 240 seconds. The live
+digest uses the Host owner's public typed `Job` serialization. Unknown fields
+are rejected; omitted defaults serialize exactly as the Host serializes them.
+The existing pinned job includes the authority, task, workspace, validator,
+runtime, toolchain, catalog, access adapter, model, budget and deadline.
+
+For fresh admission the server verifies those public artifact pins and the
+existing provider authority's job/binary/model/access-source/config/task/catalog/
+request/budget bindings. The packet must be
+`work-engine.coding-live-continuity-packet.v1` with the existing one-inference,
+one-tool, one-validator, two-SDK-session, one-workspace-command, one-reset and
+four-live-request bounds. These checks run at fresh startup, at submission and
+again before spawning the producing executable. The Host repeats full admission,
+including inventories and provider permission, before effects. Profile data and
+transport credentials do not grant provider authority. Fresh state is required;
+root/operator admission of the exact executable/job/authority remains separate.
+
+The producer supports fixed verbs `pi-docker run --request FILE`, and
+`inspect|reconcile|cancel --state DIR`. Run uses its original lifecycle
+composition and returns the actual `{receipt_id,receipt}` wrapper after the
+existing successful delivery ACK. `--execute FILE` remains compatible with its
+summary output. Inspect opens the same producing-binary journal without changing
+its recorded state. Reconcile collects that journal through the existing Host;
+it installs no fresh lifecycle gate and starts no new provider execution. Cancel
+checks producing-binary identity and writes the existing cancellation request
+without waiting for the run lock. Signal handling uses the existing Host's
+bounded stop mechanism. Delivery ACK leaves acceptance `owner_pending`.
+
+A restarted server can reopen an already bound operation after its original
+admission inputs expire; readback and reconciliation do not issue fresh entry.
+Exact repeat retains one operation; unknown entry stays uncertain and never
+launches a replacement. Qualification of the actual development pilot additionally
+requires the Events HTTP MCP → command → server → producing runtime path, original
+independent validation of exported repository bytes, separate review and explicit
+owner acceptance. A fixture verifier establishes only its configured fixture
+identity, not OAuth onboarding.
 
 ## Request flow
 

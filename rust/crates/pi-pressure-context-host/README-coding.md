@@ -123,3 +123,26 @@ The live profile's sole tool-bearing turn uses the initial ingress prefix from
 sequence 1 through its committed history coordinate. Derivation reads only that
 slice. Later duplicate observations preserve checkpoint availability; genuinely
 conflicting observations still fence the parent through normal owner handling.
+
+
+## Producing-binary job facade
+
+`coding-qualification` retains `--execute PINNED_JOB` and also serves the fixed
+server interface: `pi-docker run --request PINNED_JOB` and
+`pi-docker inspect|reconcile|cancel --state ORIGINAL_STATE`.
+Run invokes the same bounded lifecycle composition and successful delivery ACK,
+then emits the real Host `{receipt_id,receipt}` wrapper. The legacy `--execute`
+summary remains unchanged. Neither output grants semantic acceptance.
+
+Inspect reads the original journal under its existing Host lock. Reconcile opens
+that same producing-binary state and collects through Host recovery, without
+installing a new lifecycle gate or starting a replacement provider turn. Cancel
+verifies the producing binary and original job identity and writes the existing
+Host cancellation marker while a run may hold the lock. SIGTERM/SIGINT use the
+Host's existing stop handling. An old producer's journals cannot be reinterpreted
+by a rebuilt executable.
+
+`tests/coding_driver.rs` exercises the actual executable with synthetic collected
+journals and missing-input failures. Server live-class tests use shell fixtures
+for timeout, interruption, replay and Events HTTP composition. These are offline
+evidence; actual live qualification remains an independently admitted run.

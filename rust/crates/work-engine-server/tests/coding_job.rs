@@ -205,6 +205,73 @@ impl Fx {
         fx.start();
         fx
     }
+    /// Live-class collector fixture. No provider, credentials or Docker are entered.
+    fn enable_live_fixture(&mut self) {
+        self.stop();
+        let mut job: Value =
+            serde_json::from_slice(&std::fs::read(self.root.join("job.json")).unwrap()).unwrap();
+        let old: work_engine_manual_host::pi_docker::Job =
+            serde_json::from_value(job.clone()).unwrap();
+        let old_canonical = serde_json::to_string(&old).unwrap();
+        let old_digest = hex(old_canonical.as_bytes());
+        let public = self.root.join("public");
+        private(&public, b"public fixture", 0o600);
+        let artifact = json!({"path":public,"sha256":hex(b"public fixture")});
+        let provider = json!({"lane":{"pi_config":{"root":self.root.join("config"),"manifest":artifact},"native_auth_source":self.root.join("unopened-native-source")},"task":artifact,"catalog":artifact,"access_adapter":artifact,"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
+        job["coding"]["schema"] =
+            json!(work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE);
+        job["coding"]["workspace_write_boundary"] = json!("src_lib_rs");
+        job["coding"]["fixture_command"] = json!("");
+        job["coding"]["provider"] = provider.clone();
+        for key in ["shim", "acceptance"] {
+            job["coding"][key] = artifact.clone();
+        }
+        job["coding"]["toolchain"]["manifest"] = artifact.clone();
+        job["runtime"]["manifest"] = artifact.clone();
+        job["workspace"]["manifest"] = artifact.clone();
+        let mut profile: Value =
+            serde_json::from_slice(&std::fs::read(self.root.join("job-profile.json")).unwrap())
+                .unwrap();
+        let auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":profile["host_binary_sha256"],"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"native_auth_source":provider["lane"]["native_auth_source"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"allow_native_access_projection":true}).to_string();
+        private(&self.root.join("authority.json"), auth.as_bytes(), 0o600);
+        job["authority"] =
+            json!({"path":self.root.join("authority.json"),"sha256":hex(auth.as_bytes())});
+        let packet = json!({"schema":"work-engine.coding-live-continuity-packet.v1","bounds":{"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":0,"physical_resets":1,"live_provider_requests":4}}).to_string();
+        private(&self.root.join("packet.json"), packet.as_bytes(), 0o600);
+        self.packet_sha = hex(packet.as_bytes());
+        job["packet"]["sha256"] = json!(self.packet_sha);
+        let typed: work_engine_manual_host::pi_docker::Job =
+            serde_json::from_value(job.clone()).unwrap();
+        let canonical = serde_json::to_string(&typed).unwrap();
+        let digest = hex(canonical.as_bytes());
+        for name in ["journal.tpl", "receipt.json"] {
+            let path = self.root.join(name);
+            let text = std::fs::read_to_string(&path)
+                .unwrap()
+                .replace(&old_canonical, &canonical)
+                .replace(&old_digest, &digest);
+            private(&path, text.as_bytes(), 0o600);
+        }
+        let bytes = serde_json::to_vec_pretty(&job).unwrap();
+        private(&self.root.join("job.json"), &bytes, 0o600);
+        self.job_sha = hex(&bytes);
+        profile["version"] = json!(2);
+        profile["capability"] = json!("coding-job-local-live-v1");
+        profile["class"] = json!("local-live");
+        profile["authorizations"][0]["job_sha256"] = json!(self.job_sha);
+        profile["authorizations"][0]["packet_sha256"] = json!(self.packet_sha);
+        profile["authorizations"][0]["host_input_digest"] = json!(digest);
+        private(
+            &self.root.join("job-profile.json"),
+            profile.to_string().as_bytes(),
+            0o600,
+        );
+        let mut config: Value =
+            serde_json::from_slice(&std::fs::read(&self.config).unwrap()).unwrap();
+        config["coding_job_capability"] = json!("coding-job-local-live-v1");
+        private(&self.config, config.to_string().as_bytes(), 0o600);
+        self.start();
+    }
     fn start(&mut self) {
         let child = Command::new(env!("CARGO_BIN_EXE_work-engine-server"))
             .arg(&self.config)
@@ -623,6 +690,13 @@ fn command_repeat_during_host_journal_publication_preserves_identity() {
 #[test]
 #[ignore = "requires COMMAND_BINARY pointing at work-engine-command"]
 fn events_http_mcp_preserves_the_real_job_operation_across_server_restart() {
+    events_job_bridge(false);
+}
+#[test]
+fn events_http_mcp_live_class_fixture_preserves_the_original_operation_across_restart() {
+    events_job_bridge(true);
+}
+fn events_job_bridge(live: bool) {
     use std::io::{Read, Write};
 
     struct Events(Child);
@@ -681,6 +755,9 @@ fn events_http_mcp_preserves_the_real_job_operation_across_server_restart() {
     let binary =
         std::env::var("COMMAND_BINARY").expect("COMMAND_BINARY must name work-engine-command");
     let mut fx = Fx::new();
+    if live {
+        fx.enable_live_fixture();
+    }
     // Cargo's executable can be hard-linked to its deps entry. Match the existing
     // bridge fixtures: stage a private single-link copy before pinning it.
     let staged_binary = fx.root.join("work-engine-command");

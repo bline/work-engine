@@ -31,6 +31,8 @@ use std::{
 };
 
 pub const CAPABILITY_OFFLINE: &str = "coding-job-offline-fixture-v1";
+pub const CAPABILITY_LIVE: &str = "coding-job-local-live-v1";
+const CLASS_LIVE: &str = "local-live";
 const SCHEMA: &str = "work-engine.coding-job.v1";
 const PROFILE_KIND: &str = "coding-job-profile";
 const CLASS_OFFLINE: &str = "offline-fixture";
@@ -166,14 +168,97 @@ mod host {
     }
 }
 
-/// The Host input digest of a job document, or `None` when it is outside the offline class or a
-/// different Host job/profile version.
+/// The Host input digest for the bounded offline or lifecycle-live class. Other
+/// Host job/profile versions and unknown fields have no supported digest.
 fn host_input_digest(job: &Value) -> Option<String> {
+    // The live class uses the owner's public versioned DTO, including emitted defaults.
+    if job["coding"]["schema"] == work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE {
+        let typed: work_engine_manual_host::pi_docker::Job =
+            serde_json::from_value(job.clone()).ok()?;
+        if typed.schema != HOST_JOB_SCHEMA
+            || typed.receiver.is_some()
+            || typed.coding.as_ref()?.provider.is_none()
+        {
+            return None;
+        }
+        return Some(hex(&serde_json::to_vec(&typed).ok()?));
+    }
     let typed: host::Job = serde_json::from_value(job.clone()).ok()?;
     if typed.schema != HOST_JOB_SCHEMA || typed.coding.schema != HOST_CODING_SCHEMA {
         return None;
     }
     Some(hex(&serde_json::to_vec(&typed).ok()?))
+}
+
+/// Check public immutable admission references before consuming the one-shot authorization.
+/// Host admission remains the authority owner and repeats its full checks before effects.
+fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
+    use work_engine_manual_host::pi_docker::{
+        Job,
+        coding::{LIVE_BRIDGE_PROFILE, WorkspaceWriteBoundary},
+    };
+    let job: Job = serde_json::from_value(value.clone()).map_err(|_| "host_identity_mismatch")?;
+    let coding = job.coding.as_ref().ok_or("capability_mismatch")?;
+    let provider = coding.provider.as_ref().ok_or("capability_mismatch")?;
+    if coding.schema != LIVE_BRIDGE_PROFILE
+        || coding.max_tool_calls != 1
+        || coding.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
+        || !coding.fixture_command.is_empty()
+        || job.receiver.is_some()
+        || provider.model != "gpt-6-luna"
+        || provider.max_requests != 4
+        || provider.budget_microusd == 0
+        || provider.budget_microusd > 700_000
+        || !(1024..=24_000).contains(&provider.max_context_bytes)
+        || !(1..=30).contains(&job.command_timeout_seconds)
+        || job.idle_seconds != 0
+    {
+        return Err("capability_mismatch");
+    }
+    let authority: Value =
+        serde_json::from_slice(&job.authority.verify().map_err(|_| "job_mismatch")?)
+            .map_err(|_| "job_mismatch")?;
+    if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
+        || authority["binary_sha256"] != binary
+        || authority["job_id"] != job.job_id
+        || authority["model"] != provider.model
+        || authority["task_sha256"] != provider.task.sha256
+        || authority["catalog_sha256"] != provider.catalog.sha256
+        || authority["native_auth_source"]
+            != serde_json::to_value(&provider.lane.native_auth_source)
+                .map_err(|_| "job_mismatch")?
+        || authority["pi_config_manifest_sha256"] != provider.lane.pi_config.manifest.sha256
+        || authority["max_requests"] != provider.max_requests
+        || authority["budget_microusd"] != provider.budget_microusd
+        || authority["allow_provider"] != true
+        || authority["allow_native_access_projection"] != true
+    {
+        return Err("job_mismatch");
+    }
+    if provider.task.verify().map_err(|_| "job_mismatch")?.len() > 8192 {
+        return Err("job_mismatch");
+    }
+    for artifact in [
+        &provider.catalog,
+        &provider.access_adapter,
+        &coding.shim,
+        &coding.acceptance,
+        &job.workspace.manifest,
+        &coding.toolchain.manifest,
+        &job.runtime.manifest,
+        &provider.lane.pi_config.manifest,
+    ] {
+        artifact.verify().map_err(|_| "job_mismatch")?;
+    }
+    let packet: Value = serde_json::from_slice(&job.packet.verify().map_err(|_| "job_mismatch")?)
+        .map_err(|_| "job_mismatch")?;
+    if packet["schema"] != "work-engine.coding-live-continuity-packet.v1"
+        || packet["bounds"]
+            != json!({"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":0,"physical_resets":1,"live_provider_requests":4})
+    {
+        return Err("job_mismatch");
+    }
+    Ok(())
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -331,11 +416,18 @@ pub struct Jobs {
 }
 
 impl JobProfile {
+    pub fn capability(&self) -> &str {
+        &self.capability
+    }
+    fn live(&self) -> bool {
+        self.version == 2 && self.capability == CAPABILITY_LIVE && self.class == CLASS_LIVE
+    }
     pub fn validate(&self) -> Result<(), &'static str> {
-        if self.version != 1
+        if !((self.version == 1
+            && self.capability == CAPABILITY_OFFLINE
+            && self.class == CLASS_OFFLINE)
+            || self.live())
             || self.kind != PROFILE_KIND
-            || self.capability != CAPABILITY_OFFLINE
-            || self.class != CLASS_OFFLINE
             || !Path::new(&self.host_binary).is_absolute()
             || !is_hex64(&self.host_binary_sha256)
             || !Path::new(&self.operation_root).is_absolute()
@@ -414,6 +506,15 @@ impl Jobs {
             }),
         };
         jobs.host_binary()?;
+        if jobs.profile.live() {
+            for authorization in &jobs.profile.authorizations {
+                // Recovery reads the original operation even after deadlines or input expiry.
+                // Only a fresh authorization can enter and needs fresh admission now.
+                if !jobs.op_dir(authorization).join("binding.json").exists() {
+                    jobs.verify_job(authorization)?;
+                }
+            }
+        }
         Ok(jobs)
     }
 
@@ -510,7 +611,8 @@ impl Jobs {
         let deadline = job["deadline_unix_seconds"]
             .as_u64()
             .ok_or("job_mismatch")?;
-        if deadline <= now() + 5 || deadline > now() + 300 {
+        let latest = if self.profile.live() { 240 } else { 300 };
+        if deadline <= now() + 5 || deadline > now() + latest {
             return Err("job_deadline_window");
         }
         // Offline class: provider-disabled coding profile only, no receiver/native auth lane.
@@ -518,8 +620,13 @@ impl Jobs {
             .get("coding")
             .filter(|c| c.is_object())
             .ok_or("job_mismatch")?;
-        if coding.get("provider").is_some_and(|p| !p.is_null()) || job.get("receiver").is_some() {
+        if job.get("receiver").is_some()
+            || (!self.profile.live() && coding.get("provider").is_some_and(|p| !p.is_null()))
+        {
             return Err("capability_mismatch");
+        }
+        if self.profile.live() {
+            verify_live_job(&job, &self.profile.host_binary_sha256)?;
         }
         // Bind the exact Host serialized Job before any entry is possible. A job outside the offline
         // shape or a different Host job/profile version has no digest; a different job has another one.
@@ -853,10 +960,17 @@ impl Jobs {
         let snapshot_ok = action != "run"
             || session_query::read_file(&snapshot, JOB_FILE_LIMIT, true)
                 .is_ok_and(|b| hex(&b) == a.job_sha256);
-        if !snapshot_ok {
+        let admission = if !snapshot_ok {
+            Err("job_snapshot_mismatch")
+        } else if action == "run" && self.profile.live() {
+            self.verify_job(a).map(|_| ())
+        } else {
+            Ok(())
+        };
+        if let Err(code) = admission {
             let _ = write_atomic(
                 &dir.join("collector-run.json"),
-                &json!({"schema":SCHEMA,"action":action,"spawn_error":"job_snapshot_mismatch","process_cleanup":"not_established"}),
+                &json!({"schema":SCHEMA,"action":action,"spawn_error":code,"process_cleanup":"not_established"}),
             );
             return;
         }

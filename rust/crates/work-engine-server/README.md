@@ -276,4 +276,11 @@ config fields, a separate job credential pinned by hash in the operator profile,
 and no session grant or bearer authorizes a job. The Pi Host remains the owner of
 admission, effects, custody and receipts. See the
 [coding-job operating guide](../../../docs/coding-job-operating-guide.md) and
-[schema](schemas/coding-job-v1.json). Qualification is offline only.
+[schema](schemas/coding-job-v1.json). Deterministic qualification uses fixtures.
+
+A separate opt-in `coding-job-local-live-v1` capability requires a version 2
+`local-live` job profile and the pinned `coding-qualification` producing binary.
+It uses the existing lifecycle-live Host profile and canonical public Job DTO;
+version 1 offline profiles retain provider refusal. The config capability must
+match the profile. See the operating guide for exact pins, limits, the producer
+facade and the separate live admission/acceptance obligations.

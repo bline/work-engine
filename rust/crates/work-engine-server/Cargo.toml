@@ -5,6 +5,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+work-engine-manual-host = { path = "../work-engine-manual-host" }
 claim-evidence = { path = "../claim-evidence" }
 repository-evidence-cbm = { path = "../repository-evidence-cbm" }
 session-query = { path = "../session-query" }

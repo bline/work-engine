@@ -4310,6 +4310,7 @@ dependencies = [
  "time",
  "tokio",
  "work-engine-claims-host",
+ "work-engine-manual-host",
 ]
 
 [[package]]
