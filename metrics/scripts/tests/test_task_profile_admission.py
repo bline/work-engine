@@ -400,6 +400,13 @@ class AdmissionBase(unittest.TestCase):
             self.rechain(run, "t", {"enrollment.json": lambda data: data.update(task_id="other")})
             return run
 
+        def enrollment_task_id_masks_a_stop(name):
+            """The enrollment names another task and the history covers that name: the old gate reads the P1 as
+            covered."""
+            run = enrollment_task_id(name)
+            self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["other"]}})
+            return run
+
         def review_task_id(name):
             run = self.terra_with_review(name, p1=1)
             self.rechain(run, "t", {"review-first.json": lambda data: data.update(task_id="other")})
@@ -513,6 +520,10 @@ class AdmissionBase(unittest.TestCase):
                 self.new_run(name)), "round_file_unreadable"),
             "pause_duplicate_keys": (history_text('{"covered_triggers": {"p1_episodes": ["task-p1"]}, "covered_triggers": {}}'),
                                      "trigger_inputs_unreadable"),
+            "pause_duplicate_keys_last_one_covers": (
+                history_text('{"covered_triggers": {}, "covered_triggers": {"p1_episodes": ["task-p1"]}}'),
+                "trigger_inputs_unreadable"),
+            "enrollment_task_id_masks_a_stop": (enrollment_task_id_masks_a_stop, "enrollment_record_invalid"),
             "pause_nan_rounds": (history_text('{"covered_triggers": {"terra_repair_rounds": NaN}}'),
                                  "trigger_inputs_unreadable"),
             "pause_infinity_rounds": (history_text('{"covered_triggers": {"terra_repair_rounds": Infinity}}', rounds),
