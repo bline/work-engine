@@ -1,0 +1,56 @@
+{
+  "role": "rust-production-startup",
+  "root_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+  "approved_objective_status": "COMPLETE_SOURCE_FIXTURE_ACCEPTED",
+  "original_B_production_objective": "UNFULFILLED; prior closure remains historical",
+  "source_commit": "6410ab92fb2fd823a530e9a25952bfafb73cae7d",
+  "merge_commit": "7fc47c0e87870c5520986ee25f8f4e41ce61c884",
+  "source_integrated": true,
+  "acceptance": "STARTUP-B-001/002 resolved for bounded source review, no new findings; Root accepts original841 source through reconstructedc12/4f/6410 repairs. Whole-source review not renewed.",
+  "repair": "Actual private boundary root and all seven directory sources must be canonical nonsymlink private runtime/root-owned directories, rechecked on frozen verification, cold open and both sandbox constructors.",
+  "trust_limit": "Untrusted confined descendants cannot write host boundary parents. Pathname checks do not fence concurrent trusted-host replacement after final check, malicious host mounts or administrators.",
+  "validation": "Baseline actual process/child proxy-alias exposure reproduced. Ten repaired fixture/build/consumer/lint/format checks pass; source/release identity verified. No whole-suite or installed-production qualification.",
+  "failure_history": "Initial private-mount fixture selected symlinked /usr/bin/true and failed UnsafeProgram; canonical fixture selection corrected without pin weakening. Prior analyzer-pin, overlap and fixture failures preserved.",
+  "requested_observed": "Builder requested Sol6.1/medium/default; latest retained applied event only, new-turn applied preservation unestablished. Separate reviewer exact turn matched Astra/high/default with native readOnly/networkfalse; Root Sol6.1/xhigh/default applied on approval turn. Backend fulfillment/billing unknown.",
+  "review_continuity": "reconstructed, same-provider different-model; no wider-tool/cross-provider/statistical/continuous-context independence claim",
+  "review_host_fallback": "Optional outer host refused before create/start on partial cost status from redundant parent binding. Refusal closed/acked. Existing pinned role_host prepared native readOnly, Root verified realized grant and configured review cap before first turn, exact-turn collection captured one explicit final_answer. No thread-idleness acceptance.",
+  "installation_standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "production_qualification": "UNESTABLISHED",
+  "production_missing": [
+    "actual qualified startup/job policy",
+    "genuine reviewed subject and destination/ref",
+    "validator policy",
+    "filesystem and epoch allocation",
+    "authority issuance",
+    "current provider/catalog/compiler/credential qualification",
+    "exact installation/readback review and operator approval"
+  ],
+  "excluded": [
+    "protected installation/publication",
+    "C whole-job settlement",
+    "new full live-loop pilot",
+    "credentials/provider actions",
+    "paused peer state"
+  ],
+  "pushed": false,
+  "foreign_untracked_preserved": ".claude/",
+  "process_disposition": {
+    "budget_listener": {
+      "pid": 2134267,
+      "state": "gone",
+      "cleanup": "already_gone",
+      "detached_exit_code": "unavailable"
+    },
+    "observer_99590": "collected exit0 at allocation boundary",
+    "observer_60478": "collected exit0 at exact terminal",
+    "native_preparation_37509": "collected exit0",
+    "startup_57544": "collected exit0",
+    "builder": "completed; exact final collected; zero reported processes",
+    "review": "exact selected turn completed, final captured; native role released without paid turn",
+    "optional_host": "pre-admission refusal with no create/start; operation abandoned, final receipt acknowledged",
+    "remaining_owned_processes": []
+  },
+  "next_owner": "Human supplies actual production selections and authorizes a separate production qualification scope; C remains separate. No automatic continuation beyond this accepted repair.",
+  "phase_artifacts": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236",
+  "accounting": "ACCOUNTING.json"
+}

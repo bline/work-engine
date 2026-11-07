@@ -1,0 +1,26 @@
+{
+  "baseline_commit": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "files": [
+    {
+      "path": "rust/crates/review-execution-evidence/src/claude/isolation.rs",
+      "baseline_sha256": "c900f596abd7e72060602d00bfc3931962bc1420d89c00378ab6220c8d547f34",
+      "repaired_sha256": "088c668c9f93dc80916b567c069ac984052fa52e143fb7a403a2cfa809388b1b",
+      "baseline_bytes": 79396,
+      "repaired_bytes": 83386
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/production_completion.rs",
+      "baseline_sha256": "ea4ba938ced20e978fa82d6ffa0fdafd32b6d58492eb5d0822d4e2900031275f",
+      "repaired_sha256": "8049b1c5ca1ca929f110e14368d8ea67b9683ae9c083602025fd019b9a7ae06b",
+      "baseline_bytes": 7466,
+      "repaired_bytes": 8800
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/README.md",
+      "baseline_sha256": "ab575b4930a1a1d8598feb41ae3741343d17f9f615a62b19857db3ac96dd5d69",
+      "repaired_sha256": "44ac92f12b771e39452a4afd839e6d75eacb6d1d91ad46f0daefceb8ce08ffd7",
+      "baseline_bytes": 7491,
+      "repaired_bytes": 8628
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "0bba9581-2a25-432d-8b03-fe44bdd6fbe6",
+    "sessions": [
+      {
+        "session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "provider": "codex",
+        "from": "2026-11-07T02:39:19Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [
+      {
+        "session_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+        "provider": "codex",
+        "parent_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "bound_at": "2026-11-07T02:39:20Z",
+        "bound_by": "supervisor",
+        "reason": "New approved remaining001 repair; retained builder historical calls excluded by new window"
+      },
+      {
+        "session_id": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+        "provider": "codex",
+        "parent_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "bound_at": "2026-11-07T02:54:14Z",
+        "bound_by": "supervisor",
+        "reason": "Separate native readOnly bounded alias review; optional outer host refused before effects; direct role_host owns exact selected turn"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 5.45,
+        "marks_usd": [
+          4.5
+        ],
+        "set_by": "user",
+        "set_at": "2026-11-07T02:39:20Z",
+        "reason": "6all-in minus.30startup and.25closingholds; hardstop04:06:14.724",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+        "max_usd": 2.0,
+        "marks_usd": [],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T02:39:20Z",
+        "reason": "Approved bounded repair allocation, reserving separate review and closure",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+        "max_usd": 3.0,
+        "marks_usd": [],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T02:57:16Z",
+        "reason": "Reallocate approved0.5contingency to review before original2.5 crossing: observed2.254562, global4.2214724 including holds; original6/90min and aggregate61 unchanged. Final bounded report/closure only.",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Remaining STARTUP-B-001 socket alias repair, meaningful regression, affected validation, separate bounded review, local integration only if accepted",
+    "original_items": [
+      "Resolve remaining001 without weakening executable/UID/custody authority",
+      "Regression and affected checks, separate source review, accept and integrate locally only if no blocking defect",
+      "Collect all actors/processes, retain failures/limitations and close under6USD/90minutes"
+    ],
+    "started_at": "2026-11-07T02:39:19Z",
+    "weekly_at_start": {
+      "used_percent": 91.0,
+      "observed_at": "2026-11-07T02:38:14.885Z",
+      "resets_at": 1794435190,
+      "window_minutes": 10080,
+      "limit_id": "codex",
+      "plan_type": "prolite",
+      "source": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T17-17-29-01a1b35e-1427-7e03-ba39-5b9e1be3cb97.jsonl"
+    },
+    "limits": {
+      "max_hours": 1.4485513575,
+      "reconsider_after_additions": 1
+    },
+    "limits_set_by": "user",
+    "limits_reason": "Current budget approved binds6USD, original approval02:36:14.724 +90min, aggregate61; startup.30 and closure.25 reserved outside canonical5.45.",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 5.45,
+          "marks_usd": [
+            4.5
+          ],
+          "set_by": "user",
+          "set_at": "2026-11-07T02:39:20Z",
+          "reason": "6all-in minus.30startup and.25closingholds; hardstop04:06:14.724",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+          "max_usd": 2.0,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T02:39:20Z",
+          "reason": "Approved bounded repair allocation, reserving separate review and closure",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+          "max_usd": 2.5,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T02:54:14Z",
+          "reason": "Approved separate review2.5 configured before native first turn",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+          "max_usd": 3.0,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T02:57:16Z",
+          "reason": "Reallocate approved0.5contingency to review before original2.5 crossing: observed2.254562, global4.2214724 including holds; original6/90min and aggregate61 unchanged. Final bounded report/closure only.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+          "max_usd": 2.5,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T02:54:14Z",
+          "reason": "Approved separate review2.5 configured before native first turn",
+          "basis": "speed_adjusted_api_usd"
+        }
+      }
+    ],
+    "additions": [],
+    "listener": {
+      "pid": 2134267,
+      "started_at": "2026-11-07T02:40:09Z",
+      "argv": [
+        "/usr/bin/python3",
+        "/home/bline/code/work-engine/skills/durable-state/scripts/codex_chatboard.py",
+        "--repository",
+        "/home/bline/code/work-engine",
+        "wait",
+        "--since",
+        "4795",
+        "--topic",
+        "session:01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "--exclude-session-id",
+        "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "--budget-record",
+        "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/budget.json",
+        "--budget-reader",
+        "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+        "--budget-sha256",
+        "ed026f40f93801c9fffab4a9d5d5fc32745fd1d94a6137edd22ed875b5a67291",
+        "--budget-interval",
+        "20.0",
+        "--follow"
+      ],
+      "stdout": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/budget-listener-0bba9581-2a25-432d-8b03-fe44bdd6fbe6.jsonl",
+      "stderr": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/budget-listener-0bba9581-2a25-432d-8b03-fe44bdd6fbe6.stderr",
+      "reader": "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+      "reader_sha256": "ed026f40f93801c9fffab4a9d5d5fc32745fd1d94a6137edd22ed875b5a67291",
+      "chatboard": "/home/bline/code/work-engine/skills/durable-state/scripts/codex_chatboard.py",
+      "chatboard_sha256": "698a63ed0c63ea6d46d589c91a3c96fe8c71de8a455c8c769747e2e8e0582dfc"
+    },
+    "closed_at": "2026-11-07T03:00:01Z",
+    "close": {
+      "at": "2026-11-07T03:00:01Z",
+      "disposition": "accepted",
+      "reason": "Approved bounded001 repair complete: exact6410ab92 source accepted after separate native readOnly Astra/high/default review, merged locally7fc47c0e. Both001/002 resolved for source. Production installation/publication/C remain excluded and unestablished; all review/worker finals collected, closure records only remain.",
+      "set_by": "supervisor"
+    }
+  }
+}

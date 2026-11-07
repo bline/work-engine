@@ -1,0 +1,16 @@
+{
+  "budget_listener": {
+    "pid": 2134267,
+    "state": "gone",
+    "cleanup": "already_gone",
+    "detached_exit_code": "unavailable"
+  },
+  "observer_99590": "collected exit0 at allocation boundary",
+  "observer_60478": "collected exit0 at exact terminal",
+  "native_preparation_37509": "collected exit0",
+  "startup_57544": "collected exit0",
+  "builder": "completed; exact final collected; zero reported processes",
+  "review": "exact selected turn completed, final captured; native role released without paid turn",
+  "optional_host": "pre-admission refusal with no create/start; operation abandoned, final receipt acknowledged",
+  "remaining_owned_processes": []
+}

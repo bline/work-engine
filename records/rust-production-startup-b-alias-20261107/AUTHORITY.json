@@ -1,0 +1,33 @@
+{
+  "human_reply": "budget approved",
+  "approval_at": "2026-11-07T02:36:14.724Z",
+  "objective": "Remaining STARTUP-B-001 socket alias repair, meaningful regression, affected validation, separate bounded review, local integration only if accepted",
+  "max_all_in_usd": 6,
+  "target_usd": [
+    4,
+    5
+  ],
+  "canonical_cap_usd": 5.45,
+  "setup_hold_usd": 0.3,
+  "closing_hold_usd": 0.25,
+  "setup_basis": "Pre-init calls from current approval are conservatively reserved here; root canonical window begins at init. Prior closed scope is not reopened and later candidates are not automatically attributed there.",
+  "hard_stop": "2026-11-07T04:06:14.724000+00:00",
+  "aggregate_prior_conservative_usd": 54.9297396,
+  "aggregate_ceiling_usd": 61,
+  "root_sid": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+  "allowed": "Private bounded source changes, focused checks and local source/record commits; no push",
+  "excluded": [
+    "protected installation or publication",
+    "actual production authority issuance",
+    "C settlement",
+    "live full-loop pilot",
+    "credentials/provider calls",
+    "paused peer state"
+  ],
+  "allocation": {
+    "builder": 2,
+    "review": 2.5,
+    "coordination_and_closure": 1,
+    "contingency": 0.5
+  }
+}

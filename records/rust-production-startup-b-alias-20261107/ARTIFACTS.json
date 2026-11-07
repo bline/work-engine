@@ -1,0 +1,137 @@
+{
+  "phase": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236",
+  "artifacts": [
+    {
+      "record": "AUTHORITY.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/AUTHORITY.json",
+      "sha256": "ea7c5bca572ee3a20dc9dd9dc5bd60c38d9e3eb76e968e4ba1857a4bb2448675",
+      "byte_identical": true
+    },
+    {
+      "record": "BUILDER-RESULT.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/RESULT.json",
+      "sha256": "3241e8823f1806d672c6e3a12d4ec2d70beb52121dcd457d6e8877b84c6aaaf5",
+      "byte_identical": true
+    },
+    {
+      "record": "SOURCE-DELTA.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/SOURCE-DELTA.json",
+      "sha256": "ad834535e949ed0d625d716b1b22c56a291872dafd8f595453fb2e17793552e3",
+      "byte_identical": true
+    },
+    {
+      "record": "INSTALLATION-PACKET.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/INSTALLATION-PACKET.json",
+      "sha256": "5d61a5920d93a5e05cd07330f0f248eafc6008f1beeabaa5dbb79b88c2fbfea5",
+      "byte_identical": true
+    },
+    {
+      "record": "MOUNT-ALIAS-EVIDENCE.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/MOUNT-ALIAS-EVIDENCE.json",
+      "sha256": "a8b97b89b4f3408961a6ed2f6521f41f79f72ffdcf4c83036b2b8f4fbba0ca88",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/RESULT.json",
+      "sha256": "c52e67477d84d1b803c1ef11dda19928f8d5b86e5474f8c11e458b5cb317686a",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW-CAPTURE.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/RESULT-CAPTURE.json",
+      "sha256": "ca2252b7b08896df21a27e87f452caeaedf07435b218cedc36d56cd7e9723338",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW-NATIVE-GRANT.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/NATIVE-PREPARED.json",
+      "sha256": "ce8a969c2197d4bd0640892c988ab150928184cde348cff55eadadc2bbae0bc4",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW-NATIVE-START.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/NATIVE-STARTED.json",
+      "sha256": "25fdd9145c60ed198266c38185537868d455c9dd170ea3c408a47b317a454f6f",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW-SETTINGS.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/SETTINGS.json",
+      "sha256": "b9100442b4ee28f63cf353f7af951942855aef1469fc3ca284dc4855f62a9972",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW-ALLOCATION-AMENDMENT.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/ALLOCATION-AMENDMENT.json",
+      "sha256": "98fd332de93ac2718f1590cfd8b6105fc8b7cfcadebd75a450a59e947acabc8c",
+      "byte_identical": true
+    },
+    {
+      "record": "REVIEW-ROLE-RELEASE.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/ROLE-RELEASE.json",
+      "sha256": "99d977c15f2eb23697c503e0439854293d5732f2a97b5e07506e7ec7ddd1012b",
+      "byte_identical": true
+    },
+    {
+      "record": "OUTER-HOST-REFUSAL.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/dispatch-1.json",
+      "sha256": "3cb000070ce879a3961b712eea534a157283e204f64600a83b4b924ff7695e28",
+      "byte_identical": true
+    },
+    {
+      "record": "OUTER-HOST-CLOSE.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/host-close.json",
+      "sha256": "89e0aab7b235e78ea5038e46be635d6d3cc1b66fb154499ac94aceb79e7e1c9e",
+      "byte_identical": true
+    },
+    {
+      "record": "OUTER-HOST-ACK.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/review/host-ack.json",
+      "sha256": "bcfa473e6b02ad2710700e1535b6998135c4db4996b548db9450cabab10ecf0b",
+      "byte_identical": true
+    },
+    {
+      "record": "ACCEPTANCE.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/ACCEPTANCE.json",
+      "sha256": "a7ac2e3bddd315165f705196c2c35a9e40912122752e9cf71f84afc93b71d26f",
+      "byte_identical": true
+    },
+    {
+      "record": "INTEGRATION.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/INTEGRATION.json",
+      "sha256": "05e0929c6a1b0ce5ee070eba5be36f1a7ef94ee4e2a97ef38a25321178e18e6e",
+      "byte_identical": true
+    },
+    {
+      "record": "ROOT-VERIFICATION.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/ROOT-VERIFICATION.json",
+      "sha256": "dddb2c0978517b5e1a8afd999662dd21d9be7eac23c1028d1a3f4ba5995582c6",
+      "byte_identical": true
+    },
+    {
+      "record": "PROCESS-SETTLEMENT.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/PROCESS-SETTLEMENT.json",
+      "sha256": "b514350c8dbdde21a24692678675c3949123377b6f173fc8b85e350cafb8fd2a",
+      "byte_identical": true
+    },
+    {
+      "record": "CLOSED-LEDGER.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/CLOSED-LEDGER.json",
+      "sha256": "592cdf83f07dd460d4ea61c138776b48e7a9e7d363d793f44dd878c78e4b06c3",
+      "byte_identical": true
+    },
+    {
+      "record": "CLOSED-BUDGET.json",
+      "original_path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/budget.json",
+      "sha256": "c337cc6475cf16bee5584994861f19706c6ab3a7a74688799346cd0c6afc2f13",
+      "byte_identical": true
+    },
+    {
+      "external_executable": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/bin/work-engine-review-host",
+      "sha256": "14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272",
+      "standing": "uninstalled source-qualified artifact; no production qualification"
+    }
+  ],
+  "external_reference_limit": "Source/release archives, custody records and logs remain at absolute historical paths in copied reports. No release binary committed or installed."
+}

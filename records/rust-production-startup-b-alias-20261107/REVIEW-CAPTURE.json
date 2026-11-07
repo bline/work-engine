@@ -1,0 +1,11 @@
+{
+  "native_session_id": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+  "exact_turn_id": "01a1b3ed-9695-7361-add3-0c3c705b68ed",
+  "exact_turn_status": "completed",
+  "source": "EXACT-FINAL.json",
+  "item_id": "msg_0ab6bbc81d1416b9016aee939520a887d09845aef6fbd7e443",
+  "phase": "final_answer",
+  "text_sha256": "9e13c768fbc58ad38b216cbcd16d8d6902ffa4484952b27496c8d95df9c834c3",
+  "captured_sha256": "c52e67477d84d1b803c1ef11dda19928f8d5b86e5474f8c11e458b5cb317686a",
+  "captured_by": "Root; reviewer did not write result file"
+}

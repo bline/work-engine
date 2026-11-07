@@ -1,0 +1,118 @@
+{
+  "verdict": "accept",
+  "subject_commit": "6410ab92fb2fd823a530e9a25952bfafb73cae7d",
+  "baseline_commit": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "recommendation_scope": "Accept the bounded source repair. Root retains acceptance and integration authority. This does not establish installed production qualification.",
+  "finding_dispositions": [
+    {
+      "id": "STARTUP-B-001",
+      "disposition": "resolved_for_bounded_source_review",
+      "evidence": [
+        "isolation.rs:26-59 enumerates all seven private directory sources: build-cache, build-runtime, review-cache, review-runtime, session, scratch and proxy. The root and each source must be canonical nonsymlink directories, private against group/other access, and owned by the runtime UID or root.",
+        "verify_frozen at isolation.rs:1064 invokes this check. open_frozen invokes verify_frozen before returning. Both base_command and reviewer_command repeat the check before constructing sandbox commands.",
+        "The active guarded_launch_inner validates the frozen boundary before creating proxy/analysis.sock and uses reviewer_command before mounting proxy at /cbm/socket. Its writable session/cache/runtime/scratch locations are fresh guest tmpfs mounts; it grants no writable host boundary parent through which a confined reviewer could replace these directory sources.",
+        "TrustedStartup::revalidate reloads qualified startup, whose loader calls CandidateBoundary::open_frozen. The completion serving route repeats startup revalidation before executing each decoded command. Retained reviewer launches also revalidate independently.",
+        "The unchanged managed validator route checks active custody and canonicalizes the exact source at each launch, confines it to the selected operations/inputs namespace, and rejects nested devices, sockets, FIFOs and hard links. Its writable scratch locations are guest filesystems.",
+        "completion.rs:308-365 retains canonical/private socket-parent and ancestry checks, fixed /usr, /lib, /lib64 and /etc/ssl exclusions including canonical aliases, and candidate/boundary/workspace exclusions. Connected-peer UID authentication remains unchanged; neither same-UID credentials nor read-only mounts were treated as containment.",
+        "The baseline diagnostic binds unchanged 4f isolation source and demonstrates actual reviewer-process and child connections to /cbm/socket/completion.sock through the proxy alias. The repaired regression checks original and translated paths for process and child, with host positive controls, then inserts the alias after bootstrap and observes retained validation, cold reopen and subsequent launch refusal before proxy listener creation. The constructor matrix rejects aliases for every listed private directory."
+      ],
+      "timing_and_trust_limit": "These are pathname checks, not atomic descriptor-pinned mounts. They reject aliases present at reopen and launch checks. They do not fence concurrent trusted-host replacement after the final check, malicious host bind mounts or administrators. Within the reviewed confinement boundary, untrusted descendants cannot replace the host mount-source parents. The README explicitly preserves this trusted-host limitation."
+    },
+    {
+      "id": "STARTUP-B-002",
+      "disposition": "resolved_for_bounded_source_review_carried_forward",
+      "evidence": [
+        "work-engine-completion-host/src/lib.rs is unchanged from c12dc571 and 4f921bbd; the production completion route is unchanged from 4f921bbd.",
+        "The production listener still uses serve_connections_checked. Transport errors remain connection-local, listener errors remain fatal, checks precede execution, and failed response writes do not replay execution.",
+        "The current transport regression custody record reports exit0, no timeout and no leftover processes."
+      ],
+      "qualification": "Timeouts are per blocking I/O operation, not a total request or command deadline. Stub-domain listener evidence does not establish installed startup, timeout expiration or slow-drip resistance."
+    }
+  ],
+  "new_findings": [],
+  "reviewed_scope": {
+    "delta": "Entire three-file repair: 168 insertions, 23 deletions.",
+    "changed_files": [
+      "rust/crates/review-execution-evidence/src/claude/isolation.rs",
+      "rust/crates/work-engine-review-host/tests/production_completion.rs",
+      "rust/crates/work-engine-review-host/README.md"
+    ],
+    "supporting_paths": [
+      "rust/crates/review-workflow/src/startup.rs",
+      "rust/crates/review-workflow/src/completion.rs",
+      "rust/crates/workspace-publication/src/custody.rs",
+      "rust/crates/work-engine-completion-host/src/lib.rs",
+      "rust/crates/slice-campaign/src/publication_ingress.rs"
+    ],
+    "whole_source_review_renewed": false,
+    "historical_review": "Original 841295d1 findings and limitations remain reference evidence. Prior final proxy-alias finding and first remediation report were read. Unrelated historical issues were not reopened.",
+    "graph_limit": "Task-directed Tier2 indexing/navigation and coverage checks used the detached worktree project, reported generation 2026-11-07T02:54:22Z/store u26b83fdc781a76b1g2. Material code paths reported unresolved calls despite content verification; exact-source reads supplied the relevant checks and routes. Trace totals were unknown. No exhaustive completeness or general private-graph freshness claim is made."
+  },
+  "source_test_release_identity": {
+    "source": "Verified detached HEAD and clean worktree; all changed file bytes match HEAD and SOURCE-DELTA baseline/repaired hashes. All 4,129 source-manifest file entries match this worktree.",
+    "result_sha256": "3241e8823f1806d672c6e3a12d4ec2d70beb52121dcd457d6e8877b84c6aaaf5",
+    "source_delta_sha256": "ad834535e949ed0d625d716b1b22c56a291872dafd8f595453fb2e17793552e3",
+    "prior_final_review_sha256": "2cd035c16183b79b9a0365dd5783165eba6b87caeda791c7c184e769e242fbfd",
+    "artifact_verification": "Verified 54 referenced artifact/record/log hashes without mismatches, including source/release manifests and archives, installation packet and executable. All five release-manifest file entries match.",
+    "executable_sha256": "14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272",
+    "release_standing": "UNINSTALLED_NOT_PRODUCTION_QUALIFIED",
+    "tests": "Twelve listed custody records report exit0, no timeout and empty leftover processes. This includes fixture preparation and the baseline defect reproduction; baseline exit0 establishes exposure, not confinement. Corrected regression input hashes match the reviewed source. No tests were rerun by this reviewer.",
+    "failure_history": [
+      "The initial private-mount regression failed with UnsafeProgram because /usr/bin/true was a symlink. The corrected fixture canonicalizes the executable; the production pin policy is unchanged.",
+      "Whole-suite qualification remains withheld because of the unchanged analyzer-pin mismatch and invalidated overlapping diagnostic run.",
+      "Earlier socket-path-length and fixture-program failures remain preserved in prior review evidence."
+    ],
+    "regression_limits": "Provider-free hostile-probe evidence shares the reviewer constructor but differs from the installed active launch. It establishes translated-path behavior and refusal after alias substitution, not installed confinement or a full production loop. Prior validator descendant evidence is carried forward for unchanged code."
+  },
+  "requested_observed_settings": {
+    "requested": {
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "sandbox": "readOnly"
+    },
+    "observed": {
+      "model": "gpt-6-astra",
+      "provider": "openai",
+      "effort": "high",
+      "service_tier": "default",
+      "approval_policy": "never",
+      "native_sandbox": "readOnly",
+      "network_access": false
+    },
+    "evidence": "Root-owned review/NATIVE-PREPARED.json and exact rollout settings event at line12, timestamp 2026-11-07T02:54:16.550Z.",
+    "settings_event_sha256": "6843f1811c7f8514f866502ff7966716e35235cb158d29434805dbd85b912cc1",
+    "backend_fulfillment_and_actual_billing": "unknown",
+    "grant_attestation_owner": "Root; this reviewer does not independently attest its own capability grant."
+  },
+  "review_continuity": "reconstructed",
+  "identity_binding": {
+    "session_id": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+    "turn_id": "01a1b3ed-9695-7361-add3-0c3c705b68ed",
+    "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T19-54-14-01a1b3ed-9303-7112-8c3b-2be5e8902029.jsonl",
+    "parent_and_collector": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+    "binding_acknowledged": true,
+    "context_observation": "Pinned reader reported 108104 input tokens, epoch0, no compaction markers and retain_ok at 2026-11-07T02:56:28.975914Z."
+  },
+  "independence": {
+    "wider_independence_claimed": false,
+    "scope": "Separate native review using reconstructed reports and exact source, without inherited builder conversation. Host records report no runtime parent or fork.",
+    "limits": "Same-provider evidence; no cross-provider, continuous-context or renewed whole-source independence claim. Root owns independent grant observation."
+  },
+  "production_qualification": "unestablished",
+  "installation_standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "remaining_limits": [
+    "Production installation, authority issuance, genuine reviewed subject/destination and full live-loop qualification remain unestablished.",
+    "No whole-job acceptance, C settlement or production readiness follows from this source recommendation."
+  ],
+  "process_disposition": {
+    "source_or_report_files_written": false,
+    "agents_spawned": 0,
+    "tests_or_builds_launched": 0,
+    "owned_running_processes": 0,
+    "production_provider_or_credential_actions": false,
+    "graph_operation": "Requested task-local indexing with persistence=false for required navigation; no source mutation.",
+    "result_delivery": "Final JSON for exact-turn host capture. Root owns collection, acceptance, integration, process/receipt settlement and budget accounting.",
+    "budget": "Root's revised 3.0USD review allocation acknowledged; global6USD and hardstop2026-11-07T04:06:14.724Z remain unchanged."
+  }
+}

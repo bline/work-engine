@@ -1,0 +1,22 @@
+{
+  "graph": {
+    "tier": "Tier2",
+    "project": "home-bline-code-work-engine",
+    "generation": "2026-11-07T01:24:31Z",
+    "store": "ub79629c43202f12dg2",
+    "limitation": "shared main baseline; not private worktree freshness; unresolved/missing coverage read via exact private-source fallback",
+    "raw": "COVERAGE.json"
+  },
+  "source_boundary": "review-execution-evidence::claude::isolation (actual reviewer and local CBM command constructors)",
+  "baseline_diagnostic": {
+    "source": "baseline-test-source.rs",
+    "custody": "baseline/baseline-translated-alias-exposure.json",
+    "observation": "Unchanged4f isolation accepted boundary/proxy symlinked to private operator directory. Actual reviewer constructor run_hostile_probe process and child connected /cbm/socket/completion.sock. Host positive before/after; provider-free local fixture. Diagnostic exit0 confirms defect, not safety pass."
+  },
+  "enforcement": "Shared private helper verifies canonical runtime/root-owned mode0700-or-stricter root and seven private source directories, refusing symlinks. Reused directory list at preparation; verify_frozen and both constructors call guard. No public API/schema change.",
+  "later_uses": "TrustedStartup::revalidate reloads startup and CandidateBoundary::open_frozen on each completion command; reopened boundary verifies private sources. Retained boundary verify_frozen and later hostile/guarded launch revalidate too; constructor guard repeats after source verification.",
+  "validator": "Unchanged workspace-publication::ManagedCustody::run calls check_active then canonical(exact source), requires selected operations/inputs namespace and rejects sockets/FIFO/devices/hardlinks. Prior managed-custody descendant denial reused unchanged; not independently rerun here.",
+  "fixed_mount_policy": "Existing /usr,/lib,/lib64,/etc/ssl canonical-source exclusions unchanged. Existing selected candidate/boundary/workspace root socket exclusions and native peer/executable/custody checks unchanged.",
+  "trust_limit": "Untrusted descendants have no host boundary write grant. Runtime UID remains trusted outside confinement. No claim against adversarial host administrator, malicious host bind-mount installation or atomic concurrent trusted-host replacements.",
+  "standing": "source and fixture evidence only; actual installed confinement unestablished"
+}

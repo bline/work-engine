@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "sourceCommit": "6410ab92fb2fd823a530e9a25952bfafb73cae7d",
+  "supersedesSource": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "release": {
+    "executable": {
+      "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/bin/work-engine-review-host",
+      "sha256": "14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272",
+      "bytes": 30048328
+    },
+    "sourceArchive": {
+      "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/source.tar",
+      "sha256": "bd627311294dc2684bedd196af2f8df969c3d28ff581689df1b96236f93ed151",
+      "bytes": 66744320
+    },
+    "toolchain": {
+      "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/toolchain.txt",
+      "sha256": "3d2dfb9699c5ef34e46809e5a5376089d780c58339e588cdd2da9fbb7447e79b",
+      "bytes": 232
+    },
+    "lockfile": {
+      "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/Cargo.lock",
+      "sha256": "725ace32e45d34af24fc88525e93b9c7ea38f8c249a725104b0b3c62f7b5c5c4",
+      "bytes": 101908
+    },
+    "buildInfo": {
+      "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/BUILD-INFO.json",
+      "sha256": "7cdd9798970dab8db106af2dee2156da295c19de8f843936d2288d698e57c98a",
+      "bytes": 3430
+    },
+    "features": [],
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": false
+    },
+    "environment": {
+      "CARGO_PROFILE_DEV_DEBUG": "0"
+    },
+    "freezeManifest": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release-freeze/manifest.json",
+    "freezeArchive": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release-freeze/subject.tar"
+  },
+  "proposedInstalledBinary": {
+    "path": "/usr/local/lib/work-engine/production-startup-b/6410ab92/work-engine-review-host",
+    "uid": 0,
+    "mode": "0555",
+    "sha256": "14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272",
+    "ancestry": "root-owned canonical, no group/other writes"
+  },
+  "protectedFiles": {
+    "completion": {
+      "path": "/etc/work-engine/review-host/completion.json",
+      "uid": 0,
+      "mode": "0444",
+      "status": "BYTES_UNISSUED",
+      "schemaFields": [
+        "schemaVersion",
+        "startupDigest",
+        "runtimeSha256",
+        "completionRoot",
+        "workspaceRoot",
+        "repository",
+        "custodySha256",
+        "socket",
+        "operatorUid",
+        "authoritySourceDigest"
+      ],
+      "binding": "runtimeSha256 is the exact binary above; startupDigest exact startup bytes; authoritySourceDigest exact claims source pin; completionRoot actual campaign root/publication; repository/workspaceRoot exact custody paths; custodySha256 exact phase selection bytes."
+    },
+    "custody": {
+      "path": "/etc/work-engine/workspace-publication/custody.json",
+      "uid": 0,
+      "mode": "0444",
+      "status": "BYTES_UNISSUED",
+      "owner": "workspace-publication::custody::CustodySelection",
+      "initialize": "Fresh epoch; exact runtime/root/repository/permanent-lock identities; null marker/ledger identities; no publication authority.",
+      "active": "Separately seal actual resulting marker/ledger identities and preserve same epoch/config; update completion custodySha256 accordingly."
+    }
+  },
+  "requiredInputs": [
+    {
+      "input": "qualified startup document and optional job request",
+      "owner": "operator / review startup",
+      "status": "UNISSUED",
+      "condition": "Must pin this binary and exact source/build inputs; existing installed acceptance or job-policy admission must authorize its actual campaign. Historical episode current_exe pins cannot be migrated or relabeled."
+    },
+    {
+      "input": "genuine reviewed subject, candidate/parent/tree and gate/physical-profile receipts",
+      "owner": "campaign/review/evidence owners + operator subject selection",
+      "status": "UNISSUED",
+      "condition": "Actual qualified evidence and claims/episode owner readbacks required; fixture or preparation standing insufficient."
+    },
+    {
+      "input": "claims source/configuration/grants, episode authority and installed acceptance or job policy",
+      "owner": "their existing authority issuers",
+      "status": "UNISSUED",
+      "condition": "Completion JSON only selects these existing grants; it cannot issue them."
+    },
+    {
+      "input": "canonical bare destination/ref, initial object import and workspace ledger root",
+      "owner": "operator / publication custody",
+      "status": "UNISSUED",
+      "condition": "Select independent managed destination containing exact candidate objects; approve immutable object import and canonical ref allowlist."
+    },
+    {
+      "input": "validator argv/executable/policy digest/timeout",
+      "owner": "operator / validation policy",
+      "status": "UNISSUED",
+      "condition": "Exact protected /usr executable and policy; no fixture /usr/bin/true relabeling."
+    },
+    {
+      "input": "runtime/operator UID, owner roots, socket directory, epoch and filesystem identities",
+      "owner": "operator installation",
+      "status": "UNISSUED",
+      "condition": "Trusted UID1000 permitted only with actual untrusted descendants confined away from authority/canonical state; initialize and active selections separately sealed. Socket parent must be outside /usr; read-only system exposure still grants socket connectivity. Socket admission excludes /usr,/lib,/lib64,/etc/ssl and canonical aliases, selected candidate/reviewer-boundary/validator-workspace roots; actual installed mounts still require observation."
+    },
+    {
+      "input": "current provider/catalog/compiler/credential eligibility",
+      "owner": "qualified runtime / operator",
+      "status": "UNESTABLISHED",
+      "condition": "No credential contents or provider calls were accessed; separately authorized current qualification remains required."
+    }
+  ],
+  "readbackAndOrder": [
+    {
+      "owner": "operator",
+      "action": "Review exact source delta and release manifest, approve concrete missing selections/issuance. No installation before that approval."
+    },
+    {
+      "owner": "operator",
+      "action": "Install exact binary and source/build inputs under protected ancestry; allocate selected canonical bare repository, permanent lock, ledger and runtime-private socket directory; import only approved genuine objects."
+    },
+    {
+      "owner": "operator / review owner",
+      "action": "Issue/open actual qualified startup through existing installed acceptance or fixed job-policy admission. Verify source/grant/episode/current_exe and qualified evidence identities; recover original committed review outcome before serving."
+    },
+    {
+      "owner": "operator",
+      "action": "Install exact initialize custody bytes and matching completion bytes atomically; read back SHA256, canonical ancestry, UID/mode/device/inode and fixed program pins."
+    },
+    {
+      "owner": "trusted runtime",
+      "executable": "/usr/local/lib/work-engine/production-startup-b/6410ab92/work-engine-review-host",
+      "operation": "completion-bootstrap",
+      "argumentsOwnedByOperator": [
+        "--startup exact-qualified-startup-path",
+        "optional --job-request exact-private-existing-request"
+      ],
+      "expected": "completion_initialized, active:false, exact workspaceRootId/repositoryId."
+    },
+    {
+      "owner": "operator",
+      "action": "Observe marker/database identities; separately approve/install active custody plus matching completion hash. Preserve initialize bytes, epoch history and owner roots."
+    },
+    {
+      "owner": "trusted runtime",
+      "executable": "/usr/local/lib/work-engine/production-startup-b/6410ab92/work-engine-review-host",
+      "operation": "completion-serve",
+      "argumentsOwnedByOperator": [
+        "--startup same-exact-qualified-startup-path",
+        "optional --job-request same-existing-request"
+      ],
+      "expected": "One private socket; durable owner reopen, no new review launch or synthesized result."
+    },
+    {
+      "owner": "independent observer / operator",
+      "action": "Observe actual reviewer/validator descendant namespaces, mounts, FDs, network grants, guard lifetime and inaccessible owner/canonical/socket paths. Read source/binary/policy and actual owner IDs; source checks do not establish installation."
+    },
+    {
+      "owner": "operator",
+      "action": "Inspect package and accept-checkpoint over its displayed digest; separately prepare/show exact offer and make create decision over that displayed digest. Neither accepts/settles the coding job."
+    },
+    {
+      "owner": "publication owner / independent observer",
+      "action": "Read exact operation/CAS/ref receipt, stop/collect host, inspect/remove only a proven stale socket, cold reopen same installed configuration and read back the exact publication result. Preserve unresolved/unconfirmed state if evidence is insufficient."
+    }
+  ],
+  "rollback": {
+    "beforeAdmission": "Stop/collect host; operator revokes/removes protected selection. Preserve roots, permanent lock, binary/source/selection bytes and epoch history.",
+    "afterAdmissionOrUnknown": "No retry, ref reset, marker regeneration, lock replacement or state deletion. Restore only exact approved custody or separately issue a new epoch preserving history; use existing inspect/reconcile and retain unresolved or unconfirmed standing."
+  },
+  "notPerformed": [
+    "No protected installation",
+    "No credentials/provider qualification",
+    "No authority issuance",
+    "No checkpoint acceptance or create decision",
+    "No production publication/cold qualification",
+    "No C job-terminal settlement"
+  ],
+  "repairEvidence": {
+    "sourceReview": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/final-source-review/RESULT.json",
+    "sourceAcceptance": "UNESTABLISHED_ROOT_FINAL001_REVIEW_PENDING",
+    "findings": [
+      "STARTUP-B-001",
+      "STARTUP-B-002"
+    ],
+    "fixtureLimit": "Both reviewer constructor and managed validator real descendant denial observed under fixture standing only; actual installed confinement remains unestablished.",
+    "listenerLimit": "Actual listener/framing/peer boundary tested with domain callback stub; installed startup not exercised.",
+    "remainingReview": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/remediation-review/RESULT.json",
+    "reviewerRegression": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/focused-private-programs/reviewer-socket-denial.json"
+  }
+}

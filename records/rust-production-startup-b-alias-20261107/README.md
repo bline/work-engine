@@ -1,0 +1,37 @@
+# Production startup socket alias repair — 2026-11-07 UTC
+
+**The approved source repair is complete, accepted and integrated locally. Production qualification remains unestablished.** This dated result does not activate installation or whole-job completion.
+
+The exact accepted source is `6410ab92fb2fd823a530e9a25952bfafb73cae7d`, merged as `7fc47c0e87870c5520986ee25f8f4e41ce61c884`. Root checked destination HEAD and all affected working bytes against the admitted baseline, then verified every integrated source blob matches the reviewed candidate. Existing dated records and foreign `.claude/` are preserved. No push occurred.
+
+## Change and evidence
+
+The remaining STARTUP-B-001 defect allowed `boundary/proxy` to alias an operator socket directory outside the checked boundary root. The active reviewer bind could expose it as `/cbm/socket/completion.sock`, reachable by a same-UID reviewer and child. The baseline diagnostic reproduces those actual connections; its exit0 means exposure was demonstrated.
+
+The boundary owner now checks its root and all seven private directory sources: build-cache, build-runtime, review-cache, review-runtime, session, scratch and proxy. Each must be a canonical nonsymlink directory, private against group/other access and owned by the runtime UID or root. Frozen verification, cold reopen and both sandbox constructors repeat these checks. The regression tests original and translated socket paths for process and child with host positive controls; inserting an alias after bootstrap causes retained verification, cold reopen and subsequent launch to refuse before proxy listener creation.
+
+This relies on the existing trusted-host boundary: confined untrusted descendants cannot replace the host mount-source parents. These are pathname checks, not atomic descriptor-pinned mounts; concurrent trusted-host filesystem replacement, malicious host bind mounts and administrators are outside the claim. Canonical/private socket ancestry, fixed system/canonical-alias exclusions, peer UID authentication and executable/custody pins remain intact.
+
+The [separate review](REVIEW.json) accepts the entire three-file delta (168 insertions,23 deletions), resolves001 and carries002 resolved. No new findings were reported. Root's [source acceptance](ACCEPTANCE.json) relies on the original full841 review and reconstructed c12/4f/6410 remediation reports. This is not continuous reviewer context or a renewed whole-source review.
+
+Ten repaired validation/check records pass: private mount and translated alias regressions, transport and socket-policy regressions, cold completion, authority negatives, affected default consumers, lint, format and build. Two other successful custody records cover fixture preparation and baseline exposure reproduction. Root verified27 report references and the executable digest; the reviewer verified54 references and the source/release manifests. All listed custody records report exit0, no timeout and no leftovers. The final uninstalled binary digest is `14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272`.
+
+The initial private-mount regression failed because its `/usr/bin/true` fixture was a symlink rejected by PinnedProgram. The corrected fixture uses its canonical executable without relaxing production pin policy. Historical analyzer-pin mismatch, invalidated overlapping broad run, debug timeouts and prior fixture failures remain preserved. Whole affected-suite qualification remains withheld. Provider-free probes share the reviewer constructor but differ from installed active launch; they do not prove installed confinement. Listener evidence retains per-I/O timeout and stub-domain limits.
+
+## Review and coordination provenance
+
+The retained builder requested Sol6.1/medium/default. Its last matching applied event is from the retained session; a new-turn applied event was unavailable, so fresh preservation is not claimed. Root observed its own Sol6.1/xhigh/default event on the approval turn. Root chose retention at151805 input plus30k expected growth; pre-review Root145721+35k and closure183430+12k fit the235k planning band. These are observations and estimates, not capacity guarantees.
+
+The optional outer host refused before native create/start because the cost reader marked a redundant explicit/native builder-parent binding as partial. Root retained and closed that refusal, acknowledged its final receipt, and used the existing pinned native role host. Root verified the returned native filesystem grant was readOnly with networking disabled, configured the review allocation before the first turn, verified exact-turn Astra/high/default settings and captured the selected completed turn's single explicit final answer. The reviewer has no runtime parent or inherited builder conversation. Same-provider different-model evidence, reconstructed continuity and the narrow native filesystem grant are recorded; wider tool, cross-provider, statistical and continuous-context independence are not claimed.
+
+Main-repository Tier2 generation2026-11-07T01:24:31Z had missing private paths and unresolved isolation calls; exact source supplied the material fallback. The reviewer used a task-local detached index generation2026-11-07T02:54:22Z with unresolved-call limitations and exact-source verification. Neither establishes exhaustive graph completeness.
+
+## Budget and remaining vertical
+
+Human approval at02:36:14.724UTC authorized6USD/90minutes and aggregate ceiling61. The bounded source objective closed accepted at03:00:01UTC, about24minutes later. Closed canonical cost is **$4.284792**, plus0.30 setup and0.25 closing-tail reserves: **$4.834792 conservative book**, within the4–5 target and6cap. Prior conservative aggregate54.9297396 plus this scope is **$59.764531**, below61. [ACCOUNTING.json](ACCOUNTING.json) retains actor totals, the partial parent-binding warning and post-close uncertainty. Each actor is counted once and direct totals reconcile. These are API-equivalent speed-adjusted proxies, not measured quota or billing; nested totals overlap and are not additive.
+
+The review allowance moved from2.5 to3 using the approved0.5 contingency at observed2.254562, before the original allocation was crossed; final review2.726584 fits the amendment. Global6,90minutes and aggregate61 were unchanged. Closed-window totals do not establish a settled zero tail; reserves cover setup and remaining Root closure calls.
+
+The [installation packet](INSTALLATION-PACKET.json) remains **INERT_UNISSUED_NOT_APPROVAL_READY**. Actual qualified startup/job policy, genuine subject/destination/ref, validator policy, filesystem/epoch allocation and authority issuance remain unselected. Current provider/catalog/compiler/credential qualification, a concrete reviewed installation/readback packet, operator approval, real publication and cold production reopen remain unestablished. The prior B production objective remains unfulfilled; this new accepted repair supersedes its source blocker only. C whole-job terminal settlement and a new full live-loop proof remain separate. No protected, provider, credential or paused-peer effects occurred.
+
+All worker and review results are collected. Native review is released, optional-host receipts acknowledged, foreground observers collected and the owned budget listener is gone. Root releases the campaign/integration claims in the terminal board transition. Further production work requires its actual inputs and a separately authorized scope.

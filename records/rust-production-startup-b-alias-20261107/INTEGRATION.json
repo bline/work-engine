@@ -1,0 +1,26 @@
+{
+  "merge_commit": "7fc47c0e87870c5520986ee25f8f4e41ce61c884",
+  "parents": [
+    "80f66d9b5ca774a5cdff9298b28274d1f6ccfc12",
+    "6410ab92fb2fd823a530e9a25952bfafb73cae7d"
+  ],
+  "accepted_source": "6410ab92fb2fd823a530e9a25952bfafb73cae7d",
+  "all_affected_source_blobs_match_reviewed_candidate": true,
+  "files": [
+    "rust/crates/review-execution-evidence/src/claude/isolation.rs",
+    "rust/crates/review-workflow/Cargo.toml",
+    "rust/crates/review-workflow/src/completion.rs",
+    "rust/crates/review-workflow/src/initial.rs",
+    "rust/crates/review-workflow/src/lib.rs",
+    "rust/crates/work-engine-completion-host/Cargo.toml",
+    "rust/crates/work-engine-completion-host/src/lib.rs",
+    "rust/crates/work-engine-completion-host/src/main.rs",
+    "rust/crates/work-engine-review-host/README.md",
+    "rust/crates/work-engine-review-host/src/completion.rs",
+    "rust/crates/work-engine-review-host/src/main.rs",
+    "rust/crates/work-engine-review-host/tests/production_completion.rs"
+  ],
+  "prior_records_preserved": true,
+  "foreign_untracked": "?? .claude/",
+  "pushed": false
+}

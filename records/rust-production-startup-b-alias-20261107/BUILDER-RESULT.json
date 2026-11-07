@@ -1,0 +1,242 @@
+{
+  "schema": "work-engine.production-startup-b-alias-repair.v1",
+  "standing": "PRIVATE_REPAIR_DELIVERED_NOT_ACCEPTED_OR_INTEGRATED",
+  "created_at": "2026-11-07T02:51:18.928817+00:00",
+  "authority": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/AUTHORITY.json",
+    "sha256": "ea7c5bca572ee3a20dc9dd9dc5bd60c38d9e3eb76e968e4ba1857a4bb2448675"
+  },
+  "packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/PACKET.md",
+    "sha256": "ab8ef9f0f4105da382e5c3a73cac69a0d20010c93b852e3aeaed8c5fa595fd57"
+  },
+  "prior_review": {
+    "path": "/home/bline/code/work-engine/records/rust-production-startup-b-20261107/FINAL-REMEDIATION-REVIEW.json",
+    "sha256": "2cd035c16183b79b9a0365dd5783165eba6b87caeda791c7c184e769e242fbfd"
+  },
+  "baseline_commit": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "source_commit": "6410ab92fb2fd823a530e9a25952bfafb73cae7d",
+  "branch": "repair/startup-b-20261107",
+  "worktree": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source",
+  "working_tree_clean": true,
+  "source_delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/SOURCE-DELTA.json",
+    "sha256": "ad834535e949ed0d625d716b1b22c56a291872dafd8f595453fb2e17793552e3"
+  },
+  "delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/repair.diff",
+    "sha256": "41dedc4eeb68889d1cd59c3f1c97446b8ea401bcfbdf686b8cded4bc7a18d3ed"
+  },
+  "mount_alias_evidence": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/MOUNT-ALIAS-EVIDENCE.json",
+    "sha256": "a8b97b89b4f3408961a6ed2f6521f41f79f72ffdcf4c83036b2b8f4fbba0ca88"
+  },
+  "baseline_test_source": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/baseline-test-source.rs",
+    "sha256": "dec7471089e13da76353ba0a6795104909ede56d0bd1fd29ebe02e895e6b65d3"
+  },
+  "source_freeze": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/source-freeze/manifest.json",
+      "sha256": "f5b2c2e2dd067750ad65cb88a181d1dfaaa0b20b902f1cfe929b99e481e1bb27"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/source-freeze/subject.tar",
+      "sha256": "bd627311294dc2684bedd196af2f8df969c3d28ff581689df1b96236f93ed151"
+    },
+    "changes": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/source-freeze/changes.json",
+      "sha256": "c8c401d9ac8f0763dfd359ee51354ce4252142f31f5902bda81c8efbf291a59b"
+    }
+  },
+  "release_freeze": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release-freeze/manifest.json",
+      "sha256": "6abeed7a0031983eff116e9ea882e3fc88b5f754121c2a3f72ae2a5d7c3ca3b5"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release-freeze/subject.tar",
+      "sha256": "e82a6a2f32eb3abaad9013e6a52090ac76ae2eb3f1dc02e392188da15053f41e"
+    }
+  },
+  "executable": {
+    "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/release/bin/work-engine-review-host",
+    "sha256": "14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272",
+    "bytes": 30048328
+  },
+  "installation_packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/INSTALLATION-PACKET.json",
+    "sha256": "5d61a5920d93a5e05cd07330f0f248eafc6008f1beeabaa5dbb79b88c2fbfea5"
+  },
+  "installation_standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "finding": {
+    "id": "STARTUP-B-001",
+    "disposition": "repair delivered for separate Root-owned review; no self acceptance",
+    "cause": "Enclosing boundary root was canonical but actual proxy directory mount source could symlink outside it.",
+    "causal_owner_edit": "review-execution-evidence/src/claude/isolation.rs owns dynamic mounts; reason recorded in continuation before edits. No public API/schema or new owner.",
+    "repair": "Canonical, private runtime/root-owned root and all seven private directory sources revalidated by verify_frozen and both sandbox constructors. Preparation reuses same directory list. Outward or inward symlink aliases fail.",
+    "later_uses": "Each completion command already invokes TrustedStartup::revalidate, which reloads qualified startup and opens/verifies frozen boundary; alias changes after bootstrap are not accepted as a stale snapshot. Retained launches also revalidate and constructors repeat check before command setup.",
+    "regressions": "Baseline actual process+child connected translated /cbm/socket/completion.sock through proxy alias. Repaired fixture denies original host and translated guest path for process+child with host positives; after alias substitution retained verify, cold reopen and subsequent run_hostile_probe refuse before proxy listener creation. Both constructor unit guards reject every private source alias.",
+    "scope_preserved": "Fixed-system/canonical-alias socket exclusions, canonical/private socket ancestry, UID/peer authentication, native executable/custody pins and resolved002 source unchanged."
+  },
+  "checks": [
+    {
+      "name": "baseline/fixture-programs",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/baseline/fixture-programs.json",
+        "sha256": "a3d8052a400e5f90fa6348b7ee1120ed3910da9057739cf29ccf836c157850aa"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "baseline/baseline-translated-alias-exposure",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/baseline/baseline-translated-alias-exposure.json",
+        "sha256": "fe8f16f67010aac825dbf4dc2a0e35805d31b3ba0fdfebdac070913638611186"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "baseline_defect_reproduction"
+    },
+    {
+      "name": "focused-corrected/private-mount-source-regression",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/focused-corrected/private-mount-source-regression.json",
+        "sha256": "c2e0164b27e170a8aa36a494c7473fa187f1ef5ff76fdbe2b74c1c2aeafc19ee"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "focused-corrected/translated-alias-regression",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/focused-corrected/translated-alias-regression.json",
+        "sha256": "46298a86ac96e2c5dec72505f50382e9eb069b0c91c2560d741012603f3504e0"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/transport-regressions",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/transport-regressions.json",
+        "sha256": "c7b45aeee5421d0a5bab5817b66418debe6fcf7a706989aa871a3a86ca023f29"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/socket-policy-regressions",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/socket-policy-regressions.json",
+        "sha256": "86bba85d3f761d15ca34dd22e8bc1039c7f7ea49e4b363116c60d41edeaa4541"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/cold-completion",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/cold-completion.json",
+        "sha256": "05c693e3ba0d5eb1a2d0d0fa7f467cd0ecb6eb6d5b275b24511b4d1af8a5c1f4"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/default-authority-negatives",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/default-authority-negatives.json",
+        "sha256": "349a4ce51207989d73c34365e0bca83c92a78a678e3cc3484cae6b7b91db3a03"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/affected-default-consumers",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/affected-default-consumers.json",
+        "sha256": "e4cc937590c76717a307afb72041a641a5fe0dbc3a69da352f04f2b6c59705ec"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/lint",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/lint.json",
+        "sha256": "9097d1a1c02ccdccd0f688fdcbd7ca77e367ee36c520e916d84ba1f28a0fbd73"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/format",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/format.json",
+        "sha256": "386dbea30122ec7cfe58631a4760bbe2fc9a3e596c4e393788bdb81f563a059c"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    },
+    {
+      "name": "validation/build",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/validation/build.json",
+        "sha256": "9286cb182ac9fab6733550cc54da73a88805ba4889342f6c8440f5d3c3a06789"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null,
+      "standing": "fixture_or_affected_build_check"
+    }
+  ],
+  "retained_failures": [
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/focused/private-mount-source-regression.json",
+        "sha256": "0d9e0954a228bbf57b6df166431d5517e7742b498d2dcd7edc9b32d5b8a490c6"
+      },
+      "reason": "Fixture selected /usr/bin/true, a symlink rejected by PinnedProgram. Fixed test to select canonical executable; production pin policy unchanged. Focused corrected run passes."
+    }
+  ],
+  "limits": [
+    "Separate bounded source review, source acceptance and shared integration remain Root-owned and unestablished.",
+    "Provider-free fixture routes share reviewer constructor but differ from active installed launch; no actual installed production confinement/startup/publication qualification.",
+    "Baseline diagnostic exit0 proves successful unauthorized reachability; it is not a baseline confinement pass. A separate baseline source and custody record are retained.",
+    "Runtime UID remains trusted on host; no fencing claim against adversarial host administrators, malicious host bind mounts, or atomic races with concurrent trusted-host filesystem replacement. Untrusted confined descendants have no host boundary write grant.",
+    "Prior managed validator descendant denial and whole-source review evidence carried forward for unchanged owner; validator launch exact-source canonical/special-file checks were read, not changed.",
+    "Whole affected suite remains unqualified because prior analyzer pin mismatch and historically invalidated overlapping run remain unresolved; no unrelated repair or broad rerun.",
+    "Actual startup/job policy, genuine subject/destination/validator policy, filesystem allocation/epoch and authority issuance remain unselected; source/release refs only updated in inert installation packet.",
+    "Closed original B scope was not reopened; this new alias phase uses human-approved6USD/90min, actor2USD, hard04:06:14.724UTC. Root owns canonical spend and final collection.",
+    "No protected installation, credentials/provider calls, publication/acceptance, C settlement, live full loop or paused-peer action."
+  ],
+  "identity": {
+    "session_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+    "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T17-55-12-01a1b380-9b41-7460-bfc2-5ee01bb5b6a8.jsonl",
+    "binding_acknowledged": true,
+    "requested": "gpt-6.1-sol/medium/default",
+    "observed": "Latest retained matching applied event Sol6.1/medium/default at00:55:14.150Z; settings reader found no new-turn applied record. Root independent realization/collection owns any stronger claim. Backend fulfillment and actual billing unknown.",
+    "context_check": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-alias-20261107T0236/builder/context-before-result.json",
+      "sha256": "6cb3d43d9adf7c89bdc26d4d45ad44d5ea4c1df4728ec6f8709f8317ff53574c"
+    }
+  },
+  "process_disposition": {
+    "owned_running_processes": 0,
+    "owned_listeners": 0,
+    "subagents": 0,
+    "protected_or_provider_effects": false,
+    "collection_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97"
+  }
+}

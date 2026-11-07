@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-07T02:59:16.044907+00:00",
+  "decision": "SOURCE_FIXTURE_ACCEPTED",
+  "subject_commit": "6410ab92fb2fd823a530e9a25952bfafb73cae7d",
+  "review_sha256": "c52e67477d84d1b803c1ef11dda19928f8d5b86e5474f8c11e458b5cb317686a",
+  "basis": "Original full841 review plus bounded c12/4f/6410 reconstructed remediation reports; both P2 resolved, no new blocker. Entire6410 delta reviewed; no renewed whole-source review.",
+  "production_qualification": "unestablished",
+  "trust_limit": "Pathname checks rely on trusted host runtime/administration; untrusted confined descendants cannot replace host mount-source parents. No atomic trusted-host replacement fencing claim.",
+  "destination_head": "80f66d9b5ca774a5cdff9298b28274d1f6ccfc12",
+  "authority": "AUTHORITY.json"
+}

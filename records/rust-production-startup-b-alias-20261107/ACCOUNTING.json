@@ -1,0 +1,52 @@
+{
+  "units": "API-equivalent USD adjusted for subscription speed; proxy, not measured subscription quota or actual billing",
+  "closed_window_canonical_usd": 4.2847916,
+  "setup_hold_usd": 0.3,
+  "closing_tail_hold_usd": 0.25,
+  "conservative_book_usd": 4.8347916,
+  "approved_cap_usd": 6,
+  "target_usd": [
+    4,
+    5
+  ],
+  "approval_at": "2026-11-07T02:36:14.724Z",
+  "closed_at": "2026-11-07T03:00:01Z",
+  "hard_stop": "2026-11-07T04:06:14.724Z",
+  "aggregate_prior_conservative_usd": 54.9297396,
+  "aggregate_book_usd": 59.7645312,
+  "aggregate_ceiling_usd": 61,
+  "actors": [
+    {
+      "session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+      "direct_usd": 0.8191287999999999,
+      "calls": 29
+    },
+    {
+      "session_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+      "direct_usd": 0.7390787999999999,
+      "calls": 27
+    },
+    {
+      "session_id": "01a1b3ed-9303-7112-8c3b-2be5e8902029",
+      "direct_usd": 2.726584,
+      "calls": 15
+    }
+  ],
+  "nested_totals": "Overlap canonical tree; do not add",
+  "allocation_history": "Builder2, review2.5, coordination/closure1, contingency.5. Reallocated .5 contingency to review3 at observed2.254562 before original2.5 crossing. Final review2.726584 within amended3. Original all-in6 and90min unchanged.",
+  "coverage": "partial",
+  "issues": [
+    {
+      "kind": "multiple_parents",
+      "node_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+      "parent_node_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+      "rejected": "codex_parent",
+      "retained": "binding"
+    }
+  ],
+  "known_gaps": [
+    "Claude Code title and other side calls are not in transcripts"
+  ],
+  "coverage_explanation": "Redundant explicit/native parent binding for retained builder produces partial status. Explicit binding takes precedence; Root, builder and reviewer each occur once, their direct totals reconcile to canonical, unpriced calls0 and unattributed totals0. No complete coverage claim.",
+  "post_close": "Closed window is not settled zero tail. Later reused-session costs require attribution; .25 hold reserves remaining Root record/board/final calls. .30 setup hold reserves current-approval pre-init costs once, not costs of the previous closed scope."
+}
