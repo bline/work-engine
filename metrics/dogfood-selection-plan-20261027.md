@@ -6,8 +6,9 @@ has existed since 2026-11-01T08:41:08Z, with reason "Terra trigger: P1 episodes
 []; repair rounds 10 (budget 10)". Only the owner resumes it. **Do not screen or
 enroll any dispatch for round 2 while it is paused.** The Status paragraph below
 is history: it records the state on 2026-10-28 and is not current. A round's
-state lives in its run directory, not in this plan. This notice is a temporary
-stopgap, not the admission authority.
+state lives in its run directory, not in this plan; read it with
+`task_profile_record.py admission --run-dir <run>` (exit 0 only when active).
+This notice is a stopgap, not the admission authority: `admission` is.
 
 Status (2026-10-28): **round 2 is active: a builder comparison** (section
 "Round 2"). Run directory: `~/.local/state/work-engine/task-profile-pilot-2`.
@@ -248,6 +249,10 @@ outcomes: make collection permanent, revise the schema, or stop.
 
 The round's state is in the Status lines at the top. It was approved and
 activated on 2026-10-28 (see "Activation" below).
+
+*Historical (2026-11-07): the sentence above describes 2026-10-28. A round's
+state is read from its run directory with `task_profile_record.py admission
+--run-dir <run>`, not from the Status lines; see the notice at the top.*
 
 **Design review: ready** (`gpt-6-astra` at `high`, standard tier, one retained
 read-only session, 2026-10-28; [review](probes/dogfood-round2-review-astra-20261028.md)).
@@ -596,6 +601,9 @@ paragraph that begins "Before dispatch, compare the packet":
 7. **Rounds.** The guidance profiles only while the Status lines name an active
    round, its run directory and cap, so later rounds change this plan, not the
    guidance.
+   *Historical (2026-11-07): the guidance now gates screening on
+   `task_profile_record.py admission --run-dir <run>`, which reads the run
+   directory alone; the plan supplies only the run-directory path.*
 8. **The model doing the work.** An adapter or launcher is not profiled; the
    dispatch of the model it starts is, once.
 9. **Hygiene.** Sidecars go in `<run>/sidecars/`; packets and files a child is
