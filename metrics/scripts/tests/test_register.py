@@ -510,6 +510,15 @@ class RealRegisterTests(unittest.TestCase):
                            capture_output=True, text=True)
         self.assertEqual(p.returncode, 0, p.stdout)
 
+    def test_real_h2_decision_rests_on_k6_not_k5(self):
+        register = os.path.join(REAL_REPO, "metrics", "register")
+        if not os.path.isdir(register):
+            self.skipTest("metrics/register not present")
+        with open(os.path.join(register, "decisions.json"), encoding="utf-8") as fh:
+            decisions = {d["decision_id"]: d for d in json.load(fh)}
+        h2 = decisions["context-boundary.h2-levels"]["findings"]
+        self.assertTrue(h2 and all(f.startswith("codex-compaction-points#") for f in h2), h2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,13 +8,22 @@ it changes a decision. Decision owners decide.
 ## Rules
 
 1. Studies record what the sources say. They carry no judgment fields.
-2. Events, judgments and applicability records are append-only. A correction is a new event
-   that links the corrected finding; nothing is rewritten.
+2. `events.jsonl` and `judgments.jsonl` are append-only: a correction is a new event that links
+   the corrected finding, a changed assessment is a new judgment line (the latest per finding
+   and axis wins), nothing is rewritten. `applicability.jsonl` is append-only except for one
+   in-place edit: the decision owner sets `authorization.status` (and `at`) on a record. Every
+   other change to an applicability record is a new record. `studies/`, `questions.json`,
+   `decisions.json` and `materialized.jsonl` are edited in place and reviewed as diffs; the
+   repository history is their only record of the prior state. Because `validate` requires an
+   applicability record's `decision_revision` to equal the decision's current `revision`, a
+   revision change to a decision means rewriting or re-adding its records; the historical
+   decision record `...-at-df288c3d` below is the workaround for one case.
 3. The current-knowledge view is generated, never edited. `register.py build` regenerates it
    byte for byte.
 4. `records/` is never edited. A correction to a record is a new record elsewhere.
 5. In-repo sources are pinned `{path, commit, blob, lines?}`, valid when
-   `git rev-parse <commit>:<path>` equals `blob`. Off-repo sources are
+   `git rev-parse <commit>:<path>` equals `blob` and the object is a blob; `lines` (`N` or `N-M`,
+   1-based) are lines of that file at that commit and must lie within it. Off-repo sources are
    `{location, sha256 | null, custody: "off_repo", status: verified | unverified | unavailable}`
    with an optional `note`. When an off-repo primary exists it is recorded as well as any
    in-repo summary. Sealed files are cited by path and digest only.
@@ -61,14 +70,29 @@ only, no network, no model calls; it writes only to `--out`.
 standing alone. The judged standing (`standing | qualified | corrected | withdrawn`) is shown
 beside it, not replaced by it.
 
+**Decision `lines`.** A decision's `lines` are lines of its `document` at its own `revision`,
+not at any later commit. `validate` checks the format and that they lie inside that file; it
+cannot check that they hold the anchored text.
+
 **Which decisions `nominate` reaches.** For each event it lists every decision whose `findings`
 include the event's `subject_finding` **or its `by_finding`**, and says which (`via`:
-`subject_finding`, `by_finding` or `both`). The chosen rule is to follow `by_finding`. So a
-challenge to K8 by K7 reaches the Pi coding profile acceptance contract because that decision
-lists K7, not because it lists K8; the roadmap route is reached because it lists K8.
+`subject_finding`, `by_finding` or `both`). The chosen rule is to follow `by_finding`. Two
+cases depend on it. A challenge to K8 by K7 reaches the Pi coding profile acceptance contract
+because that decision lists K7, not because it lists K8; the roadmap route is reached because
+it lists K8. The K5 same-day correction (subject `...#rediscovery-free-reading`, by
+`...#conditional-result`) reaches the Pi/Docker context replacement decision only through
+`by_finding`: no decision lists the subject finding, so without the rule that correction would
+nominate nothing. Each decision's `findings` follow pass 1: the context-boundary H2 levels list
+only the K6 findings (pass 1: H2 rests on K6 and K5 only informs it), so K5 relates to H2
+through its applicability record (`not_established`) and the K5 correction does not nominate H2.
 
-**Qualification events.** The event vocabulary has no `qualification` kind. The two K3 events
-(F1.1, 2026-10-28, and the 10-31 audit) are recorded as `challenge`, with the basis saying so.
+**Qualification events.** The event vocabulary has no `qualification` kind. The K3 F1.1
+qualification (2026-10-28) is recorded as a `challenge`, with the basis saying so. The 10-31
+quota audit examined a later report (`quota-fit-20261031`), not the experiment-plan section 1
+fit that K3 records, so it is not a challenge to K3's fitted values. It is recorded as a
+`status_discrepancy` on K3 (the cost-table row gives a per-1% figure without the 10-29 quota
+change the audit's report re-expresses); this departs from pass 1, which lists the audit as a
+qualification of the fit. The event basis says so.
 
 **Historical decision revisions.** `model-selection.claude-host-builder-rows-at-df288c3d` pins a
 superseded revision of the Claude-host builder rows, the one that cited full-battery counts
@@ -89,8 +113,9 @@ have no record. Assessor: `claude-opus-5-5 (evidence-map pass 1, 2026-11-06)`.
 
 **Applicability starts pending.** Every record is proposed by the register builder with
 `authorization.status: pending` and the decision owner named. Authorizing or declining is the
-owner's act: they set `authorization.status` and `at` on the record, and git history keeps the
-prior state.
+owner's act, and the one permitted in-place edit (rule 2): they set `authorization.status` and
+`at` on the record, and the repository history keeps the prior state. `validate` rejects a
+decided status without `at`.
 
 ## Not in this stage
 

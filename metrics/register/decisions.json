@@ -29,7 +29,7 @@
    "e1a-first-artifact-battery#full-battery-reading",
    "e1a-first-artifact-battery#traced-reading"
   ],
-  "lines": "42-43",
+  "lines": "39-40",
   "owner": "user (model-selection owner)",
   "revision": "git:4ff69ffd"
  },
@@ -62,7 +62,7 @@
   "findings": [
    "sol-effort-per-call-cost#per-call-cost-by-effort"
   ],
-  "lines": "117",
+  "lines": "92",
   "owner": "user (model-selection owner)",
   "revision": "git:2127cc34"
  },
@@ -71,7 +71,6 @@
   "decision_id": "context-boundary.h2-levels",
   "document": "skills/manual-orchestration/references/context-boundary.md",
   "findings": [
-   "handoff-threshold-replay-m22#conditional-result",
    "codex-compaction-points#no-limit-compaction-points",
    "codex-compaction-points#limit-250k-behaviour"
   ],

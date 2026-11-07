@@ -6,7 +6,7 @@
   {
    "basis": "single-observation",
    "caveats": [
-    "not established whether the model or a shim authored the verifier invocation, and whether the model read the verifier's text",
+    "the model authored the one tool call that ran the verifier: entry 5 of the exported pilot session transcript (off-repo, source below) is an assistant message from gpt-6-luna whose single workspace_exec call appends the tests and ends with rustc --edition=2024 --test /acceptance.rs -o /tmp/check && /tmp/check; entry 4 is the prompt that instructs it to run the original independent validator (pass 2 section 1; entries counted from 0 and read by the repair builder). No read of the verifier's text is recorded, and with one call the model could not iterate against its output",
     "the smoke-plus-private-verifier pattern has never run with a live model (the Sol/high round stopped at admission with zero model requests)",
     "no remediation found in the repository by grep (pass 1; unverified beyond that)",
     "the pilot's task acceptance was not overturned: it also rested on the crate suite, mutation checks and separate review",

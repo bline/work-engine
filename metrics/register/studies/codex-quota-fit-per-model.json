@@ -8,7 +8,7 @@
    "caveats": [
     "modelled, not observed per call; assumes all quota use came from rollouts on this machine",
     "F1.1 (owner-approved 2026-10-28) found 3,660 Fast-tier calls on 2026-10-03 to 10-08 and lists this fit as not established until its owner rechecks it with the tier; whether the fit's windows include those days is not established (usage-ledger-f11-20261028.md:60-66)",
-    "10-31 audit (off-repo): the samples do not establish stable model-specific quota coefficients; per pass 1 a baseline-selection defect moves the five-minute Sol 6.1 estimate from $6.63 to $8.37 per point, not a calibrated replacement rate; figures not re-read by the register builder",
+    "10-31 audit (off-repo, read 2026-11-07): it audited the later quota-fit-20261031 report (isolate3 estimator, overlapping October data, pre- and post-doubling windows), not the experiment-plan section 1 fit, so it does not test the 2,319-reading fit. In its own dataset it does not establish stable model-specific quota coefficients, and its same-window re-expression supports an approximately doubled denominator after the 10-29 change; this fit predates that change. Its $6.63 to $8.37 per point is that report's five-minute Sol 6.1 post-doubling estimate under a baseline-selection sensitivity, not a calibrated replacement rate and not an adjustment to this fit",
     "per pass 1 the fit predates the 10-29 quota change; not re-verified",
     "no recheck found in metrics/ or the inventory (pass 1); absence is within that search only"
    ],
@@ -32,7 +32,7 @@
     {
      "custody": "off_repo",
      "location": "~/cbm-work/quota-audit-20261031/findings.json",
-     "note": "digest from the nominations file and recomputed 2026-11-07; contents not re-read by the register builder",
+     "note": "digest from the nominations file and recomputed 2026-11-07; contents read by the repair builder 2026-11-07 (keys subject, scope, overall, findings); the audit's subject is the later report /home/bline/cbm-work/quota-fit-20261031, not the experiment-plan section 1 fit",
      "sha256": "8a54666c452b6099d29dd16b57d907c394225d39a0eaf8b2fe3b30149b7e2c81",
      "status": "verified"
     }

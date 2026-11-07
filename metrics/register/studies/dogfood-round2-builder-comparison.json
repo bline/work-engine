@@ -72,6 +72,12 @@
      "path": "metrics/probes/dogfood-round2-builder-outcomes-20261104.md"
     },
     {
+     "blob": "66694f0dc6d647eb0bbf9f5e7f8ce9e19e54a08b",
+     "commit": "d80dd242",
+     "lines": "5-6",
+     "path": "metrics/dogfood-selection-plan-20261027.md"
+    },
+    {
      "custody": "off_repo",
      "location": "~/.local/state/work-engine/task-profile-pilot-2/PAUSED",
      "note": "digest computed 2026-11-07 by the register builder; file mode 600, 306 bytes",

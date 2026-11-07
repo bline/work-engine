@@ -8,7 +8,8 @@
    "caveats": [
     "conclusive that this sequence occurred once; no reliability claim",
     "the consumer-precision repair was qualified offline, not live",
-    "the authoritative validator was visible to the agent; see pi-acceptance-verifier-visibility#observation and event ev-20261106-acceptance-verifier-visible"
+    "the authoritative validator was visible to the agent; see pi-acceptance-verifier-visibility#observation and event ev-20261106-acceptance-verifier-visible",
+    "conservative_combined_usd (18.26) is a completed-call, speed-adjusted API-equivalent snapshot covering all bound actors once, including a 1.40 USD reservation for at most two trials of which only the first was used; it is not provider cost (the pinned catalog's conservative settlement is 2,510 microUSD), subscription quota, final billing or a steady-state per-task cost (README lines 125-132)"
    ],
    "claim": "One actual Events HTTP MCP request reached the Rust command, job server and Pi runtime; Pi added two tests (919 bytes, original 5,847 bytes unchanged), passed validation, reset and recovered context and returned a receipt; the exported patch passed the crate suite, mutation checks and review and was accepted on 2026-11-06.",
    "id": "first-useful-local-development-pilot-20261106#bounded-observation",
@@ -19,6 +20,18 @@
      "blob": "6c97c1e00cb56d8c99517e48619799d0325e3bd7",
      "commit": "d80dd242",
      "lines": "1-40",
+     "path": "records/local-development-pilot-20261106/README.md"
+    },
+    {
+     "blob": "6c97c1e00cb56d8c99517e48619799d0325e3bd7",
+     "commit": "d80dd242",
+     "lines": "49-50",
+     "path": "records/local-development-pilot-20261106/README.md"
+    },
+    {
+     "blob": "6c97c1e00cb56d8c99517e48619799d0325e3bd7",
+     "commit": "d80dd242",
+     "lines": "125-132",
      "path": "records/local-development-pilot-20261106/README.md"
     },
     {
