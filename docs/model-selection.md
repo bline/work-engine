@@ -193,6 +193,37 @@ published interface or a parity or provenance claim, Claude-only review does not
 satisfy the requirement. Record the gap; do not describe the review as
 independent.
 
+**An outside reader on API credits (2026-11-07).** `gpt-6-astra` can run from a
+separate Codex home, `~/.codex-api`, logged in with an OpenAI API key and billed
+to that account's API credits (USD 100, auto-recharge off, per the owner). The
+main `~/.codex` stays on the ChatGPT login, so other Codex sessions are not
+affected. Each use spends from the credits, so it needs the owner's approval for
+that objective: an objective authorized only for Claude reviewers does not cover
+it. Launch one fresh, read-only process per review:
+
+```bash
+CODEX_HOME=$HOME/.codex-api codex exec -C <checkout of the reviewed commit> \
+  -m gpt-6-astra -c model_reasoning_effort=high -c service_tier=default \
+  -s read-only "<review prompt>"
+```
+
+- Use `xhigh` instead of `high` when the subject is architecture, an ownership
+  contract or planning with unresolved design questions, as for any Astra review.
+- The review contract is [Codex adversarial review](../skills/codex-adversarial-review/SKILL.md).
+  Its `spawn_agent` binding steps assume a Codex caller; record the session ID
+  that `codex exec` prints instead.
+- Read the observed model, tier and token use from the rollout under
+  `~/.codex-api/sessions/`. `metrics/scripts/usage_ledger.py` reads only
+  `~/.codex`, so these reviews do not appear in its totals or in budget checks.
+- **Cost:** an Astra first review in dogfood round 2 cost $1.30–9.67 at frozen API
+  prices, median about $4.50 (n = 16), so the credits cover roughly 10–20 first
+  reviews. Whether current API prices match the frozen table is unverified.
+- Spend it where Claude review has been weakest: contract-class changes and the
+  final acceptance of a workstream.
+- A one-call probe on 2026-11-07 observed `gpt-6-astra` at `high` on the `default`
+  tier (session `01a1b6fb-0dee-7b93-9d45-ee5d56250d0e`, 13,169 tokens, $0.13 at
+  frozen prices).
+
 ### Supervisor practice on Claude
 
 - **Root context size is the one measured cost lever; the root model has never
@@ -367,4 +398,5 @@ configuration with no builder.
 | 2026-10-28 | Clarify Terra/medium as the default for bounded implementation after discovery: select Sol for concrete residual decisions and risk, not domain labels, the planner's model, or a repair-round count alone. (Superseded 2026-11-04.) | guidance clarification following owner feedback |
 | 2026-11-04 | `gpt-6.1-sol` at `medium` is the default builder; `gpt-6.1-terra` at `medium` narrows to small, mechanical, fully specified changes. Campaign defaults align. | owner; [round 2 outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md) |
 | 2026-11-07 | Claude-host choices move into their own [section](#claude-host-and-claude-only-development) for Claude-only development. Added: Sonnet 5.5 `medium` for Claude reconnaissance and mechanical edits; a fresh Sonnet or Haiku second review pass beside Opus tier 1; Claude-only review recorded as same-provider. Corrected: the tier-1 reviewer row said no matched Sonnet review comparison existed (Test R generation 2 is one, n = 1 per model), and the Sonnet builder row's "Opus" was `claude-opus-5`, not 5.5. | owner requested the section; the two additions are recommendations the owner may change |
-| 2026-11-07 | Claude-only development runs without an outside non-Claude reader: the Codex quota is spent. Review there is recorded as same-provider, and a requirement for an outside reader is recorded as unmet, not satisfied. | owner |
+| 2026-11-07 | Claude-only development runs without an outside non-Claude reader: the Codex quota is spent. Review there is recorded as same-provider, and a requirement for an outside reader is recorded as unmet, not satisfied. (Superseded the same day.) | owner |
+| 2026-11-07 | An outside reader is available: `gpt-6-astra` from a separate Codex home on OpenAI API credits (USD 100, auto-recharge off), used per objective with owner approval. Review without it is still recorded as same-provider. | owner; [probe](#claude-host-and-claude-only-development) session `01a1b6fb` |
