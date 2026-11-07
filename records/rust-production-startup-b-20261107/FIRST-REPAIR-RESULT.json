@@ -1,0 +1,200 @@
+{
+  "schema": "work-engine.production-startup-b-repair.v1",
+  "standing": "REPAIR_IMPLEMENTED_VALIDATED_PENDING_ROOT_REVIEW",
+  "created_at": "2026-11-07T01:01:33.651989+00:00",
+  "packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/REPAIR-PACKET.md",
+    "sha256": "33f0f38d2f01c2e744a6657bf4581bcde8e37aaae6eb534bc5f6633ec9008d3c"
+  },
+  "review_report": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/final-source-review/RESULT.json",
+    "sha256": "2fb06e51cdc1bea0fbbe75c0fd6c4d9cc76c58861f9b3c5033b995a87fd6408b"
+  },
+  "baseline_commit": "841295d174f62995d336f109779437ac03880f2e",
+  "source_commit": "c12dc571464482afc875643913cec46a22ef76ad",
+  "branch": "repair/startup-b-20261107",
+  "worktree": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source",
+  "working_tree_clean": true,
+  "source_delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/SOURCE-DELTA.json",
+    "sha256": "271b9403e3b2eea9c026980018fb6522ec9ee8aec4e07e769ef00c6fac4a1eb4"
+  },
+  "delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/repair.diff",
+    "sha256": "1e2de1fc15c018f1413c17547ad87aa119268ed2b541c04d996de76ff0f96c58"
+  },
+  "source_freeze": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source-freeze/manifest.json",
+      "sha256": "93034754ca5492aa06ad948f2f5a013955630140f7b52e9c64b539e45bd32c95"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source-freeze/subject.tar",
+      "sha256": "236db60d46a1993c3d6f2bffda8fd51ec24ddcba948856189c4dbd5739fbdb06"
+    },
+    "changes": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source-freeze/changes.json",
+      "sha256": "b8e0c23fd61a80006925e8f8976906b0df9e74936e9c679fe620ae6f2f659a49"
+    }
+  },
+  "release_freeze": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/release-freeze/manifest.json",
+      "sha256": "273b8712b9d8c9f4e7639570b702c9f17b5358fe0d938ef85b137747d5192a01"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/release-freeze/subject.tar",
+      "sha256": "f8458e91526165e50841bdd657137f14e1ee910750dafa33d911845f350cfdbc"
+    }
+  },
+  "executable": {
+    "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/release/bin/work-engine-review-host",
+    "sha256": "471a26b55cec4dda6250acb0c676a1ceeb2af05c12463ff1728a2e8df1c36ec6",
+    "bytes": 30034240
+  },
+  "installation_packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/INSTALLATION-PACKET.json",
+    "sha256": "8093eabe14fe61ee44527c333a3aef04ba9a4b969d3c4064351e0a391edbf974"
+  },
+  "installation_standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "findings": {
+    "STARTUP-B-001": {
+      "disposition": "repair delivered for separate review",
+      "change": "Actual socket admission now rejects /usr subtree before filesystem admission; canonical/private/runtime-owner/ancestry and real peer auth remain.",
+      "regression": "Exact rejected socket pathname and component-aware mount-policy cases without protected /usr writes; actual existing managed-custody fixture denied socket connection in process and descendant."
+    },
+    "STARTUP-B-002": {
+      "disposition": "repair delivered for separate review",
+      "change": "Dedicated client Transport errors are contained at shared serving loop; listener errors propagate. Reads and writes bounded to30sec. Commands never replayed after write failure.",
+      "regression": "Real UnixListener accepted oversized, fully disconnected-after-request, then valid request; first two assert Transport, final response succeeds; execution count2 proves no replay; peer UID observed on original connected socket. Authority failure prevents execution; listener failure is fatal."
+    }
+  },
+  "checks": [
+    {
+      "name": "focused-corrected/transport-regressions",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/focused-corrected/transport-regressions.json",
+        "sha256": "ce9f9f67d1a7cc48419c48eabaf0f953d5df71e0b06226d8b1926626fc76436d"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "focused-corrected/socket-regression",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/focused-corrected/socket-regression.json",
+        "sha256": "5588845638a99ef2b59659b4b03df6a0e6a1ae27a9700dd0aec5804567f4e1cf"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/custody-connection-denial",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/custody-connection-denial.json",
+        "sha256": "b4af9e6e7f4a6474135e794fcda4049909ed0d96a3f1826496bdd6e696264e0d"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/cold-completion",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/cold-completion.json",
+        "sha256": "b031eaff442f5075cf6afe66ae99a35860a4198f987657b57aaf7642d8b4090f"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/wire",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/wire.json",
+        "sha256": "9a46d5fbe3aa04b944590e53b04929883b632416ffa8f65bbab06d969b01d49b"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/default-negatives",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/default-negatives.json",
+        "sha256": "21ef1d747a8c6e6219faae4feec44c8d29408d29f2fb7193421ab6ace8f55211"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/lint",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/lint.json",
+        "sha256": "4ff3a85d760786e1c21150d90111951096782a1a9cd45b1a425cf17dbcb943ec"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/format",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/format.json",
+        "sha256": "b0f8762a718855c6219edfc05c34f4dcf770c1f2ca7ac1924091fdfaf205f89b"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/build",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/validation/build.json",
+        "sha256": "4c3d8fd9d46b1b1d091d490ee7754b6049f4fd1dac87a9d8ced0e2a68f5ef4ff"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "bound-build/build",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/bound-build/build.json",
+        "sha256": "5ed2e9b310ae933eccd0f60cff68e9133babff8a8a7800a911331c9355663af0"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    }
+  ],
+  "retained_failures": [
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/focused/transport-regressions.json",
+        "sha256": "881cda978d774d9b313c95200f0426f1d6378e22d904f02c8dec13512518094f"
+      },
+      "explanation": "Initial test compile used incorrect rustix helper name; corrected to socket_peercred and reran both focused regressions successfully. No failing source carried into commit."
+    }
+  ],
+  "limits": [
+    "Separate source acceptance remains Root-owned and unestablished.",
+    "Listener regression uses exact production serving loop and framing with stub domain callback; no successful installed startup or installed application qualification claimed.",
+    "Confined descendant denial is real managed-custody fixture evidence, not installed production confinement.",
+    "Whole affected suite remains unqualified: prior baseline analyzer/checkpoint mismatch and historically invalidated overlapping broader rebuild remain preserved in original builder/review records; not repaired or reclassified.",
+    "Actual startup/job policy, genuine subject/destination/validator policy, filesystem allocation/epoch and authority issuance remain unselected; installation packet remains inert/unissued.",
+    "No provider/catalog/credential qualification, protected installation, acceptance/publication, C settlement or paused peer access performed."
+  ],
+  "identity": {
+    "session_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+    "rollout": "/home/bline/.codex/sessions/2026/11/06/rollout-2026-11-06T17-55-12-01a1b380-9b41-7460-bfc2-5ee01bb5b6a8.jsonl",
+    "binding_acknowledged": true,
+    "requested": "gpt-6.1-sol/medium/default",
+    "observed": "Root verified applied identity; context check also observed Sol6.1/medium",
+    "context_check": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/context-before-result.json",
+      "sha256": "2090abd305bc76bb4224716f1446b84e01e95d4940a9ce96dbdee62e5728f559"
+    },
+    "accounting_owner": "Root; repair allocation up to1.50USD proxy inside original18USD/hard04:11:39UTC; no independent actual-cost assertion"
+  },
+  "process_disposition": {
+    "owned_running_processes": 0,
+    "owned_listeners": 0,
+    "subagents": 0,
+    "protected_or_provider_effects": false,
+    "collection_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "recorded_at": "2026-11-07T01:23:56.399059+00:00",
+  "role": "rust-production-startup",
+  "root_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+  "adoption_sequence": 4784,
+  "handoff_sha256": "d9b836859732a1ff2f5eec18ee1d0e8628fbfcb067445d19745a7d6aabf2cc06",
+  "objective_status": "UNFULFILLED_CLOSED_ABANDONED",
+  "source_status": "UNACCEPTED_PRIVATE_NOT_INTEGRATED",
+  "candidate_commit": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "candidate_branch": "repair/startup-b-20261107",
+  "candidate_worktree": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source",
+  "shared_base": "c12182d5556d18c956fcc7a1f7a065c2d4244a7b",
+  "source_integrated": false,
+  "protected_effects": false,
+  "installation_standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "open_finding": "STARTUP-B-001 P2: actual dynamic proxy bind may be a symlink to an operator socket directory outside the checked boundary root. Validate actual canonical mount sources and add translated guest-path regression before acceptance.",
+  "resolved_finding": "STARTUP-B-002 transport failures are connection-local; carried bounded source evidence, no total request deadline qualification.",
+  "reason_for_stop": "Remaining original18USD allowance cannot responsibly cover another repair, review and closure. No further feature, repair or review work dispatched.",
+  "production_missing": [
+    "selected qualified startup/job policy",
+    "genuine reviewed subject and destination/ref",
+    "validator policy",
+    "filesystem and epoch allocation",
+    "authority issuance",
+    "current provider/catalog/compiler/credential qualification",
+    "exact reviewed installation/readback and operator approval"
+  ],
+  "validation": "Nine final-repair fixture/build custody records passed, binary digest verified; prior default consumers passed. Whole affected suite unqualified.",
+  "review_provenance": "Initial full841 native Astra/xhigh/default changes_required; fresh reconstructed c12 and4f Astra/high/default remediation retained exact reports. Recorded native readOnly/networkAccessfalse and exact-turn settings independently observed by Root. Same-provider different-model evidence; no wider tool, cross-provider, statistical or continuous-context independence claim, no renewed whole-source review.",
+  "excluded": [
+    "C whole-job terminal settlement",
+    "new full live development-loop pilot",
+    "clearing owner_pending",
+    "paused peer state"
+  ],
+  "process_disposition": {
+    "context_wait": {
+      "pid": 1951018,
+      "tool_session": 62797,
+      "terminal_exit": 130,
+      "signal": "SIGINT after exact argv verification",
+      "collected": true,
+      "pid_exists": false
+    },
+    "budget_listener": {
+      "pid": 1951004,
+      "stopped_by": "scope_budget close abandoned",
+      "pid_exists": false
+    },
+    "builders": "Both collaboration builders completed; exact finals collected",
+    "native_reviews": "All four operations terminal, closed and final receipts acknowledged; no running review turn",
+    "remaining_owned_processes": []
+  },
+  "next_owner": "Human may authorize a new bounded repair/review objective and supply actual production inputs. This closed scope grants no automatic continuation or activation.",
+  "accounting": "ACCOUNTING.json",
+  "phase_artifacts": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011"
+}

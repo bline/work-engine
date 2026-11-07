@@ -1,0 +1,30 @@
+{
+  "schema": "work-engine.manual-authority.v1",
+  "human_reply": "approved",
+  "human_direction": "Approve B production startup and outstanding custody qualification, $18 / 4 hours, target $12\u201315; included $2 / 30-minute owner-composition feasibility gate; aggregate ceiling $56; fresh supervisor transfer.",
+  "approved_start": "2026-11-07T00:11:39Z",
+  "gate_stop": "2026-11-07T00:41:39Z",
+  "feature_stop": "2026-11-07T02:26:39Z",
+  "feature_stop_all_in_usd": 10,
+  "hard_stop": "2026-11-07T04:11:39Z",
+  "max_all_in_usd": 18,
+  "canonical_cap_usd": 17.5,
+  "setup_hold_usd": 0.5,
+  "aggregate_prior_conservative_usd": 37.3701036,
+  "aggregate_ceiling_usd": 56,
+  "scope": [
+    "Same installed executable for production review/completion startup",
+    "Connect actual campaign/review/evidence/custody owners",
+    "Complete reviewed installation/readback packet, then actual production publication and cold reopen only after exact operator approval"
+  ],
+  "excluded": [
+    "C job-terminal settlement",
+    "Full new live development-loop pilot",
+    "Unapproved protected installation, credentials, task acceptance or publication",
+    "Paused peer state"
+  ],
+  "accounting": "All setup and predecessor/successor/worker/review/repair/closure costs share this single original clock and cap; nested totals overlap. No transfer clock reset.",
+  "predecessor_sid": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+  "predecessor_rollout": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl",
+  "authority_source": "Current human approved in this session; budget and transfer proposal immediately preceding reply."
+}

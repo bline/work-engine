@@ -1,0 +1,203 @@
+{
+  "schema": "work-engine.production-startup-b-repair.v1",
+  "standing": "REMAINING001_REPAIR_DELIVERED_PENDING_ROOT_REVIEW",
+  "created_at": "2026-11-07T01:14:56.902268+00:00",
+  "review_report": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/remediation-review/RESULT.json",
+    "sha256": "70107e26fac762ee79b09daf52ab40ae26b6fbf7c1696e3ff273f871cdcd4111"
+  },
+  "prior_result": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/RESULT.json",
+    "sha256": "0db49524785384496fff25180ae3cb2e968776a197cd69752891ad3254996823"
+  },
+  "baseline_commit": "c12dc571464482afc875643913cec46a22ef76ad",
+  "original_subject": "841295d174f62995d336f109779437ac03880f2e",
+  "source_commit": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "branch": "repair/startup-b-20261107",
+  "worktree": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair/source",
+  "working_tree_clean": true,
+  "source_delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/SOURCE-DELTA.json",
+    "sha256": "bd2b104bc20fb09f6a23d3b3a116f8025dc3e155975681ed3f741edf7b30e801"
+  },
+  "delta": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/repair.diff",
+    "sha256": "d66022c07f664fe281d81b7ed1dd375cd7ba44161a4ef93b333ac42717512ab8"
+  },
+  "mount_evidence": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/MOUNT-EVIDENCE.json",
+    "sha256": "76680672e3b4da198df4ec7a89dc42ad8d97d38df72cfea5c2fea9cdfaaf9297"
+  },
+  "source_freeze": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/source-freeze/manifest.json",
+      "sha256": "5257f6a1d3a4664a4ba9021008a6c322eeaf1f26aff63c42be38838eb812bee6"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/source-freeze/subject.tar",
+      "sha256": "63fdedb2a785162e282a8739c1ec6873ec3e33b24744f7d3fb773e00eb2acafa"
+    },
+    "changes": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/source-freeze/changes.json",
+      "sha256": "a7e58d8838f331f4fd459e9646a70c7824a25259eae2f4c1cab42725fa9b8b6b"
+    }
+  },
+  "release_freeze": {
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/release-freeze/manifest.json",
+      "sha256": "e65918d919f395223411ef8e9d76c4dbc33cda40b76d5ca8ad435a3b0739c325"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/release-freeze/subject.tar",
+      "sha256": "591b31ae26e5a541edc70fa18ac28c5957b24baa083e4833ce120f5ab44e852c"
+    }
+  },
+  "executable": {
+    "artifact": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/release/bin/work-engine-review-host",
+    "sha256": "740bf2432f864a4b47a318c38d7c250499dc608dfc4d8ec46308939ac600396a",
+    "bytes": 30040176
+  },
+  "installation_packet": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/INSTALLATION-PACKET.json",
+    "sha256": "4729e4d24ab865df22aed7f763f46883de61dc34bf0c5a08793a0edf79947f2d"
+  },
+  "installation_standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+  "findings": {
+    "STARTUP-B-001": {
+      "disposition": "comprehensive mount repair delivered; separate Root review pending",
+      "change": "Socket admission excludes reviewer/validator union /usr,/lib,/lib64,/etc/ssl and canonical source aliases; installation also excludes selected candidate, reviewer boundary and validator workspace roots to cover dynamic directory grants. Canonical parent, UID/private mode, ancestry and exact connected peer checks remain.",
+      "policy_regressions": "Every fixed system tree and descendant; component boundaries; canonical symlink alias and independent non-merged root fixture.",
+      "actual_reviewer_probe": "CandidateBoundary::prepare/publish_manifest/run_hostile_probe reaches production reviewer_command. Same-UID host socket connection succeeds before/after, reviewer and child get FileNotFoundError. Local CBM only, network unshared, provider-free. Fixed policy trees tested without protected path writes; no installed confinement claim."
+    },
+    "STARTUP-B-002": {
+      "disposition": "resolved_for_bounded_source_review in prior remediation report; implementation unchanged byte-for-byte",
+      "qualification": "Original real listener/stub-domain regression remains fixture evidence. Timeouts bound each blocking I/O, not total request/command duration; no slow-drip or expiration qualification."
+    }
+  },
+  "checks": [
+    {
+      "name": "focused/reviewer-fixture-programs",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/focused/reviewer-fixture-programs.json",
+        "sha256": "618151cca65dd6ac520e100b8af6b562c739fd8e71508bcfb58e62fd76e223ea"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "focused-private-programs/reviewer-socket-denial",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/focused-private-programs/reviewer-socket-denial.json",
+        "sha256": "174b5afba4f1b6b717484ad0a897bbc8c0f63a608eda2bffd2a847cda66d55ea"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "focused-private-programs/socket-policy",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/focused-private-programs/socket-policy.json",
+        "sha256": "a865751c1ef1d7fb43d6151127a129f74153dba4f4389239fc8379ca2452e489"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/cold-completion",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/validation/cold-completion.json",
+        "sha256": "af46da5450bab223cb9b9d38a3e47ec2408be6e082bfd01ec656037ff7f4d517"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/wire",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/validation/wire.json",
+        "sha256": "bc85cb4d7ba212ca7dbeeddd90f9775bd1f30573a39c93d3d718f18879f26c41"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/default-negatives",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/validation/default-negatives.json",
+        "sha256": "43cdafc816ed2af397ad42f0910035da623cf68e7bd33d50e85e284b27059917"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/lint",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/validation/lint.json",
+        "sha256": "8579aceee64d937684dcfbec2e52ce2a36fca39c9a815f2c85d759e3f142de70"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/format",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/validation/format.json",
+        "sha256": "a6f933fd1fa52b44916a557d4114b01145fb1b22c39e56158e3be39f934fca8b"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    },
+    {
+      "name": "validation/build",
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/validation/build.json",
+        "sha256": "5202f6727e5405e6406fce48ebc702d0b934477346694d15e223b194dc4a4e11"
+      },
+      "returncode": 0,
+      "leftovers_after_kill": null
+    }
+  ],
+  "retained_failures": [
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/focused/reviewer-socket-denial.json",
+        "sha256": "c77b7584b0dcf0dabee3ac54087328c9752e135050b42a9a624bdc7a5d037796"
+      },
+      "explanation": "First fixture failed before sandbox because long artifact-root Unix socket path exceeded SUN_LEN; changed explicit temporary fixture parent to /tmp/work-engine-b2-socket-fixture."
+    },
+    {
+      "record": {
+        "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/focused-corrected/reviewer-socket-denial.json",
+        "sha256": "c36906961949c59822e17e09394c744fd0d7d7baa3ec6f5b8921526fd0f431dd"
+      },
+      "explanation": "Next fixture refused group-writable build helper via existing PinnedProgram policy; test now copies helper programs to private0700 fixture files, matching existing owner fixture. No production pin/policy relaxation."
+    }
+  ],
+  "limits": [
+    "Separate final001 review and source acceptance remain Root-owned; no acceptance or installation claimed.",
+    "Actual reviewer constructor and validator managed-custody denial are fixture observations; installed production confinement remains unestablished.",
+    "No successful installed bootstrap/serving or production publication qualification.",
+    "Whole affected suite still unqualified: prior baseline analyzer/checkpoint mismatch and invalidated overlapping broader rebuild remain preserved and unresolved.",
+    "Actual startup/job policy, genuine subject/destination/validator policy, filesystem allocation/epoch and authority issuance remain unselected. Packet remains INERT_UNISSUED_NOT_APPROVAL_READY.",
+    "All first-repair records/freezes/digests/commits preserved; authorized same private worktree now advances to this commit.",
+    "No provider/credential calls, protected installation, acceptance/publication, C settlement or paused-peer access."
+  ],
+  "identity": {
+    "session_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+    "binding_acknowledged": true,
+    "requested": "gpt-6.1-sol/medium/default",
+    "observed": "Root verified inherited applied identity",
+    "context_check": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/repair2/context-before-freeze.json",
+      "sha256": "b94bcabf4abf436916eb313290b9748f03aa8c12a44c6d62efaccfb6225ee578"
+    },
+    "accounting_owner": "Root; cumulative repair allocation revised to2USD inside original18USD/hard04:11:39UTC; no independent cost assertion"
+  },
+  "process_disposition": {
+    "owned_running_processes": 0,
+    "owned_listeners": 0,
+    "subagents": 0,
+    "protected_or_provider_effects": false,
+    "collection_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97"
+  }
+}

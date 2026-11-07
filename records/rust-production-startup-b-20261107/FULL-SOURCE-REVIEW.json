@@ -1,0 +1,116 @@
+{
+  "baseline": "c12182d5556d18c956fcc7a1f7a065c2d4244a7b",
+  "context_observation": {
+    "checked_at": "2026-11-07T00:52:02.997775+00:00",
+    "compaction_markers": 0,
+    "disposition": "Review complete; return the result immediately without context replacement or further exploration.",
+    "epoch": 0,
+    "input_tokens": 168937,
+    "reader_sha256": "d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204",
+    "recommendation": "fresh"
+  },
+  "evidence_class": "bounded_adversarial_source_review_with_existing_build_and_fixture_evidence",
+  "findings": [
+    {
+      "consequence": "An accepted socket location can expose the authenticated operator channel to an untrusted validator running under the supported same-UID arrangement.",
+      "evidence": "Counterexample: select runtimeUid/operatorUid 1000 and a socket under /usr/local/lib/work-engine/operator, with that directory owned by UID1000 and mode0700 and root-owned, non-writable ancestors. check_socket_parent accepts this layout. workspace-publication/src/custody.rs:446-493 exposes the entire /usr tree through --ro-bind without changing the host credential to a distinct UID. Read-only filesystem exposure does not prevent connecting to a pathname Unix socket; custody.rs:418-419 explicitly recognizes that distinction. The completion socket therefore remains reachable from the validator. publication_ingress.rs:4-13 authenticates only the connected UID, so such a descendant can submit operator commands using known record references, for example revoke_from_peer at publication.rs:490-503. It can queue the request during validation for processing afterward. This is a source-derived counterexample, not an executed exploit.",
+      "file": "rust/crates/review-workflow/src/completion.rs",
+      "id": "STARTUP-B-001",
+      "line": 295,
+      "remediation": "Reject socket locations exposed by the actual reviewer/validator mount grants, including /usr, or explicitly mask the socket and its containing authority directory in every untrusted descendant. Preserve real peer authentication. Add a regression covering this otherwise-valid private-directory layout and an independently observed confined-descendant connection denial.",
+      "severity": "P2"
+    },
+    {
+      "consequence": "A single client transport failure terminates the production completion server and leaves a socket pathname that prevents a subsequent cold start until operator cleanup.",
+      "evidence": "serve_connection_checked returns an error for an oversized request, read timeout or failed response write (work-engine-completion-host/src/lib.rs:296-304,327-328). The new listener loop propagates that connection-local error with '?'. A client sending 1,048,577 bytes therefore exits the entire host before request decoding; a client disconnecting before its response can do the same after command execution. The socket is intentionally retained, and the next UnixListener::bind at completion.rs:372 fails on the existing pathname.",
+      "file": "rust/crates/review-workflow/src/completion.rs",
+      "id": "STARTUP-B-002",
+      "line": 392,
+      "remediation": "Handle bounded client framing/read/write failures at the connection boundary and continue accepting subsequent peers. Keep deployment-authority failures fail-closed and preserve uncertain command outcomes without replay. Add a listener regression showing that an oversized or disconnected client does not prevent a following valid request.",
+      "severity": "P2"
+    }
+  ],
+  "independence_claimed": false,
+  "process_disposition": {
+    "accounting_owner": "Root",
+    "agents_spawned": 0,
+    "builds_or_tests_launched": 0,
+    "owned_running_processes": 0,
+    "protected_or_provider_effects": false,
+    "result_collection_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+    "source_files_edited": false
+  },
+  "production_qualification": {
+    "blockers": [
+      "Genuine campaign/startup/job-policy and authority issuance remain unselected.",
+      "Reviewed subject, destination/ref, validator policy, filesystem allocation and epoch remain unselected.",
+      "Current provider/catalog/credential/headroom readiness is unestablished.",
+      "Actual installed descendant confinement and production publication/cold recovery have not been established."
+    ],
+    "documentation_assessment": "README and installation packet correctly retain source/fixture versus production standing. Their required socket-isolation condition is not enforced for the counterexample in STARTUP-B-001.",
+    "excluded": [
+      "C whole-job settlement",
+      "New full live development-loop pilot",
+      "Protected installation"
+    ],
+    "installation_authorized": false,
+    "objective_complete": false,
+    "operator_packet": "INERT_UNISSUED_NOT_APPROVAL_READY",
+    "status": "unestablished"
+  },
+  "requested_observed_identity": {
+    "grant_attestation": "Native readOnly realization remains Root's independently collected assertion; this reviewer does not attest its own grant.",
+    "observed": {
+      "effort": "xhigh",
+      "model": "gpt-6-astra",
+      "service_tier": "default",
+      "session_id": "01a1b378-9dd6-72e2-9866-11e441e36734",
+      "source": "Exact-turn host settings observation in final-source-review/host-state/state.json",
+      "turn_id": "01a1b378-a84f-7e50-ac0c-9233cbd1664a"
+    },
+    "prior_attempt": "Fresh review of 841295d1; no acceptance or continuous remediation context inherited from the interrupted superseded attempt.",
+    "relationship": "Same-provider different-model relative to Root-attested builder gpt-6.1-sol in copied inputs/RESULT.json; builder rollout was not independently inspected here.",
+    "requested": {
+      "effort": "xhigh",
+      "model": "gpt-6-astra",
+      "service_tier": "default"
+    }
+  },
+  "reviewed_scope": {
+    "changed_files": [
+      "rust/crates/review-workflow/Cargo.toml",
+      "rust/crates/review-workflow/src/completion.rs",
+      "rust/crates/review-workflow/src/initial.rs",
+      "rust/crates/review-workflow/src/lib.rs",
+      "rust/crates/work-engine-completion-host/Cargo.toml",
+      "rust/crates/work-engine-completion-host/src/lib.rs",
+      "rust/crates/work-engine-completion-host/src/main.rs",
+      "rust/crates/work-engine-review-host/README.md",
+      "rust/crates/work-engine-review-host/src/completion.rs",
+      "rust/crates/work-engine-review-host/src/main.rs",
+      "rust/crates/work-engine-review-host/tests/production_completion.rs"
+    ],
+    "diff": "11 files, 848 insertions, 63 deletions. The assignment's 841-insertion count differs.",
+    "required_context": "Read repository AGENTS.md, full DESIGN.md and PHILOSOPHY.md, manual-orchestration reviewer/worker, call-cost and Codex-host references, W0 contract and prior A result.",
+    "semantic_boundaries": [
+      "Qualified startup, installed acceptance, job reopen and current_exe bindings.",
+      "Campaign/claims/evidence owner composition, Arc identity and epoch checks.",
+      "Native episode read scope and durable initial-outcome recovery.",
+      "Publication peer authentication, managed custody, bootstrap/active separation and guarded publication recovery."
+    ],
+    "source_identity": "HEAD verified; clean detached worktree; all 11 affected files byte-compared with the subject commit."
+  },
+  "schema": "work-engine.production-startup-source-review.v1",
+  "subject_commit": "841295d174f62995d336f109779437ac03880f2e",
+  "validation_limits": [
+    "No builds, tests or exploit probes were run by this reviewer.",
+    "Inspected existing pre-launch custody records and verified their referenced log hashes for cold completion, original review recovery, workflow units, default negatives, wire negative, lint, format and default build. These are existing observations, not independently rerun validation.",
+    "The cold test exercises two fixture owner reopens, original receipt equality and one peer entry. It does not exercise successful installed completion bootstrap or the production socket-serving loop.",
+    "Verified frozen release executable SHA-256 b36d584f4cfbbf22d0f4797b2148893ca20146715173b85c38a0452669eb0772 against the copied installation packet. This establishes artifact identity, not production custody.",
+    "Whole affected suite remains unqualified. Verified that checkpoint.py is unchanged from baseline with SHA-256 398086bbf33022d9bcdb467484b0733f362301a6634eb3478f52dcdbfc7f34c9, while the unchanged analyzer expects 1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b.",
+    "The broader run's overlapping diagnostic rebuild remains invalidated. Earlier host-response timeouts and invocation/compile failures remain preserved; targeted later passes do not qualify the entire suite.",
+    "Tier2 graph navigation used an exact-worktree fast index, generation 2026-11-07T00:47:03Z/store u81527e55fec2d889g2. Coverage checked 35 relied-on paths: unresolved calls required direct-source verification; the two analyzer/checkpoint scripts were excluded and checked directly. No exhaustive graph-completeness claim.",
+    "Root must collect final exact validation and decide source acceptance."
+  ],
+  "verdict": "changes_required"
+}

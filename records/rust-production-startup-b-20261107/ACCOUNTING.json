@@ -1,0 +1,84 @@
+{
+  "units": "API-equivalent USD adjusted for subscription speed; cost proxy, not measured quota or actual billing",
+  "snapshot_at": "2026-11-07T01:23:55.821371+00:00",
+  "closed_window_canonical_usd": 16.709636000000003,
+  "setup_hold_usd": 0.5,
+  "closing_tail_hold_usd": 0.35,
+  "conservative_book_usd": 17.559636,
+  "user_cap_usd": 18,
+  "target_usd": [
+    12,
+    15
+  ],
+  "target_exceeded": true,
+  "aggregate_prior_conservative_usd": 37.3701036,
+  "aggregate_conservative_book_usd": 54.9297396,
+  "aggregate_ceiling_usd": 56,
+  "original_start": "2026-11-07T00:11:39Z",
+  "objective_closed_at": "2026-11-07T01:22:33Z",
+  "original_hard_stop": "2026-11-07T04:11:39Z",
+  "clock_or_human_cap_extended": false,
+  "nested_totals_overlap_global_do_not_add": true,
+  "post_close": "Later bound-session calls are separate attribution candidates; closed window is not settled zero tail. The closing hold reserves the remaining Root record/board/final work.",
+  "allocation_history": [
+    "Full841 review allowance4.5 to6 before observed crossing; actual4.59669.",
+    "First remediation2.25 to3 before observed crossing; actual2.41952.",
+    "Final001 original1.75 allocation crossed to1.797822 before revision to2.1. Final observed2.032912. Historical crossing retained.",
+    "Repair cumulative1.5 to2; second repair stayed within amended allowance."
+  ],
+  "actors": [
+    {
+      "session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+      "role_name": null,
+      "direct_usd": 0.28601679999999996,
+      "calls": 15
+    },
+    {
+      "session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+      "role_name": "Rust production startup B | continuation d9b83685",
+      "direct_usd": 3.1999324000000007,
+      "calls": 124
+    },
+    {
+      "session_id": "01a1b370-6635-7120-92a9-e54f3d81adae",
+      "role_name": null,
+      "direct_usd": 0.856744,
+      "calls": 6
+    },
+    {
+      "session_id": "01a1b378-9dd6-72e2-9866-11e441e36734",
+      "role_name": null,
+      "direct_usd": 4.59669,
+      "calls": 21
+    },
+    {
+      "session_id": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+      "role_name": null,
+      "direct_usd": 2.41952,
+      "calls": 14
+    },
+    {
+      "session_id": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+      "role_name": null,
+      "direct_usd": 2.032912,
+      "calls": 12
+    },
+    {
+      "session_id": "01a1b361-5868-7882-b9f4-a629df3f9c58",
+      "role_name": "Poincare",
+      "direct_usd": 2.0567772,
+      "calls": 83
+    },
+    {
+      "session_id": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+      "role_name": "Euler",
+      "direct_usd": 1.2610435999999998,
+      "calls": 64
+    }
+  ],
+  "coverage": "complete",
+  "issues": [],
+  "known_gaps": [
+    "Claude Code title and other side calls are not in transcripts"
+  ]
+}

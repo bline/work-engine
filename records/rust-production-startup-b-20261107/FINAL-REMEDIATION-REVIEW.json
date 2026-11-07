@@ -1,0 +1,110 @@
+{
+  "comparison_baseline": "c12dc571464482afc875643913cec46a22ef76ad",
+  "finding_dispositions": [
+    {
+      "consequence": "An admitted socket directory can remain reachable by an untrusted same-UID reviewer through the actual proxy bind, so the operator-channel confinement defect is not fully repaired.",
+      "disposition": "partially_repaired_still_P2",
+      "evidence": [
+        "completion.rs:246-256 derives the boundary root from session/mcp.json and checks only that enclosing root, the candidate repository and workspace root. check_socket_mount at lines 356-365 canonicalizes only the supplied root.",
+        "Source-derived counterexample: keep a valid canonical boundary at /var/lib/work-engine/boundary and a runtime-owned mode0700 socket directory at /var/lib/work-engine/operator, with acceptable ancestors. Replace boundary/proxy with a symlink to operator. The completion socket parent is outside all three checked dynamic roots and every fixed system mount, so the new exclusion accepts it.",
+        "review-execution-evidence/src/claude/isolation.rs:864-918 validates the boundary root and frozen manifest. verify_frozen at lines 1037-1101 checks frozen candidate, store and configuration content but does not reject or canonicalize proxy. This proxy arrangement does not alter those pinned bytes.",
+        "The active reviewer route creates proxy/analysis.sock at isolation.rs:354-355 and mounts private_root/proxy at /cbm/socket at lines 416-419. With the counterexample, the reviewer receives the operator directory and can address /cbm/socket/completion.sock.",
+        "slice-campaign/src/publication_ingress.rs:4-13 authenticates the connected UID. A reviewer using the supported same host UID still satisfies that check; read-only mounting does not prevent pathname socket connections.",
+        "README.md's dynamic-root exclusion description does not disclose this surviving alias case."
+      ],
+      "evidence_limit": "Source-derived counterexample; no filesystem mutation or exploit execution was performed.",
+      "file": "rust/crates/review-workflow/src/completion.rs",
+      "id": "STARTUP-B-001",
+      "line": 251,
+      "remaining_defect": "The dynamic exclusion canonicalizes the enclosing boundary root, not every actual directory mount source. A symlinked boundary/proxy can expose an admitted socket outside that root.",
+      "remediation": "Validate the actual dynamic directory mount sources, including canonical boundary/proxy, against the socket directory, or enforce and revalidate that those sources remain canonical descendants of their checked owner root. Apply the same principle to other dynamic directory grants. Add a regression for a proxy alias outside the boundary and probe the resulting guest socket path.",
+      "resolved_portion": "The fixed mount exclusions cover /usr, /lib, /lib64 and /etc/ssl, including canonical aliases. Canonical socket-parent, private UID/mode, ancestry and connected-peer authentication remain intact.",
+      "severity": "P2"
+    },
+    {
+      "disposition": "resolved_for_bounded_source_review_carried_forward",
+      "evidence": [
+        "Read the retained remediation-review/RESULT.json disposition and its transport-containment reasoning.",
+        "Verified work-engine-completion-host/src/lib.rs is unchanged between c12dc571 and 4f921bbd.",
+        "The production completion route still uses serve_connections_checked."
+      ],
+      "id": "STARTUP-B-002",
+      "qualification": "Prior listener/stub-domain evidence remains bounded. It does not establish installed startup, timeout expiration or a total request deadline."
+    }
+  ],
+  "independence_claimed": false,
+  "new_findings": [],
+  "original_subject": "841295d174f62995d336f109779437ac03880f2e",
+  "process_disposition": {
+    "C_settlement_or_live_pilot": false,
+    "agents_spawned": 0,
+    "builds_or_tests_launched": 0,
+    "collection_and_accounting_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+    "credentials_or_paused_peer_state_accessed": false,
+    "external_effects": false,
+    "owned_running_processes": 0,
+    "result_delivery": "Final JSON for host capture; Root owns exact collection, accounting, closure, source acceptance and integration.",
+    "result_written_by_reviewer": false,
+    "source_files_edited": false
+  },
+  "production_qualification": "unestablished",
+  "requested_observed_identity": {
+    "backend_fulfillment_and_actual_billing": "unknown",
+    "context_observation": {
+      "checked_at": "2026-11-07T01:17:52.151432+00:00",
+      "compaction_markers": 0,
+      "input_tokens": 93262,
+      "recommendation": "retain_ok"
+    },
+    "grant_attestation_owner": "Root; this reviewer does not independently attest its own native grant.",
+    "observed": {
+      "effort": "high",
+      "model": "gpt-6-astra",
+      "service_tier": "default",
+      "session_id": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+      "source": "Host-owned exact-turn settings in final001-review/host-state/state.json; referenced settings event digest verified.",
+      "turn_id": "01a1b393-f685-7020-9691-4e6be493d3b3"
+    },
+    "relationship": "Same-provider different-model evidence relative to the Root-attributed Sol builder.",
+    "requested": {
+      "effort": "high",
+      "model": "gpt-6-astra",
+      "sandbox": "readOnly",
+      "service_tier": "default"
+    }
+  },
+  "review_continuity": "reconstructed",
+  "reviewed_scope": {
+    "boundaries": [
+      "Fixed system mount union and canonical aliases",
+      "Dynamic candidate, reviewer proxy/boundary and validator workspace mounts",
+      "Canonical ancestry, private ownership/mode and connected-peer authentication",
+      "Actual reviewer constructor and its active caller",
+      "Provider-free reviewer fixture, host positive controls and descendant denial",
+      "Retained source, release, custody and failure evidence"
+    ],
+    "delta": "3 files, 189 insertions, 19 deletions",
+    "files": [
+      "rust/crates/review-workflow/src/completion.rs",
+      "rust/crates/work-engine-review-host/README.md",
+      "rust/crates/work-engine-review-host/tests/production_completion.rs"
+    ],
+    "source_acceptance_and_integration_owner": "Root",
+    "source_identity": "Verified HEAD, clean worktree, and affected working-file bytes against HEAD. Baseline and repaired hashes match inputs/SOURCE-DELTA.json.",
+    "whole_source_review_renewed": false
+  },
+  "subject_commit": "4f921bbd3d0010d8d260fc4eb90a8bbf1aa72182",
+  "validation_limits": [
+    "Read repository AGENTS, full DESIGN/PHILOSOPHY, manual-orchestration worker/reviewer, call-cost and Codex-host references, and both retained review reports. No builder or reviewer conversation was inherited.",
+    "Verified 51 absolute artifact, record and log hash references with no mismatches, including source/release freeze artifacts, installation packet, nine passing custody records and both retained fixture failures. The copied RESULT.json matches repair2/RESULT.json.",
+    "Verified release executable SHA-256 740bf2432f864a4b47a318c38d7c250499dc608dfc4d8ec46308939ac600396a. Artifact identity does not establish installation.",
+    "All nine passing records report exit0, no timeout and empty leftover_processes. No validation was rerun.",
+    "Preserved both reviewer fixture failures: the first exceeded the Unix socket pathname limit; the next returned UnsafeProgram during fixture program setup. The corrected route uses a short fixture root, private mode0700 helper copies and /usr/bin/python3 inside the reviewer namespace.",
+    "The corrected canary reaches reviewer_command through run_hostile_probe, establishes host connectivity before and after confinement, and asserts FileNotFoundError for the reviewer process and its child. It is meaningful fixture evidence, but probes the original host pathname in an ordinary layout; it does not cover an operator directory exposed through a translated proxy alias.",
+    "The hostile-probe route shares the reviewer constructor but differs from the installed active route, including fixture session/scratch mounts and network denial. Actual installed reviewer/validator confinement remains unestablished.",
+    "Tier2 coverage confirmed shared baseline generation 2026-11-06T22:50:28Z/store u6727226d1acc557bg2. Private changed paths were missing and relevant boundary paths had unresolved calls. Exact-source fallback supports the review; no private graph freshness, absence or completeness claim is made.",
+    "Whole-suite qualification remains withheld because of the unchanged analyzer pin mismatch and historically invalidated overlapping run. The prior c12 default-consumer check is carried evidence, not a new run.",
+    "Actual installed bootstrap, serving, confinement and publication remain unestablished. Operator inputs and authority issuance remain unselected. The packet remains INERT_UNISSUED_NOT_APPROVAL_READY; these missing inputs are not classified as source repairs."
+  ],
+  "verdict": "changes_required"
+}

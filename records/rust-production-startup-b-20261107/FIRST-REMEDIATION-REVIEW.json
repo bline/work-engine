@@ -1,0 +1,118 @@
+{
+  "finding_dispositions": [
+    {
+      "consequence": "An admitted operator socket can still be exposed to an untrusted reviewer running with the supported same host UID.",
+      "disposition": "partially_repaired_still_P2",
+      "evidence": [
+        "completion.rs:291-333 now rejects /usr and its descendants while retaining canonical-parent, private ownership/mode and ancestry checks. This closes the original /usr validator counterexample.",
+        "The check rejects only /usr. A canonical /etc/ssl/work-engine/operator directory owned by UID1000 with mode0700 and root-owned, non-writable ancestors passes these checks.",
+        "rust/crates/review-execution-evidence/src/claude/isolation.rs:1237-1255 constructs the reviewer sandbox with a read-only bind of the entire host /etc/ssl tree. Its namespace arguments do not select a distinct host UID. The active reviewer route calls this constructor at isolation.rs:378-379.",
+        "Read-only mounting does not revoke pathname Unix-socket connection authority. rust/crates/slice-campaign/src/publication_ingress.rs:4-13 authenticates the connected UID; a reachable same-UID reviewer therefore satisfies that principal check.",
+        "The verified socket regression covers /usr, /var/lib and /usr-private, but not /etc/ssl. The managed-custody denial fixture exercises the validator mount layout, not this reviewer exposure."
+      ],
+      "evidence_limit": "Source-derived counterexample; no exploit or protected filesystem setup was executed.",
+      "file": "rust/crates/review-workflow/src/completion.rs",
+      "id": "STARTUP-B-001",
+      "line": 327,
+      "remediation": "Reject socket locations exposed by every applicable untrusted mount grant, including /etc/ssl and independently rooted /lib or /lib64 layouts, or mask the authority directory in those sandboxes. Preserve canonical/ancestry and connected-peer checks. Add admission and actual reviewer-boundary denial coverage for the remaining exposed path.",
+      "severity": "P2"
+    },
+    {
+      "disposition": "resolved_for_bounded_source_review",
+      "evidence": [
+        "review-workflow/src/completion.rs:407-425 routes the production listener through Application::serve_connections_checked.",
+        "work-engine-completion-host/src/lib.rs:314-367 classifies oversized input, socket read failures and response write failures as Transport and contains them at the connection boundary. Listener iterator failures remain fatal.",
+        "The deployment check remains before execute at lib.rs:346. A failed check produces a negative response without executing the command; continuing to accept connections does not bypass revalidation.",
+        "The original connected UnixStream reaches execute and the peer-authenticated owner methods. Execution occurs once; a failed response write does not invoke execution again.",
+        "Verified repair/focused-corrected/transport-regressions.json and both log digests: two tests passed, exit0, no timeout or recorded leftover processes. The real UnixListener regression processes oversized, disconnected and subsequent valid clients, observes connected UID, and asserts exactly two executions.",
+        "Inspected the fixture_host caller: it still propagates single-connection errors. The repaired production route uses the new containing loop."
+      ],
+      "id": "STARTUP-B-002",
+      "qualification": "The regression uses a stub domain callback. It establishes listener/framing behavior, not successful installed startup. Socket timeouts are per blocking I/O operation, not a 30-second total request or command deadline; existing evidence does not exercise timeout expiration or slow-drip clients."
+    }
+  ],
+  "independence_claimed": false,
+  "new_findings": [],
+  "original_subject": "841295d174f62995d336f109779437ac03880f2e",
+  "process_disposition": {
+    "agents_spawned": 0,
+    "budget": "Original B budget and deadline preserved; no reset.",
+    "collection_and_accounting_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+    "credentials_or_paused_peer_state_accessed": false,
+    "external_mutations": false,
+    "owned_running_processes": 0,
+    "result_delivery": "Final JSON for host capture; Root owns exact-turn collection, closure and acceptance decisions.",
+    "result_written_by_reviewer": false,
+    "source_files_edited": false,
+    "tests_or_builds_launched": 0
+  },
+  "production_qualification": "unestablished",
+  "requested_observed_identity": {
+    "backend_fulfillment_and_actual_billing": "unknown",
+    "context_observation": {
+      "checked_at": "2026-11-07T01:04:00.064198+00:00",
+      "compaction_markers": 0,
+      "epoch": 0,
+      "input_tokens": 81636,
+      "recommendation": "retain_ok"
+    },
+    "grant_attestation_owner": "Root; the reviewer inspected the host-owned realization record rather than independently attesting its own grant.",
+    "observed": {
+      "effort": "high",
+      "model": "gpt-6-astra",
+      "native_realization": {
+        "approval_policy": "never",
+        "forked_from": null,
+        "network_access": false,
+        "runtime_parent": null,
+        "sandbox": "readOnly"
+      },
+      "provider": "openai",
+      "service_tier": "default",
+      "session_id": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+      "source": "../host-state/state.json and digest-verified exact-turn rollout events",
+      "turn_id": "01a1b387-97c8-7b51-9f1a-976bc73b60c7"
+    },
+    "relationship": "Same-provider different-model evidence only; repair builder identity is Root-attributed gpt-6.1-sol/medium/default.",
+    "requested": {
+      "effort": "high",
+      "model": "gpt-6-astra",
+      "network_access": false,
+      "sandbox": "readOnly",
+      "service_tier": "default"
+    }
+  },
+  "review_continuity": "reconstructed",
+  "reviewed_scope": {
+    "boundaries": [
+      "Socket admission against validator and reviewer mount exposure",
+      "Canonical path, ownership, ancestry and connected UID",
+      "Production listener dispatch and Transport classification",
+      "Deployment revalidation, failed responses and command replay",
+      "Existing repair regression, release and custody evidence"
+    ],
+    "files": [
+      "rust/crates/review-workflow/src/completion.rs",
+      "rust/crates/work-engine-completion-host/src/lib.rs",
+      "rust/crates/work-engine-review-host/README.md"
+    ],
+    "history": "Read final-source-review/RESULT.json: the full 841295d1 review reported two P2 findings and changes_required, with no acceptance. Its host operation is closed and acknowledged. Retained native readOnly re-attestation was unavailable; this review reconstructs remediation evidence without inheriting that conversation.",
+    "source_acceptance_and_integration_owner": "Root",
+    "whole_source_review_renewed": false
+  },
+  "schema": "work-engine.production-startup-remediation-review.v1",
+  "subject_commit": "c12dc571464482afc875643913cec46a22ef76ad",
+  "validation_limits": [
+    "No tests, builds, exploit probes, agents or mutations were performed by this reviewer.",
+    "HEAD and clean worktree verified. All three affected files were byte-compared with c12dc571; baseline and repaired SHA-256 values match inputs/SOURCE-DELTA.json. Exact delta: 222 insertions and 49 deletions.",
+    "Verified referenced repair result, delta, source/release freeze manifests and archives, installation packet, and release artifact digests. The uninstalled executable SHA-256 is 471a26b55cec4dda6250acb0c676a1ceeb2af05c12463ff1728a2e8df1c36ec6.",
+    "Verified all ten listed passing custody records and their stdout/stderr digests: transport/socket regressions, managed-custody denial, cold completion, wire/default negatives, lint, format and two builds. Records report exit0, no timeout and empty leftover_processes. The sequential repair validation intervals do not overlap.",
+    "Verified the retained initial transport-test compile failure and its logs: exit101 caused by the incorrect get_socket_peercred helper. The corrected focused run passed; the failure remains preserved.",
+    "Managed-custody logs and test source establish fixture descendant socket denial, including a child process. They do not establish actual installed reviewer/validator confinement.",
+    "Whole affected suite remains unqualified: the prior unchanged analyzer pin mismatch and invalidated overlapping diagnostic rebuild remain unresolved. Targeted repair passes do not replace that history.",
+    "Graph Tier2 coverage used shared project home-bline-code-work-engine, generation 2026-11-06T22:50:28Z, which does not represent the private repaired subject. Relevant completion/README paths were missing; other relied-on paths carried unresolved-call coverage. Direct exact-source fallback supports repair and boundary claims. No graph absence, exhaustive coverage or private-worktree freshness claim is made.",
+    "Successful installed bootstrap/serving, actual installed confinement and production publication remain unestablished. Actual startup/policy, genuine subject/destination/validator, filesystem/epoch and issuance remain unselected. The packet remains INERT_UNISSUED_NOT_APPROVAL_READY.",
+    "No protected installation, publication, job settlement or live pilot is authorized."
+  ],
+  "verdict": "changes_required"
+}

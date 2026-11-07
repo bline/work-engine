@@ -1,0 +1,396 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "00788080-72e3-4c16-a7a8-7f2e9fa2098b",
+    "sessions": [
+      {
+        "session_id": "01a1a2c0-7191-76f2-afa1-16d32d5c4883",
+        "provider": "codex",
+        "from": "2026-11-07T00:15:09Z",
+        "bound_by": "init",
+        "evidence": null
+      },
+      {
+        "session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "provider": "codex",
+        "from": "2026-11-07T00:17:29Z",
+        "bound_by": "rotation",
+        "evidence": "{\"author\": \"successor-root\", \"body\": \"Adoption acknowledged: digest verified, claims reconciled.\", \"contract_version\": 1, \"data\": {\"handoff_sha256\": \"d9b836859732a1ff2f5eec18ee1d0e8628fbfcb067445d19745a7d6aabf2cc06\", \"predecessor_session\": \"01a1a2c0-7191-76f2-afa1-16d32d5c4883\"}, \"kind\": \"adoption\", \"message_id\": \"b0078319-ca98-47e1-8d49-7cd2585ff865\", \"observed_at\": \"2026-11-07T00:18:15.734675Z\", \"references\": [\"/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/ROOT-HANDOFF.md\"], \"role\": \"rust-production-startup\", \"sequence\": 4784, \"session_id\": \"01a1b35e-1427-7e03-ba39-5b9e1be3cb97\", \"to\": [\"role:rust-production-startup\"], \"topic\": \"session:01a1b35e-1427-7e03-ba39-5b9e1be3cb97\"}",
+        "previous_from": "2026-11-07T00:18:15.734675Z",
+        "startup_reconciliation": "Actual successor launch; includes pre-adoption usage once. Original rotation binding retained."
+      }
+    ],
+    "bindings": [
+      {
+        "session_id": "01a1b370-6635-7120-92a9-e54f3d81adae",
+        "provider": "codex",
+        "parent_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "bound_at": "2026-11-07T00:37:31Z",
+        "bound_by": "supervisor",
+        "reason": "manual-host operation source-review-08aa4cf4"
+      },
+      {
+        "session_id": "01a1b378-9dd6-72e2-9866-11e441e36734",
+        "provider": "codex",
+        "parent_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "bound_at": "2026-11-07T00:46:29Z",
+        "bound_by": "supervisor",
+        "reason": "manual-host operation source-review-841295d1"
+      },
+      {
+        "session_id": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+        "provider": "codex",
+        "parent_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "bound_at": "2026-11-07T01:02:48Z",
+        "bound_by": "supervisor",
+        "reason": "manual-host operation remediation-c12dc571"
+      },
+      {
+        "session_id": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+        "provider": "codex",
+        "parent_session_id": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "bound_at": "2026-11-07T01:16:18Z",
+        "bound_by": "supervisor",
+        "reason": "manual-host operation final001-4f921bbd"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 17.5,
+        "marks_usd": [
+          1.5,
+          9.5,
+          13.5,
+          16.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T00:15:09Z",
+        "reason": "18all-in less .50setuphold; included gate2/30min; feature10/135min; reserve review/qualification/closure",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b361-5868-7882-b9f4-a629df3f9c58",
+        "max_usd": 4.0,
+        "marks_usd": [
+          3.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T00:25:20Z",
+        "reason": "Builder allocation within unchanged18all-in; includes bounded discovery and source/check/ordinary remediation, no extra funds.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b378-9dd6-72e2-9866-11e441e36734",
+        "max_usd": 6.0,
+        "marks_usd": [
+          5.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T00:51:21Z",
+        "reason": "Root revises review allocation4.5to6 before original crossing: observed3.65275 at00:50:48; exact same source scope, use original18 reserve, no extra funding/clock.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+        "max_usd": 3.0,
+        "marks_usd": [
+          2.6
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T01:05:16Z",
+        "reason": "Same bounded remediation scope, observed1.883724 before original2.25 crossing; allocate original18 reserve to finish exact verdict/collection.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+        "max_usd": 2.0,
+        "marks_usd": [
+          1.7
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T01:07:45Z",
+        "reason": "Extend same repair actor allowance1.5to2 for still-open001 reviewer mount boundary; original18 reserve, no scope addition/clock reset.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+        "max_usd": 2.1,
+        "marks_usd": [
+          1.95
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-07T01:18:31Z",
+        "reason": "Final001 observed1.478556 at01:17:51; allocate .35 additional from original18 reserve, retaining closure headroom. No scope/clock increase.",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "production-startup-B",
+    "original_items": [
+      "Production review/completion owner composition, reviewed installation packet, gated production custody qualification and cold reopen"
+    ],
+    "started_at": "2026-11-07T00:15:09Z",
+    "weekly_at_start": {
+      "used_percent": 88.0,
+      "observed_at": "2026-11-07T00:14:42.253Z",
+      "resets_at": 1794435190,
+      "window_minutes": 10080,
+      "limit_id": "codex",
+      "plan_type": "prolite",
+      "source": "/home/bline/.codex/sessions/2026/11/03/rollout-2026-11-03T11-51-23-01a1a2c0-7191-76f2-afa1-16d32d5c4883.jsonl"
+    },
+    "limits": {
+      "max_hours": 3.9414371841666664,
+      "reconsider_after_additions": 1
+    },
+    "limits_set_by": "user",
+    "limits_reason": "Approved18USD4h aggregate56, original start00:11:39 hard04:11:39 UTC, transfer does not reset clock; .50setuphold",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 17.5,
+          "marks_usd": [
+            1.5,
+            9.5,
+            13.5,
+            16.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:15:09Z",
+          "reason": "18all-in less .50setuphold; included gate2/30min; feature10/135min; reserve review/qualification/closure",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b361-5868-7882-b9f4-a629df3f9c58",
+          "max_usd": 4.0,
+          "marks_usd": [
+            3.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:25:20Z",
+          "reason": "Builder allocation within unchanged18all-in; includes bounded discovery and source/check/ordinary remediation, no extra funds.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b378-9dd6-72e2-9866-11e441e36734",
+          "max_usd": 4.5,
+          "marks_usd": [
+            3.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:47:09Z",
+          "reason": "Final frozen source review allocation inside original18all-in, distinct from prior interrupted.856744review; reserve repairs and closure.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b378-9dd6-72e2-9866-11e441e36734",
+          "max_usd": 6.0,
+          "marks_usd": [
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:51:21Z",
+          "reason": "Root revises review allocation4.5to6 before original crossing: observed3.65275 at00:50:48; exact same source scope, use original18 reserve, no extra funding/clock.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1b378-9dd6-72e2-9866-11e441e36734",
+          "max_usd": 4.5,
+          "marks_usd": [
+            3.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:47:09Z",
+          "reason": "Final frozen source review allocation inside original18all-in, distinct from prior interrupted.856744review; reserve repairs and closure.",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+          "max_usd": 1.5,
+          "marks_usd": [
+            1.2
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:56:09Z",
+          "reason": "Fresh bounded repair of STARTUP-B001/002 within original18 reserve; no feature expansion.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+          "max_usd": 2.25,
+          "marks_usd": [
+            1.75
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:03:32Z",
+          "reason": "Bounded reconstructed remediation review only; original18 cap/clock unchanged.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+          "max_usd": 3.0,
+          "marks_usd": [
+            2.6
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:05:16Z",
+          "reason": "Same bounded remediation scope, observed1.883724 before original2.25 crossing; allocate original18 reserve to finish exact verdict/collection.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1b387-8f4a-7bc2-abc5-8a472be4addc",
+          "max_usd": 2.25,
+          "marks_usd": [
+            1.75
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:03:32Z",
+          "reason": "Bounded reconstructed remediation review only; original18 cap/clock unchanged.",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+          "max_usd": 2.0,
+          "marks_usd": [
+            1.7
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:07:45Z",
+          "reason": "Extend same repair actor allowance1.5to2 for still-open001 reviewer mount boundary; original18 reserve, no scope addition/clock reset.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1b380-9b41-7460-bfc2-5ee01bb5b6a8",
+          "max_usd": 1.5,
+          "marks_usd": [
+            1.2
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T00:56:09Z",
+          "reason": "Fresh bounded repair of STARTUP-B001/002 within original18 reserve; no feature expansion.",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+          "max_usd": 1.75,
+          "marks_usd": [
+            1.4
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:17:20Z",
+          "reason": "Final bounded001 review only; remaining original18 allowance must cover review and closure.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+          "max_usd": 2.1,
+          "marks_usd": [
+            1.95
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:18:31Z",
+          "reason": "Final001 observed1.478556 at01:17:51; allocate .35 additional from original18 reserve, retaining closure headroom. No scope/clock increase.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1b393-ee02-7e91-854a-19a128e8cbd9",
+          "max_usd": 1.75,
+          "marks_usd": [
+            1.4
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-07T01:17:20Z",
+          "reason": "Final bounded001 review only; remaining original18 allowance must cover review and closure.",
+          "basis": "speed_adjusted_api_usd"
+        }
+      }
+    ],
+    "additions": [],
+    "listener": {
+      "pid": 1951004,
+      "started_at": "2026-11-07T00:19:52Z",
+      "argv": [
+        "/usr/bin/python3",
+        "/home/bline/code/work-engine/skills/durable-state/scripts/codex_chatboard.py",
+        "--repository",
+        "/home/bline/code/work-engine",
+        "wait",
+        "--since",
+        "4785",
+        "--topic",
+        "session:01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "--topic",
+        "campaign:production-startup-B:20261107",
+        "--exclude-session-id",
+        "01a1b35e-1427-7e03-ba39-5b9e1be3cb97",
+        "--budget-record",
+        "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/budget.json",
+        "--budget-reader",
+        "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+        "--budget-sha256",
+        "ed026f40f93801c9fffab4a9d5d5fc32745fd1d94a6137edd22ed875b5a67291",
+        "--budget-interval",
+        "30.0",
+        "--follow"
+      ],
+      "stdout": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/budget-listener-00788080-72e3-4c16-a7a8-7f2e9fa2098b.jsonl",
+      "stderr": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/budget-listener-00788080-72e3-4c16-a7a8-7f2e9fa2098b.stderr",
+      "reader": "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+      "reader_sha256": "ed026f40f93801c9fffab4a9d5d5fc32745fd1d94a6137edd22ed875b5a67291",
+      "chatboard": "/home/bline/code/work-engine/skills/durable-state/scripts/codex_chatboard.py",
+      "chatboard_sha256": "698a63ed0c63ea6d46d589c91a3c96fe8c71de8a455c8c769747e2e8e0582dfc"
+    },
+    "closed_at": "2026-11-07T01:22:33Z",
+    "close": {
+      "at": "2026-11-07T01:22:33Z",
+      "disposition": "abandoned",
+      "reason": "B production objective unfulfilled: STARTUP-B-001 remains P2 at exact4f921bbd; source unaccepted and not integrated; installation inputs and authority unissued. Remaining original allowance reserved for closure only, no new paid work.",
+      "set_by": "supervisor"
+    }
+  }
+}

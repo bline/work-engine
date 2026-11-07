@@ -1,0 +1,133 @@
+{
+  "schema": "work-engine.production-startup-builder-result.v1",
+  "status": "SOURCE_AND_UNINSTALLED_RELEASE_READY_FOR_ROOT_REVIEW",
+  "source": {
+    "commit": "841295d174f62995d336f109779437ac03880f2e",
+    "initial_review_subject": "08aa4cf488bbca4e0a29880ab2ac310d44b55f15",
+    "baseline": "c12182d5556d18c956fcc7a1f7a065c2d4244a7b",
+    "worktree": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/worktree",
+    "branch": "production-startup-b-20261107",
+    "changed_paths": [
+      "rust/crates/review-workflow/Cargo.toml",
+      "rust/crates/review-workflow/src/completion.rs",
+      "rust/crates/review-workflow/src/initial.rs",
+      "rust/crates/review-workflow/src/lib.rs",
+      "rust/crates/work-engine-completion-host/Cargo.toml",
+      "rust/crates/work-engine-completion-host/src/lib.rs",
+      "rust/crates/work-engine-completion-host/src/main.rs",
+      "rust/crates/work-engine-review-host/README.md",
+      "rust/crates/work-engine-review-host/src/completion.rs",
+      "rust/crates/work-engine-review-host/src/main.rs",
+      "rust/crates/work-engine-review-host/tests/production_completion.rs"
+    ],
+    "dirty": false,
+    "shared_destination_mutated": false
+  },
+  "behavior": "One review-host executable opens existing qualified startup/acceptance and actual durable campaign/evidence/claims/episode owners once, initializes or cold opens managed publication and authenticates connected operator peers. Fixed protected completion selection binds exact startup/runtime/authority/custody and independent canonical repository. Fixture composition is explicit-feature-only.",
+  "source_review": {
+    "owner": "Root",
+    "status": "PENDING_FINAL_EXACT_SOURCE",
+    "requirement": "Initial08aa review cannot accept841 without exact delta reconciliation."
+  },
+  "qualification": {
+    "production_default_build": "PASS",
+    "production_default_authority_negatives": "PASS",
+    "scoped_warnings_denied_lint": "PASS",
+    "scoped_format": "PASS",
+    "cold_owner_reopen": "PASS_FIXTURE_STANDING_ONLY",
+    "review_recovery_regression": "PASS_FIXTURE_STANDING_ONLY",
+    "workflow_selection_units": "PASS",
+    "wire_authority_injection_negative": "PASS",
+    "installed_production": "NOT_ESTABLISHED",
+    "whole_affected_suite": "NOT_QUALIFIED"
+  },
+  "passing_custody": [
+    "stable-tests/cold-completion.json",
+    "stable-tests/review-regression.json",
+    "stable-tests/workflow-units.json",
+    "final-production/summary.json"
+  ],
+  "distinct_targeted_tests": 6,
+  "failures_preserved": [
+    {
+      "record": "tests-1/affected-tests.json",
+      "result": "11 pass/16 fail in campaign_owner_join; broad package command stopped there",
+      "disposition": "8 schema-four analyzer hash failures have exact unchanged-baseline source cause in baseline-analyzer-mismatch.json. Remaining episode errors invalidated by an overlapping diagnostic rebuild of the running test executable; no qualification claim from those errors."
+    },
+    {
+      "record": "diagnostic-schema-four/schema-four.json",
+      "result": "Reproduces analyzer hash rejection",
+      "disposition": "Baseline/current checkpoint.py SHA398086bb differs from unchanged analyzer expected1b814da3; unadmitted unrelated repair not made."
+    },
+    {
+      "record": "focused-host-tests/host-tests.json",
+      "result": "6 pass/5 bounded host-response timeouts",
+      "disposition": "Stable old08aa unoptimized debug binaries, no overlapping rebuild. Preserve as failed configuration, superseded only for targeted tested behavior by serial CARGO_PROFILE_DEV_DEBUG=0 artifacts."
+    },
+    {
+      "record": "stable-tests/wire.json",
+      "result": "Invalid test-target name protocol",
+      "disposition": "Invocation error preserved; actual joined target passed in final-production/wire.json."
+    },
+    {
+      "record": "check-default/check-default.json",
+      "result": "Initial new module import/type compile errors",
+      "disposition": "Fixed before reviewed source commits; default check and final build pass."
+    }
+  ],
+  "release": {
+    "binary_sha256": "b36d584f4cfbbf22d0f4797b2148893ca20146715173b85c38a0452669eb0772",
+    "binary": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/release/bin/work-engine-review-host",
+    "features": [],
+    "profile_environment": {
+      "CARGO_PROFILE_DEV_DEBUG": "0"
+    },
+    "source_archive": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/release/source.tar.gz",
+    "build_info": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/release/BUILD-INFO.json",
+    "manifest": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/release-freeze/manifest.json",
+      "sha256": "2a2c57ba4e765bb92f28011b154afcf7b783b868462084f5b8c8bdc0c4aa74ce"
+    },
+    "archive": {
+      "path": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/release-freeze/subject.tar",
+      "sha256": "133370078598070b9bfd98df15a3cc9b90e514dbc6221e228bc67c864e014b92"
+    }
+  },
+  "installation": {
+    "packet": "/home/bline/.local/state/work-engine/rust-production-startup-b-20261107T0011/builder/INSTALLATION-PACKET.json",
+    "standing": "INERT_UNISSUED_NOT_APPROVAL_READY",
+    "blocker": "Operator-owned actual qualified startup/admission/grants, genuine reviewed subject/destination/ref/validator, current provider qualification and epoch/filesystem allocation remain absent. Root requested human inputs. Source/build/package/new schema/order/readback/rollback are concrete; missing values are not fabricated.",
+    "effects_performed": false
+  },
+  "exclusions": [
+    "C job settlement",
+    "live development-loop pilot",
+    "protected installation",
+    "provider or credential invocation",
+    "operator checkpoint/create decisions",
+    "production publication",
+    "paused peer activation"
+  ],
+  "process_disposition": {
+    "owned_running_jobs": 0,
+    "listeners": 0,
+    "leftovers": 0,
+    "all_tool_sessions_collected": true
+  },
+  "identity": {
+    "sid": "01a1b361-5868-7882-b9f4-a629df3f9c58",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "tier": "default",
+    "verified_by_root": true,
+    "collection_owner": "01a1b35e-1427-7e03-ba39-5b9e1be3cb97"
+  },
+  "context_observation": {
+    "artifact": "context-before-result.json",
+    "input_tokens": 199271,
+    "epoch": 0,
+    "recommendation": "retain_ok"
+  },
+  "cost": "Worker measurement unavailable; Root owns canonical shared accounting. No separate provider calls.",
+  "next": "Root collects exact final, reconciles separate source review to841295d1, then resolves missing operator inputs before any installation approval."
+}

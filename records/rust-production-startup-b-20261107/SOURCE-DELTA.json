@@ -1,0 +1,26 @@
+{
+  "baseline_commit": "c12dc571464482afc875643913cec46a22ef76ad",
+  "files": [
+    {
+      "path": "rust/crates/review-workflow/src/completion.rs",
+      "baseline_sha256": "71c94f4b2f149a15c77e2f6e5c02d4c48564ee5264f32069b5889edf829a9063",
+      "repaired_sha256": "45c72fbad070602d5ed484281dcda38173ac3dc64adfe94bcef09c6cfa8b9a34",
+      "baseline_bytes": 20630,
+      "repaired_bytes": 22866
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/tests/production_completion.rs",
+      "baseline_sha256": "79699f88711b718db83de3631f388f5545d6aeef41ece364f55b22cdac25ce16",
+      "repaired_sha256": "ea4ba938ced20e978fa82d6ffa0fdafd32b6d58492eb5d0822d4e2900031275f",
+      "baseline_bytes": 2576,
+      "repaired_bytes": 7466
+    },
+    {
+      "path": "rust/crates/work-engine-review-host/README.md",
+      "baseline_sha256": "4d8a381684878d7c0e907692abf57383ec68e674064de812e26e75a2e5778c3c",
+      "repaired_sha256": "ab575b4930a1a1d8598feb41ae3741343d17f9f615a62b19857db3ac96dd5d69",
+      "baseline_bytes": 7196,
+      "repaired_bytes": 7491
+    }
+  ]
+}
