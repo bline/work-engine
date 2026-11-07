@@ -395,6 +395,23 @@ class AdmissionBase(unittest.TestCase):
                 return run
             return build
 
+        def repair_lone_number_two(name):
+            """The only repair record is numbered 2 (round 2): the recorder numbers a record highest + 1, so it
+            asserts a round 1 that is absent."""
+            run = self.terra_with_repair(name, budget=2)  # counted 1 of 2: the old gate says active, the numbering says 2
+            self.rechain(run, "t", {"repair-01.json": lambda data: data.update(round=2)})
+            d = run / "enrollments" / "t"
+            os.rename(d / "repair-01.json", d / "repair-02.json")
+            names = [line.split("  ", 1)[1] for line in (d / "SHA256SUMS").read_text().splitlines()]
+            self.write_manifest(d, ["repair-02.json" if n == "repair-01.json" else n for n in names])
+            return run
+
+        def repair_gap_one_and_three(name):
+            run = self.terra_with_repair(name, budget=1)
+            self.add_record_copy(run, "t", "repair-01.json", "repair-03.json")
+            self.rechain(run, "t", {"repair-03.json": lambda data: data.update(round=3)})
+            return run
+
         def enrollment_task_id(name):
             run = self.terra_with_review(name, p1=1)
             self.rechain(run, "t", {"enrollment.json": lambda data: data.update(task_id="other")})
@@ -502,6 +519,8 @@ class AdmissionBase(unittest.TestCase):
             "repair_duplicate_number": (repair_extra_name("repair-001.json"), "repair_record_invalid"),
             "repair_name_not_numbered_as_the_recorder_writes": (repair_extra_name("repair-1.json"), "repair_record_invalid"),
             "repair_name_non_numeric": (repair_extra_name("repair-x.json"), "repair_record_invalid"),
+            "repair_numbering_starts_at_two": (repair_lone_number_two, "repair_record_invalid"),
+            "repair_numbering_skips_a_number": (repair_gap_one_and_three, "repair_record_invalid"),
             "manifest_duplicate_name": (duplicate_manifest_line, "episode_integrity_problem"),
             # Hand-edited unsealed files.
             "round_duplicate_keys": (round_text('{"cap": 1, "cap": 20, "terra_in_flight": 2, "terra_repair_budget": 3}'),
@@ -1491,6 +1510,27 @@ class AdmissionClassRepair(AdmissionBase):
                 build, code = cases[name]
                 self.admit(build(name), "unknown", code)
 
+    def test_repair_records_numbered_other_than_one_to_n_are_unknown_naming_the_episode(self):
+        cases = self.fail_closed_cases()
+        for name in ("repair_numbering_starts_at_two", "repair_numbering_skips_a_number"):
+            with self.subTest(name):
+                build, code = cases[name]
+                out = self.admit(build(name), "unknown", code)
+                self.assertIn("t", out["reason"]["text"])
+                self.assertIn("repair", out["reason"]["text"])
+
+    def test_contiguous_repair_records_still_agree_with_the_shared_rule(self):
+        run = self.new_run("contiguous", budget=100, in_flight=9)
+        self.enroll(run, "t", byte=1)
+        self.repair(run, "t")
+        self.repair(run, "t")
+        self.repair(run, "t")
+        (run / "PAUSED").unlink(missing_ok=True)
+        out = rec.admission_decision(str(run))
+        self.assertIn(out["state"], ("stop_reached", "active"), out)
+        self.assertEqual(out["facts"]["trigger"]["terra_repair_rounds"], rec.trigger_facts(str(run))["terra_repair_rounds"])
+        self.assertEqual(out["facts"]["trigger"]["terra_repair_rounds"], 3)
+
     def test_unsealed_files_with_ambiguous_or_invalid_values_are_unknown(self):
         cases = self.fail_closed_cases()
         wanted = [n for n in cases if n.startswith(("round_", "pause_"))
@@ -1628,6 +1668,8 @@ class AdmissionClassRepair(AdmissionBase):
                 self.assertEqual(facts["covered_p1_episodes"], sorted(covered))
                 self.assertEqual(facts["covered_repair_rounds"], rounds)
                 self.assertEqual(facts["terra_repair_rounds"], rec.terra_repairs(str(fixture)))
+                numbered = sorted(n for n in os.listdir(fixture / "enrollments" / "t") if n.startswith("repair-"))
+                self.assertEqual(numbered, ["repair-01.json", "repair-02.json"])  # contiguous 1..n is valid input
                 self.assertEqual(out["facts"]["enrollments"]["count"], len(rec.enrollment_dirs(str(fixture))))
                 new_p1, over = rec.terra_stop_rule(shared, covered, rounds, out["facts"]["round"]["terra_repair_budget"])
                 self.assertEqual(out["state"] == "stop_reached" and out["reason"]["code"] == "pause_trigger_unmarked",
