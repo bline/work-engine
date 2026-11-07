@@ -292,6 +292,7 @@ fn check_socket_parent(socket: &Path) -> Result<()> {
     let parent = socket
         .parent()
         .ok_or_else(|| refuse("completion_installation", "socket parent absent"))?;
+    check_socket_mount_exposure(parent)?;
     if !socket.is_absolute() || socket.file_name().is_none() || fs::canonicalize(parent)? != parent
     {
         return Err(refuse(
@@ -299,6 +300,8 @@ fn check_socket_parent(socket: &Path) -> Result<()> {
             "socket parent is not canonical",
         ));
     }
+    // Both managed validator and reviewer custody expose host /usr read-only.
+    // RO mounts still permit Unix socket connections by the same runtime UID.
     // A private directory protects the socket name as well as its contents.
     // Runtime UID is checked independently by installed workspace custody.
     let owner = fs::metadata(parent)?;
@@ -318,6 +321,38 @@ fn check_socket_parent(socket: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn check_socket_mount_exposure(parent: &Path) -> Result<()> {
+    if parent.starts_with("/usr") {
+        return Err(refuse(
+            "completion_installation",
+            "operator socket is exposed by untrusted system mounts",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod socket_mount_tests {
+    use super::*;
+
+    #[test]
+    fn private_runtime_directory_under_usr_is_still_exposed() {
+        // Exercise the actual admission boundary without protected /usr writes.
+        let denied = check_socket_parent(Path::new(
+            "/usr/local/lib/work-engine/operator/completion.sock",
+        ))
+        .unwrap_err();
+        assert!(denied.to_string().contains("untrusted system mounts"));
+        // Mount policy is independent of owner/mode; no protected /usr writes.
+        assert!(
+            check_socket_mount_exposure(Path::new("/usr/local/lib/work-engine/operator")).is_err()
+        );
+        assert!(check_socket_mount_exposure(Path::new("/usr")).is_err());
+        assert!(check_socket_mount_exposure(Path::new("/var/lib/work-engine/operator")).is_ok());
+        assert!(check_socket_mount_exposure(Path::new("/usr-private/operator")).is_ok());
+    }
 }
 
 impl Workflow {
@@ -371,26 +406,23 @@ impl Workflow {
         // recovery signal. An operator inspects/removes stale sockets explicitly.
         let listener = UnixListener::bind(&value.socket)?;
         fs::set_permissions(&value.socket, fs::Permissions::from_mode(0o600))?;
-        for peer in listener.incoming() {
-            let peer = peer?;
-            let startup = &self.startup;
-            application
-                .serve_connection_checked(peer, || {
-                    let check = || -> Result<()> {
-                        startup.revalidate()?;
-                        if read_selection(Path::new(INSTALLED_SELECTION))? != installation.bytes {
-                            return Err(refuse(
-                                "completion_installation",
-                                "installed completion selection changed",
-                            ));
-                        }
-                        check_socket_parent(&value.socket)?;
-                        Ok(())
-                    };
-                    check().map_err(|e| work_engine_completion_host::Error::Wire(e.to_string()))
-                })
-                .map_err(|e| refuse("completion", e.to_string()))?;
-        }
+        let startup = &self.startup;
+        application
+            .serve_connections_checked(listener.incoming(), || {
+                let check = || -> Result<()> {
+                    startup.revalidate()?;
+                    if read_selection(Path::new(INSTALLED_SELECTION))? != installation.bytes {
+                        return Err(refuse(
+                            "completion_installation",
+                            "installed completion selection changed",
+                        ));
+                    }
+                    check_socket_parent(&value.socket)?;
+                    Ok(())
+                };
+                check().map_err(|e| work_engine_completion_host::Error::Wire(e.to_string()))
+            })
+            .map_err(|e| refuse("completion", e.to_string()))?;
         Ok(())
     }
 

@@ -27,7 +27,7 @@ canonical. JSON is strict, with no request override or fixture selector:
 | `workspaceRoot` | Exact publication workspace owner root selected by custody |
 | `repository` | Exact managed canonical bare repository selected by custody; immutable candidate objects must be available there |
 | `custodySha256` | SHA-256 of the exact fixed installed custody selection bytes for this phase |
-| `socket` | Absolute Unix socket under a canonical runtime-owned private directory |
+| `socket` | Absolute Unix socket under a canonical runtime-owned private directory outside `/usr` |
 | `operatorUid` | Independently selected operator UID checked from the connected Unix peer |
 | `authoritySourceDigest` | Exact claims authority-source file SHA-256 already pinned by qualified startup |
 
@@ -100,3 +100,15 @@ or uncertain effects, do not retry creation, reset refs, regenerate markers,
 replace the permanent lock or delete state. Reopen the identical approved owner
 configuration and use the existing operation inspection/reconciliation route;
 retain unresolved or unconfirmed standing when the evidence cannot settle it.
+
+The socket directory is rejected under `/usr`, even with runtime ownership and
+mode `0700`: managed descendants receive that tree through a read-only mount,
+which still permits pathname socket connections. Canonical path, private mode,
+ancestry and connected-peer checks remain required. Installed descendant
+confinement still needs observation against the actual deployment.
+
+Oversized requests, bounded read failures and failed response writes end only
+the affected connection. The listener continues accepting peers; listener errors
+remain fatal and authority revalidation still prevents command execution. A
+failed response can follow a completed command, so its outcome remains unknown
+until inspected through the existing owners; the server never replays it.

@@ -18,6 +18,8 @@ pub enum Error {
     Workspace(#[from] workspace_publication::Error),
     #[error("wire: {0}")]
     Wire(String),
+    #[error("client transport (command outcome may be unknown): {0}")]
+    Transport(String),
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -290,41 +292,168 @@ impl Application<'_, '_, '_> {
     /// before any command can take effect. The connected peer remains intact.
     pub fn serve_connection_checked(
         &mut self,
-        mut peer: UnixStream,
+        peer: UnixStream,
         check: impl FnOnce() -> Result<()>,
     ) -> Result<()> {
-        peer.set_read_timeout(Some(std::time::Duration::from_secs(30)))
-            .map_err(|e| Error::Wire(e.to_string()))?;
-        let mut bytes = Vec::new();
-        (&peer)
-            .take(1_048_577)
-            .read_to_end(&mut bytes)
-            .map_err(|e| Error::Wire(e.to_string()))?;
-        if bytes.len() > 1_048_576 {
-            return Err(Error::Wire("request exceeds 1 MiB".into()));
+        serve_command(peer, check, |peer, req| self.execute(peer, req))
+    }
+
+    /// Connection-local transport failures never replay a command or stop later
+    /// clients. Listener failures still terminate serving.
+    pub fn serve_connections_checked(
+        &mut self,
+        peers: impl IntoIterator<Item = std::io::Result<UnixStream>>,
+        mut check: impl FnMut() -> Result<()>,
+    ) -> Result<()> {
+        serve_connections(peers, |peer| {
+            self.serve_connection_checked(peer, &mut check)
+        })
+    }
+}
+
+fn serve_connections(
+    peers: impl IntoIterator<Item = std::io::Result<UnixStream>>,
+    mut serve: impl FnMut(UnixStream) -> Result<()>,
+) -> Result<()> {
+    for peer in peers {
+        let peer = peer.map_err(|e| Error::Wire(e.to_string()))?;
+        match serve(peer) {
+            Ok(()) | Err(Error::Transport(_)) => (),
+            Err(e) => return Err(e),
         }
-        let response = match serde_json::from_slice::<Request>(&bytes) {
-            Ok(req) => match check().and_then(|()| self.execute(&peer, req)) {
-                Ok(value) => Response {
-                    ok: true,
-                    result: Some(value),
-                    error: None,
-                },
-                Err(e) => Response {
-                    ok: false,
-                    result: None,
-                    error: Some(e.to_string()),
-                },
+    }
+    Ok(())
+}
+
+fn serve_command(
+    mut peer: UnixStream,
+    check: impl FnOnce() -> Result<()>,
+    execute: impl FnOnce(&UnixStream, Request) -> Result<Value>,
+) -> Result<()> {
+    peer.set_write_timeout(Some(std::time::Duration::from_secs(30)))
+        .map_err(|e| Error::Transport(e.to_string()))?;
+    peer.set_read_timeout(Some(std::time::Duration::from_secs(30)))
+        .map_err(|e| Error::Transport(e.to_string()))?;
+    let mut bytes = Vec::new();
+    (&peer)
+        .take(1_048_577)
+        .read_to_end(&mut bytes)
+        .map_err(|e| Error::Transport(e.to_string()))?;
+    if bytes.len() > 1_048_576 {
+        return Err(Error::Transport("request exceeds 1 MiB".into()));
+    }
+    let response = match serde_json::from_slice::<Request>(&bytes) {
+        Ok(req) => match check().and_then(|()| execute(&peer, req)) {
+            Ok(value) => Response {
+                ok: true,
+                result: Some(value),
+                error: None,
             },
             Err(e) => Response {
                 ok: false,
                 result: None,
-                error: Some(format!("invalid request: {e}")),
+                error: Some(e.to_string()),
             },
-        };
-        let mut encoded = serde_json::to_vec(&response).map_err(|e| Error::Wire(e.to_string()))?;
-        encoded.push(b'\n');
-        peer.write_all(&encoded)
-            .map_err(|e| Error::Wire(e.to_string()))
+        },
+        Err(e) => Response {
+            ok: false,
+            result: None,
+            error: Some(format!("invalid request: {e}")),
+        },
+    };
+    let mut encoded = serde_json::to_vec(&response).map_err(|e| Error::Transport(e.to_string()))?;
+    encoded.push(b'\n');
+    peer.write_all(&encoded)
+        .map_err(|e| Error::Transport(e.to_string()))
+}
+
+#[cfg(test)]
+mod listener_tests {
+    use super::*;
+    use std::net::Shutdown;
+    use std::os::unix::net::UnixListener;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn oversized_and_disconnected_clients_do_not_stop_listener_or_replay() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("operator.sock");
+        let listener = UnixListener::bind(&path).unwrap();
+        let executions = AtomicUsize::new(0);
+        std::thread::scope(|scope| {
+            let server = scope.spawn(|| {
+                let mut connection = 0;
+                serve_connections(listener.incoming().take(3), |peer| {
+                    connection += 1;
+                    let result = serve_command(
+                        peer,
+                        || Ok(()),
+                        |peer, req| {
+                            // The real connected socket reaches execution unchanged.
+                            assert_eq!(
+                                rustix::net::sockopt::socket_peercred(peer).unwrap().uid,
+                                rustix::process::geteuid()
+                            );
+                            assert!(matches!(req, Request::InspectOperation { .. }));
+                            executions.fetch_add(1, Ordering::SeqCst);
+                            Ok(json!({"observed":true}))
+                        },
+                    );
+                    if connection < 3 {
+                        assert!(matches!(result, Err(Error::Transport(_))), "{result:?}");
+                    }
+                    result
+                })
+                .unwrap();
+            });
+            let mut oversized = UnixStream::connect(&path).unwrap();
+            oversized.write_all(&vec![b'x'; 1_048_577]).unwrap();
+            oversized.shutdown(Shutdown::Write).unwrap();
+            let mut ignored = Vec::new();
+            let _ = oversized.read_to_end(&mut ignored);
+            let mut disconnected = UnixStream::connect(&path).unwrap();
+            disconnected
+                .write_all(br#"{"command":"inspect_operation","operationId":"once"}"#)
+                .unwrap();
+            disconnected.shutdown(Shutdown::Both).unwrap();
+            drop(disconnected);
+            let mut valid = UnixStream::connect(&path).unwrap();
+            valid
+                .write_all(br#"{"command":"inspect_operation","operationId":"later"}"#)
+                .unwrap();
+            valid.shutdown(Shutdown::Write).unwrap();
+            let mut bytes = Vec::new();
+            valid.read_to_end(&mut bytes).unwrap();
+            let response: Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(response["ok"], true);
+            assert_eq!(response["result"]["observed"], true);
+            server.join().unwrap();
+        });
+        // A failed response after execution is uncertain, never retried.
+        assert_eq!(executions.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn authority_failure_never_executes_and_listener_error_is_fatal() {
+        let (server, mut client) = UnixStream::pair().unwrap();
+        client
+            .write_all(br#"{"command":"inspect_operation","operationId":"denied"}"#)
+            .unwrap();
+        client.shutdown(Shutdown::Write).unwrap();
+        serve_command(
+            server,
+            || Err(Error::Wire("authority revoked".into())),
+            |_, _| panic!("revoked authority executed"),
+        )
+        .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        assert!(response.contains("authority revoked"));
+        assert!(
+            serve_connections([Err(std::io::Error::other("listener failed"))], |_| panic!(
+                "no peer"
+            ))
+            .is_err()
+        );
     }
 }
