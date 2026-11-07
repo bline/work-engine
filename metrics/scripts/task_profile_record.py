@@ -1450,7 +1450,8 @@ def admission_trigger_facts(episodes):
     P1 episodes: Terra episodes whose first review has p1 > 0, where p1 must be an int (not a bool), not
     negative, and the review must name the episode's task. Repair rounds: the repair-*.json records of Terra
     episodes (the shared rule counts the glob), each of which must be named as the recorder names them,
-    carry the number in its name as round, name the episode's task, and share its number with no other.
+    carry the number in its name as round, name the episode's task, and share its number with no other;
+    an episode's numbers must be exactly 1 through n, as cmd_repair writes them.
     """
     p1 = []
     repairs = 0
@@ -1482,6 +1483,11 @@ def admission_trigger_facts(episodes):
                                        f"{name}/{n}: not a repair record numbered as named for this episode")
             numbers.add(number)
             repairs += 1
+        if numbers != set(range(1, len(numbers) + 1)):
+            # cmd_repair numbers a record as the highest existing number plus one, so a record numbered n asserts
+            # rounds 1..n-1: a skipped number is missing or inconsistent evidence, and the round total is understated.
+            raise AdmissionUnknown("repair_record_invalid",
+                                   f"{name}: repair records are numbered {sorted(numbers)}, not 1 through {len(numbers)}")
     return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
 
 
