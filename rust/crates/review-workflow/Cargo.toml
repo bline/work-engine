@@ -11,6 +11,8 @@ test-support = ["slice-campaign/test-support", "review-execution-evidence/test-s
 test-faults = ["slice-campaign/test-faults", "claim-evidence/test-faults", "review-episode/test-faults", "review-execution-evidence/test-faults", "work-engine-completion-host/test-faults", "workspace-publication/test-faults"]
 
 [dependencies]
+work-engine-completion-host = { path = "../work-engine-completion-host" }
+workspace-publication = { path = "../workspace-publication" }
 work-engine-compiler = { path = "../work-engine-compiler" }
 slice-campaign = { path = "../slice-campaign" }
 claim-evidence = { path = "../claim-evidence" }
@@ -22,11 +24,12 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
+rustix = { version = "=1.1.5", features = ["fs", "process"] }
 
 [dev-dependencies]
 tempfile = "=3.27.0"
 workspace-publication = { path = "../workspace-publication" }
-work-engine-completion-host = { path = "../work-engine-completion-host" }
+work-engine-completion-host = { path = "../work-engine-completion-host", features = ["fixture"] }
 rustix = { version = "=1.1.5", features = ["process"] }
 tokio.workspace = true
 rusqlite = { version = "=0.37.0", features = ["bundled"] }

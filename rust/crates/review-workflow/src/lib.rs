@@ -8,6 +8,7 @@
 //! ```compile_fail
 //! let _: review_workflow::initial::InitialLaunch = serde_json::from_str("{}").unwrap();
 //! ```
+pub mod completion;
 mod initial;
 pub mod preparation;
 pub mod protocol;

@@ -1,5 +1,6 @@
 //! Local completion application route. Trusted startup supplies the actual
 //! campaign/claim/episode owner handles; request JSON supplies no authority.
+#[cfg(feature = "fixture")]
 pub mod fixture_host;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -282,7 +283,16 @@ impl Application<'_, '_, '_> {
         }
     }
     /// One bounded JSON command per connected Unix peer. Client half-closes write.
-    pub fn serve_connection(&mut self, mut peer: UnixStream) -> Result<()> {
+    pub fn serve_connection(&mut self, peer: UnixStream) -> Result<()> {
+        self.serve_connection_checked(peer, || Ok(()))
+    }
+    /// Revalidate deployment authority after the bounded request is read and
+    /// before any command can take effect. The connected peer remains intact.
+    pub fn serve_connection_checked(
+        &mut self,
+        mut peer: UnixStream,
+        check: impl FnOnce() -> Result<()>,
+    ) -> Result<()> {
         peer.set_read_timeout(Some(std::time::Duration::from_secs(30)))
             .map_err(|e| Error::Wire(e.to_string()))?;
         let mut bytes = Vec::new();
@@ -294,7 +304,7 @@ impl Application<'_, '_, '_> {
             return Err(Error::Wire("request exceeds 1 MiB".into()));
         }
         let response = match serde_json::from_slice::<Request>(&bytes) {
-            Ok(req) => match self.execute(&peer, req) {
+            Ok(req) => match check().and_then(|()| self.execute(&peer, req)) {
                 Ok(value) => Response {
                     ok: true,
                     result: Some(value),
