@@ -344,24 +344,24 @@ impl Workflow {
             source_sha256: d.peer.source.sha256.clone(),
         })
     }
-    pub(crate) fn join(&mut self, reference: ExecutionEvidenceRef) -> Result<Value> {
-        let d = self.startup.document.clone();
-        let prepared = self
-            .snapshot()?
-            .obligations
-            .into_iter()
-            .find(|o| o.obligation_id == d.obligation_id)
-            .and_then(|o| o.request)
-            .ok_or_else(|| refuse("unresolved", "original prepared request absent"))?;
-        let dispatch = self.dispatch_receipt(&prepared)?;
-        #[allow(unused_mut)] // Test-support injects a separately classified synthetic owner.
-        let (mut reader, expected_provenance, mut evidence_profile, mut evidence_record_profile): (
+    pub(crate) fn initial_reader(
+        &self,
+        prepared: &NativeReviewRequestRef,
+        dispatch_revision: &str,
+    ) -> Result<(
+        Arc<dyn ExecutionEvidenceOwner>,
+        ExecutionProvenance,
+        EvidenceReaderProfile,
+        &'static str,
+    )> {
+        let d = &self.startup.document;
+        let result: (
             Arc<dyn ExecutionEvidenceOwner>,
             ExecutionProvenance,
             EvidenceReaderProfile,
             &str,
         ) = if let Some(runtime) = &self.startup.qualified {
-            let scope = self.qualified_scope(&prepared, dispatch.result_revision.as_str())?;
+            let scope = self.qualified_scope(prepared, dispatch_revision)?;
             let expected = scope.reader_selection()?;
             let reader = review_execution_evidence::claude::QualifiedReader::open(
                 &d.roots.evidence,
@@ -378,7 +378,7 @@ impl Workflow {
                 },
             )
         } else {
-            let scope = self.scope(&prepared, dispatch.result_revision.as_str())?;
+            let scope = self.scope(prepared, dispatch_revision)?;
             let reader = EvidenceReader::open(&d.roots.evidence, scope.reader_pin()?)?;
             (
                 Arc::new(reader),
@@ -387,6 +387,81 @@ impl Workflow {
                 "controlled-process-v1",
             )
         };
+        Ok(result)
+    }
+    pub(crate) fn initial_claims(
+        &mut self,
+        prepared: &NativeReviewRequestRef,
+        reader: Arc<dyn ExecutionEvidenceOwner>,
+        evidence_profile: EvidenceReaderProfile,
+        evidence_record_profile: &str,
+        initialize: bool,
+    ) -> Result<(slice_campaign::InitialClaimsOwner, NativeRootSelection)> {
+        let d = self.startup.document.clone();
+        if !initialize && !d.roots.claims.exists() {
+            return Err(refuse("unresolved", "initial claims owner absent"));
+        }
+        let native = read_native_selection(&d.roots.episode)?;
+        let selection = InitialJoinSelection {
+            claims_root: RootIdentity {
+                absolute_path: d.roots.claims.clone(),
+                root_id: d.claims.root_id.clone(),
+                profile: "native-review-claims-v1".into(),
+            },
+            production_grant_id: d.claims.production_grant_id.clone(),
+            production_grant_sha256: d.claims.production_grant_sha256.clone(),
+            episode_selection: native.clone(),
+            episode_authority: self.startup.authority.clone(),
+            evidence_profile,
+            evidence_owner: "review-execution-evidence".into(),
+            evidence_root_id: d.peer.evidence_root_id.clone(),
+            evidence_record_profile: evidence_record_profile.into(),
+        };
+        let files = BootstrapFiles {
+            root: d.roots.claims.clone(),
+            config: d.claims.configuration.path.clone(),
+            source: d.claims.source.path.clone(),
+            expected_config_sha256: d.claims.configuration.sha256.clone(),
+            expected_source_sha256: d.claims.source.sha256.clone(),
+        };
+        let claims = if d.roots.claims.exists() {
+            self.campaign
+                .open_initial_claims(files.into(), selection, reader)?
+        } else {
+            self.campaign
+                .initialize_initial_claims(files, selection, reader)?
+        };
+        if let Some(runtime) = &self.startup.qualified
+            && runtime.installed()
+        {
+            let completion = CompletionSelection::new(
+                claims.claims().root().clone(),
+                runtime.completion_grant_id.clone(),
+                runtime.completion_grant_sha256.clone(),
+                runtime.completion_grant_id.clone(),
+                runtime.completion_grant_sha256.clone(),
+                runtime.completion_consumer.clone(),
+                prepared.candidate.tree.clone(),
+                runtime.completion_decision_scope.clone(),
+                vec![runtime.completion_authority_source.clone()],
+            )?;
+            self.campaign.install_completion_selection(completion)?;
+        }
+        Ok((claims, native))
+    }
+    pub(crate) fn join(&mut self, reference: ExecutionEvidenceRef) -> Result<Value> {
+        let d = self.startup.document.clone();
+        let prepared = self
+            .snapshot()?
+            .obligations
+            .into_iter()
+            .find(|o| o.obligation_id == d.obligation_id)
+            .and_then(|o| o.request)
+            .ok_or_else(|| refuse("unresolved", "original prepared request absent"))?;
+        let dispatch = self.dispatch_receipt(&prepared)?;
+        #[allow(unused_mut)]
+        let (mut reader, expected_provenance, mut evidence_profile, mut evidence_record_profile) =
+            self.initial_reader(&prepared, dispatch.result_revision.as_str())?;
         #[allow(unused_mut)] // Test-support substitutes a separately classified fixture reference.
         let mut reference = reference;
         // This adapter exists only in test-support builds. It replaces a
@@ -485,52 +560,13 @@ impl Workflow {
         {
             return Err(refuse("conflict", "execution provenance differs"));
         }
-        let native = read_native_selection(&d.roots.episode)?;
-        let selection = InitialJoinSelection {
-            claims_root: RootIdentity {
-                absolute_path: d.roots.claims.clone(),
-                root_id: d.claims.root_id.clone(),
-                profile: "native-review-claims-v1".into(),
-            },
-            production_grant_id: d.claims.production_grant_id.clone(),
-            production_grant_sha256: d.claims.production_grant_sha256.clone(),
-            episode_selection: native.clone(),
-            episode_authority: self.startup.authority.clone(),
+        let (mut claims, native) = self.initial_claims(
+            &prepared,
+            reader,
             evidence_profile,
-            evidence_owner: "review-execution-evidence".into(),
-            evidence_root_id: d.peer.evidence_root_id.clone(),
-            evidence_record_profile: evidence_record_profile.into(),
-        };
-        let files = BootstrapFiles {
-            root: d.roots.claims.clone(),
-            config: d.claims.configuration.path.clone(),
-            source: d.claims.source.path.clone(),
-            expected_config_sha256: d.claims.configuration.sha256.clone(),
-            expected_source_sha256: d.claims.source.sha256.clone(),
-        };
-        let mut claims = if d.roots.claims.exists() {
-            self.campaign
-                .open_initial_claims(files.into(), selection, reader)?
-        } else {
-            self.campaign
-                .initialize_initial_claims(files, selection, reader)?
-        };
-        if let Some(runtime) = &self.startup.qualified
-            && runtime.installed()
-        {
-            let completion = CompletionSelection::new(
-                claims.claims().root().clone(),
-                runtime.completion_grant_id.clone(),
-                runtime.completion_grant_sha256.clone(),
-                runtime.completion_grant_id.clone(),
-                runtime.completion_grant_sha256.clone(),
-                runtime.completion_consumer.clone(),
-                prepared.candidate.tree.clone(),
-                runtime.completion_decision_scope.clone(),
-                vec![runtime.completion_authority_source.clone()],
-            )?;
-            self.campaign.install_completion_selection(completion)?;
-        }
+            evidence_record_profile,
+            true,
+        )?;
         #[cfg(feature = "test-support")]
         if std::env::var_os("RP2_TEST_SYNTHETIC_FIXTURE_JOIN").is_some() {
             let configuration: Value =

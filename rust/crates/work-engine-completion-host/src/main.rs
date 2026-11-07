@@ -1,4 +1,5 @@
 //! Fixture-only executable; installation and route live in the library.
+#[cfg(feature = "fixture")]
 fn main() {
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 3 || args[1] != "--fixture-config" {
@@ -11,4 +12,12 @@ fn main() {
         eprintln!("{e}");
         std::process::exit(1)
     }
+}
+
+#[cfg(not(feature = "fixture"))]
+fn main() {
+    eprintln!(
+        "fixture host is disabled; production completion is served by work-engine-review-host"
+    );
+    std::process::exit(2);
 }

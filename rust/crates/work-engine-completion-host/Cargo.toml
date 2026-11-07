@@ -6,6 +6,8 @@ rust-version.workspace = true
 publish.workspace = true
 
 [features]
+default = []
+fixture = ["dep:review-execution-custody", "review-execution-custody/test-support"]
 test-faults = ["slice-campaign/test-faults"]
 
 [dependencies]
@@ -20,7 +22,7 @@ claim-evidence = { path = "../claim-evidence" }
 review-episode = { path = "../review-episode" }
 review-episode-core = { path = "../review-episode-core" }
 review-episode-store = { path = "../review-episode-store" }
-review-execution-custody = { path = "../review-execution-custody", features = ["test-support"] }
+review-execution-custody = { path = "../review-execution-custody", optional = true }
 
 [dev-dependencies]
 tempfile = "=3.27.0"
