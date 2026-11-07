@@ -87,9 +87,11 @@ import collections
 import contextlib
 import fcntl
 import datetime as dt
+import fnmatch
 import glob
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -1103,6 +1105,18 @@ Exit code and state:
                     covered_triggers is not an object, p1_episodes not a list of strings or
                     terra_repair_rounds not an integer (a boolean or float is not; reason
                     pause_history_malformed). A genuinely absent enrollments/ or pauses/ means none.
+                    Also unknown: a count that is not a nonnegative integer (a boolean, float, NaN, Infinity,
+                    string, null or missing value is not one) in round.json, a first review's p1 or a pause
+                    history's terra_repair_rounds (reasons round_file_invalid, review_record_invalid,
+                    pause_history_malformed); a review, repair or enrollment record that contradicts the
+                    episode it sits in (another task, a repair number that differs from its name or repeats;
+                    reasons review_record_invalid, repair_record_invalid, enrollment_record_invalid); an
+                    unresolvable entry of enrollments/ (a dangling link) or a dangling link, FIFO, directory
+                    or other non-regular file named enrollment.json, review-first.json, repair-*.json,
+                    close.json, withdraw.json, SHA256SUMS or pauses/*.json; a file with a duplicate JSON
+                    key, or NaN or Infinity in round.json or pause history; the run directory unreadable
+                    (run_dir_unreadable). Files are read through a non-blocking open checked on the
+                    descriptor: a FIFO is refused, never waited on.
 Any other exit code, including a usage error (2) or a crash (1), is not an admission: do not screen.
 The Terra in-flight limit is reported as a fact and is not a stop.
 """
@@ -1134,17 +1148,86 @@ def pause_marker_fact(path):
         return {**fact, "valid": False, "error": f"{type(e).__name__}: {e}"}
 
 
+SPECIAL_RECORD = re.compile(r"(?:enrollment|review-first|close|withdraw)\.json\Z")
+REPAIR_GLOB = "repair-*.json"  # What the shared trigger rule counts, by glob.
+REPAIR_NAME = re.compile(r"repair-([0-9]{2,})\.json\Z")  # What the recorder writes: repair-{number:02d}.json
+
+
+def admission_read_bytes(path, code, label):
+    """All bytes of a regular file, or AdmissionUnknown.
+
+    The file is opened non-blocking and its type is checked on the descriptor, so a FIFO, socket or device
+    that is (or has become) the entry is refused instead of waited on, and any I/O error is unknown.
+    """
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_CLOEXEC)
+    except OSError as e:
+        raise AdmissionUnknown(code, f"{label} cannot be opened: {e}") from e
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise AdmissionUnknown(code, f"{label} is not a regular file")
+        chunks = []
+        while True:
+            chunk = os.read(fd, 1 << 20)
+            if not chunk:
+                return b"".join(chunks)
+            chunks.append(chunk)
+    except OSError as e:
+        raise AdmissionUnknown(code, f"{label} cannot be read: {e}") from e
+    finally:
+        os.close(fd)
+
+
+def no_duplicate_keys(pairs):
+    out = {}
+    for key, value in pairs:
+        if key in out:
+            raise ValueError(f"duplicate key {key!r}")
+        out[key] = value
+    return out
+
+
+def refuse_constant(text):
+    raise ValueError(f"non-finite number {text}")
+
+
+def finite_float(text):
+    value = float(text)
+    if not math.isfinite(value):
+        raise ValueError(f"non-finite number {text}")
+    return value
+
+
+def admission_parse_json(raw, code, label, finite=False):
+    """Decode UTF-8 JSON, refusing duplicate keys (the last would silently win). With finite, also refuse
+    NaN, Infinity and numbers that overflow to infinity. Episode records keep Python's defaults for those:
+    their consumed fields are type-checked, so a float never passes as a count."""
+    kwargs = {"parse_constant": refuse_constant, "parse_float": finite_float} if finite else {}
+    try:
+        return json.loads(raw.decode("utf-8"), object_pairs_hook=no_duplicate_keys, **kwargs)
+    except (ValueError, UnicodeError, RecursionError) as e:
+        raise AdmissionUnknown(code, f"{label} is malformed: {type(e).__name__}: {e}") from e
+
+
+def admission_record(raw, code, label):
+    """A sealed episode record from bytes already read: an object whose content_sha256 matches."""
+    data = admission_parse_json(raw, code, label)
+    if not isinstance(data, dict) or data.get("content_sha256") != content_sha256(data):
+        raise AdmissionUnknown(code, f"{label}: content_sha256 mismatch or missing")
+    return data
+
+
 def read_round_config(run_dir):
     path = os.path.join(run_dir, "round.json")
-    if not os.path.isfile(path):
+    st = admission_stat(path, "round_file_missing", "round.json", dangling_absent=True)
+    if st is None or not stat.S_ISREG(st.st_mode):
         raise AdmissionUnknown("round_file_missing", "round.json is missing or not a regular file")
-    try:
-        config = read_json(path)
-    except (OSError, ValueError, UnicodeError) as e:
-        raise AdmissionUnknown("round_file_unreadable", f"round.json is unreadable or malformed: {e}") from e
+    config = admission_parse_json(admission_read_bytes(path, "round_file_unreadable", "round.json"),
+                                  "round_file_unreadable", "round.json", finite=True)
     fields = ("cap", "terra_in_flight", "terra_repair_budget")
-    if not isinstance(config, dict) or any(type(config.get(f)) is not int for f in fields):
-        raise AdmissionUnknown("round_file_invalid", "round.json lacks integer cap, terra_in_flight and terra_repair_budget")
+    if not isinstance(config, dict) or any(type(config.get(f)) is not int or config[f] < 0 for f in fields):
+        raise AdmissionUnknown("round_file_invalid",
+                               "round.json lacks nonnegative integer cap, terra_in_flight and terra_repair_budget")
     return {f: config[f] for f in fields}
 
 
@@ -1153,7 +1236,7 @@ def admission_stat(path, code, label, dangling_absent):
 
     glob and the os.path predicates (exists, isfile, isdir) turn every OSError into "not there". The gate
     cannot: a path it could not examine may hold the stop it is looking for. A dangling symlink is absent
-    where dangling_absent is set (an entry of a listing, as the old predicates saw it), else unknown.
+    where dangling_absent is set (an entry the gate does not consume), else unknown.
     """
     try:
         return os.stat(path)
@@ -1185,6 +1268,9 @@ def admission_enrollment_dirs(run_dir):
     """enrollment_dirs() for the gate: the same set where it can be listed, unknown where it cannot.
 
     A genuinely absent enrollments/ is no enrollments, as for enroll. glob("*") skips hidden names, as here.
+    A regular file there is not an episode and is skipped (as enrollment_dirs does). An entry that cannot be
+    resolved (a dangling link, a loop, a permission error) or vanished while listing might be an episode, so
+    it is unknown; enrollment_dirs would skip it.
     """
     base = os.path.join(run_dir, "enrollments")
     out = []
@@ -1192,45 +1278,65 @@ def admission_enrollment_dirs(run_dir):
         if name.startswith("."):
             continue
         path = os.path.join(base, name)
-        st = admission_stat(path, "enrollments_unlistable", f"enrollments/{name}", dangling_absent=True)
-        if st is not None and stat.S_ISDIR(st.st_mode):
+        st = admission_stat(path, "enrollments_unlistable", f"enrollments/{name}", dangling_absent=False)
+        if st is None:
+            raise AdmissionUnknown("enrollments_unlistable", f"enrollments/{name} vanished while listing")
+        if stat.S_ISDIR(st.st_mode):
             out.append(path)
     return out
 
 
 def admission_episode_listing(d):
-    """(record file names, whether SHA256SUMS exists) for one episode directory, as record_files() and
-    os.path.exists() see them, but with any listing or stat error unknown instead of an absent file."""
+    """The record files of one episode directory and whether SHA256SUMS exists, as record_files() and
+    os.path.exists() see them, but with any listing or stat error unknown instead of an absent file.
+
+    Names the decision consumes (enrollment, review-first, close, withdraw, repair-*.json) must be regular
+    files: a dangling link, a directory, a FIFO or a vanished entry of such a name is unknown, where the old
+    predicates read it as absent (or, for a FIFO, blocked). Other entries are not consumed and are skipped
+    as record_files() skips them.
+    """
     name = os.path.basename(d)
     code = "episode_unlistable"
     files = []
     for n in admission_listdir(d, code, f"{name}/", missing_ok=False):
         if n == SUMS or n.startswith("."):
             continue
-        st = admission_stat(os.path.join(d, n), code, f"{name}/{n}", dangling_absent=True)
-        if st is not None and stat.S_ISREG(st.st_mode):
+        special = bool(SPECIAL_RECORD.fullmatch(n) or fnmatch.fnmatchcase(n, REPAIR_GLOB))
+        st = admission_stat(os.path.join(d, n), code, f"{name}/{n}", dangling_absent=not special)
+        if st is None:
+            if special:
+                raise AdmissionUnknown(code, f"{name}/{n} vanished while listing")
+            continue
+        if stat.S_ISREG(st.st_mode):
             files.append(n)
-    sums = admission_stat(os.path.join(d, SUMS), code, f"{name}/{SUMS}", dangling_absent=True)
+        elif special:
+            raise AdmissionUnknown(code, f"{name}/{n} is not a regular file")
+    sums = admission_stat(os.path.join(d, SUMS), code, f"{name}/{SUMS}", dangling_absent=False)
+    if sums is not None and not stat.S_ISREG(sums.st_mode):
+        raise AdmissionUnknown("episode_manifest_unreadable", f"{name}/{SUMS} is not a regular file")
     return files, sums is not None
 
 
-def validate_pause_history(run_dir):
-    """Check every pause-history file before pause_coverage consumes it. Read-only.
+def admission_pause_coverage(run_dir):
+    """The triggers acknowledged by pause history: (covered P1 episodes, covered repair rounds). Read-only.
 
+    The strict equivalent of pause_coverage: the same sets on valid input, from one read of each file, and
+    unknown (never a guess) where a file cannot be listed, opened or decoded, or is not what the rule needs.
     pause_coverage applies set.update and max to whatever the files hold, so a parseable but malformed
-    document can cover a trigger it never covered (a dict of falses, a boolean, a float). Valid is: an object;
-    covered_triggers, when present, an object; p1_episodes, when present, a list of strings;
-    terra_repair_rounds, when present, an integer and not a boolean. Absent keys keep pause_coverage's defaults.
+    document can cover a trigger it never covered (a dict of falses, a boolean, a float). Valid is: an
+    object; covered_triggers, when present, an object; p1_episodes, when present, a list of strings;
+    terra_repair_rounds, when present, an integer, not a boolean, not negative. Absent keys keep
+    pause_coverage's defaults; duplicate keys, NaN and Infinity are refused.
     """
     base = os.path.join(run_dir, "pauses")
+    covered_p1, covered_repairs = set(), -1
     for name in admission_listdir(base, "pause_history_unlistable", "pauses/", missing_ok=True):
         if name.startswith(".") or not name.endswith(".json"):
             continue  # pause_coverage's glob("*.json") does not see these either.
         label = f"pauses/{name}"
-        try:
-            document = read_json(os.path.join(base, name))
-        except (OSError, ValueError, UnicodeError) as e:
-            raise AdmissionUnknown("trigger_inputs_unreadable", f"{label} is unreadable or malformed JSON: {e}") from e
+        code = "trigger_inputs_unreadable"
+        document = admission_parse_json(admission_read_bytes(os.path.join(base, name), code, label), code, label,
+                                        finite=True)
 
         def malformed(why):
             return AdmissionUnknown("pause_history_malformed", f"{label}: {why}")
@@ -1246,12 +1352,62 @@ def validate_pause_history(run_dir):
         if not isinstance(episodes, list) or any(not isinstance(item, str) for item in episodes):
             raise malformed("covered_triggers.p1_episodes is not a list of strings")
         rounds = covered.get("terra_repair_rounds", -1)
-        if type(rounds) is not int:
-            raise malformed("covered_triggers.terra_repair_rounds is not an integer")
+        if type(rounds) is not int or (rounds < 0 and "terra_repair_rounds" in covered):
+            raise malformed("covered_triggers.terra_repair_rounds is not a nonnegative integer")
+        covered_p1.update(episodes)
+        covered_repairs = max(covered_repairs, rounds)
+    return covered_p1, covered_repairs
+
+
+def admission_episode_records(d, files, manifest):
+    """The sealed JSON records of one episode, each read once, checked against the manifest bytes.
+
+    A strict equivalent of integrity_problems for the gate: the listing came from admission_episode_listing,
+    so every name is a regular file; each is read through the non-blocking checked open; the manifest must
+    list exactly those files, once each, with the digests of the bytes just read (and in the line shape
+    repair_manifest_tail accepts); every .json record must carry a matching content_sha256 and backward links
+    (prior_files) that match. Returns {name: record} for the .json files.
+    """
+    name = os.path.basename(d)
+    code = "episode_integrity_problem"
+    raw = {n: admission_read_bytes(os.path.join(d, n), code, f"{name}/{n}") for n in files}
+    digests = {n: hashlib.sha256(b).hexdigest() for n, b in raw.items()}
+    listed_digests = {}
+    # Mirror repair_manifest_tail's per-line test on the raw bytes. listed() splits text with
+    # str.splitlines(), which also breaks on \r, \f and U+2028; repair_manifest_tail splits bytes on \n, \r
+    # and \r\n only and raises on any line that is not "<hash>  <name>" for an existing, matching record. A
+    # manifest the first accepts and the second rejects must not be admitted.
+    for line in manifest.splitlines(keepends=True):
+        match = re.fullmatch(rb"([0-9a-f]{64})  ([^\r\n]+)\n?", line)
+        try:
+            entry = match.group(2).decode("utf-8") if match else None
+        except UnicodeDecodeError:
+            entry = None  # repair_manifest_tail raises on an undecodable name as well.
+        if entry not in digests or digests[entry] != match.group(1).decode():
+            raise AdmissionUnknown("episode_manifest_needs_repair",
+                                   f"{name}: {SUMS} has a line that repair_manifest_tail rejects")
+        if entry in listed_digests:
+            raise AdmissionUnknown(code, f"{name}: {SUMS} lists {entry} more than once")
+        listed_digests[entry] = digests[entry]
+    unlisted = sorted(set(files) - set(listed_digests))
+    if unlisted:
+        raise AdmissionUnknown(code, f"{name}: unlisted file: {', '.join(unlisted)}")
+    records = {n: admission_record(raw[n], code, f"{name}/{n}") for n in files if n.endswith(".json")}
+    for n, data in records.items():
+        prior = data.get("prior_files", {})
+        if not isinstance(prior, dict):
+            raise AdmissionUnknown(code, f"{name}/{n}: prior_files is not an object")
+        for prior_name, digest in prior.items():
+            if digests.get(prior_name) != digest:
+                raise AdmissionUnknown(code, f"{name}/{n} recorded {prior_name} with a different hash")
+    return records
 
 
 def read_episodes_unrepaired(run_dir):
-    """List enrollments as enrollments() does, but refuse where recover_episode would repair. Read-only."""
+    """List enrollments as enrollments() does, but refuse where recover_episode would repair. Read-only.
+
+    Returns (directory, enrollment record, record file names, {name: sealed record}) per episode.
+    """
     episodes = []
     for d in admission_enrollment_dirs(run_dir):
         name = os.path.basename(d)
@@ -1261,11 +1417,7 @@ def read_episodes_unrepaired(run_dir):
         # Read the manifest bytes as repair_manifest_tail does (same existence test), without repairing.
         manifest = b""
         if has_manifest:
-            try:
-                with open(os.path.join(d, SUMS), "rb") as fh:
-                    manifest = fh.read()
-            except OSError as e:
-                raise AdmissionUnknown("episode_manifest_unreadable", f"{name}: {SUMS} cannot be read: {e}") from e
+            manifest = admission_read_bytes(os.path.join(d, SUMS), "episode_manifest_unreadable", f"{name}/{SUMS}")
         if not files:
             if manifest:
                 # recover_episode raises on a complete entry for a file that is gone, and archives a torn tail.
@@ -1279,31 +1431,58 @@ def read_episodes_unrepaired(run_dir):
             # repair_manifest_tail treats a final line with no newline as torn and rewrites the manifest,
             # even when that line parses and verifies.
             raise AdmissionUnknown("episode_manifest_needs_repair", f"{name}: {SUMS} does not end at a line boundary")
-        if manifest:
-            # Mirror repair_manifest_tail's per-line test on the raw bytes. listed() splits text with
-            # str.splitlines(), which also breaks on \r, \f and U+2028; repair_manifest_tail splits bytes
-            # on \n, \r and \r\n only and raises on any line that is not "<hash>  <name>" for an existing,
-            # matching record. A manifest the first accepts and the second rejects must not be admitted.
-            for line in manifest.splitlines(keepends=True):
-                match = re.fullmatch(rb"([0-9a-f]{64})  ([^\r\n]+)\n?", line)
-                try:
-                    entry = match.group(2).decode("utf-8") if match else None
-                except UnicodeDecodeError:
-                    entry = None  # repair_manifest_tail raises on an undecodable name as well.
-                if entry not in files or sha256(os.path.join(d, entry)) != match.group(1).decode():
-                    raise AdmissionUnknown("episode_manifest_needs_repair",
-                                           f"{name}: {SUMS} has a line that repair_manifest_tail rejects")
-        path = os.path.join(d, "enrollment.json")
+        records = admission_episode_records(d, files, manifest)
         if "enrollment.json" not in files:
             raise AdmissionUnknown("episode_without_enrollment", f"{name}: records exist but enrollment.json does not")
-        try:
-            record = read_episode_record(path)
-        except IntegrityFailure as e:
-            raise AdmissionUnknown("enrollment_record_invalid", str(e)) from e
+        record = records["enrollment.json"]
         if record.get("arm") not in (TERRA, SOL) or not isinstance(record.get("task_id"), str):
             raise AdmissionUnknown("enrollment_record_invalid", f"{name}: enrollment lacks a known arm and a task_id")
-        episodes.append((d, record))
+        if record["task_id"] != name:
+            raise AdmissionUnknown("enrollment_record_invalid",
+                                   f"{name}: enrollment names task {record['task_id']!r}, not its directory")
+        episodes.append((d, record, files, records))
     return episodes
+
+
+def admission_trigger_facts(episodes):
+    """episode_trigger_facts for the gate: the same facts from the strictly read episodes, or unknown.
+
+    P1 episodes: Terra episodes whose first review has p1 > 0, where p1 must be an int (not a bool), not
+    negative, and the review must name the episode's task. Repair rounds: the repair-*.json records of Terra
+    episodes (the shared rule counts the glob), each of which must be named as the recorder names them,
+    carry the number in its name as round, name the episode's task, and share its number with no other.
+    """
+    p1 = []
+    repairs = 0
+    for d, e, files, records in episodes:
+        if e["arm"] != TERRA:
+            continue
+        name = os.path.basename(d)
+        task = e["task_id"]
+        review = records.get("review-first.json")
+        if review is not None:
+            count = review.get("p1")
+            if type(count) is not int or count < 0:
+                raise AdmissionUnknown("review_record_invalid",
+                                       f"{name}/review-first.json: p1 is {count!r}, not a nonnegative integer")
+            if review.get("task_id") != task:
+                raise AdmissionUnknown("review_record_invalid", f"{name}/review-first.json names another task")
+            if count > 0:
+                p1.append(task)
+        numbers = set()
+        for n in files:
+            if not fnmatch.fnmatchcase(n, REPAIR_GLOB):
+                continue
+            match = REPAIR_NAME.fullmatch(n)
+            number = int(match.group(1)) if match else None
+            round_field = records[n].get("round")
+            if (match is None or number in numbers or type(round_field) is not int or round_field != number
+                    or records[n].get("task_id") != task):
+                raise AdmissionUnknown("repair_record_invalid",
+                                       f"{name}/{n}: not a repair record numbered as named for this episode")
+            numbers.add(number)
+            repairs += 1
+    return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
 
 
 def admission_decision(run_dir):
@@ -1313,7 +1492,8 @@ def admission_decision(run_dir):
         return {"state": state, "reason": {"code": code, "text": text}, "run_dir": run_dir, "facts": facts}
 
     try:
-        if not os.path.isdir(run_dir):
+        run_stat = admission_stat(run_dir, "run_dir_unreadable", "run directory", dangling_absent=True)
+        if run_stat is None or not stat.S_ISDIR(run_stat.st_mode):
             return outcome("unknown", "run_dir_missing", "run directory is missing or not a directory")
         marker = os.path.join(run_dir, "PAUSED")
         try:
@@ -1330,14 +1510,16 @@ def admission_decision(run_dir):
         config = read_round_config(run_dir)
         facts["round"] = {"evaluated": True, **config}
         episodes = read_episodes_unrepaired(run_dir)
-        open_terra = sum(e["arm"] == TERRA and not terminal(d) for d, e in episodes)
+        open_terra = sum(e["arm"] == TERRA and not {"close.json", "withdraw.json"} & set(files)
+                         for _, e, files, _ in episodes)
         facts["enrollments"] = {"evaluated": True, "count": len(episodes), "cap": config["cap"]}
         facts["terra_in_flight"] = {"evaluated": True, "open_terra": open_terra, "limit": config["terra_in_flight"],
                                     "limit_reached": open_terra >= config["terra_in_flight"], "gates_admission": False}
-        validate_pause_history(run_dir)  # Before pause_coverage consumes it: malformed coverage must not cover.
         try:
-            trigger = episode_trigger_facts(episodes)
-            covered_p1, covered_repairs = pause_coverage(run_dir)
+            # Strict equivalents of pause_coverage and episode_trigger_facts: malformed coverage must not
+            # cover, and an unreadable or invalid record must not read as "no P1" or "no repair".
+            covered_p1, covered_repairs = admission_pause_coverage(run_dir)
+            trigger = admission_trigger_facts(episodes)
         except (IntegrityFailure, OSError, ValueError, KeyError, TypeError, AttributeError) as e:
             raise AdmissionUnknown("trigger_inputs_unreadable", f"review-first.json or pause history is unreadable: {e}") from e
         new_p1, over_budget = terra_stop_rule(trigger, covered_p1, covered_repairs, config["terra_repair_budget"])
