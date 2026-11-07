@@ -326,6 +326,27 @@ class AdmissionStates(AdmissionBase):
             path = run / "enrollments" / "t" / "SHA256SUMS"
             path.write_bytes(path.read_bytes() + b"abc")
 
+        def manifest_without_newline(run):
+            # The last complete entry parses and verifies; repair_manifest_tail still treats the file as torn.
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.write_bytes(path.read_bytes().rstrip(b"\n"))
+
+        def manifest_listing_vanished_records(run):
+            # A directory whose manifest lists a record that is gone and that holds no record file.
+            ghost = run / "enrollments" / "ghost"
+            ghost.mkdir()
+            (ghost / "SHA256SUMS").write_text("0" * 64 + "  enrollment.json\n")
+
+        def manifest_torn_with_no_records(run):
+            ghost = run / "enrollments" / "ghost"
+            ghost.mkdir()
+            (ghost / "SHA256SUMS").write_bytes(b"abc")
+
+        def manifest_is_a_directory(run):
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.unlink()
+            path.mkdir()
+
         def corrupt_review(run):
             path = run / "enrollments" / "t" / "review-first.json"
             path.write_text("{")
@@ -357,6 +378,10 @@ class AdmissionStates(AdmissionBase):
             "missing_manifest": (missing_manifest, "episode_integrity_problem", False),
             "listed_but_missing": (listed_but_missing, "episode_integrity_problem", False),
             "torn_manifest": (torn_manifest, "episode_integrity_problem", False),
+            "manifest_without_newline": (manifest_without_newline, "episode_manifest_needs_repair", False),
+            "manifest_listing_vanished_records": (manifest_listing_vanished_records, "episode_manifest_without_records", False),
+            "manifest_torn_with_no_records": (manifest_torn_with_no_records, "episode_manifest_without_records", False),
+            "manifest_is_a_directory": (manifest_is_a_directory, "episode_manifest_unreadable", False),
             "corrupt_review": (corrupt_review, "episode_integrity_problem", True),
             "review_resealed_without_p1": (review_resealed_without_p1, "trigger_inputs_unreadable", True),
             "orphan_episode": (orphan_episode, "episode_without_enrollment", False),
@@ -435,6 +460,109 @@ class AdmissionWritesNothing(AdmissionBase):
         probe = self.copy_of(run, "torn-probe")
         self.rcall(probe, "status")
         self.assertTrue(list((probe / "enrollments" / "t").glob("SHA256SUMS.damaged-*")), "fixture is not a would-write case")
+
+    def test_11_manifest_conditions_where_recovery_acts_are_unknown_and_untouched(self):
+        """The conditions the first review found, plus their neighbours. On a copy the old path acts."""
+        def no_newline(run):
+            sums = run / "enrollments" / "t" / "SHA256SUMS"
+            sums.write_bytes(sums.read_bytes().rstrip(b"\n"))
+
+        def vanished(run):
+            ghost = run / "enrollments" / "ghost"
+            ghost.mkdir()
+            (ghost / "SHA256SUMS").write_text("0" * 64 + "  enrollment.json\n")
+
+        def torn_only(run):
+            ghost = run / "enrollments" / "ghost"
+            ghost.mkdir()
+            (ghost / "SHA256SUMS").write_bytes(b"abc")
+
+        def sums_directory(run):
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.unlink()
+            path.mkdir()
+
+        # name: (damage, code, how recovery acts on the copy: "writes" a damaged copy, or "raises" exit 1)
+        cases = {
+            "no_newline": (no_newline, "episode_manifest_needs_repair", "writes"),
+            "vanished": (vanished, "episode_manifest_without_records", "raises"),
+            "torn_only": (torn_only, "episode_manifest_without_records", "writes"),
+            "sums_directory": (sums_directory, "episode_manifest_unreadable", "raises"),
+        }
+        for name, (damage, code, acts) in cases.items():
+            with self.subTest(name):
+                run = self.new_run("run-" + name)
+                self.enroll(run, "t", byte=1)
+                damage(run)
+                self.admit(run, "unknown", code)
+                probe = self.copy_of(run, "probe-" + name)
+                before = snapshot(probe)
+                if acts == "writes":
+                    self.rcall(probe, "status")
+                    self.assertTrue(list(probe.glob("enrollments/*/SHA256SUMS.damaged-*")), "recovery did not write")
+                    self.assertNotEqual(before, snapshot(probe))
+                else:
+                    with self.assertRaises((rec.IntegrityFailure, OSError)):
+                        rec.enrollments(str(probe))
+
+    def test_11_the_two_reviewed_conditions_make_enroll_act_too(self):
+        """enroll takes the same path as status: it repairs the no-newline manifest and raises on vanished records."""
+        run = self.new_run("nonewline")
+        self.enroll(run, "t", byte=1)
+        sums = run / "enrollments" / "t" / "SHA256SUMS"
+        sums.write_bytes(sums.read_bytes().rstrip(b"\n"))
+        probe = self.copy_of(run, "nonewline-probe")
+        self.enroll(probe, "u", byte=2)
+        self.assertTrue(list(probe.glob("enrollments/t/SHA256SUMS.damaged-*")), "enroll did not repair")
+        self.assertTrue((probe / "enrollments" / "t" / "SHA256SUMS").read_bytes().endswith(b"\n"))
+
+        run = self.new_run("vanished")
+        self.enroll(run, "t", byte=1)
+        ghost = run / "enrollments" / "ghost"
+        ghost.mkdir()
+        (ghost / "SHA256SUMS").write_text("0" * 64 + "  enrollment.json\n")
+        probe = self.copy_of(run, "vanished-probe")
+        with self.assertRaises(rec.IntegrityFailure):
+            rec.enrollments(str(probe))
+        self.rcall(probe, "status", code=1)
+
+    def test_11_directories_recovery_neither_writes_nor_raises_stay_skipped(self):
+        run = self.new_run("skipped")
+        self.enroll(run, "t", byte=1)
+        (run / "enrollments" / "empty").mkdir()
+        silent = run / "enrollments" / "silent"
+        silent.mkdir()
+        (silent / "SHA256SUMS").write_bytes(b"")
+        (silent / "subdir").mkdir()
+        self.admit(run, "active")
+        probe = self.copy_of(run, "skipped-probe")
+        before = snapshot(probe)
+        self.assertEqual([os.path.basename(d) for d, _ in rec.enrollments(str(probe))], ["t"])
+        self.assertEqual(before, snapshot(probe), "recovery acted on a directory the gate skips")
+
+    def test_11_manifest_truncation_sweep_gate_is_unknown_exactly_where_recovery_acts(self):
+        """Truncate a real manifest at every byte offset and compare the gate with the old path on a copy."""
+        run = self.new_run("sweep")
+        self.enroll(run, "t", byte=1)
+        self.review(run, "t", p1=0)
+        raw = (run / "enrollments" / "t" / "SHA256SUMS").read_bytes()
+        acts_count = quiet_count = 0
+        for k in range(len(raw) + 1):
+            probe = self.copy_of(run, f"sweep-{k}")
+            (probe / "enrollments" / "t" / "SHA256SUMS").write_bytes(raw[:k])
+            gate = rec.admission_decision(str(probe))  # Read-only, so run it before the old path touches the copy.
+            before = snapshot(probe)
+            try:
+                rec.enrollments(str(probe))
+                acted = before != snapshot(probe)
+            except rec.IntegrityFailure:
+                acted = True
+            self.assertEqual(gate["state"] == "unknown", acted, (k, gate["reason"], acted))
+            acts_count += acted
+            quiet_count += not acted
+            shutil.rmtree(probe)
+        self.assertEqual(quiet_count, 1)  # Only the whole manifest needs no recovery.
+        self.assertEqual(acts_count, len(raw))
 
     def test_11_every_state_leaves_a_run_directory_with_no_lock_file(self):
         for name, build in {

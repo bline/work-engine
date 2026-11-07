@@ -49,12 +49,15 @@ Usage
   task_profile_record.py resume    --run-dir R --owner-approval TEXT
   task_profile_record.py status    --run-dir R [--task-id T]
   task_profile_record.py recover-screening --run-dir R
+  task_profile_record.py admission --run-dir R   read-only gate before screening; exit 0 only when active
   task_profile_record.py verify    --run-dir R [--repo REPO] [--no-recompute] [--tools-root DIR]
 
 Round-2 episode records live in <run_dir>/enrollments/<task_id>/ with their own
 SHA256SUMS and prior_files. Initialize round.json before using round commands.
 Round commands print one JSON object (verify retains text lines); exit 2 is a usage refusal, 1 an integrity
 failure, 3 includes profile no-ops and verify with no records, and 0 includes logged screening refusals.
+`admission` prints one JSON object and writes nothing: exit 0 active, 10 paused, 11 stop_reached, 12 unknown;
+only 0 admits a screening.
 Exit 4 is profile_required: an eligible packet can enroll; no screening or enrollment is written. A run-level advisory lock
 serializes round commands; episode records are published without replacement by linking a complete, fsynced
 temporary file to the final name. Missing manifest entries are recovered on read
@@ -788,17 +791,7 @@ def cmd_recover_screening(a):
 
 
 def trigger_facts(run_dir, episodes=None):
-    episodes = enrollments(run_dir) if episodes is None else episodes
-    p1 = []
-    repairs = 0
-    for d, e in episodes:
-        if e["arm"] != TERRA:
-            continue
-        review = os.path.join(d, "review-first.json")
-        if os.path.exists(review) and read_episode_record(review)["p1"] > 0:
-            p1.append(e["task_id"])
-        repairs += len(glob.glob(os.path.join(d, "repair-*.json")))
-    return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
+    return episode_trigger_facts(enrollments(run_dir) if episodes is None else episodes)
 
 
 def episode_trigger_facts(episodes):
@@ -1152,11 +1145,27 @@ def read_episodes_unrepaired(run_dir):
     episodes = []
     for d in enrollment_dirs(run_dir):
         name = os.path.basename(d)
+        # Read the manifest bytes as repair_manifest_tail does (same existence test), without repairing.
+        manifest = b""
+        if os.path.exists(os.path.join(d, SUMS)):
+            try:
+                with open(os.path.join(d, SUMS), "rb") as fh:
+                    manifest = fh.read()
+            except OSError as e:
+                raise AdmissionUnknown("episode_manifest_unreadable", f"{name}: {SUMS} cannot be read: {e}") from e
         if not record_files(d):
-            continue  # No record yet; enrollments() ignores it too.
+            if manifest:
+                # recover_episode raises on a complete entry for a file that is gone, and archives a torn tail.
+                raise AdmissionUnknown("episode_manifest_without_records",
+                                       f"{name}: {SUMS} is not empty but the directory holds no record files")
+            continue  # Nothing listed and nothing recorded: enrollments() neither writes nor raises.
         problems = integrity_problems(d)
         if problems:
             raise AdmissionUnknown("episode_integrity_problem", f"{name}: " + "; ".join(problems))
+        if manifest and not manifest.endswith(b"\n"):
+            # repair_manifest_tail treats a final line with no newline as torn and rewrites the manifest,
+            # even when that line parses and verifies.
+            raise AdmissionUnknown("episode_manifest_needs_repair", f"{name}: {SUMS} does not end at a line boundary")
         path = os.path.join(d, "enrollment.json")
         if not os.path.isfile(path):
             raise AdmissionUnknown("episode_without_enrollment", f"{name}: records exist but enrollment.json does not")
