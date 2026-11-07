@@ -32,7 +32,11 @@ def snapshot(path):
     out = {}
 
     def entry(p, rel):
-        st = os.lstat(p)
+        try:
+            st = os.lstat(p)
+        except OSError as e:  # An entry of a directory without search permission cannot be examined.
+            out[rel] = ("error", type(e).__name__, None, None)
+            return
         kind = ("symlink" if stat.S_ISLNK(st.st_mode) else "dir" if stat.S_ISDIR(st.st_mode)
                 else "file" if stat.S_ISREG(st.st_mode) else "other")
         digest = None
@@ -136,6 +140,166 @@ class AdmissionBase(unittest.TestCase):
         dest = self.root / name
         shutil.copytree(run, dest, symlinks=True)
         return dest
+
+    # --- fail-closed fixtures (shared by AdmissionFailsClosed and the case-11 no-write test) ---------------
+    def chmod_for_test(self, path, mode):
+        """chmod, restoring access before temporary-directory cleanup (cleanups run last-in first-out)."""
+        self.addCleanup(os.chmod, path, 0o755)
+        os.chmod(path, mode)
+
+    def p1_unmarked(self, name):
+        """A Terra episode with a P1 review and no PAUSED marker: an unmarked stop, until covered."""
+        run = self.new_run(name)
+        self.enroll(run, "task-p1", byte=1)
+        self.review(run, "task-p1", p1=1)
+        self.unmark(run)
+        return run
+
+    def rounds_unmarked(self, name):
+        """One Terra repair round against a budget of one, no PAUSED marker."""
+        run = self.new_run(name, budget=1)
+        self.enroll(run, "t", byte=1)
+        self.repair(run, "t")
+        self.unmark(run)
+        return run
+
+    def write_pause_history(self, run, document, name="x.json"):
+        (run / "pauses").mkdir(exist_ok=True)
+        text = document if isinstance(document, str) else json.dumps(document)
+        (run / "pauses" / name).write_text(text)
+
+    def with_enrollment(self, name):
+        run = self.new_run(name)
+        self.enroll(run, "t", byte=1)
+        return run
+
+    def fail_closed_cases(self):
+        """name -> (build(name) -> run, expected reason code). Each is a state that must not be admitted."""
+        def history(builder, document):
+            def build(name):
+                run = builder(name)
+                self.write_pause_history(run, document)
+                return run
+            return build
+
+        def enrollments_unreadable(name):
+            run = self.with_enrollment(name)
+            self.chmod_for_test(run / "enrollments", 0o000)
+            return run
+
+        def enrollments_not_searchable(name):
+            run = self.with_enrollment(name)
+            self.chmod_for_test(run / "enrollments", 0o444)  # Names list; no entry can be examined.
+            return run
+
+        def enrollments_regular_file(name):
+            run = self.new_run(name)
+            (run / "enrollments").write_text("not a directory")
+            return run
+
+        def enrollments_replaced_by_file(name):
+            run = self.with_enrollment(name)
+            shutil.rmtree(run / "enrollments")
+            (run / "enrollments").write_text("not a directory")
+            return run
+
+        def enrollments_dangling_symlink(name):
+            run = self.new_run(name)
+            os.symlink(str(self.root / "nowhere"), str(run / "enrollments"))
+            return run
+
+        def enrollment_entry_symlink_loop(name):
+            run = self.new_run(name)
+            (run / "enrollments").mkdir()
+            os.symlink("loop", str(run / "enrollments" / "loop"))
+            return run
+
+        def episode_unreadable(name):
+            run = self.with_enrollment(name)
+            self.chmod_for_test(run / "enrollments" / "t", 0o000)
+            return run
+
+        def episode_not_searchable(name):
+            run = self.with_enrollment(name)
+            self.chmod_for_test(run / "enrollments" / "t", 0o444)  # Names list; no record can be examined.
+            return run
+
+        def episode_not_listable(name):
+            run = self.with_enrollment(name)
+            self.chmod_for_test(run / "enrollments" / "t", 0o311)  # Searchable; names cannot be listed.
+            return run
+
+        def pauses_unreadable(name):
+            run = self.p1_unmarked(name)
+            self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["task-p1"]}})
+            self.chmod_for_test(run / "pauses", 0o000)
+            return run
+
+        def pauses_regular_file(name):
+            run = self.p1_unmarked(name)
+            (run / "pauses").write_text("not a directory")
+            return run
+
+        def pauses_dangling_symlink(name):
+            run = self.p1_unmarked(name)
+            os.symlink(str(self.root / "nowhere"), str(run / "pauses"))
+            return run
+
+        def pause_entry_is_a_directory(name):
+            run = self.p1_unmarked(name)
+            (run / "pauses").mkdir()
+            (run / "pauses" / "x.json").mkdir()
+            return run
+
+        def run_dir_not_searchable(name):
+            run = self.with_enrollment(name)
+            self.chmod_for_test(run, 0o644)  # round.json, PAUSED and the rest cannot be examined.
+            return run
+
+        def one_bad_among_good(name):
+            run = history(self.p1_unmarked, {"covered_triggers": {"p1_episodes": ["task-p1"]}})(name)
+            self.write_pause_history(run, {"covered_triggers": {"p1_episodes": {"task-p1": 0}}}, "y.json")
+            return run
+
+        p1 = self.p1_unmarked
+        rounds = self.rounds_unmarked
+        return {
+            "enrollments_unreadable": (enrollments_unreadable, "enrollments_unlistable"),
+            "enrollments_not_searchable": (enrollments_not_searchable, "enrollments_unlistable"),
+            "enrollments_regular_file": (enrollments_regular_file, "enrollments_unlistable"),
+            "enrollments_replaced_by_file": (enrollments_replaced_by_file, "enrollments_unlistable"),
+            "enrollments_dangling_symlink": (enrollments_dangling_symlink, "enrollments_unlistable"),
+            "enrollment_entry_symlink_loop": (enrollment_entry_symlink_loop, "enrollments_unlistable"),
+            "episode_unreadable": (episode_unreadable, "episode_unlistable"),
+            "episode_not_searchable": (episode_not_searchable, "episode_unlistable"),
+            "episode_not_listable": (episode_not_listable, "episode_unlistable"),
+            "pauses_unreadable": (pauses_unreadable, "pause_history_unlistable"),
+            "pauses_regular_file": (pauses_regular_file, "pause_history_unlistable"),
+            "pauses_dangling_symlink": (pauses_dangling_symlink, "pause_history_unlistable"),
+            "pause_entry_is_a_directory": (pause_entry_is_a_directory, "trigger_inputs_unreadable"),
+            "run_dir_not_searchable": (run_dir_not_searchable, "pause_marker_unreadable"),
+            "p1_episodes_dict_suppresses_a_stop": (history(p1, {"covered_triggers": {"p1_episodes": {"task-p1": False}}}),
+                                                   "pause_history_malformed"),
+            "p1_episodes_list_with_non_string": (history(p1, {"covered_triggers": {"p1_episodes": ["task-p1", 1]}}),
+                                                 "pause_history_malformed"),
+            "p1_episodes_only_non_string": (history(p1, {"covered_triggers": {"p1_episodes": [1]}}),
+                                            "pause_history_malformed"),
+            "p1_episodes_string": (history(p1, {"covered_triggers": {"p1_episodes": "task-p1"}}), "pause_history_malformed"),
+            "p1_episodes_null": (history(p1, {"covered_triggers": {"p1_episodes": None}}), "pause_history_malformed"),
+            "rounds_string": (history(rounds, {"covered_triggers": {"terra_repair_rounds": "many"}}),
+                              "pause_history_malformed"),
+            "rounds_float_suppresses_a_stop": (history(rounds, {"covered_triggers": {"terra_repair_rounds": 5.0}}),
+                                               "pause_history_malformed"),
+            "rounds_bool_suppresses_a_stop": (history(rounds, {"covered_triggers": {"terra_repair_rounds": True}}),
+                                              "pause_history_malformed"),
+            "rounds_null": (history(rounds, {"covered_triggers": {"terra_repair_rounds": None}}), "pause_history_malformed"),
+            "covered_triggers_list": (history(p1, {"covered_triggers": []}), "pause_history_malformed"),
+            "covered_triggers_string": (history(p1, {"covered_triggers": "task-p1"}), "pause_history_malformed"),
+            "covered_triggers_null": (history(p1, {"covered_triggers": None}), "pause_history_malformed"),
+            "document_is_a_list": (history(p1, ["task-p1"]), "pause_history_malformed"),
+            "document_is_null": (history(p1, "null"), "pause_history_malformed"),
+            "one_bad_file_among_good_ones": (one_bad_among_good, "pause_history_malformed"),
+        }
 
 
 class AdmissionStates(AdmissionBase):
@@ -392,8 +556,8 @@ class AdmissionStates(AdmissionBase):
 
         cases = {
             "corrupt_pause_history": (corrupt_pause_history, "trigger_inputs_unreadable", False),
-            "pause_history_not_object": (pause_history_not_object, "trigger_inputs_unreadable", False),
-            "pause_history_wrong_shape": (pause_history_wrong_shape, "trigger_inputs_unreadable", False),
+            "pause_history_not_object": (pause_history_not_object, "pause_history_malformed", False),
+            "pause_history_wrong_shape": (pause_history_wrong_shape, "pause_history_malformed", False),
             "edited_enrollment": (edited_enrollment, "episode_integrity_problem", False),
             "unlisted_record": (unlisted_record, "episode_integrity_problem", False),
             "missing_manifest": (missing_manifest, "episode_integrity_problem", False),
@@ -670,6 +834,13 @@ class AdmissionWritesNothing(AdmissionBase):
                         self.assertEqual(set(mode.value) & set("wax+"), set(), f"{name}: open mode {mode.value!r}")
         self.assertNotIn("admission", ROUND_DISPATCH_NAMES(tree))
 
+    def test_11_fail_closed_states_are_untouched(self):
+        """Every unlistable or malformed state of AdmissionFailsClosed is decided without writing, and is unknown."""
+        for name, (build, code) in self.fail_closed_cases().items():
+            with self.subTest(name):
+                run = build(name)
+                self.admit(run, "unknown", code)  # admit() compares full snapshots and checks for a lock file.
+
     def test_11_snapshot_helper_detects_a_change(self):
         run = self.new_run()
         before = snapshot(run)
@@ -686,6 +857,114 @@ def ROUND_DISPATCH_NAMES(tree):
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "ROUND_COMMANDS" for t in node.targets):
             return {e.value for e in node.value.elts}
     raise AssertionError("ROUND_COMMANDS not found")
+
+
+class AdmissionFailsClosed(AdmissionBase):
+    """AR-1 defects: an unlistable input and a malformed pause history must be unknown, never active.
+
+    The two reproduced fail-open defects are the first and the dict/bool/float cases here; the others harden
+    the same rule on every listing or existence test the gate relies on.
+    """
+
+    def test_every_unlistable_or_malformed_state_is_unknown_with_its_reason_code(self):
+        for name, (build, code) in self.fail_closed_cases().items():
+            with self.subTest(name):
+                self.admit(build(name), "unknown", code)
+
+    def test_unreadable_enrollments_directory_is_not_active(self):
+        run = self.with_enrollment("unreadable")
+        self.chmod_for_test(run / "enrollments", 0o000)
+        out = self.admit(run, "unknown", "enrollments_unlistable")
+        self.assertFalse(out["facts"]["enrollments"]["evaluated"])
+
+    def test_enrollments_as_a_regular_file_is_unknown(self):
+        run = self.new_run()
+        (run / "enrollments").write_text("x")
+        self.admit(run, "unknown", "enrollments_unlistable")
+
+    def test_absent_enrollments_directory_still_means_no_enrollments(self):
+        run = self.new_run()
+        self.assertFalse((run / "enrollments").exists())
+        out = self.admit(run, "active", "admitted")
+        self.assertEqual(out["facts"]["enrollments"], {"evaluated": True, "count": 0, "cap": 20})
+        # The same with an empty directory, and with a hidden entry that enroll ignores as well.
+        (run / "enrollments").mkdir()
+        (run / "enrollments" / ".hidden").mkdir()
+        self.assertEqual(self.admit(run, "active")["facts"]["enrollments"]["count"], 0)
+
+    def test_absent_pause_history_still_means_nothing_is_covered(self):
+        run = self.p1_unmarked("no-history")
+        self.assertFalse((run / "pauses").exists())
+        out = self.admit(run, "stop_reached", "pause_trigger_unmarked")
+        self.assertEqual(out["facts"]["trigger"]["covered_p1_episodes"], [])
+        # An empty directory, a non-JSON file and a hidden JSON file are not history, as pause_coverage's glob sees it.
+        (run / "pauses").mkdir()
+        (run / "pauses" / "notes.txt").write_text("not json")
+        (run / "pauses" / ".hidden.json").write_text("[")
+        self.admit(run, "stop_reached", "pause_trigger_unmarked")
+
+    def test_a_malformed_coverage_would_have_suppressed_a_real_stop_on_the_old_path(self):
+        """The reproduced defect, on a synthetic copy: pause_coverage covers task-p1 from a dict of falses."""
+        run = self.p1_unmarked("suppressed")
+        self.admit(run, "stop_reached", "pause_trigger_unmarked")  # The stop is real without any history.
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": {"task-p1": False}}})
+        covered, _ = rec.pause_coverage(str(run))
+        self.assertEqual(covered, {"task-p1"})  # What the unchanged consumer does with it.
+        out = self.admit(run, "unknown", "pause_history_malformed")
+        self.assertIn("x.json", out["reason"]["text"])
+        self.assertFalse(out["facts"]["trigger"]["evaluated"])
+
+    def test_bool_and_float_rounds_would_have_suppressed_a_repair_round_stop(self):
+        for value in (True, 5.0):
+            with self.subTest(repr(value)):
+                run = self.rounds_unmarked(f"rounds-{value}")
+                self.admit(run, "stop_reached", "pause_trigger_unmarked")
+                self.write_pause_history(run, {"covered_triggers": {"terra_repair_rounds": value}})
+                _, covered_rounds = rec.pause_coverage(str(run))
+                self.assertEqual(covered_rounds, value)  # The consumer accepts it and the stop is suppressed.
+                self.admit(run, "unknown", "pause_history_malformed")
+
+    def test_well_formed_histories_keep_their_meaning(self):
+        run = self.p1_unmarked("good")
+        for document in ({}, {"covered_triggers": {}}, {"reason": "x"}, {"covered_triggers": {"p1_episodes": []}},
+                         {"covered_triggers": {"terra_repair_rounds": -1}},
+                         {"covered_triggers": {"p1_episodes": ["other"], "terra_repair_rounds": 0, "extra": [1, {}]}}):
+            with self.subTest(document):
+                self.write_pause_history(run, document)
+                self.admit(run, "stop_reached", "pause_trigger_unmarked")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["task-p1"], "terra_repair_rounds": 0}})
+        out = self.admit(run, "active")
+        self.assertEqual(out["facts"]["trigger"]["covered_p1_episodes"], ["task-p1"])
+
+    def test_real_resume_history_validates_and_agrees_with_enroll(self):
+        run = self.new_run(budget=2)
+        self.enroll(run, "t", byte=1)
+        self.review(run, "t", p1=1)
+        self.repair(run, "t")
+        self.repair(run, "t")
+        self.resume(run)  # Writes a real pauses/*.json with covered_triggers from enforce_triggers.
+        self.assertTrue(list((run / "pauses").glob("*.json")))
+        self.admit(run, "active")
+
+    def test_the_gate_names_the_file_it_rejected(self):
+        run = self.p1_unmarked("named")
+        self.write_pause_history(run, {"covered_triggers": []}, "2026-11-07T00-00-00Z.json")
+        out = self.admit(run, "unknown", "pause_history_malformed")
+        self.assertIn("2026-11-07T00-00-00Z.json", out["reason"]["text"])
+
+    def test_enroll_and_enforcement_semantics_are_unchanged(self):
+        """The repair is on admission's path only: the shared consumers still behave as before."""
+        run = self.p1_unmarked("unchanged")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": {"task-p1": False}}})
+        probe = self.copy_of(run, "unchanged-probe")
+        out = self.rcall(probe, "status")  # enforce_triggers still sees the dict as coverage.
+        self.assertFalse(out["paused"])
+        self.assertEqual(rec.enrollment_dirs(str(self.root / "no-such-run")), [])
+        os.chmod(run / "enrollments", 0o000)
+        try:
+            self.assertEqual(rec.enrollment_dirs(str(run)), [])  # enrollment_dirs still swallows the error.
+        finally:
+            os.chmod(run / "enrollments", 0o755)
 
 
 class AdmissionAgreesWithEnroll(AdmissionBase):
