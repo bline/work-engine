@@ -9,6 +9,7 @@ import ast
 import builtins
 import contextlib
 import errno
+import glob
 import hashlib
 import io
 import json
@@ -1330,7 +1331,8 @@ class AdmissionClassRepair(AdmissionBase):
         """Count the filesystem calls of the block; raise OSError(EIO) on call number `index` when given.
 
         Patches the low-level calls, so the os.path predicates and glob, which swallow OSError, see the fault
-        exactly as they would a real I/O error. Yields the list of (call, path) seen."""
+        exactly as they would a real I/O error, and also the predicates and glob themselves, so a fault raised
+        at that level is covered too (a call is counted at each level it passes). Yields (call, path) seen."""
         calls = []
 
         def wrap(name, original):
@@ -1344,7 +1346,9 @@ class AdmissionClassRepair(AdmissionBase):
 
         with contextlib.ExitStack() as stack:
             for owner, name in ((os, "stat"), (os, "lstat"), (os, "listdir"), (os, "scandir"), (os, "open"),
-                                (os, "fstat"), (os, "read"), (builtins, "open")):
+                                (os, "fstat"), (os, "read"), (builtins, "open"), (os.path, "exists"),
+                                (os.path, "isdir"), (os.path, "isfile"), (os.path, "islink"), (os.path, "lexists"),
+                                (glob, "glob")):
                 stack.enter_context(mock.patch.object(owner, name, wrap(name, getattr(owner, name))))
             yield calls
 
