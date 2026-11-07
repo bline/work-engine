@@ -1,7 +1,8 @@
 # Model selection for engineering work
 
-Current guidance: 2026-11-04. This is the single place for model and effort
-choices. It replaces the 2026-10-20 version, which covered only `gpt-6-astra`
+Current guidance: 2026-11-04; the
+[Claude host](#claude-host-and-claude-only-development) section dates from
+2026-11-07. This is the single place for model and effort choices. It replaces the 2026-10-20 version, which covered only `gpt-6-astra`
 and `gpt-6-sol`, and the role choices that skills stated for themselves (see
 [Where choices are encoded](#where-choices-are-encoded)).
 
@@ -39,14 +40,11 @@ review, not for supervising, coordinating, planning or building.
 | --- | --- | --- | --- |
 | **Builder** for implementation, integration, tests and ordinary remediation under a clear contract | `gpt-6.1-sol` | `medium` | **Owner decision 2026-11-04.** In randomized dogfood round 2 ([outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md), n = 9 Sol, 10 Terra), Sol needed 0.44 repair rounds per task against Terra's 1.00, and passed first review 5 of 9 times against 3 of 9. Neither difference is significant at this n (p = 0.15 and 0.32). Sol's builds cost no more: median $0.93 per builder session against Terra's $1.08, because Terra made more calls. A first review cost a median four times the build. |
 | **Builder** for a small, mechanical, fully specified change (rename, configuration, fixture or documentation edit) with focused validation | `gpt-6.1-terra` | `medium` | **Narrowed 2026-11-04** from the provisional default of 2026-10-27. [E1a-Terra](../metrics/probes/e1a-terra-result-20261027.md) (n = 3, $0.13–0.15 per run): 0 failures in all three runs on the 12 battery cases that trace to the packet; the full battery gives 7, 7 and 11, but most of its cases do not trace to the packet ([traceability check](../metrics/probes/e1a-result-20261027.md#battery-traceability-post-hoc-not-pre-registered)). Usage-export task: 3 first-version failures in the four-builder trial (n = 1), the cheapest arm. Its tests were thinner than the Claude builders' (2–4 against 10–14). In round 2 it took 1.00 repair rounds per task, and one task drew three P1 findings at first review. |
-| Builder on the Claude host, with a fully specified packet | `claude-sonnet-5-5` | `high` | Matched Opus on gates and defect incidence at 38% of the cost ([S2 builder probe](../metrics/probes/claude-s2-builder-20261020-protocol.md), lines 467–560, n = 1). At `medium` in [E1a](../metrics/probes/e1a-result-20261027.md) (n = 3, $0.67–0.73 per run), Sonnet failed 2, 0 and 0 of the 12 traced cases; the full battery gives 11–15. |
-| Builder on the Claude host, where unresolved reasoning or complexity warrants it | `claude-opus-5-5` | `high` | In E1a at `medium` (n = 1, $2.35), Opus failed 0 of the 12 traced cases; the full battery gives 9. |
+| Any role on the Claude host, including Claude-only development | see [Claude host and Claude-only development](#claude-host-and-claude-only-development) | | |
 | Successor after a Claude builder refusal | the default builder above | as above | The refusal is recorded; the successor gets a fresh packet. |
-| Architecture, ownership contracts, and planning with unresolved design questions | `gpt-6.1-sol` | `xhigh` | Spend reasoning where mistakes propagate; an Astra review at `xhigh` challenges the result (row below). On the Claude host: `claude-opus-5-5` at `high`. |
-| Supervisor / coordinator, including supervisors spawned as subagents | `gpt-6.1-sol` | `xhigh` | **Owner decision 2026-10-28.** `spawn_agent` gives a child its parent's model unless overridden, so a supervisor spawned from a `gpt-6.1-sol` root needs no override. Before this date supervisors were a mix (frozen usage ledger, by call count: Sol medium 2,361, Astra high 1,403, Astra medium 316, Astra xhigh 260). O2 and O4 ([experiment plan](../metrics/experiment-plan-20261026.md) §7) remain available as checks. On the Claude host: `claude-opus-5-5`. |
+| Architecture, ownership contracts, and planning with unresolved design questions | `gpt-6.1-sol` | `xhigh` | Spend reasoning where mistakes propagate; an Astra review at `xhigh` challenges the result (row below). |
+| Supervisor / coordinator, including supervisors spawned as subagents | `gpt-6.1-sol` | `xhigh` | **Owner decision 2026-10-28.** `spawn_agent` gives a child its parent's model unless overridden, so a supervisor spawned from a `gpt-6.1-sol` root needs no override. Before this date supervisors were a mix (frozen usage ledger, by call count: Sol medium 2,361, Astra high 1,403, Astra medium 316, Astra xhigh 260). O2 and O4 ([experiment plan](../metrics/experiment-plan-20261026.md) §7) remain available as checks. |
 | Adversarial review, where an OpenAI reviewer is permitted | separate `gpt-6-astra` | `high`; `xhigh` when the subject is architecture, an ownership contract, or planning with unresolved design questions | Challenge the composed result from a separately established context. No measured review comparison of `high` and `xhigh` exists; on supervisor calls `xhigh` used about 14% more weighted tokens per call ([experiment plan §1](../metrics/experiment-plan-20261026.md)). Partitioned Sol review is planned as experiment O1. |
-| Tier-1 reviewer, verifier or assessor on the Claude host | `claude-opus-5-5` | `high` | No matched Sonnet review comparison yet. |
-| Tier-2 reviewer on the Claude host | `claude-fable-5-1`, fresh context | default | **Scarce.** One contract review cost 2% of the weekly Fable meter (n = 1), and Fable also draws the main Claude meter at Fable prices. Use it only for a shared contract, the final acceptance of a workstream, or an unresolved P1 between builder and tier-1 reviewer. Give it a small input (contract, diff, tier-1 findings, with paths), and never a retained follow-up. |
 | Reconnaissance | the default builder | `medium` or `high` | Match effort to the remaining uncertainty and consequence. Routine documentation and straightforward edits follow the Terra row above. |
 | Experiment arms | as pre-registered | as pre-registered | An arm's model and effort come from its pre-registration, never from this table. |
 
@@ -106,6 +104,130 @@ mechanical for Terra start needing repair rounds.
   or a fixed number of failed tests. A model change does not repair a harness,
   test or contract defect, and a failure count alone doesn't establish that the
   model caused the failures.
+
+## Claude host and Claude-only development
+
+This section holds the model choices for every role that runs on Claude Code:
+a Claude role inside Codex-led work, and Claude-only development, where the root
+and every child run on Anthropic models. Host mechanics (the `Agent` tool's
+`model` and `effort`, transcripts, worktrees, root transfer) are in the
+[Claude Code host reference](../skills/manual-orchestration/references/anthropic-host.md).
+Claude-only work coordinates through
+[manual orchestration](../skills/manual-orchestration/SKILL.md) on Claude Code.
+`skills/claude-builder` does not apply there: it assumes a Codex caller and an
+Astra reviewer.
+
+Every comparison below is n = 1 per model and effort unless stated, and most come
+from one subject, the S2 slice. Read the rows as a starting point, not as
+measured rankings.
+
+| Role | Model | Effort | Status and evidence |
+| --- | --- | --- | --- |
+| Supervisor / root | `claude-opus-5-5` | the session default (`xhigh` in `~/.claude/settings.json` on 2026-11-07) | What the measured Claude roots ran: the R1 and R2 roots (`bf60b4c1`, `c1d31e88`) record only `claude-opus-5-5` in `message.model`. None of the 259 studies in the 2026-11-06 evidence inventory (`~/cbm-work/evidence-map-20261106`) compares supervisor models on Claude. E3 built 10 fixtures from past supervisor decisions for Sonnet `high`, Opus `high` and Haiku `xhigh`, and its arms were never run ([E3 fixtures](../metrics/probes/e3-pilot-fixtures-20261027.md)). R1's orchestrator used 36.2% of the campaign's weighted tokens, against 25% in the pure-Codex baseline ([R1 score](../metrics/probes/claude-builder-campaign-r1-score-20261022.md), n = 1 campaign). |
+| Architecture, ownership contracts, and planning with unresolved design questions | `claude-opus-5-5` | `high` | Carries over the Codex row's reasoning: spend reasoning where mistakes propagate. Not measured on Claude. R1's planners ran this configuration. |
+| Builder with a fully specified packet | `claude-sonnet-5-5` | `high` | [S2 builder probe](../metrics/probes/claude-s2-builder-20261020-protocol.md) (lines 467–579), same plan and prompt: Sonnet and `claude-opus-5` (the earlier Opus, not 5.5) both passed 7 of 7 gates with 44 tests on exactly the declared paths, and both left the shutdown join loop unsafe to outer cancellation. Sonnet cost $4.71 against $12.50 and took 15.6 against 32.6 minutes. At `medium` in [E1a](../metrics/probes/e1a-result-20261027.md) (n = 3, $0.67–0.73 per run), Sonnet failed 2, 0 and 0 of the 12 cases that trace to the packet. R1 and R2 used Sonnet `high` builders for about 10,200 and 11,100 Rust lines (n = 1 campaign each). |
+| Builder where unresolved reasoning or complexity warrants it | `claude-opus-5-5` | `high` | In E1a at `medium` (n = 1, $2.35, 7.6 minutes), Opus failed 0 of the 12 traced cases. |
+| Reconnaissance, documentation and small mechanical edits | `claude-sonnet-5-5` | `medium` | There is no Claude counterpart to the Terra row. Haiku was not cheaper as a builder: in E1a, Haiku 5.5 at `high` cost $0.78 over 59 calls and 11.2 minutes, against $0.67–0.73 and 3.1–3.8 minutes for Sonnet at `medium` (n = 1 Haiku run); 43 of its 59 calls fell in the higher price tier for prompts over 100,000 tokens. |
+| Tier-1 reviewer, verifier or assessor | `claude-opus-5-5` | `high` | Kept as tier 1, with the second pass below. In Test R generation 2 (same subject, unchanged prompt, all at `xhigh`; [protocol](../metrics/probes/claude-s2-review-independence-20261019-protocol.md), lines 276–462), one reference defect separated the models: a task spawned before it was registered. Haiku matched it, Sonnet declared it unresolved, and both `claude-opus-5-5` and `claude-opus-5` cleared it as verified. `claude-opus-5` also cleared it at `high` and at `max`, so effort did not change the outcome ([generation 3](../metrics/probes/claude-s2-review-generation3-20261020-protocol.md), lines 113–137). Cost per review: Haiku $0.39, Sonnet $1.24, Opus 5.5 $1.94. |
+| Second review pass | `claude-sonnet-5-5` or `claude-haiku-5-5`, fresh context | `xhigh` | **Recommendation 2026-11-07.** Give it a concern statement (the properties to examine, naming no defect or file) or a small group of contract obligations, not the whole contract as obligations. Evidence under [Review on Claude only](#review-on-claude-only). |
+| Tier-2 reviewer | `claude-fable-5-1`, fresh context | default | **Scarce.** One contract review used 2% of the weekly Fable meter (n = 1), and Fable counts against the all-models weekly limit as well as its own (owner-confirmed 2026-10-30). Use it only for a shared contract, the final acceptance of a workstream, or an unresolved P1 between builder and tier-1 reviewer. Give it a small input (contract, diff, tier-1 findings, with paths), and never a retained follow-up. |
+
+**Pass model and effort explicitly in every `Agent` call;** this table is the
+owning instruction for the effort. R1 did so: its subagents' `meta.json` records
+`sonnet` at `high` for builders and `opus` at `high` for reviewers and planners.
+The `model` parameter takes an alias, so record the observed `message.model`.
+
+### Review on Claude only
+
+Claude-only review is same-provider review. Record it as such: it does not meet a
+cross-provider requirement
+([review ownership](#preserve-implementation-and-review-ownership)). The evidence
+on what it misses, and on what helped:
+
+- **Inside review missed contract-class defects.** Across two slices that review
+  inside the Claude orchestration had passed with P3 findings only, an outside
+  non-Claude reviewer found 1 P1 and 3 P2s. One of the slices had also passed the
+  Fable tier-2 final
+  ([P1 port cohort](../metrics/probes/claude-p1-port-cohort-20261022.md), lines
+  258–311; [R1 score](../metrics/probes/claude-builder-campaign-r1-score-20261022.md),
+  lines 209–249; n = 2 slices, 1 outside reviewer). The R1 record reads this as
+  review at these tiers finding P3-class issues reliably and provenance- and
+  contract-class issues unreliably.
+- **Naming what to examine changed what was found.** Sonnet at `xhigh`, given a
+  concern statement (happens-before, ownership across cancellation, truthful close
+  facts; no defect or file named), matched the spawn-before-register defect it
+  had declared unresolved without one, and cost less: $0.99 against $1.24
+  ([generation 3](../metrics/probes/claude-s2-review-generation3-20261020-protocol.md),
+  lines 238–262).
+- **Obligations find what they target, and only that.** No Claude review found
+  the reference cancellation defect in 11 runs across 4 models and 4 effort
+  levels (generation 3, lines 275–280). Obligations aimed at that defect class
+  found it; obligations aimed at another class did not
+  ([S2 builder probe](../metrics/probes/claude-s2-builder-20261020-protocol.md),
+  lines 615–672). Haiku given one obligation alone found it for $0.37, where the
+  same text inside a 25-obligation packet did not
+  ([obligation compiler](../metrics/probes/claude-s2-obligation-compiler-20261020-protocol.md),
+  lines 772–836). Keep obligation groups small; the best size is not established.
+- **Re-grade severity.** All four generation-2 reviewers matched the reference's
+  only high-severity defect and graded it low, and Haiku graded another matched
+  defect low where the reference graded it medium (obligation compiler, lines
+  861–877). Judge detection and severity separately: a reviewer's low grade alone
+  does not make a finding non-blocking.
+- **Check attribution before a revert.** Across 17 Claude review runs on one
+  subject, reviewers attributed every discrepancy caused by the plan itself to the
+  implementation, and all five arms whose full findings were kept prescribed
+  revert or remove
+  ([finding attribution](../metrics/probes/claude-finding-attribution-20261020.md),
+  lines 33–38). Before applying such a remedy, check whether the contract
+  requires what the finding flags.
+- **Size review by what it must read.** In R2, end-of-slice review plus
+  remediation cost 105% of the builds they reviewed, and two reviewers reached
+  the context trigger and handed off
+  ([R2 score](../metrics/probes/claude-builder-campaign-r2-score-20261023.md),
+  lines 344–368). Divide a large subject into named obligation groups, as the
+  [supervisor reference](../skills/manual-orchestration/references/supervisor.md)
+  describes.
+
+Where an owner requires an outside reader, for example for a shared contract, a
+published interface or a parity or provenance claim, Claude-only review does not
+satisfy the requirement. Record the gap; do not describe the review as
+independent.
+
+### Supervisor practice on Claude
+
+- **Root context size is the one measured cost lever; the root model has never
+  been varied.** A Claude Code root reached 656,196 tokens with no automatic
+  compaction. Transferring it to a fresh successor cut context by 92% and made
+  each coordination call 5.0 times cheaper, breaking even after 1.4 calls
+  ([root transfer](../metrics/probes/claude-root-transfer-20261022.md), n = 1).
+  Plan root transfers
+  ([procedure](../skills/manual-orchestration/references/anthropic-host.md#root-transfer-on-claude-code))
+  rather than waiting for compaction.
+- **Limit parallel high-effort agents.** Four parallel `xhigh` reviewers moved the
+  five-hour window about 8 points (n = 1 batch), and earlier review arms failed on
+  the five-hour limit, not the weekly one
+  ([Test R protocol](../metrics/probes/claude-s2-review-independence-20261019-protocol.md),
+  lines 499–515). Three parallel Fable agents with an Opus coordinator moved it
+  from 1% to 13% in four minutes
+  ([experiment plan §3](../metrics/experiment-plan-20261026.md#3-spending-controls),
+  n = 1 interval).
+- **Compare Claude tiers in dollars, not weighted tokens.** In the RP2 pilot four
+  Claude arms fell within 0.09–0.19 Mwt while their cost spanned 58 times
+  ([RP2 protocol](../metrics/probes/claude-rp2-comprehension-20261019-protocol.md),
+  lines 335–342).
+
+### Open questions and the checks that would settle them
+
+| Question | Check | State on 2026-11-07 |
+| --- | --- | --- |
+| Can Sonnet supervise as well as Opus, for less? | E3 supervisor replay ([experiment plan §6](../metrics/experiment-plan-20261026.md#e3-supervisor-decision-replay)) | fixtures built; arms never run |
+| Which reviewer model and structure finds the most defects per dollar? | E2: Sonnet `high` as one reviewer against four concern partitions, with Opus single and Haiku partitioned as strategy comparisons ([experiment plan §6](../metrics/experiment-plan-20261026.md#e2-review-structure-and-model)) | planned; needs 4–6 artifacts with known defects |
+| Does the best builder depend on the task type? | E1b: Haiku `high`, Sonnet `medium` and Opus `medium` on T0 tasks ([experiment plan §6](../metrics/experiment-plan-20261026.md#e1-builders-first-artifact-quality-builder-only)) | blocked on fixing 12 cases of the T0 R2-E2 battery |
+| Does the second pass catch what Opus tier 1 clears? | Record, per review, the findings each pass made that the other did not, through existing receipts | starts with Claude-only work; no new gate |
+
+Revisit the tier-1 choice if the second pass repeatedly finds P1 or P2 defects
+that Opus cleared, or the reverse, or if an outside reader finds blocking defects
+after Claude-only acceptance.
 
 ## Cost and quota facts that bear on selection
 
@@ -205,8 +327,8 @@ guide states the intended choice and the copy is stale.
 | `skills/slice-supervisor/scripts/campaign-preflight.mjs`: `defaults.builder` and the `currentBuilderModels` allowlist | campaign builder default; preflight rejects a builder model not on its list | aligned: `gpt-6.1-sol` / `medium`; same allowlist |
 | `skills/slice-supervisor/references/work-engine-config.md` | documented campaign defaults | aligned: `gpt-6.1-sol` / `medium` |
 | `skills/slice-builder/SKILL.md` | default statement and effort ladder | points to this guide |
-| `skills/claude-builder/SKILL.md` and `references/astra-review.md`, `references/native-session.md` | Claude builder, successor and reviewer choices | point to this guide |
-| `skills/manual-orchestration/references/anthropic-host.md` | Claude-host role table | points to this guide; the host mapping (`Agent` `model`, observed `message.model`) stays there |
+| `skills/claude-builder/SKILL.md` and `references/astra-review.md`, `references/native-session.md` | Claude builder, successor and reviewer choices | point to this guide; the skill pairs its builder with an Astra reviewer, so it serves Codex-led work only |
+| `skills/manual-orchestration/references/anthropic-host.md` | Claude-host role table | points to this guide; the "Claude-host rows" it names are now the [Claude host](#claude-host-and-claude-only-development) section. The host mapping (`Agent` `model`, observed `message.model`) stays there |
 | `resolve_builder_context()` signature default in `resolve_provider.py` | internal default for callers that omit the model | stays `gpt-6-sol` / `high` on purpose: production paths pass the model explicitly, and tests use the default to build same-model review cases |
 | `skills/slice-supervisor/scripts/append_metrics.py`, `.get("model", "gpt-6-sol")` and `.get("reasoning_effort", "high")` | how a receipt with no recorded builder model is read | stays as is on purpose: receipts written without an explicit model ran under the earlier default |
 | `~/.codex/config.toml`, `~/.claude/settings.json` | session defaults | see above |
@@ -244,3 +366,5 @@ configuration with no builder.
 | 2026-10-28 | Codex manual roots use `/fast` for supervisors and builders; Astra reviewers launch as separate top-level threads with an explicit standard-tier override. The live probe found `/fast` also persists a shared Fast default, so top-level launch alone is insufficient. Campaign supervisors keep `/fast` off pending separate reviewer launch/binding support. | owner; [observed probe](../metrics/probes/codex-manual-service-tier-20261028.json) |
 | 2026-10-28 | Clarify Terra/medium as the default for bounded implementation after discovery: select Sol for concrete residual decisions and risk, not domain labels, the planner's model, or a repair-round count alone. (Superseded 2026-11-04.) | guidance clarification following owner feedback |
 | 2026-11-04 | `gpt-6.1-sol` at `medium` is the default builder; `gpt-6.1-terra` at `medium` narrows to small, mechanical, fully specified changes. Campaign defaults align. | owner; [round 2 outcomes](../metrics/probes/dogfood-round2-builder-outcomes-20261104.md) |
+| 2026-11-07 | Claude-host choices move into their own [section](#claude-host-and-claude-only-development) for Claude-only development. Added: Sonnet 5.5 `medium` for Claude reconnaissance and mechanical edits; a fresh Sonnet or Haiku second review pass beside Opus tier 1; Claude-only review recorded as same-provider. Corrected: the tier-1 reviewer row said no matched Sonnet review comparison existed (Test R generation 2 is one, n = 1 per model), and the Sonnet builder row's "Opus" was `claude-opus-5`, not 5.5. | owner requested the section; the two additions are recommendations the owner may change |
+| 2026-11-07 | Claude-only development runs without an outside non-Claude reader: the Codex quota is spent. Review there is recorded as same-provider, and a requirement for an outside reader is recorded as unmet, not satisfied. | owner |
