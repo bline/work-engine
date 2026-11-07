@@ -1166,6 +1166,21 @@ def read_episodes_unrepaired(run_dir):
             # repair_manifest_tail treats a final line with no newline as torn and rewrites the manifest,
             # even when that line parses and verifies.
             raise AdmissionUnknown("episode_manifest_needs_repair", f"{name}: {SUMS} does not end at a line boundary")
+        if manifest:
+            # Mirror repair_manifest_tail's per-line test on the raw bytes. listed() splits text with
+            # str.splitlines(), which also breaks on \r, \f and U+2028; repair_manifest_tail splits bytes
+            # on \n, \r and \r\n only and raises on any line that is not "<hash>  <name>" for an existing,
+            # matching record. A manifest the first accepts and the second rejects must not be admitted.
+            files = record_files(d)
+            for line in manifest.splitlines(keepends=True):
+                match = re.fullmatch(rb"([0-9a-f]{64})  ([^\r\n]+)\n?", line)
+                try:
+                    entry = match.group(2).decode("utf-8") if match else None
+                except UnicodeDecodeError:
+                    entry = None  # repair_manifest_tail raises on an undecodable name as well.
+                if entry not in files or sha256(os.path.join(d, entry)) != match.group(1).decode():
+                    raise AdmissionUnknown("episode_manifest_needs_repair",
+                                           f"{name}: {SUMS} has a line that repair_manifest_tail rejects")
         path = os.path.join(d, "enrollment.json")
         if not os.path.isfile(path):
             raise AdmissionUnknown("episode_without_enrollment", f"{name}: records exist but enrollment.json does not")

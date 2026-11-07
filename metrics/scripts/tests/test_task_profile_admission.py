@@ -331,6 +331,27 @@ class AdmissionStates(AdmissionBase):
             path = run / "enrollments" / "t" / "SHA256SUMS"
             path.write_bytes(path.read_bytes().rstrip(b"\n"))
 
+        def manifest_with_crlf(run):
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+
+        def manifest_with_bare_cr(run):
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\r"))
+
+        def manifest_entries_joined_by_bare_cr(run):
+            # The manifest still ends in \n, so only the per-line test can see this one.
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\r", 1))
+
+        def manifest_entries_joined_by_formfeed(run):
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\f", 1))
+
+        def manifest_entries_joined_by_line_separator(run):
+            path = run / "enrollments" / "t" / "SHA256SUMS"
+            path.write_bytes(path.read_bytes().replace(b"\n", "\u2028".encode(), 1))
+
         def manifest_listing_vanished_records(run):
             # A directory whose manifest lists a record that is gone and that holds no record file.
             ghost = run / "enrollments" / "ghost"
@@ -379,6 +400,11 @@ class AdmissionStates(AdmissionBase):
             "listed_but_missing": (listed_but_missing, "episode_integrity_problem", False),
             "torn_manifest": (torn_manifest, "episode_integrity_problem", False),
             "manifest_without_newline": (manifest_without_newline, "episode_manifest_needs_repair", False),
+            "manifest_with_crlf": (manifest_with_crlf, "episode_manifest_needs_repair", True),
+            "manifest_with_bare_cr": (manifest_with_bare_cr, "episode_manifest_needs_repair", True),
+            "manifest_entries_joined_by_bare_cr": (manifest_entries_joined_by_bare_cr, "episode_manifest_needs_repair", True),
+            "manifest_entries_joined_by_formfeed": (manifest_entries_joined_by_formfeed, "episode_manifest_needs_repair", True),
+            "manifest_entries_joined_by_line_separator": (manifest_entries_joined_by_line_separator, "episode_manifest_needs_repair", True),
             "manifest_listing_vanished_records": (manifest_listing_vanished_records, "episode_manifest_without_records", False),
             "manifest_torn_with_no_records": (manifest_torn_with_no_records, "episode_manifest_without_records", False),
             "manifest_is_a_directory": (manifest_is_a_directory, "episode_manifest_unreadable", False),
@@ -482,17 +508,34 @@ class AdmissionWritesNothing(AdmissionBase):
             path.unlink()
             path.mkdir()
 
+        # str.splitlines() in listed() breaks on these; bytes.splitlines() in repair_manifest_tail does not
+        # (or keeps the separator), so the old path raises on a manifest the first parser accepts.
+        def replaced(old, new, count=-1):
+            def damage(run):
+                sums = run / "enrollments" / "t" / "SHA256SUMS"
+                sums.write_bytes(sums.read_bytes().replace(old, new, count))
+            return damage
+
         # name: (damage, code, how recovery acts on the copy: "writes" a damaged copy, or "raises" exit 1)
         cases = {
             "no_newline": (no_newline, "episode_manifest_needs_repair", "writes"),
             "vanished": (vanished, "episode_manifest_without_records", "raises"),
             "torn_only": (torn_only, "episode_manifest_without_records", "writes"),
             "sums_directory": (sums_directory, "episode_manifest_unreadable", "raises"),
+            "crlf": (replaced(b"\n", b"\r\n"), "episode_manifest_needs_repair", "raises"),
+            "bare_cr": (replaced(b"\n", b"\r"), "episode_manifest_needs_repair", "raises"),
+            "bare_cr_join": (replaced(b"\n", b"\r", 1), "episode_manifest_needs_repair", "raises"),
+            "formfeed_join": (replaced(b"\n", b"\f", 1), "episode_manifest_needs_repair", "raises"),
+            "line_separator_join": (replaced(b"\n", "\u2028".encode(), 1), "episode_manifest_needs_repair", "raises"),
         }
+        two_entries = {"crlf", "bare_cr", "bare_cr_join", "formfeed_join", "line_separator_join"}  # Needs a review record: 2 lines.
         for name, (damage, code, acts) in cases.items():
             with self.subTest(name):
                 run = self.new_run("run-" + name)
                 self.enroll(run, "t", byte=1)
+                if name in two_entries:
+                    self.review(run, "t", p1=0)
+                    self.assertEqual((run / "enrollments" / "t" / "SHA256SUMS").read_bytes().count(b"\n"), 2)
                 damage(run)
                 self.admit(run, "unknown", code)
                 probe = self.copy_of(run, "probe-" + name)
