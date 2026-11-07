@@ -108,6 +108,21 @@ class Git:
     def blob(self, commit, path):
         return self.run("rev-parse", "--verify", "-q", f"{commit}:{path}")
 
+    def object_type(self, commit, path):
+        return self.run("cat-file", "-t", f"{commit}:{path}")
+
+    def line_count(self, commit, path):
+        key = ("line_count", commit, path)
+        if key not in self.cache:
+            p = subprocess.run(["git", "-C", self.repo, "cat-file", "blob", f"{commit}:{path}"],
+                               capture_output=True, check=False)
+            if p.returncode != 0:
+                self.cache[key] = None
+            else:
+                data = p.stdout
+                self.cache[key] = data.count(b"\n") + (1 if data and not data.endswith(b"\n") else 0)
+        return self.cache[key]
+
     def commit_exists(self, commit):
         return self.run("rev-parse", "--verify", "-q", f"{commit}^{{commit}}") is not None
 
@@ -199,9 +214,33 @@ def is_text(v):
     return isinstance(v, str) and v.strip() != ""
 
 
+def has(collection, value):
+    """Membership that never raises: a non-string value is never a member."""
+    return isinstance(value, str) and value in collection
+
+
 def check_enum(errors, loc, key, value, allowed):
-    if value not in allowed:
+    if not has(allowed, value):
         errors.add("bad-value", loc, f"{key} {value!r} not in {sorted(allowed)}")
+
+
+LINES = re.compile(r"^(\d+)(?:-(\d+))?$")
+
+
+def check_lines(errors, git, loc, lines, commit, path):
+    """`lines` is N or N-M, 1-based, and must lie within the file at commit:path."""
+    m = LINES.match(lines) if isinstance(lines, str) else None
+    if not m:
+        errors.add("bad-value", loc, f"lines {lines!r} is not N or N-M")
+        return
+    lo = int(m.group(1))
+    hi = int(m.group(2)) if m.group(2) else lo
+    if lo < 1 or hi < lo:
+        errors.add("bad-value", loc, f"lines {lines!r} is not an ascending range from 1")
+        return
+    count = git.line_count(commit, path)
+    if count is not None and hi > count:
+        errors.add("pin-lines-out-of-range", loc, f"lines {lines} exceed the {count} lines of {commit}:{path}")
 
 
 def check_date(errors, loc, key, value):
@@ -223,7 +262,7 @@ def check_source(errors, git, loc, src):
             errors.add("offrepo-malformed", loc, "sha256 must be 64 lowercase hex or null")
         if src["custody"] != "off_repo":
             errors.add("offrepo-malformed", loc, "custody must be 'off_repo'")
-        if src["status"] not in OFFREPO_STATUSES:
+        if not has(OFFREPO_STATUSES, src["status"]):
             errors.add("offrepo-malformed", loc, f"status {src['status']!r} not in {sorted(OFFREPO_STATUSES)}")
         elif src["status"] == "verified" and sha is None:
             errors.add("offrepo-malformed", loc, "status verified requires a sha256")
@@ -245,6 +284,10 @@ def check_source(errors, git, loc, src):
         errors.add("pin-unresolved", loc, f"git rev-parse {commit}:{path} does not resolve")
     elif actual != blob:
         errors.add("pin-blob-mismatch", loc, f"{commit}:{path} is blob {actual}, register says {blob}")
+    elif git.object_type(commit, path) != "blob":
+        errors.add("pin-not-blob", loc, f"{commit}:{path} is a {git.object_type(commit, path)}, not a blob")
+    elif "lines" in src:
+        check_lines(errors, git, loc, src["lines"], commit, path)
 
 
 def check_sources(errors, git, loc, sources, nonempty=False):
@@ -271,7 +314,8 @@ def validate_register(reg, git):
                     e.add("bad-value", loc, f"id {q['id']!r} is not Q<number>")
                 elif q["id"] in qids:
                     e.add("duplicate-id", loc, f"question id {q['id']}")
-                qids.add(q["id"])
+                else:
+                    qids.add(q["id"])
                 for k in ("text", "area"):
                     if not is_text(q[k]):
                         e.add("bad-value", loc, f"{k} must be non-empty text")
@@ -299,7 +343,7 @@ def validate_register(reg, git):
             e.add("bad-value", loc, "questions must be a list")
         else:
             for q in study["questions"]:
-                if q not in qids:
+                if not has(qids, q):
                     e.add("unknown-question-reference", loc, f"question {q!r} is not in questions.json")
         if not isinstance(study["lifecycle"], list) or not study["lifecycle"]:
             e.add("bad-value", loc, "lifecycle must be a non-empty list")
@@ -356,25 +400,30 @@ def validate_register(reg, git):
             did = d["decision_id"]
             if not (isinstance(did, str) and KEBAB.match(did.replace(".", "-"))):
                 e.add("bad-value", loc, f"decision_id {did!r} is not kebab-case with optional dots")
-            if did in dids:
+            elif did in dids:
                 e.add("duplicate-id", loc, f"decision id {did}")
-            dids.add(did)
-            drev[did] = d["revision"]
+            else:
+                dids.add(did)
+                drev[did] = d["revision"]
             for k in ("document", "anchor", "owner"):
                 if not is_text(d[k]):
                     e.add("bad-value", loc, f"{k} must be non-empty text")
             m = REVISION.match(d["revision"]) if isinstance(d["revision"], str) else None
             if not m:
-                e.add("bad-value", loc, f"revision {d['revision']!r} is not git:<commit>")
+                e.add("bad-value", loc, f"revision {d['revision']!r} must be a string of the form git:<commit>")
             elif not git.commit_exists(m.group(1)):
                 e.add("pin-unresolved", loc, f"revision commit {m.group(1)} does not resolve")
             elif is_text(d["document"]) and git.blob(m.group(1), d["document"]) is None:
                 e.add("pin-unresolved", loc, f"{m.group(1)}:{d['document']} does not resolve")
+            elif "lines" in d and is_text(d["document"]):
+                check_lines(e, git, loc + ".lines", d["lines"], m.group(1), d["document"])
+            elif "lines" in d:
+                e.add("bad-value", loc, "lines needs a document")
             if not isinstance(d["findings"], list) or not d["findings"]:
                 e.add("bad-value", loc, "findings must be a non-empty list")
             else:
                 for fid in d["findings"]:
-                    if fid not in fids:
+                    if not has(fids, fid):
                         e.add("unknown-finding-reference", loc, f"finding {fid!r} is not in any study")
 
     # events
@@ -384,14 +433,15 @@ def validate_register(reg, git):
             continue
         if not (isinstance(ev["event_id"], str) and KEBAB.match(ev["event_id"])):
             e.add("bad-value", loc, f"event_id {ev['event_id']!r} is not kebab-case")
-        if ev["event_id"] in eids:
+        elif ev["event_id"] in eids:
             e.add("duplicate-id", loc, f"event id {ev['event_id']}")
-        eids.add(ev["event_id"])
+        else:
+            eids.add(ev["event_id"])
         check_enum(e, loc, "kind", ev["kind"], EVENT_KINDS)
         check_date(e, loc, "date", ev["date"])
-        if ev["subject_finding"] not in fids:
+        if not has(fids, ev["subject_finding"]):
             e.add("unknown-finding-reference", loc, f"subject_finding {ev['subject_finding']!r} is not in any study")
-        if ev["by_finding"] is not None and ev["by_finding"] not in fids:
+        if ev["by_finding"] is not None and not has(fids, ev["by_finding"]):
             e.add("unknown-finding-reference", loc, f"by_finding {ev['by_finding']!r} is not in any study")
         if not is_text(ev["basis"]):
             e.add("bad-value", loc, "basis must be non-empty text")
@@ -401,9 +451,9 @@ def validate_register(reg, git):
     for loc, j in reg.judgments:
         if not check_keys(e, loc, j, JUDGMENT_KEYS):
             continue
-        if j["finding"] not in fids:
+        if not has(fids, j["finding"]):
             e.add("unknown-finding-reference", loc, f"finding {j['finding']!r} is not in any study")
-        if j["axis"] not in AXES:
+        if not has(AXES, j["axis"]):
             e.add("bad-value", loc, f"axis {j['axis']!r} not in {sorted(AXES)}")
         else:
             check_enum(e, loc, "value", j["value"], AXES[j["axis"]])
@@ -415,9 +465,12 @@ def validate_register(reg, git):
     # applicability
     aids = set()
     for loc, a in reg.applicability:
-        if isinstance(a, dict) and "decision_revision" not in a:
-            e.add("missing-decision-revision", loc, "applicability is per (finding, decision@revision)")
-            a = {**a, "decision_revision": None}
+        rev_present = True
+        if isinstance(a, dict) and a.get("decision_revision") is None:
+            e.add("missing-decision-revision", loc, "applicability is per (finding, decision@revision); "
+                  "decision_revision is absent or null")
+            a = {**a, "decision_revision": ""}
+            rev_present = False
         auth = a.get("authorization") if isinstance(a, dict) else None
         if isinstance(a, dict) and (not isinstance(auth, dict) or "status" not in auth):
             e.add("missing-authorization-status", loc, "authorization.status is required")
@@ -426,14 +479,18 @@ def validate_register(reg, git):
             continue
         if not (isinstance(a["applicability_id"], str) and KEBAB.match(a["applicability_id"])):
             e.add("bad-value", loc, f"applicability_id {a['applicability_id']!r} is not kebab-case")
-        if a["applicability_id"] in aids:
+        elif a["applicability_id"] in aids:
             e.add("duplicate-id", loc, f"applicability id {a['applicability_id']}")
-        aids.add(a["applicability_id"])
-        if a["finding"] not in fids:
+        else:
+            aids.add(a["applicability_id"])
+        if not has(fids, a["finding"]):
             e.add("unknown-finding-reference", loc, f"finding {a['finding']!r} is not in any study")
-        if a["decision_id"] not in dids:
+        rev_valid = isinstance(a["decision_revision"], str) and bool(REVISION.match(a["decision_revision"]))
+        if rev_present and not rev_valid:
+            e.add("bad-value", loc, f"decision_revision {a['decision_revision']!r} must be a string of the form git:<commit>")
+        if not has(dids, a["decision_id"]):
             e.add("unknown-decision-reference", loc, f"decision {a['decision_id']!r} is not in decisions.json")
-        elif a["decision_revision"] is not None and a["decision_revision"] != drev[a["decision_id"]]:
+        elif rev_valid and a["decision_revision"] != drev[a["decision_id"]]:
             e.add("decision-revision-mismatch", loc,
                   f"decision_revision {a['decision_revision']!r} differs from decisions.json {drev[a['decision_id']]!r}")
         check_enum(e, loc, "relation", a["relation"], RELATIONS)
@@ -453,7 +510,7 @@ def validate_register(reg, git):
     # materialized
     for loc, m in reg.materialized:
         if check_keys(e, loc, m, MATERIALIZED_KEYS - {"label"}, {"label"}):
-            if m["finding"] not in fids:
+            if not has(fids, m["finding"]):
                 e.add("unknown-finding-reference", loc, f"finding {m['finding']!r} is not in any study")
     return fids
 
@@ -603,7 +660,22 @@ def derive(reg):
     return findings, events, decisions, appl, out
 
 
+def inside(path, directory):
+    """True when path is the directory or lies under it (symlinks resolved)."""
+    path, directory = os.path.realpath(path), os.path.realpath(directory)
+    return os.path.commonpath([path, directory]) == directory
+
+
+def refuse_out_in_register(cmd, out, register):
+    if inside(out, register):
+        print(f"{cmd}: refused, --out {out} is inside the register directory {register}")
+        return True
+    return False
+
+
 def cmd_build(args):
+    if refuse_out_in_register("build", args.out, args.register):
+        return 2
     reg, errors, _ = load_valid(args.register, args.repo)
     if errors:
         for name, loc, msg in errors.items:
@@ -642,27 +714,29 @@ def render_md(doc):
          "Standing and currency are assessments, not decisions; applicability is per (finding, decision@revision) "
          "and is advisory until its owner authorizes it.", "",
          "## Findings", ""]
-    for alias, ent in doc["k_index"].items():
-        for fid in ent["findings"]:
-            r = doc["findings"][fid]
-            j = r["judgments"]
-            L += [f"### {alias}: `{fid}`", "",
-                  f"- Study: {r['study_title']} (lifecycle: {r['lifecycle']['latest']})",
-                  f"- Claim: {r['claim']}",
-                  f"- Basis: {r['basis']}; n = {r['n'] if r['n'] is not None else 'not established'}",
-                  f"- Claim kind: {j['claim_kind']['value']}; evidence strength: {j['evidence_strength']['value']}",
-                  f"- Standing (judged): {j['standing']['value']}; standing from events: {r['standing_from_events']}"
-                  + ("; status discrepancy recorded" if r["status_discrepancy"] else ""),
-                  f"- Currency: {j['currency']['value']}",
-                  f"- Events: {', '.join(r['events']) or 'none'}"]
-            if r["applicability"]:
-                L.append("- Applicability:")
-                for a in r["applicability"]:
-                    L.append(f"  - {a['relation']} | {a['document']} ({a['anchor']}) at {a['decision_revision']} | "
-                             f"authorization: {a['authorization']} | {a['applicability_id']}")
-            else:
-                L.append("- Applicability: none recorded")
-            L.append("")
+    entries = [(alias, fid) for alias, ent in doc["k_index"].items() for fid in ent["findings"]]
+    aliased = {fid for _, fid in entries}
+    entries += [("no alias", fid) for fid in sorted(doc["findings"]) if fid not in aliased]
+    for alias, fid in entries:
+        r = doc["findings"][fid]
+        j = r["judgments"]
+        L += [f"### {alias}: `{fid}`", "",
+              f"- Study: {r['study_title']} (lifecycle: {r['lifecycle']['latest']})",
+              f"- Claim: {r['claim']}",
+              f"- Basis: {r['basis']}; n = {r['n'] if r['n'] is not None else 'not established'}",
+              f"- Claim kind: {j['claim_kind']['value']}; evidence strength: {j['evidence_strength']['value']}",
+              f"- Standing (judged): {j['standing']['value']}; standing from events: {r['standing_from_events']}"
+              + ("; status discrepancy recorded" if r["status_discrepancy"] else ""),
+              f"- Currency: {j['currency']['value']}",
+              f"- Events: {', '.join(r['events']) or 'none'}"]
+        if r["applicability"]:
+            L.append("- Applicability:")
+            for a in r["applicability"]:
+                L.append(f"  - {a['relation']} | {a['document']} ({a['anchor']}) at {a['decision_revision']} | "
+                         f"authorization: {a['authorization']} | {a['applicability_id']}")
+        else:
+            L.append("- Applicability: none recorded")
+        L.append("")
     L += ["## Questions", ""]
     for qid, q in doc["questions"].items():
         L.append(f"- {qid} ({q['area']}): {q['text']} Findings: {', '.join(q['findings']) or 'none linked'}")
@@ -696,6 +770,8 @@ def cmd_nominate(args):
     claims = (args.claims_host, args.startup, args.startup_sha256)
     if any(claims) and not all(claims):
         print("nominate: --claims-host, --startup and --startup-sha256 go together")
+        return 2
+    if refuse_out_in_register("nominate", args.out, args.register):
         return 2
     reg, errors, _ = load_valid(args.register, args.repo)
     if errors:

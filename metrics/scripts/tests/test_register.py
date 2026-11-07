@@ -214,6 +214,95 @@ class ValidateTests(Fixture):
         names, _ = self.check(lambda d: d["applicability"][0].pop("decision_revision"))
         self.assertEqual(names, ["missing-decision-revision"])
 
+    def test_null_or_non_string_decision_revision_fails_in_applicability(self):
+        names, errors = self.check(lambda d: d["applicability"][0].update(decision_revision=None))
+        self.assertEqual(names, ["missing-decision-revision"])
+        self.assertIn("applicability.jsonl:1", errors.items[0][1])
+        for bad in (7, ["git:" + self.c2], {"r": 1}, True):
+            with self.subTest(bad=bad):
+                names, errors = self.check(lambda d: d["applicability"][0].update(decision_revision=bad))
+                self.assertEqual(names, ["bad-value"])
+                self.assertIn("must be a string of the form git:<commit>", errors.items[0][2])
+        names, _ = self.check(lambda d: d["applicability"][0].update(decision_revision=self.c2))
+        self.assertEqual(names, ["bad-value"])  # no git: prefix
+
+    def test_null_or_non_string_revision_fails_in_decisions(self):
+        for bad in (None, 7, ["git:" + self.c2], {"r": 1}):
+            with self.subTest(bad=bad):
+                names, errors = self.check(lambda d: d["decisions"][1].update(revision=bad))
+                self.assertIn("bad-value", names)
+                self.assertTrue(any(loc == "decisions.json[1]" for _, loc, _ in errors.items))
+
+    def test_wrongly_typed_ids_references_and_enums_give_named_errors(self):
+        weird = (["x"], {"k": "v"}, 7, None)
+        cases = [
+            ("question id", lambda d, v: d["questions"][0].update(id=v), {"bad-value", "unknown-question-reference"}),
+            ("study kind", lambda d, v: d["studies"][0].update(kind=v), {"bad-value"}),
+            ("study question ref", lambda d, v: d["studies"][0]["questions"].append(v), {"unknown-question-reference"}),
+            ("finding basis", lambda d, v: d["studies"][0]["findings"][0].update(basis=v), {"bad-value"}),
+            ("decision id", lambda d, v: d["decisions"][0].update(decision_id=v), {"bad-value"}),
+            ("decision finding ref", lambda d, v: d["decisions"][0]["findings"].append(v),
+             {"unknown-finding-reference"}),
+            ("event id", lambda d, v: d["events"][0].update(event_id=v), {"bad-value"}),
+            ("event kind", lambda d, v: d["events"][0].update(kind=v), {"bad-value"}),
+            ("event subject", lambda d, v: d["events"][0].update(subject_finding=v), {"unknown-finding-reference"}),
+            ("event by_finding", lambda d, v: d["events"][0].update(by_finding=v), {"unknown-finding-reference"}),
+            ("judgment finding", lambda d, v: d["judgments"][0].update(finding=v), {"unknown-finding-reference"}),
+            ("judgment axis", lambda d, v: d["judgments"][0].update(axis=v), {"bad-value"}),
+            ("judgment value", lambda d, v: d["judgments"][0].update(value=v), {"bad-value"}),
+            ("applicability id", lambda d, v: d["applicability"][0].update(applicability_id=v), {"bad-value"}),
+            ("applicability finding", lambda d, v: d["applicability"][0].update(finding=v),
+             {"unknown-finding-reference"}),
+            ("applicability decision", lambda d, v: d["applicability"][0].update(decision_id=v),
+             {"unknown-decision-reference"}),
+            ("applicability relation", lambda d, v: d["applicability"][0].update(relation=v), {"bad-value"}),
+            ("authorization status", lambda d, v: d["applicability"][0]["authorization"].update(status=v),
+             {"bad-value"}),
+            ("offrepo status", lambda d, v: d["studies"][0]["sources"].append(
+                {"location": "x", "sha256": None, "custody": "off_repo", "status": v}), {"offrepo-malformed"}),
+            ("materialized finding", lambda d, v: d["materialized"].append(
+                {"finding": v, "claim_id": "c", "revision_id": "r", "revision_sha256": "s"}),
+             {"unknown-finding-reference"}),
+        ]
+        for site, mutate, expected in cases:
+            for v in weird:
+                with self.subTest(site=site, value=v):
+                    names, errors = self.check(lambda d: mutate(d, v))
+                    if site == "event by_finding" and v is None:
+                        self.assertEqual(names, [])  # by_finding may be null
+                        continue
+                    self.assertTrue(names, "no error reported")
+                    self.assertTrue(set(names) <= expected, (site, v, errors.items))
+                    for _, loc, _ in errors.items:
+                        self.assertTrue(loc)
+
+    def test_wrongly_typed_value_is_not_a_traceback_on_the_command_line(self):
+        root = self.make(lambda d: d["events"][0].update(subject_finding=["alpha-study#original"]))
+        p = self.cli("validate", "--register", root, "--repo", self.repo)
+        self.assertEqual(p.returncode, 1)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertIn("ERROR unknown-finding-reference events.jsonl:1", p.stdout)
+
+    def test_pin_lines_are_checked_for_format_and_range(self):
+        names, errors = self.check(lambda d: d["studies"][0]["findings"][0]["sources"][0].update(lines="1-3"))
+        self.assertEqual(names, ["pin-lines-out-of-range"])  # study.md has 2 lines
+        self.assertIn("alpha-study.json", errors.items[0][1])
+        names, _ = self.check(lambda d: d["studies"][0]["findings"][0]["sources"][0].update(lines="2-2"))
+        self.assertEqual(names, [])
+        for bad in ("0", "3-2", "x", "1-", 5, None, ["1"]):
+            with self.subTest(bad=bad):
+                names, _ = self.check(lambda d: d["studies"][0]["findings"][0]["sources"][0].update(lines=bad))
+                self.assertEqual(names, ["bad-value"])
+        names, _ = self.check(lambda d: d["decisions"][0].update(lines="1-9"))
+        self.assertEqual(names, ["pin-lines-out-of-range"])  # model.md at the first commit has 2 lines
+        names, _ = self.check(lambda d: d["decisions"][0].update(lines={"a": 1}))
+        self.assertEqual(names, ["bad-value"])
+
+    def test_pin_to_a_directory_fails(self):
+        tree = git(self.repo, "rev-parse", f"{self.c2}:docs")
+        names, _ = self.check(lambda d: d["studies"][0]["findings"][0]["sources"][0].update(path="docs", blob=tree))
+        self.assertEqual(names, ["pin-not-blob"])
+
     def test_decision_revision_must_match_decisions_file(self):
         names, _ = self.check(lambda d: d["applicability"][0].update(decision_revision=f"git:{self.c1}"))
         self.assertEqual(names, ["decision-revision-mismatch"])
@@ -317,6 +406,28 @@ class OutputTests(Fixture):
         md = slurp(os.path.join(a, "current-knowledge.md"), "r")
         self.assertIn("### K1:", md)
         self.assertIn("standing from events: corrected", md)
+
+    def test_markdown_view_keeps_findings_of_a_study_without_aliases(self):
+        root = self.make(lambda d: d["studies"][0].update(aliases=[]))
+        out = os.path.join(tempfile.mkdtemp(prefix="out-", dir=self.base), "view")
+        self.cli("build", "--register", root, "--repo", self.repo, "--out", out, check=True)
+        md = slurp(os.path.join(out, "current-knowledge.md"), "r")
+        doc = json.loads(slurp(os.path.join(out, "current-knowledge.json"), "r"))
+        for fid in doc["findings"]:
+            self.assertIn(f"`{fid}`", md)
+        self.assertIn("### no alias: `alpha-study#original`", md)
+
+    def test_build_and_nominate_refuse_an_out_path_inside_the_register(self):
+        root = self.make()
+        before = snapshot(root)
+        for cmd, out in (("build", os.path.join(root, "view")), ("build", root),
+                         ("nominate", os.path.join(root, "events.jsonl")),
+                         ("nominate", os.path.join(root, "studies", "n.json"))):
+            with self.subTest(cmd=cmd, out=out):
+                p = self.cli(cmd, "--register", root, "--repo", self.repo, "--out", out)
+                self.assertEqual(p.returncode, 2)
+                self.assertIn("inside the register directory", p.stdout)
+                self.assertEqual(snapshot(root), before)
 
     def test_build_refuses_an_invalid_register(self):
         root = self.make(lambda d: d["events"][0].update(subject_finding="x#y"))
