@@ -93,6 +93,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -1094,7 +1095,14 @@ Exit code and state:
                     count) or enrollments are at the cap (reason cap_reached); do not screen, tell the owner
   12  unknown       the run directory, round.json, an enrollment, review-first.json or pause history is
                     missing, unreadable or fails its integrity check, or an episode needs manifest recovery
-                    that enroll would perform; admission never repairs, so do not screen, tell the owner
+                    that enroll would perform; admission never repairs, so do not screen, tell the owner.
+                    Also unknown: any directory it must list or entry it must examine that cannot be
+                    (enrollments/, an episode directory, pauses/, PAUSED: not a directory, a dangling
+                    symlink, a permission or I/O error; reasons enrollments_unlistable, episode_unlistable,
+                    pause_history_unlistable, pause_marker_unreadable), and a pause-history file whose
+                    covered_triggers is not an object, p1_episodes not a list of strings or
+                    terra_repair_rounds not an integer (a boolean or float is not; reason
+                    pause_history_malformed). A genuinely absent enrollments/ or pauses/ means none.
 Any other exit code, including a usage error (2) or a crash (1), is not an admission: do not screen.
 The Terra in-flight limit is reported as a fact and is not a stop.
 """
@@ -1140,20 +1148,125 @@ def read_round_config(run_dir):
     return {f: config[f] for f in fields}
 
 
+def admission_stat(path, code, label, dangling_absent):
+    """os.stat that tells absent from unexaminable: None when absent, AdmissionUnknown on any other error.
+
+    glob and the os.path predicates (exists, isfile, isdir) turn every OSError into "not there". The gate
+    cannot: a path it could not examine may hold the stop it is looking for. A dangling symlink is absent
+    where dangling_absent is set (an entry of a listing, as the old predicates saw it), else unknown.
+    """
+    try:
+        return os.stat(path)
+    except FileNotFoundError as e:
+        if os.path.islink(path) and not dangling_absent:
+            raise AdmissionUnknown(code, f"{label} is a dangling symlink") from e
+        return None
+    except OSError as e:
+        raise AdmissionUnknown(code, f"{label} cannot be examined: {e}") from e
+
+
+def admission_listdir(path, code, label, missing_ok):
+    """Sorted names in a directory. An absent directory is [] only when missing_ok; anything else that is
+    not a listable directory (a file, a dangling symlink, a permission or I/O error) is unknown."""
+    st = admission_stat(path, code, label, dangling_absent=False)
+    if st is None:
+        if missing_ok:
+            return []
+        raise AdmissionUnknown(code, f"{label} is missing")
+    if not stat.S_ISDIR(st.st_mode):
+        raise AdmissionUnknown(code, f"{label} exists but is not a directory")
+    try:
+        return sorted(os.listdir(path))
+    except OSError as e:
+        raise AdmissionUnknown(code, f"{label} cannot be listed: {e}") from e
+
+
+def admission_enrollment_dirs(run_dir):
+    """enrollment_dirs() for the gate: the same set where it can be listed, unknown where it cannot.
+
+    A genuinely absent enrollments/ is no enrollments, as for enroll. glob("*") skips hidden names, as here.
+    """
+    base = os.path.join(run_dir, "enrollments")
+    out = []
+    for name in admission_listdir(base, "enrollments_unlistable", "enrollments/", missing_ok=True):
+        if name.startswith("."):
+            continue
+        path = os.path.join(base, name)
+        st = admission_stat(path, "enrollments_unlistable", f"enrollments/{name}", dangling_absent=True)
+        if st is not None and stat.S_ISDIR(st.st_mode):
+            out.append(path)
+    return out
+
+
+def admission_episode_listing(d):
+    """(record file names, whether SHA256SUMS exists) for one episode directory, as record_files() and
+    os.path.exists() see them, but with any listing or stat error unknown instead of an absent file."""
+    name = os.path.basename(d)
+    code = "episode_unlistable"
+    files = []
+    for n in admission_listdir(d, code, f"{name}/", missing_ok=False):
+        if n == SUMS or n.startswith("."):
+            continue
+        st = admission_stat(os.path.join(d, n), code, f"{name}/{n}", dangling_absent=True)
+        if st is not None and stat.S_ISREG(st.st_mode):
+            files.append(n)
+    sums = admission_stat(os.path.join(d, SUMS), code, f"{name}/{SUMS}", dangling_absent=True)
+    return files, sums is not None
+
+
+def validate_pause_history(run_dir):
+    """Check every pause-history file before pause_coverage consumes it. Read-only.
+
+    pause_coverage applies set.update and max to whatever the files hold, so a parseable but malformed
+    document can cover a trigger it never covered (a dict of falses, a boolean, a float). Valid is: an object;
+    covered_triggers, when present, an object; p1_episodes, when present, a list of strings;
+    terra_repair_rounds, when present, an integer and not a boolean. Absent keys keep pause_coverage's defaults.
+    """
+    base = os.path.join(run_dir, "pauses")
+    for name in admission_listdir(base, "pause_history_unlistable", "pauses/", missing_ok=True):
+        if name.startswith(".") or not name.endswith(".json"):
+            continue  # pause_coverage's glob("*.json") does not see these either.
+        label = f"pauses/{name}"
+        try:
+            document = read_json(os.path.join(base, name))
+        except (OSError, ValueError, UnicodeError) as e:
+            raise AdmissionUnknown("trigger_inputs_unreadable", f"{label} is unreadable or malformed JSON: {e}") from e
+
+        def malformed(why):
+            return AdmissionUnknown("pause_history_malformed", f"{label}: {why}")
+
+        if not isinstance(document, dict):
+            raise malformed("the document is not a JSON object")
+        if "covered_triggers" not in document:
+            continue
+        covered = document["covered_triggers"]
+        if not isinstance(covered, dict):
+            raise malformed("covered_triggers is not an object")
+        episodes = covered.get("p1_episodes", [])
+        if not isinstance(episodes, list) or any(not isinstance(item, str) for item in episodes):
+            raise malformed("covered_triggers.p1_episodes is not a list of strings")
+        rounds = covered.get("terra_repair_rounds", -1)
+        if type(rounds) is not int:
+            raise malformed("covered_triggers.terra_repair_rounds is not an integer")
+
+
 def read_episodes_unrepaired(run_dir):
     """List enrollments as enrollments() does, but refuse where recover_episode would repair. Read-only."""
     episodes = []
-    for d in enrollment_dirs(run_dir):
+    for d in admission_enrollment_dirs(run_dir):
         name = os.path.basename(d)
+        # Strict listing: an unexaminable record or manifest is unknown, not an absent file (a directory that
+        # lists but cannot be searched would otherwise look empty and be skipped).
+        files, has_manifest = admission_episode_listing(d)
         # Read the manifest bytes as repair_manifest_tail does (same existence test), without repairing.
         manifest = b""
-        if os.path.exists(os.path.join(d, SUMS)):
+        if has_manifest:
             try:
                 with open(os.path.join(d, SUMS), "rb") as fh:
                     manifest = fh.read()
             except OSError as e:
                 raise AdmissionUnknown("episode_manifest_unreadable", f"{name}: {SUMS} cannot be read: {e}") from e
-        if not record_files(d):
+        if not files:
             if manifest:
                 # recover_episode raises on a complete entry for a file that is gone, and archives a torn tail.
                 raise AdmissionUnknown("episode_manifest_without_records",
@@ -1171,7 +1284,6 @@ def read_episodes_unrepaired(run_dir):
             # str.splitlines(), which also breaks on \r, \f and U+2028; repair_manifest_tail splits bytes
             # on \n, \r and \r\n only and raises on any line that is not "<hash>  <name>" for an existing,
             # matching record. A manifest the first accepts and the second rejects must not be admitted.
-            files = record_files(d)
             for line in manifest.splitlines(keepends=True):
                 match = re.fullmatch(rb"([0-9a-f]{64})  ([^\r\n]+)\n?", line)
                 try:
@@ -1182,7 +1294,7 @@ def read_episodes_unrepaired(run_dir):
                     raise AdmissionUnknown("episode_manifest_needs_repair",
                                            f"{name}: {SUMS} has a line that repair_manifest_tail rejects")
         path = os.path.join(d, "enrollment.json")
-        if not os.path.isfile(path):
+        if "enrollment.json" not in files:
             raise AdmissionUnknown("episode_without_enrollment", f"{name}: records exist but enrollment.json does not")
         try:
             record = read_episode_record(path)
@@ -1204,7 +1316,14 @@ def admission_decision(run_dir):
         if not os.path.isdir(run_dir):
             return outcome("unknown", "run_dir_missing", "run directory is missing or not a directory")
         marker = os.path.join(run_dir, "PAUSED")
-        if os.path.lexists(marker):
+        try:
+            os.lstat(marker)
+            marker_present = True
+        except FileNotFoundError:
+            marker_present = False
+        except OSError as e:  # os.path.lexists would call this absent. It may be the marker.
+            raise AdmissionUnknown("pause_marker_unreadable", f"PAUSED cannot be examined: {e}") from e
+        if marker_present:
             facts["pause_marker"] = {"evaluated": True, **pause_marker_fact(marker)}
             return outcome("paused", "pause_marker_present", "a PAUSED entry exists; only the owner resumes the round")
         facts["pause_marker"] = {"evaluated": True, "present": False}
@@ -1215,6 +1334,7 @@ def admission_decision(run_dir):
         facts["enrollments"] = {"evaluated": True, "count": len(episodes), "cap": config["cap"]}
         facts["terra_in_flight"] = {"evaluated": True, "open_terra": open_terra, "limit": config["terra_in_flight"],
                                     "limit_reached": open_terra >= config["terra_in_flight"], "gates_admission": False}
+        validate_pause_history(run_dir)  # Before pause_coverage consumes it: malformed coverage must not cover.
         try:
             trigger = episode_trigger_facts(episodes)
             covered_p1, covered_repairs = pause_coverage(run_dir)
