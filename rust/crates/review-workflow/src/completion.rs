@@ -237,6 +237,24 @@ impl InstalledSelection {
             ));
         }
         check_socket_parent(&self.value.socket)?;
+        let parent = self.value.socket.parent().expect("checked socket parent");
+        let qualified = workflow
+            .startup
+            .qualified
+            .as_ref()
+            .expect("checked installed startup");
+        let mcp_config = qualified.boundary.mcp_config_path();
+        let boundary_root = mcp_config
+            .parent()
+            .and_then(Path::parent)
+            .ok_or_else(|| refuse("completion_installation", "review boundary root absent"))?;
+        for root in [
+            d.repository.as_path(),
+            boundary_root,
+            self.value.workspace_root.as_path(),
+        ] {
+            check_socket_mount(parent, root)?;
+        }
         Ok(())
     }
 }
@@ -300,7 +318,7 @@ fn check_socket_parent(socket: &Path) -> Result<()> {
             "socket parent is not canonical",
         ));
     }
-    // Both managed validator and reviewer custody expose host /usr read-only.
+    // Reviewer and validator custody expose host system trees read-only.
     // RO mounts still permit Unix socket connections by the same runtime UID.
     // A private directory protects the socket name as well as its contents.
     // Runtime UID is checked independently by installed workspace custody.
@@ -323,8 +341,22 @@ fn check_socket_parent(socket: &Path) -> Result<()> {
     Ok(())
 }
 
+// Union of host directory grants in reviewer_command/base_command and managed
+// validator custody. Other mounts are fresh guest filesystems, exact program/
+// policy files or owner-private relay state. Candidate trees reject sockets.
+const UNTRUSTED_SYSTEM_MOUNTS: &[&str] = &["/usr", "/lib", "/lib64", "/etc/ssl"];
+
 fn check_socket_mount_exposure(parent: &Path) -> Result<()> {
-    if parent.starts_with("/usr") {
+    for mount in UNTRUSTED_SYSTEM_MOUNTS {
+        check_socket_mount(parent, Path::new(mount))?;
+    }
+    Ok(())
+}
+
+fn check_socket_mount(parent: &Path, mount: &Path) -> Result<()> {
+    // Check both the independent layout and its canonical host alias. A
+    // canonical socket directory may sit under a symlinked mount source.
+    if parent.starts_with(mount) || parent.starts_with(fs::canonicalize(mount)?) {
         return Err(refuse(
             "completion_installation",
             "operator socket is exposed by untrusted system mounts",
@@ -338,20 +370,45 @@ mod socket_mount_tests {
     use super::*;
 
     #[test]
-    fn private_runtime_directory_under_usr_is_still_exposed() {
-        // Exercise the actual admission boundary without protected /usr writes.
-        let denied = check_socket_parent(Path::new(
-            "/usr/local/lib/work-engine/operator/completion.sock",
-        ))
-        .unwrap_err();
-        assert!(denied.to_string().contains("untrusted system mounts"));
-        // Mount policy is independent of owner/mode; no protected /usr writes.
-        assert!(
-            check_socket_mount_exposure(Path::new("/usr/local/lib/work-engine/operator")).is_err()
-        );
-        assert!(check_socket_mount_exposure(Path::new("/usr")).is_err());
-        assert!(check_socket_mount_exposure(Path::new("/var/lib/work-engine/operator")).is_ok());
-        assert!(check_socket_mount_exposure(Path::new("/usr-private/operator")).is_ok());
+    fn every_reviewer_and_validator_system_mount_is_excluded() {
+        for mount in UNTRUSTED_SYSTEM_MOUNTS {
+            for parent in [
+                PathBuf::from(mount),
+                Path::new(mount).join("work-engine/operator"),
+            ] {
+                let denied = check_socket_parent(&parent.join("completion.sock")).unwrap_err();
+                assert!(
+                    denied.to_string().contains("untrusted system mounts"),
+                    "{parent:?}: {denied}"
+                );
+            }
+        }
+        for parent in [
+            "/usr-private/operator",
+            "/lib-private/operator",
+            "/lib64-private/operator",
+            "/etc/ssl-private/operator",
+            "/var/lib/work-engine/operator",
+        ] {
+            assert!(
+                check_socket_mount_exposure(Path::new(parent)).is_ok(),
+                "{parent}"
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_mount_alias_and_independent_layout_are_both_excluded() {
+        let temp = tempfile::tempdir().unwrap();
+        let independent = temp.path().join("independent-lib");
+        fs::create_dir(&independent).unwrap();
+        let alias = temp.path().join("lib");
+        std::os::unix::fs::symlink(&independent, &alias).unwrap();
+        assert!(check_socket_mount(&independent.join("operator"), &alias).is_err());
+        assert!(check_socket_mount(&alias.join("operator"), &alias).is_err());
+        assert!(check_socket_mount(&temp.path().join("lib-private/operator"), &alias).is_ok());
+        // A non-merged /lib remains independently exposed.
+        assert!(check_socket_mount(&independent.join("operator"), &independent).is_err());
     }
 }
 
