@@ -1,5 +1,14 @@
 # Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)
 
+**Current status (2026-11-07), superseding the Status paragraph below: round 2
+is paused.** The marker `~/.local/state/work-engine/task-profile-pilot-2/PAUSED`
+has existed since 2026-11-01T08:41:08Z, with reason "Terra trigger: P1 episodes
+[]; repair rounds 10 (budget 10)". Only the owner resumes it. **Do not screen or
+enroll any dispatch for round 2 while it is paused.** The Status paragraph below
+is history: it records the state on 2026-10-28 and is not current. A round's
+state lives in its run directory, not in this plan. This notice is a temporary
+stopgap, not the admission authority.
+
 Status (2026-10-28): **round 2 is active: a builder comparison** (section
 "Round 2"). Run directory: `~/.local/state/work-engine/task-profile-pilot-2`.
 Limits: a cap of 20 enrolled episodes, counted by `enroll` (not by
