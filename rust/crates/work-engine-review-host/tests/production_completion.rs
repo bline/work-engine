@@ -128,27 +128,27 @@ fn actual_reviewer_constructor_denies_operator_socket_to_descendants() {
     )
     .unwrap();
     let boundary = CandidateBoundary::prepare(
-        profile,
+        profile.clone(),
         &candidate,
         temp.path().join("boundary"),
         "socket_canary",
     )
     .unwrap();
-    let (boundary, _) = boundary.publish_manifest().unwrap();
+    let (boundary, manifest_digest) = boundary.publish_manifest().unwrap();
     let probe = temp.path().join("probe.py");
     let socket_json = serde_json::to_string(&socket).unwrap();
     let script = r#"import socket, subprocess, sys, json
-path = SOCKET_PATH
-code = "import socket; s=socket.socket(socket.AF_UNIX); s.connect(" + repr(path) + ")"
-for descendant in [False, True]:
- if descendant:
-  result=subprocess.run([sys.executable,'-I','-c',code],capture_output=True)
-  assert result.returncode != 0 and b'FileNotFoundError' in result.stderr, result
- else:
-  try: socket.socket(socket.AF_UNIX).connect(path)
-  except FileNotFoundError: pass
-  else: raise AssertionError('operator socket exposed')
- print('operator-socket-denied', file=sys.stderr)
+for path in [SOCKET_PATH, '/cbm/socket/completion.sock']:
+ code = "import socket; s=socket.socket(socket.AF_UNIX); s.connect(" + repr(path) + ")"
+ for descendant in [False, True]:
+  if descendant:
+   result=subprocess.run([sys.executable,'-I','-c',code],capture_output=True)
+   assert result.returncode != 0 and b'FileNotFoundError' in result.stderr, result
+  else:
+   try: socket.socket(socket.AF_UNIX).connect(path)
+   except FileNotFoundError: pass
+   else: raise AssertionError('operator socket exposed')
+  print('operator-socket-denied', path, file=sys.stderr)
 p=subprocess.Popen(['/cbm/client'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)
 def rpc(value):
  p.stdin.write(json.dumps(value)+'\n'); p.stdin.flush()
@@ -171,12 +171,43 @@ print(json.dumps({'operator_socket_denied':True,'descendant_denied':True,'standi
         String::from_utf8_lossy(&output.stderr)
             .matches("operator-socket-denied")
             .count(),
-        2
+        4
     );
     let observed: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(observed["operator_socket_denied"], true);
     assert_eq!(observed["descendant_denied"], true);
     println!("{observed}");
+    // An alias installed after bootstrap must invalidate both a retained
+    // boundary and a freshly reopened boundary before any later launch.
+    let proxy = temp.path().join("boundary/proxy");
+    let saved_proxy = temp.path().join("boundary/saved-proxy");
+    fs::rename(&proxy, &saved_proxy).unwrap();
+    std::os::unix::fs::symlink(&operator, &proxy).unwrap();
+    assert!(boundary.verify_frozen().is_err());
+    assert!(
+        CandidateBoundary::open_frozen(
+            profile,
+            &candidate,
+            temp.path().join("boundary"),
+            &manifest_digest,
+        )
+        .is_err()
+    );
+    assert!(boundary.run_hostile_probe(&probe).is_err());
+    // Refusal occurred before the proxy listener was created through the alias.
+    assert!(!operator.join("analysis.sock").exists());
+    listener.set_nonblocking(true).unwrap();
+    assert_eq!(
+        listener.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
+    listener.set_nonblocking(false).unwrap();
+    fs::remove_file(&proxy).unwrap();
+    fs::rename(&saved_proxy, &proxy).unwrap();
+    boundary.verify_frozen().unwrap();
+    println!(
+        "proxy_alias_rejected_after_bootstrap_before_launch guest=/cbm/socket/completion.sock"
+    );
     // Listener is still reachable on the host; denial came from confinement.
     let _host = UnixStream::connect(&socket).unwrap();
     drop(listener.accept().unwrap());

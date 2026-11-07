@@ -115,3 +115,20 @@ the affected connection. The listener continues accepting peers; listener errors
 remain fatal and authority revalidation still prevents command execution. A
 failed response can follow a completed command, so its outcome remains unknown
 until inspected through the existing owners; the server never replays it.
+
+The reviewer boundary owner now rejects aliases in its private directory mount
+sources (`proxy`, `session`, `scratch`, both cache directories and both runtime
+directories). The root and each source must be canonical private directories
+owned by the runtime UID or root. Frozen-boundary reads and both sandbox command
+constructors recheck them. Completion startup revalidation reopens that boundary
+before later commands, so a proxy alias added after bootstrap is refused rather
+than mounted at `/cbm/socket`. Existing socket placement and peer checks remain.
+
+The alias regression reproduces baseline process and descendant connections to
+`/cbm/socket/completion.sock`, then verifies repaired refusal after bootstrap on
+both a retained boundary and a cold reopen. The ordinary confined fixture also
+checks the host and translated guest socket paths. These are provider-free
+fixture observations, not qualification of an installed production deployment.
+The runtime UID remains trusted on the host: these checks do not claim to fence
+an adversarial host administrator or atomic races with concurrent trusted-host
+filesystem replacement.

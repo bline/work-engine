@@ -23,6 +23,41 @@ use super::{Rp0Error, TrustedClaudeProfile, TrustedRp0Profile};
 const MAX_PROCESS_OUTPUT: usize = 1024 * 1024;
 const REVIEW_ROOT: &str = "/repo/candidate";
 
+// These directories are used as dynamic sandbox mount sources. Canonical
+// containment must be checked again after reopening and before command setup:
+// a read-only bind of an outward symlink still grants socket connectivity.
+const PRIVATE_MOUNT_DIRECTORIES: &[&str] = &[
+    "build-cache",
+    "build-runtime",
+    "review-cache",
+    "review-runtime",
+    "session",
+    "scratch",
+    "proxy",
+];
+
+fn verify_private_mount_sources(private_root: &Path) -> Result<(), Rp0Error> {
+    if !private_root.is_absolute() || fs::canonicalize(private_root)? != private_root {
+        return Err(Rp0Error::UnsafePrivateRoot);
+    }
+    for path in std::iter::once(private_root.to_owned()).chain(
+        PRIVATE_MOUNT_DIRECTORIES
+            .iter()
+            .map(|name| private_root.join(name)),
+    ) {
+        let metadata = fs::symlink_metadata(&path)?;
+        if !metadata.is_dir()
+            || metadata.file_type().is_symlink()
+            || metadata.permissions().mode() & 0o077 != 0
+            || (metadata.uid() != unsafe { libc::geteuid() } && metadata.uid() != 0)
+            || fs::canonicalize(&path)? != path
+        {
+            return Err(Rp0Error::UnsafePrivateRoot);
+        }
+    }
+    Ok(())
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CandidateIndex {
@@ -554,15 +589,7 @@ impl CandidateBoundary {
         fs::create_dir(private_root)?;
         fs::set_permissions(private_root, fs::Permissions::from_mode(0o700))?;
         let private_root = fs::canonicalize(private_root)?;
-        for name in [
-            "build-cache",
-            "build-runtime",
-            "review-cache",
-            "review-runtime",
-            "session",
-            "scratch",
-            "proxy",
-        ] {
+        for name in PRIVATE_MOUNT_DIRECTORIES {
             let path = private_root.join(name);
             fs::create_dir(&path)?;
             fs::set_permissions(&path, fs::Permissions::from_mode(0o700))?;
@@ -1035,6 +1062,7 @@ impl CandidateBoundary {
     }
 
     pub fn verify_frozen(&self) -> Result<(), Rp0Error> {
+        verify_private_mount_sources(&self.private_root)?;
         self.profile.verify()?;
         if let Some(expected) = &self.manifest_sha256
             && sha256(&fs::read(self.private_root.join("boundary-manifest.json"))?) != *expected
@@ -1173,6 +1201,7 @@ fn base_command(
     runtime: &str,
     network_denied: bool,
 ) -> Result<Command, Rp0Error> {
+    verify_private_mount_sources(private_root)?;
     profile.verify()?;
     let mut command = Command::new(profile.bwrap.path());
     command.env_clear();
@@ -1240,6 +1269,7 @@ fn reviewer_command(
     private_root: &Path,
     mount_proc: bool,
 ) -> Result<Command, Rp0Error> {
+    verify_private_mount_sources(private_root)?;
     profile.verify()?;
     let mut command = Command::new(profile.bwrap.path());
     command.env_clear();
@@ -2139,5 +2169,72 @@ mod coverage_status_tests {
         let mut unknown = batch;
         unknown["paths"][0]["status"] = json!("future_unrecognized_status");
         assert!(matches!(build(unknown), Err(Rp0Error::IncompleteStore)));
+    }
+}
+
+#[cfg(test)]
+mod private_mount_tests {
+    use super::*;
+    use crate::claude::PinnedProgram;
+
+    #[test]
+    fn every_private_directory_alias_is_rejected_by_both_constructors() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("boundary");
+        let outside = temp.path().join("operator");
+        fs::create_dir(&root).unwrap();
+        fs::create_dir(&outside).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        fs::set_permissions(&outside, fs::Permissions::from_mode(0o700)).unwrap();
+        for name in PRIVATE_MOUNT_DIRECTORIES {
+            fs::create_dir(root.join(name)).unwrap();
+            fs::set_permissions(root.join(name), fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        let program = fs::canonicalize("/usr/bin/true").unwrap();
+        let pin = PinnedProgram::load(&program, &sha256(&fs::read(&program).unwrap())).unwrap();
+        let profile = TrustedRp0Profile::load(pin.clone(), pin.clone(), pin.clone(), pin).unwrap();
+        verify_private_mount_sources(&root).unwrap();
+        for name in PRIVATE_MOUNT_DIRECTORIES {
+            let path = root.join(name);
+            fs::remove_dir(&path).unwrap();
+            std::os::unix::fs::symlink(&outside, &path).unwrap();
+            assert!(
+                matches!(
+                    verify_private_mount_sources(&root),
+                    Err(Rp0Error::UnsafePrivateRoot)
+                ),
+                "{name}"
+            );
+            assert!(
+                matches!(
+                    reviewer_command(&profile, temp.path(), &root, false),
+                    Err(Rp0Error::UnsafePrivateRoot)
+                ),
+                "reviewer {name}"
+            );
+            assert!(
+                matches!(
+                    base_command(
+                        &profile,
+                        temp.path(),
+                        &root,
+                        "review-cache",
+                        "review-runtime",
+                        true
+                    ),
+                    Err(Rp0Error::UnsafePrivateRoot)
+                ),
+                "analysis {name}"
+            );
+            fs::remove_file(&path).unwrap();
+            fs::create_dir(&path).unwrap();
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
+            verify_private_mount_sources(&root).unwrap();
+        }
+        let alias = temp.path().join("boundary-alias");
+        std::os::unix::fs::symlink(&root, &alias).unwrap();
+        assert!(verify_private_mount_sources(&alias).is_err());
+        fs::set_permissions(root.join("proxy"), fs::Permissions::from_mode(0o720)).unwrap();
+        assert!(verify_private_mount_sources(&root).is_err());
     }
 }
