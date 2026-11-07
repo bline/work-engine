@@ -407,7 +407,7 @@ class AdmissionBase(unittest.TestCase):
             return run
 
         def repair_gap_one_and_three(name):
-            run = self.terra_with_repair(name, budget=1)
+            run = self.terra_with_repair(name, budget=3)  # counted 2 of 3: active under the old gate, round 3 is named
             self.add_record_copy(run, "t", "repair-01.json", "repair-03.json")
             self.rechain(run, "t", {"repair-03.json": lambda data: data.update(round=3)})
             return run
