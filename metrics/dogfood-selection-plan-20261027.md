@@ -8,7 +8,7 @@ enroll any dispatch for round 2 while it is paused.** The Status paragraph below
 is history: it records the state on 2026-10-28 and is not current. A round's
 state lives in its run directory, not in this plan; read it with
 `task_profile_record.py admission --run-dir <run>` (exit 0 only when active).
-This notice is a stopgap, not the admission authority: `admission` is.
+This notice is a temporary stopgap, not the admission authority: `admission` is.
 
 Status (2026-10-28): **round 2 is active: a builder comparison** (section
 "Round 2"). Run directory: `~/.local/state/work-engine/task-profile-pilot-2`.
