@@ -6,7 +6,9 @@ round commands; cases that need a state the commands refuse to leave (an unmarke
 stop, an episode that needs manifest recovery) edit the temporary directory directly.
 """
 import ast
+import builtins
 import contextlib
+import errno
 import hashlib
 import io
 import json
@@ -62,6 +64,8 @@ def snapshot(path):
 
 
 class AdmissionBase(unittest.TestCase):
+    ADMISSION_TIMEOUT = 15  # A gate that hangs is a failure: no state, no exit code.
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -124,7 +128,7 @@ class AdmissionBase(unittest.TestCase):
         """Run admission as a process, assert its state and exit code, and that it changed nothing."""
         before = snapshot(run)
         proc = subprocess.run([sys.executable, "-I", SCRIPT, "admission", "--run-dir", str(run), *extra],
-                              capture_output=True, text=True, timeout=60)
+                              capture_output=True, text=True, timeout=self.ADMISSION_TIMEOUT)
         after = snapshot(run)
         self.assertEqual(before, after, "admission changed the run directory")
         self.snapshots_compared += 1
@@ -140,6 +144,60 @@ class AdmissionBase(unittest.TestCase):
         dest = self.root / name
         shutil.copytree(run, dest, symlinks=True)
         return dest
+
+
+    # --- helpers for the class-repair fixtures ---------------------------------------------------------
+    def rechain(self, run, task, edits):
+        """Rewrite an episode's JSON records in order with edits[name](data) applied, keeping every seal,
+        backward link and manifest line consistent. Only the content the edit chose is wrong afterwards."""
+        d = Path(run) / "enrollments" / task
+        order = [line.split("  ", 1)[1] for line in (d / "SHA256SUMS").read_text().splitlines()]
+        for name in order:
+            if not name.endswith(".json"):
+                continue
+            data = json.loads((d / name).read_text())
+            data.pop("content_sha256", None)
+            if name in edits:
+                edits[name](data)
+            if "prior_files" in data:
+                data["prior_files"] = {pn: rec.sha256(str(d / pn)) for pn in data["prior_files"]}
+            (d / name).write_text(json.dumps(rec.seal_episode_record(data)))
+        self.write_manifest(d, order)
+
+    def write_manifest(self, d, names):
+        Path(d, "SHA256SUMS").write_text("".join(f"{rec.sha256(str(Path(d) / n))}  {n}\n" for n in names))
+
+    def add_record_copy(self, run, task, source, new_name):
+        """A byte copy of a record under another name, listed in the manifest (hash-consistent, so only
+        its name or its content relative to its siblings is wrong)."""
+        d = Path(run) / "enrollments" / task
+        shutil.copyfile(d / source, d / new_name)
+        names = [line.split("  ", 1)[1] for line in (d / "SHA256SUMS").read_text().splitlines()]
+        self.write_manifest(d, names + [new_name])
+
+    def replace_with_fifo(self, path):
+        os.unlink(path)
+        os.mkfifo(path)
+
+    def replace_with_dangling_symlink(self, path):
+        os.unlink(path)
+        os.symlink(str(self.root / "nowhere"), str(path))
+
+    def terra_with_review(self, name, p1=0, budget=3):
+        run = self.new_run(name, budget=budget)
+        self.enroll(run, "t", byte=1)
+        self.review(run, "t", p1=p1)
+        if (run / "PAUSED").exists():
+            self.unmark(run)
+        return run
+
+    def terra_with_repair(self, name, budget=3):
+        run = self.new_run(name, budget=budget)
+        self.enroll(run, "t", byte=1)
+        self.repair(run, "t")
+        if (run / "PAUSED").exists():
+            self.unmark(run)
+        return run
 
     # --- fail-closed fixtures (shared by AdmissionFailsClosed and the case-11 no-write test) ---------------
     def chmod_for_test(self, path, mode):
@@ -261,9 +319,118 @@ class AdmissionBase(unittest.TestCase):
             self.write_pause_history(run, {"covered_triggers": {"p1_episodes": {"task-p1": 0}}}, "y.json")
             return run
 
+        # --- class repair: every input of the admission decision (see input-inventory.md) ----------------
+        missing = object()
+
+        def p1_value(value):
+            """A Terra episode whose sealed first review carries `value` as p1 (the review is the only record
+            after the enrollment, so the chain stays consistent). With p1 = 1 the stop is real."""
+            def build(name):
+                run = self.terra_with_review(name, p1=1)
+
+                def edit(data):
+                    if value is missing:
+                        data.pop("p1", None)
+                    else:
+                        data["p1"] = value
+                self.rechain(run, "t", {"review-first.json": edit})
+                return run
+            return build
+
+        def special_entry(record, how, builder=None):
+            def build(name):
+                run = (builder or self.terra_with_review)(name)
+                path = run / "enrollments" / "t" / record
+                (self.replace_with_fifo if how == "fifo" else self.replace_with_dangling_symlink)(path)
+                return run
+            return build
+
+        def special_enrollments_entry(name):
+            run = self.new_run(name)
+            (run / "enrollments").mkdir()
+            os.symlink(str(self.root / "nowhere"), str(run / "enrollments" / "ghost"))
+            return run
+
+        def fifo_pause_history(name):
+            run = self.p1_unmarked(name)
+            (run / "pauses").mkdir()
+            os.mkfifo(run / "pauses" / "x.json")
+            return run
+
+        def dangling_pause_history(name):
+            run = self.p1_unmarked(name)
+            (run / "pauses").mkdir()
+            os.symlink(str(self.root / "nowhere"), str(run / "pauses" / "x.json"))
+            return run
+
+        def fifo_round_json(name):
+            run = self.new_run(name)
+            self.replace_with_fifo(run / "round.json")
+            return run
+
+        def fifo_manifest(name):
+            run = self.with_enrollment(name)
+            self.replace_with_fifo(run / "enrollments" / "t" / "SHA256SUMS")
+            return run
+
+        def round_text(text):
+            def build(name):
+                run = self.new_run(name)
+                (run / "round.json").write_text(text)
+                return run
+            return build
+
+        def repair_edit(edit):
+            def build(name):
+                run = self.terra_with_repair(name, budget=1)
+                self.rechain(run, "t", {"repair-01.json": edit})
+                return run
+            return build
+
+        def repair_extra_name(new_name):
+            def build(name):
+                run = self.terra_with_repair(name, budget=1)
+                self.add_record_copy(run, "t", "repair-01.json", new_name)
+                return run
+            return build
+
+        def enrollment_task_id(name):
+            run = self.terra_with_review(name, p1=1)
+            self.rechain(run, "t", {"enrollment.json": lambda data: data.update(task_id="other")})
+            return run
+
+        def review_task_id(name):
+            run = self.terra_with_review(name, p1=1)
+            self.rechain(run, "t", {"review-first.json": lambda data: data.update(task_id="other")})
+            return run
+
+        def duplicate_manifest_line(name):
+            run = self.with_enrollment(name)
+            sums = run / "enrollments" / "t" / "SHA256SUMS"
+            sums.write_bytes(sums.read_bytes() + sums.read_bytes().splitlines(keepends=True)[0])
+            return run
+
+        def history_text(text, builder=None):
+            def build(name):
+                run = (builder or self.p1_unmarked)(name)
+                self.write_pause_history(run, text)
+                return run
+            return build
+
+        def terra_dir_special(record_dir_name):
+            def build(name):
+                run = self.terra_with_review(name)
+                os.mkdir(run / "enrollments" / "t" / record_dir_name)
+                return run
+            return build
+
+        p1_values = {"nan": float("nan"), "negative": -1, "minus_infinity": float("-inf"), "infinity": float("inf"),
+                     "bool_true": True, "bool_false": False, "float_zero": 0.0, "float_one": 1.0, "string": "1",
+                     "null": None, "list": [1], "missing": missing}
+
         p1 = self.p1_unmarked
         rounds = self.rounds_unmarked
-        return {
+        cases = {
             "enrollments_unreadable": (enrollments_unreadable, "enrollments_unlistable"),
             "enrollments_not_searchable": (enrollments_not_searchable, "enrollments_unlistable"),
             "enrollments_regular_file": (enrollments_regular_file, "enrollments_unlistable"),
@@ -299,7 +466,65 @@ class AdmissionBase(unittest.TestCase):
             "document_is_a_list": (history(p1, ["task-p1"]), "pause_history_malformed"),
             "document_is_null": (history(p1, "null"), "pause_history_malformed"),
             "one_bad_file_among_good_ones": (one_bad_among_good, "pause_history_malformed"),
+            # A FIFO or a dangling link where a record or history file is expected: unknown, never a hang.
+            "fifo_pause_history_entry": (fifo_pause_history, "trigger_inputs_unreadable"),
+            "dangling_pause_history_entry": (dangling_pause_history, "trigger_inputs_unreadable"),
+            "fifo_round_json": (fifo_round_json, "round_file_missing"),
+            "fifo_manifest": (fifo_manifest, "episode_manifest_unreadable"),
+            "fifo_review_record": (special_entry("review-first.json", "fifo"), "episode_unlistable"),
+            "dangling_review_record": (special_entry("review-first.json", "dangling"), "episode_unlistable"),
+            "fifo_enrollment_record": (special_entry("enrollment.json", "fifo", self.with_enrollment), "episode_unlistable"),
+            "dangling_enrollment_record": (special_entry("enrollment.json", "dangling", self.with_enrollment),
+                                           "episode_unlistable"),
+            "dangling_enrollments_entry": (special_enrollments_entry, "enrollments_unlistable"),
+            "repair_record_is_a_directory": (terra_dir_special("repair-02.json"), "episode_unlistable"),
+            "close_record_is_a_directory": (terra_dir_special("close.json"), "episode_unlistable"),
+            "repair_fifo": (lambda name: (lambda run: (os.mkfifo(run / "enrollments" / "t" / "repair-02.json"), run)[1])(
+                self.terra_with_repair(name, budget=1)), "episode_unlistable"),
+            "repair_dangling": (lambda name: (lambda run: (os.symlink(str(self.root / "nowhere"),
+                                                                       str(run / "enrollments" / "t" / "repair-09.json")), run)[1])(
+                self.terra_with_repair(name, budget=1)), "episode_unlistable"),
+            # Counts and consistency of the evidence the stop rule reads.
+            **{f"review_p1_{label}": (p1_value(value), "review_record_invalid") for label, value in p1_values.items()},
+            "review_task_id_differs": (review_task_id, "review_record_invalid"),
+            "enrollment_task_id_differs_from_directory": (enrollment_task_id, "enrollment_record_invalid"),
+            "repair_round_differs_from_name": (repair_edit(lambda data: data.update(round=7)), "repair_record_invalid"),
+            "repair_round_is_a_bool": (repair_edit(lambda data: data.update(round=True)), "repair_record_invalid"),
+            "repair_task_id_differs": (repair_edit(lambda data: data.update(task_id="other")), "repair_record_invalid"),
+            "repair_duplicate_number": (repair_extra_name("repair-001.json"), "repair_record_invalid"),
+            "repair_name_not_numbered_as_the_recorder_writes": (repair_extra_name("repair-1.json"), "repair_record_invalid"),
+            "repair_name_non_numeric": (repair_extra_name("repair-x.json"), "repair_record_invalid"),
+            "manifest_duplicate_name": (duplicate_manifest_line, "episode_integrity_problem"),
+            # Hand-edited unsealed files.
+            "round_duplicate_keys": (round_text('{"cap": 1, "cap": 20, "terra_in_flight": 2, "terra_repair_budget": 3}'),
+                                     "round_file_unreadable"),
+            "round_nan_literal": (round_text('{"cap": NaN, "terra_in_flight": 2, "terra_repair_budget": 3}'),
+                                  "round_file_unreadable"),
+            "round_infinity_literal": (round_text('{"cap": Infinity, "terra_in_flight": 2, "terra_repair_budget": 3}'),
+                                       "round_file_unreadable"),
+            "round_negative_cap": (round_text('{"cap": -1, "terra_in_flight": 2, "terra_repair_budget": 3}'),
+                                   "round_file_invalid"),
+            "round_negative_budget": (round_text('{"cap": 20, "terra_in_flight": 2, "terra_repair_budget": -1}'),
+                                      "round_file_invalid"),
+            "round_negative_in_flight": (round_text('{"cap": 20, "terra_in_flight": -2, "terra_repair_budget": 3}'),
+                                         "round_file_invalid"),
+            "round_not_utf8": (lambda name: (lambda run: ((run / "round.json").write_bytes(b'{"cap": "\xff"}'), run)[1])(
+                self.new_run(name)), "round_file_unreadable"),
+            "pause_duplicate_keys": (history_text('{"covered_triggers": {"p1_episodes": ["task-p1"]}, "covered_triggers": {}}'),
+                                     "trigger_inputs_unreadable"),
+            "pause_nan_rounds": (history_text('{"covered_triggers": {"terra_repair_rounds": NaN}}'),
+                                 "trigger_inputs_unreadable"),
+            "pause_infinity_rounds": (history_text('{"covered_triggers": {"terra_repair_rounds": Infinity}}', rounds),
+                                      "trigger_inputs_unreadable"),
+            "pause_negative_rounds": (history_text('{"covered_triggers": {"terra_repair_rounds": -5}}', rounds),
+                                      "pause_history_malformed"),
+            "pause_negative_rounds_minus_one": (history_text('{"covered_triggers": {"terra_repair_rounds": -1}}'),
+                                                "pause_history_malformed"),
+            "pause_not_utf8": (lambda name: (lambda run: (self.write_pause_history(run, "{}"),
+                                                          (run / "pauses" / "x.json").write_bytes(b'{"a": "\xff"}'), run)[2])(
+                self.p1_unmarked(name)), "trigger_inputs_unreadable"),
         }
+        return cases
 
 
 class AdmissionStates(AdmissionBase):
@@ -573,7 +798,7 @@ class AdmissionStates(AdmissionBase):
             "manifest_torn_with_no_records": (manifest_torn_with_no_records, "episode_manifest_without_records", False),
             "manifest_is_a_directory": (manifest_is_a_directory, "episode_manifest_unreadable", False),
             "corrupt_review": (corrupt_review, "episode_integrity_problem", True),
-            "review_resealed_without_p1": (review_resealed_without_p1, "trigger_inputs_unreadable", True),
+            "review_resealed_without_p1": (review_resealed_without_p1, "review_record_invalid", True),
             "orphan_episode": (orphan_episode, "episode_without_enrollment", False),
         }
         for name, (damage, code, with_review) in cases.items():
@@ -820,18 +1045,29 @@ class AdmissionWritesNothing(AdmissionBase):
                                 "write_bytes", "mkstemp", "link", "symlink", "truncate", "flock", "fdopen", "rmtree",
                                 "copy", "copyfile", "move", "write", "writelines", "touch"}
         self.assertEqual(reached & forbidden_functions, set())
-        self.assertIn("terra_stop_rule", reached)
-        self.assertIn("episode_trigger_facts", reached)
-        self.assertIn("pause_coverage", reached)
+        self.assertIn("terra_stop_rule", reached)  # The stop rule stays the one shared function.
+        # The lenient shared readers swallow listing errors and accept any shape: admission has strict
+        # equivalents and reaches none of them (their differential tests are in AdmissionClassRepair).
+        lenient = {"episode_trigger_facts", "pause_coverage", "terminal"}
+        self.assertEqual(reached & lenient, set())
+        self.assertIn("admission_trigger_facts", reached)
+        self.assertIn("admission_pause_coverage", reached)
         for name in reached:
             for node in ast.walk(functions[name]):
                 if isinstance(node, ast.Attribute):
                     self.assertNotIn(node.attr, forbidden_attributes, f"{name}: .{node.attr}")
+                    if isinstance(node.value, ast.Name):  # glob swallows OSError.
+                        self.assertNotEqual(node.value.id, "glob", f"{name}: glob")
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "open":
                     mode = node.args[1] if len(node.args) > 1 else next((k.value for k in node.keywords if k.arg == "mode"), None)
                     if mode is not None:
                         self.assertIsInstance(mode, ast.Constant)
                         self.assertEqual(set(mode.value) & set("wax+"), set(), f"{name}: open mode {mode.value!r}")
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "open" \
+                        and isinstance(node.func.value, ast.Name) and node.func.value.id == "os":
+                    flags = {n.attr for n in ast.walk(node.args[1]) if isinstance(n, ast.Attribute)} if len(node.args) > 1 else set()
+                    self.assertTrue(flags and flags <= {"O_RDONLY", "O_NONBLOCK", "O_CLOEXEC", "O_DIRECTORY"},
+                                    f"{name}: os.open flags {flags}")
         self.assertNotIn("admission", ROUND_DISPATCH_NAMES(tree))
 
     def test_11_fail_closed_states_are_untouched(self):
@@ -927,7 +1163,7 @@ class AdmissionFailsClosed(AdmissionBase):
     def test_well_formed_histories_keep_their_meaning(self):
         run = self.p1_unmarked("good")
         for document in ({}, {"covered_triggers": {}}, {"reason": "x"}, {"covered_triggers": {"p1_episodes": []}},
-                         {"covered_triggers": {"terra_repair_rounds": -1}},
+                         {"covered_triggers": {"terra_repair_rounds": 0}},
                          {"covered_triggers": {"p1_episodes": ["other"], "terra_repair_rounds": 0, "extra": [1, {}]}}):
             with self.subTest(document):
                 self.write_pause_history(run, document)
@@ -1078,6 +1314,338 @@ class SharedRule(AdmissionBase):
         self.assertEqual(rec.trigger_facts(str(run)), rec.episode_trigger_facts(episodes))
         self.assertEqual(rec.episode_trigger_facts(episodes), {"p1_episodes": ["t"], "terra_repair_rounds": 1})
         self.assertEqual(rec.terra_repairs(str(run)), 1)
+
+
+class AdmissionClassRepair(AdmissionBase):
+    """The whole fail-open class: the gate returns active only when every fact it needs was read and valid.
+
+    Black-box: each test runs `admission` (as a process, or in process with injected faults) on a fixture
+    directory, so the same tests run against any version of the recorder. See input-inventory.md for the
+    row each test covers (IDs in the docstrings).
+    """
+
+    # --- fault injection ---------------------------------------------------------------------------------
+    @contextlib.contextmanager
+    def fs_fault(self, index=None):
+        """Count the filesystem calls of the block; raise OSError(EIO) on call number `index` when given.
+
+        Patches the low-level calls, so the os.path predicates and glob, which swallow OSError, see the fault
+        exactly as they would a real I/O error. Yields the list of (call, path) seen."""
+        calls = []
+
+        def wrap(name, original):
+            def call(*args, **kwargs):
+                n = len(calls)
+                calls.append((name, args[0] if args else None))
+                if n == index:
+                    raise OSError(errno.EIO, "injected I/O error", str(args[0]) if args else None)
+                return original(*args, **kwargs)
+            return call
+
+        with contextlib.ExitStack() as stack:
+            for owner, name in ((os, "stat"), (os, "lstat"), (os, "listdir"), (os, "scandir"), (os, "open"),
+                                (os, "fstat"), (os, "read"), (builtins, "open")):
+                stack.enter_context(mock.patch.object(owner, name, wrap(name, getattr(owner, name))))
+            yield calls
+
+    def decide(self, run, index=None):
+        with self.fs_fault(index) as calls:
+            out = rec.admission_decision(str(run))
+        return out, calls
+
+    def eio_sweep(self, run, label):
+        """Inject EIO into each filesystem call of one decision in turn. No run may be active (unless the
+        un-injected decision is active and the call is one the decision does not need: there are none),
+        and none may write."""
+        base, calls = self.decide(run)
+        before = snapshot(run)
+        self.assertGreater(len(calls), 5, label)
+        for index, (name, path) in enumerate(calls):
+            out, _ = self.decide(run, index)
+            self.assertNotEqual(out["state"], "active",
+                                f"{label}: EIO in call {index} ({name} {path}) still gave active ({out['reason']})")
+        self.assertEqual(snapshot(run), before, f"{label}: a faulted decision wrote to the run directory")
+        return base
+
+    def sweep_fixtures(self):
+        def active_full(name):
+            run = self.new_run(name, budget=3, in_flight=5)
+            self.enroll(run, "t", byte=1)
+            self.review(run, "t", p1=0)
+            self.repair(run, "t")
+            self.enroll(run, "s", byte=0)
+            self.review(run, "s", p1=0)
+            self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["old"], "terra_repair_rounds": 0}})
+            return run
+
+        def covered_p1(name):
+            run = self.p1_unmarked(name)
+            self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["task-p1"], "terra_repair_rounds": 0}})
+            return run
+
+        def paused(name):
+            run = self.with_enrollment(name)
+            self.rcall(run, "pause", "--reason", "synthetic")
+            return run
+
+        def capped(name):
+            run = self.new_run(name, cap=1)
+            self.enroll(run, "t", byte=1)
+            return run
+
+        return {"active_full": (active_full, "active"), "covered_p1": (covered_p1, "active"),
+                "p1_stop": (self.p1_unmarked, "stop_reached"), "repair_stop": (self.rounds_unmarked, "stop_reached"),
+                "paused": (paused, "paused"), "cap": (capped, "stop_reached")}
+
+    # --- D1: the repair scan ------------------------------------------------------------------------------
+    def test_d1_eio_in_the_repair_scan_is_not_active(self):
+        """B3/A13. A real stop (one repair round, budget one). The episode directory is listed once without
+        error; every later scan (glob uses os.scandir) fails. The old gate counted zero repairs: active."""
+        run = self.rounds_unmarked("d1")
+        self.assertEqual(self.decide(run)[0]["state"], "stop_reached")
+        episode = str(run / "enrollments" / "t")
+        real = os.scandir
+
+        def failing(path, *args, **kwargs):
+            if str(path) == episode:
+                raise OSError(errno.EIO, "injected", episode)
+            return real(path, *args, **kwargs)
+
+        with mock.patch.object(os, "scandir", failing):
+            out = rec.admission_decision(str(run))
+        self.assertNotEqual(out["state"], "active", out)
+
+    def test_d1_eio_on_any_call_never_turns_a_stop_or_a_pause_into_active(self):
+        for label, (build, expected) in self.sweep_fixtures().items():
+            with self.subTest(label):
+                run = build("sweep-" + label)
+                base = self.eio_sweep(run, label)
+                self.assertEqual(base["state"], expected, base)
+
+    # --- D2: counts ---------------------------------------------------------------------------------------
+    def test_d2_p1_must_be_a_non_negative_int(self):
+        """A12. Sealed, hash-consistent first reviews with an invalid p1 on a Terra episode: unknown."""
+        cases = self.fail_closed_cases()
+        names = [n for n in cases if n.startswith("review_p1_")]
+        self.assertEqual(len(names), 12)
+        for name in names:
+            with self.subTest(name):
+                build, code = cases[name]
+                self.admit(build(name), "unknown", code)
+
+    def test_d2_valid_p1_counts_keep_their_meaning(self):
+        for p1, state in ((0, "active"), (1, "stop_reached"), (2, "stop_reached"), (10 ** 30, "stop_reached")):
+            with self.subTest(p1):
+                run = self.terra_with_review(f"p1-{p1}", p1=p1)
+                self.admit(run, state)
+
+    def test_d2_a_malformed_p1_on_a_sol_episode_is_not_consumed(self):
+        """Sol first reviews are not read by the stop rule, so they add no rule here (they are still sealed)."""
+        run = self.new_run()
+        self.enroll(run, "s", byte=0)
+        self.review(run, "s", p1=1)
+        self.rechain(run, "s", {"review-first.json": lambda data: data.update(p1=-1)})
+        self.admit(run, "active")
+
+    # --- D3: non-regular files ----------------------------------------------------------------------------
+    def test_d3_a_fifo_or_dangling_link_where_a_record_is_expected_is_unknown_without_a_hang(self):
+        wanted = ("fifo_pause_history_entry", "dangling_pause_history_entry", "fifo_round_json", "fifo_manifest",
+                  "fifo_review_record", "dangling_review_record", "fifo_enrollment_record",
+                  "dangling_enrollment_record", "dangling_enrollments_entry", "repair_record_is_a_directory",
+                  "close_record_is_a_directory", "repair_fifo", "repair_dangling")
+        cases = self.fail_closed_cases()
+        for name in wanted:
+            with self.subTest(name):
+                build, code = cases[name]
+                self.admit(build(name), "unknown", code)
+
+    def test_d3_a_fifo_paused_marker_is_paused_and_is_never_opened(self):
+        run = self.new_run()
+        os.mkfifo(run / "PAUSED")
+        self.admit(run, "paused", "pause_marker_present")
+
+    # --- consistency of the evidence ----------------------------------------------------------------------
+    def test_conflicting_or_duplicated_records_are_unknown(self):
+        cases = self.fail_closed_cases()
+        wanted = [n for n in cases if n.startswith(("repair_", "manifest_duplicate", "enrollment_task_id",
+                                                    "review_task_id")) and not n.startswith(("repair_fifo", "repair_dangling",
+                                                                                              "repair_record_is"))]
+        self.assertGreaterEqual(len(wanted), 9)
+        for name in wanted:
+            with self.subTest(name):
+                build, code = cases[name]
+                self.admit(build(name), "unknown", code)
+
+    def test_unsealed_files_with_ambiguous_or_invalid_values_are_unknown(self):
+        cases = self.fail_closed_cases()
+        wanted = [n for n in cases if n.startswith(("round_", "pause_"))
+                  and n not in ("pause_entry_is_a_directory", "pauses_unreadable", "pauses_regular_file",
+                                "pauses_dangling_symlink", "pause_history_not_object", "pause_history_wrong_shape")]
+        self.assertGreaterEqual(len(wanted), 12)
+        for name in wanted:
+            with self.subTest(name):
+                build, code = cases[name]
+                self.admit(build(name), "unknown", code)
+
+    # --- mutation of every consumed JSON field ----------------------------------------------------------
+    BAD = [None, "x", "", -1, -2 ** 70, True, False, 1.5, 0.0, 1.0, float("nan"), float("inf"), float("-inf"), [], [1], {}, {"a": 1}]
+
+    def mutate_and_decide(self, baseline, label, edit_file, field, values, valid, expected_baseline, absent_is_valid=False):
+        """For each value (and the absent field) not in `valid`, copy the baseline, write the value through
+        edit_file(copy, field, value) and require unknown."""
+        base = rec.admission_decision(str(baseline))
+        self.assertEqual(base["state"], expected_baseline, f"{label}: fixture baseline {base}")
+        missing = object()
+        for index, value in enumerate(list(values) + [missing]):
+            if (value is missing and absent_is_valid) or (value is not missing and valid(value)):
+                continue
+            copy = self.copy_of(baseline, f"{label}-{index}")
+            edit_file(copy, field, value, missing)
+            out = rec.admission_decision(str(copy))
+            self.assertEqual(out["state"], "unknown", f"{label}: {field}={value!r} gave {out['state']} ({out['reason']})")
+
+    def test_every_consumed_json_field_rejects_malformed_values(self):
+        def is_count(value):
+            return type(value) is int and value >= 0
+
+        def json_edit(name):
+            def edit(run, field, value, missing):
+                path = run / name
+                data = json.loads(path.read_text())
+                if value is missing:
+                    data.pop(field, None)
+                else:
+                    data[field] = value
+                path.write_text(json.dumps(data))
+            return edit
+
+        def pause_edit(inner):
+            def edit(run, field, value, missing):
+                path = run / "pauses" / "x.json"
+                data = json.loads(path.read_text())
+                if inner:
+                    target = data.setdefault("covered_triggers", {})
+                    if value is missing:
+                        target.pop(field, None)
+                    else:
+                        target[field] = value
+                elif value is missing:
+                    data.pop(field, None)
+                else:
+                    data[field] = value
+                path.write_text(json.dumps(data))
+            return edit
+
+        def record_edit(task, name):
+            def edit(run, field, value, missing):
+                def apply(data):
+                    if value is missing:
+                        data.pop(field, None)
+                    else:
+                        data[field] = value
+                self.rechain(run, task, {name: apply})
+            return edit
+
+        sweeps = self.sweep_fixtures()
+        active = sweeps["active_full"][0]("mut-active")
+        covered = sweeps["covered_p1"][0]("mut-covered")
+        p1_stop = self.p1_unmarked("mut-p1")
+        repair_stop = self.rounds_unmarked("mut-rep")
+        sol = self.new_run("mut-sol")
+        self.enroll(sol, "s", byte=0)
+        for field in ("cap", "terra_in_flight", "terra_repair_budget"):
+            self.mutate_and_decide(active, f"round-{field}", json_edit("round.json"), field, self.BAD, is_count, "active")
+        # Replacing a count with a valid int is the owner's edit; only the invalid values are the class.
+        self.mutate_and_decide(p1_stop, "review-p1", record_edit("task-p1", "review-first.json"), "p1", self.BAD, is_count,
+                               "stop_reached")
+        self.mutate_and_decide(p1_stop, "review-task", record_edit("task-p1", "review-first.json"), "task_id",
+                               self.BAD + ["other"], lambda v: v == "task-p1", "stop_reached")
+        self.mutate_and_decide(p1_stop, "enrollment-arm", record_edit("task-p1", "enrollment.json"), "arm", self.BAD + ["other"],
+                               lambda v: v in (rec.TERRA, rec.SOL), "stop_reached")
+        self.mutate_and_decide(p1_stop, "enrollment-task", record_edit("task-p1", "enrollment.json"), "task_id",
+                               self.BAD + ["other"], lambda v: v == "task-p1", "stop_reached")
+        self.mutate_and_decide(repair_stop, "repair-round", record_edit("t", "repair-01.json"), "round", self.BAD + [2, 0],
+                               lambda v: type(v) is int and v == 1, "stop_reached")
+        self.mutate_and_decide(repair_stop, "repair-task", record_edit("t", "repair-01.json"), "task_id", self.BAD + ["other"],
+                               lambda v: v == "t", "stop_reached")
+        self.mutate_and_decide(covered, "pause-covered", pause_edit(False), "covered_triggers", self.BAD,
+                               lambda v: isinstance(v, dict), "active", absent_is_valid=True)
+        self.mutate_and_decide(covered, "pause-p1", pause_edit(True), "p1_episodes", self.BAD,
+                               lambda v: isinstance(v, list) and all(isinstance(i, str) for i in v), "active", absent_is_valid=True)
+        self.mutate_and_decide(covered, "pause-rounds", pause_edit(True), "terra_repair_rounds", self.BAD, is_count, "active", absent_is_valid=True)
+
+    # --- the strict readers give the shared readers' facts on valid input ----------------------------------
+    def test_differential_facts_equal_the_shared_readers_on_valid_fixtures(self):
+        fixtures = []
+        run = self.new_run("diff-a", budget=100, in_flight=9)
+        for task, byte in (("t", 1), ("u", 1), ("v", 1), ("s", 0)):
+            self.enroll(run, task, byte=byte)
+        self.review(run, "t", p1=1)
+        self.review(run, "u", p1=0)
+        self.review(run, "s", p1=3)
+        self.repair(run, "t")
+        self.repair(run, "t")
+        self.repair(run, "u")
+        self.repair(run, "s")
+        (run / "PAUSED").unlink()
+        fixtures.append(run)
+        resumed = self.copy_of(run, "diff-b")
+        (resumed / "pauses").mkdir()
+        (resumed / "pauses" / "a.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 2}}))
+        (resumed / "pauses" / "b.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["x"], "terra_repair_rounds": 0}}))
+        (resumed / "pauses" / "ignored.txt").write_text("[")
+        fixtures.append(resumed)
+        linked = self.copy_of(run, "diff-c")  # A symlinked review is followed, as before.
+        d = linked / "enrollments" / "t"
+        shutil.copyfile(d / "review-first.json", self.root / "review-elsewhere.json")
+        os.unlink(d / "review-first.json")
+        os.symlink(str(self.root / "review-elsewhere.json"), str(d / "review-first.json"))
+        fixtures.append(linked)
+        for fixture in fixtures:
+            with self.subTest(fixture.name):
+                out = rec.admission_decision(str(fixture))
+                self.assertIn(out["state"], ("stop_reached", "active"), out)
+                facts = out["facts"]["trigger"]
+                shared = rec.trigger_facts(str(fixture))
+                self.assertEqual(facts["p1_episodes"], shared["p1_episodes"])
+                self.assertEqual(facts["terra_repair_rounds"], shared["terra_repair_rounds"])
+                covered, rounds = rec.pause_coverage(str(fixture))
+                self.assertEqual(facts["covered_p1_episodes"], sorted(covered))
+                self.assertEqual(facts["covered_repair_rounds"], rounds)
+                self.assertEqual(facts["terra_repair_rounds"], rec.terra_repairs(str(fixture)))
+                self.assertEqual(out["facts"]["enrollments"]["count"], len(rec.enrollment_dirs(str(fixture))))
+                new_p1, over = rec.terra_stop_rule(shared, covered, rounds, out["facts"]["round"]["terra_repair_budget"])
+                self.assertEqual(out["state"] == "stop_reached" and out["reason"]["code"] == "pause_trigger_unmarked",
+                                 bool(new_p1 or over))
+
+    def test_open_terra_fact_counts_closed_and_withdrawn_episodes_as_before(self):
+        run = self.new_run(in_flight=9)
+        self.enroll(run, "t", byte=1)
+        self.enroll(run, "u", byte=1)
+        self.enroll(run, "v", byte=1)
+        self.rcall(run, "withdraw", "--task-id", "u", "--reason", "synthetic")
+        out = self.admit(run, "active")
+        episodes = rec.enrollments(str(run))
+        expected = sum(e["arm"] == rec.TERRA and not rec.terminal(d) for d, e in episodes)
+        self.assertEqual(out["facts"]["terra_in_flight"]["open_terra"], expected)
+        self.assertEqual(expected, 2)
+
+    def test_gate_reads_each_regular_input_through_a_non_blocking_checked_open(self):
+        """A FIFO is not opened blocking even if it replaces a file between the listing and the read."""
+        run = self.with_enrollment("race")
+        real_open = os.open
+        seen = []
+
+        def spying(path, flags, *args, **kwargs):
+            seen.append((str(path), flags))
+            return real_open(path, flags, *args, **kwargs)
+
+        with mock.patch.object(os, "open", spying):
+            out = rec.admission_decision(str(run))
+        self.assertEqual(out["state"], "active")
+        gate_reads = [flags for path, flags in seen if path.startswith(str(run))]
+        self.assertTrue(gate_reads)
+        self.assertTrue(all(flags & os.O_NONBLOCK for flags in gate_reads), seen)
 
 
 if __name__ == "__main__":
