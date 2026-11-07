@@ -1,0 +1,62 @@
+{
+ "aliases": [
+  "K4"
+ ],
+ "findings": [
+  {
+   "basis": "measured",
+   "caveats": [
+    "the task-level effect of effort is unmeasured; the source states the telemetry establishes the cost structure, not the consequence",
+    "current defaults use gpt-6.1-sol; Pi jobs carry a different standing context, so the cache-dominance premise needs re-measurement there (unverified either way)"
+   ],
+   "claim": "On Codex gpt-6-sol, weighted cost per call was 15.9, 16.4, 15.8 and 16.5 K at low, medium, high and xhigh effort over 35,503 October calls, because cached context re-send (about 77%) dominates.",
+   "id": "sol-effort-per-call-cost#per-call-cost-by-effort",
+   "n": 35503,
+   "scope": "Codex gpt-6-sol, October 2026 calls",
+   "sources": [
+    {
+     "blob": "2458eacf14fc1cb274b3cd9941aacc0bef61c745",
+     "commit": "d80dd242",
+     "lines": "208-225",
+     "path": "notes/post-s10-direction-20261019.md"
+    }
+   ],
+   "value": {
+    "cached_context_resend_share": 0.77,
+    "kweighted_per_call": {
+     "high": 15.8,
+     "low": 15.9,
+     "medium": 16.4,
+     "xhigh": 16.5
+    },
+    "mean_output_tokens": 333
+   }
+  }
+ ],
+ "id": "sol-effort-per-call-cost",
+ "kind": "retrospective-analysis",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "2458eacf14fc1cb274b3cd9941aacc0bef61c745",
+    "commit": "d80dd242",
+    "lines": "208-225",
+    "path": "notes/post-s10-direction-20261019.md"
+   },
+   "date": "2026-10-19",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q3"
+ ],
+ "sources": [
+  {
+   "blob": "2458eacf14fc1cb274b3cd9941aacc0bef61c745",
+   "commit": "d80dd242",
+   "path": "notes/post-s10-direction-20261019.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "Sol effort and per-call cost"
+}

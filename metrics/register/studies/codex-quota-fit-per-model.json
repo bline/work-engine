@@ -1,0 +1,81 @@
+{
+ "aliases": [
+  "K3"
+ ],
+ "findings": [
+  {
+   "basis": "modelled",
+   "caveats": [
+    "modelled, not observed per call; assumes all quota use came from rollouts on this machine",
+    "F1.1 (owner-approved 2026-10-28) found 3,660 Fast-tier calls on 2026-10-03 to 10-08 and lists this fit as not established until its owner rechecks it with the tier; whether the fit's windows include those days is not established (usage-ledger-f11-20261028.md:60-66)",
+    "10-31 audit (off-repo): the samples do not establish stable model-specific quota coefficients; per pass 1 a baseline-selection defect moves the five-minute Sol 6.1 estimate from $6.63 to $8.37 per point, not a calibrated replacement rate; figures not re-read by the register builder",
+    "per pass 1 the fit predates the 10-29 quota change; not re-verified",
+    "no recheck found in metrics/ or the inventory (pass 1); absence is within that search only"
+   ],
+   "claim": "Astra uses about 1.85x and Sol about 0.42x the baseline quota per weighted token (ratio 4.4 to 4.7), from 2,319 meter readings over 5 weekly windows; about $6 to $7 of API-equivalent spend per 1% of a Pro week.",
+   "id": "codex-quota-fit-per-model#quota-fit",
+   "n": 2319,
+   "scope": "Codex rollouts on this machine; 5 weekly windows (the plan does not give their dates); only medium and high effort data exists for Sol",
+   "sources": [
+    {
+     "blob": "6e817e69bbc96cba83760cad98ee177f7f7e020c",
+     "commit": "d80dd242",
+     "lines": "28-50",
+     "path": "metrics/experiment-plan-20261026.md"
+    },
+    {
+     "blob": "e166a986a1e693d89c52457ae588d94579f9d620",
+     "commit": "d80dd242",
+     "lines": "44-68",
+     "path": "metrics/probes/usage-ledger-f11-20261028.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/quota-audit-20261031/findings.json",
+     "note": "digest from the nominations file and recomputed 2026-11-07; contents not re-read by the register builder",
+     "sha256": "8a54666c452b6099d29dd16b57d907c394225d39a0eaf8b2fe3b30149b7e2c81",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "astra_multiple": 1.85,
+    "baseline_plus_units_per_mwt": 7.826,
+    "ratio_range": [
+     4.4,
+     4.7
+    ],
+    "sol_multiple": 0.42,
+    "usd_per_pct_pro_week": [
+     6,
+     7
+    ]
+   }
+  }
+ ],
+ "id": "codex-quota-fit-per-model",
+ "kind": "retrospective-analysis",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "6e817e69bbc96cba83760cad98ee177f7f7e020c",
+    "commit": "d80dd242",
+    "lines": "28-50",
+    "path": "metrics/experiment-plan-20261026.md"
+   },
+   "date": "2026-10-26",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q16"
+ ],
+ "sources": [
+  {
+   "blob": "6e817e69bbc96cba83760cad98ee177f7f7e020c",
+   "commit": "d80dd242",
+   "path": "metrics/experiment-plan-20261026.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "Codex per-model quota fit"
+}

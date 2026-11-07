@@ -1,0 +1,96 @@
+{
+ "aliases": [
+  "K7"
+ ],
+ "findings": [
+  {
+   "basis": "single-observation",
+   "caveats": [
+    "not established whether the model or a shim authored the verifier invocation, and whether the model read the verifier's text",
+    "the smoke-plus-private-verifier pattern has never run with a live model (the Sol/high round stopped at admission with zero model requests)",
+    "no remediation found in the repository by grep (pass 1; unverified beyond that)",
+    "the pilot's task acceptance was not overturned: it also rested on the crate suite, mutation checks and separate review",
+    "pass 1 searched all 21 files of the pilot bundle for visibility or independence language; hits were mount and command strings only; not repeated by the register builder"
+   ],
+   "claim": "The current Host mounts profile.acceptance at /acceptance.rs in both the tool and validation containers; in the accepted local development pilot the authoritative validator (sha256 c3e91c48...) was readable in the tool container, named in the model's tool description and prompt, and run by the model's one tool call.",
+   "id": "pi-acceptance-verifier-visibility#observation",
+   "n": 1,
+   "scope": "Host profile as read at the 2026-11-06 preflight; the 2026-11-06 local development pilot",
+   "sources": [
+    {
+     "blob": "d7187f1871528c3cb861b1bf0399b167af77add3",
+     "commit": "d80dd242",
+     "lines": "44-58",
+     "path": "records/sol-high-live-pilot-20261106/README.md"
+    },
+    {
+     "blob": "e4eefd248de0b4ea6d55ad01e1fb01676d594399",
+     "commit": "d80dd242",
+     "path": "records/local-development-pilot-20261106/RAW-RECEIPT.json"
+    },
+    {
+     "blob": "d31869f5066e68e00fb7205e357a47ad03e06894",
+     "commit": "d80dd242",
+     "lines": "455",
+     "path": "rust/crates/work-engine-manual-host/src/pi_coding.rs"
+    },
+    {
+     "blob": "eeaa45bb6d0e9beeaee151964db0ec7afbdafcd8",
+     "commit": "d80dd242",
+     "lines": "18",
+     "path": "rust/crates/work-engine-manual-host/src/pi_coding_validation.rs"
+    },
+    {
+     "blob": "3e331a4b495037927ce72f31aead37a71972b570",
+     "commit": "d80dd242",
+     "lines": "117",
+     "path": "rust/crates/work-engine-manual-host/receiver/pi-coding.mjs"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/.local/state/work-engine/local-development-pilot-20261106T0004/operator/live-ordinal-1/state/exports/sessions/2026-11-06T00-52-32-190Z_01a1ae57-cd3d-753b-967b-942d5bb54786.jsonl",
+     "note": "digest recomputed 2026-11-07 and found in records/local-development-pilot-20261106/RAW-RECEIPT.json",
+     "sha256": "53f5e91eeece1c7f9c61c7924ab40041d407f4a47a469e9e84789313f207d248",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "acceptance_sha256_prefix": "c3e91c48",
+    "containers": [
+     "tool",
+     "validation"
+    ],
+    "exploitation": "not observed; not inferred",
+    "mount_path": "/acceptance.rs",
+    "tool_calls": 1
+   }
+  }
+ ],
+ "id": "pi-acceptance-verifier-visibility",
+ "kind": "retrospective-analysis",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "d7187f1871528c3cb861b1bf0399b167af77add3",
+    "commit": "d80dd242",
+    "lines": "44-58",
+    "path": "records/sol-high-live-pilot-20261106/README.md"
+   },
+   "date": "2026-11-06",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q12",
+  "Q14"
+ ],
+ "sources": [
+  {
+   "blob": "d7187f1871528c3cb861b1bf0399b167af77add3",
+   "commit": "d80dd242",
+   "path": "records/sol-high-live-pilot-20261106/README.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "Acceptance verifier visibility to the implementing agent"
+}

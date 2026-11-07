@@ -1,0 +1,133 @@
+{
+ "aliases": [
+  "K1"
+ ],
+ "findings": [
+  {
+   "basis": "measured",
+   "caveats": [
+    "one round, mixed task types; randomization balances type in expectation only",
+    "abandoned tasks count 0 repair rounds, which flatters Terra's mean",
+    "one Terra task (b3-qualification-package-assembly) moved to Sol mid-task and stays in the Terra arm",
+    "Astra was the only reviewer; re-reviews and root coordination are not attributed",
+    "three task pairs share a builder session; arm totals and medians count each session once",
+    "conflicting interpretation kept unresolved: the plan says records from different release periods are reported apart and not compared directly (lines 451-452), the analysis pools all periods; arms were drawn independently within every period (line 453), which supports pooling statistically",
+    "pass 1 reports that one Sol first review was re-recorded by the owner from changes_required to accept; not re-verified by the register builder"
+   ],
+   "claim": "On 19 randomized production builder tasks (Codex host, both models at medium, Astra reviewer), Sol took 0.44 repair rounds per task against Terra's 1.00 and passed first review 5 of 9 against 3 of 9; neither difference is statistically significant.",
+   "id": "dogfood-round2-builder-comparison#repair-and-first-review-comparison",
+   "n": 19,
+   "scope": "Codex host; gpt-6.1-sol (9 tasks) versus gpt-6.1-terra (10 tasks), both at medium; reviewer gpt-6-astra throughout; production builder tasks enrolled before the pause at 2026-11-01T08:41Z; costs are API-equivalent USD",
+   "sources": [
+    {
+     "blob": "c872d9c2df414fb98a19cd68c74ec96687e872c9",
+     "commit": "d80dd242",
+     "lines": "14-37",
+     "path": "metrics/probes/dogfood-round2-builder-outcomes-20261104.md"
+    },
+    {
+     "blob": "c872d9c2df414fb98a19cd68c74ec96687e872c9",
+     "commit": "d80dd242",
+     "lines": "63-81",
+     "path": "metrics/probes/dogfood-round2-builder-outcomes-20261104.md"
+    },
+    {
+     "blob": "66694f0dc6d647eb0bbf9f5e7f8ce9e19e54a08b",
+     "commit": "d80dd242",
+     "lines": "451-453",
+     "path": "metrics/dogfood-selection-plan-20261027.md"
+    }
+   ],
+   "value": {
+    "first_review_accept": {
+     "sol": "5/9",
+     "terra": "3/9"
+    },
+    "first_review_accept_one_sided_fisher_p": 0.319,
+    "median_builder_spend_usd_per_session": {
+     "sol": 0.93,
+     "terra": 1.08
+    },
+    "repair_rounds_one_sided_permutation_p": 0.152,
+    "repair_rounds_per_task": {
+     "sol": 0.44,
+     "terra": 1.0
+    }
+   }
+  },
+  {
+   "basis": "single-observation",
+   "caveats": [
+    "the plan's status line at d80dd242 still reads that round 2 is active; recorded as the status_discrepancy event ev-20261101-round2-status-line, not as part of this finding"
+   ],
+   "claim": "Round 2 paused when Terra reached its preregistered repair budget, 10 of 10, at 2026-11-01T08:41:08Z, with 19 of 20 episodes enrolled.",
+   "id": "dogfood-round2-builder-comparison#round-pause",
+   "n": 1,
+   "scope": "dogfood round 2 run directory ~/.local/state/work-engine/task-profile-pilot-2",
+   "sources": [
+    {
+     "blob": "c872d9c2df414fb98a19cd68c74ec96687e872c9",
+     "commit": "d80dd242",
+     "lines": "5-8",
+     "path": "metrics/probes/dogfood-round2-builder-outcomes-20261104.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/.local/state/work-engine/task-profile-pilot-2/PAUSED",
+     "note": "digest computed 2026-11-07 by the register builder; file mode 600, 306 bytes",
+     "sha256": "3eda206b444487794897ad798da7a0e900ec6c31510f6b0a8c79b04aa15298af",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "enrolled": 19,
+    "enrollment_cap": 20,
+    "paused_at": "2026-11-01T08:41:08Z",
+    "terra_repair_budget": 10,
+    "terra_repair_rounds": 10
+   }
+  }
+ ],
+ "id": "dogfood-round2-builder-comparison",
+ "kind": "controlled-experiment",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "66694f0dc6d647eb0bbf9f5e7f8ce9e19e54a08b",
+    "commit": "d80dd242",
+    "lines": "3-4",
+    "path": "metrics/dogfood-selection-plan-20261027.md"
+   },
+   "date": "2026-10-28",
+   "state": "running"
+  },
+  {
+   "basis": {
+    "blob": "c872d9c2df414fb98a19cd68c74ec96687e872c9",
+    "commit": "d80dd242",
+    "lines": "5-8",
+    "path": "metrics/probes/dogfood-round2-builder-outcomes-20261104.md"
+   },
+   "date": "2026-11-01",
+   "state": "stopped"
+  }
+ ],
+ "questions": [
+  "Q1",
+  "Q2"
+ ],
+ "sources": [
+  {
+   "blob": "c872d9c2df414fb98a19cd68c74ec96687e872c9",
+   "commit": "d80dd242",
+   "path": "metrics/probes/dogfood-round2-builder-outcomes-20261104.md"
+  },
+  {
+   "blob": "66694f0dc6d647eb0bbf9f5e7f8ce9e19e54a08b",
+   "commit": "d80dd242",
+   "path": "metrics/dogfood-selection-plan-20261027.md"
+  }
+ ],
+ "stop_reason_class": "budget_or_stop_rule",
+ "title": "Dogfood round 2: Sol versus Terra builder comparison, stopped by its stop rule"
+}

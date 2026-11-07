@@ -1,0 +1,113 @@
+{
+ "aliases": [
+  "K6"
+ ],
+ "findings": [
+  {
+   "basis": "measured",
+   "caveats": [
+    "the probe table lists 69 compactions in 17 threads started and compacted before the change plus 4 in 2 older roots after it; context-boundary.md states n = 73 and 17 threads; whether the 2 roots are among the 17 is not established",
+    "requested compactions are tabulated separately in the probe and excluded here"
+   ],
+   "claim": "With no configured limit Codex compacted near 94% of the window: Sol 6.1 at 437,522 to 456,118 of 475,000 (n = 73, 17 threads); Astra at 239,130 to 245,418 of 258,400 (n = 10).",
+   "id": "codex-compaction-points#no-limit-compaction-points",
+   "n": 73,
+   "scope": "local Codex rollouts, 2026-10-26 to 2026-11-05T07:40Z",
+   "sources": [
+    {
+     "blob": "1da54bb48eb33ef61ad1987f572af0dda8c6f0c1",
+     "commit": "d80dd242",
+     "lines": "16-22",
+     "path": "metrics/probes/compaction-points-20261105.md"
+    },
+    {
+     "blob": "cc9327188f64fefb1d98ac652c98404dc7d79fc2",
+     "commit": "d80dd242",
+     "lines": "72-78",
+     "path": "skills/manual-orchestration/references/context-boundary.md"
+    }
+   ],
+   "value": {
+    "gpt-6-astra": {
+     "compactions": 10,
+     "max": 245418,
+     "min": 239130,
+     "window": 258400
+    },
+    "gpt-6.1-sol": {
+     "compactions": 73,
+     "max": 456118,
+     "min": 437522,
+     "threads": 17,
+     "window": 475000
+    }
+   }
+  },
+  {
+   "basis": "single-observation",
+   "caveats": [
+    "low strength: each observation is one or two sessions"
+   ],
+   "claim": "With model_auto_compact_token_limit = 250000 (since 2026-11-05T04:58Z) the limit applies only to sessions started after the change and a child keeps its parent's limit: one new Sol 6.1 session compacted at 248,987, two older roots kept compacting near 449K, and one builder under an older root reached 338,682 without compacting.",
+   "id": "codex-compaction-points#limit-250k-behaviour",
+   "n": "n = 1 to 2 per observation",
+   "scope": "Codex host, sessions observed 2026-11-05",
+   "sources": [
+    {
+     "blob": "1da54bb48eb33ef61ad1987f572af0dda8c6f0c1",
+     "commit": "d80dd242",
+     "lines": "24-30",
+     "path": "metrics/probes/compaction-points-20261105.md"
+    },
+    {
+     "blob": "cc9327188f64fefb1d98ac652c98404dc7d79fc2",
+     "commit": "d80dd242",
+     "lines": "80-86",
+     "path": "skills/manual-orchestration/references/context-boundary.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/.codex/config.toml",
+     "note": "mutable host configuration; line 11 read 2026-11-07 as model_auto_compact_token_limit = 250000; no digest recorded",
+     "sha256": null,
+     "status": "unverified"
+    }
+   ],
+   "value": {
+    "child_of_older_root_reached_without_compaction": 338682,
+    "limit": 250000,
+    "new_session_compacted_at": 248987,
+    "older_roots_compacted_at": [
+     448797,
+     449676
+    ]
+   }
+  }
+ ],
+ "id": "codex-compaction-points",
+ "kind": "retrospective-analysis",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "1da54bb48eb33ef61ad1987f572af0dda8c6f0c1",
+    "commit": "d80dd242",
+    "lines": "1-10",
+    "path": "metrics/probes/compaction-points-20261105.md"
+   },
+   "date": "2026-11-05",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q7"
+ ],
+ "sources": [
+  {
+   "blob": "1da54bb48eb33ef61ad1987f572af0dda8c6f0c1",
+   "commit": "d80dd242",
+   "path": "metrics/probes/compaction-points-20261105.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "Codex compaction points"
+}

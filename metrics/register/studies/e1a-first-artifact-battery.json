@@ -1,0 +1,126 @@
+{
+ "aliases": [
+  "K2"
+ ],
+ "findings": [
+  {
+   "basis": "measured",
+   "caveats": [
+    "n = 1 each for Haiku and Opus",
+    "which cases fail varies more than the count (16 distinct cases in the Sonnet union, 10 in common)",
+    "post hoc, only 12 of the 34 cases trace to the packet, so the headline is not contract compliance; see e1a-first-artifact-battery#traced-reading and event ev-20261027-e1a-traceability",
+    "the E1b replication study never ran; the trigger fired (planned-only, not a study in this register)"
+   ],
+   "claim": "Sonnet 5.5 at medium failed 15, 11 and 13 of 34 battery cases (range 4), firing the preregistered E1b replication trigger.",
+   "id": "e1a-first-artifact-battery#full-battery-reading",
+   "n": 3,
+   "scope": "one task (usage-export), fixed interface, frozen production harness in a sandbox; Sonnet 5.5 medium x3, Haiku 5.5 high x1, Opus 5.5 medium x1",
+   "sources": [
+    {
+     "blob": "ce878eae71d5ac07f86b2b71c9ffe5d2728d8e7c",
+     "commit": "d80dd242",
+     "lines": "8-22",
+     "path": "metrics/probes/e1a-result-20261027.md"
+    },
+    {
+     "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+     "commit": "d80dd242",
+     "lines": "432",
+     "path": "metrics/efficiency-ledger.md"
+    }
+   ],
+   "value": {
+    "cases": 34,
+    "haiku_confirmed_failures": 14,
+    "opus_confirmed_failures": 9,
+    "sonnet_confirmed_failures": [
+     15,
+     11,
+     13
+    ]
+   }
+  },
+  {
+   "basis": "measured",
+   "caveats": [
+    "12 traced cases; one independent trace check",
+    "the per-case trace file is sealed off-repo and was not opened by the register builder"
+   ],
+   "claim": "Only 12 of the 34 battery cases trace to a clause in the E1a packet; 58 of the 62 confirmed failures across the five arms fall on untraced cases; on the traced cases Sonnet failed 2, 0 and 0, Haiku 2 and Opus 0. The preregistered reading stands as registered.",
+   "id": "e1a-first-artifact-battery#traced-reading",
+   "n": 3,
+   "scope": "same five E1a arms; independent post-hoc trace check, not preregistered",
+   "sources": [
+    {
+     "blob": "ce878eae71d5ac07f86b2b71c9ffe5d2728d8e7c",
+     "commit": "d80dd242",
+     "lines": "8-22",
+     "path": "metrics/probes/e1a-result-20261027.md"
+    },
+    {
+     "blob": "ce878eae71d5ac07f86b2b71c9ffe5d2728d8e7c",
+     "commit": "d80dd242",
+     "lines": "96-110",
+     "path": "metrics/probes/e1a-result-20261027.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/f3-battery-scorer/TRACE-ANCHOR-SEALED.md",
+     "note": "sealed: digest only, contents not opened. That this is the per-case trace file pass 2 refers to is not established; it is named in the Stage 0 packet's exclusion list",
+     "sha256": "a35ea21c4107f2f73e9cafb422430295e97a5699d0e9ad5a9fddf38d1bd6eb9f",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "cases": 34,
+    "failures_on_untraced": "58 of 62",
+    "traced_cases": 12,
+    "traced_failures": {
+     "haiku": 2,
+     "opus": 0,
+     "sonnet": [
+      2,
+      0,
+      0
+     ]
+    }
+   }
+  }
+ ],
+ "id": "e1a-first-artifact-battery",
+ "kind": "pilot",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "a34b7bc1387eea39b25474734516774a7950a6da",
+    "commit": "d80dd242",
+    "path": "metrics/probes/e1a-prereg.md"
+   },
+   "date": "2026-10-27",
+   "state": "preregistered"
+  },
+  {
+   "basis": {
+    "blob": "ce878eae71d5ac07f86b2b71c9ffe5d2728d8e7c",
+    "commit": "d80dd242",
+    "lines": "1-12",
+    "path": "metrics/probes/e1a-result-20261027.md"
+   },
+   "date": "2026-10-27",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q1",
+  "Q15"
+ ],
+ "sources": [
+  {
+   "blob": "ce878eae71d5ac07f86b2b71c9ffe5d2728d8e7c",
+   "commit": "d80dd242",
+   "path": "metrics/probes/e1a-result-20261027.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "E1a first-artifact battery on usage-export"
+}

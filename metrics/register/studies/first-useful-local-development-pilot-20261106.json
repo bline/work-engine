@@ -1,0 +1,66 @@
+{
+ "aliases": [
+  "K8"
+ ],
+ "findings": [
+  {
+   "basis": "single-observation",
+   "caveats": [
+    "conclusive that this sequence occurred once; no reliability claim",
+    "the consumer-precision repair was qualified offline, not live",
+    "the authoritative validator was visible to the agent; see pi-acceptance-verifier-visibility#observation and event ev-20261106-acceptance-verifier-visible"
+   ],
+   "claim": "One actual Events HTTP MCP request reached the Rust command, job server and Pi runtime; Pi added two tests (919 bytes, original 5,847 bytes unchanged), passed validation, reset and recovered context and returned a receipt; the exported patch passed the crate suite, mutation checks and review and was accepted on 2026-11-06.",
+   "id": "first-useful-local-development-pilot-20261106#bounded-observation",
+   "n": 1,
+   "scope": "local-live profile, one provider trial",
+   "sources": [
+    {
+     "blob": "6c97c1e00cb56d8c99517e48619799d0325e3bd7",
+     "commit": "d80dd242",
+     "lines": "1-40",
+     "path": "records/local-development-pilot-20261106/README.md"
+    },
+    {
+     "blob": "6d5ed63687c62ccd8c6fd26bc8c82f3a0c7cc249",
+     "commit": "d80dd242",
+     "path": "records/local-development-pilot-20261106/ACCOUNTING.json"
+    }
+   ],
+   "value": {
+    "added_bytes": 919,
+    "conservative_combined_usd": 18.26,
+    "model": "gpt-6-luna via Pi SDK 1.5.0",
+    "original_bytes": 5847,
+    "provider_trials": 1,
+    "tool_calls": 1
+   }
+  }
+ ],
+ "id": "first-useful-local-development-pilot-20261106",
+ "kind": "pilot",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "6c97c1e00cb56d8c99517e48619799d0325e3bd7",
+    "commit": "d80dd242",
+    "lines": "1-10",
+    "path": "records/local-development-pilot-20261106/README.md"
+   },
+   "date": "2026-11-06",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q11"
+ ],
+ "sources": [
+  {
+   "blob": "6c97c1e00cb56d8c99517e48619799d0325e3bd7",
+   "commit": "d80dd242",
+   "path": "records/local-development-pilot-20261106/README.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "First useful local development pilot"
+}

@@ -1,0 +1,125 @@
+[
+ {
+  "anchor": "Builder default row: gpt-6.1-sol at medium (owner decision 2026-11-04)",
+  "decision_id": "model-selection.builder-default",
+  "document": "docs/model-selection.md",
+  "findings": [
+   "dogfood-round2-builder-comparison#repair-and-first-review-comparison"
+  ],
+  "lines": "40",
+  "owner": "user (model-selection owner)",
+  "revision": "git:41d47209"
+ },
+ {
+  "anchor": "Builder row for small mechanical changes: gpt-6.1-terra at medium",
+  "decision_id": "model-selection.terra-mechanical-builder",
+  "document": "docs/model-selection.md",
+  "findings": [
+   "dogfood-round2-builder-comparison#repair-and-first-review-comparison"
+  ],
+  "lines": "41",
+  "owner": "user (model-selection owner)",
+  "revision": "git:41d47209"
+ },
+ {
+  "anchor": "Builder on the Claude host rows (Sonnet 5.5 high; Opus 5.5 high), citing traced battery counts",
+  "decision_id": "model-selection.claude-host-builder-rows",
+  "document": "docs/model-selection.md",
+  "findings": [
+   "e1a-first-artifact-battery#full-battery-reading",
+   "e1a-first-artifact-battery#traced-reading"
+  ],
+  "lines": "42-43",
+  "owner": "user (model-selection owner)",
+  "revision": "git:4ff69ffd"
+ },
+ {
+  "anchor": "Builder on the Claude host rows as of df288c3d, citing full-battery counts before the traceability correction",
+  "decision_id": "model-selection.claude-host-builder-rows-at-df288c3d",
+  "document": "docs/model-selection.md",
+  "findings": [
+   "e1a-first-artifact-battery#full-battery-reading"
+  ],
+  "lines": "39-40",
+  "owner": "user (model-selection owner)",
+  "revision": "git:df288c3d"
+ },
+ {
+  "anchor": "Cost table row: Codex quota tracks API cost, Astra about 4.5x Sol, $6-7 per 1% of a Pro week",
+  "decision_id": "model-selection.cost-table-quota-row",
+  "document": "docs/model-selection.md",
+  "findings": [
+   "codex-quota-fit-per-model#quota-fit"
+  ],
+  "lines": "115",
+  "owner": "user (model-selection owner)",
+  "revision": "git:1a1cb443"
+ },
+ {
+  "anchor": "Cost table row: effort barely changes Astra's and Sol's cost per call",
+  "decision_id": "model-selection.cost-table-effort-row",
+  "document": "docs/model-selection.md",
+  "findings": [
+   "sol-effort-per-call-cost#per-call-cost-by-effort"
+  ],
+  "lines": "117",
+  "owner": "user (model-selection owner)",
+  "revision": "git:2127cc34"
+ },
+ {
+  "anchor": "Hypothesis H2 levels: trigger 200,000 and band floor 235,000 tokens",
+  "decision_id": "context-boundary.h2-levels",
+  "document": "skills/manual-orchestration/references/context-boundary.md",
+  "findings": [
+   "handoff-threshold-replay-m22#conditional-result",
+   "codex-compaction-points#no-limit-compaction-points",
+   "codex-compaction-points#limit-250k-behaviour"
+  ],
+  "lines": "88-101",
+  "owner": "not established (the reference does not name an owner)",
+  "revision": "git:1a1cb443"
+ },
+ {
+  "anchor": "Current strategic route",
+  "decision_id": "roadmap.current-strategic-route",
+  "document": "roadmap.md",
+  "findings": [
+   "first-useful-local-development-pilot-20261106#bounded-observation"
+  ],
+  "lines": "113-118",
+  "owner": "user (maintainer direction)",
+  "revision": "git:a71b2027"
+ },
+ {
+  "anchor": "whole document",
+  "decision_id": "pi-docker-convergence.context-replacement",
+  "document": "planning/s10-pi-docker-convergence-amendment-20261103.md",
+  "findings": [
+   "handoff-threshold-replay-m22#conditional-result"
+  ],
+  "owner": "user (maintainer direction)",
+  "revision": "git:a71b2027"
+ },
+ {
+  "anchor": "expected_mounts: profile.acceptance mounted at /acceptance.rs in the tool container; final validation reruns the same file (pi_coding_validation.rs:18)",
+  "decision_id": "pi-coding-profile.acceptance-contract",
+  "document": "rust/crates/work-engine-manual-host/src/pi_coding.rs",
+  "findings": [
+   "pi-acceptance-verifier-visibility#observation"
+  ],
+  "lines": "455",
+  "owner": "user (Pi coding-job profile and verification contract)",
+  "revision": "git:d80dd242"
+ },
+ {
+  "anchor": "Status line: round 2 is active",
+  "decision_id": "dogfood-plan.round2-status-line",
+  "document": "metrics/dogfood-selection-plan-20261027.md",
+  "findings": [
+   "dogfood-round2-builder-comparison#round-pause"
+  ],
+  "lines": "3",
+  "owner": "user (dogfood plan owner)",
+  "revision": "git:d80dd242"
+ }
+]

@@ -1,0 +1,111 @@
+{
+ "aliases": [
+  "K5"
+ ],
+ "findings": [
+  {
+   "basis": "modelled",
+   "caveats": [
+    "superseded the same day; the ledger states the earlier figure is 'the rediscovery-free row of the table, not a separate finding'",
+    "see handoff-threshold-replay-m22#conditional-result and event ev-20261018-m22-same-day-correction"
+   ],
+   "claim": "Hand off at 70 to 80K for about 35%.",
+   "id": "handoff-threshold-replay-m22#rediscovery-free-reading",
+   "n": 44,
+   "scope": "the first reading of the replay, taken without a rediscovery term on resets a policy adds",
+   "sources": [
+    {
+     "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+     "commit": "d80dd242",
+     "lines": "359-367",
+     "path": "metrics/efficiency-ledger.md"
+    },
+    {
+     "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+     "commit": "d80dd242",
+     "lines": "431",
+     "path": "metrics/efficiency-ledger.md"
+    }
+   ],
+   "value": {
+    "saving_pct": 35,
+    "threshold_k": [
+     70,
+     80
+    ]
+   }
+  },
+  {
+   "basis": "modelled",
+   "caveats": [
+    "rediscovery on added resets is modelled, not measured; the coefficient has about +/-25% scatter",
+    "the replay holds the work stream constant, so it prices carrying context, not redoing work",
+    "Codex-only and predates Sol 6.1 with a 475,000 window, the 250K compaction limit and the Pi/Docker route with Rust-owned context replacement (roadmap.md:116)",
+    "per pass 1 the 116K floor is a 2026-10-16 value reused in context-boundary.md line 105"
+   ],
+   "claim": "With rediscovery charged on added resets, break-even total restart is about 75K; at the measured 116K floor every threshold loses about 30%; at a 40K restart a 70K trigger is worth +29.6%; the addressable term is the about 36K doctrine re-read.",
+   "id": "handoff-threshold-replay-m22#conditional-result",
+   "n": 44,
+   "scope": "44 gpt-6-sol builder threads, 37,628 calls, 582.0 Mweighted, 2026-10-07 to 10-17; replay reproduces observed spend within 7%",
+   "sources": [
+    {
+     "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+     "commit": "d80dd242",
+     "lines": "295-374",
+     "path": "metrics/efficiency-ledger.md"
+    },
+    {
+     "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+     "commit": "d80dd242",
+     "lines": "50",
+     "path": "metrics/efficiency-ledger.md"
+    },
+    {
+     "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+     "commit": "d80dd242",
+     "lines": "431",
+     "path": "metrics/efficiency-ledger.md"
+    },
+    {
+     "blob": "cc9327188f64fefb1d98ac652c98404dc7d79fc2",
+     "commit": "d80dd242",
+     "lines": "105",
+     "path": "skills/manual-orchestration/references/context-boundary.md"
+    }
+   ],
+   "value": {
+    "addressable_doctrine_reread_k": 36,
+    "break_even_total_restart_k": 75,
+    "loss_at_measured_floor_pct": 30,
+    "measured_floor_k": 116,
+    "saving_at_40k_restart_pct": 29.6
+   }
+  }
+ ],
+ "id": "handoff-threshold-replay-m22",
+ "kind": "retrospective-analysis",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+    "commit": "d80dd242",
+    "lines": "295-300",
+    "path": "metrics/efficiency-ledger.md"
+   },
+   "date": "2026-10-18",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q5"
+ ],
+ "sources": [
+  {
+   "blob": "401a64377148bcfdea65616b52c82c6d63f648ba",
+   "commit": "d80dd242",
+   "path": "metrics/efficiency-ledger.md"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "Handoff-threshold replay, M22"
+}

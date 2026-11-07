@@ -1,0 +1,102 @@
+[
+ {
+  "area": "model-and-cost",
+  "id": "Q1",
+  "text": "Which builder model and effort reaches an accepted result at the lowest total cost, for a given class of work?"
+ },
+ {
+  "area": "model-and-cost",
+  "id": "Q2",
+  "text": "When does a cheaper model's price advantage survive its extra repair, review and coordination rounds?"
+ },
+ {
+  "area": "model-and-cost",
+  "id": "Q3",
+  "text": "Does reasoning effort change task-level cost or quality, given per-call cost is effort-independent?"
+ },
+ {
+  "area": "review-and-acceptance",
+  "id": "Q4",
+  "text": "How do review structure and reviewer model affect defects caught, false clearance and false blocks?"
+ },
+ {
+  "area": "context-continuity",
+  "id": "Q5",
+  "text": "What does context replacement cost, and below what restart floor does an earlier handoff pay?"
+ },
+ {
+  "area": "context-continuity",
+  "id": "Q6",
+  "text": "What must survive context replacement (obligations, authority, exact references), and how is survival verified?"
+ },
+ {
+  "area": "context-continuity",
+  "id": "Q7",
+  "text": "When does compaction actually occur on each host, and what governs it per session?"
+ },
+ {
+  "area": "supervision-overhead",
+  "id": "Q8",
+  "text": "What share of cost and time goes to supervision and coordination machinery, and what reduces it without losing correctness?"
+ },
+ {
+  "area": "supervision-overhead",
+  "id": "Q9",
+  "text": "Which human interventions can deterministic host ownership remove?"
+ },
+ {
+  "area": "supervision-overhead",
+  "id": "Q10",
+  "text": "Do budgets work as forecasts or as ceilings, and why do objectives fail?"
+ },
+ {
+  "area": "runtime-and-isolation",
+  "id": "Q11",
+  "text": "Can the Pi/Docker runtime run a contract-bound job end to end, recover context and return a truthful receipt?"
+ },
+ {
+  "area": "runtime-and-isolation",
+  "id": "Q12",
+  "text": "What isolation does the runtime actually establish (filesystem, network, sockets, verifier visibility)?"
+ },
+ {
+  "area": "runtime-and-isolation",
+  "id": "Q13",
+  "text": "How does harness choice (Pi, Codex, Claude Code) change cost and success for the same model?"
+ },
+ {
+  "area": "review-and-acceptance",
+  "id": "Q14",
+  "text": "Is acceptance independent of the implementing agent?"
+ },
+ {
+  "area": "instrument-validity",
+  "id": "Q15",
+  "text": "Do our instruments (batteries, scorers, ledgers) measure what they claim?"
+ },
+ {
+  "area": "model-and-cost",
+  "id": "Q16",
+  "text": "How do subscription meters map to API-equivalent spend per model and tier?"
+ },
+ {
+  "area": "reconsideration",
+  "id": "Q17",
+  "text": "When does a change in evidence or configuration change a conclusion's applicability, and how is reconsideration nominated?"
+ },
+ {
+  "area": "context-continuity",
+  "id": "Q18",
+  "text": "Can models consume exact claims across context replacement correctly, and does reliance improve outcomes?"
+ },
+ {
+  "area": "instrument-validity",
+  "id": "Q19",
+  "text": "How do packet and contract representations affect comprehension and first-artifact defects?"
+ },
+ {
+  "area": "instruction-load",
+  "id": "Q20",
+  "text": "Which standing instructions and doctrine loads are worth their per-call context cost?"
+ }
+]
