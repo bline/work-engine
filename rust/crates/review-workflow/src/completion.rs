@@ -36,6 +36,7 @@ pub struct CompletionSelection {
     pub runtime_sha256: String,
     pub completion_root: PathBuf,
     pub workspace_root: PathBuf,
+    pub repository: PathBuf,
     pub custody_sha256: String,
     pub socket: PathBuf,
     pub operator_uid: u32,
@@ -60,9 +61,14 @@ impl CompletionSelection {
             ]
             .into_iter()
             .all(|s| sha(s))
-            || ![&self.completion_root, &self.workspace_root, &self.socket]
-                .into_iter()
-                .all(|p| p.is_absolute())
+            || ![
+                &self.completion_root,
+                &self.workspace_root,
+                &self.repository,
+                &self.socket,
+            ]
+            .into_iter()
+            .all(|p| p.is_absolute())
         {
             return Err(refuse(
                 "completion_installation",
@@ -159,7 +165,7 @@ impl InstalledSelection {
         value.validate_proposal()?;
         Ok(Self { value, bytes })
     }
-    fn custody(&self, workflow: &Workflow) -> Result<ManagedCustody> {
+    fn custody(&self) -> Result<ManagedCustody> {
         let path = Path::new(workspace_publication::custody::INSTALLED_SELECTION);
         let bytes = read_selection(path)?;
         if sha256_bytes(&bytes) != self.value.custody_sha256 {
@@ -170,7 +176,7 @@ impl InstalledSelection {
         }
         let selected: workspace_publication::custody::CustodySelection =
             serde_json::from_slice(&bytes)?;
-        if selected.repository != workflow.startup.document.repository
+        if selected.repository != self.value.repository
             || selected.root != self.value.workspace_root
         {
             return Err(refuse(
@@ -244,7 +250,7 @@ mod tests {
         let value = json!({"schemaVersion":1,"startupDigest":"a".repeat(64),
             "runtimeSha256":"b".repeat(64),"authoritySourceDigest":"c".repeat(64),
             "custodySha256":"d".repeat(64),"completionRoot":"/campaign/publication",
-            "workspaceRoot":"/workspace","socket":"/operator/completion.sock","operatorUid":1000});
+            "workspaceRoot":"/workspace","repository":"/canonical.git","socket":"/operator/completion.sock","operatorUid":1000});
         let proposal: CompletionSelection = serde_json::from_value(value.clone()).unwrap();
         proposal.validate_proposal().unwrap();
         for key in [
@@ -321,7 +327,7 @@ impl Workflow {
         let installation = InstalledSelection::load()?;
         self.startup.revalidate()?;
         installation.revalidate(&self)?;
-        let workspace = Workspace::initialize_managed(installation.custody(&self)?)
+        let workspace = Workspace::initialize_managed(installation.custody()?)
             .map_err(|e| refuse("workspace", e.to_string()))?;
         let value = &installation.value;
         let _publication = CampaignPublication::initialize(
@@ -345,7 +351,7 @@ impl Workflow {
         self.startup.revalidate()?;
         installation.revalidate(&self)?;
         let (mut claims, mut episode) = self.reopen_completion_owners()?;
-        let workspace = Workspace::open_managed(installation.custody(&self)?)
+        let workspace = Workspace::open_managed(installation.custody()?)
             .map_err(|e| refuse("workspace", e.to_string()))?;
         let value = &installation.value;
         let mut owners = InitialCompletionOwners::new(&mut claims, Some(&mut episode));

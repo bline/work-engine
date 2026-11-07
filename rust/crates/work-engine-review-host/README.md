@@ -25,6 +25,7 @@ canonical. JSON is strict, with no request override or fixture selector:
 | `runtimeSha256` | Exact installed review-host executable SHA-256, also selected by startup and custody |
 | `completionRoot` | The existing campaign owner's root plus `/publication` |
 | `workspaceRoot` | Exact publication workspace owner root selected by custody |
+| `repository` | Exact managed canonical bare repository selected by custody; immutable candidate objects must be available there |
 | `custodySha256` | SHA-256 of the exact fixed installed custody selection bytes for this phase |
 | `socket` | Absolute Unix socket under a canonical runtime-owned private directory |
 | `operatorUid` | Independently selected operator UID checked from the connected Unix peer |
