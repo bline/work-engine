@@ -801,16 +801,47 @@ def trigger_facts(run_dir, episodes=None):
     return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
 
 
-def enforce_triggers(run_dir, episodes=None):
-    facts = trigger_facts(run_dir, episodes)
+def episode_trigger_facts(episodes):
+    """The trigger facts of already-listed episodes. Read-only: it opens no file for writing."""
+    p1 = []
+    repairs = 0
+    for d, e in episodes:
+        if e["arm"] != TERRA:
+            continue
+        review = os.path.join(d, "review-first.json")
+        if os.path.exists(review) and read_episode_record(review)["p1"] > 0:
+            p1.append(e["task_id"])
+        repairs += len(glob.glob(os.path.join(d, "repair-*.json")))
+    return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
+
+
+def pause_coverage(run_dir):
+    """The triggers already acknowledged by pause history: (covered P1 episodes, covered repair rounds). Read-only."""
     covered_p1, covered_repairs = set(), -1
     for path in glob.glob(os.path.join(run_dir, "pauses", "*.json")):
         covered = read_json(path).get("covered_triggers", {})
         covered_p1.update(covered.get("p1_episodes", []))
         covered_repairs = max(covered_repairs, covered.get("terra_repair_rounds", -1))
+    return covered_p1, covered_repairs
+
+
+def terra_stop_rule(facts, covered_p1, covered_repairs, budget):
+    """The one Terra stop rule. Pure: (uncovered P1 episodes, whether repair rounds are over budget and uncovered).
+
+    A stop is a non-empty first element or a true second element. enforce_triggers writes PAUSED on a stop;
+    the admission command only reports it.
+    """
     new_p1 = sorted(set(facts["p1_episodes"]) - covered_p1)
-    budget = read_json(os.path.join(run_dir, "round.json"))["terra_repair_budget"]
     over_budget = facts["terra_repair_rounds"] >= budget and facts["terra_repair_rounds"] > covered_repairs
+    return new_p1, over_budget
+
+
+def enforce_triggers(run_dir, episodes=None):
+    episodes = enrollments(run_dir) if episodes is None else episodes
+    facts = episode_trigger_facts(episodes)
+    covered_p1, covered_repairs = pause_coverage(run_dir)
+    budget = read_json(os.path.join(run_dir, "round.json"))["terra_repair_budget"]
+    new_p1, over_budget = terra_stop_rule(facts, covered_p1, covered_repairs, budget)
     if new_p1 or over_budget:
         reason = f"Terra trigger: P1 episodes {new_p1}; repair rounds {facts['terra_repair_rounds']} (budget {budget})"
         pause_round(run_dir, reason)
@@ -1054,6 +1085,140 @@ def cmd_status(a):
     return out
 
 
+ADMISSION_EXIT = {"active": 0, "paused": 10, "stop_reached": 11, "unknown": 12}
+ADMISSION_EPILOG = """\
+Read-only gate: decide from the run directory alone whether a supervisor may screen a task. It reads no plan,
+takes no lock, writes and syncs nothing, and runs no trigger. Prints one JSON object with state, reason
+(code and text) and the facts it used.
+
+Exit code and state:
+  0   active        screen
+  10  paused        a PAUSED entry exists; only the owner resumes. Any entry named PAUSED counts, including
+                    a malformed or unreadable file, a directory and a broken symlink (os.path.lexists,
+                    stricter than enroll, which uses os.path.exists and would not see a broken symlink)
+  11  stop_reached  no PAUSED entry, but the pause trigger is met and unmarked (reason pause_trigger_unmarked:
+                    an uncovered Terra P1 episode, or Terra repair rounds at the budget and above the covered
+                    count) or enrollments are at the cap (reason cap_reached); do not screen, tell the owner
+  12  unknown       the run directory, round.json, an enrollment, review-first.json or pause history is
+                    missing, unreadable or fails its integrity check, or an episode needs manifest recovery
+                    that enroll would perform; admission never repairs, so do not screen, tell the owner
+Any other exit code, including a usage error (2) or a crash (1), is not an admission: do not screen.
+The Terra in-flight limit is reported as a fact and is not a stop.
+"""
+
+
+class AdmissionUnknown(Exception):
+    def __init__(self, code, text):
+        super().__init__(text)
+        self.code = code
+        self.text = text
+
+
+def pause_marker_fact(path):
+    """Describe a PAUSED entry without writing. A FIFO or special file is never opened."""
+    fact = {"present": True}
+    if os.path.islink(path) and not os.path.exists(path):
+        return {**fact, "kind": "broken_symlink", "valid": False}
+    if os.path.isdir(path):
+        return {**fact, "kind": "directory", "valid": False}
+    if not os.path.isfile(path):
+        return {**fact, "kind": "other", "valid": False}
+    fact["kind"] = "file"
+    try:
+        data = read_json(path)
+        if not isinstance(data, dict):
+            raise ValueError("not a JSON object")
+        return {**fact, "valid": True, "reason": data.get("reason"), "paused_at": data.get("paused_at")}
+    except (OSError, ValueError, UnicodeError) as e:
+        return {**fact, "valid": False, "error": f"{type(e).__name__}: {e}"}
+
+
+def read_round_config(run_dir):
+    path = os.path.join(run_dir, "round.json")
+    if not os.path.isfile(path):
+        raise AdmissionUnknown("round_file_missing", "round.json is missing or not a regular file")
+    try:
+        config = read_json(path)
+    except (OSError, ValueError, UnicodeError) as e:
+        raise AdmissionUnknown("round_file_unreadable", f"round.json is unreadable or malformed: {e}") from e
+    fields = ("cap", "terra_in_flight", "terra_repair_budget")
+    if not isinstance(config, dict) or any(type(config.get(f)) is not int for f in fields):
+        raise AdmissionUnknown("round_file_invalid", "round.json lacks integer cap, terra_in_flight and terra_repair_budget")
+    return {f: config[f] for f in fields}
+
+
+def read_episodes_unrepaired(run_dir):
+    """List enrollments as enrollments() does, but refuse where recover_episode would repair. Read-only."""
+    episodes = []
+    for d in enrollment_dirs(run_dir):
+        name = os.path.basename(d)
+        if not record_files(d):
+            continue  # No record yet; enrollments() ignores it too.
+        problems = integrity_problems(d)
+        if problems:
+            raise AdmissionUnknown("episode_integrity_problem", f"{name}: " + "; ".join(problems))
+        path = os.path.join(d, "enrollment.json")
+        if not os.path.isfile(path):
+            raise AdmissionUnknown("episode_without_enrollment", f"{name}: records exist but enrollment.json does not")
+        try:
+            record = read_episode_record(path)
+        except IntegrityFailure as e:
+            raise AdmissionUnknown("enrollment_record_invalid", str(e)) from e
+        if record.get("arm") not in (TERRA, SOL) or not isinstance(record.get("task_id"), str):
+            raise AdmissionUnknown("enrollment_record_invalid", f"{name}: enrollment lacks a known arm and a task_id")
+        episodes.append((d, record))
+    return episodes
+
+
+def admission_decision(run_dir):
+    facts = {key: {"evaluated": False} for key in ("pause_marker", "round", "enrollments", "trigger", "terra_in_flight")}
+
+    def outcome(state, code, text):
+        return {"state": state, "reason": {"code": code, "text": text}, "run_dir": run_dir, "facts": facts}
+
+    try:
+        if not os.path.isdir(run_dir):
+            return outcome("unknown", "run_dir_missing", "run directory is missing or not a directory")
+        marker = os.path.join(run_dir, "PAUSED")
+        if os.path.lexists(marker):
+            facts["pause_marker"] = {"evaluated": True, **pause_marker_fact(marker)}
+            return outcome("paused", "pause_marker_present", "a PAUSED entry exists; only the owner resumes the round")
+        facts["pause_marker"] = {"evaluated": True, "present": False}
+        config = read_round_config(run_dir)
+        facts["round"] = {"evaluated": True, **config}
+        episodes = read_episodes_unrepaired(run_dir)
+        open_terra = sum(e["arm"] == TERRA and not terminal(d) for d, e in episodes)
+        facts["enrollments"] = {"evaluated": True, "count": len(episodes), "cap": config["cap"]}
+        facts["terra_in_flight"] = {"evaluated": True, "open_terra": open_terra, "limit": config["terra_in_flight"],
+                                    "limit_reached": open_terra >= config["terra_in_flight"], "gates_admission": False}
+        try:
+            trigger = episode_trigger_facts(episodes)
+            covered_p1, covered_repairs = pause_coverage(run_dir)
+        except (IntegrityFailure, OSError, ValueError, KeyError, TypeError, AttributeError) as e:
+            raise AdmissionUnknown("trigger_inputs_unreadable", f"review-first.json or pause history is unreadable: {e}") from e
+        new_p1, over_budget = terra_stop_rule(trigger, covered_p1, covered_repairs, config["terra_repair_budget"])
+        facts["trigger"] = {"evaluated": True, **trigger, "covered_p1_episodes": sorted(covered_p1),
+                            "covered_repair_rounds": covered_repairs, "uncovered_p1_episodes": new_p1,
+                            "repair_rounds_over_budget": over_budget}
+        if new_p1 or over_budget:
+            return outcome("stop_reached", "pause_trigger_unmarked",
+                           f"Terra trigger met with no PAUSED marker: uncovered P1 episodes {new_p1}; repair rounds "
+                           f"{trigger['terra_repair_rounds']} (budget {config['terra_repair_budget']}, covered {covered_repairs})")
+        if len(episodes) >= config["cap"]:
+            return outcome("stop_reached", "cap_reached", f"{len(episodes)} enrollments at cap {config['cap']}")
+        return outcome("active", "admitted", "no marker, trigger or cap stops screening")
+    except AdmissionUnknown as e:
+        return outcome("unknown", e.code, e.text)
+    except Exception as e:  # An unexpected failure is never an admission.
+        return outcome("unknown", "unexpected_exception", f"{type(e).__name__}: {e}")
+
+
+def cmd_admission(a):
+    out = admission_decision(a.run_dir)
+    print(json.dumps(out, sort_keys=True))
+    return ADMISSION_EXIT[out["state"]]
+
+
 @contextlib.contextmanager
 def round_lock(run_dir):
     with open(os.path.join(run_dir, ".round.lock"), "a") as lock:
@@ -1139,6 +1304,9 @@ def main():
     v.add_argument("--repo")
     v.add_argument("--no-recompute", action="store_true")
     v.add_argument("--tools-root", default=TOOLS_ROOT)
+    ad = sub.add_parser("admission", help="read-only: may a supervisor screen? exit 0 only when active",
+                        description=ADMISSION_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ad.add_argument("--run-dir", required=True)
     for name in sorted(ROUND_COMMANDS):
         r = sub.add_parser(name)
         r.add_argument("--run-dir", required=True)
@@ -1175,6 +1343,8 @@ def main():
         ap.error("--assignment cannot be combined with --all")
     if a.cmd in ROUND_COMMANDS:
         run_round_command(a)
+    elif a.cmd == "admission":
+        sys.exit(cmd_admission(a))
     elif a.cmd == "start":
         print(now())
     elif a.cmd == "check-tool":
