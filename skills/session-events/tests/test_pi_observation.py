@@ -16,11 +16,13 @@ import time
 import unittest
 from unittest import mock
 from test_session_events import SE
+from test_http_auth import needs_verifier
 
 REPO = Path(__file__).resolve().parents[3]
-BIN = REPO / 'rust/target/debug/examples/mcp_pi_observation'
-NATIVE = REPO / 'rust/target/debug/examples/native_ack_fixture'
-BASE = REPO / 'rust/target/debug/examples/pi_docker_fixture'
+TARGET = Path(os.environ.get('CARGO_TARGET_DIR') or REPO / 'rust/target').resolve()
+BIN = TARGET / 'debug/examples/mcp_pi_observation'
+NATIVE = TARGET / 'debug/examples/native_ack_fixture'
+BASE = TARGET / 'debug/examples/pi_docker_fixture'
 READER = Path('/home/bline/.local/state/work-engine/tools/context-status/d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204/work-engine-context-status')
 SCHEMA = 'work-engine.mcp-pi-observation.v1'
 
@@ -35,6 +37,12 @@ def write(path, value):
     path.chmod(0o600)
     return artifact(path)
 
+MISSING = [str(path) for path in (BIN, NATIVE, BASE, READER) if not path.is_file()]
+
+@unittest.skipUnless(not MISSING, 'requires the built Rust examples and the pinned context reader; missing: '
+                     + ', '.join(MISSING) + '. Build: cargo build --manifest-path rust/Cargo.toml -p session-delivery '
+                     '--example mcp_pi_observation --example native_ack_fixture, and -p work-engine-manual-host '
+                     '--example pi_docker_fixture')
 class Observation(unittest.TestCase):
     def setUp(self):
         root = REPO / '.mcp-pi-evidence'
@@ -258,6 +266,7 @@ class Observation(unittest.TestCase):
         self.assertTrue(self.call('observe')['isError'])
         self.assertFalse(self.calls.exists())
 
+    @needs_verifier
     def test_http_authorization_to_exact_fake_result_without_sockets(self):
         from test_http_auth import AuthHttp, b64, SUBJECT, RESOURCE, ISSUER, VERIFIER
         self.key=self.root/'key.pem'

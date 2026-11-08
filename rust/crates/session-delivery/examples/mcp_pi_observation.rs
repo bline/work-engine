@@ -243,6 +243,13 @@ fn read_result(c: &Config, binding: &str) -> R<Value> {
     v["intent_reference"] = serde_json::to_value(pin(&c.operation_dir.join("intent.json"))?)?;
     Ok(v)
 }
+/// What the Host worker returns in place of the Host itself (see `execute`).
+struct Observed {
+    ack: Value,
+    receipt: Value,
+    session_id: Option<String>,
+    native_history: Option<Artifact>,
+}
 fn execute(c: &Config) -> R<Value> {
     let mut s = c.startup.clone();
     convert(source(&s))?; // Source event exists before the native session can start.
@@ -260,7 +267,32 @@ fn execute(c: &Config) -> R<Value> {
         return Err(err("grant_expired_or_revoked"));
     }
     let expected = digest(&serde_json::to_vec(&job)?);
-    let worker = std::thread::spawn(move || VerifiedRun::run(job).map_err(|e| e.to_string()));
+    // The Host stays on its worker thread: its optional coding gate is not Send, so
+    // the Host cannot come back through join(). The worker finishes the run, waits
+    // for the released startup, acknowledges, and returns plain results. Host::admit
+    // installs no Pi owner, so dropping the Host there releases only its state lock.
+    let (released, released_rx) = std::sync::mpsc::channel::<Option<Startup>>();
+    let worker = std::thread::spawn(move || -> Result<Observed, String> {
+        let mut run = VerifiedRun::run(job).map_err(|e| e.to_string())?;
+        let s = released_rx
+            .recv()
+            .ok()
+            .flatten()
+            .ok_or("event_not_released")?;
+        let ack = run
+            .ack_with_clock(&s, proof::now)
+            .map_err(|e| e.to_string())?;
+        let journal = run.journal();
+        Ok(Observed {
+            ack,
+            receipt: run.receipt_value().clone(),
+            session_id: journal.session_id.clone(),
+            native_history: journal
+                .receiver
+                .as_ref()
+                .and_then(|r| r.native_history.clone()),
+        })
+    });
     let release_result = (|| -> R<()> {
         while !s.ready_path.exists() {
             if worker.is_finished() || convert(now())? >= s.deadline_unix_seconds {
@@ -286,16 +318,15 @@ fn execute(c: &Config) -> R<Value> {
         }
         convert(release(&s, convert(now())?))
     })();
+    // Tell the worker whether the event was released; it exits either way.
+    let _ = released.send(release_result.is_ok().then(|| s.clone()));
     // Always join, including release errors and HTTP disconnect. Host owns cleanup.
     let run = worker.join().map_err(|_| err("host_panicked"))?;
     release_result?;
-    let mut run = run.map_err(|e| err(&e))?;
-    let ack = convert(run.ack_with_clock(&s, proof::now))?;
+    let run = run.map_err(|e| err(&e))?;
+    let ack = run.ack;
     let receipt_path = c.operation_dir.join("native-receipt.json");
-    convert(publish(
-        &receipt_path,
-        &serde_json::to_vec(run.receipt_value())?,
-    ))?;
+    convert(publish(&receipt_path, &serde_json::to_vec(&run.receipt)?))?;
     let envelope: session_delivery::Envelope =
         serde_json::from_slice(&fs::read(&s.envelope_path)?)?;
     let observation_ack = observation_ack(&envelope);
@@ -305,11 +336,7 @@ fn execute(c: &Config) -> R<Value> {
         pin(&s.envelope_path)?,
         pin(&c.operation_dir.join("job.json"))?,
         pin(&c.operation_dir.join("startup.json"))?,
-        run.journal()
-            .receiver
-            .as_ref()
-            .unwrap()
-            .native_history
+        run.native_history
             .clone()
             .ok_or_else(|| err("history_missing"))?,
         pin(&s.ready_path)?,
@@ -317,7 +344,7 @@ fn execute(c: &Config) -> R<Value> {
     Ok(
         json!({"state":"target_observed","accepted":true,"transport_accepted":true,"target_observed":true,
         "application_result":null,"completion":null,"fixture_only":true,"provenance":"provider-disabled SDK observation; source reader/event may be synthetic; native JSONL not established",
-        "native_session_id":run.journal().session_id,"store_ack":ack,"observation_ack":observation_ack,"native_receipt_id":run.receipt_value()["receipt_id"],"evidence":evidence,"retry_permitted":false}),
+        "native_session_id":run.session_id,"store_ack":ack,"observation_ack":observation_ack,"native_receipt_id":run.receipt["receipt_id"],"evidence":evidence,"retry_permitted":false}),
     )
 }
 fn call(c: &Config, config_bytes: &[u8], r: &Request) -> R<Value> {

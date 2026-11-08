@@ -96,6 +96,6 @@ python3 skills/durable-state/scripts/codex_chatboard.py --repository . post --au
 python3 skills/durable-state/scripts/codex_chatboard.py --repository . claim --resource RESOURCE --author AUTHOR --session-id SESSION_ID --note NOTE [--claim-id CLAIM_ID] [--ttl-seconds TTL_SECONDS]
 python3 skills/durable-state/scripts/codex_chatboard.py --repository . release --resource RESOURCE --session-id SESSION_ID --claim-id CLAIM_ID
 python3 skills/durable-state/scripts/codex_chatboard.py --repository . read [--since SINCE] [--limit LIMIT] [--active-claims] [--kind KINDS] [--role ROLES] [--format {json,compact}]
-# other subcommands (put --help after one for its usage): wait, topics, roles, requests, handoff-publish, handoff-status, kinds, adopt
+# other subcommands (put --help after one for its usage): wait, topics, roles, requests, handoff-publish, handoff-status, owner-boundary-io, kinds, adopt
 ```
 <!-- /cli-synopsis -->

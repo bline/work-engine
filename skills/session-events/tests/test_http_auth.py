@@ -14,7 +14,11 @@ from unittest import mock
 
 from test_session_events import Fixture, SE, CODEX_ID, URL, whsec
 
-VERIFIER = Path(os.environ.get("MCP_AUTH_TEST_BINARY", Path(__file__).resolve().parents[3] / "rust/target/debug/mcp-auth"))
+TARGET = Path(os.environ.get("CARGO_TARGET_DIR") or Path(__file__).resolve().parents[3] / "rust/target").resolve()
+VERIFIER = Path(os.environ.get("MCP_AUTH_TEST_BINARY") or TARGET / "debug/mcp-auth")
+# Tests that need a token to verify run only with the Rust verifier built; the rest run without it.
+needs_verifier = unittest.skipUnless(VERIFIER.is_file(), f"requires the mcp-auth verifier at {VERIFIER}: "
+                                     "cargo build --manifest-path rust/Cargo.toml -p mcp-auth, or set MCP_AUTH_TEST_BINARY")
 RESOURCE = "https://mcp-test.devwits.ai/mcp"
 ISSUER = "https://checkered-replace-0099.customers.stytch.dev"
 SUBJECT = "user-test-8b1b7b52-0fa4-4b70-8594-b2b043592a1c"
@@ -75,6 +79,7 @@ class AuthHttp(Fixture):
             self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name}})[0], 401)
         self.assertEqual(self.request({"jsonrpc":"2.0", "id":1, "method":"ping"}, headers={"Origin":"https://evil.example"})[0], 403)
 
+    @needs_verifier
     def test_explicit_offline_discovery_preserves_write_scope_and_subject(self):
         config = json.loads(self.config.read_text())
         config["advertise_offline_access"] = True
@@ -94,6 +99,7 @@ class AuthHttp(Fixture):
         with self.assertRaises(ValueError):
             SE.HttpAuth(str(self.config))
 
+    @needs_verifier
     def test_auth_before_effects_and_bad_requests(self):
         msg = {"jsonrpc":"2.0", "id":2, "method":"events/subscribe", "params": {"name": SE.SIMPLE_EVENT_NAME, "arguments":{"session_id":CODEX_ID,"pattern":"x"}, "delivery":{"mode":"webhook", "url":URL,"secret":whsec()}}}
         self.assertEqual(self.request(msg)[0], 401)
@@ -144,6 +150,7 @@ class AuthHttp(Fixture):
                 self.config.write_text(json.dumps({**original, "write_scope":scope}))
                 with self.assertRaises(ValueError): SE.HttpAuth(str(self.config))
 
+    @needs_verifier
     def test_stytch_profile_requires_bound_client_project_and_resource(self):
         config = json.loads(self.config.read_text())
         client = "connected-app-test-7607c19e-b18a-4ef5-b675-480c2b7457c5"
@@ -183,6 +190,7 @@ class AuthHttp(Fixture):
         self.assertEqual(self.request(msg, token({"client_id":None}))[0], 401)
         self.assertEqual(self.request(msg, token({"jti":None}))[0], 401)
 
+    @needs_verifier
     def test_authenticated_read_only_staging(self):
         client = "connected-app-test-7607c19e-b18a-4ef5-b675-480c2b7457c5"
         project = "project-test-5f16c2cc-3020-4a9a-93af-b3a0f22aa9bd"
@@ -233,6 +241,7 @@ class AuthHttp(Fixture):
         log = (self.homes.state / "requests.log").read_text()
         self.assertNotIn(good, log); self.assertNotIn(insufficient, log)
 
+    @needs_verifier
     def test_observation_only_exact_subject_and_write_boundary(self):
         seen = []
         auth = SE.HttpAuth(str(self.config))
@@ -277,6 +286,7 @@ class AuthHttp(Fixture):
                 SE.main(["serve-http", "--authenticated-read-only"])
             bind.assert_not_called()
 
+    @needs_verifier
     def test_rejections_and_rotation(self):
         msg = {"jsonrpc":"2.0", "id":1, "method":"events/unsubscribe", "params":{}}
         now = int(time.time())
