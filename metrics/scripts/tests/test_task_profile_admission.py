@@ -14,6 +14,7 @@ import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import stat
@@ -248,6 +249,10 @@ class AdmissionBase(unittest.TestCase):
 
     def write_pause_history(self, run, document, name="x.json"):
         (run / "pauses").mkdir(exist_ok=True)
+        if isinstance(document, dict) and "covered_triggers" in document:
+            # cmd_resume writes the owner's approval with the coverage and refuses a blank one (AR-1 class repair, A1):
+            # a hand-written history that covers a trigger carries one unless the test is about it.
+            document = {"owner_approval": "synthetic owner approval", **document}
         text = document if isinstance(document, str) else json.dumps(document)
         (run / "pauses" / name).write_text(text)
 
@@ -581,6 +586,60 @@ class AdmissionBase(unittest.TestCase):
             self.enroll(run, "s", byte=0)
             return run
 
+        # --- Astra findings A1-A2 and the format pass (see input-inventory.md, section F, C19-C21) -----------------
+        def approval_history(value):
+            """A pause history that covers the P1 episode, with owner_approval `value` (or none). Written as text so
+            that the helper's default approval is not added."""
+            def build(name):
+                run = self.p1_unmarked(name)
+                document = {"covered_triggers": {"p1_episodes": ["task-p1"], "terra_repair_rounds": 0}}
+                if value is not missing:
+                    document["owner_approval"] = value
+                self.write_pause_history(run, json.dumps(document))
+                return run
+            return build
+
+        def second_history_without_approval(name):
+            run = self.p1_unmarked(name)
+            document = {"covered_triggers": {"p1_episodes": ["task-p1"], "terra_repair_rounds": 0}}
+            self.write_pause_history(run, json.dumps({**document, "owner_approval": "synthetic owner approval"}), "a.json")
+            self.write_pause_history(run, json.dumps(document), "b.json")  # Same coverage, no approval.
+            return run
+
+        def receipt_digest(value):
+            """repair-01.json's review_receipt.sha256 set to value (a callable gets the genuine digest)."""
+            def build(name):
+                run = self.terra_with_repair(name, budget=3)  # Counted 1 of 3: active unless the record is refused.
+
+                def edit(data):
+                    receipt = dict(data["review_receipt"])
+                    chosen = value(receipt["sha256"]) if callable(value) else value
+                    if chosen is missing:
+                        receipt.pop("sha256")
+                    else:
+                        receipt["sha256"] = chosen
+                    data["review_receipt"] = receipt
+                self.rechain(run, "t", {"repair-01.json": edit})
+                return run
+            return build
+
+        def uppercase_duplicate_receipt(name):
+            run = self.terra_with_repair(name, budget=3)
+            receipt = json.loads((run / "enrollments" / "t" / "repair-01.json").read_text())["review_receipt"]
+            self.append_record(run, "t", "repair-02.json", {
+                "task_id": "t", "round": 2, "review_receipt": {**receipt, "sha256": receipt["sha256"].upper()},
+                "resubmitted_at": "2026-11-07T00:00:00Z"})
+            return run
+
+        def task_id_outside_the_format(task):
+            def build(name):
+                run = self.new_run(name)
+                self.enroll(run, "t", byte=0)
+                os.rename(run / "enrollments" / "t", run / "enrollments" / task)
+                self.rechain(run, task, {"enrollment.json": lambda data: data.update(task_id=task)})
+                return run
+            return build
+
         p1_values = {"nan": float("nan"), "negative": -1, "minus_infinity": float("-inf"), "infinity": float("inf"),
                      "bool_true": True, "bool_false": False, "float_zero": 0.0, "float_one": 1.0, "string": "1",
                      "null": None, "list": [1], "missing": missing}
@@ -729,6 +788,25 @@ class AdmissionBase(unittest.TestCase):
             **{f"enrollment_draw_byte_{label}": (enrollment_edit(set_field("draw_byte", value)), "enrollment_record_invalid")
                for label, value in (("true", True), ("false", False), ("float", 1.0), ("above_255", 257), ("negative", -1),
                                     ("string", "1"), ("null", None), ("missing", missing), ("even", 2), ("nan", float("nan")))},
+            # A1: coverage with no valid owner approval (cmd_resume refuses a blank one and writes the two together).
+            **{f"pause_approval_{label}": (approval_history(value), "pause_history_malformed")
+               for label, value in (("empty", ""), ("spaces", "   "), ("whitespace", "\t\n "), ("no_break_space", "\u00a0"),
+                                    ("null", None), ("missing", missing), ("integer", 5), ("zero", 0), ("true", True),
+                                    ("list", ["approved"]), ("object", {"by": "owner"}))},
+            "pause_approval_blank_in_the_second_history": (second_history_without_approval, "pause_history_malformed"),
+            # A2: a repair receipt digest the recorder cannot have written (file_evidence: 64 lowercase hex digits).
+            **{f"repair_receipt_digest_{label}": (receipt_digest(value), "repair_record_invalid")
+               for label, value in (("empty", ""), ("not_a_hash", "not-a-hash"), ("short", "a" * 63), ("long", "a" * 65),
+                                    ("non_hex", "g" * 64), ("uppercase", lambda genuine: genuine.upper()),
+                                    ("trailing_newline", lambda genuine: genuine + "\n"),
+                                    ("leading_space", lambda genuine: " " + genuine[1:]),
+                                    ("arabic_indic_digits", "\u0660" * 64), ("null", None), ("integer", 5), ("list", ["a" * 64]),
+                                    ("missing", missing))},
+            "repair_receipt_digest_uppercase_form_of_another_repairs_digest": (uppercase_duplicate_receipt, "repair_record_invalid"),
+            # The task ID is the identity the P1 episodes and the coverage are matched by; episode_dir refuses others.
+            **{f"task_id_format_{label}": (task_id_outside_the_format(task), "enrollment_record_invalid")
+               for label, task in (("leading_dash", "-t"), ("space", "a b"), ("too_long", "a" * 129),
+                                   ("non_ascii", "caf\u00e9"), ("trailing_newline", "t\n"))},
         }
         return cases
 
@@ -1500,7 +1578,7 @@ class SharedRule(AdmissionBase):
                             (run / "round.json").write_text(json.dumps(config))
                             if covered == "all":
                                 (run / "pauses").mkdir()
-                                (run / "pauses" / "c.json").write_text(json.dumps({"covered_triggers": rec.trigger_facts(str(run))}))
+                                (run / "pauses" / "c.json").write_text(json.dumps({"owner_approval": "synthetic owner approval", "covered_triggers": rec.trigger_facts(str(run))}))
                             out = rec.admission_decision(str(run))
                             probe = self.copy_of(run, name + "-probe")
                             rec.enforce_triggers(str(probe))
@@ -1821,6 +1899,24 @@ class AdmissionClassRepair(AdmissionBase):
                                self.BAD + [{"path": "x"}, {"sha256": 5}], lambda v: False, "stop_reached")
         self.mutate_and_decide(covered, "pause-covered", pause_edit(False), "covered_triggers", self.BAD,
                                lambda v: isinstance(v, dict), "active", absent_is_valid=True)
+        # Astra A1-A2: the approval written with the coverage, and the digest the recorder writes for a receipt.
+        def receipt_edit(run, field, value, missing):
+            def apply(data):
+                receipt = dict(data["review_receipt"])
+                if value is missing:
+                    receipt.pop(field, None)
+                else:
+                    receipt[field] = value
+                data["review_receipt"] = receipt
+            self.rechain(run, "t", {"repair-01.json": apply})
+
+        repaired = self.terra_with_repair("mut-repaired", budget=3)
+        self.mutate_and_decide(repaired, "repair-receipt-sha256", receipt_edit, "sha256",
+                               self.BAD + ["not-a-hash", "a" * 63, "a" * 65, "g" * 64, "A" * 64, "\u0660" * 64],
+                               lambda v: isinstance(v, str) and re.fullmatch("[0-9a-f]{64}", v) is not None, "active")
+        self.mutate_and_decide(covered, "pause-approval", pause_edit(False), "owner_approval",
+                               self.BAD + [" ", "\t", "\u00a0", 5, ["x"]],
+                               lambda v: isinstance(v, str) and bool(v.strip()), "active")
         self.mutate_and_decide(covered, "pause-p1", pause_edit(True), "p1_episodes", self.BAD,
                                lambda v: isinstance(v, list) and all(isinstance(i, str) for i in v), "active", absent_is_valid=True)
         self.mutate_and_decide(covered, "pause-rounds", pause_edit(True), "terra_repair_rounds", self.BAD, is_count, "active", absent_is_valid=True)
@@ -1843,8 +1939,8 @@ class AdmissionClassRepair(AdmissionBase):
         fixtures.append(run)
         resumed = self.copy_of(run, "diff-b")
         (resumed / "pauses").mkdir()
-        (resumed / "pauses" / "a.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 2}}))
-        (resumed / "pauses" / "b.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["t", "v"], "terra_repair_rounds": 3}}))
+        (resumed / "pauses" / "a.json").write_text(json.dumps({"owner_approval": "a", "covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 2}}))
+        (resumed / "pauses" / "b.json").write_text(json.dumps({"owner_approval": "b", "covered_triggers": {"p1_episodes": ["t", "v"], "terra_repair_rounds": 3}}))
         (resumed / "pauses" / "ignored.txt").write_text("[")
         fixtures.append(resumed)
         linked = self.copy_of(run, "diff-c")  # A symlinked review is followed, as before.
@@ -2128,6 +2224,46 @@ class AdmissionClassRepair(AdmissionBase):
                 self.assertEqual((record["arm"], record["draw_byte"]), (expected[0], byte))
                 self.admit(run, expected[1])
 
+    # --- Astra A1-A2 and the format pass: valid states keep their facts ----------------------------------------
+    def test_a1_the_approval_the_real_resume_writes_is_the_one_the_gate_accepts(self):
+        run = self.new_run("a1-valid", budget=3, in_flight=9)
+        self.enroll(run, "t", byte=1)
+        self.review(run, "t", p1=1)
+        self.rcall(run, "resume", "--owner-approval", "  padded approval  ")  # Stored as given, not stripped.
+        self.enroll(run, "u", byte=1)
+        self.review(run, "u", p1=1)
+        self.rcall(run, "resume", "--owner-approval", "approuv\u00e9 \u2713")
+        approvals = [json.loads((run / "pauses" / n).read_text())["owner_approval"] for n in sorted(os.listdir(run / "pauses"))]
+        self.assertEqual(sorted(approvals), sorted(["  padded approval  ", "approuv\u00e9 \u2713"]))
+        out = self.admit(run, "active")
+        covered, rounds = rec.pause_coverage(str(run))
+        self.assertEqual((out["facts"]["trigger"]["covered_p1_episodes"], out["facts"]["trigger"]["covered_repair_rounds"]),
+                         (sorted(covered), rounds))
+        self.assertEqual(sorted(covered), ["t", "u"])
+        # A history that carries no coverage needs no approval (pause_coverage reads it as nothing covered).
+        self.write_pause_history(run, {"reason": "x"}, "no-coverage.json")
+        self.admit(run, "active")
+
+    def test_a2_every_receipt_digest_the_recorder_writes_is_accepted_and_counted(self):
+        run = self.new_run("a2-valid", budget=10, in_flight=9)
+        self.enroll(run, "t", byte=1)
+        for _ in range(3):
+            self.repair(run, "t")
+        digests = [json.loads((run / "enrollments" / "t" / f"repair-0{n}.json").read_text())["review_receipt"]["sha256"]
+                   for n in (1, 2, 3)]
+        self.assertEqual(len(set(digests)), 3)
+        for digest in digests:
+            self.assertRegex(digest, r"\A[0-9a-f]{64}\Z")
+        out = self.admit(run, "active")
+        self.assertEqual(out["facts"]["trigger"]["terra_repair_rounds"], 3)
+        self.assertEqual(rec.trigger_facts(str(run))["terra_repair_rounds"], 3)
+
+    def test_task_ids_the_recorder_accepts_are_admitted(self):
+        run = self.new_run("ids-valid", in_flight=9)
+        for task in ("0", "A.b_c-9", "a" * 128):
+            self.enroll(run, task, byte=1)
+        self.assertEqual(self.admit(run, "active")["facts"]["enrollments"]["count"], 3)
+
     def test_coupling_fixtures_are_all_unknown_and_none_touches_the_run_directory(self):
         """The F1-F5 and coupling-pass fixtures are in fail_closed_cases, so the reason-code test and the no-write
         snapshot test (`test_11_fail_closed_states_are_untouched`) run them. Count them here so a dropped fixture
@@ -2136,7 +2272,8 @@ class AdmissionClassRepair(AdmissionBase):
         groups = {"coverage_": 9, "review_changes_required_without": 1, "review_accept_with": 2, "review_flag_": 7,
                   "review_verdict_": 4, "review_p2_": 12, "review_written_after_close": 1, "close_repair_rounds_": 8,
                   "repair_written_after_close": 1, "repair_review_receipt_repeated": 1,
-                  "enrollment_sol_with_odd": 1, "enrollment_terra_with_even": 1, "enrollment_draw_byte_": 10}
+                  "enrollment_sol_with_odd": 1, "enrollment_terra_with_even": 1, "enrollment_draw_byte_": 10,
+                  "pause_approval_": 12, "repair_receipt_digest_": 14, "task_id_format_": 5}
         for prefix, count in groups.items():
             self.assertEqual(len([n for n in cases if n.startswith(prefix)]), count, prefix)
 

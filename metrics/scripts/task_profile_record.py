@@ -1124,7 +1124,11 @@ Exit code and state:
                     not (verdict == accept), p2 not a nonnegative integer), or that was written after the
                     episode ended: review_record_invalid. A Terra close.json whose repair_rounds is not the
                     number of repair records, a repair record with no review receipt of its own or written
-                    after the episode ended: repair_record_invalid. Pause history that covers more repair
+                    after the episode ended, or whose receipt digest is not 64 lowercase hex digits (what the
+                    recorder writes), or an enrollment whose task ID the recorder would refuse:
+                    repair_record_invalid, enrollment_record_invalid. A pause-history file with covered_triggers
+                    and no nonblank owner_approval string (cmd_resume refuses a blank one and writes the two
+                    together): pause_history_malformed. Pause history that covers more repair
                     rounds than there are repair records, or a P1 episode that is not a Terra episode with a
                     first review of p1 above 0, or two histories that are not ordered (neither has both a subset
                     of the other's covered P1 episodes and no more covered rounds): pause_history_inconsistent.
@@ -1163,6 +1167,7 @@ def pause_marker_fact(path):
 
 SPECIAL_RECORD = re.compile(r"(?:enrollment|review-first|close|withdraw)\.json\Z")
 REPAIR_GLOB = "repair-*.json"  # What the shared trigger rule counts, by glob.
+SHA256_HEX = re.compile(r"[0-9a-f]{64}")  # What sha256() above writes and file_evidence records.
 REPAIR_NAME = re.compile(r"repair-([0-9]{2,})\.json\Z")  # What the recorder writes: repair-{number:02d}.json
 
 
@@ -1385,6 +1390,12 @@ def admission_pause_coverage(run_dir):
         rounds = covered.get("terra_repair_rounds", -1)
         if type(rounds) is not int or (rounds < 0 and "terra_repair_rounds" in covered):
             raise malformed("covered_triggers.terra_repair_rounds is not a nonnegative integer")
+        approval = document.get("owner_approval")
+        if not isinstance(approval, str) or not approval.strip():
+            # cmd_resume refuses a blank approval and writes covered_triggers in the same record as owner_approval, so a
+            # history that covers a trigger without a stated approval is not one the recorder wrote: the coverage
+            # would suppress a stop that nobody is recorded as having acknowledged.
+            raise malformed(f"owner_approval is {approval!r}, not a nonblank string (cmd_resume writes it with covered_triggers)")
         covered_p1.update(episodes)
         covered_repairs = max(covered_repairs, rounds)
         histories.append((name, frozenset(episodes), rounds))
@@ -1472,6 +1483,10 @@ def read_episodes_unrepaired(run_dir):
         if record["task_id"] != name:
             raise AdmissionUnknown("enrollment_record_invalid",
                                    f"{name}: enrollment names task {record['task_id']!r}, not its directory")
+        if not TASK_ID.fullmatch(name):
+            # episode_dir refuses any other task ID before cmd_enroll writes, and the ID is the identity the P1
+            # episodes and the pause coverage are matched by.
+            raise AdmissionUnknown("enrollment_record_invalid", f"{name}: not a task ID the recorder accepts")
         byte = record.get("draw_byte")
         if type(byte) is not int or not 0 <= byte <= 255 or record["arm"] != (TERRA if byte & 1 else SOL):
             # cmd_enroll derives the arm from the byte in the same write (arm = TERRA if byte & 1 else SOL), and the
@@ -1551,12 +1566,15 @@ def admission_trigger_facts(episodes):
             round_field = records[n].get("round")
             receipt = records[n].get("review_receipt")
             receipt = receipt.get("sha256") if isinstance(receipt, dict) else None
+            if not isinstance(receipt, str) or not SHA256_HEX.fullmatch(receipt):
+                receipt = None  # file_evidence writes sha256(path): 64 lowercase hex digits, nothing else is a digest.
             if (match is None or number in numbers or type(round_field) is not int or round_field != number
                     or records[n].get("task_id") != task or not isinstance(receipt, str) or receipt in receipts
                     or TERMINAL_RECORDS & set(records[n].get("prior_files", {}))):
                 raise AdmissionUnknown("repair_record_invalid",
                                        f"{name}/{n}: not a repair record numbered as named for this episode, "
-                                       "with its own review receipt, written before the episode ended")
+                                       "with its own review receipt (a lowercase sha256 digest), written before the episode "
+                                       "ended")
             numbers.add(number)
             receipts.add(receipt)
             repairs += 1
