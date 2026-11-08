@@ -1126,7 +1126,11 @@ Exit code and state:
                     number of repair records, a repair record with no review receipt of its own or written
                     after the episode ended, or whose receipt digest is not 64 lowercase hex digits (what the
                     recorder writes), or an enrollment whose task ID the recorder would refuse:
-                    repair_record_invalid, enrollment_record_invalid. A pause-history file with covered_triggers
+                    repair_record_invalid, enrollment_record_invalid. An enrollment whose task_revision is not a
+                    revision of its own task (cmd_enroll refuses any other; reason enrollment_record_invalid), a
+                    Terra close.json that names another task, and a Terra review or repair record without the
+                    prior_files object the recorder always writes (reasons repair_record_invalid,
+                    review_record_invalid). A pause-history file with covered_triggers
                     and no nonblank owner_approval string (cmd_resume refuses a blank one and writes the two
                     together): pause_history_malformed. Pause history that covers more repair
                     rounds than there are repair records, or a P1 episode that is not a Terra episode with a
@@ -1518,7 +1522,8 @@ def admission_review_problem(review, task):
     p2 nonnegative integers (not booleans or floats), the verdict one of the four, accept with no P1 or P2,
     changes_required with at least one, and the first-review-pass flag a boolean equal to (verdict ==
     "accept"). The review names the episode's task and was not written after the episode was closed or
-    withdrawn (cmd_review refuses a terminal episode, and prior_files lists what existed at the write).
+    withdrawn (cmd_review refuses a terminal episode, and the prior_files object, which episode_write always
+    writes, lists what existed at the write).
     """
     for field in ("p1", "p2"):
         if type(review.get(field)) is not int or review[field] < 0:
@@ -1534,7 +1539,11 @@ def admission_review_problem(review, task):
         return "verdict changes_required with p1 0 and p2 0"
     if type(review.get("first_review_pass")) is not bool or review["first_review_pass"] != (verdict == "accept"):
         return f"first_review_pass is {review.get('first_review_pass')!r} with verdict {verdict}"
-    if TERMINAL_RECORDS & set(review.get("prior_files", {})):
+    if type(review.get("prior_files")) is not dict:
+        # episode_write adds prior_files to every record it writes, and the check below reads it: without it the
+        # fact "written before the episode ended" is not established.
+        return f"prior_files is {review.get('prior_files')!r}, not the object episode_write always writes"
+    if TERMINAL_RECORDS & set(review["prior_files"]):
         return "was written after the episode was closed or withdrawn"
     return None
 
@@ -1548,8 +1557,9 @@ def admission_trigger_facts(episodes):
     must be named as the recorder names them, carry the number in its name as round, name the episode's task,
     share its number with no other, hold a review receipt no other repair of the episode holds (cmd_repair
     answers a known receipt with already_repaired and writes nothing) and not have been written after the
-    episode was closed or withdrawn; an episode's numbers must be exactly 1 through n, as cmd_repair writes
-    them; and a close.json, when present, must record repair_rounds as an int equal to n, as cmd_close writes it.
+    episode was closed or withdrawn (each carries the prior_files object episode_write always writes); an
+    episode's numbers must be exactly 1 through n, as cmd_repair writes them; and a close.json, when present,
+    must name the episode's task and record repair_rounds as an int equal to n, as cmd_close writes it.
     """
     p1 = []
     repairs = 0
@@ -1579,11 +1589,12 @@ def admission_trigger_facts(episodes):
                 receipt = None  # file_evidence writes sha256(path): 64 lowercase hex digits, nothing else is a digest.
             if (match is None or number in numbers or type(round_field) is not int or round_field != number
                     or records[n].get("task_id") != task or not isinstance(receipt, str) or receipt in receipts
-                    or TERMINAL_RECORDS & set(records[n].get("prior_files", {}))):
+                    or type(records[n].get("prior_files")) is not dict
+                    or TERMINAL_RECORDS & set(records[n]["prior_files"])):
                 raise AdmissionUnknown("repair_record_invalid",
                                        f"{name}/{n}: not a repair record numbered as named for this episode, "
                                        "with its own review receipt (a lowercase sha256 digest), written before the episode "
-                                       "ended")
+                                       "ended (its prior_files object says so)")
             numbers.add(number)
             receipts.add(receipt)
             repairs += 1

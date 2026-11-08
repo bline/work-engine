@@ -149,7 +149,7 @@ class AdmissionBase(unittest.TestCase):
 
 
     # --- helpers for the class-repair fixtures ---------------------------------------------------------
-    def rechain(self, run, task, edits):
+    def rechain(self, run, task, edits, keep_prior=()):
         """Rewrite an episode's JSON records in order with edits[name](data) applied, keeping every seal,
         backward link and manifest line consistent. Only the content the edit chose is wrong afterwards."""
         d = Path(run) / "enrollments" / task
@@ -161,7 +161,7 @@ class AdmissionBase(unittest.TestCase):
             data.pop("content_sha256", None)
             if name in edits:
                 edits[name](data)
-            if "prior_files" in data:
+            if "prior_files" in data and name not in keep_prior:  # keep_prior: the edit set prior_files on purpose
                 data["prior_files"] = {pn: rec.sha256(str(d / pn)) for pn in data["prior_files"]}
             (d / name).write_text(json.dumps(rec.seal_episode_record(data)))
         self.write_manifest(d, order)
@@ -654,6 +654,21 @@ class AdmissionBase(unittest.TestCase):
                 return run
             return build
 
+        def repair_prior_files(value):
+            def build(name):
+                run = self.terra_with_repair(name, budget=3)
+                self.rechain(run, "t", {"repair-01.json": set_field("prior_files", value)}, keep_prior=("repair-01.json",))
+                return run
+            return build
+
+        def review_prior_files(value):
+            def build(name):
+                run = self.terra_with_review(name, p1=1)
+                self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 0}})
+                self.rechain(run, "t", {"review-first.json": set_field("prior_files", value)}, keep_prior=("review-first.json",))
+                return run
+            return build
+
         def sol_with_revision_of_another_task(name):
             run = self.new_run(name)
             self.enroll(run, "s", byte=0)
@@ -837,6 +852,13 @@ class AdmissionBase(unittest.TestCase):
                                     ("empty", ""), ("null", None), ("integer", 5), ("true", True),
                                     ("list", ["t@" + "a" * 16]), ("object", {}), ("missing", missing))},
             "enrollment_task_revision_of_another_task_on_a_sol_episode": (sol_with_revision_of_another_task, "enrollment_record_invalid"),
+            # Refusal audit: episode_write adds a prior_files object to every record; the gate reads it for C9.
+            "review_prior_files_missing": (review_prior_files(missing), "review_record_invalid"),
+            "repair_prior_files_missing": (repair_prior_files(missing), "repair_record_invalid"),
+            # A present prior_files that is not an object is refused earlier, by the integrity check the gate mirrors.
+            **{f"{kind}_prior_files_{label}": (builder(value), "episode_integrity_problem")
+               for kind, builder in (("review", review_prior_files), ("repair", repair_prior_files))
+               for label, value in (("null", None), ("list", []), ("string", "x"), ("integer", 5))},
             # H2: close.json vouches for the episode's repair total, so it must name the episode (cmd_close writes a.task_id).
             **{f"close_task_id_{label}": (close_edit(set_field("task_id", value)), "repair_record_invalid")
                for label, value in (("other_task", "u"), ("empty", ""), ("trailing_newline", "t\n"), ("null", None),
@@ -1957,6 +1979,12 @@ class AdmissionClassRepair(AdmissionBase):
                                            "task-p1@" + "a" * 17, "task-p1@" + "a" * 16 + "\n", "x-task-p1@" + "a" * 16],
                                lambda v: isinstance(v, str) and rec.REVISION.match(v) is not None and v.split("@")[0] == "task-p1",
                                "active")
+        # prior_files: only its absence is edited here (rechain recomputes any value that is present); a present
+        # non-object value is the fixtures `*_prior_files_*` above.
+        self.mutate_and_decide(p1_stop, "review-prior-files", record_edit("task-p1", "review-first.json"), "prior_files",
+                               [], lambda v: False, "stop_reached")
+        self.mutate_and_decide(self.terra_with_repair("mut-prior-repair", budget=3), "repair-prior-files",
+                               record_edit("t", "repair-01.json"), "prior_files", [], lambda v: False, "active")
         self.mutate_and_decide(closed, "close-task", record_edit("t", "close.json"), "task_id", self.BAD + ["other", "t\n"],
                                lambda v: v == "t", "active")
         self.mutate_and_decide(covered, "pause-p1", pause_edit(True), "p1_episodes", self.BAD,
@@ -2349,7 +2377,8 @@ class AdmissionClassRepair(AdmissionBase):
                   "repair_written_after_close": 1, "repair_review_receipt_repeated": 1,
                   "enrollment_sol_with_odd": 1, "enrollment_terra_with_even": 1, "enrollment_draw_byte_": 10,
                   "pause_approval_": 12, "repair_receipt_digest_": 14, "task_id_format_": 5,
-                  "enrollment_task_revision_": 19, "close_task_id_": 8}
+                  "enrollment_task_revision_": 19, "close_task_id_": 8, "review_prior_files_": 5,
+                  "repair_prior_files_": 5}
         for prefix, count in groups.items():
             self.assertEqual(len([n for n in cases if n.startswith(prefix)]), count, prefix)
 
