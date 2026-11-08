@@ -62,6 +62,32 @@ only, no network, no model calls; it writes only to `--out`.
 - `nominate --out FILE [--claims-host PATH --startup PATH --startup-sha256 HEX]`: per event, the
   decisions to review, applicability records, and claim revisions. Without the claims options,
   claim revisions are reported as `not_queried`. Disposition is always `review_nominated`.
+- `anchors --out DIR [--at COMMIT]`: reports whether each decision's anchored text still stands
+  where the register says, and writes `anchors.json` and `anchors.md` to `--out` only. It changes
+  nothing: nothing is re-anchored, no record is edited, no authorization is transferred, and the
+  repository (including `.git`) is not written. `--at` (default `HEAD`) is resolved once to a full
+  commit id. The register's `decisions.json` and `applicability.jsonl` are read from that same
+  commit, not from the working tree, and their digests are recorded in the output; `--register`
+  must therefore lie inside the repository. Every observation is repository source at the pinned
+  commit; for a decision under `skills/` the installed skill release is not examined. Git is called
+  with explicit diff options, so the result does not depend on git configuration. Each decision gets
+  one class: `unchanged` (same lines, identical text), `moved` (no change to the anchored lines, they
+  sit at other line numbers), `relocated_verbatim` (history changed the lines but the identical text
+  occurs once in the document), `modified` (the range can be followed but its text differs),
+  `ambiguous` (the exact text occurs more than once at the target, every occurrence is listed as a
+  candidate and none is chosen) or `absent` (document gone, or the range deleted with the text
+  nowhere), or an error entry (unresolvable revision, document missing at the revision, bad or
+  out-of-range `lines`). A whole-document anchor is `unchanged`, `modified` or `absent` by blob. A
+  rename is reported as `document_at_target`, not as a class. `relocated_verbatim`, and a `moved`
+  anchor whose enclosing Markdown heading changed, are flagged `owner_review_required`; no other
+  judgment of meaning is made. For every decision that is not `unchanged` the report gives the
+  before state (revision, lines, anchored-text sha256), candidate or new lines, and each applicability
+  record that cites it, copied verbatim, with an after-state of `carried_unchanged`,
+  `owner_review_required` or `pending_judgment_required`; an `authorized` record that is not
+  `carried_unchanged` is shown as `authorized_at_prior_revision`. Exit 0 when every decision is
+  classified; 3 when outputs were written but a decision or register line has an error entry; 4
+  when nothing could be written (target or register records unusable); 2 for an argument error or an
+  `--out` inside the register or `.git`. Deterministic: two runs on the same inputs are byte-identical.
 
 ## Conventions this register adopts
 
