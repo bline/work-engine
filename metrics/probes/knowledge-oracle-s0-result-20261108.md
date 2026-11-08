@@ -45,6 +45,9 @@ feasibility experiment for the exploratory Knowledge Oracle
 **Run setup:** `claude-sonnet-5-5` at medium effort; one host; 12 items; 3 arms;
 36 runs. **n = 12 per arm, and n = 1 per item and arm cell.**
 
+**Correction (2026-11-08, approved by the user):** section 14 supersedes one
+statement in section 6 and records the routing re-score and its limits.
+
 ## 1. Outcome
 
 | | A, unassisted | B, existing claims readers | C, curated projection |
@@ -223,6 +226,9 @@ items, r1 was 4 of 4 in both arms.
 
 **The S2 default is met under every reading:** the model router made 0 false
 routes (the limit is 1), and more correct routes than substring.
+
+> **Superseded on 2026-11-08 by section 14.** The statement above is kept as
+> written. It holds under the pre-registered truth rule only.
 
 **Harness defects:**
 
@@ -434,3 +440,120 @@ digest, and it holds both scores.
 **In-repo protocol:** the approval packet,
 `planning/knowledge-oracle-s0-experiment-20261108.md` (revision 2), committed
 with this record.
+
+## 14. Correction and follow-up, 2026-11-08
+
+**Approved by the user on 2026-11-08.**
+
+- **What changed:** sections 1 to 13 are unchanged, apart from the
+  superseded marker added in section 6.
+- **What stayed frozen:** the S0 scores, routes and harness outputs.
+
+### 14.1 The superseded statement
+
+- **Statement (section 6, kept as written):** "The S2 default is met under
+  every reading: the model router made 0 false routes (the limit is 1), and
+  more correct routes than substring."
+- **Status:** superseded by 14.2.
+- **Error class:** an over-general claim. "Every reading" covered the two
+  readings section 6 tabulates, official and routable-only. It did not cover
+  the truth designations the frozen key leaves unsettled (14.3).
+- **Consequence:**
+  - The S2 default holds under the pre-registered reading, and fails under an
+    admissible alternative (14.2).
+  - Arm outcomes, the S1 decision rule and section 8 are unaffected.
+  - S2 is not accepted (14.4).
+- **The check that would have caught it:** list the designations the key
+  leaves open, and score each against the default before writing "every".
+
+### 14.2 Routing re-scored with harness revision 3
+
+**How:** the final independent re-review re-scored the frozen S0 routes, with
+no new runs. It was round 3: a fresh `claude-opus-5-5` at high effort, same
+provider, stubs only. Its report is
+`~/cbm-work/routing-harness-v2-20261108/qualification/report-round3.md`,
+sha256 `22e9fe35bea27f5c9c73fed6d85bbeac680a6e81bff9397a6475fca8158e1244`.
+
+**The re-review's verdict:** revision 3 is qualified for keeping tool failure,
+abstention, false route and missed route apart. No P1 or P2 is open; 6 P3s
+remain.
+
+**The S2 default** (packet, lines 243-245): the model router's false routes are
+1 of 12 or fewer, and it makes more correct routes than substring `discover`.
+
+Tallies are correct / false / missed / correct abstention / router error.
+
+| Reading | Model router | Substring | S2 default |
+|---|---|---|---|
+| S0 as scored (section 6, official) | 8 / 0 / 3 / 1 / — | 4 / 0 / 7 / 1 / — | met |
+| **A:** the pre-registered rule (a route is correct if it hits the key's evidence), with the settled E8 correction | 8 / 0 / 2 / 2 / 0 | 4 / 0 / 6 / 2 / 0 | **met:** 0 of 12 false; 8 correct against 4 |
+| A, with E5's null-id strings mapped to the findings they quote (the reviewer's inference) | 7 / 1 / 2 / 2 / 0 | 4 / 0 / 6 / 2 / 0 | **met, with zero margin:** 1 of 12 false; 7 against 4 |
+| **B:** E4, E6 and M4 treated as abstain items whose key evidence is a decoy | 6 / 2 / 1 / 3 / 0 | 2 / 2 / 5 / 3 / 0 | **not met:** 2 of 12 false |
+
+- **Settled:** E8 is a correct abstention for both routers, not a miss. This
+  is the decoy-truth defect of section 6.
+- **Router failures:**
+  - the model router had none in its 12 replies, checked against its 12
+    transcripts;
+  - for the substring router a total failure is ruled out on 12 of 12 items.
+    A partial failure is `not established`, because S0 did not record each
+    `discover` result.
+
+  Revision 3's `router_error` class therefore changes no S0 figure.
+- **Correction to the re-review:** the round-3 report says the default also
+  fails with E5's strings mapped. That applies a limit of zero false routes;
+  the pre-registered limit is 1 of 12 or fewer. The report states that it did
+  not read the threshold text. The report itself is kept unchanged.
+
+### 14.3 Truth designations the key does not settle
+
+- **E4:** the effort-cost finding (K4) is either a target with a caveat
+  (reading A) or a decoy on an abstain item (reading B).
+- **E6:** the stale claim `75fb9ef5…` is either a target or a decoy on an
+  abstain item.
+- **M4:** `c4dd4826…`, `7d72bc32…`, K5 `#conditional-result` and
+  `#no-limit-compaction-points` are either targets or decoys.
+- **E5:** `#full-battery-reading` is either a decoy (from the key's
+  false-confident-reuse clause) or context. This matters only if E5's null-id
+  strings are mapped.
+
+**Unchanged:** the S0 key and the frozen routes. Which reading applies is
+`not established`.
+
+### 14.4 Harness limitations and S2 status
+
+- **F-1 (P3):** SPEC says `router_error` counts as a false route under S2,
+  but no code computes an S2 figure.
+- **F-2 and F-3 (P3):** three failure-path mutants survive, and the refusal of
+  a non-empty router directory is untested.
+- **F-4 (P3):** a claims-tool failure reported only in the response body,
+  without `isError`, scores as no hits.
+- **F-5 and F-6 (P3):**
+  - a route with a target plus unknown ids scores correct, which is how SPEC
+    defines it;
+  - a reply whose `abstain` flag contradicts its route is not flagged.
+- **Not measured:** routing to register findings. All of S0's register
+  candidates had null ids.
+- **Review provenance:** the re-review is one same-provider review.
+- **S2 is not accepted.** By the user's decision of 2026-11-08, F-1 and the
+  unsettled designations of 14.3 are prerequisites for any S2 qualification
+  decision.
+
+### 14.5 Follow-up review cost: a process failure
+
+**What happened:** the user set an all-in ceiling of USD 3, API-equivalent,
+for the round-3 re-review, and it was exceeded. This is recorded as a process
+failure.
+
+| Amount | USD | Kind |
+|---|---|---|
+| Reviewer: 26 calls, attributed by agent in the usage ledger | 2.021 | observed |
+| All root calls over the whole follow-up (68 calls). They also covered the register integration, coordination and the analysis | 5.49 | observed |
+| Root calls for the re-review. Each call's cost is observed; which calls belong to the re-review is my attribution from the sequence of actions | 1.5–1.7 | estimated |
+| Re-review all-in | 3.5–3.7 | estimated: 0.5–0.7 over the ceiling. This replaces the rougher 3.6–3.9 reported earlier |
+
+- **Cause:** I capped the reviewer at 2.30 and assumed root calls would cost
+  about 0.5 (5 to 8 calls at 0.065). About 20 were needed, at 0.05–0.15 each,
+  and root spend was not watched.
+- **Rule set by the user:** future all-in limits account for root and reviewer
+  calls together, and observed and estimated amounts are kept distinct.
