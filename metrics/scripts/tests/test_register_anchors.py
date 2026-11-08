@@ -490,6 +490,14 @@ class RemediationR2Tests(AnchorFixture):
         self.assertEqual(e["class"], "modified")
         self.assertEqual([c["lines"] for c in e["candidates"]], ["3"])
 
+    def test_candidate_inside_a_larger_replacement_uses_the_same_offset_clamped(self):
+        # control (also passes on 6ee4384d): old lines 3-6 replaced by 3 new lines; anchor 5-6 sits at offsets 2, 3
+        v1 = lines_text("# T", "", "o1", "o2", "anchor a", "anchor b", "tail")
+        v2 = lines_text("# T", "", "n1", "n2", "n3", "tail")
+        e = self.one(v1, v2, "5-6")
+        self.assertEqual(e["class"], "modified")
+        self.assertEqual([c["lines"] for c in e["candidates"]], ["5"])
+
     def test_anchor_wholly_inside_a_larger_deletion_is_absent(self):
         v1 = lines_text("# T", "", "p1", "a1 anchored", "a2 anchored", "x1", "tail")
         v2 = lines_text("# T", "", "tail")

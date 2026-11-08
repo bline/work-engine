@@ -95,7 +95,8 @@ only, no network, no model calls; it writes only to `--out`.
   that is not `carried_unchanged` is shown as `authorized_at_prior_revision`. For a decision with an
   error entry the citing records are listed too, with after-state `not_established` (nothing was
   classified and nothing is transferred). A `modified` decision's candidate spans the anchored lines
-  that survive and any replacement lines; it is `absent` only when every anchored line was deleted. Exit 0 when every decision is
+  that survive and, for lines replaced in place, the line at the same offset in the replacement
+  (clamped to it); it is `absent` only when every anchored line was deleted. Exit 0 when every decision is
   classified; 3 when outputs were written but a decision or register line has an error entry; 4
   when nothing could be written (target or register records unusable, or a write failed); 2 for an
   argument error, an `--out` inside the register or inside any git directory of the repository

@@ -1030,8 +1030,9 @@ def track(hunks, lo, hi):
     """Follow old lines lo..hi through the hunks of a -U0 diff, each line on its own.
     Returns (touched, new_lo, span): touched is true when any anchored line lies in a changed hunk or
     something was inserted between anchored lines; new_lo is where line lo would sit if the range
-    were untouched; span is (first, last) new line over the anchored lines that survive and the
-    replacement lines of changed hunks, or None when every anchored line was deleted outright."""
+    were untouched; span is (first, last) new line over the anchored lines that survive and, for each
+    anchored line replaced in place, the line at the same offset in its replacement (clamped to it);
+    None when every anchored line was deleted outright."""
     touched = any(a >= lo and a < hi for a, b, _c, _d in hunks if b == 0)
     nlo = lo + sum(d - b if b > 0 and a + b - 1 < lo else d if b == 0 and a < lo else 0 for a, b, _c, d in hunks)
     nums = []
@@ -1042,14 +1043,15 @@ def track(hunks, lo, hi):
                 if a + b - 1 < line:
                     off += d - b
                 elif a <= line:
-                    inside = (c, d)
+                    inside = (a, c, d)
             elif a < line:
                 off += d
         if inside is None:
             nums.append(line + off)
         else:
             touched = True
-            nums.extend(range(inside[0], inside[0] + inside[1]))
+            if inside[2] > 0:  # replaced in place: the line at the same offset in the replacement, clamped
+                nums.append(inside[1] + min(line - inside[0], inside[2] - 1))
     return touched, nlo, ((min(nums), max(nums)) if nums else None)
 
 
