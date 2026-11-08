@@ -14,6 +14,31 @@ assert spec and spec.loader
 S = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(S)
 
+# check reads spend from the usage ledger; tests never scan real transcripts.
+_FAKE_DIR = tempfile.TemporaryDirectory()
+FAKE_READER = Path(_FAKE_DIR.name) / "usage_ledger.py"
+FAKE_READER.write_text("# fake usage ledger\n")
+REAL_LEDGER_PATH, REAL_LEDGER_CONTROL = S.ledger_path, S.ledger_control
+CONTROL: dict = {}
+
+
+def control_doc(record: Path) -> dict:
+    """Ledger control output: every cost limit unspent and fully covered, unless a test sets CONTROL['doc']."""
+    if "doc" in CONTROL:
+        if isinstance(CONTROL["doc"], Exception):
+            raise CONTROL["doc"]
+        return CONTROL["doc"]
+    sb = json.loads(Path(record).read_text())["scope_budget"]
+    controls = [{"pool": c["pool"], "node_id": c.get("node"), "set_by": c["set_by"], "max_usd": c.get("max_usd"),
+                 "remaining_usd": c.get("max_usd")} for c in sb.get("cost_limits", [])]
+    return {"schema": "objective-budget-control-v1", "topic": "control:budget:x", "events": [],
+            "snapshot": {"status": "complete", "snapshot_at": "2026-11-07T00:00:00Z", "cost_controls": controls,
+                         "time": {"basis": "model_call_latency", "status": "complete", "model_busy_hours": 0.5}}}
+
+
+S.ledger_path = lambda repository: FAKE_READER
+S.ledger_control = lambda reader, record: control_doc(record)
+
 
 def call(*argv: str) -> tuple[int, dict | str]:
     out, err = io.StringIO(), io.StringIO()
@@ -46,7 +71,7 @@ class ScopeBudgetTest(unittest.TestCase):
 
     def test_additions_trigger_reconsideration_and_keep_other_keys(self):
         rc, r = call("init", "--record", str(self.rec), "--objective", "S10", "--item", "one", "--item", "two",
-                     "--max-hours", "100", "--reconsider-after-additions", "2", "--set-by", "user")
+                     "--pool", "codex", "--max-usd", "100", "--reconsider-after-additions", "2", "--set-by", "user")
         self.assertEqual(rc, 0)
         self.assertEqual(call("check", "--record", str(self.rec))[0], 0)
         call("add", "--record", str(self.rec), "--item", "three", "--reason", "gap found in review")
@@ -59,24 +84,101 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(doc["owners"], {"a": "b"})
         self.assertEqual([a["item"] for a in doc["scope_budget"]["additions"]], ["three", "four"])
 
-    def test_hours_limit_stops_and_revise_keeps_history(self):
-        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
-             "--max-hours", "0", "--set-by", "supervisor", "--reason", "proposed in first report")
-        rc, r = call("check", "--record", str(self.rec))
-        self.assertEqual(rc, 4)
-        self.assertEqual(r["reached"], ["hours"])
-        rc, r = call("revise", "--record", str(self.rec), "--max-hours", "8", "--set-by", "user", "--reason", "owner")
-        self.assertEqual(r["limits"]["max_hours"], 8)
+    def test_hours_are_refused_reported_and_ignored_in_old_records(self):
+        base = ("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "5")
+        before = self.rec.read_bytes()
+        rc, err = call(*base, "--max-hours", "2", "--set-by", "user")
+        self.assertEqual(rc, 2)
+        self.assertIn("--max-usd", err)
+        self.assertEqual(self.rec.read_bytes(), before)
+        call(*base, "--reconsider-after-additions", "3", "--set-by", "supervisor", "--reason", "proposed in first report")
+        rc, err = call("revise", "--record", str(self.rec), "--max-hours", "8", "--set-by", "user")
+        self.assertEqual(rc, 2)
+        rc, r = call("revise", "--record", str(self.rec), "--reconsider-after-additions", "1", "--set-by", "user", "--reason", "owner")
+        self.assertEqual(r["limits"], {"reconsider_after_additions": 1})
         sb = json.loads(self.rec.read_text())["scope_budget"]
-        self.assertEqual(sb["limit_history"][0]["limits"]["max_hours"], 0)
+        self.assertEqual(sb["limit_history"][-1]["limits"], {"reconsider_after_additions": 3})
         self.assertEqual(sb["limits_set_by"], "user")
-        self.assertEqual(call("check", "--record", str(self.rec))[0], 0)
+        doc = json.loads(self.rec.read_text())
+        doc["scope_budget"]["limits"]["max_hours"] = 0  # a record written before hours were retired
+        self.rec.write_text(json.dumps(doc))
+        rc, r = call("check", "--record", str(self.rec))
+        self.assertEqual(rc, 0)
+        self.assertEqual((r["reached"], r["stop"], r["ignored_limits"]), ([], False, ["max_hours"]))
+        self.assertGreaterEqual(r["elapsed_hours"], 0)
+        self.assertEqual(r["time"]["model_busy_hours"], 0.5)
+
+    def test_init_records_the_dollar_limit(self):
+        rc, r = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "claude_all_models",
+                     "--max-usd", "12", "--mark-usd", "6", "--mark-usd", "3", "--mark-usd", "6", "--set-by", "user", "--reason", "owner")
+        self.assertEqual(rc, 0)
+        sb = json.loads(self.rec.read_text())["scope_budget"]
+        self.assertEqual(sb["limits"], {})
+        [cost] = sb["cost_limits"]
+        self.assertEqual({k: cost[k] for k in ("pool", "node", "max_usd", "marks_usd", "set_by", "reason", "basis")},
+                         {"pool": "claude_all_models", "node": None, "max_usd": 12, "marks_usd": [3, 6], "set_by": "user",
+                          "reason": "owner", "basis": "speed_adjusted_api_usd"})
+        self.assertEqual(sb["limit_history"], [{"cost_limit": cost, "previous_cost_limit": None}])
+        self.assertEqual(r["cost_limit"], cost)
+
+    def test_user_dollar_limit_stops_and_supervisor_limit_is_a_mark(self):
+        self.addCleanup(CONTROL.clear)
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "5",
+             "--set-by", "user")
+        call("cost-limit", "--record", str(self.rec), "--pool", "codex", "--node", "child", "--max-usd", "1",
+             "--set-by", "supervisor", "--reason", "child")
+        events = [{"kind": "node_mark_crossed", "pool": "codex", "node_id": "child", "level": 1, "set_by": "supervisor"},
+                  {"kind": "limit_fraction", "pool": "codex", "node_id": None, "level": 2.5, "set_by": "user"}]
+        controls = [{"pool": "codex", "node_id": None, "set_by": "user", "max_usd": 5, "remaining_usd": 2},
+                    {"pool": "codex", "node_id": "child", "set_by": "supervisor", "max_usd": 1, "remaining_usd": -0.5}]
+        snapshot = {"status": "complete", "snapshot_at": "2026-11-07T00:00:00Z", "cost_controls": controls, "time": None}
+        CONTROL["doc"] = {"schema": "objective-budget-control-v1", "topic": "t", "events": events, "snapshot": snapshot}
+        rc, r = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, r["reached"], r["unknown"], r["stop"]), (0, [], [], False))
+        self.assertEqual([e["kind"] for e in r["spend"]["crossed"]], ["node_mark_crossed", "limit_fraction"])
+        self.assertEqual(r["spend"]["reader"]["path"], str(FAKE_READER))
+        events.append({"kind": "limit_reached", "pool": "codex", "node_id": None, "level": 5, "set_by": "user"})
+        controls[0]["remaining_usd"] = -1
+        rc, r = call("check", "--record", str(self.rec))
+        self.assertEqual((rc, r["reached"], r["stop"]), (4, ["max_usd:codex"], True))
+
+    def test_unestablished_spend_is_unknown_not_zero(self):
+        self.addCleanup(CONTROL.clear)
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "5",
+             "--set-by", "user")
+        call("cost-limit", "--record", str(self.rec), "--pool", "codex", "--mark-usd", "2", "--set-by", "supervisor", "--reason", "m")
+        partial = {"status": "partial", "snapshot_at": "x", "time": None,
+                   "cost_controls": [{"pool": "codex", "node_id": None, "set_by": "user", "max_usd": 5, "remaining_usd": None}]}
+        for doc, status in ((ValueError("usage ledger exited 2"), "unavailable"),
+                            ({"schema": "objective-budget-control-v1", "topic": "t", "events": [], "snapshot": partial}, "partial")):
+            CONTROL["doc"] = doc
+            rc, r = call("check", "--record", str(self.rec))
+            self.assertEqual((rc, r["unknown"], r["stop"], r["spend"]["status"]), (0, ["max_usd:codex"], False, status))
+
+    def test_ledger_lookup_and_output_validation(self):
+        repo = self.d / "repo"
+        self.assertIsNone(REAL_LEDGER_PATH(str(repo)))
+        reader = repo / "metrics/scripts/usage_ledger.py"
+        reader.parent.mkdir(parents=True)
+        good = {"schema": "objective-budget-control-v1", "topic": "t", "events": [], "snapshot": {}}
+        reader.write_text(f"import json\nprint(json.dumps({good!r}))\n")
+        self.assertEqual(REAL_LEDGER_PATH(str(repo)), reader.resolve())
+        self.assertEqual(REAL_LEDGER_CONTROL(reader, self.rec), good)
+        reader.write_text("print('{\"schema\": \"other\"}')\n")
+        with self.assertRaisesRegex(ValueError, "incompatible"):
+            REAL_LEDGER_CONTROL(reader, self.rec)
+        reader.write_text("import sys\nsys.exit(3)\n")
+        with self.assertRaisesRegex(ValueError, "exited 3"):
+            REAL_LEDGER_CONTROL(reader, self.rec)
+        beside = Path(S.__file__).resolve().parents[3] / "metrics/scripts/usage_ledger.py"
+        if beside.is_file():
+            self.assertEqual(REAL_LEDGER_PATH(None), beside.resolve())
 
     def test_v1_meter_authority_and_upgrade(self):
         ro = self.d / "rollout.jsonl"
         rollout(ro, [35.0])
         call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--rollout", str(ro),
-             "--max-hours", "100", "--set-by", "supervisor")
+             "--pool", "codex", "--max-usd", "100", "--set-by", "supervisor")
         doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
         sb["schema"] = S.SCHEMA_V1
         for k in ("objective_id", "sessions", "bindings", "cost_limits"): sb.pop(k)
@@ -98,7 +200,7 @@ class ScopeBudgetTest(unittest.TestCase):
 
     def test_v2_binding_and_cost_limits(self):
         rc, _ = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
-                     "--max-hours", "3", "--set-by", "user", "--session", "root", "--provider", "codex")
+                     "--pool", "codex", "--max-usd", "3", "--set-by", "user", "--session", "root", "--provider", "codex")
         self.assertEqual(rc, 0)
         args = ("add-session", "--record", str(self.rec), "--session", "next", "--provider", "claude",
                 "--from", "2026-10-30T00:00:00Z", "--bound-by", "rotation", "--evidence", "adoption")
@@ -116,7 +218,7 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(sb["limit_history"][-1]["previous_cost_limit"]["marks_usd"], [2, 5])
 
     def test_cost_limits_preserve_other_setters_and_history(self):
-        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "3", "--set-by", "user")
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "3", "--set-by", "user")
         for node in (None, "child"):
             base = ["cost-limit", "--record", str(self.rec), "--pool", "codex", "--reason", "test"]
             if node: base += ["--node", node]
@@ -128,13 +230,16 @@ class ScopeBudgetTest(unittest.TestCase):
             self.assertEqual(entries["user"]["max_usd"], 20)
             self.assertEqual(entries["supervisor"]["max_usd"], 7)
             history = [h for h in sb["limit_history"] if h["cost_limit"]["node"] == node]
+            if node is None:  # init recorded the objective's dollar limit first
+                self.assertEqual(history[0]["cost_limit"]["max_usd"], 3)
+                history = history[1:]
             self.assertEqual(len(history), 4)
             self.assertIsNone(history[1]["previous_cost_limit"])
             self.assertEqual(history[2]["previous_cost_limit"]["marks_usd"], [5])
             self.assertEqual(history[3]["previous_cost_limit"]["max_usd"], 10)
 
     def test_input_validation_and_empty_root(self):
-        base = ("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "2", "--set-by", "user")
+        base = ("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "2", "--set-by", "user")
         for extra in (("--session", "root"), ("--provider", "codex")):
             self.assertEqual(call(*base, *extra)[0], 2)
         self.assertEqual(call(*base)[0], 0)
@@ -150,7 +255,7 @@ class ScopeBudgetTest(unittest.TestCase):
     def test_legacy_authority_and_missing_meter(self):
         ro = self.d / "meter.jsonl"
         rollout(ro, [35])
-        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--rollout", str(ro), "--max-hours", "100", "--set-by", "user")
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--rollout", str(ro), "--pool", "codex", "--max-usd", "100", "--set-by", "user")
         doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
         sb["schema"] = S.SCHEMA_V1; sb["limits"]["max_weekly_points"] = 2
         rollout(ro, [40])
@@ -168,7 +273,7 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(self.rec.read_bytes(), before)
 
     def test_legacy_coordinator_matches_supervisor(self):
-        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "100", "--set-by", "supervisor")
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "100", "--set-by", "supervisor")
         doc = json.loads(self.rec.read_text()); sb = doc["scope_budget"]
         sb["schema"] = S.SCHEMA_V1
         sb["limits_set_by"] = "coordinator"
@@ -213,7 +318,7 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(stale['status'], 'stale')
         self.assertIsNone(stale['remaining_percent'])
         self.assertIsNone(stale['headroom_to_ceiling_percent'])
-        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--max-hours', '100', '--set-by', 'user')
+        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--pool', 'codex', '--max-usd', '100', '--set-by', 'user')
         call('cost-limit', '--record', str(self.rec), '--pool', 'codex', '--max-usd', '10', '--set-by', 'user', '--reason', 'existing units')
         before = self.rec.read_bytes()
         rc, result = call('check', '--record', str(self.rec))
@@ -225,7 +330,7 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(self.rec.read_bytes(), before)
 
     def test_invalid_account_limits_leave_record_unchanged(self):
-        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--max-hours', '100', '--set-by', 'user')
+        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--pool', 'codex', '--max-usd', '100', '--set-by', 'user')
         before = self.rec.read_bytes()
         for value in ('nan', 'inf', '-1', '101'):
             self.assertEqual(call('revise', '--record', str(self.rec), '--max-weekly-percent', value, '--set-by', 'user')[0], 2)
@@ -233,7 +338,7 @@ class ScopeBudgetTest(unittest.TestCase):
 
     def test_expired_meter_cannot_establish_current_ceiling_crossing(self):
         from unittest.mock import patch
-        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--max-hours', '100',
+        call('init', '--record', str(self.rec), '--objective', 'x', '--item', 'a', '--pool', 'codex', '--max-usd', '100',
              '--max-weekly-percent', '80', '--set-by', 'user')
         meter = dict(used_percent=95, observed_at='2026-01-01T00:00:00Z', resets_at=1)
         with patch.object(S, 'weekly_percent', return_value=meter):
@@ -246,15 +351,21 @@ class ScopeBudgetTest(unittest.TestCase):
     def test_usage_errors(self):
         rc, err = call("check", "--record", str(self.rec))
         self.assertEqual(rc, 2)
-        rc, err = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
-                       "--reconsider-after-additions", "3", "--set-by", "user")
-        self.assertEqual(rc, 2)
-        self.assertIn("at least one", err)
-        rc, err = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
+        for missing in (("--pool", "codex"), ("--max-usd", "5")):
+            with self.assertRaises(SystemExit) as exit_:
+                call("init", "--record", str(self.rec), "--objective", "x", "--item", "a",
+                     "--reconsider-after-additions", "3", "--set-by", "user", *missing)
+            self.assertEqual(exit_.exception.code, 2)
+        for value in ("-1", "nan", "inf"):
+            rc, err = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex",
+                           "--max-usd", value, "--set-by", "user")
+            self.assertEqual(rc, 2)
+        self.assertFalse(self.rec.exists() and "scope_budget" in json.loads(self.rec.read_text()))
+        rc, err = call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "5",
                        "--max-weekly-points", "5", "--set-by", "user")
         self.assertEqual(rc, 2)
         self.assertIn("cost-limit", err)
-        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--max-hours", "1", "--set-by", "user")
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "1", "--set-by", "user")
         self.assertEqual(call("revise", "--record", str(self.rec), "--max-weekly-points", "2", "--set-by", "user")[0], 2)
 
 

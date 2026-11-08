@@ -111,7 +111,7 @@ class Tree(unittest.TestCase):
         sb = {'objective_id':'one', 'cost_limits':[{'pool':'codex', 'marks_usd':[1], 'max_usd':2, 'set_by':'user'}], 'limits':{}}
         spend = L.pools(); spend['codex']['quota_usd_high'] = spend['codex']['quota_usd_low'] = 1.2
         doc = dict(snapshot_at='2026-01-01T00:00:00Z', status='complete', totals=spend, nodes=[])
-        args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0', role_host_ledger=None)
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', role_host_ledger=None)
         def run():
             out = io.StringIO()
             with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, [], sb)):
@@ -146,7 +146,7 @@ class Tree(unittest.TestCase):
                 prior_key = json.dumps(['mark_crossed', 'codex', None, 1, 'user'], separators=(',', ':'))
                 def cursor(states):
                     return base64.urlsafe_b64encode(json.dumps(dict(objective_id='id', states=states)).encode()).decode().rstrip('=')
-                args = argparse.Namespace(record=path, cursor=cursor({prior_key: True}), limit_fractions='0.5,0.8,1', hours_fractions='0.8,1', role_host_ledger=os.path.join(d, 'absent'))
+                args = argparse.Namespace(record=path, cursor=cursor({prior_key: True}), limit_fractions='0.5,0.8,1', role_host_ledger=os.path.join(d, 'absent'))
                 def run():
                     out = io.StringIO()
                     with contextlib.redirect_stdout(out): L.cmd_control(args)
@@ -173,8 +173,7 @@ class Tree(unittest.TestCase):
         doc = dict(snapshot_at=close, status='complete', totals=spend, nodes=[])
         prior = {'objective_id': 'closed-account', 'states': {}, 'account_quota_status': 'expired'}
         cursor = base64.urlsafe_b64encode(json.dumps(prior).encode()).decode().rstrip('=')
-        args = argparse.Namespace(record='x', cursor=cursor, limit_fractions='1',
-                                  hours_fractions='1', role_host_ledger=None)
+        args = argparse.Namespace(record='x', cursor=cursor, limit_fractions='1', role_host_ledger=None)
         quota = [dict(ts=close, window_minutes=10080, used_percent=95,
                       resets_at=1767319200, limit_id='codex')]
         out = io.StringIO()
@@ -228,7 +227,7 @@ class Tree(unittest.TestCase):
                 self.assertEqual(tail['coverage'], 'complete')
                 self.assertEqual(tree['measurements']['account_quota']['used_percent'], 95)
                 self.assertEqual(tree['measurements']['account_quota']['status'], 'observed')
-                args = argparse.Namespace(record=record, cursor=None, limit_fractions='1', hours_fractions='1',
+                args = argparse.Namespace(record=record, cursor=None, limit_fractions='1',
                                           role_host_ledger=os.path.join(d, 'no-ledger'))
                 out = io.StringIO()
                 with contextlib.redirect_stdout(out): L.cmd_control(args)
@@ -259,7 +258,7 @@ class Tree(unittest.TestCase):
         at = '2026-01-01T00:00:00Z'
         sb = dict(objective_id='one', cost_limits=[dict(pool='codex', max_usd=10, set_by='user')],
                   limits=dict(max_weekly_percent=90))
-        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', hours_fractions='1', role_host_ledger=None)
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', role_host_ledger=None)
         for dollars, percent, expected in [(1, 95, ['account_ceiling']), (12, 20, ['limit_reached']), (1, 20, [])]:
             with self.subTest(dollars=dollars, percent=percent):
                 spend = L.pools(); spend['codex'].update(usd_low=dollars, usd_high=dollars,
@@ -281,7 +280,7 @@ class Tree(unittest.TestCase):
         from unittest.mock import patch
         sb = dict(objective_id='one', cost_limits=[], limits=dict(max_weekly_percent=90))
         doc = dict(snapshot_at='2026-01-01T00:00:00Z', status='complete', totals=L.pools(), nodes=[])
-        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', hours_fractions='1', role_host_ledger=None)
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', role_host_ledger=None)
         def run():
             out = io.StringIO()
             with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, [], sb)):
@@ -303,7 +302,7 @@ class Tree(unittest.TestCase):
         sb = dict(objective_id='one', cost_limits=[], limits=dict(max_weekly_percent=90))
         doc = dict(snapshot_at=at, status='complete', totals=L.pools(), nodes=[])
         q = [dict(ts=at, window_minutes=10080, used_percent=20, resets_at=L.ts_of(at).timestamp()+3600)]
-        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', hours_fractions='1', role_host_ledger=None)
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='1', role_host_ledger=None)
         def run():
             out = io.StringIO()
             with contextlib.redirect_stdout(out), patch.object(L, 'cost_tree', return_value=(doc, q, sb)):

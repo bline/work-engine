@@ -1,6 +1,6 @@
 ---
 name: session-events
-description: Deliver Codex or Claude Code turn ends (optionally with board, budget, worker-closure and successor context), budget/deadline/stall/successor alerts, and regular-expression transcript matches to an MCP Events subscriber such as OpenAI Dot, as signed webhooks with replay; and let it list, search and read local sessions and inspect budgets and delivery health. An operator-run service; it grants the subscriber no authority over the sessions.
+description: Deliver Codex or Claude Code turn ends (optionally with board, budget, worker-closure and successor context), budget/stall/successor alerts, and regular-expression transcript matches to an MCP Events subscriber such as OpenAI Dot, as signed webhooks with replay; and let it list, search and read local sessions and inspect budgets and delivery health. An operator-run service; it grants the subscriber no authority over the sessions.
 ---
 
 # Session events
@@ -112,7 +112,7 @@ cannot be gathered is named in `context_errors`, and the event is still sent.
 | `subscription_id`, `sequence` | per-subscription numbering for `replay_events`; a jump means missed events |
 | `turn_started_at` | from `task_complete.started_at`, else read back to the turn's start |
 | `board` | `cursor` (the last row considered) and `revision`. `posted` and `received` are rows posted during the turn by the session or its workers, or addressed to the session. `outstanding` covers open `request`s it made or owes and the claims it holds. Bodies are cut to 300 characters and redacted. |
-| `budget` | the session's objective at the turn's end (limits, `hours_deadline`, the grant and deadline fields roots write beside `scope_budget`, `closed`), with `spend` per pool and `coverage` from `usage_ledger.py tree --until <ended_at>` |
+| `budget` | the session's objective at the turn's end (limits, the grant and deadline fields roots write beside `scope_budget`, `closed`), with `spend` per pool and `coverage` from `usage_ledger.py tree --until <ended_at>` |
 | `closure` | the session's workers. `workers_total`, `states`, `sources`, `running` (up to 20) and `dead` (shown running, but not written to since the host booted). `workers_settled` is true when none is running. `costs` is the ledger coverage (`complete`, `partial` or `not_established`). |
 | `successors` | adoptions of this session's role on the board. Each is checked: the adoption is on the successor's own topic, the predecessor posted `ending` naming the same handoff digest, and the handoff file hashes to that digest. Whether the gate committed the rotation is recorded only in the gate's state directory, so it is reported as not established. |
 | `artifacts` | files the turn's board posts reference, plus the grant's result files beside its `scope_budget` record (`root-result.json`, `closure-cost.json`, `final-recorded-cost.json`, `continuation.json`). Each has sha256, size, mtime and `changed_this_turn`; JSON files also get a redacted summary of `status`, `grant`, `review`, `verdict` and similar keys. |
@@ -127,17 +127,18 @@ established.
 ### Event `session.alert`
 
 Raised between turn ends. Arguments: `session_ids`, `kinds` (any of `budget`,
-`deadline`, `stalled` and `successor`; default all) and `stall_minutes`
+`deadline`, `stalled` and `successor`; default all; `deadline` is accepted but
+never raised, since budgets no longer limit time) and `stall_minutes`
 (5–240, default 20). The payload has `alert_id`, `subscription_id`,
 `sequence`, `kind`, `session_id`, `session_title`, `raised_at`, `summary` and
 `detail`.
 
-- **`budget` and `deadline`:** every 2 minutes, the daemon runs `usage_ledger.py
+- **`budget`:** every 2 minutes, the daemon runs `usage_ledger.py
   control` with its own persisted cursor for each watched session's current
   objective. That is the latest `scope_budget` record naming the session that
-  started in the last 24 h and is not closed. Each new ledger event becomes an
-  alert: `hours_*` events are `deadline`, and the rest (marks, limit fractions,
-  account ceiling, coverage changes) are `budget`. `detail` carries the ledger
+  started in the last 24 h and is not closed. Each new ledger event (marks,
+  limit fractions, account ceiling, coverage changes) becomes a `budget` alert.
+  `detail` carries the ledger
   event, the objective and the spend snapshot. The cursor is independent of
   any supervisor's own listener.
 - **`stalled`:** the session's turn is open, but neither its transcript nor

@@ -3,14 +3,20 @@
 
 The record is a JSON object file; this script owns only its `scope_budget` key,
 so it can live in the existing assignment record. `init` writes the original
-items and limits, `add` appends one scope addition with its reason, `revise`
-changes a limit (keeping the old one as history), and `check` prints one JSON
-line: elapsed hours, additions, the weekly quota meter when a Codex rollout is
-given, and whether to reconsider or stop.
+items, a dollar limit and any other limits, `add` appends one scope addition
+with its reason, `revise` changes a limit (keeping the old one as history),
+`cost-limit` sets further dollar limits, and `check` prints one JSON line:
+additions, spend against the dollar limits and model-busy time from the usage
+ledger, elapsed hours, the weekly quota meter when a Codex rollout is given,
+and whether to reconsider or stop.
+
+A budget limits dollars and scope additions, not time. Elapsed and model-busy
+hours are reported as information: a wall-clock limit kept running while work
+waited for a person, and stopping then repeated setup without saving spend.
 
 Exit codes for `check`: 0 within budget, 3 reconsider (additions reached their
-trigger), 4 stop (hours or quota reached). Other commands return 0. All return
-2 for a usage error.
+trigger), 4 stop (a user dollar limit or the account-wide ceiling reached), 5
+closed. Other commands return 0. All return 2 for a usage error.
 """
 
 from __future__ import annotations
@@ -37,7 +43,10 @@ SCHEMA = "manual-orchestration.scope-budget.v2"
 WEEK_MINUTES = 10080
 METER_MAX_AGE_SECONDS = 300
 COST_BASIS = 'speed_adjusted_api_usd'
-LIMITS = ("max_hours", "max_weekly_points", "max_weekly_percent", "reconsider_after_additions")
+LIMITS = ("max_weekly_points", "max_weekly_percent", "reconsider_after_additions")
+POOLS = ("codex", "claude_all_models", "claude_fable")
+LEDGER = Path("metrics/scripts/usage_ledger.py")
+SPEND_KINDS = ("mark_crossed", "node_mark_crossed", "limit_fraction", "limit_reached")
 
 
 class UsageError(Exception):
@@ -165,6 +174,14 @@ def upgrade(sb: dict[str, Any]) -> None:
 def reject_points(args: argparse.Namespace) -> None:
     if args.max_weekly_points is not None:
         raise UsageError("--max-weekly-points is no longer accepted; use cost-limit")
+    if args.max_hours is not None:
+        raise UsageError("--max-hours is no longer accepted: a budget limits dollars and additions, "
+                         "and check reports elapsed and model-busy time; set --max-usd or use cost-limit")
+
+
+def finite_usd(values: list[float]) -> None:
+    if any(not math.isfinite(x) or x < 0 for x in values):
+        raise UsageError("give nonnegative finite --max-usd or --mark-usd")
 
 
 def setter(value: str) -> str:
@@ -188,20 +205,19 @@ def cmd_init(args: argparse.Namespace) -> int:
     if bool(args.session) != bool(args.provider):
         raise UsageError("--session and --provider must be supplied together")
     limits = limits_from(args)
-    if not ({"max_hours", "max_weekly_points", "max_weekly_percent"} & set(limits)):
-        raise UsageError("set at least one of --max-hours, --max-weekly-points, --max-weekly-percent")
+    finite_usd([args.max_usd, *args.mark_usd])
     started = now()
     meter = weekly_percent(Path(args.rollout)) if args.rollout else None
-    if args.max_weekly_points is not None and meter is None:
-        raise UsageError("--max-weekly-points needs --rollout with a readable weekly meter")
+    cost = {"pool": args.pool, "node": None, "max_usd": args.max_usd, "marks_usd": sorted(set(args.mark_usd)),
+            "set_by": args.set_by, "set_at": stamp(started), "reason": args.reason, "basis": COST_BASIS}
     doc[KEY] = {"schema": SCHEMA, "objective_id": str(uuid.uuid4()),
                 "sessions": ([{"session_id": args.session, "provider": args.provider, "from": stamp(started), "bound_by": "init", "evidence": None}] if args.session else []),
-                "bindings": [], "cost_limits": [], "objective": args.objective, "original_items": args.item,
+                "bindings": [], "cost_limits": [cost], "objective": args.objective, "original_items": args.item,
                 "started_at": stamp(started), "weekly_at_start": meter,
                 "limits": limits, "limits_set_by": args.set_by, "limits_reason": args.reason,
-                "limit_history": [], "additions": []}
+                "limit_history": [{"cost_limit": cost, "previous_cost_limit": None}], "additions": []}
     save(path, doc)
-    print(json.dumps({"record": str(path), "started_at": stamp(started), "limits": limits,
+    print(json.dumps({"record": str(path), "started_at": stamp(started), "limits": limits, "cost_limit": cost,
                       "weekly_at_start": meter and meter["used_percent"]}))
     return 0
 
@@ -278,8 +294,9 @@ def cmd_bind(args: argparse.Namespace) -> int:
 
 def cmd_cost_limit(args: argparse.Namespace) -> int:
     values = ([args.max_usd] if args.max_usd is not None else []) + args.mark_usd
-    if not values or any(not math.isfinite(x) or x < 0 for x in values):
+    if not values:
         raise UsageError("give nonnegative finite --max-usd or --mark-usd")
+    finite_usd(values)
     path = Path(args.record)
     doc = load(path)
     sb = section(doc, path)
@@ -441,6 +458,72 @@ def cmd_listen(args: argparse.Namespace) -> int:
     return 0
 
 
+def ledger_path(repository: str | None) -> Path | None:
+    """The usage ledger beside this script (repository or manual-host bundle), else the given or current repository's."""
+    if repository:
+        candidates = [Path(repository) / LEDGER]
+    else:
+        candidates = [Path(__file__).resolve().parents[3] / LEDGER]
+        try:
+            top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, timeout=10)
+            if top.returncode == 0 and top.stdout.strip():
+                candidates.append(Path(top.stdout.strip()) / LEDGER)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return next((p.resolve() for p in candidates if p.is_file()), None)
+
+
+def ledger_control(reader: Path, record: Path) -> dict[str, Any]:
+    """One cursorless `control` read: every currently crossed mark or limit is an event."""
+    result = subprocess.run([sys.executable, "-I", str(reader), "control", "--record", str(record.resolve())],
+                            capture_output=True, text=True, timeout=300)
+    if result.returncode:
+        raise ValueError(f"usage ledger exited {result.returncode}: {result.stderr.strip()[-300:]}")
+    doc = json.loads(result.stdout)
+    if not isinstance(doc, dict) or doc.get("schema") != "objective-budget-control-v1" \
+            or not isinstance(doc.get("snapshot"), dict) or not isinstance(doc.get("events"), list):
+        raise ValueError("incompatible usage ledger output")
+    return doc
+
+
+def spend(sb: dict[str, Any], record: Path, repository: str | None) -> tuple[dict[str, Any], list[str], list[str]]:
+    """Spend view plus the user dollar limits reached and those whose state is unknown.
+
+    A user limit is the user's boundary, so reaching it stops; a limit the
+    supervisor set is a mark for its next decision. A limit is unknown when the
+    ledger is unavailable, the spend has unpriced calls, or coverage is partial.
+    """
+    user = [c for c in sb.get("cost_limits", []) if setter(c.get("set_by", "")) == "user" and c.get("max_usd") is not None]
+    name = lambda c: "max_usd:" + c["pool"] + (":" + c["node"] if c.get("node") else "")
+    reader = ledger_path(repository)
+    try:
+        if reader is None:
+            raise ValueError("usage ledger not found; pass --repository")
+        reader_sha = hashlib.sha256(reader.read_bytes()).hexdigest()
+        control = ledger_control(reader, record)
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        return {"status": "unavailable", "reason": str(exc), "reader": reader and str(reader)}, [], [name(c) for c in user]
+    snap = control["snapshot"]
+    crossed = [{k: e.get(k) for k in ("kind", "pool", "node_id", "level", "set_by")}
+               for e in control["events"] if isinstance(e, dict) and e.get("kind") in SPEND_KINDS]
+    controls = snap.get("cost_controls") or []
+    reached, unknown = [], []
+    for c in user:
+        node = c.get("node")
+        if any(e["kind"] == "limit_reached" and e["pool"] == c["pool"] and e["node_id"] == node and e["set_by"] == "user"
+               for e in crossed):
+            reached.append(name(c))
+            continue
+        row = next((x for x in controls if x.get("pool") == c["pool"] and x.get("node_id") == node
+                    and x.get("set_by") == "user"), None)
+        if row is None or row.get("remaining_usd") is None:
+            unknown.append(name(c))
+    view = {"status": snap.get("status"), "snapshot_at": snap.get("snapshot_at"),
+            "reader": {"path": str(reader), "sha256": reader_sha},
+            "cost_controls": controls, "crossed": crossed, "time": snap.get("time")}
+    return view, reached, unknown
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     path = Path(args.record)
     sb = section(load(path), path)
@@ -458,8 +541,9 @@ def cmd_check(args: argparse.Namespace) -> int:
     user_points = sb.get("limits_set_by") == "user" or any(
         h.get("set_by") == "user" and h.get("limits", {}).get("max_weekly_points") == limits.get("max_weekly_points")
         and "max_weekly_points" in h.get("limits", {}) for h in sb.get("limit_history", []))
-    if "max_hours" in limits and elapsed >= limits["max_hours"]:
-        reached.append("hours")
+    view, spend_reached, spend_unknown = spend(sb, path, args.repository)
+    reached += spend_reached
+    unknown += spend_unknown
     percent = account['used_percent'] if account['status'] in ('observed', 'stale') else None
     for name, value in (("max_weekly_points", points), ("max_weekly_percent", percent)):
         if name in limits:
@@ -477,7 +561,8 @@ def cmd_check(args: argparse.Namespace) -> int:
               "weekly_percent": meter and meter["used_percent"], "account_weekly_points": points, "account_wide": True, "advisory": advisory,
               "limits": limits, "limits_set_by": setter(sb["limits_set_by"]), "reached": reached,
               "unknown": unknown, "reconsider": reconsider, "stop": bool(reached),
-              "account_quota": account,
+              "ignored_limits": [k for k in ("max_hours",) if k in limits],
+              "account_quota": account, "spend": view, "time": view.get("time"),
               "cost_basis": COST_BASIS, "cost_limits": sb.get("cost_limits", []),
               "cost_label": "API-equivalent dollars adjusted for subscription speed (proxy)",
               "estimated_objective_quota_points": {"status": "not_established", "low": None, "high": None,
@@ -491,7 +576,7 @@ def parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     def limit_args(q: argparse.ArgumentParser) -> None:
-        q.add_argument("--max-hours", type=float)
+        q.add_argument("--max-hours", type=float, help=argparse.SUPPRESS)  # retired: refused with a reason
         q.add_argument("--max-weekly-points", type=float, help="rise in the weekly meter since init")
         q.add_argument("--max-weekly-percent", type=float, help="account-wide used-percent ceiling, independent of objective dollars")
         q.add_argument("--reconsider-after-additions", type=int)
@@ -505,6 +590,10 @@ def parser() -> argparse.ArgumentParser:
     i.add_argument("--rollout", help="Codex rollout, to read the weekly meter at the start")
     i.add_argument("--session")
     i.add_argument("--provider", choices=("codex", "claude"))
+    i.add_argument("--pool", required=True, choices=POOLS, help="pool of the objective's dollar limit")
+    i.add_argument("--max-usd", type=float, required=True,
+                   help="objective dollar limit (API-equivalent, speed-adjusted); cost-limit adds pools and nodes")
+    i.add_argument("--mark-usd", type=float, action="append", default=[])
     limit_args(i)
     a = sub.add_parser("add", help="record one scope addition")
     a.add_argument("--record", required=True)
@@ -529,7 +618,7 @@ def parser() -> argparse.ArgumentParser:
     b.add_argument("--reason", required=True)
     cl = sub.add_parser("cost-limit", help="limits in API-equivalent dollars adjusted for subscription speed; not quota points")
     cl.add_argument("--record", required=True)
-    cl.add_argument("--pool", required=True, choices=("codex", "claude_all_models", "claude_fable"))
+    cl.add_argument("--pool", required=True, choices=POOLS)
     cl.add_argument("--node")
     cl.add_argument("--max-usd", type=float)
     cl.add_argument("--mark-usd", type=float, action="append", default=[])
@@ -548,9 +637,10 @@ def parser() -> argparse.ArgumentParser:
     listen.add_argument("--topic", action="append", default=[])
     listen.add_argument("--interval", type=float, default=60)
     listen.add_argument("--repository")
-    c = sub.add_parser("check", help="one JSON line: elapsed, additions, meter, reconsider, stop")
+    c = sub.add_parser("check", help="one JSON line: additions, spend, time, meter, reconsider, stop")
     c.add_argument("--record", required=True)
     c.add_argument("--rollout")
+    c.add_argument("--repository", help="repository whose usage ledger to read, if none sits beside this script")
     return p
 
 

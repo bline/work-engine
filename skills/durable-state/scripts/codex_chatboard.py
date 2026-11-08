@@ -851,7 +851,7 @@ class BudgetControl:
 
     def __init__(self, *, record: Path, reader: Path, sha256: str,
                  cursor: str | None = None, interval: float = 60,
-                 limit_fractions: str | None = None, hours_fractions: str | None = None) -> None:
+                 limit_fractions: str | None = None) -> None:
         self.reader = reader.absolute()
         self.digest, self.cursor = sha256.lower(), cursor
         if not re.fullmatch(r"[0-9a-f]{64}", self.digest):
@@ -865,8 +865,6 @@ class BudgetControl:
         self.command = ["python3", "-I", str(self.reader), "control", "--record", str(record.absolute())]
         if limit_fractions is not None:
             self.command += ["--limit-fractions", limit_fractions]
-        if hours_fractions is not None:
-            self.command += ["--hours-fractions", hours_fractions]
 
     def read(self) -> list[dict[str, Any]]:
         if time.monotonic() < self.next_run:
@@ -1322,7 +1320,6 @@ def parser() -> argparse.ArgumentParser:
     wait.add_argument("--budget-cursor")
     wait.add_argument("--budget-interval", type=float, default=60)
     wait.add_argument("--budget-limit-fractions")
-    wait.add_argument("--budget-hours-fractions")
     topics = commands.add_parser("topics", help="list recorded topics with counts and latest sequence")
     topics.add_argument("--since", type=int, default=0)
     topics.add_argument("--limit", type=int, default=100)
@@ -1454,10 +1451,9 @@ def main() -> int:
                     raise ChatboardError("budget requires --budget-record, --budget-reader and --budget-sha256")
                 budget = BudgetControl(record=args.budget_record, reader=args.budget_reader,
                                        sha256=args.budget_sha256, cursor=args.budget_cursor,
-                                       interval=args.budget_interval, limit_fractions=args.budget_limit_fractions,
-                                       hours_fractions=args.budget_hours_fractions)
+                                       interval=args.budget_interval, limit_fractions=args.budget_limit_fractions)
             elif (args.budget_cursor is not None or args.budget_interval != 60
-                  or args.budget_limit_fractions is not None or args.budget_hours_fractions is not None):
+                  or args.budget_limit_fractions is not None):
                 raise ChatboardError("budget options require a budget binding")
             started = time.monotonic()
             remaining = args.timeout_seconds

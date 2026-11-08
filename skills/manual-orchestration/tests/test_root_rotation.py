@@ -250,7 +250,7 @@ class GateCommit(Base):
         record = self.tmp / "assignment.json"
         script = ROOT / "scripts" / "scope_budget.py"
         subprocess.run([sys.executable, str(script), "init", "--record", str(record), "--objective", "x",
-                        "--item", "a", "--max-hours", "2", "--set-by", "user"], check=True, capture_output=True)
+                        "--item", "a", "--pool", "codex", "--max-usd", "2", "--set-by", "user"], check=True, capture_output=True)
         self.assertEqual(self.gate("prepare")[0], 10)
         rc, status, err = self.gate("commit", "--record", str(record))
         self.assertEqual((rc, status), (0, "committed_rotation_1"), err)
@@ -270,7 +270,7 @@ class GateCommit(Base):
         record = self.tmp / "assignment.json"
         script = ROOT / "scripts" / "scope_budget.py"
         subprocess.run([sys.executable, str(script), "init", "--record", str(record), "--objective", "x",
-                        "--item", "a", "--max-hours", "2", "--set-by", "user"], check=True, capture_output=True)
+                        "--item", "a", "--pool", "codex", "--max-usd", "2", "--set-by", "user"], check=True, capture_output=True)
         subprocess.run([sys.executable, str(script), "close", "--record", str(record), "--disposition", "accepted",
                         "--reason", "done", "--set-by", "user"], check=True, capture_output=True)
         before = record.read_bytes()

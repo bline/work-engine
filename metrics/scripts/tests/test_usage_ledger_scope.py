@@ -183,7 +183,7 @@ class ScopeBoundaries(unittest.TestCase):
             root = os.path.join(d, f'rollout-x-{ROOT}.jsonl'); other = os.path.join(d, f'rollout-x-{OTHER}.jsonl')
             rollout(root, ROOT, [('r1', T1, GOOD)]); rollout(other, OTHER, [('o1', T1, {'input_tokens': 'bad'})])
             rec = os.path.join(d, 'record'); record(rec, [{'session_id': ROOT, 'provider': 'codex', 'from': T0}])
-            args = argparse.Namespace(record=rec, cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0',
+            args = argparse.Namespace(record=rec, cursor=None, limit_fractions='0.5,0.8,1.0',
                                       role_host_ledger=os.path.join(d, 'absent'))
             out = io.StringIO()
             with patch.object(L, 'CODEX_GLOBS', [root, other]), patch.object(L, 'CLAUDE_GLOB', os.path.join(d, 'none')), \

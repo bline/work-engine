@@ -90,22 +90,62 @@ class Matrix(unittest.TestCase):
             self.assertGreater(tree['totals'][pool]['calls'],0)
             self.assertGreater(tree['unattributed']['totals'][pool]['calls'],0)
 
-    def test_hours_account_and_coverage_cursor(self):
-        sb = {'objective_id':'id', 'started_at':'2026-01-01T00:00:00Z', 'limits':{'max_hours':10,'max_weekly_percent':90}, 'cost_limits':[]}
-        doc = dict(snapshot_at='2026-01-01T09:00:00Z', status='partial', totals=L.pools(), nodes=[])
+    def test_retired_hours_account_and_coverage_cursor(self):
+        # max_hours in an old record raises nothing; elapsed time is past it throughout.
+        sb = {'objective_id':'id', 'started_at':'2026-01-01T00:00:00Z', 'limits':{'max_hours':1,'max_weekly_percent':90}, 'cost_limits':[]}
+        time_block = dict(basis='model_call_latency', status='complete', window_hours=9.0, model_busy_hours=2.0, model_call_hours=3.0, calls=4, calls_without_latency=0)
+        doc = dict(snapshot_at='2026-01-01T09:00:00Z', status='partial', totals=L.pools(), nodes=[], time=time_block)
         quota = [dict(ts='2026-01-01T08:00:00Z', window_minutes=10080, used_percent=95, resets_at=L.ts_of('2026-01-02T00:00:00Z').timestamp()),
                  dict(ts='2026-01-01T07:00:00Z', window_minutes=10080, used_percent=5, resets_at=L.ts_of('2026-01-02T00:00:00Z').timestamp())]
-        args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', hours_fractions='0.8,1.0', role_host_ledger=None)
+        args = argparse.Namespace(record='x', cursor=None, limit_fractions='0.5,0.8,1.0', role_host_ledger=None)
         def run():
             out = io.StringIO()
             with contextlib.redirect_stdout(out), patch.object(L,'cost_tree',return_value=(doc,quota,sb)): L.cmd_control(args)
             return json.loads(out.getvalue())
-        a=run(); self.assertEqual({x['kind'] for x in a['events']}, {'hours_fraction','account_ceiling','coverage_changed'})
+        a=run(); self.assertEqual({x['kind'] for x in a['events']}, {'account_ceiling','coverage_changed'})
+        self.assertEqual(a['snapshot']['time'], time_block)
         self.assertTrue(next(x for x in a['events'] if x['kind']=='account_ceiling')['observed']['account_wide'])
         args.cursor=a['next_budget_cursor']; self.assertEqual(run()['events'],[])
         doc['status']='complete'; doc['snapshot_at']='2026-01-01T11:00:00Z'
-        b=run(); self.assertEqual({x['kind'] for x in b['events']}, {'hours_reached','coverage_changed'})
+        b=run(); self.assertEqual({x['kind'] for x in b['events']}, {'coverage_changed'})
         args.cursor=b['next_budget_cursor']; self.assertEqual(run()['events'],[])
+        # A cursor written by an earlier reader may hold hours states: accepted, dropped, never raised.
+        state = json.loads(L.base64.urlsafe_b64decode(b['next_budget_cursor'] + '=' * (-len(b['next_budget_cursor']) % 4)))
+        state['states'].update({'["hours_fraction",null,null,0.8]': True, '["hours_reached",null,null,1.0]': False})
+        args.cursor = L.base64.urlsafe_b64encode(json.dumps(state).encode()).decode().rstrip('=')
+        c=run(); self.assertEqual(c['events'], [])
+        kept = json.loads(L.base64.urlsafe_b64decode(c['next_budget_cursor'] + '=' * (-len(c['next_budget_cursor']) % 4)))['states']
+        self.assertFalse(any('hours' in key for key in kept))
+        import subprocess
+        retired = subprocess.run([sys.executable, '-I', L.__file__, 'control', '--record', 'x', '--hours-fractions', '1'],
+                                 capture_output=True, text=True)
+        self.assertEqual(retired.returncode, 2)
+        self.assertIn('--hours-fractions', retired.stderr)
+
+    def test_model_time_is_the_union_of_call_intervals(self):
+        since = '2026-01-01T01:00:00Z'
+        sb = dict(started_at=since, objective_id='id', sessions=[dict(session_id='root',provider='codex', **{'from':since})],
+                  bindings=[dict(session_id='c',provider='claude',parent_session_id='root')])
+        def codex(sid, ts, latency): return dict(provider='codex', thread=sid, ts=ts, latency_s=latency, model='gpt-6.1-sol', service_tier='default', quota_multiplier=1, usd=1, pools=['codex'])
+        def claude(ts, latency): return dict(provider='anthropic', session='c', subagent=False, ts=ts, latency_s=latency, model='claude-opus-5-5', speed='standard', usd=1, usd_low=1, usd_high=1, pools=['claude_all_models'])
+        calls = [codex('root', '2026-01-01T01:10:00Z', 900),     # starts before the window: 01:00-01:10 counts
+                 claude('2026-01-01T01:12:00Z', 240),             # 01:08-01:12 overlaps the root call
+                 codex('root', '2026-01-01T01:20:00Z', 300),      # 01:15-01:20
+                 claude('2026-01-01T01:30:00Z', None),            # no latency: counted, not zero
+                 codex('other', '2026-01-01T01:40:00Z', 3000)]    # another objective's session
+        with tempfile.TemporaryDirectory() as d:
+            record = os.path.join(d,'record')
+            with open(record,'w') as f: json.dump({'scope_budget':sb},f)
+            with patch.object(L,'build_codex',return_value=([c for c in calls if c['provider']=='codex'],[],[],0)), \
+                 patch.object(L,'build_claude',return_value=([c for c in calls if c['provider']=='anthropic'],[],0)):
+                tree, _, _ = L.cost_tree(record, until_arg='2026-01-01T02:00:00Z', role_ledger=os.path.join(d,'none'))
+            self.assertEqual(tree['time'], dict(basis='model_call_latency', status='partial', window_hours=1.0,
+                model_busy_hours=round(17/60, 4), model_call_hours=round(19/60, 4), calls=4, calls_without_latency=1))
+            with open(record,'w') as f: json.dump({'scope_budget':dict(sb, sessions=[])},f)
+            with patch.object(L,'build_codex',return_value=([],[],[],0)), patch.object(L,'build_claude',return_value=([],[],0)):
+                tree, _, _ = L.cost_tree(record, until_arg='2026-01-01T02:00:00Z', role_ledger=os.path.join(d,'none'))
+            self.assertEqual((tree['time']['status'], tree['time']['model_busy_hours'], tree['time']['model_call_hours']),
+                             ('not_established', None, None))
 
     def test_build_failure_and_reader_error(self):
         with tempfile.TemporaryDirectory() as d:

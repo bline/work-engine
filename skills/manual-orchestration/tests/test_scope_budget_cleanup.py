@@ -22,7 +22,7 @@ class CleanupTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.d = Path(self.tmp.name)
         self.record = self.d / 'assignment.json'
-        self.assertEqual(call('init', '--record', str(self.record), '--objective', 'x', '--item', 'a', '--max-hours', '1', '--set-by', 'user')[0], 0)
+        self.assertEqual(call('init', '--record', str(self.record), '--objective', 'x', '--item', 'a', '--pool', 'codex', '--max-usd', '1', '--set-by', 'user')[0], 0)
         self.board = self.d / 'skills/durable-state/scripts/codex_chatboard.py'
         self.board.parent.mkdir(parents=True)
         self.repo = self.d / 'repo'

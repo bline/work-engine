@@ -401,7 +401,7 @@ python3 skills/durable-state/scripts/codex_chatboard.py --repository . wait \
 
 The reader runs at most once per interval (default 60 seconds); the listener
 wakes on that schedule even without board activity. `--budget-limit-fractions`
-and `--budget-hours-fractions` pass comma-separated levels to the reader.
+passes comma-separated levels of the user's dollar limit to the reader.
 Pass the last consumed `next_budget_cursor` as `--budget-cursor` to resume;
 it is independent of `next_since` and `next_control_cursor`. Results contain
 `budget_events`, `budget_topic`, and `next_budget_cursor`. Budget-only delivery

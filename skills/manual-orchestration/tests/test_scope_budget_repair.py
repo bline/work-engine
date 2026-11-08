@@ -47,7 +47,7 @@ class RepairTest(unittest.TestCase):
         return [sys.executable, str(self.script), *args, '--record', str(record or self.record)]
 
     def init(self, record):
-        subprocess.run(self.command('init', '--objective', 'x', '--item', 'a', '--max-hours', '2', '--set-by', 'user', record=record), check=True, capture_output=True)
+        subprocess.run(self.command('init', '--objective', 'x', '--item', 'a', '--pool', 'codex', '--max-usd', '2', '--set-by', 'user', record=record), check=True, capture_output=True)
 
     def listen_cmd(self, record=None, *args):
         return self.command('listen', '--repository', str(self.repo), '--session', SESSION, *args, record=record)

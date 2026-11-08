@@ -1019,21 +1019,24 @@ class FullEnvelope(ContextFixture):
 
 
 class Alerts(ContextFixture):
-    def test_budget_and_deadline_alerts_after_the_baseline(self):
+    def test_budget_alerts_after_the_baseline(self):
         credential = "webridge_" + "a" * 43
         (self.homes.codex / "session_index.jsonl").write_text(json.dumps({"id": CODEX_ID, "thread_name": "x" * 280 + credential}) + "\n")
         event = {"kind": "limit_fraction", "pool": "codex", "level": 2.25, "set_by": "user", "summary": "spend limit",
                  "observed": {"quota_usd_high": 2.3}, "snapshot_at": "2026-10-30T10:00:00Z"}
-        hours = {"kind": "hours_fraction", "pool": None, "level": 0.8, "summary": "hours", "observed": 0.81}
+        ceiling = {"kind": "account_ceiling", "pool": None, "level": 90, "summary": "last recorded account-wide weekly meter",
+                   "observed": {"used_percent": 91, "account_wide": True}, "snapshot_at": "2026-10-30T10:00:00Z"}
         self.ledger_responses.write_text(json.dumps({"tree": {}, "control": {
-            "c0": {"events": [event, hours], "next": "c1"}}}))
+            "c0": {"events": [event, ceiling], "next": "c1"}}}))
+        # "deadline" is retired: a subscription naming it still validates, and nothing raises it.
+        self.assertIn("id", self.subscribe_event(SE.ALERT_EVENT_NAME, {"session_ids": [CODEX_ID], "kinds": ["deadline"]})["result"])
         identifier = self.subscribe_event(SE.ALERT_EVENT_NAME, {"session_ids": [CODEX_ID]})["result"]["id"]
         self.daemon.tick()  # baseline: the first control run records the cursor, raises nothing
         self.assertEqual(self.receiver.events(), [])
         self.clock[0] += SE.BUDGET_CHECK_SECONDS
         self.daemon.tick()
         kinds = [(b["data"]["kind"], b["data"]["sequence"]) for b, _ in self.receiver.events()]
-        self.assertEqual(kinds, [("budget", 1), ("deadline", 2)])
+        self.assertEqual(kinds, [("budget", 1), ("budget", 2)])
         first = self.receiver.events()[0][0]["data"]
         self.assertIn("$2.30", first["summary"])
         self.assertIn("API-equivalent, adjusted for subscription speed; proxy", first["summary"])

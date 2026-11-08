@@ -23,7 +23,7 @@ class LifecycleTest(unittest.TestCase):
         self.record = self.d / 'assignment.json'
         self.r = str(self.record)
         self.assertEqual(call('init', '--record', self.r, '--objective', 'x', '--item', 'a',
-                              '--max-hours', '2', '--set-by', 'user')[0], 0)
+                              '--pool', 'codex', '--max-usd', '2', '--set-by', 'user')[0], 0)
         self.repo = self.d / 'repo'
         reader = self.repo / 'metrics/scripts/usage_ledger.py'
         reader.parent.mkdir(parents=True)
@@ -61,7 +61,7 @@ class LifecycleTest(unittest.TestCase):
         commands = [
             ('close', '--disposition', 'abandoned', '--reason', 'x', '--set-by', 'user'),
             ('add', '--item', 'x', '--reason', 'x'),
-            ('revise', '--max-hours', '3', '--set-by', 'user'),
+            ('revise', '--reconsider-after-additions', '3', '--set-by', 'user'),
             ('cost-limit', '--pool', 'codex', '--max-usd', '1', '--set-by', 'user', '--reason', 'x'),
             ('bind', '--session', 's', '--provider', 'codex', '--bound-by', 'user', '--reason', 'x'),
             ('add-session', '--session', 's', '--provider', 'codex', '--from', '2026-01-01T00:00:00Z', '--bound-by', 'rotation'),

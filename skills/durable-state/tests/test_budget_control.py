@@ -201,7 +201,7 @@ class BudgetTest(unittest.TestCase):
     def test_digest_after_success_and_argv_timeout_interval(self):
         from unittest.mock import patch
         observer = board.BudgetControl(record=self.record, reader=self.reader, sha256=self.digest,
-            cursor='prior', interval=10, limit_fractions='0.5,1', hours_fractions='0.8,1')
+            cursor='prior', interval=10, limit_fractions='0.5,1')
         document = {'schema': 'objective-budget-control-v1', 'topic': 'control:budget:objective',
                     'events': [], 'next_budget_cursor': 'next', 'snapshot': {}}
         response = subprocess.CompletedProcess([], 0, json.dumps(document), '')
@@ -211,7 +211,7 @@ class BudgetTest(unittest.TestCase):
         self.assertEqual(run.call_count, 2)
         argv = run.call_args_list[0].args[0]
         self.assertEqual(argv, ['python3', '-I', str(self.reader), 'control', '--record', str(self.record),
-                                '--limit-fractions', '0.5,1', '--hours-fractions', '0.8,1', '--cursor', 'prior'])
+                                '--limit-fractions', '0.5,1', '--cursor', 'prior'])
         self.assertEqual(run.call_args_list[0].kwargs['timeout'], 120)
         self.assertEqual(run.call_args_list[1].args[0][-2:], ['--cursor', 'next'])
         self.reader.write_text('changed'); observer.next_run = 0

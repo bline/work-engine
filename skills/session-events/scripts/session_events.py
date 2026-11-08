@@ -1095,7 +1095,6 @@ def record_summary(path: Path, value: dict) -> dict | None:
         return None
     limits = budget.get("limits") if isinstance(budget.get("limits"), dict) else {}
     started = parse_time(budget.get("started_at"))
-    hours = limits.get("max_hours") if isinstance(limits.get("max_hours"), (int, float)) else None
     status = value.get("status") if isinstance(value.get("status"), str) else None
     closed_at = budget.get("closed_at") or value.get("closed_at")
     return {
@@ -1108,7 +1107,6 @@ def record_summary(path: Path, value: dict) -> dict | None:
         "closed_at": closed_at if isinstance(closed_at, str) else None,
         "limits": limits, "limits_set_by": budget.get("limits_set_by"),
         "cost_limits": [c for c in budget.get("cost_limits") or [] if isinstance(c, dict)],
-        "hours_deadline": None if started is None or hours is None else iso(started + hours * 3600),
         # fields a root writes beside scope_budget for a grant it was given
         "grant": value.get("grant") or value.get("grantId") or value.get("grant_id"),
         "deadline": value.get("deadline") if isinstance(value.get("deadline"), str) else None,
@@ -1280,7 +1278,7 @@ class BudgetIndex:
 
 
 def objective_view(record: dict) -> dict:
-    return {k: record.get(k) for k in ("objective_id", "grant", "objective", "path", "started_at", "hours_deadline",
+    return {k: record.get(k) for k in ("objective_id", "grant", "objective", "path", "started_at",
                                        "deadline", "limits", "limits_set_by", "cost_limits", "closed", "closed_at",
                                        "status")}
 
@@ -1292,7 +1290,6 @@ def budget_summary(who: str, record: dict, event: dict) -> str:
     level = event.get("level")
     what = {"mark_crossed": "crossed spend mark", "node_mark_crossed": "a worker crossed spend mark",
             "limit_fraction": "reached a fraction of its spend limit", "limit_reached": "reached its spend limit",
-            "hours_fraction": "used a fraction of its time limit", "hours_reached": "reached its time limit",
             "account_ceiling": "reached its account weekly ceiling",
             "coverage_changed": "spend coverage changed"}.get(str(event.get("kind")), str(event.get("kind")))
     if isinstance(account, dict) and event.get("kind") == "coverage_changed":
@@ -2102,6 +2099,8 @@ TURN_EVENT_DESCRIPTOR = {
 }
 
 ALERT_EVENT_NAME = "session.alert"
+# "deadline" stays accepted so existing subscriptions keep validating; objectives no
+# longer carry a time limit, so it is never raised.
 ALERT_KINDS = ("budget", "deadline", "stalled", "successor")
 DEFAULT_STALL_MINUTES = 20
 
@@ -2109,8 +2108,8 @@ ALERT_EVENT_DESCRIPTOR = {
     "name": ALERT_EVENT_NAME,
     "description": (
         "Something about a watched session needs a supervisor between turn ends. budget: its current "
-        "budget objective crossed a spend mark or a fraction of a cost limit. deadline: it reached a "
-        "fraction of its time limit, or the limit itself. stalled: its turn is open but neither its own "
+        "budget objective crossed a spend mark, a fraction of a cost limit, or the account ceiling. "
+        "deadline: retired, never raised (budgets no longer limit time). stalled: its turn is open but neither its own "
         "transcript nor any worker's has changed for stall_minutes. successor: another session adopted its "
         "role through a root rotation (carries the successor's id and handoff checks, so the subscription "
         "can be moved). Budget figures come from the repository's pinned usage ledger and are observations, "
@@ -2134,7 +2133,7 @@ ALERT_EVENT_DESCRIPTOR = {
             **{name: {"type": "string"} for name in (
                 "alert_id", "subscription_id", "kind", "session_id", "session_title", "raised_at", "summary")},
             "sequence": {"type": "integer"},
-            "detail": {**OBJECT, "description": "Kind-specific: the ledger event and objective (budget, deadline), "
+            "detail": {**OBJECT, "description": "Kind-specific: the ledger event and objective (budget), "
                                                 "last activity (stalled), or the succession with its checks."},
         },
         "required": ["alert_id", "subscription_id", "sequence", "kind", "session_id", "session_title",
@@ -4103,7 +4102,7 @@ class Daemon:
             memo["successors"] = memo["successors"][-500:]
             memo["stalled"] = dict(list(memo["stalled"].items())[-200:])
             next_check = now + ALERT_CHECK_SECONDS
-        if now >= next_budget and ({"budget", "deadline"} & set(kinds)) and self.ledger is not None:
+        if now >= next_budget and "budget" in kinds and self.ledger is not None:
             self.budgets_refresh(now)
             for session in sessions:
                 record = self.budgets.current(session.session_id, now) if self.budgets else None
@@ -4122,17 +4121,16 @@ class Daemon:
                     continue  # already true when the subscription began
                 title = titles.title(session)
                 for event in result["events"]:
-                    kind = "deadline" if str(event.get("kind", "")).startswith("hours_") else "budget"
-                    if kind not in kinds or not isinstance(event, dict):
+                    if not isinstance(event, dict):
                         continue
                     detail = {"ledger_event": event, "objective": objective_view(record),
                               "snapshot": result.get("snapshot")}
-                    raise_alert(kind, f"{objective}:{canonical(event)}", session, title,
+                    raise_alert("budget", f"{objective}:{canonical(event)}", session, title,
                                 budget_summary(title or session.session_id, record, event), detail)
             memo["objectives"] = dict(sorted(memo["objectives"].items(),
                                              key=lambda kv: kv[1].get("checkedAt") or "")[-100:])
             next_budget = now + BUDGET_CHECK_SECONDS
-        elif not ({"budget", "deadline"} & set(kinds)) or self.ledger is None:
+        elif "budget" not in kinds or self.ledger is None:
             next_budget = now + 24 * 3600
         memo.update(baseline=True, nextCheckAt=next_check, nextBudgetAt=next_budget)
         return min(next_check, next_budget)

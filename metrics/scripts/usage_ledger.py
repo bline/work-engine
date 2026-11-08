@@ -64,6 +64,13 @@ the API price scenario, not a subscription surcharge. Tree/control snapshots
 separate objective costs from account-wide meter observations and leave
 uncalibrated objective quota estimates null. Existing numeric fields and budget
 thresholds retain their meaning; cost bounds are not quota confidence bounds.
+
+Objective time (2026-11-07). Budgets limit dollars and scope additions, not
+time: wall-clock limits expired while work waited for a person. Tree and
+control snapshots carry `time`, information only: the window's length and
+model-busy hours, the union of the tree's model-call intervals from
+`latency_s`. It leaves out tool execution and waits for input. Calls without
+a latency are counted in `calls_without_latency`, and status is `partial`.
 """
 import argparse, base64, binascii, collections, datetime as dt, glob, hashlib, io, json, math, os, re, sqlite3, subprocess, sys
 
@@ -96,6 +103,9 @@ PRICING_RULES = dict(codex_long_input_threshold=272000, codex_long_input_multipl
 PRICING_SCENARIO_ID = 'usage-ledger-standard-api-v1'
 METER_MAX_AGE_SECONDS = 300
 CLAUDE_LATENCY_START = {}   # message id -> its latency start, for later records of the same message
+# Objectives no longer carry a time limit. Cursors written by earlier readers may
+# still hold these trigger states; they are accepted and dropped, never raised.
+RETIRED_TRIGGERS = {'hours_fraction', 'hours_reached'}
 
 def seconds_between(start, end):
     try:
@@ -874,6 +884,31 @@ def transcript_available(provider, sid, metadata, node_id=None):
             except OSError: continue
     return False
 
+def model_time(intervals, calls, missing, since, until, status):
+    """Model-busy time of an objective tree: information, never a limit.
+
+    Each interval runs from a call's latest preceding input to its record
+    (`latency_s`), so it leaves out tool execution and time spent waiting for a
+    person, and includes provider queueing. Parallel calls in different sessions
+    count once in model_busy_hours and separately in model_call_hours. A call
+    without a latency is counted, never taken as zero time.
+    """
+    clipped = sorted((max(a, since), min(b, until)) for a, b in intervals if min(b, until) > max(a, since))
+    busy, total, cur = 0.0, 0.0, None
+    for a, b in clipped:
+        total += (b - a).total_seconds()
+        if cur and a <= cur[1]: cur[1] = max(cur[1], b)
+        else:
+            if cur: busy += (cur[1] - cur[0]).total_seconds()
+            cur = [a, b]
+    if cur: busy += (cur[1] - cur[0]).total_seconds()
+    known = status != 'not_established'
+    return dict(basis='model_call_latency', status=status,
+                window_hours=round((until - since).total_seconds() / 3600, 4),
+                model_busy_hours=round(busy / 3600, 4) if known else None,
+                model_call_hours=round(total / 3600, 4) if known else None,
+                calls=calls, calls_without_latency=missing)
+
 def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     with open(record_path) as fh: sb = json.load(fh).get('scope_budget', {})
     now = dt.datetime.now(dt.timezone.utc).isoformat()
@@ -1023,6 +1058,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
                               (not starts[x['session_id']] or ts_of(x['at']) >= ts_of(starts[x['session_id']]))]
         tail['measurements'] = cost_measurements(tail['candidate_totals'])
     unattributed = {}; undated_sessions = set(); undated_outside = 0
+    busy = []; busy_calls = 0; busy_missing = 0
     # Issues and undated calls count against the objective only when they come from
     # one of its sessions; the window holds other objectives' sessions too.
     members = {n['session_id'] for n in nodes.values()}
@@ -1046,6 +1082,10 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             for p in c['pools']: add_spend(result['unattributed']['totals'][p], spend)
             continue
         for p in c['pools']: add_spend(n['direct'][p], spend); add_spend(result['totals'][p], spend)
+        latency = c.get('latency_s'); busy_calls += 1
+        if isinstance(latency, (int, float)) and not isinstance(latency, bool) and math.isfinite(latency) and latency >= 0:
+            end = ts_of(c['ts']); busy.append((end - dt.timedelta(seconds=latency), end))
+        else: busy_missing += 1
         if c.get('model') not in n['models']: n['models'].append(c.get('model'))
         tier = c.get('service_tier') if c['provider'] == 'codex' else c.get('speed')
         if tier not in n['tiers']: n['tiers'].append(tier)
@@ -1084,6 +1124,11 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high'] or s['unpriced_calls'] for s in result['totals'].values())
     substantive_issues = [i for i in result['issues'] if i['kind'] != 'role_host_ledger_absent']
     result['status'] = 'not_established' if not sessions or missing_root else ('partial' if ranged or result['unrecorded'] or substantive_issues or undated_sessions else 'complete')
+    # Pricing gaps do not affect timing; missing transcripts, unrecorded or undated calls do.
+    lineage_gap = any(i['kind'] == 'transcript_missing' for i in result['issues'])
+    time_status = ('not_established' if result['status'] == 'not_established' else
+                   'partial' if busy_missing or lineage_gap or result['unrecorded'] or undated_sessions else 'complete')
+    result['time'] = model_time(busy, busy_calls, busy_missing, since, until, time_status)
     if 'post_close' in result:
         tail = result['post_close']
         tail_ranged = any(s['usd_low'] != s['usd_high'] or s['quota_usd_low'] != s['quota_usd_high']
@@ -1117,7 +1162,7 @@ def cmd_control(a):
             for key, state in previous.items():
                 parts = json.loads(key)
                 kinds = {'mark_crossed', 'node_mark_crossed', 'limit_fraction', 'limit_reached',
-                         'hours_fraction', 'hours_reached', 'coverage_changed', 'account_ceiling', 'objective_closed'}
+                         'coverage_changed', 'account_ceiling', 'objective_closed'} | RETIRED_TRIGGERS
                 if not isinstance(parts, list) or len(parts) not in (4, 5) or parts[0] not in kinds:
                     raise ValueError('invalid trigger key')
                 if parts[1] is not None and parts[1] not in POOLS: raise ValueError('invalid trigger pool')
@@ -1135,7 +1180,8 @@ def cmd_control(a):
                     raise ValueError('invalid trigger state')
         except (ValueError, KeyError, TypeError, UnicodeError, binascii.Error) as e:
             raise ValueError('invalid cursor: ' + str(e))
-    states = dict(previous); events = []; evaluated = set(); cost_controls = []
+    states = {k: v for k, v in previous.items() if json.loads(k)[0] not in RETIRED_TRIGGERS}
+    events = []; evaluated = set(); cost_controls = []
     def trigger(kind, pool, node, level, active, observed, summary, set_by=None):
         parts = [kind, pool, node, level]
         if set_by is not None: parts.append(set_by)
@@ -1162,7 +1208,6 @@ def cmd_control(a):
     else:
         notification_status = 'observed' if account['status'] == 'stale' else account['status']
         fractions = [float(x) for x in a.limit_fractions.split(',')]
-        hours_fractions = [float(x) for x in a.hours_fractions.split(',')]
         nodes = {n['node_id']: n for n in doc['nodes']}
         for limit in sb.get('cost_limits') or []:
             pool = limit['pool']; node = limit.get('node')
@@ -1194,12 +1239,6 @@ def cmd_control(a):
                         spend_trigger('limit_reached' if f == 1 else 'limit_fraction', maximum * f, 'spend limit')
                 else:
                     spend_trigger(mark_kind, maximum, 'spend mark')
-        limits = sb.get('limits') or {}; hours = limits.get('max_hours')
-        if hours is not None and sb.get('started_at'):
-            elapsed = (ts_of(doc['snapshot_at']) - ts_of(sb['started_at'])).total_seconds() / 3600
-            for f in sorted(set(hours_fractions + [1.0])):
-                trigger('hours_reached' if f == 1 else 'hours_fraction', None, None, hours * f,
-                        elapsed >= hours * f, elapsed, 'elapsed hours')
         if account['status'] in ('observed', 'stale') and limits.get('max_weekly_percent') is not None:
             trigger('account_ceiling', None, None, limits['max_weekly_percent'], account['used_percent'] >= limits['max_weekly_percent'],
                     dict(used_percent=account['used_percent'], account_wide=True, account_quota=account), 'last recorded account-wide weekly meter')
@@ -1232,7 +1271,7 @@ def cmd_control(a):
     print(json.dumps(dict(schema='objective-budget-control-v1', topic=topic, events=events, next_budget_cursor=cursor,
                           closed_at=closed_at, snapshot=dict(snapshot_at=doc['snapshot_at'], status=doc['status'], totals=doc['totals'],
                                         measurements=measurements, cost_controls=cost_controls,
-                                        post_close=doc.get('post_close'))), sort_keys=True))
+                                        time=doc.get('time'), post_close=doc.get('post_close'))), sort_keys=True))
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1242,7 +1281,7 @@ def main():
     r = sp.add_parser('reconcile-trial'); r.add_argument('measurement'); r.add_argument('--out')
     w = sp.add_parser('windows'); w.add_argument('dir')
     t = sp.add_parser('tree'); t.add_argument('--record', required=True); t.add_argument('--since'); t.add_argument('--until'); t.add_argument('--role-host-ledger'); t.add_argument('--out')
-    c = sp.add_parser('control'); c.add_argument('--record', required=True); c.add_argument('--cursor'); c.add_argument('--limit-fractions', default='0.5,0.8,1.0'); c.add_argument('--hours-fractions', default='0.8,1.0'); c.add_argument('--role-host-ledger')
+    c = sp.add_parser('control'); c.add_argument('--record', required=True); c.add_argument('--cursor'); c.add_argument('--limit-fractions', default='0.5,0.8,1.0'); c.add_argument('--role-host-ledger')
     a = ap.parse_args()
     if a.cmd == 'control':
         try: cmd_control(a)

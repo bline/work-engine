@@ -97,7 +97,7 @@ class Control(unittest.TestCase):
         self.doc={'snapshot_at':'2026-01-01T01:00:00Z','status':'complete','totals':self.spend,'nodes':[]}
         self.quota=[{'ts':self.doc['snapshot_at'],'window_minutes':10080,'used_percent':95,
                      'resets_at':L.ts_of(self.doc['snapshot_at']).timestamp()+3600}]
-        self.args=argparse.Namespace(record='none',cursor=None,limit_fractions='0.5,0.8,1.0',hours_fractions='0.8,1.0',role_host_ledger=None)
+        self.args=argparse.Namespace(record='none',cursor=None,limit_fractions='0.5,0.8,1.0',role_host_ledger=None)
     def run_control(self):
         out=io.StringIO()
         with patch.object(L,'cost_tree',return_value=(self.doc,self.quota,self.sb)),contextlib.redirect_stdout(out): L.cmd_control(self.args)
