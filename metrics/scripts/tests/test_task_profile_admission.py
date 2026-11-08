@@ -498,6 +498,30 @@ class AdmissionBase(unittest.TestCase):
             self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["GONE"]}}, "y.json")
             return run
 
+        def terra_p1_with_repairs(task_repairs, budget=3):
+            """Terra episodes with a first review of p1 above 0 and the given number of repair records each,
+            written by the recorder, no PAUSED marker. task_repairs: {task: repairs}."""
+            def build(name):
+                run = self.new_run(name, budget=budget, in_flight=9)
+                for task in task_repairs:  # Enroll first: a marked round refuses enrollments.
+                    self.enroll(run, task, byte=1)
+                for task, repairs in task_repairs.items():
+                    self.review(run, task, p1=1)
+                    for _ in range(repairs):
+                        self.repair(run, task)
+                self.unmark(run)
+                return run
+            return build
+
+        def histories(builder, *documents):
+            def build(name):
+                run = builder(name)
+                for index, (p1, rounds) in enumerate(documents):
+                    self.write_pause_history(run, {"covered_triggers": {"p1_episodes": p1, "terra_repair_rounds": rounds}},
+                                             f"h{index}.json")
+                return run
+            return build
+
         def review_edit(edit, p1=0):
             def build(name):
                 run = self.terra_with_review(name, p1=p1)
@@ -672,6 +696,13 @@ class AdmissionBase(unittest.TestCase):
                                                           "pause_history_inconsistent"),
             "coverage_p1_names_a_sol_episode": (history_names_sol_episode, "pause_history_inconsistent"),
             "coverage_second_file_inconsistent": (second_history_file_inconsistent, "pause_history_inconsistent"),
+            # G1: pause histories that no sequence of resumes can have written (each must be ordered against the others).
+            "coverage_histories_inflated_rounds_hide_a_stop": (histories(terra_p1_with_repairs({"t": 8}), (["t"], 5), ([], 8)),
+                                                                "pause_history_inconsistent"),
+            "coverage_histories_p1_sets_not_nested": (histories(terra_p1_with_repairs({"t": 2, "u": 0}), (["t"], 2), (["u"], 0)),
+                                                       "pause_history_inconsistent"),
+            "coverage_histories_more_p1_with_fewer_rounds": (histories(terra_p1_with_repairs({"t": 2, "u": 0}), (["t"], 2), (["t", "u"], 1)),
+                                                              "pause_history_inconsistent"),
             # F3: a first review whose counts, verdict and flag do not agree as cmd_review writes them.
             "review_changes_required_without_findings": (review_edit(set_fields(verdict="changes_required", first_review_pass=False)),
                                                          "review_record_invalid"),
@@ -1813,7 +1844,7 @@ class AdmissionClassRepair(AdmissionBase):
         resumed = self.copy_of(run, "diff-b")
         (resumed / "pauses").mkdir()
         (resumed / "pauses" / "a.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 2}}))
-        (resumed / "pauses" / "b.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["v"], "terra_repair_rounds": 0}}))
+        (resumed / "pauses" / "b.json").write_text(json.dumps({"covered_triggers": {"p1_episodes": ["t", "v"], "terra_repair_rounds": 3}}))
         (resumed / "pauses" / "ignored.txt").write_text("[")
         fixtures.append(resumed)
         linked = self.copy_of(run, "diff-c")  # A symlinked review is followed, as before.
@@ -1962,9 +1993,11 @@ class AdmissionClassRepair(AdmissionBase):
         self.repair(run, "t")
         self.repair(run, "t")
         self.unmark(run)
-        # Older and newer histories, each at or below the facts now read: equal, below, empty.
-        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 1}}, "a.json")
-        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": [], "terra_repair_rounds": 2}}, "b.json")
+        # An older and a newer history, each at or below the facts now read, and ordered: the older covers no
+        # more P1 episodes and no more rounds than the newer (G1; the facts only grow, so the recorder writes
+        # only chains).
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": [], "terra_repair_rounds": 1}}, "a.json")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 2}}, "b.json")
         out = self.admit(run, "active")
         self.assertEqual((out["facts"]["trigger"]["covered_p1_episodes"], out["facts"]["trigger"]["covered_repair_rounds"]),
                          (["t"], 2))
@@ -1972,6 +2005,67 @@ class AdmissionClassRepair(AdmissionBase):
         # The same facts, with one more round than the coverage saw: a stop, as before.
         self.repair(run, "t")
         self.unmark(run)
+        self.admit(run, "stop_reached", "pause_trigger_unmarked")
+
+    def test_g1_histories_that_form_a_chain_keep_their_meaning(self):
+        """Every pair ordered both ways: the merged facts are the shared rule's, and the stop rule still decides."""
+        run = self.new_run("g1-chain", budget=3, in_flight=9)
+        for task in ("t", "u"):
+            self.enroll(run, task, byte=1)
+        for task in ("t", "u"):
+            self.review(run, task, p1=1)
+        self.repair(run, "t")
+        self.repair(run, "t")
+        self.unmark(run)
+        # Empty, equal duplicates, a file with no coverage at all, then growing sets and rounds.
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": [], "terra_repair_rounds": 0}}, "a.json")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": [], "terra_repair_rounds": 0}}, "b.json")
+        self.write_pause_history(run, {"note": "no coverage recorded"}, "c.json")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 1}}, "d.json")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 1}}, "e.json")
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t", "u"], "terra_repair_rounds": 2}}, "f.json")
+        out = self.admit(run, "active")
+        covered, rounds = rec.pause_coverage(str(run))
+        self.assertEqual((out["facts"]["trigger"]["covered_p1_episodes"], out["facts"]["trigger"]["covered_repair_rounds"]),
+                         (sorted(covered), rounds))
+        self.assertEqual((sorted(covered), rounds), (["t", "u"], 2))
+        self.repair(run, "t")  # A round the newest history never saw, at the budget: a stop, as before.
+        self.unmark(run)
+        self.admit(run, "stop_reached", "pause_trigger_unmarked")
+
+    def test_g1_a_resume_after_a_resume_writes_a_chain_the_gate_admits(self):
+        """Histories written by the real cmd_resume at two moments."""
+        run = self.new_run("g1-resume", budget=3, in_flight=9)
+        self.enroll(run, "t", byte=1)
+        self.review(run, "t", p1=1)
+        self.resume(run)  # first history: ({t}, 0)
+        self.enroll(run, "u", byte=1)
+        self.review(run, "u", p1=1)
+        self.repair(run, "u")
+        self.resume(run)  # second history: ({t, u}, 1)
+        files = sorted(os.listdir(run / "pauses"))
+        self.assertEqual(len(files), 2, files)
+        out = self.admit(run, "active")
+        covered, rounds = rec.pause_coverage(str(run))
+        self.assertEqual((out["facts"]["trigger"]["covered_p1_episodes"], out["facts"]["trigger"]["covered_repair_rounds"]),
+                         (sorted(covered), rounds))
+        self.assertEqual((sorted(covered), rounds), (["t", "u"], 1))
+
+    def test_g1_unordered_histories_are_unknown_naming_both_files(self):
+        cases = self.fail_closed_cases()
+        for name, needles in (("coverage_histories_inflated_rounds_hide_a_stop", ("h0.json", "h1.json", "not ordered")),
+                              ("coverage_histories_p1_sets_not_nested", ("h0.json", "h1.json", "not ordered")),
+                              ("coverage_histories_more_p1_with_fewer_rounds", ("h0.json", "h1.json", "not ordered"))):
+            with self.subTest(name):
+                build, code = cases[name]
+                out = self.admit(build(name), "unknown", code)
+                for needle in needles:
+                    self.assertIn(needle, out["reason"]["text"])
+
+    def test_g1_the_single_history_that_the_facts_do_not_contradict_is_not_a_chain_problem(self):
+        """V1's control: one history ({t}, 5) over 8 rounds and budget 3 is a stop, as at c0336904."""
+        run = self.fail_closed_cases()["coverage_histories_inflated_rounds_hide_a_stop"][0]("g1-control")
+        (run / "pauses" / "h1.json").unlink()
         self.admit(run, "stop_reached", "pause_trigger_unmarked")
 
     def test_f2_coverage_beyond_the_facts_is_unknown_naming_what_it_claims(self):
@@ -2039,7 +2133,7 @@ class AdmissionClassRepair(AdmissionBase):
         snapshot test (`test_11_fail_closed_states_are_untouched`) run them. Count them here so a dropped fixture
         is noticed."""
         cases = self.fail_closed_cases()
-        groups = {"coverage_": 6, "review_changes_required_without": 1, "review_accept_with": 2, "review_flag_": 7,
+        groups = {"coverage_": 9, "review_changes_required_without": 1, "review_accept_with": 2, "review_flag_": 7,
                   "review_verdict_": 4, "review_p2_": 12, "review_written_after_close": 1, "close_repair_rounds_": 8,
                   "repair_written_after_close": 1, "repair_review_receipt_repeated": 1,
                   "enrollment_sol_with_odd": 1, "enrollment_terra_with_even": 1, "enrollment_draw_byte_": 10}

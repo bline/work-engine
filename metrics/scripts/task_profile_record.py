@@ -1126,7 +1126,9 @@ Exit code and state:
                     number of repair records, a repair record with no review receipt of its own or written
                     after the episode ended: repair_record_invalid. Pause history that covers more repair
                     rounds than there are repair records, or a P1 episode that is not a Terra episode with a
-                    first review of p1 above 0: pause_history_inconsistent. A path counts as absent only when
+                    first review of p1 above 0, or two histories that are not ordered (neither has both a subset
+                    of the other's covered P1 episodes and no more covered rounds): pause_history_inconsistent.
+                    A path counts as absent only when
                     lstat itself says ENOENT; any other lstat error is unknown.
 Any other exit code, including a usage error (2) or a crash (1), is not an admission: do not screen.
 The Terra in-flight limit is reported as a fact and is not a stop.
@@ -1341,7 +1343,12 @@ def admission_episode_listing(d):
 
 
 def admission_pause_coverage(run_dir):
-    """The triggers acknowledged by pause history: (covered P1 episodes, covered repair rounds). Read-only.
+    """The triggers acknowledged by pause history: (covered P1 episodes, covered repair rounds, histories). Read-only.
+
+    The first two are what pause_coverage returns (union of the P1 episodes, maximum of the rounds). The third
+    keeps each history's own pair, [(file name, frozenset of P1 episodes, rounds)], with a file that has no
+    covered_triggers counted as (empty, -1) as pause_coverage reads it, so admission can check the histories
+    against each other (admission_coverage_problem).
 
     The strict equivalent of pause_coverage: the same sets on valid input, from one read of each file, and
     unknown (never a guess) where a file cannot be listed, opened or decoded, or is not what the rule needs.
@@ -1352,7 +1359,7 @@ def admission_pause_coverage(run_dir):
     pause_coverage's defaults; duplicate keys, NaN and Infinity are refused.
     """
     base = os.path.join(run_dir, "pauses")
-    covered_p1, covered_repairs = set(), -1
+    covered_p1, covered_repairs, histories = set(), -1, []
     for name in admission_listdir(base, "pause_history_unlistable", "pauses/", missing_ok=True):
         if name.startswith(".") or not name.endswith(".json"):
             continue  # pause_coverage's glob("*.json") does not see these either.
@@ -1367,6 +1374,7 @@ def admission_pause_coverage(run_dir):
         if not isinstance(document, dict):
             raise malformed("the document is not a JSON object")
         if "covered_triggers" not in document:
+            histories.append((name, frozenset(), -1))
             continue
         covered = document["covered_triggers"]
         if not isinstance(covered, dict):
@@ -1379,7 +1387,8 @@ def admission_pause_coverage(run_dir):
             raise malformed("covered_triggers.terra_repair_rounds is not a nonnegative integer")
         covered_p1.update(episodes)
         covered_repairs = max(covered_repairs, rounds)
-    return covered_p1, covered_repairs
+        histories.append((name, frozenset(episodes), rounds))
+    return covered_p1, covered_repairs, histories
 
 
 def admission_episode_records(d, files, manifest):
@@ -1566,7 +1575,7 @@ def admission_trigger_facts(episodes):
     return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
 
 
-def admission_coverage_problem(covered_p1, covered_repairs, trigger):
+def admission_coverage_problem(covered_p1, covered_repairs, trigger, histories=()):
     """Why pause coverage cannot have been written from the facts now read, or None.
 
     covered_triggers is written only by cmd_resume, from enforce_triggers' facts at that moment; records are
@@ -1574,12 +1583,25 @@ def admission_coverage_problem(covered_p1, covered_repairs, trigger):
     recorder produces the covered P1 episodes are among the current Terra P1 episodes and the covered repair
     rounds do not exceed the current total. Coverage that claims more is inconsistent with the evidence the
     gate reads: the stop rule would take it as covering a stop that coverage never saw.
+
+    The histories must also agree with each other. Each is the facts at its resume, and the facts only grow, so
+    any two histories the recorder writes form a chain: one has a subset of the other's covered P1 episodes and
+    no more covered rounds. A pair that is not ordered both ways is a contradiction; the merge (union and
+    maximum) would let the inflated one cover what the other never saw. No timestamps are needed.
     """
     if covered_repairs > trigger["terra_repair_rounds"]:
         return f"covers {covered_repairs} repair rounds, but {trigger['terra_repair_rounds']} repair records exist"
     unknown = sorted(covered_p1 - set(trigger["p1_episodes"]))
     if unknown:
         return f"covers P1 episodes {unknown} that are not Terra episodes with a first review of p1 above 0"
+    ordered = sorted(histories, key=lambda h: h[0])
+    for index, (name_a, p1_a, rounds_a) in enumerate(ordered):
+        for name_b, p1_b, rounds_b in ordered[index + 1:]:
+            if (p1_a <= p1_b and rounds_a <= rounds_b) or (p1_b <= p1_a and rounds_b <= rounds_a):
+                continue
+            return (f"has histories {name_a} (P1 episodes {sorted(p1_a)}, {rounds_a} rounds) and {name_b} "
+                    f"(P1 episodes {sorted(p1_b)}, {rounds_b} rounds) that are not ordered: the recorder writes "
+                    f"histories that only grow")
     return None
 
 
@@ -1616,11 +1638,11 @@ def admission_decision(run_dir):
         try:
             # Strict equivalents of pause_coverage and episode_trigger_facts: malformed coverage must not
             # cover, and an unreadable or invalid record must not read as "no P1" or "no repair".
-            covered_p1, covered_repairs = admission_pause_coverage(run_dir)
+            covered_p1, covered_repairs, histories = admission_pause_coverage(run_dir)
             trigger = admission_trigger_facts(episodes)
         except (IntegrityFailure, OSError, ValueError, KeyError, TypeError, AttributeError) as e:
             raise AdmissionUnknown("trigger_inputs_unreadable", f"review-first.json or pause history is unreadable: {e}") from e
-        problem = admission_coverage_problem(covered_p1, covered_repairs, trigger)
+        problem = admission_coverage_problem(covered_p1, covered_repairs, trigger, histories)
         if problem:
             raise AdmissionUnknown("pause_history_inconsistent", f"pause history {problem}")
         new_p1, over_budget = terra_stop_rule(trigger, covered_p1, covered_repairs, config["terra_repair_budget"])
