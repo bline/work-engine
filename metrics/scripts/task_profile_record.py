@@ -1487,6 +1487,15 @@ def read_episodes_unrepaired(run_dir):
             # episode_dir refuses any other task ID before cmd_enroll writes, and the ID is the identity the P1
             # episodes and the pause coverage are matched by.
             raise AdmissionUnknown("enrollment_record_invalid", f"{name}: not a task ID the recorder accepts")
+        revision = record.get("task_revision")
+        if not isinstance(revision, str) or not REVISION.match(revision) or revision.split("@")[0] != name:
+            # cmd_enroll refuses to write unless the revision passes record_dir's REVISION match and its prefix is the
+            # task ID (:872-876), and writes it in the same record as task_id. It is a second statement of the identity
+            # the P1 episodes and the pause coverage are matched by: a revision naming another task, or none, means the
+            # record is not what the recorder wrote for this task, and renaming a directory changes the name and
+            # task_id but not this witness.
+            raise AdmissionUnknown("enrollment_record_invalid",
+                                   f"{name}: task_revision is {revision!r}, not a revision of task {name!r}")
         byte = record.get("draw_byte")
         if type(byte) is not int or not 0 <= byte <= 255 or record["arm"] != (TERRA if byte & 1 else SOL):
             # cmd_enroll derives the arm from the byte in the same write (arm = TERRA if byte & 1 else SOL), and the
@@ -1590,6 +1599,11 @@ def admission_trigger_facts(episodes):
             raise AdmissionUnknown("repair_record_invalid",
                                    f"{name}/close.json: repair_rounds is {close.get('repair_rounds')!r} "
                                    f"with {len(numbers)} repair records")
+        if close is not None and close.get("task_id") != task:
+            # The close record vouches for this episode's repair total (above), so it must be this episode's: cmd_close
+            # writes a.task_id, as cmd_review and cmd_repair do for the records checked above.
+            raise AdmissionUnknown("repair_record_invalid",
+                                   f"{name}/close.json: names task {close.get('task_id')!r}, not {task!r}")
     return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
 
 

@@ -640,6 +640,26 @@ class AdmissionBase(unittest.TestCase):
                 return run
             return build
 
+        # --- Opus findings H1-H2 (task identity in the enrollment revision and the close record) and the refusal audit ----
+        def covered_terra_p1(name):
+            """A Terra episode with a P1 first review that a pause history covers: active unless a record is refused."""
+            run = self.terra_with_review(name, p1=1)
+            self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["t"], "terra_repair_rounds": 0}})
+            return run
+
+        def revision_of_enrollment(value, builder=covered_terra_p1, task="t"):
+            def build(name):
+                run = builder(name)
+                self.rechain(run, task, {"enrollment.json": set_field("task_revision", value)})
+                return run
+            return build
+
+        def sol_with_revision_of_another_task(name):
+            run = self.new_run(name)
+            self.enroll(run, "s", byte=0)
+            self.rechain(run, "s", {"enrollment.json": set_field("task_revision", "t@" + "a" * 16)})
+            return run
+
         p1_values = {"nan": float("nan"), "negative": -1, "minus_infinity": float("-inf"), "infinity": float("inf"),
                      "bool_true": True, "bool_false": False, "float_zero": 0.0, "float_one": 1.0, "string": "1",
                      "null": None, "list": [1], "missing": missing}
@@ -807,6 +827,20 @@ class AdmissionBase(unittest.TestCase):
             **{f"task_id_format_{label}": (task_id_outside_the_format(task), "enrollment_record_invalid")
                for label, task in (("leading_dash", "-t"), ("space", "a b"), ("too_long", "a" * 129),
                                    ("non_ascii", "caf\u00e9"), ("trailing_newline", "t\n"))},
+            # H1: cmd_enroll refuses a revision that is not a REVISION or whose prefix is not the task ID (:872-876).
+            **{f"enrollment_task_revision_{label}": (revision_of_enrollment(value), "enrollment_record_invalid")
+               for label, value in (("other_task", "B@0123456789abcdef"), ("task_id_only", "t"), ("empty_digest", "t@"),
+                                    ("short_digest", "t@" + "a" * 15), ("long_digest", "t@" + "a" * 17),
+                                    ("uppercase_digest", "t@" + "A" * 16), ("non_hex_digest", "t@" + "g" * 16),
+                                    ("trailing_newline", "t@" + "a" * 16 + "\n"), ("leading_space", " t@" + "a" * 16),
+                                    ("two_separators", "t@t@" + "a" * 16), ("longer_prefix", "tt@" + "a" * 16),
+                                    ("empty", ""), ("null", None), ("integer", 5), ("true", True),
+                                    ("list", ["t@" + "a" * 16]), ("object", {}), ("missing", missing))},
+            "enrollment_task_revision_of_another_task_on_a_sol_episode": (sol_with_revision_of_another_task, "enrollment_record_invalid"),
+            # H2: close.json vouches for the episode's repair total, so it must name the episode (cmd_close writes a.task_id).
+            **{f"close_task_id_{label}": (close_edit(set_field("task_id", value)), "repair_record_invalid")
+               for label, value in (("other_task", "u"), ("empty", ""), ("trailing_newline", "t\n"), ("null", None),
+                                    ("integer", 5), ("true", True), ("list", ["t"]), ("missing", missing))},
         }
         return cases
 
@@ -1917,6 +1951,14 @@ class AdmissionClassRepair(AdmissionBase):
         self.mutate_and_decide(covered, "pause-approval", pause_edit(False), "owner_approval",
                                self.BAD + [" ", "\t", "\u00a0", 5, ["x"]],
                                lambda v: isinstance(v, str) and bool(v.strip()), "active")
+        # Opus H1-H2: the task identity the enrollment and the close record carry besides the directory name.
+        self.mutate_and_decide(covered, "enrollment-task-revision", record_edit("task-p1", "enrollment.json"), "task_revision",
+                               self.BAD + ["other@" + "a" * 16, "task-p1", "task-p1@", "task-p1@" + "A" * 16,
+                                           "task-p1@" + "a" * 17, "task-p1@" + "a" * 16 + "\n", "x-task-p1@" + "a" * 16],
+                               lambda v: isinstance(v, str) and rec.REVISION.match(v) is not None and v.split("@")[0] == "task-p1",
+                               "active")
+        self.mutate_and_decide(closed, "close-task", record_edit("t", "close.json"), "task_id", self.BAD + ["other", "t\n"],
+                               lambda v: v == "t", "active")
         self.mutate_and_decide(covered, "pause-p1", pause_edit(True), "p1_episodes", self.BAD,
                                lambda v: isinstance(v, list) and all(isinstance(i, str) for i in v), "active", absent_is_valid=True)
         self.mutate_and_decide(covered, "pause-rounds", pause_edit(True), "terra_repair_rounds", self.BAD, is_count, "active", absent_is_valid=True)
@@ -2211,6 +2253,39 @@ class AdmissionClassRepair(AdmissionBase):
         self.rechain(run, "s", {"close.json": lambda data: data.update(repair_rounds=9)})
         self.admit(run, "active")
 
+    def test_h1_every_revision_the_recorder_accepts_is_admitted(self):
+        """cmd_enroll writes any REVISION whose prefix is the task ID; the facts are those of the shared readers."""
+        run = self.new_run("h1-valid", in_flight=9)
+        for index, (task, digest) in enumerate((("0", "0123456789abcdef"), ("A.b_c-9", "f" * 16), ("a" * 128, "a" * 16))):
+            with mock.patch.object(rec.os, "urandom", return_value=bytes([1])):
+                out = self.rcall(run, "enroll", "--task-id", task, "--task-revision", f"{task}@{digest}",
+                                 "--eligible", "yes", "--reason", "synthetic")
+            self.assertEqual(out["outcome"], "enrolled")
+        for _, record in rec.enrollments(str(run)):
+            self.assertEqual(record["task_revision"].split("@")[0], record["task_id"])
+        self.review(run, "0", p1=1)
+        self.unmark(run)
+        self.write_pause_history(run, {"covered_triggers": {"p1_episodes": ["0"], "terra_repair_rounds": 0}})
+        out = self.admit(run, "active")
+        self.assertEqual(out["facts"]["enrollments"]["count"], 3)
+        self.assertEqual(out["facts"]["trigger"]["p1_episodes"], rec.trigger_facts(str(run))["p1_episodes"])
+
+    def test_h2_a_close_record_the_recorder_writes_names_its_episode_and_keeps_its_facts(self):
+        for repairs, budget in ((0, 3), (2, 5), (3, 4)):
+            with self.subTest(repairs):
+                run = self.terra_closed(f"h2-{repairs}", repairs=repairs, budget=budget)
+                self.assertEqual(json.loads((run / "enrollments" / "t" / "close.json").read_text())["task_id"], "t")
+                out = self.admit(run, "active")
+                self.assertEqual(out["facts"]["trigger"]["terra_repair_rounds"], repairs)
+
+    def test_h2_a_sol_episodes_close_record_naming_another_task_is_not_consumed(self):
+        run = self.new_run("h2-sol")
+        self.enroll(run, "s", byte=0)
+        self.rcall(run, "close", "--task-id", "s", "--disposition", "accepted", "--reason", "x", "--pre-review-fixes", 0,
+                   "--escalations", 0)
+        self.rechain(run, "s", {"close.json": lambda data: data.update(task_id="other")})
+        self.admit(run, "active")
+
     def test_f5_every_arm_the_recorder_draws_follows_from_its_byte(self):
         for byte in (0, 1, 2, 3, 100, 101, 254, 255):
             with self.subTest(byte):
@@ -2273,7 +2348,8 @@ class AdmissionClassRepair(AdmissionBase):
                   "review_verdict_": 4, "review_p2_": 12, "review_written_after_close": 1, "close_repair_rounds_": 8,
                   "repair_written_after_close": 1, "repair_review_receipt_repeated": 1,
                   "enrollment_sol_with_odd": 1, "enrollment_terra_with_even": 1, "enrollment_draw_byte_": 10,
-                  "pause_approval_": 12, "repair_receipt_digest_": 14, "task_id_format_": 5}
+                  "pause_approval_": 12, "repair_receipt_digest_": 14, "task_id_format_": 5,
+                  "enrollment_task_revision_": 19, "close_task_id_": 8}
         for prefix, count in groups.items():
             self.assertEqual(len([n for n in cases if n.startswith(prefix)]), count, prefix)
 
