@@ -217,12 +217,20 @@ CODEX_HOME=$HOME/.codex-api codex exec -C <checkout of the reviewed commit> \
   `~/.codex`, so these reviews do not appear in its totals or in budget checks.
 - **Cost:** an Astra first review in dogfood round 2 cost $1.30–9.67 at frozen API
   prices, median about $4.50 (n = 16), so the credits cover roughly 10–20 first
-  reviews. Whether current API prices match the frozen table is unverified.
+  reviews. The frozen Astra prices match OpenAI's published Standard prices
+  (checked 2026-11-07; [cost table](#cost-and-quota-facts-that-bear-on-selection)),
+  except that OpenAI also sells a 12-hour cache write at twice the 30-minute price
+  the table uses. Which one Codex requests is not established, so a frozen-price
+  figure understates the writes if Codex asks for 12 hours. The N1–N3 final
+  acceptance review on these credits (session
+  `01a1b74b-f8b6-7912-bb35-4b88587d68a2`, 18 calls) cost $3.61 with 30-minute
+  writes and $5.43 with 12-hour writes; writes were half of the lower figure. The
+  billed amount is on the OpenAI usage page, not in the rollout.
 - Spend it where Claude review has been weakest: contract-class changes and the
   final acceptance of a workstream.
 - A one-call probe on 2026-11-07 observed `gpt-6-astra` at `high` on the `default`
-  tier (session `01a1b6fb-0dee-7b93-9d45-ee5d56250d0e`, 13,169 tokens, $0.13 at
-  frozen prices).
+  tier (session `01a1b6fb-0dee-7b93-9d45-ee5d56250d0e`, 13,169 tokens, 13,161 of
+  them cache writes: $0.16 at frozen prices, $0.33 if the writes were 12-hour).
 
 ### Supervisor practice on Claude
 
@@ -264,7 +272,7 @@ after Claude-only acceptance.
 
 | Fact | Source |
 | --- | --- |
-| Frozen API prices per million tokens (input, cached input, output): Terra 1 / 0.05 / 5; Sol 6 2 / 0.2 / 10; Sol 6.1 2 / 0.1 / 10; Astra 10 / 1 / 50; Sonnet 5.5 2 / 0.1 / 10; Opus 5.5 4 / 0.2 / 20 | `CODEX_RATES` and `NATIVE_RATES` in `metrics/scripts/usage_ledger.py` |
+| Frozen API prices per million tokens (input, cached input, cache write, output): Terra 1 / 0.05 / 1.25 / 5; Sol 6 2 / 0.2 / 2.5 / 10; Sol 6.1 2 / 0.1 / 2.5 / 10; Astra 10 / 1 / 12.5 / 50; Sonnet 5.5 2 / 0.1 / 2.5 (5-minute) or 4 (1-hour) / 10; Opus 5.5 4 / 0.2 / 5 or 8 / 20. A Codex call over 272,000 input tokens pays 2× on all input (cached input and writes included) and 1.5× on output. On 2026-11-07 OpenAI's [pricing page](https://developers.openai.com/api/docs/pricing) matched the Standard-tier prices for Astra, Sol 6.1 and Terra, including the long-input rule. It also lists a 12-hour cache write at twice the 30-minute price shown here, which the table does not carry. Sol 6 and the Claude prices were not rechecked. | `CODEX_RATES`, `NATIVE_RATES` and `PRICING_RULES` in `metrics/scripts/usage_ledger.py`; OpenAI pricing page, read 2026-11-07 |
 | Codex quota tracks API cost: Astra uses about 4.5× Sol's quota per weighted token, and 1% of a Pro week is about $6–7 of API-equivalent spend **Not established for current model-selection use (both claims; owner, 2026-11-07):** the experiment plan §1 fit is `not established` until rechecked with the tier, per F1.1 (`metrics/probes/usage-ledger-f11-20261028.md:60-66`). The values and source are kept as the historical record. Separate context: the 2026-10-31 audit (`~/cbm-work/quota-audit-20261031/findings.json`, sha256 `8a54666c452b6099d29dd16b57d907c394225d39a0eaf8b2fe3b30149b7e2c81`) examined the later `quota-fit-20261031` report, not the §1 fit. | experiment plan §1 (2,319 readings over 5 weekly windows); efficiency ledger, Cost structure |
 | 1% of the Claude weekly meter is about $6–12 of API-equivalent spend (rough: whole-percent readings, few intervals) | experiment plan §3 |
 | Effort barely changes Astra's and Sol's cost per call, because cached context dominates; total cost still depends on how many calls a task takes | experiment plan §1 |
