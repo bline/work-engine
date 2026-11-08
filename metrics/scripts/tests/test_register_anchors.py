@@ -12,7 +12,9 @@ import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.abspath(os.path.join(HERE, "..", "register.py"))
+# ANCHORS_UNDER_TEST names another register.py to run the tests against (used to show a regression
+# test fails on an earlier script); the default is the script next to this tests directory.
+SCRIPT = os.environ.get("ANCHORS_UNDER_TEST") or os.path.abspath(os.path.join(HERE, "..", "register.py"))
 REAL_REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 BASE_COMMIT = "14031bc23320b84b79149b62cf447a6594326438"
 GIT_ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
@@ -114,14 +116,14 @@ class AnchorFixture(unittest.TestCase):
         self.n_out += 1
         return os.path.join(self.base, f"out{self.n_out}")
 
-    def anchors(self, at=None, out=None, repo=None, register=None):
+    def anchors(self, at=None, out=None, repo=None, register=None, env=None):
         out = out or self.out_dir()
         args = [sys.executable, "-I", SCRIPT, "anchors", "--repo", repo or self.repo, "--out", out]
         if at:
             args.append(f"--at={at}")
         if register:
             args += ["--register", register]
-        p = subprocess.run(args, capture_output=True, text=True, check=False)
+        p = subprocess.run(args, capture_output=True, text=True, check=False, env={**os.environ, **(env or {})})
         return p, out
 
     def report(self, at=None):
@@ -245,7 +247,7 @@ class ClassTests(AnchorFixture):
         e = self.one(v1, v2, "5-6")
         self.assertEqual(e["class"], "moved")  # classification does not change
         self.assertTrue(e["owner_review_required"])
-        self.assertEqual(e["owner_review_reasons"], ["enclosing_heading_changed"])
+        self.assertEqual(e["owner_review_reasons"], ["section_identity_changed"])
         self.assertEqual(e["context_before"]["heading"]["text"], "## One")
         self.assertEqual(e["context_after"]["heading"]["text"], "## Two")
 
@@ -388,17 +390,6 @@ class ErrorAndOutputTests(AnchorFixture):
                 self.assertEqual(digest_tree(os.path.join(self.repo, ".git")), before_git)
         self.assertIn("inside the register directory", self.anchors(out=register)[0].stdout)
 
-    def test_git_user_configuration_does_not_change_the_result(self):
-        v2 = DOC.replace("# Title\n\n", "# Title\n\nnew one\nnew two\n")
-        rev = self.commit_files({"docs/a.md": DOC}, "v1")
-        self.commit_files({"docs/a.md": v2}, "v2")
-        self.commit_register([self.decision("d", "docs/a.md", rev, "4-5")])
-        plain = self.report()
-        for key, value in (("diff.algorithm", "patience"), ("diff.renames", "copies"), ("diff.indentHeuristic", "false"),
-                           ("diff.context", "9"), ("diff.interHunkContext", "9"), ("core.quotepath", "false")):
-            git(self.repo, "config", key, value)
-        self.assertEqual(self.report()["decisions"], plain["decisions"])
-
 
 class ApplicabilityTests(AnchorFixture):
     def test_t13_applicability_accounting(self):
@@ -477,6 +468,280 @@ T14_EXPECTED = {
     "pi-coding-profile.acceptance-contract": "unchanged",
     "dogfood-plan.round2-status-line": "verbatim_elsewhere",
 }
+
+
+class RemediationR2Tests(AnchorFixture):
+    """Regression tests for the review findings of candidate 6ee4384d. Each reproduces the reviewer's
+    scenario; each fails on that candidate's register.py (run with ANCHORS_UNDER_TEST)."""
+
+    # T1-F1: a deletion hunk that overlaps the anchor must not hide the surviving anchored lines
+    def test_deletion_hunk_starting_before_the_anchor_leaves_survivors_modified(self):
+        v1 = lines_text("# T", "", "p1", "p2", "p3", "a1 anchored", "a2 anchored", "tail", "more")
+        v2 = lines_text("# T", "", "a2 anchored", "tail", "more")
+        e = self.one(v1, v2, "6-7")
+        self.assertEqual(e["class"], "modified")
+        self.assertEqual([c["lines"] for c in e["candidates"]], ["3"])
+        self.assertEqual(e["applicability_records_citing"], 0)
+
+    def test_deletion_hunk_running_past_the_anchor_leaves_survivors_modified(self):
+        v1 = lines_text("# T", "", "a1 anchored", "a2 anchored", "x1", "x2", "tail")
+        v2 = lines_text("# T", "", "a1 anchored", "tail")
+        e = self.one(v1, v2, "3-4")
+        self.assertEqual(e["class"], "modified")
+        self.assertEqual([c["lines"] for c in e["candidates"]], ["3"])
+
+    def test_anchor_wholly_inside_a_larger_deletion_is_absent(self):
+        v1 = lines_text("# T", "", "p1", "a1 anchored", "a2 anchored", "x1", "tail")
+        v2 = lines_text("# T", "", "tail")
+        e = self.one(v1, v2, "4-5")
+        self.assertEqual(e["class"], "absent")
+        self.assertEqual(e["candidates"], [])
+
+    # T1-F2: only the missing final newline was added
+    def test_adding_the_missing_final_newline_and_text_below_is_unchanged(self):
+        v1 = "# T\n\nalpha\nfinal decision line"  # no final newline
+        v2 = "# T\n\nalpha\nfinal decision line\n\nappended paragraph\n"
+        e = self.one(v1, v2, "4")
+        self.assertEqual(e["class"], "unchanged")
+        self.assertFalse(e["owner_review_required"])
+
+    def test_missing_final_newline_with_lines_inserted_above_is_moved_not_relocated(self):
+        v1 = "# T\n\nalpha\nfinal decision line"
+        v2 = "# T\n\nnew\nalpha\nfinal decision line\n\nappended paragraph\n"
+        e = self.one(v1, v2, "4")
+        self.assertEqual(e["class"], "moved")
+        self.assertEqual(e["after"]["lines"], "5")
+        self.assertFalse(e["owner_review_required"])
+
+    def test_removing_the_final_newline_is_unchanged(self):
+        e = self.one("# T\n\nalpha\nlast line\n", "# T\n\nalpha\nlast line", "4")
+        self.assertEqual(e["class"], "unchanged")
+
+    # C1 / T1-F3: section identity is the whole chain of enclosing headings
+    def _moved_under_another_parent(self, option_lines):
+        opt = [f"option text {i} anchored" for i in range(option_lines)]
+        v1 = lines_text("# Adopted", "", "## Option A", "", *opt, "", "# Rejected", "", "## Option B", "", "b1", "b2")
+        v2 = lines_text("# Adopted", "", "# Rejected", "", "## Option B", "", "b1", "b2", "", "## Option A", "", *opt)
+        first = 5
+        return self.one(v1, v2, f"{first}-{first + option_lines - 1}")
+
+    def test_subsection_moved_under_a_different_parent_is_flagged_whatever_the_block_sizes(self):
+        for size in (6, 1, 2):
+            with self.subTest(option_lines=size):
+                self.setUp()
+                e = self._moved_under_another_parent(size)
+                self.assertIn(e["class"], ("moved", "relocated_verbatim"))
+                self.assertTrue(e["owner_review_required"])
+                before = [(h["level"], h["text"]) for h in e["context_before"]["section_chain"]]
+                after = [(h["level"], h["text"]) for h in e["context_after"]["section_chain"]]
+                self.assertEqual(before, [(1, "# Adopted"), (2, "## Option A")])
+                self.assertEqual(after, [(1, "# Rejected"), (2, "## Option A")])
+                if e["class"] == "moved":
+                    self.assertEqual(e["owner_review_reasons"], ["section_identity_changed"])
+
+    def test_the_moved_class_with_a_changed_parent_is_reachable_and_carries_the_flag(self):
+        # the larger block stays aligned, so the diff reports it as untouched and `moved`
+        e = self._moved_under_another_parent(6)
+        self.assertEqual(e["class"], "moved")
+        self.assertEqual(e["context_before"]["heading"]["text"], e["context_after"]["heading"]["text"])
+        self.assertTrue(e["owner_review_required"])
+        self.assertEqual(e["owner_review_reasons"], ["section_identity_changed"])
+
+    def test_same_chain_gives_no_flag_and_a_changed_level_does(self):
+        v1 = lines_text("# Doc", "", "## One", "", "anchored a", "anchored b", "tail")
+        v2 = lines_text("# Doc", "", "inserted", "## One", "", "anchored a", "anchored b", "tail")
+        e = self.one(v1, v2, "5-6")
+        self.assertEqual(e["class"], "moved")
+        self.assertFalse(e["owner_review_required"])
+        self.setUp()
+        v3 = lines_text("# Doc", "", "inserted", "### One", "", "anchored a", "anchored b", "tail")
+        e = self.one(v1, v3, "5-6")  # same text, different level
+        self.assertTrue(e["owner_review_required"])
+
+    # SP-F3: fences close only on the same character and at least the same length
+    def test_tilde_fence_containing_a_backtick_fence_line(self):
+        v1 = lines_text("# T", "## S1", "~~~", "```", "~~~", "## S2", "anchored decision text")
+        v2 = lines_text("# T", "## S1", "~~~", "```", "~~~", "## S2", "other section text", "## S3",
+                        "anchored decision text")
+        e = self.one(v1, v2, "7")
+        self.assertEqual(e["class"], "moved")
+        self.assertEqual(e["context_before"]["heading"]["text"], "## S2")
+        self.assertEqual(e["context_after"]["heading"]["text"], "## S3")
+        self.assertTrue(e["owner_review_required"])
+        self.assertEqual(e["applicability_records_citing"], 0)
+
+    def test_long_fence_wrapping_a_short_fence_and_one_line_fence_marks(self):
+        v1 = lines_text("# T", "## S1", "````", "```", "````", "## S2", "```code``` not a fence", "anchored decision text")
+        v2 = lines_text("# T", "## S1", "````", "```", "````", "## S2", "```code``` not a fence", "other text", "## S3",
+                        "anchored decision text")
+        e = self.one(v1, v2, "8")
+        self.assertEqual((e["context_before"]["heading"]["text"], e["context_after"]["heading"]["text"]),
+                         ("## S2", "## S3"))
+        self.assertTrue(e["owner_review_required"])
+
+    def test_headings_inside_a_fence_are_not_sections(self):
+        v1 = lines_text("# T", "## S1", "```", "## not a heading", "```", "anchored decision text")
+        v2 = lines_text("# T", "## S1", "```", "## not a heading", "```", "extra", "anchored decision text")
+        e = self.one(v1, v2, "6")
+        self.assertEqual(e["class"], "moved")
+        self.assertEqual([h["text"] for h in e["context_after"]["section_chain"]], ["# T", "## S1"])
+        self.assertFalse(e["owner_review_required"])
+
+    # SP-F1: the caller's GIT_* environment, replace refs and configuration do not change the result
+    def _moved_history(self):
+        v2 = DOC.replace("# Title\n\n", "# Title\n\nnew one\nnew two\n")
+        rev = self.commit_files({"docs/a.md": DOC}, "v1")
+        self.commit_files({"docs/a.md": v2}, "v2")
+        self.commit_register([self.decision("d", "docs/a.md", rev, "4-5")])
+        return rev
+
+    def _bytes(self, **kw):
+        p, out = self.anchors(**kw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        return slurp(os.path.join(out, "anchors.json")), slurp(os.path.join(out, "anchors.md"))
+
+    def test_git_diff_opts_does_not_override_the_explicit_diff_options(self):
+        self._moved_history()
+        clean = self._bytes()
+        self.assertEqual(json.loads(clean[0])["decisions"][0]["class"], "moved")
+        self.assertEqual(self._bytes(env={"GIT_DIFF_OPTS": "-u9"}), clean)
+
+    def test_git_dir_and_work_tree_in_the_environment_do_not_redirect_the_repository(self):
+        self._moved_history()
+        clean = self._bytes()
+        other = os.path.join(self.base, "other")
+        os.makedirs(other)
+        git(other, "init", "-q")
+        git(other, "commit", "--allow-empty", "-q", "-m", "elsewhere")
+        env = {"GIT_DIR": os.path.join(other, ".git"), "GIT_WORK_TREE": other}
+        self.assertEqual(self._bytes(env=env), clean)
+
+    def test_git_config_in_the_environment_does_not_change_the_result(self):
+        self._moved_history()
+        clean = self._bytes()
+        env = {"GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": "diff.algorithm", "GIT_CONFIG_VALUE_0": "patience",
+               "GIT_CONFIG_KEY_1": "diff.context", "GIT_CONFIG_VALUE_1": "9"}
+        self.assertEqual(self._bytes(env=env), clean)
+        cfg = os.path.join(self.base, "global.cfg")
+        with open(cfg, "w") as fh:
+            fh.write("[diff]\n\tcontext = 9\n\talgorithm = histogram\n\trenames = copies\n")
+        self.assertEqual(self._bytes(env={"GIT_CONFIG_GLOBAL": cfg}), clean)
+
+    def test_replace_refs_do_not_change_the_pinned_content(self):
+        text_once = lines_text("# T", "", "alpha", "anchored one", "anchored two", "omega")
+        text_twice = lines_text("# T", "", "alpha", "anchored one", "anchored two", "omega", "anchored one", "anchored two")
+        rev = self.commit_files({"docs/a.md": text_once}, "v1")
+        self.commit_files({"docs/a.md": text_once + "\n"}, "v2")
+        self.commit_register([self.decision("d", "docs/a.md", rev, "4-5")])
+        clean = self._bytes()
+        self.assertEqual(json.loads(clean[0])["decisions"][0]["class"], "unchanged")
+        target_blob = git(self.repo, "rev-parse", "HEAD:docs/a.md")
+        self.write("dup.md", text_twice)
+        dup_blob = git(self.repo, "hash-object", "-w", "dup.md")
+        os.unlink(os.path.join(self.repo, "dup.md"))
+        git(self.repo, "replace", target_blob, dup_blob)
+        self.assertEqual(self._bytes(), clean)
+
+    # SP-F5: a register revision is a commit object id, never a ref
+    def test_a_branch_named_like_the_revision_prefix_does_not_repin_it(self):
+        rev = self._moved_history()
+        clean = self._bytes()
+        git(self.repo, "branch", rev[:10], "HEAD")
+        self.assertEqual(self._bytes(), clean)
+        self.assertEqual(json.loads(clean[0])["decisions"][0]["class"], "moved")
+
+    # SP-F2: never write through a symbolic link or outside the real --out directory
+    def test_output_symlinks_are_refused_and_nothing_is_written_through_them(self):
+        self._moved_history()
+        register = os.path.join(self.repo, "metrics", "register")
+        victim = os.path.join(register, "decisions.json")
+        before = slurp(victim)
+        outside = os.path.join(self.base, "outside.txt")
+        with open(outside, "w") as fh:
+            fh.write("keep me\n")
+        for name, target in (("anchors.json", victim), ("anchors.md", outside), ("anchors.json", outside)):
+            with self.subTest(link=name, target=os.path.basename(target)):
+                out = self.out_dir()
+                os.makedirs(out)
+                os.symlink(target, os.path.join(out, name))
+                p, _ = self.anchors(out=out)
+                self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+                self.assertIn("symbolic link", p.stdout)
+                self.assertEqual(slurp(victim), before)
+                self.assertEqual(slurp(outside), b"keep me\n")
+                self.assertEqual(sorted(os.listdir(out)), [name])
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
+    def test_out_directory_that_is_a_symlink_into_the_register_or_git_directory_is_refused(self):
+        self._moved_history()
+        for target in (os.path.join(self.repo, "metrics", "register"), os.path.join(self.repo, ".git")):
+            with self.subTest(target=os.path.basename(target)):
+                link = self.out_dir()
+                os.symlink(target, link)
+                before = digest_tree(target)
+                p, _ = self.anchors(out=link)
+                self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+                self.assertEqual(digest_tree(target), before)
+
+    def test_a_regular_out_directory_is_still_written_and_leaves_no_temporary_files(self):
+        self._moved_history()
+        p, out = self.anchors()
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual(sorted(os.listdir(out)), ["anchors.json", "anchors.md"])
+        p2, _ = self.anchors(out=out)  # rerun over existing regular files replaces them
+        self.assertEqual(p2.returncode, 0, p2.stdout + p2.stderr)
+        self.assertEqual(sorted(os.listdir(out)), ["anchors.json", "anchors.md"])
+
+    # T1-F5 / SP-F4: a linked worktree's git directory and the common git directory are refused
+    def test_out_inside_a_linked_worktrees_git_directory_or_the_common_one_is_refused(self):
+        self._moved_history()
+        wt = os.path.join(self.base, "wt")
+        git(self.repo, "worktree", "add", "-q", "--detach", wt)
+        common = os.path.join(self.repo, ".git")
+        wt_gitdir = git(wt, "rev-parse", "--absolute-git-dir")
+        for target in (os.path.join(common, "zz"), os.path.join(wt_gitdir, "zz"), wt_gitdir):
+            with self.subTest(out=target):
+                p, _ = self.anchors(out=target, repo=wt)
+                self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+                self.assertFalse(os.path.exists(os.path.join(target, "anchors.json")))
+        p, out = self.anchors(repo=wt)  # an ordinary out directory still works from the worktree
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+
+    # SP-F6: the R5 note is in the Markdown report for an unchanged skill decision
+    def test_skill_note_is_in_the_markdown_for_an_unchanged_skill_decision(self):
+        rev = self.commit_files({"skills/s/references/r.md": DOC}, "v1")
+        self.commit_register([self.decision("sk", "skills/s/references/r.md", rev, "4-5")])
+        p, out = self.anchors()
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        md = slurp(os.path.join(out, "anchors.md")).decode()
+        self.assertIn("installed skill release was not examined", md)
+        self.assertIn("`sk`", md.split("## Skill documents", 1)[1])
+
+    # C2 / T1-F6: records citing an errored decision are listed, none transferred
+    def test_applicability_of_an_errored_decision_is_listed_as_not_established(self):
+        rev = self.commit_files({"docs/a.md": DOC}, "v1")
+        bad = self.decision("bad", "docs/a.md", rev, "3-99")
+        appl = [self.appl("ap-bad-auth", "bad", rev, "authorized"), self.appl("ap-bad-pend", "bad", rev)]
+        self.commit_register([bad, self.decision("ok", "docs/a.md", rev, "4-5")], appl)
+        p, out = self.anchors()
+        self.assertEqual(p.returncode, 3, p.stdout + p.stderr)
+        rep = json.loads(slurp(os.path.join(out, "anchors.json")))
+        e = self.by_id(rep)["bad"]
+        self.assertIsNone(e["class"])
+        rows = {r["record"]["applicability_id"]: r for r in e["applicability"]}
+        self.assertEqual(sorted(rows), ["ap-bad-auth", "ap-bad-pend"])
+        for r in rows.values():
+            self.assertEqual(r["after_state"], "not_established")
+        self.assertEqual(rows["ap-bad-auth"]["authorization_after"], "authorized_at_prior_revision")
+        self.assertIsNone(rows["ap-bad-pend"]["authorization_after"])
+        self.assertEqual(rows["ap-bad-auth"]["record"], appl[0])
+        lines = slurp(os.path.join(self.repo, "metrics", "register", "applicability.jsonl")).decode().splitlines()
+        for r in rows.values():
+            n = int(r["source"].rsplit(":", 1)[1])
+            self.assertEqual(r["source_line_sha256"], hashlib.sha256(lines[n - 1].encode()).hexdigest())
+        md = slurp(os.path.join(out, "anchors.md")).decode()
+        self.assertIn("ap-bad-auth", md)
+        self.assertIn("not_established", md)
 
 
 class RealRegisterTests(unittest.TestCase):

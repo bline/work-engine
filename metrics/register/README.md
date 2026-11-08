@@ -68,9 +68,12 @@ only, no network, no model calls; it writes only to `--out`.
   repository (including `.git`) is not written. `--at` (default `HEAD`) is resolved once to a full
   commit id. The register's `decisions.json` and `applicability.jsonl` are read from that same
   commit, not from the working tree, and their digests are recorded in the output; `--register`
-  must therefore lie inside the repository. Every observation is repository source at the pinned
+  must therefore lie inside the repository. A revision `git:<hex>` is resolved as a commit object id
+  (it must name exactly one commit), never through a branch or tag of the same spelling. Every observation is repository source at the pinned
   commit; for a decision under `skills/` the installed skill release is not examined. Git is called
-  with explicit diff options, so the result does not depend on git configuration. Each decision gets
+  with explicit diff options and a rebuilt environment: every `GIT_*` variable of the caller is dropped,
+  replace refs are ignored, and system, global and repository configuration that changes diff,
+  rename or object reading is overridden, so the result does not depend on them. Each decision gets
   one class: `unchanged` (same lines, identical text), `moved` (no change to the anchored lines, they
   sit at other line numbers), `relocated_verbatim` (history changed the lines but the identical text
   occurs once in the document), `modified` (the range can be followed but its text differs),
@@ -79,15 +82,26 @@ only, no network, no model calls; it writes only to `--out`.
   nowhere), or an error entry (unresolvable revision, document missing at the revision, bad or
   out-of-range `lines`). A whole-document anchor is `unchanged`, `modified` or `absent` by blob. A
   rename is reported as `document_at_target`, not as a class. `relocated_verbatim`, and a `moved`
-  anchor whose enclosing Markdown heading changed, are flagged `owner_review_required`; no other
-  judgment of meaning is made. For every decision that is not `unchanged` the report gives the
+  anchor whose section identity changed, are flagged `owner_review_required`; no other judgment of
+  meaning is made. The section identity of an anchor in a Markdown document is the full chain of
+  headings (each with its level, outermost first) that enclose its first line, with fenced code
+  blocks excluded (a fence closes only on the same character, at least as long); both chains are
+  reported for `moved` and `relocated_verbatim`. Setext headings are not recognised. Other file types
+  have no section identity and raise no flag on that basis. A change that only adds or removes the
+  final newline of the last anchored line is not a change to that line. For every decision that is not `unchanged` the report gives the
   before state (revision, lines, anchored-text sha256), candidate or new lines, and each applicability
-  record that cites it, copied verbatim, with an after-state of `carried_unchanged`,
-  `owner_review_required` or `pending_judgment_required`; an `authorized` record that is not
-  `carried_unchanged` is shown as `authorized_at_prior_revision`. Exit 0 when every decision is
+  record that cites it, copied as parsed (with the sha256 of its source line), with an after-state of
+  `carried_unchanged`, `owner_review_required` or `pending_judgment_required`; an `authorized` record
+  that is not `carried_unchanged` is shown as `authorized_at_prior_revision`. For a decision with an
+  error entry the citing records are listed too, with after-state `not_established` (nothing was
+  classified and nothing is transferred). A `modified` decision's candidate spans the anchored lines
+  that survive and any replacement lines; it is `absent` only when every anchored line was deleted. Exit 0 when every decision is
   classified; 3 when outputs were written but a decision or register line has an error entry; 4
-  when nothing could be written (target or register records unusable); 2 for an argument error or an
-  `--out` inside the register or `.git`. Deterministic: two runs on the same inputs are byte-identical.
+  when nothing could be written (target or register records unusable, or a write failed); 2 for an
+  argument error, an `--out` inside the register or inside any git directory of the repository
+  (`.git`, a linked worktree's git directory, the common git directory), or an output path that is a
+  symbolic link (the command never writes through a symbolic link: files are created under a fresh
+  name in the real `--out` directory and renamed into place). Deterministic: two runs on the same inputs are byte-identical.
 
 ## Conventions this register adopts
 
