@@ -9,6 +9,7 @@ applicability and from authority to change decisions. See metrics/register/READM
     python3 -I metrics/scripts/register.py build --out DIR [--register DIR] [--repo DIR]
     python3 -I metrics/scripts/register.py nominate --out FILE [--register DIR] [--repo DIR]
         [--claims-host PATH --startup PATH --startup-sha256 HEX]
+    python3 -I metrics/scripts/register.py anchors --out DIR [--register DIR] [--repo DIR] [--at COMMIT]
 """
 import argparse
 import hashlib
@@ -834,6 +835,484 @@ def cmd_nominate(args):
     return 0
 
 
+# ---------------------------------------------------------------------------
+# anchors: read-only qualification of decision anchors against a pinned commit
+# ---------------------------------------------------------------------------
+
+SCHEMA_ANCHORS = "register_anchor_report_v1"
+ANCHOR_CLASSES = ("unchanged", "moved", "modified", "relocated_verbatim", "ambiguous", "absent")
+# Exit codes of `anchors` (0 ok; 2 is shared with argument errors and the out-in-register refusal).
+EXIT_ANCHOR_DECISION_ERRORS = 3  # outputs written; at least one decision (or register line) has an error entry
+EXIT_ANCHOR_CANNOT_RUN = 4       # target or register records unusable, or --out not writable; nothing written
+CONTEXT_LINES = 3
+FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
+HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", re.M)
+MD_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
+MD_EXT = (".md", ".markdown")
+SKILL_NOTE = ("skill document: observation is repository source at the pinned commit; "
+              "the installed skill release was not examined (comparing the two is a later question, O7)")
+HISTORICAL_PINS = {
+    "model-selection.claude-host-builder-rows-at-df288c3d":
+        "deliberate historical pin (named in the register README prose, no field marks it); "
+        "reported with its class like any other decision",
+}
+AFTER_STATES = ("carried_unchanged", "owner_review_required", "pending_judgment_required")
+
+
+class AnchorGit:
+    """Read-only git access. Every call that is interpreted carries explicit options, so the
+    result does not depend on the user's git configuration, and never refreshes the index."""
+
+    DIFF = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--text", "--minimal",
+            "--no-indent-heuristic", "--inter-hunk-context=0", "-U0"]
+
+    def __init__(self, repo):
+        self.repo = repo
+        self.env = {**os.environ, "GIT_OPTIONAL_LOCKS": "0"}
+        self.cache = {}
+
+    def run(self, *args):
+        if args not in self.cache:
+            p = subprocess.run(["git", "--no-optional-locks", "-C", self.repo, *args],
+                               capture_output=True, check=False, env=self.env)
+            self.cache[args] = p.stdout if p.returncode == 0 else None
+        return self.cache[args]
+
+    def commit_id(self, rev):
+        if not isinstance(rev, str) or not rev or rev.startswith("-"):
+            return None
+        out = self.run("rev-parse", "--verify", "-q", f"{rev}^{{commit}}")
+        text = out.decode("utf-8", "replace").strip() if out else ""
+        return text if FULL_COMMIT.match(text) else None
+
+    def blob_id(self, commit, path):
+        kind = self.run("cat-file", "-t", f"{commit}:{path}")
+        if kind is None or kind.strip() != b"blob":
+            return None
+        out = self.run("rev-parse", "--verify", "-q", f"{commit}:{path}")
+        return out.decode().strip() if out else None
+
+    def blob(self, blob_id):
+        return self.run("cat-file", "blob", blob_id)
+
+    def hunks(self, a_blob, b_blob):
+        out = self.run(*self.DIFF, a_blob, b_blob)
+        if out is None:
+            return None
+        res = []
+        for m in HUNK.finditer(out.decode("utf-8", "replace")):
+            res.append((int(m.group(1)), 1 if m.group(2) is None else int(m.group(2)),
+                        int(m.group(3)), 1 if m.group(4) is None else int(m.group(4))))
+        return res
+
+    def rename_of(self, old_commit, new_commit, path):
+        """(new_path, status) when the diff old_commit..new_commit, with rename detection, renames path."""
+        out = self.run("diff", "--no-ext-diff", "--no-textconv", "--no-color", "-M50%", "-l0",
+                       "--name-status", "--diff-filter=R", "-z", old_commit, new_commit)
+        if not out:
+            return None
+        parts = out.decode("utf-8", "replace").split("\0")
+        i = 0
+        while i + 2 < len(parts) and parts[i]:
+            if parts[i].startswith("R") and parts[i + 1] == path:
+                return parts[i + 2], parts[i]
+            i += 3
+        return None
+
+    def is_ancestor(self, a, b):
+        key = ("is-ancestor", a, b)
+        if key not in self.cache:
+            p = subprocess.run(["git", "--no-optional-locks", "-C", self.repo, "merge-base", "--is-ancestor", a, b],
+                               capture_output=True, check=False, env=self.env)
+            self.cache[key] = p.returncode == 0 if p.returncode in (0, 1) else None
+        return self.cache[key]
+
+
+def split_lines(data):
+    parts = data.split(b"\n")
+    if parts and parts[-1] == b"":
+        parts.pop()
+    return parts
+
+
+def text_of(lines):
+    return [ln.decode("utf-8", "replace") for ln in lines]
+
+
+def fmt_lines(lo, hi):
+    return str(lo) if lo == hi else f"{lo}-{hi}"
+
+
+def parse_lines(lines):
+    m = LINES.match(lines) if isinstance(lines, str) else None
+    if not m:
+        return None
+    lo = int(m.group(1))
+    hi = int(m.group(2)) if m.group(2) else lo
+    return (lo, hi) if 1 <= lo <= hi else None
+
+
+def anchored_sha(lines):
+    return hashlib.sha256(b"\n".join(lines) + b"\n").hexdigest()
+
+
+def find_occurrences(target, anchor):
+    k = len(anchor)
+    return [i + 1 for i in range(len(target) - k + 1) if target[i] == anchor[0] and target[i:i + k] == anchor]
+
+
+def track(hunks, lo, hi):
+    """Follow old lines lo..hi through the hunks of a -U0 diff.
+    Returns (touched, new_lo, new_hi); new_hi < new_lo means the range was deleted outright."""
+    before = touching = 0
+    touched = False
+    for a, b, _c, d in hunks:
+        if b > 0:
+            s, e = a, a + b - 1
+            is_before, is_touch = e < lo, not (e < lo or s > hi)
+        else:
+            s = a + 1
+            is_before, is_touch = s <= lo, lo < s <= hi
+        if is_before:
+            before += d - b
+        elif is_touch:
+            touched = True
+            touching += d - b
+    return touched, lo + before, hi + before + touching
+
+
+def markdown_heading(lines, lineno):
+    """Nearest heading line at or before lineno (1-based), ignoring fenced code; None when there is none."""
+    fence, found = False, None
+    for i, raw in enumerate(lines[:lineno], 1):
+        text = raw.decode("utf-8", "replace")
+        s = text.lstrip()
+        if s.startswith("```") or s.startswith("~~~"):
+            fence = not fence
+        elif not fence and MD_HEADING.match(text):
+            found = {"line": i, "text": text.strip()}
+    return found
+
+
+def surroundings(lines, lo, hi, is_md):
+    return {"lines": fmt_lines(lo, hi),
+            "heading": markdown_heading(lines, lo) if is_md else "not applicable (not a Markdown document)",
+            "before": text_of(lines[max(0, lo - 1 - CONTEXT_LINES):lo - 1]),
+            "after": text_of(lines[hi:hi + CONTEXT_LINES])}
+
+
+def anchor_error(entry, kind, reason):
+    entry["class"] = None
+    entry["error"] = {"kind": kind, "reason": reason}
+    return entry
+
+
+def blank_entry(d):
+    return {"decision_id": d.get("decision_id"), "document": d.get("document"), "anchor": d.get("anchor"),
+            "revision": d.get("revision"), "lines": d.get("lines"), "owner": d.get("owner"),
+            "class": None, "error": None, "owner_review_required": False, "owner_review_reasons": [],
+            "document_at_target": None, "candidates": [], "before": None, "after": None,
+            "context_before": None, "context_after": None, "notes": []}
+
+
+def classify_decision(git, d, target):
+    """One entry for decision d against the pinned target commit. Never raises on bad data."""
+    entry = blank_entry(d)
+    doc = d.get("document")
+    if not (isinstance(entry["decision_id"], str) and entry["decision_id"] and isinstance(doc, str) and doc.strip()):
+        return anchor_error(entry, "malformed_decision", "decision_id and document must be non-empty text")
+    m = REVISION.match(d["revision"]) if isinstance(d.get("revision"), str) else None
+    if not m:
+        return anchor_error(entry, "revision_unresolved", f"revision {d.get('revision')!r} is not of the form git:<commit>")
+    rev = git.commit_id(m.group(1))
+    if rev is None:
+        return anchor_error(entry, "revision_unresolved", f"revision commit {m.group(1)} does not resolve to one commit")
+    entry["revision_commit"] = rev
+    entry["revision_is_ancestor_of_target"] = git.is_ancestor(rev, target)
+    rev_blob = git.blob_id(rev, doc)
+    if rev_blob is None:
+        return anchor_error(entry, "document_missing_at_revision", f"{doc} does not exist at {rev}")
+    rev_lines = split_lines(git.blob(rev_blob))
+    whole = "lines" not in d
+    span = None
+    if not whole:
+        span = parse_lines(d["lines"])
+        if span is None:
+            return anchor_error(entry, "lines_invalid", f"lines {d['lines']!r} is not an ascending N or N-M from 1")
+        if span[1] > len(rev_lines):
+            return anchor_error(entry, "lines_out_of_range",
+                                f"lines {d['lines']} exceed the {len(rev_lines)} lines of {doc} at {rev}")
+    if doc.startswith("skills/"):
+        entry["notes"].append(SKILL_NOTE)
+    if entry["decision_id"] in HISTORICAL_PINS:
+        entry["notes"].append(HISTORICAL_PINS[entry["decision_id"]])
+    # the document as it exists at the target, following a rename
+    tpath, tblob, rename = doc, git.blob_id(target, doc), None
+    if tblob is None:
+        found = git.rename_of(rev, target, doc)
+        if found:
+            tpath, rename = found
+            tblob = git.blob_id(target, tpath)
+    if tblob is not None:
+        entry["document_at_target"] = {"path": tpath, "renamed": rename is not None,
+                                       "rename_status": rename, "blob": tblob}
+    before = {"revision": d["revision"], "revision_commit": rev, "document_blob": rev_blob}
+    if whole:
+        entry["before"] = before
+        if tblob is None:
+            entry["class"] = "absent"
+        else:
+            entry["class"] = "unchanged" if tblob == rev_blob else "modified"
+            entry["after"] = {"document_blob": tblob}
+            if entry["class"] == "modified":
+                entry["candidates"] = [{"document": tpath, "basis": "whole document differs; candidate only"}]
+        return entry
+    lo, hi = span
+    anchor = rev_lines[lo - 1:hi]
+    before.update({"lines": fmt_lines(lo, hi), "anchored_text_sha256": anchored_sha(anchor)})
+    entry["before"] = before
+    if tblob is None:
+        entry["class"] = "absent"
+        return entry
+    t_lines = split_lines(git.blob(tblob))
+    hunks = git.hunks(rev_blob, tblob)
+    if hunks is None:
+        return anchor_error(entry, "internal", "git diff between the two blobs failed")
+    is_md = doc.lower().endswith(MD_EXT) and tpath.lower().endswith(MD_EXT)
+    occ = find_occurrences(t_lines, anchor)
+    touched, nlo, nhi = track(hunks, lo, hi)
+    n = hi - lo + 1
+    if len(occ) > 1:
+        entry["class"] = "ambiguous"
+        entry["candidates"] = [{"lines": fmt_lines(o, o + n - 1), "basis": "exact anchored text occurs here"} for o in occ]
+        return entry
+    if len(occ) == 1:
+        o = occ[0]
+        entry["after"] = {"lines": fmt_lines(o, o + n - 1)}
+        if not touched and o == nlo and o == lo:
+            entry["class"] = "unchanged"
+            return entry
+        entry["class"] = "moved" if (not touched and o == nlo) else "relocated_verbatim"
+        entry["context_before"] = surroundings(rev_lines, lo, hi, is_md)
+        entry["context_after"] = surroundings(t_lines, o, o + n - 1, is_md)
+        if entry["class"] == "relocated_verbatim":
+            entry["owner_review_required"] = True
+            entry["owner_review_reasons"].append("relocated_verbatim")
+        elif is_md:
+            hb, ha = entry["context_before"]["heading"], entry["context_after"]["heading"]
+            if (hb and hb["text"]) != (ha and ha["text"]):
+                entry["owner_review_required"] = True
+                entry["owner_review_reasons"].append("enclosing_heading_changed")
+        return entry
+    nhi = min(nhi, len(t_lines))
+    if nhi >= nlo:
+        entry["class"] = "modified"
+        entry["candidates"] = [{"lines": fmt_lines(nlo, nhi),
+                                "basis": "line tracking through the diff; candidate only, not chosen"}]
+    else:
+        entry["class"] = "absent"
+    return entry
+
+
+def read_register_at(git, commit, register_dir, repo):
+    """Records read from the pinned commit. Returns (decisions, applicability by decision, inputs, problems)."""
+    rel = os.path.relpath(os.path.realpath(register_dir), os.path.realpath(repo))
+    if rel == ".." or rel.startswith(".." + os.sep) or os.path.isabs(rel):
+        raise ValueError(f"register directory {register_dir} is outside the repository {repo}; "
+                         "anchors reads the register from the pinned commit")
+    rel = rel.replace(os.sep, "/")
+    inputs, problems = {}, []
+
+    def read(name):
+        path = f"{rel}/{name}"
+        data = git.run("cat-file", "blob", f"{commit}:{path}")
+        if data is not None:
+            inputs[name] = {"path": path, "sha256": hashlib.sha256(data).hexdigest()}
+        return path, data
+
+    path, data = read("decisions.json")
+    if data is None:
+        raise ValueError(f"{path} not found at {commit}")
+    try:
+        decisions = json.loads(data.decode("utf-8"))
+    except ValueError as exc:
+        raise ValueError(f"{path} at {commit} is not valid JSON: {exc}")
+    if not isinstance(decisions, list):
+        raise ValueError(f"{path} at {commit} is not a list")
+    appl = {}
+    path, data = read("applicability.jsonl")
+    if data is None:
+        problems.append({"where": path, "reason": f"not found at {commit}"})
+    else:
+        for i, line in enumerate(data.decode("utf-8", "replace").splitlines(), 1):
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError as exc:
+                problems.append({"where": f"{path}:{i}", "reason": f"not valid JSON: {exc}"})
+                continue
+            if isinstance(rec, dict) and isinstance(rec.get("decision_id"), str):
+                appl.setdefault(rec["decision_id"], []).append((i, rec))
+            else:
+                problems.append({"where": f"{path}:{i}", "reason": "record has no decision_id"})
+    return decisions, appl, inputs, problems
+
+
+def applicability_after(entry, records):
+    out = []
+    cls = entry["class"]
+    if cls == "moved" and not entry["owner_review_required"]:
+        state = "carried_unchanged"
+    elif cls == "relocated_verbatim" or (cls == "moved" and entry["owner_review_required"]):
+        state = "owner_review_required"
+    else:
+        state = "pending_judgment_required"
+    for line, rec in sorted(records, key=lambda t: (str(t[1].get("applicability_id")), t[0])):
+        auth = rec.get("authorization")
+        authorized = isinstance(auth, dict) and auth.get("status") == "authorized"
+        row = {"source": f"applicability.jsonl:{line}", "record": rec, "after_state": state,
+               "authorization_after": None,
+               "record_revision_matches_decision": rec.get("decision_revision") == entry["revision"]}
+        if authorized:
+            row["authorization_after"] = "carried_unchanged" if state == "carried_unchanged" \
+                else "authorized_at_prior_revision"
+        out.append(row)
+    return out
+
+
+def build_anchor_report(git, commit, at, register_dir, repo):
+    decisions, appl, inputs, problems = read_register_at(git, commit, register_dir, repo)
+    entries = []
+    for i, d in enumerate(decisions):
+        if not isinstance(d, dict):
+            e = anchor_error(blank_entry({"decision_id": f"decisions.json[{i}]"}), "malformed_decision",
+                             "record is not an object")
+        else:
+            try:
+                e = classify_decision(git, d, commit)
+            except Exception as exc:  # the run never crashes on one decision
+                e = anchor_error(blank_entry({**d, "decision_id": d.get("decision_id", f"decisions.json[{i}]")}),
+                                 "internal", f"{type(exc).__name__}: {exc}")
+        did = e["decision_id"]
+        records = appl.get(did, []) if isinstance(did, str) else []
+        e["applicability_records_citing"] = len(records)
+        if e["class"] is not None and e["class"] != "unchanged":
+            e["applicability"] = applicability_after(e, records)
+        e["_order"] = (str(did), i)
+        entries.append(e)
+    entries.sort(key=lambda e: e["_order"])
+    for e in entries:
+        del e["_order"]
+    summary = {c: sum(1 for e in entries if e["class"] == c) for c in ANCHOR_CLASSES}
+    summary["error"] = sum(1 for e in entries if e["class"] is None)
+    report = {
+        "schema": SCHEMA_ANCHORS,
+        "authority": "read-only report; the register owner decides what any result means",
+        "statement": "Nothing was re-anchored, no register record was changed and no authorization was transferred.",
+        "provenance": "every observation is repository source at the pinned commit",
+        "pinned_commit": commit, "target_requested": at,
+        "register": {"directory": os.path.relpath(os.path.realpath(register_dir), os.path.realpath(repo)).replace(os.sep, "/"),
+                     "read_from": "the pinned commit (not the working tree)", "inputs": inputs},
+        "tool": {"register_py_sha256": sha256_file(os.path.abspath(__file__))},
+        "summary": summary, "decisions": entries, "register_read_problems": problems,
+    }
+    return report
+
+
+def ctx_md(c):
+    h = c["heading"]
+    head = f"{h['text']} (line {h['line']})" if isinstance(h, dict) else (h or "none before this line")
+    rows = [f"  - lines {c['lines']}; section: {head}"]
+    rows += [f"    - before: `{x[:160]}`" for x in c["before"]] + [f"    - after: `{x[:160]}`" for x in c["after"]]
+    return rows
+
+
+def render_anchors_md(rep):
+    L = ["# Decision anchor report", "",
+         f"Pinned commit: `{rep['pinned_commit']}` (requested `{rep['target_requested']}`).", "",
+         rep["statement"], "", f"Provenance: {rep['provenance']}.", "",
+         f"Register read from {rep['register']['read_from']}, directory `{rep['register']['directory']}`.", ""]
+    for name, info in sorted(rep["register"]["inputs"].items()):
+        L.append(f"- input `{info['path']}` sha256 `{info['sha256']}`")
+    L += [f"- `register.py` sha256 `{rep['tool']['register_py_sha256']}`", "", "## Summary", ""]
+    L += [f"- {k}: {v}" for k, v in sorted(rep["summary"].items())]
+    L += ["", "## Decisions", "", "| decision | class | lines before | lines after | owner review | document at target |",
+          "|---|---|---|---|---|---|"]
+    for e in rep["decisions"]:
+        before = (e["before"] or {}).get("lines", "whole document" if e["before"] else "")
+        after = (e["after"] or {}).get("lines", "whole document" if e["after"] else "")
+        cls = e["class"] or f"ERROR {e['error']['kind']}"
+        dat = e["document_at_target"]
+        L.append(f"| `{e['decision_id']}` | {cls} | {before} | {after} | "
+                 f"{'yes' if e['owner_review_required'] else 'no'} | "
+                 f"{(dat['path'] + (' (renamed)' if dat['renamed'] else '')) if dat else 'none'} |")
+    for e in rep["decisions"]:
+        if e["class"] == "unchanged":
+            continue
+        L += ["", f"### `{e['decision_id']}`: {e['class'] or 'ERROR'}", ""]
+        if e["error"]:
+            L.append(f"- error `{e['error']['kind']}`: {e['error']['reason']}")
+            continue
+        b = e["before"]
+        L.append(f"- before: revision `{b['revision']}`, lines {b.get('lines', 'whole document')}"
+                 + (f", anchored text sha256 `{b['anchored_text_sha256']}`" if "anchored_text_sha256" in b else ""))
+        if e["after"]:
+            L.append(f"- after: lines {e['after'].get('lines', 'whole document')}")
+        for c in e["candidates"]:
+            L.append(f"- candidate (not chosen): {c.get('lines', c.get('document'))}; {c['basis']}")
+        if e["owner_review_required"]:
+            L.append(f"- OWNER REVIEW REQUIRED: {', '.join(e['owner_review_reasons'])}")
+        for note in e["notes"]:
+            L.append(f"- note: {note}")
+        if e["context_before"]:
+            L += ["- at the revision:"] + ctx_md(e["context_before"]) + ["- at the target:"] + ctx_md(e["context_after"])
+        for a in e.get("applicability", []):
+            r = a["record"]
+            auth = r.get("authorization")
+            L.append(f"- applicability `{r.get('applicability_id')}` ({a['source']}): finding `{r.get('finding')}`, "
+                     f"relation `{r.get('relation')}`, recorded authorization `{(auth or {}).get('status')}`; "
+                     f"after-state `{a['after_state']}`"
+                     + (f"; authorization `{a['authorization_after']}`" if a["authorization_after"] else ""))
+    if rep["register_read_problems"]:
+        L += ["", "## Register read problems", ""] + [f"- {p['where']}: {p['reason']}" for p in rep["register_read_problems"]]
+    return "\n".join(L) + "\n"
+
+
+def cmd_anchors(args):
+    if refuse_out_in_register("anchors", args.out, args.register):
+        return 2
+    if inside(args.out, os.path.join(args.repo, ".git")):
+        print(f"anchors: refused, --out {args.out} is inside the repository's .git directory")
+        return 2
+    git = AnchorGit(args.repo)
+    commit = git.commit_id(args.at)
+    if commit is None:
+        print(f"anchors: cannot run, --at {args.at!r} does not resolve to a commit in {args.repo}")
+        return EXIT_ANCHOR_CANNOT_RUN
+    try:
+        report = build_anchor_report(git, commit, args.at, args.register, args.repo)
+    except ValueError as exc:
+        print(f"anchors: cannot run, {exc}")
+        return EXIT_ANCHOR_CANNOT_RUN
+    try:
+        os.makedirs(args.out, exist_ok=True)
+        with open(os.path.join(args.out, "anchors.json"), "w", encoding="utf-8") as fh:
+            fh.write(dumps(report))
+        with open(os.path.join(args.out, "anchors.md"), "w", encoding="utf-8") as fh:
+            fh.write(render_anchors_md(report))
+    except OSError as exc:
+        print(f"anchors: cannot run, writing to --out failed: {exc}")
+        return EXIT_ANCHOR_CANNOT_RUN
+    s = report["summary"]
+    print(f"anchors: wrote anchors.json and anchors.md to {args.out} (pinned {commit}; "
+          + ", ".join(f"{k} {s[k]}" for k in (*ANCHOR_CLASSES, "error")) + ")")
+    if s["error"] or report["register_read_problems"]:
+        print("anchors: one or more decisions or register lines have an error entry")
+        return EXIT_ANCHOR_DECISION_ERRORS
+    return 0
+
+
 def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     default_repo = os.path.abspath(os.path.join(here, "..", ".."))
@@ -856,11 +1335,16 @@ def main(argv=None):
     n.add_argument("--claims-host")
     n.add_argument("--startup")
     n.add_argument("--startup-sha256")
+    a = sub.add_parser("anchors")
+    common(a)
+    a.add_argument("--out", required=True)
+    a.add_argument("--at", default="HEAD", help="commit to check against (default HEAD), resolved once")
     args = ap.parse_args(argv)
     args.repo = os.path.abspath(args.repo)
     if args.register is None:
         args.register = os.path.join(args.repo, "metrics", "register")
-    return {"validate": cmd_validate, "build": cmd_build, "nominate": cmd_nominate}[args.cmd](args)
+    return {"validate": cmd_validate, "build": cmd_build, "nominate": cmd_nominate,
+            "anchors": cmd_anchors}[args.cmd](args)
 
 
 if __name__ == "__main__":
