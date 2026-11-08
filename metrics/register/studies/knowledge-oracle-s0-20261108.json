@@ -1,0 +1,482 @@
+{
+ "aliases": [],
+ "findings": [
+  {
+   "basis": "measured",
+   "caveats": [
+    "the existing-readers M5 run is counted as false confident reuse and incorrect by the user's adjudication of 2026-11-08, adopting the independent reviewer's score; the primary scorer recorded it partial without false confident reuse, and both scores are kept",
+    "the second scorer re-scored 9 runs: 7 of 9 agreed on resolution (it rated curated M1 partial and existing-readers M6 correct; the primary scores stand); none of the 9 contained a false confident reuse, so agreement on that judgment is untested",
+    "all scoring was by Claude models; the key's second reader was gpt-6-astra",
+    "blinding of the curated arm was imperfect"
+   ],
+   "claim": "Accepted outcomes over 12 items per arm: unassisted 8 correct, 2 partial, 2 incorrect, 1 false confident reuse; existing claims readers 8, 3, 1, 1; curated projections 12, 0, 0, 0 by the primary scorer. False invalidation was 0 in each arm, over the 6 items where the key's conclusion was supported (18 runs).",
+   "id": "knowledge-oracle-s0-20261108#arm-outcomes",
+   "n": "n = 12 per arm; n = 1 per item and arm",
+   "scope": "Knowledge Oracle S0, 2026-11-08: one model (claude-sonnet-5-5, medium effort) on one host; 12 items (8 explicit questions, 4 tasks with an embedded need); one run per item and arm",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "10-23",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "45-46",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "48-80",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "238-255",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "263-265",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "83-90",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/oracle-s0-20261108/private/scores/scores-primary.json",
+     "note": "primary scores as recorded; unchanged after the user's B/M5 adjudication",
+     "sha256": "6ffdc370fa6706806ad5976e0f096a873686203b72dee34fa652c7fc5d457ffb",
+     "status": "verified"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/oracle-s0-20261108/private/scores/adjudication-user-20261108.json",
+     "note": "user's B/M5 adjudication; holds both the primary and the reviewer-adjudicated score",
+     "sha256": "d7d2e0405e620fc5ef320ea3eea95216469d58c51f65374a47d3f3eaeb6da6df",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "curated_projections": {
+     "correct": 12,
+     "false_confident_reuse": 0,
+     "false_invalidation": 0,
+     "incorrect": 0,
+     "partial": 0
+    },
+    "existing_claims_readers": {
+     "correct": 8,
+     "false_confident_reuse": 1,
+     "false_invalidation": 0,
+     "incorrect": 1,
+     "partial": 3
+    },
+    "false_confident_reuse_denominator_items": 6,
+    "false_invalidation_runs": 18,
+    "unassisted": {
+     "correct": 8,
+     "false_confident_reuse": 1,
+     "false_invalidation": 0,
+     "incorrect": 2,
+     "partial": 2
+    }
+   }
+  },
+  {
+   "basis": "measured",
+   "caveats": [
+    "API-equivalent USD at the usage ledger's standard pricing; the curator figure is the CLI's list-price estimate and whether it shares the ledger's pricing basis is not established",
+    "curated projections were used once each; reuse across agents was not tested"
+   ],
+   "claim": "Total cost per correct item was 0.188 USD unassisted, 0.174 with existing claims readers and 0.247 with curated projections, the last including a one-time curator cost of 2.164 for 12 projections charged to 12 single uses. Mean per-run costs were 0.125, 0.116 and 0.067.",
+   "id": "knowledge-oracle-s0-20261108#cost-per-correct",
+   "n": "n = 12 per arm",
+   "scope": "Knowledge Oracle S0, 2026-11-08: one model (claude-sonnet-5-5, medium effort) on one host; 12 items (8 explicit questions, 4 tasks with an embedded need); one run per item and arm",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "57-60",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "83-90",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "45-46",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "113-119",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "350",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/oracle-s0-20261108/results/analysis.json",
+     "note": "computed from the primary scores; per-run scores, costs, recognition steps, routing",
+     "sha256": "95afe8f9621f031b44bb075c33f2c8e7693534fc0b8360193e14a816651f72fa",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "curator_break_even_usd": 1.454,
+    "curator_usd": 2.164,
+    "mean_usd_per_run": {
+     "curated_projections": 0.067,
+     "existing_claims_readers": 0.116,
+     "unassisted": 0.125
+    },
+    "usd_per_correct": {
+     "curated_projections": 0.247,
+     "existing_claims_readers": 0.174,
+     "unassisted": 0.188
+    }
+   }
+  },
+  {
+   "basis": "measured",
+   "caveats": [
+    "each decisive judgment rests on one scorer",
+    "the rule's outcome is a feasibility signal under the protocol, not qualification"
+   ],
+   "claim": "Applied to the accepted counts, the pre-registered rule (false confident reuse not above the unassisted arm's, and lower cost per correct item) gives 'proceed to S1', met by existing claims readers only, with zero safety margin (1 against 1). Any one of three single judgments would change it to stop.",
+   "id": "knowledge-oracle-s0-20261108#preregistered-rule-outcome",
+   "n": "n = 12 per arm",
+   "scope": "Knowledge Oracle S0, 2026-11-08: one model (claude-sonnet-5-5, medium effort) on one host; 12 items (8 explicit questions, 4 tasks with an embedded need); one run per item and arm",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "82-111",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "83-90",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "45-46",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "228-258",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    }
+   ],
+   "value": {
+    "cost": "0.174 < 0.188",
+    "flips_to_stop_if_any": [
+     "unassisted M4 not false confident reuse",
+     "one fewer correct existing-readers judgment (0.199 per correct)",
+     "one more correct unassisted judgment (0.167 per correct)"
+    ],
+    "met_by": "existing_claims_readers",
+    "outcome": "proceed to S1",
+    "safety": "1 <= 1"
+   }
+  },
+  {
+   "basis": "single-observation",
+   "caveats": [
+    "whether currency output changes behaviour once an agent reads it was not tested"
+   ],
+   "claim": "On the 2 changed-source items, all 6 runs reached the keyed conclusion and none treated the byte change as invalidation. The 4 runs without projections reached it by reading current source and did not register that the captured evidence had changed. The 2 runs whose projection stated bytes_changed registered the change. The existing-readers runs never read the relevant claim's currency output.",
+   "id": "knowledge-oracle-s0-20261108#changed-evidence-registration",
+   "n": "n = 1 per item and arm (6 runs)",
+   "scope": "Knowledge Oracle S0, 2026-11-08: one model (claude-sonnet-5-5, medium effort) on one host; 12 items (8 explicit questions, 4 tasks with an embedded need); one run per item and arm",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "121-152",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "83-90",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "45-46",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    }
+   ],
+   "value": {
+    "byte_change_as_invalidation": 0,
+    "correct_conclusion": 6,
+    "existing_readers_read_relevant_currency": "0 of 2",
+    "registered_change": {
+     "curated_projections": "2 of 2",
+     "existing_claims_readers": "0 of 2",
+     "unassisted": "0 of 2"
+    },
+    "runs": 6
+   }
+  },
+  {
+   "basis": "single-observation",
+   "caveats": [
+    "items were written to be discoverable",
+    "no pre-registered interpretation covered use after retrieval"
+   ],
+   "claim": "On the 4 embedded-need tasks with existing claims readers, a retrieval returned the keyed target in 2 runs (M4, M5), and both fell short (one partial; one incorrect with false confident reuse, as accepted). 2 of that arm's 3 embedded shortfalls came after the key evidence had been retrieved. Curated projections were correct on all 4.",
+   "id": "knowledge-oracle-s0-20261108#use-after-retrieval",
+   "n": "n = 4 tasks, 1 run each",
+   "scope": "Knowledge Oracle S0, 2026-11-08: one model (claude-sonnet-5-5, medium effort) on one host; 12 items (8 explicit questions, 4 tasks with an embedded need); one run per item and arm",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "158-190",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "83-90",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "191-213",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "45-46",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    }
+   ],
+   "value": {
+    "curated_r4_correct": "4 of 4",
+    "existing_claims_readers": {
+     "r1_looked": "4 of 4",
+     "r2_asked": "4 of 4",
+     "r3_retrieved_target": "2 of 4",
+     "r4_correct": "1 of 4",
+     "shortfalls_after_retrieval": "2 of 3"
+    },
+    "unassisted_r4_correct": "2 of 4"
+   }
+  },
+  {
+   "basis": "measured",
+   "caveats": [
+    "provisional: the S0 harness scored a failed router call or claims-tool call as an empty route, so as a miss or an abstention (findings H-1 and R-1 of the harness re-qualification; R-1 dates from the S0 substring router). Whether any S0 miss or abstention was such a failure has not been checked. Harness revision 3 scores failures separately as router_error, counted as a false route under the S2 rule; its repairs had not been independently re-reviewed when this study was registered on 2026-11-08, so any corrected reading of these counts is provisional",
+    "harness defect: all 12 register-finding candidates had a null id, so the 2 items whose targets are register findings only could not be routed correctly",
+    "by the harness's own defect, one counted miss (the lexical decoy) was a correct abstention",
+    "harness defect: the routing-truth rule scores the correct abstention on the lexical decoy as a miss, and would have scored a route to the decoy as correct",
+    "the record requires both defects to be fixed before any S2 benchmark reuses the harness"
+   ],
+   "claim": "Routing 12 questions without agents, as scored by the S0 harness: the model router made 8 correct routes, 0 false routes, 3 misses and 1 correct abstention; substring discover made 4, 0, 7 and 1. On the 8 items routable as built, the model router was correct on 8 and substring on 4. Whether any miss or abstention was in fact a router or claims-tool failure has not been checked, so those counts, and the comparison that rests on them, are provisional (first caveat).",
+   "id": "knowledge-oracle-s0-20261108#routing-benchmark",
+   "n": 12,
+   "scope": "S0 routing benchmark, 2026-11-08: claude-sonnet-5-5 medium as the model router, 12 S0 items",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "215-236",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/routing-harness-v2-20261108/qualification/report.md",
+     "note": "round-1 harness re-qualification: D1 and D2 qualified; H-1 (failure scored as abstention, inherited from S0)",
+     "sha256": "a088190e27d84c91b73f85deb07ecdc7d51188f644e2123c0d9deb36c3111b81",
+     "status": "verified"
+    },
+    {
+     "custody": "off_repo",
+     "location": "~/cbm-work/routing-harness-v2-20261108/qualification/report-round2.md",
+     "note": "round-2 re-check: R-1 (the substring router ignores the claims tool's isError; dates from S0)",
+     "sha256": "4b3334ea74ab0c058967e99fff3906c8462731150deac44fc9438faad2b11440",
+     "status": "verified"
+    }
+   ],
+   "value": {
+    "model_router": {
+     "correct": 8,
+     "correct_abstention": 1,
+     "false": 0,
+     "missed": 3
+    },
+    "routable_items": 8,
+    "substring_discover": {
+     "correct": 4,
+     "correct_abstention": 1,
+     "false": 0,
+     "missed": 7
+    }
+   }
+  },
+  {
+   "basis": "not-established",
+   "caveats": [
+    "these are limits of this study, not negative results"
+   ],
+   "claim": "S0 does not establish: a general cost advantage of existing claims readers over unassisted work; improved safety; production readiness; whether currency output changes behaviour once read; how often agents recognize knowledge needs in ordinary work; reuse of curated projections across agents; or consumption of exact claims across context replacement (S0b was not run).",
+   "id": "knowledge-oracle-s0-20261108#not-established",
+   "n": null,
+   "scope": "Knowledge Oracle S0, 2026-11-08: one model (claude-sonnet-5-5, medium effort) on one host; 12 items (8 explicit questions, 4 tasks with an embedded need); one run per item and arm",
+   "sources": [
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "24-27",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+     "commit": "daad4f2b",
+     "lines": "83-90",
+     "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "45-46",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "142-143",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    },
+    {
+     "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+     "commit": "daad4f2b",
+     "lines": "256-285",
+     "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+    }
+   ],
+   "value": [
+    "general cost advantage of existing claims readers",
+    "improved safety",
+    "production readiness",
+    "effect of currency output once read",
+    "need-recognition rate in ordinary work",
+    "reuse of curated projections across agents",
+    "consumption across context replacement"
+   ]
+  }
+ ],
+ "id": "knowledge-oracle-s0-20261108",
+ "kind": "controlled-experiment",
+ "lifecycle": [
+  {
+   "basis": {
+    "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+    "commit": "daad4f2b",
+    "lines": "1-28",
+    "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+   },
+   "date": "2026-11-08",
+   "state": "preregistered"
+  },
+  {
+   "basis": {
+    "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+    "commit": "daad4f2b",
+    "lines": "1-29",
+    "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+   },
+   "date": "2026-11-08",
+   "state": "concluded"
+  }
+ ],
+ "questions": [
+  "Q17",
+  "Q18"
+ ],
+ "sources": [
+  {
+   "blob": "93642481e5bf8181ae34ef0dacdc112766a377c3",
+   "commit": "daad4f2b",
+   "path": "metrics/probes/knowledge-oracle-s0-result-20261108.md"
+  },
+  {
+   "blob": "0fd3305a8f5c554550993ebac8a8b583eb6cd3b5",
+   "commit": "daad4f2b",
+   "path": "planning/knowledge-oracle-s0-experiment-20261108.md"
+  },
+  {
+   "custody": "off_repo",
+   "location": "~/cbm-work/oracle-s0-20261108/private/key/key-frozen.json",
+   "note": "frozen answer key; sealed until S0 ended",
+   "sha256": "1f8f3e6a75446d4668bd8274d37c95500326544be273bb0a3a5f57fa4c784054",
+   "status": "verified"
+  },
+  {
+   "custody": "off_repo",
+   "location": "~/cbm-work/oracle-s0-20261108/sealed/manifest.jsonl",
+   "note": "manifest of the 36 sealed run outputs",
+   "sha256": "21e362b5d0330f00d35aa47253dc7686b8afbebe9d45c49fc467f72d1c5f83e3",
+   "status": "verified"
+  },
+  {
+   "custody": "off_repo",
+   "location": "~/cbm-work/oracle-s0-20261108/private/scores/scores-primary.json",
+   "note": "primary scores as recorded; unchanged after the user's B/M5 adjudication",
+   "sha256": "6ffdc370fa6706806ad5976e0f096a873686203b72dee34fa652c7fc5d457ffb",
+   "status": "verified"
+  },
+  {
+   "custody": "off_repo",
+   "location": "~/cbm-work/oracle-s0-20261108/private/scores/adjudication-user-20261108.json",
+   "note": "user's B/M5 adjudication; holds both the primary and the reviewer-adjudicated score",
+   "sha256": "d7d2e0405e620fc5ef320ea3eea95216469d58c51f65374a47d3f3eaeb6da6df",
+   "status": "verified"
+  },
+  {
+   "custody": "off_repo",
+   "location": "~/cbm-work/oracle-s0-20261108/results/analysis.json",
+   "note": "computed from the primary scores; per-run scores, costs, recognition steps, routing",
+   "sha256": "95afe8f9621f031b44bb075c33f2c8e7693534fc0b8360193e14a816651f72fa",
+   "status": "verified"
+  },
+  {
+   "custody": "off_repo",
+   "location": "~/cbm-work/oracle-s0-20261108/results/interpretation-review.md",
+   "note": "independent interpretation review; verdict acceptable with the listed corrections",
+   "sha256": "88bdb04f687a2429ad1da7df870590b90220694347400f6a93557ac5c133a7a0",
+   "status": "verified"
+  }
+ ],
+ "stop_reason_class": null,
+ "title": "Knowledge Oracle S0: unassisted work, existing claims readers and curated projections on 12 questions (feasibility)"
+}
