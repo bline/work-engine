@@ -1117,6 +1117,17 @@ Exit code and state:
                     key, or NaN or Infinity in round.json or pause history; the run directory unreadable
                     (run_dir_unreadable). Files are read through a non-blocking open checked on the
                     descriptor: a FIFO is refused, never waited on.
+                    Also unknown: fields the recorder writes together that disagree. An enrollment whose arm
+                    does not follow from draw_byte (an int, 0-255; Terra when odd): enrollment_record_invalid.
+                    A first review whose verdict, p1, p2 and first_review_pass contradict each other as
+                    cmd_review forbids them (accept with a finding, changes_required with none, a flag that is
+                    not (verdict == accept), p2 not a nonnegative integer), or that was written after the
+                    episode ended: review_record_invalid. A Terra close.json whose repair_rounds is not the
+                    number of repair records, a repair record with no review receipt of its own or written
+                    after the episode ended: repair_record_invalid. Pause history that covers more repair
+                    rounds than there are repair records, or a P1 episode that is not a Terra episode with a
+                    first review of p1 above 0: pause_history_inconsistent. A path counts as absent only when
+                    lstat itself says ENOENT; any other lstat error is unknown.
 Any other exit code, including a usage error (2) or a crash (1), is not an admission: do not screen.
 The Terra in-flight limit is reported as a fact and is not a stop.
 """
@@ -1236,14 +1247,26 @@ def admission_stat(path, code, label, dangling_absent):
 
     glob and the os.path predicates (exists, isfile, isdir) turn every OSError into "not there". The gate
     cannot: a path it could not examine may hold the stop it is looking for. A dangling symlink is absent
-    where dangling_absent is set (an entry the gate does not consume), else unknown.
+    where dangling_absent is set (an entry the gate does not consume), else unknown. After a stat ENOENT the
+    path counts as absent only if os.lstat also says ENOENT: any other lstat error is unknown, and a path that
+    lstat finds but stat did not (it appeared meanwhile) is unknown.
     """
     try:
         return os.stat(path)
     except FileNotFoundError as e:
-        if os.path.islink(path) and not dangling_absent:
-            raise AdmissionUnknown(code, f"{label} is a dangling symlink") from e
-        return None
+        # os.path.islink would read an lstat error as "not a link" and so as absent. Absent is the one
+        # successful negative read: only lstat itself reporting ENOENT establishes it.
+        try:
+            link = stat.S_ISLNK(os.lstat(path).st_mode)
+        except FileNotFoundError:
+            return None
+        except OSError as le:
+            raise AdmissionUnknown(code, f"{label} cannot be examined: {le}") from le
+        if not link:
+            raise AdmissionUnknown(code, f"{label} was absent to stat but is present to lstat") from e
+        if dangling_absent:
+            return None
+        raise AdmissionUnknown(code, f"{label} is a dangling symlink") from e
     except OSError as e:
         raise AdmissionUnknown(code, f"{label} cannot be examined: {e}") from e
 
@@ -1440,18 +1463,60 @@ def read_episodes_unrepaired(run_dir):
         if record["task_id"] != name:
             raise AdmissionUnknown("enrollment_record_invalid",
                                    f"{name}: enrollment names task {record['task_id']!r}, not its directory")
+        byte = record.get("draw_byte")
+        if type(byte) is not int or not 0 <= byte <= 255 or record["arm"] != (TERRA if byte & 1 else SOL):
+            # cmd_enroll derives the arm from the byte in the same write (arm = TERRA if byte & 1 else SOL), and the
+            # arm decides whether this episode's reviews and repairs count: a pair that disagrees names no arm.
+            raise AdmissionUnknown("enrollment_record_invalid",
+                                   f"{name}: arm {record['arm']!r} does not follow from draw_byte {byte!r}")
         episodes.append((d, record, files, records))
     return episodes
+
+
+REVIEW_VERDICTS = ("accept", "changes_required", "blocked_evidence", "blocked_scope")
+TERMINAL_RECORDS = frozenset({"close.json", "withdraw.json"})
+
+
+def admission_review_problem(review, task):
+    """Why a sealed first review cannot be what cmd_review writes for this episode, or None.
+
+    cmd_review writes verdict, first_review_pass (verdict == "accept"), p1 and p2 in one record and refuses
+    counts that contradict the verdict, so the gate, which consumes p1, reads them as one evidence set: p1 and
+    p2 nonnegative integers (not booleans or floats), the verdict one of the four, accept with no P1 or P2,
+    changes_required with at least one, and the first-review-pass flag a boolean equal to (verdict ==
+    "accept"). The review names the episode's task and was not written after the episode was closed or
+    withdrawn (cmd_review refuses a terminal episode, and prior_files lists what existed at the write).
+    """
+    for field in ("p1", "p2"):
+        if type(review.get(field)) is not int or review[field] < 0:
+            return f"{field} is {review.get(field)!r}, not a nonnegative integer"
+    if review.get("task_id") != task:
+        return "names another task"
+    verdict = review.get("verdict")
+    if not isinstance(verdict, str) or verdict not in REVIEW_VERDICTS:
+        return f"verdict is {verdict!r}, not one of {', '.join(REVIEW_VERDICTS)}"
+    if verdict == "accept" and (review["p1"] or review["p2"]):
+        return f"verdict accept with p1 {review['p1']} and p2 {review['p2']}"
+    if verdict == "changes_required" and not (review["p1"] or review["p2"]):
+        return "verdict changes_required with p1 0 and p2 0"
+    if type(review.get("first_review_pass")) is not bool or review["first_review_pass"] != (verdict == "accept"):
+        return f"first_review_pass is {review.get('first_review_pass')!r} with verdict {verdict}"
+    if TERMINAL_RECORDS & set(review.get("prior_files", {})):
+        return "was written after the episode was closed or withdrawn"
+    return None
 
 
 def admission_trigger_facts(episodes):
     """episode_trigger_facts for the gate: the same facts from the strictly read episodes, or unknown.
 
-    P1 episodes: Terra episodes whose first review has p1 > 0, where p1 must be an int (not a bool), not
-    negative, and the review must name the episode's task. Repair rounds: the repair-*.json records of Terra
-    episodes (the shared rule counts the glob), each of which must be named as the recorder names them,
-    carry the number in its name as round, name the episode's task, and share its number with no other;
-    an episode's numbers must be exactly 1 through n, as cmd_repair writes them.
+    P1 episodes: Terra episodes whose first review has p1 > 0, where the review must pass
+    admission_review_problem (p1, p2, verdict and first_review_pass agree, as cmd_review writes them).
+    Repair rounds: the repair-*.json records of Terra episodes (the shared rule counts the glob), each of which
+    must be named as the recorder names them, carry the number in its name as round, name the episode's task,
+    share its number with no other, hold a review receipt no other repair of the episode holds (cmd_repair
+    answers a known receipt with already_repaired and writes nothing) and not have been written after the
+    episode was closed or withdrawn; an episode's numbers must be exactly 1 through n, as cmd_repair writes
+    them; and a close.json, when present, must record repair_rounds as an int equal to n, as cmd_close writes it.
     """
     p1 = []
     repairs = 0
@@ -1462,33 +1527,60 @@ def admission_trigger_facts(episodes):
         task = e["task_id"]
         review = records.get("review-first.json")
         if review is not None:
-            count = review.get("p1")
-            if type(count) is not int or count < 0:
-                raise AdmissionUnknown("review_record_invalid",
-                                       f"{name}/review-first.json: p1 is {count!r}, not a nonnegative integer")
-            if review.get("task_id") != task:
-                raise AdmissionUnknown("review_record_invalid", f"{name}/review-first.json names another task")
-            if count > 0:
+            problem = admission_review_problem(review, task)
+            if problem:
+                raise AdmissionUnknown("review_record_invalid", f"{name}/review-first.json: {problem}")
+            if review["p1"] > 0:
                 p1.append(task)
         numbers = set()
+        receipts = set()
         for n in files:
             if not fnmatch.fnmatchcase(n, REPAIR_GLOB):
                 continue
             match = REPAIR_NAME.fullmatch(n)
             number = int(match.group(1)) if match else None
             round_field = records[n].get("round")
+            receipt = records[n].get("review_receipt")
+            receipt = receipt.get("sha256") if isinstance(receipt, dict) else None
             if (match is None or number in numbers or type(round_field) is not int or round_field != number
-                    or records[n].get("task_id") != task):
+                    or records[n].get("task_id") != task or not isinstance(receipt, str) or receipt in receipts
+                    or TERMINAL_RECORDS & set(records[n].get("prior_files", {}))):
                 raise AdmissionUnknown("repair_record_invalid",
-                                       f"{name}/{n}: not a repair record numbered as named for this episode")
+                                       f"{name}/{n}: not a repair record numbered as named for this episode, "
+                                       "with its own review receipt, written before the episode ended")
             numbers.add(number)
+            receipts.add(receipt)
             repairs += 1
         if numbers != set(range(1, len(numbers) + 1)):
             # cmd_repair numbers a record as the highest existing number plus one, so a record numbered n asserts
             # rounds 1..n-1: a skipped number is missing or inconsistent evidence, and the round total is understated.
             raise AdmissionUnknown("repair_record_invalid",
                                    f"{name}: repair records are numbered {sorted(numbers)}, not 1 through {len(numbers)}")
+        close = records.get("close.json")
+        if close is not None and (type(close.get("repair_rounds")) is not int or close["repair_rounds"] != len(numbers)):
+            # cmd_close writes repair_rounds as the episode's repair-record count and cmd_repair refuses a terminal
+            # episode, so a closed episode's count is final and the two statements of it must agree.
+            raise AdmissionUnknown("repair_record_invalid",
+                                   f"{name}/close.json: repair_rounds is {close.get('repair_rounds')!r} "
+                                   f"with {len(numbers)} repair records")
     return {"p1_episodes": sorted(p1), "terra_repair_rounds": repairs}
+
+
+def admission_coverage_problem(covered_p1, covered_repairs, trigger):
+    """Why pause coverage cannot have been written from the facts now read, or None.
+
+    covered_triggers is written only by cmd_resume, from enforce_triggers' facts at that moment; records are
+    write-once and neither a Terra P1 episode nor a repair record is ever removed, so in any history the
+    recorder produces the covered P1 episodes are among the current Terra P1 episodes and the covered repair
+    rounds do not exceed the current total. Coverage that claims more is inconsistent with the evidence the
+    gate reads: the stop rule would take it as covering a stop that coverage never saw.
+    """
+    if covered_repairs > trigger["terra_repair_rounds"]:
+        return f"covers {covered_repairs} repair rounds, but {trigger['terra_repair_rounds']} repair records exist"
+    unknown = sorted(covered_p1 - set(trigger["p1_episodes"]))
+    if unknown:
+        return f"covers P1 episodes {unknown} that are not Terra episodes with a first review of p1 above 0"
+    return None
 
 
 def admission_decision(run_dir):
@@ -1528,6 +1620,9 @@ def admission_decision(run_dir):
             trigger = admission_trigger_facts(episodes)
         except (IntegrityFailure, OSError, ValueError, KeyError, TypeError, AttributeError) as e:
             raise AdmissionUnknown("trigger_inputs_unreadable", f"review-first.json or pause history is unreadable: {e}") from e
+        problem = admission_coverage_problem(covered_p1, covered_repairs, trigger)
+        if problem:
+            raise AdmissionUnknown("pause_history_inconsistent", f"pause history {problem}")
         new_p1, over_budget = terra_stop_rule(trigger, covered_p1, covered_repairs, config["terra_repair_budget"])
         facts["trigger"] = {"evaluated": True, **trigger, "covered_p1_episodes": sorted(covered_p1),
                             "covered_repair_rounds": covered_repairs, "uncovered_p1_episodes": new_p1,
