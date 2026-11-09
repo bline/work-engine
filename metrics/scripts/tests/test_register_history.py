@@ -323,6 +323,103 @@ class NominateViewTests(SchemaFixture):
         self.assertTrue(all("at_prior_revision" not in r for r in current))
 
 
+    def test_s4_a_record_on_a_historical_decision_carries_the_label_reached_or_not(self):
+        mark = dict(HistoricalMarkerTests.MARK)
+
+        def mutate(data):
+            self.dec(data, "d-claim").update({"historical": mark})
+            self.dec(data, "d-model-new").update({"historical": mark})
+            for aid, finding, did, rev in (("ap-reached", "beta-study#claim", "d-claim", self.c2),
+                                           ("ap-offlist", "beta-study#obs", "d-model-new", self.c2)):
+                a = copy.deepcopy(data["applicability"][0])
+                a.update({"applicability_id": aid, "finding": finding, "decision_id": did,
+                          "decision_revision": f"git:{rev}"})
+                a["authorization"] = {"status": "authorized", "owner": "user (fixture owner)", "at": "2026-01-02"}
+                data["applicability"].append(a)
+        doc = json.loads(self.nominate(mutate))
+        challenge = next(n for n in doc["nominations"] if n["event_id"] == "ev-challenge")
+        recs = {r["applicability_id"]: r for r in challenge["applicability_records"]}
+        self.assertIs(recs["ap-reached"].get("historical"), True)
+        self.assertIs(recs["ap-offlist"].get("historical"), True)
+        # d-model-new lists neither finding of this event, so it is not reached: the row alone carries the marker
+        self.assertNotIn("d-model-new", [d["decision_id"] for d in challenge["decisions"]])
+        self.assertIn("d-claim", [d["decision_id"] for d in challenge["decisions"]])
+        self.assertNotIn("historical", recs["ap-two"])  # a record on an unmarked decision
+        # the key is present only when the decision carries the marker
+        plain = json.loads(self.nominate(None))
+        for n in plain["nominations"]:
+            for r in n["applicability_records"]:
+                self.assertNotIn("historical", r)
+
+
+class BuildLabelTests(SchemaFixture):
+    """S-1: `build` labels rows that must not read as current authority; unaffected registers are unchanged."""
+
+    def build(self, mutate):
+        root = self.make(mutate)
+        out = os.path.join(self.base, f"build-{os.path.basename(root)}")
+        p = run_script(SCRIPT, "build", "--register", root, "--repo", self.repo, "--out", out)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        with open(os.path.join(out, "current-knowledge.json"), encoding="utf-8") as fh:
+            js = json.load(fh)
+        with open(os.path.join(out, "current-knowledge.md"), encoding="utf-8") as fh:
+            return js, fh.read()
+
+    @staticmethod
+    def rows(js):
+        return {a["applicability_id"]: a for f in js["findings"].values() for a in f["applicability"]}
+
+    @staticmethod
+    def md_row(md, aid):
+        return next(line for line in md.splitlines() if line.rstrip().endswith(aid) or f"| {aid} (" in line)
+
+    def prior_mutate(self, data):
+        self.dec(data).update({"revisions": [entry(self.c1)]})
+        a = copy.deepcopy(data["applicability"][0])
+        a["applicability_id"] = "ap-prior"
+        a["decision_revision"] = f"git:{self.c1}"
+        a["authorization"] = {"status": "authorized", "owner": "user (fixture owner)", "at": "2026-01-02"}
+        data["applicability"].append(a)
+
+    def test_s1_a_prior_revision_row_is_labelled_and_names_the_current_revision(self):
+        js, md = self.build(self.prior_mutate)
+        rows = self.rows(js)
+        self.assertIs(rows["ap-prior"]["at_prior_revision"], True)
+        self.assertEqual(rows["ap-prior"]["current_decision_revision"], f"git:{self.c2}")
+        self.assertEqual(rows["ap-prior"]["authorization"], "authorized")
+        self.assertNotIn("at_prior_revision", rows["ap-one"])
+        self.assertNotIn("historical_pin", rows["ap-prior"])
+        line = self.md_row(md, "ap-prior")
+        self.assertIn("prior revision", line)
+        self.assertIn(f"current revision is git:{self.c2}", line)
+        self.assertIn("not carried", line)
+        self.assertNotIn("prior revision", self.md_row(md, "ap-one"))
+        self.assertNotIn("historical pin", md)
+
+    def test_s1_a_historical_decision_row_is_labelled_not_current_authority(self):
+        mark = dict(HistoricalMarkerTests.MARK)
+
+        def mutate(data):
+            self.dec(data).update({"historical": mark})
+            data["applicability"][0]["authorization"] = {"status": "authorized", "owner": "user (fixture owner)",
+                                                         "at": "2026-01-02"}
+        js, md = self.build(mutate)
+        rows = self.rows(js)
+        self.assertIs(rows["ap-one"]["historical_pin"], True)
+        self.assertNotIn("historical_pin", rows["ap-two"])
+        self.assertIn("historical pin, not current authority", self.md_row(md, "ap-one"))
+        self.assertNotIn("historical pin", self.md_row(md, "ap-two"))
+        self.assertNotIn("at_prior_revision", rows["ap-one"])
+
+    def test_s1_a_register_using_neither_key_gets_no_label(self):
+        js, md = self.build(None)
+        for row in self.rows(js).values():
+            self.assertEqual(set(row), {"applicability_id", "decision_id", "decision_revision", "document", "anchor",
+                                        "relation", "authorization"})
+        self.assertNotIn("prior revision", md)
+        self.assertNotIn("historical pin", md)
+
+
 class AnchorViewFixture(ta.AnchorFixture):
     def anchor_report(self, at):
         p, out = self.anchors(at)
@@ -616,18 +713,6 @@ class HistoryPassTests(HistoryFixture):
         # and an unchanged disk state is an empty pass
         self.assertEqual(self.history(at="HEAD")[1]["owner_review"], [])
 
-    def test_h13_moved_anchored_text_needs_no_revision_change(self):
-        self.commit_base()
-        self.commit_files({"docs/a.md": "# New first\n\nnew line\n" + ta.DOC.replace("gamma", "G").replace("delta", "D")}, "doc moves")
-        later = git_head(self.repo)
-        p, rep = self.history(at=later)
-        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertEqual(rep["violations"], [])
-        self.assertEqual(rep["owner_review"], [])
-        # the anchored text did move, so this is the A1 class `moved`, not a revision event
-        a, _ = self.anchor_report(later)
-        self.assertIn(self.by_id(a)["d"]["class"], ("moved", "relocated_verbatim", "modified"))
-
 
 def git_head(repo):
     return ta.git(repo, "rev-parse", "HEAD")
@@ -731,6 +816,37 @@ class HistoryViolationTests(HistoryFixture):
         ]
         for label, mutate, name in cases:
             self.expect(label, mutate, name)
+
+    def test_s2_a_blanked_authorization_at_is_removed(self):
+        self.commit_base()
+        for label, value in (("null", None), ("empty string", ""), ("whitespace only", "  "), ("not text", 20260101)):
+            def mutate(decisions, appl, value=value):
+                appl[1]["authorization"]["at"] = value
+            with self.subTest(label):
+                p, rep = self.history(at=self.later(mutate))
+                self.assertEqual(p.returncode, 1, p.stdout + p.stderr)
+                self.assertEqual(self.names(rep), ["authorization-at-removed"])
+                self.assertEqual(rep["owner_review"][0]["before"]["at"], "2026-01-01")  # the earlier value stays visible
+        with self.subTest("controls: a different date and an absent base at are not removals"):
+            def other_date(decisions, appl):
+                appl[1]["authorization"]["at"] = "2026-03-03"
+            p, rep = self.history(at=self.later(other_date))
+            self.assertEqual((p.returncode, self.names(rep)), (0, []))
+            self.assertEqual(len(rep["owner_review"]), 1)
+
+            def add_at(decisions, appl):
+                appl[0]["authorization"] = {"status": "pending", "owner": "user (fixture owner)", "at": ""}
+            p, rep = self.history(at=self.later(add_at))
+            self.assertEqual((p.returncode, self.names(rep)), (0, []))
+
+    def test_s5_a_reordered_revisions_list_is_a_violation(self):
+        self.commit_base()
+        later = self.later(lambda decisions, appl: decisions[0]["revisions"].reverse())
+        p, rep = self.history(at=later)
+        self.assertEqual(p.returncode, 1, p.stdout + p.stderr)
+        self.assertIn("revision-reordered", self.names(rep))
+        self.assertNotIn("revision-removed", self.names(rep))
+        self.assertNotIn("revision-edited", self.names(rep))
 
     def test_h12_a_rename_is_told_apart_from_a_removal(self):
         self.commit_base()
@@ -868,7 +984,12 @@ class NoWriteTests(HistoryFixture):
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertEqual(writes, [], writes)
         self.assertEqual(self.tree_state(), before)
-        # and a plain run (the working-tree variant, no --at) leaves the repository as it was
+        # the working-tree variant (no --at) writes nothing either, by strace and by tree state
+        disk_argv = [sys.executable, "-I", "-B", SCRIPT, "history", "--repo", self.repo, "--base", self.base_commit]
+        writes, p = strace_writes(self, disk_argv)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual(writes, [], writes)
+        self.assertEqual(self.tree_state(), before)
         p = run_script(SCRIPT, "history", "--repo", self.repo, "--base", self.base_commit)
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertEqual(self.tree_state(), before)
@@ -886,6 +1007,47 @@ class ValidateNoWriteTests(SchemaFixture):
         self.assertEqual((ta.digest_tree(root), ta.digest_tree(self.repo)), before)
 
 
+class MovedAnchorTests(SchemaFixture):
+    """H13: anchored text that moves (A1 class `moved`) needs no revision change, on a complete register."""
+
+    def test_h13_moved_anchored_text_needs_no_revision_change(self):
+        root = self.make(lambda data: self.dec(data).update({"lines": "2"}))
+        reg_dir = os.path.join(self.repo, "metrics", "register")
+        shutil.copytree(root, reg_dir)
+        tr.git(self.repo, "add", "-A")
+        tr.git(self.repo, "commit", "-qm", "complete register")
+        base = tr.git(self.repo, "rev-parse", "HEAD")
+        # a commit that only moves the anchored text: lines are prepended to the document
+        path = os.path.join(self.repo, "docs", "model.md")
+        with open(path) as fh:
+            text = fh.read()
+        with open(path, "w") as fh:
+            fh.write("# New first\n\nnew line\n" + text)
+        tr.git(self.repo, "commit", "-qam", "doc moves")
+        later = tr.git(self.repo, "rev-parse", "HEAD")
+        # validate passes on the complete register at the later commit
+        v = run_script(SCRIPT, "validate", "--repo", self.repo)
+        self.assertEqual(v.returncode, 0, v.stdout + v.stderr)
+        self.assertTrue(v.stdout.startswith("validate: ok"), v.stdout)
+        # history passes with no new revision entry: the register files are unchanged between the two commits
+        self.assertEqual(tr.git(self.repo, "diff", "--name-only", base, later, "--", "metrics/register"), "")
+        p = run_script(SCRIPT, "history", "--repo", self.repo, "--base", base, "--at", later)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        rep = json.loads(p.stdout)
+        self.assertEqual(rep["violations"], [])
+        self.assertEqual(rep["owner_review"], [])
+        decisions = json.loads(tr.git(self.repo, "show", f"{later}:metrics/register/decisions.json"))
+        self.assertNotIn("revisions", self.dec({"decisions": decisions}))
+        # the anchored text did move: class exactly `moved`, not a revision event
+        out = os.path.join(self.base, "moved-anchors")
+        a = run_script(SCRIPT, "anchors", "--repo", self.repo, "--at", later, "--out", out)
+        self.assertEqual(a.returncode, 0, a.stdout + a.stderr)
+        with open(os.path.join(out, "anchors.json"), encoding="utf-8") as fh:
+            report = json.load(fh)
+        entry_ = next(e for e in report["decisions"] if e["decision_id"] == "d-model-new")
+        self.assertEqual(entry_["class"], "moved")
+
+
 class EnvironmentIndependenceTests(HistoryFixture):
     def test_h15_history_is_pinned_and_environment_independent(self):
         self.commit_base()
@@ -897,6 +1059,9 @@ class EnvironmentIndependenceTests(HistoryFixture):
         p0, rep0 = self.history(at=later)
         self.assertEqual(p0.returncode, 1)
         clean = p0.stdout
+        p1, rep1 = self.history()  # no --at: the later state is the register files on disk, which are the later commit's
+        self.assertEqual(p1.returncode, 1)
+        clean_disk = p1.stdout
         other = os.path.join(self.base, "other")
         os.makedirs(other)
         ta.git(other, "init", "-q")
@@ -918,6 +1083,7 @@ class EnvironmentIndependenceTests(HistoryFixture):
         for label, env in envs.items():
             with self.subTest(label):
                 self.assertEqual(self.history(at=later, env=env)[0].stdout, clean)
+                self.assertEqual(self.history(env=env)[0].stdout, clean_disk)  # the no --at path
         with self.subTest("replace refs"):
             blob = ta.git(self.repo, "rev-parse", f"{self.base_commit}:metrics/register/decisions.json")
             alt = os.path.join(self.base, "alt.json")
@@ -926,6 +1092,7 @@ class EnvironmentIndependenceTests(HistoryFixture):
             alt_blob = ta.git(self.repo, "hash-object", "-w", alt)
             ta.git(self.repo, "replace", blob, alt_blob)
             self.assertEqual(self.history(at=later)[0].stdout, clean)
+            self.assertEqual(self.history()[0].stdout, clean_disk)
             # the digest recorded for the base input is the real blob's, not the replacement's
             self.assertEqual(rep0["base"]["inputs"]["decisions.json"]["sha256"],
                              sha(ta.git(self.repo, "--no-replace-objects", "cat-file", "blob", blob, raw=True)))
