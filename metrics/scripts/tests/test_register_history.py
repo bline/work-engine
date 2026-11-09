@@ -255,6 +255,17 @@ class EvidenceFreeValidationTests(SchemaFixture):
         self.assertEqual(names, ["bad-value"])
 
 
+    def test_s9_an_unknown_key_under_none_linked_is_one_error(self):
+        names, items = self.errs(self.free({"state": "none_linked", "foo": 1}))
+        self.assertEqual(names, ["unknown-key"], items)
+        self.assertEqual(len(items), 1, items)
+        # a key that belongs to none_found only is still refused, once, with the state-specific message
+        names, items = self.errs(self.free({"state": "none_linked", "coverage": "x"}))
+        self.assertEqual(names, ["unknown-key"], items)
+        self.assertEqual(len(items), 1, items)
+        self.assertIn("none_linked", items[0][2])
+
+
 # ---------------------------------------------------------------------------
 # views (H8-H10)
 # ---------------------------------------------------------------------------
