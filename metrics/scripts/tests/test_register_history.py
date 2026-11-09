@@ -1267,5 +1267,355 @@ class RealRegisterTests(unittest.TestCase):
                 self.assertFalse({"historical", "revisions", "evidence_state"} & set(d), d["decision_id"])
 
 
+# ---------------------------------------------------------------------------
+# TR-1 and SR-1: `build` shows a prior-revision row's own historical source (R1-R8)
+# ---------------------------------------------------------------------------
+
+TR1_BASE = "9ac9826106d6afd303de384ddf86a6043fa11981"
+TR1_REAL_COMMITS = (S0_PIN, A1_CENSUS_COMMIT, S1_BASE, TR1_BASE)
+HISTORICAL_LABEL_MD = "historical source location, not a current operational location or authority"
+HISTORICAL_LABEL_JSON = "historical source location; not a current operational location or authority"
+
+
+def dumps_row(row):
+    return json.dumps(row, sort_keys=True)
+
+
+class HistoricalSourceBuildTests(SchemaFixture):
+    """R1-R8. A row at a listed prior revision shows the revision entry's own document, anchor and lines, labelled
+    as historical, never the decision's current location; everything else in `build`, and every other command, is
+    byte-identical to the script at 9ac98261."""
+
+    CUR_LINES = "2-3"          # the decision's current lines (docs/model.md has 3 lines at the current revision)
+    PRIOR_ANCHOR = "anchor as it stood at the prior revision"
+
+    def setUp(self):
+        self.out_base = tempfile.mkdtemp(prefix="tr1-", dir=self.base)
+
+    def build(self, mutate, script=None):
+        return self.build_root(self.make(mutate), script)
+
+    def build_root(self, root, script=None):
+        out = tempfile.mkdtemp(prefix="build-", dir=self.out_base)
+        p = run_script(script or SCRIPT, "build", "--register", root, "--repo", self.repo, "--out", out)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        return (p.stdout.replace(out, "OUT"), ta.slurp(os.path.join(out, "current-knowledge.json")).decode(),
+                ta.slurp(os.path.join(out, "current-knowledge.md")).decode())
+
+    @staticmethod
+    def rows(text):
+        return {a["applicability_id"]: a for f in json.loads(text)["findings"].values() for a in f["applicability"]}
+
+    @staticmethod
+    def md_row(md, aid):
+        return next(line for line in md.splitlines() if f"| {aid}" in line)
+
+    def prior_mutate(self, **entry_keys):
+        """Decision d-model-new with current lines, one prior revision entry, and a record citing that entry."""
+        def mutate(data):
+            d = self.dec(data)
+            d["lines"] = self.CUR_LINES
+            d["revisions"] = [entry(self.c1, **entry_keys)]
+            a = copy.deepcopy(data["applicability"][0])
+            a["applicability_id"] = "ap-prior"
+            a["decision_revision"] = f"git:{self.c1}"
+            a["authorization"] = {"status": "authorized", "owner": "user (fixture owner)", "at": "2026-01-02"}
+            data["applicability"].append(a)
+        return mutate
+
+    def full_c1(self):
+        return tr.git(self.repo, "rev-parse", self.c1)
+
+    def assert_no_current_location(self, row, line_md):
+        for text in (json.dumps(row), line_md):
+            self.assertNotIn("docs/model.md", text)
+            self.assertNotIn("anchor d-model-new", text)
+            self.assertNotIn(self.CUR_LINES, text)
+        for k in ("document", "anchor", "lines"):
+            self.assertNotIn(k, row)
+
+    def test_r1_prior_row_shows_the_entrys_own_location_and_no_current_one(self):
+        mutate = self.prior_mutate(document="docs/study.md", anchor=self.PRIOR_ANCHOR, lines="1-2")
+        _, js, md = self.build(mutate)
+        row = self.rows(js)["ap-prior"]
+        self.assertEqual(row["historical_source"], {
+            "revision": f"git:{self.c1}", "commit": self.full_c1(), "document": "docs/study.md",
+            "document_basis": "entry", "anchor": self.PRIOR_ANCHOR, "lines": "1-2",
+            "label": HISTORICAL_LABEL_JSON, "status": "resolved"})
+        self.assertEqual(len(row["historical_source"]["commit"]), 40)
+        self.assertIs(row["at_prior_revision"], True)
+        self.assertEqual(row["current_decision_revision"], f"git:{self.c2}")
+        self.assertEqual(row["authorization"], "authorized")
+        line = self.md_row(md, "ap-prior")
+        self.assert_no_current_location(row, line)
+        self.assertIn(HISTORICAL_LABEL_MD, line)
+        self.assertIn(f"docs/study.md ({self.PRIOR_ANCHOR}), lines 1-2 at git:{self.c1} ({self.full_c1()})", line)
+        self.assertLess(line.index(HISTORICAL_LABEL_MD), line.index("docs/study.md"))
+        self.assertLess(line.index(self.full_c1()), line.index("authorization: authorized"))
+        self.assertLess(line.index("authorization: authorized"), line.index("ap-prior"))
+        self.assertLess(line.index("ap-prior"), line.index("not carried"))
+        self.assertNotIn("schema default", line)
+        # the current-revision row of the same decision keeps its current location
+        self.assertEqual(self.rows(js)["ap-one"]["document"], "docs/model.md")
+
+    def test_r2_an_entry_without_lines_gives_null_and_says_so(self):
+        _, js, md = self.build(self.prior_mutate(document="docs/study.md", anchor=self.PRIOR_ANCHOR))
+        row = self.rows(js)["ap-prior"]
+        self.assertIsNone(row["historical_source"]["lines"])
+        line = self.md_row(md, "ap-prior")
+        self.assertIn("no line range recorded in the revision entry", line)
+        self.assert_no_current_location(row, line)
+
+    def test_r3_an_entry_without_document_uses_the_schema_default_and_says_so(self):
+        _, js, md = self.build(self.prior_mutate(anchor=self.PRIOR_ANCHOR, lines="1-2"))
+        row = self.rows(js)["ap-prior"]
+        h = row["historical_source"]
+        self.assertEqual((h["document"], h["document_basis"], h["anchor"], h["lines"]),
+                         ("docs/model.md", "schema_default", self.PRIOR_ANCHOR, "1-2"))
+        self.assertEqual(h["status"], "resolved")
+        self.assertNotIn("document", row)
+        line = self.md_row(md, "ap-prior")
+        self.assertIn(f"(document path by schema default: the decision's path, read at git:{self.c1})", line)
+        self.assertIn("lines 1-2", line)
+        self.assertNotIn("anchor d-model-new", line)
+        self.assertNotIn(self.CUR_LINES, line)
+
+    def old_script_path(self):
+        path = os.path.join(self.out_base, "register_9ac98261.py")
+        if not os.path.exists(path):
+            with open(path, "wb") as fh:
+                fh.write(show(TR1_BASE, "metrics/scripts/register.py"))
+        return path
+
+    def test_r4_current_revision_rows_and_a_historical_decision_are_byte_identical_to_9ac98261(self):
+        self.assertTrue(have(TR1_BASE))
+        old = self.old_script_path()
+        root = self.make(self.prior_mutate(document="docs/study.md", anchor=self.PRIOR_ANCHOR, lines="1-2"))
+        o_out, o_js, o_md = self.build_root(root, old)
+        n_out, n_js, n_md = self.build_root(root)
+        self.assertEqual(o_out, n_out)
+        o_rows, n_rows = self.rows(o_js), self.rows(n_js)
+        self.assertEqual(set(o_rows), set(n_rows))
+        for aid in o_rows:
+            if aid != "ap-prior":
+                self.assertEqual(dumps_row(o_rows[aid]), dumps_row(n_rows[aid]), aid)
+                self.assertEqual(self.md_row(o_md, aid), self.md_row(n_md, aid), aid)
+
+        def without_prior(md):
+            return [ln for ln in md.splitlines() if "ap-prior" not in ln]
+        self.assertEqual(without_prior(o_md), without_prior(n_md))
+        o_doc, n_doc = json.loads(o_js), json.loads(n_js)
+        for doc in (o_doc, n_doc):
+            for f in doc["findings"].values():
+                f["applicability"] = [a for a in f["applicability"] if a["applicability_id"] != "ap-prior"]
+        self.assertEqual(o_doc, n_doc)
+
+        def historical(data):
+            self.dec(data)["historical"] = dict(HistoricalMarkerTests.MARK)
+            data["applicability"][0]["authorization"] = {"status": "authorized", "owner": "user (fixture owner)",
+                                                         "at": "2026-01-02"}
+        root = self.make(historical)
+        self.assertEqual(self.build_root(root, old), self.build_root(root))
+
+    # --- byte identity for registers without revisions (R5) and the other commands (R6) ----------------------
+
+    @staticmethod
+    def norm(text, old_sha, new_sha):
+        """Only for outputs that embed the writing script's digest: normalise that value and nothing else."""
+        return text.replace(new_sha, old_sha)
+
+    def run_commands(self, script, repo, register, anchors_at, history_args, tag):
+        """validate, build (both files), nominate, anchors and history; returns {name: comparable}."""
+        res = {}
+        if register:
+            p = run_script(script, "validate", "--repo", repo, "--register", register)
+            res["validate"] = (p.returncode, p.stdout, p.stderr)
+            out = os.path.join(self.out_base, f"b-{tag}")
+            p = run_script(script, "build", "--repo", repo, "--register", register, "--out", out)
+            ok = p.returncode == 0
+            res["build"] = (p.returncode, p.stdout.replace(out, "OUT"), p.stderr,
+                            ta.slurp(os.path.join(out, "current-knowledge.json")).decode() if ok else None,
+                            ta.slurp(os.path.join(out, "current-knowledge.md")).decode() if ok else None)
+            out = os.path.join(self.out_base, f"n-{tag}.json")
+            p = run_script(script, "nominate", "--repo", repo, "--register", register, "--out", out)
+            res["nominate"] = (p.returncode, p.stdout.replace(out, "OUT"), p.stderr,
+                               ta.slurp(out).decode() if p.returncode == 0 else None)
+        out = os.path.join(self.out_base, f"a-{tag}")
+        p = run_script(script, "anchors", "--repo", repo, f"--at={anchors_at}", "--out", out)
+        files = [ta.slurp(os.path.join(out, f)).decode() if os.path.exists(os.path.join(out, f)) else None
+                 for f in ("anchors.json", "anchors.md")]
+        res["anchors"] = (p.returncode, p.stdout.replace(out, "OUT"), p.stderr, *files)
+        p = run_script(script, "history", "--repo", repo, *history_args)
+        res["history"] = (p.returncode, p.stdout, p.stderr)
+        return res
+
+    def compare(self, a, b, name, old_sha, new_sha, label):
+        """Strict equality; the digest exception only for anchors and history, which embed the script's digest."""
+        if name not in ("anchors", "history"):
+            self.assertEqual(a, b, f"{label} {name}")
+            return
+        old_text, new_text = json.dumps(a), json.dumps(b)
+        if old_sha in old_text or new_sha in new_text:  # an output that actually embeds the digest
+            self.assertIn(old_sha, old_text, f"{label} {name}")
+            self.assertIn(new_sha, new_text, f"{label} {name}")
+            if old_sha != new_sha:  # equal only when the script under test is the 9ac98261 script itself
+                self.assertNotIn(new_sha, old_text)
+                self.assertNotIn(old_sha, new_text)
+        b = tuple(self.norm(x, old_sha, new_sha) if isinstance(x, str) else x for x in b)
+        self.assertEqual(a, b, f"{label} {name}")
+
+    def assert_commands_identical(self, repo, register, anchors_at, history_args, label):
+        old = self.old_script_path()
+        old_sha, new_sha = sha(ta.slurp(old)), sha(ta.slurp(SCRIPT))
+        a = self.run_commands(old, repo, register, anchors_at, history_args, f"{label}-old")
+        b = self.run_commands(SCRIPT, repo, register, anchors_at, history_args, f"{label}-new")
+        self.assertEqual(set(a), set(b))
+        for name in a:
+            with self.subTest(label=label, command=name):
+                self.compare(a[name], b[name], name, old_sha, new_sha, label)
+        return a
+
+    def extract_real_register(self, commit):
+        data = ta.git(REAL_REPO, "archive", "--format=tar", commit, "metrics/register", raw=True)
+        root = os.path.join(self.out_base, f"reg-{commit[:8]}")
+        os.makedirs(root)
+        with tarfile.open(fileobj=io.BytesIO(data)) as tf:
+            tf.extractall(root, filter="data")
+        return os.path.join(root, "metrics", "register")
+
+    def test_r5_registers_without_revisions_are_byte_identical_in_every_command(self):
+        for c in TR1_REAL_COMMITS:
+            self.assertTrue(have(c), f"commit {c} is not in this clone")
+        for commit in TR1_REAL_COMMITS:
+            register = self.extract_real_register(commit)
+            data = ta.slurp(os.path.join(register, "decisions.json")).decode()
+            self.assertNotIn('"revisions"', data, commit)  # the real register uses no revision history
+            res = self.assert_commands_identical(REAL_REPO, register, commit, ["--base", S0_PIN, "--at", commit],
+                                                 f"real-{commit[:8]}")
+            self.assertEqual(res["validate"][0], 0, res["validate"])
+            self.assertEqual(res["build"][0], 0)
+        # the S1 H1 fixture states: a register of every anchor class, then a changed state
+        fx = AnchorViewFixture()
+        fx.setUp()
+        self.addCleanup(shutil.rmtree, fx.base, ignore_errors=True)
+        rev = fx.commit_files({"docs/a.md": ta.DOC}, "v1")
+        fx.commit_files({"docs/a.md": ta.DOC.replace("gamma", "G").replace("# Title\n\n", "# Title\n\nx\n")}, "v2")
+        decisions = [fx.decision("a", "docs/a.md", rev, "3"), fx.decision("b", "docs/a.md", rev, "4-6"),
+                     fx.decision("c", "docs/a.md", rev, "8"), fx.decision("d", "docs/missing.md", rev),
+                     fx.decision("model-selection.claude-host-builder-rows-at-df288c3d", "docs/a.md", rev, "4-5")]
+        first = fx.commit_register(decisions, [fx.appl("ap1", "b", rev, "authorized"), fx.appl("ap2", "a", rev)])
+        second = fx.commit_register(decisions, [fx.appl("ap1", "b", rev, "pending"), fx.appl("ap2", "a", rev)])
+        res = self.assert_commands_identical(fx.repo, None, second, ["--base", first, "--at", second], "h1-fixture")
+        self.assertIsNotNone(res["anchors"][3])  # the report was written, so the comparison is not vacuous
+        # a complete synthetic register without revisions
+        res = self.assert_commands_identical(self.repo, self.make(None), "HEAD", ["--base", "HEAD", "--at", "HEAD"],
+                                             "schema-fixture")
+        self.assertEqual(res["validate"][0], 0, res["validate"])
+
+    def test_r6_the_other_commands_are_byte_identical_on_the_r1_to_r3_registers(self):
+        reg_dir = os.path.join(self.repo, "metrics", "register")
+
+        def commit_register(root):
+            shutil.rmtree(reg_dir, ignore_errors=True)
+            shutil.copytree(root, reg_dir)
+            tr.git(self.repo, "add", "-A")
+            tr.git(self.repo, "commit", "-qm", "register state")
+            return tr.git(self.repo, "rev-parse", "HEAD")
+
+        base_commit = commit_register(self.make(None))
+        cases = {
+            "r1": self.prior_mutate(document="docs/study.md", anchor=self.PRIOR_ANCHOR, lines="1-2"),
+            "r2": self.prior_mutate(document="docs/study.md", anchor=self.PRIOR_ANCHOR),
+            "r3": self.prior_mutate(anchor=self.PRIOR_ANCHOR, lines="1-2"),
+        }
+        old = self.old_script_path()
+        old_sha, new_sha = sha(ta.slurp(old)), sha(ta.slurp(SCRIPT))
+        for label, mutate in cases.items():
+            root = self.make(mutate)
+            commit = commit_register(root)
+            args = ["--base", base_commit, "--at", commit]
+            outs = {}
+            for tag, script in (("old", old), ("new", SCRIPT)):
+                res = self.run_commands(script, self.repo, root, commit, args, f"{label}-{tag}")
+                outs[tag] = {k: v for k, v in res.items() if k != "build"}  # build is the command that changed
+            self.assertEqual(set(outs["old"]), {"validate", "nominate", "anchors", "history"})
+            self.assertEqual(outs["old"]["validate"][0], 0, outs["old"]["validate"])
+            for name in outs["old"]:
+                with self.subTest(label=label, command=name):
+                    self.compare(outs["old"][name], outs["new"][name], name, old_sha, new_sha, label)
+
+    def test_r7_readme_describes_build_by_what_it_emits(self):
+        with open(os.path.join(REAL_REPO, "metrics", "register", "README.md"), encoding="utf-8") as fh:
+            flat = " ".join(fh.read().split())
+        self.assertNotIn("does not render decision state", flat)
+        start = flat.index("- `build --out DIR`")
+        bullet = flat[start:flat.index("- `nominate --out FILE")]
+        for needle in ("historical source location", "historical_source", "not_established", "schema_default",
+                       "decision revision", "authorization status", "not current operational locations or authority",
+                       "`build` does not render a decision's `evidence_state`", "A register that uses neither"):
+            self.assertIn(needle, bullet)
+        self.assertIn("(`build` does not render `evidence_state`)", flat)
+
+    def assert_unresolved(self, module, d, a, git, label):
+        h = module.historical_source(d, a, git)
+        self.assertEqual(h["status"], "not_established", label)
+        self.assertEqual(h["revision"], a["decision_revision"], label)
+        self.assertEqual(h["label"], HISTORICAL_LABEL_JSON, label)
+        row = module.build_applicability_row(a, d, git) if module.at_prior_revision(d, a) else {"historical_source": h}
+        for k in ("commit", "document", "anchor", "lines", "document_basis"):
+            self.assertNotIn(k, h, label)
+            self.assertNotIn(k, row, label)
+        md = module.historical_source_md(h)
+        self.assertIn("historical source: not_established", md)
+        for text in (json.dumps(row), md):
+            self.assertNotIn("docs/model.md", text, label)
+            self.assertNotIn("anchor d-model-new", text, label)
+            self.assertNotIn(self.CUR_LINES, text, label)
+
+    def test_r8_an_unresolved_historical_source_is_reported_and_shows_no_location(self):
+        module = tr.reg
+        git = module.AnchorGit(self.repo)
+        d = {"decision_id": "d", "document": "docs/model.md", "anchor": "anchor d-model-new", "lines": self.CUR_LINES,
+             "revision": f"git:{self.c2}", "owner": "o", "findings": []}
+        a = {"applicability_id": "ap-x", "finding": "f", "decision_id": "d", "relation": "supports",
+             "authorization": {"status": "authorized"}}
+        unborn = "git:" + "0" * 10
+        listed = entry(self.c1, document="docs/study.md")
+        cases = [
+            ("no entry matches", [listed], f"git:{self.c3}", git),
+            ("two entries match", [listed, dict(listed)], f"git:{self.c1}", git),
+            ("commit does not resolve", [dict(listed, revision=unborn)], unborn, git),
+            ("no git access", [listed], f"git:{self.c1}", None),
+        ]
+        for label, revisions, cited, access in cases:
+            with self.subTest(case=label):
+                self.assert_unresolved(module, dict(d, revisions=revisions), dict(a, decision_revision=cited), access,
+                                       label)
+
+    def test_r8_the_build_output_reports_a_row_whose_commit_does_not_resolve(self):
+        module = tr.reg
+        root = self.make(self.prior_mutate(document="docs/study.md", anchor=self.PRIOR_ANCHOR, lines="1-2"))
+        r, errors, _ = module.load_valid(root, self.repo)
+        self.assertEqual(errors.names(), [])
+
+        class NoCommits:
+            def commit_by_hex(self, hexid):
+                return None
+        per = module.derive(r, NoCommits())[4]
+        fid = next(f for f, v in per.items() if any(a["applicability_id"] == "ap-prior" for a in v["applicability"]))
+        row = next(a for a in per[fid]["applicability"] if a["applicability_id"] == "ap-prior")
+        self.assertEqual(row["historical_source"]["status"], "not_established")
+        for k in ("commit", "document", "anchor", "lines"):
+            self.assertNotIn(k, row)
+            self.assertNotIn(k, row["historical_source"])
+        md = module.render_md({"k_index": {}, "findings": {fid: per[fid]}, "questions": {}})
+        line = next(ln for ln in md.splitlines() if "ap-prior" in ln)
+        self.assertIn("historical source: not_established", line)
+        for text in (json.dumps(row), line):
+            self.assertNotIn("docs/model.md", text)
+            self.assertNotIn("anchor d-model-new", text)
+            self.assertNotIn(self.CUR_LINES, text)
+
+
 if __name__ == "__main__":
     unittest.main()
