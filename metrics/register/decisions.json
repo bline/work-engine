@@ -40,6 +40,12 @@
   "findings": [
    "e1a-first-artifact-battery#full-battery-reading"
   ],
+  "historical": {
+   "marked_at": "2026-11-09",
+   "marked_by": "user (register and decision owner), per the user approval of 2026-11-09T06:39:27Z",
+   "reason": "Deliberate pin of the superseded revision of the Claude-host builder rows, the one that cited full-battery counts before the traceability correction reached the document. Kept as its own decision record so a correction reaches the revision that relied on the corrected reading, not only the current one",
+   "superseded_by": "model-selection.claude-host-builder-rows"
+  },
   "lines": "39-40",
   "owner": "user (model-selection owner)",
   "revision": "git:df288c3d"
@@ -117,6 +123,11 @@
   "findings": [
    "dogfood-round2-builder-comparison#round-pause"
   ],
+  "historical": {
+   "marked_at": "2026-11-09",
+   "marked_by": "user (register and decision owner), per the user approval of 2026-11-09T06:39:27Z",
+   "reason": "The later pause notice (metrics/dogfood-selection-plan-20261027.md, 'Current status (2026-11-07)', round 2 is paused) supersedes this status line as a statement of current operational status. The original text and revision are preserved"
+  },
   "lines": "3",
   "owner": "user (dogfood plan owner)",
   "revision": "git:d80dd242"
