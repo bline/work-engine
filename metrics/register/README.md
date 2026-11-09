@@ -147,7 +147,7 @@ only, no network, no model calls; it writes only to `--out`.
   `authorized_at_prior_revision` when authorized), whatever the class of the current revision;
   rows at the current revision of an `unchanged` decision are not listed, as before. A decision
   with `evidence_state` is reported with the state verbatim and the statement that it is not
-  evidence of absence. The fixed note on `...-at-df288c3d` (name-keyed, no field marks it) applies
+  evidence of absence. The fixed note on `...-at-df288c3d` (name-keyed; the record now has a structured `historical` marker) applies
   only while that record has no `historical` marker; once it has one, the marker's own note
   replaces it.
 - `history --base REV [--at REV2]`: read-only. Compares the register at `REV` with the register
