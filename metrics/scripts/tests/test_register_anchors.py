@@ -17,6 +17,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPT = os.environ.get("ANCHORS_UNDER_TEST") or os.path.abspath(os.path.join(HERE, "..", "register.py"))
 REAL_REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 BASE_COMMIT = "14031bc23320b84b79149b62cf447a6594326438"
+# A3 S3: the last head before any `revisions` entry, and the records that cite the two listed prior revisions
+S3_BASE = "7e946c8c3bbb04e1b3a001938cbe27f9e2044d1d"
+S3_PRIOR_RECORD_IDS = frozenset({"ap-k2-traced-claude-host-rows", "ap-k3-quota-fit-cost-table-quota-row"})
 GIT_ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
            "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid"}
 GIT_ENV.pop("GIT_EDITOR", None)
@@ -797,23 +800,55 @@ class RealRegisterTests(unittest.TestCase):
             fh.write(git(REAL_REPO, "show", f"{BASE_COMMIT}:metrics/scripts/register.py", raw=True))
         v_real = self.cli(SCRIPT, "validate", "--repo", REAL_REPO)
         self.assertEqual(v_real.returncode, 0, v_real.stdout)
-        # A1 compared the two scripts on the live register. The base script rejects the optional `historical` key
-        # (A3 S2 markers), so the comparison runs on the register pinned at BASE_COMMIT and on the live register with
-        # only that key removed from decisions.json; the markers' own effect is tested in test_register_history.py
-        pinned = os.path.join(self.base, "pinned")
-        os.makedirs(pinned)
-        tar = subprocess.run(["git", "-C", REAL_REPO, "archive", BASE_COMMIT, "metrics/register"], capture_output=True,
-                             check=True)
-        subprocess.run(["tar", "-x", "-C", pinned], input=tar.stdout, check=True)
-        unmarked = os.path.join(self.base, "live-unmarked")
-        shutil.copytree(os.path.join(REAL_REPO, "metrics", "register"), unmarked)
-        with open(os.path.join(unmarked, "decisions.json"), encoding="utf-8") as fh:
-            decisions = json.load(fh)
-        for d in decisions:
-            d.pop("historical", None)
-        with open(os.path.join(unmarked, "decisions.json"), "w", encoding="utf-8") as fh:
-            fh.write(json.dumps(decisions, indent=1, sort_keys=True) + "\n")
-        for rtag, reg in (("pinned", os.path.join(pinned, "metrics", "register")), ("live-unmarked", unmarked)):
+        # A1 compared the two scripts on the live register. The base script rejects the optional keys added since
+        # (`historical`, A3 S2; `revisions`, A3 S3) and cannot read a record that cites a listed prior revision, so the
+        # comparison runs on three registers: (1) the register pinned at BASE_COMMIT; (2) the register at S3_BASE
+        # without `historical`, which is what this comparison covered before S3, frozen; (3) the live register without
+        # `historical` and `revisions` and without the records citing a listed prior revision. The removed records must
+        # be exactly S3_PRIOR_RECORD_IDS, so the excluded set cannot widen silently. The removed keys and records are
+        # tested in test_register_history.py.
+        def extract(commit, tag):
+            dst = os.path.join(self.base, tag)
+            os.makedirs(dst)
+            tar = subprocess.run(["git", "-C", REAL_REPO, "archive", commit, "metrics/register"], capture_output=True,
+                                 check=True)
+            subprocess.run(["tar", "-x", "-C", dst], input=tar.stdout, check=True)
+            return os.path.join(dst, "metrics", "register")
+
+        def reduce(src, tag, drop_revisions):
+            dst = os.path.join(self.base, tag)
+            shutil.copytree(src, dst)
+            with open(os.path.join(dst, "decisions.json"), encoding="utf-8") as fh:
+                decisions = json.load(fh)
+            prior = {(d["decision_id"], e["revision"]) for d in decisions for e in d.get("revisions", [])}
+            removed = set()
+            if drop_revisions:
+                path = os.path.join(dst, "applicability.jsonl")
+                with open(path, encoding="utf-8") as fh:
+                    lines = fh.readlines()
+                kept = []
+                for line in lines:
+                    r = json.loads(line) if line.strip() else None
+                    if r is not None and (r["decision_id"], r["decision_revision"]) in prior:
+                        removed.add(r["applicability_id"])
+                    else:
+                        kept.append(line)
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.writelines(kept)
+            for d in decisions:
+                d.pop("historical", None)
+                if drop_revisions:
+                    d.pop("revisions", None)
+            with open(os.path.join(dst, "decisions.json"), "w", encoding="utf-8") as fh:
+                fh.write(json.dumps(decisions, indent=1, sort_keys=True) + "\n")
+            return dst, removed
+
+        pinned = extract(BASE_COMMIT, "pinned")
+        s3_base, none_removed = reduce(extract(S3_BASE, "s3-base"), "s3-base-unmarked", False)
+        self.assertEqual(none_removed, set())
+        live, removed = reduce(os.path.join(REAL_REPO, "metrics", "register"), "live-reduced", True)
+        self.assertEqual(removed, S3_PRIOR_RECORD_IDS)
+        for rtag, reg in (("pinned", pinned), ("s3-base-unmarked", s3_base), ("live-reduced", live)):
             v_old, v_new = (self.cli(s, "validate", "--repo", REAL_REPO, "--register", reg) for s in (old, SCRIPT))
             self.assertEqual((v_old.returncode, v_old.stdout), (v_new.returncode, v_new.stdout), rtag)
             self.assertEqual(v_new.returncode, 0, v_new.stdout)

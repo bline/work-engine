@@ -1141,6 +1141,45 @@ S2_MARKERS = {
 }
 S2_HISTORICAL_MARKED = frozenset(S2_MARKERS)
 
+# A3 S3 (user decisions O-1, O-2 and O-5 of 2026-11-09): the two modified current decisions move to the last commits
+# that changed their anchored text and keep their Stage 0 revision as their only `revisions` entry. superseded_at is
+# the date of the superseding source commit (1906090c, 5149cc27), not of the migration. O-3 was not decided, so S3 adds
+# no applicability record; the records citing the Stage 0 revisions stay there and no authorization is carried.
+S3_BASE = "7e946c8c3bbb04e1b3a001938cbe27f9e2044d1d"
+S3_DATA = "60f364787f2952adcd24918b54d82f50f28afeb5"  # the S3 data commit (decisions.json and README only)
+S3_HOST, S3_QUOTA = "model-selection.claude-host-builder-rows", "model-selection.cost-table-quota-row"
+S3_NEW = {
+    S3_HOST: {"revision": "git:1906090c", "lines": "128-129",
+              "anchor": ("Builder rows of the Claude host section (Sonnet 5.5 high; Opus 5.5 high), citing traced "
+                         "battery counts only")},
+    S3_QUOTA: {"revision": "git:5149cc27", "lines": "268",
+               "anchor": ("Cost table row: Codex quota tracks API cost, Astra about 4.5x Sol, $6-7 per 1% of a Pro "
+                          "week, marked not established for current model-selection use (owner, 2026-11-07)")},
+}
+S3_REVISIONS = {
+    S3_HOST: [{
+        "revision": "git:4ff69ffd", "lines": "39-40", "document": "docs/model-selection.md",
+        "anchor": "Builder on the Claude host rows (Sonnet 5.5 high; Opus 5.5 high), citing traced battery counts",
+        "superseded_at": "2026-11-07",
+        "reason": ("1906090c moved the Claude-host builder rows into the section 'Claude host and Claude-only "
+                   "development' and rewrote them there: the traced E1a counts stay (Sonnet 2, 0 and 0 of 12; Opus 0 "
+                   "of 12), the full-battery counts are gone, and the Sonnet row now cites S2 probe lines 467-579 and "
+                   "R1/R2 use. From 1906090c on, lines 39-40 are the Current defaults table header, not these rows")}],
+    S3_QUOTA: [{
+        "revision": "git:1a1cb443", "lines": "115", "document": "docs/model-selection.md",
+        "anchor": "Cost table row: Codex quota tracks API cost, Astra about 4.5x Sol, $6-7 per 1% of a Pro week",
+        "superseded_at": "2026-11-07",
+        "reason": ("5149cc27 added the owner's qualification to the row: both claims are not established for current "
+                   "model-selection use until the experiment plan section 1 fit is rechecked with the tier (F1.1); the "
+                   "values and source are kept as the historical record. The applicability record authorized on "
+                   "2026-11-07 stays on 1a1cb443 and is not carried to 5149cc27")}],
+}
+S3_PRIOR_RECORDS = {"ap-k2-traced-claude-host-rows": S3_HOST, "ap-k3-quota-fit-cost-table-quota-row": S3_QUOTA}
+S3_README_OLD = "`document`) is appended unchanged as the last `revisions` entry; text that only moves needs no\nnew revision."
+S3_README_NEW = (S3_README_OLD + " A3 S3 moved `model-selection.claude-host-builder-rows` to `1906090c` and\n"
+                 "`model-selection.cost-table-quota-row` to `5149cc27`, the last commits that changed their anchored\n"
+                 "text; their Stage 0 revisions are listed in `revisions`, and the records citing those stay there.")
+
 
 class RealRegisterTests(unittest.TestCase):
     def setUp(self):
@@ -1283,9 +1322,13 @@ class RealRegisterTests(unittest.TestCase):
         p = run_script(SCRIPT, "validate", "--repo", REAL_REPO)
         self.assertEqual(p.returncode, 0, p.stdout)
         with open(os.path.join(REAL_REPO, "metrics", "register", "decisions.json"), encoding="utf-8") as fh:
+            # A3 S3: `revisions` on exactly the two re-anchored decisions, with the approved values; `historical` on
+            # exactly the S2 pair (exact values: S2MarkersInTheCurrentRegisterTests); no `evidence_state`
             for d in json.load(fh):
-                self.assertFalse({"revisions", "evidence_state"} & set(d), d["decision_id"])
-                self.assertEqual("historical" in d, d["decision_id"] in S2_HISTORICAL_MARKED, d["decision_id"])
+                did = d["decision_id"]
+                self.assertNotIn("evidence_state", d, did)
+                self.assertEqual(d.get("revisions"), S3_REVISIONS.get(did), did)
+                self.assertEqual("historical" in d, did in S2_HISTORICAL_MARKED, did)
 
 
 # ---------------------------------------------------------------------------
@@ -1987,6 +2030,281 @@ class S2LiveRegisterHistoryViolationTests(HistoryFixture):
              "applicability-record-changed"),
             ("record's authorization owner changed", rec(lambda r, ap: r["authorization"].update(owner="someone else")),
              "authorization-owner-changed"),
+        ]
+        for label, mutate, name in cases:
+            with self.subTest(label):
+                p, rep = self.history(at=self.later(mutate))
+                self.assertEqual(p.returncode, 1, label + ": " + p.stdout + p.stderr)
+                self.assertIn(name, self.names(rep), rep["violations"])
+                self.assert_forbidden_phrases_absent(p.stdout)
+
+
+# ---------------------------------------------------------------------------
+# A3 S3: the two re-anchored current decisions (T-3, T-4)
+# ---------------------------------------------------------------------------
+
+class S3RegisterTests(unittest.TestCase):
+    """The S3 change itself, pinned at both ends: the register at S3_BASE versus the register at S3_DATA. Same script
+    and repository; `anchors` compares --at S3_BASE with --at S3_DATA and the other commands read the two extracted
+    registers, so neither the working tree nor later approved register changes alter these comparisons."""
+
+    def setUp(self):
+        for c in (S3_BASE, S3_DATA):
+            self.assertTrue(have(c), f"commit {c} is not in this clone; the S3 tests cannot run")
+        self.tmp = tempfile.mkdtemp(prefix="history-s3-")
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.reg = {}
+        for tag, commit in (("base", S3_BASE), ("s3", S3_DATA)):
+            data = ta.git(REAL_REPO, "archive", "--format=tar", commit, "metrics/register", raw=True)
+            with tarfile.open(fileobj=io.BytesIO(data)) as tf:
+                tf.extractall(os.path.join(self.tmp, tag), filter="data")
+            self.reg[tag] = os.path.join(self.tmp, tag, "metrics", "register")
+
+    def run_cmd(self, cmd, tag):
+        out = os.path.join(self.tmp, f"{cmd}-{tag}")
+        where = ("--at", {"base": S3_BASE, "s3": S3_DATA}[tag]) if cmd == "anchors" else ("--register", self.reg[tag])
+        p = run_script(SCRIPT, cmd, "--repo", REAL_REPO, "--out", out, *where)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        if cmd == "nominate":
+            with open(out, encoding="utf-8") as fh:
+                return json.load(fh), None
+        name = {"build": "current-knowledge", "anchors": "anchors"}[cmd]
+        with open(os.path.join(out, name + ".json"), encoding="utf-8") as fh:
+            j = json.load(fh)
+        with open(os.path.join(out, name + ".md"), encoding="utf-8") as fh:
+            return j, fh.read().split("\n")
+
+    def both(self, cmd):
+        return self.run_cmd(cmd, "base"), self.run_cmd(cmd, "s3")
+
+    def test_s3_exactly_the_two_decisions_change_by_the_approved_values(self):
+        pre, new = read_decisions(self.reg["base"]), read_decisions(self.reg["s3"])
+        self.assertEqual([d["decision_id"] for d in pre], [d["decision_id"] for d in new])
+        self.assertFalse(any("revisions" in d for d in pre))
+        changed = 0
+        for old, cur in zip(pre, new):
+            did = cur["decision_id"]
+            if did not in S3_NEW:
+                self.assertEqual(cur, old, did)  # the moved and historical decisions, markers included, are untouched
+                continue
+            changed += 1
+            self.assertEqual(cur["revisions"], S3_REVISIONS[did], did)
+            self.assertEqual({k: v for k, v in cur.items() if k != "revisions"}, {**old, **S3_NEW[did]}, did)
+            # the revisions entry is the base's current pin, copied unchanged
+            prior = {k: v for k, v in S3_REVISIONS[did][0].items() if k not in ("superseded_at", "reason")}
+            self.assertEqual(prior, {k: old[k] for k in ("revision", "lines", "document", "anchor")}, did)
+        self.assertEqual(changed, 2)
+        self.assertEqual({d["decision_id"]: d["historical"] for d in new if "historical" in d}, S2_MARKERS)
+        p = run_script(SCRIPT, "validate", "--repo", REAL_REPO, "--register", self.reg["s3"])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("11 decisions, 18 applicability records", p.stdout)
+
+    def test_s3_superseded_at_is_the_date_of_each_superseding_commit(self):
+        for did, (prior,) in S3_REVISIONS.items():
+            new_rev = S3_NEW[did]["revision"][len("git:"):]
+            dates = subprocess.run(["git", "-C", REAL_REPO, "show", "-s", "--format=%aI %cI", new_rev],
+                                   capture_output=True, text=True, check=True).stdout.split()
+            self.assertEqual(len(dates), 2, did)
+            self.assertTrue(all(x.startswith(prior["superseded_at"]) for x in dates), (did, dates))
+            start, _, end = prior["lines"].partition("-")
+            old_text = show(prior["revision"][len("git:"):], prior["document"]).decode().split("\n")
+            old_lines = old_text[int(start) - 1:int(end or start)]
+            parent = show(new_rev + "^", prior["document"]).decode().split("\n")
+            child = show(new_rev, prior["document"]).decode().split("\n")
+            self.assertTrue(old_lines and all(x in parent for x in old_lines), did)  # still there before it
+            self.assertFalse(any(x in child for x in old_lines), did)  # superseded by it
+
+    def test_s3_applicability_is_unchanged_and_the_readme_adds_one_sentence(self):
+        def files(root):
+            return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
+        base, s3 = self.reg["base"], self.reg["s3"]
+        self.assertEqual(files(base), files(s3))
+        for rel in files(s3):
+            if rel not in ("decisions.json", "README.md"):  # applicability.jsonl included: no record is added
+                self.assertEqual(ta.slurp(os.path.join(base, rel)), ta.slurp(os.path.join(s3, rel)), rel)
+        old = ta.slurp(os.path.join(base, "README.md")).decode()
+        new = ta.slurp(os.path.join(s3, "README.md")).decode()
+        self.assertEqual(old.count(S3_README_OLD), 1)
+        self.assertEqual(new, old.replace(S3_README_OLD, S3_README_NEW))
+
+    def test_s3_build_shows_the_two_prior_revision_records_at_their_historical_source(self):
+        (pj, pm), (lj, lm) = self.both("build")
+        self.assertFalse(any("at_prior_revision" in d for d in walk_dicts(pj)))
+        seen = set()
+        for d in walk_dicts(lj):
+            if "at_prior_revision" not in d:
+                continue
+            aid = d.get("applicability_id")
+            self.assertIn(aid, S3_PRIOR_RECORDS)
+            did = S3_PRIOR_RECORDS[aid]
+            (prior,) = S3_REVISIONS[did]
+            self.assertIs(d.pop("at_prior_revision"), True)
+            self.assertEqual(d.pop("current_decision_revision"), S3_NEW[did]["revision"])
+            src = d.pop("historical_source")
+            self.assertTrue(src.pop("commit").startswith(prior["revision"][len("git:"):]), aid)
+            self.assertEqual(src, {"anchor": prior["anchor"], "document": prior["document"], "document_basis": "entry",
+                                   "label": HISTORICAL_LABEL_JSON, "lines": prior["lines"],
+                                   "revision": prior["revision"], "status": "resolved"}, aid)
+            self.assertFalse({"anchor", "document"} & set(d), aid)  # no current location is shown for it
+            d["anchor"], d["document"] = prior["anchor"], prior["document"]
+            seen.add(aid)
+        self.assertEqual(seen, set(S3_PRIOR_RECORDS))
+        self.assertEqual(lj, pj)
+        self.assertEqual(len(lm), len(pm))
+        changed = [(a, b) for a, b in zip(pm, lm) if a != b]
+        self.assertEqual(len(changed), 2)
+        for a, b in changed:
+            aid = next(x for x in S3_PRIOR_RECORDS if x in a)
+            self.assertIn(aid, b)
+            self.assertIn(HISTORICAL_LABEL_MD, b)
+            self.assertIn("not carried", b)
+            self.assertNotIn(HISTORICAL_LABEL_MD, a)
+
+    def test_s3_anchors_change_only_the_two_reanchored_entries(self):
+        (pj, pm), (lj, lm) = self.both("anchors")
+        self.assertEqual((pj["pinned_commit"], lj["pinned_commit"]), (S3_BASE, S3_DATA))
+        for j, c in ((pj, S3_BASE), (lj, S3_DATA)):
+            self.assertEqual(j["register"]["inputs"]["decisions.json"]["sha256"],
+                             sha(show(c, "metrics/register/decisions.json")))
+        count = lambda j: tuple(j["summary"][k] for k in ("modified", "moved", "unchanged"))
+        self.assertEqual((count(pj), count(lj)), ((3, 4, 4), (1, 5, 5)))
+        expect = {S3_HOST: ("unchanged", "128-129"), S3_QUOTA: ("moved", "276")}
+        pre_by_id = {e["decision_id"]: e for e in pj["decisions"]}
+        others = 0
+        for e in lj["decisions"]:
+            did = e["decision_id"]
+            old = pre_by_id[did]
+            if did not in S3_NEW:
+                self.assertEqual(e, old, did)
+                others += 1
+                continue
+            self.assertEqual(old["class"], "modified", did)
+            self.assertEqual((e["class"], e["after"]["lines"], e["error"]), expect[did] + (None,), did)
+            for k, v in S3_NEW[did].items():
+                self.assertEqual(e[k], v, (did, k))
+            self.assertEqual((e["before"]["revision"], e["before"]["lines"]),
+                             (S3_NEW[did]["revision"], S3_NEW[did]["lines"]), did)
+            self.assertEqual(e["revisions"], S3_REVISIONS[did], did)
+            self.assertEqual(len(e["applicability"]), len(old["applicability"]))
+            moving = ("after_state", "record_revision_matches_decision")
+            for row, prow in zip(e["applicability"], old["applicability"]):
+                self.assertEqual(S3_PRIOR_RECORDS.get(row["record"]["applicability_id"]), did)
+                self.assertEqual([prow[k] for k in moving], ["pending_judgment_required", True])
+                self.assertEqual([row[k] for k in moving], ["at_prior_revision", False])
+                self.assertEqual({k: v for k, v in row.items() if k not in moving},
+                                 {k: v for k, v in prow.items() if k not in moving})
+        self.assertEqual(others, 9)
+        import difflib
+        allowed = tuple(S3_NEW) + tuple(S3_PRIOR_RECORDS) + (
+            "Pinned commit: `", "input `metrics/register/decisions.json` sha256", "- modified: ", "- moved: ",
+            "- unchanged: ", "## Decisions with listed prior revisions", "  - prior revision `git:",
+            "- before: revision `git:", "- after: lines ", "- at the revision:", "- at the target:", "  - lines ",
+            "    - before: `", "    - after: `", "- candidate (not chosen): ")
+        for line in difflib.ndiff(pm, lm):
+            if line[:2] in ("- ", "+ ") and line[2:].strip():
+                self.assertTrue(any(a in line[2:] for a in allowed), line)
+        self.assertEqual((pm.count("## Decisions with listed prior revisions"),
+                          lm.count("## Decisions with listed prior revisions")), (0, 1))
+
+    def test_s3_nominate_changes_only_the_two_decisions_and_flags_their_prior_records(self):
+        (pj, _), (lj, _) = self.both("nominate")
+        self.assertFalse(any("at_prior_revision" in d for d in walk_dicts(pj)))
+        self.assertEqual(len(lj["nominations"]), len(pj["nominations"]))
+        changed = flagged = 0
+        for nom, pnom in zip(lj["nominations"], pj["nominations"]):
+            self.assertEqual(len(nom["decisions"]), len(pnom["decisions"]))
+            for d, pd in zip(nom["decisions"], pnom["decisions"]):
+                if d["decision_id"] in S3_NEW:
+                    for k, v in S3_NEW[d["decision_id"]].items():
+                        self.assertEqual(d[k], v, (d["decision_id"], k))
+                        d[k] = pd[k]
+                    changed += 1
+            for r in nom["applicability_records"]:
+                if r["applicability_id"] in S3_PRIOR_RECORDS:
+                    self.assertIs(r.pop("at_prior_revision"), True, r["applicability_id"])
+                    flagged += 1
+                else:
+                    self.assertNotIn("at_prior_revision", r, r["applicability_id"])
+        self.assertEqual((changed, flagged), (3, 3))
+        self.assertEqual(lj, pj)
+
+    def test_s3_no_authorization_is_carried_moved_or_added(self):
+        def auths(reg):
+            return {r["applicability_id"]: (r["decision_id"], r["decision_revision"], r["authorization"])
+                    for r in read_appl(reg)}
+        base, s3 = auths(self.reg["base"]), auths(self.reg["s3"])
+        self.assertEqual(s3, base)
+        for aid, did in S3_PRIOR_RECORDS.items():
+            self.assertEqual(s3[aid][:2], (did, S3_REVISIONS[did][0]["revision"]), aid)  # stays on the prior revision
+        self.assertEqual({aid: s3[aid][2]["status"] for aid in S3_PRIOR_RECORDS},
+                         {"ap-k2-traced-claude-host-rows": "pending", "ap-k3-quota-fit-cost-table-quota-row": "authorized"})
+        self.assertFalse([aid for aid, (did, rev, _) in s3.items() if did in S3_NEW and rev == S3_NEW[did]["revision"]])
+        for cmd in ("anchors", "nominate", "build"):
+            (pj, _), (lj, _) = self.both(cmd)
+
+            def seen(j):
+                return sorted(json.dumps([d.get("applicability_id"), d.get("decision_id"), d.get("authorization"),
+                                          d.get("authorized")], sort_keys=True)
+                              for d in walk_dicts(j) if "applicability_id" in d)
+            self.assertEqual(seen(lj), seen(pj), cmd)
+
+    def test_s3_history_shows_no_violation_and_no_owner_review(self):
+        p = run_script(SCRIPT, "history", "--repo", REAL_REPO, "--base", S3_BASE, "--at", S3_DATA)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        rep = json.loads(p.stdout)
+        self.assertEqual((rep["violations"], rep["owner_review"]), ([], []))
+
+
+class S3HistoryRefusalTests(HistoryFixture):
+    """`history` from the S3 register (pinned at S3_DATA) refuses to lose or rewrite a listed prior revision, to change
+    the current revision again without history, or to move, remove or re-own the records citing the prior revisions.
+    The S3 change itself passes from the S3_BASE register."""
+
+    @staticmethod
+    def pinned(commit):
+        lines = show(commit, "metrics/register/applicability.jsonl").decode().split("\n")
+        return json.loads(show(commit, "metrics/register/decisions.json")), [json.loads(x) for x in lines if x.strip()]
+
+    def base_state(self):
+        return self.pinned(S3_DATA)
+
+    def test_s3_the_reanchoring_is_accepted_from_the_s3_base_register(self):
+        pre = self.commit_register(*self.pinned(S3_BASE), msg="S3 base register")
+        self.commit_base()
+        p, rep = self.history(base=pre, at=self.base_commit)
+        self.assertEqual((p.returncode, self.names(rep), rep["owner_review"]), (0, [], []))
+
+    def test_s3_losing_or_rewriting_a_prior_revision_or_carrying_its_records_is_rejected(self):
+        self.commit_base()
+
+        def by_id(ds, did):
+            return next(d for d in ds if d["decision_id"] == did)
+
+        def rev(did, f):
+            return lambda ds, ap: f(by_id(ds, did)["revisions"][0])
+
+        def rec(aid, f):
+            return lambda ds, ap: f(next(r for r in ap if r["applicability_id"] == aid), ap)
+
+        k2, k3 = "ap-k2-traced-claude-host-rows", "ap-k3-quota-fit-cost-table-quota-row"
+        cases = [
+            ("host revisions removed", lambda ds, ap: by_id(ds, S3_HOST).pop("revisions"), "revision-removed"),
+            ("quota revisions emptied", lambda ds, ap: by_id(ds, S3_QUOTA)["revisions"].clear(), "revision-removed"),
+            ("prior anchor edited", rev(S3_HOST, lambda e: e.update(anchor="edited")), "revision-edited"),
+            ("prior lines edited", rev(S3_QUOTA, lambda e: e.update(lines="116")), "revision-edited"),
+            ("reason edited", rev(S3_HOST, lambda e: e.update(reason="edited")), "revision-edited"),
+            ("superseded_at set to the migration date", rev(S3_QUOTA, lambda e: e.update(superseded_at="2026-11-09")),
+             "revision-edited"),
+            ("revision changed again without history",
+             lambda ds, ap: by_id(ds, S3_QUOTA).update(revision="git:869a5add"),
+             "current-revision-changed-without-history"),
+            ("ap-k2 moved to the new revision", rec(k2, lambda r, ap: r.update(decision_revision="git:1906090c")),
+             "applicability-record-changed"),
+            ("ap-k3 moved to the new revision", rec(k3, lambda r, ap: r.update(decision_revision="git:5149cc27")),
+             "applicability-record-changed"),
+            ("ap-k3 authorization owner changed", rec(k3, lambda r, ap: r["authorization"].update(owner="someone else")),
+             "authorization-owner-changed"),
+            ("ap-k2 removed", rec(k2, lambda r, ap: ap.remove(r)), "applicability-record-removed"),
         ]
         for label, mutate, name in cases:
             with self.subTest(label):
