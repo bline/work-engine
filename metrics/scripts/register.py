@@ -10,6 +10,7 @@ applicability and from authority to change decisions. See metrics/register/READM
     python3 -I metrics/scripts/register.py nominate --out FILE [--register DIR] [--repo DIR]
         [--claims-host PATH --startup PATH --startup-sha256 HEX]
     python3 -I metrics/scripts/register.py anchors --out DIR [--register DIR] [--repo DIR] [--at COMMIT]
+    python3 -I metrics/scripts/register.py history --base REV [--at REV2] [--register DIR] [--repo DIR]
 """
 import argparse
 import hashlib
@@ -29,7 +30,14 @@ LIFECYCLE_KEYS = {"date", "state", "basis"}
 EVENT_KEYS = {"event_id", "kind", "date", "subject_finding", "by_finding", "basis", "source"}
 JUDGMENT_KEYS = {"finding", "axis", "value", "basis", "assessor", "date"}
 DECISION_KEYS = {"decision_id", "document", "anchor", "revision", "owner", "findings"}
-DECISION_OPTIONAL = {"lines"}
+DECISION_OPTIONAL = {"lines", "historical", "revisions", "evidence_state"}
+REVISION_ENTRY_KEYS = {"revision", "anchor", "superseded_at", "reason"}
+REVISION_ENTRY_OPTIONAL = {"lines", "document"}
+HISTORICAL_KEYS = {"reason", "marked_by", "marked_at"}
+HISTORICAL_OPTIONAL = {"superseded_by"}
+EVIDENCE_STATES = {"none_linked", "none_found"}
+EVIDENCE_NONE_FOUND_KEYS = {"state", "corpus", "search_scope", "coverage", "assessor", "date"}
+EVIDENCE_CORPUS_KEYS = {"id", "sha256", "pin"}
 APPL_KEYS = {"applicability_id", "finding", "decision_id", "decision_revision", "relation", "rationale",
              "evidence", "proposed_by", "proposed_at", "authorization"}
 AUTH_KEYS = {"status", "owner"}
@@ -126,6 +134,18 @@ class Git:
 
     def commit_exists(self, commit):
         return self.run("rev-parse", "--verify", "-q", f"{commit}^{{commit}}") is not None
+
+    def commit_id(self, commit):
+        return self.run("rev-parse", "--verify", "-q", f"{commit}^{{commit}}")
+
+    def is_ancestor(self, a, b):
+        """True, False, or None when the question could not be answered."""
+        key = ("is-ancestor", a, b)
+        if key not in self.cache:
+            p = subprocess.run(["git", "-C", self.repo, "merge-base", "--is-ancestor", a, b],
+                               capture_output=True, check=False)
+            self.cache[key] = p.returncode == 0 if p.returncode in (0, 1) else None
+        return self.cache[key]
 
 
 class Register:
@@ -301,6 +321,115 @@ def check_sources(errors, git, loc, sources, nonempty=False):
         check_source(errors, git, f"{loc}[{i}]", s)
 
 
+def check_revisions(e, git, loc, d, current_hex):
+    """Optional `revisions` on a decision: prior revisions, oldest first (each pinned like the decision itself)."""
+    loc = loc + ".revisions"
+    revs = d["revisions"]
+    if not isinstance(revs, list) or not revs:
+        e.add("bad-value", loc, "revisions must be a non-empty list")
+        return
+    current_id = git.commit_id(current_hex) if current_hex else None
+    resolved, seen = [], {}
+    for i, r in enumerate(revs):
+        rloc = f"{loc}[{i}]"
+        if not check_keys(e, rloc, r, REVISION_ENTRY_KEYS, REVISION_ENTRY_OPTIONAL):
+            continue
+        m = REVISION.match(r["revision"]) if isinstance(r["revision"], str) else None
+        if not m:
+            e.add("bad-value", rloc, f"revision {r['revision']!r} must be a string of the form git:<commit>")
+            continue
+        for k in ("anchor", "reason"):
+            if not is_text(r[k]):
+                e.add("bad-value", rloc, f"{k} must be non-empty text")
+        check_date(e, rloc, "superseded_at", r["superseded_at"])
+        cid = git.commit_id(m.group(1))
+        if cid is None:
+            e.add("pin-unresolved", rloc, f"revision commit {m.group(1)} does not resolve")
+            continue
+        if cid == current_id:
+            e.add("revision-equals-current", rloc, f"revision {r['revision']!r} is the decision's current revision")
+        elif cid in seen:
+            e.add("duplicate-revision", rloc, f"revision {r['revision']!r} repeats revisions[{seen[cid]}]")
+        else:
+            seen[cid] = i
+        resolved.append((i, cid))
+        doc = r["document"] if "document" in r else d.get("document")
+        if "document" in r and not is_text(r["document"]):
+            e.add("bad-value", rloc, "document must be non-empty text")
+        elif not is_text(doc):
+            if "lines" in r:
+                e.add("bad-value", rloc, "lines needs a document")
+        elif git.blob(m.group(1), doc) is None:
+            e.add("pin-unresolved", rloc, f"{m.group(1)}:{doc} does not resolve")
+        elif "lines" in r:
+            check_lines(e, git, rloc + ".lines", r["lines"], m.group(1), doc)
+    for (i, a), (j, b) in zip(resolved, resolved[1:]):
+        if a != b and git.is_ancestor(a, b) is not True:
+            e.add("revision-not-ancestor", f"{loc}[{i}]", f"revisions[{i}] is not an ancestor of revisions[{j}]")
+    if current_id:
+        for i, a in resolved:
+            if a != current_id and git.is_ancestor(a, current_id) is not True:
+                e.add("revision-not-ancestor", f"{loc}[{i}]", f"revisions[{i}] is not an ancestor of the current revision")
+
+
+def check_historical(e, loc, d):
+    """Optional `historical`: this record deliberately pins a past revision; it is never current authority."""
+    loc = loc + ".historical"
+    h = d["historical"]
+    if not check_keys(e, loc, h, HISTORICAL_KEYS, HISTORICAL_OPTIONAL):
+        return
+    for k in ("reason", "marked_by"):
+        if not is_text(h[k]):
+            e.add("bad-value", loc, f"{k} must be non-empty text")
+    check_date(e, loc, "marked_at", h["marked_at"])
+    if "superseded_by" in h and not is_text(h["superseded_by"]):
+        e.add("bad-value", loc, "superseded_by must be non-empty text")
+
+
+def check_evidence_state(e, git, loc, d):
+    """Optional `evidence_state`, for a decision whose `findings` is []. Neither state asserts absence of evidence."""
+    loc = loc + ".evidence_state"
+    s = d["evidence_state"]
+    if not check_keys(e, loc, s, frozenset(), EVIDENCE_NONE_FOUND_KEYS):
+        return
+    state = s.get("state")
+    if "state" not in s:
+        e.add("missing-key", loc, "required key 'state' is absent")
+        return
+    if not has(EVIDENCE_STATES, state):
+        e.add("bad-value", loc, f"state {state!r} not in {sorted(EVIDENCE_STATES)}")
+        return
+    if state == "none_linked":
+        for k in sorted(set(s) - {"state"}):
+            if not GLOBAL_FIELD.search(k):
+                e.add("unknown-key", loc, f"key {k!r} is not allowed with state none_linked")
+        return
+    for k in ("search_scope", "coverage", "assessor"):
+        if k not in s:
+            e.add("missing-key", loc, f"none_found requires {k!r}")
+        elif not is_text(s[k]):
+            e.add("bad-value", loc, f"{k} must be non-empty text")
+    if "date" not in s:
+        e.add("missing-key", loc, "none_found requires 'date'")
+    else:
+        check_date(e, loc, "date", s["date"])
+    corpus = s.get("corpus")
+    if "corpus" not in s:
+        e.add("missing-key", loc, "none_found requires corpus 'id'")
+        e.add("missing-key", loc, "none_found requires corpus 'sha256' or 'pin'")
+    elif check_keys(e, loc + ".corpus", corpus, frozenset(), EVIDENCE_CORPUS_KEYS):
+        if "id" not in corpus:
+            e.add("missing-key", loc, "none_found requires corpus 'id'")
+        elif not is_text(corpus["id"]):
+            e.add("bad-value", loc + ".corpus", "id must be non-empty text")
+        if "sha256" not in corpus and "pin" not in corpus:
+            e.add("missing-key", loc, "none_found requires corpus 'sha256' or 'pin'")
+        if "sha256" in corpus and not (isinstance(corpus["sha256"], str) and HEX_SHA256.match(corpus["sha256"])):
+            e.add("bad-value", loc + ".corpus", "sha256 must be 64 lowercase hex")
+        if "pin" in corpus:
+            check_source(e, git, loc + ".corpus.pin", corpus["pin"])
+
+
 def validate_register(reg, git):
     e = reg.errors
     # questions
@@ -390,7 +519,7 @@ def validate_register(reg, git):
             check_sources(e, git, floc + ".sources", f["sources"], nonempty=True)
 
     # decisions
-    dids, drev = set(), {}
+    dids, drev, dlisted, superseded_refs = set(), {}, {}, []
     if not isinstance(reg.decisions, list):
         e.add("bad-value", "decisions.json", "must be a list")
     else:
@@ -406,6 +535,9 @@ def validate_register(reg, git):
             else:
                 dids.add(did)
                 drev[did] = d["revision"]
+                dlisted[did] = ({r["revision"] for r in d["revisions"]
+                                 if isinstance(r, dict) and isinstance(r.get("revision"), str)}
+                                if isinstance(d.get("revisions"), list) else set())
             for k in ("document", "anchor", "owner"):
                 if not is_text(d[k]):
                     e.add("bad-value", loc, f"{k} must be non-empty text")
@@ -420,12 +552,27 @@ def validate_register(reg, git):
                 check_lines(e, git, loc + ".lines", d["lines"], m.group(1), d["document"])
             elif "lines" in d:
                 e.add("bad-value", loc, "lines needs a document")
-            if not isinstance(d["findings"], list) or not d["findings"]:
+            if d["findings"] == [] and "evidence_state" in d:
+                check_evidence_state(e, git, loc, d)
+            elif not isinstance(d["findings"], list) or not d["findings"]:
                 e.add("bad-value", loc, "findings must be a non-empty list")
             else:
                 for fid in d["findings"]:
                     if not has(fids, fid):
                         e.add("unknown-finding-reference", loc, f"finding {fid!r} is not in any study")
+            if "evidence_state" in d and d["findings"] != []:
+                e.add("bad-value", loc, "evidence_state is allowed only when findings is []")
+            if "revisions" in d:
+                check_revisions(e, git, loc, d, m.group(1) if m and git.commit_exists(m.group(1)) else None)
+            if "historical" in d:
+                check_historical(e, loc, d)
+                if isinstance(d["historical"], dict) and "superseded_by" in d["historical"]:
+                    superseded_refs.append((loc + ".historical", did, d["historical"]["superseded_by"]))
+        for loc, did, target in superseded_refs:
+            if not has(dids, target):
+                e.add("unknown-decision-reference", loc, f"superseded_by {target!r} is not in decisions.json")
+            elif target == did:
+                e.add("bad-value", loc, "superseded_by must name a different decision")
 
     # events
     eids = set()
@@ -491,7 +638,8 @@ def validate_register(reg, git):
             e.add("bad-value", loc, f"decision_revision {a['decision_revision']!r} must be a string of the form git:<commit>")
         if not has(dids, a["decision_id"]):
             e.add("unknown-decision-reference", loc, f"decision {a['decision_id']!r} is not in decisions.json")
-        elif rev_valid and a["decision_revision"] != drev[a["decision_id"]]:
+        elif (rev_valid and a["decision_revision"] != drev[a["decision_id"]]
+              and a["decision_revision"] not in dlisted[a["decision_id"]]):
             e.add("decision-revision-mismatch", loc,
                   f"decision_revision {a['decision_revision']!r} differs from decisions.json {drev[a['decision_id']]!r}")
         check_enum(e, loc, "relation", a["relation"], RELATIONS)
@@ -767,6 +915,17 @@ def resolve_claim(host, startup, startup_sha, ref):
         return {"error": f"unreadable claims host output: {exc}"}
 
 
+EVIDENCE_STATE_NOTE = ("evidence_state records why this decision lists no finding; it is not evidence of absence, "
+                       "and it is not a claim about what evidence exists")
+
+
+def at_prior_revision(d, a):
+    """True when applicability record a cites a listed earlier revision of decision d, not its current one."""
+    return (isinstance(d, dict) and isinstance(d.get("revisions"), list)
+            and a.get("decision_revision") != d.get("revision")
+            and any(isinstance(r, dict) and r.get("revision") == a.get("decision_revision") for r in d["revisions"]))
+
+
 def cmd_nominate(args):
     claims = (args.claims_host, args.startup, args.startup_sha256)
     if any(claims) and not all(claims):
@@ -782,6 +941,7 @@ def cmd_nominate(args):
         return 1
     findings, events, decisions, appl, per = derive(reg)
     mats = [m for _, m in reg.materialized]
+    by_id = {d["decision_id"]: d for d in decisions}
     noms = []
     for ev in events:
         subj, by = ev["subject_finding"], ev["by_finding"]
@@ -794,9 +954,13 @@ def cmd_nominate(args):
                 reached[d["decision_id"]] = {k: d[k] for k in ("decision_id", "document", "anchor", "revision", "owner")
                                              } | ({"lines": d["lines"]} if "lines" in d else {}) | {
                                                  "via": via, "listed_findings": sorted(set(listed))}
+                if "historical" in d:  # a pin of a past revision, labelled; reach itself is unchanged (rule 8)
+                    reached[d["decision_id"]]["historical"] = True
+                    reached[d["decision_id"]]["historical_reason"] = d["historical"]["reason"]
         recs = [{"applicability_id": a["applicability_id"], "finding": a["finding"], "decision_id": a["decision_id"],
                  "decision_revision": a["decision_revision"], "relation": a["relation"],
                  "authorization": a["authorization"]["status"]}
+                | ({"at_prior_revision": True} if at_prior_revision(by_id.get(a["decision_id"]), a) else {})
                 for a in appl if a["finding"] in (subj, by)]
         refs = [m for m in mats if m["finding"] in (subj, by)]
         if all(claims):
@@ -825,6 +989,10 @@ def cmd_nominate(args):
            "completeness": {"scope": "events.jsonl and the decisions that list the subject or by_finding in decisions.json",
                             "events": len(events), "claims_queried": all(claims)},
            "nominations": noms}
+    free = [{"decision_id": d["decision_id"], "evidence_state": d["evidence_state"], "statement": EVIDENCE_STATE_NOTE}
+            for d in decisions if "evidence_state" in d]
+    if free:  # present only when a decision uses evidence_state; such a decision lists no finding, so it is never reached
+        doc["evidence_free_decisions"] = free
     parent = os.path.dirname(os.path.abspath(args.out))
     if not os.path.isdir(parent):
         print(f"nominate: output directory {parent} does not exist")
@@ -1110,6 +1278,15 @@ def blank_entry(d):
             "context_before": None, "context_after": None, "notes": []}
 
 
+def historical_note(h):
+    if isinstance(h, dict):
+        by = f"{h.get('marked_by')} on {h.get('marked_at')}"
+        succ = f"; superseded_by {h['superseded_by']}" if h.get("superseded_by") else ""
+        return (f"historical pin, marked by {by}: {h.get('reason')}{succ}. "
+                "A historical marker never makes this record current authority.")
+    return "historical pin (marker is not an object). A historical marker never makes this record current authority."
+
+
 def classify_decision(git, d, target):
     """One entry for decision d against the pinned target commit. Never raises on bad data."""
     entry = blank_entry(d)
@@ -1139,7 +1316,9 @@ def classify_decision(git, d, target):
                                 f"lines {d['lines']} exceed the {len(rev_lines)} lines of {doc} at {rev}")
     if doc.startswith("skills/"):
         entry["notes"].append(SKILL_NOTE)
-    if entry["decision_id"] in HISTORICAL_PINS:
+    if "historical" in d:  # the data-borne marker replaces the fixed note, which says no field marks the pin
+        entry["notes"].append(historical_note(d["historical"]))
+    elif entry["decision_id"] in HISTORICAL_PINS:
         entry["notes"].append(HISTORICAL_PINS[entry["decision_id"]])
     # the document as it exists at the target, following a rename
     tpath, tblob, rename = doc, git.blob_id(target, doc), None
@@ -1210,7 +1389,9 @@ def classify_decision(git, d, target):
 
 
 def read_register_at(git, commit, register_dir, repo):
-    """Records read from the pinned commit. Returns (decisions, applicability by decision, inputs, problems)."""
+    """Records read from the pinned commit. Returns (decisions, applicability by decision, inputs, problems).
+    With commit None (used by `history` only) the same records are read from the files in register_dir."""
+    at = f"at {commit}" if commit is not None else "in the register directory on disk"
     rel = os.path.relpath(os.path.realpath(register_dir), os.path.realpath(repo))
     if rel == ".." or rel.startswith(".." + os.sep) or os.path.isabs(rel):
         raise ValueError(f"register directory {register_dir} is outside the repository {repo}; "
@@ -1220,24 +1401,31 @@ def read_register_at(git, commit, register_dir, repo):
 
     def read(name):
         path = f"{rel}/{name}"
-        data = git.run("cat-file", "blob", f"{commit}:{path}")
+        if commit is None:
+            try:
+                with open(os.path.join(register_dir, name), "rb") as fh:
+                    data = fh.read()
+            except OSError:
+                data = None
+        else:
+            data = git.run("cat-file", "blob", f"{commit}:{path}")
         if data is not None:
             inputs[name] = {"path": path, "sha256": hashlib.sha256(data).hexdigest()}
         return path, data
 
     path, data = read("decisions.json")
     if data is None:
-        raise ValueError(f"{path} not found at {commit}")
+        raise ValueError(f"{path} not found {at}")
     try:
         decisions = json.loads(data.decode("utf-8"))
     except ValueError as exc:
-        raise ValueError(f"{path} at {commit} is not valid JSON: {exc}")
+        raise ValueError(f"{path} {at} is not valid JSON: {exc}")
     if not isinstance(decisions, list):
-        raise ValueError(f"{path} at {commit} is not a list")
+        raise ValueError(f"{path} {at} is not a list")
     appl = {}
     path, data = read("applicability.jsonl")
     if data is None:
-        problems.append({"where": path, "reason": f"not found at {commit}"})
+        problems.append({"where": path, "reason": f"not found {at}"})
     else:
         for i, line in enumerate(data.decode("utf-8", "replace").splitlines(), 1):
             if not line.strip():
@@ -1255,7 +1443,7 @@ def read_register_at(git, commit, register_dir, repo):
     return decisions, appl, inputs, problems
 
 
-def applicability_after(entry, records):
+def applicability_after(entry, records, d=None):
     out = []
     cls = entry["class"]
     if cls is None:  # an errored decision: nothing was classified and nothing is transferred
@@ -1276,8 +1464,26 @@ def applicability_after(entry, records):
         if authorized:
             row["authorization_after"] = "carried_unchanged" if state == "carried_unchanged" \
                 else "authorized_at_prior_revision"
+        if cls is not None and isinstance(d, dict):
+            # a pin of a past revision, or a record citing a listed earlier revision, is never carried
+            label = "historical_pin" if "historical" in d else "at_prior_revision" if at_prior_revision(d, rec) else None
+            if label:
+                row["after_state"] = label
+                row["authorization_after"] = "authorized_at_prior_revision" if authorized else None
         out.append(row)
     return out
+
+
+def decorate_entry(e, d):
+    """Fields for the optional decision keys. An entry for a decision that uses none of them is untouched."""
+    if "historical" in d:
+        e["historical"] = d["historical"]
+        e["authority_status"] = "historical, not current authority"
+    if "revisions" in d:
+        e["revisions"] = d["revisions"]
+    if "evidence_state" in d:
+        e["evidence_state"] = d["evidence_state"]
+        e["evidence_state_statement"] = EVIDENCE_STATE_NOTE
 
 
 def build_anchor_report(git, commit, at, register_dir, repo):
@@ -1296,8 +1502,16 @@ def build_anchor_report(git, commit, at, register_dir, repo):
         did = e["decision_id"]
         records = appl.get(did, []) if isinstance(did, str) else []
         e["applicability_records_citing"] = len(records)
+        dd = d if isinstance(d, dict) else None
         if e["class"] != "unchanged":
-            e["applicability"] = applicability_after(e, records)
+            e["applicability"] = applicability_after(e, records, dd)
+        elif dd is not None and ("historical" in dd or "revisions" in dd):
+            rows = [r for r in applicability_after(e, records, dd)
+                    if r["after_state"] in ("historical_pin", "at_prior_revision")]
+            if rows:
+                e["applicability"] = rows
+        if dd is not None:
+            decorate_entry(e, dd)
         e["_order"] = (str(did), i)
         entries.append(e)
     entries.sort(key=lambda e: e["_order"])
@@ -1346,15 +1560,17 @@ def render_anchors_md(rep):
         after = (e["after"] or {}).get("lines", "whole document" if e["after"] else "")
         cls = e["class"] or f"ERROR {e['error']['kind']}"
         dat = e["document_at_target"]
-        L.append(f"| `{e['decision_id']}` | {cls} | {before} | {after} | "
+        label = " (historical, not current authority)" if "historical" in e else ""
+        L.append(f"| `{e['decision_id']}`{label} | {cls} | {before} | {after} | "
                  f"{'yes' if e['owner_review_required'] else 'no'} | "
                  f"{(dat['path'] + (' (renamed)' if dat['renamed'] else '')) if dat else 'none'} |")
     skill = [e for e in rep["decisions"] if SKILL_NOTE in e["notes"]]
     if skill:
         L += ["", "## Skill documents", ""]
         L += [f"- `{e['decision_id']}` ({e['document']}): {SKILL_NOTE}" for e in skill]
+    L += optional_sections_md(rep["decisions"])
     for e in rep["decisions"]:
-        if e["class"] == "unchanged":
+        if e["class"] == "unchanged" and "applicability" not in e:
             continue
         L += ["", f"### `{e['decision_id']}`: {e['class'] or 'ERROR'}", ""]
         if e["error"]:
@@ -1365,6 +1581,38 @@ def render_anchors_md(rep):
     if rep["register_read_problems"]:
         L += ["", "## Register read problems", ""] + [f"- {p['where']}: {p['reason']}" for p in rep["register_read_problems"]]
     return "\n".join(L) + "\n"
+
+
+def optional_sections_md(entries):
+    """Sections for the optional decision keys; nothing at all when no decision uses one."""
+    L = []
+    hist = [e for e in entries if "historical" in e]
+    if hist:
+        L += ["", "## Historical decisions (not current authority)", ""]
+        for e in hist:
+            h = e["historical"]
+            if isinstance(h, dict):
+                succ = f"; superseded_by `{h['superseded_by']}`" if h.get("superseded_by") else ""
+                L.append(f"- `{e['decision_id']}`: historical, not current authority; reason: {h.get('reason')}; "
+                         f"marked by {h.get('marked_by')} on {h.get('marked_at')}{succ}")
+            else:
+                L.append(f"- `{e['decision_id']}`: historical, not current authority (marker is not an object)")
+    revs = [e for e in entries if "revisions" in e]
+    if revs:
+        L += ["", "## Decisions with listed prior revisions", ""]
+        for e in revs:
+            L.append(f"- `{e['decision_id']}`: current revision `{e['revision']}`")
+            for r in e["revisions"] if isinstance(e["revisions"], list) else []:
+                if isinstance(r, dict):
+                    L.append(f"  - prior revision `{r.get('revision')}`, lines {r.get('lines', 'whole document')}, "
+                             f"superseded_at {r.get('superseded_at')}: {r.get('reason')}")
+    free = [e for e in entries if "evidence_state" in e]
+    if free:
+        L += ["", "## Decisions with no linked finding (evidence_state)", ""]
+        for e in free:
+            L.append(f"- `{e['decision_id']}`: evidence_state {json.dumps(e['evidence_state'], sort_keys=True)}; "
+                     f"{EVIDENCE_STATE_NOTE}")
+    return L
 
 
 def decision_lines_md(e):
@@ -1461,6 +1709,221 @@ def cmd_anchors(args):
     return 0
 
 
+# ---------------------------------------------------------------------------
+# history: read-only comparison of two register states for preservation of decision history
+# ---------------------------------------------------------------------------
+
+SCHEMA_HISTORY = "register_history_report_v1"
+EXIT_HISTORY_VIOLATION = 1
+EXIT_HISTORY_CANNOT_RUN = 4  # a revision does not resolve, or a register state cannot be read
+HISTORY_LIMITATIONS = (
+    "Structural comparison of two register states only. It cannot authenticate who made a change or establish "
+    "that the decision owner gave approval. Every change to authorization.status or authorization.at that "
+    "register rule 2 structurally permits is listed under owner_review with owner_approval not_established, and "
+    "a pass does not turn any such change into an approved or authorized one. It does not validate either state "
+    "(use validate), does not check that anchored text still stands (use anchors), and does not compare a "
+    "decision's anchor, lines, document, owner or findings when its revision is unchanged. A decision or "
+    "applicability record added after the base is not checked, except that an added applicability record that "
+    "already carries a decided status is listed under owner_review. With no --at, the later state is the "
+    "register files on disk, which may be uncommitted and which this command does not pin."
+)
+MISSING = object()
+
+
+def history_state(git, commit, register_dir, repo):
+    """One register state: decisions by id, applicability records by id, input digests, read problems."""
+    decisions, appl, inputs, problems = read_register_at(git, commit, register_dir, repo)
+    problems = list(problems)
+    dec = {}
+    for i, d in enumerate(decisions):
+        if not (isinstance(d, dict) and isinstance(d.get("decision_id"), str)):
+            problems.append({"where": f"decisions.json[{i}]", "reason": "record is not an object with a decision_id"})
+        elif d["decision_id"] in dec:
+            problems.append({"where": f"decisions.json[{i}]", "reason": f"decision id {d['decision_id']} repeats"})
+        else:
+            dec[d["decision_id"]] = d
+    recs = {}
+    flat = sorted(((line, rec) for lst in appl.values() for line, rec, _sha in lst), key=lambda t: t[0])
+    for line, rec in flat:
+        aid = rec.get("applicability_id")
+        if not isinstance(aid, str):
+            problems.append({"where": f"applicability.jsonl:{line}", "reason": "record has no applicability_id"})
+        elif aid in recs:
+            problems.append({"where": f"applicability.jsonl:{line}", "reason": f"applicability id {aid} repeats"})
+        else:
+            recs[aid] = rec
+    return {"decisions": dec, "applicability": recs, "inputs": inputs, "problems": problems}
+
+
+def viol(name, detail, **ids):
+    return {"violation": name, **ids, "detail": detail}
+
+
+def effective_document(entry, decision):
+    return entry.get("document", decision.get("document"))
+
+
+def compare_decision(did, old, new):
+    out = []
+    ov, nv = old.get("revision"), new.get("revision")
+    old_revs = old.get("revisions") if isinstance(old.get("revisions"), list) else []
+    new_revs = new.get("revisions") if isinstance(new.get("revisions"), list) else []
+    # a listed revision is removed, edited or reordered
+    last_pos = -1
+    for entry in old_revs:
+        if not isinstance(entry, dict):
+            continue
+        rev = entry.get("revision")
+        found = [(i, r) for i, r in enumerate(new_revs) if isinstance(r, dict) and r.get("revision") == rev]
+        if not found:
+            out.append(viol("revision-removed", f"listed revision {rev!r} is absent from the later state", decision_id=did))
+            continue
+        pos, cur = found[0]
+        if cur != entry or effective_document(cur, new) != effective_document(entry, old):
+            out.append(viol("revision-edited", f"listed revision {rev!r} differs from the base entry", decision_id=did))
+        if pos < last_pos:
+            out.append(viol("revision-reordered", f"listed revision {rev!r} moved before an earlier listed revision",
+                            decision_id=did))
+        last_pos = max(last_pos, pos)
+    # the current revision changed: the old current entry must be the last listed revision, unchanged
+    if ov != nv:
+        last = new_revs[-1] if new_revs and isinstance(new_revs[-1], dict) else None
+        if last is None:
+            out.append(viol("current-revision-changed-without-history",
+                            f"current revision changed from {ov!r} to {nv!r} and the later state lists no revisions",
+                            decision_id=did))
+        else:
+            bad = [k for k, ok in (
+                ("revision", last.get("revision") == ov),
+                ("anchor", last.get("anchor") == old.get("anchor")),
+                ("lines", ("lines" in last) == ("lines" in old) and last.get("lines") == old.get("lines")),
+                ("document", effective_document(last, new) == old.get("document"))) if not ok]
+            if bad:
+                out.append(viol("current-revision-changed-without-history",
+                                f"current revision changed from {ov!r} to {nv!r}; the last listed revision does not "
+                                f"repeat the old current entry unchanged ({', '.join(bad)} differ)", decision_id=did))
+    # a historical marker is removed or edited
+    if "historical" in old:
+        if "historical" not in new:
+            out.append(viol("historical-marker-removed", "the historical marker is absent from the later state",
+                            decision_id=did))
+        elif new["historical"] != old["historical"]:
+            out.append(viol("historical-marker-edited", "the historical marker differs from the base", decision_id=did))
+    return out
+
+
+def compare_applicability(aid, old, new):
+    """(violations, transition or None) for one applicability record present in both states."""
+    out = []
+    ids = {"applicability_id": aid, "decision_id": old.get("decision_id")}
+    oa, na = old.get("authorization"), new.get("authorization")
+    changed = sorted(k for k in set(old) | set(new)
+                     if k != "authorization" and old.get(k, MISSING) != new.get(k, MISSING))
+    transition = False
+    if isinstance(oa, dict) and isinstance(na, dict):
+        if oa.get("owner", MISSING) != na.get("owner", MISSING):
+            out.append(viol("authorization-owner-changed", "authorization.owner differs from the base", **ids))
+        if "at" in oa and "at" not in na:
+            out.append(viol("authorization-at-removed", "authorization.at is present at the base and absent later", **ids))
+        changed += sorted(f"authorization.{k}" for k in (set(oa) | set(na)) - {"status", "at", "owner"}
+                          if oa.get(k, MISSING) != na.get(k, MISSING))
+        transition = oa.get("status", MISSING) != na.get("status", MISSING) or oa.get("at", MISSING) != na.get("at", MISSING)
+    elif oa != na:
+        changed.append("authorization")
+    if changed:
+        out.append(viol("applicability-record-changed",
+                        "fields other than authorization.status and authorization.at changed: " + ", ".join(changed), **ids))
+    entry = None
+    if transition:
+        entry = {"kind": "authorization_changed", "applicability_id": aid, "decision_id": old.get("decision_id"),
+                 "finding": old.get("finding"), "before": oa, "after": na, "owner_approval": "not_established",
+                 "structural_check": "permitted by register rule 2" if not out else "not permitted, see violations"}
+    return out, entry
+
+
+def compare_states(old, new):
+    violations, review = [], []
+    for label, st in (("base", old), ("later", new)):
+        for pr in st["problems"]:
+            violations.append(viol("unreadable-record", f"{label} state, {pr['where']}: {pr['reason']}"))
+    gone = sorted(set(old["decisions"]) - set(new["decisions"]))
+    added = {k: new["decisions"][k] for k in sorted(set(new["decisions"]) - set(old["decisions"]))}
+    for did in gone:
+        o = old["decisions"][did]
+        target = next((k for k, d in added.items() if all(d.get(f, MISSING) == o.get(f, MISSING)
+                                                          for f in ("document", "anchor", "revision", "findings"))), None)
+        if target is not None:
+            violations.append(viol("decision-id-renamed", f"decision id {did} is absent and {target} carries the same "
+                                   "document, anchor, revision and findings", decision_id=did))
+        else:
+            violations.append(viol("decision-id-removed", f"decision id {did} is absent from the later state",
+                                   decision_id=did))
+    for did in sorted(set(old["decisions"]) & set(new["decisions"])):
+        violations += compare_decision(did, old["decisions"][did], new["decisions"][did])
+    for aid in sorted(old["applicability"]):
+        o = old["applicability"][aid]
+        if aid not in new["applicability"]:
+            violations.append(viol("applicability-record-removed", f"applicability record {aid} is absent from the later state",
+                                   applicability_id=aid, decision_id=o.get("decision_id")))
+            continue
+        v, entry = compare_applicability(aid, o, new["applicability"][aid])
+        violations += v
+        if entry:
+            review.append(entry)
+    for aid in sorted(set(new["applicability"]) - set(old["applicability"])):
+        n = new["applicability"][aid]
+        auth = n.get("authorization")
+        if isinstance(auth, dict) and auth.get("status") not in (None, "pending"):
+            review.append({"kind": "added_with_decided_status", "applicability_id": aid,
+                           "decision_id": n.get("decision_id"), "finding": n.get("finding"), "before": None,
+                           "after": auth, "owner_approval": "not_established",
+                           "structural_check": "record added after the base; its status was not compared"})
+    return violations, review
+
+
+def cmd_history(args):
+    git = AnchorGit(args.repo)
+    rel = os.path.relpath(os.path.realpath(args.register), os.path.realpath(args.repo))
+    if rel == ".." or rel.startswith(".." + os.sep) or os.path.isabs(rel):
+        print(f"history: refused, register directory {args.register} is outside the repository {args.repo}", file=sys.stderr)
+        return 2
+    base = git.commit_id(args.base)
+    if base is None:
+        print(f"history: cannot run, --base {args.base!r} does not resolve to a commit in {args.repo}", file=sys.stderr)
+        return EXIT_HISTORY_CANNOT_RUN
+    later = None
+    if args.at is not None:
+        later = git.commit_id(args.at)
+        if later is None:
+            print(f"history: cannot run, --at {args.at!r} does not resolve to a commit in {args.repo}", file=sys.stderr)
+            return EXIT_HISTORY_CANNOT_RUN
+    try:
+        old = history_state(git, base, args.register, args.repo)
+        new = history_state(git, later, args.register, args.repo)
+    except ValueError as exc:
+        print(f"history: cannot run, {exc}", file=sys.stderr)
+        return EXIT_HISTORY_CANNOT_RUN
+    violations, review = compare_states(old, new)
+    report = {
+        "schema": SCHEMA_HISTORY,
+        "authority": "read-only comparison of two register states; the register owner decides what any result means",
+        "statement": "No register record was changed and nothing was written by this command.",
+        "base": {"requested": args.base, "commit": base, "inputs": old["inputs"]},
+        "later": {"requested": args.at, "commit": later,
+                  "source": "commit" if later else "register files on disk (not pinned)", "inputs": new["inputs"]},
+        "violations": violations,
+        "owner_review": review,
+        "summary": {"violations": len(violations), "owner_review": len(review),
+                    "decisions_in_base": len(old["decisions"]), "decisions_in_later": len(new["decisions"]),
+                    "applicability_in_base": len(old["applicability"]),
+                    "applicability_in_later": len(new["applicability"])},
+        "limitations": HISTORY_LIMITATIONS,
+        "tool": {"register_py_sha256": sha256_file(os.path.abspath(__file__))},
+    }
+    sys.stdout.write(dumps(report))
+    return EXIT_HISTORY_VIOLATION if violations else 0
+
+
 def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     default_repo = os.path.abspath(os.path.join(here, "..", ".."))
@@ -1487,12 +1950,16 @@ def main(argv=None):
     common(a)
     a.add_argument("--out", required=True)
     a.add_argument("--at", default="HEAD", help="commit to check against (default HEAD), resolved once")
+    h = sub.add_parser("history", help="read-only: compare two register states for preserved decision history")
+    common(h)
+    h.add_argument("--base", required=True, help="commit holding the earlier register state")
+    h.add_argument("--at", default=None, help="commit holding the later state (default: the register files on disk)")
     args = ap.parse_args(argv)
     args.repo = os.path.abspath(args.repo)
     if args.register is None:
         args.register = os.path.join(args.repo, "metrics", "register")
     return {"validate": cmd_validate, "build": cmd_build, "nominate": cmd_nominate,
-            "anchors": cmd_anchors}[args.cmd](args)
+            "anchors": cmd_anchors, "history": cmd_history}[args.cmd](args)
 
 
 if __name__ == "__main__":
