@@ -68,12 +68,20 @@ only, no network, no model calls; it writes only to `--out`.
   them, output and exit code are those of the script before they existed.
 - `build --out DIR`: `current-knowledge.json` and `current-knowledge.md`. Per finding: study,
   lifecycle, latest judgment per axis, standing derived from events, events, and per-decision
-  applicability with authorization status. Per question: linked findings. Deterministic.
+  applicability with authorization status. Per question: linked findings. Deterministic. For a
+  decision that uses `revisions` or `historical` (a register using neither key is unchanged), a
+  row whose record cites a listed prior revision is labelled as a prior revision, names the
+  decision's current revision and says the authorization is not carried to it (`.json`:
+  `at_prior_revision`, `current_decision_revision`), and a row on a decision carrying
+  `historical` is labelled "historical pin, not current authority" (`.json`: `historical_pin`).
+  `build` does not render a decision's `evidence_state`.
 - `nominate --out FILE [--claims-host PATH --startup PATH --startup-sha256 HEX]`: per event, the
   decisions to review, applicability records, and claim revisions. Without the claims options,
   claim revisions are reported as `not_queried`. Disposition is always `review_nominated`. Reach
   is unchanged by the optional keys: a reached historical decision carries `historical: true` and
-  its reason, an applicability record at a listed prior revision carries `at_prior_revision`, and
+  its reason, an applicability record at a listed prior revision carries `at_prior_revision`, an
+  applicability record on a historical decision carries `historical: true` (whether or not that
+  decision is reached in the nomination), and
   a decision with `evidence_state` lists no finding, so it is never reached and appears only
   under `evidence_free_decisions` (present only when one exists), with its state verbatim.
 - `anchors --out DIR [--at COMMIT]`: reports whether each decision's anchored text still stands
@@ -143,7 +151,7 @@ only, no network, no model calls; it writes only to `--out`.
   removed or edited (`historical-marker-removed`, `historical-marker-edited`); an applicability
   record is removed (`applicability-record-removed`) or changed anywhere other than
   `authorization.status` and `authorization.at` (`applicability-record-changed`); `authorization.owner`
-  changes (`authorization-owner-changed`); `authorization.at` is removed (`authorization-at-removed`);
+  changes (`authorization-owner-changed`); `authorization.at`, non-empty text at the base, is absent, null, empty or not text later (`authorization-at-removed`);
   or a record of either state cannot be read (`unreadable-record`). A change limited to
   `authorization.status` and/or `authorization.at`, including adding `at` and including a decided
   status moving back such as `authorized` to `pending`, is structurally permitted by rule 2 and
@@ -213,8 +221,8 @@ When the current revision changes, the old current entry (`revision`, `anchor`, 
 `document`) is appended unchanged as the last `revisions` entry; text that only moves needs no
 new revision. A decision with `findings: []` must carry `evidence_state`, either
 `{"state": "none_linked"}` or `{"state": "none_found", corpus: {id, sha256 | pin},
-search_scope, coverage, assessor, date}`; neither asserts that no evidence exists, and every view
-says so.
+search_scope, coverage, assessor, date}`; neither asserts that no evidence exists, and `anchors` and
+`nominate` say so (`build` does not render decision state).
 
 **Relation vocabulary.** `supports | constrains | challenges | does_not_apply_directly |
 not_established`. Pass 1 says the M22 replay "informs" the context-boundary levels; there is no

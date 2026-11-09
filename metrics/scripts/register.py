@@ -401,7 +401,7 @@ def check_evidence_state(e, git, loc, d):
         return
     if state == "none_linked":
         for k in sorted(set(s) - {"state"}):
-            if not GLOBAL_FIELD.search(k):
+            if k in EVIDENCE_NONE_FOUND_KEYS:  # a key outside the closed set was already reported once by check_keys
                 e.add("unknown-key", loc, f"key {k!r} is not allowed with state none_linked")
         return
     for k in ("search_scope", "coverage", "assessor"):
@@ -749,6 +749,20 @@ def k_sort(alias):
     return (m.group(1), int(m.group(2)), alias) if m else (alias, 0, alias)
 
 
+def applicability_labels(d, a):
+    """Keys added to a `build` applicability row only when its decision uses `revisions` or `historical`.
+
+    A record at a listed prior revision is labelled with the decision's current revision, and its authorization is
+    not carried to it; a record on a `historical` decision is labelled a historical pin, never current authority."""
+    out = {}
+    if at_prior_revision(d, a):
+        out["at_prior_revision"] = True
+        out["current_decision_revision"] = d["revision"]
+    if "historical" in d:
+        out["historical_pin"] = True
+    return out
+
+
 def derive(reg):
     """The pure derivation shared by build and nominate."""
     findings = reg.findings()
@@ -803,6 +817,7 @@ def derive(reg):
                  "document": dec_by_id[a["decision_id"]]["document"],
                  "anchor": dec_by_id[a["decision_id"]]["anchor"],
                  "relation": a["relation"], "authorization": a["authorization"]["status"]}
+                | applicability_labels(dec_by_id[a["decision_id"]], a)
                 for a in appl if a["finding"] == fid],
             "listed_in_decisions": sorted(d["decision_id"] for d in decisions if fid in d["findings"]),
         }
@@ -881,8 +896,14 @@ def render_md(doc):
         if r["applicability"]:
             L.append("- Applicability:")
             for a in r["applicability"]:
+                note = ""
+                if a.get("at_prior_revision"):
+                    note += (f" (prior revision; the decision's current revision is {a['current_decision_revision']}, "
+                             f"and this authorization is not carried to it)")
+                if a.get("historical_pin"):
+                    note += " (historical pin, not current authority)"
                 L.append(f"  - {a['relation']} | {a['document']} ({a['anchor']}) at {a['decision_revision']} | "
-                         f"authorization: {a['authorization']} | {a['applicability_id']}")
+                         f"authorization: {a['authorization']} | {a['applicability_id']}{note}")
         else:
             L.append("- Applicability: none recorded")
         L.append("")
@@ -961,6 +982,7 @@ def cmd_nominate(args):
                  "decision_revision": a["decision_revision"], "relation": a["relation"],
                  "authorization": a["authorization"]["status"]}
                 | ({"at_prior_revision": True} if at_prior_revision(by_id.get(a["decision_id"]), a) else {})
+                | ({"historical": True} if "historical" in by_id.get(a["decision_id"], {}) else {})
                 for a in appl if a["finding"] in (subj, by)]
         refs = [m for m in mats if m["finding"] in (subj, by)]
         if all(claims):
@@ -1823,8 +1845,9 @@ def compare_applicability(aid, old, new):
     if isinstance(oa, dict) and isinstance(na, dict):
         if oa.get("owner", MISSING) != na.get("owner", MISSING):
             out.append(viol("authorization-owner-changed", "authorization.owner differs from the base", **ids))
-        if "at" in oa and "at" not in na:
-            out.append(viol("authorization-at-removed", "authorization.at is present at the base and absent later", **ids))
+        if is_text(oa.get("at")) and not is_text(na.get("at")):
+            out.append(viol("authorization-at-removed",
+                            "authorization.at is non-empty text at the base and absent, null, empty or not text later", **ids))
         changed += sorted(f"authorization.{k}" for k in (set(oa) | set(na)) - {"status", "at", "owner"}
                           if oa.get(k, MISSING) != na.get(k, MISSING))
         transition = oa.get("status", MISSING) != na.get("status", MISSING) or oa.get("at", MISSING) != na.get("at", MISSING)
