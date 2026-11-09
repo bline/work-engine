@@ -14,10 +14,14 @@ it changes a decision. Decision owners decide.
    in-place edit: the decision owner sets `authorization.status` (and `at`) on a record. Every
    other change to an applicability record is a new record. `studies/`, `questions.json`,
    `decisions.json` and `materialized.jsonl` are edited in place and reviewed as diffs; the
-   repository history is their only record of the prior state. Because `validate` requires an
-   applicability record's `decision_revision` to equal the decision's current `revision`, a
-   revision change to a decision means rewriting or re-adding its records; the historical
-   decision record `...-at-df288c3d` below is the workaround for one case.
+   repository history is their only record of the prior state. An applicability record's
+   `decision_revision` must be the decision's current `revision` or a revision listed in that
+   decision's `revisions` (see Decision revisions), so a decision can move to a new revision
+   without rewriting its records: the old current entry is kept in `revisions`, the records stay
+   on the revision they cite, and an authorization at an earlier revision stays an authorized
+   historical record for that revision and never authorizes its successor. `register.py history`
+   compares two register states and fails when a decision ID, a listed revision, a historical
+   marker or an applicability record is lost or rewritten; it cannot tell who made a change.
 3. The current-knowledge view is generated, never edited. `register.py build` regenerates it
    byte for byte.
 4. `records/` is never edited. A correction to a record is a new record elsewhere.
@@ -29,7 +33,11 @@ it changes a decision. Decision owners decide.
    in-repo summary. Sealed files are cited by path and digest only.
 6. An unknown is never entered as a value. Unassessed axes carry no judgment record and the view
    prints `not established`. A decision whose owner no source names says so in its `owner` text.
-7. No record carries a global usefulness or obsolescence field; such keys are rejected.
+7. No record carries a global usefulness or obsolescence field; such keys are rejected, at any
+   depth the closed key sets reach: on a decision, inside `historical`, inside a `revisions`
+   entry and inside `evidence_state`. `historical` is not such a field. It says that one decision
+   record deliberately pins a past revision and describes that pin's role only; it never says the
+   cited work is obsolete or not useful, and it never makes the record current authority.
 8. Nomination reports; it never invalidates, reopens, retires or edits anything.
 
 ## Files
@@ -55,13 +63,19 @@ only, no network, no model calls; it writes only to `--out`.
 - `validate [--check-offrepo]`: closed key sets, unique ids, resolving references, repo pins by
   `git rev-parse`, off-repo shape. `--check-offrepo` also hashes existing off-repo files and
   reports `MATCH`, `MISMATCH`, `UNHASHED` or `ABSENT`; absence is reported and is not a violation,
-  a digest mismatch is. Exit 0 on pass, 1 on violations.
+  a digest mismatch is. Exit 0 on pass, 1 on violations. A decision may carry the optional keys
+  `historical`, `revisions` and `evidence_state` (Conventions); on a register that uses none of
+  them, output and exit code are those of the script before they existed.
 - `build --out DIR`: `current-knowledge.json` and `current-knowledge.md`. Per finding: study,
   lifecycle, latest judgment per axis, standing derived from events, events, and per-decision
   applicability with authorization status. Per question: linked findings. Deterministic.
 - `nominate --out FILE [--claims-host PATH --startup PATH --startup-sha256 HEX]`: per event, the
   decisions to review, applicability records, and claim revisions. Without the claims options,
-  claim revisions are reported as `not_queried`. Disposition is always `review_nominated`.
+  claim revisions are reported as `not_queried`. Disposition is always `review_nominated`. Reach
+  is unchanged by the optional keys: a reached historical decision carries `historical: true` and
+  its reason, an applicability record at a listed prior revision carries `at_prior_revision`, and
+  a decision with `evidence_state` lists no finding, so it is never reached and appears only
+  under `evidence_free_decisions` (present only when one exists), with its state verbatim.
 - `anchors --out DIR [--at COMMIT]`: reports whether each decision's anchored text still stands
   where the register says, and writes `anchors.json` and `anchors.md` to `--out` only. It changes
   nothing: nothing is re-anchored, no record is edited, no authorization is transferred, and the
@@ -103,6 +117,45 @@ only, no network, no model calls; it writes only to `--out`.
   (`.git`, a linked worktree's git directory, the common git directory), or an output path that is a
   symbolic link (the command never writes through a symbolic link: files are created under a fresh
   name in the real `--out` directory and renamed into place). Deterministic: two runs on the same inputs are byte-identical.
+  The report records the sha256 of the `register.py` that wrote it, so reports from two different
+  script versions differ in that one field even when nothing else differs. Classification is
+  unchanged by the optional decision keys, which only add labels. A decision with a `historical`
+  marker is listed as "historical, not current authority", and every applicability row that cites
+  it has after-state `historical_pin` (never `carried_unchanged`; an authorized record is
+  `authorized_at_prior_revision`), including when its class is `unchanged`. For a decision with
+  `revisions`, a row citing a listed prior revision has after-state `at_prior_revision` (again
+  `authorized_at_prior_revision` when authorized), whatever the class of the current revision;
+  rows at the current revision of an `unchanged` decision are not listed, as before. A decision
+  with `evidence_state` is reported with the state verbatim and the statement that it is not
+  evidence of absence. The fixed note on `...-at-df288c3d` (name-keyed, no field marks it) applies
+  only while that record has no `historical` marker; once it has one, the marker's own note
+  replaces it.
+- `history --base REV [--at REV2]`: read-only. Compares the register at `REV` with the register
+  at `REV2`, or, without `--at`, with the register files on disk as `validate` reads them (not
+  pinned, possibly uncommitted). It uses the same isolated git environment as `anchors` and writes
+  nothing, not even to `--out`; it is not part of `validate`. It prints one JSON report on stdout
+  (sorted keys) with `violations`, `owner_review` and a fixed `limitations` statement. It fails
+  (exit 1, each violation named) when a decision ID disappears (`decision-id-removed`) or is
+  renamed (`decision-id-renamed`); a listed revision is removed, edited or reordered
+  (`revision-removed`, `revision-edited`, `revision-reordered`); a decision's `revision` changes
+  without its old current entry (revision, anchor, lines, document) appearing unchanged as the
+  last `revisions` entry (`current-revision-changed-without-history`); a `historical` marker is
+  removed or edited (`historical-marker-removed`, `historical-marker-edited`); an applicability
+  record is removed (`applicability-record-removed`) or changed anywhere other than
+  `authorization.status` and `authorization.at` (`applicability-record-changed`); `authorization.owner`
+  changes (`authorization-owner-changed`); `authorization.at` is removed (`authorization-at-removed`);
+  or a record of either state cannot be read (`unreadable-record`). A change limited to
+  `authorization.status` and/or `authorization.at`, including adding `at` and including a decided
+  status moving back such as `authorized` to `pending`, is structurally permitted by rule 2 and
+  passes, but each is listed under `owner_review` with the record, the complete authorization
+  object before and after, and `owner_approval: "not_established"`. The command cannot
+  authenticate who made a change, so a pass is never a statement that the owner gave approval, and
+  a moving-back transition is not reported as a withdrawal. An applicability record added after
+  the base is not compared, except that one born with a decided status is listed under
+  `owner_review`. It does not check a decision's anchor, lines, document, owner or findings while
+  its revision is unchanged. Exit codes: 0 pass, 1 violation, 2 argument error (including a
+  `--register` outside the repository), 4 a revision does not resolve or a register state cannot
+  be read (a message on stderr, nothing on stdout).
 
 ## Conventions this register adopts
 
@@ -138,12 +191,30 @@ qualification of the fit. The event basis says so.
 **Historical decision revisions.** `model-selection.claude-host-builder-rows-at-df288c3d` pins a
 superseded revision of the Claude-host builder rows, the one that cited full-battery counts
 before the traceability correction reached the document. It exists so a correction reaches the
-revision that relied on the corrected reading, not only the current one.
+revision that relied on the corrected reading, not only the current one. A decision record may
+say so itself with an optional `historical` object: `{reason, marked_by, marked_at}` and an
+optional `superseded_by` (the ID of another, existing decision). The marker is data about the
+pin: it never makes the decision current authority, and `nominate` still reaches the decision
+and labels it `historical: true` with the reason. The marker must not be removed or edited once
+recorded (`history` fails on both). Decision IDs stay stable; a historical record keeps its ID.
 
 **Decision revisions.** Taken from the nominations file where it states one (`1a1cb443` for the
 quota row, `d80dd242` for the dogfood plan status line and the Pi acceptance code), otherwise the
-last commit that changed the anchored lines (`git log -L`). The decision's own `revision` is the
-only revision applicability may cite (`decision-revision-mismatch` otherwise).
+last commit that changed the anchored lines (`git log -L`). A decision's `revision` is its
+current revision. An optional `revisions` list holds its earlier revisions, oldest first; each
+entry has `revision` (`git:<commit>`), `anchor`, `superseded_at` (a date) and `reason`, and
+optionally `lines` and `document` (default: the record's `document`). Each entry resolves like
+the decision's own pin (commit, document at that commit, lines inside the file), differs from
+the current revision and from every other entry, and is an ancestor of the next entry and of the
+current revision. Applicability may cite the current revision or a listed one
+(`decision-revision-mismatch` otherwise, with its usual message); a record that cites a listed
+revision is at a prior revision, and its authorization is never carried to the current one.
+When the current revision changes, the old current entry (`revision`, `anchor`, `lines`,
+`document`) is appended unchanged as the last `revisions` entry; text that only moves needs no
+new revision. A decision with `findings: []` must carry `evidence_state`, either
+`{"state": "none_linked"}` or `{"state": "none_found", corpus: {id, sha256 | pin},
+search_scope, coverage, assessor, date}`; neither asserts that no evidence exists, and every view
+says so.
 
 **Relation vocabulary.** `supports | constrains | challenges | does_not_apply_directly |
 not_established`. Pass 1 says the M22 replay "informs" the context-boundary levels; there is no
