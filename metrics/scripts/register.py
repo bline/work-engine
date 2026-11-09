@@ -763,8 +763,57 @@ def applicability_labels(d, a):
     return out
 
 
-def derive(reg):
-    """The pure derivation shared by build and nominate."""
+HISTORICAL_LABEL = "historical source location; not a current operational location or authority"
+
+
+def historical_source(d, a, git):
+    """The historical source location of an applicability record at a listed prior revision of decision d.
+
+    Taken only from the one `revisions` entry whose revision is the record's `decision_revision`; the entry's
+    commit is resolved through git (an AnchorGit, the pinned isolated access). The decision's current document,
+    anchor and lines are never read, except `document` as the S1 schema default for an entry that omits it, which
+    is marked `schema_default`. When no single entry matches or its commit does not resolve, the result is
+    `status: not_established` with no location."""
+    rev = a.get("decision_revision")
+    unresolved = {"revision": rev, "status": "not_established", "label": HISTORICAL_LABEL}
+    revs = d.get("revisions") if isinstance(d, dict) else None
+    entries = [r for r in revs if isinstance(r, dict) and r.get("revision") == rev] if isinstance(revs, list) else []
+    m = REVISION.match(rev) if isinstance(rev, str) else None
+    if len(entries) != 1 or not m or git is None:
+        return unresolved
+    r = entries[0]
+    commit = git.commit_by_hex(m.group(1))
+    if commit is None:
+        return unresolved
+    if "document" in r:
+        doc, basis = r["document"], "entry"
+    else:
+        doc, basis = d.get("document"), "schema_default"
+    if not is_text(doc) or not is_text(r.get("anchor")):
+        return unresolved
+    return {"revision": r["revision"], "commit": commit, "document": doc, "document_basis": basis,
+            "anchor": r["anchor"], "lines": r.get("lines"), "label": HISTORICAL_LABEL, "status": "resolved"}
+
+
+def build_applicability_row(a, d, git):
+    """One applicability row of the `build` output.
+
+    A row at a listed prior revision carries no current location (no top-level `document` or `anchor`) and shows
+    its `historical_source` instead; every other row is as before."""
+    row = {"applicability_id": a["applicability_id"], "decision_id": a["decision_id"],
+           "decision_revision": a["decision_revision"], "relation": a["relation"],
+           "authorization": a["authorization"]["status"]}
+    if at_prior_revision(d, a):
+        row["historical_source"] = historical_source(d, a, git)
+    else:
+        row["document"] = d["document"]
+        row["anchor"] = d["anchor"]
+    return row | applicability_labels(d, a)
+
+
+def derive(reg, git=None):
+    """The pure derivation shared by build and nominate. `git` (an AnchorGit) resolves the historical source of a
+    row at a prior revision; nominate does not use those rows and passes none."""
     findings = reg.findings()
     events = sorted((ev for _, ev in reg.events), key=lambda x: x["event_id"])
     decisions = sorted(reg.decisions, key=lambda d: d["decision_id"])
@@ -812,12 +861,7 @@ def derive(reg):
             "events": sorted(ev["event_id"] for ev in events
                              if fid in (ev["subject_finding"], ev["by_finding"])),
             "applicability": [
-                {"applicability_id": a["applicability_id"], "decision_id": a["decision_id"],
-                 "decision_revision": a["decision_revision"],
-                 "document": dec_by_id[a["decision_id"]]["document"],
-                 "anchor": dec_by_id[a["decision_id"]]["anchor"],
-                 "relation": a["relation"], "authorization": a["authorization"]["status"]}
-                | applicability_labels(dec_by_id[a["decision_id"]], a)
+                build_applicability_row(a, dec_by_id[a["decision_id"]], git)
                 for a in appl if a["finding"] == fid],
             "listed_in_decisions": sorted(d["decision_id"] for d in decisions if fid in d["findings"]),
         }
@@ -846,7 +890,7 @@ def cmd_build(args):
             print(f"ERROR {name} {loc}: {msg}")
         print("build: refused, the register does not validate")
         return 1
-    findings, events, decisions, appl, per = derive(reg)
+    findings, events, decisions, appl, per = derive(reg, AnchorGit(args.repo))
     k_index = {}
     for fid, row in per.items():
         for alias in row["aliases"]:
@@ -870,6 +914,18 @@ def cmd_build(args):
         fh.write(render_md(doc))
     print(f"build: wrote current-knowledge.json and current-knowledge.md to {args.out}")
     return 0
+
+
+def historical_source_md(h):
+    """The location part of a `build` .md applicability line at a prior revision."""
+    label = "historical source location, not a current operational location or authority"
+    if h["status"] != "resolved":
+        return f"{label}: historical source: not_established (revision {h['revision']})"
+    where = f"{h['document']} ({h['anchor']})"
+    where += f", lines {h['lines']}" if h["lines"] is not None else ", no line range recorded in the revision entry"
+    if h["document_basis"] == "schema_default":
+        where += f" (document path by schema default: the decision's path, read at {h['revision']})"
+    return f"{label}: {where} at {h['revision']} ({h['commit']})"
 
 
 def render_md(doc):
@@ -902,7 +958,11 @@ def render_md(doc):
                              f"and this authorization is not carried to it)")
                 if a.get("historical_pin"):
                     note += " (historical pin, not current authority)"
-                L.append(f"  - {a['relation']} | {a['document']} ({a['anchor']}) at {a['decision_revision']} | "
+                if "historical_source" in a:
+                    where = historical_source_md(a["historical_source"])
+                else:
+                    where = f"{a['document']} ({a['anchor']}) at {a['decision_revision']}"
+                L.append(f"  - {a['relation']} | {where} | "
                          f"authorization: {a['authorization']} | {a['applicability_id']}{note}")
         else:
             L.append("- Applicability: none recorded")

@@ -68,13 +68,25 @@ only, no network, no model calls; it writes only to `--out`.
   them, output and exit code are those of the script before they existed.
 - `build --out DIR`: `current-knowledge.json` and `current-knowledge.md`. Per finding: study,
   lifecycle, latest judgment per axis, standing derived from events, events, and per-decision
-  applicability with authorization status. Per question: linked findings. Deterministic. For a
-  decision that uses `revisions` or `historical` (a register using neither key is unchanged), a
-  row whose record cites a listed prior revision is labelled as a prior revision, names the
-  decision's current revision and says the authorization is not carried to it (`.json`:
-  `at_prior_revision`, `current_decision_revision`), and a row on a decision carrying
-  `historical` is labelled "historical pin, not current authority" (`.json`: `historical_pin`).
-  `build` does not render a decision's `evidence_state`.
+  applicability. Per question: linked findings. Deterministic. Each applicability row states the
+  decision id, the decision revision the record cites, the relation and the authorization status;
+  a row at the decision's current revision also states the decision's current document and anchor.
+  A register that uses neither `revisions` nor `historical` is unchanged. For a decision that uses
+  either key: a row whose record cites a listed prior revision is labelled as a prior revision,
+  names the decision's current revision and says the authorization is not carried to it (`.json`:
+  `at_prior_revision`, `current_decision_revision`); it carries no current location, only the
+  historical source location from the one `revisions` entry that has the cited revision (`.json`:
+  `historical_source` with `revision`, the resolved full `commit`, `document`, `document_basis`,
+  `anchor`, `lines` (null when the entry has none), a label and `status`; `.md`: the label
+  "historical source location, not a current operational location or authority" before the
+  entry's document, anchor and line range). The document is the entry's own (`document_basis`
+  `entry`) or, when the entry omits it, the decision's document path by schema default
+  (`schema_default`, said so in the `.md` line); the anchor and lines come only from the entry.
+  When no single entry matches or its commit does not resolve, the row reports `status:
+  "not_established"` and shows no location. A row on a decision carrying `historical` is labelled
+  "historical pin, not current authority" (`.json`: `historical_pin`). Historical source locations
+  are provenance, not current operational locations or authority. `build` does not render a
+  decision's `evidence_state`.
 - `nominate --out FILE [--claims-host PATH --startup PATH --startup-sha256 HEX]`: per event, the
   decisions to review, applicability records, and claim revisions. Without the claims options,
   claim revisions are reported as `not_queried`. Disposition is always `review_nominated`. Reach
@@ -222,7 +234,7 @@ When the current revision changes, the old current entry (`revision`, `anchor`, 
 new revision. A decision with `findings: []` must carry `evidence_state`, either
 `{"state": "none_linked"}` or `{"state": "none_found", corpus: {id, sha256 | pin},
 search_scope, coverage, assessor, date}`; neither asserts that no evidence exists, and `anchors` and
-`nominate` say so (`build` does not render decision state).
+`nominate` say so (`build` does not render `evidence_state`).
 
 **Relation vocabulary.** `supports | constrains | challenges | does_not_apply_directly |
 not_established`. Pass 1 says the M22 replay "informs" the context-boundary levels; there is no
