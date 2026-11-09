@@ -795,26 +795,45 @@ class RealRegisterTests(unittest.TestCase):
         old = os.path.join(self.base, "register_base.py")
         with open(old, "wb") as fh:
             fh.write(git(REAL_REPO, "show", f"{BASE_COMMIT}:metrics/scripts/register.py", raw=True))
-        v_old, v_new = (self.cli(s, "validate", "--repo", REAL_REPO) for s in (old, SCRIPT))
-        self.assertEqual((v_old.returncode, v_old.stdout), (v_new.returncode, v_new.stdout))
-        self.assertEqual(v_new.returncode, 0, v_new.stdout)
-        self.assertIn("validate: ok", v_new.stdout)
-        for cmd, names in (("build", ("current-knowledge.json", "current-knowledge.md")), ("nominate", None)):
-            outs = []
-            for tag, s in (("old", old), ("new", SCRIPT)):
-                out = os.path.join(self.base, f"{cmd}-{tag}")
+        v_real = self.cli(SCRIPT, "validate", "--repo", REAL_REPO)
+        self.assertEqual(v_real.returncode, 0, v_real.stdout)
+        # A1 compared the two scripts on the live register. The base script rejects the optional `historical` key
+        # (A3 S2 markers), so the comparison runs on the register pinned at BASE_COMMIT and on the live register with
+        # only that key removed from decisions.json; the markers' own effect is tested in test_register_history.py
+        pinned = os.path.join(self.base, "pinned")
+        os.makedirs(pinned)
+        tar = subprocess.run(["git", "-C", REAL_REPO, "archive", BASE_COMMIT, "metrics/register"], capture_output=True,
+                             check=True)
+        subprocess.run(["tar", "-x", "-C", pinned], input=tar.stdout, check=True)
+        unmarked = os.path.join(self.base, "live-unmarked")
+        shutil.copytree(os.path.join(REAL_REPO, "metrics", "register"), unmarked)
+        with open(os.path.join(unmarked, "decisions.json"), encoding="utf-8") as fh:
+            decisions = json.load(fh)
+        for d in decisions:
+            d.pop("historical", None)
+        with open(os.path.join(unmarked, "decisions.json"), "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(decisions, indent=1, sort_keys=True) + "\n")
+        for rtag, reg in (("pinned", os.path.join(pinned, "metrics", "register")), ("live-unmarked", unmarked)):
+            v_old, v_new = (self.cli(s, "validate", "--repo", REAL_REPO, "--register", reg) for s in (old, SCRIPT))
+            self.assertEqual((v_old.returncode, v_old.stdout), (v_new.returncode, v_new.stdout), rtag)
+            self.assertEqual(v_new.returncode, 0, v_new.stdout)
+            self.assertIn("validate: ok", v_new.stdout)
+            for cmd, names in (("build", ("current-knowledge.json", "current-knowledge.md")), ("nominate", None)):
+                outs = []
+                for tag, s in (("old", old), ("new", SCRIPT)):
+                    out = os.path.join(self.base, f"{rtag}-{cmd}-{tag}")
+                    if names is None:
+                        out = out + ".json"
+                    p = self.cli(s, cmd, "--repo", REAL_REPO, "--register", reg, "--out", out)
+                    self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+                    outs.append((p.stdout.replace(out, "OUT"), out))
+                self.assertEqual(outs[0][0], outs[1][0], (rtag, cmd))
                 if names is None:
-                    out = out + ".json"
-                p = self.cli(s, cmd, "--repo", REAL_REPO, "--out", out)
-                self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-                outs.append((p.stdout.replace(out, "OUT"), out))
-            self.assertEqual(outs[0][0], outs[1][0])
-            if names is None:
-                self.assertEqual(slurp(outs[0][1]), slurp(outs[1][1]))
-            else:
-                for n in names:
-                    self.assertEqual(slurp(os.path.join(outs[0][1], n)), slurp(os.path.join(outs[1][1], n)))
-
+                    self.assertEqual(slurp(outs[0][1]), slurp(outs[1][1]), (rtag, cmd))
+                else:
+                    for n in names:
+                        self.assertEqual(slurp(os.path.join(outs[0][1], n)), slurp(os.path.join(outs[1][1], n)),
+                                         (rtag, cmd, n))
 
 if __name__ == "__main__":
     unittest.main()

@@ -1122,6 +1122,26 @@ def have(commit):
                           capture_output=True).returncode == 0
 
 
+# A3 S2: the two decisions the user approved marking historical (user approval 2026-11-09T06:39:27Z), with
+# exactly the approved marker values. superseded_by names the verified current counterpart on the df288c3d pin only.
+S2_MARKED_BY = "user (register and decision owner), per the user approval of 2026-11-09T06:39:27Z"
+S2_COUNTERPART = "model-selection.claude-host-builder-rows"
+S2_MARKERS = {
+    "model-selection.claude-host-builder-rows-at-df288c3d": {
+        "marked_at": "2026-11-09", "marked_by": S2_MARKED_BY, "superseded_by": S2_COUNTERPART,
+        "reason": ("Deliberate pin of the superseded revision of the Claude-host builder rows, the one that "
+                   "cited full-battery counts before the traceability correction reached the document. Kept as "
+                   "its own decision record so a correction reaches the revision that relied on the corrected "
+                   "reading, not only the current one")},
+    "dogfood-plan.round2-status-line": {
+        "marked_at": "2026-11-09", "marked_by": S2_MARKED_BY,
+        "reason": ("The later pause notice (metrics/dogfood-selection-plan-20261027.md, 'Current status "
+                   "(2026-11-07)', round 2 is paused) supersedes this status line as a statement of current "
+                   "operational status. The original text and revision are preserved")},
+}
+S2_HISTORICAL_MARKED = frozenset(S2_MARKERS)
+
+
 class RealRegisterTests(unittest.TestCase):
     def setUp(self):
         self.base = tempfile.mkdtemp(prefix="history-real-")
@@ -1264,7 +1284,8 @@ class RealRegisterTests(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout)
         with open(os.path.join(REAL_REPO, "metrics", "register", "decisions.json"), encoding="utf-8") as fh:
             for d in json.load(fh):
-                self.assertFalse({"historical", "revisions", "evidence_state"} & set(d), d["decision_id"])
+                self.assertFalse({"revisions", "evidence_state"} & set(d), d["decision_id"])
+                self.assertEqual("historical" in d, d["decision_id"] in S2_HISTORICAL_MARKED, d["decision_id"])
 
 
 # ---------------------------------------------------------------------------
@@ -1615,6 +1636,284 @@ class HistoricalSourceBuildTests(SchemaFixture):
             self.assertNotIn("docs/model.md", text)
             self.assertNotIn("anchor d-model-new", text)
             self.assertNotIn(self.CUR_LINES, text)
+
+
+# ---------------------------------------------------------------------------
+# A3 S2: the live register with the two historical markers, against the register at PRE_S2
+# ---------------------------------------------------------------------------
+PRE_S2 = "5f042f45ad10bc3adb2e3c5ce4cbacecb8809b3f"
+S2_LIVE = os.path.join(REAL_REPO, "metrics", "register")
+HISTORICAL_PIN_SUFFIX = " (historical pin, not current authority)"
+AUTHORITY_STATUS = "historical, not current authority"
+
+
+def s2_note(m):
+    succ = f"; superseded_by {m['superseded_by']}" if m.get("superseded_by") else ""
+    return (f"historical pin, marked by {m['marked_by']} on {m['marked_at']}: {m['reason']}{succ}. "
+            "A historical marker never makes this record current authority.")
+
+
+def walk_dicts(obj):
+    if isinstance(obj, dict):
+        yield obj
+        for v in obj.values():
+            yield from walk_dicts(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from walk_dicts(v)
+
+
+def read_appl(reg):
+    with open(os.path.join(reg, "applicability.jsonl"), encoding="utf-8") as fh:
+        return [json.loads(line) for line in fh if line.strip()]
+
+
+def read_decisions(reg):
+    with open(os.path.join(reg, "decisions.json"), encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+class S2LiveRegisterTests(unittest.TestCase):
+    """Same script and repository; only the register differs: the register at PRE_S2 versus the live one. `anchors`
+    reads the register from its pinned commit, so it compares --at PRE_S2 with --at HEAD (the candidate) instead.
+    These tests describe the S2 change itself: a later approved register change must restate them."""
+
+    def setUp(self):
+        self.assertTrue(have(PRE_S2), f"commit {PRE_S2} is not in this clone; the S2 tests cannot run")
+        self.base = tempfile.mkdtemp(prefix="history-s2-")
+        self.addCleanup(shutil.rmtree, self.base, ignore_errors=True)
+        data = ta.git(REAL_REPO, "archive", "--format=tar", PRE_S2, "metrics/register", raw=True)
+        with tarfile.open(fileobj=io.BytesIO(data)) as tf:
+            tf.extractall(os.path.join(self.base, "pre"), filter="data")
+        self.pre = os.path.join(self.base, "pre", "metrics", "register")
+        self.at = ta.git(REAL_REPO, "rev-parse", "HEAD")
+        self.marked_appl = {r["applicability_id"] for r in read_appl(S2_LIVE) if r["decision_id"] in S2_MARKERS}
+
+    def run_cmd(self, cmd, reg, tag):
+        out = os.path.join(self.base, f"{cmd}-{tag}")
+        if cmd == "anchors":
+            where = ("--at", PRE_S2 if reg == self.pre else self.at)
+        else:
+            where = ("--register", reg)
+        p = run_script(SCRIPT, cmd, "--repo", REAL_REPO, "--out", out, *where)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        if cmd == "nominate":
+            with open(out, encoding="utf-8") as fh:
+                return json.load(fh), None
+        name = {"build": "current-knowledge", "anchors": "anchors"}[cmd]
+        with open(os.path.join(out, name + ".json"), encoding="utf-8") as fh:
+            j = json.load(fh)
+        with open(os.path.join(out, name + ".md"), encoding="utf-8") as fh:
+            return j, fh.read().split("\n")
+
+    def both(self, cmd):
+        return self.run_cmd(cmd, self.pre, "pre"), self.run_cmd(cmd, S2_LIVE, "live")
+
+    def test_s2_decisions_receive_exactly_the_approved_markers_and_nothing_else(self):
+        pre, live = read_decisions(self.pre), read_decisions(S2_LIVE)
+        self.assertEqual([d["decision_id"] for d in pre], [d["decision_id"] for d in live])
+        self.assertFalse(any("historical" in d for d in pre))
+        others = 0
+        for old, new in zip(pre, live):
+            did = new["decision_id"]
+            if did in S2_MARKERS:
+                self.assertEqual(new["historical"], S2_MARKERS[did], did)
+                self.assertEqual({k: v for k, v in new.items() if k != "historical"}, old, did)
+            else:
+                self.assertEqual(new, old, did)
+                others += 1
+        self.assertEqual(others, 9)
+        live_by_id = {d["decision_id"]: d for d in live}
+        self.assertIn(S2_COUNTERPART, live_by_id)
+        self.assertNotIn("historical", live_by_id[S2_COUNTERPART])  # the counterpart stays current
+        self.assertNotIn("superseded_by", S2_MARKERS["dogfood-plan.round2-status-line"])
+
+    def test_s2_other_register_files_are_byte_identical_and_the_readme_changes_one_line(self):
+        def files(root):
+            return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
+        self.assertEqual(files(self.pre), files(S2_LIVE))
+        for rel in files(S2_LIVE):
+            if rel not in ("decisions.json", "README.md"):
+                self.assertEqual(ta.slurp(os.path.join(self.pre, rel)), ta.slurp(os.path.join(S2_LIVE, rel)), rel)
+        old = ta.slurp(os.path.join(self.pre, "README.md")).decode().split("\n")
+        new = ta.slurp(os.path.join(S2_LIVE, "README.md")).decode().split("\n")
+        self.assertEqual(len(old), len(new))
+        changed = [(a, b) for a, b in zip(old, new) if a != b]
+        self.assertEqual(len(changed), 1)
+        self.assertIn("no field marks it", changed[0][0])
+        self.assertIn("now has a structured `historical` marker", changed[0][1])
+
+    def test_s2_build_changes_only_the_rows_citing_a_marked_decision(self):
+        (pj, pm), (lj, lm) = self.both("build")
+        self.assertFalse(any("historical_pin" in d for d in walk_dicts(pj)))
+        popped = 0
+        for d in walk_dicts(lj):
+            if "historical_pin" in d:
+                self.assertIn(d.get("decision_id"), S2_MARKERS)
+                self.assertIs(d.pop("historical_pin"), True)
+                popped += 1
+        self.assertEqual(popped, len(self.marked_appl))
+        self.assertEqual(lj, pj)
+        self.assertEqual(len(lm), len(pm))
+        changed = [(a, b) for a, b in zip(pm, lm) if a != b]
+        self.assertEqual(len(changed), len(self.marked_appl))
+        for a, b in changed:
+            self.assertEqual(b.replace(HISTORICAL_PIN_SUFFIX, "", 1), a)
+            self.assertTrue(any(aid in b for aid in self.marked_appl), b)
+
+    def test_s2_anchors_change_only_as_the_markers_require(self):
+        (pj, pm), (lj, lm) = self.both("anchors")
+        self.assertEqual((pj["pinned_commit"], lj["pinned_commit"]), (PRE_S2, self.at))
+        self.assertEqual(pj["target_requested"], PRE_S2)
+        lj["pinned_commit"], lj["target_requested"] = pj["pinned_commit"], pj["target_requested"]
+        lsha, psha = (j["register"]["inputs"]["decisions.json"] for j in (lj, pj))
+        self.assertEqual(lsha["sha256"], sha(show(self.at, "metrics/register/decisions.json")))
+        self.assertEqual(psha["sha256"], sha(show(PRE_S2, "metrics/register/decisions.json")))
+        lsha["sha256"] = psha["sha256"]
+        pre_by_id = {e["decision_id"]: e for e in pj["decisions"]}
+        seen = set()
+        for e in lj["decisions"]:
+            did = e["decision_id"]
+            old = pre_by_id[did]
+            self.assertNotIn("historical", old)
+            self.assertNotIn("authority_status", old)
+            if did not in S2_MARKERS:
+                continue
+            seen.add(did)
+            self.assertEqual(e.pop("historical"), S2_MARKERS[did])
+            self.assertEqual(e.pop("authority_status"), AUTHORITY_STATUS)
+            self.assertEqual(e["notes"], [s2_note(S2_MARKERS[did])])
+            self.assertFalse(any("no field marks it" in n for n in e["notes"]))
+            e["notes"] = old["notes"]
+            self.assertEqual(len(e["applicability"]), len(old["applicability"]))
+            for row, prow in zip(e["applicability"], old["applicability"]):
+                self.assertEqual(row["after_state"], "historical_pin", did)
+                self.assertNotEqual(prow["after_state"], "historical_pin", did)
+                row["after_state"] = prow["after_state"]
+        self.assertEqual(seen, set(S2_MARKERS))
+        self.assertEqual(lj, pj)
+        # markdown: every changed line belongs to a marked decision, its applicability, the input digest or the
+        # new historical section
+        allowed = tuple(S2_MARKERS) + tuple(self.marked_appl) + (
+            "Pinned commit: `", "input `metrics/register/decisions.json` sha256", "## Historical decisions (not current authority)",
+            "- note: historical pin, marked by ")
+        import difflib
+        fixed_note = "- note: deliberate historical pin (named in the register README prose, no field marks it)"
+        for line in difflib.ndiff(pm, lm):
+            if line[:2] in ("- ", "+ ") and line[2:].strip():
+                ok = allowed + ((fixed_note,) if line[:2] == "- " else ())
+                self.assertTrue(any(a in line[2:] for a in ok), line)
+        self.assertFalse(any(fixed_note in x for x in lm))
+        self.assertIn("## Historical decisions (not current authority)", lm)
+
+    def test_s2_nominate_keeps_the_historical_flag_and_reason_and_changes_nothing_else(self):
+        (pj, _), (lj, _) = self.both("nominate")
+        self.assertFalse(any("historical" in d or "historical_reason" in d for d in walk_dicts(pj)))
+        reached = {did: 0 for did in S2_MARKERS}
+        counterpart_beside_pin = 0
+        for nom in lj["nominations"]:
+            ids = {d["decision_id"] for d in nom["decisions"]}
+            for d in nom["decisions"]:
+                did = d["decision_id"]
+                if did in S2_MARKERS:
+                    self.assertIs(d.pop("historical"), True, did)
+                    self.assertEqual(d.pop("historical_reason"), S2_MARKERS[did]["reason"], did)
+                    reached[did] += 1
+                else:
+                    self.assertNotIn("historical", d, did)  # current decisions carry no historical flag
+            for r in nom["applicability_records"]:
+                if r["decision_id"] in S2_MARKERS:
+                    self.assertIs(r.pop("historical"), True, r["applicability_id"])
+                else:
+                    self.assertNotIn("historical", r, r["applicability_id"])
+            if {S2_COUNTERPART, "model-selection.claude-host-builder-rows-at-df288c3d"} <= ids:
+                counterpart_beside_pin += 1
+        self.assertTrue(all(reached.values()), reached)  # a historical decision is still reached, and labelled
+        self.assertGreaterEqual(counterpart_beside_pin, 1)  # the pin and its current counterpart are distinguishable
+        self.assertEqual(lj, pj)
+
+    def test_s2_no_applicability_authorization_is_transferred_or_changed(self):
+        def auths(recs):
+            return {r["applicability_id"]: (r["decision_id"], r["decision_revision"], r["authorization"]) for r in recs}
+        self.assertEqual(auths(read_appl(S2_LIVE)), auths(read_appl(self.pre)))
+        for cmd in ("anchors", "nominate", "build"):
+            (pj, _), (lj, _) = self.both(cmd)
+
+            def seen(j):
+                return sorted(json.dumps([d.get("applicability_id"), d.get("decision_id"), d.get("authorization"),
+                                          d.get("authorized")], sort_keys=True)
+                              for d in walk_dicts(j) if "applicability_id" in d)
+            self.assertEqual(seen(lj), seen(pj), cmd)
+
+    def test_s2_history_accepts_the_markers_from_the_pre_s2_register(self):
+        p = run_script(SCRIPT, "history", "--repo", REAL_REPO, "--base", PRE_S2)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        rep = json.loads(p.stdout)
+        self.assertEqual((rep["violations"], rep["owner_review"]), ([], []))
+
+
+class S2LiveRegisterHistoryViolationTests(HistoryFixture):
+    """`history` from the live register (markers included) refuses to lose or rewrite what it records."""
+
+    def base_state(self):
+        return copy.deepcopy(read_decisions(S2_LIVE)), read_appl(S2_LIVE)
+
+    @staticmethod
+    def by_id(decisions, did):
+        return next(d for d in decisions if d["decision_id"] == did)
+
+    def test_s2_the_marker_addition_is_accepted(self):
+        def strip(decisions, appl):
+            for d in decisions:
+                d.pop("historical", None)
+        unmarked = self.later(strip)
+        self.commit_base()
+        p, rep = self.history(base=unmarked, at=self.base_commit)
+        self.assertEqual((p.returncode, self.names(rep), rep["owner_review"]), (0, [], []))
+
+    def test_s2_removing_or_rewriting_a_marker_or_a_prior_record_is_rejected(self):
+        self.commit_base()
+        pin, dog = "model-selection.claude-host-builder-rows-at-df288c3d", "dogfood-plan.round2-status-line"
+        aid = next(r["applicability_id"] for r in read_appl(S2_LIVE) if r["decision_id"] == dog)
+
+        def mark(did, f):
+            return lambda decisions, appl: f(self.by_id(decisions, did)["historical"])
+
+        def rec(f):
+            return lambda decisions, appl: f(next(r for r in appl if r["applicability_id"] == aid), appl)
+
+        cases = [
+            ("pin marker removed", lambda ds, ap: self.by_id(ds, pin).pop("historical"), "historical-marker-removed"),
+            ("dogfood marker removed", lambda ds, ap: self.by_id(ds, dog).pop("historical"),
+             "historical-marker-removed"),
+            ("reason reworded", mark(pin, lambda h: h.update(reason="reworded")), "historical-marker-edited"),
+            ("marked_by changed", mark(dog, lambda h: h.update(marked_by="someone else")), "historical-marker-edited"),
+            ("marked_at backdated", mark(dog, lambda h: h.update(marked_at="2026-11-01")), "historical-marker-edited"),
+            ("superseded_by dropped", mark(pin, lambda h: h.pop("superseded_by")), "historical-marker-edited"),
+            ("superseded_by retargeted", mark(pin, lambda h: h.update(superseded_by="model-selection.builder-default")),
+             "historical-marker-edited"),
+            ("superseded_by added to the dogfood marker", mark(dog, lambda h: h.update(superseded_by=S2_COUNTERPART)),
+             "historical-marker-edited"),
+            ("historical decision removed", lambda ds, ap: ds.remove(self.by_id(ds, pin)), "decision-id-removed"),
+            ("historical decision renamed", lambda ds, ap: self.by_id(ds, dog).update(decision_id=dog + "-renamed"),
+             "decision-id-renamed"),
+            ("historical decision's revision changed without history",
+             lambda ds, ap: self.by_id(ds, pin).update(revision="git:4ff69ffd"),
+             "current-revision-changed-without-history"),
+            ("another decision removed", lambda ds, ap: ds.remove(self.by_id(ds, S2_COUNTERPART)),
+             "decision-id-removed"),
+            ("record citing a marked decision removed", rec(lambda r, ap: ap.remove(r)), "applicability-record-removed"),
+            ("record moved to the counterpart", rec(lambda r, ap: r.update(decision_id=S2_COUNTERPART)),
+             "applicability-record-changed"),
+            ("record's authorization owner changed", rec(lambda r, ap: r["authorization"].update(owner="someone else")),
+             "authorization-owner-changed"),
+        ]
+        for label, mutate, name in cases:
+            with self.subTest(label):
+                p, rep = self.history(at=self.later(mutate))
+                self.assertEqual(p.returncode, 1, label + ": " + p.stdout + p.stderr)
+                self.assertIn(name, self.names(rep), rep["violations"])
+                self.assert_forbidden_phrases_absent(p.stdout)
 
 
 if __name__ == "__main__":
