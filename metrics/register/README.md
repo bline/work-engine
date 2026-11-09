@@ -231,7 +231,9 @@ current revision. Applicability may cite the current revision or a listed one
 revision is at a prior revision, and its authorization is never carried to the current one.
 When the current revision changes, the old current entry (`revision`, `anchor`, `lines`,
 `document`) is appended unchanged as the last `revisions` entry; text that only moves needs no
-new revision. A decision with `findings: []` must carry `evidence_state`, either
+new revision. A3 S3 moved `model-selection.claude-host-builder-rows` to `1906090c` and
+`model-selection.cost-table-quota-row` to `5149cc27`, the last commits that changed their anchored
+text; their Stage 0 revisions are listed in `revisions`, and the records citing those stay there. A decision with `findings: []` must carry `evidence_state`, either
 `{"state": "none_linked"}` or `{"state": "none_found", corpus: {id, sha256 | pin},
 search_scope, coverage, assessor, date}`; neither asserts that no evidence exists, and `anchors` and
 `nominate` say so (`build` does not render `evidence_state`).

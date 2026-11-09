@@ -22,16 +22,26 @@
   "revision": "git:41d47209"
  },
  {
-  "anchor": "Builder on the Claude host rows (Sonnet 5.5 high; Opus 5.5 high), citing traced battery counts",
+  "anchor": "Builder rows of the Claude host section (Sonnet 5.5 high; Opus 5.5 high), citing traced battery counts only",
   "decision_id": "model-selection.claude-host-builder-rows",
   "document": "docs/model-selection.md",
   "findings": [
    "e1a-first-artifact-battery#full-battery-reading",
    "e1a-first-artifact-battery#traced-reading"
   ],
-  "lines": "39-40",
+  "lines": "128-129",
   "owner": "user (model-selection owner)",
-  "revision": "git:4ff69ffd"
+  "revision": "git:1906090c",
+  "revisions": [
+   {
+    "anchor": "Builder on the Claude host rows (Sonnet 5.5 high; Opus 5.5 high), citing traced battery counts",
+    "document": "docs/model-selection.md",
+    "lines": "39-40",
+    "reason": "1906090c moved the Claude-host builder rows into the section 'Claude host and Claude-only development' and rewrote them there: the traced E1a counts stay (Sonnet 2, 0 and 0 of 12; Opus 0 of 12), the full-battery counts are gone, and the Sonnet row now cites S2 probe lines 467-579 and R1/R2 use. From 1906090c on, lines 39-40 are the Current defaults table header, not these rows",
+    "revision": "git:4ff69ffd",
+    "superseded_at": "2026-11-07"
+   }
+  ]
  },
  {
   "anchor": "Builder on the Claude host rows as of df288c3d, citing full-battery counts before the traceability correction",
@@ -51,15 +61,25 @@
   "revision": "git:df288c3d"
  },
  {
-  "anchor": "Cost table row: Codex quota tracks API cost, Astra about 4.5x Sol, $6-7 per 1% of a Pro week",
+  "anchor": "Cost table row: Codex quota tracks API cost, Astra about 4.5x Sol, $6-7 per 1% of a Pro week, marked not established for current model-selection use (owner, 2026-11-07)",
   "decision_id": "model-selection.cost-table-quota-row",
   "document": "docs/model-selection.md",
   "findings": [
    "codex-quota-fit-per-model#quota-fit"
   ],
-  "lines": "115",
+  "lines": "268",
   "owner": "user (model-selection owner)",
-  "revision": "git:1a1cb443"
+  "revision": "git:5149cc27",
+  "revisions": [
+   {
+    "anchor": "Cost table row: Codex quota tracks API cost, Astra about 4.5x Sol, $6-7 per 1% of a Pro week",
+    "document": "docs/model-selection.md",
+    "lines": "115",
+    "reason": "5149cc27 added the owner's qualification to the row: both claims are not established for current model-selection use until the experiment plan section 1 fit is rechecked with the tier (F1.1); the values and source are kept as the historical record. The applicability record authorized on 2026-11-07 stays on 1a1cb443 and is not carried to 5149cc27",
+    "revision": "git:1a1cb443",
+    "superseded_at": "2026-11-07"
+   }
+  ]
  },
  {
   "anchor": "Cost table row: effort barely changes Astra's and Sol's cost per call",
