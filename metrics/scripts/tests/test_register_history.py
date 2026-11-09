@@ -1457,16 +1457,16 @@ class HistoricalSourceBuildTests(SchemaFixture):
         old_text, new_text = json.dumps(a), json.dumps(b)
         if old_sha in old_text or new_sha in new_text:  # an output that actually embeds the digest
             self.assertIn(old_sha, old_text, f"{label} {name}")
-            self.assertNotIn(new_sha, old_text)
             self.assertIn(new_sha, new_text, f"{label} {name}")
-            self.assertNotIn(old_sha, new_text)
+            if old_sha != new_sha:  # equal only when the script under test is the 9ac98261 script itself
+                self.assertNotIn(new_sha, old_text)
+                self.assertNotIn(old_sha, new_text)
         b = tuple(self.norm(x, old_sha, new_sha) if isinstance(x, str) else x for x in b)
         self.assertEqual(a, b, f"{label} {name}")
 
     def assert_commands_identical(self, repo, register, anchors_at, history_args, label):
         old = self.old_script_path()
         old_sha, new_sha = sha(ta.slurp(old)), sha(ta.slurp(SCRIPT))
-        self.assertNotEqual(old_sha, new_sha)
         a = self.run_commands(old, repo, register, anchors_at, history_args, f"{label}-old")
         b = self.run_commands(SCRIPT, repo, register, anchors_at, history_args, f"{label}-new")
         self.assertEqual(set(a), set(b))
