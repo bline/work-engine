@@ -780,7 +780,9 @@ def read_snapshot(git, rev, register_dir, repo):
     commit = git.commit_id(rev)
     if commit is None:
         raise SnapshotError(f"--at {rev!r} does not resolve to a commit in {repo}")
-    rel = os.path.relpath(os.path.realpath(register_dir), os.path.realpath(repo))
+    # lexical on purpose (abspath normalises without resolving links): a symbolic link in the working tree
+    # must not change which committed directory is read (review: Astra F1)
+    rel = os.path.relpath(os.path.abspath(register_dir), os.path.abspath(repo))
     if rel == ".." or rel.startswith(".." + os.sep) or os.path.isabs(rel):
         raise SnapshotError(f"register directory {register_dir} is outside the repository {repo}; "
                             "--at reads the register from the pinned commit")
@@ -852,6 +854,38 @@ class PinnedRegister(Register):
         return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
+class PinnedGit(Git):
+    """Git for checking source pins in pinned mode, with AnchorGit's object-access policy: GIT_* variables
+    dropped, global and system configuration ignored, replace objects off, no optional locks. Unpinned
+    validation keeps Git (review: Astra F2, Sonnet F1)."""
+
+    def __init__(self, repo):
+        super().__init__(repo)
+        self.anchor = AnchorGit(repo)
+
+    def run(self, *args):
+        if args not in self.cache:
+            out = self.anchor.run(*args)
+            self.cache[args] = out.decode("utf-8", "replace").strip() if out is not None else None
+        return self.cache[args]
+
+    def line_count(self, commit, path):
+        key = ("line_count", commit, path)
+        if key not in self.cache:
+            data = self.anchor.run("cat-file", "blob", f"{commit}:{path}")
+            self.cache[key] = None if data is None else (
+                data.count(b"\n") + (1 if data and not data.endswith(b"\n") else 0))
+        return self.cache[key]
+
+    def is_ancestor(self, a, b):
+        key = ("is-ancestor", a, b)
+        if key not in self.cache:
+            p = subprocess.run(self.anchor.argv("merge-base", "--is-ancestor", a, b), capture_output=True,
+                               check=False, env=self.anchor.env)
+            self.cache[key] = p.returncode == 0 if p.returncode in (0, 1) else None
+        return self.cache[key]
+
+
 def pinned_snapshot(cmd, args):
     """read_snapshot for --at, or None after printing why the command cannot run."""
     try:
@@ -876,7 +910,7 @@ def snapshot_lines(snap, requested):
 def load_valid(register_dir, repo, extra=None, snapshot=None):
     errors = Errors()
     reg = Register(register_dir, errors) if snapshot is None else PinnedRegister(snapshot, errors)
-    git = Git(repo)
+    git = Git(repo) if snapshot is None else PinnedGit(repo)
     fids = validate_register(reg, git)
     return reg, errors, fids
 
@@ -1073,7 +1107,8 @@ SNAPSHOT_NAME = "snapshot.json"
 def build_at(args):
     """build --at: the view from one commit's register, byte-identical to `build` on a clean checkout of that
     commit, with the snapshot manifest in snapshot.json beside it (never inside the view). Nothing is written
-    unless the snapshot reads and validates."""
+    unless the snapshot reads and validates. snapshot.json also records each view file's sha256 (`outputs`)
+    and is published last (publish_generation)."""
     git = AnchorGit(args.repo)
     for gd in [os.path.join(args.repo, ".git"), *git.git_dirs()]:
         if inside(args.out, gd):
@@ -1102,14 +1137,48 @@ def build_at(args):
         if refuse_out_in_register("build", real_out, args.register) or any(inside(real_out, gd) for gd in git.git_dirs()):
             print(f"build: refused, --out resolves to {real_out}, inside the register or a git directory")
             return 2
-        write_outputs(real_out, {VIEW_NAMES[0]: json_text, VIEW_NAMES[1]: md_text,
-                                 SNAPSHOT_NAME: dumps(snap.manifest())})
+        manifest = snap.manifest()
+        manifest["outputs"] = {VIEW_NAMES[0]: hashlib.sha256(json_text.encode("utf-8")).hexdigest(),
+                               VIEW_NAMES[1]: hashlib.sha256(md_text.encode("utf-8")).hexdigest()}
+        publish_generation(real_out, {VIEW_NAMES[0]: json_text, VIEW_NAMES[1]: md_text}, SNAPSHOT_NAME,
+                           dumps(manifest))
     except OSError as exc:
         print(f"build: cannot run, writing to --out failed: {exc}")
         return EXIT_PINNED_CANNOT_RUN
     print(f"build: wrote current-knowledge.json, current-knowledge.md and snapshot.json to {args.out} "
           f"(pinned {snap.commit})")
     return 0
+
+
+def publish_generation(out, views, manifest_name, manifest_text):
+    """Publish view files and the manifest that describes them, so that a manifest is never left beside
+    views it does not describe (review: Sonnet F2, Astra F3). Content integrity comes from the view digests
+    inside the manifest; this ordering does not make publication atomic. Every file is first written under
+    a fresh temporary name (O_EXCL, O_NOFOLLOW); then the old manifest is removed, the views are renamed
+    into place, and the manifest is renamed in last. A failure leaves either the previous files untouched
+    or no manifest. Raises OSError."""
+    temps = {}
+    try:
+        for name, text in sorted({**views, manifest_name: manifest_text}.items()):
+            tmp = os.path.join(out, f".{name}.{os.getpid()}.tmp")
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o644)
+            temps[name] = tmp
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        final = os.path.join(out, manifest_name)
+        if os.path.lexists(final):
+            os.unlink(final)
+        for name in sorted(views):
+            os.replace(temps[name], os.path.join(out, name))
+            del temps[name]  # only once renamed: a failed rename leaves the temporary file for cleanup
+        os.replace(temps[manifest_name], final)
+        del temps[manifest_name]
+    finally:
+        for tmp in temps.values():
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
 
 
 def render_view(reg, repo):

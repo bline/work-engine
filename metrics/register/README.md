@@ -68,14 +68,26 @@ only, no network, no model calls; it writes only to `--out`.
   them, output and exit code are those of the script before they existed.
 - `validate --at COMMIT` and `build --at COMMIT --out DIR`: read the whole register (every file listed
   under Files, `studies/*.json` included) from the Git objects of one commit, never from the working
-  tree; `--at` is resolved once to a full commit id. Each first prints the snapshot manifest as lines
+  tree; `--at` is resolved once to a full commit id. The register path is `--register` relative to
+  `--repo`, taken lexically, so a symbolic link in the working tree cannot change which committed
+  directory is read. Source pins are checked with the same protected Git access as the snapshot
+  (`GIT_*` variables, global and system configuration and replace objects are ignored); unpinned
+  `validate` keeps its old Git access. Each command first prints the snapshot manifest as lines
   starting `snapshot `: the commit, the register tree id, each input's mode, blob id, sha256 and path,
-  any missing input, and `register.py`'s sha256 and Git blob id. `build --at` also writes the manifest
-  as `snapshot.json` beside the view, never inside it: the two view files are byte-identical to
-  `build` on a clean checkout of that commit. A commit that does not resolve, or a register path that
-  is not a directory at it, exits 4 and writes nothing. A missing, non-regular, non-UTF-8 or malformed
-  input is a violation: `validate` exits 1 and `build` refuses. Without `--at` both commands are
-  unchanged.
+  any missing input, and `register.py`'s sha256 and Git blob id.
+  `build --at` also writes the manifest as `snapshot.json` beside the view, never inside it, adding
+  `outputs`, the sha256 of each view file; the two view files are byte-identical to `build` on a clean
+  checkout of that commit. Publication is ordered, not atomic: every file is first written under a
+  temporary name, then the old `snapshot.json` is removed, the views are renamed into place and the new
+  `snapshot.json` is renamed in last. A failed write leaves either the previous files untouched or no
+  `snapshot.json`. A consumer treats the views as pinned output only when `snapshot.json` is present
+  and every `outputs` digest matches its file; a `snapshot.json` left behind by a later unpinned
+  `build` into the same directory fails that check.
+  A commit that does not resolve, or a register path that is not a directory at it, exits 4 and writes
+  nothing. A missing or non-regular input, a file that is not UTF-8, or a file that is not valid JSON
+  (JSON Lines for `.jsonl`) is a violation: `validate` exits 1 and `build` refuses. Other content is
+  checked only as far as `validate` checks it: for example, a study file containing JSON `null` is
+  skipped without an error, as in the unpinned reader. Without `--at` both commands are unchanged.
 - `build --out DIR`: `current-knowledge.json` and `current-knowledge.md`. Per finding: study,
   lifecycle, latest judgment per axis, standing derived from events, events, and per-decision
   applicability. Per question: linked findings. Deterministic. Each applicability row states the

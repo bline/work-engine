@@ -16,7 +16,9 @@ import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.abspath(os.path.join(HERE, "..", "register.py"))
+# PINNED_UNDER_TEST names another register.py to run these tests against (used to show that a test fails on
+# an earlier or deliberately broken script); the default is the script next to this tests directory.
+SCRIPT = os.environ.get("PINNED_UNDER_TEST") or os.path.abspath(os.path.join(HERE, "..", "register.py"))
 REAL_REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 S4_BASE = "c8a50e177e12b5d799430160fe802bb2d8637c6f"  # the S4-min base commit; its register has 9 studies
 GIT_ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
@@ -53,8 +55,9 @@ def digest_tree(root):
     return out
 
 
-def run(*args):
-    return subprocess.run([sys.executable, "-I", SCRIPT, *args], capture_output=True, text=True, check=False)
+def run(*args, env=None):
+    return subprocess.run([sys.executable, "-I", SCRIPT, *args], capture_output=True, text=True, check=False,
+                          env={**os.environ, **(env or {})})
 
 
 def own_lines(stdout):
@@ -115,7 +118,8 @@ class PinnedFixture(unittest.TestCase):
                 "applicability_id": "ap", "finding": "s#f", "decision_id": "d", "decision_revision": f"git:{self.c0}",
                 "relation": "supports", "rationale": f"rationale mark{v}x", "evidence": [pin], "proposed_by": "t",
                 "proposed_at": "2026-01-02", "authorization": {"status": "pending", "owner": owner}}) + "\n",
-            "materialized.jsonl": "",
+            "materialized.jsonl": json.dumps({"finding": "s#f", "label": f"label mark{v}x", "claim_id": f"claim-mark{v}x",
+                                              "revision_id": f"rev-mark{v}x", "revision_sha256": f"{v}" * 64}) + "\n",
         }
 
     def commit_register(self, v, changes=None):
@@ -134,12 +138,17 @@ class PinnedFixture(unittest.TestCase):
         self.n_out += 1
         return os.path.join(self.base, f"out{self.n_out}")
 
-    def validate(self, at=None):
-        return run("validate", "--repo", self.repo, *([f"--at={at}"] if at is not None else []))
+    def validate(self, at=None, env=None):
+        return run("validate", "--repo", self.repo, *([f"--at={at}"] if at is not None else []), env=env)
 
-    def build(self, at=None, out=None):
+    def build(self, at=None, out=None, env=None):
         out = out or self.out_dir()
-        return run("build", "--repo", self.repo, "--out", out, *([f"--at={at}"] if at is not None else [])), out
+        return run("build", "--repo", self.repo, "--out", out, *([f"--at={at}"] if at is not None else []),
+                   env=env), out
+
+    def put_blob(self, text):
+        return subprocess.run(["git", "-C", self.repo, "hash-object", "-w", "--stdin"], input=text.encode(),
+                              capture_output=True, check=True, env=GIT_ENV).stdout.decode().strip()
 
     def files(self, out):
         return {name: slurp(os.path.join(out, name)) for name in sorted(os.listdir(out))}
@@ -204,6 +213,7 @@ class PinnedTests(PinnedFixture):
         expected = sorted(f"metrics/register/{n}" for n in (*TOP_FILES, "studies/s.json"))
         self.assertEqual([i["path"] for i in m["inputs"]], expected)
         self.assertEqual(m["missing"], [])
+        self.assertEqual(m["outputs"], {n: hashlib.sha256(self.files(out)[n]).hexdigest() for n in VIEWS})
         for i in m["inputs"]:
             self.assertEqual(i["blob"], git(self.repo, "rev-parse", f"{self.c1}:{i['path']}"), i["path"])
             data = git(self.repo, "cat-file", "blob", i["blob"], raw=True)
@@ -325,6 +335,104 @@ class PinnedTests(PinnedFixture):
         self.assertEqual(p.returncode, 2, p.stdout)
         self.assertEqual(sorted(os.listdir(out)), ["snapshot.json"])
         self.assertFalse(os.path.exists(target))
+
+
+class PinnedRemediationTests(PinnedFixture):
+    """S4-min r1: regressions for the reproduced review findings (Astra F1, F2, F3, F5; Sonnet F1, F2)."""
+
+    def verified(self, out):
+        """The consumer rule: snapshot.json is present and every `outputs` digest matches its view file."""
+        path = os.path.join(out, "snapshot.json")
+        if not os.path.isfile(path):
+            return False
+        outputs = json.loads(slurp(path)).get("outputs") or {}
+        return sorted(outputs) == sorted(VIEWS) and all(
+            os.path.isfile(os.path.join(out, n)) and hashlib.sha256(slurp(os.path.join(out, n))).hexdigest() == d
+            for n, d in outputs.items())
+
+    def test_8_working_tree_symlink_does_not_redirect_the_register(self):
+        for rel, text in self.data(1).items():
+            self.write(os.path.join("metrics", "alternate", rel), text)
+        c = self.commit("register holds mark2x, alternate holds mark1x")
+        v1, (b1, out1) = self.validate(c), self.build(c)
+        self.assertEqual((v1.returncode, b1.returncode), (0, 0), v1.stdout)
+        os.rename(self.register, self.register + ".aside")
+        os.symlink("alternate", self.register)
+        v2, (b2, out2) = self.validate(c), self.build(c)
+        self.assertEqual(v2.stdout, v1.stdout)
+        self.assertEqual(self.files(out2), self.files(out1))
+        self.assertEqual(json.loads(self.files(out2)["snapshot.json"])["register_path"], "metrics/register")
+        self.assertIn(b"mark2x", self.files(out2)["current-knowledge.json"])
+        self.assertNotIn(b"mark1x", self.files(out2)["current-knowledge.json"])
+
+    def test_9_pinned_pin_checks_ignore_git_overrides_and_replace_refs(self):
+        clean = self.validate(self.c1)
+        self.assertEqual(clean.returncode, 0, clean.stdout)
+        empty = os.path.join(self.base, "empty-objects")
+        os.makedirs(empty)
+        for env in ({"GIT_DIR": os.path.join(self.base, "missing")}, {"GIT_OBJECT_DIRECTORY": empty}):
+            p = self.validate(self.c1, env=env)
+            self.assertEqual((p.returncode, p.stdout), (0, clean.stdout), env)
+            self.assertEqual(self.build(self.c1, env=env)[0].returncode, 0, env)
+        git(self.repo, "replace", self.blob, self.put_blob(""))
+        p = self.validate(self.c1)
+        self.assertEqual((p.returncode, p.stdout), (0, clean.stdout), "valid pin, blob replaced by an empty one")
+        git(self.repo, "replace", "-d", self.blob)
+        s = json.loads(self.data(1)["studies/s.json"])
+        s["findings"][0]["sources"][0]["lines"] = "1-3"  # the pinned blob has two lines
+        c = self.commit_register(1, {"studies/s.json": json.dumps(s)})
+        before = self.validate(c)
+        self.assertEqual(before.returncode, 1, before.stdout)
+        git(self.repo, "replace", self.blob, self.put_blob("result a\nresult b\nFORGED THIRD LINE\n"))
+        after = self.validate(c)
+        self.assertEqual((after.returncode, after.stdout), (1, before.stdout), "forged third line accepted")
+        b, out = self.build(c)
+        self.assertEqual(b.returncode, 1, b.stdout)
+        self.assertFalse(os.path.exists(out))
+        # unpinned validation keeps its old Git access, replace refs included (preserved legacy behaviour)
+        self.assertEqual(self.validate().returncode, 0)
+
+    def test_10_materialized_rows_are_read_parsed_and_checked(self):
+        for commit, v in ((self.c1, 1), (self.c2, 2)):
+            snap = reg.read_snapshot(reg.AnchorGit(self.repo), commit, self.register, self.repo)
+            errors = reg.Errors()
+            rows = [r for _, r in reg.PinnedRegister(snap, errors).materialized]
+            self.assertFalse(errors, errors.items)
+            self.assertEqual(rows, [json.loads(self.data(v)["materialized.jsonl"])])
+            entry = next(i for i in snap.manifest()["inputs"] if i["path"].endswith("/materialized.jsonl"))
+            self.assertEqual(entry["blob"], git(self.repo, "rev-parse", f"{commit}:metrics/register/materialized.jsonl"))
+        row = json.loads(self.data(1)["materialized.jsonl"])
+        row["finding"] = "absent#finding"
+        c3 = self.commit_register(1, {"materialized.jsonl": json.dumps(row) + "\n"})
+        v = self.validate(c3)
+        self.assertEqual(v.returncode, 1, v.stdout)
+        self.assertIn("ERROR unknown-finding-reference materialized.jsonl:1", v.stdout)
+
+    def test_11_publication_never_leaves_a_manifest_beside_views_it_does_not_describe(self):
+        b, out = self.build(self.c1)
+        self.assertTrue(self.verified(out), b.stdout)
+        first = self.files(out)
+        manifest = os.path.join(out, "snapshot.json")
+        os.unlink(manifest)
+        os.makedirs(manifest)  # the manifest name is obstructed: nothing may be replaced
+        p, _ = self.build(self.c2, out=out)
+        self.assertEqual(p.returncode, 4, p.stdout)
+        for name in VIEWS:
+            self.assertEqual(slurp(os.path.join(out, name)), first[name], name)
+        b, out = self.build(self.c1)
+        md = os.path.join(out, "current-knowledge.md")
+        os.unlink(md)
+        os.makedirs(md)  # a view name is obstructed: no manifest may remain
+        p, _ = self.build(self.c2, out=out)
+        self.assertEqual(p.returncode, 4, p.stdout)
+        self.assertFalse(os.path.exists(os.path.join(out, "snapshot.json")))
+        self.assertFalse(self.verified(out))
+        self.assertEqual([n for n in os.listdir(out) if n.startswith(".")], [], "temporary files remain")
+        b, out = self.build(self.c1)
+        u, _ = self.build(out=out)  # unpinned build of the checkout (c2) into the same directory
+        self.assertEqual(u.returncode, 0, u.stdout)
+        self.assertTrue(os.path.exists(os.path.join(out, "snapshot.json")))
+        self.assertFalse(self.verified(out), "a stale snapshot.json must fail the digest check")
 
 
 class RealRegisterPinnedTests(unittest.TestCase):
