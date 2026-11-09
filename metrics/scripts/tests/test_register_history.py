@@ -1639,9 +1639,12 @@ class HistoricalSourceBuildTests(SchemaFixture):
 
 
 # ---------------------------------------------------------------------------
-# A3 S2: the live register with the two historical markers, against the register at PRE_S2
+# A3 S2: the register with the two historical markers, against the register at PRE_S2
 # ---------------------------------------------------------------------------
 PRE_S2 = "5f042f45ad10bc3adb2e3c5ce4cbacecb8809b3f"
+# The S2 integration commit. Its register is the S2 result (f8303d57 markers, d71f32b6 README; cac68c5a changed
+# only tests). Later approved register changes start after it, so the S2 delta is PRE_S2 -> S2_COMMIT.
+S2_COMMIT = "cac68c5a4e5b2efcdff90a68b4afcf6b143aabaa"
 S2_LIVE = os.path.join(REAL_REPO, "metrics", "register")
 HISTORICAL_PIN_SUFFIX = " (historical pin, not current authority)"
 AUTHORITY_STATUS = "historical, not current authority"
@@ -1674,20 +1677,25 @@ def read_decisions(reg):
 
 
 class S2LiveRegisterTests(unittest.TestCase):
-    """Same script and repository; only the register differs: the register at PRE_S2 versus the live one. `anchors`
-    reads the register from its pinned commit, so it compares --at PRE_S2 with --at HEAD (the candidate) instead.
-    These tests describe the S2 change itself: a later approved register change must restate them."""
+    """The S2 change itself, as qualified: same script and repository; only the register differs: the register at
+    PRE_S2 versus the register at S2_COMMIT (the live register when S2 was integrated). `anchors` reads the register
+    from its pinned commit, so it compares --at PRE_S2 with --at S2_COMMIT. Both sides are fixed commits, so later
+    approved register changes do not alter these comparisons; the current register is checked by
+    S2MarkersInTheCurrentRegisterTests, S2LiveRegisterHistoryViolationTests and the live `validate` tests."""
 
     def setUp(self):
-        self.assertTrue(have(PRE_S2), f"commit {PRE_S2} is not in this clone; the S2 tests cannot run")
+        for c in (PRE_S2, S2_COMMIT):
+            self.assertTrue(have(c), f"commit {c} is not in this clone; the S2 tests cannot run")
         self.base = tempfile.mkdtemp(prefix="history-s2-")
         self.addCleanup(shutil.rmtree, self.base, ignore_errors=True)
-        data = ta.git(REAL_REPO, "archive", "--format=tar", PRE_S2, "metrics/register", raw=True)
-        with tarfile.open(fileobj=io.BytesIO(data)) as tf:
-            tf.extractall(os.path.join(self.base, "pre"), filter="data")
+        for tag, commit in (("pre", PRE_S2), ("s2", S2_COMMIT)):
+            data = ta.git(REAL_REPO, "archive", "--format=tar", commit, "metrics/register", raw=True)
+            with tarfile.open(fileobj=io.BytesIO(data)) as tf:
+                tf.extractall(os.path.join(self.base, tag), filter="data")
         self.pre = os.path.join(self.base, "pre", "metrics", "register")
-        self.at = ta.git(REAL_REPO, "rev-parse", "HEAD")
-        self.marked_appl = {r["applicability_id"] for r in read_appl(S2_LIVE) if r["decision_id"] in S2_MARKERS}
+        self.s2 = os.path.join(self.base, "s2", "metrics", "register")
+        self.at = S2_COMMIT
+        self.marked_appl = {r["applicability_id"] for r in read_appl(self.s2) if r["decision_id"] in S2_MARKERS}
 
     def run_cmd(self, cmd, reg, tag):
         out = os.path.join(self.base, f"{cmd}-{tag}")
@@ -1707,10 +1715,10 @@ class S2LiveRegisterTests(unittest.TestCase):
             return j, fh.read().split("\n")
 
     def both(self, cmd):
-        return self.run_cmd(cmd, self.pre, "pre"), self.run_cmd(cmd, S2_LIVE, "live")
+        return self.run_cmd(cmd, self.pre, "pre"), self.run_cmd(cmd, self.s2, "s2")
 
     def test_s2_decisions_receive_exactly_the_approved_markers_and_nothing_else(self):
-        pre, live = read_decisions(self.pre), read_decisions(S2_LIVE)
+        pre, live = read_decisions(self.pre), read_decisions(self.s2)
         self.assertEqual([d["decision_id"] for d in pre], [d["decision_id"] for d in live])
         self.assertFalse(any("historical" in d for d in pre))
         others = 0
@@ -1731,12 +1739,12 @@ class S2LiveRegisterTests(unittest.TestCase):
     def test_s2_other_register_files_are_byte_identical_and_the_readme_changes_one_line(self):
         def files(root):
             return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
-        self.assertEqual(files(self.pre), files(S2_LIVE))
-        for rel in files(S2_LIVE):
+        self.assertEqual(files(self.pre), files(self.s2))
+        for rel in files(self.s2):
             if rel not in ("decisions.json", "README.md"):
-                self.assertEqual(ta.slurp(os.path.join(self.pre, rel)), ta.slurp(os.path.join(S2_LIVE, rel)), rel)
+                self.assertEqual(ta.slurp(os.path.join(self.pre, rel)), ta.slurp(os.path.join(self.s2, rel)), rel)
         old = ta.slurp(os.path.join(self.pre, "README.md")).decode().split("\n")
-        new = ta.slurp(os.path.join(S2_LIVE, "README.md")).decode().split("\n")
+        new = ta.slurp(os.path.join(self.s2, "README.md")).decode().split("\n")
         self.assertEqual(len(old), len(new))
         changed = [(a, b) for a, b in zip(old, new) if a != b]
         self.assertEqual(len(changed), 1)
@@ -1835,7 +1843,7 @@ class S2LiveRegisterTests(unittest.TestCase):
     def test_s2_no_applicability_authorization_is_transferred_or_changed(self):
         def auths(recs):
             return {r["applicability_id"]: (r["decision_id"], r["decision_revision"], r["authorization"]) for r in recs}
-        self.assertEqual(auths(read_appl(S2_LIVE)), auths(read_appl(self.pre)))
+        self.assertEqual(auths(read_appl(self.s2)), auths(read_appl(self.pre)))
         for cmd in ("anchors", "nominate", "build"):
             (pj, _), (lj, _) = self.both(cmd)
 
@@ -1846,10 +1854,82 @@ class S2LiveRegisterTests(unittest.TestCase):
             self.assertEqual(seen(lj), seen(pj), cmd)
 
     def test_s2_history_accepts_the_markers_from_the_pre_s2_register(self):
-        p = run_script(SCRIPT, "history", "--repo", REAL_REPO, "--base", PRE_S2)
+        p = run_script(SCRIPT, "history", "--repo", REAL_REPO, "--base", PRE_S2, "--at", S2_COMMIT)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         rep = json.loads(p.stdout)
         self.assertEqual((rep["violations"], rep["owner_review"]), ([], []))
+
+
+class S2MarkersInTheCurrentRegisterTests(unittest.TestCase):
+    """What S2 established must still hold in the current register after later approved changes: the two markers
+    keep their approved values, `history` from before and after S2 finds no violation (owner review entries are
+    expected for later approved status changes and are not asserted), and every view labels exactly the marked
+    decisions. Unlike S2LiveRegisterTests, nothing here compares whole outputs, so an approved change elsewhere in
+    the register does not require restating these tests."""
+
+    def setUp(self):
+        for c in (PRE_S2, S2_COMMIT):
+            self.assertTrue(have(c), f"commit {c} is not in this clone; the S2 tests cannot run")
+        self.base = tempfile.mkdtemp(prefix="history-s2-current-")
+        self.addCleanup(shutil.rmtree, self.base, ignore_errors=True)
+
+    def view(self, cmd, *where):
+        out = os.path.join(self.base, cmd)
+        p = run_script(SCRIPT, cmd, "--repo", REAL_REPO, "--out", out, *where)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        name = {"build": "current-knowledge.json", "anchors": "anchors.json"}.get(cmd)
+        with open(os.path.join(out, name) if name else out, encoding="utf-8") as fh:
+            return json.load(fh)
+
+    def test_the_s2_markers_keep_their_approved_values(self):
+        by_id = {d["decision_id"]: d for d in read_decisions(S2_LIVE)}
+        for did, marker in S2_MARKERS.items():
+            self.assertEqual(by_id[did].get("historical"), marker, did)
+        self.assertNotIn("historical", by_id[S2_COUNTERPART])
+
+    def test_history_from_before_and_after_s2_to_the_current_register_has_no_violation(self):
+        for base in (PRE_S2, S2_COMMIT):
+            with self.subTest(base=base):
+                p = run_script(SCRIPT, "history", "--repo", REAL_REPO, "--base", base)
+                self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+                self.assertEqual(json.loads(p.stdout)["violations"], [])
+
+    def test_the_current_views_label_exactly_the_marked_decisions(self):
+        decisions = read_decisions(S2_LIVE)
+        markers = {d["decision_id"]: d["historical"] for d in decisions if "historical" in d}
+        self.assertTrue(set(S2_MARKERS) <= set(markers), markers)
+        marked_appl = {r["applicability_id"] for r in read_appl(S2_LIVE) if r["decision_id"] in markers}
+
+        nom = self.view("nominate", "--register", S2_LIVE)
+        reached = set()
+        for n in nom["nominations"]:
+            for d in n["decisions"]:
+                did = d["decision_id"]
+                if did in markers:
+                    self.assertIs(d.get("historical"), True, did)
+                    self.assertEqual(d.get("historical_reason"), markers[did]["reason"], did)
+                    reached.add(did)
+                else:
+                    self.assertNotIn("historical", d, did)
+            for r in n["applicability_records"]:
+                self.assertEqual(r.get("historical"), True if r["decision_id"] in markers else None,
+                                 r["applicability_id"])
+        self.assertEqual(reached & set(S2_MARKERS), set(S2_MARKERS))  # still reached, and labelled
+
+        pins = [d for d in walk_dicts(self.view("build", "--register", S2_LIVE)) if "historical_pin" in d]
+        self.assertTrue(all(d.get("decision_id") in markers and d["historical_pin"] is True for d in pins), pins)
+        self.assertEqual(len(pins), len(marked_appl))
+
+        # anchors reads the committed register, so its markers come from HEAD, not the working tree
+        head_markers = {d["decision_id"]: d["historical"]
+                        for d in json.loads(show("HEAD", "metrics/register/decisions.json")) if "historical" in d}
+        for e in self.view("anchors", "--at", "HEAD")["decisions"]:
+            did = e["decision_id"]
+            if did in head_markers:
+                self.assertEqual((e.get("historical"), e.get("authority_status")), (head_markers[did], AUTHORITY_STATUS))
+                self.assertTrue(all(row["after_state"] == "historical_pin" for row in e["applicability"]), did)
+            else:
+                self.assertFalse({"historical", "authority_status"} & set(e), did)
 
 
 class S2LiveRegisterHistoryViolationTests(HistoryFixture):
