@@ -21,6 +21,20 @@ class Pricing(unittest.TestCase):
         u['input_tokens'] += 1
         self.assertAlmostEqual(L.native_usd(u, 'claude-haiku-5-5')[0], .0500005)
 
+    def test_addendum_20261110_rates(self):
+        # Rates from metrics/probes/price-table-addendum-20261110.json.
+        u = dict(input_tokens=1000, output_tokens=1000, cache_read_input_tokens=1000000,
+                 cache_creation_input_tokens=2000000, ephemeral_5m_input_tokens=1000000,
+                 ephemeral_1h_input_tokens=1000000)
+        for model, usd in (('claude-fable-5-2', 26.248), ('claude-sonnet-5', 6.712)):
+            low, high, unknown = L.native_usd(u, model)
+            self.assertAlmostEqual(low, usd)
+            self.assertAlmostEqual(high, usd)
+            self.assertEqual(unknown, 0)
+        # Fable 5.2 has no prompt-length tier.
+        big = dict(input_tokens=500000, output_tokens=0, cache_read_input_tokens=0, cache_creation_input_tokens=0)
+        self.assertAlmostEqual(L.native_usd(big, 'claude-fable-5-2')[0], 4.0)
+
 
 class Measurements(unittest.TestCase):
     def test_call_aliases_preserve_cost_and_expose_context(self):

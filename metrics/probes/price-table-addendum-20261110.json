@@ -1,0 +1,62 @@
+{
+ "schema": "price-table-addendum/v1",
+ "created_at": "2026-11-10T18:53:35.040514+00:00",
+ "purpose": "Adds Claude Fable 5.2 and Claude Sonnet 5 to NATIVE_RATES in metrics/scripts/usage_ledger.py. Before this addendum the ledger left both unpriced (usd null): calls were counted in their quota pools but carried no modelled dollars.",
+ "source": {
+  "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+  "fetched": "2026-11-10 (WebFetch markdown conversion)",
+  "page_dated": "not established: the page shows no last-updated date",
+  "copy": "/home/bline/cbm-work/prices/platform-pricing-20261110.md",
+  "copy_sha256": "4fe2b894c1ec51f87e10428bb630886489c6a668fb674bc607a2c36a6834aabb"
+ },
+ "verbatim_rows": {
+  "line_17": "| Claude Fable 5.2 | $8 / MTok | $10 / MTok | $16 / MTok | $0.20 / MTok<sup>1</sup> | $40 / MTok |",
+  "line_32": "| Claude Sonnet 5 | $2 / MTok<sup>3</sup> | $2.50 / MTok | $4 / MTok | $0.20 / MTok | $10 / MTok<sup>3</sup> |",
+  "line_40": "*<sup>1 Cache hits and refreshes on Claude Fable 5.2, Claude Mythos 5.2, Claude Fable 5.1, and Claude Mythos 5.1 are priced at 0.025x the base input price.</sup>*",
+  "line_46": "*<sup>3 The $2/$10 per million input/output token pricing for Claude Sonnet 5, announced at launch as introductory pricing through August 31, 2026, is now the standard price. The previously scheduled increase to $3/$15 per million input/output tokens on September 1, 2026 will not occur.</sup>*",
+  "line_181_fast_mode": "| Claude Fable 5.2 | $16 USD / MTok | $80 USD / MTok |"
+ },
+ "units": "USD per million tokens",
+ "models": {
+  "claude-fable-5-2": {
+   "model_id_verified": "message.model == 'claude-fable-5-2' in Claude Code transcripts (62 matching lines in 1 file under ~/.claude/projects on 2026-11-10)",
+   "tiers": [
+    {
+     "applies_when": "all",
+     "input": 8,
+     "cache_write_5m": 10,
+     "cache_write_1h": 16,
+     "cache_read": 0.2,
+     "output": 40
+    }
+   ],
+   "long_context": "no prompt-length tier on the page for this model",
+   "fast_mode": "16 / 80 on the page; not applied. The ledger reports fast-mode calls as fast_mode_unpriced; all 63,911 speed fields in the transcripts on 2026-11-10 were 'standard'.",
+   "rule_check": "1.25x, 2x and 0.025x (footnote 1) of input 8 give 10, 16 and 0.20, matching the row"
+  },
+  "claude-sonnet-5": {
+   "model_id_verified": "message.model == 'claude-sonnet-5' in Claude Code transcripts (1,151 matching lines in 17 files under ~/.claude/projects on 2026-11-10)",
+   "tiers": [
+    {
+     "applies_when": "all",
+     "input": 2,
+     "cache_write_5m": 2.5,
+     "cache_write_1h": 4,
+     "cache_read": 0.2,
+     "output": 10
+    }
+   ],
+   "footnote_3": "the 2 / 10 introductory price is now the standard price; the scheduled rise to 3 / 15 will not occur",
+   "rule_check": "1.25x, 2x and 0.1x of input 2 give 2.50, 4 and 0.20, matching the row"
+  }
+ },
+ "cross_check_against_cli_cost": "not established: no CLI costUSD record for either model was located (a search of ~/cbm-work hit a 60 s limit)",
+ "cross_check_existing_frozen_rates": {
+  "claude-fable-5-1": "page: 10 / 12.50 / 20 / 0.25 / 50 = NATIVE_RATES exactly",
+  "claude-opus-5-5": "page: 4 / 5 / 8 / 0.20 / 20 = NATIVE_RATES exactly",
+  "claude-opus-5": "page: 5 / 6.25 / 10 / 0.50 / 25 = NATIVE_RATES exactly",
+  "claude-opus-4-8": "page: 5 / 6.25 / 10 / 0.50 / 25 = NATIVE_RATES exactly",
+  "claude-sonnet-5-5": "page: 2 / 2.50 / 4 / 0.10 / 10 = NATIVE_RATES exactly",
+  "claude-haiku-5-5": "page: 0.10 / 0.125 / 0.20 / 0.01 / 0.50, and 5x of each over 100,000 prompt tokens = NATIVE_RATES with PRICING_RULES haiku_long_multiplier 5 exactly"
+ }
+}

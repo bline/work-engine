@@ -37,8 +37,9 @@ Counting rules
 
 Pricing is the frozen Standard API scenario of
 anthropic-builder-baselines-20261027 (measurement/final-refresh-v2.json "pricing"):
-not a bill and not subscription quota. A model without a frozen rate is unpriced
-(usd null), never estimated. `weighted` is the pure-Codex baseline unit,
+not a bill and not subscription quota. Rates added later each cite a
+metrics/probes/price-table-addendum-*.json (Fable 5.2 and Sonnet 5: 20261110).
+A model without a frozen rate is unpriced (usd null), never estimated. `weighted` is the pure-Codex baseline unit,
 uncached + cached/10 + 5*output.
 
 F1.1 (2026-10-28) adds fields and one file; every F1 field, total and file is
@@ -102,7 +103,9 @@ NATIVE_RATES = {
     'claude-sonnet-5-5': dict(input=2, output=10, cache_write_5m=2.5, cache_write_1h=4, cache_read=.1),
     'claude-opus-5-5': dict(input=4, output=20, cache_write_5m=5, cache_write_1h=8, cache_read=.2)}
 NATIVE_RATES.update({
+    'claude-fable-5-2': dict(input=8, output=40, cache_write_5m=10, cache_write_1h=16, cache_read=.2),
     'claude-fable-5-1': dict(input=10, output=50, cache_write_5m=12.5, cache_write_1h=20, cache_read=.25),
+    'claude-sonnet-5': dict(input=2, output=10, cache_write_5m=2.5, cache_write_1h=4, cache_read=.2),
     'claude-opus-5': dict(input=5, output=25, cache_write_5m=6.25, cache_write_1h=10, cache_read=.5),
     'claude-opus-4-8': dict(input=5, output=25, cache_write_5m=6.25, cache_write_1h=10, cache_read=.5),
     'claude-haiku-5-5': dict(input=.1, output=.5, cache_write_5m=.125, cache_write_1h=.2, cache_read=.01)})
