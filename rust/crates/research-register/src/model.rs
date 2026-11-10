@@ -243,7 +243,8 @@ pub struct LifecycleEntry {
 /// A finding's `n`: an integer or text (`null` is `None` on [`Finding::n`]).
 #[derive(Debug, Clone, PartialEq)]
 pub enum SampleSize {
-    Integer(serde_json::Number),
+    /// The integer's decimal literal exactly as written, of any magnitude (R-07).
+    Integer(crate::parse::Number),
     Text(String),
 }
 
@@ -1317,15 +1318,16 @@ impl State {
                 decoded.into_iter().collect::<Option<Vec<_>>>().map(Some)
             }),
         };
-        if o.complete {
-            self.decision_pins.push(DecisionPin {
-                at: cx.loc(&pointer),
-                revision: revision.clone(),
-                document: document.clone(),
-                lines: lines.flatten(),
-                revisions: revision_pins,
-            });
-        }
+        // A9 (owner decision D-A9): every pin field that decoded is checked against Git whether
+        // or not the record is complete, so a missing object is `cannot_read` wherever the
+        // record's other faults sit. Fields that did not decode are `None` and are not checked.
+        self.decision_pins.push(DecisionPin {
+            at: cx.loc(&pointer),
+            revision: revision.clone(),
+            document: document.clone(),
+            lines: lines.flatten(),
+            revisions: revision_pins,
+        });
         let historical = match o.get("historical") {
             None => Some(None),
             Some(v) => {
@@ -1619,9 +1621,7 @@ fn finding(
     let n = match o.get("n") {
         None => None,
         Some(Json::Null) => Some(None),
-        Some(Json::Number(num)) if num.is_i64() || num.is_u64() => {
-            Some(Some(SampleSize::Integer(num.clone())))
-        }
+        Some(Json::Number(num)) if num.is_integer() => Some(Some(SampleSize::Integer(num.clone()))),
         Some(Json::String(s)) => Some(Some(SampleSize::Text(s.clone()))),
         Some(other) => {
             cx.bad(
@@ -1685,19 +1685,18 @@ fn revision_entry(
         }
         Some(v) => cx.lines_value(&o.at("lines"), v, RuleId::R13).map(Some),
     };
-    if o.complete {
-        let effective = if o.has("document") {
-            document.clone().flatten()
-        } else {
-            decision_document.map(str::to_owned)
-        };
-        pins.push(RevisionPin {
-            at: cx.loc(pointer),
-            revision: revision.clone(),
-            document: effective,
-            lines: lines.flatten(),
-        });
-    }
+    // A9: collected whether or not the entry is complete (see the decision record).
+    let effective = if o.has("document") {
+        document.clone().flatten()
+    } else {
+        decision_document.map(str::to_owned)
+    };
+    pins.push(RevisionPin {
+        at: cx.loc(pointer),
+        revision: revision.clone(),
+        document: effective,
+        lines: lines.flatten(),
+    });
     Some(RevisionEntry {
         revision: revision?,
         anchor: anchor?,

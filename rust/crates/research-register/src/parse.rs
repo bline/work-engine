@@ -3,19 +3,52 @@
 //!
 //! JSON Lines are split on `\n` only; a trailing `\r` is JSON whitespace. Lines that are empty or
 //! whitespace only are skipped. Line numbers are 1-based.
+//!
+//! Numbers keep their exact source text ([`Number`]), so an integer of any magnitude is preserved
+//! losslessly (R-07, owner decision D-CF02). serde_json (without `arbitrary_precision`) would
+//! read an integer outside i64/u64 as an approximate float, and one longer than about 309 digits
+//! as out of range. So before parsing, [`number_literals`] replaces each valid JSON number literal
+//! outside strings with `0` padded by spaces to the literal's length (lines and columns are
+//! unchanged), and the visitor pairs each placeholder it is given, in document order, with the
+//! next saved literal. The pairing is checked: every visit must be a placeholder and every saved
+//! literal must be used. A float literal that overflows f64 (`1e400`) is left in place, so serde
+//! reports it out of range (F-6) as before; invalid literals are left for serde to reject.
 
 use crate::rules::{Location, RuleId, Violation};
-use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
+use std::cell::Cell;
 use std::collections::HashSet;
 use std::fmt;
 
+/// A JSON number: the exact text of a valid, finite JSON number literal.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Number(String);
+
+impl Number {
+    /// The literal as written.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+    /// An integer in R-07's sense: a literal with no fraction and no exponent, of any magnitude
+    /// (`-0` included; `1.0` and `1e3` are not).
+    pub fn is_integer(&self) -> bool {
+        !self.0.bytes().any(|b| matches!(b, b'.' | b'e' | b'E'))
+    }
+}
+
+impl fmt::Display for Number {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
 /// A parsed JSON value. Objects keep their members in document order and never hold a duplicate
-/// key. Numbers are finite.
+/// key. Numbers are finite and keep their source text.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Json {
     Null,
     Bool(bool),
-    Number(serde_json::Number),
+    Number(Number),
     String(String),
     Array(Vec<Json>),
     Object(Vec<(String, Json)>),
@@ -52,15 +85,40 @@ impl Json {
 
 const DUPLICATE_KEY: &str = "duplicate object key";
 
-impl<'de> Deserialize<'de> for Json {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(JsonVisitor)
+const PAIRING: &str = "number literal pairing failed";
+
+/// The saved number literals of one text, consumed in document order.
+struct Literals {
+    list: Vec<String>,
+    next: Cell<usize>,
+}
+
+impl Literals {
+    fn take<E: de::Error>(&self, placeholder: u64) -> Result<Json, E> {
+        let i = self.next.get();
+        match (placeholder, self.list.get(i)) {
+            (0, Some(text)) => {
+                self.next.set(i + 1);
+                Ok(Json::Number(Number(text.clone())))
+            }
+            _ => Err(E::custom(PAIRING)),
+        }
     }
 }
 
-struct JsonVisitor;
+#[derive(Clone, Copy)]
+struct JsonSeed<'l>(&'l Literals);
 
-impl<'de> Visitor<'de> for JsonVisitor {
+impl<'de> DeserializeSeed<'de> for JsonSeed<'_> {
+    type Value = Json;
+    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Json, D::Error> {
+        deserializer.deserialize_any(JsonVisitor(self.0))
+    }
+}
+
+struct JsonVisitor<'l>(&'l Literals);
+
+impl<'de> Visitor<'de> for JsonVisitor<'_> {
     type Value = Json;
 
     fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -75,16 +133,15 @@ impl<'de> Visitor<'de> for JsonVisitor {
     fn visit_bool<E>(self, v: bool) -> Result<Json, E> {
         Ok(Json::Bool(v))
     }
-    fn visit_i64<E>(self, v: i64) -> Result<Json, E> {
-        Ok(Json::Number(v.into()))
+    /// Every number serde sees is a `0` placeholder; anything else breaks the pairing.
+    fn visit_i64<E: de::Error>(self, _: i64) -> Result<Json, E> {
+        Err(E::custom(PAIRING))
     }
-    fn visit_u64<E>(self, v: u64) -> Result<Json, E> {
-        Ok(Json::Number(v.into()))
+    fn visit_u64<E: de::Error>(self, v: u64) -> Result<Json, E> {
+        self.0.take(v)
     }
-    fn visit_f64<E: de::Error>(self, v: f64) -> Result<Json, E> {
-        serde_json::Number::from_f64(v)
-            .map(Json::Number)
-            .ok_or_else(|| E::custom("non-finite number"))
+    fn visit_f64<E: de::Error>(self, _: f64) -> Result<Json, E> {
+        Err(E::custom(PAIRING))
     }
     fn visit_str<E>(self, v: &str) -> Result<Json, E> {
         Ok(Json::String(v.to_owned()))
@@ -94,7 +151,7 @@ impl<'de> Visitor<'de> for JsonVisitor {
     }
     fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Json, A::Error> {
         let mut items = Vec::new();
-        while let Some(item) = seq.next_element()? {
+        while let Some(item) = seq.next_element_seed(JsonSeed(self.0))? {
             items.push(item);
         }
         Ok(Json::Array(items))
@@ -106,7 +163,7 @@ impl<'de> Visitor<'de> for JsonVisitor {
             if !seen.insert(key.clone()) {
                 return Err(de::Error::custom(format!("{DUPLICATE_KEY} {key:?}")));
             }
-            members.push((key, map.next_value()?));
+            members.push((key, map.next_value_seed(JsonSeed(self.0))?));
         }
         Ok(Json::Object(members))
     }
@@ -167,8 +224,108 @@ pub fn lines(file: &str, bytes: &[u8], out: &mut Vec<Violation>) -> Vec<(u64, Js
     records
 }
 
+/// `text` with every valid, finite JSON number literal outside strings replaced by `0` and
+/// spaces of the same length, and those literals in document order. A literal is the maximal run
+/// of `0-9 + - . e E` starting at `-` or a digit; runs that are not valid JSON numbers, and float
+/// literals that overflow f64, are left unchanged for serde_json to reject.
+fn number_literals(text: &str) -> (String, Vec<String>) {
+    let bytes = text.as_bytes();
+    let mut masked = bytes.to_vec();
+    let mut literals = Vec::new();
+    let (mut in_string, mut escaped) = (false, false);
+    let mut i = 0;
+    while i < bytes.len() {
+        let b = bytes[i];
+        if in_string {
+            match (escaped, b) {
+                (true, _) => escaped = false,
+                (false, b'\\') => escaped = true,
+                (false, b'"') => in_string = false,
+                _ => {}
+            }
+            i += 1;
+        } else if b == b'"' {
+            in_string = true;
+            i += 1;
+        } else if b == b'-' || b.is_ascii_digit() {
+            let start = i;
+            while i < bytes.len()
+                && matches!(bytes[i], b'0'..=b'9' | b'+' | b'-' | b'.' | b'e' | b'E')
+            {
+                i += 1;
+            }
+            let literal = &text[start..i];
+            let keep = is_json_number(literal)
+                && (Number(literal.to_owned()).is_integer()
+                    || literal.parse::<f64>().is_ok_and(f64::is_finite));
+            if keep {
+                masked[start] = b'0';
+                masked[start + 1..i].fill(b' ');
+                literals.push(literal.to_owned());
+            }
+        } else {
+            i += 1;
+        }
+    }
+    // Only ASCII bytes inside literals were replaced by ASCII, so the text stays UTF-8.
+    let masked = String::from_utf8(masked).expect("ASCII replacement keeps UTF-8");
+    (masked, literals)
+}
+
+/// RFC 8259 `number`: `-? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?`, whole text.
+fn is_json_number(s: &str) -> bool {
+    let b = s.as_bytes();
+    let mut i = usize::from(b.first() == Some(&b'-'));
+    let digits = |i: &mut usize| {
+        let start = *i;
+        while *i < b.len() && b[*i].is_ascii_digit() {
+            *i += 1;
+        }
+        *i - start
+    };
+    match b.get(i) {
+        Some(b'0') => i += 1,
+        Some(b'1'..=b'9') => {
+            digits(&mut i);
+        }
+        _ => return false,
+    }
+    if b.get(i) == Some(&b'.') {
+        i += 1;
+        if digits(&mut i) == 0 {
+            return false;
+        }
+    }
+    if matches!(b.get(i), Some(b'e' | b'E')) {
+        i += 1;
+        if matches!(b.get(i), Some(b'+' | b'-')) {
+            i += 1;
+        }
+        if digits(&mut i) == 0 {
+            return false;
+        }
+    }
+    i == b.len()
+}
+
+/// Parse one JSON text with numbers kept as their literals (see the module notes).
+fn parse_json(text: &str) -> Result<Json, serde_json::Error> {
+    let (masked, list) = number_literals(text);
+    let literals = Literals {
+        list,
+        next: Cell::new(0),
+    };
+    let mut de = serde_json::Deserializer::from_str(&masked);
+    let value = JsonSeed(&literals).deserialize(&mut de)?;
+    de.end()?;
+    if literals.next.get() != literals.list.len() {
+        return Err(de::Error::custom(PAIRING));
+    }
+    Ok(value)
+}
+
 fn parse_text(file: &str, line: Option<u64>, text: &str, out: &mut Vec<Violation>) -> Option<Json> {
-    match serde_json::from_str::<Json>(text) {
+    match parse_json(text) {
         Ok(value) => Some(value),
         Err(e) => {
             let message = e.to_string();
@@ -211,4 +368,71 @@ fn has_non_finite_token(text: &str) -> bool {
         }
     }
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn numbers(v: &Json, out: &mut Vec<String>) {
+        match v {
+            Json::Number(n) => out.push(n.as_str().to_owned()),
+            Json::Array(items) => items.iter().for_each(|i| numbers(i, out)),
+            Json::Object(members) => members.iter().for_each(|(_, m)| numbers(m, out)),
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn number_literals_pair_in_document_order() {
+        let text = r#"{"a\"1": "2\\", "k": -0, "12": [4.5e-1, "5\"6", 7E+2, {"x": [[8], 1e-400]}], "t": [true, false, null, 18446744073709551616]}"#;
+        let v = parse_json(text).unwrap();
+        let mut got = Vec::new();
+        numbers(&v, &mut got);
+        assert_eq!(
+            got,
+            [
+                "-0",
+                "4.5e-1",
+                "7E+2",
+                "8",
+                "1e-400",
+                "18446744073709551616"
+            ]
+        );
+    }
+
+    #[test]
+    fn json_number_grammar() {
+        for ok in [
+            "0", "-0", "1", "-12", "1.5", "1e5", "1E+5", "1e-05", "-0.0e0",
+        ] {
+            assert!(is_json_number(ok), "{ok}");
+        }
+        for bad in [
+            "", "-", "01", "-01", "1.", ".1", "+1", "1e", "1e+", "1.e1", "1-2", "--1",
+        ] {
+            assert!(!is_json_number(bad), "{bad}");
+        }
+    }
+
+    /// Masking keeps serde_json's error positions: the same line and column as on the original.
+    #[test]
+    fn errors_keep_their_positions() {
+        for text in [
+            "[123, x]",
+            "{\"a\": 12345 6}",
+            "[1,\n 22, 333 }",
+            "[01]",
+            "[1e400]",
+        ] {
+            let ours = parse_json(text).unwrap_err();
+            let theirs = serde_json::from_str::<serde_json::Value>(text).unwrap_err();
+            assert_eq!(
+                (ours.line(), ours.column()),
+                (theirs.line(), theirs.column()),
+                "{text}"
+            );
+        }
+    }
 }

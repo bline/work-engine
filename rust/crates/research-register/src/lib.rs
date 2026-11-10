@@ -24,9 +24,9 @@ pub use model::{Decoded, Index, Records, decode};
 pub use objects::{
     Ancestry, BlobAt, Commit, EntryKind, GitObjects, Prefix, TreeEntry, TreeListing,
 };
-pub use parse::Json;
+pub use parse::{Json, Number};
 pub use rules::{Location, RuleId, Violation};
 pub use snapshot::{
     EntryIdentity, PinnedSnapshot, SNAPSHOT_SCHEMA, SnapshotEntry, SnapshotIdentity,
 };
-pub use validate::{Outcome, ValidRegister, validate};
+pub use validate::{Outcome, Unreadable, ValidRegister, validate, validate_report};

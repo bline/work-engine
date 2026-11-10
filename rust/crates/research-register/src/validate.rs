@@ -61,8 +61,25 @@ pub enum Outcome {
     Invalid(Vec<Violation>),
 }
 
-/// Validate the register in `snapshot`.
+/// A validation that could not be completed (A9): the reading failure, plus the violations
+/// established before it, kept as diagnostics. Every Git-free check runs first, then the Git
+/// checks in record order until the first failure, so `diagnostics` is deterministic for a given
+/// register and repository.
+#[derive(Debug)]
+pub struct Unreadable {
+    pub error: Error,
+    pub diagnostics: Vec<Violation>,
+}
+
+/// Validate the register in `snapshot`. [`validate_report`] also returns the diagnostics of a
+/// validation that could not be completed.
 pub fn validate(snapshot: &PinnedSnapshot) -> Result<Outcome, Error> {
+    validate_report(snapshot).map_err(|u| u.error)
+}
+
+/// Validate the register in `snapshot`, keeping the violations established before a reading
+/// failure.
+pub fn validate_report(snapshot: &PinnedSnapshot) -> Result<Outcome, Unreadable> {
     let mut out = file_set(snapshot);
     let files = snapshot
         .entries()
@@ -76,11 +93,20 @@ pub fn validate(snapshot: &PinnedSnapshot) -> Result<Outcome, Error> {
     out.extend(decoded.violations);
     references(&decoded.records, &decoded.index, &mut out);
     let mut git = Git::new(snapshot.objects());
-    for pin in &decoded.pins {
-        git.pin(pin, &mut out)?;
-    }
-    for d in &decoded.decision_pins {
-        git.decision(d, &mut out)?;
+    let checked = (|| {
+        for pin in &decoded.pins {
+            git.pin(pin, &mut out)?;
+        }
+        for d in &decoded.decision_pins {
+            git.decision(d, &mut out)?;
+        }
+        Ok(())
+    })();
+    if let Err(error) = checked {
+        return Err(Unreadable {
+            error,
+            diagnostics: out,
+        });
     }
     Ok(if out.is_empty() {
         Outcome::Valid(Box::new(ValidRegister::new(snapshot, decoded.records)))

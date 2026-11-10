@@ -960,3 +960,104 @@ fn decode_register_dir_from_env() {
     );
     assert!(d.violations.is_empty(), "{:#?}", d.violations);
 }
+
+/// R-1b.4 item 5 (owner decision D-CF02): an R-07 integer is a JSON number literal without a
+/// fraction or exponent, of any magnitude, kept losslessly as its decimal text.
+#[test]
+fn r07_integers_of_any_magnitude_are_kept_losslessly() {
+    use research_register::Json;
+    use research_register::model::SampleSize;
+    let files = render(&base());
+    let file = "studies/alpha.json";
+    let study = String::from_utf8(files[file].clone()).unwrap();
+    assert!(study.contains("\"n\":4") && study.contains("\"value\":3"));
+    let with = |text: String| {
+        let mut f = files.clone();
+        f.insert(file.into(), text.into_bytes());
+        f
+    };
+    let with_n = |n: &str| with(study.replace("\"n\":4", &format!("\"n\":{n}")));
+    let decoded_n = |f: &BTreeMap<String, Vec<u8>>| {
+        let d = decode(f.iter().map(|(p, b)| (p.as_str(), b.as_slice())));
+        let finding = &d.records.studies[0].findings[0];
+        let value = match &finding.value {
+            Json::Number(v) => v.as_str().to_owned(),
+            other => format!("{other:?}"),
+        };
+        let n = match &finding.n {
+            Some(SampleSize::Integer(v)) => v.as_str().to_owned(),
+            other => format!("{other:?}"),
+        };
+        (d.violations, n, value)
+    };
+    let nines = "9".repeat(400);
+    for n in [
+        "18446744073709551615",
+        "18446744073709551616",
+        "-9223372036854775808",
+        "-9223372036854775809",
+        "1234567890123456789012345678901234567890",
+        nines.as_str(),
+        "-0",
+        "0",
+    ] {
+        let (v, got, _) = decoded_n(&with_n(n));
+        assert!(
+            v.is_empty(),
+            "{n}: {:?}",
+            v.iter().map(summary).collect::<Vec<_>>()
+        );
+        assert_eq!(got, n, "n is kept as written");
+    }
+    let mut failures = Vec::new();
+    for n in [
+        "1.0", "1e3", "1E3", "1e+3", "-0.0", "0.5", "1e-400", "10E-1",
+    ] {
+        check_one(
+            n,
+            &with_n(n),
+            ("R-07", file, None, "/findings/0/n"),
+            &mut failures,
+        );
+    }
+    // Not JSON numbers: still parse errors (R-02), never integers.
+    for n in [
+        "01", "-01", "1.", ".5", "+1", "-", "1e", "1e+", "0x10", "1_0",
+    ] {
+        check_one(n, &with_n(n), ("R-02", file, Some(1), ""), &mut failures);
+    }
+    // A float literal that overflows f64 is still F-6; a long integer is not.
+    check_one(
+        "1e400",
+        &with_n("1e400"),
+        ("F-6", file, Some(1), ""),
+        &mut failures,
+    );
+    assert!(failures.is_empty(), "{failures:#?}");
+    // Digits, signs, exponents, quotes and escapes inside strings (keys and values) before and
+    // around the numbers do not shift the pairing of numbers with their literals.
+    let tricky = study
+        .replace(
+            "\"claim\":\"c\"",
+            r#""claim":"\"1\" -2 3e5 \\","1e9 \"x":"7","z":"\\\"""#,
+        )
+        .replace("\"n\":4", "\"n\":123456789012345678901234567890");
+    let (v, n, value) = decoded_n(&with(tricky));
+    assert_eq!(
+        v.iter().map(summary).collect::<Vec<_>>(),
+        vec![
+            (
+                "R-03".into(),
+                file.into(),
+                None,
+                "/findings/0/1e9 \"x".into()
+            ),
+            ("R-03".into(), file.into(), None, "/findings/0/z".into()),
+        ],
+        "only the two extra keys are reported"
+    );
+    assert_eq!(
+        (n.as_str(), value.as_str()),
+        ("123456789012345678901234567890", "3")
+    );
+}

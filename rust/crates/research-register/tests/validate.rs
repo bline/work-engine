@@ -5,7 +5,9 @@
 
 mod support;
 
-use research_register::{Error, GitObjects, Outcome, PinnedSnapshot, Violation, validate};
+use research_register::{
+    Error, GitObjects, Outcome, PinnedSnapshot, Unreadable, Violation, validate, validate_report,
+};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -1004,4 +1006,240 @@ fn validate_command_outcomes_and_exit_codes() {
         .output()
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
+}
+
+fn report(repo: &Path, commit: &str) -> Result<Outcome, Unreadable> {
+    let snapshot = PinnedSnapshot::build(GitObjects::open(repo).unwrap(), commit, REG).unwrap();
+    validate_report(&snapshot)
+}
+
+fn drop_key(reg: &mut Reg, file: &str, pointer: &str, key: &str) {
+    reg.get_mut(file)
+        .unwrap()
+        .pointer_mut(pointer)
+        .unwrap()
+        .as_object_mut()
+        .unwrap()
+        .remove(key)
+        .expect("key exists");
+}
+
+/// R-1b.4 item 3 (owner decision D-A9): every decision pin field that decodes is checked against
+/// Git whether or not its record is complete, so a missing object is `cannot_read` wherever the
+/// other faults sit, and the violations found before it are kept as diagnostics.
+#[test]
+fn a9_missing_objects_are_cannot_read_wherever_other_faults_sit() {
+    let fx = Fx::new("validate-a9");
+    let (repo, i) = history(&fx, "r");
+    let absent = "1111111111111111111111111111111111111111";
+    let absent_rev = |r: &mut Reg, d: usize| {
+        set(
+            r,
+            "decisions.json",
+            &format!("/{d}/revision"),
+            json!(format!("git:{absent}")),
+        );
+        set(
+            r,
+            "applicability.jsonl",
+            &format!("/{d}/decision_revision"),
+            json!(format!("git:{absent}")),
+        );
+    };
+    let no_owner = |r: &mut Reg, d: usize| drop_key(r, "decisions.json", &format!("/{d}"), "owner");
+    let listed_without_anchor = |r: &mut Reg, d: usize| {
+        r.get_mut("decisions.json").unwrap()[d]["revisions"] = json!([{"revision": format!("git:{}", &absent[..8]),
+                    "superseded_at": "2026-01-01", "reason": "r"}]);
+    };
+    type Case<'a> = (&'a str, Mutation<'a>, &'a str);
+    let cases: Vec<Case> = vec![
+        (
+            "(a) same decision: missing owner + absent revision (decision 1)",
+            Box::new(|r| {
+                no_owner(r, 1);
+                absent_rev(r, 1);
+            }),
+            "/1",
+        ),
+        (
+            "(a, swapped) same decision: missing owner + absent revision (decision 0)",
+            Box::new(|r| {
+                no_owner(r, 0);
+                absent_rev(r, 0);
+            }),
+            "/0",
+        ),
+        (
+            "(b) absent revision in decision 1, missing owner in decision 0",
+            Box::new(|r| {
+                no_owner(r, 0);
+                absent_rev(r, 1);
+            }),
+            "/0",
+        ),
+        (
+            "(b, swapped) absent revision in decision 0, missing owner in decision 1",
+            Box::new(|r| {
+                no_owner(r, 1);
+                absent_rev(r, 0);
+            }),
+            "/1",
+        ),
+        (
+            "(c) listed revision without anchor, at an absent commit (decision 0)",
+            Box::new(|r| listed_without_anchor(r, 0)),
+            "/0/revisions/0",
+        ),
+        (
+            "(c, swapped) listed revision without anchor, at an absent commit (decision 1)",
+            Box::new(|r| listed_without_anchor(r, 1)),
+            "/1/revisions/0",
+        ),
+    ];
+    for (name, mutate, r03_at) in cases {
+        let mut reg = base(&i);
+        mutate(&mut reg);
+        let c = commit(&fx, &repo, &reg, &|_| {});
+        match report(&repo, &c) {
+            Err(Unreadable { error, diagnostics }) => {
+                assert_eq!(error.category(), "cannot_read", "{name}: {error}");
+                assert!(
+                    diagnostics
+                        .iter()
+                        .any(|v| v.rule.as_str() == "R-03" && v.location.pointer == r03_at),
+                    "{name}: R-03 at {r03_at} missing from diagnostics {:#?}",
+                    shown(&diagnostics)
+                );
+            }
+            Ok(o) => panic!("{name}: expected cannot_read, got {o:?}"),
+        }
+    }
+    // (d) A malformed revision needs no Git operation: invalid, not cannot_read.
+    let mut reg = base(&i);
+    set(&mut reg, "decisions.json", "/1/revision", json!("git:XYZ"));
+    no_owner(&mut reg, 1);
+    let c = commit(&fx, &repo, &reg, &|_| {});
+    let v = violations(&repo, &c);
+    assert!(
+        v.iter().any(|v| v.rule.as_str() == "R-12") && v.iter().any(|v| v.rule.as_str() == "R-03"),
+        "(d): {:#?}",
+        shown(&v)
+    );
+    // The command prints the diagnostics with the cannot_read outcome (exit 4).
+    let mut reg = base(&i);
+    no_owner(&mut reg, 1);
+    absent_rev(&mut reg, 1);
+    let c = commit(&fx, &repo, &reg, &|_| {});
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_work-engine-register"))
+        .args(["validate", "--at", &c, "--register", REG, "--repo"])
+        .arg(&repo)
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(4));
+    let doc: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(doc["outcome"], "cannot_read");
+    assert!(
+        doc["diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|d| d["rule"] == "R-03" && d["pointer"] == "/1"),
+        "{doc}"
+    );
+}
+
+/// R-1b.4 item 4 (owner decision D-A5): an abbreviation is resolved against verified objects of
+/// any type; two or more are ambiguous (A5); a junk or corrupt object file sharing the prefix is
+/// `cannot_read`, even beside a valid candidate, and never counts as a candidate.
+#[test]
+fn a5_counts_verified_objects_and_junk_is_cannot_read() {
+    let fx = Fx::new("validate-a5-types");
+    let (repo, i) = history(&fx, "r");
+    // 60k blobs and 60k commits (deterministic), so that commit+blob and commit+commit pairs share
+    // a 7-hex prefix.
+    let mut stream = Vec::new();
+    for k in 0..60_000u32 {
+        let data = format!("filler {k}\n");
+        stream.extend_from_slice(format!("blob\ndata {}\n{data}\n", data.len()).as_bytes());
+        let msg = format!("c{k}\n");
+        stream.extend_from_slice(
+            format!(
+                "commit refs/heads/fill\ncommitter t <t@x> 0 +0000\ndata {}\n{msg}\n",
+                msg.len()
+            )
+            .as_bytes(),
+        );
+    }
+    fx.git_with(&repo, &["fast-import", "--quiet"], Some(&stream), &[]);
+    let all = fx.git(
+        &repo,
+        &[
+            "cat-file",
+            "--batch-all-objects",
+            "--batch-check=%(objectname) %(objecttype)",
+        ],
+    );
+    let mut ids: Vec<(&str, &str)> = all.lines().filter_map(|l| l.split_once(' ')).collect();
+    ids.sort_unstable();
+    let pair = |a: &str, b: &str| {
+        ids.windows(2)
+            .find(|w| {
+                w[0].0[..7] == w[1].0[..7]
+                    && ((w[0].1 == a && w[1].1 == b) || (w[0].1 == b && w[1].1 == a))
+                    && ids.iter().filter(|x| x.0[..7] == w[0].0[..7]).count() == 2
+            })
+            .map(|w| w[0].0[..7].to_owned())
+            .unwrap_or_else(|| panic!("no {a}+{b} pair sharing 7 hex"))
+    };
+    let pin_at = |prefix: &str| {
+        let mut reg = base(&i);
+        set(
+            &mut reg,
+            "studies/alpha.json",
+            "/findings/0/sources/0/commit",
+            json!(prefix),
+        );
+        reg
+    };
+    let a5 = ("R-10", "studies/alpha.json", None, "/findings/0/sources/0");
+    for (a, b) in [("commit", "blob"), ("commit", "commit")] {
+        let prefix = pair(a, b);
+        let c = commit(&fx, &repo, &pin_at(&prefix), &|_| {});
+        assert_one(&format!("{a}+{b} at {prefix}"), &violations(&repo, &c), a5);
+    }
+    // A junk loose object file sharing the prefix of a valid commit: cannot_read, whether the
+    // valid commit is loose or packed. The pin names A by its first 7 hex digits.
+    let junk_name = format!("{}{}", &i.a[..7], "0".repeat(33));
+    assert_ne!(junk_name, i.a);
+    let junk = fx.loose(&repo, &junk_name);
+    let c = commit(&fx, &repo, &base(&i), &|_| {});
+    assert_eq!(
+        category(run(&repo, &c)),
+        "valid",
+        "control: unique valid commit"
+    );
+    std::fs::create_dir_all(junk.parent().unwrap()).unwrap();
+    std::fs::write(&junk, b"not a zlib object").unwrap();
+    assert_eq!(
+        category(run(&repo, &c)),
+        "cannot_read",
+        "loose commit + junk"
+    );
+    std::fs::remove_file(&junk).unwrap();
+    fx.git(&repo, &["repack", "-a", "-d", "-q"]);
+    assert!(!fx.loose(&repo, &i.a).exists(), "A is packed");
+    assert_eq!(category(run(&repo, &c)), "valid", "control: packed commit");
+    std::fs::create_dir_all(junk.parent().unwrap()).unwrap();
+    std::fs::write(&junk, b"not a zlib object").unwrap();
+    assert_eq!(
+        category(run(&repo, &c)),
+        "cannot_read",
+        "packed commit + junk"
+    );
+    // A junk file alone under a prefix no object has.
+    let lonely = fx.loose(&repo, &format!("eeeeeee{}", "1".repeat(33)));
+    std::fs::create_dir_all(lonely.parent().unwrap()).unwrap();
+    std::fs::write(&lonely, b"junk").unwrap();
+    let c = commit(&fx, &repo, &pin_at("eeeeeee"), &|_| {});
+    assert_eq!(category(run(&repo, &c)), "cannot_read", "junk alone");
 }

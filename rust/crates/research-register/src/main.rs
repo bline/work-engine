@@ -6,7 +6,8 @@
 //! JSON `outcome` names which).
 
 use research_register::{
-    Error, GitObjects, Outcome, PinnedSnapshot, SNAPSHOT_SCHEMA, Violation, validate,
+    Error, GitObjects, Outcome, PinnedSnapshot, SNAPSHOT_SCHEMA, Unreadable, Violation,
+    validate_report,
 };
 use serde::Serialize;
 use std::path::PathBuf;
@@ -22,6 +23,20 @@ struct Failure<'a> {
     outcome: &'static str,
     requested: &'a str,
     error: String,
+    /// A9: violations established before validation stopped at a reading failure. Omitted when
+    /// empty, so other failures print as before.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    diagnostics: Vec<ViolationOut<'a>>,
+}
+
+fn shown(v: &Violation) -> ViolationOut<'_> {
+    ViolationOut {
+        rule: v.rule.as_str(),
+        file: &v.location.file,
+        line: v.location.line,
+        pointer: &v.location.pointer,
+        detail: &v.detail,
+    }
 }
 
 #[derive(Serialize)]
@@ -62,13 +77,17 @@ fn main() -> ExitCode {
     };
     let result = GitObjects::open(&repo)
         .and_then(|objects| PinnedSnapshot::build(objects, &at, &register))
+        .map_err(|error| Unreadable {
+            error,
+            diagnostics: Vec::new(),
+        })
         .and_then(|snapshot| match command {
             Command::Snapshot => {
                 print(&snapshot.identity());
                 Ok(ExitCode::SUCCESS)
             }
             Command::Validate => {
-                let outcome = validate(&snapshot)?;
+                let outcome = validate_report(&snapshot)?;
                 let (name, code, violations): (_, _, &[Violation]) = match &outcome {
                     Outcome::Valid(_) => ("valid", 0, &[]),
                     Outcome::Invalid(v) => ("invalid", 1, v),
@@ -80,28 +99,23 @@ fn main() -> ExitCode {
                     commit: snapshot.commit().to_string(),
                     register_path: snapshot.register_path(),
                     register_tree: snapshot.register_tree().to_string(),
-                    violations: violations
-                        .iter()
-                        .map(|v| ViolationOut {
-                            rule: v.rule.as_str(),
-                            file: &v.location.file,
-                            line: v.location.line,
-                            pointer: &v.location.pointer,
-                            detail: &v.detail,
-                        })
-                        .collect(),
+                    violations: violations.iter().map(shown).collect(),
                 });
                 Ok(ExitCode::from(code))
             }
         });
     match result {
         Ok(code) => code,
-        Err(e) => {
+        Err(Unreadable {
+            error: e,
+            diagnostics,
+        }) => {
             print(&Failure {
                 schema,
                 outcome: e.category(),
                 requested: &at,
                 error: e.to_string(),
+                diagnostics: diagnostics.iter().map(shown).collect(),
             });
             ExitCode::from(if matches!(e, Error::BadRequest(_)) {
                 3

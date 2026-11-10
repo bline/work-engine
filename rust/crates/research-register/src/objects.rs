@@ -312,16 +312,32 @@ impl GitObjects {
             prefix: hex.into(),
             reason: e.to_string(),
         })?;
-        match self.repo.objects.lookup_prefix(prefix, None) {
-            Ok(None) => Ok(Prefix::Missing),
-            Ok(Some(Ok(id))) => Ok(Prefix::Unique(id)),
-            Ok(Some(Err(()))) => Ok(Prefix::Ambiguous),
-            Err(e) => Err(CannotRead::ObjectStore {
+        let mut candidates = HashSet::new();
+        if let Err(e) = self
+            .repo
+            .objects
+            .lookup_prefix(prefix, Some(&mut candidates))
+        {
+            return Err(CannotRead::ObjectStore {
                 id: hex.into(),
                 reason: e.to_string(),
             }
-            .into()),
+            .into());
         }
+        // A5 (owner decision D-A5): only verified objects of any type are candidates. Every id in
+        // the store with the prefix is read and verified first; one that cannot be (a junk or
+        // corrupt object file) makes resolution unreliable, so it is `cannot_read` even when
+        // another candidate is valid, and it is never counted as an ambiguity candidate.
+        let mut ids: Vec<ObjectId> = candidates.into_iter().collect();
+        ids.sort_unstable();
+        for id in &ids {
+            self.read(*id)?;
+        }
+        Ok(match ids.as_slice() {
+            [] => Prefix::Missing,
+            [id] => Prefix::Unique(*id),
+            _ => Prefix::Ambiguous,
+        })
     }
 
     /// The entry at `path` in `commit`'s tree, or `None` when no such path exists.
