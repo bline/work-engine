@@ -114,7 +114,7 @@ python3 -I metrics/scripts/task_profile_record.py status --run-dir RUN_DIR [--ta
 <!-- /cli-synopsis -->
 <!-- cli-synopsis script=metrics/scripts/usage_ledger.py subs="build" display="python3 -I metrics/scripts/usage_ledger.py" -->
 ```text
-python3 -I metrics/scripts/usage_ledger.py build [--since SINCE] [--until UNTIL] --out OUT [--no-codex] [--no-claude] [--streams [STREAMS ...]]
+python3 -I metrics/scripts/usage_ledger.py build [--since SINCE] [--until UNTIL] --out OUT [--no-codex] [--no-claude] [--streams [STREAMS ...]] [--no-pi] [--pi-state PI_STATE]
 # other subcommands (put --help after one for its usage): reconcile-trial, windows, tree, control
 ```
 <!-- /cli-synopsis -->

@@ -173,7 +173,10 @@ What the agent gets, enforced by the container rather than by instructions:
 The proxy log and runner record (`pi/<session>/host/turn-N.*`) are host-only.
 The events and the extension's tier record are written inside the container,
 where the agent could alter them, so `status` takes the tier, request count and
-usage from the proxy (`last_turn.egress`, `service_tier.observed_by`). The turn
+usage from the proxy (`last_turn.egress`, `service_tier.observed_by`). The proxy
+log records input, cached, cache-write, output and reasoning tokens per call;
+`metrics/scripts/usage_ledger.py build` reads it as provider `pi`, marks each
+call with the tier the provider reported, and prices it at that tier. The turn
 container is removed after each turn; `retire --force` stops it. If the runner
 dies before its cleanup, `status` lists the container and socket folder it left
 under `leftovers`, and `retire` (forced or not) removes them.

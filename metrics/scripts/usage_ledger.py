@@ -3,7 +3,7 @@
 
 Usage
   python3 -I usage_ledger.py build --since ISO [--until ISO] [--no-codex] [--no-claude]
-                                   [--streams GLOB ...] --out DIR
+                                   [--no-pi] [--pi-state DIR] [--streams GLOB ...] --out DIR
       Writes DIR/calls.jsonl (one row per model call), DIR/quota.jsonl (provider
       utilisation readings), DIR/level1.json (reconstructed totals against provider
       cumulative counters), DIR/issues.jsonl, DIR/summary.json and, since F1.1,
@@ -65,6 +65,24 @@ separate objective costs from account-wide meter observations and leave
 uncalibrated objective quota estimates null. Existing numeric fields and budget
 thresholds retain their meaning; cost bounds are not quota confidence bounds.
 
+Pi (2026-11-10). Pi turns that role_host.py ran with --container are read from
+the role_host state directory (--pi-state, default $XDG_STATE_HOME/work-engine/
+role-host): its ledger names each turn's egress-proxy log, which role_host
+writes on the host, outside the agent's reach. One call per unique response_id
+with HTTP 200, provider `pi`, pool `pi_api` (API-billed; not in the objective
+budget tree yet). Usage is Codex-shaped. Cache writes come from the proxy log,
+or, for logs written before the proxy recorded them, from Pi's session file by
+response_id (`cache_write_basis`); a call with neither is unpriced.
+`service_tier` is the tier the provider reported on the call, not the one
+requested (`requested_tier`). For these API-billed calls `quota_multiplier` is
+OpenAI's published price ratio for that tier, so `speed_adjusted_api_usd` is
+the call's tier-priced API estimate while `usd` stays the Standard scenario:
+`flex` 0.5 and Fast (`priority`, renamed `fast` on 2026-07-30) 2, exact for
+every CODEX_RATES model on developers.openai.com/api/docs/pricing as read on
+2026-11-10. Other tiers (`auto`, `scale`) are unknown and get the usual bounds.
+Pi turns run on the host without --container have no proxy log; they are
+counted in coverage as `pi_host_turns_not_read`, not read.
+
 Objective time (2026-11-07). Budgets limit dollars and scope additions, not
 time: wall-clock limits expired while work waited for a person. Tree and
 control snapshots carry `time`, information only: the window's length and
@@ -97,6 +115,12 @@ STATE_DB = f'{HOME}/.codex/state_5.sqlite'
 PREFIX = re.compile(r'^\{"timestamp":"([^"]+)",(?:"ordinal":\d+,)?"type":"(\w+)","payload":\{"type":"(\w+)"')
 INPUT_ITEMS = ('function_call_output', 'custom_tool_call_output')
 QUOTA_MULTIPLIER = {'default': 1.0, 'priority': 2.5}
+# API price ratio by the tier a provider reported; see the Pi section above.
+API_TIER_MULTIPLIER = {'default': 1.0, 'flex': 0.5, 'priority': 2.0, 'fast': 2.0}
+PI_STATE = os.path.join(os.environ.get('XDG_STATE_HOME') or os.path.join(os.path.expanduser('~'), '.local/state'),
+                        'work-engine', 'role-host')
+# Providers whose calls carry Codex-shaped usage and a service_tier.
+CODEX_SHAPED = ('codex', 'pi')
 PRICING_RULES = dict(codex_long_input_threshold=272000, codex_long_input_multiplier=2,
                      codex_long_output_multiplier=1.5, unknown_tier_low=1, unknown_tier_high=2.5,
                      haiku_long_input_threshold=100000, haiku_long_multiplier=5)
@@ -659,6 +683,96 @@ def stream_quota(globs):
                 except (TypeError, ValueError, AttributeError): issue('malformed_quota_record', path=f, line=n)
     return rows
 
+# ---------------------------------------------------------------- Pi
+def pi_session_cache_writes(session_dir, sid):
+    """response_id -> cache-write tokens from Pi's session file (its `cacheWrite`)."""
+    out = {}
+    if not session_dir:
+        return out
+    paths = glob.glob(os.path.join(session_dir, f'*{sid}*.jsonl')) + glob.glob(os.path.join(session_dir, '*', f'*{sid}*.jsonl'))
+    for path in paths:
+        for line in open_lines(path):
+            try: rec = json.loads(line)
+            except ValueError: continue
+            m = rec.get('message') if isinstance(rec, dict) else None
+            if isinstance(m, dict) and rec.get('type') == 'message' and m.get('role') == 'assistant' and m.get('responseId'):
+                cw = (m.get('usage') or {}).get('cacheWrite')
+                if isinstance(cw, int) and not isinstance(cw, bool) and cw >= 0:
+                    out[m['responseId']] = cw
+    return out
+
+def build_pi(since, until, state=PI_STATE):
+    """Pi container turns run by role_host: one call per response_id in the host egress-proxy log."""
+    ledger = os.path.join(state, 'ledger.jsonl')
+    rows, seen = [], set()
+    cov = dict(pi_container_turns=0, pi_host_turns_not_read=0, pi_proxy_logs_missing=0)
+    if not os.path.exists(ledger):
+        return rows, cov
+    records = []
+    for n, line in enumerate(open_lines(ledger), 1):
+        try: records.append(json.loads(line))
+        except ValueError: issue('malformed_role_host_row', path=ledger, line=n)
+    launches = {r['session_id']: r for r in records
+                if isinstance(r, dict) and r.get('host') == 'pi' and r.get('event') == 'launch' and r.get('session_id')}
+    for r in records:
+        if not isinstance(r, dict) or r.get('host') != 'pi' or not r.get('turn'):
+            continue
+        log = (r.get('files') or {}).get('proxy_log')
+        if not log:
+            cov['pi_host_turns_not_read'] += 1
+            continue
+        if not os.path.exists(log):
+            cov['pi_proxy_logs_missing'] += 1; issue('pi_proxy_log_missing', path=log)
+            continue
+        cov['pi_container_turns'] += 1
+        sid = r.get('session_id'); launch = launches.get(sid, {})
+        session_dir = (launch.get('container_environment') or {}).get('session_dir')
+        writes = None
+        for n, line in enumerate(open_lines(log), 1):
+            try: p = json.loads(line)
+            except ValueError: issue('malformed_pi_proxy_row', path=log, line=n); continue
+            if not isinstance(p, dict) or p.get('event') != 'request':
+                continue
+            rid = p.get('response_id')
+            if p.get('http_status') != 200 or not rid:
+                issue('pi_request_without_response', path=log, line=n, http_status=p.get('http_status')); continue
+            if rid in seen:
+                issue('duplicate_response_id', path=log, line=n, response_id=rid); continue
+            seen.add(rid)
+            ts = p.get('at')
+            if not in_window(ts, since, until):
+                continue
+            pu = p.get('usage') or {}
+            cw, basis = pu.get('cache_write_tokens'), 'egress_proxy'
+            if cw is None:
+                if writes is None:
+                    writes = pi_session_cache_writes(session_dir, sid)
+                cw = writes.get(rid)
+                basis = 'pi_session' if cw is not None else None
+            u = dict(input_tokens=pu.get('input_tokens'), cached_input_tokens=pu.get('cached_tokens') or 0,
+                     cache_write_input_tokens=cw, output_tokens=pu.get('output_tokens'),
+                     reasoning_output_tokens=pu.get('reasoning_tokens') or 0)
+            valid = cw is not None and valid_usage(u, CODEX_KEYS, ('input_tokens', 'output_tokens')) and valid_timestamp(ts)
+            if valid:
+                u['total_tokens'] = u['input_tokens'] + u['output_tokens']
+            model = p.get('response_model') or p.get('model')
+            try: price = codex_usd(u, model) if valid else None
+            except (ValueError, TypeError, ArithmeticError) as e:
+                issue('invalid_call_usage', path=log, line=n, error=str(e)); price = None
+            if price is None:
+                issue('unpriced_call', path=log, line=n, reason='cache writes unknown' if cw is None else 'no rate or invalid usage')
+            tier = p.get('observed_tier') if isinstance(p.get('observed_tier'), str) else None
+            rows.append(dict(provider='pi', ts=ts, call_id=rid, dedupe_basis='response_id', thread=sid,
+                             parent_thread=launch.get('parent_session_id'), agent_path=None, originator='role_host',
+                             model=model, effort=launch.get('thinking'), role_index=None, role_heuristic=None,
+                             usage=u, weighted=codex_weighted(u) if valid else None, usd=price,
+                             source=f'{log}:{n}', pools=['pi_api'], service_tier=tier,
+                             quota_multiplier=API_TIER_MULTIPLIER.get(tier), requested_tier=p.get('requested_tier'),
+                             lane=launch.get('auth_lane'), cache_write_basis=basis,
+                             latency_s=p.get('seconds'), latency_basis='egress_proxy_request'))
+            annotate_call_measurements(rows[-1])
+    return rows, cov
+
 # ---------------------------------------------------------------- commands
 def cmd_build(a):
     since = ts_of(a.since) if a.since else None; until = ts_of(a.until) if a.until else None
@@ -669,6 +783,10 @@ def cmd_build(a):
         r, q, l, nf = build_codex(since, until, turns); calls += r; quota += q; l1['codex_threads'] = l; cov['codex_files'] = nf
     if not a.no_claude:
         r, l, nf = build_claude(since, until, unrecorded=unrecorded); calls += r; l1['claude_sessions'] = l; cov['claude_files'] = nf
+    # The CLI always sets no_pi; a caller building its own arguments without it
+    # (tests, other scripts) does not read the machine's role_host state.
+    if getattr(a, 'no_pi', True) is False:
+        r, c = build_pi(since, until, a.pi_state); calls += r; cov.update(c)
     if a.streams: quota += stream_quota(a.streams)
     calls.sort(key=lambda r: str(r['ts'] or ''))
     with open(os.path.join(a.out, 'calls.jsonl'), 'w') as fh:
@@ -717,7 +835,7 @@ def f11_summary(calls, turns):
         return None if not n else (xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2)
     cells = collections.defaultdict(lambda: dict(calls=0, usd=0.0, quota_weighted_usd=0.0, quota_unweighted_calls=0, latencies=[]))
     for r in calls:
-        tier = r.get('service_tier') if r['provider'] == 'codex' else r.get('speed')
+        tier = r.get('service_tier') if r['provider'] in CODEX_SHAPED else r.get('speed')
         g = cells[f"{r['provider']}|{r['model']}|{r.get('effort')}|{tier}"]; g['calls'] += 1
         if r['usd'] is not None:
             g['usd'] += r['usd']
@@ -837,7 +955,7 @@ def add_spend(dst, src):
 
 def call_spend(c):
     lo = c.get('usd_low', c.get('usd')); hi = c.get('usd_high', c.get('usd'))
-    mult = c.get('quota_multiplier') if c['provider'] == 'codex' else 1
+    mult = c.get('quota_multiplier') if c['provider'] in CODEX_SHAPED else 1
     return dict(calls=1, unpriced_calls=int(lo is None or hi is None), usd_low=lo or 0, usd_high=hi or 0,
                 quota_usd_low=(lo or 0) * (mult if mult is not None else PRICING_RULES['unknown_tier_low']),
                 quota_usd_high=(hi or 0) * (mult if mult is not None else PRICING_RULES['unknown_tier_high']))
@@ -854,10 +972,10 @@ def annotate_call_measurements(row):
     context = None
     if row.get('weighted') is not None:
         context = u.get('input_tokens', 0)
-        if row['provider'] != 'codex':
+        if row['provider'] not in CODEX_SHAPED:
             context += u.get('cache_read_input_tokens', 0) + u.get('cache_creation_input_tokens', 0)
     row['input_context_tokens'] = context
-    row['api_long_context_input'] = context > PRICING_RULES['codex_long_input_threshold'] if row['provider'] == 'codex' and context is not None else None
+    row['api_long_context_input'] = context > PRICING_RULES['codex_long_input_threshold'] if row['provider'] in CODEX_SHAPED and context is not None else None
 
 
 def finish_measurements(result, quota):
@@ -1041,7 +1159,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         for c in observed_calls:
             if not valid_timestamp(c.get('ts')) or not (after < ts_of(c['ts']) <= ts_of(now)):
                 continue
-            sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
+            sid = c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
             nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
             if nid not in nodes or (starts[nid] and ts_of(c['ts']) < ts_of(starts[nid])):
                 continue
@@ -1063,7 +1181,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     # one of its sessions; the window holds other objectives' sessions too.
     members = {n['session_id'] for n in nodes.values()}
     for c in calls:
-        sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
+        sid = c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
         nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
         if not valid_timestamp(c.get('ts')):
             if sid not in members:
@@ -1087,7 +1205,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             end = ts_of(c['ts']); busy.append((end - dt.timedelta(seconds=latency), end))
         else: busy_missing += 1
         if c.get('model') not in n['models']: n['models'].append(c.get('model'))
-        tier = c.get('service_tier') if c['provider'] == 'codex' else c.get('speed')
+        tier = c.get('service_tier') if c['provider'] in CODEX_SHAPED else c.get('speed')
         if tier not in n['tiers']: n['tiers'].append(tier)
         if valid_timestamp(c['ts']) and (n['first_call'] is None or c['ts'] < n['first_call']): n['first_call'] = c['ts']
         if valid_timestamp(c['ts']) and (n['last_call'] is None or c['ts'] > n['last_call']): n['last_call'] = c['ts']
@@ -1103,7 +1221,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
                             (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
     file_sessions = collections.defaultdict(set)
     for c in calls:
-        src = c.get('source'); sid = c.get('thread') if c['provider'] == 'codex' else c.get('session')
+        src = c.get('source'); sid = c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
         if isinstance(src, str) and isinstance(sid, str): file_sessions[src.rsplit(':', 1)[0]].add(sid)
     def in_scope(i):
         # An issue is outside only when everything known about its file points to
@@ -1278,6 +1396,7 @@ def main():
     sp = ap.add_subparsers(dest='cmd', required=True)
     b = sp.add_parser('build'); b.add_argument('--since'); b.add_argument('--until'); b.add_argument('--out', required=True)
     b.add_argument('--no-codex', action='store_true'); b.add_argument('--no-claude', action='store_true'); b.add_argument('--streams', nargs='*')
+    b.add_argument('--no-pi', action='store_true'); b.add_argument('--pi-state', default=PI_STATE)
     r = sp.add_parser('reconcile-trial'); r.add_argument('measurement'); r.add_argument('--out')
     w = sp.add_parser('windows'); w.add_argument('dir')
     t = sp.add_parser('tree'); t.add_argument('--record', required=True); t.add_argument('--since'); t.add_argument('--until'); t.add_argument('--role-host-ledger'); t.add_argument('--out')
