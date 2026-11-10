@@ -435,6 +435,95 @@ class PinnedRemediationTests(PinnedFixture):
         self.assertFalse(self.verified(out), "a stale snapshot.json must fail the digest check")
 
 
+def forge_commit_graph(repo, child, parent):
+    """Write a commit-graph (generation v1) and make it claim `parent` as `child`'s first parent."""
+    import struct
+    git(repo, "-c", "commitGraph.generationVersion=1", "commit-graph", "write", "--reachable")
+    path = os.path.join(repo, ".git", "objects", "info", "commit-graph")
+    b = bytearray(slurp(path))
+    chunks = {bytes(b[8 + 12 * i:12 + 12 * i]): struct.unpack(">Q", b[12 + 12 * i:20 + 12 * i])[0]
+              for i in range(b[6] + 1)}
+    oidf, oidl, cdat = chunks[b"OIDF"], chunks[b"OIDL"], chunks[b"CDAT"]
+    n = struct.unpack(">I", b[oidf + 1020:oidf + 1024])[0]
+    oids = [bytes(b[oidl + 20 * i:oidl + 20 * i + 20]).hex() for i in range(n)]
+    c, p = cdat + 36 * oids.index(child), cdat + 36 * oids.index(parent)
+    level = struct.unpack(">Q", b[p + 28:p + 36])[0] >> 34
+    b[c + 20:c + 24] = struct.pack(">I", oids.index(parent))
+    low = struct.unpack(">Q", b[c + 28:c + 36])[0] & ((1 << 34) - 1)
+    b[c + 28:c + 36] = struct.pack(">Q", ((level + 1) << 34) | low)
+    b[-20:] = hashlib.sha1(bytes(b[:-20])).digest()
+    os.chmod(path, 0o644)
+    with open(path, "wb") as fh:
+        fh.write(bytes(b))
+
+
+class PinnedR2Tests(PinnedFixture):
+    """S4-min r2: ancestry from metadata outside the commit objects (r1 re-review R1-1; shallow; commit-graph)."""
+
+    def graft(self, text):
+        path = os.path.join(self.repo, ".git", "info", "grafts")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as fh:
+            fh.write(text + "\n")
+        self.addCleanup(lambda: os.path.lexists(path) and os.unlink(path))
+
+    def decision_revisions(self, current, prior):
+        d = json.loads(self.data(1)["decisions.json"])
+        d[0]["revision"] = f"git:{current}"
+        d[0]["revisions"] = [{"revision": f"git:{prior}", "anchor": "old", "superseded_at": "2026-01-01",
+                              "reason": "update"}]
+        return self.commit_register(1, {"decisions.json": json.dumps(d)})
+
+    def test_12_graft_file_cannot_forge_or_sever_pinned_ancestry(self):
+        tree = git(self.repo, "rev-parse", f"{self.c0}^{{tree}}")
+        unrelated = git(self.repo, "commit-tree", tree, "-m", "unrelated root, same documents")
+        c = self.decision_revisions(unrelated, self.c0)
+        before = self.validate(c)
+        self.assertEqual(before.returncode, 1, before.stdout)
+        self.assertIn("revision-not-ancestor", before.stdout)
+        self.graft(f"{unrelated} {self.c0}")  # fabricated parent
+        after = self.validate(c)
+        self.assertEqual((after.returncode, after.stdout), (1, before.stdout), "graft forged pinned ancestry")
+        b, out = self.build(c)
+        self.assertEqual(b.returncode, 1, b.stdout)
+        self.assertFalse(os.path.exists(out))
+        self.assertEqual(self.validate().returncode, 0)  # unpinned validation keeps honouring grafts (legacy)
+        child = git(self.repo, "commit-tree", tree, "-p", self.c0, "-m", "child, same documents")
+        c2 = self.decision_revisions(child, self.c0)
+        ok = self.validate(c2)
+        self.assertEqual(ok.returncode, 0, ok.stdout)
+        self.graft(child)  # severed: the child shown without parents
+        self.assertEqual(self.validate(c2).stdout, ok.stdout, "graft severed pinned ancestry")
+        self.assertEqual(self.build(c2)[0].returncode, 0)
+
+    def test_13_shallow_repository_cannot_run_pinned(self):
+        self.assertEqual(self.validate(self.c1).returncode, 0)
+        path = os.path.join(self.repo, ".git", "shallow")
+        with open(path, "w") as fh:
+            fh.write(self.c1 + "\n")
+        self.addCleanup(lambda: os.path.lexists(path) and os.unlink(path))
+        p = self.validate(self.c1)
+        self.assertEqual(p.returncode, 4, p.stdout)
+        self.assertIn("shallow repository", p.stdout)
+        b, out = self.build(self.c1)
+        self.assertEqual(b.returncode, 4, b.stdout)
+        self.assertFalse(os.path.exists(out))
+        self.assertEqual(self.validate().returncode, 0)  # unpinned validation is unchanged
+
+    def test_14_hardened_git_reads_parents_from_commit_objects(self):
+        import importlib.util
+        tree = git(self.repo, "rev-parse", f"{self.c0}^{{tree}}")
+        root = git(self.repo, "commit-tree", tree, "-m", "root without parents")
+        git(self.repo, "update-ref", "refs/heads/root", root)
+        forge_commit_graph(self.repo, root, self.c0)
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%P", root), self.c0)  # the forgery is live
+        spec = importlib.util.spec_from_file_location("register_under_test", SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        self.assertEqual(mod.AnchorGit(self.repo).run("log", "-1", "--format=%P", root).strip(), b"")
+        self.assertFalse(mod.PinnedGit(self.repo).is_ancestor(self.c0, root))
+
+
 class RealRegisterPinnedTests(unittest.TestCase):
     """The real register at the S4-min base: pinned commands equal unpinned ones run on that commit's
     register files, extracted with `git archive` (read-only for the repository)."""

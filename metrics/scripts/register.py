@@ -856,7 +856,8 @@ class PinnedRegister(Register):
 
 class PinnedGit(Git):
     """Git for checking source pins in pinned mode, with AnchorGit's object-access policy: GIT_* variables
-    dropped, global and system configuration ignored, replace objects off, no optional locks. Unpinned
+    dropped, global and system configuration ignored, replace objects, graft files and commit-graph files off,
+    no optional locks. Unpinned
     validation keeps Git (review: Astra F2, Sonnet F1)."""
 
     def __init__(self, repo):
@@ -888,8 +889,12 @@ class PinnedGit(Git):
 
 def pinned_snapshot(cmd, args):
     """read_snapshot for --at, or None after printing why the command cannot run."""
+    git = AnchorGit(args.repo)
     try:
-        return read_snapshot(AnchorGit(args.repo), args.at, args.register, args.repo)
+        if git.is_shallow():
+            # ancestry over history cut at a shallow boundary is not determined by the commit
+            raise SnapshotError(f"{args.repo} is a shallow repository; pinned mode needs its complete history")
+        return read_snapshot(git, args.at, args.register, args.repo)
     except SnapshotError as exc:
         print(f"{cmd}: cannot run, {exc}")
         return None
@@ -1399,23 +1404,28 @@ AFTER_STATES = ("carried_unchanged", "owner_review_required", "pending_judgment_
 class AnchorGit:
     """Read-only git access. Every call that is interpreted carries explicit options and the process
     environment is rebuilt, so the result depends neither on the caller's GIT_* variables (GIT_DIR,
-    GIT_DIFF_OPTS, GIT_CONFIG_*, ...) nor on replace refs nor on system, global or repository
-    configuration that changes diff, rename or object reading. It never refreshes the index."""
+    GIT_DIFF_OPTS, GIT_CONFIG_*, ...) nor on replace refs, graft files or commit-graph files nor on system,
+    global or repository configuration that changes diff, rename or object reading: parents come from the
+    commit objects. It never refreshes the index."""
 
     DIFF = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--text", "--minimal", "--no-renames",
             "--no-indent-heuristic", "--inter-hunk-context=0", "-U0"]
-    # configuration keys that change diff or rename output, pinned on the command line
+    # pinned on the command line: keys that change diff or rename output, and commit-graph reads off so a
+    # forged objects/info/commit-graph cannot change parents (review: S4-min r1 re-review)
     CONFIG = ("diff.algorithm=myers", "diff.renames=false", "diff.context=0",
               "diff.interHunkContext=0", "diff.indentHeuristic=false", "diff.noprefix=false",
               "diff.mnemonicPrefix=false", "diff.relative=false",
-              "core.quotepath=false", "core.autocrlf=false", "core.safecrlf=false")
+              "core.quotepath=false", "core.autocrlf=false", "core.safecrlf=false",
+              "core.commitGraph=false")
 
     def __init__(self, repo):
         self.repo = repo
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
         self.env.update({"GIT_OPTIONAL_LOCKS": "0", "GIT_CONFIG_GLOBAL": os.devnull,
                          "GIT_CONFIG_SYSTEM": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
-                         "GIT_NO_REPLACE_OBJECTS": "1"})
+                         "GIT_NO_REPLACE_OBJECTS": "1",
+                         # an empty graft file: .git/info/grafts cannot rewrite parents (review: r1 R1-1)
+                         "GIT_GRAFT_FILE": os.devnull})
         self.cache = {}
 
     def argv(self, *args):
@@ -1427,6 +1437,11 @@ class AnchorGit:
             p = subprocess.run(self.argv(*args), capture_output=True, check=False, env=self.env)
             self.cache[args] = p.stdout if p.returncode == 0 else None
         return self.cache[args]
+
+    def is_shallow(self):
+        """True in a shallow repository, whose history is cut off at the shallow boundary."""
+        out = self.run("rev-parse", "--is-shallow-repository")
+        return out is not None and out.strip() == b"true"
 
     def commit_id(self, rev):
         """A commit named by a ref, tag or expression (used for --at)."""
