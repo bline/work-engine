@@ -12,7 +12,17 @@ decision turns on that rationale. Context loaded at startup is re-sent with ever
 later model call, so startup context should be the binding doctrine plus what the
 task needs ([PHILOSOPHY.md §17](PHILOSOPHY.md#17-the-role-of-the-design-document)).
 
-## Model-selection guidance
+## Pre-release compatibility policy
+Work Engine is under active development. Internal implementations and
+interfaces have no backward-compatibility guarantee unless an explicit consumer
+or owner-approved contract requires one.  Prefer the simplest architecture that
+satisfies current requirements and the intended system design.  Existing code
+is reusable implementation material, not architectural authority. It may be
+modified, replaced, or removed.  Preserve approved semantics, data integrity,
+provenance, and qualification evidence—not obsolete implementation behavior.
+Any recommendation to preserve compatibility must identify the specific
+consumer, the consequence of breaking it, and the cost of maintaining it.  ##
+Model-selection guidance
 
 [Model selection](docs/model-selection.md) provides current defaults and their
 tradeoffs when choosing an engineering model. It is decision guidance, not an
