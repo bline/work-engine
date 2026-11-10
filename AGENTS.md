@@ -21,9 +21,9 @@ is reusable implementation material, not architectural authority. It may be
 modified, replaced, or removed.  Preserve approved semantics, data integrity,
 provenance, and qualification evidence—not obsolete implementation behavior.
 Any recommendation to preserve compatibility must identify the specific
-consumer, the consequence of breaking it, and the cost of maintaining it.  ##
-Model-selection guidance
+consumer, the consequence of breaking it, and the cost of maintaining it.  
 
+## Model-selection guidance
 [Model selection](docs/model-selection.md) provides current defaults and their
 tradeoffs when choosing an engineering model. It is decision guidance, not an
 override of explicit user choices or campaign/provider contracts; consult it
