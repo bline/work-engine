@@ -36,6 +36,25 @@ codex (probe metrics/probes/codex-daemon-thread-host-20261026.json, n = 1)
            released by a ledger row, since the daemon has no unload request.
   legacy   ledger rows from earlier `codex exec` launches carry a pid; a live
            pid still reads as running, and retire --force terminates it.
+pi (probe metrics/probes/pi-cli-host-20261109.json, pi 1.4.0, local fake
+OpenAI endpoint, n = 1 per cell; no provider was contacted)
+  host     no daemon. Each turn is one detached `pi --mode json` process
+           (its own process group) whose stdin is the prompt file and whose
+           stdout/stderr/exit status land in the role-host state directory.
+  launch   `--session-id <uuid>` creates the session under that exact id; the
+           first stdout record is the session header carrying it.
+  status   a live turn pid (checked against its recorded start time) is
+           running; otherwise idle, with the last turn read from its events.
+           JSON mode exits 0 even when the response failed, so outcome comes
+           from the events, not the exit status.
+  deliver  the same `--session-id` on an idle session continues that session
+           file with its history; launch settings are reused.
+  retire   SIGTERM to a running turn's process group (with --force); the
+           session keeps the user message without a reply. Idle is a ledger row.
+  auth     every launch names a lane: `api` needs Pi's credential for the
+           provider to be an API key, `subscription` an OAuth login. A service
+           tier is accepted only on the api lane for provider openai, and is
+           sent and observed by scripts/pi_service_tier.ts.
 
 Children: every launch with --parent appends to a ledger, so a root's
 cross-CLI children are parent-scoped by construction. Children started any
@@ -56,6 +75,7 @@ import subprocess
 import sys
 import time
 import tomllib
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -76,10 +96,13 @@ class HostError(Exception):
 # must never inherit them: a Codex successor started from a Claude session
 # inherited CLAUDE_CODE_SESSION_ID, `whoami` reported the caller's id, and the
 # successor waited on the caller's topic for its whole adoption window
-# (observed 2026-10-25). The messaging token is also a credential.
+# (observed 2026-10-25). The messaging token is also a credential. Pi 1.4.0's
+# bash tool exports its session id, file, provider, model and thinking level to
+# every command it runs.
 CALLER_IDENTITY = ("CLAUDE_CODE_SESSION_ID", "CLAUDE_PID", "CLAUDE_CODE_MESSAGING_SOCKET",
                    "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_SESSION_ATTENDED",
-                   "CLAUDE_CODE_CHILD_SESSION", "CLAUDECODE", "CODEX_THREAD_ID")
+                   "CLAUDE_CODE_CHILD_SESSION", "CLAUDECODE", "CODEX_THREAD_ID",
+                   "PI_SESSION_ID", "PI_SESSION_FILE", "PI_PROVIDER", "PI_MODEL", "PI_REASONING_LEVEL")
 
 
 def child_env():
@@ -181,10 +204,10 @@ def codex_settings(sid: str, rollout: Path, turn_id: str | None = None) -> dict:
                             "Runtime configuration does not establish backend fulfillment or billing."]}
 
 
-def _run(argv, *, cwd=None, timeout=60):
+def _run(argv, *, cwd=None, timeout=60, env=None):
     try:
         return subprocess.run(argv, cwd=cwd, capture_output=True, text=True,
-                              timeout=timeout, stdin=subprocess.DEVNULL, env=child_env())
+                              timeout=timeout, stdin=subprocess.DEVNULL, env=env or child_env())
     except (OSError, subprocess.TimeoutExpired) as e:
         raise HostError(NOT_ESTABLISHED, "host_cli_failed", f"{argv[0]}: {e}")
 
@@ -718,7 +741,387 @@ class Codex:
         return {"session_id": sid, "unarchived": True, "resumed": False}
 
 
-HOSTS = {"claude": Claude, "codex": Codex}
+# -------------------------------------------------------------------- pi ----
+
+class Pi:
+    """Pi roles are sessions; each turn is one detached `pi --mode json` process.
+
+    The prompt, events, stderr, exit status and service-tier record of turn N
+    live in <state>/pi/<session>/turn-N.*. The ledger row carries the turn's
+    wrapper pid and start time, so a reused pid never reads as a live turn.
+    """
+    name = "pi"
+    LANES = ("api", "subscription")
+    LANE_AUTH = {"api": "api_key", "subscription": "oauth"}
+    TIERS = ("auto", "default", "flex", "priority", "scale")
+    TIER_PROVIDERS = frozenset({"openai"})
+    THINKING = ("off", "minimal", "low", "medium", "high", "xhigh", "max")
+    # Pi flags passed through. Session, mode, credential and provider selection
+    # are role_host's, so they are not accepted here.
+    VALUE_FLAGS = {"--model": "--model", "--thinking": "--thinking", "--tools": "--tools", "-t": "--tools",
+                   "--exclude-tools": "--exclude-tools", "-xt": "--exclude-tools", "--skill": "--skill",
+                   "--append-system-prompt": "--append-system-prompt", "--extension": "--extension", "-e": "--extension"}
+    BOOL_FLAGS = {"--no-mcp", "--no-skills", "-ns", "--no-extensions", "-ne", "--no-context-files", "-nc",
+                  "--approve", "-a", "--no-approve", "-na"}
+    EXTENSION = Path(__file__).resolve().parent / "pi_service_tier.ts"
+    START_TIMEOUT = 30
+    STOP_WAIT = 10
+    # The wrapper stays the process-group leader until pi exits, then writes
+    # pi's exit status atomically. A killed turn leaves no status file.
+    WRAPPER = ('prompt=$1 out=$2 err=$3 status=$4; shift 4; '
+               '"$@" < "$prompt" > "$out" 2> "$err"; echo $? > "$status.tmp" && mv "$status.tmp" "$status"')
+    TURN_FILES = {"prompt": "prompt", "events": "events.jsonl", "stderr": "stderr",
+                  "exit": "exit", "tier_record": "tier.jsonl"}
+
+    def __init__(self, exe="pi"):
+        self.exe = exe
+
+    # ---- options and credentials ----
+    @classmethod
+    def options(cls, host_args, lane, tier) -> dict:
+        """Validate a launch request; returns the pass-through argv and the selection."""
+        if lane not in cls.LANES:
+            raise HostError(USAGE, "usage", "a pi launch needs --auth api or --auth subscription")
+        argv, model, thinking = [], None, None
+        args = list(host_args)
+        while args:
+            flag = args.pop(0)
+            key, eq, inline = flag.partition("=")
+            if key in cls.BOOL_FLAGS and not eq:
+                argv.append(key)
+                continue
+            if key not in cls.VALUE_FLAGS:
+                raise HostError(USAGE, "usage", f"pi host arg {flag!r} is not accepted here")
+            if eq:
+                value = inline
+            elif args:
+                value = args.pop(0)
+            else:
+                raise HostError(USAGE, "usage", f"pi host arg {flag!r} needs a value")
+            canonical = cls.VALUE_FLAGS[key]
+            if canonical == "--model":
+                if model is not None:
+                    raise HostError(USAGE, "usage", "--model given twice")
+                model = value
+            elif canonical == "--thinking":
+                if value not in cls.THINKING:
+                    raise HostError(USAGE, "usage", f"--thinking {value!r} is not one of {', '.join(cls.THINKING)}")
+                thinking = value
+            argv += [canonical, value]
+        if not model:
+            raise HostError(USAGE, "usage", "a pi launch needs --host-arg=--model --host-arg=<provider>/<model-id>")
+        provider, slash, model_id = model.partition("/")
+        if not slash or not provider or not model_id or any(c in model for c in "*?, "):
+            raise HostError(USAGE, "usage", f"--model {model!r} must be one exact <provider>/<model-id>, not a pattern")
+        if ":" in model_id and model_id.rsplit(":", 1)[1] in cls.THINKING:
+            raise HostError(USAGE, "usage", "give the thinking level with --thinking, not a :<level> model suffix")
+        if tier is not None:
+            if tier not in cls.TIERS:
+                raise HostError(USAGE, "usage", f"service tier {tier!r} is not one of {', '.join(cls.TIERS)}")
+            if lane != "api":
+                raise HostError(USAGE, "usage", "a service tier applies only to api-lane requests; "
+                                "subscription (session-quota) requests do not take one")
+            if provider not in cls.TIER_PROVIDERS:
+                raise HostError(USAGE, "usage", f"a service tier is supported here only for provider "
+                                f"{', '.join(sorted(cls.TIER_PROVIDERS))}, not {provider!r}")
+        return {"argv": argv, "model": model, "provider": provider, "thinking": thinking,
+                "lane": lane, "tier": tier}
+
+    def check_lane(self, opts, *, cwd, env) -> dict:
+        """Confirm Pi's credential for the provider is the lane's kind. Never refreshes or prints it."""
+        provider, lane = opts["provider"], opts["lane"]
+        r = _run([self.exe, "auth", "check", "--provider", provider, "--json", "--no-refresh"],
+                 cwd=cwd, env=env, timeout=60)
+        try:
+            got = json.loads(r.stdout.strip().splitlines()[-1])
+        except (ValueError, IndexError):
+            raise HostError(NOT_ESTABLISHED, "credential_not_established",
+                            f"pi auth check exit {r.returncode}: {r.stderr.strip()[:200]}")
+        if not isinstance(got, dict) or got.get("status") != "ready":
+            raise HostError(NOT_ESTABLISHED, "credential_not_ready",
+                            f"pi auth check for {provider}: {got.get('status') if isinstance(got, dict) else got} "
+                            f"{got.get('reason', '') if isinstance(got, dict) else ''}".strip())
+        want = self.LANE_AUTH[lane]
+        if got.get("authType") != want:
+            raise HostError(NOT_ESTABLISHED, "lane_mismatch",
+                            f"the {lane} lane needs a {want} credential for {provider}; Pi reports {got.get('authType')!r}")
+        # Pi 1.4.0 sends a non-"sk-" OPENAI_API_KEY to OpenAI as a Sign in with
+        # ChatGPT token (openai-responses.js isChatGPTSignIn): subscription
+        # billing under an api label. Only the prefix is read.
+        key = env.get("OPENAI_API_KEY")
+        if lane == "api" and provider == "openai" and key and not key.startswith("sk-"):
+            raise HostError(NOT_ESTABLISHED, "lane_mismatch",
+                            "OPENAI_API_KEY is not an sk- API key; Pi would send it as a ChatGPT sign-in token")
+        return {"provider": provider, "auth_type": got["authType"]}
+
+    # ---- processes ----
+    @staticmethod
+    def _start_time(pid):
+        try:
+            fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+        except (OSError, IndexError):
+            return None
+        return None if fields[0] == "Z" else int(fields[19])
+
+    def _alive(self, row) -> bool:
+        pid = row.get("pid")
+        return bool(pid) and row.get("pid_start") is not None and self._start_time(pid) == row["pid_start"]
+
+    @staticmethod
+    def _group_alive(pgid) -> bool:
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+
+    @staticmethod
+    def _records(path: Path) -> tuple[list[dict], bool]:
+        """Complete LF-terminated JSON records; True when a partial last line was left out."""
+        try:
+            data = path.read_bytes()
+        except OSError:
+            return [], False
+        lines = data.split(b"\n")
+        partial = lines.pop() != b""
+        out = []
+        for n, raw in enumerate(lines, 1):
+            if not raw.strip():
+                continue
+            try:
+                value = json.loads(raw)
+            except ValueError:
+                raise HostError(NOT_ESTABLISHED, "turn_not_established", f"{path}:{n} is not JSON")
+            if isinstance(value, dict):
+                out.append(value)
+        return out, partial
+
+    def _turns(self, sid, ledger):
+        return [r for r in ledger.rows() if r.get("session_id") == sid and r.get("host") == self.name]
+
+    def _spawn(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None):
+        turn = sum(1 for r in self._turns(sid, ledger) if r.get("turn")) + 1
+        folder = ledger.path.parent / "pi" / sid
+        folder.mkdir(parents=True, exist_ok=True)
+        files = {k: folder / f"turn-{turn}.{suffix}" for k, suffix in self.TURN_FILES.items()}
+        try:
+            with open(files["prompt"], "x") as fh:
+                fh.write(prompt)
+        except FileExistsError:
+            raise HostError(NOT_ESTABLISHED, "turn_not_established", f"{files['prompt']} already exists")
+        argv = [self.exe, "--mode", "json", "--session-id", sid, "-e", str(self.EXTENSION), *opts["argv"]]
+        if name:
+            argv += ["--name", name]
+        env = {**child_env(), "WORK_ENGINE_PI_SERVICE_TIER": opts["tier"] or "",
+               "WORK_ENGINE_PI_SERVICE_TIER_MODEL": opts["model"],
+               "WORK_ENGINE_PI_SERVICE_TIER_RECORD": str(files["tier_record"])}
+        try:
+            proc = subprocess.Popen(["/bin/sh", "-c", self.WRAPPER, "sh",
+                                     *(str(files[k]) for k in ("prompt", "events", "stderr", "exit")), *argv],
+                                    cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL, start_new_session=True)
+        except OSError as e:
+            raise HostError(NOT_ESTABLISHED, "fail_launch", f"pi turn: {e}")
+        row = {"host": self.name, "event": event, "session_id": sid, "turn": turn, "pid": proc.pid,
+               "pid_start": self._start_time(proc.pid), "at_epoch": time.time(),
+               "files": {k: str(v) for k, v in files.items()}, "model": opts["model"],
+               "thinking": opts["thinking"], "auth_lane": opts["lane"], "service_tier": opts["tier"],
+               "host_argv": opts["argv"]}
+        if event == "launch":
+            row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent)
+        ledger.append(row)
+        self._verify_header(proc, row, files, ledger)
+        return row
+
+    def _verify_header(self, proc, row, files, ledger):
+        """The turn's first record must be the session header for the requested id."""
+        sid, deadline = row["session_id"], time.time() + self.START_TIMEOUT
+        while True:
+            exited = proc.poll() is not None  # read before the events, so an exit is never ahead of them
+            records, _ = self._records(files["events"])
+            if records:
+                first = records[0]
+                if first.get("type") == "session" and first.get("id") == sid:
+                    return
+                if self._alive(row):
+                    os.killpg(row["pid"], signal.SIGTERM)
+                ledger.append({"host": self.name, "event": "identity_defect", "session_id": sid,
+                               "turn": row["turn"], "first_record": {k: first.get(k) for k in ("type", "id")}})
+                raise HostError(DEFECT, "identity_mismatch",
+                                f"turn {row['turn']} began with {first.get('type')} {first.get('id')!r}, not session {sid}; turn stopped")
+            if exited:
+                err = files["stderr"].read_text(errors="replace").strip() if files["stderr"].exists() else ""
+                raise HostError(NOT_ESTABLISHED, "fail_launch",
+                                f"pi exited {proc.returncode} before a session header: {err[-300:]}")
+            if time.time() > deadline:
+                raise HostError(NOT_ESTABLISHED, "identity_not_established",
+                                f"no session header within {self.START_TIMEOUT}s; turn {row['turn']} is in the ledger "
+                                "and may still be running (retire --force stops it)")
+            time.sleep(0.1)
+
+    # ---- observation ----
+    def session_dir(self) -> Path:
+        if os.environ.get("PI_CODING_AGENT_SESSION_DIR"):
+            return Path(os.environ["PI_CODING_AGENT_SESSION_DIR"])
+        agent = os.environ.get("PI_CODING_AGENT_DIR") or str(Path.home() / ".pi/agent")
+        return Path(agent) / "sessions"
+
+    def session_file(self, sid) -> Path | None:
+        matches = set()
+        for path in self.session_dir().glob(f"*/*{sid}*.jsonl"):
+            try:
+                with path.open() as fh:
+                    head = json.loads(fh.readline())
+            except (OSError, ValueError):
+                continue
+            if isinstance(head, dict) and head.get("type") == "session" and head.get("id") == sid:
+                matches.add(path.resolve())
+        if len(matches) > 1:
+            raise HostError(NOT_ESTABLISHED, "identity_not_established", f"{len(matches)} session files carry {sid}")
+        return matches.pop() if matches else None
+
+    def identity(self, sid) -> dict:
+        path = self.session_file(sid)
+        if path is None:
+            raise HostError(NOT_ESTABLISHED, "identity_not_established",
+                            f"no session file under {self.session_dir()} begins with session {sid}")
+        return {"session_id": sid, "session_file": str(path), "source": "session file header id"}
+
+    def observe_turn(self, row) -> dict:
+        """Outcome, model, cost and tier of one turn, from its own files only."""
+        files = {k: Path(v) for k, v in row["files"].items()}
+        try:
+            exit_code = int(files["exit"].read_text().strip())
+        except (OSError, ValueError):
+            exit_code = None
+        records, partial = self._records(files["events"])
+        header = records[0] if records and records[0].get("type") == "session" else None
+        settled = next((r for r in reversed(records) if r.get("type") == "agent_settled"), None)
+        replies = [r["message"] for r in records if r.get("type") == "message_end"
+                   and isinstance(r.get("message"), dict) and r["message"].get("role") == "assistant"]
+        final = replies[-1] if replies else {}
+        if header is None or header.get("id") != row["session_id"]:
+            outcome = "not_established"
+        elif exit_code is None:
+            outcome = "interrupted"
+        elif exit_code != 0:
+            outcome = "failed"
+        elif settled is None:
+            outcome = "not_established"
+        elif settled.get("aborted"):
+            outcome = "aborted"
+        elif final.get("stopReason") in ("error", "aborted"):
+            outcome = "failed"
+        elif final.get("stopReason") == "length":
+            outcome = "incomplete"
+        elif not replies:
+            outcome = "not_established"
+        else:
+            outcome = "completed"
+        served = sorted({f"{m.get('provider')}/{m.get('model')}" for m in replies})
+        cost = sum(((m.get("usage") or {}).get("cost") or {}).get("total") or 0 for m in replies)
+        tier_rows, _ = self._records(files["tier_record"])
+        injected = [r for r in tier_rows if r.get("event") == "injected"]
+        observed = [r.get("tier") for r in tier_rows if r.get("event") == "observed"]
+        requested = row.get("service_tier")
+        if not requested:
+            tier_status = "not_requested"
+        elif not injected:
+            tier_status = "not_applied"
+        elif not observed or None in observed:
+            tier_status = "not_established"
+        elif requested != "auto" and any(t != requested for t in observed):
+            tier_status = "mismatch"
+        else:
+            tier_status = "applied"
+        return {
+            "turn": row["turn"], "outcome": outcome, "exit_code": exit_code, "partial_last_record": partial,
+            "stop_reason": final.get("stopReason"), "error": final.get("errorMessage"),
+            "model_requested": row.get("model"), "model_served": served,
+            "model_match": (served == [row.get("model")]) if served else None,
+            "assistant_messages": len(replies),
+            "pi_reported_cost_usd": round(cost, 6),
+            "service_tier": {"requested": requested, "status": tier_status, "injected": len(injected),
+                             "observed": observed,
+                             "skipped": sorted({r.get("reason") for r in tier_rows if r.get("event") == "skipped"})},
+            "files": row["files"],
+            "limitations": ["Cost is Pi's catalog price times Pi's tier multiplier, not billing.",
+                            "The tier is observed from the provider's terminal response event as Pi parsed it."],
+        }
+
+    # ---- lifecycle ----
+    def status(self, sid, ledger=None) -> dict:
+        rows = self._turns(sid, ledger) if ledger else []
+        turns = [r for r in rows if r.get("turn")]
+        if not turns:
+            if self.session_file(sid) is None:
+                return {"state": "absent", "kind": None}
+            raise HostError(NOT_ESTABLISHED, "status_not_established",
+                            f"pi session {sid} exists but role_host started none of its turns; its holder is not observable here")
+        last = turns[-1]
+        if self._alive(last):
+            return {"state": "running", "kind": "pi_turn", "turn": last["turn"], "pid": last["pid"]}
+        lifecycle = [r for r in rows if r.get("event") in ("launch", "deliver", "retire")]
+        state = "stopped" if lifecycle[-1].get("event") == "retire" else "idle"
+        if state == "idle" and self.session_file(sid) is None:
+            state = "absent"
+        return {"state": state, "kind": "pi_turn", "last_turn": self.observe_turn(last)}
+
+    def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, lane=None, tier=None) -> dict:
+        opts = self.options(host_args, lane, tier)
+        auth = self.check_lane(opts, cwd=cwd, env=child_env())
+        sid = str(uuid.uuid4())
+        row = self._spawn(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event="launch", name=name, parent=parent)
+        return {**row, "credential": auth, "session_header_verified": True}
+
+    def deliver(self, sid, *, message, cwd, ledger, host_args=()) -> dict:
+        if host_args:
+            raise HostError(USAGE, "usage", "pi delivery reuses the launch settings; launch a new session to change them")
+        st = self.status(sid, ledger)
+        if st["state"] == "running":
+            raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
+        if st["state"] == "absent":
+            raise HostError(NOT_ESTABLISHED, "deliver_failed", f"pi session {sid} is unknown to this host")
+        launch = next(r for r in self._turns(sid, ledger) if r.get("event") == "launch")
+        # Pi resolves --session-id within the working directory's project; from
+        # another directory it would silently create a new session.
+        if Path(cwd).resolve() != Path(launch["cwd"]):
+            raise HostError(USAGE, "usage", f"pi sessions belong to their working directory; deliver with --cwd {launch['cwd']}")
+        opts = {"argv": launch["host_argv"], "model": launch["model"], "provider": launch["model"].split("/", 1)[0],
+                "thinking": launch["thinking"], "lane": launch["auth_lane"], "tier": launch["service_tier"]}
+        auth = self.check_lane(opts, cwd=cwd, env=child_env())
+        row = self._spawn(sid, opts, cwd=cwd, prompt=message, ledger=ledger, event="deliver")
+        return {"session_id": sid, "delivered": True, "turn": row["turn"], "credential": auth}
+
+    def retire(self, sid, *, ledger, force=False) -> dict:
+        st = self.status(sid, ledger)
+        if st["state"] in ("absent", "stopped"):
+            return {"session_id": sid, "retired": "already_not_loaded", "state": st["state"]}
+        if st["state"] == "running":
+            if not force:
+                raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
+            last = [r for r in self._turns(sid, ledger) if r.get("turn")][-1]
+            # SIGTERM only: Pi kills the tool process trees it started detached
+            # on SIGTERM (utils/shell.js); SIGKILL would leave them running.
+            try:
+                os.killpg(last["pid"], signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            deadline = time.time() + self.STOP_WAIT
+            while self._group_alive(last["pid"]):
+                if time.time() > deadline:
+                    raise HostError(NOT_ESTABLISHED, "retire_not_established",
+                                    f"turn {last['turn']} process group {last['pid']} still alive {self.STOP_WAIT}s after SIGTERM")
+                time.sleep(0.2)
+            ledger.append({"host": self.name, "event": "retire", "session_id": sid, "terminated_turn": last["turn"]})
+            return {"session_id": sid, "retired": "turn_terminated", "turn": last["turn"]}
+        ledger.append({"host": self.name, "event": "retire", "session_id": sid})
+        return {"session_id": sid, "retired": "idle_released"}
+
+
+HOSTS = {"claude": Claude, "codex": Codex, "pi": Pi}
 
 
 def host(name):
@@ -754,6 +1157,10 @@ def main(argv=None) -> int:
     la.add_argument("host"); la.add_argument("--cwd", required=True); la.add_argument("--name", required=True)
     la.add_argument("--prompt-file", required=True, type=Path)
     la.add_argument("--parent"); la.add_argument("--host-arg", action="append", default=[])
+    la.add_argument("--auth", choices=Pi.LANES,
+                    help="pi only, required: api (API-key billing) or subscription (OAuth session quota)")
+    la.add_argument("--service-tier", choices=Pi.TIERS,
+                    help="pi only: OpenAI service tier for an api-lane openai model")
     pr = sub.add_parser("prepare", help="create an idle Codex thread, without inference")
     pr.add_argument("host", choices=("codex",)); pr.add_argument("--cwd", required=True)
     pr.add_argument("--name", required=True); pr.add_argument("--parent")
@@ -761,8 +1168,8 @@ def main(argv=None) -> int:
     st = sub.add_parser("start-prepared", help="start the first turn on an idle prepared Codex thread")
     st.add_argument("host", choices=("codex",)); st.add_argument("session_id")
     st.add_argument("--prompt-file", required=True, type=Path); st.add_argument("--effort")
-    ident = sub.add_parser("identity", help="resolve a native thread rollout by verified session_meta")
-    ident.add_argument("host", choices=("codex",)); ident.add_argument("session_id")
+    ident = sub.add_parser("identity", help="resolve a native rollout (Codex) or session file (Pi) by its recorded id")
+    ident.add_argument("host", choices=("codex", "pi")); ident.add_argument("session_id")
     ex = sub.add_parser("exact-turn", help="observe one exact native turn, paging history")
     ex.add_argument("host", choices=("codex",)); ex.add_argument("session_id"); ex.add_argument("--turn-id", required=True)
     for verb in ("status", "retire"):
@@ -791,7 +1198,7 @@ def main(argv=None) -> int:
     try:
         if a.cmd == "whoami":
             found = [(h, os.environ[var], var) for var, h in
-                     (("CLAUDE_CODE_SESSION_ID", "claude"), ("CODEX_THREAD_ID", "codex"))
+                     (("CLAUDE_CODE_SESSION_ID", "claude"), ("CODEX_THREAD_ID", "codex"), ("PI_SESSION_ID", "pi"))
                      if UUID.match(os.environ.get(var, ""))]
             # Both set means one was inherited from whoever launched this
             # session, and nothing here can tell which. Refuse rather than pick.
@@ -821,14 +1228,23 @@ def main(argv=None) -> int:
             elif a.cmd == "exact-turn":
                 res = h.exact_turn(sid, a.turn_id)
             elif a.cmd == "launch":
+                kw = {}
+                if a.host == "pi":
+                    kw = {"lane": a.auth, "tier": a.service_tier}
+                elif a.auth or a.service_tier:
+                    raise HostError(USAGE, "usage", "--auth and --service-tier are pi launch options; "
+                                    "Codex selects its tier with -c service_tier")
                 res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
-                               host_args=a.host_arg, ledger=ledger, parent=a.parent)
+                               host_args=a.host_arg, ledger=ledger, parent=a.parent, **kw)
             elif a.cmd == "status":
                 res = {"session_id": sid, "host": a.host, **h.status(sid, ledger)}
             elif a.cmd == "deliver":
-                kw = {"host_args": a.host_arg} if a.host == "codex" else {}
+                kw = {"host_args": a.host_arg} if a.host in ("codex", "pi") else {}
                 res = h.deliver(sid, message=a.message_file.read_text(), cwd=a.cwd, ledger=ledger, **kw)
             elif a.cmd in ("rename", "archive", "unarchive"):
+                if a.host == "pi":
+                    raise HostError(USAGE, "unsupported_control", "Pi names a session with --name at launch; "
+                                    "external rename/archive is not established by this adapter.")
                 if a.host != "codex":
                     raise HostError(USAGE, "unsupported_control", "Claude supports --name, current-session /rename, and stop; "
                                     "external rename/archive is not established by this adapter. rm may remove a worktree.")

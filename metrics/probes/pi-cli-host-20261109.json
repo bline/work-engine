@@ -1,0 +1,62 @@
+{
+  "probe": "pi-cli-host-20261109",
+  "date": "2026-11-09",
+  "recorded_by": "claude 9e806e83-dfd2-491b-ba5e-69a0e02edc95",
+  "question": "Can role_host.py host a Pi role the way it hosts Claude and Codex roles (launch under a known id, observe, deliver to the same session, retire), and can a per-launch OpenAI service tier be sent and its applied value observed?",
+  "versions": {
+    "pi": "pi-coding-agent 1.4.0 (snap revision 77, classic), /snap/pi-coding-agent/current/lib/pi/packages/coding-agent",
+    "extension": "skills/manual-orchestration/scripts/pi_service_tier.ts, revision before the not_requested refactor; the integration tests below ran the committed revision"
+  },
+  "n": "1 per cell; one machine; a local fake OpenAI Responses endpoint, never a provider",
+  "isolation": "env -i with HOME and PI_CODING_AGENT_DIR in the evidence directory, models.json pointing provider openai at http://127.0.0.1:<port>/v1, OPENAI_API_KEY a fake value, PI_OFFLINE=1, PI_TELEMETRY=0. No real credential was inherited and no provider was contacted. The openai-codex (subscription) lane was not exercised: the owner reported its quota at 0% and said not to use it.",
+  "method": "tests/role_host_fakes/fake_openai_responses.py served /v1/responses as SSE and logged each request body. Turn 1: prompt on stdin, `pi --mode json --session-id <uuid4> --name probe-one --model openai/gpt-6.1-sol --thinking low -e pi_service_tier.ts` with tier priority. Turn 2: same --session-id, fake reports tier default. Turn 3: fake delays 30 s; SIGTERM to the process group after 4 s. Turn 4: -e names a missing file.",
+  "facts": [
+    {"id": "P1", "fact": "--session-id with a new uuid4 creates a session under exactly that id; the first stdout record is {type: session, id: <uuid>}; stderr warns that a new session was created.", "evidence": "out-1.jsonl line 1, err-1.txt"},
+    {"id": "P2", "fact": "Piped stdin with no message argument becomes the prompt.", "evidence": "out-1.jsonl user message_end"},
+    {"id": "P3", "fact": "--mode json without -p runs once, ends with agent_settled {aborted: false} and exits 0.", "evidence": "out-1.jsonl, exit 0"},
+    {"id": "P4", "fact": "The same --session-id on an existing session continues the same session file with the same header id; the request carried the earlier turn (input items 4 -> 7). One session file exists after both turns.", "evidence": "out-2.jsonl line 1, requests.jsonl n=2"},
+    {"id": "P5", "fact": "A .ts extension given with -e loads; the payload returned by before_provider_request reaches the wire (service_tier: priority in the request body); provider_stream_event delivers response.completed with response.service_tier.", "evidence": "tier-1.jsonl, requests.jsonl n=1"},
+    {"id": "P6", "fact": "When the response reports a tier other than the requested one, the observed record shows the reported tier (requested priority, reported default).", "evidence": "tier-2.jsonl"},
+    {"id": "P7", "fact": "Pi's recorded cost follows the reported tier: 1000 input tokens cost 0.004 with priority reported and 0.002 with default reported (Pi's 2x priority multiplier, openai-responses.js getServiceTierCostMultiplier). Whether that matches OpenAI's price for this model is not established.", "evidence": "out-1.jsonl and out-2.jsonl assistant usage.cost"},
+    {"id": "P8", "fact": "AGENTS.md in the working directory reaches the request.", "evidence": "requests.jsonl n=1 contains PROBE-AGENTS-MARKER"},
+    {"id": "P9", "fact": "--thinking low is carried in configuration_update input items while reasoning.effort is sent as medium (openai-responses.js CONFIGURATION_UPDATE_REQUEST_EFFORT).", "evidence": "requests.jsonl n=1 reasoning, n=2 input item types"},
+    {"id": "P10", "fact": "SIGTERM to the turn's process group ends Pi within 2 s; the session keeps the user message with no assistant reply; no Pi process remained.", "evidence": "out-3.jsonl, session file last entry"},
+    {"id": "P11", "fact": "A missing -e path exits 1 before any stdout record and creates no session file.", "evidence": "out-4.jsonl (empty), err-4.txt"}
+  ],
+  "source_facts": [
+    "pi auth check --provider P --json --no-refresh reports {status, provider, authType} without refreshing or printing the credential (dist/cli/auth-check.js); authType is the stored credential type.",
+    "Pi reports an exception thrown by a before_provider_request handler and sends the request unchanged (dist/core/extensions/runner.js emitBeforeProviderRequest).",
+    "Pi's bash tool exports PI_SESSION_ID, PI_SESSION_FILE, PI_PROVIDER, PI_MODEL and PI_REASONING_LEVEL to commands by default (dist/core/tools/bash.js).",
+    "Pi starts bash-tool commands detached and kills their process trees with SIGKILL when it receives SIGTERM or SIGHUP (dist/utils/shell.js).",
+    "A non-sk- OPENAI_API_KEY sent to api.openai.com is treated as a Sign in with ChatGPT token (ai/dist/api/openai-responses.js isChatGPTSignIn).",
+    "No coding-agent setting passes serviceTier to the provider; only the payload hook can (grep of coding-agent/dist)."
+  ],
+  "not_established": [
+    "Any real provider's acceptance or billing of a service tier.",
+    "The subscription (openai-codex OAuth) lane end to end.",
+    "Whether compaction or branch-summary requests pass through before_provider_request and so carry the tier.",
+    "Pi versions other than 1.4.0."
+  ],
+  "design_consequences": [
+    "role_host hosts each Pi turn as a detached `pi --mode json --session-id <uuid>` process and verifies the header id (P1, P4).",
+    "Turn outcome is read from events, not the exit status (P3; docs/cli-integration.md: JSON mode exits 0 on a failed response).",
+    "The tier is per launch through pi_service_tier.ts and reported as requested, injected and observed (P5, P6), because a throwing hook would send the request without it.",
+    "retire --force sends SIGTERM only (P10 and the shell.js source fact).",
+    "Pi's identity variables join role_host's CALLER_IDENTITY, and whoami reads PI_SESSION_ID."
+  ],
+  "regression_tests": "skills/manual-orchestration/tests/test_role_host_pi.py (RealPiTests drive the installed pi through role_host against the same fake endpoint)",
+  "evidence_dir": "~/cbm-work/pi-host-probe-20261109",
+  "evidence_sha256": {
+    "out-1.jsonl": "54275b3e539b1839b5419904ff52463842a53b3ef411a6a7be21ac016afc40bc",
+    "out-2.jsonl": "e3b28f4481ed3bee6b7c623f0aed48d7c0fea581631be85566df945bf9024f8d",
+    "out-3.jsonl": "9d5e1ca9080ef85628c3bc8173e4765661c054912bfbdc624fd02975a85ae99a",
+    "out-4.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "err-1.txt": "fc5ff6c684957b40db9631a444e4f1374089a018d02775dcd42f3117f5e608e5",
+    "err-4.txt": "c7792b24681510edb7588a0db426ec4b0dedc57aacb44c90318161abca3ebfa3",
+    "tier-1.jsonl": "9fd90cc37ca3bce5e5f3b98b35acae1cc65f85eca1c00be3de68f37b7b7621d6",
+    "tier-2.jsonl": "8e3996d46cdc1143dff8c2099f2d86dc4a76abba00784cf56de9d40b8d0ccb39",
+    "requests.jsonl": "d896fa1fc554ebb55e424e28355eb0d92c8b06302950fcb42d3f9a9412f8f035",
+    "agent/models.json": "7eac55bc6f2c07503e5e95931cd17ab1a29f5783815d8b10e2e23473697d382b",
+    "session file 2026-11-10T04-20-16-937Z_cf4d6927-8721-4b70-9ef7-fff118906dcf.jsonl": "9dacd6944c5aee3b52b1bdc40497e25c4f2b20876de254b944424fd8207ea27b"
+  }
+}

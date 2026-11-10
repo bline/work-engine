@@ -44,6 +44,7 @@ import role_host  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 UUID = role_host.UUID
+ROTATION_HOSTS = ("claude", "codex")
 ROLE_RX = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 SESSION_PROC = re.compile(r"(^|/|\s)(claude|codex)(\s|$)")
 
@@ -619,9 +620,10 @@ def parser():
     ap.add_argument("--repo", default=repo_default, help="repository holding the board")
     ap.add_argument("--board-cmd", default=str(HERE.parents[1] / "durable-state/scripts/codex_chatboard.py"))
     ap.add_argument("--host-state", default=str(role_host.DEFAULT_STATE))
-    ap.add_argument("--pred-host", choices=sorted(role_host.HOSTS), required=True)
+    # Rotation is established for Claude and Codex roots only; role_host also hosts Pi.
+    ap.add_argument("--pred-host", choices=ROTATION_HOSTS, required=True)
     ap.add_argument("--pred-session", required=True)
-    ap.add_argument("--successor-host", choices=sorted(role_host.HOSTS), required=True)
+    ap.add_argument("--successor-host", choices=ROTATION_HOSTS, required=True)
     ap.add_argument("--cwd", help="successor working directory (default: --repo)")
     ap.add_argument("--host-arg", action="append", default=[], help="extra successor launch argument")
     ap.add_argument("--validator", default=f"python3 {HERE / 'handoff_validator.py'}")
