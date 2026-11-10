@@ -1243,3 +1243,18 @@ fn a5_counts_verified_objects_and_junk_is_cannot_read() {
     let c = commit(&fx, &repo, &pin_at("eeeeeee"), &|_| {});
     assert_eq!(category(run(&repo, &c)), "cannot_read", "junk alone");
 }
+
+/// R-1b.4 item 8 (survivors S5, S14): a pinned blob, or a tree on a pin's path, that cannot be
+/// read is `cannot_read`, never tolerated or reported as "does not resolve".
+#[test]
+fn unreadable_pinned_objects_are_cannot_read() {
+    let fx = Fx::new("validate-pinned-unreadable");
+    for (name, which) in [("pinned blob", 0), ("tree on the pin path", 1)] {
+        let (repo, i) = history(&fx, &format!("r{which}"));
+        let c = commit(&fx, &repo, &base(&i), &|_| {});
+        assert_eq!(category(run(&repo, &c)), "valid", "control");
+        let gone = if which == 0 { &i.b_md } else { &i.docs_at_a };
+        std::fs::remove_file(fx.loose(&repo, gone)).unwrap();
+        assert_eq!(category(run(&repo, &c)), "cannot_read", "{name}");
+    }
+}

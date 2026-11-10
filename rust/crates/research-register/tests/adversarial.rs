@@ -1228,3 +1228,73 @@ fn security_exact_reference_names_and_length_limits() {
     assert!(deep.len() > 4096);
     assert_eq!(category(&deep), "bad_request");
 }
+
+/// R-1b.4 item 8 (Fable F-9, survivors S1-S3): an object file holding another object's content
+/// is refused for commits, trees and tags, not only blobs.
+#[test]
+fn security_substituted_commit_tree_and_tag_objects_are_cannot_read() {
+    let fx = Fx::new("substituted");
+    let swap = |r: &Path, from: &str, onto: &str| {
+        let (src, dst) = (fx.loose(r, from), fx.loose(r, onto));
+        std::fs::remove_file(&dst).unwrap();
+        std::fs::copy(src, dst).unwrap();
+    };
+    let (r, c1, c2) = fx.base("commit", &none);
+    swap(&r, &c1, &c2);
+    judge(
+        &fx,
+        "commit substituted",
+        read(&r, &c2, "reg"),
+        &Expect::Refuse("cannot_read"),
+    );
+    let (r, c1, c2) = fx.base("tree", &none);
+    let (t1, t2) = (
+        fx.tree_id(&r, &format!("{c1}^{{tree}}")),
+        fx.tree_id(&r, &format!("{c2}^{{tree}}")),
+    );
+    assert!(t1 != t2 && t1 != c1, "CONTROL: two distinct root trees");
+    swap(&r, &t1, &t2);
+    judge(
+        &fx,
+        "root tree substituted",
+        read(&r, &c2, "reg"),
+        &Expect::Refuse("cannot_read"),
+    );
+    let (r, c1, c2) = fx.base("tag", &none);
+    fx.git(&r, &["tag", "-a", "-m", "one", "t1", &c1]);
+    fx.git(&r, &["tag", "-a", "-m", "two", "t2", &c2]);
+    let (g1, g2) = (
+        fx.git(&r, &["rev-parse", "refs/tags/t1"]),
+        fx.git(&r, &["rev-parse", "refs/tags/t2"]),
+    );
+    swap(&r, &g1, &g2);
+    judge(
+        &fx,
+        "tag substituted",
+        read(&r, "refs/tags/t2", "reg"),
+        &Expect::Refuse("cannot_read"),
+    );
+}
+
+/// R-1b.4 item 8 (survivor S15): the register tree nesting limit, pinned at its value (32).
+#[test]
+fn security_tree_nesting_limit_boundary() {
+    let fx = Fx::new("depth");
+    let (r, _, _) = fx.base("repo", &none);
+    let b = fx.git_with(&r, &["hash-object", "-w", "--stdin"], Some(b"x\n"), &[]);
+    let chain = |levels: usize| {
+        let mut t = literal_tree(&fx, &r, &[("100644", "f", &b)]);
+        for _ in 0..levels {
+            t = literal_tree(&fx, &r, &[("040000", "d", &t)]);
+        }
+        commit_with_register(&fx, &r, &t)
+    };
+    let s = read(&r, &chain(32), "reg").expect("BEHAVIOR: 32 levels are within the limit");
+    assert!(s.entry(&format!("{}f", "d/".repeat(32))).is_some());
+    judge(
+        &fx,
+        "33 levels",
+        read(&r, &chain(33), "reg"),
+        &Expect::Refuse("cannot_read"),
+    );
+}

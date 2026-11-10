@@ -981,11 +981,11 @@ fn r07_integers_of_any_magnitude_are_kept_losslessly() {
         let d = decode(f.iter().map(|(p, b)| (p.as_str(), b.as_slice())));
         let finding = &d.records.studies[0].findings[0];
         let value = match &finding.value {
-            Json::Number(v) => v.as_str().to_owned(),
+            Json::Number(v) => v.to_string(),
             other => format!("{other:?}"),
         };
         let n = match &finding.n {
-            Some(SampleSize::Integer(v)) => v.as_str().to_owned(),
+            Some(SampleSize::Integer(v)) => v.to_string(),
             other => format!("{other:?}"),
         };
         (d.violations, n, value)
