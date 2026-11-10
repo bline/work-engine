@@ -70,8 +70,10 @@ Pi (2026-11-10). Pi turns that role_host.py ran with --container are read from
 the role_host state directory (--pi-state, default $XDG_STATE_HOME/work-engine/
 role-host): its ledger names each turn's egress-proxy log, which role_host
 writes on the host, outside the agent's reach. One call per unique response_id
-with HTTP 200, provider `pi`, pool `pi_api` (API-billed; not in the objective
-budget tree yet). Usage is Codex-shaped. Cache writes come from the proxy log,
+with HTTP 200, provider `pi`, pool `pi_api` (API-billed). `tree` reads the
+same ledger, so a Pi child joined by --parent carries its priced calls; a Pi
+node counts as readable only when every turn the ledger records for it has a
+readable proxy log. Usage is Codex-shaped. Cache writes come from the proxy log,
 or, for logs written before the proxy recorded them, from Pi's session file by
 response_id (`cache_write_basis`); a call with neither is unpriced.
 `service_tier` is the tier the provider reported on the call, not the one
@@ -704,9 +706,13 @@ def pi_session_cache_writes(session_dir, sid):
                     out[m['responseId']] = cw
     return out
 
-def build_pi(since, until, state=PI_STATE):
-    """Pi container turns run by role_host: one call per response_id in the host egress-proxy log."""
-    ledger = os.path.join(state, 'ledger.jsonl')
+def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
+    """Pi container turns run by role_host: one call per response_id in the host egress-proxy log.
+
+    `sessions`, when given, receives session_id -> turn counts (read, not_read, missing).
+    """
+    ledger = ledger or os.path.join(state, 'ledger.jsonl')
+    sessions = {} if sessions is None else sessions
     rows, seen = [], set()
     cov = dict(pi_container_turns=0, pi_host_turns_not_read=0, pi_proxy_logs_missing=0)
     if not os.path.exists(ledger):
@@ -720,15 +726,17 @@ def build_pi(since, until, state=PI_STATE):
     for r in records:
         if not isinstance(r, dict) or r.get('host') != 'pi' or not r.get('turn'):
             continue
+        sid = r.get('session_id')
+        turns = sessions.setdefault(sid, dict(read=0, not_read=0, missing=0))
         log = (r.get('files') or {}).get('proxy_log')
         if not log:
-            cov['pi_host_turns_not_read'] += 1
+            cov['pi_host_turns_not_read'] += 1; turns['not_read'] += 1
             continue
         if not os.path.exists(log):
-            cov['pi_proxy_logs_missing'] += 1; issue('pi_proxy_log_missing', path=log)
+            cov['pi_proxy_logs_missing'] += 1; turns['missing'] += 1; issue('pi_proxy_log_missing', path=log)
             continue
-        cov['pi_container_turns'] += 1
-        sid = r.get('session_id'); launch = launches.get(sid, {})
+        cov['pi_container_turns'] += 1; turns['read'] += 1
+        launch = launches.get(sid, {})
         session_dir = (launch.get('container_environment') or {}).get('session_dir')
         writes = None
         for n, line in enumerate(open_lines(log), 1):
@@ -945,7 +953,7 @@ def cmd_windows(a):
         for model, g in sorted(models.items(), key=lambda kv: -kv[1]['usd']):
             print(f"   {str(model):16s} calls={g['calls']:6d} modelled_usd={g['usd']:9.2f} weighted={g['weighted'] / 1e6:8.2f}M unpriced={g['unpriced']}")
 
-POOLS = ('codex', 'claude_all_models', 'claude_fable')
+POOLS = ('codex', 'claude_all_models', 'claude_fable', 'pi_api')
 
 def empty_spend():
     return dict(calls=0, unpriced_calls=0, usd_low=0.0, usd_high=0.0, quota_usd_low=0.0, quota_usd_high=0.0)
@@ -992,8 +1000,11 @@ def finish_measurements(result, quota):
 def digest(path):
     with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()
 
-def transcript_available(provider, sid, metadata, node_id=None):
+def transcript_available(provider, sid, metadata, node_id=None, pi_sessions=None):
     if provider == 'codex': return sid in metadata
+    if provider == 'pi':
+        turns = (pi_sessions or {}).get(sid)
+        return bool(turns) and turns['read'] > 0 and not turns['not_read'] and not turns['missing']
     if provider == 'claude':
         for path in find_transcripts(sid):
             if node_id is not None and node_id != sid:
@@ -1067,7 +1078,16 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError) as e:
         result['issues'].append(dict(kind='build_failed', error=str(e)))
         return finish_measurements(result, []), [], sb
-    observed_calls = codex + claude
+    ledger = role_ledger or os.path.join(os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state')), 'work-engine/role-host/ledger.jsonl')
+    # Pi turns are read from the same role_host ledger that supplies their lineage.
+    # A failure here leaves Pi nodes unreadable (transcript_missing), not the whole tree.
+    pi_sessions = {}
+    try:
+        pi, _ = build_pi(since, observation_until, os.path.dirname(ledger), ledger=ledger, sessions=pi_sessions)
+    except (OSError, subprocess.SubprocessError) as e:
+        pi = []; pi_sessions.clear()
+        result['issues'].append(dict(kind='pi_read_failed', path=ledger, error=str(e)))
+    observed_calls = codex + claude + pi
     calls = [c for c in observed_calls if in_window(c.get('ts'), since, until)]
     nodes = {}; starts = {}; links = []
     def add_node(node_id, sid, provider, parent, link, role=None, start=None):
@@ -1101,7 +1121,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for i, bound in enumerate(sessions + (sb.get('bindings') or [])):
         sid = bound.get('session_id'); provider = bound.get('provider')
         checked_sessions.add((sid, provider))
-        if not transcript_available(provider, sid, metadata):
+        if not transcript_available(provider, sid, metadata, pi_sessions=pi_sessions):
             result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider))
             if i == 0 and sessions: missing_root = True
     for b in sb.get('bindings') or []:
@@ -1109,7 +1129,6 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for sid, meta in metadata.items():
         if meta.get('parent_thread_id'):
             links.append((1, sid, sid, 'codex', meta['parent_thread_id'], 'codex_parent', meta.get('agent_nickname')))
-    ledger = role_ledger or os.path.join(os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state')), 'work-engine/role-host/ledger.jsonl')
     try:
         with open(ledger) as fh:
             for number, line in enumerate(fh, 1):
@@ -1145,7 +1164,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for node in nodes.values():
         sid = node['session_id']; provider = node['provider']; nid = node['node_id']
         if nid == sid and (sid, provider) in checked_sessions: continue
-        if not transcript_available(provider, sid, metadata, nid):
+        if not transcript_available(provider, sid, metadata, nid, pi_sessions=pi_sessions):
             result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider, node_id=nid))
     # The winning graph is now fixed. Derive descendant boundaries from it,
     # rather than retaining the boundary of an earlier, displaced parent.

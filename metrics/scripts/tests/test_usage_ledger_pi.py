@@ -112,6 +112,47 @@ class PiReaderTests(unittest.TestCase):
         rows, cov = L.build_pi(None, None, os.path.join(self.tmp.name, 'nowhere'))
         self.assertEqual((rows, cov['pi_container_turns']), ([], 0))
 
+    def tree(self, extra_ledger=()):
+        from unittest import mock
+        ledger = os.path.join(self.state, 'ledger.jsonl')
+        if extra_ledger:
+            with open(ledger, 'a') as fh:
+                fh.write(''.join(json.dumps(r) + '\n' for r in extra_ledger))
+        record = os.path.join(self.tmp.name, 'record.json')
+        with open(record, 'w') as fh:
+            json.dump({'scope_budget': {'objective_id': 'o', 'started_at': '2026-11-10T06:00:00Z',
+                                        'closed_at': '2026-11-10T07:00:00Z',
+                                        'sessions': [{'session_id': 'parent', 'provider': 'codex'}]}}, fh)
+
+        def codex(since, until, turns=None, metadata=None):
+            metadata['parent'] = {}
+            return [], [], [], 0
+        with mock.patch.object(L, 'build_codex', side_effect=codex), \
+                mock.patch.object(L, 'build_claude', return_value=([], [], 0)):
+            return L.cost_tree(record, role_ledger=ledger)[0]
+
+    def test_tree_attaches_pi_child_calls(self):
+        tree = self.tree()
+        node = {n['node_id']: n for n in tree['nodes']}[SID]
+        self.assertEqual((node['provider'], node['link'], node['parent_node_id']), ('pi', 'role_host', 'parent'))
+        missing = [i for i in tree['issues'] if i['kind'] == 'transcript_missing']
+        self.assertEqual(missing, [])
+        # resp_a..resp_d are in the window (resp_d unpriced); resp_e is after close.
+        self.assertEqual(tree['totals']['pi_api']['calls'], 4)
+        self.assertEqual(tree['totals']['pi_api']['unpriced_calls'], 1)
+        priced = [r for r in self.build()[0] if r['usd'] is not None]
+        self.assertAlmostEqual(tree['totals']['pi_api']['usd_low'], sum(r['usd'] for r in priced))
+        self.assertEqual(tree['nodes'][0]['inclusive']['pi_api']['calls'], 4)
+        self.assertEqual(tree['post_close']['candidate_totals']['pi_api']['calls'], 1)
+
+    def test_tree_keeps_host_mode_pi_child_unreadable(self):
+        host_child = '00000000-0000-4000-8000-00000000000a'
+        tree = self.tree([dict(host='pi', event='launch', session_id=host_child, turn=1,
+                               parent_session_id='parent', files={'events': '/x'})])
+        missing = {i.get('node_id') for i in tree['issues'] if i['kind'] == 'transcript_missing'}
+        self.assertEqual(missing, {host_child})
+        self.assertEqual(tree['status'], 'partial')
+
 
 if __name__ == '__main__':
     unittest.main()

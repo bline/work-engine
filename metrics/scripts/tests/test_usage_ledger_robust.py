@@ -76,13 +76,15 @@ class Matrix(unittest.TestCase):
     def test_conservation_every_pool_with_unattributed(self):
         ts = '2026-01-01T01:00:00Z'
         sb = dict(started_at=ts, objective_id='id', sessions=[dict(session_id='root',provider='codex', **{'from':ts})],
-                  bindings=[dict(session_id='c',provider='claude',parent_session_id='root')])
+                  bindings=[dict(session_id='c',provider='claude',parent_session_id='root'),
+                            dict(session_id='p',provider='pi',parent_session_id='root')])
+        def pi(sid): return dict(provider='pi', thread=sid, ts=ts, model='gpt-6-astra', service_tier='flex', quota_multiplier=0.5, usd=0.5, pools=['pi_api'])
         def codex(sid): return dict(provider='codex', thread=sid, ts=ts, model='gpt-6.1-sol', service_tier='default', quota_multiplier=1, usd=1, pools=['codex'])
         def claude(sid, model): return dict(provider='anthropic', session=sid, subagent=False, ts=ts, model=model, speed='standard', usd=2, usd_low=2, usd_high=2, pools=['claude_all_models'] + (['claude_fable'] if model.startswith('claude-fable-') else []))
         with tempfile.TemporaryDirectory() as d:
             record = os.path.join(d,'record')
             with open(record,'w') as f: json.dump({'scope_budget':sb},f)
-            with patch.object(L,'build_codex',return_value=([codex('root'),codex('outside')],[],[],0)), patch.object(L,'build_claude',return_value=([claude('c','claude-fable-5-1'),claude('else','claude-fable-5-1'),claude('else','claude-opus-5')],[],0)), patch.object(L,'unrecorded_claude',return_value=[]):
+            with patch.object(L,'build_codex',return_value=([codex('root'),codex('outside')],[],[],0)), patch.object(L,'build_claude',return_value=([claude('c','claude-fable-5-1'),claude('else','claude-fable-5-1'),claude('else','claude-opus-5')],[],0)), patch.object(L,'build_pi',return_value=([pi('p'),pi('pout')],{})), patch.object(L,'unrecorded_claude',return_value=[]):
                 tree, _, _ = L.cost_tree(record,role_ledger=os.path.join(d,'none'))
         for pool in L.POOLS:
             for key in L.empty_spend():
