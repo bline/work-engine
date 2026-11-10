@@ -8,6 +8,12 @@ use std::path::{Path, PathBuf};
 
 const MAX_SYMBOLIC_DEPTH: usize = 8;
 const MAX_TAG_DEPTH: usize = 8;
+/// Reference-name limits, an implementation constraint (R-1b.4 item 7): a loose reference is a
+/// file whose path is the name, and 255 bytes per path component (NAME_MAX) and 4096 bytes in
+/// total (PATH_MAX) are the Linux limits such a file can have. Longer names are `bad_request`
+/// before any lookup.
+pub const MAX_REF_COMPONENT_BYTES: usize = 255;
+pub const MAX_REF_NAME_BYTES: usize = 4096;
 
 /// The kind of a tree entry, from the entry's mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -90,32 +96,58 @@ pub struct GitObjects {
 
 impl GitObjects {
     /// Open `path` (a working tree, linked worktree or git directory) in isolation from the
-    /// environment and from user and system configuration. Refuses shallow repositories and the
-    /// repository formats [`check_repository_format`] names.
+    /// environment and from user and system configuration.
+    ///
+    /// The git directory and common directory are found once, with gix's own discovery steps,
+    /// and the configuration there is checked ([`check_repository_config`]) before gix opens that
+    /// same path as-is; after opening, gix's git and common directories must be the checked ones.
+    /// So the format check and the opened repository cannot diverge in any layout (R-1b.4 item
+    /// 7). Shallowness is read from `<common dir>/shallow` as git reads it (item 6), never from
+    /// configuration.
     pub fn open(path: &Path) -> Result<Self, Error> {
         let shown = path.display().to_string();
-        check_repository_format(path)?;
-        let options =
-            gix::open::Options::isolated().config_overrides(["core.useReplaceRefs=false"]);
-        let repo = gix::open_opts(path, options).map_err(|e| CannotRead::Open {
+        let cannot = |reason: String| CannotRead::Open {
             path: shown.clone(),
-            reason: e.to_string(),
-        })?;
+            reason,
+        };
+        let (dot_git, kind) = discover(path).map_err(&cannot)?;
+        let cwd = std::env::current_dir().map_err(|e| cannot(e.to_string()))?;
+        let (git_dir, _) =
+            gix::discover::repository::Path::from_dot_git_dir(dot_git.clone(), kind, &cwd)
+                .ok_or_else(|| cannot("the repository path cannot be resolved".into()))?
+                .into_repository_and_work_tree_directories();
+        let common_dir = match gix::discover::path::from_plain_file(&git_dir.join("commondir")) {
+            None => git_dir.clone(),
+            Some(Ok(dir)) => git_dir.join(dir),
+            Some(Err(e)) => return Err(cannot(format!("commondir: {e}")).into()),
+        };
+        check_repository_config(&common_dir.join("config"), &git_dir.join("config.worktree"))
+            .map_err(|e| match e {
+                Error::CannotRead(CannotRead::Open { reason, .. }) => cannot(reason).into(),
+                other => other,
+            })?;
+        let options = gix::open::Options::isolated()
+            .config_overrides(["core.useReplaceRefs=false"])
+            .open_path_as_is(true);
+        let repo = gix::open_opts(&dot_git, options).map_err(|e| cannot(e.to_string()))?;
+        if !same_dir(repo.git_dir(), &git_dir) || !same_dir(repo.common_dir(), &common_dir) {
+            return Err(cannot(format!(
+                "gix opened {} (common {}), not the checked {} (common {})",
+                repo.git_dir().display(),
+                repo.common_dir().display(),
+                git_dir.display(),
+                common_dir.display()
+            ))
+            .into());
+        }
         if repo.object_hash() != HashKind::Sha1 {
             return Err(Unsupported::ObjectFormat {
                 format: format!("{:?}", repo.object_hash()),
             }
             .into());
         }
-        match repo.is_shallow() {
-            Ok(false) => {}
-            Ok(true) => return Err(Unsupported::ShallowRepository.into()),
-            Err(e) => {
-                return Err(CannotRead::ShallowState {
-                    reason: e.to_string(),
-                }
-                .into());
-            }
+        if is_shallow(&common_dir.join("shallow"))? {
+            return Err(Unsupported::ShallowRepository.into());
         }
         Ok(GitObjects { repo, path: shown })
     }
@@ -256,31 +288,42 @@ impl GitObjects {
         .into())
     }
 
+    /// The object an exact reference name (`HEAD` or a full name under `refs/`) points to,
+    /// following symbolic references. Only the exact name is looked up: gix's lookup also tries
+    /// other spellings (under `tags/`, `heads/`, `remotes/`), so a result whose full name differs
+    /// from the name asked for is treated as not found.
     fn reference_target(&self, name: &str) -> Result<ObjectId, Error> {
+        let bad = |reason: String| BadRequest::Revision {
+            rev: name.into(),
+            reason,
+        };
+        if let Some(reason) = ref_name_too_long(name) {
+            return Err(bad(reason).into());
+        }
         if name != "HEAD"
             && let Err(e) = gix::validate::reference::name(name.as_bytes().into())
         {
-            return Err(BadRequest::Revision {
-                rev: name.into(),
-                reason: format!("not a valid reference name: {e}"),
-            }
-            .into());
+            return Err(bad(format!("not a valid reference name: {e}")).into());
         }
         let mut current = name.to_string();
         for _ in 0..MAX_SYMBOLIC_DEPTH {
-            let reference = match self.repo.try_find_reference(current.as_str()) {
-                Ok(Some(r)) => r,
-                Ok(None) => {
-                    return Err(BadRequest::Revision {
-                        rev: name.into(),
-                        reason: format!("reference {current} does not exist"),
-                    }
-                    .into());
-                }
+            let found = match self.repo.try_find_reference(current.as_str()) {
+                Ok(Some(r)) if r.name().as_bstr() == current.as_str() => Some(r),
+                Ok(_) => None,
                 Err(e) => {
                     return Err(CannotRead::Reference {
                         name: current,
                         reason: e.to_string(),
+                    }
+                    .into());
+                }
+            };
+            let reference = match found {
+                Some(r) => r,
+                None => {
+                    return Err(BadRequest::Revision {
+                        rev: name.into(),
+                        reason: format!("reference {current} does not exist"),
                     }
                     .into());
                 }
@@ -563,6 +606,60 @@ pub(crate) fn split_tree_path(path: &str) -> Result<Vec<&str>, BadRequest> {
     Ok(components)
 }
 
+/// Why a reference name exceeds [`MAX_REF_COMPONENT_BYTES`] or [`MAX_REF_NAME_BYTES`].
+pub(crate) fn ref_name_too_long(name: &str) -> Option<String> {
+    if name.len() > MAX_REF_NAME_BYTES {
+        return Some(format!(
+            "reference name is {} bytes; the limit is {MAX_REF_NAME_BYTES}",
+            name.len()
+        ));
+    }
+    name.split('/')
+        .find(|c| c.len() > MAX_REF_COMPONENT_BYTES)
+        .map(|c| {
+            format!(
+                "reference name component is {} bytes; the limit is {MAX_REF_COMPONENT_BYTES}",
+                c.len()
+            )
+        })
+}
+
+/// gix's discovery for `gix::open_opts` without `open_path_as_is`, step for step: `<path>/.git`
+/// unless the path already ends in `.git`, falling back to the path itself.
+fn discover(path: &Path) -> Result<(PathBuf, gix::discover::repository::Kind), String> {
+    if !path.ends_with(".git") {
+        let candidate = path.join(".git");
+        if let Ok(kind) = gix::discover::is_git(&candidate) {
+            return Ok((candidate, kind));
+        }
+    }
+    gix::discover::is_git(path)
+        .map(|kind| (path.to_path_buf(), kind))
+        .map_err(|e| e.to_string())
+}
+
+fn same_dir(a: &Path, b: &Path) -> bool {
+    matches!((a.canonicalize(), b.canonicalize()), (Ok(x), Ok(y)) if x == y)
+}
+
+/// Whether the repository is shallow, as git decides it: the shallow file exists and can be
+/// opened (an empty file counts). A shallow state that cannot be established (the file exists
+/// but cannot be opened, or is not a regular file) is `cannot_read`.
+fn is_shallow(file: &Path) -> Result<bool, CannotRead> {
+    let state = |reason: String| CannotRead::ShallowState { reason };
+    match std::fs::symlink_metadata(file) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(state(format!("{}: {e}", file.display()))),
+        Ok(_) => match std::fs::metadata(file) {
+            Ok(m) if m.is_file() => std::fs::File::open(file)
+                .map(|_| true)
+                .map_err(|e| state(format!("{}: {e}", file.display()))),
+            Ok(_) => Err(state(format!("{} is not a regular file", file.display()))),
+            Err(e) => Err(state(format!("{}: {e}", file.display()))),
+        },
+    }
+}
+
 /// Extensions that do not change how objects or references are read here. At repository format
 /// version 1 any other extension is refused, as git refuses an extension it does not know.
 const KNOWN_EXTENSIONS: &[&str] = &[
@@ -574,21 +671,61 @@ const KNOWN_EXTENSIONS: &[&str] = &[
     "noop",
 ];
 
-/// Check the repository's own configuration before gix opens it, so that an unsupported
-/// repository is refused as `unsupported` with its reason rather than failing to open: a format
-/// version above 1, an object format other than sha1, a reference backend other than files, or
-/// (at version 1) an extension outside [`KNOWN_EXTENSIONS`]. The configuration is parsed with
-/// gix-config's grammar, without includes. An unparseable configuration is `cannot_read`. The
-/// object format is checked again after opening.
-fn check_repository_format(path: &Path) -> Result<(), Error> {
-    let Some(bytes) = repository_config_path(path).and_then(|p| std::fs::read(p).ok()) else {
+/// Read a configuration file; a missing file is `None`, any other reading failure `cannot_read`.
+fn read_config(file: &Path) -> Result<Option<gix::config::File>, Error> {
+    let cannot = |reason: String| CannotRead::Open {
+        path: file.display().to_string(),
+        reason,
+    };
+    match std::fs::read(file) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(cannot(e.to_string()).into()),
+        Ok(bytes) => Ok(Some(
+            parse_config(&bytes).map_err(|e| cannot(format!("{}: {e}", file.display())))?,
+        )),
+    }
+}
+
+/// Check the configuration gix will load, before gix opens the repository, so that an
+/// unsupported repository is refused as `unsupported` with its reason rather than failing to
+/// open or being read differently from git: in `local` (the common directory's `config`), a
+/// format version above 1, an object format other than sha1, a reference backend other than
+/// files, or (at version 1) an extension outside [`KNOWN_EXTENSIONS`]; in `local` or `worktree`
+/// (`config.worktree`), any `gitoxide.*` key (item 6). Files are parsed with gix-config's
+/// grammar, without includes (gix opens with includes off). An unparseable file is
+/// `cannot_read`. The object format is checked again after opening.
+fn check_repository_config(local: &Path, worktree: &Path) -> Result<(), Error> {
+    for file in [local, worktree] {
+        if let Some(config) = read_config(file)? {
+            for section in config.sections() {
+                if section.header().name().eq_ignore_ascii_case(b"gitoxide") {
+                    let sub = section
+                        .header()
+                        .subsection_name()
+                        .map(|s| format!(".{s}"))
+                        .unwrap_or_default();
+                    let key = section
+                        .body()
+                        .value_names()
+                        .next()
+                        .map(|k| format!("gitoxide{sub}.{k}"))
+                        .unwrap_or_else(|| format!("gitoxide{sub}"));
+                    return Err(Unsupported::GitoxideKey {
+                        file: file.display().to_string(),
+                        key,
+                    }
+                    .into());
+                }
+            }
+        }
+    }
+    let Some(config) = read_config(local)? else {
         return Ok(());
     };
     let cannot = |reason: String| CannotRead::Open {
-        path: path.display().to_string(),
+        path: local.display().to_string(),
         reason,
     };
-    let config = parse_config(&bytes).map_err(cannot)?;
     let version = config
         .integer("core.repositoryformatversion")
         .map_err(|e| cannot(format!("core.repositoryformatversion: {e}")))?
@@ -627,37 +764,6 @@ fn check_repository_format(path: &Path) -> Result<(), Error> {
         }
     }
     Ok(())
-}
-
-/// The configuration file of the repository at `path`: in the common directory of a linked
-/// worktree, otherwise in the git directory.
-fn repository_config_path(path: &Path) -> Option<PathBuf> {
-    let dot = path.join(".git");
-    let git_dir: PathBuf = if dot.is_dir() {
-        dot
-    } else if dot.is_file() {
-        let text = std::fs::read_to_string(&dot).ok()?;
-        let target = PathBuf::from(text.strip_prefix("gitdir:")?.trim());
-        if target.is_absolute() {
-            target
-        } else {
-            path.join(target)
-        }
-    } else {
-        path.to_path_buf()
-    };
-    let dir = match std::fs::read_to_string(git_dir.join("commondir")) {
-        Ok(common) => {
-            let common = PathBuf::from(common.trim());
-            if common.is_absolute() {
-                common
-            } else {
-                git_dir.join(common)
-            }
-        }
-        Err(_) => git_dir,
-    };
-    Some(dir.join("config"))
 }
 
 fn parse_config(bytes: &[u8]) -> Result<gix::config::File, String> {
@@ -793,6 +899,28 @@ mod tests {
                 String::from_utf8_lossy(name)
             );
         }
+    }
+
+    #[test]
+    fn reference_name_length_limits() {
+        let name = |parts: &[usize]| {
+            let mut s = String::from("refs");
+            for n in parts {
+                s.push('/');
+                s.push_str(&"x".repeat(*n));
+            }
+            s
+        };
+        assert_eq!(ref_name_too_long(&name(&[255])), None);
+        assert!(ref_name_too_long(&name(&[256])).is_some());
+        // 4 + 16 * 255 + 16 slashes = 4100 > 4096; 4 + 15 * 255 + 15 + 1 + 251 = 4096.
+        assert!(ref_name_too_long(&name(&[255; 16])).is_some());
+        let at_limit = name(&[
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 251,
+        ]);
+        assert_eq!(at_limit.len(), 4096);
+        assert_eq!(ref_name_too_long(&at_limit), None);
+        assert!(ref_name_too_long(&format!("{at_limit}x")).is_some());
     }
 
     #[test]

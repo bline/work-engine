@@ -73,6 +73,11 @@ pub enum Unsupported {
     FormatVersion { version: i64 },
     #[error("repository extension {name} = {value:?} is not supported")]
     Extension { name: String, value: String },
+    /// git ignores `gitoxide.*` keys but gix reads them from the repository's own configuration
+    /// (for example `gitoxide.core.refsNamespace`, `gitoxide.core.shallowFile`), so a repository
+    /// that sets one would be read differently from git.
+    #[error("repository configuration {file} sets {key}, which git ignores but gix would apply")]
+    GitoxideKey { file: String, key: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

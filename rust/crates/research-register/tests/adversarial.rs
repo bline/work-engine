@@ -1055,3 +1055,176 @@ fn security_namespace_settings_cannot_redirect_a_reference() {
         &t,
     );
 }
+
+fn copy_dir(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for e in std::fs::read_dir(from).unwrap() {
+        let e = e.unwrap();
+        let target = to.join(e.file_name());
+        if e.file_type().unwrap().is_dir() {
+            copy_dir(&e.path(), &target);
+        } else {
+            std::fs::copy(e.path(), target).unwrap();
+        }
+    }
+}
+
+const UNSUPPORTED_FORMATS: [(&str, &str); 4] = [
+    (
+        "unknown extension",
+        "[core]\n\trepositoryformatversion = 1\n[extensions]\n\tbogusext = 1\n",
+    ),
+    (
+        "reftable",
+        "[core]\n\trepositoryformatversion = 1\n[extensions]\n\trefstorage = reftable\n",
+    ),
+    (
+        "format version 2",
+        "[core]\n\trepositoryformatversion = 2\n",
+    ),
+    (
+        "sha256",
+        "[core]\n\trepositoryformatversion = 1\n[extensions]\n\tobjectformat = sha256\n",
+    ),
+];
+
+/// R-1b.4 item 7 (Fable F-4): the format check reads the configuration of the repository gix
+/// actually opens, in every layout, so a decoy `.git/` or an odd gitfile cannot hide it.
+#[test]
+fn security_repository_format_is_checked_where_gix_opens() {
+    let fx = Fx::new("format-layouts");
+    for (k, (name, config)) in UNSUPPORTED_FORMATS.iter().enumerate() {
+        let (r, c1, _) = fx.base(&format!("repo-{k}"), &none);
+        std::fs::write(r.join(".git/config"), config).unwrap();
+        let expect = |what: &str, path: &Path| {
+            let res = GitObjects::open(path).and_then(|o| PinnedSnapshot::build(o, &c1, "reg"));
+            judge(
+                &fx,
+                &format!("{what}, {name}"),
+                res,
+                &Expect::Refuse("unsupported"),
+            );
+        };
+        expect("worktree path", &r);
+        // D1: the path is itself a git directory and holds a non-repository .git/ of its own.
+        let bare = fx.root.join(format!("d1-{k}"));
+        copy_dir(&r.join(".git"), &bare);
+        expect("git directory path", &bare);
+        std::fs::create_dir_all(bare.join(".git")).unwrap();
+        expect("git directory path with an empty .git/ inside", &bare);
+        write(
+            &bare.join(".git/config"),
+            "[core]\n\trepositoryformatversion = 0\n",
+        );
+        expect("git directory path with a decoy .git/config", &bare);
+        // D2: the path names W/.git, which holds a decoy .git/ of its own.
+        std::fs::create_dir_all(r.join(".git/.git")).unwrap();
+        expect("W/.git with W/.git/.git/", &r.join(".git"));
+        // D3: a gitfile whose target keeps a leading space ("gitdir:  realgit").
+        let w = fx.root.join(format!("d3-{k}"));
+        copy_dir(&r.join(".git"), &w.join(" realgit"));
+        std::fs::write(w.join(".git"), "gitdir:  realgit\n").unwrap();
+        expect("gitfile with two spaces", &w);
+    }
+}
+
+/// R-1b.4 item 6 (Fable F-2, F-3): repository-local `gitoxide.*` keys (which git ignores) are
+/// refused, in `config` and in `config.worktree`; shallowness comes from the shallow file as git
+/// reads it, never from configuration.
+#[test]
+fn security_repository_gitoxide_keys_and_shallow_file() {
+    let fx = Fx::new("gitoxide-keys");
+    let refuse = |what: &str, r: &Path, rev: &str, cat: &'static str| {
+        judge(&fx, what, read(r, rev, "reg"), &Expect::Refuse(cat))
+    };
+    // C1
+    let (r, c1, _) = fx.base("c1", &none);
+    set_config_text(&r, &|t| t + "[gitoxide \"core\"]\n\trefsNamespace = ns\n");
+    refuse("C1 local refsNamespace", &r, &c1, "unsupported");
+    // C9 (worktree configuration)
+    let (r, c1, _) = fx.base("c9", &none);
+    set_config_text(&r, &|t| {
+        t.replace("repositoryformatversion = 0", "repositoryformatversion = 1")
+            + "[extensions]\n\tworktreeConfig = true\n"
+    });
+    write(
+        &r.join(".git/config.worktree"),
+        "[gitoxide \"core\"]\n\trefsNamespace = ns\n",
+    );
+    refuse("C9 config.worktree refsNamespace", &r, &c1, "unsupported");
+    // C2: a real shallow file hidden by gitoxide.core.shallowFile, then the file alone.
+    let (r, c1, c2) = fx.base("c2", &none);
+    std::fs::write(r.join(".git/shallow"), format!("{c1}\n")).unwrap();
+    assert_eq!(
+        fx.git(&r, &["rev-parse", "--is-shallow-repository"]),
+        "true",
+        "CONTROL"
+    );
+    set_config_text(&r, &|t| {
+        t + "[gitoxide \"core\"]\n\tshallowFile = no-such-file\n"
+    });
+    refuse(
+        "C2 shallowFile hides the shallow file",
+        &r,
+        &c2,
+        "unsupported",
+    );
+    set_config_text(&r, &|t| {
+        t.replace("[gitoxide \"core\"]\n\tshallowFile = no-such-file\n", "")
+    });
+    refuse("shallow file", &r, &c2, "unsupported");
+    std::fs::write(r.join(".git/shallow"), "").unwrap();
+    assert_eq!(
+        fx.git(&r, &["rev-parse", "--is-shallow-repository"]),
+        "true",
+        "CONTROL: git treats an empty shallow file as shallow"
+    );
+    refuse("empty shallow file", &r, &c2, "unsupported");
+    std::fs::remove_file(r.join(".git/shallow")).unwrap();
+    std::fs::create_dir(r.join(".git/shallow")).unwrap();
+    refuse("shallow state unreadable", &r, &c2, "cannot_read");
+    std::fs::remove_dir(r.join(".git/shallow")).unwrap();
+    judge(&fx, "control", read(&r, &c2, "reg"), &truth(&fx, &r, &c2));
+}
+
+/// R-1b.4 item 7 (Fable F-5, F-6): only the exact reference name is resolved, and names over
+/// the documented length limits are `bad_request` before any lookup.
+#[test]
+fn security_exact_reference_names_and_length_limits() {
+    let fx = Fx::new("exact-refs");
+    let (r, c1, c2) = fx.base("repo", &none);
+    for d in [
+        "heads/refs/heads/zzz",
+        "tags/refs/heads/zzz",
+        "remotes/refs/heads/zzz",
+        "remotes/refs/heads/zzy/HEAD",
+        "refs/remotes/refs/heads/zzy/HEAD",
+        "refs/tags/refs/heads/zzx",
+    ] {
+        write(&r.join(".git").join(d), &format!("{c1}\n"));
+    }
+    let o = GitObjects::open(&r).unwrap();
+    let category = |rev: &str| match o.resolve(rev) {
+        Ok(id) => format!("ok {id}"),
+        Err(e) => e.category().to_owned(),
+    };
+    for name in ["refs/heads/zzz", "refs/heads/zzy", "refs/heads/zzx"] {
+        assert_eq!(
+            category(name),
+            "bad_request",
+            "SECURITY: {name} resolved through a decoy"
+        );
+    }
+    assert_eq!(category("refs/heads/main"), format!("ok {c2}"));
+    let long = |n: usize| format!("refs/heads/{}", "a".repeat(n));
+    assert_eq!(
+        category(&long(255)),
+        "bad_request",
+        "at the component limit: does not exist"
+    );
+    assert_eq!(category(&long(256)), "bad_request");
+    assert_eq!(category(&long(5000)), "bad_request");
+    let deep = format!("refs/{}", vec!["b".repeat(200); 21].join("/"));
+    assert!(deep.len() > 4096);
+    assert_eq!(category(&deep), "bad_request");
+}
