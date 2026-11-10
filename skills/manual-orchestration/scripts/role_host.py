@@ -946,6 +946,7 @@ class Pi:
                                              reserved=[str(state), str(self.socket_root())])
             limits = _pi_container().validate_limits(container.get("memory", "4g"), container.get("pids", 512),
                                                   container.get("cpus", "2"))
+            usd_limit, max_output = self._usd_limit(container, opts)
         except _pi_container().ContainerError as e:
             raise HostError(USAGE if e.status == "usage" else NOT_ESTABLISHED, e.status, e.detail)
         if _run([self.docker(), "image", "inspect", "--format", "{{.Id}}", _pi_container().IMAGE]).returncode != 0:
@@ -962,6 +963,7 @@ class Pi:
                "home": home, "container_dir": str(cdir), "host_dir": str(hdir),
                "agent_dir": str(cdir / "agent"), "session_dir": str(cdir / "sessions"),
                "max_requests": container.get("max_requests"),
+               "max_output_tokens": max_output, "usd_limit": usd_limit,
                "selection": {"model": opts["model"], "tier": opts["tier"], "thinking": opts["thinking"],
                              "pi_argv": opts["argv"]},
                "user": os.environ.get("USER") or os.environ.get("LOGNAME") or "",
@@ -977,6 +979,39 @@ class Pi:
             env["codebase_memory"] = self._prepare_codebase_memory(binary, cwd=str(Path(cwd).resolve()), env=env)
         env["fingerprint"] = _pi_container().fingerprint(env)
         return env
+
+    @staticmethod
+    def _usd_limit(container, opts):
+        """(usd_limit, max_output_tokens) for the environment; rates are fixed at launch."""
+        pc = _pi_container()
+        max_usd, max_output = container.get("max_usd"), container.get("max_output_tokens")
+        if max_output is not None and max_output < 1:
+            raise pc.ContainerError("usage", f"--max-output-tokens {max_output} must be at least 1")
+        if max_usd is None:
+            if container.get("usd_strict_tier"):
+                raise pc.ContainerError("usage", "--usd-strict-tier needs --max-usd")
+            return None, max_output
+        if not max_usd > 0:
+            raise pc.ContainerError("usage", f"--max-usd {max_usd} must be positive")
+        rates = pc.usd_rates(opts["model"].split("/", 1)[1])
+        if (opts["tier"] or "default") not in rates["tier_multiplier"]:
+            raise pc.ContainerError("usage", f"--max-usd needs a priced tier ({', '.join(rates['tier_multiplier'])}) "
+                                             f"or none, not {opts['tier']!r}")
+        return ({"max_usd": float(max_usd), "strict_tier": bool(container.get("usd_strict_tier")), "rates": rates},
+                max_output if max_output is not None else pc.DEFAULT_MAX_OUTPUT_TOKENS)
+
+    def _prior_usd(self, sid, ledger, env) -> dict:
+        """Session spend before this turn, from earlier turns' host-only proxy logs."""
+        logs = [r["files"]["proxy_log"] for r in self._turns(sid, ledger) if r.get("turn")]
+        try:
+            prior = _pi_container().prior_usd_state(logs)
+        except _pi_container().ContainerError as e:
+            raise HostError(NOT_ESTABLISHED, e.status, e.detail)
+        if prior["spent_before_usd"] >= env["usd_limit"]["max_usd"]:
+            raise HostError(NOT_ESTABLISHED, "usd_limit_reached",
+                            f"session spend {prior['spent_before_usd']:.4f} USD has reached the "
+                            f"{env['usd_limit']['max_usd']:.4f} USD limit; no turn started")
+        return prior
 
     def _prepare_codebase_memory(self, binary, *, cwd, env) -> dict:
         """A fresh index of exactly the working directory, verified inside the container profile.
@@ -1128,6 +1163,7 @@ class Pi:
         files.update({k: hdir / f"turn-{turn}.{suffix}" for k, suffix in (
             ("proxy_log", "proxy.jsonl"), ("runner_record", "runner.jsonl"),
             ("runner_log", "runner.log"), ("spec", "spec.json"))})
+        prior = self._prior_usd(sid, ledger, env) if env.get("usd_limit") else None
         key = self.provider_key(opts, cwd=cwd)
         self._write_prompt(files["prompt"], prompt)
         self.socket_root().mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -1144,7 +1180,8 @@ class Pi:
                 "pi_argv": pi_argv, "files": {k: str(v) for k, v in files.items()},
                 "upstream": os.environ.get("ROLE_HOST_PI_UPSTREAM", "https://api.openai.com/v1"),
                 "model_id": opts["model"].split("/", 1)[1], "service_tier": opts["tier"],
-                "max_requests": env.get("max_requests")}
+                "max_requests": env.get("max_requests"), "max_output_tokens": env.get("max_output_tokens"),
+                "usd_limit": {**env["usd_limit"], **prior} if prior is not None else None}
         files["spec"].write_text(json.dumps(spec, indent=1) + "\n")
         runner = Path(__file__).resolve().parent / "pi_container.py"
         with open(files["runner_log"], "ab") as log:
@@ -1162,6 +1199,9 @@ class Pi:
         del key
         row = self._turn_row(sid, opts, event=event, turn=turn, proc=proc, files=files)
         row["container"] = {"name": container_name, "fingerprint_sha256": env["fingerprint"]["sha256"]}
+        if prior is not None:
+            row["usd_limit"] = {"max_usd": env["usd_limit"]["max_usd"], "spent_before_usd": prior["spent_before_usd"],
+                                "max_output_tokens": env["max_output_tokens"]}
         if event == "launch":
             row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent, container_environment=env)
         ledger.append(row)
@@ -1300,6 +1340,16 @@ class Pi:
                 "http_errors": [r.get("http_status") for r in requests if r.get("http_status") != 200],
                 "usage": {k: sum((r.get("usage") or {}).get(k) or 0 for r in requests)
                           for k in ("input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens")}}
+            if row.get("usd_limit"):
+                lim, t = row["usd_limit"], _pi_container().usd_totals(proxy_rows)
+                out["egress"]["usd"] = {
+                    "limit_usd": lim["max_usd"], "spent_before_usd": lim["spent_before_usd"],
+                    "charged_usd": round(t["charged_usd"], 6),
+                    "unsettled_reserved_usd": round(t["unsettled_reserved_usd"], 6),
+                    "session_spent_usd": round(lim["spent_before_usd"] + t["charged_usd"]
+                                               + t["unsettled_reserved_usd"], 6),
+                    "limit_reached": t["limit_reached"], "bound_basis": t["bound_basis"],
+                    "multiplier_floor": t["multiplier_floor"]}
             out["container"] = {**(row.get("container") or {}), "exit_code": state.get("ExitCode"),
                                 "oom_killed": state.get("OOMKilled"),
                                 "removed": any(r.get("event") == "container_removed" and r.get("exit") == 0 for r in runner)}
@@ -1476,6 +1526,14 @@ def main(argv=None) -> int:
     la.add_argument("--container-pids", type=int, default=512)
     la.add_argument("--container-cpus", default="2")
     la.add_argument("--max-requests", type=int, help="container: egress proxy cap on model requests per turn")
+    la.add_argument("--max-usd", type=float,
+                    help="container: session dollar limit; the proxy sets aside each request's worst case before "
+                         "forwarding it and refuses once spend plus that would pass the limit")
+    la.add_argument("--max-output-tokens", type=int,
+                    help="container: cap the proxy forces on max_output_tokens (default 16000 with --max-usd, "
+                         "none without)")
+    la.add_argument("--usd-strict-tier", action="store_true",
+                    help="container, with --max-usd: set aside at the dearer of the requested and default tier")
     la.add_argument("--codebase-memory", action="store_true",
                     help="container: index the working directory into this session's own codebase-memory cache, "
                          "verify it inside the container, and give Pi the MCP server")
@@ -1547,14 +1605,17 @@ def main(argv=None) -> int:
                 res = h.exact_turn(sid, a.turn_id)
             elif a.cmd == "launch":
                 kw = {}
-                container_flags = a.mount_ro or a.mount_rw or a.max_requests is not None or a.codebase_memory
+                container_flags = (a.mount_ro or a.mount_rw or a.max_requests is not None or a.codebase_memory
+                                   or a.max_usd is not None or a.max_output_tokens is not None or a.usd_strict_tier)
                 if a.host == "pi":
                     if container_flags and not a.container:
-                        raise HostError(USAGE, "usage", "--mount-ro, --mount-rw, --max-requests and --codebase-memory "
-                                        "need --container")
+                        raise HostError(USAGE, "usage", "--mount-ro, --mount-rw, --max-requests, --max-usd, "
+                                        "--max-output-tokens, --usd-strict-tier and --codebase-memory need --container")
                     kw = {"lane": a.auth, "tier": a.service_tier, "container": {
                         "ro": a.mount_ro, "rw": a.mount_rw, "memory": a.container_memory, "pids": a.container_pids,
                         "cpus": a.container_cpus, "max_requests": a.max_requests,
+                        "max_usd": a.max_usd, "max_output_tokens": a.max_output_tokens,
+                        "usd_strict_tier": a.usd_strict_tier,
                         "codebase_memory": a.codebase_memory} if a.container else None}
                 elif a.auth or a.service_tier or a.container or container_flags:
                     raise HostError(USAGE, "usage", "--auth, --service-tier and the container options are pi launch "

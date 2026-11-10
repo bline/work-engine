@@ -160,6 +160,32 @@ What the agent gets, enforced by the container rather than by instructions:
   refuses `store: true`. It sets the requested tier (or removes one),
   substitutes the real key, and logs the tier and usage the provider reported.
   `--max-requests N` caps forwarded model requests per turn.
+- **Dollar limit.** `--max-usd X` limits the whole session's modelled API
+  spend. The proxy forces `max_output_tokens` to `--max-output-tokens`
+  (default 16000 with `--max-usd`), then sets aside each request's worst
+  case before forwarding it: every input token at the dearer of the input and
+  cache-write rates, plus the full output cap, at the requested tier. Input is
+  bounded by the previous request's reported `input_tokens` plus the bytes of
+  the items appended to it when the request extends that input, otherwise by
+  the bytes of the whole body (a token is at least one byte); above 272k the
+  long-context multipliers apply. If spend plus that amount would pass the
+  limit, the proxy refuses with 429, refuses every later request, and the
+  runner stops the container. After the response the reservation is replaced
+  by the charge from the provider's final usage at the tier it reports. A
+  response with no usage keeps the full reservation; an error status before
+  any stream is charged nothing (assumed unbilled, not verified). A response
+  served at another tier is charged at that tier and later reservations use at
+  least the dearer of it and default; one reporting no tier is charged at the
+  dearest multiplier. `--usd-strict-tier` sets aside at the dearer of the
+  requested and default tier from the start. Files, and images not sent
+  inline, are refused because their bytes do not bound their tokens. Rates
+  are `scripts/openai_api_rates.json` (a test keeps them equal to the usage
+  ledger's) and are fixed in the environment at launch. Each turn starts from
+  the spend recorded in the session's earlier proxy logs, counting any
+  reservation that was never settled; a delivery is refused with
+  `usd_limit_reached` once that spend reaches the limit. `status` reports it
+  under `last_turn.egress.usd`. Stopping early is the cost of a hard limit:
+  the limit can stop a run while up to one worst case of it is unspent.
 - **The proxy is bounded too.** It runs on the host, outside the container's
   limits, so it accepts at most 8 connections at once (more are closed
   without a thread), requires a `Content-Length` of at most 64 MiB, refuses

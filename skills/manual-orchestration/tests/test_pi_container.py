@@ -150,9 +150,17 @@ class RequestCheckTests(unittest.TestCase):
         self.assertIsNone(self.check(pi_request))
 
 
+USAGE = {"input_tokens": 7, "output_tokens": 3, "input_tokens_details": {"cached_tokens": 2, "cache_write_tokens": 4}}
+
+
 class Upstream(BaseHTTPRequestHandler):
-    """Records what the proxy sent and streams a terminal event echoing the tier."""
+    """Records what the proxy sent and streams a terminal event echoing the tier.
+
+    Class settings shape the reply: status (non-200 sends a JSON error),
+    terminal (event type, or None for a stream with no terminal event), usage.
+    """
     seen = []
+    status, terminal, usage = 200, "response.completed", USAGE
 
     def log_message(self, *a):
         pass
@@ -160,14 +168,22 @@ class Upstream(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["content-length"])))
         Upstream.seen.append({"path": self.path, "auth": self.headers.get("authorization"), "body": body})
-        event = {"type": "response.completed", "response": {"id": "r1", "model": body["model"],
-                 "service_tier": body.get("service_tier", "default"),
-                 "usage": {"input_tokens": 7, "output_tokens": 3,
-                           "input_tokens_details": {"cached_tokens": 2, "cache_write_tokens": 4}}}}
+        if Upstream.status != 200:
+            payload = b'{"error": {"message": "fake"}}'
+            self.send_response(Upstream.status)
+            self.send_header("content-length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         self.send_response(200)
         self.send_header("content-type", "text/event-stream")
         self.end_headers()
-        self.wfile.write(f"event: response.completed\ndata: {json.dumps(event)}\n\n".encode())
+        if Upstream.terminal is None:
+            self.wfile.write(b'data: {"type": "response.created"}\n\n')
+            return
+        event = {"type": Upstream.terminal, "response": {"id": "r1", "model": body["model"],
+                 "service_tier": body.get("service_tier", "default"), "usage": Upstream.usage}}
+        self.wfile.write(f"event: {Upstream.terminal}\ndata: {json.dumps(event)}\n\n".encode())
 
 
 class UnixHTTP(http.client.HTTPConnection):
@@ -180,11 +196,12 @@ class UnixHTTP(http.client.HTTPConnection):
         self.sock.connect(self.unix_path)
 
 
-class EgressProxyTests(unittest.TestCase):
+class ProxyHarness(unittest.TestCase):
     def setUp(self):
         self.tmp = pathlib.Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.tmp)
         Upstream.seen = []
+        Upstream.status, Upstream.terminal, Upstream.usage = 200, "response.completed", USAGE
         self.upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
         threading.Thread(target=self.upstream.serve_forever, daemon=True).start()
         self.addCleanup(self.upstream.server_close)
@@ -209,6 +226,8 @@ class EgressProxyTests(unittest.TestCase):
     def log(self):
         return [json.loads(line) for line in (self.tmp / "proxy.jsonl").read_text().splitlines()]
 
+
+class EgressProxyTests(ProxyHarness):
     def test_key_substituted_tier_enforced_and_observed(self):
         self.proxy(tier="flex")
         status, data = self.post({"model": "gpt-6.1-sol", "service_tier": "priority", "input": []})
@@ -289,6 +308,267 @@ class EgressProxyTests(unittest.TestCase):
             c.close()
         self.assertTrue(any(r.get("reason") == "body not received in time" for r in self.log()))
         self.assertEqual(self.post({"model": "gpt-6.1-sol", "input": []})[0], 200)
+
+
+LEDGER = ROOT.parents[1] / "metrics" / "scripts" / "usage_ledger.py"
+
+
+def load_ledger():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("usage_ledger_for_rates", LEDGER)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class UsdPricingTests(unittest.TestCase):
+    @unittest.skipUnless(LEDGER.exists(), "usage ledger not in this tree")
+    def test_rates_match_the_usage_ledger(self):
+        ledger = load_ledger()
+        table = json.loads(pi_container.RATES_PATH.read_text())
+        self.assertEqual({m: (r["input"], r["cached_input"], r["cache_write"], r["output"])
+                          for m, r in table["models"].items()}, ledger.CODEX_RATES)
+        self.assertEqual(table["tier_multiplier"], ledger.API_TIER_MULTIPLIER)
+        rules = ledger.PRICING_RULES
+        self.assertEqual((table["long_input_threshold"], table["long_input_multiplier"], table["long_output_multiplier"]),
+                         (rules["codex_long_input_threshold"], rules["codex_long_input_multiplier"],
+                          rules["codex_long_output_multiplier"]))
+        for model in table["models"]:
+            rates = pi_container.usd_rates(model)
+            for i, c, w, o in ((50000, 30000, 5000, 2000), (300000, 100000, 0, 9000)):
+                want = ledger.codex_usd({"input_tokens": i, "cached_input_tokens": c, "cache_write_input_tokens": w,
+                                         "output_tokens": o}, model) * 0.5
+                got = pi_container.usage_usd(rates, input_tokens=i, cached=c, cache_write=w, output_tokens=o,
+                                             multiplier=0.5)
+                self.assertAlmostEqual(got, want, places=12)
+
+    def test_worst_case_and_unpriced_model(self):
+        astra = pi_container.usd_rates("gpt-6-astra")
+        # 272k input all at the cache-write rate plus 128k output, at flex.
+        self.assertAlmostEqual(pi_container.reserve_usd(astra, input_bound=272000, max_output_tokens=128000,
+                                                        multiplier=0.5), 4.90, places=9)
+        long = pi_container.reserve_usd(astra, input_bound=272001, max_output_tokens=0, multiplier=1)
+        self.assertAlmostEqual(long, 272001 * 12.5 * 2 / 1e6, places=9)
+        with self.assertRaises(pi_container.ContainerError):
+            pi_container.usd_rates("gpt-unknown")
+
+
+def body(*items, instructions="sys"):
+    return {"model": "gpt-6.1-sol", "instructions": instructions, "input": list(items)}
+
+
+class InputBoundTests(unittest.TestCase):
+    def prefix_after(self, b, tokens):
+        basis = pi_container.input_basis(b)
+        return {"items": basis["items"], "chain_sha256": basis["chains"][-1], "rest_sha256": basis["rest_sha256"],
+                "input_tokens": tokens}
+
+    def test_bytes_bound_without_a_prefix(self):
+        b = body({"role": "user", "content": "héllo"})
+        basis = pi_container.input_basis(b)
+        bound, how = pi_container.input_bound(basis, None)
+        self.assertEqual(how, "bytes")
+        self.assertEqual(bound, basis["rest_bytes"] + sum(basis["item_bytes"]) + 2 * pi_container.ITEM_OVERHEAD_TOKENS)
+        # Escaped JSON is never shorter than the UTF-8 text it carries.
+        self.assertGreaterEqual(basis["item_bytes"][0], len("héllo".encode()))
+        self.assertEqual(pi_container.input_basis({"input": "text"})["items"], 1)
+
+    def test_prefix_bound_counts_only_appended_items(self):
+        first = body({"role": "user", "content": "a"})
+        prefix = self.prefix_after(first, 900)
+        second = body({"role": "user", "content": "a"}, {"type": "function_call_output", "output": "x" * 100})
+        basis = pi_container.input_basis(second)
+        bound, how = pi_container.input_bound(basis, prefix)
+        self.assertEqual((how, bound), ("prefix", 900 + basis["item_bytes"][1] + pi_container.ITEM_OVERHEAD_TOKENS))
+        changed_rest = body({"role": "user", "content": "a"}, {"role": "user", "content": "b"}, instructions="other")
+        basis = pi_container.input_basis(changed_rest)
+        bound, how = pi_container.input_bound(basis, prefix)
+        self.assertEqual(how, "prefix")
+        self.assertEqual(bound, 900 + basis["item_bytes"][1] + basis["rest_bytes"] + 2 * pi_container.ITEM_OVERHEAD_TOKENS)
+
+    def test_rewritten_history_falls_back_to_bytes(self):
+        prefix = self.prefix_after(body({"role": "user", "content": "a"}, {"role": "user", "content": "b"}), 900)
+        for other in (body({"role": "user", "content": "A"}, {"role": "user", "content": "b"}),  # edited
+                      body({"role": "user", "content": "a"})):  # shorter (compacted)
+            self.assertEqual(pi_container.input_bound(pi_container.input_basis(other), prefix)[1], "bytes")
+
+    def test_unpriceable_inputs(self):
+        self.assertIsNone(pi_container.unpriceable_input([{"type": "input_image", "image_url": "data:image/png;base64,AA"}]))
+        self.assertIn("input_image", pi_container.unpriceable_input(
+            [{"role": "user", "content": [{"type": "input_image", "image_url": "https://x/y.png"}]}]))
+        self.assertIn("input_image", pi_container.unpriceable_input([{"type": "input_image", "file_id": "f"}]))
+        self.assertIn("input_file", pi_container.unpriceable_input([{"type": "input_file", "file_data": "x"}]))
+
+
+def completed(i=1000, o=100, c=0, w=0, tier="flex"):
+    return {"service_tier": tier, "usage": {"input_tokens": i, "output_tokens": o,
+                                            "input_tokens_details": {"cached_tokens": c, "cache_write_tokens": w}}}
+
+
+class UsdBudgetTests(unittest.TestCase):
+    def budget(self, max_usd=1.0, tier="flex", **kw):
+        return pi_container.UsdBudget(max_usd=max_usd, rates=pi_container.usd_rates("gpt-6-astra"), tier=tier,
+                                      max_output_tokens=16000, **kw)
+
+    def basis(self, n=1):
+        return pi_container.input_basis(body(*({"role": "user", "content": str(k)} for k in range(n))))
+
+    def test_reserve_settle_and_latch(self):
+        b = self.budget(max_usd=1.0)
+        ticket, refusal = b.reserve(self.basis())
+        self.assertIsNone(refusal)
+        want = (ticket["input_bound"] * 12.5 + 16000 * 50) / 1e6 * 0.5
+        self.assertAlmostEqual(ticket["reserved_usd"], want, places=12)
+        usd = b.settle(ticket, http_status=200, response=completed(i=1000, o=100, c=600, w=300))
+        self.assertEqual(usd["charge_basis"], "usage")
+        self.assertAlmostEqual(usd["charged_usd"], ((100 * 10 + 600 * 1 + 300 * 12.5) + 100 * 50) / 1e6 * 0.5, places=6)
+        self.assertEqual(b.prefix["input_tokens"], 1000)
+        b2 = self.budget(max_usd=0.4)  # one worst case is about 0.40 USD
+        self.assertIsNone(b2.reserve(self.basis())[0])
+        self.assertTrue(b2.exhausted)
+
+    def test_concurrent_reservations_count_against_the_limit(self):
+        b = self.budget(max_usd=0.9)
+        self.assertIsNotNone(b.reserve(self.basis())[0])
+        self.assertIsNotNone(b.reserve(self.basis())[0])
+        self.assertIsNone(b.reserve(self.basis())[0])
+
+    def test_charges_without_usage(self):
+        for status, response, how in ((429, {}, "error_status"), (200, {"usage": None}, "reservation"),
+                                      (None, {}, "reservation"), (200, completed(i=10, c=8, w=8), "reservation")):
+            b = self.budget()
+            ticket, _ = b.reserve(self.basis())
+            usd = b.settle(ticket, http_status=status, response=response)
+            self.assertEqual(usd["charge_basis"], how, (status, response))
+            self.assertEqual(usd["charged_usd"], 0.0 if how == "error_status" else round(ticket["reserved_usd"], 6))
+            self.assertEqual(b.outstanding, 0.0)
+
+    def test_tier_mismatch_raises_the_floor(self):
+        b = self.budget()
+        ticket, _ = b.reserve(self.basis())
+        usd = b.settle(ticket, http_status=200, response=completed(i=1000, o=0, tier="default"))
+        self.assertAlmostEqual(usd["charged_usd"], 1000 * 10 / 1e6, places=9)  # charged at the served tier
+        self.assertEqual((b.floor, b.multiplier()), (1.0, 1.0))
+        b = self.budget()
+        ticket, _ = b.reserve(self.basis())
+        b.settle(ticket, http_status=200, response=completed(tier=None))
+        self.assertEqual(b.multiplier(), 2.0)  # no reported tier: the dearest
+        self.assertEqual(self.budget(strict_tier=True).multiplier(), 1.0)
+        self.assertEqual(self.budget(tier=None).multiplier(), 1.0)
+        with self.assertRaises(pi_container.ContainerError):
+            self.budget(tier="auto")
+
+    def test_prior_state_counts_unsettled_reservations(self):
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        one, two, empty = tmp / "turn-1.proxy.jsonl", tmp / "turn-2.proxy.jsonl", tmp / "turn-3.proxy.jsonl"
+        basis = {"items": 3, "chain_sha256": "c", "rest_sha256": "r"}
+        one.write_text("\n".join(json.dumps(r) for r in (
+            {"event": "usd_reserved", "rid": 1, "reserved_usd": 0.5, "bound_basis": "bytes"},
+            {"event": "request", "usage": {"input_tokens": 1200}, "input_basis": basis,
+             "usd": {"rid": 1, "charged_usd": 0.1, "charge_basis": "usage", "multiplier_floor": 0.0}})) + "\n")
+        two.write_text(json.dumps({"event": "usd_reserved", "rid": 1, "reserved_usd": 0.3, "bound_basis": "prefix"}) + "\n")
+        empty.write_text("")
+        got = pi_container.prior_usd_state([one, two, empty])
+        self.assertEqual(got["spent_before_usd"], 0.4)
+        self.assertEqual(got["prefix"], {**basis, "input_tokens": 1200})
+        with self.assertRaises(pi_container.ContainerError) as cm:
+            pi_container.prior_usd_state([tmp / "missing.jsonl"])
+        self.assertEqual(cm.exception.status, "usd_spend_not_established")
+
+
+class EgressProxyUsdTests(ProxyHarness):
+    """The proxy with a dollar limit (gpt-6.1-sol at flex, 1,000-token output cap)."""
+
+    def usd_proxy(self, max_usd, **kw):
+        self.exhausted = []
+        budget = pi_container.UsdBudget(max_usd=max_usd, rates=pi_container.usd_rates("gpt-6.1-sol"), tier="flex",
+                                        max_output_tokens=1000, **kw)
+        return self.proxy(tier="flex", max_output_tokens=1000, budget=budget, on_usd_exhausted=self.exhausted.append)
+
+    def rows(self, event):
+        return [r for r in self.log() if r["event"] == event]
+
+    def test_output_cap_reserve_settle_and_latch(self):
+        self.usd_proxy(0.01)  # a small request sets aside about 0.0053 USD
+        self.assertEqual(self.post({"model": "gpt-6.1-sol", "input": [], "max_output_tokens": 128000})[0], 200)
+        self.assertEqual(Upstream.seen[-1]["body"]["max_output_tokens"], 1000)
+        self.assertEqual(self.post({"model": "gpt-6.1-sol", "input": [], "max_output_tokens": 500})[0], 200)
+        self.assertEqual(Upstream.seen[-1]["body"]["max_output_tokens"], 500)
+        settled = [r["usd"] for r in self.rows("request")]
+        want = ((7 - 2 - 4) * 2 + 2 * .1 + 4 * 2.5 + 3 * 10) / 1e6 * 0.5
+        self.assertEqual([u["charge_basis"] for u in settled], ["usage", "usage"])
+        self.assertAlmostEqual(settled[0]["charged_usd"], round(want, 6))
+        self.assertEqual([r["bound_basis"] for r in self.rows("usd_reserved")], ["bytes", "prefix"])
+        big = {"model": "gpt-6.1-sol", "input": [{"role": "user", "content": "x" * 20000}]}
+        status, data = self.post(big)
+        self.assertEqual(status, 429)
+        self.assertIn(b"usd_limit", data)
+        self.assertEqual(self.post({"model": "gpt-6.1-sol", "input": []})[0], 429)  # latched
+        self.assertEqual(len(Upstream.seen), 2)
+        self.assertEqual(len(self.exhausted), 1)
+        totals = pi_container.usd_totals(self.log())
+        self.assertTrue(totals["limit_reached"])
+        self.assertEqual(totals["unsettled_reserved_usd"], 0)
+
+    def test_no_terminal_event_charges_the_reservation_and_errors_charge_nothing(self):
+        self.usd_proxy(1.0)
+        Upstream.terminal = None
+        self.post({"model": "gpt-6.1-sol", "input": []})
+        Upstream.status = 429
+        self.assertEqual(self.post({"model": "gpt-6.1-sol", "input": []})[0], 429)
+        reserved = [r["reserved_usd"] for r in self.rows("usd_reserved")]
+        usd = [r["usd"] for r in self.rows("request")]
+        self.assertEqual([u["charge_basis"] for u in usd], ["reservation", "error_status"])
+        self.assertEqual([u["charged_usd"] for u in usd], [reserved[0], 0.0])
+
+    def test_unpriceable_input_refused(self):
+        self.usd_proxy(1.0)
+        status, data = self.post({"model": "gpt-6.1-sol", "input": [{"type": "input_file", "file_id": "f"}]})
+        self.assertEqual((status, Upstream.seen), (403, []))
+        self.assertIn(b"unpriceable", data)
+
+    def test_log_exists_before_any_request(self):
+        self.usd_proxy(1.0)
+        self.assertEqual(self.log(), [])
+
+
+class UsdLaunchOptionTests(unittest.TestCase):
+    def opts(self, model="openai/gpt-6-astra", tier="flex"):
+        return {"model": model, "tier": tier}
+
+    def test_defaults_and_refusals(self):
+        lim, out = role_host.Pi._usd_limit({"max_usd": 3}, self.opts())
+        self.assertEqual((lim["max_usd"], lim["strict_tier"], lim["rates"]["model"], out), (3.0, False, "gpt-6-astra", 16000))
+        self.assertEqual(role_host.Pi._usd_limit({"max_output_tokens": 500}, self.opts()), (None, 500))
+        for container, opts in (({"max_usd": 3}, self.opts(model="openai/gpt-unknown")),
+                                ({"max_usd": 3}, self.opts(tier="auto")), ({"max_usd": 0}, self.opts()),
+                                ({"usd_strict_tier": True}, self.opts()), ({"max_output_tokens": 0}, self.opts())):
+            with self.assertRaises(pi_container.ContainerError, msg=container):
+                role_host.Pi._usd_limit(container, opts)
+
+    def test_flags_need_container(self):
+        r = subprocess.run([sys.executable, str(HOST), "--state", tempfile.mkdtemp(), "launch", "pi", "--cwd", "/",
+                            "--name", "x", "--prompt-file", "/dev/null", "--auth", "api", "--max-usd", "3",
+                            "--host-arg=--model", f"--host-arg={MODEL}"], capture_output=True, text=True)
+        self.assertEqual(r.returncode, role_host.USAGE, r.stderr)
+        self.assertIn("--max-usd", r.stderr)
+
+    def test_session_spend_refuses_a_new_turn(self):
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        ledger = role_host.Ledger(tmp / "state")
+        log = tmp / "turn-1.proxy.jsonl"
+        log.write_text(json.dumps({"event": "usd_reserved", "rid": 1, "reserved_usd": 3.0, "bound_basis": "bytes"}) + "\n")
+        ledger.append({"host": "pi", "event": "launch", "session_id": SID, "turn": 1, "files": {"proxy_log": str(log)}})
+        env = {"usd_limit": {"max_usd": 3.0}}
+        with self.assertRaises(role_host.HostError) as cm:
+            role_host.Pi()._prior_usd(SID, ledger, env)
+        self.assertEqual(cm.exception.status, "usd_limit_reached")
+        log.unlink()
+        with self.assertRaises(role_host.HostError) as cm:
+            role_host.Pi()._prior_usd(SID, ledger, env)
+        self.assertEqual(cm.exception.status, "usd_spend_not_established")
 
 
 def runtime_fixture(root: pathlib.Path):
@@ -525,6 +805,43 @@ class RealContainerTests(unittest.TestCase):
         self.assertEqual(got["collected"]["container"], name)
         self.assertNotEqual(subprocess.run(["docker", "inspect", name], capture_output=True).returncode, 0)
         self.assertFalse(pathlib.Path(got["collected"]["socket_dir"]).exists())
+
+    def requests(self):
+        return [json.loads(line)["body"] for line in self.log.read_text().splitlines()]
+
+    def test_usd_limit_uses_prefix_bounds_within_and_across_turns(self):
+        self.mode.write_text(json.dumps({"tool_command": "echo hi"}))
+        code, row = self.launch("--service-tier", "flex", "--max-usd", "5")
+        self.assertEqual(code, 0, row)
+        sid = row["session_id"]
+        turn = self.wait_idle(sid)[1]["last_turn"]
+        usd = turn["egress"]["usd"]
+        self.assertEqual((turn["outcome"], turn["egress"]["requests"]), ("completed", 2), turn)
+        self.assertEqual(usd["bound_basis"], {"bytes": 1, "prefix": 1}, usd)
+        self.assertFalse(usd["limit_reached"])
+        self.assertGreater(usd["charged_usd"], 0)
+        self.assertEqual({b.get("max_output_tokens") for b in self.requests()}, {16000})
+        message = self.tmp / "msg"
+        message.write_text("Again.")
+        self.mode.write_text("{}")
+        self.assertEqual(self.host("deliver", "pi", sid, "--cwd", str(self.tmp / "ws"), "--message-file", str(message))[0], 0)
+        usd2 = self.wait_idle(sid)[1]["last_turn"]["egress"]["usd"]
+        self.assertEqual(usd2["bound_basis"], {"prefix": 1}, usd2)  # the new turn extends the last turn's input
+        self.assertEqual(usd2["spent_before_usd"], usd["session_spent_usd"])
+
+    def test_usd_limit_reached_stops_the_turn(self):
+        started = time.time()
+        code, row = self.launch("--max-usd", "0.01")  # below one worst case (16k output alone is 0.16 USD)
+        self.assertEqual(code, 0, row)
+        sid = row["session_id"]
+        code, st = self.wait_idle(sid)
+        usd = st["last_turn"]["egress"]["usd"]
+        self.assertTrue(usd["limit_reached"], st)
+        self.assertEqual((st["last_turn"]["egress"]["requests"], usd["session_spent_usd"]), (0, 0), st)
+        self.assertFalse(self.log.exists() and self.log.read_text().strip())  # nothing reached the upstream
+        runner = [json.loads(line) for line in pathlib.Path(row["files"]["runner_record"]).read_text().splitlines()]
+        self.assertTrue(any(r["event"] == "stop_requested" and r.get("reason") == "usd_limit" for r in runner), runner)
+        self.assertLess(time.time() - started, 60)
 
     def test_refusals_before_any_effect(self):
         self.assertEqual(self.launch("--auth", "subscription")[0], role_host.USAGE)

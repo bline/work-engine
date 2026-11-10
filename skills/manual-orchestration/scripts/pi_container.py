@@ -18,6 +18,12 @@ hosted (server-side) tools, sets or removes service_tier, substitutes the real
 key for the container's placeholder, and logs the tier and usage the provider
 reported. The key never enters the container.
 
+With a dollar limit (UsdBudget), the proxy also caps max_output_tokens, sets
+aside each request's worst-case cost before forwarding it, refuses with 429
+once spend plus that amount would pass the limit, records the real charge from
+the provider's final usage, and has the runner stop the container on the first
+such refusal.
+
 Host facts: metrics/probes/pi-docker-host-20261109.json.
 """
 from __future__ import annotations
@@ -69,6 +75,13 @@ MAX_BODY_BYTES = 64 * 1024 * 1024
 SOCKET_TIMEOUT = 60
 TERMINAL_EVENTS = frozenset({"response.completed", "response.incomplete", "response.failed"})
 MEMORY = re.compile(r"^[1-9][0-9]*[kmg]?$")
+RATES_PATH = HERE / "openai_api_rates.json"
+# Output cap applied with a dollar limit when none is given. Observed Astra
+# review output (8 proxy logs, 136 requests, 2026-11-10): max 7,847 tokens.
+DEFAULT_MAX_OUTPUT_TOKENS = 16000
+# Framing tokens allowed per input item and once per request on top of the
+# byte bound. Not measured; chosen well above typical per-message framing.
+ITEM_OVERHEAD_TOKENS = 32
 
 
 class ContainerError(Exception):
@@ -260,6 +273,7 @@ def fingerprint(env: dict) -> dict:
         "mounts": env["mounts"], "mount_identities": mount_identities(env["mounts"]),
         "limits": env["limits"], "uid_gid": [env["uid"], env["gid"]],
         "selection": env["selection"], "max_requests": env.get("max_requests"),
+        "max_output_tokens": env.get("max_output_tokens"), "usd_limit": env.get("usd_limit"),
         "container_env": container_env(env, "<per turn>"),
         "entry_sha256": file_sha256(HERE / "pi_container_entry.py"),
         "extension_sha256": file_sha256(HERE / "pi_service_tier.ts"),
@@ -400,16 +414,228 @@ def check_request(body, *, model_id: str) -> str | None:
     return None
 
 
+# ---------------------------------------------------------- dollar limit ----
+
+def usd_rates(model_id: str, path=RATES_PATH) -> dict:
+    """The rate row and pricing rules for one model, or a usage error if it is unpriced."""
+    table = json.loads(Path(path).read_text())
+    if model_id not in table["models"]:
+        raise ContainerError("usage", f"no API rate for {model_id!r} in {Path(path).name}; "
+                                      f"priced: {', '.join(sorted(table['models']))}")
+    return {"model": model_id, **table["models"][model_id],
+            **{k: table[k] for k in ("tier_multiplier", "long_input_threshold",
+                                     "long_input_multiplier", "long_output_multiplier")}}
+
+
+def usage_usd(rates: dict, *, input_tokens, cached, cache_write, output_tokens, multiplier) -> float:
+    """Same formula as usage_ledger.codex_usd, times the tier multiplier."""
+    long = input_tokens > rates["long_input_threshold"]
+    m_in, m_out = (rates["long_input_multiplier"], rates["long_output_multiplier"]) if long else (1, 1)
+    base = ((input_tokens - cached - cache_write) * rates["input"] + cached * rates["cached_input"]
+            + cache_write * rates["cache_write"]) * m_in + output_tokens * rates["output"] * m_out
+    return base / 1e6 * multiplier
+
+
+def reserve_usd(rates: dict, *, input_bound: int, max_output_tokens: int, multiplier: float) -> float:
+    """Worst case: every input token at the dearest input rate (a cache can always miss)."""
+    long = input_bound > rates["long_input_threshold"]
+    m_in, m_out = (rates["long_input_multiplier"], rates["long_output_multiplier"]) if long else (1, 1)
+    dearest = max(rates["input"], rates["cache_write"])
+    return (input_bound * dearest * m_in + max_output_tokens * rates["output"] * m_out) / 1e6 * multiplier
+
+
+def _canonical(value) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+
+
+def input_basis(body: dict) -> dict:
+    """Byte sizes and a hash chain over the request's input items.
+
+    chains[k] identifies the first k items, so a later request can be checked
+    for starting with an earlier request's whole input. A token is at least
+    one byte of its text and JSON escaping only adds bytes, so a canonical
+    item's byte length bounds its text tokens.
+    """
+    items = body.get("input", [])
+    if not isinstance(items, list):
+        items = [items]
+    rest = _canonical({k: v for k, v in body.items() if k != "input"})
+    h = hashlib.sha256(b"").digest()
+    chains, sizes = [h.hex()], []
+    for item in items:
+        raw = _canonical(item)
+        sizes.append(len(raw))
+        h = hashlib.sha256(h + hashlib.sha256(raw).digest()).digest()
+        chains.append(h.hex())
+    return {"items": len(items), "chains": chains, "item_bytes": sizes,
+            "rest_sha256": hashlib.sha256(rest).hexdigest(), "rest_bytes": len(rest)}
+
+
+def input_bound(basis: dict, prefix: dict | None) -> tuple[int, str]:
+    """Upper bound on the request's input tokens, and how it was found.
+
+    prefix: the provider's input_tokens for an earlier request whose input
+    this request starts with. Those tokens already cover its instructions and
+    tools; changed ones are counted again in full.
+    """
+    n, sizes = basis["items"], basis["item_bytes"]
+    if prefix and isinstance(prefix.get("input_tokens"), int) and prefix["items"] <= n \
+            and basis["chains"][prefix["items"]] == prefix["chain_sha256"]:
+        k = prefix["items"]
+        bound = prefix["input_tokens"] + sum(sizes[k:]) + ITEM_OVERHEAD_TOKENS * (n - k)
+        if basis["rest_sha256"] != prefix["rest_sha256"]:
+            bound += basis["rest_bytes"] + ITEM_OVERHEAD_TOKENS
+        return bound, "prefix"
+    return basis["rest_bytes"] + sum(sizes) + ITEM_OVERHEAD_TOKENS * (n + 1), "bytes"
+
+
+def unpriceable_input(value) -> str | None:
+    """Inputs whose tokens the body's bytes do not bound: files, and images by URL or file id.
+
+    An inline (data:) image is bounded by its base64 length; that an image's
+    token count stays below it is assumed, not verified for every detail level.
+    """
+    if isinstance(value, dict):
+        kind = value.get("type")
+        if kind == "input_file":
+            return "usd_limit_unpriceable_input:input_file"
+        if kind == "input_image" and not str(value.get("image_url") or "").startswith("data:"):
+            return "usd_limit_unpriceable_input:input_image"
+        for item in value.values():
+            found = unpriceable_input(item)
+            if found:
+                return found
+    elif isinstance(value, list):
+        for item in value:
+            found = unpriceable_input(item)
+            if found:
+                return found
+    return None
+
+
+def usd_totals(rows: list) -> dict:
+    """Spend recorded in one proxy log: settled charges plus any reservation never settled."""
+    reserved, charged, prefix, floor, bases = {}, 0.0, None, 0.0, {}
+    for r in rows:
+        if r.get("event") == "usd_reserved":
+            reserved[r["rid"]] = r["reserved_usd"]
+            bases[r["bound_basis"]] = bases.get(r["bound_basis"], 0) + 1
+        elif r.get("event") == "request" and r.get("usd"):
+            u = r["usd"]
+            reserved.pop(u["rid"], None)
+            charged += u["charged_usd"]
+            floor = max(floor, u.get("multiplier_floor") or 0.0)
+            tokens = (r.get("usage") or {}).get("input_tokens")
+            if u.get("charge_basis") == "usage" and r.get("input_basis") and isinstance(tokens, int):
+                prefix = {**r["input_basis"], "input_tokens": tokens}
+    return {"charged_usd": charged, "unsettled_reserved_usd": sum(reserved.values()), "prefix": prefix,
+            "multiplier_floor": floor, "bound_basis": bases,
+            "limit_reached": any(r.get("event") == "refused" and str(r.get("reason", "")).startswith("usd_limit")
+                                 for r in rows)}
+
+
+def prior_usd_state(paths) -> dict:
+    """Session spend before a new turn, from earlier turns' host-only proxy logs."""
+    spent, prefix, floor = 0.0, None, 0.0
+    for path in paths:
+        try:
+            rows = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+        except (OSError, ValueError) as e:
+            raise ContainerError("usd_spend_not_established", f"{path}: {e}")
+        t = usd_totals(rows)
+        spent += t["charged_usd"] + t["unsettled_reserved_usd"]
+        prefix = t["prefix"] or prefix
+        floor = max(floor, t["multiplier_floor"])
+    return {"spent_before_usd": round(spent, 6), "prefix": prefix, "multiplier_floor": floor}
+
+
+class UsdBudget:
+    """A session dollar limit, enforced per request. Callers hold the proxy lock.
+
+    reserve() sets aside the request's worst-case cost or refuses; settle()
+    replaces it with the charge from the provider's final usage. Reservations
+    use the requested tier's multiplier (the dearer of it and default with
+    strict_tier). A response served at another tier is charged at that tier,
+    and later reservations use at least the dearer of it and default; a
+    response reporting no tier is charged at the dearest multiplier, which
+    then becomes that floor. After the first refusal every later request is
+    refused.
+    """
+
+    def __init__(self, *, max_usd: float, rates: dict, tier: str | None, max_output_tokens: int,
+                 spent_before_usd: float = 0.0, prefix: dict | None = None,
+                 multiplier_floor: float = 0.0, strict_tier: bool = False):
+        if (tier or "default") not in rates["tier_multiplier"]:
+            raise ContainerError("usage", f"a dollar limit needs a priced tier, not {tier!r}")
+        self.max_usd, self.rates, self.tier = max_usd, rates, tier or "default"
+        self.max_output_tokens, self.strict_tier = max_output_tokens, strict_tier
+        self.settled, self.outstanding = spent_before_usd, 0.0
+        self.prefix, self.floor = prefix, multiplier_floor
+        self.exhausted, self.seq = False, 0
+
+    def multiplier(self) -> float:
+        table = self.rates["tier_multiplier"]
+        m = max(table[self.tier], table["default"]) if self.strict_tier else table[self.tier]
+        return max(m, self.floor)
+
+    def reserve(self, basis: dict):
+        """(ticket, None) when the request may go, or (None, refusal detail)."""
+        bound, how = input_bound(basis, self.prefix)
+        amount = reserve_usd(self.rates, input_bound=bound, max_output_tokens=self.max_output_tokens,
+                             multiplier=self.multiplier())
+        if self.exhausted or self.settled + self.outstanding + amount > self.max_usd:
+            self.exhausted = True
+            return None, (f"usd_limit: spent {self.settled + self.outstanding:.4f} + worst case {amount:.4f} "
+                          f"> limit {self.max_usd:.4f}")
+        self.seq += 1
+        self.outstanding += amount
+        return {"rid": self.seq, "reserved_usd": amount, "input_bound": bound, "bound_basis": how,
+                "basis": basis}, None
+
+    def settle(self, ticket: dict, *, http_status, response: dict) -> dict:
+        """Record the charge. http_status None: the upstream exchange failed part way."""
+        self.outstanding -= ticket["reserved_usd"]
+        table = self.rates["tier_multiplier"]
+        usage = response.get("usage") or {}
+        details = usage.get("input_tokens_details") or {}
+        i, o = usage.get("input_tokens"), usage.get("output_tokens")
+        c, w = details.get("cached_tokens") or 0, details.get("cache_write_tokens") or 0
+        if http_status is not None and http_status != 200:
+            # An error status before any stream: treated as unbilled (assumed, not verified).
+            charged, how = 0.0, "error_status"
+        elif all(isinstance(x, int) and x >= 0 for x in (i, o, c, w)) and c + w <= i:
+            observed = response.get("service_tier")
+            m = table[observed] if observed in table else max(table.values())
+            if observed != self.tier:
+                self.floor = max(self.floor, table["default"], m)
+            charged, how = usage_usd(self.rates, input_tokens=i, cached=c, cache_write=w, output_tokens=o,
+                                     multiplier=m), "usage"
+            basis = ticket["basis"]
+            self.prefix = {"items": basis["items"], "chain_sha256": basis["chains"][-1],
+                           "rest_sha256": basis["rest_sha256"], "input_tokens": i}
+        else:
+            charged, how = ticket["reserved_usd"], "reservation"
+        self.settled += charged
+        return {"rid": ticket["rid"], "reserved_usd": round(ticket["reserved_usd"], 6),
+                "charged_usd": round(charged, 6), "charge_basis": how,
+                "session_spent_usd": round(self.settled + self.outstanding, 6), "multiplier_floor": self.floor}
+
+
 class EgressProxy:
     """HTTP/1.1 on a Unix socket; one upstream request per accepted request."""
 
     def __init__(self, socket_path: str, *, upstream: str, key: str, model_id: str,
                  tier: str | None, log_path: str, max_requests: int | None = None,
+                 max_output_tokens: int | None = None, budget: UsdBudget | None = None,
+                 on_usd_exhausted=None,
                  max_connections: int = MAX_CONNECTIONS, max_body: int = MAX_BODY_BYTES,
                  socket_timeout: float = SOCKET_TIMEOUT):
+        if budget is not None and max_output_tokens != budget.max_output_tokens:
+            raise ValueError("a dollar limit needs the proxy's output cap to be the budget's")
         self.socket_path, self.key, self.model_id, self.tier = socket_path, key, model_id, tier
         self.upstream = urllib.parse.urlsplit(upstream)
         self.log_path, self.max_requests = log_path, max_requests
+        self.max_output_tokens, self.budget, self.on_usd_exhausted = max_output_tokens, budget, on_usd_exhausted
         self.max_connections, self.max_body, self.socket_timeout = max_connections, max_body, socket_timeout
         self.accepted = 0
         self.dropped_connections = 0
@@ -422,6 +648,9 @@ class EgressProxy:
 
     def start(self):
         proxy = self
+        # Exists from the start, so a turn with no requests still leaves a
+        # readable (empty) log for the next turn's spend total.
+        open(self.log_path, "a").close()
 
         class Handler(BaseHTTPRequestHandler):
             # HTTP/1.0 framing: the streamed body ends when the connection closes.
@@ -458,11 +687,14 @@ class EgressProxy:
                 # Reserve a slot under the cap before any body is buffered; a
                 # request refused below gives its slot back.
                 with proxy.lock:
-                    if proxy.max_requests is not None and proxy.accepted >= proxy.max_requests:
+                    spent_out = proxy.budget is not None and proxy.budget.exhausted
+                    if spent_out or (proxy.max_requests is not None and proxy.accepted >= proxy.max_requests):
                         n = None
                     else:
                         proxy.accepted += 1
                         n = proxy.accepted
+                if spent_out:
+                    return self.refuse(429, "usd_limit: reached earlier in this turn")
                 if n is None:
                     return self.refuse(429, f"request cap {proxy.max_requests} reached")
 
@@ -491,6 +723,39 @@ class EgressProxy:
                     body["service_tier"] = proxy.tier
                 else:
                     body.pop("service_tier", None)
+                if proxy.max_output_tokens is not None:
+                    asked = body.get("max_output_tokens")
+                    if not (isinstance(asked, int) and not isinstance(asked, bool)
+                            and 0 < asked < proxy.max_output_tokens):
+                        body["max_output_tokens"] = proxy.max_output_tokens
+                ticket = None
+                if proxy.budget is not None:
+                    reason = unpriceable_input(body.get("input"))
+                    if reason:
+                        release()
+                        return self.refuse(403, reason)
+                    basis = input_basis(body)
+                    with proxy.lock:
+                        ticket, refusal = proxy.budget.reserve(basis)
+                    if ticket is None:
+                        release()
+                        self.refuse(429, refusal)
+                        if proxy.on_usd_exhausted:
+                            proxy.on_usd_exhausted(refusal)
+                        return
+                    proxy.log({"event": "usd_reserved", "n": n, "rid": ticket["rid"],
+                               "reserved_usd": round(ticket["reserved_usd"], 6),
+                               "input_bound": ticket["input_bound"], "bound_basis": ticket["bound_basis"]})
+
+                def settle(http_status, response):
+                    if ticket is None:
+                        return {}
+                    with proxy.lock:
+                        usd = proxy.budget.settle(ticket, http_status=http_status, response=response)
+                    b = ticket["basis"]
+                    return {"usd": usd, "input_basis": {"items": b["items"], "chain_sha256": b["chains"][-1],
+                                                        "rest_sha256": b["rest_sha256"]}}
+
                 data = json.dumps(body).encode()
                 headers = {k: v for k, v in self.headers.items()
                            if k.lower() not in ("host", "authorization", "content-length", "connection",
@@ -504,7 +769,8 @@ class EgressProxy:
                     conn.request("POST", up.path.rstrip("/") + "/responses", data, headers)
                     resp = conn.getresponse()
                 except OSError as e:
-                    proxy.log({"event": "upstream_error", "n": n, "detail": str(e)[:300]})
+                    # The request may have reached the provider, so a reservation stays charged.
+                    proxy.log({"event": "upstream_error", "n": n, "detail": str(e)[:300], **settle(None, {})})
                     return self.refuse(502, "upstream unreachable")
                 self.send_response(resp.status)
                 for k, v in resp.getheaders():
@@ -549,6 +815,7 @@ class EgressProxy:
                               "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens")},
                     "seconds": round(time.time() - started, 3),
                     **({"error_head": head.decode("utf-8", "replace")} if resp.status != 200 else {}),
+                    **settle(resp.status if terminal is not None or resp.status != 200 else None, response),
                 })
                 self.close_connection = True
 
@@ -602,20 +869,32 @@ def run_turn(spec_path: str) -> int:
         note("refused", detail="no provider key on stdin")
         return 64
     os.makedirs(spec["socket_dir"], mode=0o700, exist_ok=True)
-    proxy = EgressProxy(spec["socket_path"], upstream=spec["upstream"], key=key, model_id=spec["model_id"],
-                        tier=spec.get("service_tier"), log_path=spec["files"]["proxy_log"],
-                        max_requests=spec.get("max_requests")).start()
-    del key
-    note("proxy_listening", socket=spec["socket_path"], upstream=spec["upstream"])
     name = spec["container_name"]
     stopping = threading.Event()
 
-    def stop_container(signum, _frame):
+    def stop(**why):
         if not stopping.is_set():
             stopping.set()
-            note("stop_requested", signal=signum)
+            note("stop_requested", **why)
             threading.Thread(target=subprocess.run, args=([docker, "stop", "-t", "10", name],),
                              kwargs={"capture_output": True}, daemon=True).start()
+
+    def stop_container(signum, _frame):
+        stop(signal=signum)
+
+    budget = None
+    if spec.get("usd_limit"):
+        lim = spec["usd_limit"]
+        budget = UsdBudget(max_usd=lim["max_usd"], rates=lim["rates"], tier=spec.get("service_tier"),
+                           max_output_tokens=spec["max_output_tokens"], spent_before_usd=lim["spent_before_usd"],
+                           prefix=lim.get("prefix"), multiplier_floor=lim.get("multiplier_floor") or 0.0,
+                           strict_tier=bool(lim.get("strict_tier")))
+    proxy = EgressProxy(spec["socket_path"], upstream=spec["upstream"], key=key, model_id=spec["model_id"],
+                        tier=spec.get("service_tier"), log_path=spec["files"]["proxy_log"],
+                        max_requests=spec.get("max_requests"), max_output_tokens=spec.get("max_output_tokens"),
+                        budget=budget, on_usd_exhausted=lambda detail: stop(reason="usd_limit", detail=detail)).start()
+    del key
+    note("proxy_listening", socket=spec["socket_path"], upstream=spec["upstream"])
 
     signal.signal(signal.SIGTERM, stop_container)
     signal.signal(signal.SIGINT, stop_container)
