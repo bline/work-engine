@@ -427,6 +427,34 @@ pub struct Index {
     pub decisions: BTreeMap<String, DecisionRevisions>,
 }
 
+/// A `revisions` entry's Git-checked parts (R-13, R-14), kept for every entry object that has
+/// all its required keys, whatever its other fields hold.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionPin {
+    /// The entry object.
+    pub at: Location,
+    /// The parsed revision; `None` when malformed (reported already, not resolved).
+    pub revision: Option<Revision>,
+    /// The document to resolve at the revision: the entry's own `document`, or the decision's
+    /// when the entry has none; `None` when there is no usable document.
+    pub document: Option<String>,
+    pub lines: Option<Lines>,
+}
+
+/// A decision's Git-checked parts (R-12 to R-14), kept for every decision object that has all
+/// its required keys, as Python checks them, so that an unrelated defect never hides a missing
+/// object (F-4).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionPin {
+    /// The decision object.
+    pub at: Location,
+    pub revision: Option<Revision>,
+    pub document: Option<String>,
+    pub lines: Option<Lines>,
+    /// Entries of a `revisions` list; empty when absent or not a list.
+    pub revisions: Vec<RevisionPin>,
+}
+
 /// The result of [`decode`].
 #[derive(Debug, Clone, Default)]
 pub struct Decoded {
@@ -434,6 +462,8 @@ pub struct Decoded {
     pub index: Index,
     /// Every well-formed in-repo pin, in decode order, for the Git-backed R-10 checks.
     pub pins: Vec<Pin>,
+    /// Decision revision pins, in decode order, for the Git-backed R-12 to R-14 checks.
+    pub decision_pins: Vec<DecisionPin>,
     pub violations: Vec<Violation>,
 }
 
@@ -494,6 +524,7 @@ pub fn decode<'a>(files: impl IntoIterator<Item = (&'a str, &'a [u8])>) -> Decod
         records: st.records,
         index: st.index,
         pins: st.pins,
+        decision_pins: st.decision_pins,
         violations: st.out,
     }
 }
@@ -954,6 +985,7 @@ impl Cx<'_> {
 struct State {
     out: Vec<Violation>,
     pins: Vec<Pin>,
+    decision_pins: Vec<DecisionPin>,
     records: Records,
     index: Index,
     study_ids: BTreeSet<String>,
@@ -1264,7 +1296,7 @@ impl State {
                 }
             }
         };
-        let doc_ok = document.is_some();
+        let mut revision_pins = Vec::new();
         let revisions = match o.get("revisions") {
             None => Some(None),
             Some(_) => cx.list(&o, "revisions", true).and_then(|items| {
@@ -1272,11 +1304,28 @@ impl State {
                 let decoded: Vec<Option<RevisionEntry>> = items
                     .iter()
                     .enumerate()
-                    .map(|(j, item)| revision_entry(&mut cx, &index(&rp, j), item, doc_ok))
+                    .map(|(j, item)| {
+                        revision_entry(
+                            &mut cx,
+                            &index(&rp, j),
+                            item,
+                            document.as_deref(),
+                            &mut revision_pins,
+                        )
+                    })
                     .collect();
                 decoded.into_iter().collect::<Option<Vec<_>>>().map(Some)
             }),
         };
+        if o.complete {
+            self.decision_pins.push(DecisionPin {
+                at: cx.loc(&pointer),
+                revision: revision.clone(),
+                document: document.clone(),
+                lines: lines.flatten(),
+                revisions: revision_pins,
+            });
+        }
         let historical = match o.get("historical") {
             None => Some(None),
             Some(v) => {
@@ -1601,8 +1650,10 @@ fn revision_entry(
     cx: &mut Cx,
     pointer: &str,
     v: &Json,
-    decision_document_ok: bool,
+    decision_document: Option<&str>,
+    pins: &mut Vec<RevisionPin>,
 ) -> Option<RevisionEntry> {
+    let decision_document_ok = decision_document.is_some();
     let o = cx.object(
         pointer,
         v,
@@ -1634,6 +1685,19 @@ fn revision_entry(
         }
         Some(v) => cx.lines_value(&o.at("lines"), v, RuleId::R13).map(Some),
     };
+    if o.complete {
+        let effective = if o.has("document") {
+            document.clone().flatten()
+        } else {
+            decision_document.map(str::to_owned)
+        };
+        pins.push(RevisionPin {
+            at: cx.loc(pointer),
+            revision: revision.clone(),
+            document: effective,
+            lines: lines.flatten(),
+        });
+    }
     Some(RevisionEntry {
         revision: revision?,
         anchor: anchor?,

@@ -49,6 +49,7 @@ pub struct PinnedSnapshot {
     register_path: String,
     register_tree: ObjectId,
     entries: BTreeMap<String, SnapshotEntry>,
+    invalid_names: Vec<String>,
 }
 
 impl PinnedSnapshot {
@@ -73,7 +74,15 @@ impl PinnedSnapshot {
             Some(e) => e.id,
         };
         let mut entries = BTreeMap::new();
-        collect(&objects, register_tree, "", 0, &mut entries)?;
+        let mut invalid_names = Vec::new();
+        collect(
+            &objects,
+            register_tree,
+            "",
+            0,
+            &mut entries,
+            &mut invalid_names,
+        )?;
         Ok(PinnedSnapshot {
             objects,
             requested: rev.into(),
@@ -82,6 +91,7 @@ impl PinnedSnapshot {
             register_path: register_path.into(),
             register_tree,
             entries,
+            invalid_names,
         })
     }
 
@@ -110,6 +120,11 @@ impl PinnedSnapshot {
     pub fn entry(&self, path: &str) -> Option<&SnapshotEntry> {
         self.entries.get(path)
     }
+    /// Register-relative paths of entries whose names are not UTF-8 (not in [`Self::entries`];
+    /// never read). The name's bytes are shown with `\xNN` escapes; R-01 reports them (A6).
+    pub fn invalid_names(&self) -> &[String] {
+        &self.invalid_names
+    }
 
     /// Provenance and per-entry identity, without file bytes. Field and entry order are fixed.
     pub fn identity(&self) -> SnapshotIdentity<'_> {
@@ -132,6 +147,7 @@ impl PinnedSnapshot {
                     sha256: e.sha256.as_deref(),
                 })
                 .collect(),
+            invalid_names: &self.invalid_names,
         }
     }
 }
@@ -146,6 +162,9 @@ pub struct SnapshotIdentity<'a> {
     pub register_path: &'a str,
     pub register_tree: String,
     pub entries: Vec<EntryIdentity<'a>>,
+    /// Omitted when empty, so output for registers without such names is unchanged.
+    #[serde(skip_serializing_if = "<[String]>::is_empty")]
+    pub invalid_names: &'a [String],
 }
 
 #[derive(Debug, Serialize)]
@@ -163,6 +182,7 @@ fn collect(
     prefix: &str,
     depth: usize,
     out: &mut BTreeMap<String, SnapshotEntry>,
+    invalid: &mut Vec<String>,
 ) -> Result<(), Error> {
     if depth > MAX_TREE_DEPTH {
         return Err(CannotRead::Malformed {
@@ -171,7 +191,22 @@ fn collect(
         }
         .into());
     }
-    for entry in objects.tree(tree)? {
+    let listing = objects.tree_listing(tree)?;
+    for raw in &listing.non_utf8_names {
+        let name: String = raw
+            .utf8_chunks()
+            .flat_map(|c| {
+                let bad: String = c.invalid().iter().map(|b| format!("\\x{b:02x}")).collect();
+                [c.valid().to_owned(), bad]
+            })
+            .collect();
+        invalid.push(if prefix.is_empty() {
+            name
+        } else {
+            format!("{prefix}/{name}")
+        });
+    }
+    for entry in listing.entries {
         let path = if prefix.is_empty() {
             entry.name.clone()
         } else {
@@ -194,7 +229,7 @@ fn collect(
             },
         );
         if entry.kind == EntryKind::Tree {
-            collect(objects, entry.id, &path, depth + 1, out)?;
+            collect(objects, entry.id, &path, depth + 1, out, invalid)?;
         }
     }
     Ok(())

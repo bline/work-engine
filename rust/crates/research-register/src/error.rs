@@ -56,6 +56,11 @@ pub enum CannotRead {
     Reference { name: String, reason: String },
     #[error("whether the repository is shallow could not be determined: {reason}")]
     ShallowState { reason: String },
+    #[error("whether {ancestor} is an ancestor of {descendant} could not be established")]
+    Ancestry {
+        ancestor: String,
+        descendant: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

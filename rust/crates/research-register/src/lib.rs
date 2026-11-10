@@ -7,7 +7,8 @@
 //! [`PinnedSnapshot`] is built only through [`GitObjects`] and never changes afterwards.
 //!
 //! [`model::decode`] parses the register files ([`parse`]) and decodes typed records with their
-//! Git-free checks; violations carry a [`RuleId`]. Git-backed validation, anchors and decision
+//! Git-free checks; violations carry a [`RuleId`]. [`validate`] checks a whole snapshot, including
+//! the Git-backed rules, and yields a [`ValidRegister`] or the violations. Anchors and decision
 //! cards are not part of this crate yet.
 
 pub mod error;
@@ -16,12 +17,16 @@ pub mod objects;
 pub mod parse;
 pub mod rules;
 pub mod snapshot;
+pub mod validate;
 
 pub use error::{BadRequest, CannotRead, Error, NoRegister, Unsupported};
 pub use model::{Decoded, Index, Records, decode};
-pub use objects::{Ancestry, BlobAt, Commit, EntryKind, GitObjects, Prefix, TreeEntry};
+pub use objects::{
+    Ancestry, BlobAt, Commit, EntryKind, GitObjects, Prefix, TreeEntry, TreeListing,
+};
 pub use parse::Json;
 pub use rules::{Location, RuleId, Violation};
 pub use snapshot::{
     EntryIdentity, PinnedSnapshot, SNAPSHOT_SCHEMA, SnapshotEntry, SnapshotIdentity,
 };
+pub use validate::{Outcome, ValidRegister, validate};

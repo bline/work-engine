@@ -1,15 +1,20 @@
 //! `work-engine-register snapshot --at <rev> [--register <path>] [--repo <dir>]`
+//! `work-engine-register validate --at <rev> [--register <path>] [--repo <dir>]`
 //!
-//! Prints one JSON line. Exit codes: 0 ok, 2 usage, 3 bad_request, 4 cannot_read, unsupported or
-//! no_register_at_commit (the JSON `outcome` names which).
+//! Each prints one JSON line. Exit codes: 0 ok (snapshot) or valid (validate), 1 invalid
+//! (validate), 2 usage, 3 bad_request, 4 cannot_read, unsupported or no_register_at_commit (the
+//! JSON `outcome` names which).
 
-use research_register::{Error, GitObjects, PinnedSnapshot, SNAPSHOT_SCHEMA};
+use research_register::{
+    Error, GitObjects, Outcome, PinnedSnapshot, SNAPSHOT_SCHEMA, Violation, validate,
+};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 const USAGE: &str =
-    "usage: work-engine-register snapshot --at <rev> [--register <path>] [--repo <dir>]";
+    "usage: work-engine-register (snapshot|validate) --at <rev> [--register <path>] [--repo <dir>]";
+pub const VALIDATION_SCHEMA: &str = "research_register_validation_v1";
 
 #[derive(Serialize)]
 struct Failure<'a> {
@@ -19,33 +24,85 @@ struct Failure<'a> {
     error: String,
 }
 
+#[derive(Serialize)]
+struct ViolationOut<'a> {
+    rule: &'static str,
+    file: &'a str,
+    line: Option<u64>,
+    pointer: &'a str,
+    detail: &'a str,
+}
+
+#[derive(Serialize)]
+struct Validation<'a> {
+    schema: &'static str,
+    outcome: &'static str,
+    requested: &'a str,
+    commit: String,
+    register_path: &'a str,
+    register_tree: String,
+    violations: Vec<ViolationOut<'a>>,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Command {
+    Snapshot,
+    Validate,
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let Some((at, register, repo)) = parse(&args) else {
+    let Some((command, at, register, repo)) = parse(&args) else {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
     };
-    let result =
-        GitObjects::open(&repo).and_then(|objects| PinnedSnapshot::build(objects, &at, &register));
+    let schema = match command {
+        Command::Snapshot => SNAPSHOT_SCHEMA,
+        Command::Validate => VALIDATION_SCHEMA,
+    };
+    let result = GitObjects::open(&repo)
+        .and_then(|objects| PinnedSnapshot::build(objects, &at, &register))
+        .and_then(|snapshot| match command {
+            Command::Snapshot => {
+                print(&snapshot.identity());
+                Ok(ExitCode::SUCCESS)
+            }
+            Command::Validate => {
+                let outcome = validate(&snapshot)?;
+                let (name, code, violations): (_, _, &[Violation]) = match &outcome {
+                    Outcome::Valid(_) => ("valid", 0, &[]),
+                    Outcome::Invalid(v) => ("invalid", 1, v),
+                };
+                print(&Validation {
+                    schema,
+                    outcome: name,
+                    requested: &at,
+                    commit: snapshot.commit().to_string(),
+                    register_path: snapshot.register_path(),
+                    register_tree: snapshot.register_tree().to_string(),
+                    violations: violations
+                        .iter()
+                        .map(|v| ViolationOut {
+                            rule: v.rule.as_str(),
+                            file: &v.location.file,
+                            line: v.location.line,
+                            pointer: &v.location.pointer,
+                            detail: &v.detail,
+                        })
+                        .collect(),
+                });
+                Ok(ExitCode::from(code))
+            }
+        });
     match result {
-        Ok(snapshot) => {
-            println!(
-                "{}",
-                serde_json::to_string(&snapshot.identity()).expect("identity serializes")
-            );
-            ExitCode::SUCCESS
-        }
+        Ok(code) => code,
         Err(e) => {
-            let failure = Failure {
-                schema: SNAPSHOT_SCHEMA,
+            print(&Failure {
+                schema,
                 outcome: e.category(),
                 requested: &at,
                 error: e.to_string(),
-            };
-            println!(
-                "{}",
-                serde_json::to_string(&failure).expect("failure serializes")
-            );
+            });
             ExitCode::from(if matches!(e, Error::BadRequest(_)) {
                 3
             } else {
@@ -55,11 +112,20 @@ fn main() -> ExitCode {
     }
 }
 
-fn parse(args: &[String]) -> Option<(String, String, PathBuf)> {
+fn print(value: &impl Serialize) {
+    println!(
+        "{}",
+        serde_json::to_string(value).expect("output serializes")
+    );
+}
+
+fn parse(args: &[String]) -> Option<(Command, String, String, PathBuf)> {
     let (command, rest) = args.split_first()?;
-    if command != "snapshot" {
-        return None;
-    }
+    let command = match command.as_str() {
+        "snapshot" => Command::Snapshot,
+        "validate" => Command::Validate,
+        _ => return None,
+    };
     let (mut at, mut register, mut repo) =
         (None, "metrics/register".to_string(), PathBuf::from("."));
     let mut it = rest.iter();
@@ -72,5 +138,5 @@ fn parse(args: &[String]) -> Option<(String, String, PathBuf)> {
             _ => return None,
         }
     }
-    Some((at?, register, repo))
+    Some((command, at?, register, repo))
 }

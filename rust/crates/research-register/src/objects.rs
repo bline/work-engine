@@ -35,6 +35,13 @@ impl EntryKind {
     }
 }
 
+/// A tree's entries split by whether their names are UTF-8.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TreeListing {
+    pub entries: Vec<TreeEntry>,
+    pub non_utf8_names: Vec<Vec<u8>>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TreeEntry {
     pub name: String,
@@ -146,14 +153,32 @@ impl GitObjects {
         Ok(parse_commit(id, &data)?)
     }
 
+    /// The entries of tree `id`. A non-UTF-8 entry name is a malformed tree here; use
+    /// [`GitObjects::tree_listing`] to see such names.
     pub fn tree(&self, id: ObjectId) -> Result<Vec<TreeEntry>, Error> {
+        let listing = self.tree_listing(id)?;
+        if !listing.non_utf8_names.is_empty() {
+            return Err(CannotRead::Malformed {
+                id: id.to_string(),
+                reason: "entry name is not UTF-8".into(),
+            }
+            .into());
+        }
+        Ok(listing.entries)
+    }
+
+    /// The entries of tree `id` with UTF-8 names, plus the raw names that are not UTF-8 (A6: the
+    /// register reports those as invalid content, R-01). Duplicate names (compared as bytes) and
+    /// names containing `/` are a malformed tree.
+    pub fn tree_listing(&self, id: ObjectId) -> Result<TreeListing, Error> {
         let data = self.read_kind(id, Kind::Tree)?;
         let malformed = |reason: String| CannotRead::Malformed {
             id: id.to_string(),
             reason,
         };
         let mut entries = Vec::new();
-        let mut names = HashSet::new();
+        let mut non_utf8_names = Vec::new();
+        let mut names: HashSet<Vec<u8>> = HashSet::new();
         for entry in gix::objs::TreeRefIter::from_bytes(&data, HashKind::Sha1) {
             let entry = entry.map_err(|e| malformed(format!("tree does not decode: {e}")))?;
             let kind = match entry.mode.kind() {
@@ -163,23 +188,30 @@ impl GitObjects {
                 gix::objs::tree::EntryKind::Link => EntryKind::Link,
                 gix::objs::tree::EntryKind::Commit => EntryKind::Gitlink,
             };
-            let name = String::from_utf8(entry.filename.to_vec())
-                .map_err(|_| malformed("entry name is not UTF-8".into()))?;
+            let raw: &[u8] = entry.filename.as_ref();
+            let shown = String::from_utf8_lossy(raw);
             // A name containing '/' or a repeated name is a malformed tree (git fsck reports
             // both); reading it would make the snapshot and path lookups disagree or drop files.
-            if name.contains('/') {
-                return Err(malformed(format!("entry name {name:?} contains '/'")).into());
+            if raw.contains(&b'/') {
+                return Err(malformed(format!("entry name {shown:?} contains '/'")).into());
             }
-            if !names.insert(name.clone()) {
-                return Err(malformed(format!("duplicate entry name {name:?}")).into());
+            if !names.insert(raw.to_vec()) {
+                return Err(malformed(format!("duplicate entry name {shown:?}")).into());
             }
+            let Ok(name) = String::from_utf8(raw.to_vec()) else {
+                non_utf8_names.push(raw.to_vec());
+                continue;
+            };
             entries.push(TreeEntry {
                 name,
                 kind,
                 id: entry.oid.to_owned(),
             });
         }
-        Ok(entries)
+        Ok(TreeListing {
+            entries,
+            non_utf8_names,
+        })
     }
 
     pub fn blob(&self, id: ObjectId) -> Result<Vec<u8>, Error> {
@@ -296,7 +328,8 @@ impl GitObjects {
         let mut tree = self.commit(commit)?.tree;
         let last = components.len() - 1;
         for (i, component) in components.iter().enumerate() {
-            let Some(entry) = self.tree(tree)?.into_iter().find(|e| e.name == *component) else {
+            let entries = self.tree_listing(tree)?.entries;
+            let Some(entry) = entries.into_iter().find(|e| e.name == *component) else {
                 return Ok(None);
             };
             if i == last {
