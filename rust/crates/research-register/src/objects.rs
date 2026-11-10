@@ -83,15 +83,11 @@ pub struct GitObjects {
 
 impl GitObjects {
     /// Open `path` (a working tree, linked worktree or git directory) in isolation from the
-    /// environment and from user and system configuration. Refuses shallow repositories and any
-    /// object format other than sha1.
+    /// environment and from user and system configuration. Refuses shallow repositories and the
+    /// repository formats [`check_repository_format`] names.
     pub fn open(path: &Path) -> Result<Self, Error> {
         let shown = path.display().to_string();
-        if let Some(format) = declared_object_format(path)
-            && !format.eq_ignore_ascii_case("sha1")
-        {
-            return Err(Unsupported::ObjectFormat { format }.into());
-        }
+        check_repository_format(path)?;
         let options = gix::open::Options::isolated().config_overrides(["core.useReplaceRefs=false"]);
         let repo = gix::open_opts(path, options).map_err(|e| CannotRead::Open {
             path: shown.clone(),
@@ -140,6 +136,7 @@ impl GitObjects {
         let data = self.read_kind(id, Kind::Tree)?;
         let malformed = |reason: String| CannotRead::Malformed { id: id.to_string(), reason };
         let mut entries = Vec::new();
+        let mut names = HashSet::new();
         for entry in gix::objs::TreeRefIter::from_bytes(&data, HashKind::Sha1) {
             let entry = entry.map_err(|e| malformed(format!("tree does not decode: {e}")))?;
             let kind = match entry.mode.kind() {
@@ -151,6 +148,14 @@ impl GitObjects {
             };
             let name = String::from_utf8(entry.filename.to_vec())
                 .map_err(|_| malformed("entry name is not UTF-8".into()))?;
+            // A name containing '/' or a repeated name is a malformed tree (git fsck reports
+            // both); reading it would make the snapshot and path lookups disagree or drop files.
+            if name.contains('/') {
+                return Err(malformed(format!("entry name {name:?} contains '/'")).into());
+            }
+            if !names.insert(name.clone()) {
+                return Err(malformed(format!("duplicate entry name {name:?}")).into());
+            }
             entries.push(TreeEntry { name, kind, id: entry.oid.to_owned() });
         }
         Ok(entries)
@@ -185,6 +190,11 @@ impl GitObjects {
     }
 
     fn reference_target(&self, name: &str) -> Result<ObjectId, Error> {
+        if name != "HEAD"
+            && let Err(e) = gix::validate::reference::name(name.as_bytes().into())
+        {
+            return Err(BadRequest::Revision { rev: name.into(), reason: format!("not a valid reference name: {e}") }.into());
+        }
         let mut current = name.to_string();
         for _ in 0..MAX_SYMBOLIC_DEPTH {
             let reference = match self.repo.try_find_reference(current.as_str()) {
@@ -251,19 +261,19 @@ impl GitObjects {
     }
 
     /// Whether `ancestor` is reachable from `descendant` through parents recorded in verified
-    /// commit objects. Grafts, replace refs and commit-graph files are never consulted.
+    /// commit objects. Grafts, replace refs and commit-graph files are never consulted. `Yes`
+    /// requires `ancestor` itself to be read as a verified commit, so an absent id gives
+    /// `CannotEstablish` and a non-commit id gives `cannot_read`, never `Yes`.
     pub fn is_ancestor(&self, ancestor: ObjectId, descendant: ObjectId) -> Result<Ancestry, Error> {
         let mut seen = HashSet::new();
         let mut queue = VecDeque::from([descendant]);
         let mut incomplete = false;
         while let Some(id) = queue.pop_front() {
-            if id == ancestor {
-                return Ok(Ancestry::Yes);
-            }
             if !seen.insert(id) {
                 continue;
             }
             match self.commit(id) {
+                Ok(_) if id == ancestor => return Ok(Ancestry::Yes),
                 Ok(commit) => queue.extend(commit.parents),
                 Err(Error::CannotRead(CannotRead::ObjectUnavailable { .. })) => incomplete = true,
                 Err(e) => return Err(e),
@@ -361,9 +371,56 @@ pub(crate) fn split_tree_path(path: &str) -> Result<Vec<&str>, BadRequest> {
     Ok(components)
 }
 
-/// The object format a repository declares in its own configuration, read before gix opens it so
-/// that an unsupported format is refused with that reason rather than as an open failure.
-fn declared_object_format(path: &Path) -> Option<String> {
+/// Extensions that do not change how objects or references are read here. At repository format
+/// version 1 any other extension is refused, as git refuses an extension it does not know.
+const KNOWN_EXTENSIONS: &[&str] = &["objectformat", "refstorage", "worktreeconfig", "preciousobjects", "partialclone", "noop"];
+
+/// Check the repository's own configuration before gix opens it, so that an unsupported
+/// repository is refused as `unsupported` with its reason rather than failing to open: a format
+/// version above 1, an object format other than sha1, a reference backend other than files, or
+/// (at version 1) an extension outside [`KNOWN_EXTENSIONS`]. The configuration is parsed with
+/// gix-config's grammar, without includes. An unparseable configuration is `cannot_read`. The
+/// object format is checked again after opening.
+fn check_repository_format(path: &Path) -> Result<(), Error> {
+    let Some(bytes) = repository_config_path(path).and_then(|p| std::fs::read(p).ok()) else {
+        return Ok(());
+    };
+    let cannot = |reason: String| CannotRead::Open { path: path.display().to_string(), reason };
+    let config = parse_config(&bytes).map_err(cannot)?;
+    let version = config
+        .integer("core.repositoryformatversion")
+        .map_err(|e| cannot(format!("core.repositoryformatversion: {e}")))?
+        .unwrap_or(0);
+    if !(0..=1).contains(&version) {
+        return Err(Unsupported::FormatVersion { version }.into());
+    }
+    if let Some(format) = object_format(&config)
+        && !format.eq_ignore_ascii_case("sha1")
+    {
+        return Err(Unsupported::ObjectFormat { format }.into());
+    }
+    if let Some(value) = config.string("extensions.refstorage").map(|v| v.to_string())
+        && !value.eq_ignore_ascii_case("files")
+    {
+        return Err(Unsupported::Extension { name: "refstorage".into(), value }.into());
+    }
+    if version == 1 {
+        for section in config.sections_by_name("extensions").into_iter().flatten() {
+            for name in section.body().value_names() {
+                let name = name.to_string();
+                if !KNOWN_EXTENSIONS.contains(&name.to_ascii_lowercase().as_str()) {
+                    let value = config.string(format!("extensions.{name}").as_str()).map(|v| v.to_string()).unwrap_or_default();
+                    return Err(Unsupported::Extension { name, value }.into());
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The configuration file of the repository at `path`: in the common directory of a linked
+/// worktree, otherwise in the git directory.
+fn repository_config_path(path: &Path) -> Option<PathBuf> {
     let dot = path.join(".git");
     let git_dir: PathBuf = if dot.is_dir() {
         dot
@@ -374,32 +431,28 @@ fn declared_object_format(path: &Path) -> Option<String> {
     } else {
         path.to_path_buf()
     };
-    let mut dirs = vec![git_dir.clone()];
-    if let Ok(common) = std::fs::read_to_string(git_dir.join("commondir")) {
-        let common = PathBuf::from(common.trim());
-        dirs.push(if common.is_absolute() { common } else { git_dir.join(common) });
-    }
-    dirs.iter()
-        .filter_map(|d| std::fs::read_to_string(d.join("config")).ok())
-        .find_map(|config| parse_object_format(&config))
+    let dir = match std::fs::read_to_string(git_dir.join("commondir")) {
+        Ok(common) => {
+            let common = PathBuf::from(common.trim());
+            if common.is_absolute() { common } else { git_dir.join(common) }
+        }
+        Err(_) => git_dir,
+    };
+    Some(dir.join("config"))
 }
 
+fn parse_config(bytes: &[u8]) -> Result<gix::config::File, String> {
+    gix::config::File::from_bytes_no_includes(bytes, gix::config::file::Metadata::from(gix::config::Source::Local), Default::default())
+        .map_err(|e| e.to_string())
+}
+
+fn object_format(config: &gix::config::File) -> Option<String> {
+    config.string("extensions.objectformat").map(|v| v.to_string())
+}
+
+#[cfg(test)]
 fn parse_object_format(config: &str) -> Option<String> {
-    let mut in_extensions = false;
-    for line in config.lines() {
-        let line = line.trim();
-        if let Some(section) = line.strip_prefix('[') {
-            in_extensions = section.trim_end_matches(']').trim().eq_ignore_ascii_case("extensions");
-            continue;
-        }
-        if in_extensions
-            && let Some((key, value)) = line.split_once('=')
-            && key.trim().eq_ignore_ascii_case("objectformat")
-        {
-            return Some(value.trim().trim_matches('"').to_string());
-        }
-    }
-    None
+    parse_config(config.as_bytes()).ok().and_then(|c| object_format(&c))
 }
 
 #[cfg(test)]

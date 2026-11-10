@@ -395,3 +395,131 @@ fn security_sha256_repository_is_refused_as_unsupported() {
     assert!(matches!(&result, Err(Error::Unsupported(research_register::Unsupported::ObjectFormat { .. }))), "BEHAVIOR: sha256 refusal reason: {:?}", result.as_ref().err());
     judge(&fx, "sha256 repository", result, &Expect::Refuse("unsupported"));
 }
+
+// ---- A9 repairs (R-1b.2 repair commit) ----
+
+/// A literal tree entry: mode, name, object id.
+type Entry<'a> = (&'a str, &'a str, &'a str);
+
+fn literal_tree(fx: &Fx, r: &Path, entries: &[Entry]) -> String {
+    let mut bytes = Vec::new();
+    for (mode, name, id) in entries {
+        bytes.extend_from_slice(format!("{mode} {name}\0").as_bytes());
+        bytes.extend_from_slice(gix::ObjectId::from_hex(id.as_bytes()).unwrap().as_bytes());
+    }
+    fx.git_with(r, &["hash-object", "-t", "tree", "-w", "--literally", "--stdin"], Some(&bytes), &[])
+}
+
+fn commit_with_register(fx: &Fx, r: &Path, reg_tree: &str) -> String {
+    let root = fx.git_with(r, &["mktree"], Some(format!("040000 tree {reg_tree}\treg\n").as_bytes()), &[]);
+    fx.git(r, &["commit-tree", &root, "-m", "malformed"])
+}
+
+fn set_config_text(r: &Path, edit: &dyn Fn(String) -> String) {
+    let p = r.join(".git/config");
+    let t = edit(std::fs::read_to_string(&p).unwrap());
+    std::fs::write(&p, t).unwrap();
+}
+
+#[test]
+fn security_ancestry_yes_requires_a_verified_commit() {
+    let fx = Fx::new("ancestry-self");
+    let (r, c1, _) = fx.base("repo", &none);
+    let o = GitObjects::open(&r).unwrap();
+    let id = |h: &str| gix::ObjectId::from_hex(h.as_bytes()).unwrap();
+    assert!(matches!(o.is_ancestor(id(&c1), id(&c1)), Ok(Ancestry::Yes)), "BEHAVIOR: a commit is its own ancestor");
+    let missing = id("0123456789abcdef0123456789abcdef01234567");
+    assert!(matches!(o.is_ancestor(missing, missing), Ok(Ancestry::CannotEstablish)), "SECURITY: ancestry of an absent object must be CannotEstablish");
+    let blob = id(&fx.git(&r, &["rev-parse", &format!("{c1}:reg/decisions.json")]));
+    assert!(matches!(o.is_ancestor(blob, blob), Err(Error::CannotRead(_))), "SECURITY: ancestry asserted for a blob");
+}
+
+#[test]
+fn behavior_invalid_reference_name_is_bad_request() {
+    let fx = Fx::new("bad-refname");
+    let (r, _, _) = fx.base("repo", &none);
+    for rev in ["refs/heads/main~1", "refs/heads/x..y", "refs/heads/ma:in"] {
+        judge(&fx, &format!("revision {rev}"), read(&r, rev, "reg"), &Expect::Refuse("bad_request"));
+    }
+}
+
+#[test]
+fn behavior_repository_format_follows_git_config_grammar() {
+    let fx = Fx::new("format-grammar");
+    let r = fx.root.join("sha256");
+    std::fs::create_dir_all(&r).unwrap();
+    fx.git(&r, &["init", "-q", "--object-format=sha256", "-b", "main"]);
+    write(&r.join("reg/decisions.json"), "{}\n");
+    fx.git(&r, &["add", "-A"]);
+    fx.git(&r, &["commit", "-q", "-m", "c1"]);
+    set_config_text(&r, &|t| t.replace("[extensions]\n\tobjectformat = sha256", "[extensions] objectformat = sha256"));
+    assert_eq!(fx.git(&r, &["rev-parse", "--show-object-format"]), "sha256", "CONTROL: git reads the one-line declaration");
+    judge(&fx, "sha256 declared on one line", read(&r, "HEAD", "reg"), &Expect::Refuse("unsupported"));
+
+    let (r, c1, _) = fx.base("sha1-comment", &none);
+    let t = truth(&fx, &r, &c1);
+    set_config_text(&r, &|t| t.replace("repositoryformatversion = 0", "repositoryformatversion = 1") + "[extensions]\n\tobjectformat = sha1 ; comment\n");
+    assert_eq!(fx.git(&r, &["rev-parse", "--show-object-format"]), "sha1", "CONTROL: git reads sha1 despite the comment");
+    judge(&fx, "sha1 with an inline comment", read(&r, &c1, "reg"), &t);
+}
+
+#[test]
+fn behavior_unsupported_repository_formats_are_refused_as_unsupported() {
+    let fx = Fx::new("formats");
+    let r = fx.root.join("reftable");
+    std::fs::create_dir_all(&r).unwrap();
+    fx.git(&r, &["init", "-q", "--ref-format=reftable", "-b", "main"]);
+    write(&r.join("reg/decisions.json"), "{}\n");
+    fx.git(&r, &["add", "-A"]);
+    fx.git(&r, &["commit", "-q", "-m", "c1"]);
+    assert_eq!(fx.git(&r, &["rev-parse", "--show-ref-format"]), "reftable", "CONTROL: reftable repository");
+    for rev in ["refs/heads/main", "HEAD"] {
+        judge(&fx, &format!("reftable {rev}"), read(&r, rev, "reg"), &Expect::Refuse("unsupported"));
+    }
+    for (name, edit) in [
+        ("unknown extension at version 1", &(|t: String| t.replace("repositoryformatversion = 0", "repositoryformatversion = 1") + "[extensions]\n\tbogusext = 1\n") as &dyn Fn(String) -> String),
+        ("format version 2", &|t: String| t.replace("repositoryformatversion = 0", "repositoryformatversion = 2")),
+    ] {
+        let (r, c1, _) = fx.base(&name.replace(' ', "-"), &none);
+        set_config_text(&r, edit);
+        assert!(!fx.git_try(&r, &["rev-parse", "HEAD"], &[]).0, "CONTROL: git accepts the repository with {name}");
+        judge(&fx, name, read(&r, &c1, "reg"), &Expect::Refuse("unsupported"));
+    }
+}
+
+#[test]
+fn security_malformed_register_tree_entries_are_cannot_read() {
+    let fx = Fx::new("malformed-tree");
+    let (r, _, _) = fx.base("repo", &none);
+    let b1 = fx.git_with(&r, &["hash-object", "-w", "--stdin"], Some(b"{\"v\": 1}\n"), &[]);
+    let b2 = fx.git_with(&r, &["hash-object", "-w", "--stdin"], Some(b"{\"v\": 2}\n"), &[]);
+    let cases: [(&str, Vec<Entry>); 2] = [
+        ("duplicate entry names", vec![("100644", "a.json", &b1), ("100644", "a.json", &b2)]),
+        ("entry name containing '/'", vec![("100644", "a/b.json", &b1)]),
+    ];
+    for (what, entries) in cases {
+        let tree = literal_tree(&fx, &r, &entries);
+        let c = commit_with_register(&fx, &r, &tree);
+        if what.starts_with("duplicate") {
+            let out = fx.cmd(&r, &["fsck", "--no-dangling"], &[]).output().unwrap();
+            assert!(String::from_utf8_lossy(&out.stderr).contains("duplicateEntries"), "CONTROL: git fsck does not report the duplicate");
+            let o = GitObjects::open(&r).unwrap();
+            let cid = gix::ObjectId::from_hex(c.as_bytes()).unwrap();
+            assert!(matches!(o.blob_at(cid, "reg/a.json"), Err(Error::CannotRead(_))), "SECURITY: blob_at read one of two duplicate entries");
+        }
+        judge(&fx, what, read(&r, &c, "reg"), &Expect::Refuse("cannot_read"));
+    }
+}
+
+#[test]
+fn security_namespace_settings_cannot_redirect_a_reference() {
+    let fx = Fx::new("namespace");
+    let (r, c1, c2) = fx.base("repo", &none);
+    let t = truth(&fx, &r, &c2);
+    fx.git(&r, &["update-ref", "refs/namespaces/ns/refs/heads/main", &c1]);
+    assert_eq!(fx.git(&r, &["rev-parse", "refs/namespaces/ns/refs/heads/main"]), c1, "CONTROL: the namespaced ref names another commit");
+    let home = fx.root.join("ns-home");
+    write(&home.join(".gitconfig"), "[gitoxide \"core\"]\n\trefsNamespace = ns\n");
+    judge_cli(&fx, "GIT_NAMESPACE", &r, "refs/heads/main", &[("GIT_NAMESPACE", "ns".into())], &t);
+    judge_cli(&fx, "user config refsNamespace", &r, "refs/heads/main", &[("HOME", home.display().to_string())], &t);
+}

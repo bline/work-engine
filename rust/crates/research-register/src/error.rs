@@ -57,6 +57,10 @@ pub enum Unsupported {
     ObjectFormat { format: String },
     #[error("shallow repository; history is incomplete")]
     ShallowRepository,
+    #[error("repository format version {version}; only 0 and 1 are supported")]
+    FormatVersion { version: i64 },
+    #[error("repository extension {name} = {value:?} is not supported")]
+    Extension { name: String, value: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

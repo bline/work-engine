@@ -1,6 +1,6 @@
 //! One immutable snapshot of a register tree at an exact commit.
 
-use crate::error::{BadRequest, CannotRead, Error, NoRegister};
+use crate::error::{CannotRead, Error, NoRegister};
 use crate::objects::{split_tree_path, EntryKind, GitObjects};
 use gix::hash::ObjectId;
 use serde::Serialize;
@@ -159,9 +159,6 @@ fn collect(
         return Err(CannotRead::Malformed { id: tree.to_string(), reason: format!("tree nesting exceeds {MAX_TREE_DEPTH}") }.into());
     }
     for entry in objects.tree(tree)? {
-        if entry.name.contains('/') {
-            return Err(BadRequest::Path { path: entry.name, reason: "tree entry name contains '/'".into() }.into());
-        }
         let path = if prefix.is_empty() { entry.name.clone() } else { format!("{prefix}/{}", entry.name) };
         let (bytes, sha256) = if entry.kind.is_file() {
             let bytes: Arc<[u8]> = objects.blob(entry.id)?.into();
