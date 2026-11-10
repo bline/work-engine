@@ -73,8 +73,9 @@ only, no network, no model calls; it writes only to `--out`.
   `--at`), placed inside `--repo` lexically, so a symbolic link in the working tree cannot change which
   committed directory is read. Source pins are checked with the same protected Git access as the snapshot
   (`GIT_*` variables, global and system configuration, replace objects and graft files are ignored,
-  and parents are read from the commit objects, not from a commit-graph file); unpinned `validate` keeps
-  its old Git access. In a shallow repository both commands exit 4 and write nothing: ancestry over
+  parents are read from the commit objects, not from a commit-graph file, and an object missing locally
+  is never fetched from a promisor remote: a missing register input exits 4 and a missing source
+  document is a violation); unpinned `validate` keeps its old Git access. In a shallow repository both commands exit 4 and write nothing: ancestry over
   history cut at a shallow boundary is not a property of the commit. Each command first prints the snapshot manifest as lines
   starting `snapshot `: the commit, the register tree id, each input's mode, blob id, sha256 and path,
   any missing input, and `register.py`'s sha256 and Git blob id.

@@ -856,7 +856,7 @@ class PinnedRegister(Register):
 
 class PinnedGit(Git):
     """Git for checking source pins in pinned mode, with AnchorGit's object-access policy: GIT_* variables
-    dropped, global and system configuration ignored, replace objects, graft files and commit-graph files off,
+    dropped, global and system configuration ignored, replace objects, graft files, commit-graph files and lazy fetch off,
     no optional locks. Unpinned
     validation keeps Git (review: Astra F2, Sonnet F1)."""
 
@@ -1406,7 +1406,7 @@ class AnchorGit:
     environment is rebuilt, so the result depends neither on the caller's GIT_* variables (GIT_DIR,
     GIT_DIFF_OPTS, GIT_CONFIG_*, ...) nor on replace refs, graft files or commit-graph files nor on system,
     global or repository configuration that changes diff, rename or object reading: parents come from the
-    commit objects. It never refreshes the index."""
+    commit objects. It never refreshes the index and never fetches an object missing locally."""
 
     DIFF = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--text", "--minimal", "--no-renames",
             "--no-indent-heuristic", "--inter-hunk-context=0", "-U0"]
@@ -1425,7 +1425,10 @@ class AnchorGit:
                          "GIT_CONFIG_SYSTEM": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
                          "GIT_NO_REPLACE_OBJECTS": "1",
                          # an empty graft file: .git/info/grafts cannot rewrite parents (review: r1 R1-1)
-                         "GIT_GRAFT_FILE": os.devnull})
+                         "GIT_GRAFT_FILE": os.devnull,
+                         # no lazy fetch: an object missing locally fails instead of running a transport
+                         # named in repository configuration and writing packs (review: r2 R2-1)
+                         "GIT_NO_LAZY_FETCH": "1"})
         self.cache = {}
 
     def argv(self, *args):

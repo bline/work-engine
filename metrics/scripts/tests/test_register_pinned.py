@@ -458,7 +458,7 @@ def forge_commit_graph(repo, child, parent):
 
 
 class PinnedR2Tests(PinnedFixture):
-    """S4-min r2: ancestry from metadata outside the commit objects (r1 re-review R1-1; shallow; commit-graph)."""
+    """S4-min r2/r3: Git metadata outside the commit objects (r1 re-review R1-1; shallow; commit-graph; r2 R2-1)."""
 
     def graft(self, text):
         path = os.path.join(self.repo, ".git", "info", "grafts")
@@ -522,6 +522,37 @@ class PinnedR2Tests(PinnedFixture):
         spec.loader.exec_module(mod)
         self.assertEqual(mod.AnchorGit(self.repo).run("log", "-1", "--format=%P", root).strip(), b"")
         self.assertFalse(mod.PinnedGit(self.repo).is_ancestor(self.c0, root))
+
+    def test_15_missing_objects_are_never_fetched_from_a_promisor_remote(self):
+        study_blob = git(self.repo, "rev-parse", f"{self.c1}:metrics/register/questions.json")
+        bare = os.path.join(self.base, "remote.git")
+        subprocess.run(["git", "clone", "-q", "--bare", self.repo, bare], check=True, capture_output=True, env=GIT_ENV)
+        for oid in (study_blob, self.blob):  # a register input of c1; the source document every pin names
+            os.unlink(os.path.join(self.repo, ".git", "objects", oid[:2], oid[2:]))
+        for fail in (False, True):
+            with self.subTest(remote="failing" if fail else "working"):
+                marker = os.path.join(self.base, f"upload-pack-ran-{fail}")
+                helper = os.path.join(self.base, f"upload-pack-{fail}.sh")
+                with open(helper, "w") as fh:
+                    fh.write(f'#!/bin/sh\necho ran >> "{marker}"\n' + ("exit 1\n" if fail else 'exec git-upload-pack "$@"\n'))
+                os.chmod(helper, 0o755)
+                for key, value in (("remote.origin.url", bare), ("remote.origin.promisor", "true"),
+                                   ("remote.origin.partialclonefilter", "blob:none"), ("remote.origin.uploadpack", helper)):
+                    git(self.repo, "config", key, value)
+                before = digest_tree(os.path.join(self.repo, ".git"))
+                v = self.validate(self.c1)
+                self.assertEqual(v.returncode, 4, v.stdout)
+                self.assertIn("cannot read blob", v.stdout)
+                b, out = self.build(self.c1)
+                self.assertEqual(b.returncode, 4, b.stdout)
+                self.assertFalse(os.path.exists(out))
+                p = self.validate(self.c2)  # complete snapshot; the pinned source document is missing
+                self.assertEqual(p.returncode, 1, p.stdout)
+                b, out = self.build(self.c2)
+                self.assertEqual(b.returncode, 1, b.stdout)
+                self.assertFalse(os.path.exists(out))
+                self.assertFalse(os.path.exists(marker), "a transport named in repository configuration ran")
+                self.assertEqual(digest_tree(os.path.join(self.repo, ".git")), before)
 
 
 class RealRegisterPinnedTests(unittest.TestCase):
