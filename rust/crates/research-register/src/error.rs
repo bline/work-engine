@@ -40,9 +40,16 @@ pub enum CannotRead {
     #[error("object store error reading {id}: {reason}")]
     ObjectStore { id: String, reason: String },
     #[error("object returned for {requested} has content hashing to {content_hash}")]
-    Substituted { requested: String, content_hash: String },
+    Substituted {
+        requested: String,
+        content_hash: String,
+    },
     #[error("object {id} is a {actual}, expected a {expected}")]
-    TypeMismatch { id: String, expected: String, actual: String },
+    TypeMismatch {
+        id: String,
+        expected: String,
+        actual: String,
+    },
     #[error("object {id} is malformed: {reason}")]
     Malformed { id: String, reason: String },
     #[error("reference {name} could not be read: {reason}")]

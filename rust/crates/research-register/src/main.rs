@@ -8,7 +8,8 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const USAGE: &str = "usage: work-engine-register snapshot --at <rev> [--register <path>] [--repo <dir>]";
+const USAGE: &str =
+    "usage: work-engine-register snapshot --at <rev> [--register <path>] [--repo <dir>]";
 
 #[derive(Serialize)]
 struct Failure<'a> {
@@ -24,16 +25,32 @@ fn main() -> ExitCode {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
     };
-    let result = GitObjects::open(&repo).and_then(|objects| PinnedSnapshot::build(objects, &at, &register));
+    let result =
+        GitObjects::open(&repo).and_then(|objects| PinnedSnapshot::build(objects, &at, &register));
     match result {
         Ok(snapshot) => {
-            println!("{}", serde_json::to_string(&snapshot.identity()).expect("identity serializes"));
+            println!(
+                "{}",
+                serde_json::to_string(&snapshot.identity()).expect("identity serializes")
+            );
             ExitCode::SUCCESS
         }
         Err(e) => {
-            let failure = Failure { schema: SNAPSHOT_SCHEMA, outcome: e.category(), requested: &at, error: e.to_string() };
-            println!("{}", serde_json::to_string(&failure).expect("failure serializes"));
-            ExitCode::from(if matches!(e, Error::BadRequest(_)) { 3 } else { 4 })
+            let failure = Failure {
+                schema: SNAPSHOT_SCHEMA,
+                outcome: e.category(),
+                requested: &at,
+                error: e.to_string(),
+            };
+            println!(
+                "{}",
+                serde_json::to_string(&failure).expect("failure serializes")
+            );
+            ExitCode::from(if matches!(e, Error::BadRequest(_)) {
+                3
+            } else {
+                4
+            })
         }
     }
 }
@@ -43,7 +60,8 @@ fn parse(args: &[String]) -> Option<(String, String, PathBuf)> {
     if command != "snapshot" {
         return None;
     }
-    let (mut at, mut register, mut repo) = (None, "metrics/register".to_string(), PathBuf::from("."));
+    let (mut at, mut register, mut repo) =
+        (None, "metrics/register".to_string(), PathBuf::from("."));
     let mut it = rest.iter();
     while let Some(flag) = it.next() {
         let value = it.next()?;

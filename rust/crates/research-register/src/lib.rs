@@ -14,4 +14,6 @@ pub mod snapshot;
 
 pub use error::{BadRequest, CannotRead, Error, NoRegister, Unsupported};
 pub use objects::{Ancestry, BlobAt, Commit, EntryKind, GitObjects, Prefix, TreeEntry};
-pub use snapshot::{EntryIdentity, PinnedSnapshot, SnapshotEntry, SnapshotIdentity, SNAPSHOT_SCHEMA};
+pub use snapshot::{
+    EntryIdentity, PinnedSnapshot, SNAPSHOT_SCHEMA, SnapshotEntry, SnapshotIdentity,
+};

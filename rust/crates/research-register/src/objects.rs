@@ -88,18 +88,27 @@ impl GitObjects {
     pub fn open(path: &Path) -> Result<Self, Error> {
         let shown = path.display().to_string();
         check_repository_format(path)?;
-        let options = gix::open::Options::isolated().config_overrides(["core.useReplaceRefs=false"]);
+        let options =
+            gix::open::Options::isolated().config_overrides(["core.useReplaceRefs=false"]);
         let repo = gix::open_opts(path, options).map_err(|e| CannotRead::Open {
             path: shown.clone(),
             reason: e.to_string(),
         })?;
         if repo.object_hash() != HashKind::Sha1 {
-            return Err(Unsupported::ObjectFormat { format: format!("{:?}", repo.object_hash()) }.into());
+            return Err(Unsupported::ObjectFormat {
+                format: format!("{:?}", repo.object_hash()),
+            }
+            .into());
         }
         match repo.is_shallow() {
             Ok(false) => {}
             Ok(true) => return Err(Unsupported::ShallowRepository.into()),
-            Err(e) => return Err(CannotRead::ShallowState { reason: e.to_string() }.into()),
+            Err(e) => {
+                return Err(CannotRead::ShallowState {
+                    reason: e.to_string(),
+                }
+                .into());
+            }
         }
         Ok(GitObjects { repo, path: shown })
     }
@@ -111,11 +120,16 @@ impl GitObjects {
 
     /// Read any object, checking that its content hashes to `id`.
     fn read(&self, id: ObjectId) -> Result<(Kind, Vec<u8>), Error> {
-        let found = self.repo.try_find_object(id).map_err(|e| CannotRead::ObjectStore {
-            id: id.to_string(),
-            reason: e.to_string(),
-        })?;
-        let object = found.ok_or_else(|| CannotRead::ObjectUnavailable { id: id.to_string() })?.detach();
+        let found = self
+            .repo
+            .try_find_object(id)
+            .map_err(|e| CannotRead::ObjectStore {
+                id: id.to_string(),
+                reason: e.to_string(),
+            })?;
+        let object = found
+            .ok_or_else(|| CannotRead::ObjectUnavailable { id: id.to_string() })?
+            .detach();
         verify_hash(id, object.kind, &object.data)?;
         Ok((object.kind, object.data))
     }
@@ -134,7 +148,10 @@ impl GitObjects {
 
     pub fn tree(&self, id: ObjectId) -> Result<Vec<TreeEntry>, Error> {
         let data = self.read_kind(id, Kind::Tree)?;
-        let malformed = |reason: String| CannotRead::Malformed { id: id.to_string(), reason };
+        let malformed = |reason: String| CannotRead::Malformed {
+            id: id.to_string(),
+            reason,
+        };
         let mut entries = Vec::new();
         let mut names = HashSet::new();
         for entry in gix::objs::TreeRefIter::from_bytes(&data, HashKind::Sha1) {
@@ -156,7 +173,11 @@ impl GitObjects {
             if !names.insert(name.clone()) {
                 return Err(malformed(format!("duplicate entry name {name:?}")).into());
             }
-            entries.push(TreeEntry { name, kind, id: entry.oid.to_owned() });
+            entries.push(TreeEntry {
+                name,
+                kind,
+                id: entry.oid.to_owned(),
+            });
         }
         Ok(entries)
     }
@@ -169,13 +190,19 @@ impl GitObjects {
     /// Annotated tags are peeled through verified tag objects. Abbreviations are refused here;
     /// use [`GitObjects::resolve_prefix`].
     pub fn resolve(&self, rev: &str) -> Result<ObjectId, Error> {
-        let bad = |reason: &str| BadRequest::Revision { rev: rev.into(), reason: reason.into() };
+        let bad = |reason: &str| BadRequest::Revision {
+            rev: rev.into(),
+            reason: reason.into(),
+        };
         let start = if is_full_hex(rev) {
             ObjectId::from_hex(rev.as_bytes()).map_err(|e| bad(&e.to_string()))?
         } else if rev == "HEAD" || rev.starts_with("refs/") {
             self.reference_target(rev)?
         } else {
-            return Err(bad("expected a full 40-hex commit id, HEAD, or a full reference name under refs/").into());
+            return Err(bad(
+                "expected a full 40-hex commit id, HEAD, or a full reference name under refs/",
+            )
+            .into());
         };
         let mut id = start;
         for _ in 0..=MAX_TAG_DEPTH {
@@ -183,17 +210,27 @@ impl GitObjects {
             match kind {
                 Kind::Commit => return Ok(id),
                 Kind::Tag => id = parse_tag_target(id, &data)?,
-                other => return Err(bad(&format!("names a {}, not a commit", kind_name(other))).into()),
+                other => {
+                    return Err(bad(&format!("names a {}, not a commit", kind_name(other))).into());
+                }
             }
         }
-        Err(CannotRead::Malformed { id: start.to_string(), reason: "tag chain too deep".into() }.into())
+        Err(CannotRead::Malformed {
+            id: start.to_string(),
+            reason: "tag chain too deep".into(),
+        }
+        .into())
     }
 
     fn reference_target(&self, name: &str) -> Result<ObjectId, Error> {
         if name != "HEAD"
             && let Err(e) = gix::validate::reference::name(name.as_bytes().into())
         {
-            return Err(BadRequest::Revision { rev: name.into(), reason: format!("not a valid reference name: {e}") }.into());
+            return Err(BadRequest::Revision {
+                rev: name.into(),
+                reason: format!("not a valid reference name: {e}"),
+            }
+            .into());
         }
         let mut current = name.to_string();
         for _ in 0..MAX_SYMBOLIC_DEPTH {
@@ -206,28 +243,50 @@ impl GitObjects {
                     }
                     .into());
                 }
-                Err(e) => return Err(CannotRead::Reference { name: current, reason: e.to_string() }.into()),
+                Err(e) => {
+                    return Err(CannotRead::Reference {
+                        name: current,
+                        reason: e.to_string(),
+                    }
+                    .into());
+                }
             };
             match &reference.inner.target {
                 gix::refs::Target::Object(id) => return Ok(*id),
                 gix::refs::Target::Symbolic(next) => current = next.as_bstr().to_string(),
             }
         }
-        Err(CannotRead::Reference { name: name.into(), reason: "symbolic reference chain too deep".into() }.into())
+        Err(CannotRead::Reference {
+            name: name.into(),
+            reason: "symbolic reference chain too deep".into(),
+        }
+        .into())
     }
 
     /// Look up an abbreviated id (4 to 40 lowercase hex digits).
     pub fn resolve_prefix(&self, hex: &str) -> Result<Prefix, Error> {
-        if !(4..=40).contains(&hex.len()) || !hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) {
-            return Err(BadRequest::Prefix { prefix: hex.into(), reason: "expected 4 to 40 lowercase hex digits".into() }.into());
+        if !(4..=40).contains(&hex.len())
+            || !hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+        {
+            return Err(BadRequest::Prefix {
+                prefix: hex.into(),
+                reason: "expected 4 to 40 lowercase hex digits".into(),
+            }
+            .into());
         }
-        let prefix = gix::hash::Prefix::from_hex(hex)
-            .map_err(|e| BadRequest::Prefix { prefix: hex.into(), reason: e.to_string() })?;
+        let prefix = gix::hash::Prefix::from_hex(hex).map_err(|e| BadRequest::Prefix {
+            prefix: hex.into(),
+            reason: e.to_string(),
+        })?;
         match self.repo.objects.lookup_prefix(prefix, None) {
             Ok(None) => Ok(Prefix::Missing),
             Ok(Some(Ok(id))) => Ok(Prefix::Unique(id)),
             Ok(Some(Err(()))) => Ok(Prefix::Ambiguous),
-            Err(e) => Err(CannotRead::ObjectStore { id: hex.into(), reason: e.to_string() }.into()),
+            Err(e) => Err(CannotRead::ObjectStore {
+                id: hex.into(),
+                reason: e.to_string(),
+            }
+            .into()),
         }
     }
 
@@ -255,8 +314,14 @@ impl GitObjects {
     pub fn blob_at(&self, commit: ObjectId, path: &str) -> Result<BlobAt, Error> {
         match self.entry_at(commit, path)? {
             None => Ok(BlobAt::Absent),
-            Some(e) if e.kind.is_file() => Ok(BlobAt::Blob { id: e.id, bytes: self.blob(e.id)? }),
-            Some(e) => Ok(BlobAt::NotABlob { id: e.id, kind: e.kind }),
+            Some(e) if e.kind.is_file() => Ok(BlobAt::Blob {
+                id: e.id,
+                bytes: self.blob(e.id)?,
+            }),
+            Some(e) => Ok(BlobAt::NotABlob {
+                id: e.id,
+                kind: e.kind,
+            }),
         }
     }
 
@@ -279,7 +344,11 @@ impl GitObjects {
                 Err(e) => return Err(e),
             }
         }
-        Ok(if incomplete { Ancestry::CannotEstablish } else { Ancestry::No })
+        Ok(if incomplete {
+            Ancestry::CannotEstablish
+        } else {
+            Ancestry::No
+        })
     }
 }
 
@@ -295,7 +364,10 @@ pub(crate) fn verify_hash(requested: ObjectId, kind: Kind, data: &[u8]) -> Resul
         reason: format!("hash computation failed: {e}"),
     })?;
     if actual != requested {
-        return Err(CannotRead::Substituted { requested: requested.to_string(), content_hash: actual.to_string() });
+        return Err(CannotRead::Substituted {
+            requested: requested.to_string(),
+            content_hash: actual.to_string(),
+        });
     }
     Ok(())
 }
@@ -325,7 +397,10 @@ fn is_full_hex(s: &str) -> bool {
 }
 
 fn parse_hex_id(id: ObjectId, value: &[u8], what: &str) -> Result<ObjectId, CannotRead> {
-    let malformed = || CannotRead::Malformed { id: id.to_string(), reason: format!("bad {what} id") };
+    let malformed = || CannotRead::Malformed {
+        id: id.to_string(),
+        reason: format!("bad {what} id"),
+    };
     let text = std::str::from_utf8(value).map_err(|_| malformed())?;
     if !is_full_hex(text) {
         return Err(malformed());
@@ -339,7 +414,12 @@ pub(crate) fn parse_commit(id: ObjectId, data: &[u8]) -> Result<Commit, CannotRe
     let mut lines = data.split(|b| *b == b'\n');
     let tree = match lines.next().and_then(|l| l.strip_prefix(b"tree ")) {
         Some(hex) => parse_hex_id(id, hex, "tree")?,
-        None => return Err(CannotRead::Malformed { id: id.to_string(), reason: "commit does not start with a tree line".into() }),
+        None => {
+            return Err(CannotRead::Malformed {
+                id: id.to_string(),
+                reason: "commit does not start with a tree line".into(),
+            });
+        }
     };
     let mut parents = Vec::new();
     for line in lines {
@@ -352,28 +432,50 @@ pub(crate) fn parse_commit(id: ObjectId, data: &[u8]) -> Result<Commit, CannotRe
 }
 
 fn parse_tag_target(id: ObjectId, data: &[u8]) -> Result<ObjectId, CannotRead> {
-    match data.split(|b| *b == b'\n').next().and_then(|l| l.strip_prefix(b"object ")) {
+    match data
+        .split(|b| *b == b'\n')
+        .next()
+        .and_then(|l| l.strip_prefix(b"object "))
+    {
         Some(hex) => parse_hex_id(id, hex, "tag object"),
-        None => Err(CannotRead::Malformed { id: id.to_string(), reason: "tag does not start with an object line".into() }),
+        None => Err(CannotRead::Malformed {
+            id: id.to_string(),
+            reason: "tag does not start with an object line".into(),
+        }),
     }
 }
 
 /// Split a repository-relative tree path. Refuses empty, absolute, `.` and `..` components.
 pub(crate) fn split_tree_path(path: &str) -> Result<Vec<&str>, BadRequest> {
-    let bad = |reason: &str| BadRequest::Path { path: path.into(), reason: reason.into() };
+    let bad = |reason: &str| BadRequest::Path {
+        path: path.into(),
+        reason: reason.into(),
+    };
     if path.is_empty() || path.contains('\0') {
         return Err(bad("empty or contains NUL"));
     }
     let components: Vec<&str> = path.split('/').collect();
-    if components.iter().any(|c| c.is_empty() || *c == "." || *c == "..") {
-        return Err(bad("must be relative, without empty, '.' or '..' components"));
+    if components
+        .iter()
+        .any(|c| c.is_empty() || *c == "." || *c == "..")
+    {
+        return Err(bad(
+            "must be relative, without empty, '.' or '..' components",
+        ));
     }
     Ok(components)
 }
 
 /// Extensions that do not change how objects or references are read here. At repository format
 /// version 1 any other extension is refused, as git refuses an extension it does not know.
-const KNOWN_EXTENSIONS: &[&str] = &["objectformat", "refstorage", "worktreeconfig", "preciousobjects", "partialclone", "noop"];
+const KNOWN_EXTENSIONS: &[&str] = &[
+    "objectformat",
+    "refstorage",
+    "worktreeconfig",
+    "preciousobjects",
+    "partialclone",
+    "noop",
+];
 
 /// Check the repository's own configuration before gix opens it, so that an unsupported
 /// repository is refused as `unsupported` with its reason rather than failing to open: a format
@@ -385,7 +487,10 @@ fn check_repository_format(path: &Path) -> Result<(), Error> {
     let Some(bytes) = repository_config_path(path).and_then(|p| std::fs::read(p).ok()) else {
         return Ok(());
     };
-    let cannot = |reason: String| CannotRead::Open { path: path.display().to_string(), reason };
+    let cannot = |reason: String| CannotRead::Open {
+        path: path.display().to_string(),
+        reason,
+    };
     let config = parse_config(&bytes).map_err(cannot)?;
     let version = config
         .integer("core.repositoryformatversion")
@@ -399,17 +504,26 @@ fn check_repository_format(path: &Path) -> Result<(), Error> {
     {
         return Err(Unsupported::ObjectFormat { format }.into());
     }
-    if let Some(value) = config.string("extensions.refstorage").map(|v| v.to_string())
+    if let Some(value) = config
+        .string("extensions.refstorage")
+        .map(|v| v.to_string())
         && !value.eq_ignore_ascii_case("files")
     {
-        return Err(Unsupported::Extension { name: "refstorage".into(), value }.into());
+        return Err(Unsupported::Extension {
+            name: "refstorage".into(),
+            value,
+        }
+        .into());
     }
     if version == 1 {
         for section in config.sections_by_name("extensions").into_iter().flatten() {
             for name in section.body().value_names() {
                 let name = name.to_string();
                 if !KNOWN_EXTENSIONS.contains(&name.to_ascii_lowercase().as_str()) {
-                    let value = config.string(format!("extensions.{name}").as_str()).map(|v| v.to_string()).unwrap_or_default();
+                    let value = config
+                        .string(format!("extensions.{name}").as_str())
+                        .map(|v| v.to_string())
+                        .unwrap_or_default();
                     return Err(Unsupported::Extension { name, value }.into());
                 }
             }
@@ -427,14 +541,22 @@ fn repository_config_path(path: &Path) -> Option<PathBuf> {
     } else if dot.is_file() {
         let text = std::fs::read_to_string(&dot).ok()?;
         let target = PathBuf::from(text.strip_prefix("gitdir:")?.trim());
-        if target.is_absolute() { target } else { path.join(target) }
+        if target.is_absolute() {
+            target
+        } else {
+            path.join(target)
+        }
     } else {
         path.to_path_buf()
     };
     let dir = match std::fs::read_to_string(git_dir.join("commondir")) {
         Ok(common) => {
             let common = PathBuf::from(common.trim());
-            if common.is_absolute() { common } else { git_dir.join(common) }
+            if common.is_absolute() {
+                common
+            } else {
+                git_dir.join(common)
+            }
         }
         Err(_) => git_dir,
     };
@@ -442,17 +564,25 @@ fn repository_config_path(path: &Path) -> Option<PathBuf> {
 }
 
 fn parse_config(bytes: &[u8]) -> Result<gix::config::File, String> {
-    gix::config::File::from_bytes_no_includes(bytes, gix::config::file::Metadata::from(gix::config::Source::Local), Default::default())
-        .map_err(|e| e.to_string())
+    gix::config::File::from_bytes_no_includes(
+        bytes,
+        gix::config::file::Metadata::from(gix::config::Source::Local),
+        Default::default(),
+    )
+    .map_err(|e| e.to_string())
 }
 
 fn object_format(config: &gix::config::File) -> Option<String> {
-    config.string("extensions.objectformat").map(|v| v.to_string())
+    config
+        .string("extensions.objectformat")
+        .map(|v| v.to_string())
 }
 
 #[cfg(test)]
 fn parse_object_format(config: &str) -> Option<String> {
-    parse_config(config.as_bytes()).ok().and_then(|c| object_format(&c))
+    parse_config(config.as_bytes())
+        .ok()
+        .and_then(|c| object_format(&c))
 }
 
 #[cfg(test)]
@@ -465,23 +595,43 @@ mod tests {
 
     #[test]
     fn canonical_hash_matches_known_git_ids() {
-        verify_hash(id("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"), Kind::Blob, b"").unwrap();
-        verify_hash(id("4b825dc642cb6eb9a060e54bf8d69288fbee4904"), Kind::Tree, b"").unwrap();
+        verify_hash(
+            id("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"),
+            Kind::Blob,
+            b"",
+        )
+        .unwrap();
+        verify_hash(
+            id("4b825dc642cb6eb9a060e54bf8d69288fbee4904"),
+            Kind::Tree,
+            b"",
+        )
+        .unwrap();
     }
 
     #[test]
     fn security_hash_mismatch_and_type_mismatch_are_refused() {
         let empty_blob = id("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391");
-        assert!(matches!(verify_hash(empty_blob, Kind::Blob, b"x"), Err(CannotRead::Substituted { .. })));
-        assert!(matches!(verify_hash(empty_blob, Kind::Tree, b""), Err(CannotRead::Substituted { .. })));
-        assert!(matches!(verify_kind(empty_blob, Kind::Tree, Kind::Blob), Err(CannotRead::TypeMismatch { .. })));
+        assert!(matches!(
+            verify_hash(empty_blob, Kind::Blob, b"x"),
+            Err(CannotRead::Substituted { .. })
+        ));
+        assert!(matches!(
+            verify_hash(empty_blob, Kind::Tree, b""),
+            Err(CannotRead::Substituted { .. })
+        ));
+        assert!(matches!(
+            verify_kind(empty_blob, Kind::Tree, Kind::Blob),
+            Err(CannotRead::TypeMismatch { .. })
+        ));
     }
 
     #[test]
     fn commit_header_parsing() {
         let t = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
         let p = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
-        let data = format!("tree {t}\nparent {p}\nparent {t}\nauthor a <a> 0 +0000\n\nparent {p}\n");
+        let data =
+            format!("tree {t}\nparent {p}\nparent {t}\nauthor a <a> 0 +0000\n\nparent {p}\n");
         let c = parse_commit(id(p), data.as_bytes()).unwrap();
         assert_eq!(c.tree, id(t));
         assert_eq!(c.parents, vec![id(p), id(t)]);
@@ -491,11 +641,21 @@ mod tests {
 
     #[test]
     fn tree_paths_and_object_format_declaration() {
-        assert_eq!(split_tree_path("metrics/register").unwrap(), vec!["metrics", "register"]);
+        assert_eq!(
+            split_tree_path("metrics/register").unwrap(),
+            vec!["metrics", "register"]
+        );
         for bad in ["", "/a", "a/", "a//b", "./a", "a/../b"] {
             assert!(split_tree_path(bad).is_err(), "{bad}");
         }
-        assert_eq!(parse_object_format("[core]\n\tbare = false\n[extensions]\n\tobjectFormat = sha256\n").as_deref(), Some("sha256"));
-        assert_eq!(parse_object_format("[core]\n\tobjectformat = sha256\n"), None);
+        assert_eq!(
+            parse_object_format("[core]\n\tbare = false\n[extensions]\n\tobjectFormat = sha256\n")
+                .as_deref(),
+            Some("sha256")
+        );
+        assert_eq!(
+            parse_object_format("[core]\n\tobjectformat = sha256\n"),
+            None
+        );
     }
 }

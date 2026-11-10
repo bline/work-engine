@@ -1,7 +1,7 @@
 //! One immutable snapshot of a register tree at an exact commit.
 
 use crate::error::{CannotRead, Error, NoRegister};
-use crate::objects::{split_tree_path, EntryKind, GitObjects};
+use crate::objects::{EntryKind, GitObjects, split_tree_path};
 use gix::hash::ObjectId;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -57,9 +57,18 @@ impl PinnedSnapshot {
         let commit = objects.resolve(rev)?;
         let root_tree = objects.commit(commit)?.tree;
         let register_tree = match objects.entry_at(commit, register_path)? {
-            None => return Err(NoRegister::Absent { path: register_path.into() }.into()),
+            None => {
+                return Err(NoRegister::Absent {
+                    path: register_path.into(),
+                }
+                .into());
+            }
             Some(e) if e.kind != EntryKind::Tree => {
-                return Err(NoRegister::NotATree { path: register_path.into(), kind: e.kind.as_str().into() }.into());
+                return Err(NoRegister::NotATree {
+                    path: register_path.into(),
+                    kind: e.kind.as_str().into(),
+                }
+                .into());
             }
             Some(e) => e.id,
         };
@@ -156,10 +165,18 @@ fn collect(
     out: &mut BTreeMap<String, SnapshotEntry>,
 ) -> Result<(), Error> {
     if depth > MAX_TREE_DEPTH {
-        return Err(CannotRead::Malformed { id: tree.to_string(), reason: format!("tree nesting exceeds {MAX_TREE_DEPTH}") }.into());
+        return Err(CannotRead::Malformed {
+            id: tree.to_string(),
+            reason: format!("tree nesting exceeds {MAX_TREE_DEPTH}"),
+        }
+        .into());
     }
     for entry in objects.tree(tree)? {
-        let path = if prefix.is_empty() { entry.name.clone() } else { format!("{prefix}/{}", entry.name) };
+        let path = if prefix.is_empty() {
+            entry.name.clone()
+        } else {
+            format!("{prefix}/{}", entry.name)
+        };
         let (bytes, sha256) = if entry.kind.is_file() {
             let bytes: Arc<[u8]> = objects.blob(entry.id)?.into();
             let digest = format!("{:x}", Sha256::digest(&bytes));
@@ -167,7 +184,15 @@ fn collect(
         } else {
             (None, None)
         };
-        out.insert(path.clone(), SnapshotEntry { kind: entry.kind, id: entry.id, bytes, sha256 });
+        out.insert(
+            path.clone(),
+            SnapshotEntry {
+                kind: entry.kind,
+                id: entry.id,
+                bytes,
+                sha256,
+            },
+        );
         if entry.kind == EntryKind::Tree {
             collect(objects, entry.id, &path, depth + 1, out)?;
         }

@@ -33,15 +33,29 @@ impl Fx {
         std::fs::create_dir_all(&home).unwrap();
         std::fs::create_dir_all(&bin).unwrap();
         let hits = root.join("marker-hits");
-        Fx { root, home, bin, hits }
+        Fx {
+            root,
+            home,
+            bin,
+            hits,
+        }
     }
 
     pub fn cmd(&self, dir: &Path, args: &[&str], env: &[(&str, &str)]) -> Command {
         let mut c = Command::new("git");
-        c.arg("-C").arg(dir).args(args).env_clear()
-            .env("PATH", "/usr/bin:/bin").env("HOME", &self.home).env("GIT_CONFIG_NOSYSTEM", "1").env("LC_ALL", "C")
-            .env("GIT_AUTHOR_NAME", "t").env("GIT_AUTHOR_EMAIL", "t@x").env("GIT_COMMITTER_NAME", "t")
-            .env("GIT_COMMITTER_EMAIL", "t@x").env("GIT_AUTHOR_DATE", "2026-01-01T00:00:00Z")
+        c.arg("-C")
+            .arg(dir)
+            .args(args)
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .env("HOME", &self.home)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("LC_ALL", "C")
+            .env("GIT_AUTHOR_NAME", "t")
+            .env("GIT_AUTHOR_EMAIL", "t@x")
+            .env("GIT_COMMITTER_NAME", "t")
+            .env("GIT_COMMITTER_EMAIL", "t@x")
+            .env("GIT_AUTHOR_DATE", "2026-01-01T00:00:00Z")
             .env("GIT_COMMITTER_DATE", "2026-01-01T00:00:00Z");
         for (k, v) in env {
             c.env(k, v);
@@ -54,10 +68,18 @@ impl Fx {
         self.git_with(dir, args, None, &[])
     }
 
-    pub fn git_with(&self, dir: &Path, args: &[&str], input: Option<&[u8]>, env: &[(&str, &str)]) -> String {
+    pub fn git_with(
+        &self,
+        dir: &Path,
+        args: &[&str],
+        input: Option<&[u8]>,
+        env: &[(&str, &str)],
+    ) -> String {
         use std::io::Write;
         let mut c = self.cmd(dir, args, env);
-        c.stdin(std::process::Stdio::piped()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped());
+        c.stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
         let mut child = c.spawn().expect("git runs");
         if let Some(bytes) = input {
             child.stdin.take().unwrap().write_all(bytes).unwrap();
@@ -65,14 +87,21 @@ impl Fx {
             drop(child.stdin.take());
         }
         let out = child.wait_with_output().unwrap();
-        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
         String::from_utf8(out.stdout).unwrap().trim().to_string()
     }
 
     /// Run git without requiring success; returns (success, stdout).
     pub fn git_try(&self, dir: &Path, args: &[&str], env: &[(&str, &str)]) -> (bool, String) {
         let out = self.cmd(dir, args, env).output().unwrap();
-        (out.status.success(), String::from_utf8_lossy(&out.stdout).trim().to_string())
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).trim().to_string(),
+        )
     }
 
     /// A repository with two commits. C1: reg/{decisions.json, events.jsonl, studies/s1.json},
@@ -100,8 +129,24 @@ impl Fx {
 
     /// Ground truth from the git CLI with replacement disabled: path (relative to `reg`) to
     /// (kind, id). Call before applying a hazard.
-    pub fn truth(&self, repo: &Path, commit: &str, reg: &str) -> BTreeMap<String, (String, String)> {
-        let listing = self.git(repo, &["--no-replace-objects", "ls-tree", "-r", "-t", commit, "--", &format!("{reg}/")]);
+    pub fn truth(
+        &self,
+        repo: &Path,
+        commit: &str,
+        reg: &str,
+    ) -> BTreeMap<String, (String, String)> {
+        let listing = self.git(
+            repo,
+            &[
+                "--no-replace-objects",
+                "ls-tree",
+                "-r",
+                "-t",
+                commit,
+                "--",
+                &format!("{reg}/"),
+            ],
+        );
         listing
             .lines()
             .filter(|line| line.split_once('\t').is_some_and(|(_, path)| path != reg))
@@ -130,8 +175,17 @@ impl Fx {
     /// A script that records its name when run, then optionally execs `passthru`.
     pub fn marker(&self, name: &str, passthru: Option<&str>) -> String {
         let p = self.bin.join(name);
-        let tail = passthru.map(|t| format!("exec {t} \"$@\"\n")).unwrap_or_else(|| "exit 0\n".into());
-        std::fs::write(&p, format!("#!/bin/sh\necho \"{name} $*\" >> {}\n{tail}", self.hits.display())).unwrap();
+        let tail = passthru
+            .map(|t| format!("exec {t} \"$@\"\n"))
+            .unwrap_or_else(|| "exit 0\n".into());
+        std::fs::write(
+            &p,
+            format!(
+                "#!/bin/sh\necho \"{name} $*\" >> {}\n{tail}",
+                self.hits.display()
+            ),
+        )
+        .unwrap();
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).unwrap();
         p.display().to_string()
@@ -141,7 +195,11 @@ impl Fx {
     pub fn take_hits(&self) -> Vec<String> {
         let text = std::fs::read_to_string(&self.hits).unwrap_or_default();
         let _ = std::fs::remove_file(&self.hits);
-        let mut names: Vec<String> = text.lines().filter_map(|l| l.split_whitespace().next()).map(String::from).collect();
+        let mut names: Vec<String> = text
+            .lines()
+            .filter_map(|l| l.split_whitespace().next())
+            .map(String::from)
+            .collect();
         names.sort();
         names.dedup();
         names
@@ -150,7 +208,15 @@ impl Fx {
 
 /// The snapshot's entries in the same shape as [`Fx::truth`].
 pub fn listing(s: &PinnedSnapshot) -> BTreeMap<String, (String, String)> {
-    s.entries().iter().map(|(p, e)| (p.clone(), (e.kind().as_str().to_string(), e.id().to_string()))).collect()
+    s.entries()
+        .iter()
+        .map(|(p, e)| {
+            (
+                p.clone(),
+                (e.kind().as_str().to_string(), e.id().to_string()),
+            )
+        })
+        .collect()
 }
 
 impl Fx {
@@ -168,7 +234,8 @@ impl Fx {
             .into_iter()
             .filter(|(_, (kind, _))| kind == "blob" || kind == "blob_executable")
             .map(|(path, (_, id))| {
-                let bytes = self.git_bytes(repo, &["--no-replace-objects", "cat-file", "blob", &id]);
+                let bytes =
+                    self.git_bytes(repo, &["--no-replace-objects", "cat-file", "blob", &id]);
                 (path, format!("{:x}", Sha256::digest(&bytes)))
             })
             .collect()
@@ -181,5 +248,8 @@ impl Fx {
 }
 
 pub fn shas(s: &PinnedSnapshot) -> BTreeMap<String, String> {
-    s.entries().iter().filter_map(|(p, e)| e.sha256().map(|h| (p.clone(), h.to_string()))).collect()
+    s.entries()
+        .iter()
+        .filter_map(|(p, e)| e.sha256().map(|h| (p.clone(), h.to_string())))
+        .collect()
 }
