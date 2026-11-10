@@ -739,6 +739,151 @@ fn missing_objects_are_cannot_read_never_invalid() {
     );
 }
 
+/// R-1b.4 item 2 (owner decision D-R12): a decision's or listed revision's document must be a
+/// regular file entry (100644 or 100755) backed by a verified blob, with or without `lines`. A
+/// link, tree or gitlink is an R-12 (current) or R-13 (listed) violation decided by the entry's
+/// mode; an unreadable blob of a regular document, or an unreadable tree on the way, is
+/// `cannot_read`.
+#[test]
+fn decision_documents_must_be_regular_files() {
+    let fx = Fx::new("validate-documents");
+    let (repo, i) = history(&fx, "r");
+    // G (child of B): t/ (a tree whose object is removed below), u/f.md under a tree that is
+    // removed below, w.md (a blob removed below) and docs/sub, a gitlink.
+    write(&repo.join("t/only-here.txt"), "t\n");
+    write(&repo.join("u/f.md"), "u-only\n");
+    write(&repo.join("w.md"), "w-only\n");
+    fx.git(&repo, &["add", "-A"]);
+    fx.git(
+        &repo,
+        &[
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            &format!("160000,{},docs/sub", i.x),
+        ],
+    );
+    fx.git(&repo, &["commit", "-q", "-m", "G"]);
+    let g = fx.git(&repo, &["rev-parse", "HEAD"]);
+    let t_tree = fx.git(&repo, &["rev-parse", &format!("{g}:t")]);
+    let u_tree = fx.git(&repo, &["rev-parse", &format!("{g}:u")]);
+    let w_blob = fx.git(&repo, &["rev-parse", &format!("{g}:w.md")]);
+    // Later register commits must not contain (and so rewrite) the objects removed below.
+    fx.git(&repo, &["rm", "-r", "-q", "t", "u", "w.md", "docs/sub"]);
+    let current_at = |r: &mut Reg, doc: &str, lines: Option<&str>| {
+        set(
+            r,
+            "decisions.json",
+            "/1/revision",
+            json!(format!("git:{g}")),
+        );
+        set(
+            r,
+            "applicability.jsonl",
+            "/1/decision_revision",
+            json!(format!("git:{g}")),
+        );
+        set(r, "decisions.json", "/1/document", json!(doc));
+        if let Some(l) = lines {
+            r.get_mut("decisions.json").unwrap()[1]["lines"] = json!(l);
+        }
+    };
+    let listed = |r: &mut Reg, doc: &str, lines: Option<&str>| {
+        let mut e = json!({"revision": format!("git:{}", &i.a[..7]), "anchor": "A0",
+                           "superseded_at": "2026-01-01", "reason": "r", "document": doc});
+        if let Some(l) = lines {
+            e["lines"] = json!(l);
+        }
+        set(r, "decisions.json", "/0/revisions/0", e);
+    };
+    let r12 = ("R-12", "decisions.json", None, "/1");
+    let r13 = ("R-13", "decisions.json", None, "/0/revisions/0");
+    let cases: Vec<(&str, Mutation, Expected)> = vec![
+        (
+            "current document is a tree, with lines",
+            Box::new(|r| current_at(r, "docs", Some("1-40"))),
+            r12,
+        ),
+        (
+            "current document is a tree, with lines far beyond any count",
+            Box::new(|r| current_at(r, "docs", Some("1-999999"))),
+            r12,
+        ),
+        (
+            "current document is a tree, without lines",
+            Box::new(|r| current_at(r, "docs", None)),
+            r12,
+        ),
+        (
+            "current document is a symbolic link, without lines",
+            Box::new(|r| current_at(r, "docs/l.md", None)),
+            r12,
+        ),
+        (
+            "current document is a symbolic link, with in-range lines",
+            Box::new(|r| current_at(r, "docs/l.md", Some("1"))),
+            r12,
+        ),
+        (
+            "current document is a gitlink",
+            Box::new(|r| current_at(r, "docs/sub", None)),
+            r12,
+        ),
+        (
+            "current document is a tree whose object is absent (mode decides)",
+            Box::new(|r| current_at(r, "t", None)),
+            r12,
+        ),
+        (
+            "listed document is a tree, with lines",
+            Box::new(|r| listed(r, "docs", Some("1-40"))),
+            r13,
+        ),
+        (
+            "listed document is a tree, without lines",
+            Box::new(|r| listed(r, "docs", None)),
+            r13,
+        ),
+        (
+            "listed document is a symbolic link",
+            Box::new(|r| listed(r, "docs/l.md", None)),
+            r13,
+        ),
+    ];
+    std::fs::remove_file(fx.loose(&repo, &t_tree)).unwrap();
+    for (name, mutate, expected) in cases {
+        let mut reg = base(&i);
+        mutate(&mut reg);
+        let c = commit(&fx, &repo, &reg, &|_| {});
+        assert_one(name, &violations(&repo, &c), expected);
+    }
+    // Regular documents are unchanged: in range is valid, beyond the blob is a violation.
+    let mut reg = base(&i);
+    current_at(&mut reg, "w.md", Some("1"));
+    let c = commit(&fx, &repo, &reg, &|_| {});
+    assert_eq!(category(run(&repo, &c)), "valid", "regular document");
+    let mut reg = base(&i);
+    current_at(&mut reg, "w.md", Some("1-2"));
+    let c = commit(&fx, &repo, &reg, &|_| {});
+    assert_one(
+        "regular document, lines beyond it",
+        &violations(&repo, &c),
+        ("R-12", "decisions.json", None, "/1/lines"),
+    );
+    // Required objects that cannot be read stay `cannot_read`.
+    std::fs::remove_file(fx.loose(&repo, &w_blob)).unwrap();
+    std::fs::remove_file(fx.loose(&repo, &u_tree)).unwrap();
+    for (name, doc) in [
+        ("regular document's blob absent", "w.md"),
+        ("tree on the way to the document absent", "u/f.md"),
+    ] {
+        let mut reg = base(&i);
+        current_at(&mut reg, doc, None);
+        let c = commit(&fx, &repo, &reg, &|_| {});
+        assert_eq!(category(run(&repo, &c)), "cannot_read", "{name}");
+    }
+}
+
 #[test]
 fn unanswerable_ancestry_is_cannot_read() {
     let fx = Fx::new("validate-ancestry");

@@ -303,7 +303,8 @@ enum AtPath {
         kind: EntryKind,
         id: ObjectId,
         /// Lines as Python counts them (`\n` count, plus one for an unterminated last line), for
-        /// entries whose object is a blob (files and links).
+        /// regular file entries (mode 100644 or 100755), whose blob has been read and verified.
+        /// A link's blob is read by [`Git::pin`], never here.
         lines: Option<u64>,
     },
 }
@@ -364,7 +365,7 @@ impl<'a> Git<'a> {
             Err(e) => return Err(e),
             Ok(None) => AtPath::Absent,
             Ok(Some(e)) => {
-                let lines = if e.kind.is_file() || e.kind == EntryKind::Link {
+                let lines = if e.kind.is_file() {
                     Some(line_count(&self.objects.blob(e.id)?))
                 } else {
                     None
@@ -429,21 +430,16 @@ impl<'a> Git<'a> {
         })
     }
 
-    /// `lines` must lie inside the entry (when its object is a blob, as Python counts).
+    /// `lines` must lie inside a blob of `count` lines (as Python counts).
     fn lines(
         lines: Option<Lines>,
-        entry: &AtPath,
+        count: Option<u64>,
         rule: RuleId,
         loc: Location,
         out: &mut Vec<Violation>,
     ) {
-        if let (
-            Some(l),
-            AtPath::Entry {
-                lines: Some(count), ..
-            },
-        ) = (lines, entry)
-            && l.last > *count
+        if let (Some(l), Some(count)) = (lines, count)
+            && l.last > count
         {
             out.push(violation(
                 rule,
@@ -462,6 +458,17 @@ impl<'a> Git<'a> {
             return Ok(());
         };
         let entry = self.at_path(commit, &pin.path)?;
+        // A link's object is a blob (stage B choice 3): read and verify it here, at the point
+        // where every pin entry's blob is read, so a missing link blob stays `cannot_read`.
+        let count = match &entry {
+            AtPath::Entry {
+                kind: EntryKind::Link,
+                id,
+                ..
+            } => Some(line_count(&self.objects.blob(*id)?)),
+            AtPath::Entry { lines, .. } => *lines,
+            _ => None,
+        };
         let bad = |detail: String, out: &mut Vec<Violation>| {
             out.push(violation(RuleId::R10, pin.at.clone(), detail))
         };
@@ -492,14 +499,18 @@ impl<'a> Git<'a> {
                 } else {
                     let mut lines_at = pin.at.clone();
                     lines_at.pointer.push_str("/lines");
-                    Self::lines(pin.lines, &entry, RuleId::R10, lines_at, out);
+                    Self::lines(pin.lines, count, RuleId::R10, lines_at, out);
                 }
             }
         }
         Ok(())
     }
 
-    /// A decision's or listed revision's document at its resolved commit.
+    /// A decision's (R-12) or listed revision's (R-13) document at its resolved commit: it must
+    /// be a regular file entry (mode 100644 or 100755) whose object is read and verified as a
+    /// blob, whether or not `lines` is given. A link, tree, gitlink or other entry is a violation
+    /// decided by its mode, without reading its object; an unreadable blob of a regular file, or
+    /// an unreadable tree on the way to it, is `cannot_read`.
     fn document(
         &mut self,
         commit: ObjectId,
@@ -509,17 +520,25 @@ impl<'a> Git<'a> {
         loc: &Location,
         out: &mut Vec<Violation>,
     ) -> Result<(), Error> {
-        let entry = self.at_path(commit, document)?;
-        if matches!(entry, AtPath::Absent | AtPath::BadPath) {
-            out.push(violation(
+        match self.at_path(commit, document)? {
+            AtPath::Absent | AtPath::BadPath => out.push(violation(
                 rule,
                 loc.clone(),
                 format!("{commit}:{document} does not resolve"),
-            ));
-        } else {
-            let mut lines_at = loc.clone();
-            lines_at.pointer.push_str("/lines");
-            Self::lines(lines, &entry, rule, lines_at, out);
+            )),
+            AtPath::Entry { kind, .. } if !kind.is_file() => out.push(violation(
+                rule,
+                loc.clone(),
+                format!(
+                    "{commit}:{document} is a {}, not a regular file",
+                    kind.as_str()
+                ),
+            )),
+            AtPath::Entry { lines: count, .. } => {
+                let mut lines_at = loc.clone();
+                lines_at.pointer.push_str("/lines");
+                Self::lines(lines, count, rule, lines_at, out);
+            }
         }
         Ok(())
     }

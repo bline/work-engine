@@ -168,8 +168,9 @@ impl GitObjects {
     }
 
     /// The entries of tree `id` with UTF-8 names, plus the raw names that are not UTF-8 (A6: the
-    /// register reports those as invalid content, R-01). Duplicate names (compared as bytes) and
-    /// names containing `/` are a malformed tree.
+    /// register reports those as invalid content, R-01). A duplicate name (compared as bytes) or a
+    /// name [`unsafe_entry_name`] refuses makes the tree malformed (`cannot_read`), checked on the
+    /// raw bytes before any path is formed from them.
     pub fn tree_listing(&self, id: ObjectId) -> Result<TreeListing, Error> {
         let data = self.read_kind(id, Kind::Tree)?;
         let malformed = |reason: String| CannotRead::Malformed {
@@ -190,10 +191,11 @@ impl GitObjects {
             };
             let raw: &[u8] = entry.filename.as_ref();
             let shown = String::from_utf8_lossy(raw);
-            // A name containing '/' or a repeated name is a malformed tree (git fsck reports
-            // both); reading it would make the snapshot and path lookups disagree or drop files.
-            if raw.contains(&b'/') {
-                return Err(malformed(format!("entry name {shown:?} contains '/'")).into());
+            // An unsafe or repeated name is a malformed tree (git fsck reports each); reading it
+            // would make the snapshot and path lookups disagree, drop files or let one entry
+            // stand for another.
+            if let Some(why) = unsafe_entry_name(raw) {
+                return Err(malformed(format!("entry name {shown:?} {why}")).into());
             }
             if !names.insert(raw.to_vec()) {
                 return Err(malformed(format!("duplicate entry name {shown:?}")).into());
@@ -478,6 +480,52 @@ fn parse_tag_target(id: ObjectId, data: &[u8]) -> Result<ObjectId, CannotRead> {
     }
 }
 
+/// Why a tree entry name is refused, or `None` for a safe name. One rule on every platform: the
+/// name is empty, `.`, `..`, contains `/`, or is equivalent to `.git` under the protections git
+/// applies to tree entries (`git fsck`'s `hasDotgit`, which runs both regardless of platform):
+///
+/// - HFS+: `.git` compared case-insensitively after removing the code points HFS+ ignores
+///   (U+200C-U+200F, U+202A-U+202E, U+206A-U+206F, U+FEFF), anywhere in the name;
+/// - NTFS: in any segment between backslashes, `.git` or the short name `git~1`
+///   (case-insensitive), followed only by dots and spaces up to the end or a `:` (alternate
+///   data stream).
+///
+/// Both checks are gix-validate's ports of git's `is_hfs_dotgit` and `is_ntfs_dotgit`; the split
+/// on backslash is git's own and is applied here because gix-validate leaves it to its Windows
+/// option, which also refuses unrelated names. Checked against `git fsck` 2.53.0 (R-1b.4).
+pub(crate) fn unsafe_entry_name(raw: &[u8]) -> Option<&'static str> {
+    use gix::validate::path::component::{self, Error as Refused, Options};
+    if raw.is_empty() {
+        return Some("is empty");
+    }
+    if raw == b"." || raw == b".." {
+        return Some("is '.' or '..'");
+    }
+    if raw.contains(&b'/') {
+        return Some("contains '/'");
+    }
+    let dotgit = |name: &[u8], options: Options| {
+        matches!(
+            gix::validate::path::component(name.into(), None, options),
+            Err(Refused::DotGitDir)
+        )
+    };
+    let hfs = component::Options {
+        protect_windows: false,
+        protect_hfs: true,
+        protect_ntfs: false,
+    };
+    let ntfs = component::Options {
+        protect_windows: false,
+        protect_hfs: false,
+        protect_ntfs: true,
+    };
+    if dotgit(raw, hfs) || raw.split(|b| *b == b'\\').any(|s| dotgit(s, ntfs)) {
+        return Some("is equivalent to '.git'");
+    }
+    None
+}
+
 /// Split a repository-relative tree path. Refuses empty, absolute, `.` and `..` components.
 pub(crate) fn split_tree_path(path: &str) -> Result<Vec<&str>, BadRequest> {
     let bad = |reason: &str| BadRequest::Path {
@@ -670,6 +718,65 @@ mod tests {
         assert_eq!(c.parents, vec![id(p), id(t)]);
         assert!(parse_commit(id(p), b"author x\n").is_err());
         assert!(parse_commit(id(p), format!("tree {}\n", &t[..39]).as_bytes()).is_err());
+    }
+
+    /// The names `git fsck --strict` 2.53.0 reports as `hasDotgit` (or refuses outright), and
+    /// look-alikes it accepts (R-1b.4 oracle run, `work/names_oracle.py`).
+    #[test]
+    fn security_unsafe_entry_names_match_git_fsck() {
+        let refused: &[&[u8]] = &[
+            b"",
+            b".",
+            b"..",
+            b"a/b",
+            b".git",
+            b".GIT",
+            b".Git",
+            b"git~1",
+            b"GIT~1",
+            b"git~1.",
+            b".git.",
+            b".git ",
+            b".git. .",
+            b".git::$INDEX_ALLOCATION",
+            b".git:x",
+            ".g\u{200c}it".as_bytes(),
+            "\u{200c}.git".as_bytes(),
+            ".git\u{feff}".as_bytes(),
+            ".GI\u{200d}T".as_bytes(),
+            b"a\\.git",
+            b".git\\a",
+            b"a\\git~1",
+            b".git\\",
+            b"\\.git",
+        ];
+        for name in refused {
+            assert!(
+                unsafe_entry_name(name).is_some(),
+                "{:?}",
+                String::from_utf8_lossy(name)
+            );
+        }
+        let accepted: &[&[u8]] = &[
+            b"git~2",
+            b".gitx",
+            b"git",
+            b".git~1",
+            b"x.git",
+            b".gitmodules",
+            b"git~1x",
+            b"...",
+            b"a\\b",
+            b"\xff.git",
+        ];
+        for name in accepted {
+            assert_eq!(
+                unsafe_entry_name(name),
+                None,
+                "{:?}",
+                String::from_utf8_lossy(name)
+            );
+        }
     }
 
     #[test]

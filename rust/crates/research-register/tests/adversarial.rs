@@ -910,6 +910,115 @@ fn security_malformed_register_tree_entries_are_cannot_read() {
     }
 }
 
+/// R-1b.4 item 1 (owner decision D-NAMES): empty, `.`, `..` and `.git`-equivalent entry names
+/// are refused when a tree is parsed, before any path is formed, at the register root, nested,
+/// and above the register path; look-alike names are read normally.
+#[test]
+fn security_unsafe_tree_entry_names_are_cannot_read() {
+    let fx = Fx::new("unsafe-names");
+    let (r, _, _) = fx.base("repo", &none);
+    let blob = |text: &str| {
+        fx.git_with(
+            &r,
+            &["hash-object", "-w", "--stdin"],
+            Some(text.as_bytes()),
+            &[],
+        )
+    };
+    let (b1, b2) = (blob("{\"v\": 1}\n"), blob("{\"v\": 2}\n"));
+    let refuse = |what: &str, commit: &str| {
+        judge(
+            &fx,
+            what,
+            read(&r, commit, "reg"),
+            &Expect::Refuse("cannot_read"),
+        )
+    };
+    let unsafe_names = [
+        "",
+        ".",
+        "..",
+        ".git",
+        ".GIT",
+        "git~1",
+        ".git.",
+        ".git ",
+        ".g\u{200c}it",
+        "a\\.git",
+    ];
+    for name in unsafe_names {
+        for mode in ["100644", "040000"] {
+            let id = if mode == "100644" {
+                b2.clone()
+            } else {
+                literal_tree(&fx, &r, &[("100644", "decisions.json", &b2)])
+            };
+            // At the register root, beside an ordinary file.
+            let reg = literal_tree(
+                &fx,
+                &r,
+                &[("100644", "decisions.json", &b1), (mode, name, &id)],
+            );
+            refuse(
+                &format!("{name:?} ({mode}) at the register root"),
+                &commit_with_register(&fx, &r, &reg),
+            );
+            // Nested one level down.
+            let sub = literal_tree(&fx, &r, &[(mode, name, &id)]);
+            let reg = literal_tree(
+                &fx,
+                &r,
+                &[("100644", "decisions.json", &b1), ("040000", "sub", &sub)],
+            );
+            refuse(
+                &format!("{name:?} ({mode}) nested"),
+                &commit_with_register(&fx, &r, &reg),
+            );
+        }
+    }
+    // Fable E1/E3 and the coordinator's f1 case: an empty-named subtree whose children would
+    // become register-root keys, replacing (both orders) or supplying decisions.json.
+    let inner = literal_tree(&fx, &r, &[("100644", "decisions.json", &b2)]);
+    let (b1s, inner) = (b1.as_str(), inner.as_str());
+    for (what, entries) in [
+        (
+            "empty-named subtree after decisions.json",
+            vec![("100644", "decisions.json", b1s), ("040000", "", inner)],
+        ),
+        (
+            "empty-named subtree before decisions.json",
+            vec![("040000", "", inner), ("100644", "decisions.json", b1s)],
+        ),
+        (
+            "empty-named subtree supplies decisions.json",
+            vec![("100644", "events.jsonl", b1s), ("040000", "", inner)],
+        ),
+    ] {
+        let reg = literal_tree(&fx, &r, &entries);
+        refuse(what, &commit_with_register(&fx, &r, &reg));
+    }
+    // Fable E4: an unsafe name above the register path (in the commit's root tree).
+    let reg = literal_tree(&fx, &r, &[("100644", "decisions.json", &b1)]);
+    for name in ["", ".git"] {
+        let root = literal_tree(&fx, &r, &[("040000", name, &reg), ("040000", "reg", &reg)]);
+        let c = fx.git(&r, &["commit-tree", &root, "-m", "unsafe root"]);
+        refuse(&format!("{name:?} in the root tree"), &c);
+    }
+    // Controls: names that only look like the refused ones are ordinary entries.
+    let entries: Vec<Entry> = [".gitx", "git", "git~2", ".git~1", "x.git", "..."]
+        .into_iter()
+        .map(|n| ("100644", n, b1.as_str()))
+        .collect();
+    let reg = literal_tree(&fx, &r, &entries);
+    let s = read(&r, &commit_with_register(&fx, &r, &reg), "reg")
+        .expect("BEHAVIOR: look-alike names are refused");
+    assert_eq!(
+        s.entries().keys().cloned().collect::<Vec<_>>(),
+        vec!["...", ".gitx", ".git~1", "git", "git~2", "x.git"],
+        "BEHAVIOR: look-alike names"
+    );
+}
+
 #[test]
 fn security_namespace_settings_cannot_redirect_a_reference() {
     let fx = Fx::new("namespace");
