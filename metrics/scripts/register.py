@@ -5,8 +5,8 @@ Standard library only. No network and no model calls. Writes only to --out.
 Records what studies observed and what they support, kept apart from present
 applicability and from authority to change decisions. See metrics/register/README.md.
 
-    python3 -I metrics/scripts/register.py validate [--register DIR] [--repo DIR] [--check-offrepo]
-    python3 -I metrics/scripts/register.py build --out DIR [--register DIR] [--repo DIR]
+    python3 -I metrics/scripts/register.py validate [--register DIR] [--repo DIR] [--check-offrepo] [--at COMMIT]
+    python3 -I metrics/scripts/register.py build --out DIR [--register DIR] [--repo DIR] [--at COMMIT]
     python3 -I metrics/scripts/register.py nominate --out FILE [--register DIR] [--repo DIR]
         [--claims-host PATH --startup PATH --startup-sha256 HEX]
     python3 -I metrics/scripts/register.py anchors --out DIR [--register DIR] [--repo DIR] [--at COMMIT]
@@ -156,20 +156,25 @@ class Register:
         self.errors = errors
         self.questions = self._json("questions.json", [])
         self.studies = []
-        sdir = os.path.join(root, "studies")
-        if os.path.isdir(sdir):
-            for name in sorted(os.listdir(sdir)):
-                if name.endswith(".json"):
-                    doc = self._json(os.path.join("studies", name), None)
-                    if doc is not None:
-                        self.studies.append((name, doc))
-        else:
+        names = self._study_names()
+        if names is None:
             errors.add("missing-file", "studies/", "directory not found")
+        for name in names or []:
+            doc = self._json(os.path.join("studies", name), None)
+            if doc is not None:
+                self.studies.append((name, doc))
         self.events = self._jsonl("events.jsonl")
         self.judgments = self._jsonl("judgments.jsonl")
         self.decisions = self._json("decisions.json", [])
         self.applicability = self._jsonl("applicability.jsonl")
         self.materialized = self._jsonl("materialized.jsonl")
+
+    def _study_names(self):
+        """Sorted names ending .json directly under studies/, or None when studies/ is not a directory."""
+        sdir = os.path.join(self.root, "studies")
+        if not os.path.isdir(sdir):
+            return None
+        return [name for name in sorted(os.listdir(sdir)) if name.endswith(".json")]
 
     def _read(self, rel):
         path = os.path.join(self.root, rel)
@@ -716,16 +721,214 @@ def check_offrepo(reg):
     return mismatches, report
 
 
-def load_valid(register_dir, repo, extra=None):
+# ---------------------------------------------------------------------------
+# pinned reads: the whole register from the Git objects of one commit (validate --at, build --at)
+# ---------------------------------------------------------------------------
+
+SCHEMA_SNAPSHOT = "register_snapshot_manifest_v1"
+EXIT_PINNED_CANNOT_RUN = 4  # --at does not resolve to a commit, or the register is not a directory there
+# every file Register reads, besides the .json files directly under studies/
+REGISTER_FILES = ("questions.json", "events.jsonl", "judgments.jsonl", "decisions.json", "applicability.jsonl",
+                  "materialized.jsonl")
+REGULAR_MODES = ("100644", "100755")
+
+
+class SnapshotError(Exception):
+    pass
+
+
+def tool_identity():
+    """The running register.py, by content: sha256 and the Git blob id it would have (SHA-1 object format)."""
+    with open(os.path.abspath(__file__), "rb") as fh:
+        data = fh.read()
+    return {"name": os.path.basename(__file__), "sha256": hashlib.sha256(data).hexdigest(),
+            "git_blob_sha1": hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()}
+
+
+class Snapshot:
+    """The register read whole from the Git objects of one commit. Nothing is read from the working tree.
+
+    files: path relative to the register directory -> bytes, for every input that is a regular file there.
+    blobs: the same paths -> (mode, blob id). missing: a required input that is absent or not a regular
+    file -> reason. studies: sorted .json names directly under studies/, or None when studies/ is not a
+    directory at the commit."""
+
+    def __init__(self, commit, register_path, register_tree):
+        self.commit, self.register_path, self.register_tree = commit, register_path, register_tree
+        self.files, self.blobs, self.missing, self.studies = {}, {}, {}, None
+
+    def repo_path(self, rel):
+        return rel if self.register_path == "." else f"{self.register_path}/{rel}"
+
+    def manifest(self):
+        """Data identity (commit, register tree, input blobs) and code identity (tool), as separate fields."""
+        return {"schema": SCHEMA_SNAPSHOT, "read_from": "git", "commit": self.commit,
+                "register_path": self.register_path, "register_tree": self.register_tree,
+                "inputs": [{"path": self.repo_path(rel), "mode": self.blobs[rel][0], "blob": self.blobs[rel][1],
+                            "sha256": hashlib.sha256(self.files[rel]).hexdigest()} for rel in sorted(self.blobs)],
+                "missing": [{"path": self.repo_path(rel), "reason": self.missing[rel]} for rel in sorted(self.missing)],
+                "tool": tool_identity()}
+
+
+def read_snapshot(git, rev, register_dir, repo):
+    """Read the whole register at the commit `rev` names, from Git objects only. `git` is an AnchorGit.
+
+    The commit is resolved once; the register tree and every input blob are then read from that commit's
+    tree, so all inputs come from one snapshot. Raises SnapshotError when `rev` does not resolve to a
+    commit, the register directory lies outside the repository, or the register path is not a directory
+    at the commit. A missing or non-regular input is recorded in Snapshot.missing, not raised."""
+    commit = git.commit_id(rev)
+    if commit is None:
+        raise SnapshotError(f"--at {rev!r} does not resolve to a commit in {repo}")
+    # lexical on purpose (abspath normalises without resolving links): a symbolic link in the working tree
+    # must not change which committed directory is read (review: Astra F1)
+    rel = os.path.relpath(os.path.abspath(register_dir), os.path.abspath(repo))
+    if rel == ".." or rel.startswith(".." + os.sep) or os.path.isabs(rel):
+        raise SnapshotError(f"register directory {register_dir} is outside the repository {repo}; "
+                            "--at reads the register from the pinned commit")
+    rel = rel.replace(os.sep, "/")
+    out = git.run("rev-parse", "--verify", "-q", f"{commit}^{{tree}}" if rel == "." else f"{commit}:{rel}")
+    tree = out.decode("utf-8", "replace").strip() if out else ""
+    if not tree or (git.run("cat-file", "-t", tree) or b"").strip() != b"tree":
+        raise SnapshotError(f"{rel} is not a directory at {commit}")
+    listing = git.run("ls-tree", "-r", "-t", "-z", tree)
+    if listing is None:
+        raise SnapshotError(f"cannot list {rel} at {commit}")
+    entries = {}
+    for item in listing.split(b"\0"):
+        if item:
+            meta, _, name = item.partition(b"\t")
+            mode, kind, oid = meta.decode("ascii").split(" ")
+            entries[os.fsdecode(name)] = (mode, kind, oid)
+    snap = Snapshot(commit, rel, tree)
+
+    def take(name):
+        entry = entries.get(name)
+        if entry is None:
+            snap.missing[name] = f"not found at {commit}"
+        elif entry[1] != "blob" or entry[0] not in REGULAR_MODES:
+            snap.missing[name] = f"not a regular file at {commit} (mode {entry[0]}, {entry[1]})"
+        else:
+            data = git.run("cat-file", "blob", entry[2])
+            if data is None:
+                raise SnapshotError(f"cannot read blob {entry[2]} ({snap.repo_path(name)}) at {commit}")
+            snap.files[name], snap.blobs[name] = data, (entry[0], entry[2])
+
+    for name in REGISTER_FILES:
+        take(name)
+    if entries.get("studies", ("", ""))[1] == "tree":
+        snap.studies = sorted(n[len("studies/"):] for n in entries
+                              if n.startswith("studies/") and "/" not in n[len("studies/"):] and n.endswith(".json"))
+        for name in snap.studies:
+            take(f"studies/{name}")
+    else:
+        snap.missing["studies/"] = f"directory not found at {commit}"
+    return snap
+
+
+class PinnedRegister(Register):
+    """Register records parsed from a Snapshot. Reads nothing from disk."""
+
+    def __init__(self, snapshot, errors):
+        self.snapshot = snapshot
+        super().__init__(None, errors)
+
+    def _study_names(self):
+        return self.snapshot.studies
+
+    def _read(self, rel):
+        rel = rel.replace(os.sep, "/")
+        if rel in self.snapshot.missing:
+            self.errors.add("missing-file", rel, self.snapshot.missing[rel])
+            return None
+        data = self.snapshot.files.get(rel)
+        if data is None:
+            self.errors.add("missing-file", rel, f"not read from {self.snapshot.commit}")
+            return None
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            self.errors.add("bad-encoding", rel, f"not UTF-8 at {self.snapshot.commit}: {exc}")
+            return None
+        # the newline translation reading the file in text mode applies
+        return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+class PinnedGit(Git):
+    """Git for checking source pins in pinned mode, with AnchorGit's object-access policy: GIT_* variables
+    dropped, global and system configuration ignored, replace objects, graft files, commit-graph files and lazy fetch off,
+    no optional locks. Unpinned
+    validation keeps Git (review: Astra F2, Sonnet F1)."""
+
+    def __init__(self, repo):
+        super().__init__(repo)
+        self.anchor = AnchorGit(repo)
+
+    def run(self, *args):
+        if args not in self.cache:
+            out = self.anchor.run(*args)
+            self.cache[args] = out.decode("utf-8", "replace").strip() if out is not None else None
+        return self.cache[args]
+
+    def line_count(self, commit, path):
+        key = ("line_count", commit, path)
+        if key not in self.cache:
+            data = self.anchor.run("cat-file", "blob", f"{commit}:{path}")
+            self.cache[key] = None if data is None else (
+                data.count(b"\n") + (1 if data and not data.endswith(b"\n") else 0))
+        return self.cache[key]
+
+    def is_ancestor(self, a, b):
+        key = ("is-ancestor", a, b)
+        if key not in self.cache:
+            p = subprocess.run(self.anchor.argv("merge-base", "--is-ancestor", a, b), capture_output=True,
+                               check=False, env=self.anchor.env)
+            self.cache[key] = p.returncode == 0 if p.returncode in (0, 1) else None
+        return self.cache[key]
+
+
+def pinned_snapshot(cmd, args):
+    """read_snapshot for --at, or None after printing why the command cannot run."""
+    git = AnchorGit(args.repo)
+    try:
+        if git.is_shallow():
+            # ancestry over history cut at a shallow boundary is not determined by the commit
+            raise SnapshotError(f"{args.repo} is a shallow repository; pinned mode needs its complete history")
+        return read_snapshot(git, args.at, args.register, args.repo)
+    except SnapshotError as exc:
+        print(f"{cmd}: cannot run, {exc}")
+        return None
+
+
+def snapshot_lines(snap, requested):
+    """The manifest as report lines, each starting `snapshot `, printed before the command's own output."""
+    m = snap.manifest()
+    lines = [f"snapshot read_from git requested {json.dumps(requested)} commit {m['commit']} "
+             f"register {m['register_path']} tree {m['register_tree']}"]
+    lines += [f"snapshot input {i['mode']} {i['blob']} {i['sha256']} {i['path']}" for i in m["inputs"]]
+    lines += [f"snapshot missing {x['path']}: {x['reason']}" for x in m["missing"]]
+    t = m["tool"]
+    lines.append(f"snapshot tool {t['name']} sha256 {t['sha256']} git_blob_sha1 {t['git_blob_sha1']}")
+    return lines
+
+
+def load_valid(register_dir, repo, extra=None, snapshot=None):
     errors = Errors()
-    reg = Register(register_dir, errors)
-    git = Git(repo)
+    reg = Register(register_dir, errors) if snapshot is None else PinnedRegister(snapshot, errors)
+    git = Git(repo) if snapshot is None else PinnedGit(repo)
     fids = validate_register(reg, git)
     return reg, errors, fids
 
 
 def cmd_validate(args):
-    reg, errors, fids = load_valid(args.register, args.repo)
+    snap = None
+    if args.at is not None:
+        snap = pinned_snapshot("validate", args)
+        if snap is None:
+            return EXIT_PINNED_CANNOT_RUN
+        for line in snapshot_lines(snap, args.at):
+            print(line)
+    reg, errors, fids = load_valid(args.register, args.repo, snapshot=snap)
     report = []
     if args.check_offrepo:
         mism, report = check_offrepo(reg)
@@ -884,13 +1087,108 @@ def refuse_out_in_register(cmd, out, register):
 def cmd_build(args):
     if refuse_out_in_register("build", args.out, args.register):
         return 2
+    if args.at is not None:
+        return build_at(args)
     reg, errors, _ = load_valid(args.register, args.repo)
     if errors:
         for name, loc, msg in errors.items:
             print(f"ERROR {name} {loc}: {msg}")
         print("build: refused, the register does not validate")
         return 1
-    findings, events, decisions, appl, per = derive(reg, AnchorGit(args.repo))
+    json_text, md_text = render_view(reg, args.repo)
+    os.makedirs(args.out, exist_ok=True)
+    with open(os.path.join(args.out, "current-knowledge.json"), "w", encoding="utf-8") as fh:
+        fh.write(json_text)
+    with open(os.path.join(args.out, "current-knowledge.md"), "w", encoding="utf-8") as fh:
+        fh.write(md_text)
+    print(f"build: wrote current-knowledge.json and current-knowledge.md to {args.out}")
+    return 0
+
+
+VIEW_NAMES = ("current-knowledge.json", "current-knowledge.md")
+SNAPSHOT_NAME = "snapshot.json"
+
+
+def build_at(args):
+    """build --at: the view from one commit's register, byte-identical to `build` on a clean checkout of that
+    commit, with the snapshot manifest in snapshot.json beside it (never inside the view). Nothing is written
+    unless the snapshot reads and validates. snapshot.json also records each view file's sha256 (`outputs`)
+    and is published last (publish_generation)."""
+    git = AnchorGit(args.repo)
+    for gd in [os.path.join(args.repo, ".git"), *git.git_dirs()]:
+        if inside(args.out, gd):
+            print(f"build: refused, --out {args.out} is inside the repository's git directory {gd}")
+            return 2
+    for name in (*VIEW_NAMES, SNAPSHOT_NAME):
+        path = os.path.join(args.out, name)
+        if os.path.islink(path):
+            print(f"build: refused, output path {path} is a symbolic link; nothing was written")
+            return 2
+    snap = pinned_snapshot("build", args)
+    if snap is None:
+        return EXIT_PINNED_CANNOT_RUN
+    for line in snapshot_lines(snap, args.at):
+        print(line)
+    reg, errors, _ = load_valid(args.register, args.repo, snapshot=snap)
+    if errors:
+        for name, loc, msg in errors.items:
+            print(f"ERROR {name} {loc}: {msg}")
+        print("build: refused, the register does not validate")
+        return 1
+    json_text, md_text = render_view(reg, args.repo)
+    try:
+        os.makedirs(args.out, exist_ok=True)
+        real_out = os.path.realpath(args.out)
+        if refuse_out_in_register("build", real_out, args.register) or any(inside(real_out, gd) for gd in git.git_dirs()):
+            print(f"build: refused, --out resolves to {real_out}, inside the register or a git directory")
+            return 2
+        manifest = snap.manifest()
+        manifest["outputs"] = {VIEW_NAMES[0]: hashlib.sha256(json_text.encode("utf-8")).hexdigest(),
+                               VIEW_NAMES[1]: hashlib.sha256(md_text.encode("utf-8")).hexdigest()}
+        publish_generation(real_out, {VIEW_NAMES[0]: json_text, VIEW_NAMES[1]: md_text}, SNAPSHOT_NAME,
+                           dumps(manifest))
+    except OSError as exc:
+        print(f"build: cannot run, writing to --out failed: {exc}")
+        return EXIT_PINNED_CANNOT_RUN
+    print(f"build: wrote current-knowledge.json, current-knowledge.md and snapshot.json to {args.out} "
+          f"(pinned {snap.commit})")
+    return 0
+
+
+def publish_generation(out, views, manifest_name, manifest_text):
+    """Publish view files and the manifest that describes them, so that a manifest is never left beside
+    views it does not describe (review: Sonnet F2, Astra F3). Content integrity comes from the view digests
+    inside the manifest; this ordering does not make publication atomic. Every file is first written under
+    a fresh temporary name (O_EXCL, O_NOFOLLOW); then the old manifest is removed, the views are renamed
+    into place, and the manifest is renamed in last. A failure leaves either the previous files untouched
+    or no manifest. Raises OSError."""
+    temps = {}
+    try:
+        for name, text in sorted({**views, manifest_name: manifest_text}.items()):
+            tmp = os.path.join(out, f".{name}.{os.getpid()}.tmp")
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o644)
+            temps[name] = tmp
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        final = os.path.join(out, manifest_name)
+        if os.path.lexists(final):
+            os.unlink(final)
+        for name in sorted(views):
+            os.replace(temps[name], os.path.join(out, name))
+            del temps[name]  # only once renamed: a failed rename leaves the temporary file for cleanup
+        os.replace(temps[manifest_name], final)
+        del temps[manifest_name]
+    finally:
+        for tmp in temps.values():
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
+
+def render_view(reg, repo):
+    """The current-knowledge view of a validated register: (JSON text, Markdown text)."""
+    findings, events, decisions, appl, per = derive(reg, AnchorGit(repo))
     k_index = {}
     for fid, row in per.items():
         for alias in row["aliases"]:
@@ -907,13 +1205,7 @@ def cmd_build(args):
            "authority": "generated view; edit the register, never this file; decision owners decide",
            "k_index": {k: k_index[k] for k in sorted(k_index, key=k_sort)},
            "findings": per, "questions": questions}
-    os.makedirs(args.out, exist_ok=True)
-    with open(os.path.join(args.out, "current-knowledge.json"), "w", encoding="utf-8") as fh:
-        fh.write(dumps(doc))
-    with open(os.path.join(args.out, "current-knowledge.md"), "w", encoding="utf-8") as fh:
-        fh.write(render_md(doc))
-    print(f"build: wrote current-knowledge.json and current-knowledge.md to {args.out}")
-    return 0
+    return dumps(doc), render_md(doc)
 
 
 def historical_source_md(h):
@@ -1112,23 +1404,31 @@ AFTER_STATES = ("carried_unchanged", "owner_review_required", "pending_judgment_
 class AnchorGit:
     """Read-only git access. Every call that is interpreted carries explicit options and the process
     environment is rebuilt, so the result depends neither on the caller's GIT_* variables (GIT_DIR,
-    GIT_DIFF_OPTS, GIT_CONFIG_*, ...) nor on replace refs nor on system, global or repository
-    configuration that changes diff, rename or object reading. It never refreshes the index."""
+    GIT_DIFF_OPTS, GIT_CONFIG_*, ...) nor on replace refs, graft files or commit-graph files nor on system,
+    global or repository configuration that changes diff, rename or object reading: parents come from the
+    commit objects. It never refreshes the index and never fetches an object missing locally."""
 
     DIFF = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--text", "--minimal", "--no-renames",
             "--no-indent-heuristic", "--inter-hunk-context=0", "-U0"]
-    # configuration keys that change diff or rename output, pinned on the command line
+    # pinned on the command line: keys that change diff or rename output, and commit-graph reads off so a
+    # forged objects/info/commit-graph cannot change parents (review: S4-min r1 re-review)
     CONFIG = ("diff.algorithm=myers", "diff.renames=false", "diff.context=0",
               "diff.interHunkContext=0", "diff.indentHeuristic=false", "diff.noprefix=false",
               "diff.mnemonicPrefix=false", "diff.relative=false",
-              "core.quotepath=false", "core.autocrlf=false", "core.safecrlf=false")
+              "core.quotepath=false", "core.autocrlf=false", "core.safecrlf=false",
+              "core.commitGraph=false")
 
     def __init__(self, repo):
         self.repo = repo
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
         self.env.update({"GIT_OPTIONAL_LOCKS": "0", "GIT_CONFIG_GLOBAL": os.devnull,
                          "GIT_CONFIG_SYSTEM": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
-                         "GIT_NO_REPLACE_OBJECTS": "1"})
+                         "GIT_NO_REPLACE_OBJECTS": "1",
+                         # an empty graft file: .git/info/grafts cannot rewrite parents (review: r1 R1-1)
+                         "GIT_GRAFT_FILE": os.devnull,
+                         # no lazy fetch: an object missing locally fails instead of running a transport
+                         # named in repository configuration and writing packs (review: r2 R2-1)
+                         "GIT_NO_LAZY_FETCH": "1"})
         self.cache = {}
 
     def argv(self, *args):
@@ -1140,6 +1440,11 @@ class AnchorGit:
             p = subprocess.run(self.argv(*args), capture_output=True, check=False, env=self.env)
             self.cache[args] = p.stdout if p.returncode == 0 else None
         return self.cache[args]
+
+    def is_shallow(self):
+        """True in a shallow repository, whose history is cut off at the shallow boundary."""
+        out = self.run("rev-parse", "--is-shallow-repository")
+        return out is not None and out.strip() == b"true"
 
     def commit_id(self, rev):
         """A commit named by a ref, tag or expression (used for --at)."""
@@ -2020,9 +2325,13 @@ def main(argv=None):
     v = sub.add_parser("validate")
     common(v)
     v.add_argument("--check-offrepo", action="store_true")
+    pinned_help = ("read the whole register from this commit's Git objects, never from the working tree; "
+                   "the snapshot manifest is reported separately from the command's output")
+    v.add_argument("--at", default=None, help=pinned_help)
     b = sub.add_parser("build")
     common(b)
     b.add_argument("--out", required=True)
+    b.add_argument("--at", default=None, help=pinned_help)
     n = sub.add_parser("nominate")
     common(n)
     n.add_argument("--out", required=True)
