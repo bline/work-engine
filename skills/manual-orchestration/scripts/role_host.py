@@ -55,6 +55,14 @@ OpenAI endpoint, n = 1 per cell; no provider was contacted)
            provider to be an API key, `subscription` an OAuth login. A service
            tier is accepted only on the api lane for provider openai, and is
            sent and observed by scripts/pi_service_tier.ts.
+  container  (--container; probe metrics/probes/pi-docker-host-20261109.json,
+           docker 29.7.2) each turn runs in a no-network container with the
+           host's /usr and /etc read-only and only the listed folders mounted,
+           at the same paths. scripts/pi_container.py runs it detached and
+           serves the egress proxy on a mounted Unix socket: the API key stays
+           on the host, the proxy pins model and tier and logs what the
+           provider reported. A later turn refuses to run if the environment
+           fingerprint changed since launch.
 
 Children: every launch with --parent appends to a ledger, so a root's
 cross-CLI children are parent-scoped by construction. Children started any
@@ -69,10 +77,12 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import signal
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 import tomllib
 import uuid
@@ -82,6 +92,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import codex_app  # noqa: E402
 
 OK, DEFECT, NOT_ESTABLISHED, BUSY, USAGE = 0, 21, 32, 40, 64
+
+def _pi_container():
+    """Container mode's module, imported only when used: other callers keep
+    role_host's import set to codex_app (tests/test_auto_continue.py)."""
+    import pi_container
+    return pi_container
+
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 DEFAULT_STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "work-engine/role-host"
 
@@ -901,16 +918,175 @@ class Pi:
     def _turns(self, sid, ledger):
         return [r for r in ledger.rows() if r.get("session_id") == sid and r.get("host") == self.name]
 
-    def _spawn(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None):
+    def _launch_row(self, sid, ledger):
+        if ledger is None:
+            return None
+        return next((r for r in self._turns(sid, ledger) if r.get("event") == "launch"), None)
+
+    def _session_dir_for(self, sid, ledger):
+        env = (self._launch_row(sid, ledger) or {}).get("container_environment") or {}
+        return env.get("session_dir")
+
+    # ---- container mode ----
+    @staticmethod
+    def docker():
+        return os.environ.get("ROLE_HOST_DOCKER_EXE", "docker")
+
+    @staticmethod
+    def socket_root() -> Path:
+        return Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / "we-pi"
+
+    def container_environment(self, sid, ledger, *, cwd, container, opts) -> dict:
+        """Validate a container request and prepare the session's directories."""
+        state = ledger.path.parent
+        try:
+            runtime = _pi_container().runtime_paths(os.environ.get("ROLE_HOST_PI_RUNTIME", _pi_container().DEFAULT_RUNTIME))
+            home = os.path.expanduser("~")
+            mounts = _pi_container().mount_plan(cwd, container.get("ro") or (), container.get("rw") or (), home=home,
+                                             reserved=[str(state), str(self.socket_root())])
+            limits = _pi_container().validate_limits(container.get("memory", "4g"), container.get("pids", 512),
+                                                  container.get("cpus", "2"))
+        except _pi_container().ContainerError as e:
+            raise HostError(USAGE if e.status == "usage" else NOT_ESTABLISHED, e.status, e.detail)
+        if _run([self.docker(), "image", "inspect", "--format", "{{.Id}}", _pi_container().IMAGE]).returncode != 0:
+            raise HostError(NOT_ESTABLISHED, "image_not_found",
+                            f"{_pi_container().IMAGE} is not present locally; pull it once with `docker pull {_pi_container().IMAGE}`")
+        binary = None
+        if container.get("codebase_memory"):
+            binary = _pi_container().default_codebase_memory()
+            if not os.access(binary, os.X_OK):
+                raise HostError(NOT_ESTABLISHED, "codebase_memory_not_found", f"{binary} is not executable")
+        base = state / "pi" / sid
+        cdir, hdir = base / "container", base / "host"
+        env = {"runtime": runtime, "mounts": mounts, "limits": limits, "uid": os.getuid(), "gid": os.getgid(),
+               "home": home, "container_dir": str(cdir), "host_dir": str(hdir),
+               "agent_dir": str(cdir / "agent"), "session_dir": str(cdir / "sessions"),
+               "max_requests": container.get("max_requests"),
+               "selection": {"model": opts["model"], "tier": opts["tier"], "thinking": opts["thinking"],
+                             "pi_argv": opts["argv"]},
+               "user": os.environ.get("USER") or os.environ.get("LOGNAME") or "",
+               "lang": os.environ.get("LANG") or "C.UTF-8"}
+        for d in (cdir / "agent", cdir / "sessions", hdir):
+            d.mkdir(parents=True, exist_ok=True)
+        os.chmod(cdir, 0o700)
+        os.chmod(hdir, 0o700)
+        (cdir / "agent" / "models.json").write_text(json.dumps(
+            {"providers": {"openai": {"baseUrl": f"http://127.0.0.1:{_pi_container().RELAY_PORT}/v1"}}}) + "\n")
+        (cdir / "agent" / "settings.json").write_text("{}\n")
+        if binary:
+            env["codebase_memory"] = self._prepare_codebase_memory(binary, cwd=str(Path(cwd).resolve()), env=env)
+        env["fingerprint"] = _pi_container().fingerprint(env)
+        return env
+
+    def _prepare_codebase_memory(self, binary, *, cwd, env) -> dict:
+        """A fresh index of exactly the working directory, verified inside the container profile.
+
+        The shared cache holds every project's index; this session gets only its
+        own, so nothing indexed from outside its mounts can reach the agent.
+        """
+        cdir = Path(env["container_dir"])
+        cache = cdir / "cbm-cache"
+        cache.mkdir(mode=0o700, parents=True, exist_ok=True)
+        # The server's coordination socket lives in its runtime directory, which
+        # must already exist, be private, and keep the socket path within 108
+        # bytes. On the host: a short temporary dir; in the container: a tmpfs.
+        self.socket_root().mkdir(mode=0o700, parents=True, exist_ok=True)
+        host_runtime = Path(tempfile.mkdtemp(prefix="cbm-", dir=self.socket_root()))
+        runtime = _pi_container().CBM_RUNTIME
+        try:
+            indexed = _pi_container().index_codebase_memory(binary, cwd, cache=str(cache), runtime=str(host_runtime),
+                                                         env=child_env())
+            version = _run([binary, "--version"]).stdout.strip()
+            cbm = {"binary": binary, "version": version, "project": indexed["project"], "root_path": cwd,
+                   "cache_dir": str(cache), "runtime_dir": runtime,
+                   "files_indexed": indexed.get("files_indexed"), "nodes": indexed.get("nodes")}
+            db = cache / f"{indexed['project']}.db"
+            cbm["index_db_sha256_at_launch"] = _pi_container().file_sha256(db) if db.exists() else None
+            cbm["check"] = _pi_container().check_codebase_memory(self.docker(), {**env, "codebase_memory": cbm},
+                                                             cwd=cwd, container_dir=str(cdir))
+        except _pi_container().ContainerError as e:
+            raise HostError(NOT_ESTABLISHED, e.status, e.detail)
+        finally:
+            shutil.rmtree(host_runtime, ignore_errors=True)
+        (cdir / "agent" / "mcp.json").write_text(json.dumps({"mcpServers": {"codebase-memory-mcp": {
+            "command": binary, "args": [], "exposure": "direct",
+            "env": {"CBM_CACHE_DIR": str(cache), "CBM_RUNTIME_DIR": runtime}}}}, indent=1) + "\n")
+        return cbm
+
+    def _check_environment(self, env, *, cwd, ledger) -> dict:
+        """A later turn runs only in the environment its session launched in."""
+        pc = _pi_container()
+        try:
+            runtime = pc.runtime_paths(env["runtime"]["root"])
+            # Re-plan from the recorded paths: a mount replaced by a symlink, or
+            # one that now crosses a boundary, plans differently and is refused.
+            replanned = pc.mount_plan(cwd, [p for p, m in env["mounts"] if m == "ro"],
+                                      [p for p, m in env["mounts"] if m == "rw"], home=env["home"],
+                                      reserved=[str(ledger.path.parent), str(self.socket_root())])
+        except pc.ContainerError as e:
+            raise HostError(NOT_ESTABLISHED, "environment_changed", e.detail)
+        if replanned != env["mounts"]:
+            raise HostError(NOT_ESTABLISHED, "environment_changed",
+                            f"mounts now resolve to {replanned}, not {env['mounts']}")
+        now = pc.fingerprint({**env, "runtime": runtime})
+        if now["sha256"] != env["fingerprint"]["sha256"]:
+            changed = sorted(k for k in now if k != "sha256" and now[k] != env["fingerprint"].get(k))
+            raise HostError(NOT_ESTABLISHED, "environment_changed",
+                            f"the container environment differs from launch in {', '.join(changed)}; "
+                            "launch a new session to run in it")
+        return {**env, "runtime": runtime}
+
+    def provider_key(self, opts, *, cwd) -> str:
+        """The host Pi's API key for the egress proxy. Held in memory only."""
+        r = _run([self.exe, "auth", "print-api-key", "--provider", opts["provider"]], cwd=cwd, timeout=60)
+        key = r.stdout.strip() if r.returncode == 0 else ""
+        if not key.startswith("sk-"):
+            raise HostError(NOT_ESTABLISHED, "credential_not_ready",
+                            f"pi auth print-api-key for {opts['provider']} gave no sk- API key (exit {r.returncode})")
+        return key
+
+    def _leftovers(self, row) -> dict:
+        """A container turn's container and socket dir that still exist."""
+        if not row.get("container"):
+            return {}
+        out = {}
+        name = row["container"]["name"]
+        if self._container_state(name) is not None:
+            out["container"] = name
+        socket_dir = self.socket_root() / f"{row['session_id']}-{row['turn']}"
+        if socket_dir.exists():
+            out["socket_dir"] = str(socket_dir)
+        return out
+
+    def _collect_leftovers(self, row) -> dict:
+        """Remove a turn's leftover container and socket dir; refuse if removal fails."""
+        found = self._leftovers(row)
+        if "container" in found:
+            r = _run([self.docker(), "rm", "-f", found["container"]])
+            if r.returncode != 0 or self._container_state(found["container"]) is not None:
+                raise HostError(NOT_ESTABLISHED, "retire_not_established",
+                                f"docker rm -f {found['container']}: {r.stderr.strip()[:200]}")
+        if "socket_dir" in found:
+            shutil.rmtree(found["socket_dir"], ignore_errors=True)
+        return found
+
+    def _container_state(self, name):
+        """True running, False exists stopped, None absent."""
+        r = _run([self.docker(), "inspect", "--format", "{{.State.Running}}", name])
+        if r.returncode != 0:
+            return None
+        return r.stdout.strip() == "true"
+
+    # ---- turns ----
+    def _spawn(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None, env=None):
         turn = sum(1 for r in self._turns(sid, ledger) if r.get("turn")) + 1
+        if env is not None:
+            return self._spawn_container(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event=event,
+                                         turn=turn, env=env, name=name, parent=parent)
         folder = ledger.path.parent / "pi" / sid
         folder.mkdir(parents=True, exist_ok=True)
         files = {k: folder / f"turn-{turn}.{suffix}" for k, suffix in self.TURN_FILES.items()}
-        try:
-            with open(files["prompt"], "x") as fh:
-                fh.write(prompt)
-        except FileExistsError:
-            raise HostError(NOT_ESTABLISHED, "turn_not_established", f"{files['prompt']} already exists")
+        self._write_prompt(files["prompt"], prompt)
         argv = [self.exe, "--mode", "json", "--session-id", sid, "-e", str(self.EXTENSION), *opts["argv"]]
         if name:
             argv += ["--name", name]
@@ -924,13 +1100,70 @@ class Pi:
                                     stderr=subprocess.DEVNULL, start_new_session=True)
         except OSError as e:
             raise HostError(NOT_ESTABLISHED, "fail_launch", f"pi turn: {e}")
-        row = {"host": self.name, "event": event, "session_id": sid, "turn": turn, "pid": proc.pid,
-               "pid_start": self._start_time(proc.pid), "at_epoch": time.time(),
-               "files": {k: str(v) for k, v in files.items()}, "model": opts["model"],
-               "thinking": opts["thinking"], "auth_lane": opts["lane"], "service_tier": opts["tier"],
-               "host_argv": opts["argv"]}
+        row = self._turn_row(sid, opts, event=event, turn=turn, proc=proc, files=files)
         if event == "launch":
             row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent)
+        ledger.append(row)
+        self._verify_header(proc, row, files, ledger)
+        return row
+
+    @staticmethod
+    def _write_prompt(path, prompt):
+        try:
+            with open(path, "x") as fh:
+                fh.write(prompt)
+        except FileExistsError:
+            raise HostError(NOT_ESTABLISHED, "turn_not_established", f"{path} already exists")
+
+    def _turn_row(self, sid, opts, *, event, turn, proc, files):
+        return {"host": self.name, "event": event, "session_id": sid, "turn": turn, "pid": proc.pid,
+                "pid_start": self._start_time(proc.pid), "at_epoch": time.time(),
+                "files": {k: str(v) for k, v in files.items()}, "model": opts["model"],
+                "thinking": opts["thinking"], "auth_lane": opts["lane"], "service_tier": opts["tier"],
+                "host_argv": opts["argv"]}
+
+    def _spawn_container(self, sid, opts, *, cwd, prompt, ledger, event, turn, env, name=None, parent=None):
+        cdir, hdir = Path(env["container_dir"]), Path(env["host_dir"])
+        files = {k: cdir / f"turn-{turn}.{suffix}" for k, suffix in self.TURN_FILES.items()}
+        files.update({k: hdir / f"turn-{turn}.{suffix}" for k, suffix in (
+            ("proxy_log", "proxy.jsonl"), ("runner_record", "runner.jsonl"),
+            ("runner_log", "runner.log"), ("spec", "spec.json"))})
+        key = self.provider_key(opts, cwd=cwd)
+        self._write_prompt(files["prompt"], prompt)
+        self.socket_root().mkdir(mode=0o700, parents=True, exist_ok=True)
+        socket_dir = self.socket_root() / f"{sid}-{turn}"
+        container_name = f"we-pi-{sid}-{turn}"
+        pi_argv = ["--mode", "json", "--session-id", sid, "--session-dir", env["session_dir"],
+                   "-e", str(self.EXTENSION), *opts["argv"]]
+        if name:
+            pi_argv += ["--name", name]
+        container_env = _pi_container().container_env(env, str(files["tier_record"]))
+        spec = {"session_id": sid, "turn": turn, "cwd": str(Path(cwd).resolve()), "container_name": container_name,
+                "docker": self.docker(), "socket_dir": str(socket_dir), "socket_path": str(socket_dir / "egress.sock"),
+                "container_dir": env["container_dir"], "environment": env, "container_env": container_env,
+                "pi_argv": pi_argv, "files": {k: str(v) for k, v in files.items()},
+                "upstream": os.environ.get("ROLE_HOST_PI_UPSTREAM", "https://api.openai.com/v1"),
+                "model_id": opts["model"].split("/", 1)[1], "service_tier": opts["tier"],
+                "max_requests": env.get("max_requests")}
+        files["spec"].write_text(json.dumps(spec, indent=1) + "\n")
+        runner = Path(__file__).resolve().parent / "pi_container.py"
+        with open(files["runner_log"], "ab") as log:
+            try:
+                proc = subprocess.Popen([sys.executable, str(runner), "run-turn", str(files["spec"])],
+                                        stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
+                                        env=child_env(), cwd=str(hdir), start_new_session=True)
+            except OSError as e:
+                raise HostError(NOT_ESTABLISHED, "fail_launch", f"pi container runner: {e}")
+        try:
+            proc.stdin.write((key + "\n").encode())
+            proc.stdin.close()
+        except OSError:
+            pass  # the runner died; the header wait reports it
+        del key
+        row = self._turn_row(sid, opts, event=event, turn=turn, proc=proc, files=files)
+        row["container"] = {"name": container_name, "fingerprint_sha256": env["fingerprint"]["sha256"]}
+        if event == "launch":
+            row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent, container_environment=env)
         ledger.append(row)
         self._verify_header(proc, row, files, ledger)
         return row
@@ -952,9 +1185,15 @@ class Pi:
                 raise HostError(DEFECT, "identity_mismatch",
                                 f"turn {row['turn']} began with {first.get('type')} {first.get('id')!r}, not session {sid}; turn stopped")
             if exited:
-                err = files["stderr"].read_text(errors="replace").strip() if files["stderr"].exists() else ""
+                parts = []
+                for k in ("stderr", "runner_record", "runner_log"):
+                    p = Path(files[k]) if k in files else None
+                    if p is not None and p.exists():
+                        text = p.read_text(errors="replace").strip()
+                        if text:
+                            parts.append(f"{k}: {text[-300:]}")
                 raise HostError(NOT_ESTABLISHED, "fail_launch",
-                                f"pi exited {proc.returncode} before a session header: {err[-300:]}")
+                                f"pi turn exited {proc.returncode} before a session header: {' | '.join(parts)}")
             if time.time() > deadline:
                 raise HostError(NOT_ESTABLISHED, "identity_not_established",
                                 f"no session header within {self.START_TIMEOUT}s; turn {row['turn']} is in the ledger "
@@ -968,9 +1207,10 @@ class Pi:
         agent = os.environ.get("PI_CODING_AGENT_DIR") or str(Path.home() / ".pi/agent")
         return Path(agent) / "sessions"
 
-    def session_file(self, sid) -> Path | None:
+    def session_file(self, sid, session_dir=None) -> Path | None:
+        base = Path(session_dir) if session_dir else self.session_dir()
         matches = set()
-        for path in self.session_dir().glob(f"*/*{sid}*.jsonl"):
+        for path in [*base.glob(f"*{sid}*.jsonl"), *base.glob(f"*/*{sid}*.jsonl")]:
             try:
                 with path.open() as fh:
                     head = json.loads(fh.readline())
@@ -982,12 +1222,25 @@ class Pi:
             raise HostError(NOT_ESTABLISHED, "identity_not_established", f"{len(matches)} session files carry {sid}")
         return matches.pop() if matches else None
 
-    def identity(self, sid) -> dict:
-        path = self.session_file(sid)
+    def identity(self, sid, ledger=None) -> dict:
+        session_dir = self._session_dir_for(sid, ledger)
+        path = self.session_file(sid, session_dir)
         if path is None:
             raise HostError(NOT_ESTABLISHED, "identity_not_established",
-                            f"no session file under {self.session_dir()} begins with session {sid}")
+                            f"no session file under {session_dir or self.session_dir()} begins with session {sid}")
         return {"session_id": sid, "session_file": str(path), "source": "session file header id"}
+
+    @staticmethod
+    def _tier_status(requested, sent, observed) -> str:
+        if not requested:
+            return "not_requested"
+        if not sent:
+            return "not_applied"
+        if not observed or None in observed:
+            return "not_established"
+        if requested != "auto" and any(t != requested for t in observed):
+            return "mismatch"
+        return "applied"
 
     def observe_turn(self, row) -> dict:
         """Outcome, model, cost and tier of one turn, from its own files only."""
@@ -1004,7 +1257,7 @@ class Pi:
         final = replies[-1] if replies else {}
         if header is None or header.get("id") != row["session_id"]:
             outcome = "not_established"
-        elif exit_code is None:
+        elif exit_code is None or exit_code < 0 or exit_code in (130, 143):
             outcome = "interrupted"
         elif exit_code != 0:
             outcome = "failed"
@@ -1024,57 +1277,91 @@ class Pi:
         cost = sum(((m.get("usage") or {}).get("cost") or {}).get("total") or 0 for m in replies)
         tier_rows, _ = self._records(files["tier_record"])
         injected = [r for r in tier_rows if r.get("event") == "injected"]
-        observed = [r.get("tier") for r in tier_rows if r.get("event") == "observed"]
         requested = row.get("service_tier")
-        if not requested:
-            tier_status = "not_requested"
-        elif not injected:
-            tier_status = "not_applied"
-        elif not observed or None in observed:
-            tier_status = "not_established"
-        elif requested != "auto" and any(t != requested for t in observed):
-            tier_status = "mismatch"
+        tier = {"requested": requested, "injected": len(injected),
+                "skipped": sorted({r.get("reason") for r in tier_rows if r.get("event") == "skipped"})}
+        limitations = ["Cost is Pi's catalog price times Pi's tier multiplier, not billing."]
+        out = {"turn": row["turn"], "outcome": outcome, "exit_code": exit_code, "partial_last_record": partial,
+               "stop_reason": final.get("stopReason"), "error": final.get("errorMessage"),
+               "model_requested": row.get("model"), "model_served": served,
+               "model_match": (served == [row.get("model")]) if served else None,
+               "assistant_messages": len(replies), "pi_reported_cost_usd": round(cost, 6)}
+        if "proxy_log" in files:
+            proxy_rows, _ = self._records(files["proxy_log"])
+            requests = [r for r in proxy_rows if r.get("event") == "request"]
+            observed = [r.get("observed_tier") for r in requests]
+            runner, _ = self._records(files["runner_record"])
+            state = next((r for r in reversed(runner) if r.get("event") == "container_state"), {})
+            tier.update(status=self._tier_status(requested, len(requests), observed), observed=observed,
+                        observed_by="egress proxy (host)")
+            out["egress"] = {
+                "requests": len(requests),
+                "refused": [r.get("reason") for r in proxy_rows if r.get("event") == "refused"],
+                "http_errors": [r.get("http_status") for r in requests if r.get("http_status") != 200],
+                "usage": {k: sum((r.get("usage") or {}).get(k) or 0 for r in requests)
+                          for k in ("input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens")}}
+            out["container"] = {**(row.get("container") or {}), "exit_code": state.get("ExitCode"),
+                                "oom_killed": state.get("OOMKilled"),
+                                "removed": any(r.get("event") == "container_removed" and r.get("exit") == 0 for r in runner)}
+            limitations.append("Events and the extension's tier record are written inside the container, where the "
+                               "agent could alter them; the egress log and runner record are host-only.")
         else:
-            tier_status = "applied"
-        return {
-            "turn": row["turn"], "outcome": outcome, "exit_code": exit_code, "partial_last_record": partial,
-            "stop_reason": final.get("stopReason"), "error": final.get("errorMessage"),
-            "model_requested": row.get("model"), "model_served": served,
-            "model_match": (served == [row.get("model")]) if served else None,
-            "assistant_messages": len(replies),
-            "pi_reported_cost_usd": round(cost, 6),
-            "service_tier": {"requested": requested, "status": tier_status, "injected": len(injected),
-                             "observed": observed,
-                             "skipped": sorted({r.get("reason") for r in tier_rows if r.get("event") == "skipped"})},
-            "files": row["files"],
-            "limitations": ["Cost is Pi's catalog price times Pi's tier multiplier, not billing.",
-                            "The tier is observed from the provider's terminal response event as Pi parsed it."],
-        }
+            observed = [r.get("tier") for r in tier_rows if r.get("event") == "observed"]
+            tier.update(status=self._tier_status(requested, len(injected), observed), observed=observed,
+                        observed_by="pi extension")
+            limitations.append("The tier is observed from the provider's terminal response event as Pi parsed it.")
+        out.update(service_tier=tier, files=row["files"], limitations=limitations)
+        return out
 
     # ---- lifecycle ----
     def status(self, sid, ledger=None) -> dict:
         rows = self._turns(sid, ledger) if ledger else []
         turns = [r for r in rows if r.get("turn")]
+        session_dir = self._session_dir_for(sid, ledger)
         if not turns:
             if self.session_file(sid) is None:
                 return {"state": "absent", "kind": None}
             raise HostError(NOT_ESTABLISHED, "status_not_established",
                             f"pi session {sid} exists but role_host started none of its turns; its holder is not observable here")
         last = turns[-1]
+        kind = "pi_container_turn" if last.get("container") else "pi_turn"
         if self._alive(last):
-            return {"state": "running", "kind": "pi_turn", "turn": last["turn"], "pid": last["pid"]}
+            return {"state": "running", "kind": kind, "turn": last["turn"], "pid": last["pid"]}
+        if last.get("container") and self._container_state(last["container"]["name"]):
+            # The runner (and with it the egress proxy) is gone; the container is not.
+            return {"state": "running", "kind": "container_without_runner", "turn": last["turn"],
+                    "container": last["container"]["name"]}
         lifecycle = [r for r in rows if r.get("event") in ("launch", "deliver", "retire")]
         state = "stopped" if lifecycle[-1].get("event") == "retire" else "idle"
-        if state == "idle" and self.session_file(sid) is None:
+        if state == "idle" and self.session_file(sid, session_dir) is None:
             state = "absent"
-        return {"state": state, "kind": "pi_turn", "last_turn": self.observe_turn(last)}
+        out = {"state": state, "kind": kind, "last_turn": self.observe_turn(last)}
+        leftovers = self._leftovers(last)
+        if leftovers:
+            out["leftovers"] = leftovers  # the runner died before cleanup; retire collects them
+        return out
 
-    def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, lane=None, tier=None) -> dict:
+    def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, lane=None, tier=None, container=None) -> dict:
         opts = self.options(host_args, lane, tier)
+        if container is not None:
+            if lane != "api":
+                raise HostError(USAGE, "usage", "container mode supports the api lane only for now; "
+                                "subscription sessions run on the host")
+            if opts["provider"] != "openai":
+                raise HostError(USAGE, "usage", f"container mode routes provider openai through its egress proxy, "
+                                f"not {opts['provider']!r}")
+            if container.get("codebase_memory") and "--no-mcp" in opts["argv"]:
+                raise HostError(USAGE, "usage", "--codebase-memory needs MCP; drop --no-mcp")
         auth = self.check_lane(opts, cwd=cwd, env=child_env())
         sid = str(uuid.uuid4())
-        row = self._spawn(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event="launch", name=name, parent=parent)
-        return {**row, "credential": auth, "session_header_verified": True}
+        env = (self.container_environment(sid, ledger, cwd=cwd, container=container, opts=opts)
+               if container is not None else None)
+        row = self._spawn(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event="launch", name=name,
+                          parent=parent, env=env)
+        out = {**row, "credential": auth, "session_header_verified": True}
+        if env is not None:
+            out["environment_fingerprint"] = env["fingerprint"]["sha256"]
+        return out
 
     def deliver(self, sid, *, message, cwd, ledger, host_args=()) -> dict:
         if host_args:
@@ -1084,42 +1371,59 @@ class Pi:
             raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
         if st["state"] == "absent":
             raise HostError(NOT_ESTABLISHED, "deliver_failed", f"pi session {sid} is unknown to this host")
-        launch = next(r for r in self._turns(sid, ledger) if r.get("event") == "launch")
+        launch = self._launch_row(sid, ledger)
         # Pi resolves --session-id within the working directory's project; from
         # another directory it would silently create a new session.
         if Path(cwd).resolve() != Path(launch["cwd"]):
             raise HostError(USAGE, "usage", f"pi sessions belong to their working directory; deliver with --cwd {launch['cwd']}")
         opts = {"argv": launch["host_argv"], "model": launch["model"], "provider": launch["model"].split("/", 1)[0],
                 "thinking": launch["thinking"], "lane": launch["auth_lane"], "tier": launch["service_tier"]}
+        env = launch.get("container_environment")
+        if env is not None:
+            env = self._check_environment(env, cwd=launch["cwd"], ledger=ledger)
         auth = self.check_lane(opts, cwd=cwd, env=child_env())
-        row = self._spawn(sid, opts, cwd=cwd, prompt=message, ledger=ledger, event="deliver")
+        row = self._spawn(sid, opts, cwd=cwd, prompt=message, ledger=ledger, event="deliver", env=env)
         return {"session_id": sid, "delivered": True, "turn": row["turn"], "credential": auth}
 
     def retire(self, sid, *, ledger, force=False) -> dict:
         st = self.status(sid, ledger)
+        turns = [r for r in self._turns(sid, ledger) if r.get("turn")]
         if st["state"] in ("absent", "stopped"):
-            return {"session_id": sid, "retired": "already_not_loaded", "state": st["state"]}
+            collected = self._collect_leftovers(turns[-1]) if turns else {}
+            if collected:
+                ledger.append({"host": self.name, "event": "collect", "session_id": sid,
+                               "turn": turns[-1]["turn"], "collected": collected})
+            return {"session_id": sid, "retired": "already_not_loaded", "state": st["state"],
+                    **({"collected": collected} if collected else {})}
         if st["state"] == "running":
             if not force:
                 raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
             last = [r for r in self._turns(sid, ledger) if r.get("turn")][-1]
-            # SIGTERM only: Pi kills the tool process trees it started detached
-            # on SIGTERM (utils/shell.js); SIGKILL would leave them running.
-            try:
-                os.killpg(last["pid"], signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            deadline = time.time() + self.STOP_WAIT
-            while self._group_alive(last["pid"]):
-                if time.time() > deadline:
-                    raise HostError(NOT_ESTABLISHED, "retire_not_established",
-                                    f"turn {last['turn']} process group {last['pid']} still alive {self.STOP_WAIT}s after SIGTERM")
-                time.sleep(0.2)
-            ledger.append({"host": self.name, "event": "retire", "session_id": sid, "terminated_turn": last["turn"]})
-            return {"session_id": sid, "retired": "turn_terminated", "turn": last["turn"]}
-        ledger.append({"host": self.name, "event": "retire", "session_id": sid})
-        return {"session_id": sid, "retired": "idle_released"}
-
+            name = (last.get("container") or {}).get("name")
+            # SIGTERM only: on the host Pi kills the tool process trees it started
+            # detached (utils/shell.js); in a container the runner stops the
+            # container, and the kernel ends everything in it with its PID 1.
+            if self._alive(last):
+                try:
+                    os.killpg(last["pid"], signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                wait = self.STOP_WAIT + (20 if name else 0)
+                deadline = time.time() + wait
+                while self._group_alive(last["pid"]):
+                    if time.time() > deadline:
+                        raise HostError(NOT_ESTABLISHED, "retire_not_established",
+                                        f"turn {last['turn']} process group {last['pid']} still alive {wait}s after SIGTERM")
+                    time.sleep(0.2)
+            collected = self._collect_leftovers(last)
+            ledger.append({"host": self.name, "event": "retire", "session_id": sid, "terminated_turn": last["turn"],
+                           **({"collected": collected} if collected else {})})
+            return {"session_id": sid, "retired": "turn_terminated", "turn": last["turn"],
+                    **({"collected": collected} if collected else {})}
+        collected = self._collect_leftovers(turns[-1]) if turns else {}
+        ledger.append({"host": self.name, "event": "retire", "session_id": sid,
+                       **({"collected": collected} if collected else {})})
+        return {"session_id": sid, "retired": "idle_released", **({"collected": collected} if collected else {})}
 
 HOSTS = {"claude": Claude, "codex": Codex, "pi": Pi}
 
@@ -1161,6 +1465,20 @@ def main(argv=None) -> int:
                     help="pi only, required: api (API-key billing) or subscription (OAuth session quota)")
     la.add_argument("--service-tier", choices=Pi.TIERS,
                     help="pi only: OpenAI service tier for an api-lane openai model")
+    la.add_argument("--container", action="store_true",
+                    help="pi only: run each turn in a no-network container behind the egress proxy")
+    la.add_argument("--mount-ro", action="append", default=[], metavar="PATH",
+                    help="container: bind PATH read-only at the same path (repeatable)")
+    la.add_argument("--mount-rw", action="append", default=[], metavar="PATH",
+                    help="container: bind PATH read-write at the same path (repeatable); the working directory "
+                         "is read-write unless a listed mount covers it")
+    la.add_argument("--container-memory", default="4g")
+    la.add_argument("--container-pids", type=int, default=512)
+    la.add_argument("--container-cpus", default="2")
+    la.add_argument("--max-requests", type=int, help="container: egress proxy cap on model requests per turn")
+    la.add_argument("--codebase-memory", action="store_true",
+                    help="container: index the working directory into this session's own codebase-memory cache, "
+                         "verify it inside the container, and give Pi the MCP server")
     pr = sub.add_parser("prepare", help="create an idle Codex thread, without inference")
     pr.add_argument("host", choices=("codex",)); pr.add_argument("--cwd", required=True)
     pr.add_argument("--name", required=True); pr.add_argument("--parent")
@@ -1224,16 +1542,23 @@ def main(argv=None) -> int:
             elif a.cmd == "start-prepared":
                 res = h.start_prepared(sid, message=a.prompt_file.read_text(), ledger=ledger, effort=a.effort)
             elif a.cmd == "identity":
-                res = h.identity(sid)
+                res = h.identity(sid, ledger) if a.host == "pi" else h.identity(sid)
             elif a.cmd == "exact-turn":
                 res = h.exact_turn(sid, a.turn_id)
             elif a.cmd == "launch":
                 kw = {}
+                container_flags = a.mount_ro or a.mount_rw or a.max_requests is not None or a.codebase_memory
                 if a.host == "pi":
-                    kw = {"lane": a.auth, "tier": a.service_tier}
-                elif a.auth or a.service_tier:
-                    raise HostError(USAGE, "usage", "--auth and --service-tier are pi launch options; "
-                                    "Codex selects its tier with -c service_tier")
+                    if container_flags and not a.container:
+                        raise HostError(USAGE, "usage", "--mount-ro, --mount-rw, --max-requests and --codebase-memory "
+                                        "need --container")
+                    kw = {"lane": a.auth, "tier": a.service_tier, "container": {
+                        "ro": a.mount_ro, "rw": a.mount_rw, "memory": a.container_memory, "pids": a.container_pids,
+                        "cpus": a.container_cpus, "max_requests": a.max_requests,
+                        "codebase_memory": a.codebase_memory} if a.container else None}
+                elif a.auth or a.service_tier or a.container or container_flags:
+                    raise HostError(USAGE, "usage", "--auth, --service-tier and the container options are pi launch "
+                                    "options; Codex selects its tier with -c service_tier")
                 res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
                                host_args=a.host_arg, ledger=ledger, parent=a.parent, **kw)
             elif a.cmd == "status":

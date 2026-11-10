@@ -11,6 +11,10 @@ it. Mode file keys (re-read on every request, all optional):
   omit_tier     true: report no service_tier at all
   delay         seconds to wait before streaming (simulates a long turn)
   fail          true: stream response.failed instead of completing
+  tool_command  shell command: a request without tool output gets a function
+                call asking Pi's bash tool to run it; the next request (which
+                carries the output) gets a text reply
+  tool_call     {"name": ..., "arguments": {...}}: the same, for any named tool
 """
 from __future__ import annotations
 
@@ -71,6 +75,24 @@ class Handler(BaseHTTPRequestHandler):
             base["service_tier"] = tier
         item_done = {"id": mid, "type": "message", "status": "completed", "role": "assistant",
                      "content": [{"type": "output_text", "text": text, "annotations": []}]}
+        has_output = any(isinstance(i, dict) and i.get("type") == "function_call_output" for i in req.get("input") or [])
+        wanted = m.get("tool_call") or ({"name": "bash", "arguments": {"command": m["tool_command"]}}
+                                         if m.get("tool_command") else None)
+        if wanted and not has_output:
+            args = json.dumps(wanted.get("arguments") or {})
+            call = {"id": f"fc_{n}", "type": "function_call", "status": "completed", "call_id": f"call_{n}",
+                    "name": wanted["name"], "arguments": args}
+            events = [
+                {"type": "response.created", "response": {**base, "status": "in_progress", "output": []}},
+                {"type": "response.output_item.added", "output_index": 0, "item": {**call, "status": "in_progress", "arguments": ""}},
+                {"type": "response.function_call_arguments.delta", "item_id": call["id"], "output_index": 0, "delta": args},
+                {"type": "response.function_call_arguments.done", "item_id": call["id"], "output_index": 0, "arguments": args},
+                {"type": "response.output_item.done", "output_index": 0, "item": call},
+                {"type": "response.completed", "response": {**base, "status": "completed", "output": [call],
+                    "usage": {"input_tokens": 1000, "output_tokens": 10, "total_tokens": 1010,
+                              "input_tokens_details": {"cached_tokens": 0}, "output_tokens_details": {"reasoning_tokens": 0}}}},
+            ]
+            return self.stream(events)
         events = [
             {"type": "response.created", "response": {**base, "status": "in_progress", "output": []}},
             {"type": "response.output_item.added", "output_index": 0,
@@ -90,6 +112,9 @@ class Handler(BaseHTTPRequestHandler):
                 "usage": {"input_tokens": 1000, "output_tokens": 10, "total_tokens": 1010,
                           "input_tokens_details": {"cached_tokens": 0},
                           "output_tokens_details": {"reasoning_tokens": 0}}}})
+        self.stream(events)
+
+    def stream(self, events):
         self.send_response(200)
         self.send_header("content-type", "text/event-stream")
         self.send_header("cache-control", "no-cache")

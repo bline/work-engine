@@ -51,7 +51,10 @@ class Base(unittest.TestCase):
                         CODEX_HOME=str(self.codex_home),
                         ROLE_HOST_CODEX_SOCKET=str(self.tmp / "daemon.sock"),
                         FAKE_DAEMON_MODE=str(self.tmp / "daemon-mode.json"))
-        for k in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "FAKE_SUCCESSOR", "FAKE_TURN"):
+        # Every host's identity variables, so a run inside a Pi, Claude or Codex
+        # session does not leak its own session id into the simulated one.
+        for k in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "PI_SESSION_ID", "PI_SESSION_FILE",
+                  "PI_PROVIDER", "PI_MODEL", "PI_REASONING_LEVEL", "FAKE_SUCCESSOR", "FAKE_TURN"):
             self.env.pop(k, None)
         # The gate is normally run from inside a host session, so the caller's
         # identity is in the environment. The fakes pass it through, as real

@@ -122,6 +122,85 @@ assistant message's `usage`; the context size of the latest call is
 limit. Make the retained-or-fresh decision from that reading as
 [context boundary](context-boundary.md) describes, and record it.
 
+## Container mode
+
+`--container` runs each turn in a Docker container with no network. It is
+available on the api lane for provider `openai`; subscription sessions run on
+the host. Host facts: [Pi Docker probe](../../../metrics/probes/pi-docker-host-20261109.json)
+(Docker 29.7.2, local fake endpoint, n = 1 per cell).
+
+```bash
+python3 <skill-dir>/scripts/role_host.py launch pi --container \
+  --cwd <work-dir> --name <role-name> --prompt-file <packet> --parent <your-session-id> \
+  --auth api --service-tier priority \
+  --mount-ro <inputs> --mount-rw <output-dir> [--codebase-memory] \
+  --host-arg=--model --host-arg=openai/<model-id> --host-arg=--thinking --host-arg=<level>
+```
+
+What the agent gets, enforced by the container rather than by instructions:
+
+- **Your own tools at your own paths.** The host's `/usr` and `/etc` are
+  mounted read-only, so the user, git, Python and other tool versions match the
+  host. Listed folders are mounted at their host paths: `--mount-ro` read-only,
+  `--mount-rw` read-write. The working directory is read-write unless a listed
+  mount covers it. Everything else is absent, including the rest of your home
+  directory. Home itself, `/`, system paths and role_host's state cannot be
+  mounted.
+- **No network.** The container has only loopback. Network access fails at once
+  with "Network is unreachable"; there is no web access from tools.
+- **No credentials or host environment.** Only the variables role_host sets
+  reach the container. The API key stays on the host: the container holds a
+  placeholder.
+- **One way out.** A relay in the container forwards Pi's model requests over a
+  mounted Unix socket to an egress proxy that role_host runs on the host. The
+  proxy accepts `POST /v1/responses` for the launched model only. It forwards
+  only a fixed set of top-level request fields (so stored prompts, previous
+  responses, conversations and background mode are refused), refuses hosted
+  (server-side) tools declared in any `tools` list and in `tool_choice`, and
+  refuses `store: true`. It sets the requested tier (or removes one),
+  substitutes the real key, and logs the tier and usage the provider reported.
+  `--max-requests N` caps forwarded model requests per turn.
+- **The proxy is bounded too.** It runs on the host, outside the container's
+  limits, so it accepts at most 8 connections at once (more are closed
+  without a thread), requires a `Content-Length` of at most 64 MiB, refuses
+  chunked bodies, checks the request cap before reading a body, and drops a
+  connection that stalls for 60 s.
+- **Nothing outlives the turn.** The container's entry process is its PID 1;
+  when it exits, the kernel ends every process left in the container.
+- Limits default to `--container-memory 4g`, `--container-pids 512` and
+  `--container-cpus 2`.
+
+The proxy log and runner record (`pi/<session>/host/turn-N.*`) are host-only.
+The events and the extension's tier record are written inside the container,
+where the agent could alter them, so `status` takes the tier, request count and
+usage from the proxy (`last_turn.egress`, `service_tier.observed_by`). The turn
+container is removed after each turn; `retire --force` stops it. If the runner
+dies before its cleanup, `status` lists the container and socket folder it left
+under `leftovers`, and `retire` (forced or not) removes them.
+
+**Environment fingerprint.** The launch records a fingerprint of what decides
+what the agent sees and can do: the image; host OS, kernel, package database
+and `/usr/local` metadata; the Pi runtime (an immutable snap revision by path,
+any other runtime by a digest of all its files); each mount's path, mode,
+device and inode; limits and user; model, tier and Pi arguments; the container's
+complete environment; and the digests of the entry script, tier extension,
+`pi_container.py` and codebase-memory binary. Each later turn re-validates the
+mounts (a folder replaced by a symlink plans differently) and recomputes the
+fingerprint, and refuses with `environment_changed` if anything differs. Not
+covered: hand edits under `/etc` that change no package, and an edit under
+`/usr/local` that keeps size and modification time. Launch a new session to
+run in a changed environment.
+
+**codebase-memory.** `--codebase-memory` indexes the working directory into the
+session's own cache before launch, so the agent sees no other project's index
+and nothing indexed from outside its mounts. role_host then runs `index_status`
+inside the same container profile, with no model, and refuses the launch unless
+it reports `ready` for the working directory's path. Pi gets the server's
+tools declared directly (17 in 0.11.0), named `mcp__codebase_memory_mcp__<tool>`
+(Pi turns the dashes into underscores). The index records no revision: it
+matches the tree because it was built from it at launch. Whether it refreshes
+after the agent edits files inside the container is not established.
+
 ## Not supported here
 
 - `rename`, `archive`, `unarchive`, `settings`, `prepare`, `start-prepared` and
@@ -130,4 +209,8 @@ limit. Make the retained-or-fresh decision from that reading as
   `status` reports `not_established` rather than idle.
 - The session directory is read from `PI_CODING_AGENT_SESSION_DIR`, else
   `PI_CODING_AGENT_DIR/sessions`, else `~/.pi/agent/sessions`. A `sessionDir` in
-  Pi's `settings.json` is not read.
+  Pi's `settings.json` is not read. Container sessions keep their session file
+  in their own directory under role_host's state.
+- Container mode does not yet offer the subscription lane, web access (a
+  mediated fetch through the proxy is the intended route), or moving a session
+  between host and container.

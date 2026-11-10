@@ -1,0 +1,43 @@
+{
+  "probe": "pi-docker-host-20261109",
+  "date": "2026-11-09",
+  "recorded_by": "claude 9e806e83-dfd2-491b-ba5e-69a0e02edc95",
+  "question": "Can role_host.py run each Pi turn in a container whose only route out is a host egress proxy, with the host's own tools, no credentials inside, and a verified codebase-memory index?",
+  "versions": {
+    "docker": "29.7.2 (runc, cgroup v2, default seccomp, AppArmor)",
+    "pi": "pi-coding-agent 1.4.0 (snap revision 77)",
+    "image": "node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da (local node:22-bookworm-slim, the Rust pi_docker::IMAGE)",
+    "codebase_memory": "codebase-memory-mcp 0.11.0-claims-pr2914-pr2915",
+    "host": "uid/gid 1000:1000, git 2.53.0, Python 3.14.4"
+  },
+  "n": "1 per cell; one machine; every provider request went to tests/role_host_fakes/fake_openai_responses.py; no provider was contacted",
+  "facts": [
+    {"id": "C1", "fact": "Host Pi 1.4.0 runs unmodified in the pinned image from the snap tree bind-mounted read-only (node v22.23.4 in the image, Pi needs >=22.19); its only native addon is the TUI X11 one."},
+    {"id": "C2", "fact": "With host /usr and /etc bind-mounted read-only, the container reports the host user (bline), git 2.53.0 and Python 3.14.4; host home content is absent unless mounted; host environment variables are not inherited."},
+    {"id": "C3", "fact": "Docker's --init cannot be injected with host /usr mounted read-only (/sbin/docker-init not found); the entry script runs as PID 1, forwards SIGTERM/SIGINT to Pi and reaps orphans."},
+    {"id": "C4", "fact": "A tmpfs at the host home path with read-only binds beneath it works; same-path mounts keep Pi's session file and paths identical to the host."},
+    {"id": "C5", "fact": "strace can trace its own child under cap-drop ALL, no-new-privileges and the default seccomp profile; attaching to a non-descendant is refused, as on the host (ptrace_scope 1)."},
+    {"id": "C6", "fact": "An --internal Docker network still reaches the host: TCP to its bridge address 172.20.0.1 was refused by the host, and host UDP services bind every bridge address (3702, 5353). All 17 host TCP listeners were loopback-only."},
+    {"id": "C7", "fact": "--network none leaves only lo: TCP to 1.1.1.1, the docker0 gateway and the LAN address, and UDP to the host's 3702, all fail with ENETUNREACH."},
+    {"id": "C8", "fact": "A relay in the container from 127.0.0.1:8080 to a mounted Unix socket reaches a host proxy; Pi's openai provider with baseUrl http://127.0.0.1:8080/v1 completed turns through it. The container sent only a placeholder key and the proxy substituted its own."},
+    {"id": "C9", "fact": "Through role_host --container, the agent's own bash (driven by a fake function call) saw: 'Network is unreachable', the unmounted folder absent, OPENAI_API_KEY equal to the placeholder, host git 2.53.0, a --mount-ro file readable and writes to it refused with 'Read-only file system'."},
+    {"id": "C10", "fact": "The proxy observed the requested tier on the provider's terminal event for every request; a shell request to the proxy for another model, a hosted tool, another path or beyond --max-requests was refused without reaching the upstream."},
+    {"id": "C11", "fact": "docker stop -t 10 ends a turn in about 0.1-0.5 s (Pi exits on the forwarded SIGTERM). A hard-killed attached docker run client leaves its container running, so turns run detached and write events to a mounted directory."},
+    {"id": "C12", "fact": "codebase-memory indexes into a custom CBM_CACHE_DIR without touching the shared cache. Its runtime dir must already exist and keep the coordination socket path within 108 bytes; under a long state path it failed with 'secure CLI coordination could not be created (endpoint)'. A short host temp dir and a container tmpfs at /run/cbm work."},
+    {"id": "C13", "fact": "Inside the container, index_status for the session's fresh index reported status ready and root_path equal to the working directory; Pi offered 17 codebase-memory tools with exposure direct, named mcp__codebase_memory_mcp__<tool>; a model call to search_graph returned the indexed function. Pi's default exposure is codemode (not declared to the model)."},
+    {"id": "C14", "fact": "A later turn after a mounted folder was removed was refused with environment_changed."}
+  ],
+  "source_facts": [
+    "docker secret needs Swarm (this node is inactive); non-Swarm secrets are mounted files readable by every process in the container, including Pi's bash tool.",
+    "Pi honours HTTP(S)_PROXY through undici EnvHttpProxyAgent and an httpProxy setting (dist/core/http-dispatcher.js); a CONNECT proxy would leave the key in the container and the tier invisible to the proxy.",
+    "Pi's openai-codex provider derives the account id from the token and may use WebSocket; host Pi prints live credentials with `pi auth print-api-key` and `pi auth print-bearer-token --min-expiry` (not run for openai-codex: the owner reported its quota at 0%)."
+  ],
+  "not_established": [
+    "Any real provider behind the proxy.",
+    "The subscription lane in a container.",
+    "Whether the codebase-memory index refreshes after the agent edits files inside the container.",
+    "Resource limits (4g, 512 pids, 2 cpus) under a real test suite."
+  ],
+  "regression_tests": "skills/manual-orchestration/tests/test_pi_container.py (unit tests plus RealContainerTests against the fake endpoint)",
+  "evidence_dirs": ["~/cbm-work/pi-docker-probe-20261109 (RESULTS.md)", "~/cbm-work/pi-container-smoke-20261109"]
+}
