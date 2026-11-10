@@ -161,7 +161,9 @@ class Upstream(BaseHTTPRequestHandler):
         body = json.loads(self.rfile.read(int(self.headers["content-length"])))
         Upstream.seen.append({"path": self.path, "auth": self.headers.get("authorization"), "body": body})
         event = {"type": "response.completed", "response": {"id": "r1", "model": body["model"],
-                 "service_tier": body.get("service_tier", "default"), "usage": {"input_tokens": 7, "output_tokens": 3}}}
+                 "service_tier": body.get("service_tier", "default"),
+                 "usage": {"input_tokens": 7, "output_tokens": 3,
+                           "input_tokens_details": {"cached_tokens": 2, "cache_write_tokens": 4}}}}
         self.send_response(200)
         self.send_header("content-type", "text/event-stream")
         self.end_headers()
@@ -217,6 +219,7 @@ class EgressProxyTests(unittest.TestCase):
         self.assertEqual((sent["path"], sent["body"]["service_tier"]), ("/v1/responses", "flex"))
         row = self.log()[-1]
         self.assertEqual((row["requested_tier"], row["observed_tier"], row["usage"]["input_tokens"]), ("flex", "flex", 7))
+        self.assertEqual((row["usage"]["cached_tokens"], row["usage"]["cache_write_tokens"]), (2, 4))
 
     def test_untiered_requests_lose_any_tier(self):
         self.proxy(tier=None)
