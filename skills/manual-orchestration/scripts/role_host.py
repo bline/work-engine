@@ -947,6 +947,9 @@ class Pi:
             limits = _pi_container().validate_limits(container.get("memory", "4g"), container.get("pids", 512),
                                                   container.get("cpus", "2"))
             usd_limit, max_output = self._usd_limit(container, opts)
+            definition = (_pi_container().model_definition(container["model_file"], provider=opts["provider"],
+                                                           model_id=opts["model"].split("/", 1)[1])
+                          if container.get("model_file") else None)
         except _pi_container().ContainerError as e:
             raise HostError(USAGE if e.status == "usage" else NOT_ESTABLISHED, e.status, e.detail)
         if _run([self.docker(), "image", "inspect", "--format", "{{.Id}}", _pi_container().IMAGE]).returncode != 0:
@@ -972,8 +975,11 @@ class Pi:
             d.mkdir(parents=True, exist_ok=True)
         os.chmod(cdir, 0o700)
         os.chmod(hdir, 0o700)
-        (cdir / "agent" / "models.json").write_text(json.dumps(
-            {"providers": {"openai": {"baseUrl": f"http://127.0.0.1:{_pi_container().RELAY_PORT}/v1"}}}) + "\n")
+        route = {"baseUrl": _pi_container().PROVIDERS[opts["provider"]]["relay_base"]}
+        if definition:
+            env["model_definition"] = definition
+            route["models"] = [definition]
+        (cdir / "agent" / "models.json").write_text(json.dumps({"providers": {opts["provider"]: route}}) + "\n")
         (cdir / "agent" / "settings.json").write_text("{}\n")
         if binary:
             env["codebase_memory"] = self._prepare_codebase_memory(binary, cwd=str(Path(cwd).resolve()), env=env)
@@ -993,7 +999,7 @@ class Pi:
             return None, max_output
         if not max_usd > 0:
             raise pc.ContainerError("usage", f"--max-usd {max_usd} must be positive")
-        rates = pc.usd_rates(opts["model"].split("/", 1)[1])
+        rates = pc.usd_rates(opts["model"].split("/", 1)[1], provider=pc.provider_of(opts["model"]))
         if (opts["tier"] or "default") not in rates["tier_multiplier"]:
             raise pc.ContainerError("usage", f"--max-usd needs a priced tier ({', '.join(rates['tier_multiplier'])}) "
                                              f"or none, not {opts['tier']!r}")
@@ -1075,6 +1081,12 @@ class Pi:
         """The host Pi's API key for the egress proxy. Held in memory only."""
         r = _run([self.exe, "auth", "print-api-key", "--provider", opts["provider"]], cwd=cwd, timeout=60)
         key = r.stdout.strip() if r.returncode == 0 else ""
+        if opts["provider"] == "anthropic":
+            # An OAuth token (sk-ant-oat...) is subscription credit, not an API key.
+            if not key.startswith("sk-ant-") or "sk-ant-oat" in key:
+                raise HostError(NOT_ESTABLISHED, "credential_not_ready",
+                                f"pi auth print-api-key for anthropic gave no sk-ant- API key (exit {r.returncode})")
+            return key
         if not key.startswith("sk-"):
             raise HostError(NOT_ESTABLISHED, "credential_not_ready",
                             f"pi auth print-api-key for {opts['provider']} gave no sk- API key (exit {r.returncode})")
@@ -1174,11 +1186,13 @@ class Pi:
         if name:
             pi_argv += ["--name", name]
         container_env = _pi_container().container_env(env, str(files["tier_record"]))
+        route = _pi_container().PROVIDERS[opts["provider"]]
         spec = {"session_id": sid, "turn": turn, "cwd": str(Path(cwd).resolve()), "container_name": container_name,
                 "docker": self.docker(), "socket_dir": str(socket_dir), "socket_path": str(socket_dir / "egress.sock"),
                 "container_dir": env["container_dir"], "environment": env, "container_env": container_env,
                 "pi_argv": pi_argv, "files": {k: str(v) for k, v in files.items()},
-                "upstream": os.environ.get("ROLE_HOST_PI_UPSTREAM", "https://api.openai.com/v1"),
+                "upstream": os.environ.get(route["upstream_env"], route["upstream"]),
+                **({"provider": opts["provider"]} if opts["provider"] != "openai" else {}),
                 "model_id": opts["model"].split("/", 1)[1], "service_tier": opts["tier"],
                 "max_requests": env.get("max_requests"), "max_output_tokens": env.get("max_output_tokens"),
                 "usd_limit": {**env["usd_limit"], **prior} if prior is not None else None}
@@ -1339,7 +1353,9 @@ class Pi:
                 "refused": [r.get("reason") for r in proxy_rows if r.get("event") == "refused"],
                 "http_errors": [r.get("http_status") for r in requests if r.get("http_status") != 200],
                 "usage": {k: sum((r.get("usage") or {}).get(k) or 0 for r in requests)
-                          for k in ("input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens")}}
+                          for k in (("input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens")
+                                    if not any(r.get("provider") == "anthropic" for r in requests)
+                                    else _pi_container().ANTHROPIC_USAGE_KEYS)}}
             if row.get("usd_limit"):
                 lim, t = row["usd_limit"], _pi_container().usd_totals(proxy_rows)
                 out["egress"]["usd"] = {
@@ -1397,9 +1413,10 @@ class Pi:
             if lane != "api":
                 raise HostError(USAGE, "usage", "container mode supports the api lane only for now; "
                                 "subscription sessions run on the host")
-            if opts["provider"] != "openai":
-                raise HostError(USAGE, "usage", f"container mode routes provider openai through its egress proxy, "
-                                f"not {opts['provider']!r}")
+            routes = _pi_container().PROVIDERS
+            if opts["provider"] not in routes:
+                raise HostError(USAGE, "usage", f"container mode routes providers {', '.join(sorted(routes))} "
+                                f"through its egress proxy, not {opts['provider']!r}")
             if container.get("codebase_memory") and "--no-mcp" in opts["argv"]:
                 raise HostError(USAGE, "usage", "--codebase-memory needs MCP; drop --no-mcp")
         auth = self.check_lane(opts, cwd=cwd, env=child_env())
@@ -1534,6 +1551,9 @@ def main(argv=None) -> int:
                          "none without)")
     la.add_argument("--usd-strict-tier", action="store_true",
                     help="container, with --max-usd: set aside at the dearer of the requested and default tier")
+    la.add_argument("--container-model-file", metavar="JSON",
+                    help="container: a Pi models.json model entry for the pinned model, for a model Pi's catalog "
+                         "lacks; written with the relay baseUrl (no baseUrl, headers, apiKey or fallbacks)")
     la.add_argument("--codebase-memory", action="store_true",
                     help="container: index the working directory into this session's own codebase-memory cache, "
                          "verify it inside the container, and give Pi the MCP server")
@@ -1606,13 +1626,15 @@ def main(argv=None) -> int:
             elif a.cmd == "launch":
                 kw = {}
                 container_flags = (a.mount_ro or a.mount_rw or a.max_requests is not None or a.codebase_memory
-                                   or a.max_usd is not None or a.max_output_tokens is not None or a.usd_strict_tier)
+                                   or a.max_usd is not None or a.max_output_tokens is not None or a.usd_strict_tier
+                                   or a.container_model_file)
                 if a.host == "pi":
                     if container_flags and not a.container:
                         raise HostError(USAGE, "usage", "--mount-ro, --mount-rw, --max-requests, --max-usd, "
-                                        "--max-output-tokens, --usd-strict-tier and --codebase-memory need --container")
+                                        "--max-output-tokens, --usd-strict-tier, --container-model-file and "
+                                        "--codebase-memory need --container")
                     kw = {"lane": a.auth, "tier": a.service_tier, "container": {
-                        "ro": a.mount_ro, "rw": a.mount_rw, "memory": a.container_memory, "pids": a.container_pids,
+                        "ro": a.mount_ro, "rw": a.mount_rw, "model_file": a.container_model_file, "memory": a.container_memory, "pids": a.container_pids,
                         "cpus": a.container_cpus, "max_requests": a.max_requests,
                         "max_usd": a.max_usd, "max_output_tokens": a.max_output_tokens,
                         "usd_strict_tier": a.usd_strict_tier,

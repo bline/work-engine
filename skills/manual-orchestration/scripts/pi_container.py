@@ -13,7 +13,8 @@ SIGTERM or SIGINT to the runner stops the container (`docker stop -t 10`).
 
 The container runs the host's own /usr and /etc read-only, so tools, versions,
 users and paths match the host. It has no network: its only route out is the
-proxy, which accepts POST /v1/responses for the pinned model only, refuses
+proxy, which accepts POST /v1/responses (or, for provider anthropic, POST
+/v1/messages) for the pinned model only, refuses
 hosted (server-side) tools, sets or removes service_tier, substitutes the real
 key for the container's placeholder, and logs the tier and usage the provider
 reported. The key never enters the container.
@@ -82,6 +83,66 @@ DEFAULT_MAX_OUTPUT_TOKENS = 16000
 # Framing tokens allowed per input item and once per request on top of the
 # byte bound. Not measured; chosen well above typical per-message framing.
 ITEM_OVERHEAD_TOKENS = 32
+
+# Anthropic Messages, as Pi 1.4.0's "anthropic-messages" API sends it (stage A
+# record: ~/cbm-work/pi-anthropic-p2-20261110/stage-a-precheck.md). Pi treats a
+# key containing "sk-ant-oat" as an OAuth token, so the placeholder avoids it.
+ANTHROPIC_PLACEHOLDER_KEY = "sk-ant-api-role-host-container-placeholder"
+ANTHROPIC_VERSION = "2023-06-01"
+ANTHROPIC_ALLOWED_FIELDS = frozenset({
+    "model", "messages", "max_tokens", "stream", "system", "temperature", "top_p", "top_k", "stop_sequences",
+    "tools", "tool_choice", "thinking", "output_config", "metadata"})
+# Betas Pi can request. server-side-fallback is left out: it lets another model
+# serve the request, which defeats the model pin.
+ANTHROPIC_BETAS = frozenset({
+    "fine-grained-tool-streaming-2025-05-14", "interleaved-thinking-2025-05-14",
+    "mid-conversation-output-config-2026-07-01", "thinking-binding-controls-2026-08-01",
+    "inline-tools-2026-09-15"})
+ANTHROPIC_TOOL_CHOICE_TYPES = frozenset({"auto", "any", "tool", "none"})
+ANTHROPIC_THINKING_TYPES = frozenset({"adaptive", "enabled", "disabled"})
+ANTHROPIC_OUTPUT_CONFIG_KEYS = frozenset({"effort", "format"})
+ANTHROPIC_USAGE_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens",
+                        "ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens", "output_tokens")
+ANTHROPIC_RATES_PATH = HERE / "anthropic_api_rates.json"
+# What differs per provider. The openai entry holds the values used before
+# Anthropic support, so OpenAI requests, logs and fingerprints are unchanged.
+PROVIDERS = {
+    "openai": {"api": "openai-responses", "route": "/v1/responses", "upstream": "https://api.openai.com/v1",
+               "upstream_env": "ROLE_HOST_PI_UPSTREAM", "relay_base": f"http://127.0.0.1:{RELAY_PORT}/v1",
+               "key_env": "OPENAI_API_KEY", "placeholder": PLACEHOLDER_KEY, "rates": RATES_PATH,
+               "rule_keys": ("tier_multiplier", "long_input_threshold", "long_input_multiplier",
+                             "long_output_multiplier")},
+    "anthropic": {"api": "anthropic-messages", "route": "/v1/messages", "upstream": "https://api.anthropic.com",
+                  "upstream_env": "ROLE_HOST_PI_UPSTREAM_ANTHROPIC", "relay_base": f"http://127.0.0.1:{RELAY_PORT}",
+                  "key_env": "ANTHROPIC_API_KEY", "placeholder": ANTHROPIC_PLACEHOLDER_KEY,
+                  "rates": ANTHROPIC_RATES_PATH, "rule_keys": ("tier_multiplier",)},
+}
+
+
+def provider_of(model: str) -> str:
+    """The provider of a '<provider>/<model-id>' selection."""
+    return model.split("/", 1)[0]
+
+
+def model_definition(path: str, *, provider: str, model_id: str) -> dict:
+    """An operator's Pi models.json entry for the pinned model, for a model Pi's
+    catalog lacks. role_host writes it under the provider with the relay
+    baseUrl, so it may not set an endpoint, headers, key or fallback models."""
+    try:
+        d = json.loads(Path(path).read_text())
+    except (OSError, ValueError) as e:
+        raise ContainerError("usage", f"--container-model-file {path}: {e}")
+    if not isinstance(d, dict) or d.get("id") != model_id:
+        raise ContainerError("usage", f"--container-model-file must define the pinned model {model_id!r}")
+    api = PROVIDERS[provider]["api"]
+    if d.get("api", api) != api:
+        raise ContainerError("usage", f"--container-model-file: provider {provider} uses api {api!r}, not {d.get('api')!r}")
+    bad = sorted(set(d) & {"baseUrl", "headers", "apiKey", "provider"})
+    if bad:
+        raise ContainerError("usage", f"--container-model-file may not set {', '.join(bad)}")
+    if isinstance(d.get("compat"), dict) and d["compat"].get("allowedFallbackModels"):
+        raise ContainerError("usage", "--container-model-file may not allow fallback models; the model is pinned")
+    return d
 
 
 class ContainerError(Exception):
@@ -246,10 +307,11 @@ def mount_identities(mounts) -> dict:
 def container_env(env: dict, record_path: str) -> dict:
     """The container's entire environment. Nothing else from the host reaches it."""
     sel = env["selection"]
+    p = PROVIDERS[provider_of(sel["model"])]
     return {"HOME": env["home"], "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
             "LANG": env["lang"], "USER": env["user"], "LOGNAME": env["user"],
             "PI_CODING_AGENT_DIR": env["agent_dir"], "PI_OFFLINE": "1", "PI_TELEMETRY": "0",
-            "OPENAI_API_KEY": PLACEHOLDER_KEY,
+            p["key_env"]: p["placeholder"],
             "WORK_ENGINE_PI_SERVICE_TIER": sel["tier"] or "", "WORK_ENGINE_PI_SERVICE_TIER_MODEL": sel["model"],
             "WORK_ENGINE_PI_SERVICE_TIER_RECORD": record_path}
 
@@ -279,6 +341,8 @@ def fingerprint(env: dict) -> dict:
         "extension_sha256": file_sha256(HERE / "pi_service_tier.ts"),
         "pi_container_sha256": file_sha256(HERE / "pi_container.py"),
     }
+    if env.get("model_definition"):
+        body["model_definition"] = env["model_definition"]
     if env.get("codebase_memory"):
         cbm = env["codebase_memory"]
         body["codebase_memory"] = {"binary_sha256": file_sha256(cbm["binary"]), "version": cbm["version"],
@@ -414,17 +478,110 @@ def check_request(body, *, model_id: str) -> str | None:
     return None
 
 
+def anthropic_tool_definitions(body: dict) -> list:
+    """Every tool definition in the request: the top-level list and inline
+    tool_addition blocks anywhere in the messages (Pi's native tool changes)."""
+    found = list(body.get("tools") or [])
+
+    def walk(value):
+        if isinstance(value, dict):
+            if value.get("type") == "tool_addition":
+                tool = value.get("tool")
+                found.append(tool.get("definition") if isinstance(tool, dict) else tool)
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk(body.get("messages"))
+    return found
+
+
+def check_anthropic_request(body, *, model_id: str, betas=()) -> str | None:
+    """A refusal reason for an Anthropic Messages request, or None when it may go upstream."""
+    if not isinstance(body, dict):
+        return "body_not_object"
+    unexpected = sorted(set(body) - ANTHROPIC_ALLOWED_FIELDS)
+    if unexpected:
+        return "unexpected_field:" + ",".join(unexpected)
+    if body.get("model") != model_id:
+        return "model_not_pinned"
+    if body.get("stream") is not True:
+        return "stream_required"
+    refused = sorted(set(betas) - ANTHROPIC_BETAS)
+    if refused:
+        return "beta_refused:" + ",".join(refused)
+    if not isinstance(body.get("tools", []), list):
+        return "tools_not_list"
+    choice = body.get("tool_choice")
+    if choice is not None and not (isinstance(choice, dict) and choice.get("type") in ANTHROPIC_TOOL_CHOICE_TYPES):
+        return "tool_choice_refused"
+    thinking = body.get("thinking")
+    if thinking is not None and not (isinstance(thinking, dict) and thinking.get("type") in ANTHROPIC_THINKING_TYPES):
+        return "thinking_refused"
+    config = body.get("output_config")
+    if config is not None and not (isinstance(config, dict) and set(config) <= ANTHROPIC_OUTPUT_CONFIG_KEYS):
+        return "output_config_refused"
+    # A custom (client-run) tool has no type or type "custom"; anything else is
+    # run by the provider (web search, code execution, MCP, ...).
+    hosted = {str(d.get("type")) if isinstance(d, dict) else type(d).__name__
+              for d in anthropic_tool_definitions(body)
+              if not (isinstance(d, dict) and d.get("type", "custom") == "custom")}
+    if hosted:
+        return "hosted_tool_refused:" + ",".join(sorted(hosted))
+    return None
+
+
+def anthropic_unpriceable(value) -> str | None:
+    """Image or document sources fetched by the provider (url, file id): their bytes are not in the body."""
+    if isinstance(value, dict):
+        source = value.get("source")
+        if value.get("type") in ("image", "document") and isinstance(source, dict) \
+                and source.get("type") not in ("base64", "text", "content"):
+            return f"usd_limit_unpriceable_input:{value['type']}"
+        for item in value.values():
+            found = anthropic_unpriceable(item)
+            if found:
+                return found
+    elif isinstance(value, list):
+        for item in value:
+            found = anthropic_unpriceable(item)
+            if found:
+                return found
+    return None
+
+
+def merge_anthropic_usage(into: dict, raw) -> dict:
+    """Fold one message_start or message_delta usage object into the running usage.
+    Later values replace earlier ones (message_delta carries cumulative counts)."""
+    if not isinstance(raw, dict):
+        return into
+    for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens"):
+        if raw.get(k) is not None:
+            into[k] = raw[k]
+    split = raw.get("cache_creation")
+    if isinstance(split, dict):
+        for k in ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens"):
+            if split.get(k) is not None:
+                into[k] = split[k]
+    for k in ("service_tier", "server_tool_use"):
+        if raw.get(k) is not None:
+            into[k] = raw[k]
+    return into
+
+
 # ---------------------------------------------------------- dollar limit ----
 
-def usd_rates(model_id: str, path=RATES_PATH) -> dict:
+def usd_rates(model_id: str, path=None, provider: str = "openai") -> dict:
     """The rate row and pricing rules for one model, or a usage error if it is unpriced."""
+    p = PROVIDERS[provider]
+    path = path or p["rates"]
     table = json.loads(Path(path).read_text())
     if model_id not in table["models"]:
         raise ContainerError("usage", f"no API rate for {model_id!r} in {Path(path).name}; "
                                       f"priced: {', '.join(sorted(table['models']))}")
-    return {"model": model_id, **table["models"][model_id],
-            **{k: table[k] for k in ("tier_multiplier", "long_input_threshold",
-                                     "long_input_multiplier", "long_output_multiplier")}}
+    return {"model": model_id, **table["models"][model_id], **{k: table[k] for k in p["rule_keys"]}}
 
 
 def usage_usd(rates: dict, *, input_tokens, cached, cache_write, output_tokens, multiplier) -> float:
@@ -448,18 +605,19 @@ def _canonical(value) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
-def input_basis(body: dict) -> dict:
-    """Byte sizes and a hash chain over the request's input items.
+def input_basis(body: dict, items_key: str = "input") -> dict:
+    """Byte sizes and a hash chain over the request's input items
+    (`input` for Responses, `messages` for Anthropic Messages).
 
     chains[k] identifies the first k items, so a later request can be checked
     for starting with an earlier request's whole input. A token is at least
     one byte of its text and JSON escaping only adds bytes, so a canonical
     item's byte length bounds its text tokens.
     """
-    items = body.get("input", [])
+    items = body.get(items_key, [])
     if not isinstance(items, list):
         items = [items]
-    rest = _canonical({k: v for k, v in body.items() if k != "input"})
+    rest = _canonical({k: v for k, v in body.items() if k != items_key})
     h = hashlib.sha256(b"").digest()
     chains, sizes = [h.hex()], []
     for item in items:
@@ -525,7 +683,8 @@ def usd_totals(rows: list) -> dict:
             reserved.pop(u["rid"], None)
             charged += u["charged_usd"]
             floor = max(floor, u.get("multiplier_floor") or 0.0)
-            tokens = (r.get("usage") or {}).get("input_tokens")
+            # Anthropic's input_tokens exclude cache reads and writes; its rows carry the total.
+            tokens = u.get("input_total", (r.get("usage") or {}).get("input_tokens"))
             if u.get("charge_basis") == "usage" and r.get("input_basis") and isinstance(tokens, int):
                 prefix = {**r["input_basis"], "input_tokens": tokens}
     return {"charged_usd": charged, "unsettled_reserved_usd": sum(reserved.values()), "prefix": prefix,
@@ -578,11 +737,14 @@ class UsdBudget:
         m = max(table[self.tier], table["default"]) if self.strict_tier else table[self.tier]
         return max(m, self.floor)
 
+    def worst_case(self, bound: int) -> float:
+        return reserve_usd(self.rates, input_bound=bound, max_output_tokens=self.max_output_tokens,
+                           multiplier=self.multiplier())
+
     def reserve(self, basis: dict):
         """(ticket, None) when the request may go, or (None, refusal detail)."""
         bound, how = input_bound(basis, self.prefix)
-        amount = reserve_usd(self.rates, input_bound=bound, max_output_tokens=self.max_output_tokens,
-                             multiplier=self.multiplier())
+        amount = self.worst_case(bound)
         if self.exhausted or self.settled + self.outstanding + amount > self.max_usd:
             self.exhausted = True
             return None, (f"usd_limit: spent {self.settled + self.outstanding:.4f} + worst case {amount:.4f} "
@@ -621,6 +783,57 @@ class UsdBudget:
                 "session_spent_usd": round(self.settled + self.outstanding, 6), "multiplier_floor": self.floor}
 
 
+class AnthropicUsdBudget(UsdBudget):
+    """UsdBudget for Anthropic Messages, with the usage ledger's rates (native_usd).
+
+    No tiers: the proxy refuses service_tier and speed, so a request runs at
+    standard rates; a response reporting another tier keeps its reservation.
+    Worst case: every input token at the dearest of the input and both
+    cache-write rates, plus the output cap (thinking counts as output). Cache
+    writes are charged by lifetime; writes the provider did not split by
+    lifetime are charged at the dearer rate. No long-context rule is applied,
+    as in the ledger.
+    """
+
+    def multiplier(self) -> float:
+        return 1.0
+
+    def worst_case(self, bound: int) -> float:
+        r = self.rates
+        dearest = max(r["input"], r["cache_write_5m"], r["cache_write_1h"])
+        return (bound * dearest + self.max_output_tokens * r["output"]) / 1e6
+
+    def settle(self, ticket: dict, *, http_status, response: dict) -> dict:
+        self.outstanding -= ticket["reserved_usd"]
+        u, r = response.get("usage") or {}, self.rates
+        i, cr, cw, o = (u.get(k) for k in ("input_tokens", "cache_read_input_tokens",
+                                             "cache_creation_input_tokens", "output_tokens"))
+        w5, w1 = u.get("ephemeral_5m_input_tokens") or 0, u.get("ephemeral_1h_input_tokens") or 0
+        total = None
+        if http_status is not None and http_status != 200:
+            charged, how = 0.0, "error_status"  # assumed unbilled, not verified
+        elif all(isinstance(x, int) and not isinstance(x, bool) and x >= 0 for x in (i, cr, cw, o, w5, w1)) \
+                and w5 + w1 <= cw and u.get("service_tier") in (None, "standard"):
+            charged = (i * r["input"] + cr * r["cache_read"] + w5 * r["cache_write_5m"] + w1 * r["cache_write_1h"]
+                       + (cw - w5 - w1) * max(r["cache_write_5m"], r["cache_write_1h"]) + o * r["output"]) / 1e6
+            how, total = "usage", i + cr + cw
+            basis = ticket["basis"]
+            self.prefix = {"items": basis["items"], "chain_sha256": basis["chains"][-1],
+                           "rest_sha256": basis["rest_sha256"], "input_tokens": total}
+        else:
+            charged, how = ticket["reserved_usd"], "reservation"
+        self.settled += charged
+        out = {"rid": ticket["rid"], "reserved_usd": round(ticket["reserved_usd"], 6),
+               "charged_usd": round(charged, 6), "charge_basis": how,
+               "session_spent_usd": round(self.settled + self.outstanding, 6), "multiplier_floor": self.floor}
+        if total is not None:
+            out["input_total"] = total
+        return out
+
+
+BUDGETS = {"openai": UsdBudget, "anthropic": AnthropicUsdBudget}
+
+
 class EgressProxy:
     """HTTP/1.1 on a Unix socket; one upstream request per accepted request."""
 
@@ -629,9 +842,16 @@ class EgressProxy:
                  max_output_tokens: int | None = None, budget: UsdBudget | None = None,
                  on_usd_exhausted=None,
                  max_connections: int = MAX_CONNECTIONS, max_body: int = MAX_BODY_BYTES,
-                 socket_timeout: float = SOCKET_TIMEOUT):
+                 socket_timeout: float = SOCKET_TIMEOUT, provider: str = "openai"):
         if budget is not None and max_output_tokens != budget.max_output_tokens:
             raise ValueError("a dollar limit needs the proxy's output cap to be the budget's")
+        if provider not in PROVIDERS:
+            raise ValueError(f"no egress route for provider {provider!r}")
+        if budget is not None and type(budget) is not BUDGETS[provider]:
+            raise ValueError(f"a {provider} dollar limit needs {BUDGETS[provider].__name__}")
+        if provider == "anthropic" and tier:
+            raise ValueError("the anthropic route sets no service tier")
+        self.provider, self.route = provider, PROVIDERS[provider]["route"]
         self.socket_path, self.key, self.model_id, self.tier = socket_path, key, model_id, tier
         self.upstream = urllib.parse.urlsplit(upstream)
         self.log_path, self.max_requests = log_path, max_requests
@@ -670,14 +890,138 @@ class EgressProxy:
                 self.wfile.write(payload)
                 self.close_connection = True
 
+            def forward_anthropic(self, body, n, release):
+                """Anthropic Messages: check, cap, reserve, forward with the host key, stream back, log usage."""
+                query = urllib.parse.urlsplit(self.path).query
+                betas = [b.strip() for b in (self.headers.get("anthropic-beta") or "").split(",") if b.strip()]
+                reason = "query_refused" if query not in ("", "beta=true") else \
+                    check_anthropic_request(body, model_id=proxy.model_id, betas=betas)
+                if reason is None and proxy.max_output_tokens is not None:
+                    asked = body.get("max_tokens")
+                    if not (isinstance(asked, int) and not isinstance(asked, bool)
+                            and 0 < asked < proxy.max_output_tokens):
+                        body["max_tokens"] = proxy.max_output_tokens
+                    thinking = body.get("thinking") or {}
+                    budget_tokens = thinking.get("budget_tokens")
+                    if thinking.get("type") == "enabled" and not (
+                            isinstance(budget_tokens, int) and budget_tokens < body["max_tokens"]):
+                        reason = "thinking_budget_not_below_output_cap"
+                if reason is None and proxy.budget is not None:
+                    reason = anthropic_unpriceable(body.get("system")) or anthropic_unpriceable(body.get("messages"))
+                if reason:
+                    release()
+                    return self.refuse(403, reason)
+                ticket = None
+                if proxy.budget is not None:
+                    basis = input_basis(body, items_key="messages")
+                    with proxy.lock:
+                        ticket, refusal = proxy.budget.reserve(basis)
+                    if ticket is None:
+                        release()
+                        self.refuse(429, refusal)
+                        if proxy.on_usd_exhausted:
+                            proxy.on_usd_exhausted(refusal)
+                        return
+                    proxy.log({"event": "usd_reserved", "n": n, "rid": ticket["rid"],
+                               "reserved_usd": round(ticket["reserved_usd"], 6),
+                               "input_bound": ticket["input_bound"], "bound_basis": ticket["bound_basis"]})
+
+                def settle(http_status, response):
+                    if ticket is None:
+                        return {}
+                    with proxy.lock:
+                        usd = proxy.budget.settle(ticket, http_status=http_status, response=response)
+                    b = ticket["basis"]
+                    return {"usd": usd, "input_basis": {"items": b["items"], "chain_sha256": b["chains"][-1],
+                                                        "rest_sha256": b["rest_sha256"]}}
+
+                data = json.dumps(body).encode()
+                # Headers are rebuilt, not copied: the container's x-api-key and
+                # authorization never go upstream, and only allowed betas do.
+                headers = {"content-type": "application/json", "anthropic-version": ANTHROPIC_VERSION,
+                           "x-api-key": proxy.key, "content-length": str(len(data))}
+                if betas:
+                    headers["anthropic-beta"] = ",".join(betas)
+                up = proxy.upstream
+                conn_cls = http.client.HTTPSConnection if up.scheme == "https" else http.client.HTTPConnection
+                started = time.time()
+                try:
+                    conn = conn_cls(up.hostname, up.port, timeout=900)
+                    conn.request("POST", up.path.rstrip("/") + proxy.route + (f"?{query}" if query else ""),
+                                 data, headers)
+                    resp = conn.getresponse()
+                except OSError as e:
+                    proxy.log({"event": "upstream_error", "provider": "anthropic", "n": n, "detail": str(e)[:300],
+                               **settle(None, {})})
+                    return self.refuse(502, "upstream unreachable")
+                self.send_response(resp.status)
+                for k, v in resp.getheaders():
+                    if k.lower() not in ("transfer-encoding", "connection", "content-length", "keep-alive"):
+                        self.send_header(k, v)
+                self.send_header("connection", "close")
+                self.end_headers()
+                usage, buf, head = {}, b"", b""
+                message, terminal, stop_reason, error_type, stream_error = {}, None, None, None, None
+                try:
+                    while True:
+                        chunk = resp.read1(65536)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        self.wfile.flush()
+                        if resp.status != 200 and len(head) < 2000:
+                            head += chunk[: 2000 - len(head)]
+                        buf += chunk
+                        *lines, buf = buf.split(b"\n")
+                        for line in lines:
+                            if not line.startswith(b"data:"):
+                                continue
+                            try:
+                                event = json.loads(line[5:].strip())
+                            except ValueError:
+                                continue
+                            kind = event.get("type") if isinstance(event, dict) else None
+                            if kind == "message_start" and isinstance(event.get("message"), dict):
+                                message = event["message"]
+                                merge_anthropic_usage(usage, message.get("usage"))
+                            elif kind == "message_delta":
+                                merge_anthropic_usage(usage, event.get("usage"))
+                                stop_reason = (event.get("delta") or {}).get("stop_reason") or stop_reason
+                            elif kind == "message_stop":
+                                terminal = kind
+                            elif kind == "error":
+                                error_type = (event.get("error") or {}).get("type") or "error"
+                except OSError as e:
+                    # The container went away (cancellation) or the upstream broke.
+                    stream_error = str(e)[:300]
+                    proxy.log({"event": "stream_error", "provider": "anthropic", "n": n, "detail": stream_error})
+                finally:
+                    conn.close()
+                response_model = message.get("model")
+                proxy.log({
+                    "event": "request", "provider": "anthropic", "n": n, "http_status": resp.status,
+                    "model": body.get("model"), "requested_tier": None, "observed_tier": usage.get("service_tier"),
+                    "terminal": terminal, "response_id": message.get("id"), "response_model": response_model,
+                    **({"model_mismatch": True} if response_model and response_model != proxy.model_id else {}),
+                    "stop_reason": stop_reason, "thinking": (body.get("thinking") or {}).get("type"),
+                    "effort": (body.get("output_config") or {}).get("effort"), "betas": betas,
+                    "usage": {k: usage.get(k) for k in ANTHROPIC_USAGE_KEYS},
+                    **({"server_tool_use": usage["server_tool_use"]} if usage.get("server_tool_use") else {}),
+                    **({"stream_error_type": error_type} if error_type else {}),
+                    "seconds": round(time.time() - started, 3),
+                    **({"error_head": head.decode("utf-8", "replace")} if resp.status != 200 else {}),
+                    **settle(resp.status if terminal is not None or resp.status != 200 else None, {"usage": usage}),
+                })
+                self.close_connection = True
+
             def do_GET(self):
-                self.refuse(403, "only POST /v1/responses is allowed")
+                self.refuse(403, f"only POST {proxy.route} is allowed")
 
             do_PUT = do_DELETE = do_PATCH = do_GET
 
             def do_POST(self):
-                if self.path.split("?", 1)[0] != "/v1/responses":
-                    return self.refuse(403, "only POST /v1/responses is allowed")
+                if self.path.split("?", 1)[0] != proxy.route:
+                    return self.refuse(403, f"only POST {proxy.route} is allowed")
                 if self.headers.get("transfer-encoding"):
                     return self.refuse(411, "chunked or encoded request bodies are not accepted")
                 length = self.headers.get("content-length", "")
@@ -715,6 +1059,8 @@ class EgressProxy:
                 except ValueError:
                     release()
                     return self.refuse(400, "body is not JSON")
+                if proxy.provider == "anthropic":
+                    return self.forward_anthropic(body, n, release)
                 reason = check_request(body, model_id=proxy.model_id)
                 if reason:
                     release()
@@ -882,17 +1228,19 @@ def run_turn(spec_path: str) -> int:
     def stop_container(signum, _frame):
         stop(signal=signum)
 
+    provider = spec.get("provider", "openai")
     budget = None
     if spec.get("usd_limit"):
         lim = spec["usd_limit"]
-        budget = UsdBudget(max_usd=lim["max_usd"], rates=lim["rates"], tier=spec.get("service_tier"),
+        budget = BUDGETS[provider](max_usd=lim["max_usd"], rates=lim["rates"], tier=spec.get("service_tier"),
                            max_output_tokens=spec["max_output_tokens"], spent_before_usd=lim["spent_before_usd"],
                            prefix=lim.get("prefix"), multiplier_floor=lim.get("multiplier_floor") or 0.0,
                            strict_tier=bool(lim.get("strict_tier")))
     proxy = EgressProxy(spec["socket_path"], upstream=spec["upstream"], key=key, model_id=spec["model_id"],
                         tier=spec.get("service_tier"), log_path=spec["files"]["proxy_log"],
                         max_requests=spec.get("max_requests"), max_output_tokens=spec.get("max_output_tokens"),
-                        budget=budget, on_usd_exhausted=lambda detail: stop(reason="usd_limit", detail=detail)).start()
+                        budget=budget, on_usd_exhausted=lambda detail: stop(reason="usd_limit", detail=detail),
+                        provider=provider).start()
     del key
     note("proxy_listening", socket=spec["socket_path"], upstream=spec["upstream"])
 

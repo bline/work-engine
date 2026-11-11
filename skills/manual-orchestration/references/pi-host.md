@@ -125,7 +125,7 @@ limit. Make the retained-or-fresh decision from that reading as
 ## Container mode
 
 `--container` runs each turn in a Docker container with no network. It is
-available on the api lane for provider `openai`; subscription sessions run on
+available on the api lane for providers `openai` and `anthropic`; subscription sessions run on
 the host. Host facts: [Pi Docker probe](../../../metrics/probes/pi-docker-host-20261109.json)
 (Docker 29.7.2, local fake endpoint, n = 1 per cell).
 
@@ -229,6 +229,42 @@ tools declared directly (17 in 0.11.0), named `mcp__codebase_memory_mcp__<tool>`
 (Pi turns the dashes into underscores). The index records no revision: it
 matches the tree because it was built from it at launch. Whether it refreshes
 after the agent edits files inside the container is not established.
+
+### Anthropic Messages
+
+`--host-arg=--model --host-arg=anthropic/<model-id>` routes Pi's own
+`anthropic-messages` transport through the same container and proxy
+(2026-11-10, offline with mocked providers; no live Anthropic request yet).
+Differences from the OpenAI route:
+
+- The proxy accepts `POST /v1/messages` (query `beta=true` only) for the
+  launched model, with `stream: true`. It forwards a fixed set of top-level
+  fields; `fallbacks` (another model may serve the request), `service_tier`,
+  `speed`, `container`, `mcp_servers` and anything else are refused. Betas are
+  limited to the ones Pi uses, without `server-side-fallback`. Tools must be
+  custom (no `type`, or `custom`) in `tools` and in inline `tool_addition`
+  blocks. No service tier is set; `--service-tier` is refused.
+- The proxy rebuilds the headers: `anthropic-version`, the allowed
+  `anthropic-beta` values and `x-api-key` with the host key from
+  `pi auth print-api-key --provider anthropic` (must be `sk-ant-`, not an OAuth
+  `sk-ant-oat` token). The container holds `ANTHROPIC_API_KEY` set to a
+  placeholder. Upstream is `https://api.anthropic.com`, or
+  `ROLE_HOST_PI_UPSTREAM_ANTHROPIC`.
+- Usage comes from the stream's `message_start` and `message_delta` events:
+  input, cache reads, cache writes split into 5-minute and 1-hour lifetimes,
+  and output. The proxy log row carries `provider: anthropic`;
+  `usage_ledger.py build` prices it with the Claude rates (`native_usd`) in
+  pool `pi_api`.
+- `--max-usd` uses `scripts/anthropic_api_rates.json` (a test keeps it equal to
+  the ledger's rates). The worst case prices every input token at the dearest
+  of the input and both cache-write rates, plus `max_tokens` forced to the
+  output cap; a budget-thinking `budget_tokens` at or above the cap is refused.
+  Cache writes the provider does not split by lifetime are charged at the
+  1-hour rate; a reported tier other than `standard` keeps the reservation.
+- A model missing from Pi's catalog (Pi 1.4.0 lacks `claude-fable-5-2`) needs
+  `--container-model-file <json>`: one Pi `models.json` model entry with that
+  id, written under the provider with the relay `baseUrl`; it may not set
+  `baseUrl`, `headers`, `apiKey` or fallback models.
 
 ## Not supported here
 

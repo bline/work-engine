@@ -706,6 +706,30 @@ def pi_session_cache_writes(session_dir, sid):
                     out[m['responseId']] = cw
     return out
 
+def pi_anthropic_call(p, log, n, ts, rid, sid, launch):
+    """One Anthropic Messages call from a Pi egress-proxy row, priced like a Claude call (native_usd)."""
+    pu = p.get('usage') or {}
+    u = {k: pu.get(k) for k in NATIVE_KEYS}
+    u.update({k: pu[k] for k in TTL_KEYS if pu.get(k) is not None})
+    model = p.get('response_model') or p.get('model')
+    tier = p.get('observed_tier') if isinstance(p.get('observed_tier'), str) else None
+    valid = valid_usage(u, NATIVE_KEYS + TTL_KEYS, NATIVE_KEYS) and valid_timestamp(ts)
+    lo = hi = un = None
+    if valid and tier in (None, 'standard') and not p.get('server_tool_use'):
+        try: lo, hi, un = native_usd(u, model)
+        except (ValueError, TypeError, ArithmeticError) as e: issue('invalid_call_usage', path=log, line=n, error=str(e))
+    if lo is None:
+        issue('unpriced_call', path=log, line=n, reason='no rate, invalid usage, unpriced tier or server tools')
+    row = dict(provider='pi', usage_shape='anthropic', ts=ts, call_id=rid, dedupe_basis='response_id', thread=sid,
+               parent_thread=launch.get('parent_session_id'), agent_path=None, originator='role_host',
+               model=model, effort=launch.get('thinking'), role_index=None, role_heuristic=None,
+               usage=u, weighted=native_weighted(u) if valid else None, usd=lo if lo == hi else None,
+               usd_low=lo, usd_high=hi, unknown_ttl_tokens=un, source=f'{log}:{n}', pools=['pi_api'],
+               service_tier=tier, quota_multiplier=1.0, requested_tier=None, lane=launch.get('auth_lane'),
+               cache_write_basis='egress_proxy', latency_s=p.get('seconds'), latency_basis='egress_proxy_request')
+    annotate_call_measurements(row)
+    return row
+
 def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
     """Pi container turns run by role_host: one call per response_id in the host egress-proxy log.
 
@@ -752,6 +776,9 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
             seen.add(rid)
             ts = p.get('at')
             if not in_window(ts, since, until):
+                continue
+            if p.get('provider') == 'anthropic':
+                rows.append(pi_anthropic_call(p, log, n, ts, rid, sid, launch))
                 continue
             pu = p.get('usage') or {}
             cw, basis = pu.get('cache_write_tokens'), 'egress_proxy'
@@ -983,10 +1010,15 @@ def annotate_call_measurements(row):
     context = None
     if row.get('weighted') is not None:
         context = u.get('input_tokens', 0)
-        if row['provider'] not in CODEX_SHAPED:
+        if not codex_shaped(row):
             context += u.get('cache_read_input_tokens', 0) + u.get('cache_creation_input_tokens', 0)
     row['input_context_tokens'] = context
-    row['api_long_context_input'] = context > PRICING_RULES['codex_long_input_threshold'] if row['provider'] in CODEX_SHAPED and context is not None else None
+    row['api_long_context_input'] = context > PRICING_RULES['codex_long_input_threshold'] if codex_shaped(row) and context is not None else None
+
+
+def codex_shaped(row):
+    """Codex/Responses usage (input includes cache); Pi Anthropic calls carry Claude-shaped usage."""
+    return row['provider'] in CODEX_SHAPED and row.get('usage_shape') != 'anthropic'
 
 
 def finish_measurements(result, quota):
