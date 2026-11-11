@@ -74,6 +74,7 @@ class Successor(unittest.TestCase):
         self.assertEqual(p["totals"]["codex"]["calls"], 3)                     # 01:10, 01:20, kid 01:25
         self.assertEqual(tail["candidate_totals"]["codex"]["calls"], 1)        # predecessor binding stays
         self.assertEqual(tail["successor_excluded"]["calls"], 3)               # root 01:40/01:50 + kid 01:45
+        self.assertEqual((tail["successor_excluded"]["totals"]["codex"]["calls"], tail["successor_excluded"]["totals"]["codex"]["quota_usd_high"]), (3, 3.0))
         self.assertEqual(s["totals"]["codex"]["calls"], 3)                     # = what the predecessor excluded
         self.assertEqual(3 + 1 + 3, len(CALLS))                                # conservation: nothing lost
         self.assertEqual(p["reconciled_all_in"]["totals"]["codex"]["calls"], 4)
