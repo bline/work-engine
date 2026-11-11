@@ -2,6 +2,15 @@
 
 use crate::error::{BadRequest, CannotRead, Error, Unsupported};
 use gix::hash::{Kind as HashKind, ObjectId};
+
+// S9 (R-1b.6): the post-open object-format check below cannot fire while gix offers only SHA-1
+// (gix-hash features {default, sha1} on the frozen lock). If a second hash kind becomes
+// available (gix-hash feature `sha256`), this stops the build, so that check and every
+// SHA-1-only parse in this crate are reviewed before such a repository can be opened.
+const _: () = assert!(
+    matches!(HashKind::all(), [HashKind::Sha1]),
+    "gix offers a hash kind other than SHA-1; review the object-format checks"
+);
 use gix::objs::Kind;
 use std::collections::{HashSet, VecDeque};
 use std::path::{Path, PathBuf};
