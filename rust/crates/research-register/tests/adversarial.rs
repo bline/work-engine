@@ -1542,3 +1542,102 @@ fn security_tree_nesting_limit_boundary() {
         &Expect::Refuse("cannot_read"),
     );
 }
+
+/// O3 FO3-03 (X1): N18 git-dir half. Two linked-worktree git directories under one ASCII common
+/// directory: `worktrees/cafe\u{301}` (NFD, HEAD = c1) and `worktrees/caf\u{e9}` (NFC, HEAD = c2).
+/// With core.precomposeUnicode gix opens the NFC sibling; both resolve to the same common
+/// directory, so only the git-dir comparison detects it. Fixture by Fable (O3 report C4a,
+/// `scratch/tests/n18_gitdir_half.rs.inc`), renamed.
+#[test]
+fn security_precomposed_worktree_git_dir_cannot_open_a_sibling_worktree() {
+    let fx = Fx::new("n18-gitdir-half");
+    let (r, c1, c2) = fx.base("repo", &none);
+    fx.git(&r, &["config", "core.precomposeUnicode", "true"]);
+    let wts = r.join(".git").join("worktrees");
+    let (target, decoy) = (wts.join("cafe\u{301}"), wts.join("caf\u{e9}"));
+    let (wt_t, wt_d) = (fx.root.join("wt-target"), fx.root.join("wt-decoy"));
+    for (gd, wt, head) in [(&target, &wt_t, &c1), (&decoy, &wt_d, &c2)] {
+        write(&gd.join("HEAD"), &format!("{head}\n"));
+        write(&gd.join("commondir"), "../..\n");
+        write(
+            &gd.join("gitdir"),
+            &format!("{}\n", wt.join(".git").display()),
+        );
+        write(&wt.join(".git"), &format!("gitdir: {}\n", gd.display()));
+    }
+    assert_eq!(
+        std::fs::read_dir(&wts).unwrap().count(),
+        2,
+        "CONTROL: NFC and NFD worktree git dirs are distinct"
+    );
+    let control = read(&wt_d, "HEAD", "reg").expect("CONTROL: the decoy worktree opens");
+    assert_eq!(
+        control.commit().to_string(),
+        c2,
+        "CONTROL: decoy HEAD is c2"
+    );
+    for repo in [target.clone(), wt_t.clone()] {
+        match read(&repo, "HEAD", "reg") {
+            Ok(s) => {
+                assert_eq!(
+                    s.commit().to_string(),
+                    c1,
+                    "SECURITY: HEAD of the NFD worktree git dir {} is c1; the NFC sibling's HEAD \
+                     was read",
+                    repo.display()
+                );
+                panic!(
+                    "FIXTURE: gix did not redirect {}; the fixture does not exercise the check",
+                    repo.display()
+                );
+            }
+            Err(e) => assert_eq!(e.category(), "cannot_read", "{}: {e}", repo.display()),
+        }
+    }
+}
+
+/// O3 FO3-02 (X6, X11): overlong 3- and 4-byte UTF-8 after `.git` is malformed for git, so the
+/// name is `.git` (`hasDotgit`) and `cannot_read` in the root tree and in the register. Unlike
+/// `.git\xe0\x80\x80` (decodes to U+0000, which ends the name either way), these decode to a
+/// non-zero code point, so they pin the overlong clauses themselves (coordinator-verified names).
+#[test]
+fn security_dotgit_with_overlong_utf8_is_cannot_read() {
+    let fx = Fx::new("dotgit-overlong");
+    let (r, _, _) = fx.base("repo", &none);
+    let b1 = fx.git_with(
+        &r,
+        &["hash-object", "-w", "--stdin"],
+        Some(b"{\"v\": 1}\n"),
+        &[],
+    );
+    let plain = literal_tree(&fx, &r, &[("100644", "decisions.json", &b1)]);
+    let names: &[(&[u8], &str)] = &[
+        (b".git\xe0\x9f\xbf", "overlong 3-byte U+07FF"),
+        (b".git\xf0\x8f\xbf\xbf", "overlong 4-byte U+FFFF"),
+    ];
+    for (name, what) in names {
+        let root = literal_tree_bytes(
+            &fx,
+            &r,
+            &[("100644", name, &b1), ("040000", b"reg", &plain)],
+        );
+        let at_root = fx.git(&r, &["commit-tree", &root, "-m", "name in the root tree"]);
+        judge(
+            &fx,
+            &format!(".git + {what} in the root tree"),
+            read(&r, &at_root, "reg"),
+            &Expect::Refuse("cannot_read"),
+        );
+        let reg = literal_tree_bytes(
+            &fx,
+            &r,
+            &[("100644", b"decisions.json", &b1), ("100644", name, &b1)],
+        );
+        judge(
+            &fx,
+            &format!(".git + {what} in the register"),
+            read(&r, &commit_with_register(&fx, &r, &reg), "reg"),
+            &Expect::Refuse("cannot_read"),
+        );
+    }
+}
