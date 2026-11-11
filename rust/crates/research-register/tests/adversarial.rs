@@ -1019,6 +1019,107 @@ fn security_unsafe_tree_entry_names_are_cannot_read() {
     );
 }
 
+fn literal_tree_bytes(fx: &Fx, r: &Path, entries: &[(&str, &[u8], &str)]) -> String {
+    let mut bytes = Vec::new();
+    for (mode, name, id) in entries {
+        bytes.extend_from_slice(format!("{mode} ").as_bytes());
+        bytes.extend_from_slice(name);
+        bytes.push(0);
+        bytes.extend_from_slice(gix::ObjectId::from_hex(id.as_bytes()).unwrap().as_bytes());
+    }
+    fx.git_with(
+        r,
+        &["hash-object", "-t", "tree", "-w", "--literally", "--stdin"],
+        Some(&bytes),
+        &[],
+    )
+}
+
+/// R-1b.6 FB5-04 (D-NAMES): `.git` in an HFS+ form followed by bytes that are not UTF-8 by git's
+/// rule is a name `git fsck --strict` 2.53.0 reports as `hasDotgit`; it is refused as
+/// `cannot_read` in the commit's root tree (on the path to the register) and inside the register,
+/// as `.git` is. Other non-UTF-8 names keep A6: ignored above the register, R-01 inside it.
+#[test]
+fn security_dotgit_with_malformed_utf8_is_cannot_read() {
+    let fx = Fx::new("dotgit-malformed");
+    let (r, _, _) = fx.base("repo", &none);
+    let b1 = fx.git_with(
+        &r,
+        &["hash-object", "-w", "--stdin"],
+        Some(b"{\"v\": 1}\n"),
+        &[],
+    );
+    let refuse = |what: &str, commit: &str| {
+        judge(
+            &fx,
+            what,
+            read(&r, commit, "reg"),
+            &Expect::Refuse("cannot_read"),
+        )
+    };
+    let unsafe_names: &[&[u8]] = &[
+        b".git\xff",
+        b".git\xe2\x80",
+        b".GIT\xff",
+        b".git\xed\xa0\x80",
+        b".git\xc0\x80",
+        b".git\xf0\x9f",
+        b".git\xef\xbf\xbe",
+        b".git\xe2\x80\x8c\xff",
+        b"\xef\xbb\xbf.Git\xff",
+    ];
+    let plain = literal_tree(&fx, &r, &[("100644", "decisions.json", &b1)]);
+    let at_root = |name: &[u8]| {
+        let root = literal_tree_bytes(
+            &fx,
+            &r,
+            &[("100644", name, &b1), ("040000", b"reg", &plain)],
+        );
+        fx.git(&r, &["commit-tree", &root, "-m", "name in the root tree"])
+    };
+    let in_register = |name: &[u8]| {
+        let reg = literal_tree_bytes(
+            &fx,
+            &r,
+            &[("100644", b"decisions.json", &b1), ("100644", name, &b1)],
+        );
+        commit_with_register(&fx, &r, &reg)
+    };
+    for name in unsafe_names {
+        let shown = String::from_utf8_lossy(name);
+        refuse(&format!("{shown:?} in the root tree"), &at_root(name));
+        refuse(&format!("{shown:?} in the register"), &in_register(name));
+    }
+    // Controls (A6 unchanged): non-UTF-8 names that are not `.git` forms, and `.git` followed by
+    // valid UTF-8.
+    let controls: &[(&[u8], &str)] = &[
+        (b"\xff.git", "\\xff.git"),
+        (b".gi\xfft", ".gi\\xfft"),
+        (b".\xffgit", ".\\xffgit"),
+        (b"n\xffe.txt", "n\\xffe.txt"),
+    ];
+    for (name, escaped) in controls {
+        read(&r, &at_root(name), "reg")
+            .unwrap_or_else(|e| panic!("BEHAVIOR: {escaped} in the root tree is refused: {e}"));
+        let s = read(&r, &in_register(name), "reg")
+            .unwrap_or_else(|e| panic!("BEHAVIOR: {escaped} in the register is refused: {e}"));
+        let violations = match research_register::validate(&s).unwrap() {
+            research_register::Outcome::Invalid(v) => v,
+            research_register::Outcome::Valid(_) => Vec::new(),
+        };
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule.as_str() == "R-01" && v.location.file == *escaped),
+            "BEHAVIOR: {escaped} in the register is not R-01 (A6)"
+        );
+    }
+    for name in [".git\u{e9}", ".git\u{1f600}"] {
+        read(&r, &in_register(name.as_bytes()), "reg")
+            .unwrap_or_else(|e| panic!("BEHAVIOR: {name:?} in the register is refused: {e}"));
+    }
+}
+
 #[test]
 fn security_namespace_settings_cannot_redirect_a_reference() {
     let fx = Fx::new("namespace");

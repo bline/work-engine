@@ -544,14 +544,17 @@ fn parse_tag_target(id: ObjectId, data: &[u8]) -> Result<ObjectId, CannotRead> {
 /// applies to tree entries (`git fsck`'s `hasDotgit`, which runs both regardless of platform):
 ///
 /// - HFS+: `.git` compared case-insensitively after removing the code points HFS+ ignores
-///   (U+200C-U+200F, U+202A-U+202E, U+206A-U+206F, U+FEFF), anywhere in the name;
+///   (U+200C-U+200F, U+202A-U+202E, U+206A-U+206F, U+FEFF), anywhere in the name; bytes after
+///   `.git` that are not UTF-8 by git's rule end the comparison as the end of the name would, so
+///   `.git\xff` is refused ([`is_hfs_dotgit`], FB5-04);
 /// - NTFS: in any segment between backslashes, `.git` or the short name `git~1`
 ///   (case-insensitive), followed only by dots and spaces up to the end or a `:` (alternate
 ///   data stream).
 ///
-/// Both checks are gix-validate's ports of git's `is_hfs_dotgit` and `is_ntfs_dotgit`; the split
-/// on backslash is git's own and is applied here because gix-validate leaves it to its Windows
-/// option, which also refuses unrelated names. Checked against `git fsck` 2.53.0 (R-1b.4).
+/// The HFS+ check is a port of git's `is_hfs_dotgit` on the raw bytes; the NTFS check is
+/// gix-validate's port of `is_ntfs_dotgit`, with git's own split on backslash applied here
+/// because gix-validate leaves it to its Windows option, which also refuses unrelated names.
+/// Checked against `git fsck` 2.53.0 (R-1b.4; malformed UTF-8 forms R-1b.6).
 pub(crate) fn unsafe_entry_name(raw: &[u8]) -> Option<&'static str> {
     use gix::validate::path::component::{self, Error as Refused, Options};
     if raw.is_empty() {
@@ -569,20 +572,94 @@ pub(crate) fn unsafe_entry_name(raw: &[u8]) -> Option<&'static str> {
             Err(Refused::DotGitDir)
         )
     };
-    let hfs = component::Options {
-        protect_windows: false,
-        protect_hfs: true,
-        protect_ntfs: false,
-    };
     let ntfs = component::Options {
         protect_windows: false,
         protect_hfs: false,
         protect_ntfs: true,
     };
-    if dotgit(raw, hfs) || raw.split(|b| *b == b'\\').any(|s| dotgit(s, ntfs)) {
+    if is_hfs_dotgit(raw) || raw.split(|b| *b == b'\\').any(|s| dotgit(s, ntfs)) {
         return Some("is equivalent to '.git'");
     }
     None
+}
+
+/// git's `is_hfs_dotgit` (utf8.c) on raw bytes: after the code points HFS+ ignores are skipped,
+/// the name reads `.git` (ASCII, case-insensitive) and then ends. As in git, a byte sequence that
+/// is not UTF-8 by [`git_utf8_char`] counts as the end, so `.git` followed by malformed UTF-8 is
+/// refused, while malformed UTF-8 before or inside `.git` is not a match.
+fn is_hfs_dotgit(raw: &[u8]) -> bool {
+    let mut rest = Some(raw);
+    // git's `next_hfs_char`: the next code point HFS+ does not ignore; 0 at the end of the name
+    // or at malformed UTF-8 (git stops reading there).
+    let mut next = || loop {
+        let Some(s) = rest else { return 0 };
+        let Some((c, len)) = git_utf8_char(s) else {
+            rest = None;
+            return 0;
+        };
+        rest = if c == 0 { None } else { Some(&s[len..]) };
+        match c {
+            0x200c..=0x200f | 0x202a..=0x202e | 0x206a..=0x206f | 0xfeff => continue,
+            _ => return c,
+        }
+    };
+    if next() != u32::from(b'.') {
+        return false;
+    }
+    for needle in b"git" {
+        let c = next();
+        if c > 127 || (c as u8).to_ascii_lowercase() != *needle {
+            return false;
+        }
+    }
+    // git also accepts a directory separator here; tree entry names cannot contain '/'.
+    let c = next();
+    c == 0 || c == u32::from(b'/')
+}
+
+/// git's `pick_one_utf8_char` (utf8.c): the code point at the start of `s` and its length, or
+/// `None` for malformed UTF-8: a stray or invalid lead byte, a missing continuation byte, an
+/// overlong form, a surrogate, U+FFFE or U+FFFF, or a value above U+10FFFF. The end of `s` reads
+/// as code point 0, as git's NUL terminator does.
+fn git_utf8_char(s: &[u8]) -> Option<(u32, usize)> {
+    let b = |i: usize| s.get(i).copied().unwrap_or(0);
+    let cont = |i: usize| b(i) & 0xc0 == 0x80;
+    let low = |i: usize| u32::from(b(i) & 0x3f);
+    let s0 = b(0);
+    if s0 < 0x80 {
+        Some((u32::from(s0), 1))
+    } else if s0 & 0xe0 == 0xc0 {
+        if !cont(1) || s0 & 0xfe == 0xc0 {
+            return None;
+        }
+        Some(((u32::from(s0 & 0x1f) << 6) | low(1), 2))
+    } else if s0 & 0xf0 == 0xe0 {
+        if !cont(1)
+            || !cont(2)
+            || (s0 == 0xe0 && b(1) & 0xe0 == 0x80)
+            || (s0 == 0xed && b(1) & 0xe0 == 0xa0)
+            || (s0 == 0xef && b(1) == 0xbf && b(2) & 0xfe == 0xbe)
+        {
+            return None;
+        }
+        Some(((u32::from(s0 & 0x0f) << 12) | (low(1) << 6) | low(2), 3))
+    } else if s0 & 0xf8 == 0xf0 {
+        if !cont(1)
+            || !cont(2)
+            || !cont(3)
+            || (s0 == 0xf0 && b(1) & 0xf0 == 0x80)
+            || (s0 == 0xf4 && b(1) > 0x8f)
+            || s0 > 0xf4
+        {
+            return None;
+        }
+        Some((
+            (u32::from(s0 & 0x07) << 18) | (low(1) << 12) | (low(2) << 6) | low(3),
+            4,
+        ))
+    } else {
+        None
+    }
 }
 
 /// Split a repository-relative tree path. Refuses empty, absolute, `.` and `..` components.
@@ -871,6 +948,24 @@ mod tests {
             b"a\\git~1",
             b".git\\",
             b"\\.git",
+            // R-1b.6 FB5-04: malformed UTF-8 (git's rule) after an HFS+ `.git` form.
+            b".git\xff",
+            b".git\xe2\x80",
+            b".GIT\xff",
+            b".git\xed\xa0\x80",
+            b".git\xc0\x80",
+            b".git\xc1\xbf",
+            b".git\xe0\x80\x80",
+            b".git\xf0\x80\x80\x80",
+            b".git\xf4\x90\x80\x80",
+            b".git\xf5\x80\x80\x80",
+            b".git\xf0\x9f",
+            b".git\x80",
+            b".git\xef\xbf\xbe",
+            b".git\xef\xbf\xbf",
+            b".git\xe2\x80\x8c\xff",
+            b"\xef\xbb\xbf.git\xff",
+            b".git\xff\xff.",
         ];
         for name in refused {
             assert!(
@@ -890,6 +985,12 @@ mod tests {
             b"...",
             b"a\\b",
             b"\xff.git",
+            b".gi\xfft",
+            b".\xffgit",
+            ".git\u{e9}".as_bytes(),
+            ".git\u{1f600}".as_bytes(),
+            ".git\u{fffd}".as_bytes(),
+            ".git\u{10ffff}".as_bytes(),
         ];
         for name in accepted {
             assert_eq!(
