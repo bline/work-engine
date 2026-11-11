@@ -531,6 +531,34 @@ def spend(sb: dict[str, Any], record: Path, repository: str | None) -> tuple[dic
     return view, reached, unknown
 
 
+def cmd_successor(args: argparse.Namespace) -> int:
+    """Declare the objective's authorized successor; the closure block is left as it was."""
+    path = Path(args.record); doc = load(path)
+    if KEY not in doc:
+        raise UsageError(f"{path} has no {KEY} record")
+    sb = doc[KEY]
+    succ_path = Path(args.successor_record).resolve()
+    nsb = load(succ_path).get(KEY)
+    if not nsb or not nsb.get("objective_id"):
+        raise UsageError("successor record has no objective_id")
+    if nsb["objective_id"] == sb.get("objective_id"):
+        raise UsageError("an objective cannot be its own successor")
+    starts = [nsb.get("started_at")] + [s.get("from") for s in nsb.get("sessions") or [] if isinstance(s, dict)]
+    start = min((parse(x) for x in starts if x), default=None)
+    if start is None:
+        raise UsageError("successor record has no start")
+    if not sb.get("closed_at") or start < parse(sb["closed_at"]):
+        raise UsageError("successor start must not be before the predecessor's closure (predecessor must be closed)")
+    entry = {"objective_id": nsb["objective_id"], "record": str(succ_path), "authorized_start": stamp(start),
+             "set_by": args.set_by, "set_at": stamp(now()), "reason": args.reason}
+    if sb.get("successor"):
+        raise UsageError("successor already declared; it is not replaced")
+    sb["successor"] = entry
+    save(path, doc)
+    print(json.dumps(entry))
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     path = Path(args.record)
     sb = section(load(path), path)
@@ -647,6 +675,9 @@ def parser() -> argparse.ArgumentParser:
     listen.add_argument("--topic", action="append", default=[])
     listen.add_argument("--interval", type=float, default=60)
     listen.add_argument("--repository")
+    su = sub.add_parser("successor", help="declare the authorized successor objective of a closed record")
+    su.add_argument("--record", required=True); su.add_argument("--successor-record", required=True)
+    su.add_argument("--set-by", required=True, choices=("user", "supervisor")); su.add_argument("--reason", required=True)
     c = sub.add_parser("check", help="one JSON line: additions, spend, time, meter, reconsider, stop")
     c.add_argument("--record", required=True)
     c.add_argument("--rollout")
@@ -657,7 +688,7 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
-        commands = {"init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check,
+        commands = {"successor": cmd_successor, "init": cmd_init, "add": cmd_add, "revise": cmd_revise, "check": cmd_check,
                     "add-session": cmd_add_session, "bind": cmd_bind, "cost-limit": cmd_cost_limit,
                     "close": cmd_close, "listen": cmd_listen}
         if args.command == "check":

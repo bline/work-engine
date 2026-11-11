@@ -1134,6 +1134,41 @@ def window_start(sb):
     first = min(valid, key=ts_of)
     return first, ('started_at' if first == sb.get('started_at') else 'earliest_session_from')
 
+def successor_boundary(sb, record_path):
+    """The record's declared successor (scope_budget `successor`): objective id, record and authorized start.
+
+    Valid only when the successor record exists with that objective id, its own earliest authorized start
+    equals the declared boundary, the predecessor is closed and the boundary is not before its closure or
+    start. Anything else is an accounting error: the caller keeps the full post-close tail.
+    """
+    decl = sb.get('successor')
+    if decl is None:
+        return None
+    out = dict(declared=decl, valid=False, error=None)
+    def bad(msg):
+        out['error'] = msg; return out
+    if not isinstance(decl, dict) or not decl.get('objective_id') or not decl.get('record') or not valid_timestamp(decl.get('authorized_start')):
+        return bad('successor needs objective_id, record and an authorized_start timestamp')
+    path = decl['record'] if os.path.isabs(decl['record']) else os.path.join(os.path.dirname(os.path.abspath(record_path)), decl['record'])
+    try:
+        with open(path) as fh: nsb = json.load(fh).get('scope_budget', {})
+    except (OSError, ValueError) as e:
+        return bad(f'successor record unreadable: {e}')
+    if nsb.get('objective_id') != decl['objective_id']:
+        return bad('successor record objective_id differs from the declaration')
+    if nsb.get('objective_id') == sb.get('objective_id'):
+        return bad('an objective cannot be its own successor')
+    start, _ = window_start(nsb)
+    if not valid_timestamp(start) or ts_of(start) != ts_of(decl['authorized_start']):
+        return bad(f'declared authorized_start {decl["authorized_start"]} differs from the successor record start {start}')
+    if not sb.get('closed_at'):
+        return bad('predecessor is not closed, so its boundary with the successor is undefined')
+    if ts_of(start) < ts_of(sb['closed_at']) or ts_of(start) < ts_of(window_start(sb)[0]):
+        return bad('successor start overlaps the predecessor window')
+    sessions = {s.get('session_id') for s in (nsb.get('sessions') or []) + (nsb.get('bindings') or []) if isinstance(s, dict)}
+    out.update(valid=True, start=start, record=os.path.abspath(path), sessions=sorted(x for x in sessions if x))
+    return out
+
 def reconciled_all_in(result, sb):
     """Closed record: in-window totals plus post-close candidates, with hard-limit breaches flagged.
 
@@ -1155,7 +1190,11 @@ def reconciled_all_in(result, sb):
             breaches.append(dict(pool=pool, max_usd=maximum, set_by=limit.get('set_by'), all_in_quota_usd_high=value,
                                  in_window_quota_usd_high=inside, post_close_quota_usd_high=value - inside,
                                  status='not_established' if unknown and value <= maximum else 'exceeded'))
-    status = 'complete' if result['status'] == 'complete' and tail['coverage'] == 'complete' else 'partial'
+    succ = tail.get('successor')
+    if succ is not None and not succ['valid']:
+        status = 'accounting_error'
+    else:
+        status = 'complete' if result['status'] == 'complete' and tail['coverage'] == 'complete' else 'partial'
     return dict(status=status, basis='in-window totals + post_close candidate_totals', totals=totals,
                 measurements=cost_measurements(totals), hard_limit_breaches=breaches)
 
@@ -1298,6 +1337,22 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     if 'post_close' in result:
         tail = result['post_close']; tail['candidate_totals'] = pools()
         tail_sessions = {}; after = ts_of(tail['excluded_after'])
+        succ = successor_boundary(sb, record_path)
+        if succ is not None:
+            tail['successor'] = succ
+            if succ['valid']:
+                tail['successor_excluded'] = dict(objective_id=succ['declared']['objective_id'], start=succ['start'], totals=pools(), calls=0)
+            else:
+                result['issues'].append(dict(kind='successor_boundary_error', error=succ['error']))
+        def succeeds(nid):
+            # A successor session, or a child reached only through links both records share (codex parent,
+            # role_host launch, Claude subagent). A predecessor binding or successor session is its own.
+            cur, seen = nid, set()
+            while cur and cur not in seen:
+                if cur in succ['sessions']: return True
+                if cur not in nodes or nodes[cur]['link'] not in ('codex_parent', 'role_host', 'claude_subagent'): return False
+                seen.add(cur); cur = nodes[cur]['parent_node_id']
+            return False
         for c in observed_calls:
             if not valid_timestamp(c.get('ts')) or not (after < ts_of(c['ts']) <= ts_of(now)):
                 continue
@@ -1306,6 +1361,11 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             if nid not in nodes or (starts[nid] and ts_of(c['ts']) < ts_of(starts[nid])):
                 continue
             spend = call_spend(c)
+            if succ is not None and succ['valid'] and ts_of(c['ts']) >= ts_of(succ['start']) and succeeds(nid):
+                # The successor's call: accounted there, kept visible here, never in this tail.
+                excluded = tail['successor_excluded']; excluded['calls'] += 1
+                for p in c['pools']: add_spend(excluded['totals'][p], spend)
+                continue
             row = tail_sessions.setdefault(nid, dict(node_id=nid, session_id=sid,
                 provider=c['provider'], totals=pools(), first_call=c['ts'], last_call=c['ts']))
             row['first_call'] = min(row['first_call'], c['ts'], key=ts_of)
@@ -1397,6 +1457,9 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             'partial' if tail_ranged or tail['unrecorded'] or substantive_issues or undated_sessions else 'complete')
         result['coverage_scope'] = 'requested_cost_window; post_close coverage and settlement are separate'
         result['reconciled_all_in'] = reconciled_all_in(result, sb)
+    elif sb.get('successor') is not None:
+        result['issues'].append(dict(kind='successor_boundary_error', error='successor declared on an open objective'))
+        result['status'] = 'partial' if result['status'] == 'complete' else result['status']
     return finish_measurements(result, quota), quota, sb
 
 PI_ACCOUNTING_ISSUES = ('pi_read_failed', 'pi_proxy_log_missing', 'malformed_pi_proxy_row', 'malformed_pi_reservation',
