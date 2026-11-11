@@ -2879,6 +2879,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "research-register"
+version = "0.1.0"
+dependencies = [
+ "gix",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "retained-task-workflow"
 version = "0.1.0"
 dependencies = [

@@ -1,0 +1,22 @@
+[package]
+name = "research-register"
+description = "Commit-pinned research-register reading: verified Git object access and one immutable pinned snapshot. No validation yet."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "research_register"
+path = "src/lib.rs"
+
+[[bin]]
+name = "work-engine-register"
+path = "src/main.rs"
+
+[dependencies]
+gix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true

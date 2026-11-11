@@ -1,0 +1,236 @@
+//! One immutable snapshot of a register tree at an exact commit.
+
+use crate::error::{CannotRead, Error, NoRegister};
+use crate::objects::{EntryKind, GitObjects, split_tree_path};
+use gix::hash::ObjectId;
+use serde::Serialize;
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
+use std::sync::Arc;
+
+pub const SNAPSHOT_SCHEMA: &str = "research_register_snapshot_v1";
+const MAX_TREE_DEPTH: usize = 32;
+
+/// One entry under the register tree. Files carry their verified bytes; links and gitlinks are
+/// recorded by id only and never read through.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotEntry {
+    kind: EntryKind,
+    id: ObjectId,
+    bytes: Option<Arc<[u8]>>,
+    sha256: Option<String>,
+}
+
+impl SnapshotEntry {
+    pub fn kind(&self) -> EntryKind {
+        self.kind
+    }
+    pub fn id(&self) -> ObjectId {
+        self.id
+    }
+    pub fn bytes(&self) -> Option<&[u8]> {
+        self.bytes.as_deref()
+    }
+    pub fn size(&self) -> Option<u64> {
+        self.bytes.as_ref().map(|b| b.len() as u64)
+    }
+    pub fn sha256(&self) -> Option<&str> {
+        self.sha256.as_deref()
+    }
+}
+
+/// The register tree at one commit, read once through [`GitObjects`]. It keeps the repository
+/// handle so that later checks read from the same opened repository.
+pub struct PinnedSnapshot {
+    objects: GitObjects,
+    requested: String,
+    commit: ObjectId,
+    root_tree: ObjectId,
+    register_path: String,
+    register_tree: ObjectId,
+    entries: BTreeMap<String, SnapshotEntry>,
+    invalid_names: Vec<String>,
+}
+
+impl PinnedSnapshot {
+    pub fn build(objects: GitObjects, rev: &str, register_path: &str) -> Result<Self, Error> {
+        split_tree_path(register_path)?;
+        let commit = objects.resolve(rev)?;
+        let root_tree = objects.commit(commit)?.tree;
+        let register_tree = match objects.entry_at(commit, register_path)? {
+            None => {
+                return Err(NoRegister::Absent {
+                    path: register_path.into(),
+                }
+                .into());
+            }
+            Some(e) if e.kind != EntryKind::Tree => {
+                return Err(NoRegister::NotATree {
+                    path: register_path.into(),
+                    kind: e.kind.as_str().into(),
+                }
+                .into());
+            }
+            Some(e) => e.id,
+        };
+        let mut entries = BTreeMap::new();
+        let mut invalid_names = Vec::new();
+        collect(
+            &objects,
+            register_tree,
+            "",
+            0,
+            &mut entries,
+            &mut invalid_names,
+        )?;
+        Ok(PinnedSnapshot {
+            objects,
+            requested: rev.into(),
+            commit,
+            root_tree,
+            register_path: register_path.into(),
+            register_tree,
+            entries,
+            invalid_names,
+        })
+    }
+
+    pub fn objects(&self) -> &GitObjects {
+        &self.objects
+    }
+    pub fn requested(&self) -> &str {
+        &self.requested
+    }
+    pub fn commit(&self) -> ObjectId {
+        self.commit
+    }
+    pub fn root_tree(&self) -> ObjectId {
+        self.root_tree
+    }
+    pub fn register_path(&self) -> &str {
+        &self.register_path
+    }
+    pub fn register_tree(&self) -> ObjectId {
+        self.register_tree
+    }
+    /// Entries keyed by path relative to the register tree, in byte order.
+    pub fn entries(&self) -> &BTreeMap<String, SnapshotEntry> {
+        &self.entries
+    }
+    pub fn entry(&self, path: &str) -> Option<&SnapshotEntry> {
+        self.entries.get(path)
+    }
+    /// Register-relative paths of entries whose names are not UTF-8 (not in [`Self::entries`];
+    /// never read). The name's bytes are shown with `\xNN` escapes; R-01 reports them (A6).
+    pub fn invalid_names(&self) -> &[String] {
+        &self.invalid_names
+    }
+
+    /// Provenance and per-entry identity, without file bytes. Field and entry order are fixed.
+    pub fn identity(&self) -> SnapshotIdentity<'_> {
+        SnapshotIdentity {
+            schema: SNAPSHOT_SCHEMA,
+            outcome: "ok",
+            requested: &self.requested,
+            commit: self.commit.to_string(),
+            root_tree: self.root_tree.to_string(),
+            register_path: &self.register_path,
+            register_tree: self.register_tree.to_string(),
+            entries: self
+                .entries
+                .iter()
+                .map(|(path, e)| EntryIdentity {
+                    path,
+                    kind: e.kind.as_str(),
+                    id: e.id.to_string(),
+                    size: e.size(),
+                    sha256: e.sha256.as_deref(),
+                })
+                .collect(),
+            invalid_names: &self.invalid_names,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct SnapshotIdentity<'a> {
+    pub schema: &'static str,
+    pub outcome: &'static str,
+    pub requested: &'a str,
+    pub commit: String,
+    pub root_tree: String,
+    pub register_path: &'a str,
+    pub register_tree: String,
+    pub entries: Vec<EntryIdentity<'a>>,
+    /// Omitted when empty, so output for registers without such names is unchanged.
+    #[serde(skip_serializing_if = "<[String]>::is_empty")]
+    pub invalid_names: &'a [String],
+}
+
+#[derive(Debug, Serialize)]
+pub struct EntryIdentity<'a> {
+    pub path: &'a str,
+    pub kind: &'static str,
+    pub id: String,
+    pub size: Option<u64>,
+    pub sha256: Option<&'a str>,
+}
+
+fn collect(
+    objects: &GitObjects,
+    tree: ObjectId,
+    prefix: &str,
+    depth: usize,
+    out: &mut BTreeMap<String, SnapshotEntry>,
+    invalid: &mut Vec<String>,
+) -> Result<(), Error> {
+    if depth > MAX_TREE_DEPTH {
+        return Err(CannotRead::Malformed {
+            id: tree.to_string(),
+            reason: format!("tree nesting exceeds {MAX_TREE_DEPTH}"),
+        }
+        .into());
+    }
+    let listing = objects.tree_listing(tree)?;
+    for raw in &listing.non_utf8_names {
+        let name: String = raw
+            .utf8_chunks()
+            .flat_map(|c| {
+                let bad: String = c.invalid().iter().map(|b| format!("\\x{b:02x}")).collect();
+                [c.valid().to_owned(), bad]
+            })
+            .collect();
+        invalid.push(if prefix.is_empty() {
+            name
+        } else {
+            format!("{prefix}/{name}")
+        });
+    }
+    for entry in listing.entries {
+        let path = if prefix.is_empty() {
+            entry.name.clone()
+        } else {
+            format!("{prefix}/{}", entry.name)
+        };
+        let (bytes, sha256) = if entry.kind.is_file() {
+            let bytes: Arc<[u8]> = objects.blob(entry.id)?.into();
+            let digest = format!("{:x}", Sha256::digest(&bytes));
+            (Some(bytes), Some(digest))
+        } else {
+            (None, None)
+        };
+        out.insert(
+            path.clone(),
+            SnapshotEntry {
+                kind: entry.kind,
+                id: entry.id,
+                bytes,
+                sha256,
+            },
+        );
+        if entry.kind == EntryKind::Tree {
+            collect(objects, entry.id, &path, depth + 1, out, invalid)?;
+        }
+    }
+    Ok(())
+}
