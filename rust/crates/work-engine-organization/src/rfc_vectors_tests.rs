@@ -1,6 +1,7 @@
-//! Published RFC 8785 vectors (not self-generated goldens). Each fixture's source path and
-//! sha256 are in `fixtures/rfc8785/provenance.json`, and this test re-checks the sha256 of
-//! every embedded fixture against it.
+//! RFC 8785 vectors that are not self-generated goldens: 18 upstream files (Apache-2.0, see
+//! `fixtures/rfc8785/ATTRIBUTION.md`) and 4 authored vectors. Each fixture's source and sha256 are
+//! in `fixtures/rfc8785/provenance.json`, and this test re-checks the sha256 of every embedded
+//! fixture against it.
 //!
 //! Vectors whose numbers are all integers must match byte for byte. Vectors containing a
 //! non-integer number (for example `56.0`, `1E30`) are outside the v0 data model and must be
@@ -91,15 +92,21 @@ fn fixtures_match_their_recorded_sha256() {
         ("output/values.json", fixture!("output/values.json")),
         ("output/weird.json", fixture!("output/weird.json")),
         (
-            "rfc_example.expected.json",
-            fixture!("rfc_example.expected.json"),
+            "authored_example.expected.json",
+            fixture!("authored_example.expected.json"),
         ),
-        ("rfc_example.input.json", fixture!("rfc_example.input.json")),
         (
-            "rfc_sorting.expected.json",
-            fixture!("rfc_sorting.expected.json"),
+            "authored_example.input.json",
+            fixture!("authored_example.input.json"),
         ),
-        ("rfc_sorting.input.json", fixture!("rfc_sorting.input.json")),
+        (
+            "authored_sorting.expected.json",
+            fixture!("authored_sorting.expected.json"),
+        ),
+        (
+            "authored_sorting.input.json",
+            fixture!("authored_sorting.input.json"),
+        ),
     ];
     for (name, bytes) in embedded {
         let row = rows
@@ -134,13 +141,42 @@ fn testdata_vectors_in_the_data_model_match_byte_for_byte() {
 }
 
 #[test]
-fn rfc_sorting_vector_matches_byte_for_byte() {
-    // RFC 8785 section 3.2.3: keys order by UTF-16 code unit, so the emoji (surrogates 0xD83D..)
-    // sorts before U+FB33, unlike UTF-8 byte order.
-    let canonical = JsonValue::parse(fixture!("rfc_sorting.input.json"))
+fn authored_sorting_vector_orders_keys_by_utf16_code_unit() {
+    // RFC 8785 section 3.2.3. The 11 keys include the empty key, a prefix pair, a Latin-1 letter,
+    // five astral keys (D800 DC00, D800 DC01, D834 DD1E, D83D DE00, DBFF DFFF) and two BMP keys
+    // above the surrogate range (E000, FFFD). UTF-16 order puts every astral key before E000 and
+    // FFFD; UTF-8 byte order puts them after, so a byte-order sort fails this vector.
+    let input = fixture!("authored_sorting.input.json");
+    let expected = fixture!("authored_sorting.expected.json");
+    let canonical = JsonValue::parse(input).unwrap().canonical_bytes();
+    assert_eq!(canonical, expected);
+    let JsonValue::Object(members) = JsonValue::parse(expected).unwrap() else {
+        panic!("an object")
+    };
+    assert_eq!(members.len(), 11);
+    let keys: Vec<&str> = members.iter().map(|(key, _)| key.as_str()).collect();
+    let mut by_utf8 = keys.clone();
+    by_utf8.sort_by(|a, b| a.as_bytes().cmp(b.as_bytes()));
+    assert_ne!(
+        keys, by_utf8,
+        "the vector must distinguish UTF-16 from UTF-8 order"
+    );
+    let mut by_utf16 = keys.clone();
+    by_utf16.sort_by_key(|key| key.encode_utf16().collect::<Vec<u16>>());
+    assert_eq!(
+        keys, by_utf16,
+        "the expected output is in UTF-16 code-unit order"
+    );
+}
+
+#[test]
+fn authored_example_vector_matches_byte_for_byte() {
+    // Literals, short and \u00xx escapes, solidus and DEL unescaped, non-ASCII unescaped,
+    // integers up to 2^53 - 1 and nesting, within the v0 data model (RFC 8785 section 3.2.2).
+    let canonical = JsonValue::parse(fixture!("authored_example.input.json"))
         .unwrap()
         .canonical_bytes();
-    assert_eq!(canonical, fixture!("rfc_sorting.expected.json"));
+    assert_eq!(canonical, fixture!("authored_example.expected.json"));
 }
 
 #[test]
@@ -148,10 +184,6 @@ fn vectors_with_non_integer_numbers_are_refused() {
     for (name, input) in [
         ("structures (56.0)", fixture!("input/structures.json")),
         ("values (floats, 1E30)", fixture!("input/values.json")),
-        (
-            "rfc_example (floats, 1E30)",
-            fixture!("rfc_example.input.json"),
-        ),
     ] {
         let error = JsonValue::parse(input).unwrap_err();
         assert!(

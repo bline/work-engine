@@ -1,116 +1,116 @@
 {
- "origin": "serde_json_canonicalizer 0.3.2 (crates.io, MIT per its Cargo.toml and LICENSE) tests/resources; its testdata/README.md states these files are copied from https://github.com/cyberphone/json-canonicalization/tree/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata; rfc_sorting.* and rfc_example.* reproduce examples of RFC 8785",
- "licence_finding": "No per-file licence notice in the copied files. The crate LICENSE (MIT, Attila Mravik) covers the crate; the upstream repository licence was not read (no network use). A sibling file of the same upstream origin, tests/resources/generated-numbers/numgen.js, carries an Apache-2.0 header (WebPKI.org). Upstream licence for these data files: not established.",
- "files": [
-  {
-   "fixture": "input/arrays.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/arrays.json",
-   "sha256": "a3814385fc8fb61167fff036ec18b2aae9a041b1fe2db1443c948352ea656e19"
-  },
-  {
-   "fixture": "input/french.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/french.json",
-   "sha256": "918590165565e7b19d08e0991150a452e16e091ac3702f45bae819bf6ef33067"
-  },
-  {
-   "fixture": "input/structures.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/structures.json",
-   "sha256": "4c1031ecea7f50a06ee5d9aea1904c9d553360a5e2fa1df1449e5ff8acad5711"
-  },
-  {
-   "fixture": "input/unicode.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/unicode.json",
-   "sha256": "6c2f4c54ff6fd1ab331001575c692a948425079d050dfbd6543f8ef95644aad0"
-  },
-  {
-   "fixture": "input/values.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/values.json",
-   "sha256": "86ee06aed66b98b33281cc1f63b34bb9041adff29246fa269420b454e28b8a74"
-  },
-  {
-   "fixture": "input/weird.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/weird.json",
-   "sha256": "38d570b654019b63dd0eb6a848ffa1f603d766bd8ab6bd546cf4b2bb23e49f5b"
-  },
-  {
-   "fixture": "outhex/arrays.txt",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/arrays.txt",
-   "sha256": "551338f891befecc30b758ca24d35bc39683a290180b0d7d156225e2368fb6ef"
-  },
-  {
-   "fixture": "outhex/french.txt",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/french.txt",
-   "sha256": "0a3d53f65fb8e717fc7bf6f3a8d7681843ce36b5d6540eb9f5db3bf19f27ebbb"
-  },
-  {
-   "fixture": "outhex/structures.txt",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/structures.txt",
-   "sha256": "9e23b6470ffbfb07cc1544cd8537239d34d038308da510cefdeae4e7a017c960"
-  },
-  {
-   "fixture": "outhex/unicode.txt",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/unicode.txt",
-   "sha256": "0c04bf2f5f44538940341287ed5647a4a3a1a4cc295348f2c311ee9c8b84549d"
-  },
-  {
-   "fixture": "outhex/values.txt",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/values.txt",
-   "sha256": "a4636d7ca07f4e3b6febb844b79295e2cb76504b59851c75aed7287e9ff23c99"
-  },
-  {
-   "fixture": "outhex/weird.txt",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/weird.txt",
-   "sha256": "68da694a6ffc8300242339933558febf87896bbc0c91d9a322c38b0313341ee5"
-  },
-  {
-   "fixture": "output/arrays.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/arrays.json",
-   "sha256": "099601b171cafed97c333f8878d68e7f8c8f795412adb34b2fdcf0e7c7beac42"
-  },
-  {
-   "fixture": "output/french.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/french.json",
-   "sha256": "d99d0ebdcb0033cb858cfa830ae46bc0fb3309413b271f1da828c89901a27ed5"
-  },
-  {
-   "fixture": "output/structures.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/structures.json",
-   "sha256": "605f65004ec2db7692522a0852c22f1c989e036d547e88963d1a3143cf3195d5"
-  },
-  {
-   "fixture": "output/unicode.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/unicode.json",
-   "sha256": "0d99aad92a125196ff887876643fd3206786a84ddce2cee52ba4ad256d2381d3"
-  },
-  {
-   "fixture": "output/values.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/values.json",
-   "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
-  },
-  {
-   "fixture": "output/weird.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/weird.json",
-   "sha256": "6af595a9aa80110b964b4de3f82a05fa6ae7423005019bacfa2620dddc4e94d1"
-  },
-  {
-   "fixture": "rfc_example.expected.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/rfc_example.expected.json",
-   "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
-  },
-  {
-   "fixture": "rfc_example.input.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/rfc_example.input.json",
-   "sha256": "fd921acbc3cc11f36bee14f5631035af45908d78ce2748928bdf0ba2e4ba6302"
-  },
-  {
-   "fixture": "rfc_sorting.expected.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/rfc_sorting.expected.json",
-   "sha256": "5e321556d22018a9656991a9e94f77ec175fa193e52a2429d312f8419ec8b08c"
-  },
-  {
-   "fixture": "rfc_sorting.input.json",
-   "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/rfc_sorting.input.json",
-   "sha256": "98ec4ff4621e70f872dcabd87862ec02998ce3499491263e3a3885c768c429d9"
-  }
- ]
+  "origin": "input/, output/ and outhex/ (18 files): unmodified copies of https://github.com/cyberphone/json-canonicalization at commit dc406ceaf94b5fa554fcabb92c091089c2357e83, directory testdata/, reached through the intermediate copy in serde_json_canonicalizer 0.3.2 (crates.io, MIT) tests/resources/testdata. authored_*.json (4 files): written for this crate, not copied. See ATTRIBUTION.md and LICENSE-APACHE-2.0.",
+  "licence_finding": "Upstream licence read from the repository LICENSE at the commit above: Apache-2.0, Copyright 2018 Anders Rundgren. The repository has no NOTICE file (HTTP 404) and testdata/ states no terms of its own. The 18 upstream files are kept with the full licence text and an attribution file (Apache-2.0 section 4(a) and 4(c); no 4(d) obligation because there is no NOTICE). The four files rfc_example.* and rfc_sorting.* of the intermediate crate, whose own licence status was not established, are not used; they are replaced by the authored_* vectors. The work-engine repository is MIT.",
+  "files": [
+    {
+      "fixture": "input/arrays.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/arrays.json",
+      "sha256": "a3814385fc8fb61167fff036ec18b2aae9a041b1fe2db1443c948352ea656e19"
+    },
+    {
+      "fixture": "input/french.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/french.json",
+      "sha256": "918590165565e7b19d08e0991150a452e16e091ac3702f45bae819bf6ef33067"
+    },
+    {
+      "fixture": "input/structures.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/structures.json",
+      "sha256": "4c1031ecea7f50a06ee5d9aea1904c9d553360a5e2fa1df1449e5ff8acad5711"
+    },
+    {
+      "fixture": "input/unicode.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/unicode.json",
+      "sha256": "6c2f4c54ff6fd1ab331001575c692a948425079d050dfbd6543f8ef95644aad0"
+    },
+    {
+      "fixture": "input/values.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/values.json",
+      "sha256": "86ee06aed66b98b33281cc1f63b34bb9041adff29246fa269420b454e28b8a74"
+    },
+    {
+      "fixture": "input/weird.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/input/weird.json",
+      "sha256": "38d570b654019b63dd0eb6a848ffa1f603d766bd8ab6bd546cf4b2bb23e49f5b"
+    },
+    {
+      "fixture": "outhex/arrays.txt",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/arrays.txt",
+      "sha256": "551338f891befecc30b758ca24d35bc39683a290180b0d7d156225e2368fb6ef"
+    },
+    {
+      "fixture": "outhex/french.txt",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/french.txt",
+      "sha256": "0a3d53f65fb8e717fc7bf6f3a8d7681843ce36b5d6540eb9f5db3bf19f27ebbb"
+    },
+    {
+      "fixture": "outhex/structures.txt",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/structures.txt",
+      "sha256": "9e23b6470ffbfb07cc1544cd8537239d34d038308da510cefdeae4e7a017c960"
+    },
+    {
+      "fixture": "outhex/unicode.txt",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/unicode.txt",
+      "sha256": "0c04bf2f5f44538940341287ed5647a4a3a1a4cc295348f2c311ee9c8b84549d"
+    },
+    {
+      "fixture": "outhex/values.txt",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/values.txt",
+      "sha256": "a4636d7ca07f4e3b6febb844b79295e2cb76504b59851c75aed7287e9ff23c99"
+    },
+    {
+      "fixture": "outhex/weird.txt",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/outhex/weird.txt",
+      "sha256": "68da694a6ffc8300242339933558febf87896bbc0c91d9a322c38b0313341ee5"
+    },
+    {
+      "fixture": "output/arrays.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/arrays.json",
+      "sha256": "099601b171cafed97c333f8878d68e7f8c8f795412adb34b2fdcf0e7c7beac42"
+    },
+    {
+      "fixture": "output/french.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/french.json",
+      "sha256": "d99d0ebdcb0033cb858cfa830ae46bc0fb3309413b271f1da828c89901a27ed5"
+    },
+    {
+      "fixture": "output/structures.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/structures.json",
+      "sha256": "605f65004ec2db7692522a0852c22f1c989e036d547e88963d1a3143cf3195d5"
+    },
+    {
+      "fixture": "output/unicode.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/unicode.json",
+      "sha256": "0d99aad92a125196ff887876643fd3206786a84ddce2cee52ba4ad256d2381d3"
+    },
+    {
+      "fixture": "output/values.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/values.json",
+      "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
+    },
+    {
+      "fixture": "output/weird.json",
+      "source": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json_canonicalizer-0.3.2/tests/resources/testdata/output/weird.json",
+      "sha256": "6af595a9aa80110b964b4de3f82a05fa6ae7423005019bacfa2620dddc4e94d1"
+    },
+    {
+      "fixture": "authored_example.expected.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "c4f325ed65820b3c13b9a19fdbaa1dba0bfd472cda901e02f67b8b09b457acdb"
+    },
+    {
+      "fixture": "authored_example.input.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "8c746fbbdb51e3d78b92108f965e54013a276ad9d2608249081debe3f8359343"
+    },
+    {
+      "fixture": "authored_sorting.expected.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "1c23b912f6eae9b16241091d13d5e3836c8673568ff7a3b5345dbf718a91ad38"
+    },
+    {
+      "fixture": "authored_sorting.input.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "8d89f2155079b0ef08909c4c3bb766f2512b72bace1d859a7857bf1e3fb6839e"
+    }
+  ]
 }
