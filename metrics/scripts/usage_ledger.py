@@ -1466,7 +1466,13 @@ PI_ACCOUNTING_ISSUES = ('pi_read_failed', 'pi_proxy_log_missing', 'malformed_pi_
                         'malformed_role_host_row', 'role_host_ledger_unreadable', 'duplicate_response_id',
                         'pi_retained_charge_unconverted')  # unpriced Pi calls are caught by the pi_api totals
 
-def pi_admission(record_path, new_max_usd, parent, role_ledger=None):
+def admission_journal_path(record_path):
+    """Host-wide admission journal for an objective; role_host writes it under the per-objective lock."""
+    base = os.environ.get('ROLE_HOST_OBJECTIVE_LOCK_DIR') or os.path.join(
+        os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state')), 'work-engine', 'pi-objective-admissions')
+    return os.path.join(base, hashlib.sha256(os.path.realpath(record_path).encode()).hexdigest()[:32] + '.admissions.jsonl')
+
+def pi_admission(record_path, new_max_usd, parent, role_ledger=None, journal=None):
     """Admit a new Pi session's dollar limit against the objective's owner-set pi_api limit.
 
     Exposure = the tree's pi_api spend (high bound, retained reservations included) + every admitted,
@@ -1508,8 +1514,56 @@ def pi_admission(record_path, new_max_usd, parent, role_ledger=None):
         pass
     retired = {r.get('session_id') for r in rows if isinstance(r, dict) and r.get('event') == 'retire'}
     commitments = []
+    # Journal admissions (role_host, under the objective lock): a pending allocation stays committed in full
+    # until a launched row ties it to a session or a released row records a confirmed failed launch; a
+    # launched session's unspent limit is committed until its retire row. Nothing expires by time or pid.
+    jpath = journal or admission_journal_path(record_path)
+    try:
+        jlines = list(open_lines(jpath))
+    except FileNotFoundError:
+        jlines = []
+    except OSError as e:
+        return done('not_established', f'admission journal unreadable: {e}')
+    groups, journal_sessions, state_cache = {}, set(), {}
+    for line in jlines:
+        try: j = json.loads(line)
+        except ValueError: return done('not_established', 'corrupted admission journal line')
+        if not isinstance(j, dict) or not j.get('admission_id') or j.get('event') not in ('pending', 'launched', 'released', 'launch_uncertain'):
+            return done('not_established', 'malformed admission journal row')
+        groups.setdefault(j['admission_id'], []).append(j)
+    for aid, js in groups.items():
+        pend = [j for j in js if j['event'] == 'pending']
+        if len(pend) != 1 or not isinstance(pend[0].get('max_usd'), (int, float)) or isinstance(pend[0].get('max_usd'), bool):
+            return done('not_established', f'admission {aid} has no single valid pending row')
+        cap = pend[0]['max_usd']
+        launched = [j.get('session_id') for j in js if j['event'] == 'launched']
+        entry = dict(admission_id=aid, max_usd=cap, session_id=launched[0] if launched else None, source='journal')
+        if any(j['event'] == 'released' for j in js):
+            if launched:
+                return done('not_established', f'admission {aid} is both launched and released')
+            entry.update(committed_usd=0.0, state='released'); commitments.append(entry); continue
+        if not launched:
+            entry.update(committed_usd=cap, state='pending_or_uncertain'); commitments.append(entry); continue
+        sid = launched[0]; journal_sessions.add(sid)
+        sl = pend[0].get('state_ledger')
+        if sl not in state_cache:
+            try: state_cache[sl] = [json.loads(x) for x in open_lines(sl)]
+            except (OSError, TypeError, ValueError): return done('not_established', f'state ledger for admission {aid} unreadable')
+        is_retired = any(isinstance(x, dict) and x.get('event') == 'retire' and x.get('session_id') == sid for x in state_cache[sl])
+        node = nodes.get(sid)
+        if node is None:
+            return done('not_established', f'admitted session {sid} has no readable spend')
+        spent_s = node['direct']['pi_api']['quota_usd_high']
+        if spent_s > cap + 1e-6:
+            return done('not_established', f'session {sid} spend {spent_s:.6f} exceeds its own limit {cap}')
+        entry.update(spent_high_usd=spent_s, retired=is_retired, committed_usd=0.0 if is_retired else cap - spent_s,
+                     state='retired' if is_retired else 'open')
+        commitments.append(entry)
+    out['admission_journal'] = jpath
     for r in rows:
         if not (isinstance(r, dict) and r.get('event') == 'objective_admission' and r.get('objective_record') == record_path):
+            continue
+        if r.get('session_id') in journal_sessions:
             continue
         sid, cap = r.get('session_id'), r.get('max_usd')
         node = nodes.get(sid)
@@ -1529,7 +1583,7 @@ def pi_admission(record_path, new_max_usd, parent, role_ledger=None):
     return done('admitted', 'within the objective pi_api limit')
 
 def cmd_pi_admit(a):
-    out = pi_admission(a.record, a.max_usd, a.parent, a.role_host_ledger)
+    out = pi_admission(a.record, a.max_usd, a.parent, a.role_host_ledger, a.admission_journal)
     print(json.dumps(out, sort_keys=True))
     return {'admitted': 0, 'refused': 21}.get(out['decision'], 32)
 
@@ -1680,7 +1734,7 @@ def main():
     c = sp.add_parser('control'); c.add_argument('--record', required=True); c.add_argument('--cursor'); c.add_argument('--limit-fractions', default='0.5,0.8,1.0'); c.add_argument('--role-host-ledger')
     pa = sp.add_parser('pi-admit', help='admit a new Pi session limit against the objective pi_api limit (exit 0 admitted, 21 refused, 32 not established)')
     pa.add_argument('--record', required=True); pa.add_argument('--max-usd', type=float, required=True)
-    pa.add_argument('--parent', required=True); pa.add_argument('--role-host-ledger')
+    pa.add_argument('--parent', required=True); pa.add_argument('--role-host-ledger'); pa.add_argument('--admission-journal')
     a = ap.parse_args()
     if a.cmd == 'pi-admit': sys.exit(cmd_pi_admit(a))
     if a.cmd == 'control':

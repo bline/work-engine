@@ -40,7 +40,7 @@ class ObjectiveAdmission(unittest.TestCase):
                 "--objective-record", str(self.record), *extra]
         out, err = io.StringIO(), io.StringIO()
         launch = launch or mock.MagicMock(return_value={"session_id": "S1"})
-        with mock.patch.dict(os.environ, {"ROLE_HOST_USAGE_LEDGER": str(self.fake(decision))}), \
+        with mock.patch.dict(os.environ, {"ROLE_HOST_USAGE_LEDGER": str(self.fake(decision)), "ROLE_HOST_OBJECTIVE_LOCK_DIR": str(self.tmp / "locks")}), \
                 mock.patch.object(role_host.Pi, "launch", launch), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = role_host.main(argv)

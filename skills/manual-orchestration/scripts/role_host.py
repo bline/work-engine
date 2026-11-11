@@ -1492,7 +1492,7 @@ class Pi:
                        **({"collected": collected} if collected else {})})
         return {"session_id": sid, "retired": "idle_released", **({"collected": collected} if collected else {})}
 
-def objective_admission(record, max_usd, parent, ledger_path) -> dict:
+def objective_admission(record, max_usd, parent, ledger_path, journal=None) -> dict:
     """--objective-record: the usage ledger admits this Pi session's --max-usd against the objective's
     owner-set pi_api limit, counting spend and every open session's unspent limit. Anything but an
     admission refuses the launch; the per-session proxy limit is unchanged."""
@@ -1510,7 +1510,8 @@ def objective_admission(record, max_usd, parent, ledger_path) -> dict:
     if found is None:
         raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", "usage ledger not found")
     r = subprocess.run([sys.executable, "-I", str(found), "pi-admit", "--record", str(Path(record).resolve()),
-                        "--max-usd", repr(float(max_usd)), "--parent", parent, "--role-host-ledger", str(ledger_path)],
+                        "--max-usd", repr(float(max_usd)), "--parent", parent, "--role-host-ledger", str(ledger_path),
+                        *(["--admission-journal", str(journal)] if journal else [])],
                        capture_output=True, text=True, timeout=600)
     try:
         out = json.loads(r.stdout)
@@ -1522,6 +1523,48 @@ def objective_admission(record, max_usd, parent, ledger_path) -> dict:
     out["reader"] = str(found)
     out["reader_sha256"] = hashlib.sha256(found.read_bytes()).hexdigest()
     return out
+
+
+def admission_paths(record) -> tuple[Path, Path]:
+    """Per-objective lock and admission journal at one host-wide place, whatever --state a launcher uses."""
+    base = Path(os.environ.get("ROLE_HOST_OBJECTIVE_LOCK_DIR") or
+                Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "work-engine" / "pi-objective-admissions")
+    base.mkdir(parents=True, exist_ok=True)
+    key = hashlib.sha256(str(Path(record).resolve()).encode()).hexdigest()[:32]
+    return base / f"{key}.lock", base / f"{key}.admissions.jsonl"
+
+
+def journal_append(journal: Path, row: dict) -> None:
+    row = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "pid": os.getpid(), **row}
+    with open(journal, "a") as fh:
+        fh.write(json.dumps(row, sort_keys=True) + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+
+
+def admit_transaction(record, max_usd, parent, ledger_path, admission_id) -> tuple[dict, Path]:
+    """Under the objective lock: refuse a reused admission id, recompute capacity with the journal, and write
+    the pending allocation before the lock is released."""
+    lock, journal = admission_paths(record)
+    with open(lock, "a") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            if journal.exists():
+                for line in journal.read_text().splitlines():
+                    try:
+                        row = json.loads(line)
+                    except ValueError:
+                        raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", f"corrupted admission journal {journal}")
+                    if isinstance(row, dict) and row.get("admission_id") == admission_id:
+                        raise HostError(NOT_ESTABLISHED, "admission_duplicate", f"admission {admission_id} already exists in {journal}")
+            out = objective_admission(record, max_usd, parent, ledger_path, journal)
+            journal_append(journal, {"event": "pending", "admission_id": admission_id, "objective_record": out["record"],
+                                     "max_usd": float(max_usd), "parent": parent, "state_ledger": str(ledger_path),
+                                     "admission": {k: out.get(k) for k in ("limit_usd", "spent_high_usd", "committed_usd",
+                                                                           "exposure_usd", "reader_sha256")}})
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+    return out, journal
 
 
 HOSTS = {"claude": Claude, "codex": Codex, "pi": Pi}
@@ -1586,6 +1629,7 @@ def main(argv=None) -> int:
     la.add_argument("--container-model-file", metavar="JSON",
                     help="container: a Pi models.json model entry for the pinned model, for a model Pi's catalog "
                          "lacks; written with the relay baseUrl (no baseUrl, headers, apiKey or fallbacks)")
+    la.add_argument("--admission-id", help="with --objective-record: idempotency key; a reused id is refused, never re-allocated")
     la.add_argument("--objective-record", metavar="RECORD",
                     help="container, with --max-usd and --parent: admit this session's limit against the objective's "
                          "owner-set pi_api limit (spend + open sessions' unspent limits); refused otherwise")
@@ -1681,15 +1725,31 @@ def main(argv=None) -> int:
                 if a.objective_record:
                     if a.host != "pi" or not a.container:
                         raise HostError(USAGE, "usage", "--objective-record is a pi --container launch option")
-                    admission = objective_admission(a.objective_record, a.max_usd, a.parent, ledger.path)
-                res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
-                               host_args=a.host_arg, ledger=ledger, parent=a.parent, **kw)
+                    admission_id = a.admission_id or str(uuid.uuid4())
+                    admission, journal = admit_transaction(a.objective_record, a.max_usd, a.parent, ledger.path, admission_id)
+                    launches_before = sum(1 for r in ledger.rows() if r.get("event") == "launch")
+                try:
+                    res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
+                                   host_args=a.host_arg, ledger=ledger, parent=a.parent, **kw)
+                except BaseException as e:
+                    if admission:
+                        # Released only when no launch row appeared (nothing was started); otherwise kept.
+                        after = sum(1 for r in ledger.rows() if r.get("event") == "launch")
+                        confirmed = after == launches_before
+                        journal_append(journal, {"event": "released" if confirmed else "launch_uncertain",
+                                                 "admission_id": admission_id,
+                                                 "reason": "launch_failed_before_start" if confirmed else "launch_outcome_uncertain",
+                                                 "evidence": {"launch_rows_before": launches_before, "launch_rows_after": after,
+                                                              "error": f"{type(e).__name__}: {e}"[:300]}})
+                    raise
                 if admission:
+                    journal_append(journal, {"event": "launched", "admission_id": admission_id, "session_id": res["session_id"]})
                     keep = ("decision", "limit_usd", "spent_high_usd", "committed_usd", "exposure_usd", "reader", "reader_sha256")
                     ledger.append({"host": "pi", "event": "objective_admission", "session_id": res["session_id"],
                                    "objective_record": admission["record"], "max_usd": float(a.max_usd),
                                    "admission": {k: admission.get(k) for k in keep}})
                     res["objective_admission"] = {k: admission.get(k) for k in keep}
+                    res["objective_admission"]["admission_id"] = admission_id
             elif a.cmd == "status":
                 res = {"session_id": sid, "host": a.host, **h.status(sid, ledger)}
             elif a.cmd == "deliver":
