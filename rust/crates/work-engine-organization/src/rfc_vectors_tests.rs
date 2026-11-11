@@ -8,12 +8,13 @@
 //!
 //! Embedding uses `include_bytes!`, so the crate performs no file access at test time.
 
+use crate::CodecError;
+use crate::json::JsonValue;
 use sha2::{Digest as _, Sha256};
-use work_engine_organization::{CodecError, JsonValue};
 
 macro_rules! fixture {
     ($path:literal) => {
-        include_bytes!(concat!("fixtures/rfc8785/", $path)) as &[u8]
+        include_bytes!(concat!("../tests/fixtures/rfc8785/", $path)) as &[u8]
     };
 }
 
@@ -170,7 +171,7 @@ fn null_is_canonicalized_but_refused_under_the_v0_rules() {
     assert_eq!(
         error,
         CodecError::ExplicitNull {
-            at: work_engine_organization::Position::Path("/1/10".into())
+            at: crate::Position::Path("/1/10".into())
         }
     );
 }

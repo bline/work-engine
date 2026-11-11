@@ -5,7 +5,7 @@
 //! stored as `serde_json::Number`, so the bytes cannot depend on that type's feature-selected
 //! representation (`arbitrary_precision`, `float_roundtrip`).
 //!
-//! Parsing refuses rather than normalizes: duplicate object keys (after unescaping), floats,
+//! Parsing refuses rather than normalizes: duplicate object keys (after unescaping), `-0`, floats,
 //! exponents, out-of-range integers, unpaired surrogate escapes and trailing data. The only
 //! normalization is the one RFC 8785 defines: key order by UTF-16 code unit, no insignificant
 //! whitespace, minimal string escaping and integers without exponents.
@@ -14,14 +14,14 @@ use crate::digest::{Digest, DigestKind};
 use crate::error::{CodecError, Position};
 
 /// The largest accepted integer magnitude, 2^53 - 1.
-pub const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
+pub(crate) const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
 
 /// Container nesting limit. A recursion bound; the v0 schemas nest far less.
-pub const MAX_DEPTH: usize = 64;
+pub(crate) const MAX_DEPTH: usize = 64;
 
 /// A JSON value restricted to the v0 data model.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum JsonValue {
+pub(crate) enum JsonValue {
     Null,
     Bool(bool),
     Integer(i64),
@@ -34,7 +34,7 @@ pub enum JsonValue {
 impl JsonValue {
     /// Parses authored bytes. Accepts `null` (see [`JsonValue::refuse_null`]); refuses everything
     /// else outside the data model.
-    pub fn parse(bytes: &[u8]) -> Result<JsonValue, CodecError> {
+    pub(crate) fn parse(bytes: &[u8]) -> Result<JsonValue, CodecError> {
         let text = std::str::from_utf8(bytes).map_err(|error| CodecError::InvalidUtf8 {
             valid_up_to: error.valid_up_to(),
         })?;
@@ -54,61 +54,15 @@ impl JsonValue {
 
     /// Parses authored bytes under the v0 rules: [`JsonValue::parse`] followed by
     /// [`JsonValue::refuse_null`].
-    pub fn parse_v0(bytes: &[u8]) -> Result<JsonValue, CodecError> {
+    pub(crate) fn parse_v0(bytes: &[u8]) -> Result<JsonValue, CodecError> {
         let value = JsonValue::parse(bytes)?;
         value.refuse_null()?;
         Ok(value)
     }
 
-    /// Converts an in-memory `serde_json::Value` using only its public accessors, so the result
-    /// is the same whichever `serde_json` number features are enabled. Floats and numbers that do
-    /// not fit `i64` are refused.
-    pub fn from_serde(value: &serde_json::Value) -> Result<JsonValue, CodecError> {
-        fn convert(value: &serde_json::Value, path: &mut String) -> Result<JsonValue, CodecError> {
-            Ok(match value {
-                serde_json::Value::Null => JsonValue::Null,
-                serde_json::Value::Bool(flag) => JsonValue::Bool(*flag),
-                serde_json::Value::Number(number) => {
-                    let at = || Position::Path(path.clone());
-                    if let Some(integer) = number.as_i64() {
-                        check_integer(integer, at())?;
-                        JsonValue::Integer(integer)
-                    } else if number.as_u64().is_some() {
-                        return Err(CodecError::IntegerOutOfRange { at: at() });
-                    } else {
-                        return Err(CodecError::NonIntegerNumber { at: at() });
-                    }
-                }
-                serde_json::Value::String(text) => JsonValue::String(text.clone()),
-                serde_json::Value::Array(items) => {
-                    let mut converted = Vec::with_capacity(items.len());
-                    for (index, item) in items.iter().enumerate() {
-                        let mark = path.len();
-                        path.push_str(&format!("/{index}"));
-                        converted.push(convert(item, path)?);
-                        path.truncate(mark);
-                    }
-                    JsonValue::Array(converted)
-                }
-                serde_json::Value::Object(members) => {
-                    let mut converted = Vec::with_capacity(members.len());
-                    for (key, member) in members {
-                        let mark = path.len();
-                        path.push('/');
-                        path.push_str(&escape_pointer(key));
-                        converted.push((key.clone(), convert(member, path)?));
-                        path.truncate(mark);
-                    }
-                    JsonValue::Object(converted)
-                }
-            })
-        }
-        convert(value, &mut String::new())
-    }
-
     /// Refuses an explicit `null` anywhere in the value (section 17.4: optional fields are
     /// absent, or present with a non-null value).
-    pub fn refuse_null(&self) -> Result<(), CodecError> {
+    pub(crate) fn refuse_null(&self) -> Result<(), CodecError> {
         fn walk(value: &JsonValue, path: &mut String) -> Result<(), CodecError> {
             match value {
                 JsonValue::Null => Err(CodecError::ExplicitNull {
@@ -141,20 +95,20 @@ impl JsonValue {
 
     /// The RFC 8785 canonical bytes of this value. Array order is kept; object members are
     /// sorted by UTF-16 code unit. Sets are ordered by the caller before they reach this point.
-    pub fn canonical_bytes(&self) -> Vec<u8> {
+    pub(crate) fn canonical_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
         write_value(self, &mut out);
         out
     }
 
     /// The framed digest of this value's canonical bytes.
-    pub fn digest(&self, kind: DigestKind) -> Digest {
+    pub(crate) fn digest(&self, kind: DigestKind) -> Digest {
         Digest::frame(kind, &self.canonical_bytes())
     }
 }
 
 /// Checks the integer range of section 17.4.
-pub fn check_integer(value: i64, at: Position) -> Result<i64, CodecError> {
+pub(crate) fn check_integer(value: i64, at: Position) -> Result<i64, CodecError> {
     if value.unsigned_abs() > MAX_SAFE_INTEGER as u64 {
         Err(CodecError::IntegerOutOfRange { at })
     } else {
@@ -391,6 +345,11 @@ impl Parser<'_> {
             });
         }
         let magnitude = digits.parse::<i64>().unwrap_or(0);
+        if negative && magnitude == 0 {
+            return Err(CodecError::NegativeZero {
+                at: Position::Offset(start),
+            });
+        }
         Ok(JsonValue::Integer(if negative {
             -magnitude
         } else {

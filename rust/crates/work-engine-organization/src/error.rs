@@ -33,6 +33,8 @@ pub enum CodecError {
         "non-integer number at {at}: only integers are accepted, floats and exponents are refused"
     )]
     NonIntegerNumber { at: Position },
+    #[error("negative zero at {at}: `-0` is a non-canonical spelling of 0 and is refused")]
+    NegativeZero { at: Position },
     #[error("integer out of range at {at}: allowed magnitude is at most 2^53 - 1")]
     IntegerOutOfRange { at: Position },
     #[error("explicit null at {at}: optional fields are absent or non-null")]

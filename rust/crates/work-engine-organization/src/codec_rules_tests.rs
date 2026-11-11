@@ -4,9 +4,8 @@
 //!
 //! Every test passes unchanged under `--features serde_json/arbitrary_precision`.
 
-use work_engine_organization::{
-    CodecError, Digest, DigestKind, Id, IdError, JsonValue, MAX_DEPTH, MAX_SAFE_INTEGER, Position,
-};
+use crate::json::{JsonValue, MAX_DEPTH, MAX_SAFE_INTEGER};
+use crate::{CodecError, Digest, DigestKind, Id, IdError, Position};
 
 fn canonical(text: &str) -> String {
     String::from_utf8(JsonValue::parse(text.as_bytes()).unwrap().canonical_bytes()).unwrap()
@@ -56,8 +55,10 @@ fn integers_are_accepted_only_within_the_safe_range() {
     assert_eq!(canonical("9007199254740991"), "9007199254740991");
     assert_eq!(canonical("-9007199254740991"), "-9007199254740991");
     assert_eq!(canonical("0"), "0");
-    // RFC 8785 serializes negative zero as 0; the lexical form is an integer.
-    assert_eq!(canonical("-0"), "0");
+    // `-0` is a non-canonical spelling of 0: refused with a typed error, never rewritten.
+    assert!(matches!(error("-0"), CodecError::NegativeZero { .. }));
+    assert!(matches!(error("[1,-0]"), CodecError::NegativeZero { .. }));
+    assert!(matches!(error("-00"), CodecError::Syntax { .. }));
     for text in [
         "9007199254740992",
         "-9007199254740992",
@@ -230,7 +231,7 @@ fn key_and_set_order_of_authored_bytes_does_not_change_the_digest() {
 
 #[test]
 fn unknown_codec_declarations_are_refused() {
-    use work_engine_organization::{CODEC_DOMAIN, CODEC_VERSION};
+    use crate::{CODEC_DOMAIN, CODEC_VERSION};
     assert_eq!(
         DigestKind::from_declaration(CODEC_DOMAIN, "requirements", CODEC_VERSION),
         Ok(DigestKind::Requirements)
@@ -338,73 +339,22 @@ fn identifiers_deserialize_validated_and_sort_by_byte() {
 
 // U2: conversion from serde_json::Value must not depend on Number internals.
 #[test]
-fn serde_conversion_is_independent_of_number_features() {
-    let text = r#"{"b":[9007199254740991,-9007199254740991,0],"a":"x","c":{"d":true}}"#;
-    let value: serde_json::Value = serde_json::from_str(text).unwrap();
-    let converted = JsonValue::from_serde(&value).unwrap();
+fn bytes_from_serde_json_values_canonicalize_identically_under_both_number_features() {
+    // The codec never reads `serde_json::Number`: callers that build values with serde_json hand
+    // over bytes. This test runs under both feature settings with the same expected bytes.
+    let value = serde_json::json!({"b": [9007199254740991i64, -9007199254740991i64, 0], "a": "x", "c": {"d": true}});
+    let bytes = serde_json::to_vec(&value).unwrap();
     assert_eq!(
-        String::from_utf8(converted.canonical_bytes()).unwrap(),
+        canonical(std::str::from_utf8(&bytes).unwrap()),
         r#"{"a":"x","b":[9007199254740991,-9007199254740991,0],"c":{"d":true}}"#
     );
-    assert_eq!(
-        converted,
-        JsonValue::parse(text.as_bytes())
-            .unwrap()
-            .into_sorted_for_test()
-    );
-
     for float in ["1.0", "56.0", "0.5", "1e30", "1E2"] {
         let value: serde_json::Value = serde_json::from_str(float).unwrap();
+        let bytes = serde_json::to_vec(&value).unwrap();
+        let refused = JsonValue::parse(&bytes);
         assert!(
-            matches!(
-                JsonValue::from_serde(&value),
-                Err(CodecError::NonIntegerNumber { .. })
-            ),
-            "{float}"
+            matches!(refused, Err(CodecError::NonIntegerNumber { .. })),
+            "{float}: {refused:?}"
         );
-    }
-    let value: serde_json::Value = serde_json::from_str("9007199254740992").unwrap();
-    assert!(matches!(
-        JsonValue::from_serde(&value),
-        Err(CodecError::IntegerOutOfRange { .. })
-    ));
-    let value: serde_json::Value = serde_json::from_str("[0,[0,{\"k\":1.5}]]").unwrap();
-    assert_eq!(
-        JsonValue::from_serde(&value),
-        Err(CodecError::NonIntegerNumber {
-            at: Position::Path("/1/1/k".into())
-        })
-    );
-    // A number beyond u64 is refused (its class differs by serde_json feature and is not relied on).
-    let value: serde_json::Value = serde_json::from_str("123456789012345678901234567890").unwrap();
-    assert!(JsonValue::from_serde(&value).is_err());
-}
-
-trait SortedForTest {
-    fn into_sorted_for_test(self) -> JsonValue;
-}
-
-impl SortedForTest for JsonValue {
-    /// `serde_json::Value` (no `preserve_order`) holds objects in key order; compare after the same
-    /// ordering so that member order, which is not identity, does not matter.
-    fn into_sorted_for_test(self) -> JsonValue {
-        match self {
-            JsonValue::Object(mut members) => {
-                members.sort_by(|a, b| a.0.cmp(&b.0));
-                JsonValue::Object(
-                    members
-                        .into_iter()
-                        .map(|(k, v)| (k, v.into_sorted_for_test()))
-                        .collect(),
-                )
-            }
-            JsonValue::Array(items) => JsonValue::Array(
-                items
-                    .into_iter()
-                    .map(SortedForTest::into_sorted_for_test)
-                    .collect(),
-            ),
-            other => other,
-        }
     }
 }

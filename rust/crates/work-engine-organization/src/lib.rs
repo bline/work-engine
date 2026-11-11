@@ -4,16 +4,20 @@
 //! no path to any effect. Its identities are digests of a canonical form
 //! (contract revision 5.1, section 17).
 //!
-//! Phase 1 content: the restricted RFC 8785 canonicalizer, the digest framing and the scalar and
-//! identifier rules. The schema, derivation and candidate types are added once the schema
-//! decisions are recorded.
+//! The canonicalizer and its value type are crate-private. The public surface is the interface
+//! of contract section 10.1 and the types needed to name its arguments, results and errors.
 
-pub mod digest;
-pub mod error;
-pub mod ids;
-pub mod json;
+mod digest;
+mod error;
+mod ids;
+#[allow(dead_code)]
+mod json;
 
 pub use digest::{CODEC_DOMAIN, CODEC_VERSION, Digest, DigestKind};
 pub use error::{CodecError, IdError, Position};
 pub use ids::Id;
-pub use json::{JsonValue, MAX_DEPTH, MAX_SAFE_INTEGER};
+
+#[cfg(test)]
+mod codec_rules_tests;
+#[cfg(test)]
+mod rfc_vectors_tests;

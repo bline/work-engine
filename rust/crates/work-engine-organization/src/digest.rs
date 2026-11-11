@@ -60,7 +60,7 @@ pub struct Digest([u8; 32]);
 
 impl Digest {
     /// Frames and hashes already-canonical bytes.
-    pub fn frame(kind: DigestKind, canonical_bytes: &[u8]) -> Digest {
+    pub(crate) fn frame(kind: DigestKind, canonical_bytes: &[u8]) -> Digest {
         let mut hasher = Sha256::new();
         hasher.update(CODEC_DOMAIN.as_bytes());
         hasher.update([0u8]);
