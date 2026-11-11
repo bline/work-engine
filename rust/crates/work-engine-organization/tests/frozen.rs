@@ -84,7 +84,8 @@ fn frozen_vertical_diagnostic_report() {
         "obligation",
         if organization.obligations.len() == 1
             && organization.obligations[0].id.as_str() == obligation_id
-            && organization.obligations[0].served_by == format!("vantage:{obligation_id}")
+            && organization.obligations[0].served_by.as_deref()
+                == Some(format!("vantage:{obligation_id}").as_str())
         {
             Verdict::Match
         } else {

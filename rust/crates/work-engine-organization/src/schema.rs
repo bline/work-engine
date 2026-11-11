@@ -95,6 +95,23 @@ pub struct Obligation {
     pub scope_digest: Digest,
 }
 
+/// The single value of `obligations[].kind` (contract 3.1).
+pub(crate) const OBLIGATION_KIND: &str = "candidate_review";
+/// The single value of `obligations[].subject` (contract 3.1).
+pub(crate) const OBLIGATION_SUBJECT: &str = "campaign_candidate";
+
+impl Obligation {
+    /// `kind`: the literal `candidate_review`.
+    pub fn kind(&self) -> &'static str {
+        OBLIGATION_KIND
+    }
+
+    /// `subject`: the literal `campaign_candidate`.
+    pub fn subject(&self) -> &'static str {
+        OBLIGATION_SUBJECT
+    }
+}
+
 /// `NormativeRequirements v0`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
@@ -215,6 +232,35 @@ pub(crate) fn id_json(id: &Id) -> JsonValue {
     string(id.as_str())
 }
 
+/// `problemScope`, shared by the requirements and the candidate so a copy cannot drift.
+pub(crate) fn problem_scope_json(scope: &ProblemScope) -> JsonValue {
+    object(vec![
+        ("runId", id_json(&scope.run_id)),
+        ("planLineage", id_json(&scope.plan_lineage)),
+        ("sliceNumber", integer(scope.slice_number)),
+    ])
+}
+
+/// One obligation, shared by the requirements and the candidate so a copy cannot drift.
+pub(crate) fn obligation_json(obligation: &Obligation) -> JsonValue {
+    object(vec![
+        ("id", id_json(&obligation.id)),
+        ("kind", string(obligation.kind())),
+        ("subject", string(obligation.subject())),
+        (
+            "resultContract",
+            object(vec![
+                ("id", id_json(&obligation.result_contract.id)),
+                ("version", integer(obligation.result_contract.version)),
+            ]),
+        ),
+        (
+            "scope",
+            object(vec![("digest", string(&obligation.scope_digest.to_hex()))]),
+        ),
+    ])
+}
+
 pub(crate) fn id_set_json(set: &BTreeSet<Id>) -> JsonValue {
     strings(set.iter().map(Id::as_str))
 }
@@ -266,25 +312,7 @@ fn integer(value: u64) -> JsonValue {
 
 impl OrganizationalRequirements {
     fn to_json(&self) -> JsonValue {
-        let scope = &self.problem_scope;
-        let obligations = self.obligations.iter().map(|obligation| {
-            object(vec![
-                ("id", id_json(&obligation.id)),
-                ("kind", string("candidate_review")),
-                ("subject", string("campaign_candidate")),
-                (
-                    "resultContract",
-                    object(vec![
-                        ("id", id_json(&obligation.result_contract.id)),
-                        ("version", integer(obligation.result_contract.version)),
-                    ]),
-                ),
-                (
-                    "scope",
-                    object(vec![("digest", string(&obligation.scope_digest.to_hex()))]),
-                ),
-            ])
-        });
+        let obligations = self.obligations.iter().map(obligation_json);
         let conditions = self.conditions.iter().map(|condition| {
             let mut members = vec![
                 ("id", id_json(&condition.id)),
@@ -324,14 +352,7 @@ impl OrganizationalRequirements {
             ])
         });
         object(vec![
-            (
-                "problemScope",
-                object(vec![
-                    ("runId", id_json(&scope.run_id)),
-                    ("planLineage", id_json(&scope.plan_lineage)),
-                    ("sliceNumber", integer(scope.slice_number)),
-                ]),
-            ),
+            ("problemScope", problem_scope_json(&self.problem_scope)),
             ("obligations", JsonValue::Array(obligations.collect())),
             (
                 "acceptanceConditions",

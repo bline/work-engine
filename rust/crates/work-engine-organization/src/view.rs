@@ -5,15 +5,26 @@ use crate::derive::{
     AuthorityRequirement, CandidateCondition, ComponentBindingRequirement, OrganizationCandidate,
     RelationshipKind, SeparationRequirement,
 };
+use crate::digest::Digest;
 use crate::ids::Id;
-use crate::schema::{Normative, RealizationConstraint};
+use crate::schema::{Normative, ProblemScope, RealizationConstraint, ResultContract};
 
-/// An obligation and the vantage that serves it (from `serves`).
+/// An obligation as the candidate carries it, and the vantage that serves it (from `serves`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct ViewObligation {
     pub id: Id,
-    pub served_by: String,
+    /// The literal `candidate_review`.
+    pub kind: &'static str,
+    /// The literal `campaign_candidate`.
+    pub subject: &'static str,
+    pub result_contract: ResultContract,
+    /// `scope.digest`.
+    pub scope_digest: Digest,
+    /// The reviewer vantage in this obligation's `serves` relationship. `None` only when the
+    /// candidate has no such relationship, which `derive` never produces; the absence is shown,
+    /// not filled and not dropped.
+    pub served_by: Option<String>,
 }
 
 /// A vantage. The builder vantage has no effective requirements and no conditions of its own: it
@@ -54,6 +65,7 @@ pub struct Terminalization {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct OrganizationView {
+    pub problem_scope: ProblemScope,
     pub obligations: Vec<ViewObligation>,
     pub vantages: Vec<ViewVantage>,
     pub conditions: Vec<CandidateCondition>,
@@ -70,13 +82,19 @@ pub fn view(candidate: &OrganizationCandidate) -> OrganizationView {
     let relationships = candidate.relationships();
     let of_kind = |kind: RelationshipKind| relationships.iter().filter(move |r| r.kind == kind);
 
-    let obligations = of_kind(RelationshipKind::Serves)
-        .filter_map(|r| {
-            let id = Id::parse(r.to.as_deref()?).ok()?;
-            Some(ViewObligation {
-                id,
-                served_by: r.from.clone(),
-            })
+    // Every obligation of the candidate is projected, whether or not its `serves` row is found.
+    let obligations = candidate
+        .obligations()
+        .iter()
+        .map(|obligation| ViewObligation {
+            id: obligation.id.clone(),
+            kind: obligation.kind(),
+            subject: obligation.subject(),
+            result_contract: obligation.result_contract.clone(),
+            scope_digest: obligation.scope_digest,
+            served_by: of_kind(RelationshipKind::Serves)
+                .find(|r| r.to.as_deref() == Some(obligation.id.as_str()))
+                .map(|r| r.from.clone()),
         })
         .collect();
 
@@ -133,6 +151,7 @@ pub fn view(candidate: &OrganizationCandidate) -> OrganizationView {
         });
 
     OrganizationView {
+        problem_scope: candidate.problem_scope().clone(),
         obligations,
         vantages,
         conditions: candidate.conditions().to_vec(),

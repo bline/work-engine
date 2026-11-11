@@ -13,9 +13,9 @@ use crate::digest::{Digest, DigestKind};
 use crate::ids::Id;
 use crate::json::{JsonValue, object, string, strings};
 use crate::schema::{
-    Condition, Dimension, Normative, Obligation, OrganizationalRequirements, Profile,
+    Condition, Dimension, Normative, Obligation, OrganizationalRequirements, ProblemScope, Profile,
     RealizationConstraint, RequiredAuthority, constraints_json, id_json, id_set_json,
-    normative_json,
+    normative_json, obligation_json, problem_scope_json,
 };
 
 // Profile constants of `fixed-slice-review-v1` (amendment 3 and 3A.1).
@@ -204,6 +204,8 @@ pub struct TraceRow {
 pub struct OrganizationCandidate {
     requirements_digest: Digest,
     profile: Profile,
+    problem_scope: ProblemScope,
+    obligations: Vec<Obligation>,
     participants: Vec<Participant>,
     conditions: Vec<CandidateCondition>,
     vantage_requirements: Vec<VantageRequirement>,
@@ -222,6 +224,14 @@ impl OrganizationCandidate {
     }
     pub fn profile(&self) -> Profile {
         self.profile
+    }
+    /// `problemScope`, copied unchanged from the validated requirements.
+    pub fn problem_scope(&self) -> &ProblemScope {
+        &self.problem_scope
+    }
+    /// `obligations[]`, a set keyed by `id`, copied unchanged from the validated requirements.
+    pub fn obligations(&self) -> &[Obligation] {
+        &self.obligations
     }
     pub fn participants(&self) -> &[Participant] {
         &self.participants
@@ -714,19 +724,9 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     );
 
     if !internal.is_empty() {
-        let mut items: Vec<Unresolved> = internal
-            .into_iter()
-            .map(|collection| Unresolved {
-                kind: UnresolvedKind::InternalError,
-                subject: collection.to_owned(),
-                reason: UnresolvedReason::DuplicateCollectionKey,
-                conditions: Vec::new(),
-            })
-            .collect();
-        sort_unresolved(&mut items);
         return DerivationResult {
             candidates: Vec::new(),
-            unresolved: items,
+            unresolved: internal_error_items(internal),
             receipt: make_receipt(rule_trace),
         };
     }
@@ -734,6 +734,8 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     let mut candidate = OrganizationCandidate {
         requirements_digest,
         profile,
+        problem_scope: requirements.problem_scope().clone(),
+        obligations: obligations.to_vec(),
         participants,
         conditions: candidate_conditions,
         vantage_requirements,
@@ -752,6 +754,21 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
         unresolved: Vec::new(),
         receipt: make_receipt(rule_trace),
     }
+}
+
+/// The unresolved items for failed derivation invariants, one per collection, sorted.
+fn internal_error_items(collections: Vec<&'static str>) -> Vec<Unresolved> {
+    let mut items: Vec<Unresolved> = collections
+        .into_iter()
+        .map(|collection| Unresolved {
+            kind: UnresolvedKind::InternalError,
+            subject: collection.to_owned(),
+            reason: UnresolvedReason::DuplicateCollectionKey,
+            conditions: Vec::new(),
+        })
+        .collect();
+    sort_unresolved(&mut items);
+    items
 }
 
 fn check_unique<I, S>(keys: I, collection: &'static str, internal: &mut Vec<&'static str>)
@@ -908,6 +925,34 @@ fn build_trace(
         .iter()
         .filter(|c| c.consumer_class.as_str() == CLASS_BUILDER)
         .collect();
+
+    // Problem scope and obligations: copied unchanged, one row per member.
+    for field in ["runId", "planLineage", "sliceNumber"] {
+        add(
+            "problemScope",
+            "problemScope",
+            field,
+            src("problemScope", "problemScope", field),
+        );
+    }
+    for obligation in requirements.obligations() {
+        let id = obligation.id.as_str();
+        for field in [
+            "id",
+            "kind",
+            "subject",
+            "resultContract.id",
+            "resultContract.version",
+            "scope.digest",
+        ] {
+            add(
+                "obligation",
+                id,
+                field,
+                src_obligation(&obligation.id, field),
+            );
+        }
+    }
 
     // Participants.
     for participant in participants {
@@ -1261,6 +1306,11 @@ fn candidate_json(candidate: &OrganizationCandidate) -> JsonValue {
             string(&candidate.requirements_digest.to_hex()),
         ),
         ("profile", string(candidate.profile.as_str())),
+        ("problemScope", problem_scope_json(&candidate.problem_scope)),
+        (
+            "obligations",
+            JsonValue::Array(candidate.obligations.iter().map(obligation_json).collect()),
+        ),
         ("participants", JsonValue::Array(participants.collect())),
         ("conditions", JsonValue::Array(conditions.collect())),
         (

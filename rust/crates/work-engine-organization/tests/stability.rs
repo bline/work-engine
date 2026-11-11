@@ -4,7 +4,7 @@
 //! derived candidates were read against the amendment 3 table and the F4 table, and
 //! `golden/*.canonical.json` was re-derived independently with Python (framing with `hashlib`,
 //! canonical form with `json.dumps(sort_keys=True, separators=(",", ":"))`); see the builder
-//! custody record `p2-golden-check.txt`. The rule tests are in `rules.rs`.
+//! custody record `p2-golden-check.txt and p3-golden-check.txt`. The rule tests are in `rules.rs`.
 
 mod common;
 
@@ -304,6 +304,10 @@ macro_rules! golden {
     };
 }
 
+// Draft candidate goldens, redefined by G32 (problemScope and obligations added) under the root's
+// section 17.6 record ("§17.6 and this prequalification correction", gap-decisions-r1.md): no
+// admission names the e0c949bf digests, so this does not bump `profile`. The exemption ends when
+// IG1A accepts a candidate; after that, any change to these bytes bumps the profile.
 #[test]
 fn golden_vectors_fix_canonical_bytes_and_digests() {
     type Case<'a> = (
@@ -321,7 +325,7 @@ fn golden_vectors_fix_canonical_bytes_and_digests() {
             golden!("frozen-requirements"),
             golden!("frozen-candidate"),
             "81b0e582a9376caeb6b491e2fc1730276252649ec83d1326100aec46d5b351b0",
-            "67641c2219d02090f81042720f150bebaf2bab7ef301be69e9b9ae6c04f731a4",
+            "e47e5dd9ddcf626bb960214278d8c5fb05fcd9f2e0522ede3dc918ceaa08fca3",
         ),
         (
             "heterogeneous conditions",
@@ -329,7 +333,7 @@ fn golden_vectors_fix_canonical_bytes_and_digests() {
             golden!("hetero-requirements"),
             golden!("hetero-candidate"),
             "dd94d9f4a8064d18b2541d11ee13feae2f78cad2841630c2a5ff27816cc88fc0",
-            "9053f60b41ccc1e941d47a87f3b851a3eb745b57f0891e994db5a402984d8f8f",
+            "a3c54d0f70554d628eeb22a147938bb29cb5daf3290751302b73823531c0c7c9",
         ),
     ];
     for (name, requirements, requirements_bytes, candidate_bytes, requirements_hex, content_hex) in
@@ -351,7 +355,7 @@ fn golden_vectors_fix_canonical_bytes_and_digests() {
             "{name}"
         );
         // The digests are the framed hashes of the golden bytes (also checked with Python
-        // hashlib in `p2-golden-check.txt`).
+        // hashlib in `p2-golden-check.txt and p3-golden-check.txt`).
         assert_eq!(
             framed_hex(DigestKind::Candidate, candidate_bytes),
             content_hex,

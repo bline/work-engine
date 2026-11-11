@@ -1,13 +1,13 @@
 //! `EnforceabilityReport` (contract r4 4.3 mechanism table, G29, amendment 4 and OC2).
 //!
-//! One row per condition and property, from an exhaustive match: a property added to
-//! `Normative` or a dimension added to `Dimension` without a row fails to compile. The report is
-//! data; `executable` is true iff no row is `None`, and it permits nothing.
+//! One row per condition and property, and one `resultContract` row per obligation, from an
+//! exhaustive match: a property added to `Normative` or a dimension added to `Dimension` without a
+//! row fails to compile. The report is data; `executable` is true iff no row is `None`, and it permits nothing.
 
 use crate::derive::OrganizationCandidate;
 use crate::ids::Id;
 use crate::schema::{
-    Continuity, Dimension, EvidenceCustody, Integrity, Mutation, Normative, Profile,
+    Continuity, Dimension, EvidenceCustody, Integrity, Mutation, Normative, Obligation, Profile,
     RealizationConstraint,
 };
 
@@ -34,7 +34,7 @@ pub enum EvidenceClass {
 #[non_exhaustive]
 pub struct EnforceabilityRow {
     pub property: String,
-    /// The condition ID the row belongs to.
+    /// The condition ID the row belongs to; for the `resultContract` property, the obligation ID.
     pub scope: String,
     pub requirement: String,
     pub status: EnforceStatus,
@@ -210,10 +210,45 @@ fn row_for_constraint(scope: &Id, constraint: &RealizationConstraint) -> Enforce
     }
 }
 
+/// The result contract id and version the v1 mechanism table declares a mechanism for.
+const SUPPORTED_RESULT_CONTRACT: (&str, u64) = ("implementation-review", 1);
+
+/// One `resultContract` row for an obligation, identified by the obligation ID. `Supported` means
+/// only that the profile declares a mechanism for this contract id and version; Gate R must still
+/// bind the concrete validator. Any other id or version is `None`; a row is never dropped.
+fn row_for_result_contract(obligation: &Obligation) -> EnforceabilityRow {
+    let contract = &obligation.result_contract;
+    let supported = (contract.id.as_str(), contract.version) == SUPPORTED_RESULT_CONTRACT;
+    EnforceabilityRow {
+        property: "resultContract".to_owned(),
+        scope: obligation.id.as_str().to_owned(),
+        requirement: format!("{}@{}", contract.id, contract.version),
+        status: if supported {
+            EnforceStatus::Supported
+        } else {
+            EnforceStatus::None
+        },
+        evidence_class: if supported {
+            EvidenceClass::Recording
+        } else {
+            EvidenceClass::NotApplicable
+        },
+        note: if supported {
+            "a mechanism is declared for this contract id and version; Gate R must still bind the concrete validator"
+        } else {
+            "no mechanism is declared for this result contract id or version"
+        },
+    }
+}
+
 /// The enforceability report of a candidate under a profile.
 pub fn enforceability(candidate: &OrganizationCandidate, profile: Profile) -> EnforceabilityReport {
     let Profile::FixedSliceReviewV1 = profile;
-    let mut rows = Vec::new();
+    let mut rows: Vec<EnforceabilityRow> = candidate
+        .obligations()
+        .iter()
+        .map(row_for_result_contract)
+        .collect();
     for condition in candidate.conditions() {
         rows.extend(rows_for_normative(&condition.id, &condition.normative));
         for constraint in &condition.realization_constraints {

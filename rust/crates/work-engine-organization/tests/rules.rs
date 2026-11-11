@@ -1478,7 +1478,7 @@ fn the_view_projects_hosting_episode_access_and_terminalization() {
     let v = view(&c);
     assert_eq!(v.obligations.len(), 1);
     assert_eq!(v.obligations[0].id.as_str(), "ob-a");
-    assert_eq!(v.obligations[0].served_by, "vantage:ob-a");
+    assert_eq!(v.obligations[0].served_by.as_deref(), Some("vantage:ob-a"));
     let vantage_ids: Vec<&str> = v.vantages.iter().map(|x| x.id.as_str()).collect();
     assert_eq!(vantage_ids, ["vantage-builder", "vantage:ob-a"]);
     assert!(v.vantages[0].effective.is_none());
