@@ -730,6 +730,39 @@ def pi_anthropic_call(p, log, n, ts, rid, sid, launch):
     annotate_call_measurements(row)
     return row
 
+def pi_retain_charge(row, p):
+    """A proxy charge above the usage price (identity refusal, stream without a terminal): the high bound is
+    what the proxy kept against the session limit; the low bound stays the usage price."""
+    charged = (p.get('usd') or {}).get('charged_usd')
+    if not isinstance(charged, (int, float)) or isinstance(charged, bool) or not math.isfinite(charged):
+        return row
+    lo = row.get('usd_low', row.get('usd')); hi = row.get('usd_high', row.get('usd'))
+    mult = row.get('quota_multiplier')
+    if lo is None or hi is None:
+        return row  # already unpriced: stays unpriced, never zero
+    if not mult:
+        issue('pi_retained_charge_unconverted', path=row['source'], charged_usd=charged)
+        return row
+    target = charged / mult
+    if target > hi + 1e-12:
+        row.update(usd=None, usd_low=lo, usd_high=target, charge_basis='proxy_retained_charge',
+                   settlement='unsettled', proxy_charged_usd=charged)
+        annotate_call_measurements(row)
+    return row
+
+def pi_retained_reservation(log, n, ts, rid, reserved, sid, launch):
+    """A reservation with no settling request (cancelled or killed stream): low 0, high the amount kept."""
+    row = dict(provider='pi', usage_shape='reservation', ts=ts, call_id=f'reservation:{log}:{rid}',
+               dedupe_basis='proxy_reservation', thread=sid, parent_thread=launch.get('parent_session_id'),
+               agent_path=None, originator='role_host', model=launch.get('model'), effort=launch.get('thinking'),
+               role_index=None, role_heuristic=None, usage={}, weighted=None, usd=None, usd_low=0.0,
+               usd_high=float(reserved), unknown_ttl_tokens=None, source=f'{log}:{n}', pools=['pi_api'],
+               service_tier=None, quota_multiplier=1.0, requested_tier=None, lane=launch.get('auth_lane'),
+               charge_basis='retained_reservation', settlement='unsettled', proxy_reserved_usd=float(reserved),
+               latency_s=None, latency_basis=None)
+    annotate_call_measurements(row)
+    return row
+
 def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
     """Pi container turns run by role_host: one call per response_id in the host egress-proxy log.
 
@@ -763,10 +796,22 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
         launch = launches.get(sid, {})
         session_dir = (launch.get('container_environment') or {}).get('session_dir')
         writes = None
+        reserved, settled = {}, set()
         for n, line in enumerate(open_lines(log), 1):
             try: p = json.loads(line)
             except ValueError: issue('malformed_pi_proxy_row', path=log, line=n); continue
-            if not isinstance(p, dict) or p.get('event') != 'request':
+            if not isinstance(p, dict):
+                continue
+            if p.get('event') == 'usd_reserved':
+                amount = p.get('reserved_usd')
+                if isinstance(amount, (int, float)) and not isinstance(amount, bool) and math.isfinite(amount) and amount >= 0:
+                    reserved[p.get('rid')] = (amount, p.get('at'), n)
+                else:
+                    issue('malformed_pi_reservation', path=log, line=n)
+                continue
+            if isinstance(p.get('usd'), dict) and 'rid' in p['usd']:
+                settled.add(p['usd']['rid'])
+            if p.get('event') != 'request':
                 continue
             rid = p.get('response_id')
             if p.get('http_status') != 200 or not rid:
@@ -778,7 +823,7 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
             if not in_window(ts, since, until):
                 continue
             if p.get('provider') == 'anthropic':
-                rows.append(pi_anthropic_call(p, log, n, ts, rid, sid, launch))
+                rows.append(pi_retain_charge(pi_anthropic_call(p, log, n, ts, rid, sid, launch), p))
                 continue
             pu = p.get('usage') or {}
             cw, basis = pu.get('cache_write_tokens'), 'egress_proxy'
@@ -809,6 +854,10 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
                              lane=launch.get('auth_lane'), cache_write_basis=basis,
                              latency_s=p.get('seconds'), latency_basis='egress_proxy_request'))
             annotate_call_measurements(rows[-1])
+            pi_retain_charge(rows[-1], p)
+        for res_id, (amount, at, n) in reserved.items():
+            if res_id not in settled and in_window(at, since, until):
+                rows.append(pi_retained_reservation(log, n, at, res_id, amount, sid, launch))
     return rows, cov
 
 # ---------------------------------------------------------------- commands
@@ -1350,6 +1399,77 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         result['reconciled_all_in'] = reconciled_all_in(result, sb)
     return finish_measurements(result, quota), quota, sb
 
+PI_ACCOUNTING_ISSUES = ('pi_read_failed', 'pi_proxy_log_missing', 'malformed_pi_proxy_row', 'malformed_pi_reservation',
+                        'malformed_role_host_row', 'role_host_ledger_unreadable', 'duplicate_response_id',
+                        'pi_retained_charge_unconverted')  # unpriced Pi calls are caught by the pi_api totals
+
+def pi_admission(record_path, new_max_usd, parent, role_ledger=None):
+    """Admit a new Pi session's dollar limit against the objective's owner-set pi_api limit.
+
+    Exposure = the tree's pi_api spend (high bound, retained reservations included) + every admitted,
+    unretired session's unspent limit + the new limit. Committed capacity is released only by a role_host
+    retire row. Missing, unpriced or inconsistent accounting refuses (not_established), never reads as zero.
+    """
+    record_path = os.path.abspath(record_path)
+    out = dict(schema='pi-admission-v1', record=record_path, new_max_usd=new_max_usd, parent_session_id=parent,
+               decision='not_established', reasons=[])
+    def done(decision, reason):
+        out['decision'] = decision; out['reasons'].append(reason); return out
+    if not isinstance(new_max_usd, (int, float)) or not math.isfinite(new_max_usd) or new_max_usd <= 0:
+        return done('refused', 'new session needs a positive --max-usd')
+    doc, _, sb = cost_tree(record_path, role_ledger=role_ledger)
+    if sb.get('closed_at'):
+        return done('refused', 'objective is closed')
+    limits = [c for c in sb.get('cost_limits') or [] if c.get('pool') == 'pi_api' and not c.get('node')
+              and c.get('set_by') == 'user' and isinstance(c.get('max_usd'), (int, float))]
+    if not limits:
+        return done('refused', 'no owner-set pi_api cost limit on the objective')
+    limit = min(c['max_usd'] for c in limits); out['limit_usd'] = limit
+    nodes = {n['node_id']: n for n in doc['nodes']}
+    blocking = [i for i in doc['issues'] if i.get('kind') in PI_ACCOUNTING_ISSUES or
+                (i.get('kind') == 'transcript_missing' and i.get('provider') == 'pi')]
+    total = doc['totals']['pi_api']
+    if doc['status'] == 'not_established' or total['unpriced_calls'] or blocking:
+        out['blocking_issues'] = blocking[:20]
+        return done('not_established', 'objective accounting unavailable, unpriced or inconsistent')
+    if parent not in nodes:
+        return done('refused', 'parent session is not in the objective tree, so the new session\'s spend would be unattributed')
+    rows = []
+    path = role_ledger or os.path.join(os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state')),
+                                       'work-engine/role-host/ledger.jsonl')
+    try:
+        for line in open_lines(path):
+            try: rows.append(json.loads(line))
+            except ValueError: return done('not_established', 'malformed role_host ledger row')
+    except FileNotFoundError:
+        pass
+    retired = {r.get('session_id') for r in rows if isinstance(r, dict) and r.get('event') == 'retire'}
+    commitments = []
+    for r in rows:
+        if not (isinstance(r, dict) and r.get('event') == 'objective_admission' and r.get('objective_record') == record_path):
+            continue
+        sid, cap = r.get('session_id'), r.get('max_usd')
+        node = nodes.get(sid)
+        if node is None or not isinstance(cap, (int, float)):
+            return done('not_established', f'admitted session {sid} has no readable spend or limit')
+        spent = node['direct']['pi_api']['quota_usd_high']
+        if spent > cap + 1e-6:
+            return done('not_established', f'session {sid} spend {spent:.6f} exceeds its own limit {cap}')
+        commitments.append(dict(session_id=sid, max_usd=cap, spent_high_usd=spent, retired=sid in retired,
+                                committed_usd=0.0 if sid in retired else cap - spent))
+    spent = total['quota_usd_high']; committed = sum(c['committed_usd'] for c in commitments)
+    exposure = spent + committed + new_max_usd
+    out.update(spent_high_usd=spent, spent_low_usd=total['quota_usd_low'], tree_status=doc['status'],
+               committed_usd=committed, commitments=commitments, exposure_usd=exposure, remaining_usd=limit - spent - committed)
+    if exposure > limit + 1e-9:
+        return done('refused', f'exposure {exposure:.6f} would pass the objective pi_api limit {limit}')
+    return done('admitted', 'within the objective pi_api limit')
+
+def cmd_pi_admit(a):
+    out = pi_admission(a.record, a.max_usd, a.parent, a.role_host_ledger)
+    print(json.dumps(out, sort_keys=True))
+    return {'admitted': 0, 'refused': 21}.get(out['decision'], 32)
+
 def cmd_tree(a):
     doc, _, _ = cost_tree(a.record, a.since, a.until, a.role_host_ledger)
     out = json.dumps(doc, indent=1, sort_keys=True)
@@ -1495,7 +1615,11 @@ def main():
     w = sp.add_parser('windows'); w.add_argument('dir')
     t = sp.add_parser('tree'); t.add_argument('--record', required=True); t.add_argument('--since'); t.add_argument('--until'); t.add_argument('--role-host-ledger'); t.add_argument('--out')
     c = sp.add_parser('control'); c.add_argument('--record', required=True); c.add_argument('--cursor'); c.add_argument('--limit-fractions', default='0.5,0.8,1.0'); c.add_argument('--role-host-ledger')
+    pa = sp.add_parser('pi-admit', help='admit a new Pi session limit against the objective pi_api limit (exit 0 admitted, 21 refused, 32 not established)')
+    pa.add_argument('--record', required=True); pa.add_argument('--max-usd', type=float, required=True)
+    pa.add_argument('--parent', required=True); pa.add_argument('--role-host-ledger')
     a = ap.parse_args()
+    if a.cmd == 'pi-admit': sys.exit(cmd_pi_admit(a))
     if a.cmd == 'control':
         try: cmd_control(a)
         except ValueError as e: ap.error(str(e))

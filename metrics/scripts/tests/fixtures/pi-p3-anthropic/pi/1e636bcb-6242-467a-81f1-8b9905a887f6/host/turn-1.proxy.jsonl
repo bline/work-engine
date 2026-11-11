@@ -1,0 +1,1 @@
+{"at": "2026-11-11T01:09:07Z", "event": "refused", "method": "POST", "path": "/v1/messages?beta=true", "http_status": 429, "reason": "usd_limit: spent 0.0000 + worst case 0.2567 > limit 0.0500"}

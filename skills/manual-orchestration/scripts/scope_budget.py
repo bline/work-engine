@@ -44,7 +44,7 @@ WEEK_MINUTES = 10080
 METER_MAX_AGE_SECONDS = 300
 COST_BASIS = 'speed_adjusted_api_usd'
 LIMITS = ("max_weekly_points", "max_weekly_percent", "reconsider_after_additions")
-POOLS = ("codex", "claude_all_models", "claude_fable")
+POOLS = ("codex", "claude_all_models", "claude_fable", "pi_api")
 LEDGER = Path("metrics/scripts/usage_ledger.py")
 SPEND_KINDS = ("mark_crossed", "node_mark_crossed", "limit_fraction", "limit_reached")
 

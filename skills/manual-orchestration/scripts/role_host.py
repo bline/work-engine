@@ -1492,6 +1492,38 @@ class Pi:
                        **({"collected": collected} if collected else {})})
         return {"session_id": sid, "retired": "idle_released", **({"collected": collected} if collected else {})}
 
+def objective_admission(record, max_usd, parent, ledger_path) -> dict:
+    """--objective-record: the usage ledger admits this Pi session's --max-usd against the objective's
+    owner-set pi_api limit, counting spend and every open session's unspent limit. Anything but an
+    admission refuses the launch; the per-session proxy limit is unchanged."""
+    if max_usd is None:
+        raise HostError(USAGE, "usage", "--objective-record needs --max-usd")
+    if not parent:
+        raise HostError(USAGE, "usage", "--objective-record needs --parent: the objective session that owns this Pi session")
+    reader = os.environ.get("ROLE_HOST_USAGE_LEDGER")
+    candidates = [Path(reader)] if reader else [Path(__file__).resolve().parents[3] / "metrics/scripts/usage_ledger.py"]
+    if not reader:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+        if top.returncode == 0 and top.stdout.strip():
+            candidates.append(Path(top.stdout.strip()) / "metrics/scripts/usage_ledger.py")
+    found = next((c for c in candidates if c.is_file()), None)
+    if found is None:
+        raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", "usage ledger not found")
+    r = subprocess.run([sys.executable, "-I", str(found), "pi-admit", "--record", str(Path(record).resolve()),
+                        "--max-usd", repr(float(max_usd)), "--parent", parent, "--role-host-ledger", str(ledger_path)],
+                       capture_output=True, text=True, timeout=600)
+    try:
+        out = json.loads(r.stdout)
+    except ValueError:
+        raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", (r.stderr or r.stdout)[-800:])
+    if r.returncode != 0 or out.get("decision") != "admitted":
+        status = "objective_pi_limit_refused" if out.get("decision") == "refused" else "objective_accounting_unavailable"
+        raise HostError(NOT_ESTABLISHED, status, json.dumps(out, sort_keys=True))
+    out["reader"] = str(found)
+    out["reader_sha256"] = hashlib.sha256(found.read_bytes()).hexdigest()
+    return out
+
+
 HOSTS = {"claude": Claude, "codex": Codex, "pi": Pi}
 
 
@@ -1554,6 +1586,9 @@ def main(argv=None) -> int:
     la.add_argument("--container-model-file", metavar="JSON",
                     help="container: a Pi models.json model entry for the pinned model, for a model Pi's catalog "
                          "lacks; written with the relay baseUrl (no baseUrl, headers, apiKey or fallbacks)")
+    la.add_argument("--objective-record", metavar="RECORD",
+                    help="container, with --max-usd and --parent: admit this session's limit against the objective's "
+                         "owner-set pi_api limit (spend + open sessions' unspent limits); refused otherwise")
     la.add_argument("--codebase-memory", action="store_true",
                     help="container: index the working directory into this session's own codebase-memory cache, "
                          "verify it inside the container, and give Pi the MCP server")
@@ -1642,8 +1677,19 @@ def main(argv=None) -> int:
                 elif a.auth or a.service_tier or a.container or container_flags:
                     raise HostError(USAGE, "usage", "--auth, --service-tier and the container options are pi launch "
                                     "options; Codex selects its tier with -c service_tier")
+                admission = None
+                if a.objective_record:
+                    if a.host != "pi" or not a.container:
+                        raise HostError(USAGE, "usage", "--objective-record is a pi --container launch option")
+                    admission = objective_admission(a.objective_record, a.max_usd, a.parent, ledger.path)
                 res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
                                host_args=a.host_arg, ledger=ledger, parent=a.parent, **kw)
+                if admission:
+                    keep = ("decision", "limit_usd", "spent_high_usd", "committed_usd", "exposure_usd", "reader", "reader_sha256")
+                    ledger.append({"host": "pi", "event": "objective_admission", "session_id": res["session_id"],
+                                   "objective_record": admission["record"], "max_usd": float(a.max_usd),
+                                   "admission": {k: admission.get(k) for k in keep}})
+                    res["objective_admission"] = {k: admission.get(k) for k in keep}
             elif a.cmd == "status":
                 res = {"session_id": sid, "host": a.host, **h.status(sid, ledger)}
             elif a.cmd == "deliver":
