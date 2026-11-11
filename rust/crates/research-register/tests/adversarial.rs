@@ -1120,6 +1120,149 @@ fn security_dotgit_with_malformed_utf8_is_cannot_read() {
     }
 }
 
+/// R-1b.6 N18 (git-dir half of the post-open equality check). With the target's own
+/// `core.precomposeUnicode=true`, gix opening a repository at an NFD path opens the sibling at the
+/// NFC spelling instead; the post-open check refuses that rather than reading another
+/// repository's objects (Phase A fixture `n18_fixture.py`, Fable's extension). Both --repo forms.
+#[test]
+fn security_precomposed_path_cannot_open_a_sibling_repository() {
+    let fx = Fx::new("n18-gitdir");
+    let (r, _, c2) = fx.base("repo", &none);
+    let parent = fx.root.join("n18");
+    let (target, decoy) = (parent.join("cafe\u{301}"), parent.join("caf\u{e9}"));
+    std::fs::create_dir_all(&parent).unwrap();
+    fx.git(&parent, &["init", "-q", target.to_str().unwrap()]);
+    fx.git(&target, &["config", "core.precomposeUnicode", "true"]);
+    fx.git(
+        &parent,
+        &[
+            "clone",
+            "-q",
+            "--no-hardlinks",
+            r.to_str().unwrap(),
+            decoy.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(
+        std::fs::read_dir(&parent).unwrap().count(),
+        2,
+        "CONTROL: NFC and NFD spellings are distinct directories"
+    );
+    for repo in [target.clone(), target.join(".git")] {
+        judge(
+            &fx,
+            &format!("NFD target {} with an NFC decoy", repo.display()),
+            read(&repo, &c2, "reg"),
+            &Expect::Refuse("cannot_read"),
+        );
+    }
+    let control = read(&decoy, &c2, "reg");
+    assert!(control.is_ok(), "CONTROL: the decoy holds the commit");
+}
+
+/// R-1b.6 N18 (common-dir half). A linked-worktree git directory with an ASCII path whose
+/// `commondir` names the NFD repository: gix resolves the common directory to the NFC sibling, so
+/// only the common-dir comparison detects the redirect (Fable's `ext/cd2` fixture).
+#[test]
+fn security_precomposed_common_dir_cannot_open_a_sibling_repository() {
+    let fx = Fx::new("n18-commondir");
+    let (r, _, c2) = fx.base("repo", &none);
+    let parent = fx.root.join("n18cd");
+    let (target, decoy) = (parent.join("cafe\u{301}"), parent.join("caf\u{e9}"));
+    std::fs::create_dir_all(&parent).unwrap();
+    fx.git(&parent, &["init", "-q", target.to_str().unwrap()]);
+    fx.git(&target, &["config", "core.precomposeUnicode", "true"]);
+    fx.git(&target, &["commit", "-q", "--allow-empty", "-m", "e"]);
+    let head = fx.git(&target, &["rev-parse", "HEAD"]);
+    fx.git(
+        &parent,
+        &[
+            "clone",
+            "-q",
+            "--no-hardlinks",
+            r.to_str().unwrap(),
+            decoy.to_str().unwrap(),
+        ],
+    );
+    let wtgit = fx.root.join("ascii").join("wtgit");
+    let wt = fx.root.join("wt");
+    write(&wtgit.join("HEAD"), &format!("{head}\n"));
+    write(
+        &wtgit.join("commondir"),
+        &format!("{}\n", target.join(".git").display()),
+    );
+    write(
+        &wtgit.join("gitdir"),
+        &format!("{}\n", wt.join(".git").display()),
+    );
+    write(&wt.join(".git"), &format!("gitdir: {}\n", wtgit.display()));
+    for repo in [wtgit.clone(), wt.clone()] {
+        judge(
+            &fx,
+            &format!("linked git dir {} with an NFD common dir", repo.display()),
+            read(&repo, &c2, "reg"),
+            &Expect::Refuse("cannot_read"),
+        );
+    }
+}
+
+/// R-1b.6 S12a (Fable R-1b.5): configuration from the environment (`GIT_CONFIG_COUNT`) is not
+/// applied, so it cannot move a reference into a namespace.
+#[test]
+fn security_environment_config_count_cannot_redirect_a_reference() {
+    let fx = Fx::new("s12a-env");
+    let (r, c1, c2) = fx.base("repo", &none);
+    let t = truth(&fx, &r, &c2);
+    fx.git(
+        &r,
+        &["update-ref", "refs/namespaces/ns/refs/heads/main", &c1],
+    );
+    judge_cli(
+        &fx,
+        "GIT_CONFIG_COUNT gitoxide.core.refsNamespace",
+        &r,
+        "refs/heads/main",
+        &[
+            ("GIT_CONFIG_COUNT", "1".into()),
+            ("GIT_CONFIG_KEY_0", "gitoxide.core.refsNamespace".into()),
+            ("GIT_CONFIG_VALUE_0", "ns".into()),
+        ],
+        &t,
+    );
+}
+
+/// R-1b.6 S12a (Fable R-1b.5): a repository-local `include.path` is not followed, so an included
+/// file cannot move a reference into a namespace (library and CLI).
+#[test]
+fn security_repository_local_include_is_not_followed() {
+    let fx = Fx::new("s12a-include");
+    let (r, c1, c2) = fx.base("repo", &none);
+    let t = truth(&fx, &r, &c2);
+    fx.git(
+        &r,
+        &["update-ref", "refs/namespaces/ns/refs/heads/main", &c1],
+    );
+    write(
+        &r.join(".git/extra.cfg"),
+        "[gitoxide \"core\"]\n\trefsNamespace = ns\n",
+    );
+    fx.git(&r, &["config", "include.path", "extra.cfg"]);
+    judge(
+        &fx,
+        "local include.path (library)",
+        read(&r, "refs/heads/main", "reg"),
+        &t,
+    );
+    judge_cli(
+        &fx,
+        "local include.path (cli)",
+        &r,
+        "refs/heads/main",
+        &[],
+        &t,
+    );
+}
+
 #[test]
 fn security_namespace_settings_cannot_redirect_a_reference() {
     let fx = Fx::new("namespace");
