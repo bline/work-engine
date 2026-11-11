@@ -1,0 +1,6 @@
+{
+  "source": "/home/bline/cbm-work/org-envelope-review-r3-20261111/evidence/frozen/rust-production-claude-takeover-20261111/slice-2/p1-repair-2/out/prepared/job-policy.proposed.json",
+  "sourceSha256": "f9a4d28bebeb1a9f9413105b84c06a05a0409cfb29b849e9178e50ba0cd99694",
+  "pointer": "/startupAuthority/completionConsumer",
+  "value": "campaign"
+}

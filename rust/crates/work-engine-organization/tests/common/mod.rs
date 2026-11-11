@@ -138,3 +138,29 @@ pub fn relationship_keys(candidate: &OrganizationCandidate) -> Vec<String> {
         })
         .collect()
 }
+
+/// A vantage whose two conditions state different normative content (F4 combination).
+pub fn two_condition_vantage() -> Value {
+    let mut first = condition("c1", "ob-a", "builder_projection", "builder", "owner-a");
+    first["normative"]["capabilities"] = json!(["x"]);
+    first["normative"]["independence"] = json!({"from": ["state.builder_context"]});
+    first["realizationConstraints"] = json!([
+        {"dimension": "provider_family", "allowed": ["anthropic", "other"]},
+        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox"]}
+    ]);
+    let mut second = condition(
+        "c2",
+        "ob-a",
+        "campaign_terminalization",
+        "campaign",
+        "owner-a",
+    );
+    second["normative"]["capabilities"] = json!(["y"]);
+    second["realizationConstraints"] =
+        json!([{"dimension": "provider_family", "allowed": ["anthropic"]}]);
+    document(
+        vec![obligation("ob-a", DIGEST_A)],
+        vec![first, second],
+        vec![authority("auth-1", "owner-a", "accept_claim", None)],
+    )
+}

@@ -1,0 +1,42 @@
+{
+  "grantId": "production-timestamp-episode-20261107",
+  "identity": {
+    "attemptId": "review-005",
+    "planVersion": "timestamp-projection-v1",
+    "reviewEpisodeId": "ad20341a4937167c8442fbaa9e81288d",
+    "reviewObligationId": "rp3-initial-implementation-review",
+    "runId": "production-qualification-20261107",
+    "sliceNumber": 1
+  },
+  "initialSubject": {
+    "freshness": "exact_revision",
+    "owner": "slice-supervisor",
+    "reference": "git-checkpoint:96808de3d565a6c4b0211e8dc263cb7343514d74",
+    "revision": "96808de3d565a6c4b0211e8dc263cb7343514d74",
+    "sha256": "18108e56e12f8428ce69da714ba7fc10e93990226717e987bf228c269951d9c1"
+  },
+  "predecessorRevision": null,
+  "readers": [
+    "native-review-host"
+  ],
+  "schemaVersion": 1,
+  "source": {
+    "freshness": "Exact proposed bytes; operator issuance pending",
+    "owner": "operator-production-qualification-20261107",
+    "reference": "/home/bline/.local/state/work-engine/rust-production-qualification-20261107T0312/package/inputs/claims-source.proposed.json",
+    "revision": "proposal-20261107-v1",
+    "sha256": "b88d5e0cb0cea5ded95aac782d98fa72c2a8e453c1fc3c33a666a17fd062db76"
+  },
+  "writer": {
+    "actorId": "native-review-host",
+    "generation": 1,
+    "provider": "pinned-claude-cli-2.1.322",
+    "runtimeSession": {
+      "freshness": "exact_revision",
+      "owner": "review-host-deployment-owner",
+      "reference": "0d861d5c-5d06-4826-a69f-e45fdf3b68df",
+      "revision": "production-qualification-runtime-20261107-0616-r1",
+      "sha256": "14bbf407ae36ed921b4c85670a37e1aba6000939e010d3fc6d47a3686adc7272"
+    }
+  }
+}

@@ -224,31 +224,6 @@ fn identity_changes_on_every_listed_input_class() {
 // ---------------------------------------------------------------------------------------------
 // 1A-3 conditions (F4)
 
-fn two_condition_vantage() -> Value {
-    let mut first = condition("c1", "ob-a", "builder_projection", "builder", "owner-a");
-    first["normative"]["capabilities"] = json!(["x"]);
-    first["normative"]["independence"] = json!({"from": ["state.builder_context"]});
-    first["realizationConstraints"] = json!([
-        {"dimension": "provider_family", "allowed": ["anthropic", "other"]},
-        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox"]}
-    ]);
-    let mut second = condition(
-        "c2",
-        "ob-a",
-        "campaign_terminalization",
-        "campaign",
-        "owner-a",
-    );
-    second["normative"]["capabilities"] = json!(["y"]);
-    second["realizationConstraints"] =
-        json!([{"dimension": "provider_family", "allowed": ["anthropic"]}]);
-    document(
-        vec![obligation("ob-a", DIGEST_A)],
-        vec![first, second],
-        vec![authority("auth-1", "owner-a", "accept_claim", None)],
-    )
-}
-
 #[test]
 fn heterogeneous_conditions_are_preserved_and_combined_by_the_f4_table() {
     let result = candidate(&two_condition_vantage());
