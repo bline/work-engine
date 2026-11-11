@@ -812,8 +812,11 @@ class AnthropicUsdBudget(UsdBudget):
         total = None
         if http_status is not None and http_status != 200:
             charged, how = 0.0, "error_status"  # assumed unbilled, not verified
-        elif all(isinstance(x, int) and not isinstance(x, bool) and x >= 0 for x in (i, cr, cw, o, w5, w1)) \
+        elif http_status is not None \
+                and all(isinstance(x, int) and not isinstance(x, bool) and x >= 0 for x in (i, cr, cw, o, w5, w1)) \
                 and w5 + w1 <= cw and u.get("service_tier") in (None, "standard"):
+            # http_status None: the stream ended before message_stop, so the
+            # usage seen so far (message_start) understates output; keep the reservation.
             charged = (i * r["input"] + cr * r["cache_read"] + w5 * r["cache_write_5m"] + w1 * r["cache_write_1h"]
                        + (cw - w5 - w1) * max(r["cache_write_5m"], r["cache_write_1h"]) + o * r["output"]) / 1e6
             how, total = "usage", i + cr + cw
