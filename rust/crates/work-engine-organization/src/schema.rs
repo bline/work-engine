@@ -132,11 +132,38 @@ closed_enum!(
     /// A recognized `execution_confinement` class of `fixed-slice-review-v1`.
     ExecutionConfinement { GuardedSandbox = "guarded_sandbox" }
 );
-closed_enum!(
-    /// The recognized `normative.observerClass` of `fixed-slice-review-v1`: a class, not an
-    /// observer identity.
-    ObserverClass { IndependentExecutionEvidence = "independent_execution_evidence" }
-);
+/// The recognized `normative.observerClass` of `fixed-slice-review-v1`: a class, not an
+/// observer identity.
+///
+/// Written out instead of through `closed_enum!` so that a second value exists in `cfg(test)`
+/// builds only: the internal F4 observerClass conflict test needs two different classes at one
+/// vantage, which the one-class v1 vocabulary cannot provide. The test-only variant is absent
+/// from `ALL`, from `parse` and so from the vocabulary and from validation; it cannot be spelled
+/// in authored requirements and does not exist outside `cfg(test)`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ObserverClass {
+    IndependentExecutionEvidence,
+    #[cfg(test)]
+    TestOnlyAlternate,
+}
+
+impl ObserverClass {
+    /// Every recognized value, in declaration order.
+    pub const ALL: &'static [ObserverClass] = &[ObserverClass::IndependentExecutionEvidence];
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ObserverClass::IndependentExecutionEvidence => "independent_execution_evidence",
+            #[cfg(test)]
+            ObserverClass::TestOnlyAlternate => "test_only_alternate_observer",
+        }
+    }
+    fn parse(text: &str) -> Option<ObserverClass> {
+        match text {
+            "independent_execution_evidence" => Some(ObserverClass::IndependentExecutionEvidence),
+            _ => None,
+        }
+    }
+}
 
 /// A recognized member of `realizationConstraints[].allowed`; the variant fixes the dimension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

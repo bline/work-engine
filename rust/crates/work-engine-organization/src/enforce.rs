@@ -155,6 +155,15 @@ fn rows_for_normative(scope: &Id, normative: &Normative) -> Vec<EnforceabilityRo
             EvidenceClass::Recording,
             "the realization admission must state the class-to-identity mapping",
         ),
+        // Exists only in cfg(test) builds; fail closed like any unrecognized class.
+        #[cfg(test)]
+        ObserverClass::TestOnlyAlternate => row(
+            "observerClass",
+            observer_class.as_str().to_owned(),
+            NoRow,
+            EvidenceClass::NotApplicable,
+            "test-only class: no realization exists",
+        ),
     });
     if let Some(from) = independence {
         rows.push(row(

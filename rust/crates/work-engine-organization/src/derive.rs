@@ -1530,6 +1530,40 @@ mod injection_tests {
         assert_eq!(ids, ["cond-1", "cond-2"]);
     }
 
+    /// Internal combination test, not reachable through the public v1 vocabulary (one
+    /// `observerClass` value): the real `combine` is fed two conditions at one vantage whose
+    /// observer classes differ, using the `cfg(test)`-only `ObserverClass::TestOnlyAlternate`.
+    /// No production class is added and validation cannot produce the second value.
+    #[test]
+    fn f4_reports_differing_observer_classes_as_a_condition_conflict() {
+        use crate::schema::ObserverClass;
+        let validated = requirements();
+        let mut first = validated.conditions()[0].clone();
+        let mut second = first.clone();
+        first.id = Id::parse("cond-1").unwrap();
+        second.id = Id::parse("cond-2").unwrap();
+        second.normative.observer_class = ObserverClass::TestOnlyAlternate;
+        assert_ne!(
+            first.normative.observer_class,
+            second.normative.observer_class
+        );
+        let conflicts = combine(&[&first, &second]).unwrap_err();
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].kind, UnresolvedKind::ConditionConflict);
+        assert_eq!(conflicts[0].subject, "observerClass");
+        assert_eq!(conflicts[0].reason, UnresolvedReason::DifferingValues);
+        let ids: Vec<&str> = conflicts[0].conditions.iter().map(Id::as_str).collect();
+        assert_eq!(ids, ["cond-1", "cond-2"]);
+
+        // The same two conditions agreeing yield an effective class; the conflicting pair yields
+        // no effective normative requirements at all (the Err above carries no candidate value).
+        let (effective, _) = combine(&[&first, &first.clone()]).unwrap();
+        assert_eq!(
+            effective.observer_class,
+            ObserverClass::IndependentExecutionEvidence
+        );
+    }
+
     #[test]
     fn a_view_obligation_without_a_serves_row_is_shown_unestablished_not_dropped_or_filled() {
         let result = derive(&requirements(), Profile::FixedSliceReviewV1);
