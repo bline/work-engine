@@ -552,6 +552,32 @@ def anthropic_unpriceable(value) -> str | None:
     return None
 
 
+ANTHROPIC_IDENTITY_HOLD_BYTES = 1 << 20
+
+
+def anthropic_identity_refusal(event, model_id: str) -> str | None:
+    """None when a stream's first event is a message_start naming exactly the
+    authorized model; otherwise why the stream is refused. The response's own
+    message.model is checked, not the request's."""
+    if not isinstance(event, dict) or event.get("type") != "message_start":
+        return "response_model_not_first_event"
+    message = event.get("message")
+    if not isinstance(message, dict):
+        return "response_model_malformed"
+    if "model" not in message or message["model"] is None:
+        return "response_model_missing"
+    if not isinstance(message["model"], str) or not message["model"]:
+        return "response_model_malformed"
+    return None if message["model"] == model_id else "response_model_mismatch"
+
+
+def loggable_model(value):
+    """A response's model field as logged: a short string as is, anything else as a bounded repr."""
+    if value is None or (isinstance(value, str) and len(value) <= 200):
+        return value
+    return repr(value)[:200]
+
+
 def merge_anthropic_usage(into: dict, raw) -> dict:
     """Fold one message_start or message_delta usage object into the running usage.
     Later values replace earlier ones (message_delta carries cumulative counts)."""
@@ -957,55 +983,100 @@ class EgressProxy:
                     proxy.log({"event": "upstream_error", "provider": "anthropic", "n": n, "detail": str(e)[:300],
                                **settle(None, {})})
                     return self.refuse(502, "upstream unreachable")
-                self.send_response(resp.status)
-                for k, v in resp.getheaders():
-                    if k.lower() not in ("transfer-encoding", "connection", "content-length", "keep-alive"):
-                        self.send_header(k, v)
-                self.send_header("connection", "close")
-                self.end_headers()
+                replied = []
+
+                def reply_headers():
+                    replied.append(True)
+                    self.send_response(resp.status)
+                    for k, v in resp.getheaders():
+                        if k.lower() not in ("transfer-encoding", "connection", "content-length", "keep-alive"):
+                            self.send_header(k, v)
+                    self.send_header("connection", "close")
+                    self.end_headers()
+
+                # A 200 stream is held, line by line, until its first event (pings
+                # aside) is a message_start naming exactly the authorized model;
+                # nothing from an unverified model reaches the container. Error
+                # statuses carry no model output and pass through as before.
+                streaming = resp.status == 200
+                if not streaming:
+                    reply_headers()
                 usage, buf, head = {}, b"", b""
                 message, terminal, stop_reason, error_type, stream_error = {}, None, None, None, None
+                verified, identity_refusal, held, held_bytes = not streaming, None, [], 0
                 try:
-                    while True:
+                    while identity_refusal is None:
                         chunk = resp.read1(65536)
                         if not chunk:
                             break
-                        self.wfile.write(chunk)
-                        self.wfile.flush()
-                        if resp.status != 200 and len(head) < 2000:
-                            head += chunk[: 2000 - len(head)]
+                        if not streaming:
+                            self.wfile.write(chunk)
+                            self.wfile.flush()
+                            if len(head) < 2000:
+                                head += chunk[: 2000 - len(head)]
                         buf += chunk
                         *lines, buf = buf.split(b"\n")
                         for line in lines:
-                            if not line.startswith(b"data:"):
-                                continue
-                            try:
-                                event = json.loads(line[5:].strip())
-                            except ValueError:
-                                continue
-                            kind = event.get("type") if isinstance(event, dict) else None
-                            if kind == "message_start" and isinstance(event.get("message"), dict):
-                                message = event["message"]
-                                merge_anthropic_usage(usage, message.get("usage"))
-                            elif kind == "message_delta":
-                                merge_anthropic_usage(usage, event.get("usage"))
-                                stop_reason = (event.get("delta") or {}).get("stop_reason") or stop_reason
-                            elif kind == "message_stop":
-                                terminal = kind
-                            elif kind == "error":
-                                error_type = (event.get("error") or {}).get("type") or "error"
+                            event, kind = None, None
+                            if line.startswith(b"data:"):
+                                try:
+                                    event = json.loads(line[5:].strip())
+                                except ValueError:
+                                    event = None
+                                kind = event.get("type") if isinstance(event, dict) else None
+                                if streaming and not verified and kind != "ping":
+                                    identity_refusal = anthropic_identity_refusal(event, proxy.model_id)
+                                    verified = identity_refusal is None
+                                elif streaming and kind == "message_start":
+                                    identity_refusal = "response_model_restated"
+                            if streaming and identity_refusal is None:
+                                held.append(line + b"\n")
+                                held_bytes += len(line) + 1
+                            if isinstance(event, dict):
+                                if kind == "message_start" and isinstance(event.get("message"), dict):
+                                    message = event["message"]
+                                    merge_anthropic_usage(usage, message.get("usage"))
+                                elif kind == "message_delta":
+                                    merge_anthropic_usage(usage, event.get("usage"))
+                                    stop_reason = (event.get("delta") or {}).get("stop_reason") or stop_reason
+                                elif kind == "message_stop":
+                                    terminal = kind
+                                elif kind == "error":
+                                    error_type = (event.get("error") or {}).get("type") or "error"
+                            if identity_refusal:
+                                break
+                        if streaming and verified and identity_refusal is None and held:
+                            if not replied:
+                                reply_headers()
+                            self.wfile.write(b"".join(held))
+                            self.wfile.flush()
+                            held, held_bytes = [], 0
+                        elif streaming and not verified and held_bytes + len(buf) > ANTHROPIC_IDENTITY_HOLD_BYTES:
+                            identity_refusal = "response_model_not_established"
+                    if streaming and verified and identity_refusal is None and buf:
+                        self.wfile.write(buf)
+                        self.wfile.flush()
                 except OSError as e:
                     # The container went away (cancellation) or the upstream broke.
                     stream_error = str(e)[:300]
                     proxy.log({"event": "stream_error", "provider": "anthropic", "n": n, "detail": stream_error})
                 finally:
                     conn.close()
-                response_model = message.get("model")
+                if streaming and not verified and identity_refusal is None:
+                    identity_refusal = "response_model_not_established"
+                response_model = loggable_model(message.get("model"))
+                if identity_refusal:
+                    # Fail closed: no retry, no fallback; the reservation stays charged below.
+                    proxy.log({"event": "response_model_refused", "provider": "anthropic", "n": n,
+                               "reason": identity_refusal, "authorized_model": proxy.model_id,
+                               "response_model": response_model, "response_id": message.get("id"),
+                               "verified_bytes_forwarded": bool(replied), "detail": stream_error})
                 proxy.log({
                     "event": "request", "provider": "anthropic", "n": n, "http_status": resp.status,
                     "model": body.get("model"), "requested_tier": None, "observed_tier": usage.get("service_tier"),
                     "terminal": terminal, "response_id": message.get("id"), "response_model": response_model,
                     **({"model_mismatch": True} if response_model and response_model != proxy.model_id else {}),
+                    **({"response_model_check": identity_refusal or "verified"} if streaming else {}),
                     "stop_reason": stop_reason, "thinking": (body.get("thinking") or {}).get("type"),
                     "effort": (body.get("output_config") or {}).get("effort"), "betas": betas,
                     "usage": {k: usage.get(k) for k in ANTHROPIC_USAGE_KEYS},
@@ -1013,9 +1084,15 @@ class EgressProxy:
                     **({"stream_error_type": error_type} if error_type else {}),
                     "seconds": round(time.time() - started, 3),
                     **({"error_head": head.decode("utf-8", "replace")} if resp.status != 200 else {}),
-                    **settle(resp.status if terminal is not None or resp.status != 200 else None, {"usage": usage}),
+                    **settle(None if identity_refusal else
+                             resp.status if terminal is not None or resp.status != 200 else None, {"usage": usage}),
                 })
                 self.close_connection = True
+                if identity_refusal and not replied:
+                    try:
+                        self.refuse(502, identity_refusal)
+                    except OSError:
+                        pass
 
             def do_GET(self):
                 self.refuse(403, f"only POST {proxy.route} is allowed")

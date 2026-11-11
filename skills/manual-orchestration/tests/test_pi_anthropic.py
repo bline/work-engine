@@ -53,9 +53,13 @@ def request(**over):
 
 class Upstream(BaseHTTPRequestHandler):
     """Streams an Anthropic message. Class settings: status, usage, delta_usage,
-    stop (False: no message_stop), pause (seconds before the closing events), model."""
+    stop (False: no message_stop), pause (seconds before the closing events), model,
+    first (raw first data line replacing message_start; b"" sends no events),
+    ping (a ping before message_start), tool (a tool_use block), restate (model of a
+    second message_start after the first content)."""
     seen = []
     status, usage, delta_usage, stop, pause, model = 200, USAGE, {"output_tokens": 7}, True, 0, None
+    first, ping, tool, restate = None, False, False, None
 
     def log_message(self, *a):
         pass
@@ -77,9 +81,27 @@ class Upstream(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("content-type", "text/event-stream")
         self.end_headers()
-        self.send("message_start", {"message": {"id": "msg_1", "model": Upstream.model or body["model"],
-                                                "usage": Upstream.usage}})
+        if Upstream.ping:
+            self.send("ping", {})
+        if Upstream.first is not None:
+            if Upstream.first:
+                self.wfile.write(b"event: message_start\ndata: " + Upstream.first + b"\n\n")
+        else:
+            self.send("message_start", {"message": {"id": "msg_1", "model": Upstream.model or body["model"],
+                                                    "usage": Upstream.usage}})
+        if Upstream.first == b"":
+            return
         try:
+            if Upstream.tool:
+                self.send("content_block_start", {"index": 1, "content_block": {
+                    "type": "tool_use", "id": "toolu_1", "name": "bash", "input": {}}})
+                self.send("content_block_delta", {"index": 1, "delta": {
+                    "type": "input_json_delta", "partial_json": '{"command": "touch /x"}'}})
+                self.send("content_block_stop", {"index": 1})
+            if Upstream.restate:
+                time.sleep(0.2)  # the verified content goes out in its own read
+                self.send("message_start", {"message": {"id": "msg_2", "model": Upstream.restate,
+                                                        "usage": Upstream.usage}})
             time.sleep(Upstream.pause)
             for _ in range(20 if Upstream.pause else 1):
                 self.send("content_block_delta", {"index": 0, "delta": {"type": "text_delta", "text": "x" * 4000}})
@@ -98,6 +120,7 @@ class Harness(unittest.TestCase):
         Upstream.seen = []
         Upstream.status, Upstream.usage, Upstream.delta_usage = 200, USAGE, {"output_tokens": 7}
         Upstream.stop, Upstream.pause, Upstream.model = True, 0, None
+        Upstream.first, Upstream.ping, Upstream.tool, Upstream.restate = None, False, False, None
         self.upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
         threading.Thread(target=self.upstream.serve_forever, daemon=True).start()
         self.addCleanup(self.upstream.server_close)
@@ -160,11 +183,89 @@ class AnthropicRouteTests(Harness):
         self.assertNotIn("model_mismatch", row)
         self.assertNotIn(REAL_KEY, (self.tmp / "proxy.jsonl").read_text())
 
-    def test_served_by_another_model_is_flagged(self):
-        Upstream.model = "claude-opus-5"
-        self.proxy()
-        self.post(request())
+    def assert_identity_refused(self, reason, data, status, response_model=None):
+        """Refused before any upstream byte reached the client; reservation kept; audit event; no key."""
+        self.assertEqual(status, 502, data)
+        self.assertIn(reason.encode(), data)
+        for leaked in (b"content_block", b"tool_use", b"text_delta", b"message_start", b"msg_1"):
+            self.assertNotIn(leaked, data)
+        (ev,) = [r for r in self.log() if r.get("event") == "response_model_refused"]
+        self.assertEqual((ev["reason"], ev["authorized_model"], ev["response_model"], ev["verified_bytes_forwarded"]),
+                         (reason, MODEL_ID, response_model, False))
+        (row,) = self.requests()
+        self.assertEqual(row["response_model_check"], reason)
+        self.assertEqual((row["usd"]["charge_basis"], row["usd"]["charged_usd"]),
+                         ("reservation", row["usd"]["reserved_usd"]))
+        totals = pi_container.usd_totals(self.log())
+        self.assertAlmostEqual(totals["charged_usd"], row["usd"]["reserved_usd"])
+        self.assertEqual(len(Upstream.seen), 1)  # no retry, no fallback request
+        self.assertNotIn(REAL_KEY, (self.tmp / "proxy.jsonl").read_text())
+
+    def test_same_model_accepted_and_recorded(self):
+        Upstream.ping, Upstream.tool = True, True
+        self.proxy(max_usd=5)
+        status, data = self.post(request())
+        self.assertEqual(status, 200, data)
+        self.assertIn(b"tool_use", data)
+        self.assertIn(b"message_stop", data)
+        row = self.requests()[0]
+        self.assertEqual((row["response_model_check"], row["usd"]["charge_basis"]), ("verified", "usage"))
+        self.assertFalse([r for r in self.log() if r.get("event") == "response_model_refused"])
+
+    def test_served_by_another_model_is_refused_before_any_content(self):
+        Upstream.model, Upstream.tool = "claude-opus-5", True
+        self.proxy(max_usd=5)
+        status, data = self.post(request())
+        self.assert_identity_refused("response_model_mismatch", data, status, "claude-opus-5")
         self.assertTrue(self.requests()[0]["model_mismatch"])
+
+    def test_missing_or_malformed_model_refused(self):
+        msg = {"id": "msg_1", "usage": USAGE}
+        cases = [
+            (json.dumps({"type": "message_start", "message": msg}), "response_model_missing", None),
+            (json.dumps({"type": "message_start", "message": {**msg, "model": None}}), "response_model_missing", None),
+            (json.dumps({"type": "message_start", "message": {**msg, "model": 5}}), "response_model_malformed", "5"),
+            (json.dumps({"type": "message_start", "message": {**msg, "model": ""}}), "response_model_malformed", ""),
+            (json.dumps({"type": "message_start", "message": {**msg, "model": [MODEL_ID]}}),
+             "response_model_malformed", repr([MODEL_ID])),
+            (json.dumps({"type": "message_start", "message": "x"}), "response_model_malformed", None),
+            (json.dumps({"type": "content_block_delta", "delta": {"text": "x"}}), "response_model_not_first_event", None),
+            ("{not json", "response_model_not_first_event", None),
+            (json.dumps({"type": "message_start", "message": {**msg, "model": MODEL_ID + "-x"}}),
+             "response_model_mismatch", MODEL_ID + "-x"),
+        ]
+        for first, reason, logged in cases:
+            with self.subTest(reason=reason, first=first):
+                self.setUp()
+                Upstream.first, Upstream.tool = first.encode(), True
+                self.proxy(max_usd=5)
+                status, data = self.post(request())
+                self.assert_identity_refused(reason, data, status, logged)
+
+    def test_stream_ending_before_identity_fails_and_keeps_reservation(self):
+        Upstream.first = b""
+        self.proxy(max_usd=5)
+        status, data = self.post(request())
+        self.assert_identity_refused("response_model_not_established", data, status)
+
+    def test_identity_hold_is_bounded(self):
+        Upstream.first = json.dumps({"type": "ping", "pad": "p" * 5000}).encode()
+        with mock.patch.object(pi_container, "ANTHROPIC_IDENTITY_HOLD_BYTES", 1000):
+            self.proxy(max_usd=5)
+            status, data = self.post(request())
+        self.assert_identity_refused("response_model_not_established", data, status)
+
+    def test_restated_model_stops_the_stream(self):
+        Upstream.restate, Upstream.tool = "claude-opus-5", True
+        self.proxy(max_usd=5)
+        status, data = self.post(request())
+        self.assertEqual(status, 200)  # verified bytes were already sent
+        self.assertIn(b"tool_use", data)  # from the verified model, before the restatement
+        self.assertNotIn(b"msg_2", data)
+        self.assertNotIn(b"message_stop", data)
+        (ev,) = [r for r in self.log() if r.get("event") == "response_model_refused"]
+        self.assertEqual((ev["reason"], ev["verified_bytes_forwarded"]), ("response_model_restated", True))
+        self.assertEqual(self.requests()[0]["usd"]["charge_basis"], "reservation")
 
     def test_refusals_never_reach_upstream(self):
         self.proxy()
@@ -501,6 +602,39 @@ class RealAnthropicContainerTests(unittest.TestCase):
         self.assertAlmostEqual(sum(r["usd"] for r in rows), 2 * expected_usd())
         code, out = self.host("retire", "pi", sid)
         self.assertEqual(code, 0, out)
+
+
+    def test_wrong_model_tool_call_never_runs(self):
+        marker = self.tmp / "ws" / "TOOL-RAN"
+        self.mode.write_text(json.dumps({"tool_command": f"touch {marker}", "model": "claude-opus-5"}))
+        prompt = self.tmp / "prompt"
+        prompt.write_text("Run the check.")
+        code, row = self.host("launch", "pi", "--cwd", str(self.tmp / "ws"), "--name", "anthropic-wrong-model",
+                              "--prompt-file", str(prompt), "--auth", "api", "--container", "--max-usd", "1",
+                              "--container-model-file", str(self.model_file),
+                              "--host-arg=--model", f"--host-arg=anthropic/{MODEL_ID}")
+        self.assertEqual(code, 0, row)
+        sid = row["session_id"]
+        for _ in range(600):
+            code, st = self.host("status", "pi", sid)
+            if code != 0 or st["state"] != "running":
+                break
+            time.sleep(0.1)
+        turn = st["last_turn"]
+        self.assertTrue(turn["container"]["removed"], turn)
+        self.assertFalse(marker.exists())
+        seen = [json.loads(line) for line in self.log.read_text().splitlines()]
+        self.assertTrue(seen)
+        self.assertNotIn("tool_result", json.dumps([s["body"]["messages"] for s in seen]))
+        proxy_log = pathlib.Path(turn["files"]["proxy_log"]) if "files" in turn else None
+        rows = [json.loads(line) for line in proxy_log.read_text().splitlines()] if proxy_log else []
+        refused = [r for r in rows if r.get("event") == "response_model_refused"]
+        self.assertEqual(len(refused), len(seen), rows)
+        self.assertTrue(all(r["reason"] == "response_model_mismatch" for r in refused))
+        self.assertGreater(turn["egress"]["usd"]["charged_usd"], 0)
+        state_text = "".join(p.read_text(errors="replace") for p in (self.tmp / "state").rglob("*") if p.is_file())
+        self.assertNotIn(REAL_KEY, state_text)
+        self.host("retire", "pi", sid)
 
 
 if __name__ == "__main__":

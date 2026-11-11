@@ -250,6 +250,18 @@ Differences from the OpenAI route:
   `sk-ant-oat` token). The container holds `ANTHROPIC_API_KEY` set to a
   placeholder. Upstream is `https://api.anthropic.com`, or
   `ROLE_HOST_PI_UPSTREAM_ANTHROPIC`.
+- The response's own model identity is checked, fail closed. A 200 stream is
+  held until its first event (pings aside) is a `message_start` whose
+  `message.model` equals the launched model exactly; only then are headers and
+  events sent to the container. A missing, malformed or different model, a
+  different first event, a stream that ends (or holds more than 1 MiB) before
+  that event, or a second `message_start` later in the stream, refuses the
+  request: the upstream connection is closed, the proxy logs a
+  `response_model_refused` event (reason, authorized and reported model) and
+  the request row's `response_model_check`, the reservation stays charged, the
+  container gets a 502 (or, after a restatement, a truncated stream), and
+  nothing is retried or substituted. Error statuses carry no model output and
+  pass through unchanged.
 - Usage comes from the stream's `message_start` and `message_delta` events:
   input, cache reads, cache writes split into 5-minute and 1-hour lifetimes,
   and output. The proxy log row carries `provider: anthropic`;
