@@ -1333,3 +1333,89 @@ fn candidate_json(candidate: &OrganizationCandidate) -> JsonValue {
         ("requirementTrace", JsonValue::Array(trace.collect())),
     ])
 }
+
+/// Fault injection for derivation invariants that validated input cannot reach (crate-private,
+/// test-only: it does not widen the public surface).
+#[cfg(test)]
+mod injection_tests {
+    use super::*;
+    use crate::view::view;
+    use serde_json::json;
+
+    fn requirements() -> OrganizationalRequirements {
+        let doc = json!({
+            "problemScope": {"runId": "run-1", "planLineage": "plan-a", "sliceNumber": 1},
+            "obligations": [{
+                "id": "ob-a", "kind": "candidate_review", "subject": "campaign_candidate",
+                "resultContract": {"id": "implementation-review", "version": 1},
+                "scope": {"digest": "a".repeat(64)}
+            }],
+            "acceptanceConditions": [{
+                "id": "cond-1", "obligation": "ob-a",
+                "consumptionBoundary": "campaign_terminalization", "consumerClass": "campaign",
+                "proposition": "p", "coveredState": "review-result",
+                "normative": {
+                    "continuity": "fresh_initial", "mutation": "none", "capabilities": [],
+                    "integrity": "verified_artifacts",
+                    "evidenceCustody": "execution_evidence_custody",
+                    "observerClass": "independent_execution_evidence"
+                },
+                "acceptor": "owner-a",
+                "unestablishedRoute": "hold-consumption-for-owner-disposition"
+            }],
+            "requiredAuthorities": [
+                {"id": "auth-1", "principal": "owner-a", "permission": "accept_claim", "scope": {}}
+            ],
+            "organizationPolicy": {"mode": "fixed", "profile": "fixed-slice-review-v1"}
+        });
+        OrganizationalRequirements::from_json_bytes(&serde_json::to_vec(&doc).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn a_duplicate_key_is_detected_and_named_as_an_internal_error() {
+        let mut internal = Vec::new();
+        check_unique(["a", "b", "c"], "participants", &mut internal);
+        assert!(internal.is_empty());
+        check_unique(["a", "b", "a"], "participants", &mut internal);
+        check_unique([1, 1], "relationships", &mut internal);
+        assert_eq!(internal, ["participants", "relationships"]);
+        let items = internal_error_items(vec!["relationships", "participants"]);
+        let rendered: Vec<(&str, &str, &str)> = items
+            .iter()
+            .map(|u| (u.kind.as_str(), u.subject.as_str(), u.reason.as_str()))
+            .collect();
+        assert_eq!(
+            rendered,
+            [
+                ("internal_error", "participants", "duplicate_collection_key"),
+                (
+                    "internal_error",
+                    "relationships",
+                    "duplicate_collection_key"
+                ),
+            ]
+        );
+        assert!(items.iter().all(|u| u.conditions.is_empty()));
+    }
+
+    #[test]
+    fn a_view_obligation_without_a_serves_row_is_shown_unestablished_not_dropped_or_filled() {
+        let result = derive(&requirements(), Profile::FixedSliceReviewV1);
+        let mut candidate = result.candidates.into_iter().next().unwrap();
+        assert_eq!(
+            view(&candidate).obligations[0].served_by.as_deref(),
+            Some("vantage:ob-a")
+        );
+        candidate
+            .relationships
+            .retain(|r| r.kind != RelationshipKind::Serves);
+        let projected = view(&candidate);
+        assert_eq!(projected.obligations.len(), 1);
+        assert_eq!(projected.obligations[0].id.as_str(), "ob-a");
+        assert_eq!(projected.obligations[0].served_by, None);
+        assert_eq!(
+            projected.obligations[0].result_contract.id.as_str(),
+            "implementation-review"
+        );
+    }
+}
