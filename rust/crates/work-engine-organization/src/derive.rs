@@ -1418,4 +1418,101 @@ mod injection_tests {
             "implementation-review"
         );
     }
+
+    /// Exhaustive destructuring (no `..`): a field added to or removed from the view or the
+    /// report fails to compile here until builder/p3-completeness-matrix.md and its tests are
+    /// updated. The counts are the matrix's field counts per type, nested fields included.
+    #[test]
+    fn the_view_and_report_field_lists_are_the_matrix_lists() {
+        use crate::enforce::{EnforceabilityReport, EnforceabilityRow, enforceability};
+        use crate::view::{
+            EpisodeAccess, Hosting, OrganizationView, Terminalization, ViewObligation, ViewVantage,
+        };
+        let candidate = derive(&requirements(), Profile::FixedSliceReviewV1)
+            .candidates
+            .remove(0);
+        let projected = view(&candidate);
+        let OrganizationView {
+            problem_scope,
+            obligations,
+            vantages,
+            conditions,
+            hosting,
+            episode_access,
+            terminalization,
+            separation_requirements,
+            authority_requirements,
+            component_binding_requirements,
+        } = &projected;
+        let ProblemScope {
+            run_id: _,
+            plan_lineage: _,
+            slice_number: _,
+        } = problem_scope;
+        let ViewObligation {
+            id: _,
+            kind: _,
+            subject: _,
+            result_contract: crate::schema::ResultContract { id: _, version: _ },
+            scope_digest: _,
+            served_by: _,
+        } = &obligations[0];
+        let ViewVantage {
+            id: _,
+            effective: _,
+            effective_constraints: _,
+            conditions: _,
+        } = &vantages[0];
+        let CandidateCondition {
+            id: _,
+            obligation: _,
+            vantage: _,
+            consumer: _,
+            boundary: _,
+            proposition: _,
+            covered_state: _,
+            normative: _,
+            realization_constraints: _,
+            acceptor: _,
+            unestablished_route: _,
+        } = &conditions[0];
+        let Hosting {
+            component: _,
+            vantage: _,
+        } = &hosting[0];
+        let EpisodeAccess {
+            vantage: _,
+            writer: _,
+            readers: _,
+        } = &episode_access[0];
+        let Some(Terminalization { component: _ }) = terminalization else {
+            panic!("terminalization is always present");
+        };
+        let SeparationRequirement {
+            condition: _,
+            acceptor: _,
+            vantages: _,
+        } = &separation_requirements[0];
+        let AuthorityRequirement {
+            id: _,
+            principal: _,
+            permission: _,
+            boundaries: _,
+        } = &authority_requirements[0];
+        let ComponentBindingRequirement {
+            component: _,
+            permissions: _,
+        } = &component_binding_requirements[0];
+
+        let report = enforceability(&candidate, Profile::FixedSliceReviewV1);
+        let EnforceabilityReport { profile: _, rows } = &report;
+        let EnforceabilityRow {
+            property: _,
+            scope: _,
+            requirement: _,
+            status: _,
+            evidence_class: _,
+            note: _,
+        } = &rows[0];
+    }
 }

@@ -2259,3 +2259,136 @@ fn heterogeneous_result_contracts_stay_distinct_in_candidate_view_and_report() {
     }
     assert!(!report.executable());
 }
+
+// ---------------------------------------------------------------------------------------------
+// G32 matrix: the candidate's member list
+
+/// Every member path of the candidate's canonical form (containers included; `*` is an array
+/// element). This is the candidate half of builder/p3-completeness-matrix.md: a member added to or
+/// removed from the candidate fails the test until the matrix is updated.
+const CANDIDATE_MEMBERS: &[&str] = &[
+    "/authorityRequirements",
+    "/authorityRequirements/*/id",
+    "/authorityRequirements/*/permission",
+    "/authorityRequirements/*/principal",
+    "/authorityRequirements/*/scope",
+    "/authorityRequirements/*/scope/boundaries",
+    "/componentBindingRequirements",
+    "/componentBindingRequirements/*/component",
+    "/componentBindingRequirements/*/permissions",
+    "/conditions",
+    "/conditions/*/acceptor",
+    "/conditions/*/boundary",
+    "/conditions/*/consumer",
+    "/conditions/*/coveredState",
+    "/conditions/*/id",
+    "/conditions/*/normative",
+    "/conditions/*/normative/capabilities",
+    "/conditions/*/normative/continuity",
+    "/conditions/*/normative/evidenceCustody",
+    "/conditions/*/normative/independence",
+    "/conditions/*/normative/independence/from",
+    "/conditions/*/normative/integrity",
+    "/conditions/*/normative/mutation",
+    "/conditions/*/normative/observerClass",
+    "/conditions/*/obligation",
+    "/conditions/*/proposition",
+    "/conditions/*/realizationConstraints",
+    "/conditions/*/realizationConstraints/*/allowed",
+    "/conditions/*/realizationConstraints/*/dimension",
+    "/conditions/*/unestablishedRoute",
+    "/conditions/*/vantage",
+    "/obligations",
+    "/obligations/*/id",
+    "/obligations/*/kind",
+    "/obligations/*/resultContract",
+    "/obligations/*/resultContract/id",
+    "/obligations/*/resultContract/version",
+    "/obligations/*/scope",
+    "/obligations/*/scope/digest",
+    "/obligations/*/subject",
+    "/participants",
+    "/participants/*/id",
+    "/participants/*/kind",
+    "/participants/*/serves",
+    "/problemScope",
+    "/problemScope/planLineage",
+    "/problemScope/runId",
+    "/problemScope/sliceNumber",
+    "/profile",
+    "/relationships",
+    "/relationships/*/condition",
+    "/relationships/*/from",
+    "/relationships/*/kind",
+    "/relationships/*/to",
+    "/requirementTrace",
+    "/requirementTrace/*/source",
+    "/requirementTrace/*/source/field",
+    "/requirementTrace/*/source/id",
+    "/requirementTrace/*/source/kind",
+    "/requirementTrace/*/target",
+    "/requirementTrace/*/target/field",
+    "/requirementTrace/*/target/id",
+    "/requirementTrace/*/target/kind",
+    "/requirementsDigest",
+    "/separationRequirements",
+    "/separationRequirements/*/acceptor",
+    "/separationRequirements/*/condition",
+    "/separationRequirements/*/vantages",
+    "/vantageRequirements",
+    "/vantageRequirements/*/derivedFrom",
+    "/vantageRequirements/*/effective",
+    "/vantageRequirements/*/effective/capabilities",
+    "/vantageRequirements/*/effective/continuity",
+    "/vantageRequirements/*/effective/evidenceCustody",
+    "/vantageRequirements/*/effective/independence",
+    "/vantageRequirements/*/effective/independence/from",
+    "/vantageRequirements/*/effective/integrity",
+    "/vantageRequirements/*/effective/mutation",
+    "/vantageRequirements/*/effective/observerClass",
+    "/vantageRequirements/*/effectiveConstraints",
+    "/vantageRequirements/*/effectiveConstraints/*/allowed",
+    "/vantageRequirements/*/effectiveConstraints/*/dimension",
+    "/vantageRequirements/*/vantage",
+];
+
+fn member_paths(value: &Value, here: &str, out: &mut std::collections::BTreeSet<String>) {
+    match value {
+        Value::Object(map) => {
+            for (key, child) in map {
+                let path = format!("{here}/{key}");
+                out.insert(path.clone());
+                member_paths(child, &path, out);
+            }
+        }
+        Value::Array(items) => {
+            for child in items {
+                member_paths(child, &format!("{here}/*"), out);
+            }
+        }
+        _ => {}
+    }
+}
+
+#[test]
+fn the_candidate_has_exactly_the_members_the_matrix_lists() {
+    // `rich` has every optional member; the other inputs add nothing but are walked for safety.
+    let mut found = std::collections::BTreeSet::new();
+    for doc in [
+        rich(),
+        base(),
+        two_condition_vantage(),
+        heterogeneous_obligations(),
+    ] {
+        let c = candidate(&doc);
+        member_paths(
+            &serde_json::from_slice(c.canonical_bytes()).unwrap(),
+            "",
+            &mut found,
+        );
+    }
+    let listed: std::collections::BTreeSet<String> =
+        CANDIDATE_MEMBERS.iter().map(|p| (*p).to_owned()).collect();
+    assert_eq!(CANDIDATE_MEMBERS.len(), listed.len(), "no duplicate row");
+    assert_eq!(found, listed);
+}
