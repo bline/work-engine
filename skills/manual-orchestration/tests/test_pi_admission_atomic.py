@@ -29,8 +29,10 @@ def launch(self, **kw):
         os._exit(9)
     if mode == "fail":
         raise role_host.HostError(role_host.NOT_ESTABLISHED, "launch_failed", "docker refused")
+    # Mirror the real spawn order: the runner_starting marker precedes anything provider-capable.
+    if self.before_runner_start is not None:
+        self.before_runner_start(session_id="S-fake", turn=1, spec="spec", container="we-pi-fake")
     if mode == "uncertain":
-        kw["ledger"].append({"host": "pi", "event": "launch", "session_id": "S-uncertain", "turn": 1})
         raise role_host.HostError(role_host.NOT_ESTABLISHED, "launch_failed", "died after start")
     time.sleep(0.2)
     return {"session_id": "S-%%d" %% os.getpid()}
@@ -74,7 +76,7 @@ class AtomicAdmission(unittest.TestCase):
         self.assertNotEqual(codes[1], 0, results)
         self.assertTrue(any("objective_pi_limit_refused" in o for _, o in results), results)
         rows = self.journal()
-        self.assertEqual([r["event"] for r in rows], ["pending", "launched"])
+        self.assertEqual([r["event"] for r in rows], ["pending", "runner_starting", "launched"])
 
     def test_duplicate_admission_id_never_allocates_twice(self):
         self.assertEqual(self.run1(admission_id="A-1")[0], 0)
@@ -86,12 +88,12 @@ class AtomicAdmission(unittest.TestCase):
         self.assertNotEqual(self.run1(mode="fail")[0], 0)
         rows = self.journal()
         self.assertEqual([r["event"] for r in rows], ["pending", "released"])
-        self.assertEqual(rows[1]["evidence"]["launch_rows_before"], rows[1]["evidence"]["launch_rows_after"])
+        self.assertIs(rows[1]["evidence"]["runner_starting"], False)   # positive evidence: no runner marker
         self.assertEqual(self.run1()[0], 0)                       # capacity came back only through the receipt
 
     def test_uncertain_launch_keeps_the_commitment(self):
         self.assertNotEqual(self.run1(mode="uncertain")[0], 0)
-        self.assertEqual([r["event"] for r in self.journal()], ["pending", "launch_uncertain"])
+        self.assertEqual([r["event"] for r in self.journal()], ["pending", "runner_starting", "launch_uncertain"])
         code, out = self.run1()
         self.assertNotEqual(code, 0); self.assertIn("objective_pi_limit_refused", out)
 

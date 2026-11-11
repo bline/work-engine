@@ -56,6 +56,25 @@ class Journal(T.PiTree):
         self.j(dict(event='launched', admission_id='b', session_id='x'))
         self.assertEqual(self.admit(self.rec, 0.1)['decision'], 'not_established')
 
+    def test_runner_starting_without_receipt_stays_committed(self):
+        self.j(dict(event='pending', admission_id='a', max_usd=0.6), dict(event='runner_starting', admission_id='a', turn=1))
+        out = self.admit(self.rec, 0.6)
+        self.assertEqual(out['decision'], 'refused', out)
+        self.assertAlmostEqual(out['committed_usd'], 0.6)
+
+    def test_released_after_runner_starting_is_not_established(self):
+        self.j(dict(event='pending', admission_id='a', max_usd=0.6), dict(event='runner_starting', admission_id='a'),
+               dict(event='released', admission_id='a'))
+        self.assertEqual(self.admit(self.rec, 0.1)['decision'], 'not_established')
+
+    def test_marker_launch_and_retire_account_correctly(self):
+        self.session(T.AN, 'root', [[T.reserve(1, 0.3), T.anth(1, 'msg_1', T.au(), T.T2_USD)]], retired=True)
+        self.j(dict(event='pending', admission_id='a', max_usd=0.6), dict(event='runner_starting', admission_id='a'),
+               dict(event='launched', admission_id='a', session_id=T.AN))
+        out = self.admit(self.rec, 0.6)
+        self.assertEqual(out['decision'], 'admitted', out)
+        self.assertAlmostEqual(out['exposure_usd'], T.T2_USD + 0.6)
+
     def test_launched_and_released_is_not_established(self):
         self.j(dict(event='pending', admission_id='c', max_usd=0.2), dict(event='launched', admission_id='c', session_id='x'),
                dict(event='released', admission_id='c'))

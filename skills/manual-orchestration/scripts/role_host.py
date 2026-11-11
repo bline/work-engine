@@ -1169,6 +1169,8 @@ class Pi:
                 "thinking": opts["thinking"], "auth_lane": opts["lane"], "service_tier": opts["tier"],
                 "host_argv": opts["argv"]}
 
+    before_runner_start = None  # set by an objective-admitted launch: writes the runner_starting marker
+
     def _spawn_container(self, sid, opts, *, cwd, prompt, ledger, event, turn, env, name=None, parent=None):
         cdir, hdir = Path(env["container_dir"]), Path(env["host_dir"])
         files = {k: cdir / f"turn-{turn}.{suffix}" for k, suffix in self.TURN_FILES.items()}
@@ -1198,6 +1200,10 @@ class Pi:
                 "usd_limit": {**env["usd_limit"], **prior} if prior is not None else None}
         files["spec"].write_text(json.dumps(spec, indent=1) + "\n")
         runner = Path(__file__).resolve().parent / "pi_container.py"
+        if self.before_runner_start is not None:
+            # Budget-admitted launch: the durable runner_starting marker is written and verified before any
+            # provider-capable process exists; if it cannot be, nothing is started.
+            self.before_runner_start(session_id=sid, turn=turn, spec=str(files["spec"]), container=container_name)
         with open(files["runner_log"], "ab") as log:
             try:
                 proc = subprocess.Popen([sys.executable, str(runner), "run-turn", str(files["spec"])],
@@ -1542,6 +1548,22 @@ def journal_append(journal: Path, row: dict) -> None:
         os.fsync(fh.fileno())
 
 
+def journal_has(journal: Path, admission_id: str, event: str) -> bool:
+    """Whether the journal holds `event` for this admission; an unreadable or corrupted journal raises."""
+    rows = [json.loads(line) for line in journal.read_text().splitlines()]
+    return any(isinstance(r, dict) and r.get("admission_id") == admission_id and r.get("event") == event for r in rows)
+
+
+def mark_runner_starting(journal: Path, admission_id: str, **detail) -> None:
+    journal_append(journal, {"event": "runner_starting", "admission_id": admission_id, **detail})
+    try:
+        verified = journal_has(journal, admission_id, "runner_starting")
+    except (OSError, ValueError):
+        verified = False
+    if not verified:
+        raise HostError(NOT_ESTABLISHED, "runner_marker_unverified", f"runner_starting for {admission_id} not readable in {journal}")
+
+
 def admit_transaction(record, max_usd, parent, ledger_path, admission_id) -> tuple[dict, Path]:
     """Under the objective lock: refuse a reused admission id, recompute capacity with the journal, and write
     the pending allocation before the lock is released."""
@@ -1727,19 +1749,25 @@ def main(argv=None) -> int:
                         raise HostError(USAGE, "usage", "--objective-record is a pi --container launch option")
                     admission_id = a.admission_id or str(uuid.uuid4())
                     admission, journal = admit_transaction(a.objective_record, a.max_usd, a.parent, ledger.path, admission_id)
-                    launches_before = sum(1 for r in ledger.rows() if r.get("event") == "launch")
+                    h.before_runner_start = lambda **detail: mark_runner_starting(journal, admission_id, **detail)
                 try:
                     res = h.launch(cwd=a.cwd, name=a.name, prompt=a.prompt_file.read_text(),
                                    host_args=a.host_arg, ledger=ledger, parent=a.parent, **kw)
                 except BaseException as e:
                     if admission:
-                        # Released only when no launch row appeared (nothing was started); otherwise kept.
-                        after = sum(1 for r in ledger.rows() if r.get("event") == "launch")
-                        confirmed = after == launches_before
+                        # Released only on positive evidence that no runner could exist: the journal is readable and
+                        # holds no runner_starting marker for this admission. Anything else keeps the commitment.
+                        try:  # read independently of the marker verifier
+                            marks = [json.loads(line) for line in journal.read_text().splitlines()]
+                            started = any(isinstance(r, dict) and r.get("admission_id") == admission_id
+                                          and r.get("event") == "runner_starting" for r in marks)
+                        except (OSError, ValueError):
+                            started = None
+                        confirmed = started is False
                         journal_append(journal, {"event": "released" if confirmed else "launch_uncertain",
                                                  "admission_id": admission_id,
-                                                 "reason": "launch_failed_before_start" if confirmed else "launch_outcome_uncertain",
-                                                 "evidence": {"launch_rows_before": launches_before, "launch_rows_after": after,
+                                                 "reason": "failed_before_runner_marker" if confirmed else "launch_outcome_uncertain",
+                                                 "evidence": {"runner_starting": started,
                                                               "error": f"{type(e).__name__}: {e}"[:300]}})
                     raise
                 if admission:

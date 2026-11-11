@@ -1528,7 +1528,7 @@ def pi_admission(record_path, new_max_usd, parent, role_ledger=None, journal=Non
     for line in jlines:
         try: j = json.loads(line)
         except ValueError: return done('not_established', 'corrupted admission journal line')
-        if not isinstance(j, dict) or not j.get('admission_id') or j.get('event') not in ('pending', 'launched', 'released', 'launch_uncertain'):
+        if not isinstance(j, dict) or not j.get('admission_id') or j.get('event') not in ('pending', 'runner_starting', 'launched', 'released', 'launch_uncertain'):
             return done('not_established', 'malformed admission journal row')
         groups.setdefault(j['admission_id'], []).append(j)
     for aid, js in groups.items():
@@ -1539,7 +1539,7 @@ def pi_admission(record_path, new_max_usd, parent, role_ledger=None, journal=Non
         launched = [j.get('session_id') for j in js if j['event'] == 'launched']
         entry = dict(admission_id=aid, max_usd=cap, session_id=launched[0] if launched else None, source='journal')
         if any(j['event'] == 'released' for j in js):
-            if launched:
+            if launched or any(j['event'] in ('runner_starting', 'launch_uncertain') for j in js):
                 return done('not_established', f'admission {aid} is both launched and released')
             entry.update(committed_usd=0.0, state='released'); commitments.append(entry); continue
         if not launched:
