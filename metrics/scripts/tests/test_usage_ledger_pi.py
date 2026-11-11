@@ -112,24 +112,50 @@ class PiReaderTests(unittest.TestCase):
         rows, cov = L.build_pi(None, None, os.path.join(self.tmp.name, 'nowhere'))
         self.assertEqual((rows, cov['pi_container_turns']), ([], 0))
 
-    def tree(self, extra_ledger=()):
-        from unittest import mock
+    def objective(self, extra_ledger=(), closed=True, cost_limits=None):
+        """Write a record whose Codex root 'parent' launched the Pi session; return (record, ledger)."""
         ledger = os.path.join(self.state, 'ledger.jsonl')
         if extra_ledger:
             with open(ledger, 'a') as fh:
                 fh.write(''.join(json.dumps(r) + '\n' for r in extra_ledger))
+        sb = {'objective_id': 'o', 'started_at': '2026-11-10T06:00:00Z',
+              'sessions': [{'session_id': 'parent', 'provider': 'codex'}]}
+        if closed:
+            sb['closed_at'] = '2026-11-10T07:00:00Z'
+        if cost_limits:
+            sb['cost_limits'] = cost_limits
         record = os.path.join(self.tmp.name, 'record.json')
         with open(record, 'w') as fh:
-            json.dump({'scope_budget': {'objective_id': 'o', 'started_at': '2026-11-10T06:00:00Z',
-                                        'closed_at': '2026-11-10T07:00:00Z',
-                                        'sessions': [{'session_id': 'parent', 'provider': 'codex'}]}}, fh)
+            json.dump({'scope_budget': sb}, fh)
+        return record, ledger
+
+    def readers(self):
+        from contextlib import ExitStack
+        from unittest import mock
 
         def codex(since, until, turns=None, metadata=None):
             metadata['parent'] = {}
             return [], [], [], 0
-        with mock.patch.object(L, 'build_codex', side_effect=codex), \
-                mock.patch.object(L, 'build_claude', return_value=([], [], 0)):
+        stack = ExitStack()
+        stack.enter_context(mock.patch.object(L, 'build_codex', side_effect=codex))
+        stack.enter_context(mock.patch.object(L, 'build_claude', return_value=([], [], 0)))
+        stack.enter_context(mock.patch.object(L, 'unrecorded_claude', return_value=[]))
+        return stack
+
+    def tree(self, extra_ledger=()):
+        record, ledger = self.objective(extra_ledger)
+        with self.readers():
             return L.cost_tree(record, role_ledger=ledger)[0]
+
+    def control(self, record, ledger, cursor=None):
+        import argparse
+        import contextlib
+        import io
+        out = io.StringIO()
+        args = argparse.Namespace(record=record, cursor=cursor, limit_fractions='0.5,0.8,1.0', role_host_ledger=ledger)
+        with self.readers(), contextlib.redirect_stdout(out):
+            L.cmd_control(args)
+        return json.loads(out.getvalue())
 
     def test_tree_attaches_pi_child_calls(self):
         tree = self.tree()
@@ -152,6 +178,23 @@ class PiReaderTests(unittest.TestCase):
         missing = {i.get('node_id') for i in tree['issues'] if i['kind'] == 'transcript_missing'}
         self.assertEqual(missing, {host_child})
         self.assertEqual(tree['status'], 'partial')
+
+    def test_control_reports_a_pi_api_limit_and_accepts_its_cursor(self):
+        # The window runs to "now", so the 09:00 call is in it too.
+        limit = dict(pool='pi_api', node=None, max_usd=0.05, marks_usd=[0.01], set_by='user')
+        record, ledger = self.objective(closed=False, cost_limits=[limit])
+        with self.readers():
+            spend = L.cost_tree(record, role_ledger=ledger)[0]['totals']['pi_api']
+        self.assertGreater(spend['quota_usd_high'], 0.05)
+        first = self.control(record, ledger)
+        crossed = {e['kind'] for e in first['events'] if e['pool'] == 'pi_api'}
+        self.assertTrue({'mark_crossed', 'limit_fraction', 'limit_reached'} <= crossed)
+        reached = next(e for e in first['events'] if e['kind'] == 'limit_reached')
+        self.assertAlmostEqual(reached['observed']['quota_usd_high'], spend['quota_usd_high'])
+        self.assertEqual(reached['set_by'], 'user')
+        # The cursor carries pi_api trigger keys; it must validate and not repeat them.
+        again = self.control(record, ledger, first['next_budget_cursor'])
+        self.assertEqual([e for e in again['events'] if e['pool'] == 'pi_api'], [])
 
 
 if __name__ == '__main__':
