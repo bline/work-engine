@@ -729,6 +729,7 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
         &separation_requirements,
         &component_binding_requirements,
         has_builder_vantage,
+        &mut internal,
     );
 
     if !internal.is_empty() {
@@ -760,10 +761,10 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
         Err(_violation) => {
             return DerivationResult {
                 candidates: Vec::new(),
-                unresolved: internal_error_items(vec![InternalFault {
-                    subject: "integer",
-                    reason: UnresolvedReason::IntegerOutOfRange,
-                }]),
+                unresolved: internal_error_items(vec![InternalFault::new(
+                    "integer",
+                    UnresolvedReason::IntegerOutOfRange,
+                )]),
                 receipt: make_receipt(rule_trace),
             };
         }
@@ -777,10 +778,32 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
 }
 
 /// A failed derivation invariant: the subject it concerns and the reason token.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct InternalFault {
-    subject: &'static str,
+    subject: String,
     reason: UnresolvedReason,
+    /// The condition IDs the fault names; empty when it names none.
+    conditions: Vec<Id>,
+}
+
+impl InternalFault {
+    fn new(subject: &str, reason: UnresolvedReason) -> Self {
+        InternalFault {
+            subject: subject.to_owned(),
+            reason,
+            conditions: Vec::new(),
+        }
+    }
+
+    /// A reference that the derivation itself stated and that no longer resolves: the trace
+    /// subject names what was being traced, the condition ID names the missing link.
+    fn broken_reference(subject: String, conditions: Vec<Id>) -> Self {
+        InternalFault {
+            subject,
+            reason: UnresolvedReason::UnrecognizedClass,
+            conditions,
+        }
+    }
 }
 
 /// The unresolved items for failed derivation invariants, sorted.
@@ -789,9 +812,13 @@ fn internal_error_items(faults: Vec<InternalFault>) -> Vec<Unresolved> {
         .into_iter()
         .map(|fault| Unresolved {
             kind: UnresolvedKind::InternalError,
-            subject: fault.subject.to_owned(),
+            subject: fault.subject,
             reason: fault.reason,
-            conditions: Vec::new(),
+            conditions: {
+                let mut conditions = fault.conditions;
+                conditions.sort();
+                conditions
+            },
         })
         .collect();
     sort_unresolved(&mut items);
@@ -807,10 +834,10 @@ where
     let mut seen = BTreeSet::new();
     for key in keys {
         if !seen.insert(key) {
-            internal.push(InternalFault {
-                subject: collection,
-                reason: UnresolvedReason::DuplicateCollectionKey,
-            });
+            internal.push(InternalFault::new(
+                collection,
+                UnresolvedReason::DuplicateCollectionKey,
+            ));
             return;
         }
     }
@@ -824,10 +851,10 @@ fn require_consumer(
     internal: &mut Vec<InternalFault>,
 ) -> Option<&'static str> {
     if consumer.is_none() {
-        internal.push(InternalFault {
-            subject: "consumerClass",
-            reason: UnresolvedReason::UnrecognizedClass,
-        });
+        internal.push(InternalFault::new(
+            "consumerClass",
+            UnresolvedReason::UnrecognizedClass,
+        ));
     }
     consumer
 }
@@ -958,6 +985,7 @@ fn build_trace(
     separation_requirements: &[SeparationRequirement],
     component_binding_requirements: &[ComponentBindingRequirement],
     has_builder_vantage: bool,
+    internal: &mut Vec<InternalFault>,
 ) -> Vec<TraceRow> {
     let conditions = requirements.conditions();
     let condition = |id: &Id| conditions.iter().find(|c| &c.id == id);
@@ -1084,7 +1112,13 @@ fn build_trace(
     for requirement in vantage_requirements {
         let target = requirement.vantage.as_str();
         for condition_id in &requirement.derived_from {
+            // A condition the derivation itself listed in `derived_from` must exist in the
+            // requirements. Skipping it would drop its trace rows and still yield a candidate.
             let Some(c) = condition(condition_id) else {
+                internal.push(InternalFault::broken_reference(
+                    format!("trace:vantageRequirement:{target}:derivedFrom"),
+                    vec![condition_id.clone()],
+                ));
                 continue;
             };
             add(
@@ -1128,7 +1162,9 @@ fn build_trace(
         }
     }
 
-    // Relationships: the sources of amendment 3.
+    // Relationships: the sources of amendment 3. Every link a relationship states must resolve:
+    // a missing condition, vantage target or serving obligation is a broken internal reference,
+    // never a legitimate absence (the builder vantage serves no obligation and is handled apart).
     for relationship in relationships {
         let key = relationship.key();
         let mut add_source = |source: TraceRef| add("relationship", &key, "", source);
@@ -1138,21 +1174,31 @@ fn build_trace(
                 .find(|p| p.id == vantage)
                 .and_then(|p| p.serves.first())
         };
+        let mut broken = |what: &str, conditions: Vec<Id>| {
+            internal.push(InternalFault::broken_reference(
+                format!("trace:relationship:{key}:{what}"),
+                conditions,
+            ));
+        };
         match relationship.kind {
-            RelationshipKind::Serves => {
-                if let Some(obligation) = obligation_of(&relationship.from) {
-                    add_source(src_obligation(obligation, "id"));
-                }
-            }
-            RelationshipKind::ConsumesAt => {
-                if let Some(id) = &relationship.condition {
-                    add_source(src_condition(id, "consumerClass"));
-                    add_source(src_condition(id, "consumptionBoundary"));
-                }
-            }
-            RelationshipKind::AcceptsClaim => {
-                if let Some(id) = &relationship.condition {
-                    add_source(src_condition(id, "acceptor"));
+            RelationshipKind::Serves => match obligation_of(&relationship.from) {
+                Some(obligation) => add_source(src_obligation(obligation, "id")),
+                None => broken("serves", Vec::new()),
+            },
+            RelationshipKind::ConsumesAt | RelationshipKind::AcceptsClaim => {
+                let field_sources: &[&str] = if relationship.kind == RelationshipKind::ConsumesAt {
+                    &["consumerClass", "consumptionBoundary"]
+                } else {
+                    &["acceptor"]
+                };
+                match &relationship.condition {
+                    Some(id) if condition(id).is_some() => {
+                        for field in field_sources {
+                            add_source(src_condition(id, field));
+                        }
+                    }
+                    Some(id) => broken("condition", vec![id.clone()]),
+                    None => broken("condition", Vec::new()),
                 }
             }
             RelationshipKind::HostsExecution
@@ -1165,12 +1211,11 @@ fn build_trace(
                             add_source(src_condition(&c.id, "consumerClass"));
                         }
                     }
-                    Some(vantage) => {
-                        if let Some(obligation) = obligation_of(vantage) {
-                            add_source(src_obligation(obligation, "id"));
-                        }
-                    }
-                    None => {}
+                    Some(vantage) => match obligation_of(vantage) {
+                        Some(obligation) => add_source(src_obligation(obligation, "id")),
+                        None => broken("target", Vec::new()),
+                    },
+                    None => broken("target", Vec::new()),
                 }
             }
             RelationshipKind::Terminalizes => {
@@ -1430,7 +1475,7 @@ mod injection_tests {
         assert!(internal.is_empty());
         check_unique(["a", "b", "a"], "participants", &mut internal);
         check_unique([1, 1], "relationships", &mut internal);
-        let subjects: Vec<&str> = internal.iter().map(|f| f.subject).collect();
+        let subjects: Vec<&str> = internal.iter().map(|f| f.subject.as_str()).collect();
         assert_eq!(subjects, ["participants", "relationships"]);
         let items = internal_error_items(internal.into_iter().rev().collect());
         let rendered: Vec<(&str, &str, &str)> = items
@@ -1562,6 +1607,128 @@ mod injection_tests {
             effective.observer_class,
             ObserverClass::IndependentExecutionEvidence
         );
+    }
+
+    /// Runs the real `build_trace` over a derived candidate's parts, after `inject` has broken
+    /// one internal link, and returns the rows and the recorded faults.
+    fn trace_with_injected_break(
+        inject: impl FnOnce(&mut Vec<VantageRequirement>, &mut Vec<Relationship>),
+    ) -> (Vec<TraceRow>, Vec<InternalFault>) {
+        let validated = requirements();
+        let result = derive(&validated, Profile::FixedSliceReviewV1);
+        let candidate = result.candidates.into_iter().next().unwrap();
+        let mut vantage_requirements = candidate.vantage_requirements().to_vec();
+        let mut relationships = candidate.relationships().to_vec();
+        inject(&mut vantage_requirements, &mut relationships);
+        let has_builder = candidate
+            .participants()
+            .iter()
+            .any(|p| p.id == BUILDER_VANTAGE);
+        let mut faults = Vec::new();
+        let rows = build_trace(
+            &validated,
+            candidate.participants(),
+            candidate.conditions(),
+            &vantage_requirements,
+            &relationships,
+            candidate.authority_requirements(),
+            candidate.separation_requirements(),
+            candidate.component_binding_requirements(),
+            has_builder,
+            &mut faults,
+        );
+        (rows, faults)
+    }
+
+    #[test]
+    fn an_unbroken_trace_records_no_fault() {
+        let (rows, faults) = trace_with_injected_break(|_, _| {});
+        assert!(faults.is_empty());
+        let candidate = derive(&requirements(), Profile::FixedSliceReviewV1)
+            .candidates
+            .into_iter()
+            .next()
+            .unwrap();
+        assert_eq!(rows, candidate.requirement_trace());
+    }
+
+    /// Before the repair a `derived_from` entry naming an absent condition was skipped with
+    /// `continue`: its trace rows vanished and the candidate was still produced.
+    #[test]
+    fn a_vantage_requirement_naming_an_absent_condition_is_an_internal_error_naming_both() {
+        let (_, faults) = trace_with_injected_break(|vantage_requirements, _| {
+            vantage_requirements[0]
+                .derived_from
+                .push(Id::parse("no-such-condition").unwrap());
+        });
+        let vantage = vantage_requirements_vantage();
+        let items = internal_error_items(faults);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].kind, UnresolvedKind::InternalError);
+        assert_eq!(
+            items[0].subject,
+            format!("trace:vantageRequirement:{vantage}:derivedFrom")
+        );
+        let ids: Vec<&str> = items[0].conditions.iter().map(Id::as_str).collect();
+        assert_eq!(ids, ["no-such-condition"]);
+    }
+
+    fn vantage_requirements_vantage() -> String {
+        let candidate = derive(&requirements(), Profile::FixedSliceReviewV1)
+            .candidates
+            .into_iter()
+            .next()
+            .unwrap();
+        candidate.vantage_requirements()[0].vantage.clone()
+    }
+
+    #[test]
+    fn a_relationship_with_an_unresolved_link_is_an_internal_error_not_a_skipped_row() {
+        // Serves from a vantage that is not a participant.
+        let (_, faults) = trace_with_injected_break(|_, relationships| {
+            let serves = relationships
+                .iter_mut()
+                .find(|r| r.kind == RelationshipKind::Serves)
+                .unwrap();
+            serves.from = "vantage:ghost".to_owned();
+        });
+        assert_eq!(faults.len(), 1);
+        assert!(faults[0].subject.ends_with(":serves"), "{faults:?}");
+
+        // ConsumesAt naming an absent condition, and one naming none.
+        let (_, faults) = trace_with_injected_break(|_, relationships| {
+            let consumes = relationships
+                .iter_mut()
+                .find(|r| r.kind == RelationshipKind::ConsumesAt)
+                .unwrap();
+            consumes.condition = Some(Id::parse("no-such-condition").unwrap());
+        });
+        assert_eq!(faults.len(), 1);
+        assert!(faults[0].subject.ends_with(":condition"), "{faults:?}");
+        assert_eq!(faults[0].conditions[0].as_str(), "no-such-condition");
+        let (_, faults) = trace_with_injected_break(|_, relationships| {
+            relationships
+                .iter_mut()
+                .find(|r| r.kind == RelationshipKind::AcceptsClaim)
+                .unwrap()
+                .condition = None;
+        });
+        assert_eq!(faults.len(), 1);
+        assert!(faults[0].subject.ends_with(":condition"), "{faults:?}");
+
+        // Hosting a vantage that serves no obligation and is not the builder, and one with no
+        // target at all.
+        for target in [Some("vantage:ghost".to_owned()), None] {
+            let (_, faults) = trace_with_injected_break(|_, relationships| {
+                relationships
+                    .iter_mut()
+                    .find(|r| r.kind == RelationshipKind::HostsExecution)
+                    .unwrap()
+                    .to = target;
+            });
+            assert_eq!(faults.len(), 1);
+            assert!(faults[0].subject.ends_with(":target"), "{faults:?}");
+        }
     }
 
     #[test]
