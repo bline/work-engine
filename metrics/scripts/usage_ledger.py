@@ -1073,16 +1073,55 @@ def model_time(intervals, calls, missing, since, until, status):
                 model_call_hours=round(total / 3600, 4) if known else None,
                 calls=calls, calls_without_latency=missing)
 
+def window_start(sb):
+    """Earliest authorized start: the record's started_at or any recorded session's `from`.
+
+    A session bound from before the record was created (orientation) is counted from
+    its own start; reading only from started_at undercounted it (owner decision 2026-11-11).
+    """
+    starts = [sb.get('started_at')] + [s.get('from') for s in sb.get('sessions') or [] if isinstance(s, dict)]
+    valid = [t for t in starts if valid_timestamp(t)]
+    if not valid: return sb.get('started_at'), 'started_at'
+    first = min(valid, key=ts_of)
+    return first, ('started_at' if first == sb.get('started_at') else 'earliest_session_from')
+
+def reconciled_all_in(result, sb):
+    """Closed record: in-window totals plus post-close candidates, with hard-limit breaches flagged.
+
+    The closure snapshot in the record is not changed; post-close calls stay a separate category.
+    """
+    tail = result['post_close']
+    if tail.get('candidate_totals') is None:
+        return dict(status='not_established', totals=None, hard_limit_breaches=None)
+    totals = pools()
+    for p in POOLS:
+        add_spend(totals[p], result['totals'][p]); add_spend(totals[p], tail['candidate_totals'][p])
+    breaches = []
+    for limit in sb.get('cost_limits') or []:
+        pool, maximum = limit.get('pool'), limit.get('max_usd')
+        if pool not in POOLS or maximum is None or limit.get('node'): continue
+        value, inside = totals[pool]['quota_usd_high'], result['totals'][pool]['quota_usd_high']
+        unknown = bool(totals[pool]['unpriced_calls'])
+        if value > maximum or unknown:
+            breaches.append(dict(pool=pool, max_usd=maximum, set_by=limit.get('set_by'), all_in_quota_usd_high=value,
+                                 in_window_quota_usd_high=inside, post_close_quota_usd_high=value - inside,
+                                 status='not_established' if unknown and value <= maximum else 'exceeded'))
+    status = 'complete' if result['status'] == 'complete' and tail['coverage'] == 'complete' else 'partial'
+    return dict(status=status, basis='in-window totals + post_close candidate_totals', totals=totals,
+                measurements=cost_measurements(totals), hard_limit_breaches=breaches)
+
 def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     with open(record_path) as fh: sb = json.load(fh).get('scope_budget', {})
     now = dt.datetime.now(dt.timezone.utc).isoformat()
-    since_s = since_arg or sb.get('started_at'); until_s = until_arg or sb.get('closed_at') or now
+    start_s, since_basis = window_start(sb)
+    if since_arg: since_basis = 'argument'
+    since_s = since_arg or start_s; until_s = until_arg or sb.get('closed_at') or now
     since, until = ts_of(since_s), ts_of(until_s)
     # Cost-window closure is not an account-observation cutoff or evidence of
     # settlement. Read through the snapshot, then keep the requested totals
     # separate from later bound-session candidates.
     observation_until = max(until, ts_of(now))
-    result = dict(schema='objective-cost-tree-v1', snapshot_at=now, window=dict(since=since_s, until=until_s, closed_at=sb.get('closed_at')),
+    result = dict(schema='objective-cost-tree-v1', snapshot_at=now, window=dict(since=since_s, since_basis=since_basis, started_at=sb.get('started_at'), until=until_s, closed_at=sb.get('closed_at')),
                   record=dict(path=os.path.abspath(record_path), sha256=digest(record_path), objective_id=sb.get('objective_id')),
                   reader=dict(path=os.path.abspath(__file__), sha256=digest(__file__)),
                   pricing=dict(source='https://platform.claude.com/docs/en/about-claude/pricing', fetched='2026-10-30'),
@@ -1308,6 +1347,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
         tail['coverage'] = ('not_established' if not sessions or missing_root else
             'partial' if tail_ranged or tail['unrecorded'] or substantive_issues or undated_sessions else 'complete')
         result['coverage_scope'] = 'requested_cost_window; post_close coverage and settlement are separate'
+        result['reconciled_all_in'] = reconciled_all_in(result, sb)
     return finish_measurements(result, quota), quota, sb
 
 def cmd_tree(a):

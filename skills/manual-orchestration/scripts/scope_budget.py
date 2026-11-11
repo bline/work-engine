@@ -204,14 +204,21 @@ def cmd_init(args: argparse.Namespace) -> int:
     reject_points(args)
     if bool(args.session) != bool(args.provider):
         raise UsageError("--session and --provider must be supplied together")
+    if args.session_from and not args.session:
+        raise UsageError("--session-from needs --session")
     limits = limits_from(args)
     finite_usd([args.max_usd, *args.mark_usd])
     started = now()
+    session_from = stamp(started)
+    if args.session_from:
+        if parse(args.session_from) > started:
+            raise UsageError("--session-from must not be after the record's start")
+        session_from = stamp(parse(args.session_from))
     meter = weekly_percent(Path(args.rollout)) if args.rollout else None
     cost = {"pool": args.pool, "node": None, "max_usd": args.max_usd, "marks_usd": sorted(set(args.mark_usd)),
             "set_by": args.set_by, "set_at": stamp(started), "reason": args.reason, "basis": COST_BASIS}
     doc[KEY] = {"schema": SCHEMA, "objective_id": str(uuid.uuid4()),
-                "sessions": ([{"session_id": args.session, "provider": args.provider, "from": stamp(started), "bound_by": "init", "evidence": None}] if args.session else []),
+                "sessions": ([{"session_id": args.session, "provider": args.provider, "from": session_from, "bound_by": "init", "evidence": args.session_from_evidence}] if args.session else []),
                 "bindings": [], "cost_limits": [cost], "objective": args.objective, "original_items": args.item,
                 "started_at": stamp(started), "weekly_at_start": meter,
                 "limits": limits, "limits_set_by": args.set_by, "limits_reason": args.reason,
@@ -589,6 +596,9 @@ def parser() -> argparse.ArgumentParser:
     i.add_argument("--item", action="append", required=True)
     i.add_argument("--rollout", help="Codex rollout, to read the weekly meter at the start")
     i.add_argument("--session")
+    i.add_argument("--session-from", help="the session's first transcript time, when orientation began before init; "
+                                        "the ledger counts from the earliest session start")
+    i.add_argument("--session-from-evidence")
     i.add_argument("--provider", choices=("codex", "claude"))
     i.add_argument("--pool", required=True, choices=POOLS, help="pool of the objective's dollar limit")
     i.add_argument("--max-usd", type=float, required=True,
