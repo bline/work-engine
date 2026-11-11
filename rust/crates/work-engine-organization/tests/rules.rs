@@ -170,16 +170,8 @@ fn identity_changes_on_every_listed_input_class() {
             "/acceptanceConditions/0/normative/continuity",
             json!("retained"),
         ),
-        (
-            "capabilities",
-            "/acceptanceConditions/0/normative/capabilities",
-            json!(["read-only"]),
-        ),
-        (
-            "observerClass",
-            "/acceptanceConditions/0/normative/observerClass",
-            json!("other-class"),
-        ),
+        // `capabilities` and `observerClass` have no second recognized value in v1, so no
+        // authored change of either exists; their identity coverage is the closed vocabulary.
         (
             "independence",
             "/acceptanceConditions/0/normative/independence",
@@ -232,27 +224,22 @@ fn heterogeneous_conditions_are_preserved_and_combined_by_the_f4_table() {
     let c1 = &result.conditions()[0];
     let c2 = &result.conditions()[1];
     assert_eq!(c1.id.as_str(), "c1");
-    assert_eq!(c1.normative.capabilities.len(), 1);
+    assert!(c1.normative.capabilities.is_empty());
     assert!(c1.normative.independence.is_some());
     assert_eq!(c2.id.as_str(), "c2");
     assert!(c2.normative.independence.is_none());
     assert_eq!(c1.consumer, "vantage-builder");
     assert_eq!(c2.consumer, "component:campaign");
 
-    // F4: continuity same -> fresh_initial; capabilities union {x, y}; independence union of
-    // `from` (only c1 states it); provider_family: {anthropic, other} n {anthropic} = {anthropic};
-    // execution_confinement: only c1 states it, so it is not narrowed by c2.
+    // F4: continuity same -> fresh_initial; capabilities empty (the v1 vocabulary is empty; the
+    // union is tested by injection in derive.rs); independence union of `from` (only c1 states
+    // it); provider_family: {anthropic} n {anthropic} = {anthropic} (a narrowing intersection is
+    // tested by injection); execution_confinement: only c1 states it, so c2 does not narrow it.
     assert_eq!(result.vantage_requirements().len(), 1);
     let vantage = &result.vantage_requirements()[0];
     assert_eq!(vantage.vantage, "vantage:ob-a");
     assert_eq!(vantage.effective.continuity.as_str(), "fresh_initial");
-    let capabilities: Vec<&str> = vantage
-        .effective
-        .capabilities
-        .iter()
-        .map(|c| c.as_str())
-        .collect();
-    assert_eq!(capabilities, ["x", "y"]);
+    assert!(vantage.effective.capabilities.is_empty());
     assert_eq!(
         vantage.effective.independence.as_ref().unwrap().len(),
         1,
@@ -298,28 +285,9 @@ fn contradictory_conditions_give_no_candidate_and_a_condition_conflict() {
         )]
     );
 
-    let mut observer = two_condition_vantage();
-    observer["acceptanceConditions"][1]["normative"]["observerClass"] = json!("other-class");
-    assert_eq!(
-        unresolved_of(&observer),
-        vec![(
-            "condition_conflict".to_owned(),
-            "observerClass".to_owned(),
-            set(&["c1", "c2"])
-        )]
-    );
-
-    let mut disjoint = two_condition_vantage();
-    disjoint["acceptanceConditions"][1]["realizationConstraints"] =
-        json!([{"dimension": "provider_family", "allowed": ["openai"]}]);
-    assert_eq!(
-        unresolved_of(&disjoint),
-        vec![(
-            "condition_conflict".to_owned(),
-            "realization:provider_family".to_owned(),
-            set(&["c1", "c2"])
-        )]
-    );
+    // observerClass and disjoint provider_family conflicts need a second recognized class, which
+    // the v1 vocabulary does not have; the disjoint branch is exercised by injection in derive.rs
+    // and the observerClass comparison is unreachable until a class is added.
 
     // A conflict at one vantage names only that vantage's conditions.
     let mut two = document(
@@ -472,18 +440,11 @@ fn enforceability_none_rows_for_unsupported_requirements() {
         [EnforceStatus::Supported; 2]
     );
 
+    // `capabilities` and an unmapped `observerClass` are refused by validation (the v1 vocabularies
+    // admit none), so they have no authored path to a `none` row; see the refusal tests and the
+    // crate-private injection test in enforce.rs.
     let cases: Vec<(&str, &str, Value)> = vec![
-        (
-            "capabilities",
-            "/normative/capabilities",
-            json!(["read-only"]),
-        ),
         ("continuity", "/normative/continuity", json!("retained")),
-        (
-            "observerClass",
-            "/normative/observerClass",
-            json!("unmapped-class"),
-        ),
         (
             "independence",
             "/normative/independence",
@@ -492,7 +453,7 @@ fn enforceability_none_rows_for_unsupported_requirements() {
     ];
     for (property, pointer, value) in cases {
         let mut changed = base();
-        if property == "continuity" || property == "observerClass" {
+        if property == "continuity" {
             *changed["acceptanceConditions"][1]
                 .pointer_mut(pointer)
                 .unwrap() = value.clone();
@@ -515,15 +476,108 @@ fn enforceability_none_rows_for_unsupported_requirements() {
         assert!(!report.executable());
     }
 
-    // execution_confinement: a class other than guarded_sandbox has no mechanism.
+    // A class other than guarded_sandbox is not recognized, so it cannot reach a row.
     let mut confinement = base();
     confinement["acceptanceConditions"][0]["realizationConstraints"] =
         json!([{"dimension": "execution_confinement", "allowed": ["host_process"]}]);
-    let report = enforceability(&candidate(&confinement), Profile::FixedSliceReviewV1);
     assert_eq!(
-        status_of(&report, "realization:execution_confinement"),
-        [EnforceStatus::None]
+        unrecognized(&confinement),
+        (
+            "execution_confinement".to_owned(),
+            "host_process".to_owned()
+        )
     );
+}
+
+/// The exact evidence class of every supported mechanism row, from revision 4 section 4.3
+/// (C constraint, R recording, O independent observation). A row's class is asserted, not only
+/// its status.
+#[test]
+fn every_supported_mechanism_row_has_its_exact_revision_4_evidence_class() {
+    use work_engine_organization::EvidenceClass::{
+        Constraint as C, ConstraintAndRecording as CR, Observation as O, Recording as R,
+    };
+    let mut value = base();
+    value["acceptanceConditions"][0]["realizationConstraints"] = json!([
+        {"dimension": "provider_family", "allowed": ["anthropic"]},
+        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox"]}
+    ]);
+    let report = enforceability(&candidate(&value), Profile::FixedSliceReviewV1);
+    let expected: [(&str, EnforceStatus, work_engine_organization::EvidenceClass); 9] = [
+        ("continuity", EnforceStatus::Supported, CR),
+        ("mutation", EnforceStatus::Supported, CR),
+        ("capabilities", EnforceStatus::Supported, R),
+        ("integrity", EnforceStatus::Supported, R),
+        ("evidenceCustody", EnforceStatus::Supported, O),
+        (
+            "observerClass",
+            EnforceStatus::SupportedWithRealizationMapping,
+            R,
+        ),
+        ("realization:provider_family", EnforceStatus::Supported, R),
+        (
+            "realization:execution_confinement",
+            EnforceStatus::Supported,
+            CR,
+        ),
+        ("resultContract", EnforceStatus::Supported, C),
+    ];
+    for (property, status, class) in expected {
+        let rows: Vec<_> = report
+            .rows
+            .iter()
+            .filter(|row| row.property == property)
+            .collect();
+        assert!(!rows.is_empty(), "{property} has rows");
+        for row in rows {
+            assert_eq!(row.status, status, "{property} status");
+            assert_eq!(row.evidence_class, class, "{property} evidence class");
+        }
+    }
+    // Every row is accounted for: nothing is Supported with an unasserted class.
+    let asserted: Vec<&str> = expected.iter().map(|(property, _, _)| *property).collect();
+    for row in &report.rows {
+        if row.status != EnforceStatus::None {
+            assert!(
+                asserted.contains(&row.property.as_str()),
+                "{}",
+                row.property
+            );
+        }
+    }
+}
+
+/// Recognized-but-unsupported cases yield `none` with no evidence class; unsupported result
+/// contracts are unchanged (G32).
+#[test]
+fn recognized_but_unsupported_cases_and_unsupported_result_contracts_are_none() {
+    use work_engine_organization::EvidenceClass::NotApplicable;
+    let mut retained = base();
+    retained["acceptanceConditions"][0]["normative"]["continuity"] = json!("retained");
+    retained["acceptanceConditions"][1]["normative"]["continuity"] = json!("retained");
+    let mut independent = base();
+    independent["acceptanceConditions"][0]["normative"]["independence"] =
+        json!({"from": ["state.builder_context"]});
+    let mut contract_id = base();
+    contract_id["obligations"][0]["resultContract"]["id"] = json!("other-review");
+    let mut contract_version = base();
+    contract_version["obligations"][0]["resultContract"]["version"] = json!(2);
+    for (property, value) in [
+        ("continuity", retained),
+        ("independence", independent),
+        ("resultContract", contract_id),
+        ("resultContract", contract_version),
+    ] {
+        let report = enforceability(&candidate(&value), Profile::FixedSliceReviewV1);
+        let rows: Vec<_> = report
+            .rows
+            .iter()
+            .filter(|row| row.property == property && row.status == EnforceStatus::None)
+            .collect();
+        assert!(!rows.is_empty(), "{property} has a none row");
+        assert!(rows.iter().all(|row| row.evidence_class == NotApplicable));
+        assert!(!report.executable());
+    }
 }
 
 #[test]
@@ -602,27 +656,142 @@ fn unknown_fields_standing_fields_and_realization_identities_are_refused() {
     }
 }
 
+/// Strings that are not classes of any governed field: concrete identities and arbitrary text
+/// (decision N2). `2.1.322` and the 64-hex digest have valid ID syntax; `Claude Opus` does not.
+const NOT_CLASSES: [&str; 9] = [
+    "claude-opus-5-5",
+    "2.1.322",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "claude-cli-json-v1",
+    "rp0-guarded-claude-v1",
+    "review-execution-evidence",
+    "some-other-class",
+    "Claude Opus",
+    "host_process",
+];
+
+fn unrecognized(value: &Value) -> (String, String) {
+    match refusal(value) {
+        ValidationCode::UnrecognizedClass { field, value } => (field.to_owned(), value),
+        other => panic!("expected UnrecognizedClass, got {other:?}"),
+    }
+}
+
 #[test]
-fn concrete_realization_and_observer_identities_are_not_classes() {
-    for identity in [
-        "claude-cli-json-v1",
-        "rp0-guarded-claude-v1",
-        "review-execution-evidence",
-    ] {
+fn concrete_identities_and_arbitrary_strings_are_not_classes_in_any_governed_field() {
+    for identity in NOT_CLASSES {
         let mut as_observer = base();
         as_observer["acceptanceConditions"][0]["normative"]["observerClass"] = json!(identity);
-        assert!(matches!(
-            refusal(&as_observer),
-            ValidationCode::RealizationIdentity { .. }
-        ));
-        let mut as_allowed = base();
-        as_allowed["acceptanceConditions"][0]["realizationConstraints"] =
-            json!([{"dimension": "provider_family", "allowed": [identity]}]);
-        assert!(matches!(
-            refusal(&as_allowed),
-            ValidationCode::RealizationIdentity { .. }
-        ));
+        assert_eq!(
+            unrecognized(&as_observer),
+            ("observerClass".to_owned(), identity.to_owned())
+        );
+        for dimension in ["provider_family", "execution_confinement"] {
+            let mut as_allowed = base();
+            as_allowed["acceptanceConditions"][0]["realizationConstraints"] =
+                json!([{"dimension": dimension, "allowed": [identity]}]);
+            assert_eq!(
+                unrecognized(&as_allowed),
+                (dimension.to_owned(), identity.to_owned()),
+                "{dimension}"
+            );
+            // Mixed with a recognized class the unrecognized member is still refused.
+            let recognized = if dimension == "provider_family" {
+                "anthropic"
+            } else {
+                "guarded_sandbox"
+            };
+            let mut mixed = base();
+            mixed["acceptanceConditions"][0]["realizationConstraints"] =
+                json!([{"dimension": dimension, "allowed": [recognized, identity]}]);
+            assert_eq!(
+                unrecognized(&mixed),
+                (dimension.to_owned(), identity.to_owned()),
+                "{dimension} mixed"
+            );
+        }
+        let mut as_capability = base();
+        as_capability["acceptanceConditions"][0]["normative"]["capabilities"] = json!([identity]);
+        assert_eq!(
+            unrecognized(&as_capability),
+            ("capabilities".to_owned(), identity.to_owned())
+        );
     }
+}
+
+#[test]
+fn a_class_of_one_dimension_is_not_a_class_of_another_or_of_the_observer_field() {
+    let mut value = base();
+    value["acceptanceConditions"][0]["realizationConstraints"] =
+        json!([{"dimension": "provider_family", "allowed": ["guarded_sandbox"]}]);
+    assert_eq!(
+        unrecognized(&value),
+        ("provider_family".to_owned(), "guarded_sandbox".to_owned())
+    );
+    let mut value = base();
+    value["acceptanceConditions"][0]["realizationConstraints"] =
+        json!([{"dimension": "execution_confinement", "allowed": ["anthropic"]}]);
+    assert_eq!(
+        unrecognized(&value),
+        ("execution_confinement".to_owned(), "anthropic".to_owned())
+    );
+    let mut value = base();
+    value["acceptanceConditions"][0]["normative"]["observerClass"] = json!("anthropic");
+    assert_eq!(
+        unrecognized(&value),
+        ("observerClass".to_owned(), "anthropic".to_owned())
+    );
+}
+
+#[test]
+fn a_non_string_in_a_governed_field_is_a_wrong_type_not_a_class() {
+    let mut value = base();
+    value["acceptanceConditions"][0]["normative"]["observerClass"] = json!(7);
+    assert!(matches!(refusal(&value), ValidationCode::WrongType { .. }));
+    let mut value = base();
+    value["acceptanceConditions"][0]["realizationConstraints"] =
+        json!([{"dimension": "provider_family", "allowed": [7]}]);
+    assert!(matches!(refusal(&value), ValidationCode::WrongType { .. }));
+    let mut value = base();
+    value["acceptanceConditions"][0]["normative"]["capabilities"] = json!([7]);
+    assert!(matches!(refusal(&value), ValidationCode::WrongType { .. }));
+}
+
+#[test]
+fn every_recognized_class_is_accepted_and_the_vocabulary_is_the_profile_table() {
+    let vocabulary = Profile::FixedSliceReviewV1.vocabulary();
+    assert_eq!(vocabulary.provider_family, ["anthropic"]);
+    assert_eq!(vocabulary.execution_confinement, ["guarded_sandbox"]);
+    assert_eq!(
+        vocabulary.observer_class,
+        ["independent_execution_evidence"]
+    );
+    assert!(vocabulary.capabilities.is_empty());
+    assert_eq!(
+        Profile::FixedSliceReviewV1.vocabulary_version(),
+        "fixed-slice-review-v1/classes-1"
+    );
+    for observer in &vocabulary.observer_class {
+        for provider in &vocabulary.provider_family {
+            for confinement in &vocabulary.execution_confinement {
+                let mut value = base();
+                value["acceptanceConditions"][0]["normative"]["observerClass"] = json!(observer);
+                value["acceptanceConditions"][0]["realizationConstraints"] = json!([
+                    {"dimension": "provider_family", "allowed": [provider]},
+                    {"dimension": "execution_confinement", "allowed": [confinement]}
+                ]);
+                let report = enforceability(&candidate(&value), Profile::FixedSliceReviewV1);
+                assert_eq!(
+                    status_of(&report, "realization:provider_family"),
+                    [EnforceStatus::Supported]
+                );
+            }
+        }
+    }
+    // An empty capability list is the only recognized capability value.
+    let mut value = base();
+    value["acceptanceConditions"][0]["normative"]["capabilities"] = json!([]);
+    parse(&value);
 }
 
 #[test]
@@ -752,24 +921,17 @@ fn canonical_normalization_refusals_are_typed() {
         ValidationCode::DuplicateId { .. }
     ));
     // Duplicate set members.
-    for (pointer, value) in [
-        ("normative/capabilities", json!(["a", "a"])),
-        (
-            "normative/independence",
-            json!({"from": ["state.builder_context", "state.builder_context"]}),
-        ),
-    ] {
-        let mut changed = base();
-        let (parent, key) = pointer.rsplit_once('/').unwrap();
-        changed["acceptanceConditions"][0][parent][key] = value;
-        assert!(matches!(
-            refusal(&changed),
-            ValidationCode::DuplicateMember { .. }
-        ));
-    }
+    // Duplicate capabilities are refused earlier: no capability is recognized in v1.
+    let mut changed = base();
+    changed["acceptanceConditions"][0]["normative"]["independence"] =
+        json!({"from": ["state.builder_context", "state.builder_context"]});
+    assert!(matches!(
+        refusal(&changed),
+        ValidationCode::DuplicateMember { .. }
+    ));
     let mut value = base();
     value["acceptanceConditions"][0]["realizationConstraints"] =
-        json!([{"dimension": "provider_family", "allowed": ["a", "a"]}]);
+        json!([{"dimension": "provider_family", "allowed": ["anthropic", "anthropic"]}]);
     assert!(matches!(
         refusal(&value),
         ValidationCode::DuplicateMember { .. }
@@ -783,8 +945,8 @@ fn canonical_normalization_refusals_are_typed() {
     // Duplicate constraint dimension.
     let mut value = base();
     value["acceptanceConditions"][0]["realizationConstraints"] = json!([
-        {"dimension": "provider_family", "allowed": ["a"]},
-        {"dimension": "provider_family", "allowed": ["b"]}
+        {"dimension": "provider_family", "allowed": ["anthropic"]},
+        {"dimension": "provider_family", "allowed": ["anthropic"]}
     ]);
     assert!(matches!(
         refusal(&value),
@@ -1546,18 +1708,6 @@ const LEAVES: &[(&str, Proj, Proj)] = &[
     ("/acceptanceConditions/*/proposition", Yes, No),
     ("/acceptanceConditions/*/coveredState", Yes, No),
     ("/acceptanceConditions/*/normative/continuity", Yes, Yes),
-    ("/acceptanceConditions/*/normative/capabilities/*", Yes, Yes),
-    ("/acceptanceConditions/*/normative/observerClass", Yes, Yes),
-    (
-        "/acceptanceConditions/*/realizationConstraints/*/dimension",
-        Yes,
-        Yes,
-    ),
-    (
-        "/acceptanceConditions/*/realizationConstraints/*/allowed/*",
-        Yes,
-        Yes,
-    ),
     ("/acceptanceConditions/*/acceptor", Yes, Yes),
     ("/acceptanceConditions/*/unestablishedRoute", Yes, No),
     ("/requiredAuthorities/*/id", Yes, No),
@@ -1566,8 +1716,14 @@ const LEAVES: &[(&str, Proj, Proj)] = &[
     ("/requiredAuthorities/*/scope/boundaries/*", Yes, Depends),
 ];
 
-/// Closed single-value vocabularies: no second valid value exists.
+/// Closed single-value vocabularies: no second valid value exists. Since decision N2 this includes
+/// `observerClass`, `allowed[]` and, because a dimension is bound to its own classes, `dimension` (one recognized class per field); `capabilities[]` has no
+/// leaf at all because the v1 vocabulary is empty. Their destinations are checked by
+/// `single_value_class_leaves_reach_their_destinations`.
 const LITERAL_LEAVES: &[&str] = &[
+    "/acceptanceConditions/*/normative/observerClass",
+    "/acceptanceConditions/*/realizationConstraints/*/dimension",
+    "/acceptanceConditions/*/realizationConstraints/*/allowed/*",
     "/obligations/*/kind",
     "/obligations/*/subject",
     "/acceptanceConditions/*/normative/mutation",
@@ -1597,11 +1753,10 @@ fn rich() -> Value {
         "builder",
         "owner-a",
     );
-    a_build["normative"]["capabilities"] = json!(["cap-x"]);
     a_build["normative"]["independence"] = json!({"from": ["state.builder_context"]});
     a_build["realizationConstraints"] = json!([
-        {"dimension": "provider_family", "allowed": ["anthropic", "other"]},
-        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox", "other"]}
+        {"dimension": "provider_family", "allowed": ["anthropic"]},
+        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox"]}
     ]);
     let mut a_camp = condition(
         "a-camp",
@@ -1610,9 +1765,8 @@ fn rich() -> Value {
         "campaign",
         "owner-a",
     );
-    a_camp["normative"]["capabilities"] = json!(["cap-y", "cap-z"]);
     a_camp["realizationConstraints"] =
-        json!([{"dimension": "provider_family", "allowed": ["anthropic", "other"]}]);
+        json!([{"dimension": "provider_family", "allowed": ["anthropic"]}]);
     let b_camp = condition(
         "b-camp",
         "ob-b",
@@ -1829,7 +1983,7 @@ fn every_requirements_leaf_reaches_the_candidate_and_its_documented_projections(
     let mut all = Vec::new();
     leaves(&doc, "", &mut all);
     // The count is the matrix's leaf count for this input; a changed input must update both.
-    assert_eq!(all.len(), 94, "leaves found by the walk");
+    assert_eq!(all.len(), 88, "leaves found by the walk");
 
     let mut exercised: Vec<String> = Vec::new();
     let mut reached: Vec<String> = Vec::new();
@@ -1929,6 +2083,62 @@ fn every_requirements_leaf_reaches_the_candidate_and_its_documented_projections(
             "unused literal row {pattern}"
         );
     }
+}
+
+/// The single recognized class of each governed field reaches the candidate, the view and the
+/// report. A changed class cannot be authored (validation refuses it), so the destination is
+/// checked directly rather than by edit.
+#[test]
+fn single_value_class_leaves_reach_their_destinations() {
+    let mut value = base();
+    value["acceptanceConditions"][0]["realizationConstraints"] = json!([
+        {"dimension": "provider_family", "allowed": ["anthropic"]},
+        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox"]}
+    ]);
+    let c = candidate(&value);
+    let content = candidate_content(&c).to_string();
+    for class in [
+        "independent_execution_evidence",
+        "anthropic",
+        "guarded_sandbox",
+    ] {
+        assert!(content.contains(&format!("\"{class}\"")), "{class}");
+    }
+    let projected = view(&c);
+    let vantage = projected
+        .vantages
+        .iter()
+        .find(|v| v.effective.is_some())
+        .expect("a reviewer vantage");
+    assert_eq!(
+        vantage.effective.as_ref().unwrap().observer_class.as_str(),
+        "independent_execution_evidence"
+    );
+    let allowed: Vec<(&str, Vec<&str>)> = vantage
+        .effective_constraints
+        .iter()
+        .map(|c| {
+            (
+                c.dimension.as_str(),
+                c.allowed.iter().map(|a| a.as_str()).collect(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        allowed,
+        [
+            ("execution_confinement", vec!["guarded_sandbox"]),
+            ("provider_family", vec!["anthropic"])
+        ]
+    );
+    let report = enforceability(&c, Profile::FixedSliceReviewV1);
+    let requirements: Vec<&str> = report
+        .rows
+        .iter()
+        .filter(|row| row.scope == "cond-builder" && row.property.starts_with("realization:"))
+        .map(|row| row.requirement.as_str())
+        .collect();
+    assert_eq!(requirements, ["guarded_sandbox", "anthropic"]);
 }
 
 #[test]

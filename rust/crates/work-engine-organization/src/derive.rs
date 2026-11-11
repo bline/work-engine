@@ -11,11 +11,11 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::digest::{Digest, DigestKind};
 use crate::ids::Id;
-use crate::json::{JsonValue, object, string, strings};
+use crate::json::{InvariantViolation, JsonValue, object, string, strings};
 use crate::schema::{
     Condition, Dimension, Normative, Obligation, OrganizationalRequirements, ProblemScope, Profile,
-    RealizationConstraint, RequiredAuthority, constraints_json, id_json, id_set_json,
-    normative_json, obligation_json, problem_scope_json,
+    RealizationClass, RealizationConstraint, RequiredAuthority, constraints_json, id_json,
+    id_set_json, normative_json, obligation_json, problem_scope_json,
 };
 
 // Profile constants of `fixed-slice-review-v1` (amendment 3 and 3A.1).
@@ -274,8 +274,8 @@ pub enum UnresolvedKind {
     SelfAcceptance,
     UnknownConsumerClass,
     UnstatedAuthorityDependency,
-    /// A derivation invariant failed (a duplicate in a set collection). Not reachable for
-    /// validated input.
+    /// A derivation invariant failed (a duplicate in a set collection, a consumer without a
+    /// participant, an integer outside the canonical range). Not reachable for validated input.
     InternalError,
 }
 
@@ -300,6 +300,7 @@ pub enum UnresolvedReason {
     AcceptorIsDependentVantage,
     NoMatchingAuthorityEntry,
     DuplicateCollectionKey,
+    IntegerOutOfRange,
 }
 
 impl UnresolvedReason {
@@ -311,6 +312,7 @@ impl UnresolvedReason {
             UnresolvedReason::AcceptorIsDependentVantage => "acceptor_is_dependent_vantage",
             UnresolvedReason::NoMatchingAuthorityEntry => "no_matching_authority_entry",
             UnresolvedReason::DuplicateCollectionKey => "duplicate_collection_key",
+            UnresolvedReason::IntegerOutOfRange => "integer_out_of_range",
         }
     }
 }
@@ -530,7 +532,7 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     }
 
     // From here the input has no conflict: build the candidate members.
-    let mut internal: Vec<&'static str> = Vec::new();
+    let mut internal: Vec<InternalFault> = Vec::new();
 
     // Participants.
     rule_trace.push("participants");
@@ -588,18 +590,21 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     rule_trace.push("conditions");
     let candidate_conditions: Vec<CandidateCondition> = conditions
         .iter()
-        .map(|condition| CandidateCondition {
-            id: condition.id.clone(),
-            obligation: condition.obligation.clone(),
-            vantage: reviewer_vantage(&condition.obligation),
-            consumer: consumer_of(condition).unwrap_or(CAMPAIGN).to_owned(),
-            boundary: condition.consumption_boundary.clone(),
-            proposition: condition.proposition.clone(),
-            covered_state: condition.covered_state.clone(),
-            normative: condition.normative.clone(),
-            realization_constraints: condition.realization_constraints.clone(),
-            acceptor: condition.acceptor.clone(),
-            unestablished_route: condition.unestablished_route.clone(),
+        .filter_map(|condition| {
+            let consumer = require_consumer(consumer_of(condition), &mut internal)?;
+            Some(CandidateCondition {
+                id: condition.id.clone(),
+                obligation: condition.obligation.clone(),
+                vantage: reviewer_vantage(&condition.obligation),
+                consumer: consumer.to_owned(),
+                boundary: condition.consumption_boundary.clone(),
+                proposition: condition.proposition.clone(),
+                covered_state: condition.covered_state.clone(),
+                normative: condition.normative.clone(),
+                realization_constraints: condition.realization_constraints.clone(),
+                acceptor: condition.acceptor.clone(),
+                unestablished_route: condition.unestablished_route.clone(),
+            })
         })
         .collect();
 
@@ -651,9 +656,12 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     }
     for condition in conditions {
         let vantage = reviewer_vantage(&condition.obligation);
+        let Some(consumer) = require_consumer(consumer_of(condition), &mut internal) else {
+            continue;
+        };
         relate(
             RelationshipKind::ConsumesAt,
-            consumer_of(condition).unwrap_or(CAMPAIGN),
+            consumer,
             Some(vantage.clone()),
             Some(&condition.id),
         );
@@ -747,7 +755,19 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
         canonical: Vec::new(),
         content_digest: Digest::frame(DigestKind::Candidate, b""),
     };
-    candidate.canonical = candidate_json(&candidate).canonical_bytes();
+    match candidate_json(&candidate) {
+        Ok(json) => candidate.canonical = json.canonical_bytes(),
+        Err(_violation) => {
+            return DerivationResult {
+                candidates: Vec::new(),
+                unresolved: internal_error_items(vec![InternalFault {
+                    subject: "integer",
+                    reason: UnresolvedReason::IntegerOutOfRange,
+                }]),
+                receipt: make_receipt(rule_trace),
+            };
+        }
+    }
     candidate.content_digest = Digest::frame(DigestKind::Candidate, &candidate.canonical);
     DerivationResult {
         candidates: vec![candidate],
@@ -756,22 +776,30 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     }
 }
 
-/// The unresolved items for failed derivation invariants, one per collection, sorted.
-fn internal_error_items(collections: Vec<&'static str>) -> Vec<Unresolved> {
-    let mut items: Vec<Unresolved> = collections
+/// A failed derivation invariant: the subject it concerns and the reason token.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct InternalFault {
+    subject: &'static str,
+    reason: UnresolvedReason,
+}
+
+/// The unresolved items for failed derivation invariants, sorted.
+fn internal_error_items(faults: Vec<InternalFault>) -> Vec<Unresolved> {
+    let mut items: Vec<Unresolved> = faults
         .into_iter()
-        .map(|collection| Unresolved {
+        .map(|fault| Unresolved {
             kind: UnresolvedKind::InternalError,
-            subject: collection.to_owned(),
-            reason: UnresolvedReason::DuplicateCollectionKey,
+            subject: fault.subject.to_owned(),
+            reason: fault.reason,
             conditions: Vec::new(),
         })
         .collect();
     sort_unresolved(&mut items);
+    items.dedup();
     items
 }
 
-fn check_unique<I, S>(keys: I, collection: &'static str, internal: &mut Vec<&'static str>)
+fn check_unique<I, S>(keys: I, collection: &'static str, internal: &mut Vec<InternalFault>)
 where
     I: IntoIterator<Item = S>,
     S: Ord,
@@ -779,10 +807,29 @@ where
     let mut seen = BTreeSet::new();
     for key in keys {
         if !seen.insert(key) {
-            internal.push(collection);
+            internal.push(InternalFault {
+                subject: collection,
+                reason: UnresolvedReason::DuplicateCollectionKey,
+            });
             return;
         }
     }
+}
+
+/// The consumer participant of a condition that passed the early consumer-class check. A condition
+/// without one cannot reach this point; if it does, record an internal fault and yield no
+/// consumer, never a default one (the derivation then returns no candidate).
+fn require_consumer(
+    consumer: Option<&'static str>,
+    internal: &mut Vec<InternalFault>,
+) -> Option<&'static str> {
+    if consumer.is_none() {
+        internal.push(InternalFault {
+            subject: "consumerClass",
+            reason: UnresolvedReason::UnrecognizedClass,
+        });
+    }
+    consumer
 }
 
 fn sort_unresolved(items: &mut [Unresolved]) {
@@ -846,7 +893,7 @@ fn combine(
         let Some(head) = stating.first() else {
             continue;
         };
-        let intersection: BTreeSet<Id> = stating
+        let intersection: BTreeSet<RealizationClass> = stating
             .iter()
             .skip(1)
             .fold(head.allowed.clone(), |acc, constraint| {
@@ -892,7 +939,7 @@ fn combine(
         capabilities,
         integrity: first.integrity,
         evidence_custody: first.evidence_custody,
-        observer_class: first.observer_class.clone(),
+        observer_class: first.observer_class,
     };
     Ok((effective, constraints))
 }
@@ -1210,7 +1257,12 @@ fn trace_ref_json(reference: &TraceRef) -> JsonValue {
     ])
 }
 
-fn candidate_json(candidate: &OrganizationCandidate) -> JsonValue {
+fn candidate_json(candidate: &OrganizationCandidate) -> Result<JsonValue, InvariantViolation> {
+    let obligations = candidate
+        .obligations
+        .iter()
+        .map(obligation_json)
+        .collect::<Result<Vec<_>, _>>()?;
     let participants = candidate.participants.iter().map(|p| {
         let mut members = vec![("id", string(&p.id)), ("kind", string(p.kind.as_str()))];
         if !p.serves.is_empty() {
@@ -1300,17 +1352,17 @@ fn candidate_json(candidate: &OrganizationCandidate) -> JsonValue {
             ("source", trace_ref_json(&row.source)),
         ])
     });
-    object(vec![
+    Ok(object(vec![
         (
             "requirementsDigest",
             string(&candidate.requirements_digest.to_hex()),
         ),
         ("profile", string(candidate.profile.as_str())),
-        ("problemScope", problem_scope_json(&candidate.problem_scope)),
         (
-            "obligations",
-            JsonValue::Array(candidate.obligations.iter().map(obligation_json).collect()),
+            "problemScope",
+            problem_scope_json(&candidate.problem_scope)?,
         ),
+        ("obligations", JsonValue::Array(obligations)),
         ("participants", JsonValue::Array(participants.collect())),
         ("conditions", JsonValue::Array(conditions.collect())),
         (
@@ -1331,7 +1383,7 @@ fn candidate_json(candidate: &OrganizationCandidate) -> JsonValue {
             JsonValue::Array(bindings.collect()),
         ),
         ("requirementTrace", JsonValue::Array(trace.collect())),
-    ])
+    ]))
 }
 
 /// Fault injection for derivation invariants that validated input cannot reach (crate-private,
@@ -1378,8 +1430,9 @@ mod injection_tests {
         assert!(internal.is_empty());
         check_unique(["a", "b", "a"], "participants", &mut internal);
         check_unique([1, 1], "relationships", &mut internal);
-        assert_eq!(internal, ["participants", "relationships"]);
-        let items = internal_error_items(vec!["relationships", "participants"]);
+        let subjects: Vec<&str> = internal.iter().map(|f| f.subject).collect();
+        assert_eq!(subjects, ["participants", "relationships"]);
+        let items = internal_error_items(internal.into_iter().rev().collect());
         let rendered: Vec<(&str, &str, &str)> = items
             .iter()
             .map(|u| (u.kind.as_str(), u.subject.as_str(), u.reason.as_str()))
@@ -1396,6 +1449,85 @@ mod injection_tests {
             ]
         );
         assert!(items.iter().all(|u| u.conditions.is_empty()));
+    }
+
+    #[test]
+    fn a_consumer_that_slipped_past_the_early_check_is_an_internal_error_not_the_campaign() {
+        let mut internal = Vec::new();
+        assert_eq!(
+            require_consumer(Some(CAMPAIGN), &mut internal),
+            Some(CAMPAIGN)
+        );
+        assert!(internal.is_empty());
+        assert_eq!(require_consumer(None, &mut internal), None);
+        assert_eq!(internal.len(), 1);
+        let items = internal_error_items(internal);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].kind, UnresolvedKind::InternalError);
+        assert_eq!(items[0].subject, "consumerClass");
+        assert_eq!(items[0].reason, UnresolvedReason::UnrecognizedClass);
+    }
+
+    #[test]
+    fn a_validated_integer_outside_the_canonical_range_fails_closed_in_candidate_and_json() {
+        use crate::json::MAX_SAFE_INTEGER;
+        let result = derive(&requirements(), Profile::FixedSliceReviewV1);
+        let mut candidate = result.candidates.into_iter().next().unwrap();
+        assert!(candidate_json(&candidate).is_ok());
+        candidate.problem_scope.slice_number = MAX_SAFE_INTEGER as u64 + 1;
+        let violation = candidate_json(&candidate).unwrap_err();
+        assert!(violation.detail.contains("2^53 - 1"));
+        candidate.problem_scope.slice_number = 1;
+        candidate.obligations[0].result_contract.version = u64::MAX;
+        assert!(candidate_json(&candidate).is_err());
+    }
+
+    /// Capabilities have an empty v1 vocabulary, so validated input never states one; the F4
+    /// union is still the rule (contract r4 3.2) and is checked on a crate-private value.
+    #[test]
+    fn f4_unions_capabilities_when_conditions_state_them() {
+        let validated = requirements();
+        let mut one = validated.conditions()[0].clone();
+        let mut two = one.clone();
+        one.normative.capabilities = [Id::parse("x").unwrap()].into_iter().collect();
+        two.normative.capabilities = [Id::parse("y").unwrap(), Id::parse("x").unwrap()]
+            .into_iter()
+            .collect();
+        let (effective, _) = combine(&[&one, &two]).unwrap();
+        let names: Vec<&str> = effective.capabilities.iter().map(Id::as_str).collect();
+        assert_eq!(names, ["x", "y"]);
+    }
+
+    /// A disjoint `allowed` needs two disjoint recognized sets, which one class per dimension
+    /// cannot form; an empty set (not constructible by validation) stands in for the second.
+    #[test]
+    fn f4_reports_a_disjoint_dimension_as_a_condition_conflict() {
+        use crate::schema::{ProviderFamily, RealizationClass};
+        let validated = requirements();
+        let mut with_class = validated.conditions()[0].clone();
+        let mut without = with_class.clone();
+        with_class.id = Id::parse("cond-1").unwrap();
+        without.id = Id::parse("cond-2").unwrap();
+        with_class.realization_constraints = vec![RealizationConstraint {
+            dimension: Dimension::ProviderFamily,
+            allowed: [RealizationClass::ProviderFamily(ProviderFamily::Anthropic)]
+                .into_iter()
+                .collect(),
+        }];
+        without.realization_constraints = vec![RealizationConstraint {
+            dimension: Dimension::ProviderFamily,
+            allowed: BTreeSet::new(),
+        }];
+        let conflicts = combine(&[&with_class, &without]).unwrap_err();
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].kind, UnresolvedKind::ConditionConflict);
+        assert_eq!(conflicts[0].subject, "realization:provider_family");
+        assert_eq!(
+            conflicts[0].reason,
+            UnresolvedReason::DisjointAllowedClasses
+        );
+        let ids: Vec<&str> = conflicts[0].conditions.iter().map(Id::as_str).collect();
+        assert_eq!(ids, ["cond-1", "cond-2"]);
     }
 
     #[test]

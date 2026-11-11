@@ -43,6 +43,9 @@ pub enum CodecError {
     UnpairedSurrogate { at: Position },
     #[error("nesting deeper than {limit} levels at {at}")]
     TooDeep { limit: usize, at: Position },
+    /// An invariant of the scanner failed. Fail closed; not reachable for any input.
+    #[error("internal codec invariant failed at {at}: {detail}")]
+    Internal { at: Position, detail: &'static str },
     #[error("unknown codec declaration (domain {domain:?}, kind {kind:?}, version {version:?})")]
     UnknownCodec {
         domain: String,
@@ -111,8 +114,12 @@ pub enum ValidationCode {
     EmptyCollection { name: &'static str },
     #[error("obligation {id:?} has no acceptance condition")]
     ObligationWithoutCondition { id: String },
-    #[error(
-        "{value:?} names a concrete realization or observer identity; only classes are accepted"
-    )]
-    RealizationIdentity { value: String },
+    /// A string in a field whose classes the profile closes (`provider_family`,
+    /// `execution_confinement`, `observerClass`, `capabilities`) is not one of the recognized
+    /// classes. Concrete model, CLI, harness, program and component identities are never classes.
+    #[error("{value:?} is not a recognized class of {field}")]
+    UnrecognizedClass { field: &'static str, value: String },
+    /// An internal invariant of a validated value failed; fail closed.
+    #[error("internal invariant failed: {detail}")]
+    InternalInvariant { detail: &'static str },
 }

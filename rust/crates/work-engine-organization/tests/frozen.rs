@@ -301,3 +301,51 @@ fn frozen_vertical_diagnostic_report() {
     assert!(!report.executable());
     assert_eq!(candidate.separation_requirements().len(), 2);
 }
+
+/// The IG1A reviewer's probe (review/probe/src/main.rs) as regression tests: N1 on the frozen
+/// requirements, N2 on the same input with identities in `allowed[]`.
+#[test]
+fn n1_probe_the_frozen_rows_have_the_revision_4_evidence_classes() {
+    use work_engine_organization::EvidenceClass::{Constraint, ConstraintAndRecording};
+    let requirements = OrganizationalRequirements::from_json_bytes(REQUIREMENTS).unwrap();
+    let result = derive(&requirements, Profile::FixedSliceReviewV1);
+    let report = enforceability(&result.candidates[0], Profile::FixedSliceReviewV1);
+    let mut seen = (0, 0);
+    for row in &report.rows {
+        if row.property == "resultContract" {
+            assert_eq!(row.evidence_class, Constraint, "{}", row.scope);
+            seen.0 += 1;
+        }
+        if row.property == "realization:execution_confinement" {
+            assert_eq!(row.evidence_class, ConstraintAndRecording, "{}", row.scope);
+            seen.1 += 1;
+        }
+    }
+    assert!(seen.0 > 0 && seen.1 > 0, "rows found: {seen:?}");
+}
+
+#[test]
+fn n2_probe_identities_in_allowed_are_refused_on_the_frozen_requirements() {
+    use work_engine_organization::ValidationCode;
+    for identity in [
+        "claude-opus-5-5",
+        "2.1.322",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    ] {
+        let mut input: Value = json(REQUIREMENTS);
+        for condition in input["acceptanceConditions"].as_array_mut().unwrap() {
+            condition["realizationConstraints"] =
+                serde_json::json!([{"dimension": "provider_family", "allowed": [identity]}]);
+        }
+        let error =
+            OrganizationalRequirements::from_json_bytes(&serde_json::to_vec(&input).unwrap())
+                .expect_err("the probe input must now be refused");
+        assert_eq!(
+            error.code,
+            ValidationCode::UnrecognizedClass {
+                field: "provider_family",
+                value: identity.to_owned()
+            }
+        );
+    }
+}

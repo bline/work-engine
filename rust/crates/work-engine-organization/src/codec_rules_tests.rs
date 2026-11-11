@@ -358,3 +358,35 @@ fn bytes_from_serde_json_values_canonicalize_identically_under_both_number_featu
         );
     }
 }
+
+#[test]
+fn a_digit_run_that_does_not_parse_is_an_internal_error_not_zero() {
+    use crate::error::{CodecError, Position};
+    use crate::json::digit_run_value;
+    // An empty run means the digits were all zeros.
+    assert_eq!(digit_run_value("", 3), Ok(0));
+    assert_eq!(
+        digit_run_value("9007199254740991", 3),
+        Ok(9_007_199_254_740_991)
+    );
+    for impossible in ["x", "1_0", "-1", " 1"] {
+        assert!(
+            matches!(
+                digit_run_value(impossible, 3),
+                Err(CodecError::Internal {
+                    at: Position::Offset(3),
+                    ..
+                })
+            ),
+            "{impossible:?}"
+        );
+    }
+}
+
+#[test]
+fn an_integer_outside_the_canonical_range_is_refused_when_serialized() {
+    use crate::json::{MAX_SAFE_INTEGER, safe_integer};
+    assert!(safe_integer(MAX_SAFE_INTEGER as u64).is_ok());
+    assert!(safe_integer(MAX_SAFE_INTEGER as u64 + 1).is_err());
+    assert!(safe_integer(u64::MAX).is_err());
+}

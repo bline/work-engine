@@ -20,6 +20,23 @@ pub(crate) const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
 /// Container nesting limit. A recursion bound; the v0 schemas nest far less.
 pub(crate) const MAX_DEPTH: usize = 64;
 
+/// A violated internal invariant (a state sealed validation makes unreachable). Surfaced as a
+/// typed internal error by the caller; it is never replaced by a plausible-looking value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct InvariantViolation {
+    pub(crate) detail: &'static str,
+}
+
+/// An unsigned integer within the data model's range, or the violation.
+pub(crate) fn safe_integer(value: u64) -> Result<JsonValue, InvariantViolation> {
+    match i64::try_from(value) {
+        Ok(number) if number <= MAX_SAFE_INTEGER => Ok(JsonValue::Integer(number)),
+        _ => Err(InvariantViolation {
+            detail: "a validated integer exceeds the canonical range of 2^53 - 1",
+        }),
+    }
+}
+
 /// A JSON value restricted to the v0 data model.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum JsonValue {
@@ -30,6 +47,18 @@ pub(crate) enum JsonValue {
     Array(Vec<JsonValue>),
     /// Members in authored (or insertion) order; the canonical form sorts them. Keys are unique.
     Object(Vec<(String, JsonValue)>),
+}
+
+/// The value of a run of at most 16 ASCII digits with no leading zero; an empty run is zero (the
+/// digits were all zeros). A run that does not parse is an internal error, not zero.
+pub(crate) fn digit_run_value(digits: &str, start: usize) -> Result<u64, CodecError> {
+    if digits.is_empty() {
+        return Ok(0);
+    }
+    digits.parse::<u64>().map_err(|_| CodecError::Internal {
+        at: Position::Offset(start),
+        detail: "a digit run accepted by the scanner did not parse as an integer",
+    })
 }
 
 impl JsonValue {
@@ -349,14 +378,18 @@ impl Parser<'_> {
         let digits = &self.text[digits_start..self.index];
         // At most 16 digits can be in range; anything longer is out of range without parsing.
         let magnitude = digits.trim_start_matches('0');
-        let in_range = magnitude.len() <= 16
-            && magnitude.parse::<u64>().unwrap_or(0) <= MAX_SAFE_INTEGER as u64;
-        if !in_range {
+        if magnitude.len() > 16 {
             return Err(CodecError::IntegerOutOfRange {
                 at: Position::Offset(start),
             });
         }
-        let magnitude = digits.parse::<i64>().unwrap_or(0);
+        let magnitude = digit_run_value(magnitude, start)?;
+        if magnitude > MAX_SAFE_INTEGER as u64 {
+            return Err(CodecError::IntegerOutOfRange {
+                at: Position::Offset(start),
+            });
+        }
+        let magnitude = magnitude as i64;
         if negative && magnitude == 0 {
             return Err(CodecError::NegativeZero {
                 at: Position::Offset(start),

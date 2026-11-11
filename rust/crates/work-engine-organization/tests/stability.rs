@@ -15,11 +15,10 @@ use work_engine_organization::{Digest, DigestKind, OrganizationalRequirements, P
 /// Two obligations, four conditions, four authorities, and every set kind with 2-4 members.
 fn rich() -> Value {
     let mut c1 = condition("c1", "ob-a", "builder_projection", "builder", "owner-a");
-    c1["normative"]["capabilities"] = json!(["cap-a", "cap-b", "cap-c", "cap-d"]);
     c1["normative"]["independence"] = json!({"from": ["state.builder_context"]});
     c1["realizationConstraints"] = json!([
-        {"dimension": "provider_family", "allowed": ["anthropic", "openai", "other"]},
-        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox", "host_process"]}
+        {"dimension": "provider_family", "allowed": ["anthropic"]},
+        {"dimension": "execution_confinement", "allowed": ["guarded_sandbox"]}
     ]);
     let mut c2 = condition(
         "c2",
@@ -29,7 +28,7 @@ fn rich() -> Value {
         "owner-a",
     );
     c2["realizationConstraints"] =
-        json!([{"dimension": "provider_family", "allowed": ["anthropic", "openai"]}]);
+        json!([{"dimension": "provider_family", "allowed": ["anthropic"]}]);
     let c3 = condition("c3", "ob-b", "builder_projection", "builder", "owner-b");
     let c4 = condition(
         "c4",
@@ -227,8 +226,10 @@ fn permuting_any_one_set_gives_identical_digests_and_trace() {
             assert_same(&reference, &identity_of(&bytes(&changed)), &pointer);
         }
     }
-    // obligations, conditions, authorities, capabilities, allowed (x2), boundaries (x2).
-    assert!(tested_sets >= 7, "tested {tested_sets} sets");
+    // obligations, conditions, authorities, boundaries (x2), realizationConstraints. The
+    // `capabilities` and `allowed` sets have at most one recognized member (decision N2), so
+    // they have no authored order to permute.
+    assert!(tested_sets >= 6, "tested {tested_sets} sets");
     assert_eq!(largest, 4);
 }
 
@@ -332,8 +333,8 @@ fn golden_vectors_fix_canonical_bytes_and_digests() {
             parse(&two_condition_vantage()),
             golden!("hetero-requirements"),
             golden!("hetero-candidate"),
-            "dd94d9f4a8064d18b2541d11ee13feae2f78cad2841630c2a5ff27816cc88fc0",
-            "a3c54d0f70554d628eeb22a147938bb29cb5daf3290751302b73823531c0c7c9",
+            "fcb192ccbcc219cefb4a04ec33f0f3d9e8b96b57444316b74345397218152625",
+            "3c9eab7d701c077df11029dcc400bc6b803b004a8b6c5c8a9c014d2cfcea5655",
         ),
     ];
     for (name, requirements, requirements_bytes, candidate_bytes, requirements_hex, content_hex) in

@@ -11,7 +11,9 @@ use std::collections::BTreeSet;
 use crate::digest::{Digest, DigestKind};
 use crate::error::{ValidationCode, ValidationError};
 use crate::ids::Id;
-use crate::json::{JsonValue, MAX_SAFE_INTEGER, object, string, strings};
+use crate::json::{
+    InvariantViolation, JsonValue, MAX_SAFE_INTEGER, object, safe_integer, string, strings,
+};
 
 /// The derivation profile. The only profile is `fixed-slice-review-v1`; `derive` takes it as an
 /// argument so a second profile is a compile-visible change.
@@ -26,6 +28,58 @@ impl Profile {
             Profile::FixedSliceReviewV1 => "fixed-slice-review-v1",
         }
     }
+
+    /// The version of this profile's class vocabulary. Adding or removing a recognized class is a
+    /// revision of this value and of the profile (decision N2); it does not enter any digest.
+    pub fn vocabulary_version(self) -> &'static str {
+        match self {
+            Profile::FixedSliceReviewV1 => "fixed-slice-review-v1/classes-1",
+        }
+    }
+
+    /// The recognized classes of the profile, as spelled in authored requirements. Everything not
+    /// listed is refused by validation. `capabilities` has an empty vocabulary in v1.
+    pub fn vocabulary(self) -> Vocabulary {
+        match self {
+            Profile::FixedSliceReviewV1 => Vocabulary {
+                provider_family: ProviderFamily::ALL.iter().map(|c| c.as_str()).collect(),
+                execution_confinement: ExecutionConfinement::ALL
+                    .iter()
+                    .map(|c| c.as_str())
+                    .collect(),
+                observer_class: ObserverClass::ALL.iter().map(|c| c.as_str()).collect(),
+                capabilities: Vec::new(),
+            },
+        }
+    }
+
+    fn recognize_provider_family(self, text: &str) -> Option<ProviderFamily> {
+        match self {
+            Profile::FixedSliceReviewV1 => ProviderFamily::parse(text),
+        }
+    }
+
+    fn recognize_execution_confinement(self, text: &str) -> Option<ExecutionConfinement> {
+        match self {
+            Profile::FixedSliceReviewV1 => ExecutionConfinement::parse(text),
+        }
+    }
+
+    fn recognize_observer_class(self, text: &str) -> Option<ObserverClass> {
+        match self {
+            Profile::FixedSliceReviewV1 => ObserverClass::parse(text),
+        }
+    }
+}
+
+/// A profile's closed class vocabulary (see [`Profile::vocabulary`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Vocabulary {
+    pub provider_family: Vec<&'static str>,
+    pub execution_confinement: Vec<&'static str>,
+    pub observer_class: Vec<&'static str>,
+    pub capabilities: Vec<&'static str>,
 }
 
 macro_rules! closed_enum {
@@ -34,6 +88,8 @@ macro_rules! closed_enum {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub enum $name { $($variant),+ }
         impl $name {
+            /// Every recognized value, in declaration order.
+            pub const ALL: &'static [$name] = &[$($name::$variant),+];
             pub fn as_str(self) -> &'static str {
                 match self { $($name::$variant => $text),+ }
             }
@@ -68,6 +124,42 @@ closed_enum!(
     /// The closed dimensions of a realization constraint.
     Dimension { ProviderFamily = "provider_family", ExecutionConfinement = "execution_confinement" }
 );
+closed_enum!(
+    /// A recognized `provider_family` class of `fixed-slice-review-v1`. A class, never a model.
+    ProviderFamily { Anthropic = "anthropic" }
+);
+closed_enum!(
+    /// A recognized `execution_confinement` class of `fixed-slice-review-v1`.
+    ExecutionConfinement { GuardedSandbox = "guarded_sandbox" }
+);
+closed_enum!(
+    /// The recognized `normative.observerClass` of `fixed-slice-review-v1`: a class, not an
+    /// observer identity.
+    ObserverClass { IndependentExecutionEvidence = "independent_execution_evidence" }
+);
+
+/// A recognized member of `realizationConstraints[].allowed`; the variant fixes the dimension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RealizationClass {
+    ProviderFamily(ProviderFamily),
+    ExecutionConfinement(ExecutionConfinement),
+}
+
+impl RealizationClass {
+    pub fn dimension(self) -> Dimension {
+        match self {
+            RealizationClass::ProviderFamily(_) => Dimension::ProviderFamily,
+            RealizationClass::ExecutionConfinement(_) => Dimension::ExecutionConfinement,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RealizationClass::ProviderFamily(class) => class.as_str(),
+            RealizationClass::ExecutionConfinement(class) => class.as_str(),
+        }
+    }
+}
 
 /// `problemScope`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -123,7 +215,7 @@ pub struct Normative {
     pub capabilities: BTreeSet<Id>,
     pub integrity: Integrity,
     pub evidence_custody: EvidenceCustody,
-    pub observer_class: Id,
+    pub observer_class: ObserverClass,
 }
 
 /// `RealizationConstraint v0`: a restriction expressed only as classes.
@@ -131,7 +223,8 @@ pub struct Normative {
 #[non_exhaustive]
 pub struct RealizationConstraint {
     pub dimension: Dimension,
-    pub allowed: BTreeSet<Id>,
+    /// Recognized classes of the dimension; never empty.
+    pub allowed: BTreeSet<RealizationClass>,
 }
 
 /// `acceptanceConditions[]`.
@@ -174,14 +267,6 @@ pub struct OrganizationalRequirements {
     canonical: Vec<u8>,
     digest: Digest,
 }
-
-/// The three concrete identities contract 3.1 names as rejected by the schema. They are
-/// realization or observer-component identities, never classes.
-const REJECTED_IDENTITIES: [&str; 3] = [
-    "claude-cli-json-v1",
-    "rp0-guarded-claude-v1",
-    "review-execution-evidence",
-];
 
 impl OrganizationalRequirements {
     /// Validates authored JSON bytes. Refuses ambiguity; normalizes only set order and key order.
@@ -233,17 +318,17 @@ pub(crate) fn id_json(id: &Id) -> JsonValue {
 }
 
 /// `problemScope`, shared by the requirements and the candidate so a copy cannot drift.
-pub(crate) fn problem_scope_json(scope: &ProblemScope) -> JsonValue {
-    object(vec![
+pub(crate) fn problem_scope_json(scope: &ProblemScope) -> Result<JsonValue, InvariantViolation> {
+    Ok(object(vec![
         ("runId", id_json(&scope.run_id)),
         ("planLineage", id_json(&scope.plan_lineage)),
-        ("sliceNumber", integer(scope.slice_number)),
-    ])
+        ("sliceNumber", safe_integer(scope.slice_number)?),
+    ]))
 }
 
 /// One obligation, shared by the requirements and the candidate so a copy cannot drift.
-pub(crate) fn obligation_json(obligation: &Obligation) -> JsonValue {
-    object(vec![
+pub(crate) fn obligation_json(obligation: &Obligation) -> Result<JsonValue, InvariantViolation> {
+    Ok(object(vec![
         ("id", id_json(&obligation.id)),
         ("kind", string(obligation.kind())),
         ("subject", string(obligation.subject())),
@@ -251,14 +336,14 @@ pub(crate) fn obligation_json(obligation: &Obligation) -> JsonValue {
             "resultContract",
             object(vec![
                 ("id", id_json(&obligation.result_contract.id)),
-                ("version", integer(obligation.result_contract.version)),
+                ("version", safe_integer(obligation.result_contract.version)?),
             ]),
         ),
         (
             "scope",
             object(vec![("digest", string(&obligation.scope_digest.to_hex()))]),
         ),
-    ])
+    ]))
 }
 
 pub(crate) fn id_set_json(set: &BTreeSet<Id>) -> JsonValue {
@@ -281,7 +366,7 @@ pub(crate) fn normative_json(normative: &Normative) -> JsonValue {
         ("capabilities", id_set_json(capabilities)),
         ("integrity", string(integrity.as_str())),
         ("evidenceCustody", string(evidence_custody.as_str())),
-        ("observerClass", id_json(observer_class)),
+        ("observerClass", string(observer_class.as_str())),
     ];
     if let Some(from) = independence {
         members.push((
@@ -292,6 +377,13 @@ pub(crate) fn normative_json(normative: &Normative) -> JsonValue {
     object(members)
 }
 
+/// Class spellings in set order of contract 17.2 (UTF-16 code unit, equal to byte order for ASCII).
+fn classes_sorted(set: &BTreeSet<RealizationClass>) -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = set.iter().map(|class| class.as_str()).collect();
+    names.sort_unstable();
+    names
+}
+
 pub(crate) fn constraints_json(constraints: &[RealizationConstraint]) -> JsonValue {
     JsonValue::Array(
         constraints
@@ -299,20 +391,23 @@ pub(crate) fn constraints_json(constraints: &[RealizationConstraint]) -> JsonVal
             .map(|constraint| {
                 object(vec![
                     ("dimension", string(constraint.dimension.as_str())),
-                    ("allowed", id_set_json(&constraint.allowed)),
+                    (
+                        "allowed",
+                        strings(classes_sorted(&constraint.allowed).into_iter()),
+                    ),
                 ])
             })
             .collect(),
     )
 }
 
-fn integer(value: u64) -> JsonValue {
-    JsonValue::Integer(i64::try_from(value).unwrap_or(i64::MAX))
-}
-
 impl OrganizationalRequirements {
-    fn to_json(&self) -> JsonValue {
-        let obligations = self.obligations.iter().map(obligation_json);
+    fn to_json(&self) -> Result<JsonValue, InvariantViolation> {
+        let obligations = self
+            .obligations
+            .iter()
+            .map(obligation_json)
+            .collect::<Result<Vec<_>, _>>()?;
         let conditions = self.conditions.iter().map(|condition| {
             let mut members = vec![
                 ("id", id_json(&condition.id)),
@@ -351,9 +446,9 @@ impl OrganizationalRequirements {
                 ("scope", object(scope)),
             ])
         });
-        object(vec![
-            ("problemScope", problem_scope_json(&self.problem_scope)),
-            ("obligations", JsonValue::Array(obligations.collect())),
+        Ok(object(vec![
+            ("problemScope", problem_scope_json(&self.problem_scope)?),
+            ("obligations", JsonValue::Array(obligations)),
             (
                 "acceptanceConditions",
                 JsonValue::Array(conditions.collect()),
@@ -369,7 +464,7 @@ impl OrganizationalRequirements {
                     ("profile", string(self.profile.as_str())),
                 ]),
             ),
-        ])
+        ]))
     }
 }
 
@@ -456,18 +551,26 @@ fn id_at(value: &JsonValue, path: &str) -> Result<Id, ValidationError> {
     Id::parse(text(value, path)?).map_err(|error| fail(path, ValidationCode::InvalidId(error)))
 }
 
-/// An ID-syntax class value that is not one of the rejected concrete identities.
-fn class_at(value: &JsonValue, path: &str) -> Result<Id, ValidationError> {
-    let id = id_at(value, path)?;
-    if REJECTED_IDENTITIES.contains(&id.as_str()) {
-        return Err(fail(
-            path,
-            ValidationCode::RealizationIdentity {
-                value: id.as_str().to_owned(),
-            },
-        ));
-    }
-    Ok(id)
+/// A string whose spelling the profile must recognize as a class of `field`. Anything else is
+/// refused (decision N2): a concrete identity is never a class, whether or not it has ID syntax.
+fn recognized<T>(
+    value: &JsonValue,
+    path: &str,
+    field: &'static str,
+    recognize: impl FnOnce(&str) -> Option<T>,
+) -> Result<T, ValidationError> {
+    let spelled = text(value, path)?;
+    recognize(spelled).ok_or_else(|| unrecognized(path, field, spelled))
+}
+
+fn unrecognized(path: &str, field: &'static str, value: &str) -> ValidationError {
+    fail(
+        path,
+        ValidationCode::UnrecognizedClass {
+            field,
+            value: value.to_owned(),
+        },
+    )
 }
 
 fn literal(value: &JsonValue, path: &str, expected: &'static str) -> Result<(), ValidationError> {
@@ -528,26 +631,16 @@ fn unsigned_at(value: &JsonValue, path: &str, minimum: u64) -> Result<u64, Valid
     }
 }
 
-/// A set of ID-syntax strings. Duplicates are refused; an empty array is refused unless
-/// `allow_empty` (a mandatory member whose empty value is meaningful).
-fn id_set(
-    value: &JsonValue,
-    path: &str,
-    allow_empty: bool,
-    class: bool,
-) -> Result<BTreeSet<Id>, ValidationError> {
+/// A non-empty set of ID-syntax strings. Duplicates and an empty array are refused.
+fn id_set(value: &JsonValue, path: &str) -> Result<BTreeSet<Id>, ValidationError> {
     let items = array(value, path)?;
-    if items.is_empty() && !allow_empty {
+    if items.is_empty() {
         return Err(fail(path, ValidationCode::EmptySet));
     }
     let mut set = BTreeSet::new();
     for (index, item) in items.iter().enumerate() {
         let item_path = format!("{path}/{index}");
-        let id = if class {
-            class_at(item, &item_path)?
-        } else {
-            id_at(item, &item_path)?
-        };
+        let id = id_at(item, &item_path)?;
         if !set.insert(id.clone()) {
             return Err(fail(
                 &item_path,
@@ -585,7 +678,11 @@ fn keyed<T>(
     Ok(out)
 }
 
-fn parse_normative(value: &JsonValue, path: &str) -> Result<Normative, ValidationError> {
+fn parse_normative(
+    value: &JsonValue,
+    path: &str,
+    profile: Profile,
+) -> Result<Normative, ValidationError> {
     let mut reader = Reader::new(value, path)?;
     let (v, p) = reader.req("continuity")?;
     let continuity = enum_at(v, &p, Continuity::parse, "unknown continuity")?;
@@ -623,7 +720,15 @@ fn parse_normative(value: &JsonValue, path: &str) -> Result<Normative, Validatio
         }
     };
     let (v, p) = reader.req("capabilities")?;
-    let capabilities = id_set(v, &p, true, false)?;
+    // The v1 capability vocabulary is empty: any member is unrecognized (decision N2).
+    let capabilities = {
+        let items = array(v, &p)?;
+        if let Some(first) = items.first() {
+            let spelled = text(first, &format!("{p}/0"))?;
+            return Err(unrecognized(&format!("{p}/0"), "capabilities", spelled));
+        }
+        BTreeSet::new()
+    };
     let (v, p) = reader.req("integrity")?;
     let integrity = enum_at(
         v,
@@ -639,7 +744,9 @@ fn parse_normative(value: &JsonValue, path: &str) -> Result<Normative, Validatio
         "evidenceCustody must be execution_evidence_custody",
     )?;
     let (v, p) = reader.req("observerClass")?;
-    let observer_class = class_at(v, &p)?;
+    let observer_class = recognized(v, &p, "observerClass", |spelled| {
+        profile.recognize_observer_class(spelled)
+    })?;
     reader.done()?;
     Ok(Normative {
         continuity,
@@ -652,9 +759,52 @@ fn parse_normative(value: &JsonValue, path: &str) -> Result<Normative, Validatio
     })
 }
 
+/// `allowed[]`: a non-empty set of classes recognized for `dimension`; duplicates are refused.
+fn parse_allowed(
+    value: &JsonValue,
+    path: &str,
+    dimension: Dimension,
+    profile: Profile,
+) -> Result<BTreeSet<RealizationClass>, ValidationError> {
+    let items = array(value, path)?;
+    if items.is_empty() {
+        return Err(fail(path, ValidationCode::EmptySet));
+    }
+    let mut set = BTreeSet::new();
+    for (index, item) in items.iter().enumerate() {
+        let item_path = format!("{path}/{index}");
+        let class = match dimension {
+            Dimension::ProviderFamily => {
+                recognized(item, &item_path, dimension.as_str(), |spelled| {
+                    profile
+                        .recognize_provider_family(spelled)
+                        .map(RealizationClass::ProviderFamily)
+                })?
+            }
+            Dimension::ExecutionConfinement => {
+                recognized(item, &item_path, dimension.as_str(), |spelled| {
+                    profile
+                        .recognize_execution_confinement(spelled)
+                        .map(RealizationClass::ExecutionConfinement)
+                })?
+            }
+        };
+        if !set.insert(class) {
+            return Err(fail(
+                &item_path,
+                ValidationCode::DuplicateMember {
+                    member: class.as_str().to_owned(),
+                },
+            ));
+        }
+    }
+    Ok(set)
+}
+
 fn parse_constraints(
     value: &JsonValue,
     path: &str,
+    profile: Profile,
 ) -> Result<Vec<RealizationConstraint>, ValidationError> {
     let items = array(value, path)?;
     if items.is_empty() {
@@ -672,7 +822,7 @@ fn parse_constraints(
             "dimension must be provider_family or execution_confinement",
         )?;
         let (v, p) = reader.req("allowed")?;
-        let allowed = id_set(v, &p, false, true)?;
+        let allowed = parse_allowed(v, &p, dimension, profile)?;
         reader.done()?;
         if out.iter().any(|existing| existing.dimension == dimension) {
             return Err(fail(
@@ -690,6 +840,16 @@ fn parse_constraints(
 
 fn parse_requirements(root: &JsonValue) -> Result<OrganizationalRequirements, ValidationError> {
     let mut top = Reader::new(root, "")?;
+
+    // The profile owns the class vocabulary, so it is read before any class is recognized.
+    let (v, p) = top.req("organizationPolicy")?;
+    let mut policy = Reader::new(v, &p)?;
+    let (pv, pp) = policy.req("mode")?;
+    literal(pv, &pp, "fixed")?;
+    let (pv, pp) = policy.req("profile")?;
+    literal(pv, &pp, "fixed-slice-review-v1")?;
+    policy.done()?;
+    let profile = Profile::FixedSliceReviewV1;
 
     let (v, p) = top.req("problemScope")?;
     let mut reader = Reader::new(v, &p)?;
@@ -775,10 +935,10 @@ fn parse_requirements(root: &JsonValue) -> Result<OrganizationalRequirements, Va
             let (v, p) = reader.req("coveredState")?;
             let covered_state = id_at(v, &p)?;
             let (v, p) = reader.req("normative")?;
-            let normative = parse_normative(v, &p)?;
+            let normative = parse_normative(v, &p, profile)?;
             let realization_constraints = match reader.opt("realizationConstraints") {
                 None => Vec::new(),
-                Some((v, p)) => parse_constraints(v, &p)?,
+                Some((v, p)) => parse_constraints(v, &p, profile)?,
             };
             let (v, p) = reader.req("acceptor")?;
             let acceptor = id_at(v, &p)?;
@@ -825,7 +985,7 @@ fn parse_requirements(root: &JsonValue) -> Result<OrganizationalRequirements, Va
             let mut scope = Reader::new(v, &p)?;
             let boundaries = match scope.opt("boundaries") {
                 None => None,
-                Some((bv, bp)) => Some(id_set(bv, &bp, false, false)?),
+                Some((bv, bp)) => Some(id_set(bv, &bp)?),
             };
             scope.done()?;
             reader.done()?;
@@ -839,13 +999,6 @@ fn parse_requirements(root: &JsonValue) -> Result<OrganizationalRequirements, Va
         |authority| &authority.id,
     )?;
 
-    let (v, p) = top.req("organizationPolicy")?;
-    let mut policy = Reader::new(v, &p)?;
-    let (pv, pp) = policy.req("mode")?;
-    literal(pv, &pp, "fixed")?;
-    let (pv, pp) = policy.req("profile")?;
-    literal(pv, &pp, "fixed-slice-review-v1")?;
-    policy.done()?;
     top.done()?;
 
     // Referential integrity (decision G12).
@@ -881,11 +1034,18 @@ fn parse_requirements(root: &JsonValue) -> Result<OrganizationalRequirements, Va
         obligations,
         conditions,
         required_authorities,
-        profile: Profile::FixedSliceReviewV1,
+        profile,
         canonical: Vec::new(),
         digest: Digest::frame(DigestKind::Requirements, b""),
     };
-    let json = requirements.to_json();
+    let json = requirements.to_json().map_err(|violation| {
+        fail(
+            "",
+            ValidationCode::InternalInvariant {
+                detail: violation.detail,
+            },
+        )
+    })?;
     requirements.canonical = json.canonical_bytes();
     requirements.digest = Digest::frame(DigestKind::Requirements, &requirements.canonical);
     Ok(requirements)

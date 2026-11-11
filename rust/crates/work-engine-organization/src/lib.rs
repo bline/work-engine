@@ -29,9 +29,10 @@ pub use enforce::{
 pub use error::{CodecError, IdError, Position, ValidationCode, ValidationError};
 pub use ids::Id;
 pub use schema::{
-    Condition, Continuity, Dimension, EvidenceCustody, IndependenceSource, Integrity, Mutation,
-    Normative, Obligation, OrganizationalRequirements, ProblemScope, Profile,
-    RealizationConstraint, RequiredAuthority, ResultContract,
+    Condition, Continuity, Dimension, EvidenceCustody, ExecutionConfinement, IndependenceSource,
+    Integrity, Mutation, Normative, Obligation, ObserverClass, OrganizationalRequirements,
+    ProblemScope, Profile, ProviderFamily, RealizationClass, RealizationConstraint,
+    RequiredAuthority, ResultContract, Vocabulary,
 };
 pub use view::{
     EpisodeAccess, Hosting, OrganizationView, Terminalization, ViewObligation, ViewVantage, view,
