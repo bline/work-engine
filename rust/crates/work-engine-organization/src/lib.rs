@@ -7,15 +7,35 @@
 //! The canonicalizer and its value type are crate-private. The public surface is the interface
 //! of contract section 10.1 and the types needed to name its arguments, results and errors.
 
+mod derive;
 mod digest;
+mod enforce;
 mod error;
 mod ids;
-#[allow(dead_code)]
 mod json;
+mod schema;
+mod view;
 
+pub use derive::{
+    AuthorityRequirement, CandidateCondition, ComponentBindingRequirement, DerivationResult,
+    OrganizationCandidate, Participant, ParticipantKind, Receipt, Relationship, RelationshipKind,
+    SeparationRequirement, TraceRef, TraceRow, Unresolved, UnresolvedKind, UnresolvedReason,
+    VantageRequirement, derive,
+};
 pub use digest::{CODEC_DOMAIN, CODEC_VERSION, Digest, DigestKind};
-pub use error::{CodecError, IdError, Position};
+pub use enforce::{
+    EnforceStatus, EnforceabilityReport, EnforceabilityRow, EvidenceClass, enforceability,
+};
+pub use error::{CodecError, IdError, Position, ValidationCode, ValidationError};
 pub use ids::Id;
+pub use schema::{
+    Condition, Continuity, Dimension, EvidenceCustody, IndependenceSource, Integrity, Mutation,
+    Normative, Obligation, OrganizationalRequirements, ProblemScope, Profile,
+    RealizationConstraint, RequiredAuthority, ResultContract,
+};
+pub use view::{
+    EpisodeAccess, Hosting, OrganizationView, Terminalization, ViewObligation, ViewVantage, view,
+};
 
 #[cfg(test)]
 mod codec_rules_tests;

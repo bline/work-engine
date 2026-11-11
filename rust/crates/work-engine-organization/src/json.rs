@@ -10,6 +10,7 @@
 //! normalization is the one RFC 8785 defines: key order by UTF-16 code unit, no insignificant
 //! whitespace, minimal string escaping and integers without exponents.
 
+#[cfg(test)]
 use crate::digest::{Digest, DigestKind};
 use crate::error::{CodecError, Position};
 
@@ -102,18 +103,29 @@ impl JsonValue {
     }
 
     /// The framed digest of this value's canonical bytes.
+    #[cfg(test)]
     pub(crate) fn digest(&self, kind: DigestKind) -> Digest {
         Digest::frame(kind, &self.canonical_bytes())
     }
 }
 
-/// Checks the integer range of section 17.4.
-pub(crate) fn check_integer(value: i64, at: Position) -> Result<i64, CodecError> {
-    if value.unsigned_abs() > MAX_SAFE_INTEGER as u64 {
-        Err(CodecError::IntegerOutOfRange { at })
-    } else {
-        Ok(value)
-    }
+/// An object from borrowed key spellings (members are sorted by the canonical writer).
+pub(crate) fn object(members: Vec<(&str, JsonValue)>) -> JsonValue {
+    JsonValue::Object(
+        members
+            .into_iter()
+            .map(|(k, v)| (k.to_owned(), v))
+            .collect(),
+    )
+}
+
+pub(crate) fn string(text: &str) -> JsonValue {
+    JsonValue::String(text.to_owned())
+}
+
+/// An array of strings in the given order.
+pub(crate) fn strings<'a>(items: impl IntoIterator<Item = &'a str>) -> JsonValue {
+    JsonValue::Array(items.into_iter().map(string).collect())
 }
 
 fn escape_pointer(key: &str) -> String {

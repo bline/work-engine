@@ -72,6 +72,24 @@ impl Digest {
         Digest(hasher.finalize().into())
     }
 
+    /// Parses the text form of section 3.1 inputs: exactly 64 lowercase hexadecimal characters.
+    pub(crate) fn from_hex(text: &str) -> Option<Digest> {
+        let bytes = text.as_bytes();
+        if bytes.len() != 64 {
+            return None;
+        }
+        let mut out = [0u8; 32];
+        for (index, pair) in bytes.chunks(2).enumerate() {
+            let nibble = |byte: u8| match byte {
+                b'0'..=b'9' => Some(byte - b'0'),
+                b'a'..=b'f' => Some(byte - b'a' + 10),
+                _ => None,
+            };
+            out[index] = nibble(pair[0])? << 4 | nibble(pair[1])?;
+        }
+        Some(Digest(out))
+    }
+
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }

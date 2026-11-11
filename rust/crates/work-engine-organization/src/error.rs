@@ -67,3 +67,52 @@ pub enum IdError {
     )]
     InvalidCharacter { index: usize, found: char },
 }
+
+/// A refusal of authored requirements by the strict schema (contract 3.1, 17.4; tests 1A-5 and
+/// 1A-11). `path` locates the failing member in the authored document, using JSON-pointer style
+/// names with array positions; positions are for error reporting only and never enter an identity.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("{code} (at {path})")]
+pub struct ValidationError {
+    pub code: ValidationCode,
+    pub path: String,
+}
+
+/// The stable class of a [`ValidationError`].
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ValidationCode {
+    #[error("{0}")]
+    Codec(CodecError),
+    #[error("unknown field {name:?}")]
+    UnknownField { name: String },
+    #[error("missing field {name:?}")]
+    MissingField { name: String },
+    #[error("wrong type, expected {expected}")]
+    WrongType { expected: &'static str },
+    #[error("invalid identifier: {0}")]
+    InvalidId(IdError),
+    #[error("invalid digest text: 64 lowercase hexadecimal characters are required")]
+    InvalidDigest,
+    #[error("invalid value: {detail}")]
+    InvalidValue { detail: &'static str },
+    #[error("empty string")]
+    EmptyString,
+    #[error("present-but-empty set")]
+    EmptySet,
+    #[error("duplicate id {id:?}")]
+    DuplicateId { id: String },
+    #[error("duplicate set member {member:?}")]
+    DuplicateMember { member: String },
+    #[error("duplicate constraint dimension {dimension:?}")]
+    DuplicateDimension { dimension: String },
+    #[error("condition names undeclared obligation {obligation:?}")]
+    UnknownObligation { obligation: String },
+    #[error("collection {name:?} must not be empty")]
+    EmptyCollection { name: &'static str },
+    #[error("obligation {id:?} has no acceptance condition")]
+    ObligationWithoutCondition { id: String },
+    #[error(
+        "{value:?} names a concrete realization or observer identity; only classes are accepted"
+    )]
+    RealizationIdentity { value: String },
+}

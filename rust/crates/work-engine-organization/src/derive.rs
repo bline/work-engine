@@ -1,0 +1,1285 @@
+//! `derive` and `OrganizationCandidate` (contract 3.2 with amendment 5.1-A1).
+//!
+//! Derivation is pure and deterministic. Under `fixed-slice-review-v1` it emits the
+//! relationships of amendment section 3, checks the acceptor dependency closure (section 3A.2),
+//! records component binding requirements (section 3A.3) and separation requirements
+//! (section 4), and traces every candidate member to its input source. The candidate carries
+//! requirements only: it names no grant, claims no standing, and no public item can mark a
+//! separation or a component binding as established.
+
+use std::collections::{BTreeMap, BTreeSet};
+
+use crate::digest::{Digest, DigestKind};
+use crate::ids::Id;
+use crate::json::{JsonValue, object, string, strings};
+use crate::schema::{
+    Condition, Dimension, Normative, Obligation, OrganizationalRequirements, Profile,
+    RealizationConstraint, RequiredAuthority, constraints_json, id_json, id_set_json,
+    normative_json,
+};
+
+// Profile constants of `fixed-slice-review-v1` (amendment 3 and 3A.1).
+const CAMPAIGN: &str = "component:campaign";
+const EPISODE_HOST: &str = "component:episode_host";
+const BUILDER_VANTAGE: &str = "vantage-builder";
+const PERMISSION_ACCEPT_CLAIM: &str = "accept_claim";
+const PERMISSION_WRITE_EPISODE: &str = "write_episode";
+const PERMISSION_READ_EPISODE: &str = "read_episode";
+const PERMISSION_TERMINALIZE: &str = "terminalize_campaign";
+const CLASS_BUILDER: &str = "builder";
+const CLASS_CAMPAIGN: &str = "campaign";
+
+/// The kind of a candidate participant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ParticipantKind {
+    Vantage,
+    Component,
+    Principal,
+}
+
+impl ParticipantKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ParticipantKind::Vantage => "vantage",
+            ParticipantKind::Component => "component",
+            ParticipantKind::Principal => "principal",
+        }
+    }
+}
+
+/// `participants[]`. IDs follow contract 17.3: `vantage:<obligationId>`, `vantage-builder`,
+/// `component:campaign`, `component:episode_host`, `principal:<principalId>`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Participant {
+    pub id: String,
+    pub kind: ParticipantKind,
+    /// The obligations a reviewer vantage serves; empty for every other participant.
+    pub serves: Vec<Id>,
+}
+
+/// `conditions[]`: one entry per accepted condition, meaning unchanged. No grant digest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct CandidateCondition {
+    pub id: Id,
+    pub obligation: Id,
+    /// The participant ID of the obligation's reviewer vantage.
+    pub vantage: String,
+    /// The participant ID the condition's `consumerClass` maps to.
+    pub consumer: String,
+    pub boundary: Id,
+    pub proposition: String,
+    pub covered_state: Id,
+    pub normative: Normative,
+    pub realization_constraints: Vec<RealizationConstraint>,
+    /// The acceptor's `principalId`.
+    pub acceptor: Id,
+    pub unestablished_route: Id,
+}
+
+/// `vantageRequirements[]`: the F4 combination of one vantage's conditions.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct VantageRequirement {
+    pub vantage: String,
+    pub effective: Normative,
+    pub effective_constraints: Vec<RealizationConstraint>,
+    pub derived_from: Vec<Id>,
+}
+
+/// The seven relationship kinds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RelationshipKind {
+    Serves,
+    HostsExecution,
+    ConsumesAt,
+    AcceptsClaim,
+    WritesEpisode,
+    ReadsEpisode,
+    Terminalizes,
+}
+
+impl RelationshipKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RelationshipKind::Serves => "serves",
+            RelationshipKind::HostsExecution => "hosts_execution",
+            RelationshipKind::ConsumesAt => "consumes_at",
+            RelationshipKind::AcceptsClaim => "accepts_claim",
+            RelationshipKind::WritesEpisode => "writes_episode",
+            RelationshipKind::ReadsEpisode => "reads_episode",
+            RelationshipKind::Terminalizes => "terminalizes",
+        }
+    }
+}
+
+/// `relationships[]`. Profile-fixed assignments (`hosts_execution`, `writes_episode`,
+/// `reads_episode`, `terminalizes`) bind only if an organizational authority admits the candidate;
+/// the candidate claims no standing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Relationship {
+    pub kind: RelationshipKind,
+    pub from: String,
+    pub to: Option<String>,
+    pub condition: Option<Id>,
+}
+
+impl Relationship {
+    fn sort_key(&self) -> (&'static str, &str, Option<&str>, Option<&str>) {
+        (
+            self.kind.as_str(),
+            &self.from,
+            self.to.as_deref(),
+            self.condition.as_ref().map(Id::as_str),
+        )
+    }
+
+    /// The rendered key used as the trace target id: `kind|from|to|condition`, absent parts empty.
+    fn key(&self) -> String {
+        format!(
+            "{}|{}|{}|{}",
+            self.kind.as_str(),
+            self.from,
+            self.to.as_deref().unwrap_or(""),
+            self.condition.as_ref().map_or("", Id::as_str)
+        )
+    }
+}
+
+/// `authorityRequirements[]`: a required authority attached unchanged. It is a dependency, not a
+/// grant, and covers nothing by itself.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct AuthorityRequirement {
+    pub id: Id,
+    pub principal: Id,
+    pub permission: Id,
+    pub boundaries: Option<BTreeSet<Id>>,
+}
+
+/// `separationRequirements[]`: "separation between the acceptor and these vantages is not
+/// established by derivation". There is no status field; nothing in this crate can mark it
+/// satisfied.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct SeparationRequirement {
+    pub condition: Id,
+    /// `principal:<id>`.
+    pub acceptor: String,
+    /// The dependent vantage participant IDs.
+    pub vantages: Vec<String>,
+}
+
+/// `componentBindingRequirements[]`: a component that must be bound to a principal by a verified
+/// mapping which holds each permission over the problem scope. The entry has no principal member,
+/// and no public function attaches one: this crate does not establish the binding.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct ComponentBindingRequirement {
+    pub component: String,
+    pub permissions: Vec<String>,
+}
+
+/// A trace endpoint `{ kind, id, field }` (contract 17.3). Never a JSON path with an index.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[non_exhaustive]
+pub struct TraceRef {
+    pub kind: &'static str,
+    pub id: String,
+    pub field: String,
+}
+
+/// `requirementTrace[]`: the candidate member `target` originates in the input item `source`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[non_exhaustive]
+pub struct TraceRow {
+    pub target: TraceRef,
+    pub source: TraceRef,
+}
+
+/// `OrganizationCandidate v0`. It can be produced only by [`derive`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrganizationCandidate {
+    requirements_digest: Digest,
+    profile: Profile,
+    participants: Vec<Participant>,
+    conditions: Vec<CandidateCondition>,
+    vantage_requirements: Vec<VantageRequirement>,
+    relationships: Vec<Relationship>,
+    authority_requirements: Vec<AuthorityRequirement>,
+    separation_requirements: Vec<SeparationRequirement>,
+    component_binding_requirements: Vec<ComponentBindingRequirement>,
+    requirement_trace: Vec<TraceRow>,
+    canonical: Vec<u8>,
+    content_digest: Digest,
+}
+
+impl OrganizationCandidate {
+    pub fn requirements_digest(&self) -> Digest {
+        self.requirements_digest
+    }
+    pub fn profile(&self) -> Profile {
+        self.profile
+    }
+    pub fn participants(&self) -> &[Participant] {
+        &self.participants
+    }
+    pub fn conditions(&self) -> &[CandidateCondition] {
+        &self.conditions
+    }
+    pub fn vantage_requirements(&self) -> &[VantageRequirement] {
+        &self.vantage_requirements
+    }
+    pub fn relationships(&self) -> &[Relationship] {
+        &self.relationships
+    }
+    pub fn authority_requirements(&self) -> &[AuthorityRequirement] {
+        &self.authority_requirements
+    }
+    pub fn separation_requirements(&self) -> &[SeparationRequirement] {
+        &self.separation_requirements
+    }
+    pub fn component_binding_requirements(&self) -> &[ComponentBindingRequirement] {
+        &self.component_binding_requirements
+    }
+    pub fn requirement_trace(&self) -> &[TraceRow] {
+        &self.requirement_trace
+    }
+    /// The canonical bytes (contract 17.5) over which `contentDigest` is computed.
+    pub fn canonical_bytes(&self) -> &[u8] {
+        &self.canonical
+    }
+    /// `contentDigest`.
+    pub fn content_digest(&self) -> Digest {
+        self.content_digest
+    }
+}
+
+/// The class of an unresolved item (contract 3.2, G25, amendment 3A.2 and 4).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UnresolvedKind {
+    ConditionConflict,
+    SelfAcceptance,
+    UnknownConsumerClass,
+    UnstatedAuthorityDependency,
+    /// A derivation invariant failed (a duplicate in a set collection). Not reachable for
+    /// validated input.
+    InternalError,
+}
+
+impl UnresolvedKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UnresolvedKind::ConditionConflict => "condition_conflict",
+            UnresolvedKind::SelfAcceptance => "self_acceptance",
+            UnresolvedKind::UnknownConsumerClass => "unknown_consumer_class",
+            UnresolvedKind::UnstatedAuthorityDependency => "unstated_authority_dependency",
+            UnresolvedKind::InternalError => "internal_error",
+        }
+    }
+}
+
+/// The closed reason tokens; the reason is a function of `(kind, subject, conditions)`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnresolvedReason {
+    DifferingValues,
+    DisjointAllowedClasses,
+    UnrecognizedClass,
+    AcceptorIsDependentVantage,
+    NoMatchingAuthorityEntry,
+    DuplicateCollectionKey,
+}
+
+impl UnresolvedReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UnresolvedReason::DifferingValues => "differing_values",
+            UnresolvedReason::DisjointAllowedClasses => "disjoint_allowed_classes",
+            UnresolvedReason::UnrecognizedClass => "unrecognized_class",
+            UnresolvedReason::AcceptorIsDependentVantage => "acceptor_is_dependent_vantage",
+            UnresolvedReason::NoMatchingAuthorityEntry => "no_matching_authority_entry",
+            UnresolvedReason::DuplicateCollectionKey => "duplicate_collection_key",
+        }
+    }
+}
+
+/// One typed unresolved result. A set keyed by `(kind, subject, conditions)`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Unresolved {
+    pub kind: UnresolvedKind,
+    pub subject: String,
+    pub reason: UnresolvedReason,
+    /// Sorted condition IDs; empty means the item names no condition.
+    pub conditions: Vec<Id>,
+}
+
+/// Provenance of a derivation. Excluded from every identity.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Receipt {
+    pub compiler_version: &'static str,
+    pub profile_version: &'static str,
+    pub requirements_digest: Digest,
+    /// A sequence (order kept): the derivation steps that ran.
+    pub rule_trace: Vec<&'static str>,
+}
+
+/// The result of [`derive`]: exactly one candidate, or none with at least one unresolved item.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct DerivationResult {
+    pub candidates: Vec<OrganizationCandidate>,
+    pub unresolved: Vec<Unresolved>,
+    pub receipt: Receipt,
+}
+
+fn reviewer_vantage(obligation: &Id) -> String {
+    format!("vantage:{obligation}")
+}
+
+fn principal_participant(principal: &Id) -> String {
+    format!("principal:{principal}")
+}
+
+/// An acceptor "names" a vantage when its declared identifier equals the participant ID, or that
+/// ID without its `vantage:` prefix (amendment 4). Only declared identifiers are compared.
+fn names_vantage(acceptor: &Id, vantage: &str) -> bool {
+    acceptor.as_str() == vantage || vantage.strip_prefix("vantage:") == Some(acceptor.as_str())
+}
+
+fn covers_acceptor_dependency(authority: &RequiredAuthority, condition: &Condition) -> bool {
+    authority.principal == condition.acceptor
+        && authority.permission.as_str() == PERMISSION_ACCEPT_CLAIM
+        && authority
+            .boundaries
+            .as_ref()
+            .is_none_or(|boundaries| boundaries.contains(&condition.consumption_boundary))
+}
+
+fn src(kind: &'static str, id: &str, field: &str) -> TraceRef {
+    TraceRef {
+        kind,
+        id: id.to_owned(),
+        field: field.to_owned(),
+    }
+}
+fn src_obligation(id: &Id, field: &str) -> TraceRef {
+    src("obligation", id.as_str(), field)
+}
+fn src_condition(id: &Id, field: &str) -> TraceRef {
+    src("acceptanceCondition", id.as_str(), field)
+}
+fn src_authority(id: &Id, field: &str) -> TraceRef {
+    src("requiredAuthority", id.as_str(), field)
+}
+fn src_scope() -> TraceRef {
+    src("problemScope", "problemScope", "")
+}
+fn src_policy() -> TraceRef {
+    src("organizationPolicy", "organizationPolicy", "profile")
+}
+
+/// Derives the organization candidate under a fixed profile. Pure and deterministic; the same
+/// requirements give the same candidate bytes. Returns no candidate when a condition conflicts,
+/// a consumer class is unknown, an acceptor's `accept_claim` dependency is not stated, or an
+/// acceptor is a dependent vantage.
+pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> DerivationResult {
+    let Profile::FixedSliceReviewV1 = profile;
+    let mut rule_trace: Vec<&'static str> = Vec::new();
+    let mut unresolved: Vec<Unresolved> = Vec::new();
+    let obligations = requirements.obligations();
+    let conditions = requirements.conditions();
+
+    let conditions_of = |obligation: &Obligation| -> Vec<&Condition> {
+        conditions
+            .iter()
+            .filter(|condition| condition.obligation == obligation.id)
+            .collect()
+    };
+    let is_builder = |condition: &Condition| condition.consumer_class.as_str() == CLASS_BUILDER;
+    let has_builder_vantage = conditions.iter().any(is_builder);
+    let consumer_of = |condition: &Condition| -> Option<&'static str> {
+        match condition.consumer_class.as_str() {
+            CLASS_BUILDER => Some(BUILDER_VANTAGE),
+            CLASS_CAMPAIGN => Some(CAMPAIGN),
+            _ => None,
+        }
+    };
+
+    // Rule 2: an unknown consumer class is unresolved (one item per distinct class value).
+    rule_trace.push("consumer_classes");
+    let mut unknown_classes: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
+    for condition in conditions {
+        if consumer_of(condition).is_none() {
+            unknown_classes
+                .entry(condition.consumer_class.as_str())
+                .or_default()
+                .push(condition.id.clone());
+        }
+    }
+    for (_, ids) in unknown_classes {
+        unresolved.push(Unresolved {
+            kind: UnresolvedKind::UnknownConsumerClass,
+            subject: "consumerClass".to_owned(),
+            reason: UnresolvedReason::UnrecognizedClass,
+            conditions: ids,
+        });
+    }
+
+    // Rule 4: effective requirements by the F4 table, per reviewer vantage.
+    rule_trace.push("vantage_requirements");
+    let mut vantage_requirements: Vec<VantageRequirement> = Vec::new();
+    for obligation in obligations {
+        let attached = conditions_of(obligation);
+        match combine(&attached) {
+            Ok((effective, effective_constraints)) => {
+                vantage_requirements.push(VantageRequirement {
+                    vantage: reviewer_vantage(&obligation.id),
+                    effective,
+                    effective_constraints,
+                    derived_from: attached.iter().map(|c| c.id.clone()).collect(),
+                });
+            }
+            Err(conflicts) => unresolved.extend(conflicts),
+        }
+    }
+
+    // Amendment 3A.2: the acceptor dependency closure (checks it is stated; establishes nothing).
+    rule_trace.push("authority_closure");
+    let mut uncovered: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
+    for condition in conditions {
+        let covered = requirements
+            .required_authorities()
+            .iter()
+            .any(|authority| covers_acceptor_dependency(authority, condition));
+        if !covered {
+            uncovered
+                .entry(condition.acceptor.as_str())
+                .or_default()
+                .push(condition.id.clone());
+        }
+    }
+    for (acceptor, ids) in uncovered {
+        unresolved.push(Unresolved {
+            kind: UnresolvedKind::UnstatedAuthorityDependency,
+            subject: format!("principal:{acceptor}"),
+            reason: UnresolvedReason::NoMatchingAuthorityEntry,
+            conditions: ids,
+        });
+    }
+
+    // Amendment 4: dependent vantages and self-acceptance (declared identifiers only).
+    rule_trace.push("self_acceptance");
+    let dependents_of = |condition: &Condition| -> Vec<String> {
+        let mut vantages = vec![reviewer_vantage(&condition.obligation)];
+        if has_builder_vantage {
+            vantages.push(BUILDER_VANTAGE.to_owned());
+        }
+        vantages.sort();
+        vantages
+    };
+    let mut self_accepting: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
+    for condition in conditions {
+        if dependents_of(condition)
+            .iter()
+            .any(|vantage| names_vantage(&condition.acceptor, vantage))
+        {
+            self_accepting
+                .entry(condition.acceptor.as_str())
+                .or_default()
+                .push(condition.id.clone());
+        }
+    }
+    for (acceptor, ids) in self_accepting {
+        unresolved.push(Unresolved {
+            kind: UnresolvedKind::SelfAcceptance,
+            subject: format!("principal:{acceptor}"),
+            reason: UnresolvedReason::AcceptorIsDependentVantage,
+            conditions: ids,
+        });
+    }
+
+    let requirements_digest = requirements.requirements_digest();
+    let make_receipt = |rule_trace: Vec<&'static str>| Receipt {
+        compiler_version: env!("CARGO_PKG_VERSION"),
+        profile_version: profile.as_str(),
+        requirements_digest,
+        rule_trace,
+    };
+
+    if !unresolved.is_empty() {
+        sort_unresolved(&mut unresolved);
+        return DerivationResult {
+            candidates: Vec::new(),
+            unresolved,
+            receipt: make_receipt(rule_trace),
+        };
+    }
+
+    // From here the input has no conflict: build the candidate members.
+    let mut internal: Vec<&'static str> = Vec::new();
+
+    // Participants.
+    rule_trace.push("participants");
+    let mut participants: Vec<Participant> = vec![
+        Participant {
+            id: CAMPAIGN.to_owned(),
+            kind: ParticipantKind::Component,
+            serves: Vec::new(),
+        },
+        Participant {
+            id: EPISODE_HOST.to_owned(),
+            kind: ParticipantKind::Component,
+            serves: Vec::new(),
+        },
+    ];
+    for obligation in obligations {
+        participants.push(Participant {
+            id: reviewer_vantage(&obligation.id),
+            kind: ParticipantKind::Vantage,
+            serves: vec![obligation.id.clone()],
+        });
+    }
+    if has_builder_vantage {
+        participants.push(Participant {
+            id: BUILDER_VANTAGE.to_owned(),
+            kind: ParticipantKind::Vantage,
+            serves: Vec::new(),
+        });
+    }
+    let principals: BTreeSet<&Id> = conditions
+        .iter()
+        .map(|condition| &condition.acceptor)
+        .chain(
+            requirements
+                .required_authorities()
+                .iter()
+                .map(|authority| &authority.principal),
+        )
+        .collect();
+    for principal in &principals {
+        participants.push(Participant {
+            id: principal_participant(principal),
+            kind: ParticipantKind::Principal,
+            serves: Vec::new(),
+        });
+    }
+    participants.sort_by(|a, b| a.id.cmp(&b.id));
+    check_unique(
+        participants.iter().map(|p| p.id.as_str()),
+        "participants",
+        &mut internal,
+    );
+
+    // Conditions.
+    rule_trace.push("conditions");
+    let candidate_conditions: Vec<CandidateCondition> = conditions
+        .iter()
+        .map(|condition| CandidateCondition {
+            id: condition.id.clone(),
+            obligation: condition.obligation.clone(),
+            vantage: reviewer_vantage(&condition.obligation),
+            consumer: consumer_of(condition).unwrap_or(CAMPAIGN).to_owned(),
+            boundary: condition.consumption_boundary.clone(),
+            proposition: condition.proposition.clone(),
+            covered_state: condition.covered_state.clone(),
+            normative: condition.normative.clone(),
+            realization_constraints: condition.realization_constraints.clone(),
+            acceptor: condition.acceptor.clone(),
+            unestablished_route: condition.unestablished_route.clone(),
+        })
+        .collect();
+
+    // Relationships (amendment 3).
+    rule_trace.push("relationships");
+    let mut relationships: Vec<Relationship> = Vec::new();
+    let mut relate = |kind, from: &str, to: Option<String>, condition: Option<&Id>| {
+        relationships.push(Relationship {
+            kind,
+            from: from.to_owned(),
+            to,
+            condition: condition.cloned(),
+        });
+    };
+    for obligation in obligations {
+        let vantage = reviewer_vantage(&obligation.id);
+        relate(
+            RelationshipKind::Serves,
+            &vantage,
+            Some(obligation.id.as_str().to_owned()),
+            None,
+        );
+        relate(
+            RelationshipKind::HostsExecution,
+            CAMPAIGN,
+            Some(vantage.clone()),
+            None,
+        );
+        relate(
+            RelationshipKind::WritesEpisode,
+            EPISODE_HOST,
+            Some(vantage.clone()),
+            None,
+        );
+        relate(
+            RelationshipKind::ReadsEpisode,
+            EPISODE_HOST,
+            Some(vantage),
+            None,
+        );
+    }
+    if has_builder_vantage {
+        relate(
+            RelationshipKind::HostsExecution,
+            CAMPAIGN,
+            Some(BUILDER_VANTAGE.to_owned()),
+            None,
+        );
+    }
+    for condition in conditions {
+        let vantage = reviewer_vantage(&condition.obligation);
+        relate(
+            RelationshipKind::ConsumesAt,
+            consumer_of(condition).unwrap_or(CAMPAIGN),
+            Some(vantage.clone()),
+            Some(&condition.id),
+        );
+        relate(
+            RelationshipKind::AcceptsClaim,
+            &principal_participant(&condition.acceptor),
+            Some(vantage),
+            Some(&condition.id),
+        );
+    }
+    relate(RelationshipKind::Terminalizes, CAMPAIGN, None, None);
+    relationships.sort_by(|a, b| a.sort_key().cmp(&b.sort_key()));
+    check_unique(
+        relationships.iter().map(Relationship::key),
+        "relationships",
+        &mut internal,
+    );
+
+    // Authority requirements: each required authority attached unchanged.
+    rule_trace.push("authority_requirements");
+    let authority_requirements: Vec<AuthorityRequirement> = requirements
+        .required_authorities()
+        .iter()
+        .map(|authority| AuthorityRequirement {
+            id: authority.id.clone(),
+            principal: authority.principal.clone(),
+            permission: authority.permission.clone(),
+            boundaries: authority.boundaries.clone(),
+        })
+        .collect();
+
+    // Separation requirements (one per condition) and component binding requirements.
+    rule_trace.push("separation_requirements");
+    let separation_requirements: Vec<SeparationRequirement> = conditions
+        .iter()
+        .map(|condition| SeparationRequirement {
+            condition: condition.id.clone(),
+            acceptor: principal_participant(&condition.acceptor),
+            vantages: dependents_of(condition),
+        })
+        .collect();
+    rule_trace.push("component_binding_requirements");
+    let component_binding_requirements = vec![
+        ComponentBindingRequirement {
+            component: CAMPAIGN.to_owned(),
+            permissions: vec![PERMISSION_TERMINALIZE.to_owned()],
+        },
+        ComponentBindingRequirement {
+            component: EPISODE_HOST.to_owned(),
+            permissions: vec![
+                PERMISSION_READ_EPISODE.to_owned(),
+                PERMISSION_WRITE_EPISODE.to_owned(),
+            ],
+        },
+    ];
+
+    rule_trace.push("trace");
+    let requirement_trace = build_trace(
+        requirements,
+        &participants,
+        &candidate_conditions,
+        &vantage_requirements,
+        &relationships,
+        &authority_requirements,
+        &separation_requirements,
+        &component_binding_requirements,
+        has_builder_vantage,
+    );
+
+    if !internal.is_empty() {
+        let mut items: Vec<Unresolved> = internal
+            .into_iter()
+            .map(|collection| Unresolved {
+                kind: UnresolvedKind::InternalError,
+                subject: collection.to_owned(),
+                reason: UnresolvedReason::DuplicateCollectionKey,
+                conditions: Vec::new(),
+            })
+            .collect();
+        sort_unresolved(&mut items);
+        return DerivationResult {
+            candidates: Vec::new(),
+            unresolved: items,
+            receipt: make_receipt(rule_trace),
+        };
+    }
+
+    let mut candidate = OrganizationCandidate {
+        requirements_digest,
+        profile,
+        participants,
+        conditions: candidate_conditions,
+        vantage_requirements,
+        relationships,
+        authority_requirements,
+        separation_requirements,
+        component_binding_requirements,
+        requirement_trace,
+        canonical: Vec::new(),
+        content_digest: Digest::frame(DigestKind::Candidate, b""),
+    };
+    candidate.canonical = candidate_json(&candidate).canonical_bytes();
+    candidate.content_digest = Digest::frame(DigestKind::Candidate, &candidate.canonical);
+    DerivationResult {
+        candidates: vec![candidate],
+        unresolved: Vec::new(),
+        receipt: make_receipt(rule_trace),
+    }
+}
+
+fn check_unique<I, S>(keys: I, collection: &'static str, internal: &mut Vec<&'static str>)
+where
+    I: IntoIterator<Item = S>,
+    S: Ord,
+{
+    let mut seen = BTreeSet::new();
+    for key in keys {
+        if !seen.insert(key) {
+            internal.push(collection);
+            return;
+        }
+    }
+}
+
+fn sort_unresolved(items: &mut [Unresolved]) {
+    items.sort_by(|a, b| {
+        (a.kind.as_str(), &a.subject, &a.conditions).cmp(&(
+            b.kind.as_str(),
+            &b.subject,
+            &b.conditions,
+        ))
+    });
+}
+
+/// The F4 combination of the conditions attached to one vantage (contract r4 3.2).
+fn combine(
+    attached: &[&Condition],
+) -> Result<(Normative, Vec<RealizationConstraint>), Vec<Unresolved>> {
+    let ids = |select: &dyn Fn(&Condition) -> bool| -> Vec<Id> {
+        attached
+            .iter()
+            .filter(|c| select(c))
+            .map(|c| c.id.clone())
+            .collect()
+    };
+    let conflict = |subject: String, reason, conditions| Unresolved {
+        kind: UnresolvedKind::ConditionConflict,
+        subject,
+        reason,
+        conditions,
+    };
+    let mut conflicts = Vec::new();
+    let first = &attached[0].normative;
+
+    if attached
+        .iter()
+        .any(|c| c.normative.continuity != first.continuity)
+    {
+        conflicts.push(conflict(
+            "continuity".to_owned(),
+            UnresolvedReason::DifferingValues,
+            ids(&|_| true),
+        ));
+    }
+    if attached
+        .iter()
+        .any(|c| c.normative.observer_class != first.observer_class)
+    {
+        conflicts.push(conflict(
+            "observerClass".to_owned(),
+            UnresolvedReason::DifferingValues,
+            ids(&|_| true),
+        ));
+    }
+
+    let mut constraints: Vec<RealizationConstraint> = Vec::new();
+    for dimension in [Dimension::ExecutionConfinement, Dimension::ProviderFamily] {
+        let stating: Vec<&RealizationConstraint> = attached
+            .iter()
+            .flat_map(|c| c.realization_constraints.iter())
+            .filter(|constraint| constraint.dimension == dimension)
+            .collect();
+        let Some(head) = stating.first() else {
+            continue;
+        };
+        let intersection: BTreeSet<Id> = stating
+            .iter()
+            .skip(1)
+            .fold(head.allowed.clone(), |acc, constraint| {
+                acc.intersection(&constraint.allowed).cloned().collect()
+            });
+        if intersection.is_empty() {
+            conflicts.push(conflict(
+                format!("realization:{}", dimension.as_str()),
+                UnresolvedReason::DisjointAllowedClasses,
+                ids(&|c| {
+                    c.realization_constraints
+                        .iter()
+                        .any(|constraint| constraint.dimension == dimension)
+                }),
+            ));
+        } else {
+            constraints.push(RealizationConstraint {
+                dimension,
+                allowed: intersection,
+            });
+        }
+    }
+    if !conflicts.is_empty() {
+        return Err(conflicts);
+    }
+
+    let mut independence: Option<BTreeSet<_>> = None;
+    for condition in attached {
+        if let Some(from) = &condition.normative.independence {
+            independence
+                .get_or_insert_with(BTreeSet::new)
+                .extend(from.iter().copied());
+        }
+    }
+    let capabilities = attached
+        .iter()
+        .flat_map(|c| c.normative.capabilities.iter().cloned())
+        .collect();
+    let effective = Normative {
+        continuity: first.continuity,
+        mutation: first.mutation,
+        independence,
+        capabilities,
+        integrity: first.integrity,
+        evidence_custody: first.evidence_custody,
+        observer_class: first.observer_class.clone(),
+    };
+    Ok((effective, constraints))
+}
+
+// ---------------------------------------------------------------------------------------------
+// Trace
+
+#[allow(clippy::too_many_arguments)]
+fn build_trace(
+    requirements: &OrganizationalRequirements,
+    participants: &[Participant],
+    candidate_conditions: &[CandidateCondition],
+    vantage_requirements: &[VantageRequirement],
+    relationships: &[Relationship],
+    authority_requirements: &[AuthorityRequirement],
+    separation_requirements: &[SeparationRequirement],
+    component_binding_requirements: &[ComponentBindingRequirement],
+    has_builder_vantage: bool,
+) -> Vec<TraceRow> {
+    let conditions = requirements.conditions();
+    let condition = |id: &Id| conditions.iter().find(|c| &c.id == id);
+    let mut rows: BTreeSet<TraceRow> = BTreeSet::new();
+    let mut add = |kind: &'static str, id: &str, field: &str, source: TraceRef| {
+        rows.insert(TraceRow {
+            target: src(kind, id, field),
+            source,
+        });
+    };
+    let builder_conditions: Vec<&Condition> = conditions
+        .iter()
+        .filter(|c| c.consumer_class.as_str() == CLASS_BUILDER)
+        .collect();
+
+    // Participants.
+    for participant in participants {
+        let id = participant.id.as_str();
+        match participant.kind {
+            ParticipantKind::Component => add("participant", id, "", src_policy()),
+            ParticipantKind::Vantage if id == BUILDER_VANTAGE => {
+                for c in &builder_conditions {
+                    add("participant", id, "", src_condition(&c.id, "consumerClass"));
+                }
+            }
+            ParticipantKind::Vantage => {
+                for obligation in &participant.serves {
+                    add("participant", id, "", src_obligation(obligation, "id"));
+                }
+            }
+            ParticipantKind::Principal => {
+                for c in conditions {
+                    if principal_participant(&c.acceptor) == id {
+                        add("participant", id, "", src_condition(&c.id, "acceptor"));
+                    }
+                }
+                for a in requirements.required_authorities() {
+                    if principal_participant(&a.principal) == id {
+                        add("participant", id, "", src_authority(&a.id, "principal"));
+                    }
+                }
+            }
+        }
+    }
+
+    // Conditions: one row per candidate member that originates in the input.
+    for c in candidate_conditions {
+        let id = c.id.as_str();
+        let mut fields: Vec<(String, &str, String)> = vec![
+            ("id".into(), id, "id".into()),
+            ("obligation".into(), id, "obligation".into()),
+            ("vantage".into(), id, "obligation".into()),
+            ("consumer".into(), id, "consumerClass".into()),
+            ("boundary".into(), id, "consumptionBoundary".into()),
+            ("proposition".into(), id, "proposition".into()),
+            ("coveredState".into(), id, "coveredState".into()),
+            ("acceptor".into(), id, "acceptor".into()),
+            ("unestablishedRoute".into(), id, "unestablishedRoute".into()),
+        ];
+        for property in [
+            "continuity",
+            "mutation",
+            "capabilities",
+            "integrity",
+            "evidenceCustody",
+            "observerClass",
+        ] {
+            fields.push((
+                format!("normative.{property}"),
+                id,
+                format!("normative.{property}"),
+            ));
+        }
+        if c.normative.independence.is_some() {
+            fields.push((
+                "normative.independence".into(),
+                id,
+                "normative.independence".into(),
+            ));
+        }
+        for constraint in &c.realization_constraints {
+            let name = format!("realizationConstraints.{}", constraint.dimension.as_str());
+            fields.push((name.clone(), id, name));
+        }
+        for (target_field, id, source_field) in fields {
+            add(
+                "condition",
+                id,
+                &target_field,
+                src_condition(&c.id, &source_field),
+            );
+        }
+    }
+
+    // Vantage requirements: one row per contributing condition for each effective property.
+    for requirement in vantage_requirements {
+        let target = requirement.vantage.as_str();
+        for condition_id in &requirement.derived_from {
+            let Some(c) = condition(condition_id) else {
+                continue;
+            };
+            add(
+                "vantageRequirement",
+                target,
+                "derivedFrom",
+                src_condition(&c.id, "id"),
+            );
+            for property in [
+                "continuity",
+                "mutation",
+                "capabilities",
+                "integrity",
+                "evidenceCustody",
+                "observerClass",
+            ] {
+                add(
+                    "vantageRequirement",
+                    target,
+                    &format!("effective.{property}"),
+                    src_condition(&c.id, &format!("normative.{property}")),
+                );
+            }
+            if c.normative.independence.is_some() {
+                add(
+                    "vantageRequirement",
+                    target,
+                    "effective.independence",
+                    src_condition(&c.id, "normative.independence"),
+                );
+            }
+            for constraint in &c.realization_constraints {
+                let name = constraint.dimension.as_str();
+                add(
+                    "vantageRequirement",
+                    target,
+                    &format!("effectiveConstraints.{name}"),
+                    src_condition(&c.id, &format!("realizationConstraints.{name}")),
+                );
+            }
+        }
+    }
+
+    // Relationships: the sources of amendment 3.
+    for relationship in relationships {
+        let key = relationship.key();
+        let mut add_source = |source: TraceRef| add("relationship", &key, "", source);
+        let obligation_of = |vantage: &str| -> Option<&Id> {
+            participants
+                .iter()
+                .find(|p| p.id == vantage)
+                .and_then(|p| p.serves.first())
+        };
+        match relationship.kind {
+            RelationshipKind::Serves => {
+                if let Some(obligation) = obligation_of(&relationship.from) {
+                    add_source(src_obligation(obligation, "id"));
+                }
+            }
+            RelationshipKind::ConsumesAt => {
+                if let Some(id) = &relationship.condition {
+                    add_source(src_condition(id, "consumerClass"));
+                    add_source(src_condition(id, "consumptionBoundary"));
+                }
+            }
+            RelationshipKind::AcceptsClaim => {
+                if let Some(id) = &relationship.condition {
+                    add_source(src_condition(id, "acceptor"));
+                }
+            }
+            RelationshipKind::HostsExecution
+            | RelationshipKind::WritesEpisode
+            | RelationshipKind::ReadsEpisode => {
+                add_source(src_policy());
+                match relationship.to.as_deref() {
+                    Some(BUILDER_VANTAGE) => {
+                        for c in &builder_conditions {
+                            add_source(src_condition(&c.id, "consumerClass"));
+                        }
+                    }
+                    Some(vantage) => {
+                        if let Some(obligation) = obligation_of(vantage) {
+                            add_source(src_obligation(obligation, "id"));
+                        }
+                    }
+                    None => {}
+                }
+            }
+            RelationshipKind::Terminalizes => {
+                add_source(src_policy());
+                add_source(src_scope());
+            }
+        }
+    }
+
+    // Authority requirements, per member.
+    for authority in authority_requirements {
+        let id = authority.id.as_str();
+        let scope_field = if authority.boundaries.is_some() {
+            "scope.boundaries"
+        } else {
+            "scope"
+        };
+        for field in ["id", "principal", "permission", scope_field] {
+            add(
+                "authorityRequirement",
+                id,
+                field,
+                src_authority(&authority.id, field),
+            );
+        }
+    }
+
+    // Separation requirements.
+    for separation in separation_requirements {
+        let id = separation.condition.as_str();
+        add(
+            "separationRequirement",
+            id,
+            "",
+            src_condition(&separation.condition, "acceptor"),
+        );
+        add(
+            "separationRequirement",
+            id,
+            "",
+            src_condition(&separation.condition, "obligation"),
+        );
+        if has_builder_vantage {
+            for c in &builder_conditions {
+                add(
+                    "separationRequirement",
+                    id,
+                    "",
+                    src_condition(&c.id, "consumerClass"),
+                );
+            }
+        }
+    }
+
+    // Component binding requirements: the profile plus the sources of the implying relationships.
+    for binding in component_binding_requirements {
+        let id = binding.component.as_str();
+        add("componentBindingRequirement", id, "", src_policy());
+        if id == EPISODE_HOST {
+            for obligation in requirements.obligations() {
+                add(
+                    "componentBindingRequirement",
+                    id,
+                    "",
+                    src_obligation(&obligation.id, "id"),
+                );
+            }
+        } else {
+            add("componentBindingRequirement", id, "", src_scope());
+        }
+    }
+
+    rows.into_iter().collect()
+}
+
+// ---------------------------------------------------------------------------------------------
+// Canonical form of the candidate
+
+fn trace_ref_json(reference: &TraceRef) -> JsonValue {
+    object(vec![
+        ("kind", string(reference.kind)),
+        ("id", string(&reference.id)),
+        ("field", string(&reference.field)),
+    ])
+}
+
+fn candidate_json(candidate: &OrganizationCandidate) -> JsonValue {
+    let participants = candidate.participants.iter().map(|p| {
+        let mut members = vec![("id", string(&p.id)), ("kind", string(p.kind.as_str()))];
+        if !p.serves.is_empty() {
+            members.push(("serves", strings(p.serves.iter().map(Id::as_str))));
+        }
+        object(members)
+    });
+    let conditions = candidate.conditions.iter().map(|c| {
+        let mut members = vec![
+            ("id", id_json(&c.id)),
+            ("obligation", id_json(&c.obligation)),
+            ("vantage", string(&c.vantage)),
+            ("consumer", string(&c.consumer)),
+            ("boundary", id_json(&c.boundary)),
+            ("proposition", string(&c.proposition)),
+            ("coveredState", id_json(&c.covered_state)),
+            ("normative", normative_json(&c.normative)),
+            ("acceptor", id_json(&c.acceptor)),
+            ("unestablishedRoute", id_json(&c.unestablished_route)),
+        ];
+        if !c.realization_constraints.is_empty() {
+            members.push((
+                "realizationConstraints",
+                constraints_json(&c.realization_constraints),
+            ));
+        }
+        object(members)
+    });
+    let vantage_requirements = candidate.vantage_requirements.iter().map(|v| {
+        let mut members = vec![
+            ("vantage", string(&v.vantage)),
+            ("effective", normative_json(&v.effective)),
+            (
+                "derivedFrom",
+                strings(v.derived_from.iter().map(Id::as_str)),
+            ),
+        ];
+        if !v.effective_constraints.is_empty() {
+            members.push((
+                "effectiveConstraints",
+                constraints_json(&v.effective_constraints),
+            ));
+        }
+        object(members)
+    });
+    let relationships = candidate.relationships.iter().map(|r| {
+        let mut members = vec![("kind", string(r.kind.as_str())), ("from", string(&r.from))];
+        if let Some(to) = &r.to {
+            members.push(("to", string(to)));
+        }
+        if let Some(condition) = &r.condition {
+            members.push(("condition", id_json(condition)));
+        }
+        object(members)
+    });
+    let authorities = candidate.authority_requirements.iter().map(|a| {
+        let mut scope = Vec::new();
+        if let Some(boundaries) = &a.boundaries {
+            scope.push(("boundaries", id_set_json(boundaries)));
+        }
+        object(vec![
+            ("id", id_json(&a.id)),
+            ("principal", id_json(&a.principal)),
+            ("permission", id_json(&a.permission)),
+            ("scope", object(scope)),
+        ])
+    });
+    let separations = candidate.separation_requirements.iter().map(|s| {
+        object(vec![
+            ("condition", id_json(&s.condition)),
+            ("acceptor", string(&s.acceptor)),
+            ("vantages", strings(s.vantages.iter().map(String::as_str))),
+        ])
+    });
+    let bindings = candidate.component_binding_requirements.iter().map(|b| {
+        object(vec![
+            ("component", string(&b.component)),
+            (
+                "permissions",
+                strings(b.permissions.iter().map(String::as_str)),
+            ),
+        ])
+    });
+    let trace = candidate.requirement_trace.iter().map(|row| {
+        object(vec![
+            ("target", trace_ref_json(&row.target)),
+            ("source", trace_ref_json(&row.source)),
+        ])
+    });
+    object(vec![
+        (
+            "requirementsDigest",
+            string(&candidate.requirements_digest.to_hex()),
+        ),
+        ("profile", string(candidate.profile.as_str())),
+        ("participants", JsonValue::Array(participants.collect())),
+        ("conditions", JsonValue::Array(conditions.collect())),
+        (
+            "vantageRequirements",
+            JsonValue::Array(vantage_requirements.collect()),
+        ),
+        ("relationships", JsonValue::Array(relationships.collect())),
+        (
+            "authorityRequirements",
+            JsonValue::Array(authorities.collect()),
+        ),
+        (
+            "separationRequirements",
+            JsonValue::Array(separations.collect()),
+        ),
+        (
+            "componentBindingRequirements",
+            JsonValue::Array(bindings.collect()),
+        ),
+        ("requirementTrace", JsonValue::Array(trace.collect())),
+    ])
+}
