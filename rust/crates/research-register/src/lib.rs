@@ -8,11 +8,11 @@
 //!
 //! [`model::decode`] parses the register files ([`parse`]) and decodes typed records with their
 //! Git-free checks; violations carry a [`RuleId`]. [`validate`] checks a whole snapshot, including
-//! the Git-backed rules, and yields a [`ValidRegister`] or the violations. Anchors and decision
-//! cards are not part of this crate yet. [`use_bundle`] joins immutable research-use
-//! companions with the existing register proof. Its structural proof is not scientific
-//! qualification, authenticated approval or an execution permit.
+//! the Git-backed rules, and yields a [`ValidRegister`] or the violations. [`anchor::anchors`]
+//! classifies each decision's anchor of a [`ValidRegister`] at its own commit (read-only; rename
+//! detection is an open owner question, Q-R2-2). Decision cards are not part of this crate yet.
 
+pub mod anchor;
 pub mod error;
 pub mod model;
 pub mod objects;
@@ -22,6 +22,7 @@ pub mod snapshot;
 pub mod use_bundle;
 pub mod validate;
 
+pub use anchor::{AnchorClass, AnchorEntry, AnchorError, AnchorReport, anchors};
 pub use error::{BadRequest, CannotRead, Error, NoRegister, Unsupported};
 pub use model::{Decoded, Index, Records, decode};
 pub use objects::{
