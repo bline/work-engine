@@ -303,11 +303,15 @@ impl UnresolvedKind {
 }
 
 /// The closed reason tokens; the reason is a function of `(kind, subject, conditions)`.
+/// `UnrecognizedClass` reports a class value in the input that is not recognized;
+/// `BrokenInternalReference` reports a reference the derivation itself stated that no longer
+/// resolves, and appears only with the kind `InternalError`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnresolvedReason {
     DifferingValues,
     DisjointAllowedClasses,
     UnrecognizedClass,
+    BrokenInternalReference,
     AcceptorIsDependentVantage,
     NoMatchingAuthorityEntry,
     DuplicateCollectionKey,
@@ -320,6 +324,7 @@ impl UnresolvedReason {
             UnresolvedReason::DifferingValues => "differing_values",
             UnresolvedReason::DisjointAllowedClasses => "disjoint_allowed_classes",
             UnresolvedReason::UnrecognizedClass => "unrecognized_class",
+            UnresolvedReason::BrokenInternalReference => "broken_internal_reference",
             UnresolvedReason::AcceptorIsDependentVantage => "acceptor_is_dependent_vantage",
             UnresolvedReason::NoMatchingAuthorityEntry => "no_matching_authority_entry",
             UnresolvedReason::DuplicateCollectionKey => "duplicate_collection_key",
@@ -811,7 +816,7 @@ impl InternalFault {
     fn broken_reference(subject: String, conditions: Vec<Id>) -> Self {
         InternalFault {
             subject,
-            reason: UnresolvedReason::UnrecognizedClass,
+            reason: UnresolvedReason::BrokenInternalReference,
             conditions,
         }
     }
@@ -864,7 +869,7 @@ fn require_consumer(
     if consumer.is_none() {
         internal.push(InternalFault::new(
             "consumerClass",
-            UnresolvedReason::UnrecognizedClass,
+            UnresolvedReason::BrokenInternalReference,
         ));
     }
     consumer
@@ -1521,7 +1526,7 @@ mod injection_tests {
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].kind, UnresolvedKind::InternalError);
         assert_eq!(items[0].subject, "consumerClass");
-        assert_eq!(items[0].reason, UnresolvedReason::UnrecognizedClass);
+        assert_eq!(items[0].reason, UnresolvedReason::BrokenInternalReference);
     }
 
     #[test]
@@ -1682,6 +1687,36 @@ mod injection_tests {
         );
         let ids: Vec<&str> = items[0].conditions.iter().map(Id::as_str).collect();
         assert_eq!(ids, ["no-such-condition"]);
+    }
+
+    /// The broken link is an internal-integrity fault, not an unrecognized class value: the item
+    /// is an `internal_error` with `broken_internal_reference` and names the broken condition.
+    #[test]
+    fn a_broken_trace_link_is_reported_as_a_broken_internal_reference_naming_the_condition() {
+        let (_, faults) = trace_with_injected_break(|vantage_requirements, relationships| {
+            vantage_requirements[0]
+                .derived_from
+                .push(Id::parse("no-such-condition").unwrap());
+            relationships
+                .iter_mut()
+                .find(|r| r.kind == RelationshipKind::ConsumesAt)
+                .unwrap()
+                .condition = Some(Id::parse("also-missing").unwrap());
+        });
+        let items = internal_error_items(faults);
+        assert_eq!(items.len(), 2, "{items:?}");
+        for item in &items {
+            assert_eq!(item.kind, UnresolvedKind::InternalError);
+            assert_eq!(item.reason, UnresolvedReason::BrokenInternalReference);
+            assert_eq!(item.reason.as_str(), "broken_internal_reference");
+            assert_ne!(item.reason, UnresolvedReason::UnrecognizedClass);
+        }
+        let named: Vec<Vec<&str>> = items
+            .iter()
+            .map(|i| i.conditions.iter().map(Id::as_str).collect())
+            .collect();
+        assert!(named.contains(&vec!["no-such-condition"]), "{named:?}");
+        assert!(named.contains(&vec!["also-missing"]), "{named:?}");
     }
 
     fn vantage_requirements_vantage() -> String {

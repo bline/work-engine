@@ -137,12 +137,11 @@ pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewE
     // `serves`: each row names one carried obligation, and each obligation has at most one.
     let mut serving: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for row in of_kind(RelationshipKind::Serves) {
-        let obligation = row
-            .to
-            .as_deref()
-            .ok_or_else(|| ViewError::ServesWithoutTarget {
+        let Some(obligation) = row.to.as_deref() else {
+            return Err(ViewError::ServesWithoutTarget {
                 from: row.from.clone(),
-            })?;
+            });
+        };
         if !candidate
             .obligations()
             .iter()
@@ -222,12 +221,11 @@ pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewE
 
     let mut hosting = Vec::new();
     for row in of_kind(RelationshipKind::HostsExecution) {
-        let vantage = row
-            .to
-            .clone()
-            .ok_or_else(|| ViewError::HostsExecutionWithoutTarget {
+        let Some(vantage) = row.to.clone() else {
+            return Err(ViewError::HostsExecutionWithoutTarget {
                 from: row.from.clone(),
-            })?;
+            });
+        };
         hosting.push(Hosting {
             component: row.from.clone(),
             vantage,
@@ -238,12 +236,11 @@ pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewE
     let mut writers: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     let mut write_rows: Vec<(&str, &str)> = Vec::new();
     for row in of_kind(RelationshipKind::WritesEpisode) {
-        let vantage = row
-            .to
-            .as_deref()
-            .ok_or_else(|| ViewError::WritesEpisodeWithoutTarget {
+        let Some(vantage) = row.to.as_deref() else {
+            return Err(ViewError::WritesEpisodeWithoutTarget {
                 from: row.from.clone(),
-            })?;
+            });
+        };
         writers.entry(vantage).or_default().push(&row.from);
         write_rows.push((vantage, &row.from));
     }
@@ -256,12 +253,11 @@ pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewE
         }
     }
     for row in of_kind(RelationshipKind::ReadsEpisode) {
-        let vantage = row
-            .to
-            .as_deref()
-            .ok_or_else(|| ViewError::ReadsEpisodeWithoutTarget {
+        let Some(vantage) = row.to.as_deref() else {
+            return Err(ViewError::ReadsEpisodeWithoutTarget {
                 from: row.from.clone(),
-            })?;
+            });
+        };
         if !writers.contains_key(vantage) {
             return Err(ViewError::ReadsUnwrittenEpisode {
                 from: row.from.clone(),
