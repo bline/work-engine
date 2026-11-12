@@ -738,8 +738,8 @@ mod tests {
     use super::*;
 
     /// F-01: a missing revision is F-4 `cannot_read`; an ambiguous one stays an invariant failure.
-    /// (Ambiguity cannot be produced end to end: a register revision has at least 7 hex digits,
-    /// so it would need a 28-bit commit-prefix collision after validation.)
+    /// `tests/anchors.rs::revision_prefix_becomes_ambiguous_after_validation` exercises the
+    /// production lookup with a frozen seven-digit commit-prefix collision.
     #[test]
     fn unresolved_revision_classes() {
         let rev = Revision {
