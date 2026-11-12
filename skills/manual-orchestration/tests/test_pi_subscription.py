@@ -9,6 +9,7 @@ import pathlib
 import subprocess
 import socket
 import socketserver
+import shutil
 import threading
 import struct
 from types import SimpleNamespace
@@ -80,6 +81,58 @@ class SubscriptionTests(ProxyHarness):
         resp = conn.getresponse(); self.assertEqual(resp.status, 400); resp.read(); conn.close()
         self.assertIn(b' 413 ', self.raw(b'POST /codex/responses HTTP/1.1\r\ncontent-length: 1025\r\n\r\n'))
         self.assertEqual(len(Upstream.seen), 1)
+
+    def test_fresh_proxy_turns_ignore_planted_imports(self):
+        """Actual proxy in fresh interpreters, synthetic token/local upstream.
+
+        Simulate a tool planting a module between turns. Also leave an extra
+        module beside the script to discriminate the original script-directory
+        import flaw. No Docker or native credential source is involved.
+        """
+        import zstandard
+        workspace = self.tmp / 'workspace'; workspace.mkdir()
+        trusted = self.tmp / 'host'; trusted.mkdir()
+        proxy_source = trusted / 'pi_container.py'
+        shutil.copyfile(pc.__file__, proxy_source)
+        marker = self.tmp / 'import-executed'
+        poison = f"from pathlib import Path\nPath({str(marker)!r}).write_text('executed')\nraise RuntimeError('planted module')\n"
+        probe = trusted / 'probe.py'
+        probe.write_text('''import base64, http.client, json, runpy, socket, sys
+config = json.load(sys.stdin)
+pc = runpy.run_path(config['source'])
+class UnixHTTP(http.client.HTTPConnection):
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.connect(config['socket'])
+proxy = pc['EgressProxy'](config['socket'], upstream=config['upstream'], key=config['key'],
+    model_id='gpt-6.1-sol', tier=None, log_path=config['log'], provider='openai-codex').start()
+try:
+    conn = UnixHTTP('localhost', timeout=5)
+    conn.request('POST', '/codex/responses', base64.b64decode(config['body']), {'content-encoding': 'zstd'})
+    response = conn.getresponse()
+    response.read(); conn.close()
+    print(response.status)
+finally:
+    proxy.stop()
+''')
+        body = base64.b64encode(zstandard.ZstdCompressor().compress(json.dumps(self.body()).encode())).decode()
+        config = {'source': str(proxy_source), 'socket': str(self.tmp / 'fresh.sock'),
+                  'upstream': f'http://127.0.0.1:{self.upstream.server_port}/backend-api/codex',
+                  'key': token(), 'log': str(self.tmp / 'fresh.jsonl'), 'body': body}
+        for turn in (1, 2):
+            # New and modified files in the tool workspace must never become
+            # host imports, including when supplied through PYTHONPATH.
+            (workspace / 'zstandard.py').write_text(poison)
+            (workspace / 'sitecustomize.py').write_text(poison)
+            if turn == 2:
+                (trusted / 'zstandard.py').write_text(poison)
+            env = {**os.environ, 'PYTHONPATH': str(workspace), 'PYTHONUSERBASE': str(workspace)}
+            r = subprocess.run([sys.executable, '-I', str(probe)], cwd=workspace, env=env,
+                               input=json.dumps(config), capture_output=True, text=True, timeout=10)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.strip(), '200', r.stderr)
+            self.assertFalse(marker.exists())
+        self.assertEqual(len(Upstream.seen), 2)
 
     def test_invalid_compression_and_protected_fields(self):
         self.proxy()
@@ -157,6 +210,19 @@ class SubscriptionTests(ProxyHarness):
                     self.assertEqual(cm.exception.status, 'environment_changed')
             env = host.container_environment('safe', ledger, cwd=str(ws), container={'ro': [str(skills)]}, opts=opts)
             self.assertEqual(host._check_environment(env, cwd=str(ws), ledger=ledger)['mounts'], env['mounts'])
+
+    def test_writable_active_host_checkout_refused_before_launch_effects(self):
+        ws = self.tmp / 'checkout'; ws.mkdir()
+        host = rh.Pi('unused')
+        ledger = SimpleNamespace(path=self.tmp / 'state/ledger.jsonl')
+        opts = rh.Pi.options(['--model', 'openai-codex/gpt-6.1-sol'], 'subscription', None)
+        opts['container_subscription'] = True
+        with patch.object(pc, 'HERE', ws / 'skills/host/scripts'), \
+             patch.object(pc, 'runtime_paths', return_value={}), patch.object(rh, '_run') as run:
+            with self.assertRaises(rh.HostError) as cm:
+                host.container_environment('test', ledger, cwd=str(ws), container={}, opts=opts)
+        self.assertIn('trusted host', cm.exception.detail)
+        run.assert_not_called()
 
     def test_auth_validation_and_no_secret_errors(self):
         self.assertEqual(pc.codex_account(token()), 'test-host-account')
@@ -559,6 +625,17 @@ class SubscriptionTurnAdmissionTests(unittest.TestCase):
 
     def deliver(self):
         return self.host.deliver(self.sid, message='mock', cwd=str(self.tmp), ledger=self.ledger)
+
+    def test_credential_runner_is_launched_with_isolated_python(self):
+        def runner(argv, **kwargs):
+            self.assertEqual(argv[:2], [sys.executable, '-I'])
+            self.assertEqual(pathlib.Path(argv[2]).name, 'pi_container.py')
+            self.assertEqual(argv[3], 'run-turn')
+            spec = json.loads(pathlib.Path(argv[-1]).read_text())
+            pathlib.Path(spec['files']['proxy_log']).write_text('')
+            return SimpleNamespace(pid=os.getpid(), stdin=io.BytesIO())
+        with patch.object(rh.subprocess, 'Popen', runner):
+            self.assertEqual(self.deliver()['turn'], 2)
 
     def test_two_processes_cannot_admit_during_unrecorded_runner_start(self):
         ctx = multiprocessing.get_context('fork')

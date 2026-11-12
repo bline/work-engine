@@ -948,6 +948,7 @@ class Pi:
             runtime = _pi_container().runtime_paths(os.environ.get("ROLE_HOST_PI_RUNTIME", _pi_container().DEFAULT_RUNTIME))
             home = os.path.expanduser("~")
             mounts = _pi_container().mount_plan(cwd, container.get("ro") or (), container.get("rw") or (), home=home,
+                                             host_executables=[self.docker(), self.exe],
                                              reserved=[str(state), str(self.socket_root()), str(Path.home() / ".codex" / "auth.json")])
             limits = _pi_container().validate_limits(container.get("memory", "4g"), container.get("pids", 512),
                                                   container.get("cpus", "2"))
@@ -968,6 +969,7 @@ class Pi:
         base = state / "pi" / sid
         cdir, hdir = base / "container", base / "host"
         env = {"runtime": runtime, "mounts": mounts, "limits": limits, "uid": os.getuid(), "gid": os.getgid(),
+               "host_executables": [self.docker(), self.exe],
                "home": home, "container_dir": str(cdir), "host_dir": str(hdir),
                "agent_dir": str(cdir / "agent"), "session_dir": str(cdir / "sessions"),
                "max_requests": container.get("max_requests"),
@@ -1083,6 +1085,7 @@ class Pi:
             # one that now crosses a boundary, plans differently and is refused.
             replanned = pc.mount_plan(cwd, [p for p, m in env["mounts"] if m == "ro"],
                                       [p for p, m in env["mounts"] if m == "rw"], home=env["home"],
+                                      host_executables=[self.docker(), self.exe, *env.get("host_executables", ())],
                                       reserved=[str(ledger.path.parent), str(self.socket_root()),
                                                 str(Path.home() / ".codex" / "auth.json"),
                                                 str(Path(env["home"]) / ".codex" / "auth.json")])
@@ -1285,7 +1288,7 @@ class Pi:
             self.before_runner_start(session_id=sid, turn=turn, spec=str(files["spec"]), container=container_name)
         with open(files["runner_log"], "ab") as log:
             try:
-                proc = subprocess.Popen([sys.executable, str(runner), "run-turn", str(files["spec"])],
+                proc = subprocess.Popen([sys.executable, "-I", str(runner), "run-turn", str(files["spec"])],
                                         stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
                                         env=child_env(), cwd=str(hdir), start_new_session=True)
             except OSError as e:

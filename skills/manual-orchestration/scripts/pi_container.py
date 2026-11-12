@@ -192,7 +192,38 @@ def runtime_paths(root: str = DEFAULT_RUNTIME) -> dict:
     return {"root": root, "resolved": resolved, "node": node, "cli": cli, "pi_version": version}
 
 
-def mount_plan(cwd: str, ro=(), rw=(), *, home: str, reserved=()) -> list[list[str]]:
+def host_trusted_paths(executables=()) -> list[str]:
+    """Code/search roots the host may execute while holding a credential.
+
+    Protect directories, not just today's module files: a new module or PATH
+    executable can otherwise shadow a trusted dependency on a later turn.
+    Keep lexical and resolved roots so a writable parent cannot replace a
+    symlink that names the interpreter, implementation or dependency tree.
+    """
+    roots = [str(HERE), str(Path(__file__).absolute().parent), sys.executable,
+             sys.prefix, sys.base_prefix, *sys.path, *os.get_exec_path()]
+    if sys.argv and not sys.argv[0].startswith("-"):
+        # Python resolves the initial import directory. Retain the lexical
+        # launcher path too, including installed skill-directory symlinks.
+        roots.append(str(Path(sys.argv[0]).absolute().parent))
+    for command in ("docker", "pi", os.environ.get("ROLE_HOST_DOCKER_EXE"), *executables):
+        if command:
+            resolved = shutil.which(command)
+            if resolved or os.path.dirname(command):
+                roots.append(resolved or command)
+    return sorted({p for root in roots for p in (os.path.abspath(root), os.path.realpath(root))})
+
+
+def check_host_write_path(path: str, *, executables=()):
+    """Model tools must not change code later executed by the trusted host."""
+    path = os.path.realpath(path)
+    for root in host_trusted_paths(executables):
+        if path == root or path.startswith(root.rstrip("/") + "/") or root.startswith(path.rstrip("/") + "/"):
+            raise ContainerError("usage", f"writable mount {path} overlaps trusted host code/search path {root}; "
+                                 "run an installed host outside the writable workspace")
+
+
+def mount_plan(cwd: str, ro=(), rw=(), *, home: str, reserved=(), host_executables=()) -> list[list[str]]:
     """Same-path bind mounts: [[path, "ro"|"rw"], ...]. The working directory is
     mounted read-write unless a listed mount already covers it."""
     entries: dict[str, str] = {}
@@ -214,6 +245,8 @@ def mount_plan(cwd: str, ro=(), rw=(), *, home: str, reserved=()) -> list[list[s
             r = os.path.realpath(r)
             if path == r or path.startswith(r + "/") or r.startswith(path + "/"):
                 raise ContainerError("usage", f"{path} overlaps role_host state {r}")
+        if mode == "rw":
+            check_host_write_path(path, executables=host_executables)
         if entries.get(path, mode) != mode:
             raise ContainerError("usage", f"{path} is listed both read-only and read-write")
         entries[path] = mode
@@ -365,6 +398,7 @@ def fingerprint(env: dict) -> dict:
         "entry_sha256": file_sha256(HERE / "pi_container_entry.py"),
         "extension_sha256": file_sha256(HERE / "pi_service_tier.ts"),
         "pi_container_sha256": file_sha256(HERE / "pi_container.py"),
+        "host_isolation": "protected-code-search-paths-and-isolated-runner-v1",
     }
     if env.get("model_definition"):
         body["model_definition"] = env["model_definition"]
@@ -399,6 +433,9 @@ def run_profile(env: dict, *, cwd: str, container_dir: str, socket_dir: str | No
         argv += ["--tmpfs", f"{CBM_RUNTIME}:rw,nosuid,size=16m,uid={uid},gid={gid},mode=0700"]
     mounts += [(p, p, mode == "ro") for p, mode in env["mounts"]]
     for src, dst, readonly in mounts:
+        if not readonly:
+            # Also covers implicit state/socket mounts and legacy turn specs.
+            check_host_write_path(src, executables=env.get("host_executables", ()))
         argv += ["--mount", f"type=bind,src={src},dst={dst}" + (",readonly" if readonly else "")]
     return argv
 

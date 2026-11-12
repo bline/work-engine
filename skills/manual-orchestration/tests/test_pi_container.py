@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -604,6 +605,18 @@ class EnvironmentCheckTests(unittest.TestCase):
     def test_unchanged_passes(self):
         self.check()
 
+    def test_old_writable_host_mount_refused_before_fingerprint(self):
+        # A legacy record can have an otherwise matching fingerprint. It must
+        # not acquire a fresh credential-bearing runner after host code became
+        # reachable through the recorded writable workspace.
+        with patch.object(pi_container, "HERE", pathlib.Path(self.cwd) / "scripts"), \
+             patch.object(pi_container, "fingerprint") as fingerprint:
+            with self.assertRaises(role_host.HostError) as cm:
+                self.check()
+        self.assertEqual(cm.exception.status, "environment_changed")
+        self.assertIn("trusted host", cm.exception.detail)
+        fingerprint.assert_not_called()
+
     def test_changed_runtime_bytes_refused(self):
         (self.tmp / "runtime/lib/pi/packages/coding-agent/dist/cli.js").write_text("cli v2, same version")
         with self.assertRaises(role_host.HostError) as cm:
@@ -626,6 +639,71 @@ class EnvironmentCheckTests(unittest.TestCase):
         with self.assertRaises(role_host.HostError) as cm:
             self.check()
         self.assertIn("mount_identities", cm.exception.detail)
+
+
+class HostCodeIsolationTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        self.ws, self.trusted = self.tmp / "checkout", self.tmp / "installed/scripts"
+        self.ws.mkdir(); self.trusted.mkdir(parents=True)
+
+    def plan(self, cwd, ro=(), rw=()):
+        return pi_container.mount_plan(str(cwd), list(map(str, ro)), list(map(str, rw)), home="/home/test")
+
+    def test_active_checkout_host_refused_but_independent_install_allowed(self):
+        with patch.object(pi_container, "HERE", self.ws / "skills/host/scripts"):
+            with self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                self.plan(self.ws)
+            self.assertEqual(self.plan(self.ws, ro=[self.ws]), [[str(self.ws), "ro"]])
+        with patch.object(pi_container, "HERE", self.trusted):
+            self.assertEqual(self.plan(self.ws), [[str(self.ws), "rw"]])
+
+    def test_ancestors_descendants_and_symlink_aliases_of_host_code_refused(self):
+        child = self.trusted / "plugins"; child.mkdir()
+        alias = self.tmp / "alias"; alias.symlink_to(self.trusted)
+        with patch.object(pi_container, "HERE", self.trusted):
+            for path in (self.trusted, self.trusted.parent, child, alias):
+                with self.subTest(path=path), self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                    self.plan(self.ws, rw=[path])
+
+    def test_dependency_and_command_search_directories_protected(self):
+        imports = self.tmp / "python-imports"; imports.mkdir()
+        commands = self.tmp / "commands"; commands.mkdir()
+        with patch.object(pi_container.sys, "path", [str(imports)]), \
+             patch.dict(os.environ, {"PATH": str(commands)}):
+            for path in (imports, commands):
+                with self.subTest(path=path), self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                    self.plan(self.ws, rw=[path])
+
+    def test_interpreter_and_command_symlink_targets_protected(self):
+        exe = self.ws / "python"; exe.write_text("synthetic")
+        with patch.object(pi_container.sys, "executable", str(exe)):
+            with self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                self.plan(self.ws)
+        commands = self.tmp / "commands"; commands.mkdir()
+        exe.chmod(0o700); (commands / "docker").symlink_to(exe)
+        with patch.dict(os.environ, {"PATH": str(commands)}):
+            with self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                self.plan(self.ws)
+
+    def test_explicit_host_command_outside_path_protected(self):
+        exe = self.ws / "custom-docker"; exe.write_text("synthetic")
+        with self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+            pi_container.mount_plan(str(self.ws), home="/home/test", host_executables=[str(exe)])
+
+    def test_lexical_installed_launcher_symlink_parent_protected(self):
+        links = self.tmp / "launchers"; links.mkdir()
+        alias = links / "skill"; alias.symlink_to(self.trusted)
+        with patch.object(pi_container.sys, "argv", [str(alias / "role_host.py")]):
+            with self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                self.plan(self.ws, rw=[links])
+
+    def test_implicit_container_state_mount_also_protected(self):
+        env = sample_env(str(self.tmp))
+        with patch.object(pi_container, "HERE", self.trusted):
+            with self.assertRaisesRegex(pi_container.ContainerError, "trusted host"):
+                pi_container.run_profile(env, cwd=str(self.ws), container_dir=str(self.trusted / "state"))
 
 
 class FingerprintTests(unittest.TestCase):

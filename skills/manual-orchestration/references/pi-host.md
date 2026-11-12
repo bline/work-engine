@@ -146,6 +146,15 @@ What the agent gets, enforced by the container rather than by instructions:
   mount covers it. Everything else is absent, including the rest of your home
   directory. Home itself, `/`, system paths and role_host's state cannot be
   mounted.
+- **Protected host code.** Writable mounts cannot overlap the active host
+  implementation, Python runtime/import roots, command search directories or
+  resolved host executables. Launch and continuation both check this boundary;
+  implicit writable state/socket mounts are checked too. The credential-bearing
+  runner uses Python isolated mode (`-I`), excluding script/current-directory,
+  `PYTHONPATH` and user-site imports. To edit this checkout, run an independently
+  installed host outside the writable checkout. Read-only code mounts remain
+  available. This protects host loading paths; it does not attest arbitrary
+  pre-existing hard-link or bind-mount aliases created by the operator.
 - **No network.** The container has only loopback. Network access fails at once
   with "Network is unreachable"; there is no web access from tools.
 - **No credentials or host environment.** Only the variables role_host sets
