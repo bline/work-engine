@@ -4,8 +4,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::derive::{
-    AuthorityRequirement, CandidateCondition, ComponentBindingRequirement, OrganizationCandidate,
-    ParticipantKind, Relationship, RelationshipKind, SeparationRequirement,
+    AuthorityRequirement, BUILDER_VANTAGE, CandidateCondition, ComponentBindingRequirement,
+    OrganizationCandidate, ParticipantKind, Relationship, RelationshipKind, SeparationRequirement,
+    fixed_source, reviewer_vantage_of,
 };
 use crate::digest::Digest;
 use crate::ids::Id;
@@ -132,6 +133,28 @@ pub enum ViewError {
         kind: &'static str,
         from: String,
         required: &'static str,
+    },
+    #[error("{kind} relationship from `{from}`: the profile fixes the source as `{expected}`")]
+    RelationshipWrongSource {
+        kind: &'static str,
+        from: String,
+        expected: &'static str,
+    },
+    #[error(
+        "serves relationship from `{from}` for obligation `{obligation}`, but the vantage derived for that obligation is `{expected}`"
+    )]
+    ServesWrongVantage {
+        from: String,
+        obligation: String,
+        expected: String,
+    },
+    #[error(
+        "{kind} relationship from `{from}` targets the builder vantage `{to}`; episode access is for reviewer vantages only"
+    )]
+    EpisodeTargetsBuilderVantage {
+        kind: &'static str,
+        from: String,
+        to: String,
     },
     #[error("{kind} relationship from `{from}` names no target")]
     RelationshipWithoutTarget { kind: &'static str, from: String },
@@ -442,6 +465,17 @@ fn validate_relationships(candidate: &OrganizationCandidate) -> Result<(), ViewE
             });
         }
 
+        // 1b. Where the profile fixes the source participant, it is that participant.
+        if let Some(expected) = fixed_source(row.kind)
+            && from != expected
+        {
+            return Err(ViewError::RelationshipWrongSource {
+                kind,
+                from: row.from.clone(),
+                expected,
+            });
+        }
+
         // 2. `to` is present exactly when the kind has a target, and names the right entity.
         match (row.kind, row.to.as_deref()) {
             (RelationshipKind::Terminalizes, Some(to)) => {
@@ -459,8 +493,19 @@ fn validate_relationships(candidate: &OrganizationCandidate) -> Result<(), ViewE
                 });
             }
             // The `serves` target is an obligation, checked against the candidate's obligations
-            // before the projection; the other targets are vantage participants.
-            (RelationshipKind::Serves, Some(_)) => {}
+            // before the projection; its source is the vantage derived for that obligation.
+            (RelationshipKind::Serves, Some(obligation)) => {
+                let expected = reviewer_vantage_of(obligation);
+                if row.from != expected {
+                    return Err(ViewError::ServesWrongVantage {
+                        from: row.from.clone(),
+                        obligation: obligation.to_owned(),
+                        expected,
+                    });
+                }
+            }
+            // The other targets are vantage participants; episode access never targets the
+            // builder vantage.
             (_, Some(to)) => {
                 if participants.get(to) != Some(&ParticipantKind::Vantage) {
                     return Err(ViewError::RelationshipTargetInvalid {
@@ -468,6 +513,17 @@ fn validate_relationships(candidate: &OrganizationCandidate) -> Result<(), ViewE
                         from: row.from.clone(),
                         to: to.to_owned(),
                         required: "vantage participant",
+                    });
+                }
+                if matches!(
+                    row.kind,
+                    RelationshipKind::WritesEpisode | RelationshipKind::ReadsEpisode
+                ) && to == BUILDER_VANTAGE
+                {
+                    return Err(ViewError::EpisodeTargetsBuilderVantage {
+                        kind,
+                        from: row.from.clone(),
+                        to: to.to_owned(),
                     });
                 }
             }
@@ -1569,6 +1625,216 @@ mod tests {
         candidate.relationships_mut().retain(|r| {
             r.kind != RelationshipKind::ConsumesAt && r.kind != RelationshipKind::AcceptsClaim
         });
+        assert!(view(&candidate).is_ok());
+    }
+
+    // --- Profile-fixed identities (IG1A-R1 final repair) ---
+
+    fn relationship(kind: RelationshipKind, from: &str, to: Option<&str>) -> Relationship {
+        Relationship {
+            kind,
+            from: from.to_owned(),
+            to: to.map(str::to_owned),
+            condition: None,
+        }
+    }
+
+    /// The independent reviewer's probe: the sources of two otherwise valid `serves` rows are
+    /// swapped, so each obligation is served by the other's vantage while its `consumes_at` and
+    /// `accepts_claim` rows still target its own. Rows are in candidate order (sorted by
+    /// `from`), so the first row checked is `serves` from `vantage:ob-b` for `ob-a`.
+    #[test]
+    fn swapped_serves_sources_are_refused() {
+        let mut candidate = derived_two();
+        for row in candidate
+            .relationships_mut()
+            .iter_mut()
+            .filter(|r| r.kind == RelationshipKind::Serves)
+        {
+            row.from = if row.to.as_deref() == Some("ob-a") {
+                "vantage:ob-b"
+            } else {
+                "vantage:ob-a"
+            }
+            .to_owned();
+        }
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::ServesWrongVantage {
+                from: "vantage:ob-b".to_owned(),
+                obligation: "ob-a".to_owned(),
+                expected: "vantage:ob-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn a_serves_row_whose_source_is_another_obligations_vantage_is_refused() {
+        let mut candidate = derived_two();
+        let at = candidate
+            .relationships()
+            .iter()
+            .position(|r| r.kind == RelationshipKind::Serves && r.to.as_deref() == Some("ob-a"))
+            .unwrap();
+        candidate.relationships_mut()[at].from = "vantage:ob-b".to_owned();
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::ServesWrongVantage {
+                from: "vantage:ob-b".to_owned(),
+                obligation: "ob-a".to_owned(),
+                expected: "vantage:ob-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn serves_from_the_builder_vantage_is_refused() {
+        let mut candidate = derived_two();
+        let at = candidate
+            .relationships()
+            .iter()
+            .position(|r| r.kind == RelationshipKind::Serves && r.to.as_deref() == Some("ob-b"))
+            .unwrap();
+        candidate.relationships_mut()[at].from = "vantage-builder".to_owned();
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::ServesWrongVantage {
+                from: "vantage-builder".to_owned(),
+                obligation: "ob-b".to_owned(),
+                expected: "vantage:ob-b".to_owned()
+            })
+        );
+    }
+
+    /// Each fixed-source kind from the other component, and from a participant that is not a
+    /// component at all (the latter is the earlier kind check).
+    #[test]
+    fn a_fixed_source_kind_from_the_other_component_is_refused() {
+        let cases = [
+            (
+                RelationshipKind::HostsExecution,
+                "hosts_execution",
+                "component:episode_host",
+                "component:campaign",
+            ),
+            (
+                RelationshipKind::Terminalizes,
+                "terminalizes",
+                "component:episode_host",
+                "component:campaign",
+            ),
+            (
+                RelationshipKind::WritesEpisode,
+                "writes_episode",
+                "component:campaign",
+                "component:episode_host",
+            ),
+            (
+                RelationshipKind::ReadsEpisode,
+                "reads_episode",
+                "component:campaign",
+                "component:episode_host",
+            ),
+        ];
+        for (kind, name, from, expected) in cases {
+            let mut candidate = derived();
+            edit(&mut candidate, kind, None, |r| r.from = from.to_owned());
+            assert_eq!(
+                view(&candidate),
+                Err(ViewError::RelationshipWrongSource {
+                    kind: name,
+                    from: from.to_owned(),
+                    expected
+                }),
+                "{name}"
+            );
+        }
+    }
+
+    /// Reviewer episode rows moved to the builder vantage: both rows of `ob-a` move together so
+    /// the episode-access checks pass; the reads row comes first in candidate order.
+    #[test]
+    fn episode_rows_moved_to_the_builder_vantage_are_refused() {
+        let mut candidate = derived_two();
+        for row in candidate.relationships_mut().iter_mut().filter(|r| {
+            matches!(
+                r.kind,
+                RelationshipKind::WritesEpisode | RelationshipKind::ReadsEpisode
+            ) && r.to.as_deref() == Some("vantage:ob-a")
+        }) {
+            row.to = some("vantage-builder");
+        }
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::EpisodeTargetsBuilderVantage {
+                kind: "reads_episode",
+                from: "component:episode_host".to_owned(),
+                to: "vantage-builder".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn a_writes_episode_row_for_the_builder_vantage_is_refused() {
+        let mut candidate = derived_two();
+        candidate.relationships_mut().push(relationship(
+            RelationshipKind::WritesEpisode,
+            "component:episode_host",
+            Some("vantage-builder"),
+        ));
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::EpisodeTargetsBuilderVantage {
+                kind: "writes_episode",
+                from: "component:episode_host".to_owned(),
+                to: "vantage-builder".to_owned()
+            })
+        );
+    }
+
+    /// A reads row for the builder vantage, after a writes row that would make it readable; the
+    /// reads row is placed first so it is the first row checked.
+    #[test]
+    fn a_reads_episode_row_for_the_builder_vantage_is_refused() {
+        let mut candidate = derived_two();
+        candidate.relationships_mut().retain(|r| {
+            !matches!(
+                r.kind,
+                RelationshipKind::WritesEpisode | RelationshipKind::ReadsEpisode
+            )
+        });
+        candidate.relationships_mut().splice(
+            0..0,
+            [
+                relationship(
+                    RelationshipKind::ReadsEpisode,
+                    "component:episode_host",
+                    Some("vantage-builder"),
+                ),
+                relationship(
+                    RelationshipKind::WritesEpisode,
+                    "component:episode_host",
+                    Some("vantage-builder"),
+                ),
+            ],
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::EpisodeTargetsBuilderVantage {
+                kind: "reads_episode",
+                from: "component:episode_host".to_owned(),
+                to: "vantage-builder".to_owned()
+            })
+        );
+    }
+
+    /// `hosts_execution` is the one episode-adjacent kind that does target the builder vantage.
+    #[test]
+    fn hosts_execution_for_the_builder_vantage_is_accepted() {
+        let candidate = derived_two();
+        assert!(candidate.relationships().iter().any(|r| {
+            r.kind == RelationshipKind::HostsExecution && r.to.as_deref() == Some("vantage-builder")
+        }));
         assert!(view(&candidate).is_ok());
     }
 }

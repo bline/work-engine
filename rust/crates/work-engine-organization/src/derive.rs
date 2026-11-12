@@ -21,7 +21,7 @@ use crate::schema::{
 // Profile constants of `fixed-slice-review-v1` (amendment 3 and 3A.1).
 const CAMPAIGN: &str = "component:campaign";
 const EPISODE_HOST: &str = "component:episode_host";
-const BUILDER_VANTAGE: &str = "vantage-builder";
+pub(crate) const BUILDER_VANTAGE: &str = "vantage-builder";
 const PERMISSION_ACCEPT_CLAIM: &str = "accept_claim";
 const PERMISSION_WRITE_EPISODE: &str = "write_episode";
 const PERMISSION_READ_EPISODE: &str = "read_episode";
@@ -365,7 +365,28 @@ pub struct DerivationResult {
 }
 
 fn reviewer_vantage(obligation: &Id) -> String {
+    reviewer_vantage_of(obligation.as_str())
+}
+
+/// The reviewer vantage that serves the obligation with this ID: the one definition of the
+/// `vantage:<obligationId>` participant ID, used by derivation and by `view()` validation.
+pub(crate) fn reviewer_vantage_of(obligation: &str) -> String {
     format!("vantage:{obligation}")
+}
+
+/// The participant a profile-fixed relationship kind must come from, where the profile fixes one
+/// (amendment 5.1-A1 section 3): `hosts_execution` and `terminalizes` from the campaign,
+/// `writes_episode` and `reads_episode` from the episode host. `None` for the kinds whose source
+/// varies with the candidate (`serves`, `consumes_at`, `accepts_claim`). Derivation emits these
+/// rows from the same two constants; `view()` validation reads them from here.
+pub(crate) fn fixed_source(kind: RelationshipKind) -> Option<&'static str> {
+    match kind {
+        RelationshipKind::HostsExecution | RelationshipKind::Terminalizes => Some(CAMPAIGN),
+        RelationshipKind::WritesEpisode | RelationshipKind::ReadsEpisode => Some(EPISODE_HOST),
+        RelationshipKind::Serves
+        | RelationshipKind::ConsumesAt
+        | RelationshipKind::AcceptsClaim => None,
+    }
 }
 
 fn principal_participant(principal: &Id) -> String {

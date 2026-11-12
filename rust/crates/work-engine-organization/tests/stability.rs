@@ -11,7 +11,8 @@ mod common;
 use common::*;
 use serde_json::{Value, json};
 use work_engine_organization::{
-    Digest, DigestKind, OrganizationalRequirements, Profile, derive, view,
+    Digest, DigestKind, OrganizationCandidate, OrganizationView, OrganizationalRequirements,
+    ParticipantKind, Profile, derive, view,
 };
 
 /// Two obligations, four conditions, four authorities, and every set kind with 2-4 members.
@@ -373,31 +374,25 @@ fn golden_vectors_fix_canonical_bytes_and_digests() {
 }
 
 /// Every relationship of a candidate is validated by `view()` (IG1A-R1 follow-up). A valid
-/// derived candidate must still project, to the same view as before the validation existed: the
-/// digests are of the `Debug` rendering of the view as computed at `81bcf441`, before
-/// `validate_relationships` was added, with the whole validation call disabled.
+/// derived candidate must still project, and to the view the base projected before validation
+/// existed. `OrganizationView` cannot be constructed outside the crate (it is `non_exhaustive`),
+/// so the view is compared field by field, as typed values, against an expectation read from
+/// the candidate's own rows and the profile's fixed identities, not from `view()`. The earlier
+/// form of this test pinned SHA-256 digests of the `Debug` rendering, which is not a stable
+/// contract; those digests were taken at `81bcf441` with the validation call disabled, and the
+/// current view still matched them when this form replaced it.
 #[test]
 fn views_of_the_fixture_candidates_are_unchanged_by_relationship_validation() {
-    use sha2::{Digest as _, Sha256};
-    let cases: Vec<(&str, OrganizationalRequirements, &str)> = vec![
+    let cases: Vec<(&str, OrganizationalRequirements)> = vec![
         (
             "frozen vertical",
             OrganizationalRequirements::from_json_bytes(FROZEN_REQUIREMENTS).unwrap(),
-            "868f0f06692c171a3bca370d4f98ed587f4804f6daa08b0f806de59570af60f9",
         ),
-        (
-            "heterogeneous conditions",
-            parse(&two_condition_vantage()),
-            "04de034f0c1790d57fa5ef15585ce11af3c6855cb1a29a5cb0eeb143e11909e4",
-        ),
-        (
-            "builder and campaign consumers",
-            parse(&base()),
-            "d41e4f85be5ee23b6a90ff5b2eef8dc78a11ff7d4ec2d86e1941b2a08b224380",
-        ),
+        ("heterogeneous conditions", parse(&two_condition_vantage())),
+        ("builder and campaign consumers", parse(&base())),
     ];
-    let mut observed = Vec::new();
-    for (name, requirements, pinned) in cases {
+    let mut checked = 0;
+    for (name, requirements) in cases {
         let result = derive(&requirements, Profile::FixedSliceReviewV1);
         assert!(
             result.unresolved.is_empty(),
@@ -406,19 +401,141 @@ fn views_of_the_fixture_candidates_are_unchanged_by_relationship_validation() {
         );
         for candidate in &result.candidates {
             let projected = view(candidate).unwrap_or_else(|e| panic!("{name}: {e}"));
-            let hex: String = Sha256::digest(format!("{projected:?}").as_bytes())
-                .iter()
-                .map(|byte| format!("{byte:02x}"))
-                .collect();
-            observed.push((name, hex, pinned));
+            assert_view_is_the_candidates_projection(name, candidate, &projected);
+            checked += 1;
         }
     }
-    for (name, hex, _) in &observed {
-        eprintln!("VIEWDIGEST {name} {hex}");
+    assert!(checked >= 3, "only {checked} candidates were checked");
+}
+
+fn assert_view_is_the_candidates_projection(
+    name: &str,
+    candidate: &OrganizationCandidate,
+    projected: &OrganizationView,
+) {
+    const CAMPAIGN: &str = "component:campaign";
+    const EPISODE_HOST: &str = "component:episode_host";
+    const BUILDER: &str = "vantage-builder";
+    assert_eq!(
+        &projected.problem_scope,
+        candidate.problem_scope(),
+        "{name}"
+    );
+
+    // One projected obligation per candidate obligation, served by its own reviewer vantage.
+    assert_eq!(
+        projected.obligations.len(),
+        candidate.obligations().len(),
+        "{name}"
+    );
+    for (shown, carried) in projected.obligations.iter().zip(candidate.obligations()) {
+        assert_eq!(shown.id, carried.id, "{name}");
+        assert_eq!(shown.kind, "candidate_review", "{name}");
+        assert_eq!(shown.subject, "campaign_candidate", "{name}");
+        assert_eq!(shown.result_contract, carried.result_contract, "{name}");
+        assert_eq!(shown.scope_digest, carried.scope_digest, "{name}");
+        assert_eq!(
+            shown.served_by,
+            Some(format!("vantage:{}", carried.id)),
+            "{name}"
+        );
     }
-    for (name, hex, pinned) in observed {
-        assert_eq!(hex, pinned, "{name}");
+
+    // One projected vantage per vantage participant, with its own requirement or none.
+    let vantage_ids: Vec<&str> = candidate
+        .participants()
+        .iter()
+        .filter(|p| p.kind == ParticipantKind::Vantage)
+        .map(|p| p.id.as_str())
+        .collect();
+    let shown_ids: Vec<&str> = projected.vantages.iter().map(|v| v.id.as_str()).collect();
+    assert_eq!(shown_ids, vantage_ids, "{name}");
+    for shown in &projected.vantages {
+        match candidate
+            .vantage_requirements()
+            .iter()
+            .find(|r| r.vantage == shown.id)
+        {
+            Some(requirement) => {
+                assert_eq!(
+                    shown.effective.as_ref(),
+                    Some(&requirement.effective),
+                    "{name}"
+                );
+                assert_eq!(
+                    shown.effective_constraints, requirement.effective_constraints,
+                    "{name}"
+                );
+                assert_eq!(shown.conditions, requirement.derived_from, "{name}");
+            }
+            None => {
+                assert_eq!(shown.id, BUILDER, "{name}");
+                assert!(shown.effective.is_none(), "{name}");
+                assert!(shown.effective_constraints.is_empty(), "{name}");
+                assert!(shown.conditions.is_empty(), "{name}");
+            }
+        }
     }
+
+    assert_eq!(&projected.conditions[..], candidate.conditions(), "{name}");
+
+    // The campaign hosts every vantage, the builder's included; the episode host writes and
+    // reads every reviewer vantage; the campaign terminalizes.
+    let mut hosted: Vec<(&str, &str)> = projected
+        .hosting
+        .iter()
+        .map(|h| (h.component.as_str(), h.vantage.as_str()))
+        .collect();
+    hosted.sort_unstable();
+    let mut expected_hosted: Vec<(&str, &str)> =
+        vantage_ids.iter().map(|v| (CAMPAIGN, *v)).collect();
+    expected_hosted.sort_unstable();
+    assert_eq!(hosted, expected_hosted, "{name}");
+
+    let mut episodes: Vec<(&str, &str, Vec<&str>)> = projected
+        .episode_access
+        .iter()
+        .map(|e| {
+            (
+                e.vantage.as_str(),
+                e.writer.as_str(),
+                e.readers.iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    episodes.sort_unstable();
+    let mut expected_episodes: Vec<(&str, &str, Vec<&str>)> = vantage_ids
+        .iter()
+        .filter(|v| **v != BUILDER)
+        .map(|v| (*v, EPISODE_HOST, vec![EPISODE_HOST]))
+        .collect();
+    expected_episodes.sort_unstable();
+    assert_eq!(episodes, expected_episodes, "{name}");
+
+    assert_eq!(
+        projected
+            .terminalization
+            .as_ref()
+            .map(|t| t.component.as_str()),
+        Some(CAMPAIGN),
+        "{name}"
+    );
+
+    assert_eq!(
+        &projected.separation_requirements[..],
+        candidate.separation_requirements(),
+        "{name}"
+    );
+    assert_eq!(
+        &projected.authority_requirements[..],
+        candidate.authority_requirements(),
+        "{name}"
+    );
+    assert_eq!(
+        &projected.component_binding_requirements[..],
+        candidate.component_binding_requirements(),
+        "{name}"
+    );
 }
 
 /// The framing of contract 17.5, written out again here so the golden check does not call the
