@@ -99,8 +99,9 @@ pub enum BlobAt {
 /// Read-only access to one repository's objects. Every object returned has been checked against
 /// the id and type requested.
 pub struct GitObjects {
-    repo: gix::Repository,
+    repo: Option<gix::Repository>,
     path: String,
+    bounded: Option<std::cell::RefCell<crate::bounded_read::BoundedObjects>>,
 }
 
 impl GitObjects {
@@ -158,7 +159,50 @@ impl GitObjects {
         if is_shallow(&common_dir.join("shallow"))? {
             return Err(Unsupported::ShallowRepository.into());
         }
-        Ok(GitObjects { repo, path: shown })
+        Ok(GitObjects {
+            repo: Some(repo),
+            path: shown,
+            bounded: None,
+        })
+    }
+
+    pub fn open_bounded(
+        path: &Path,
+        profile: crate::bounded_read::ReadProfile,
+    ) -> Result<Self, Error> {
+        profile.validate()?;
+        let path = std::fs::canonicalize(path)
+            .map_err(|e| crate::bounded_read::refusal("ScopeUnavailable", &e.to_string()))?;
+        let git_dir = if path.join(".git").is_dir() {
+            path.join(".git")
+        } else if path.join("objects").is_dir() && path.join("HEAD").is_file() {
+            path.clone()
+        } else {
+            return Err(crate::bounded_read::refusal(
+                "ScopeUnavailable",
+                "bounded reader supports ordinary worktrees and bare repositories",
+            ));
+        };
+        if git_dir.join("commondir").exists() {
+            return Err(crate::bounded_read::refusal(
+                "ScopeUnavailable",
+                "linked common directories are unsupported",
+            ));
+        }
+        check_repository_config(&git_dir.join("config"), &git_dir.join("config.worktree"))?;
+        if is_shallow(&git_dir.join("shallow"))? {
+            return Err(Unsupported::ShallowRepository.into());
+        }
+        let bounded = crate::bounded_read::BoundedObjects::new(git_dir.join("objects"), profile)?;
+        Ok(Self {
+            repo: None,
+            path: path.display().to_string(),
+            bounded: Some(std::cell::RefCell::new(bounded)),
+        })
+    }
+
+    pub fn read_accounting(&self) -> Option<serde_json::Value> {
+        self.bounded.as_ref().map(|b| b.borrow().accounting())
     }
 
     /// The path the repository was opened from.
@@ -168,8 +212,13 @@ impl GitObjects {
 
     /// Read any object, checking that its content hashes to `id`.
     fn read(&self, id: ObjectId) -> Result<(Kind, Vec<u8>), Error> {
+        if let Some(bounded) = &self.bounded {
+            return bounded.borrow_mut().read(id);
+        }
         let found = self
             .repo
+            .as_ref()
+            .expect("ordinary object reader")
             .try_find_object(id)
             .map_err(|e| CannotRead::ObjectStore {
                 id: id.to_string(),
@@ -269,6 +318,12 @@ impl GitObjects {
             rev: rev.into(),
             reason: reason.into(),
         };
+        if self.bounded.is_some() && !is_full_hex(rev) {
+            return Err(crate::bounded_read::refusal(
+                "ScopeUnavailable",
+                "bounded revision must be a full object id",
+            ));
+        }
         let start = if is_full_hex(rev) {
             ObjectId::from_hex(rev.as_bytes()).map_err(|e| bad(&e.to_string()))?
         } else if rev == "HEAD" || rev.starts_with("refs/") {
@@ -316,7 +371,12 @@ impl GitObjects {
         }
         let mut current = name.to_string();
         for _ in 0..MAX_SYMBOLIC_DEPTH {
-            let found = match self.repo.try_find_reference(current.as_str()) {
+            let found = match self
+                .repo
+                .as_ref()
+                .expect("ordinary reference reader")
+                .try_find_reference(current.as_str())
+            {
                 Ok(Some(r)) if r.name().as_bstr() == current.as_str() => Some(r),
                 Ok(_) => None,
                 Err(e) => {
@@ -364,11 +424,18 @@ impl GitObjects {
             prefix: hex.into(),
             reason: e.to_string(),
         })?;
-        let mut candidates = HashSet::new();
-        if let Err(e) = self
-            .repo
-            .objects
-            .lookup_prefix(prefix, Some(&mut candidates))
+        let mut candidates = if let Some(bounded) = &self.bounded {
+            bounded.borrow_mut().prefix(hex)?
+        } else {
+            HashSet::new()
+        };
+        if self.bounded.is_none()
+            && let Err(e) = self
+                .repo
+                .as_ref()
+                .expect("ordinary prefix reader")
+                .objects
+                .lookup_prefix(prefix, Some(&mut candidates))
         {
             return Err(CannotRead::ObjectStore {
                 id: hex.into(),
@@ -763,7 +830,24 @@ fn read_config(file: &Path) -> Result<Option<gix::config::File>, Error> {
         path: file.display().to_string(),
         reason,
     };
-    match std::fs::read(file) {
+    use std::io::Read;
+    let bytes = (|| -> std::io::Result<Vec<u8>> {
+        let input = std::fs::File::open(file)?;
+        if input.metadata()?.len() > 1 << 20 {
+            return Err(std::io::Error::other(
+                "configuration metadata exceeds 1 MiB",
+            ));
+        }
+        let mut bytes = Vec::new();
+        input.take((1 << 20) + 1).read_to_end(&mut bytes)?;
+        if bytes.len() > 1 << 20 {
+            return Err(std::io::Error::other(
+                "configuration metadata exceeds 1 MiB",
+            ));
+        }
+        Ok(bytes)
+    })();
+    match bytes {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(e) => Err(cannot(e.to_string()).into()),
         Ok(bytes) => Ok(Some(

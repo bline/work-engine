@@ -669,3 +669,131 @@ fn required_qualification_and_well_formed_ids_are_not_optional() {
         ));
     }
 }
+
+#[test]
+#[ignore = "requires RESEARCH_READ_CGROUP_ROOT delegated Linux cgroup-v2 memory+pids parent"]
+fn bounded_same_worker_composition_and_isolated_refusals() {
+    use research_register::{bounded_read::ReadProfile, read_host::*};
+    use std::{path::Path, sync::atomic::AtomicBool};
+    let mut f = Fixture::new();
+    // Eleven registered decisions form an otherwise-valid full-batch synthetic control.
+    let path = f.repo.join("reg/decisions.json");
+    let mut decisions: Vec<Value> = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    let first = decisions[0].clone();
+    for n in 2..=11 {
+        let mut d = first.clone();
+        d["decision_id"] = json!(format!("d-{n:02}"));
+        decisions.push(d);
+    }
+    write(&path, &serde_json::to_string(&decisions).unwrap());
+    f.fx.git(&f.repo, &["add", "."]);
+    f.fx.git(&f.repo, &["commit", "-qm", "eleven synthetic decisions"]);
+    f.source = f.fx.git(&f.repo, &["rev-parse", "HEAD"]);
+    let target = f.pin(&f.source, "policy.md");
+    let study = f.pin(&f.source, "reg/studies/alpha.json");
+    for (name, doc) in &mut f.docs {
+        if name == "request.json" {
+            doc["record"]["target"] = json!(target);
+        }
+        if name == "subject.json" {
+            doc["record"]["study"] = json!(study);
+        }
+    }
+    let pin = f.publish(f.manifest());
+    assert!(f.run(pin.clone()).is_ok());
+    let exe = Path::new(env!("CARGO_BIN_EXE_work-engine-research-read"));
+    let Some(root) = std::env::var_os("RESEARCH_READ_CGROUP_ROOT") else {
+        panic!("RESEARCH_READ_CGROUP_ROOT required for actual host qualification");
+    };
+    let root = Path::new(&root);
+    let cancel = AtomicBool::new(false);
+    let request = ReadRequest {
+        repository: f.repo.clone(),
+        commit: f.source.clone(),
+        register_path: "reg".into(),
+        bundle: pin.clone(),
+    };
+    let profile = HostProfile {
+        repository_scope: Some(f.repo.clone()),
+        ..HostProfile::default()
+    };
+    let run_read = |r: ReadRequest, p: HostProfile| {
+        run(
+            exe,
+            root,
+            WorkerInput {
+                request: Some(r),
+                profile: p,
+                producer: producer(exe).unwrap(),
+                probe: None,
+            },
+            &cancel,
+        )
+    };
+    assert_eq!(
+        run_read(request.clone(), profile.clone()).unwrap()["outcome"],
+        "complete"
+    );
+    // Repack the exact otherwise-valid fixture; decoded bytes/proofs stay identical.
+    f.fx.git(&f.repo, &["repack", "-adf"]);
+    f.fx.git(&f.repo, &["prune-packed"]);
+    assert_eq!(
+        run_read(request.clone(), profile.clone()).unwrap()["outcome"],
+        "complete"
+    );
+    for name in [
+        "payload",
+        "aggregate",
+        "line",
+        "metadata",
+        "source",
+        "dependency",
+        "objects",
+        "decisions",
+    ] {
+        assert!(
+            run_read(request.clone(), profile.clone()).is_ok(),
+            "valid packed control before {name}"
+        );
+        let mut p = profile.clone();
+        match name {
+            "payload" => p.read.text_bytes = 32,
+            "aggregate" => p.read.payload_bytes = 128,
+            "line" => p.read.text_lines = 1,
+            "metadata" => p.read.index_bytes = 8,
+            "source" => p.read.source_bytes = 8,
+            "dependency" => p.read.steps = 1,
+            "objects" => p.read.objects = 1,
+            "decisions" => p.read.decisions = 1,
+            _ => unreachable!(),
+        };
+        assert!(
+            run_read(request.clone(), p).is_err(),
+            "{name} must prevent complete output"
+        );
+    }
+    assert!(run_read(request.clone(), profile.clone()).is_ok());
+    let mut wrong = request.clone();
+    wrong.bundle.sha256 = "0".repeat(64);
+    assert!(run_read(wrong, profile.clone()).is_err());
+    assert!(run_read(request.clone(), profile.clone()).is_ok());
+    let mut wrong = request.clone();
+    wrong.commit = "0".repeat(40);
+    assert!(run_read(wrong, profile.clone()).is_err());
+    assert!(run_read(request.clone(), profile.clone()).is_ok());
+    let mut outside = profile.clone();
+    outside.repository_scope = Some(f.fx.root.clone());
+    assert!(run_read(request.clone(), outside).is_err());
+    // Missing packed source cannot publish the previously valid complete batch.
+    assert!(run_read(request.clone(), profile.clone()).is_ok());
+    let pack = std::fs::read_dir(f.repo.join(".git/objects/pack"))
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .find(|p| p.extension().is_some_and(|e| e == "pack"))
+        .unwrap();
+    std::fs::remove_file(pack).unwrap();
+    assert!(run_read(request, profile).is_err());
+    let mut too_large = ReadProfile::default();
+    too_large.payload_bytes += 1;
+    assert!(too_large.validate().is_err());
+}

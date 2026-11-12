@@ -2883,6 +2883,8 @@ name = "research-register"
 version = "0.1.0"
 dependencies = [
  "gix",
+ "gix-pack",
+ "libc",
  "serde",
  "serde_json",
  "sha2",

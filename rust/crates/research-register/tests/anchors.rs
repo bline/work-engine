@@ -403,6 +403,13 @@ fn anchors_command() {
 /// Only the required revision is packed; target, both trees, and every blob stay loose.
 #[test]
 fn packed_revision_disappears_without_removing_target_inputs() {
+    packed_loss(false);
+}
+#[test]
+fn bounded_packed_revision_disappears_after_validation() {
+    packed_loss(true);
+}
+fn packed_loss(bounded: bool) {
     let f = fixture("anchors-packed-revision-gone");
     let trees: Vec<_> = [&f.rev, &f.target]
         .iter()
@@ -443,7 +450,11 @@ fn packed_revision_disappears_without_removing_target_inputs() {
         1
     );
     std::fs::remove_file(f.fx.loose(&f.repo, &f.rev)).unwrap();
-    let (snapshot, valid) = valid_at(&f.repo, &f.target);
+    let (snapshot, valid) = if bounded {
+        valid_at_bounded(&f.repo, &f.target)
+    } else {
+        valid_at(&f.repo, &f.target)
+    };
     assert_eq!(
         anchors(&valid, &snapshot).unwrap().entries.len(),
         DOCS.len()
@@ -487,6 +498,13 @@ fn packed_revision_disappears_without_removing_target_inputs() {
 /// Frozen payloads avoid any collision search in CI.
 #[test]
 fn revision_prefix_becomes_ambiguous_after_validation() {
+    late_ambiguity(false);
+}
+#[test]
+fn bounded_revision_prefix_becomes_ambiguous_in_late_pack() {
+    late_ambiguity(true);
+}
+fn late_ambiguity(bounded: bool) {
     let pair: Value =
         serde_json::from_str(include_str!("fixtures/revision-prefix-collision.json")).unwrap();
     let fx = Fx::new("anchors-prefix-collision");
@@ -522,10 +540,31 @@ fn revision_prefix_becomes_ambiguous_after_validation() {
     fx.git(&repo, &["add", "-A"]);
     fx.git(&repo, &["commit", "-q", "-m", "target"]);
     let target = fx.git(&repo, &["rev-parse", "HEAD"]);
-    let (snapshot, valid) = valid_at(&repo, &target);
+    let (snapshot, valid) = if bounded {
+        valid_at_bounded(&repo, &target)
+    } else {
+        valid_at(&repo, &target)
+    };
     assert_eq!(anchors(&valid, &snapshot).unwrap().entries.len(), 1);
     let second = write_commit(1);
     assert_eq!(second, commits[1]["id"].as_str().unwrap());
+    let mut late_paths = Vec::new();
+    if bounded {
+        let prefix = repo.join(".git/objects/pack/late");
+        let hash = fx.git_with(
+            &repo,
+            &["pack-objects", prefix.to_str().unwrap()],
+            Some(format!("{second}\n").as_bytes()),
+            &[],
+        );
+        for ext in ["pack", "idx"] {
+            late_paths.push(std::path::PathBuf::from(format!(
+                "{}-{hash}.{ext}",
+                prefix.display()
+            )));
+        }
+        std::fs::remove_file(fx.loose(&repo, &second)).unwrap();
+    }
     let objects = GitObjects::open(&repo).unwrap();
     objects.commit(objects.resolve(&second).unwrap()).unwrap();
     assert!(matches!(
@@ -536,7 +575,30 @@ fn revision_prefix_becomes_ambiguous_after_validation() {
     ));
     let err = anchors(&valid, &snapshot).unwrap_err();
     assert_eq!(err.category(), "invariant_failure", "{err}");
-    std::fs::remove_file(fx.loose(&repo, &second)).unwrap();
+    if bounded {
+        for path in late_paths {
+            std::fs::remove_file(path).unwrap();
+        }
+    } else {
+        std::fs::remove_file(fx.loose(&repo, &second)).unwrap();
+    }
     assert_eq!(anchors(&valid, &snapshot).unwrap().entries.len(), 1);
     assert_eq!(run(&repo, &target).unwrap().entries.len(), 1);
+}
+
+fn valid_at_bounded(repo: &Path, commit: &str) -> (PinnedSnapshot, Box<ValidRegister>) {
+    let snapshot = PinnedSnapshot::build(
+        GitObjects::open_bounded(
+            repo,
+            research_register::bounded_read::ReadProfile::default(),
+        )
+        .unwrap(),
+        commit,
+        REG,
+    )
+    .unwrap();
+    let Outcome::Valid(valid) = validate(&snapshot).unwrap() else {
+        panic!("bounded fixture invalid")
+    };
+    (snapshot, valid)
 }

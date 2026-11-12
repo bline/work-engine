@@ -13,10 +13,12 @@
 //! detection is an open owner question, Q-R2-2). Decision cards are not part of this crate yet.
 
 pub mod anchor;
+pub mod bounded_read;
 pub mod error;
 pub mod model;
 pub mod objects;
 pub mod parse;
+pub mod read_host;
 pub mod rules;
 pub mod snapshot;
 pub mod use_bundle;
