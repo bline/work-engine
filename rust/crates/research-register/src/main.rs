@@ -1,21 +1,23 @@
 //! `work-engine-register snapshot --at <rev> [--register <path>] [--repo <dir>]`
 //! `work-engine-register validate --at <rev> [--register <path>] [--repo <dir>]`
+//! `work-engine-register anchors --at <rev> [--register <path>] [--repo <dir>]`
 //!
-//! Each prints one JSON line. Exit codes: 0 ok (snapshot) or valid (validate), 1 invalid
-//! (validate), 2 usage, 3 bad_request, 4 cannot_read, unsupported or no_register_at_commit (the
-//! JSON `outcome` names which).
+//! Each prints one JSON line. Exit codes: 0 ok (snapshot, anchors) or valid (validate), 1 invalid
+//! (validate, anchors: the violations are printed as `validate` prints them), 2 usage, 3
+//! bad_request, 4 cannot_read, unsupported, no_register_at_commit or (anchors)
+//! invariant_failure (the JSON `outcome` names which).
 
 use research_register::{
-    Error, GitObjects, Outcome, PinnedSnapshot, SNAPSHOT_SCHEMA, Unreadable, Violation,
-    validate_report,
+    AnchorError, Error, GitObjects, Outcome, PinnedSnapshot, SNAPSHOT_SCHEMA, Unreadable,
+    Violation, validate_report,
 };
 use serde::Serialize;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const USAGE: &str =
-    "usage: work-engine-register (snapshot|validate) --at <rev> [--register <path>] [--repo <dir>]";
+const USAGE: &str = "usage: work-engine-register (snapshot|validate|anchors) --at <rev> [--register <path>] [--repo <dir>]";
 pub const VALIDATION_SCHEMA: &str = "research_register_validation_v1";
+pub const ANCHORS_SCHEMA: &str = "research_register_anchors_v1";
 
 #[derive(Serialize)]
 struct Failure<'a> {
@@ -63,6 +65,7 @@ struct Validation<'a> {
 enum Command {
     Snapshot,
     Validate,
+    Anchors,
 }
 
 fn main() -> ExitCode {
@@ -74,6 +77,7 @@ fn main() -> ExitCode {
     let schema = match command {
         Command::Snapshot => SNAPSHOT_SCHEMA,
         Command::Validate => VALIDATION_SCHEMA,
+        Command::Anchors => ANCHORS_SCHEMA,
     };
     let result = GitObjects::open(&repo)
         .and_then(|objects| PinnedSnapshot::build(objects, &at, &register))
@@ -85,6 +89,49 @@ fn main() -> ExitCode {
             Command::Snapshot => {
                 print(&snapshot.identity());
                 Ok(ExitCode::SUCCESS)
+            }
+            Command::Anchors => {
+                let outcome = validate_report(&snapshot)?;
+                let Outcome::Valid(valid) = &outcome else {
+                    let Outcome::Invalid(violations) = &outcome else {
+                        unreachable!()
+                    };
+                    print(&Validation {
+                        schema,
+                        outcome: "invalid",
+                        requested: &at,
+                        commit: snapshot.commit().to_string(),
+                        register_path: snapshot.register_path(),
+                        register_tree: snapshot.register_tree().to_string(),
+                        violations: violations.iter().map(shown).collect(),
+                    });
+                    return Ok(ExitCode::from(1));
+                };
+                match research_register::anchors(valid, &snapshot) {
+                    Ok(report) => {
+                        let mut out = report.to_json();
+                        let map = out.as_object_mut().expect("report is an object");
+                        map.insert("schema".into(), schema.into());
+                        map.insert("outcome".into(), "ok".into());
+                        map.insert("requested".into(), at.clone().into());
+                        print(&out);
+                        Ok(ExitCode::SUCCESS)
+                    }
+                    Err(AnchorError::Read(error)) => Err(Unreadable {
+                        error,
+                        diagnostics: Vec::new(),
+                    }),
+                    Err(e @ AnchorError::Invariant(_)) => {
+                        print(&Failure {
+                            schema,
+                            outcome: e.category(),
+                            requested: &at,
+                            error: e.to_string(),
+                            diagnostics: Vec::new(),
+                        });
+                        Ok(ExitCode::from(4))
+                    }
+                }
             }
             Command::Validate => {
                 let outcome = validate_report(&snapshot)?;
@@ -138,6 +185,7 @@ fn parse(args: &[String]) -> Option<(Command, String, String, PathBuf)> {
     let command = match command.as_str() {
         "snapshot" => Command::Snapshot,
         "validate" => Command::Validate,
+        "anchors" => Command::Anchors,
         _ => return None,
     };
     let (mut at, mut register, mut repo) =

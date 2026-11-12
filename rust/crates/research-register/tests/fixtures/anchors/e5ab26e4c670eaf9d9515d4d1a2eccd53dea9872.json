@@ -1,0 +1,404 @@
+{
+ "entries": [
+  {
+   "after": {
+    "lines": "88-101"
+   },
+   "before": {
+    "anchored_text_sha256": "e7d87e451b66301fc8519cb0ea45c49dc16fd563278af4eac10771af8b65f296",
+    "document_blob": "cc9327188f64fefb1d98ac652c98404dc7d79fc2",
+    "lines": "88-101",
+    "revision": "git:1a1cb443",
+    "revision_commit": "1a1cb443840a6f58527fc0a1c3589d67c91c02ab"
+   },
+   "candidates": [],
+   "class": "unchanged",
+   "context_after.section_chain": null,
+   "context_before.section_chain": null,
+   "decision_id": "context-boundary.h2-levels",
+   "document_at_target": {
+    "blob": "cc9327188f64fefb1d98ac652c98404dc7d79fc2",
+    "path": "skills/manual-orchestration/references/context-boundary.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "1a1cb443840a6f58527fc0a1c3589d67c91c02ab"
+  },
+  {
+   "after": {
+    "lines": "13"
+   },
+   "before": {
+    "anchored_text_sha256": "48fcdedb235e7261926eb5337c403db6c3c0389e9b8995bf0b65c2afaee69f89",
+    "document_blob": "66694f0dc6d647eb0bbf9f5e7f8ce9e19e54a08b",
+    "lines": "3",
+    "revision": "git:d80dd242",
+    "revision_commit": "d80dd242f83d6e3f5ce522c01fd512c94b4c501f"
+   },
+   "candidates": [],
+   "class": "moved",
+   "context_after.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)"
+    }
+   ],
+   "context_before.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Dogfood selection plan, phase 0: shadow-mode task profiles (2026-10-27)"
+    }
+   ],
+   "decision_id": "dogfood-plan.round2-status-line",
+   "document_at_target": {
+    "blob": "e036bd7aa76da1e27e2bc53b8b21a687cf621854",
+    "path": "metrics/dogfood-selection-plan-20261027.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "d80dd242f83d6e3f5ce522c01fd512c94b4c501f"
+  },
+  {
+   "after": {
+    "lines": "41"
+   },
+   "before": {
+    "anchored_text_sha256": "6dd6ae0a8f39fa8de7144648b6d5cde4f103daf901d182c80f45a381fe66b7d5",
+    "document_blob": "74c71fd02c5d474296a3e15d6def120c60d2f7c9",
+    "lines": "40",
+    "revision": "git:41d47209",
+    "revision_commit": "41d47209a107d2230b3228ef3b624dcf20dc3a06"
+   },
+   "candidates": [],
+   "class": "moved",
+   "context_after.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 33,
+     "text": "## Current defaults"
+    }
+   ],
+   "context_before.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 32,
+     "text": "## Current defaults"
+    }
+   ],
+   "decision_id": "model-selection.builder-default",
+   "document_at_target": {
+    "blob": "4f57c4e7d83233739898eed3cf162941e872deba",
+    "path": "docs/model-selection.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "41d47209a107d2230b3228ef3b624dcf20dc3a06"
+  },
+  {
+   "after": {
+    "lines": "128-129"
+   },
+   "before": {
+    "anchored_text_sha256": "139361422b2ddf1eda3d90227fe9eccbc0a528d98ca39a0e9dd047764c822c9e",
+    "document_blob": "c9b9524f621ffa00d934296d4464fa15bdd72425",
+    "lines": "128-129",
+    "revision": "git:1906090c",
+    "revision_commit": "1906090c9a5596942446f39125004283275e7131"
+   },
+   "candidates": [],
+   "class": "unchanged",
+   "context_after.section_chain": null,
+   "context_before.section_chain": null,
+   "decision_id": "model-selection.claude-host-builder-rows",
+   "document_at_target": {
+    "blob": "4f57c4e7d83233739898eed3cf162941e872deba",
+    "path": "docs/model-selection.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "1906090c9a5596942446f39125004283275e7131"
+  },
+  {
+   "after": null,
+   "before": {
+    "anchored_text_sha256": "124c540eadb914803662b96f8937edbae8424c5b98b0625c29dea0b8967bc195",
+    "document_blob": "0e4b053d793c353f1eb0b0390713eaf8efee113d",
+    "lines": "39-40",
+    "revision": "git:df288c3d",
+    "revision_commit": "df288c3d6b0020751856aad27e7c571fcae3c229"
+   },
+   "candidates": [
+    {
+     "basis": "line tracking through the diff; candidate only, not chosen",
+     "lines": "43"
+    }
+   ],
+   "class": "modified",
+   "context_after.section_chain": null,
+   "context_before.section_chain": null,
+   "decision_id": "model-selection.claude-host-builder-rows-at-df288c3d",
+   "document_at_target": {
+    "blob": "4f57c4e7d83233739898eed3cf162941e872deba",
+    "path": "docs/model-selection.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "df288c3d6b0020751856aad27e7c571fcae3c229"
+  },
+  {
+   "after": {
+    "lines": "278"
+   },
+   "before": {
+    "anchored_text_sha256": "046e2c6ecc17839009d1db1540d75179b4911e7f1485a78ced294fa3aa173fed",
+    "document_blob": "96accd6fb36ed73f144111deca7482e14916602c",
+    "lines": "92",
+    "revision": "git:2127cc34",
+    "revision_commit": "2127cc348ee078b8bfa79733f1c1752390b78c05"
+   },
+   "candidates": [],
+   "class": "moved",
+   "context_after.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 271,
+     "text": "## Cost and quota facts that bear on selection"
+    }
+   ],
+   "context_before.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 85,
+     "text": "## Cost and quota facts that bear on selection"
+    }
+   ],
+   "decision_id": "model-selection.cost-table-effort-row",
+   "document_at_target": {
+    "blob": "4f57c4e7d83233739898eed3cf162941e872deba",
+    "path": "docs/model-selection.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "2127cc348ee078b8bfa79733f1c1752390b78c05"
+  },
+  {
+   "after": {
+    "lines": "276"
+   },
+   "before": {
+    "anchored_text_sha256": "2e6ac3714fcfdbe91698985897829093201aa14c6c6cc078772f02c11c4de561",
+    "document_blob": "4cac8a2702f87d68a0c00a7029883d716ac911c9",
+    "lines": "268",
+    "revision": "git:5149cc27",
+    "revision_commit": "5149cc27b7bc57e76d0082eab33e1dfa82783fb1"
+   },
+   "candidates": [],
+   "class": "moved",
+   "context_after.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 271,
+     "text": "## Cost and quota facts that bear on selection"
+    }
+   ],
+   "context_before.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 263,
+     "text": "## Cost and quota facts that bear on selection"
+    }
+   ],
+   "decision_id": "model-selection.cost-table-quota-row",
+   "document_at_target": {
+    "blob": "4f57c4e7d83233739898eed3cf162941e872deba",
+    "path": "docs/model-selection.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "5149cc27b7bc57e76d0082eab33e1dfa82783fb1"
+  },
+  {
+   "after": {
+    "lines": "42"
+   },
+   "before": {
+    "anchored_text_sha256": "f5968b41d6ab17d67d989fe8f41c7ab39541b183fbb9e1376cb8f49f80678030",
+    "document_blob": "74c71fd02c5d474296a3e15d6def120c60d2f7c9",
+    "lines": "41",
+    "revision": "git:41d47209",
+    "revision_commit": "41d47209a107d2230b3228ef3b624dcf20dc3a06"
+   },
+   "candidates": [],
+   "class": "moved",
+   "context_after.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 33,
+     "text": "## Current defaults"
+    }
+   ],
+   "context_before.section_chain": [
+    {
+     "level": 1,
+     "line": 1,
+     "text": "# Model selection for engineering work"
+    },
+    {
+     "level": 2,
+     "line": 32,
+     "text": "## Current defaults"
+    }
+   ],
+   "decision_id": "model-selection.terra-mechanical-builder",
+   "document_at_target": {
+    "blob": "4f57c4e7d83233739898eed3cf162941e872deba",
+    "path": "docs/model-selection.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "41d47209a107d2230b3228ef3b624dcf20dc3a06"
+  },
+  {
+   "after": {
+    "lines": "455"
+   },
+   "before": {
+    "anchored_text_sha256": "2de26b72c72d259f51580523b8a5e448b21832d936140c429b76a3c8a3221370",
+    "document_blob": "d31869f5066e68e00fb7205e357a47ad03e06894",
+    "lines": "455",
+    "revision": "git:d80dd242",
+    "revision_commit": "d80dd242f83d6e3f5ce522c01fd512c94b4c501f"
+   },
+   "candidates": [],
+   "class": "unchanged",
+   "context_after.section_chain": null,
+   "context_before.section_chain": null,
+   "decision_id": "pi-coding-profile.acceptance-contract",
+   "document_at_target": {
+    "blob": "d31869f5066e68e00fb7205e357a47ad03e06894",
+    "path": "rust/crates/work-engine-manual-host/src/pi_coding.rs",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "d80dd242f83d6e3f5ce522c01fd512c94b4c501f"
+  },
+  {
+   "after": {
+    "document_blob": "5a24de8073add1e047019bb8d6aa39587f15ab53"
+   },
+   "before": {
+    "document_blob": "5a24de8073add1e047019bb8d6aa39587f15ab53",
+    "revision": "git:a71b2027",
+    "revision_commit": "a71b2027cc3ea2de9bfe9e501dac5847f14e3c9d"
+   },
+   "candidates": [],
+   "class": "unchanged",
+   "context_after.section_chain": null,
+   "context_before.section_chain": null,
+   "decision_id": "pi-docker-convergence.context-replacement",
+   "document_at_target": {
+    "blob": "5a24de8073add1e047019bb8d6aa39587f15ab53",
+    "path": "planning/s10-pi-docker-convergence-amendment-20261103.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "a71b2027cc3ea2de9bfe9e501dac5847f14e3c9d"
+  },
+  {
+   "after": {
+    "lines": "113-118"
+   },
+   "before": {
+    "anchored_text_sha256": "c983daa92664751ac3ff104a4039cf25aaa5ca18b6e01d9fe62c595012ecfc99",
+    "document_blob": "3285d545dea72c5c3e2027b16e9529dba4f4945d",
+    "lines": "113-118",
+    "revision": "git:a71b2027",
+    "revision_commit": "a71b2027cc3ea2de9bfe9e501dac5847f14e3c9d"
+   },
+   "candidates": [],
+   "class": "unchanged",
+   "context_after.section_chain": null,
+   "context_before.section_chain": null,
+   "decision_id": "roadmap.current-strategic-route",
+   "document_at_target": {
+    "blob": "3285d545dea72c5c3e2027b16e9529dba4f4945d",
+    "path": "roadmap.md",
+    "rename_status": null,
+    "renamed": false
+   },
+   "error": null,
+   "owner_review_reasons": [],
+   "owner_review_required": false,
+   "revision_commit": "a71b2027cc3ea2de9bfe9e501dac5847f14e3c9d"
+  }
+ ],
+ "pinned_commit": "e5ab26e4c670eaf9d9515d4d1a2eccd53dea9872",
+ "register_path": "metrics/register"
+}
