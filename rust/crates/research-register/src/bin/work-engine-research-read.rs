@@ -63,7 +63,7 @@ fn execute() -> Result<Vec<u8>, String> {
         libc::signal(libc::SIGTERM, cancel as libc::sighandler_t);
     }
     let start = std::time::Instant::now();
-    let bytes = acquire_input(start, profile.wall_millis)?;
+    let bytes = acquire_control_input(&CANCEL, start, profile.wall_millis)?;
     let request = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let input = WorkerInput {
@@ -80,49 +80,4 @@ fn execute() -> Result<Vec<u8>, String> {
         start,
     )?)
     .map_err(|e| e.to_string())
-}
-
-#[cfg(target_os = "linux")]
-fn acquire_input(start: std::time::Instant, wall_millis: u64) -> Result<Vec<u8>, String> {
-    let mut bytes = Vec::new();
-    loop {
-        if CANCEL.load(Ordering::SeqCst) {
-            return Err("Cancelled".into());
-        }
-        if start.elapsed() >= std::time::Duration::from_millis(wall_millis) {
-            return Err("WallLimit".into());
-        }
-        let mut fd = libc::pollfd {
-            fd: libc::STDIN_FILENO,
-            events: libc::POLLIN,
-            revents: 0,
-        };
-        let ready = unsafe { libc::poll(&mut fd, 1, 5) };
-        if ready < 0 {
-            let e = std::io::Error::last_os_error();
-            if e.kind() == std::io::ErrorKind::Interrupted {
-                continue;
-            }
-            return Err(e.to_string());
-        }
-        if ready == 0 {
-            continue;
-        }
-        let mut buf = [0u8; 4096];
-        let n = unsafe { libc::read(libc::STDIN_FILENO, buf.as_mut_ptr().cast(), buf.len()) };
-        if n < 0 {
-            return Err(std::io::Error::last_os_error().to_string());
-        }
-        if n == 0 {
-            return Ok(bytes);
-        }
-        bytes.extend_from_slice(&buf[..n as usize]);
-        if bytes.len() > 16384 {
-            return Err("ControlInputLimit".into());
-        }
-    }
-}
-#[cfg(not(target_os = "linux"))]
-fn acquire_input(_: std::time::Instant, _: u64) -> Result<Vec<u8>, String> {
-    Err("ControlsUnavailable".into())
 }

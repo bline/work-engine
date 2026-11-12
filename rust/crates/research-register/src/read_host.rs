@@ -83,8 +83,7 @@ pub fn producer(path: &Path) -> Result<String, String> {
     }
     Ok(format!("{:x}", hash.finalize()))
 }
-pub fn worker(input: WorkerInput) -> Result<serde_json::Value, String> {
-    input.profile.validate()?;
+pub(crate) fn verify_controls(profile: &HostProfile) -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
         let cg = std::fs::read_to_string("/proc/self/cgroup").map_err(|e| e.to_string())?;
@@ -103,10 +102,15 @@ pub fn worker(input: WorkerInput) -> Result<serde_json::Value, String> {
             rlim_max: 0,
         };
         let ok = unsafe { libc::getrlimit(libc::RLIMIT_CPU, &mut cpu) };
-        if mem > input.profile.memory_bytes || ok != 0 || cpu.rlim_max > input.profile.cpu_seconds {
+        if mem > profile.memory_bytes || ok != 0 || cpu.rlim_max > profile.cpu_seconds {
             return Err("ControlsUnavailable".into());
         }
     }
+    Ok(())
+}
+pub fn worker(input: WorkerInput) -> Result<serde_json::Value, String> {
+    input.profile.validate()?;
+    verify_controls(&input.profile)?;
     // The parent executes its hash-verified sealed image; echo that bound identity.
 
     let register_only = input.probe.as_deref() == Some("register-only");
@@ -238,12 +242,76 @@ pub fn run_started(
     cancel: &AtomicBool,
     start: Instant,
 ) -> Result<serde_json::Value, String> {
+    let encoded = serde_json::to_vec(&input).map_err(|e| e.to_string())?;
+    let expected = input.producer.clone();
+    let report = run_payload(
+        executable,
+        cgroup_root,
+        &input.profile,
+        &expected,
+        encoded,
+        cancel,
+        start,
+    )?;
+    if report.get("producer").and_then(|v| v.as_str()) == Some(expected.as_str())
+        && report.get("outcome").and_then(|v| v.as_str()) == Some("refused")
+    {
+        return Err(format!(
+            "ReaderRefusal: {}",
+            report
+                .get("reason")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+        ));
+    }
+    let expected_outcome = if input.probe.as_deref() == Some("register-only") {
+        "control_complete"
+    } else {
+        "complete"
+    };
+    if report.get("producer").and_then(|v| v.as_str()) != Some(expected.as_str())
+        || report.get("outcome").and_then(|v| v.as_str()) != Some(expected_outcome)
+    {
+        return Err("OutcomeOrProducerMismatch".into());
+    }
+    if let Some(r) = input.request {
+        let profile_pin = format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&input.profile).map_err(|e| e.to_string())?)
+        );
+        if report.get("profile_sha256").and_then(|v| v.as_str()) != Some(profile_pin.as_str()) {
+            return Err("ProfileMismatch".into());
+        }
+        if report.get("commit").and_then(|v| v.as_str()) != Some(r.commit.as_str())
+            || (input.probe.as_deref() != Some("register-only")
+                && report.get("bundle")
+                    != Some(&serde_json::to_value(r.bundle).map_err(|e| e.to_string())?))
+        {
+            return Err("PinMismatch".into());
+        }
+    }
+    if start.elapsed() >= Duration::from_millis(input.profile.wall_millis) {
+        return Err("WallLimit".into());
+    }
+    Ok(report)
+}
+/// Shared sealed-image, CPU/cgroup/wall/output enclosure. Domain validation stays with the caller.
+#[cfg(target_os = "linux")]
+pub(crate) fn run_payload(
+    executable: &Path,
+    cgroup_root: &Path,
+    profile: &HostProfile,
+    expected_producer: &str,
+    encoded: Vec<u8>,
+    cancel: &AtomicBool,
+    start: Instant,
+) -> Result<serde_json::Value, String> {
     use std::os::unix::process::CommandExt;
-    input.profile.validate()?;
+    profile.validate()?;
     if cancel.load(Ordering::SeqCst) {
         return Err("Cancelled".into());
     }
-    if start.elapsed() >= Duration::from_millis(input.profile.wall_millis) {
+    if start.elapsed() >= Duration::from_millis(profile.wall_millis) {
         return Err("WallLimit".into());
     }
     // Execute a sealed private copy: a pathname replacement cannot switch the admitted image.
@@ -279,10 +347,9 @@ pub fn run_started(
     }
     let image_path = PathBuf::from(format!("/proc/self/fd/{}", image.as_raw_fd()));
     let expected = producer(&image_path)?;
-    if expected != input.producer {
+    if expected != expected_producer {
         return Err("ProducerMismatch".into());
     }
-    let encoded = serde_json::to_vec(&input).map_err(|e| e.to_string())?;
     if encoded.len() > 16384 {
         return Err("ControlInputLimit".into());
     }
@@ -301,7 +368,7 @@ pub fn run_started(
     }
     let guard = Group(group.clone());
     for (name, value) in [
-        ("memory.max", input.profile.memory_bytes.to_string()),
+        ("memory.max", profile.memory_bytes.to_string()),
         ("memory.swap.max", "0".into()),
         ("memory.oom.group", "1".into()),
         ("pids.max", "16".into()),
@@ -311,13 +378,13 @@ pub fn run_started(
     if std::fs::read_to_string(group.join("memory.max"))
         .map_err(|e| e.to_string())?
         .trim()
-        != input.profile.memory_bytes.to_string()
+        != profile.memory_bytes.to_string()
     {
         return Err("ControlsUnavailable".into());
     }
     let procs = std::ffi::CString::new(group.join("cgroup.procs").as_os_str().as_encoded_bytes())
         .map_err(|e| e.to_string())?;
-    let cpu = input.profile.cpu_seconds;
+    let cpu = profile.cpu_seconds;
     let mut command = std::process::Command::new(&image_path);
     command
         .arg("--private-worker-v1")
@@ -387,13 +454,13 @@ pub fn run_started(
         child.stdout.take().unwrap(),
         total.clone(),
         overflow.clone(),
-        input.profile.output_bytes,
+        profile.output_bytes,
     );
     let stderr = drain(
         child.stderr.take().unwrap(),
         total,
         overflow.clone(),
-        input.profile.output_bytes,
+        profile.output_bytes,
     );
     let mut stdin = child.stdin.take().unwrap();
     let sender = std::thread::spawn(move || stdin.write_all(&encoded));
@@ -403,7 +470,7 @@ pub fn run_started(
             refused = Some("Cancelled".into());
         } else if overflow.load(Ordering::SeqCst) {
             refused = Some("OutputLimit".into());
-        } else if start.elapsed() > Duration::from_millis(input.profile.wall_millis) {
+        } else if start.elapsed() > Duration::from_millis(profile.wall_millis) {
             refused = Some("WallLimit".into());
         }
         if refused.is_some() {
@@ -444,44 +511,10 @@ pub fn run_started(
         return Err(format!("WorkerExit: {status}"));
     }
     let report = unframe(&out)?;
-    if report.get("producer").and_then(|v| v.as_str()) == Some(expected.as_str())
-        && report.get("outcome").and_then(|v| v.as_str()) == Some("refused")
-    {
-        return Err(format!(
-            "ReaderRefusal: {}",
-            report
-                .get("reason")
-                .and_then(|v| v.as_str())
-                .unwrap_or("Unknown")
-        ));
-    }
-    let expected_outcome = if input.probe.as_deref() == Some("register-only") {
-        "control_complete"
-    } else {
-        "complete"
-    };
-    if report.get("producer").and_then(|v| v.as_str()) != Some(expected.as_str())
-        || report.get("outcome").and_then(|v| v.as_str()) != Some(expected_outcome)
-    {
-        return Err("OutcomeOrProducerMismatch".into());
-    }
-    if let Some(r) = input.request {
-        let profile_pin = format!(
-            "{:x}",
-            Sha256::digest(serde_json::to_vec(&input.profile).map_err(|e| e.to_string())?)
-        );
-        if report.get("profile_sha256").and_then(|v| v.as_str()) != Some(profile_pin.as_str()) {
-            return Err("ProfileMismatch".into());
-        }
-        if report.get("commit").and_then(|v| v.as_str()) != Some(r.commit.as_str())
-            || (input.probe.as_deref() != Some("register-only")
-                && report.get("bundle")
-                    != Some(&serde_json::to_value(r.bundle).map_err(|e| e.to_string())?))
-        {
-            return Err("PinMismatch".into());
-        }
-    }
     drop(guard);
+    if start.elapsed() >= Duration::from_millis(profile.wall_millis) {
+        return Err("WallLimit".into());
+    }
     Ok(report)
 }
 struct SystemNonce;
@@ -563,4 +596,57 @@ mod scope_tests {
         assert!(admit_repository(&a, &link).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
+}
+
+#[cfg(target_os = "linux")]
+pub fn acquire_control_input(
+    cancel: &AtomicBool,
+    start: std::time::Instant,
+    wall_millis: u64,
+) -> Result<Vec<u8>, String> {
+    let mut bytes = Vec::new();
+    loop {
+        if cancel.load(Ordering::SeqCst) {
+            return Err("Cancelled".into());
+        }
+        if start.elapsed() >= std::time::Duration::from_millis(wall_millis) {
+            return Err("WallLimit".into());
+        }
+        let mut fd = libc::pollfd {
+            fd: libc::STDIN_FILENO,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let ready = unsafe { libc::poll(&mut fd, 1, 5) };
+        if ready < 0 {
+            let e = std::io::Error::last_os_error();
+            if e.kind() == std::io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(e.to_string());
+        }
+        if ready == 0 {
+            continue;
+        }
+        let mut buf = [0u8; 4096];
+        let n = unsafe { libc::read(libc::STDIN_FILENO, buf.as_mut_ptr().cast(), buf.len()) };
+        if n < 0 {
+            return Err(std::io::Error::last_os_error().to_string());
+        }
+        if n == 0 {
+            return Ok(bytes);
+        }
+        bytes.extend_from_slice(&buf[..n as usize]);
+        if bytes.len() > 16384 {
+            return Err("ControlInputLimit".into());
+        }
+    }
+}
+#[cfg(not(target_os = "linux"))]
+pub fn acquire_control_input(
+    cancel: &AtomicBool,
+    _: std::time::Instant,
+    _: u64,
+) -> Result<Vec<u8>, String> {
+    Err("ControlsUnavailable".into())
 }

@@ -1,0 +1,38 @@
+{
+  "status": "pass",
+  "vectors": [
+    {
+      "outcome": "revision_unknown",
+      "path": "refused-revision-unknown.json",
+      "sha256": "0ea194467a08516c42bb0daec5efdc01d06774ef2078742865294e10ca1c379f",
+      "size_bytes": 293
+    },
+    {
+      "outcome": "card",
+      "path": "success-empty.json",
+      "sha256": "ce1e6ea8bfa3ea28bcb74303180d849359a32c9116bef5226fab7989e1660e65",
+      "size_bytes": 2884
+    },
+    {
+      "outcome": "card",
+      "path": "success-unavailable.json",
+      "sha256": "c6d0712fe992e5af5e0a8e61b3579aff20d3444b5569e17ecd0e2ffc056d1d4e",
+      "size_bytes": 4605
+    }
+  ],
+  "checks": [
+    "complete fixed field sets",
+    "canonical exact-byte replay",
+    "conditional card/detail/null mapping",
+    "empty/unavailable claims and row count",
+    "per-array ordering and source judgment order",
+    "exact pending/declined/other/cross notice representation",
+    "quote/backslash/slash/control/Unicode escaping",
+    "legacy number spelling retained in copied JSON",
+    "surrogate/nonfinite/range refusal",
+    "mandatory decision_finding_statement exact text",
+    "non-card detail exactly outcome code"
+  ],
+  "manifest_sha256": "c7698bd3a71db01752ed02b25e0b61ac24d6180510d05f0ef5a8ac66de59aa4f",
+  "scope": "Prose/codec-vector verification only; no runtime product tests or authority qualification."
+}

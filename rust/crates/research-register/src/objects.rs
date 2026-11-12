@@ -100,6 +100,7 @@ pub enum BlobAt {
 /// the id and type requested.
 pub struct GitObjects {
     repo: Option<gix::Repository>,
+    replay: Option<std::collections::BTreeMap<ObjectId, (Kind, Vec<u8>)>>,
     path: String,
     bounded: Option<std::cell::RefCell<crate::bounded_read::BoundedObjects>>,
 }
@@ -161,6 +162,7 @@ impl GitObjects {
         }
         Ok(GitObjects {
             repo: Some(repo),
+            replay: None,
             path: shown,
             bounded: None,
         })
@@ -196,11 +198,33 @@ impl GitObjects {
         let bounded = crate::bounded_read::BoundedObjects::new(git_dir.join("objects"), profile)?;
         Ok(Self {
             repo: None,
+            replay: None,
             path: path.display().to_string(),
             bounded: Some(std::cell::RefCell::new(bounded)),
         })
     }
 
+    pub(crate) fn copied_objects(&self) -> Option<Vec<(ObjectId, Kind, Vec<u8>)>> {
+        self.bounded.as_ref().map(|b| b.borrow().copies())
+    }
+    pub(crate) fn from_copies(copies: Vec<(ObjectId, Kind, Vec<u8>)>) -> Result<Self, Error> {
+        let mut map = std::collections::BTreeMap::new();
+        for (id, kind, bytes) in copies {
+            verify_hash(id, kind, &bytes)?;
+            if map.insert(id, (kind, bytes)).is_some() {
+                return Err(crate::bounded_read::refusal(
+                    "CopyMismatch",
+                    "duplicate object",
+                ));
+            }
+        }
+        Ok(Self {
+            repo: None,
+            replay: Some(map),
+            path: "retained-copies".into(),
+            bounded: None,
+        })
+    }
     pub fn read_accounting(&self) -> Option<serde_json::Value> {
         self.bounded.as_ref().map(|b| b.borrow().accounting())
     }
@@ -212,6 +236,13 @@ impl GitObjects {
 
     /// Read any object, checking that its content hashes to `id`.
     fn read(&self, id: ObjectId) -> Result<(Kind, Vec<u8>), Error> {
+        if let Some(copies) = &self.replay {
+            let (kind, bytes) = copies
+                .get(&id)
+                .ok_or_else(|| CannotRead::ObjectUnavailable { id: id.to_string() })?;
+            verify_hash(id, *kind, bytes)?;
+            return Ok((*kind, bytes.clone()));
+        }
         if let Some(bounded) = &self.bounded {
             return bounded.borrow_mut().read(id);
         }
@@ -429,7 +460,16 @@ impl GitObjects {
         } else {
             HashSet::new()
         };
+        if let Some(copies) = &self.replay {
+            candidates.extend(
+                copies
+                    .keys()
+                    .filter(|id| id.to_string().starts_with(hex))
+                    .copied(),
+            );
+        }
         if self.bounded.is_none()
+            && self.replay.is_none()
             && let Err(e) = self
                 .repo
                 .as_ref()
@@ -553,7 +593,7 @@ pub(crate) fn verify_kind(id: ObjectId, expected: Kind, actual: Kind) -> Result<
     Ok(())
 }
 
-fn kind_name(kind: Kind) -> &'static str {
+pub(crate) fn kind_name(kind: Kind) -> &'static str {
     match kind {
         Kind::Commit => "commit",
         Kind::Tree => "tree",

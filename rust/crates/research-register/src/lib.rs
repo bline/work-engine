@@ -10,7 +10,7 @@
 //! Git-free checks; violations carry a [`RuleId`]. [`validate`] checks a whole snapshot, including
 //! the Git-backed rules, and yields a [`ValidRegister`] or the violations. [`anchor::anchors`]
 //! classifies each decision's anchor of a [`ValidRegister`] at its own commit (read-only; rename
-//! detection is an open owner question, Q-R2-2). Decision cards are not part of this crate yet.
+//! detection is an open owner question, Q-R2-2). The current-use card host composes these proofs with separately installed admission; its production authority route remains unavailable.
 
 pub mod anchor;
 pub mod bounded_read;
@@ -36,3 +36,8 @@ pub use snapshot::{
     EntryIdentity, PinnedSnapshot, SNAPSHOT_SCHEMA, SnapshotEntry, SnapshotIdentity,
 };
 pub use validate::{Outcome, Unreadable, ValidRegister, validate, validate_report};
+
+pub mod card;
+pub mod card_admission;
+pub mod card_host;
+pub mod card_wire;

@@ -1,0 +1,15 @@
+# M3b — implementation and qualification authorization
+
+Recorded 2026-11-12. The user approved the proposed M3b allowance with “budget approved” at `2026-11-12T16:43:42.799Z` in Codex session `01a1ccc5-012b-7111-9ec6-21fc5648f678`.
+
+The approved objective is the current-use A4 projection, synthetic installed-authority admission, deterministic codec, semantic goldens and pinned-copy reconstruction, with relevant regressions, separate review, ordinary corrections and closure. The implementation starts from accepted M3a commit `b84ecf6fd821df674fae283b21217a50a2818223` and the [M3 implementation packet](../planning/research-lifecycle-m3-a4-implementation-packet-20261112.md). The [M0 approval](research-lifecycle-m0-approval-20261111.md) continues to own the approved lifecycle and scoped A4 semantics.
+
+The allowance is **$16 in subscription cost-proxy dollars**, with a **$10 warning**. New engineering or review dispatch stops at **$14**, reserving $2 for collection and closure. The expected $11–13 spend was an estimate, not a completion guarantee. All preparation, supervision, implementation, validation, review, corrections and closure belong to this allowance. Proxy dollars are neither API charges nor measured account quota, and an in-flight response may exceed a stopping threshold. The supervisor cannot raise the user's cap.
+
+The root selects the packet's same-crate placement and proposed `research_a4_current_v1` / `research_a4_json_v1` fixture contract as engineering targets. The proposed admission route is qualified using explicitly synthetic installed authority and honest production refusal. This does not establish a live approved map, issuer, delegation, research qualification or applicability grant. Production installation/protection and the owners' acceptance remain separate prerequisites. Semantic conflicts return to their owner rather than being resolved by silently changing approved behavior.
+
+The builder owns `rust/crates/research-register/**` and only necessary Cargo declarations or lockfile changes. The root owns records, acceptance, integration and shared Git publication decisions. Preserve unrelated work. All validation, source/executable identities, failed attempts, reviewer findings and owned process dispositions must remain attributable. A completed builder result does not establish acceptance, and separate same-provider review does not establish cross-provider or statistical independence.
+
+Live H2 execution, research or register standing changes, production authority installation, M4 task adoption/execution, paid API use, distribution, push and release are outside this authorization. Q-B1 distribution clearance remains held. An A4 card establishes no execution authority.
+
+The exact approval event and digest, frozen worker packet, assignment, scope budget, verified actor bindings, observation and collected results belong to `/home/bline/cbm-work/research-lifecycle-m3b-implementation-20261112/`. This record states authority and scope; it is not an implementation or acceptance receipt.

@@ -1,0 +1,18 @@
+{
+  "contract": "planning/research-lifecycle-m3b-wire-disposition-20261112.md",
+  "standing": "Synthetic current-shape codec samples only, not admitted-use evidence.",
+  "vectors": [
+    {
+      "path": "success-empty.json",
+      "sha256": "cfcfb82708db97891b512a35dd3183aefe7fc08c75e28c7bf499ec09b1b26672"
+    },
+    {
+      "path": "success-unavailable.json",
+      "sha256": "464904ca845f09a2e9cab0d6fac982885d58ba50d31cadb75f9734af4a43c167"
+    },
+    {
+      "path": "refused-revision-unknown.json",
+      "sha256": "0ea194467a08516c42bb0daec5efdc01d06774ef2078742865294e10ca1c379f"
+    }
+  ]
+}

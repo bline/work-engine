@@ -279,6 +279,12 @@ impl BoundedObjects {
         }
         Ok(candidates)
     }
+    pub(crate) fn copies(&self) -> Vec<(ObjectId, Kind, Vec<u8>)> {
+        self.cache
+            .iter()
+            .map(|(id, d)| (*id, d.kind, d.bytes.clone()))
+            .collect()
+    }
     pub fn accounting(&self) -> serde_json::Value {
         serde_json::json!({"source_copy_bytes":self.source,"distinct_payload_bytes":self.payload,"index_metadata_bytes":self.metadata_total,"traversal_steps":self.steps,"distinct_objects":self.cache.len(),"copied_packs":self.packs.iter().filter(|p|p.data.is_some()).count()})
     }
