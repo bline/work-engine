@@ -1,5 +1,9 @@
 """Subscription transport: synthetic credentials and local upstream only."""
 import base64
+import io
+import multiprocessing
+import os
+import tempfile
 import json
 import pathlib
 import subprocess
@@ -176,7 +180,7 @@ class SubscriptionTests(ProxyHarness):
     def test_subscription_controls_and_container_has_only_public_placeholder(self):
         opts = rh.Pi.options(['--model', 'openai-codex/gpt-6.1-sol'], 'subscription', None)
         opts['container_subscription'] = True
-        for bad in ({'max_usd': 1}, {'max_output_tokens': 64}, {'usd_strict_tier': True}):
+        for bad in ({'max_usd': float('inf')}, {'max_usd': float('nan')}, {'max_usd': 0}, {'max_usd': -1}, {'max_output_tokens': 64}, {'usd_strict_tier': True}):
             with self.assertRaises(pc.ContainerError):
                 rh.Pi._usd_limit(bad, opts)
         with self.assertRaises(rh.HostError):
@@ -234,6 +238,421 @@ for await (const event of events) { if(event.type === 'error') process.exitCode 
         self.assertEqual(calls[0]['pools'], ['codex'])
         self.assertIsNone(calls[0]['usd'])
         self.assertIsNone(calls[0]['quota_multiplier'])
+
+
+class SubscriptionBudgetTests(SubscriptionTests):
+    # Inherited tests also verify the unchanged opt-out route.
+    def budget(self, max_usd=1, spent=0):
+        return pc.SubscriptionProxyBudget(max_usd=max_usd, rates=pc.usd_rates('gpt-6.1-sol'), spent_before_usd=spent)
+
+    def test_threshold_crossing_and_one_response_overshoot(self):
+        stops = []
+        b = self.budget(max_usd=1e-9)
+        self.proxy(budget=b, on_usd_exhausted=stops.append)
+        self.assertEqual(self.post(self.body())[0], 200)
+        self.assertEqual(self.post(self.body())[0], 429)
+        self.assertEqual(len(Upstream.seen), 1)
+        m = next(r['subscription_proxy'] for r in self.log() if 'subscription_proxy' in r)
+        self.assertGreater(m['cost_proxy_usd'], b.max_usd)
+        self.assertTrue(m['limit_reached'])
+        self.assertTrue(stops)
+        self.assertNotIn('max_output_tokens', Upstream.seen[0]['body'])
+
+    def test_required_usage_unknown_stops_and_replay_preserves_admission(self):
+        self.proxy(budget=self.budget())
+        Upstream.usage = {'input_tokens': True, 'output_tokens': 1}
+        self.post(self.body())
+        self.assertEqual(self.post(self.body())[0], 429)
+        totals = pc.prior_subscription_proxy_state([self.tmp / 'proxy.jsonl'])
+        self.assertTrue(totals['accounting_unknown'])
+        self.assertEqual(pc.subscription_proxy_totals(self.log())['unresolved_admissions'], [1])
+
+    def test_concurrent_admission_refused_before_forward(self):
+        admitted = threading.Event(); unblock = threading.Event()
+        original = Upstream.do_POST
+        def held(handler):
+            admitted.set(); unblock.wait(5); original(handler)
+        self.proxy(budget=self.budget())
+        result = []
+        with patch.object(Upstream, 'do_POST', held):
+            thread = threading.Thread(target=lambda: result.append(self.post(self.body())[0]))
+            thread.start()
+            try:
+                self.assertTrue(admitted.wait(3))
+                self.assertEqual(self.post(self.body())[0], 429)
+                self.assertEqual(len([r for r in self.log() if r['event'] == 'subscription_proxy_admitted']), 1)
+            finally:
+                unblock.set(); thread.join(5)
+        self.assertEqual(result, [200])
+        self.assertEqual(len(Upstream.seen), 1)
+
+    def test_cache_unknown_is_conservative_and_tiny_totals_survive_turns(self):
+        self.proxy(budget=self.budget())
+        Upstream.usage = {'input_tokens': 1, 'output_tokens': 1}
+        self.post(self.body())
+        rows = self.log()
+        m = rows[-1]['subscription_proxy']
+        self.assertEqual(m['valuation_basis'], 'conservative_all_input_at_dearest_rate')
+        self.assertGreater(m['cost_proxy_usd'], 0)
+        self.assertLess(m['cost_proxy_usd'], .01)
+        path = self.tmp / 'proxy.jsonl'
+        prior = pc.prior_subscription_proxy_state([path])
+        self.assertEqual(prior['spent_before_usd'], m['cost_proxy_usd'])
+        self.assertFalse(prior['accounting_unknown'])
+        resumed = self.budget(max_usd=m['cost_proxy_usd'] * 1.5, spent=prior['spent_before_usd'])
+        ticket, _ = resumed.admit()
+        second = resumed.settle(ticket, http_status=200,
+                                response={'id': 'r2', 'model': 'gpt-6.1-sol', 'usage': Upstream.usage},
+                                terminal='response.done', stream_error=False)
+        self.assertTrue(second['limit_reached'])
+        self.assertEqual(second['session_cost_proxy_usd'], m['cost_proxy_usd'] * 2)
+        with path.open('a') as f:
+            f.write('{"event":"subscription_proxy_admitted","rid":2}\n{"partial"')
+        prior = pc.prior_subscription_proxy_state([path])
+        self.assertEqual(prior['spent_before_usd'], m['cost_proxy_usd'])
+        self.assertTrue(prior['accounting_unknown'])
+
+    def test_identity_failures_stream_failures_and_invalid_usage(self):
+        for changes in ({'model': 'other'}, {'model': None}, {'id': None}, {'usage': None},
+                        {'usage': {'input_tokens': -1, 'output_tokens': 1}},
+                        {'usage': {'input_tokens': 1.5, 'output_tokens': 1}},
+                        {'usage': {'input_tokens': float('inf'), 'output_tokens': 1}},
+                        {'usage': {'input_tokens': 1, 'output_tokens': False}},
+                        {'usage': {'input_tokens': 1, 'output_tokens': 1, 'input_tokens_details': {'cached_tokens': 2}}}):
+            b = self.budget(); ticket, _ = b.admit()
+            response = {'id': 'r', 'model': 'gpt-6.1-sol', 'usage': base.USAGE, **changes}
+            m = b.settle(ticket, http_status=200, response=response, terminal='response.done', stream_error=False)
+            self.assertEqual(m['status'], 'unknown', changes)
+            self.assertIsNone(b.admit()[0])
+        for terminal, error, status in ((None, False, 200), ('response.failed', False, 200),
+                                         ('response.completed', True, 200), ('response.completed', False, 500)):
+            b = self.budget(); ticket, _ = b.admit()
+            m = b.settle(ticket, http_status=status, response={'id': 'r', 'model': 'gpt-6.1-sol', 'usage': base.USAGE},
+                         terminal=terminal, stream_error=error)
+            self.assertEqual(m['status'], 'unknown')
+            self.assertIsNone(b.admit()[0])
+
+    def test_realistic_native_done_and_exact_request_attribution(self):
+        self.proxy(budget=self.budget())
+        Upstream.terminal = 'response.done'
+        Upstream.usage = {'input_tokens': 7, 'output_tokens': 2,
+                          'input_tokens_details': {'cached_tokens': 3},
+                          'output_tokens_details': {'reasoning_tokens': 1}}
+        self.post(self.body()); self.post(self.body())
+        ledger = load_ledger(); state = self.tmp / 'state'; state.mkdir()
+        (state / 'ledger.jsonl').write_text(json.dumps({'host': 'pi', 'event': 'launch', 'turn': 1,
+            'session_id': 'sub', 'auth_lane': 'subscription', 'files': {'proxy_log': str(self.tmp / 'proxy.jsonl')}}) + '\n')
+        calls, _ = ledger.build_pi(None, None, str(state))
+        self.assertEqual(len(calls), 2)  # repeated mock response ID must not erase an admitted call
+        self.assertNotEqual(calls[0]['call_id'], calls[1]['call_id'])
+        self.assertTrue(all(c['usd'] is None and c['quota_multiplier'] is None and c['pools'] == ['codex'] for c in calls))
+        self.assertTrue(all(c['subscription_proxy']['status'] == 'valued' for c in calls))
+        total = pc.prior_subscription_proxy_state([self.tmp / 'proxy.jsonl'])['spent_before_usd']
+        self.assertEqual(total, sum(c['subscription_proxy']['cost_proxy_usd'] for c in calls))
+
+    def test_unknown_exchange_refuses_delivery_and_status_preserves_known_cost(self):
+        self.proxy(budget=self.budget())
+        self.post(self.body())
+        charge = self.log()[-1]['subscription_proxy']['cost_proxy_usd']
+        Upstream.terminal = None
+        self.post(self.body())
+        path = self.tmp / 'proxy.jsonl'
+        with path.open('a') as f:
+            f.write('broken\n{"partial"')
+        lim = {'measurement': pc.SUBSCRIPTION_PROXY_BASIS, 'max_usd': 1,
+               'spent_before_usd': 0, 'rates': pc.usd_rates('gpt-6.1-sol')}
+        host = rh.Pi('unused')
+        row = {'session_id': 'sub', 'turn': 1, 'usd_limit': lim,
+               'files': {k: str(self.tmp / k) for k in ('events', 'exit', 'tier_record', 'runner_record')}}
+        row['files']['proxy_log'] = str(path)
+        status = host.observe_turn(row)['egress']['subscription_proxy']
+        self.assertEqual(status['cost_proxy_usd'], charge)
+        self.assertTrue(status['accounting_unknown'])
+        self.assertEqual(status['unresolved_admissions'], [2])
+        with patch.object(host, '_turns', return_value=[row]):
+            with self.assertRaises(rh.HostError) as cm:
+                host._prior_usd('sub', object(), {'usd_limit': lim})
+        self.assertEqual(cm.exception.status, 'usd_spend_not_established')
+
+    def test_partial_native_completion_remains_unknown(self):
+        stops = []
+        self.proxy(budget=self.budget(), on_usd_exhausted=stops.append)
+        def partial(handler):
+            handler.rfile.read(int(handler.headers['content-length']))
+            handler.send_response(200); handler.end_headers()
+            handler.wfile.write(b'data: {"type":"response.done","response":{"id":"r","model":"gpt-6.1-sol"')
+        with patch.object(Upstream, 'do_POST', partial):
+            self.post(self.body())
+        self.assertTrue(stops)
+        self.assertTrue(pc.subscription_proxy_totals(self.log())['accounting_unknown'])
+        self.assertEqual(self.post(self.body())[0], 429)
+
+    def test_identity_and_stream_errors_stop_actual_proxy(self):
+        stops = []
+        self.proxy(budget=self.budget(), on_usd_exhausted=stops.append)
+        def wrong(handler):
+            handler.rfile.read(int(handler.headers['content-length']))
+            handler.send_response(200); handler.end_headers()
+            event = {'type': 'response.done', 'response': {'id': 'bad', 'model': 'other', 'usage': base.USAGE}}
+            handler.wfile.write(('data: ' + json.dumps(event) + '\n\n').encode())
+        with patch.object(Upstream, 'do_POST', wrong):
+            self.post(self.body())
+        self.assertEqual(self.post(self.body())[0], 429)
+        self.assertEqual(self.log()[-2]['subscription_proxy']['reason'], 'response_identity_not_established')
+        self.assertTrue(stops)
+
+    def test_upstream_error_is_unknown_and_admission_precedes_effect(self):
+        stops = []
+        self.proxy(budget=self.budget(), on_usd_exhausted=stops.append)
+        def failed(conn, *args, **kwargs):
+            rows = self.log()
+            self.assertEqual(rows[-1]['event'], 'subscription_proxy_admitted')
+            raise OSError('synthetic upstream failure')
+        # Patch only the upstream route; the Unix test client has its own connect method.
+        with patch.object(pc.http.client.HTTPConnection, 'connect', failed):
+            self.assertEqual(self.post(self.body())[0], 502)
+        self.assertTrue(stops)
+        self.assertTrue(pc.subscription_proxy_totals(self.log())['accounting_unknown'])
+        self.assertEqual(self.post(self.body())[0], 429)
+
+    def test_persistence_failure_never_forwards_and_stops_runner(self):
+        stops = []
+        self.proxy(budget=self.budget(), on_usd_exhausted=stops.append)
+        with patch.object(pc.os, 'fsync', side_effect=OSError('synthetic disk error')):
+            self.assertEqual(self.post(self.body())[0], 429)
+        self.assertEqual(Upstream.seen, [])
+        self.assertTrue(stops)
+        self.assertTrue(pc.prior_subscription_proxy_state([self.tmp / 'proxy.jsonl'])['accounting_unknown'])
+
+    def test_interrupted_stream_after_terminal_stays_unknown(self):
+        stops = []
+        self.proxy(budget=self.budget(), on_usd_exhausted=stops.append)
+        original = pc.http.client.HTTPResponse.read1
+        calls = 0
+        def interrupted(response, *args):
+            nonlocal calls
+            calls += 1
+            if calls > 1:
+                raise OSError('synthetic stream interruption')
+            return original(response, *args)
+        with patch.object(pc.http.client.HTTPResponse, 'read1', interrupted):
+            self.post(self.body())
+        self.assertTrue(stops)
+        self.assertTrue(pc.subscription_proxy_totals(self.log())['accounting_unknown'])
+        self.assertEqual(self.post(self.body())[0], 429)
+
+    def test_objective_admission_refused_before_process_or_reader(self):
+        prompt = self.tmp / 'prompt'; prompt.write_text('mock')
+        with patch.object(rh, 'admit_transaction') as admit, patch.object(rh.Pi, 'launch') as launch:
+            rc = rh.main(['--state', str(self.tmp / 'state'), 'launch', 'pi', '--cwd', str(self.tmp),
+                          '--name', 'mock', '--prompt-file', str(prompt), '--auth', 'subscription',
+                          '--container', '--max-usd', '1', '--objective-record', str(self.tmp / 'objective'),
+                          '--host-arg=--model', '--host-arg=openai-codex/gpt-6.1-sol'])
+        self.assertEqual(rc, rh.USAGE)
+        admit.assert_not_called(); launch.assert_not_called()
+
+
+    def test_malformed_log_shapes_retain_prior_cost_and_fail_closed(self):
+        self.proxy(budget=self.budget())
+        self.post(self.body())
+        path = self.tmp / 'proxy.jsonl'
+        known = self.log()[-1]['subscription_proxy']['cost_proxy_usd']
+        with path.open('a') as f:
+            for row in ({'event': 'request', 'usage': 'bad'},
+                        {'subscription_proxy': {'rid': [], 'status': 'valued', 'cost_proxy_usd': 0}}, []):
+                f.write(json.dumps(row) + '\n')
+        totals = pc.prior_subscription_proxy_state([path])
+        self.assertEqual(totals['spent_before_usd'], known)
+        self.assertTrue(totals['accounting_unknown'])
+        # Even syntactically complete JSON without LF is an uncommitted tail.
+        clean = self.tmp / 'tail'; clean.write_text('{"event":"request"}')
+        self.assertTrue(pc.prior_subscription_proxy_state([clean])['accounting_unknown'])
+
+    def test_terminal_before_truncated_http_body_is_unknown(self):
+        stops = []
+        self.proxy(budget=self.budget(), on_usd_exhausted=stops.append)
+        def truncated(handler):
+            handler.rfile.read(int(handler.headers['content-length']))
+            event = {'type': 'response.done', 'response': {'id': 'r', 'model': 'gpt-6.1-sol', 'usage': base.USAGE}}
+            payload = ('data: ' + json.dumps(event) + '\n\n').encode()
+            handler.send_response(200)
+            handler.send_header('content-length', str(len(payload) + 1000))
+            handler.end_headers(); handler.wfile.write(payload)
+        with patch.object(Upstream, 'do_POST', truncated):
+            self.post(self.body())
+        self.assertTrue(stops)
+        self.assertEqual(self.post(self.body())[0], 429)
+        self.assertTrue(pc.prior_subscription_proxy_state([self.tmp / 'proxy.jsonl'])['accounting_unknown'])
+        host = rh.Pi('unused')
+        with patch.object(host, '_turns', return_value=[{'turn': 1, 'files': {'proxy_log': str(self.tmp / 'proxy.jsonl')}}]):
+            with self.assertRaises(rh.HostError):
+                host._prior_usd('s', None, {'usd_limit': {'measurement': pc.SUBSCRIPTION_PROXY_BASIS, 'max_usd': 1}})
+
+    def test_terminal_with_complete_http_body_is_valued(self):
+        self.proxy(budget=self.budget())
+        def complete(handler):
+            handler.rfile.read(int(handler.headers['content-length']))
+            event = {'type': 'response.done', 'response': {'id': 'r', 'model': 'gpt-6.1-sol', 'usage': base.USAGE}}
+            payload = ('data: ' + json.dumps(event) + '\n\n').encode()
+            handler.send_response(200); handler.send_header('content-length', str(len(payload)))
+            handler.end_headers(); handler.wfile.write(payload)
+        with patch.object(Upstream, 'do_POST', complete):
+            self.post(self.body())
+        self.assertFalse(pc.prior_subscription_proxy_state([self.tmp / 'proxy.jsonl'])['accounting_unknown'])
+
+    def test_launch_rates_and_output_cap_semantics(self):
+        opts = rh.Pi.options(['--model', 'openai-codex/gpt-6.1-sol'], 'subscription', None)
+        opts['container_subscription'] = True
+        lim, output = rh.Pi._usd_limit({'max_usd': .1}, opts)
+        self.assertIsNone(output)
+        self.assertEqual(lim['measurement'], pc.SUBSCRIPTION_PROXY_BASIS)
+        self.assertEqual(lim['valuation_tier'], 'default')
+        with self.assertRaises(pc.ContainerError):
+            rh.Pi._usd_limit({'max_usd': .1}, {**opts, 'model': 'openai-codex/unknown'})
+
+    def test_unfinished_admissions_are_unpriced_ledger_calls(self):
+        path = self.tmp / 'proxy.jsonl'
+        path.write_text(json.dumps({'event': 'subscription_proxy_admitted', 'at': '2026-11-12T03:00:00Z',
+                                    'rid': 1, 'model': 'gpt-6.1-sol'}) + '\n{"partial"')
+        ledger = load_ledger(); state = self.tmp / 'state'; state.mkdir()
+        (state / 'ledger.jsonl').write_text(json.dumps({'host': 'pi', 'event': 'launch', 'turn': 1,
+            'session_id': 'sub', 'auth_lane': 'subscription', 'files': {'proxy_log': str(path)}}) + '\n')
+        calls, _ = ledger.build_pi(None, None, str(state))
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]['pools'], ['codex'])
+        self.assertIsNone(calls[0]['usd'])
+        self.assertEqual(calls[0]['subscription_proxy']['status'], 'unknown')
+
+
+
+class SubscriptionTurnAdmissionTests(unittest.TestCase):
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        self.tmp = pathlib.Path(folder.name)
+        self.sid = '00000000-0000-4000-8000-000000000001'
+        self.ledger = rh.Ledger(self.tmp / 'state')
+        self.host = rh.Pi('unused')
+        self.env = sample_env(self.tmp)
+        self.env['selection'].update(model='openai-codex/gpt-6.1-sol', tier=None, lane='subscription')
+        self.env.update(container_dir=str(self.tmp / 'container'), host_dir=str(self.tmp / 'host'),
+                        session_dir=str(self.tmp / 'sessions'), fingerprint={'sha256': 'test'}, max_output_tokens=None,
+                        usd_limit={'max_usd': 1, 'measurement': pc.SUBSCRIPTION_PROXY_BASIS, 'rates': pc.usd_rates('gpt-6.1-sol')})
+        for key in ('container_dir', 'host_dir', 'session_dir'):
+            pathlib.Path(self.env[key]).mkdir()
+        self.opts = {'argv': [], 'model': 'openai-codex/gpt-6.1-sol', 'provider': 'openai-codex',
+                     'thinking': None, 'lane': 'subscription', 'tier': None}
+        initial = self.tmp / 'turn-1.proxy.jsonl'; initial.write_text('')
+        self.ledger.append({'host': 'pi', 'event': 'launch', 'session_id': self.sid, 'turn': 1, 'pid_start': 1,
+                            'cwd': str(self.tmp), 'host_argv': [], 'model': self.opts['model'], 'thinking': None,
+                            'auth_lane': 'subscription', 'service_tier': None, 'container_environment': self.env,
+                            'files': {'proxy_log': str(initial)}})
+        self.enterContext(patch.object(self.host, '_check_environment', return_value=self.env))
+        self.enterContext(patch.object(self.host, 'check_lane', return_value={}))
+        self.enterContext(patch.object(self.host, 'provider_key', return_value='synthetic'))
+        self.enterContext(patch.object(self.host, '_verify_header'))
+        self.enterContext(patch.object(self.host, 'socket_root', return_value=self.tmp / 'sockets'))
+        self.enterContext(patch.object(self.host, 'status', side_effect=self.status))
+
+    def status(self, *args):
+        turns = self.host._turns(self.sid, self.ledger)
+        return {'state': 'running', 'turn': 2} if len(turns) > 1 else {'state': 'idle'}
+
+    def deliver(self):
+        return self.host.deliver(self.sid, message='mock', cwd=str(self.tmp), ledger=self.ledger)
+
+    def test_two_processes_cannot_admit_during_unrecorded_runner_start(self):
+        ctx = multiprocessing.get_context('fork')
+        started, release = ctx.Event(), ctx.Event()
+        results = ctx.Queue(); self.addCleanup(results.close)
+        count = ctx.Value('i', 0)
+        def runner(argv, **kwargs):
+            spec = json.loads(pathlib.Path(argv[-1]).read_text())
+            pathlib.Path(spec['files']['proxy_log']).write_text('')
+            with count.get_lock(): count.value += 1
+            started.set()
+            if not release.wait(8): raise RuntimeError('test did not release runner')
+            return SimpleNamespace(pid=os.getpid(), stdin=io.BytesIO())
+        def call():
+            try: results.put(('ok', self.deliver()['turn']))
+            except rh.HostError as e: results.put(('error', e.status))
+        with patch.object(rh.subprocess, 'Popen', runner):
+            first, second = ctx.Process(target=call), ctx.Process(target=call)
+            try:
+                first.start(); self.assertTrue(started.wait(5))
+                second.start(); second.join(5)
+                self.assertFalse(second.is_alive())
+                self.assertEqual(results.get(timeout=1), ('error', 'refused_busy'))
+                self.assertEqual(count.value, 1)
+                self.assertEqual(len(self.ledger.rows()), 1)  # runner exists before its ledger row
+                release.set(); first.join(5)
+                self.assertFalse(first.is_alive())
+                self.assertEqual(results.get(timeout=1), ('ok', 2))
+                self.assertEqual(count.value, 1)
+                self.assertEqual((first.exitcode, second.exitcode), (0, 0))
+            finally:
+                release.set()
+                for proc in (first, second):
+                    if proc.pid is not None:
+                        if proc.is_alive(): proc.terminate()
+                        proc.join(5)
+                        proc.close()
+
+    def test_stale_idle_result_is_rechecked_after_other_turn_was_recorded(self):
+        calls = 0
+        def interleaved(*args):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                # Another delivery publishes a still-empty turn after this caller's idle observation.
+                log = self.tmp / 'turn-2.proxy.jsonl'; log.write_text('')
+                self.ledger.append({'host': 'pi', 'event': 'deliver', 'session_id': self.sid, 'turn': 2,
+                                    'pid_start': 1, 'files': {'proxy_log': str(log)}})
+                return {'state': 'idle'}
+            return self.status()
+        with patch.object(self.host, 'status', side_effect=interleaved), patch.object(rh.subprocess, 'Popen') as spawn:
+            with self.assertRaises(rh.HostError) as cm: self.deliver()
+        self.assertEqual(cm.exception.status, 'refused_busy')
+        self.assertEqual(calls, 2); spawn.assert_not_called()
+
+    def test_unrecorded_started_turn_keeps_durable_ordinal_and_unknown_request(self):
+        def lost_after_start(argv, **kwargs):
+            spec = json.loads(pathlib.Path(argv[-1]).read_text())
+            pathlib.Path(spec['files']['proxy_log']).write_text(json.dumps(
+                {'event': 'subscription_proxy_admitted', 'rid': 1, 'model': 'gpt-6.1-sol'}) + '\n')
+            raise RuntimeError('simulate launcher loss after runner effect before ledger publication')
+        with patch.object(rh.subprocess, 'Popen', lost_after_start), patch.object(rh.os, 'fsync', wraps=rh.os.fsync) as sync:
+            with self.assertRaises(RuntimeError): self.deliver()
+        self.assertGreaterEqual(sync.call_count, 2)  # host admission and its directory durable before runner
+        self.assertEqual(len(self.ledger.rows()), 1)
+        log = pathlib.Path(self.env['host_dir']) / 'turn-2.proxy.jsonl'
+        marker = pathlib.Path(self.env['host_dir']) / 'turn-2.admission.json'
+        admission = json.loads(marker.read_text())
+        self.assertEqual(admission, {'session_id': self.sid, 'turn': 2, 'proxy_log': str(log)})
+        # The agent may unlink its prompt; host-only admission remains authoritative.
+        prompt = pathlib.Path(self.env['container_dir']) / 'turn-2.prompt'
+        prompt.unlink()
+        self.assertFalse(prompt.exists())
+        self.assertNotIn(str(marker.parent), [src for src, _ in self.env['mounts']])
+        self.assertNotEqual(marker.parent, pathlib.Path(self.env['container_dir']))
+        marker_bytes = marker.read_bytes()
+        self.assertTrue(pc.prior_subscription_proxy_state([log])['accounting_unknown'])
+        with patch.object(rh.subprocess, 'Popen') as spawn:
+            with self.assertRaises(rh.HostError) as cm: self.deliver()
+        self.assertEqual(cm.exception.status, 'turn_not_established')
+        self.assertIn('turn-2.admission.json', cm.exception.detail)
+        spawn.assert_not_called()
+        self.assertEqual(marker.read_bytes(), marker_bytes)
+        self.assertFalse(prompt.exists())
+        self.assertTrue(pc.prior_subscription_proxy_state([log])['accounting_unknown'])
+
+    def test_unknown_recorded_runner_identity_refuses_before_spawn(self):
+        row = self.ledger.rows()[0]; row['pid_start'] = None
+        self.ledger.path.write_text(json.dumps(row) + '\n')
+        with patch.object(rh.subprocess, 'Popen') as spawn:
+            with self.assertRaises(rh.HostError) as cm: self.deliver()
+        self.assertEqual(cm.exception.status, 'usd_spend_not_established')
+        spawn.assert_not_called()
+
 
 
 @unittest.skipIf(base.SKIP, base.SKIP or '')

@@ -75,6 +75,7 @@ import argparse
 import fcntl
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -998,7 +999,7 @@ class Pi:
         pc = _pi_container()
         max_usd, max_output = container.get("max_usd"), container.get("max_output_tokens")
         if opts.get("container_subscription") and any(container.get(k) is not None and container.get(k) is not False
-                                                      for k in ("max_usd", "max_output_tokens", "usd_strict_tier")):
+                                                      for k in ("max_output_tokens", "usd_strict_tier")):
             raise pc.ContainerError("usage", "Codex subscription transport supports neither API dollar reservations nor a hard output-token cap")
         if max_output is not None and max_output < 1:
             raise pc.ContainerError("usage", f"--max-output-tokens {max_output} must be at least 1")
@@ -1006,9 +1007,14 @@ class Pi:
             if container.get("usd_strict_tier"):
                 raise pc.ContainerError("usage", "--usd-strict-tier needs --max-usd")
             return None, max_output
-        if not max_usd > 0:
+        if not math.isfinite(max_usd) or not max_usd > 0:
             raise pc.ContainerError("usage", f"--max-usd {max_usd} must be positive")
-        rates = pc.usd_rates(opts["model"].split("/", 1)[1], provider=pc.provider_of(opts["model"]))
+        subscription = opts.get("container_subscription")
+        rates = pc.usd_rates(opts["model"].split("/", 1)[1], provider="openai" if subscription else pc.provider_of(opts["model"]))
+        if subscription:
+            return ({"max_usd": float(max_usd), "rates": rates, "measurement": pc.SUBSCRIPTION_PROXY_BASIS,
+                     "valuation_tier": "default", "billing": "unknown", "quota": "unknown",
+                     "limitation": pc.SUBSCRIPTION_PROXY_LIMITATION}, None)
         if (opts["tier"] or "default") not in rates["tier_multiplier"]:
             raise pc.ContainerError("usage", f"--max-usd needs a priced tier ({', '.join(rates['tier_multiplier'])}) "
                                              f"or none, not {opts['tier']!r}")
@@ -1019,7 +1025,12 @@ class Pi:
         """Session spend before this turn, from earlier turns' host-only proxy logs."""
         logs = [r["files"]["proxy_log"] for r in self._turns(sid, ledger) if r.get("turn")]
         try:
-            prior = _pi_container().prior_usd_state(logs)
+            if env["usd_limit"].get("measurement") == _pi_container().SUBSCRIPTION_PROXY_BASIS:
+                prior = _pi_container().prior_subscription_proxy_state(logs)
+                if prior["accounting_unknown"]:
+                    raise _pi_container().ContainerError("usd_spend_not_established", "unresolved subscription proxy accounting; no turn started")
+            else:
+                prior = _pi_container().prior_usd_state(logs)
         except _pi_container().ContainerError as e:
             raise HostError(NOT_ESTABLISHED, e.status, e.detail)
         if prior["spent_before_usd"] >= env["usd_limit"]["max_usd"]:
@@ -1153,6 +1164,32 @@ class Pi:
 
     # ---- turns ----
     def _spawn(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None, env=None):
+        args = dict(cwd=cwd, prompt=prompt, ledger=ledger, event=event, name=name, parent=parent, env=env)
+        if not env or (env.get("usd_limit") or {}).get("measurement") != "api_equivalent_cost_proxy":
+            return self._spawn_unlocked(sid, opts, **args)
+        # Session exclusion must span fresh busy/accounting checks, ordinal selection,
+        # runner startup and ledger publication, not just one proxy's request threads.
+        with open(Path(env["host_dir"]) / "turn-admission.lock", "a") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise HostError(BUSY, "refused_busy", f"{sid} has a turn admission in progress") from None
+            try:
+                if event == "deliver":
+                    st = self.status(sid, ledger)
+                    if st["state"] == "running":
+                        raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
+                    if st["state"] == "absent":
+                        raise HostError(NOT_ESTABLISHED, "deliver_failed", f"pi session {sid} is unknown to this host")
+                    turns = [r for r in self._turns(sid, ledger) if r.get("turn")]
+                    if turns and turns[-1].get("pid_start") is None:
+                        raise HostError(NOT_ESTABLISHED, "usd_spend_not_established",
+                                        "previous runner identity is unknown; no turn started")
+                return self._spawn_unlocked(sid, opts, **args)
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
+
+    def _spawn_unlocked(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None, env=None):
         turn = sum(1 for r in self._turns(sid, ledger) if r.get("turn")) + 1
         if env is not None:
             return self._spawn_container(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event=event,
@@ -1182,10 +1219,19 @@ class Pi:
         return row
 
     @staticmethod
-    def _write_prompt(path, prompt):
+    def _write_prompt(path, prompt, *, durable=False):
         try:
             with open(path, "x") as fh:
                 fh.write(prompt)
+                if durable:
+                    fh.flush()
+                    os.fsync(fh.fileno())
+            if durable:
+                fd = os.open(str(path.parent), os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
         except FileExistsError:
             raise HostError(NOT_ESTABLISHED, "turn_not_established", f"{path} already exists")
 
@@ -1207,6 +1253,11 @@ class Pi:
         prior = self._prior_usd(sid, ledger, env) if env.get("usd_limit") else None
         opts = {**opts, **({"container_subscription": True} if env["selection"].get("lane") == "subscription" else {})}
         key = self.provider_key(opts, cwd=cwd)
+        if (env.get("usd_limit") or {}).get("measurement") == "api_equivalent_cost_proxy":
+            # Reserve the ordinal in host-only storage before any runner effect.
+            # Agent-writable prompt deletion must not hide an unrecorded orphan turn.
+            admission = {"session_id": sid, "turn": turn, "proxy_log": str(files["proxy_log"])}
+            self._write_prompt(hdir / f"turn-{turn}.admission.json", json.dumps(admission) + "\n", durable=True)
         self._write_prompt(files["prompt"], prompt)
         self.socket_root().mkdir(mode=0o700, parents=True, exist_ok=True)
         socket_dir = self.socket_root() / f"{sid}-{turn}"
@@ -1248,7 +1299,7 @@ class Pi:
         row = self._turn_row(sid, opts, event=event, turn=turn, proc=proc, files=files)
         row["container"] = {"name": container_name, "fingerprint_sha256": env["fingerprint"]["sha256"]}
         if prior is not None:
-            row["usd_limit"] = {"max_usd": env["usd_limit"]["max_usd"], "spent_before_usd": prior["spent_before_usd"],
+            row["usd_limit"] = {**env["usd_limit"], "spent_before_usd": prior["spent_before_usd"],
                                 "max_output_tokens": env["max_output_tokens"]}
         if event == "launch":
             row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent, container_environment=env)
@@ -1375,7 +1426,12 @@ class Pi:
                "model_match": (served == [row.get("model")]) if served else None,
                "assistant_messages": len(replies), "pi_reported_cost_usd": round(cost, 6)}
         if "proxy_log" in files:
-            proxy_rows, _ = self._records(files["proxy_log"])
+            if (row.get("usd_limit") or {}).get("measurement") == _pi_container().SUBSCRIPTION_PROXY_BASIS:
+                proxy_rows, proxy_partial = _pi_container().subscription_proxy_records(files["proxy_log"])
+                proxy_partial = proxy_partial or any(not isinstance(r, dict) for r in proxy_rows)
+                proxy_rows = [r for r in proxy_rows if isinstance(r, dict)]
+            else:
+                proxy_rows, proxy_partial = self._records(files["proxy_log"])
             requests = [r for r in proxy_rows if r.get("event") == "request"]
             observed = [r.get("observed_tier") for r in requests]
             runner, _ = self._records(files["runner_record"])
@@ -1386,11 +1442,21 @@ class Pi:
                 "requests": len(requests),
                 "refused": [r.get("reason") for r in proxy_rows if r.get("event") == "refused"],
                 "http_errors": [r.get("http_status") for r in requests if r.get("http_status") != 200],
-                "usage": {k: sum((r.get("usage") or {}).get(k) or 0 for r in requests)
+                "usage": {k: sum(v for r in requests if type(v := (r["usage"] if isinstance(r.get("usage"), dict) else {}).get(k)) is int and v >= 0)
                           for k in (("input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens")
                                     if not any(r.get("provider") == "anthropic" for r in requests)
                                     else _pi_container().ANTHROPIC_USAGE_KEYS)}}
-            if row.get("usd_limit"):
+            if (row.get("usd_limit") or {}).get("measurement") == _pi_container().SUBSCRIPTION_PROXY_BASIS:
+                pc, lim = _pi_container(), row["usd_limit"]
+                t = pc.subscription_proxy_totals(proxy_rows, malformed=proxy_partial)
+                total = math.fsum((lim["spent_before_usd"], t["cost_proxy_usd"]))
+                out["egress"]["subscription_proxy"] = {**t, "measurement": pc.SUBSCRIPTION_PROXY_BASIS,
+                    "limit_usd": lim["max_usd"], "spent_before_usd": lim["spent_before_usd"],
+                    "session_cost_proxy_usd": total, "limit_reached": total >= lim["max_usd"],
+                    "valuation_tier": "default", "rates": lim["rates"], "billing": "unknown", "quota": "unknown",
+                    "limitation": pc.SUBSCRIPTION_PROXY_LIMITATION}
+                limitations.append(pc.SUBSCRIPTION_PROXY_LIMITATION)
+            elif row.get("usd_limit"):
                 lim, t = row["usd_limit"], _pi_container().usd_totals(proxy_rows)
                 out["egress"]["usd"] = {
                     "limit_usd": lim["max_usd"], "spent_before_usd": lim["spent_before_usd"],
@@ -1678,13 +1744,13 @@ def main(argv=None) -> int:
     la.add_argument("--container-cpus", default="2")
     la.add_argument("--max-requests", type=int, help="container: egress proxy cap on model requests per turn")
     la.add_argument("--max-usd", type=float,
-                    help="container: session dollar limit; the proxy sets aside each request's worst case before "
-                         "forwarding it and refuses once spend plus that would pass the limit")
+                    help="container: session limit; API reserves each request's worst case; subscription stops at an "
+                         "API-equivalent cost-proxy threshold (one response can overshoot; billing/quota unknown)")
     la.add_argument("--max-output-tokens", type=int,
-                    help="container: cap the proxy forces on max_output_tokens (default 16000 with --max-usd, "
+                    help="API container: cap the proxy forces on max_output_tokens (default 16000 with --max-usd, "
                          "none without)")
     la.add_argument("--usd-strict-tier", action="store_true",
-                    help="container, with --max-usd: set aside at the dearer of the requested and default tier")
+                    help="API container, with --max-usd: set aside at the dearer of the requested and default tier")
     la.add_argument("--container-model-file", metavar="JSON",
                     help="container: a Pi models.json model entry for the pinned model, for a model Pi's catalog "
                          "lacks; written with the relay baseUrl (no baseUrl, headers, apiKey or fallbacks)")
@@ -1784,6 +1850,8 @@ def main(argv=None) -> int:
                 if a.objective_record:
                     if a.host != "pi" or not a.container:
                         raise HostError(USAGE, "usage", "--objective-record is a pi --container launch option")
+                    if a.auth == "subscription":
+                        raise HostError(USAGE, "usage", "--objective-record admits API-dollar exposure, not a subscription cost proxy")
                     admission_id = a.admission_id or str(uuid.uuid4())
                     admission, journal = admit_transaction(a.objective_record, a.max_usd, a.parent, ledger.path, admission_id)
                     h.before_runner_start = lambda **detail: mark_runner_starting(journal, admission_id, **detail)

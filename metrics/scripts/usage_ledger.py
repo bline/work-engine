@@ -797,11 +797,25 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
         session_dir = (launch.get('container_environment') or {}).get('session_dir')
         writes = None
         reserved, settled = {}, set()
+        proxy_admitted, proxy_observed = {}, set()
+        subscription = launch.get('auth_lane') == 'subscription'
         for n, line in enumerate(open_lines(log), 1):
+            if subscription and not line.endswith('\n'):
+                issue('partial_pi_proxy_row', path=log, line=n)
+                continue
             try: p = json.loads(line)
             except ValueError: issue('malformed_pi_proxy_row', path=log, line=n); continue
             if not isinstance(p, dict):
                 continue
+            if p.get('event') == 'subscription_proxy_admitted':
+                if type(p.get('rid')) is int and p['rid'] > 0:
+                    proxy_admitted[p['rid']] = (p, n)
+                else:
+                    issue('malformed_pi_proxy_admission', path=log, line=n)
+                continue
+            measurement = p.get('subscription_proxy')
+            if not isinstance(measurement, dict) or type(measurement.get('rid')) is not int:
+                measurement = None
             if p.get('event') == 'usd_reserved':
                 amount = p.get('reserved_usd')
                 if isinstance(amount, (int, float)) and not isinstance(amount, bool) and math.isfinite(amount) and amount >= 0:
@@ -811,10 +825,13 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
                 continue
             if isinstance(p.get('usd'), dict) and 'rid' in p['usd']:
                 settled.add(p['usd']['rid'])
-            subscription = launch.get('auth_lane') == 'subscription'
-            if p.get('event') != 'request' and not (subscription and p.get('event') == 'upstream_error'):
+            if p.get('event') != 'request' and not (subscription and (p.get('event') == 'upstream_error' or measurement is not None)):
                 continue
+            if measurement is not None:
+                proxy_observed.add(measurement['rid'])
             rid = p.get('response_id')
+            if subscription and isinstance(measurement, dict):
+                rid = f"subscription-proxy:{log}:{measurement.get('rid')}"
             if p.get('http_status') != 200 or not rid:
                 issue('pi_request_without_response', path=log, line=n, http_status=p.get('http_status'))
                 if not subscription:
@@ -850,7 +867,7 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
             if price is None:
                 issue('unpriced_call', path=log, line=n, reason='cache writes unknown' if cw is None else 'no rate or invalid usage')
             tier = p.get('observed_tier') if isinstance(p.get('observed_tier'), str) else None
-            rows.append(dict(provider='pi', ts=ts, call_id=rid, dedupe_basis='response_id', thread=sid,
+            rows.append(dict(provider='pi', ts=ts, call_id=rid, dedupe_basis='proxy_admission' if subscription and measurement is not None else 'response_id', thread=sid,
                              parent_thread=launch.get('parent_session_id'), agent_path=None, originator='role_host',
                              model=model, effort=launch.get('thinking'), role_index=None, role_heuristic=None,
                              usage=u, weighted=codex_weighted(u) if valid else None, usd=price,
@@ -862,8 +879,22 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
                 # API catalog rates do not establish subscription quota or billing.
                 rows[-1].update(pools=['codex'], usd=None, weighted=None, quota_multiplier=None,
                                 service_tier=None, requested_tier=None, billing='unknown', quota='unknown')
+                if isinstance(measurement, dict):
+                    rows[-1]['subscription_proxy'] = measurement
+                    rows[-1]['response_id'] = p.get('response_id')
             annotate_call_measurements(rows[-1])
             pi_retain_charge(rows[-1], p)
+        for res_id, (admission, n) in proxy_admitted.items():
+            if res_id not in proxy_observed and in_window(admission.get('at'), since, until):
+                rows.append(dict(provider='pi', ts=admission.get('at'),
+                    call_id=f'subscription-proxy:{log}:{res_id}', dedupe_basis='proxy_admission', thread=sid,
+                    parent_thread=launch.get('parent_session_id'), agent_path=None, originator='role_host',
+                    model=admission.get('model'), effort=launch.get('thinking'), role_index=None, role_heuristic=None,
+                    usage={}, weighted=None, usd=None, source=f'{log}:{n}', pools=['codex'],
+                    lane='subscription', service_tier=None, requested_tier=None, quota_multiplier=None,
+                    billing='unknown', quota='unknown', subscription_proxy={'rid': res_id, 'status': 'unknown',
+                        'cost_proxy_usd': None, 'reason': 'unfinished_admission'}))
+                annotate_call_measurements(rows[-1])
         for res_id, (amount, at, n) in reserved.items():
             if res_id not in settled and in_window(at, since, until):
                 rows.append(pi_retained_reservation(log, n, at, res_id, amount, sid, launch))

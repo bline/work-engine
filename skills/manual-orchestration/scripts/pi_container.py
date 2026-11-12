@@ -33,6 +33,7 @@ import base64
 import hashlib
 import http.client
 import json
+import math
 import os
 import platform
 import re
@@ -758,6 +759,150 @@ def prior_usd_state(paths) -> dict:
     return {"spent_before_usd": round(spent, 6), "prefix": prefix, "multiplier_floor": floor}
 
 
+SUBSCRIPTION_PROXY_BASIS = "api_equivalent_cost_proxy"
+SUBSCRIPTION_PROXY_LIMITATION = "Stopping threshold; one admitted response can overshoot. Subscription billing and quota are unknown."
+
+
+def subscription_proxy_totals(rows, *, malformed=False) -> dict:
+    """Replay admissions without discarding known charges when another observation is unknown."""
+    admitted, settled, charges = {}, set(), []
+    unknown = malformed
+    for row in rows:
+        if not isinstance(row, dict):
+            unknown = True
+            continue
+        if row.get("event") == "subscription_proxy_admitted":
+            rid = row.get("rid")
+            if not isinstance(rid, int) or isinstance(rid, bool) or rid in admitted:
+                unknown = True
+            else:
+                admitted[rid] = row
+        measurement = row.get("subscription_proxy")
+        if row.get("event") in ("request", "upstream_error", "stream_error") and measurement is None:
+            unknown = True
+        if measurement is not None:
+            if not isinstance(measurement, dict):
+                unknown = True
+                continue
+            rid, amount = measurement.get("rid"), measurement.get("cost_proxy_usd")
+            if (type(rid) is not int or rid < 1 or rid not in admitted or rid in settled
+                    or measurement.get("status") != "valued"
+                    or type(amount) not in (int, float) or not 0 <= amount <= sys.float_info.max
+                    or not math.isfinite(amount)):
+                unknown = True
+                continue
+            settled.add(rid)
+            charges.append(amount)
+    unresolved = [rid for rid in admitted if rid not in settled]
+    return {"cost_proxy_usd": math.fsum(charges), "accounting_unknown": unknown or bool(unresolved),
+            "unresolved_admissions": unresolved, "admitted_requests": len(admitted)}
+
+
+def subscription_proxy_records(path):
+    rows, malformed = [], False
+    try:
+        data = Path(path).read_bytes()
+    except OSError:
+        return [], True
+    lines = data.split(b"\n")
+    malformed = bool(lines.pop())  # A final record without LF is not committed.
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except (ValueError, UnicodeDecodeError):
+            malformed = True
+    return rows, malformed
+
+
+def prior_subscription_proxy_state(paths) -> dict:
+    totals = [subscription_proxy_totals(rows, malformed=malformed)
+              for rows, malformed in (subscription_proxy_records(path) for path in paths)]
+    return {"spent_before_usd": math.fsum(t["cost_proxy_usd"] for t in totals),
+            "accounting_unknown": any(t["accounting_unknown"] for t in totals)}
+
+
+class SubscriptionProxyBudget:
+    """Serialized stopping threshold, with no reservation or hard output cap.
+
+    The proxy owns locking and durably writes admission before any upstream effect.
+    An unknown exchange keeps its admission unresolved and permanently stops this session.
+    """
+    max_output_tokens = None
+
+    def __init__(self, *, max_usd, rates, spent_before_usd=0.0):
+        self.max_usd, self.rates = max_usd, rates
+        self.settled = spent_before_usd
+        self.inflight = None
+        self.exhausted = spent_before_usd >= max_usd
+        self.unknown = False
+        self.serial = 0
+
+    def admit(self):
+        if self.exhausted:
+            return None, "usd_limit: subscription proxy threshold reached or accounting unknown"
+        if self.inflight is not None:
+            return None, "subscription_proxy_request_in_flight"
+        self.serial += 1
+        self.inflight = self.serial
+        return {"rid": self.serial}, None
+
+    def settle(self, ticket, *, http_status, response, terminal, stream_error):
+        usage = response.get("usage")
+        reason = None
+        if (http_status != 200 or stream_error or terminal not in ("response.completed", "response.done")):
+            reason = "exchange_not_completed"
+        elif (response.get("model") != self.rates["model"] or not isinstance(response.get("id"), str)
+              or not response["id"].strip()):
+            reason = "response_identity_not_established"
+        elif response.get("status") not in (None, "completed") or response.get("error"):
+            reason = "exchange_not_completed"
+        elif not isinstance(usage, dict):
+            reason = "usage_not_established"
+        else:
+            counts = [usage.get(k) for k in ("input_tokens", "output_tokens")]
+            if not all(type(v) is int and v >= 0 for v in counts):
+                reason = "usage_not_established"
+        amount, basis = None, None
+        if reason is None:
+            i, o = counts
+            details = usage.get("input_tokens_details")
+            if details is not None and not isinstance(details, dict):
+                reason = "invalid_cache_usage"
+            else:
+                details = details or {}
+                c, w = details.get("cached_tokens"), details.get("cache_write_tokens")
+                if any(v is not None and (type(v) is not int or v < 0 or v > i) for v in (c, w)) or (c or 0) + (w or 0) > i:
+                    reason = "invalid_cache_usage"
+                else:
+                    if c is None or w is None:
+                        # Missing optional cache counts: value all input at the dearer rate.
+                        c, w = 0, i if self.rates["cache_write"] > self.rates["input"] else 0
+                        basis = "conservative_all_input_at_dearest_rate"
+                    else:
+                        basis = "reported_cache_usage"
+                    try:
+                        amount = usage_usd(self.rates, input_tokens=i, cached=c, cache_write=w,
+                                           output_tokens=o, multiplier=self.rates["tier_multiplier"]["default"])
+                        if not math.isfinite(amount) or amount < 0:
+                            reason = "valuation_not_established"
+                    except (ArithmeticError, ValueError):
+                        reason = "valuation_not_established"
+        if reason:
+            amount = None
+            self.unknown = self.exhausted = True
+        else:
+            self.settled = math.fsum((self.settled, amount))
+            self.exhausted = self.settled >= self.max_usd
+        return {"rid": ticket["rid"], "status": "unknown" if reason else "valued",
+                "cost_proxy_usd": amount, "valuation_basis": basis, "reason": reason,
+                "session_cost_proxy_usd": self.settled, "limit_reached": self.exhausted,
+                "measurement": SUBSCRIPTION_PROXY_BASIS, "valuation_tier": "default",
+                "model": self.rates["model"], "rates_sha256": hashlib.sha256(_canonical(self.rates)).hexdigest(),
+                "billing": "unknown", "quota": "unknown", "limitation": SUBSCRIPTION_PROXY_LIMITATION}
+
+
 class UsdBudget:
     """A session dollar limit, enforced per request. Callers hold the proxy lock.
 
@@ -896,14 +1041,14 @@ class EgressProxy:
                  on_usd_exhausted=None,
                  max_connections: int = MAX_CONNECTIONS, max_body: int = MAX_BODY_BYTES,
                  socket_timeout: float = SOCKET_TIMEOUT, provider: str = "openai"):
-        if provider == "openai-codex" and (tier or budget is not None or max_output_tokens is not None):
+        if provider == "openai-codex" and (tier or max_output_tokens is not None):
             raise ValueError("Codex subscription takes no service tier, API budget or output cap")
         if budget is not None and max_output_tokens != budget.max_output_tokens:
             raise ValueError("a dollar limit needs the proxy's output cap to be the budget's")
         if provider not in PROVIDERS:
             raise ValueError(f"no egress route for provider {provider!r}")
-        if budget is not None and type(budget) is not BUDGETS[provider]:
-            raise ValueError(f"a {provider} dollar limit needs {BUDGETS[provider].__name__}")
+        if budget is not None and type(budget) is not ({**BUDGETS, "openai-codex": SubscriptionProxyBudget})[provider]:
+            raise ValueError(f"wrong budget type for {provider}")
         if provider == "openai-codex":
             self.account = codex_account(key)
         if provider == "anthropic" and tier:
@@ -920,14 +1065,28 @@ class EgressProxy:
         self.server = None
 
     def log(self, row: dict):
-        with self.lock, open(self.log_path, "a") as fh:
+        with self.lock:
+            self._log_locked(row)
+
+    def _log_locked(self, row, *, durable=False):
+        with open(self.log_path, "a") as fh:
             fh.write(json.dumps({"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **row}) + "\n")
+            if durable:
+                fh.flush()
+                os.fsync(fh.fileno())
 
     def start(self):
         proxy = self
         # Exists from the start, so a turn with no requests still leaves a
         # readable (empty) log for the next turn's spend total.
         open(self.log_path, "a").close()
+        if isinstance(self.budget, SubscriptionProxyBudget):
+            # Make the log's directory entry durable before an admitted request can leave.
+            fd = os.open(str(Path(self.log_path).parent), os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
 
         class Handler(BaseHTTPRequestHandler):
             # HTTP/1.0 framing: the streamed body ends when the connection closes.
@@ -1202,7 +1361,26 @@ class EgressProxy:
                             and 0 < asked < proxy.max_output_tokens):
                         body["max_output_tokens"] = proxy.max_output_tokens
                 ticket = None
-                if proxy.budget is not None:
+                subscription_budget = isinstance(proxy.budget, SubscriptionProxyBudget)
+                if subscription_budget:
+                    with proxy.lock:
+                        ticket, refusal = proxy.budget.admit()
+                        if ticket is not None:
+                            try:
+                                proxy._log_locked({"event": "subscription_proxy_admitted", "n": n,
+                                                   "rid": ticket["rid"], "model": proxy.model_id}, durable=True)
+                            except OSError:
+                                proxy.budget.unknown = proxy.budget.exhausted = True
+                                ticket, refusal = None, "usd_limit: admission persistence failed"
+                                if proxy.on_usd_exhausted:
+                                    proxy.on_usd_exhausted(refusal)
+                    if ticket is None:
+                        release()
+                        self.refuse(429, refusal)
+                        if proxy.budget.exhausted and proxy.on_usd_exhausted:
+                            proxy.on_usd_exhausted(refusal)
+                        return
+                elif proxy.budget is not None:
                     reason = unpriceable_input(body.get("input"))
                     if reason:
                         release()
@@ -1221,13 +1399,30 @@ class EgressProxy:
                                "input_bound": ticket["input_bound"], "bound_basis": ticket["bound_basis"]})
 
                 def settle(http_status, response):
-                    if ticket is None:
+                    if ticket is None or subscription_budget:
                         return {}
                     with proxy.lock:
                         usd = proxy.budget.settle(ticket, http_status=http_status, response=response)
                     b = ticket["basis"]
                     return {"usd": usd, "input_basis": {"items": b["items"], "chain_sha256": b["chains"][-1],
                                                         "rest_sha256": b["rest_sha256"]}}
+
+                def finish(row, *, http_status=None, response=None, terminal=None, stream_error=False):
+                    if not subscription_budget:
+                        proxy.log(row)
+                        return
+                    with proxy.lock:
+                        measurement = proxy.budget.settle(ticket, http_status=http_status, response=response or {},
+                                                          terminal=terminal, stream_error=stream_error)
+                        try:
+                            proxy._log_locked({**row, "subscription_proxy": measurement}, durable=True)
+                        except OSError:
+                            proxy.budget.unknown = proxy.budget.exhausted = True
+                            raise
+                        finally:
+                            if proxy.budget.exhausted and proxy.on_usd_exhausted:
+                                proxy.on_usd_exhausted("subscription proxy threshold reached or accounting unknown")
+                        proxy.budget.inflight = None
 
                 data = json.dumps(body).encode()
                 headers = {k: v for k, v in self.headers.items()
@@ -1246,23 +1441,34 @@ class EgressProxy:
                     conn = conn_cls(up.hostname, up.port, timeout=900)
                     conn.request("POST", up.path.rstrip("/") + "/responses", data, headers)
                     resp = conn.getresponse()
-                except OSError as e:
+                except (OSError, http.client.HTTPException) as e:
                     # The request may have reached the provider, so a reservation stays charged.
-                    proxy.log({"event": "upstream_error", "n": n, "detail": str(e)[:300],
+                    finish({"event": "upstream_error", "n": n, "detail": str(e)[:300],
                                **({"provider": "openai-codex", "auth_lane": "subscription", "model": proxy.model_id}
                                   if proxy.provider == "openai-codex" else {}), **settle(None, {})})
                     return self.refuse(502, "upstream unreachable")
-                self.send_response(resp.status)
-                for k, v in resp.getheaders():
-                    if k.lower() not in ("transfer-encoding", "connection", "content-length", "keep-alive"):
-                        self.send_header(k, v)
-                self.send_header("connection", "close")
-                self.end_headers()
+                stream_error = False
+                try:
+                    self.send_response(resp.status)
+                    for k, v in resp.getheaders():
+                        if k.lower() not in ("transfer-encoding", "connection", "content-length", "keep-alive"):
+                            self.send_header(k, v)
+                    self.send_header("connection", "close")
+                    self.end_headers()
+                except OSError:
+                    conn.close()
+                    finish({"event": "stream_error", "n": n}, stream_error=True)
+                    return
                 terminal, buf, head = None, b"", b""
                 try:
                     while True:
                         chunk = resp.read1(65536)
                         if not chunk:
+                            # read1() can silently return EOF with declared bytes still missing.
+                            # Chunked framing raises IncompleteRead itself; close-delimited SSE
+                            # has no remaining length and relies on its terminal event.
+                            if subscription_budget and resp.length not in (None, 0):
+                                stream_error = True
                             break
                         self.wfile.write(chunk)
                         self.wfile.flush()
@@ -1276,15 +1482,26 @@ class EgressProxy:
                                     event = json.loads(line[6:])
                                 except ValueError:
                                     continue
-                                if isinstance(event, dict) and event.get("type") in TERMINAL_EVENTS:
-                                    terminal = event
-                except OSError as e:
+                                if isinstance(event, dict):
+                                    if subscription_budget and (event.get("type") == "error" or
+                                            event.get("type") in TERMINAL_EVENTS and terminal is not None):
+                                        stream_error = True
+                                    if event.get("type") in TERMINAL_EVENTS:
+                                        terminal = event
+                except (OSError, http.client.HTTPException) as e:
+                    stream_error = True
                     proxy.log({"event": "stream_error", "n": n, "detail": str(e)[:300]})
                 finally:
                     conn.close()
                 response = (terminal or {}).get("response") or {}
+                response = response if isinstance(response, dict) else {}
                 usage = response.get("usage") or {}
-                proxy.log({
+                usage = usage if isinstance(usage, dict) else {}
+                input_details = usage.get("input_tokens_details")
+                input_details = input_details if isinstance(input_details, dict) else {}
+                output_details = usage.get("output_tokens_details")
+                output_details = output_details if isinstance(output_details, dict) else {}
+                finish({
                     "event": "request", "n": n, "http_status": resp.status, "model": body.get("model"),
                     **({"provider": "openai-codex", "auth_lane": "subscription", "billing": "unknown", "quota": "unknown"}
                        if proxy.provider == "openai-codex" else {}),
@@ -1292,13 +1509,13 @@ class EgressProxy:
                     "terminal": (terminal or {}).get("type"), "response_id": response.get("id"),
                     "response_model": response.get("model"),
                     "usage": {"input_tokens": usage.get("input_tokens"), "output_tokens": usage.get("output_tokens"),
-                              "cached_tokens": (usage.get("input_tokens_details") or {}).get("cached_tokens"),
-                              "cache_write_tokens": (usage.get("input_tokens_details") or {}).get("cache_write_tokens"),
-                              "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens")},
+                              "cached_tokens": input_details.get("cached_tokens"),
+                              "cache_write_tokens": input_details.get("cache_write_tokens"),
+                              "reasoning_tokens": output_details.get("reasoning_tokens")},
                     "seconds": round(time.time() - started, 3),
                     **({"error_head": head.decode("utf-8", "replace")} if resp.status != 200 and proxy.provider != "openai-codex" else {}),
                     **settle(resp.status if terminal is not None or resp.status != 200 else None, response),
-                })
+                }, http_status=resp.status, response=response, terminal=(terminal or {}).get("type"), stream_error=stream_error)
                 self.close_connection = True
 
         slots = threading.BoundedSemaphore(self.max_connections)
@@ -1368,7 +1585,11 @@ def run_turn(spec_path: str) -> int:
     budget = None
     if spec.get("usd_limit"):
         lim = spec["usd_limit"]
-        budget = BUDGETS[provider](max_usd=lim["max_usd"], rates=lim["rates"], tier=spec.get("service_tier"),
+        if provider == "openai-codex":
+            budget = SubscriptionProxyBudget(max_usd=lim["max_usd"], rates=lim["rates"],
+                                              spent_before_usd=lim["spent_before_usd"])
+        else:
+            budget = BUDGETS[provider](max_usd=lim["max_usd"], rates=lim["rates"], tier=spec.get("service_tier"),
                            max_output_tokens=spec["max_output_tokens"], spent_before_usd=lim["spent_before_usd"],
                            prefix=lim.get("prefix"), multiplier_floor=lim.get("multiplier_floor") or 0.0,
                            strict_tier=bool(lim.get("strict_tier")))

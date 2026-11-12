@@ -160,7 +160,7 @@ What the agent gets, enforced by the container rather than by instructions:
   refuses `store: true`. It sets the requested tier (or removes one),
   substitutes the real key, and logs the tier and usage the provider reported.
   `--max-requests N` caps forwarded model requests per turn.
-- **Dollar limit.** `--max-usd X` limits the whole session's modelled API
+- **API dollar limit.** On the API lane, `--max-usd X` limits the whole session's modelled API
   spend. The proxy forces `max_output_tokens` to `--max-output-tokens`
   (default 16000 with `--max-usd`), then sets aside each request's worst
   case before forwarding it: every input token at the dearer of the input and
@@ -253,8 +253,20 @@ and its ancestors, including aliases, while permitting nonoverlapping skill
 folders. No host credential or account identity enters the
 container, models file, fingerprint, spec, or proxy log.
 
-This native transport has no hard output-token-cap field. `--max-usd`,
-`--usd-strict-tier`, `--max-output-tokens` and service tiers are refused on
+This native transport has no hard output-token-cap field. `--max-usd X`
+opts into an **API-equivalent cost-proxy stopping threshold**, using the existing
+OpenAI rates pinned at launch and default API valuation without a subscription
+service tier. It is not a hard pre-request cap: one admitted response can
+overshoot. The proxy allows one request in flight, persists admission before
+forwarding, and stops the container when accumulated proxy cost reaches the
+threshold or accounting becomes unknown. A concurrent request is refused before
+forwarding. Failed, interrupted, identity-unverified or usage-invalid exchanges
+leave an unresolved admission; a later delivery is refused. Malformed logs or
+partial final records also block delivery while retaining prior known costs.
+Required input/output counts must be nonnegative integers; when optional cache
+counts are absent all input is conservatively valued at the dearer input/cache-write
+rate. Status, environment and receipts label the units and the overshoot limitation.
+`--usd-strict-tier`, `--max-output-tokens` and service tiers remain refused on
 this lane; `--max-requests` still applies. API lanes retain their dollar
 reservations and output caps. Proxy logs identify `openai-codex` and the
 subscription lane and retain provider-reported token usage, including native
@@ -262,6 +274,9 @@ subscription lane and retain provider-reported token usage, including native
 unknown accounting calls. Billing and quota
 are unknown. The usage ledger places these calls in the Codex subscription
 pool with unknown dollar/quota values rather than API-billed `pi_api` spend.
+It retains separately labelled per-request proxy measurements, including
+unresolved admissions, without settling subscription invoice dollars or quota.
+`--objective-record` API-dollar admission cannot be combined with this proxy limit.
 Validation uses synthetic credentials and native Pi SSE against a local mock;
 no live quota claim is established.
 
