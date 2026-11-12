@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::derive::{
     AuthorityRequirement, CandidateCondition, ComponentBindingRequirement, OrganizationCandidate,
-    RelationshipKind, SeparationRequirement,
+    ParticipantKind, Relationship, RelationshipKind, SeparationRequirement,
 };
 use crate::digest::Digest;
 use crate::ids::Id;
@@ -125,11 +125,93 @@ pub enum ViewError {
         "vantage requirement for `{vantage}`, which is not a vantage participant of the candidate"
     )]
     VantageRequirementWithoutVantage { vantage: String },
+    #[error(
+        "{kind} relationship from `{from}`: the source is not a {required} participant of the candidate"
+    )]
+    RelationshipSourceInvalid {
+        kind: &'static str,
+        from: String,
+        required: &'static str,
+    },
+    #[error("{kind} relationship from `{from}` names no target")]
+    RelationshipWithoutTarget { kind: &'static str, from: String },
+    #[error(
+        "{kind} relationship from `{from}` names target `{to}`, which is not a {required} of the candidate"
+    )]
+    RelationshipTargetInvalid {
+        kind: &'static str,
+        from: String,
+        to: String,
+        required: &'static str,
+    },
+    #[error("{kind} relationship from `{from}` names target `{to}`, where none belongs")]
+    RelationshipTargetUnexpected {
+        kind: &'static str,
+        from: String,
+        to: String,
+    },
+    #[error("{kind} relationship from `{from}` names no condition")]
+    RelationshipWithoutCondition { kind: &'static str, from: String },
+    #[error("{kind} relationship from `{from}` names condition `{condition}`, where none belongs")]
+    RelationshipConditionUnexpected {
+        kind: &'static str,
+        from: String,
+        condition: String,
+    },
+    #[error(
+        "{kind} relationship from `{from}` names condition `{condition}`, which the candidate does not carry"
+    )]
+    RelationshipUnknownCondition {
+        kind: &'static str,
+        from: String,
+        condition: String,
+    },
+    #[error(
+        "{kind} relationship from `{from}` for condition `{condition}` targets `{to}`, but the vantage serving the condition's obligation is `{expected}`"
+    )]
+    RelationshipWrongVantage {
+        kind: &'static str,
+        from: String,
+        to: String,
+        condition: String,
+        expected: String,
+    },
+    #[error(
+        "consumes_at relationship from `{from}` for condition `{condition}`, but the condition's consumer is `{expected}`"
+    )]
+    ConsumesAtWrongConsumer {
+        from: String,
+        condition: String,
+        expected: String,
+    },
+    #[error(
+        "accepts_claim relationship from `{from}` for condition `{condition}`, but the condition's acceptor is `{expected}`"
+    )]
+    AcceptsClaimWrongAcceptor {
+        from: String,
+        condition: String,
+        expected: String,
+    },
+    #[error("condition `{condition}` has more than one {kind} relationship (sources {sources:?})")]
+    DuplicateConditionRelationship {
+        kind: &'static str,
+        condition: String,
+        sources: Vec<String>,
+    },
+    #[error("duplicate {kind} relationship from `{from}` (target {to:?}, condition {condition:?})")]
+    DuplicateRelationship {
+        kind: &'static str,
+        from: String,
+        to: Option<String>,
+        condition: Option<String>,
+    },
 }
 
 /// Projects a candidate. Pure: the same candidate gives the same view. A relationship or
 /// requirement row that the projection would omit, or reduce to one of several, is a
-/// [`ViewError`]; what stays absent is absent in the candidate and is shown as absent.
+/// [`ViewError`]; what stays absent is absent in the candidate and is shown as absent. Every
+/// relationship row is also validated whether or not the view presents it (`consumes_at` and
+/// `accepts_claim` are not projected): see [`validate_relationships`].
 pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewError> {
     let relationships = candidate.relationships();
     let of_kind = |kind: RelationshipKind| relationships.iter().filter(move |r| r.kind == kind);
@@ -289,6 +371,8 @@ pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewE
         component: (*component).to_owned(),
     });
 
+    validate_relationships(candidate)?;
+
     Ok(OrganizationView {
         problem_scope: candidate.problem_scope().clone(),
         obligations,
@@ -301,6 +385,189 @@ pub fn view(candidate: &OrganizationCandidate) -> Result<OrganizationView, ViewE
         authority_requirements: candidate.authority_requirements().to_vec(),
         component_binding_requirements: candidate.component_binding_requirements().to_vec(),
     })
+}
+
+/// The participant kinds a relationship kind's `from` may name. `consumes_at` is from the
+/// condition's consumer, which is the campaign component or the builder vantage.
+fn source_kinds(kind: RelationshipKind) -> &'static [ParticipantKind] {
+    match kind {
+        RelationshipKind::Serves => &[ParticipantKind::Vantage],
+        RelationshipKind::ConsumesAt => &[ParticipantKind::Vantage, ParticipantKind::Component],
+        RelationshipKind::AcceptsClaim => &[ParticipantKind::Principal],
+        RelationshipKind::HostsExecution
+        | RelationshipKind::WritesEpisode
+        | RelationshipKind::ReadsEpisode
+        | RelationshipKind::Terminalizes => &[ParticipantKind::Component],
+    }
+}
+
+fn kinds_name(kinds: &[ParticipantKind]) -> &'static str {
+    match kinds {
+        [ParticipantKind::Vantage] => "vantage",
+        [ParticipantKind::Component] => "component",
+        [ParticipantKind::Principal] => "principal",
+        _ => "vantage or component",
+    }
+}
+
+/// Validates every relationship row of the candidate, of every kind, against what `derive`
+/// emits (amendment 5.1-A1 section 3), whether or not the view presents the kind. Rows are
+/// checked in candidate order; the first failure is returned. Required rows that are absent are
+/// not checked here: that is a separate question.
+fn validate_relationships(candidate: &OrganizationCandidate) -> Result<(), ViewError> {
+    let participants: BTreeMap<&str, ParticipantKind> = candidate
+        .participants()
+        .iter()
+        .map(|p| (p.id.as_str(), p.kind))
+        .collect();
+    let conditions: BTreeMap<&str, &CandidateCondition> = candidate
+        .conditions()
+        .iter()
+        .map(|c| (c.id.as_str(), c))
+        .collect();
+    let mut per_condition: BTreeMap<(RelationshipKind, &str), &str> = BTreeMap::new();
+    let mut seen: BTreeSet<(RelationshipKind, &str, Option<&str>, Option<&str>)> = BTreeSet::new();
+
+    for row in candidate.relationships() {
+        let kind = row.kind.as_str();
+        let from = row.from.as_str();
+
+        // 1. `from` is a participant of the required kind.
+        let required = source_kinds(row.kind);
+        if !participants.get(from).is_some_and(|k| required.contains(k)) {
+            return Err(ViewError::RelationshipSourceInvalid {
+                kind,
+                from: row.from.clone(),
+                required: kinds_name(required),
+            });
+        }
+
+        // 2. `to` is present exactly when the kind has a target, and names the right entity.
+        match (row.kind, row.to.as_deref()) {
+            (RelationshipKind::Terminalizes, Some(to)) => {
+                return Err(ViewError::RelationshipTargetUnexpected {
+                    kind,
+                    from: row.from.clone(),
+                    to: to.to_owned(),
+                });
+            }
+            (RelationshipKind::Terminalizes, None) => {}
+            (_, None) => {
+                return Err(ViewError::RelationshipWithoutTarget {
+                    kind,
+                    from: row.from.clone(),
+                });
+            }
+            // The `serves` target is an obligation, checked against the candidate's obligations
+            // before the projection; the other targets are vantage participants.
+            (RelationshipKind::Serves, Some(_)) => {}
+            (_, Some(to)) => {
+                if participants.get(to) != Some(&ParticipantKind::Vantage) {
+                    return Err(ViewError::RelationshipTargetInvalid {
+                        kind,
+                        from: row.from.clone(),
+                        to: to.to_owned(),
+                        required: "vantage participant",
+                    });
+                }
+            }
+        }
+
+        // 3 and 4. `condition` is present exactly for `consumes_at` and `accepts_claim`, names a
+        // carried condition, and the row agrees with that condition.
+        match (row.kind, row.condition.as_ref()) {
+            (RelationshipKind::ConsumesAt | RelationshipKind::AcceptsClaim, None) => {
+                return Err(ViewError::RelationshipWithoutCondition {
+                    kind,
+                    from: row.from.clone(),
+                });
+            }
+            (RelationshipKind::ConsumesAt | RelationshipKind::AcceptsClaim, Some(id)) => {
+                check_condition_row(row, id.as_str(), &conditions)?;
+                if let Some(first) = per_condition.insert((row.kind, id.as_str()), from) {
+                    return Err(ViewError::DuplicateConditionRelationship {
+                        kind,
+                        condition: id.to_string(),
+                        sources: vec![first.to_owned(), row.from.clone()],
+                    });
+                }
+            }
+            (_, Some(id)) => {
+                return Err(ViewError::RelationshipConditionUnexpected {
+                    kind,
+                    from: row.from.clone(),
+                    condition: id.to_string(),
+                });
+            }
+            (_, None) => {}
+        }
+
+        // 5. No duplicate row under the set key.
+        let key = (
+            row.kind,
+            from,
+            row.to.as_deref(),
+            row.condition.as_ref().map(Id::as_str),
+        );
+        if !seen.insert(key) {
+            return Err(ViewError::DuplicateRelationship {
+                kind,
+                from: row.from.clone(),
+                to: row.to.clone(),
+                condition: row.condition.as_ref().map(|c| c.to_string()),
+            });
+        }
+    }
+    Ok(())
+}
+
+/// A `consumes_at` or `accepts_claim` row names a carried condition, targets the vantage that
+/// serves the condition's obligation, and (for `consumes_at`) comes from the condition's
+/// consumer or (for `accepts_claim`) from the condition's acceptor.
+fn check_condition_row(
+    row: &Relationship,
+    condition_id: &str,
+    conditions: &BTreeMap<&str, &CandidateCondition>,
+) -> Result<(), ViewError> {
+    let kind = row.kind.as_str();
+    let Some(condition) = conditions.get(condition_id) else {
+        return Err(ViewError::RelationshipUnknownCondition {
+            kind,
+            from: row.from.clone(),
+            condition: condition_id.to_owned(),
+        });
+    };
+    // A target is always present here: step 2 refused a missing one.
+    if let Some(to) = row.to.as_deref()
+        && to != condition.vantage
+    {
+        return Err(ViewError::RelationshipWrongVantage {
+            kind,
+            from: row.from.clone(),
+            to: to.to_owned(),
+            condition: condition_id.to_owned(),
+            expected: condition.vantage.clone(),
+        });
+    }
+    if row.kind == RelationshipKind::ConsumesAt {
+        if row.from != condition.consumer {
+            return Err(ViewError::ConsumesAtWrongConsumer {
+                from: row.from.clone(),
+                condition: condition_id.to_owned(),
+                expected: condition.consumer.clone(),
+            });
+        }
+    } else {
+        let expected = format!("principal:{}", condition.acceptor);
+        if row.from != expected {
+            return Err(ViewError::AcceptsClaimWrongAcceptor {
+                from: row.from.clone(),
+                condition: condition_id.to_owned(),
+                expected,
+            });
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -545,5 +812,763 @@ mod tests {
         assert!(vantage.effective.is_none());
         assert!(vantage.effective_constraints.is_empty());
         assert!(vantage.conditions.is_empty());
+    }
+
+    // --- Every relationship row is validated, whether or not the view presents its kind. ---
+
+    /// Two obligations with one condition each (`cond-1` on `ob-a`, consumed by the campaign;
+    /// `cond-2` on `ob-b`, consumed by the builder), accepted by `owner-a` and `owner-b`.
+    fn derived_two() -> OrganizationCandidate {
+        let condition = |id: &str, obligation: &str, class: &str, acceptor: &str| {
+            json!({
+                "id": id, "obligation": obligation,
+                "consumptionBoundary": "campaign_terminalization", "consumerClass": class,
+                "proposition": "p", "coveredState": "review-result",
+                "normative": {
+                    "continuity": "fresh_initial", "mutation": "none", "capabilities": [],
+                    "integrity": "verified_artifacts",
+                    "evidenceCustody": "execution_evidence_custody",
+                    "observerClass": "independent_execution_evidence"
+                },
+                "acceptor": acceptor,
+                "unestablishedRoute": "hold-consumption-for-owner-disposition"
+            })
+        };
+        let obligation = |id: &str, digest: &str| {
+            json!({
+                "id": id, "kind": "candidate_review", "subject": "campaign_candidate",
+                "resultContract": {"id": "implementation-review", "version": 1},
+                "scope": {"digest": digest.repeat(64)}
+            })
+        };
+        let doc = json!({
+            "problemScope": {"runId": "run-1", "planLineage": "plan-a", "sliceNumber": 1},
+            "obligations": [obligation("ob-a", "a"), obligation("ob-b", "b")],
+            "acceptanceConditions": [
+                condition("cond-1", "ob-a", "campaign", "owner-a"),
+                condition("cond-2", "ob-b", "builder", "owner-b"),
+            ],
+            "requiredAuthorities": [
+                {"id": "auth-1", "principal": "owner-a", "permission": "accept_claim", "scope": {}},
+                {"id": "auth-2", "principal": "owner-b", "permission": "accept_claim", "scope": {}}
+            ],
+            "organizationPolicy": {"mode": "fixed", "profile": "fixed-slice-review-v1"}
+        });
+        let requirements =
+            OrganizationalRequirements::from_json_bytes(&serde_json::to_vec(&doc).unwrap())
+                .unwrap();
+        let mut result = derive(&requirements, Profile::FixedSliceReviewV1);
+        assert!(result.unresolved.is_empty(), "{:?}", result.unresolved);
+        result.candidates.remove(0)
+    }
+
+    fn row_for(
+        candidate: &OrganizationCandidate,
+        kind: RelationshipKind,
+        condition: Option<&str>,
+    ) -> usize {
+        candidate
+            .relationships()
+            .iter()
+            .position(|r| r.kind == kind && r.condition.as_ref().map(Id::as_str) == condition)
+            .unwrap_or_else(|| panic!("no {kind:?} row for {condition:?}"))
+    }
+
+    fn edit(
+        candidate: &mut OrganizationCandidate,
+        kind: RelationshipKind,
+        condition: Option<&str>,
+        change: impl FnOnce(&mut Relationship),
+    ) {
+        let at = row_for(candidate, kind, condition);
+        change(&mut candidate.relationships_mut()[at]);
+    }
+
+    fn some(text: &str) -> Option<String> {
+        Some(text.to_owned())
+    }
+
+    fn id(text: &str) -> Option<Id> {
+        Some(Id::parse(text).unwrap())
+    }
+
+    #[test]
+    fn a_derived_two_obligation_candidate_with_a_builder_consumer_projects() {
+        let candidate = derived_two();
+        let kinds: Vec<_> = candidate.relationships().iter().map(|r| r.kind).collect();
+        assert!(kinds.contains(&RelationshipKind::ConsumesAt));
+        let builder_consumes = candidate
+            .relationships()
+            .iter()
+            .any(|r| r.kind == RelationshipKind::ConsumesAt && r.from == "vantage-builder");
+        assert!(builder_consumes);
+        assert!(view(&candidate).is_ok());
+    }
+
+    // The reviewer's four probes.
+
+    #[test]
+    fn probe_an_extra_consumes_at_row_with_ghost_references_is_refused() {
+        let mut candidate = derived();
+        candidate.relationships_mut().push(Relationship {
+            kind: RelationshipKind::ConsumesAt,
+            from: "component:ghost".to_owned(),
+            to: some("vantage:ghost"),
+            condition: id("ghost"),
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "consumes_at",
+                from: "component:ghost".to_owned(),
+                required: "vantage or component"
+            })
+        );
+    }
+
+    #[test]
+    fn probe_a_consumes_at_row_with_no_target_and_no_condition_is_refused() {
+        let mut candidate = derived();
+        candidate.relationships_mut().push(Relationship {
+            kind: RelationshipKind::ConsumesAt,
+            from: "component:campaign".to_owned(),
+            to: None,
+            condition: None,
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWithoutTarget {
+                kind: "consumes_at",
+                from: "component:campaign".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn probe_an_extra_accepts_claim_row_with_ghost_references_is_refused() {
+        let mut candidate = derived();
+        candidate.relationships_mut().push(Relationship {
+            kind: RelationshipKind::AcceptsClaim,
+            from: "principal:ghost".to_owned(),
+            to: some("vantage:ghost"),
+            condition: id("ghost"),
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "accepts_claim",
+                from: "principal:ghost".to_owned(),
+                required: "principal"
+            })
+        );
+    }
+
+    #[test]
+    fn probe_an_accepts_claim_row_with_no_target_and_no_condition_is_refused() {
+        let mut candidate = derived();
+        candidate.relationships_mut().push(Relationship {
+            kind: RelationshipKind::AcceptsClaim,
+            from: "principal:owner-a".to_owned(),
+            to: None,
+            condition: None,
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWithoutTarget {
+                kind: "accepts_claim",
+                from: "principal:owner-a".to_owned()
+            })
+        );
+    }
+
+    // `consumes_at`.
+
+    #[test]
+    fn consumes_at_from_a_principal_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::ConsumesAt,
+            Some("cond-1"),
+            |r| {
+                r.from = "principal:owner-a".to_owned();
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "consumes_at",
+                from: "principal:owner-a".to_owned(),
+                required: "vantage or component"
+            })
+        );
+    }
+
+    #[test]
+    fn consumes_at_to_a_non_vantage_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::ConsumesAt,
+            Some("cond-1"),
+            |r| {
+                r.to = some("component:episode_host");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipTargetInvalid {
+                kind: "consumes_at",
+                from: "component:campaign".to_owned(),
+                to: "component:episode_host".to_owned(),
+                required: "vantage participant"
+            })
+        );
+    }
+
+    #[test]
+    fn consumes_at_with_no_condition_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::ConsumesAt,
+            Some("cond-1"),
+            |r| {
+                r.condition = None;
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWithoutCondition {
+                kind: "consumes_at",
+                from: "component:campaign".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn consumes_at_for_a_condition_the_candidate_lacks_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::ConsumesAt,
+            Some("cond-1"),
+            |r| {
+                r.condition = id("cond-ghost");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipUnknownCondition {
+                kind: "consumes_at",
+                from: "component:campaign".to_owned(),
+                condition: "cond-ghost".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn consumes_at_targeting_another_conditions_vantage_is_refused() {
+        let mut candidate = derived_two();
+        edit(
+            &mut candidate,
+            RelationshipKind::ConsumesAt,
+            Some("cond-1"),
+            |r| {
+                r.to = some("vantage:ob-b");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWrongVantage {
+                kind: "consumes_at",
+                from: "component:campaign".to_owned(),
+                to: "vantage:ob-b".to_owned(),
+                condition: "cond-1".to_owned(),
+                expected: "vantage:ob-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn consumes_at_from_a_participant_that_is_not_the_conditions_consumer_is_refused() {
+        let mut candidate = derived_two();
+        edit(
+            &mut candidate,
+            RelationshipKind::ConsumesAt,
+            Some("cond-2"),
+            |r| {
+                r.from = "component:campaign".to_owned();
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::ConsumesAtWrongConsumer {
+                from: "component:campaign".to_owned(),
+                condition: "cond-2".to_owned(),
+                expected: "vantage-builder".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn two_consumes_at_rows_for_one_condition_are_refused() {
+        let mut candidate = derived();
+        let at = row_for(&candidate, RelationshipKind::ConsumesAt, Some("cond-1"));
+        let second = candidate.relationships()[at].clone();
+        candidate.relationships_mut().push(second);
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::DuplicateConditionRelationship {
+                kind: "consumes_at",
+                condition: "cond-1".to_owned(),
+                sources: strings(&["component:campaign", "component:campaign"])
+            })
+        );
+    }
+
+    // `accepts_claim`.
+
+    #[test]
+    fn accepts_claim_from_a_component_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::AcceptsClaim,
+            Some("cond-1"),
+            |r| {
+                r.from = "component:campaign".to_owned();
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "accepts_claim",
+                from: "component:campaign".to_owned(),
+                required: "principal"
+            })
+        );
+    }
+
+    #[test]
+    fn accepts_claim_to_a_non_vantage_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::AcceptsClaim,
+            Some("cond-1"),
+            |r| {
+                r.to = some("principal:owner-a");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipTargetInvalid {
+                kind: "accepts_claim",
+                from: "principal:owner-a".to_owned(),
+                to: "principal:owner-a".to_owned(),
+                required: "vantage participant"
+            })
+        );
+    }
+
+    #[test]
+    fn accepts_claim_with_no_condition_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::AcceptsClaim,
+            Some("cond-1"),
+            |r| {
+                r.condition = None;
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWithoutCondition {
+                kind: "accepts_claim",
+                from: "principal:owner-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn accepts_claim_for_a_condition_the_candidate_lacks_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::AcceptsClaim,
+            Some("cond-1"),
+            |r| {
+                r.condition = id("cond-ghost");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipUnknownCondition {
+                kind: "accepts_claim",
+                from: "principal:owner-a".to_owned(),
+                condition: "cond-ghost".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn accepts_claim_targeting_another_conditions_vantage_is_refused() {
+        let mut candidate = derived_two();
+        edit(
+            &mut candidate,
+            RelationshipKind::AcceptsClaim,
+            Some("cond-1"),
+            |r| {
+                r.to = some("vantage:ob-b");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWrongVantage {
+                kind: "accepts_claim",
+                from: "principal:owner-a".to_owned(),
+                to: "vantage:ob-b".to_owned(),
+                condition: "cond-1".to_owned(),
+                expected: "vantage:ob-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn accepts_claim_from_a_principal_that_is_not_the_conditions_acceptor_is_refused() {
+        let mut candidate = derived_two();
+        edit(
+            &mut candidate,
+            RelationshipKind::AcceptsClaim,
+            Some("cond-1"),
+            |r| {
+                r.from = "principal:owner-b".to_owned();
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::AcceptsClaimWrongAcceptor {
+                from: "principal:owner-b".to_owned(),
+                condition: "cond-1".to_owned(),
+                expected: "principal:owner-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn two_accepts_claim_rows_for_one_condition_are_refused() {
+        let mut candidate = derived();
+        let at = row_for(&candidate, RelationshipKind::AcceptsClaim, Some("cond-1"));
+        let second = candidate.relationships()[at].clone();
+        candidate.relationships_mut().push(second);
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::DuplicateConditionRelationship {
+                kind: "accepts_claim",
+                condition: "cond-1".to_owned(),
+                sources: strings(&["principal:owner-a", "principal:owner-a"])
+            })
+        );
+    }
+
+    // `serves`, `hosts_execution`, `writes_episode`, `reads_episode`, `terminalizes`: source,
+    // target and condition on every row, and exact duplicates.
+
+    #[test]
+    fn serves_from_a_non_vantage_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::Serves, None, |r| {
+            r.from = "component:campaign".to_owned();
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "serves",
+                from: "component:campaign".to_owned(),
+                required: "vantage"
+            })
+        );
+    }
+
+    #[test]
+    fn serves_with_a_condition_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::Serves, None, |r| {
+            r.condition = id("cond-1");
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipConditionUnexpected {
+                kind: "serves",
+                from: "vantage:ob-a".to_owned(),
+                condition: "cond-1".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn hosts_execution_from_a_non_component_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::HostsExecution,
+            None,
+            |r| {
+                r.from = "principal:owner-a".to_owned();
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "hosts_execution",
+                from: "principal:owner-a".to_owned(),
+                required: "component"
+            })
+        );
+    }
+
+    #[test]
+    fn hosts_execution_to_a_non_vantage_is_refused() {
+        for target in ["component:campaign", "vantage:ghost"] {
+            let mut candidate = derived();
+            edit(
+                &mut candidate,
+                RelationshipKind::HostsExecution,
+                None,
+                |r| {
+                    r.to = some(target);
+                },
+            );
+            assert_eq!(
+                view(&candidate),
+                Err(ViewError::RelationshipTargetInvalid {
+                    kind: "hosts_execution",
+                    from: "component:campaign".to_owned(),
+                    to: target.to_owned(),
+                    required: "vantage participant"
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn hosts_execution_with_a_condition_is_refused() {
+        let mut candidate = derived();
+        edit(
+            &mut candidate,
+            RelationshipKind::HostsExecution,
+            None,
+            |r| {
+                r.condition = id("cond-1");
+            },
+        );
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipConditionUnexpected {
+                kind: "hosts_execution",
+                from: "component:campaign".to_owned(),
+                condition: "cond-1".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn a_duplicate_hosts_execution_row_is_refused() {
+        let mut candidate = derived();
+        let at = row_for(&candidate, RelationshipKind::HostsExecution, None);
+        let second = candidate.relationships()[at].clone();
+        candidate.relationships_mut().push(second);
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::DuplicateRelationship {
+                kind: "hosts_execution",
+                from: "component:campaign".to_owned(),
+                to: some("vantage:ob-a"),
+                condition: None
+            })
+        );
+    }
+
+    #[test]
+    fn writes_episode_from_a_non_component_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::WritesEpisode, None, |r| {
+            r.from = "vantage:ob-a".to_owned();
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "writes_episode",
+                from: "vantage:ob-a".to_owned(),
+                required: "component"
+            })
+        );
+    }
+
+    #[test]
+    fn writes_episode_to_a_non_vantage_is_refused() {
+        // The reader row must name a written vantage to pass the episode-access checks, so both
+        // rows move to the same non-vantage; the reader row comes first in candidate order.
+        let mut candidate = derived();
+        for kind in [
+            RelationshipKind::WritesEpisode,
+            RelationshipKind::ReadsEpisode,
+        ] {
+            edit(&mut candidate, kind, None, |r| r.to = some("vantage:ghost"));
+        }
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipTargetInvalid {
+                kind: "reads_episode",
+                from: "component:episode_host".to_owned(),
+                to: "vantage:ghost".to_owned(),
+                required: "vantage participant"
+            })
+        );
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::WritesEpisode, None, |r| {
+            r.to = some("vantage:ghost");
+        });
+        edit(&mut candidate, RelationshipKind::ReadsEpisode, None, |r| {
+            r.to = some("vantage:ghost");
+        });
+        candidate
+            .relationships_mut()
+            .retain(|r| r.kind != RelationshipKind::ReadsEpisode);
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipTargetInvalid {
+                kind: "writes_episode",
+                from: "component:episode_host".to_owned(),
+                to: "vantage:ghost".to_owned(),
+                required: "vantage participant"
+            })
+        );
+    }
+
+    #[test]
+    fn writes_episode_with_a_condition_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::WritesEpisode, None, |r| {
+            r.condition = id("cond-1");
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipConditionUnexpected {
+                kind: "writes_episode",
+                from: "component:episode_host".to_owned(),
+                condition: "cond-1".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn reads_episode_from_a_non_component_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::ReadsEpisode, None, |r| {
+            r.from = "principal:owner-a".to_owned();
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "reads_episode",
+                from: "principal:owner-a".to_owned(),
+                required: "component"
+            })
+        );
+    }
+
+    #[test]
+    fn reads_episode_with_a_condition_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::ReadsEpisode, None, |r| {
+            r.condition = id("cond-1");
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipConditionUnexpected {
+                kind: "reads_episode",
+                from: "component:episode_host".to_owned(),
+                condition: "cond-1".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn a_duplicate_reads_episode_row_is_refused() {
+        let mut candidate = derived();
+        let at = row_for(&candidate, RelationshipKind::ReadsEpisode, None);
+        let second = candidate.relationships()[at].clone();
+        candidate.relationships_mut().push(second);
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::DuplicateRelationship {
+                kind: "reads_episode",
+                from: "component:episode_host".to_owned(),
+                to: some("vantage:ob-a"),
+                condition: None
+            })
+        );
+    }
+
+    #[test]
+    fn terminalizes_from_a_non_component_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::Terminalizes, None, |r| {
+            r.from = "vantage:ob-a".to_owned();
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipSourceInvalid {
+                kind: "terminalizes",
+                from: "vantage:ob-a".to_owned(),
+                required: "component"
+            })
+        );
+    }
+
+    #[test]
+    fn terminalizes_with_a_target_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::Terminalizes, None, |r| {
+            r.to = some("vantage:ob-a");
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipTargetUnexpected {
+                kind: "terminalizes",
+                from: "component:campaign".to_owned(),
+                to: "vantage:ob-a".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn terminalizes_with_a_condition_is_refused() {
+        let mut candidate = derived();
+        edit(&mut candidate, RelationshipKind::Terminalizes, None, |r| {
+            r.condition = id("cond-1");
+        });
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipConditionUnexpected {
+                kind: "terminalizes",
+                from: "component:campaign".to_owned(),
+                condition: "cond-1".to_owned()
+            })
+        );
+    }
+
+    /// An absent required row is a separate question (not asked): no `consumes_at` row for a
+    /// condition, and no `terminalizes` row, still project.
+    #[test]
+    fn an_absent_condition_row_is_not_refused_here() {
+        let mut candidate = derived();
+        candidate.relationships_mut().retain(|r| {
+            r.kind != RelationshipKind::ConsumesAt && r.kind != RelationshipKind::AcceptsClaim
+        });
+        assert!(view(&candidate).is_ok());
     }
 }

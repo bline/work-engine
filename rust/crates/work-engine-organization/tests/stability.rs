@@ -10,7 +10,9 @@ mod common;
 
 use common::*;
 use serde_json::{Value, json};
-use work_engine_organization::{Digest, DigestKind, OrganizationalRequirements, Profile, derive};
+use work_engine_organization::{
+    Digest, DigestKind, OrganizationalRequirements, Profile, derive, view,
+};
 
 /// Two obligations, four conditions, four authorities, and every set kind with 2-4 members.
 fn rich() -> Value {
@@ -367,6 +369,55 @@ fn golden_vectors_fix_canonical_bytes_and_digests() {
             requirements_hex,
             "{name}"
         );
+    }
+}
+
+/// Every relationship of a candidate is validated by `view()` (IG1A-R1 follow-up). A valid
+/// derived candidate must still project, to the same view as before the validation existed: the
+/// digests are of the `Debug` rendering of the view as computed at `81bcf441`, before
+/// `validate_relationships` was added, with the whole validation call disabled.
+#[test]
+fn views_of_the_fixture_candidates_are_unchanged_by_relationship_validation() {
+    use sha2::{Digest as _, Sha256};
+    let cases: Vec<(&str, OrganizationalRequirements, &str)> = vec![
+        (
+            "frozen vertical",
+            OrganizationalRequirements::from_json_bytes(FROZEN_REQUIREMENTS).unwrap(),
+            "868f0f06692c171a3bca370d4f98ed587f4804f6daa08b0f806de59570af60f9",
+        ),
+        (
+            "heterogeneous conditions",
+            parse(&two_condition_vantage()),
+            "04de034f0c1790d57fa5ef15585ce11af3c6855cb1a29a5cb0eeb143e11909e4",
+        ),
+        (
+            "builder and campaign consumers",
+            parse(&base()),
+            "d41e4f85be5ee23b6a90ff5b2eef8dc78a11ff7d4ec2d86e1941b2a08b224380",
+        ),
+    ];
+    let mut observed = Vec::new();
+    for (name, requirements, pinned) in cases {
+        let result = derive(&requirements, Profile::FixedSliceReviewV1);
+        assert!(
+            result.unresolved.is_empty(),
+            "{name}: {:?}",
+            result.unresolved
+        );
+        for candidate in &result.candidates {
+            let projected = view(candidate).unwrap_or_else(|e| panic!("{name}: {e}"));
+            let hex: String = Sha256::digest(format!("{projected:?}").as_bytes())
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
+            observed.push((name, hex, pinned));
+        }
+    }
+    for (name, hex, _) in &observed {
+        eprintln!("VIEWDIGEST {name} {hex}");
+    }
+    for (name, hex, pinned) in observed {
+        assert_eq!(hex, pinned, "{name}");
     }
 }
 
