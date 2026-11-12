@@ -1706,49 +1706,65 @@ mod tests {
         );
     }
 
-    /// Each fixed-source kind from the other component, and from a participant that is not a
-    /// component at all (the latter is the earlier kind check).
+    /// A fixed-source kind from the other profile component. (From a participant that is not a
+    /// component at all, the earlier kind check refuses it: see the `..._from_a_non_component_`
+    /// tests.)
+    fn assert_wrong_source(
+        kind: RelationshipKind,
+        name: &'static str,
+        from: &str,
+        expected: &'static str,
+    ) {
+        let mut candidate = derived();
+        edit(&mut candidate, kind, None, |r| r.from = from.to_owned());
+        assert_eq!(
+            view(&candidate),
+            Err(ViewError::RelationshipWrongSource {
+                kind: name,
+                from: from.to_owned(),
+                expected
+            })
+        );
+    }
+
     #[test]
-    fn a_fixed_source_kind_from_the_other_component_is_refused() {
-        let cases = [
-            (
-                RelationshipKind::HostsExecution,
-                "hosts_execution",
-                "component:episode_host",
-                "component:campaign",
-            ),
-            (
-                RelationshipKind::Terminalizes,
-                "terminalizes",
-                "component:episode_host",
-                "component:campaign",
-            ),
-            (
-                RelationshipKind::WritesEpisode,
-                "writes_episode",
-                "component:campaign",
-                "component:episode_host",
-            ),
-            (
-                RelationshipKind::ReadsEpisode,
-                "reads_episode",
-                "component:campaign",
-                "component:episode_host",
-            ),
-        ];
-        for (kind, name, from, expected) in cases {
-            let mut candidate = derived();
-            edit(&mut candidate, kind, None, |r| r.from = from.to_owned());
-            assert_eq!(
-                view(&candidate),
-                Err(ViewError::RelationshipWrongSource {
-                    kind: name,
-                    from: from.to_owned(),
-                    expected
-                }),
-                "{name}"
-            );
-        }
+    fn hosts_execution_from_the_episode_host_is_refused() {
+        assert_wrong_source(
+            RelationshipKind::HostsExecution,
+            "hosts_execution",
+            "component:episode_host",
+            "component:campaign",
+        );
+    }
+
+    #[test]
+    fn terminalizes_from_the_episode_host_is_refused() {
+        assert_wrong_source(
+            RelationshipKind::Terminalizes,
+            "terminalizes",
+            "component:episode_host",
+            "component:campaign",
+        );
+    }
+
+    #[test]
+    fn writes_episode_from_the_campaign_is_refused() {
+        assert_wrong_source(
+            RelationshipKind::WritesEpisode,
+            "writes_episode",
+            "component:campaign",
+            "component:episode_host",
+        );
+    }
+
+    #[test]
+    fn reads_episode_from_the_campaign_is_refused() {
+        assert_wrong_source(
+            RelationshipKind::ReadsEpisode,
+            "reads_episode",
+            "component:campaign",
+            "component:episode_host",
+        );
     }
 
     /// Reviewer episode rows moved to the builder vantage: both rows of `ob-a` move together so
