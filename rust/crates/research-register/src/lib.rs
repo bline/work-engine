@@ -9,7 +9,9 @@
 //! [`model::decode`] parses the register files ([`parse`]) and decodes typed records with their
 //! Git-free checks; violations carry a [`RuleId`]. [`validate`] checks a whole snapshot, including
 //! the Git-backed rules, and yields a [`ValidRegister`] or the violations. Anchors and decision
-//! cards are not part of this crate yet.
+//! cards are not part of this crate yet. [`use_bundle`] joins immutable research-use
+//! companions with the existing register proof. Its structural proof is not scientific
+//! qualification, authenticated approval or an execution permit.
 
 pub mod error;
 pub mod model;
@@ -17,6 +19,7 @@ pub mod objects;
 pub mod parse;
 pub mod rules;
 pub mod snapshot;
+pub mod use_bundle;
 pub mod validate;
 
 pub use error::{BadRequest, CannotRead, Error, NoRegister, Unsupported};
