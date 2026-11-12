@@ -811,11 +811,16 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
                 continue
             if isinstance(p.get('usd'), dict) and 'rid' in p['usd']:
                 settled.add(p['usd']['rid'])
-            if p.get('event') != 'request':
+            subscription = launch.get('auth_lane') == 'subscription'
+            if p.get('event') != 'request' and not (subscription and p.get('event') == 'upstream_error'):
                 continue
             rid = p.get('response_id')
             if p.get('http_status') != 200 or not rid:
-                issue('pi_request_without_response', path=log, line=n, http_status=p.get('http_status')); continue
+                issue('pi_request_without_response', path=log, line=n, http_status=p.get('http_status'))
+                if not subscription:
+                    continue
+                # A forwarded request without a terminal/ID is uncertain, not zero usage.
+                rid = rid or f"pi-uncertain:{sid}:{r.get('turn')}:{n}"
             if rid in seen:
                 issue('duplicate_response_id', path=log, line=n, response_id=rid); continue
             seen.add(rid)
@@ -853,6 +858,10 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
                              quota_multiplier=API_TIER_MULTIPLIER.get(tier), requested_tier=p.get('requested_tier'),
                              lane=launch.get('auth_lane'), cache_write_basis=basis,
                              latency_s=p.get('seconds'), latency_basis='egress_proxy_request'))
+            if launch.get('auth_lane') == 'subscription':
+                # API catalog rates do not establish subscription quota or billing.
+                rows[-1].update(pools=['codex'], usd=None, weighted=None, quota_multiplier=None,
+                                service_tier=None, requested_tier=None, billing='unknown', quota='unknown')
             annotate_call_measurements(rows[-1])
             pi_retain_charge(rows[-1], p)
         for res_id, (amount, at, n) in reserved.items():

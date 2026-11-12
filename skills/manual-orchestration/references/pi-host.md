@@ -17,9 +17,9 @@ Every Pi launch names how it is paid for:
 | `--auth` | Pi credential for the provider | paid by | service tier |
 | --- | --- | --- | --- |
 | `api` | API key (environment or Pi's `auth.json`) | the provider account, per token | allowed for provider `openai` |
-| `subscription` | OAuth login stored by Pi (`/login` in an interactive `pi`) | the subscription's session quota | refused |
+| `subscription` | Pi OAuth, or existing host Codex ChatGPT auth in Codex container mode | the subscription's session quota | refused |
 
-Before each turn the launcher runs `pi auth check --provider <p> --json
+For host launches and API containers, before each turn the launcher runs `pi auth check --provider <p> --json
 --no-refresh` and refuses unless Pi's credential type matches the lane
 (`api_key` or `oauth`). It never prints, refreshes or copies the credential.
 On the api lane with provider `openai`, a non-`sk-` `OPENAI_API_KEY` is also
@@ -125,8 +125,8 @@ limit. Make the retained-or-fresh decision from that reading as
 ## Container mode
 
 `--container` runs each turn in a Docker container with no network. It is
-available on the api lane for providers `openai` and `anthropic`; subscription sessions run on
-the host. Host facts: [Pi Docker probe](../../../metrics/probes/pi-docker-host-20261109.json)
+available on the api lane for providers `openai` and `anthropic`, and on the
+subscription lane for `openai-codex` using existing host Codex ChatGPT auth. Host facts: [Pi Docker probe](../../../metrics/probes/pi-docker-host-20261109.json)
 (Docker 29.7.2, local fake endpoint, n = 1 per cell).
 
 ```bash
@@ -230,6 +230,41 @@ tools declared directly (17 in 0.11.0), named `mcp__codebase_memory_mcp__<tool>`
 matches the tree because it was built from it at launch. Whether it refreshes
 after the agent edits files inside the container is not established.
 
+### Codex subscription container
+
+`--container --auth subscription --host-arg=--model
+--host-arg=openai-codex/<model-id>` uses the existing `~/.codex/auth.json`
+ChatGPT credential on the host. It does not require Pi OAuth state, run login,
+refresh tokens, or change either application's auth file. Host subscription
+launches without `--container` continue to use Pi's own OAuth checks.
+
+The adapter validates the host record's `chatgpt` auth mode and JWT issuer,
+expiry and account claim before launch and each delivery; the backend
+authenticates the JWT. The container receives a public synthetic JWT, and its
+private Pi settings select SSE. The host proxy decodes Pi's zstd request with
+the host `zstandard` Python module, accepting exactly one frame; the frame window,
+encoded and decoded bodies all have the
+proxy's 64 MiB bound. It applies the existing request/model/tool/store
+filters, rebuilds auth/account/originator/beta headers from host state, and
+forwards to `https://chatgpt.com/backend-api/codex/responses`. The
+`ROLE_HOST_PI_UPSTREAM_CODEX` override supplies the base through `/codex` for
+local transport testing. Mount planning and retained-turn validation refuse the resolved host auth file
+and its ancestors, including aliases, while permitting nonoverlapping skill
+folders. No host credential or account identity enters the
+container, models file, fingerprint, spec, or proxy log.
+
+This native transport has no hard output-token-cap field. `--max-usd`,
+`--usd-strict-tier`, `--max-output-tokens` and service tiers are refused on
+this lane; `--max-requests` still applies. API lanes retain their dollar
+reservations and output caps. Proxy logs identify `openai-codex` and the
+subscription lane and retain provider-reported token usage, including native
+`response.done` completions. Forwarded requests missing a completion remain
+unknown accounting calls. Billing and quota
+are unknown. The usage ledger places these calls in the Codex subscription
+pool with unknown dollar/quota values rather than API-billed `pi_api` spend.
+Validation uses synthetic credentials and native Pi SSE against a local mock;
+no live quota claim is established.
+
 ### Anthropic Messages
 
 `--host-arg=--model --host-arg=anthropic/<model-id>` routes Pi's own
@@ -288,6 +323,6 @@ Differences from the OpenAI route:
   `PI_CODING_AGENT_DIR/sessions`, else `~/.pi/agent/sessions`. A `sessionDir` in
   Pi's `settings.json` is not read. Container sessions keep their session file
   in their own directory under role_host's state.
-- Container mode does not yet offer the subscription lane, web access (a
+- Container mode does not yet offer web access (a
   mediated fetch through the proxy is the intended route), or moving a session
   between host and container.

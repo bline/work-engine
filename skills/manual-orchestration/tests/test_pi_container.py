@@ -167,7 +167,7 @@ class Upstream(BaseHTTPRequestHandler):
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["content-length"])))
-        Upstream.seen.append({"path": self.path, "auth": self.headers.get("authorization"), "body": body})
+        Upstream.seen.append({"path": self.path, "auth": self.headers.get("authorization"), "body": body, "headers": dict(self.headers)})
         if Upstream.status != 200:
             payload = b'{"error": {"message": "fake"}}'
             self.send_response(Upstream.status)

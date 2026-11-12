@@ -847,6 +847,10 @@ class Pi:
     def check_lane(self, opts, *, cwd, env) -> dict:
         """Confirm Pi's credential for the provider is the lane's kind. Never refreshes or prints it."""
         provider, lane = opts["provider"], opts["lane"]
+        if opts.get("container_subscription"):
+            token = self.subscription_token()
+            del token
+            return {"provider": provider, "auth_type": "oauth", "source": "codex_host", "billing": "unknown", "quota": "unknown"}
         r = _run([self.exe, "auth", "check", "--provider", provider, "--json", "--no-refresh"],
                  cwd=cwd, env=env, timeout=60)
         try:
@@ -943,7 +947,7 @@ class Pi:
             runtime = _pi_container().runtime_paths(os.environ.get("ROLE_HOST_PI_RUNTIME", _pi_container().DEFAULT_RUNTIME))
             home = os.path.expanduser("~")
             mounts = _pi_container().mount_plan(cwd, container.get("ro") or (), container.get("rw") or (), home=home,
-                                             reserved=[str(state), str(self.socket_root())])
+                                             reserved=[str(state), str(self.socket_root()), str(Path.home() / ".codex" / "auth.json")])
             limits = _pi_container().validate_limits(container.get("memory", "4g"), container.get("pids", 512),
                                                   container.get("cpus", "2"))
             usd_limit, max_output = self._usd_limit(container, opts)
@@ -968,7 +972,7 @@ class Pi:
                "max_requests": container.get("max_requests"),
                "max_output_tokens": max_output, "usd_limit": usd_limit,
                "selection": {"model": opts["model"], "tier": opts["tier"], "thinking": opts["thinking"],
-                             "pi_argv": opts["argv"]},
+                             "pi_argv": opts["argv"], **({"lane": "subscription"} if opts.get("container_subscription") else {})},
                "user": os.environ.get("USER") or os.environ.get("LOGNAME") or "",
                "lang": os.environ.get("LANG") or "C.UTF-8"}
         for d in (cdir / "agent", cdir / "sessions", hdir):
@@ -976,11 +980,13 @@ class Pi:
         os.chmod(cdir, 0o700)
         os.chmod(hdir, 0o700)
         route = {"baseUrl": _pi_container().PROVIDERS[opts["provider"]]["relay_base"]}
+        if opts.get("container_subscription"):
+            route["apiKey"] = _pi_container().CODEX_PLACEHOLDER
         if definition:
             env["model_definition"] = definition
             route["models"] = [definition]
         (cdir / "agent" / "models.json").write_text(json.dumps({"providers": {opts["provider"]: route}}) + "\n")
-        (cdir / "agent" / "settings.json").write_text("{}\n")
+        (cdir / "agent" / "settings.json").write_text(json.dumps({"transport": "sse"} if opts.get("container_subscription") else {}) + "\n")
         if binary:
             env["codebase_memory"] = self._prepare_codebase_memory(binary, cwd=str(Path(cwd).resolve()), env=env)
         env["fingerprint"] = _pi_container().fingerprint(env)
@@ -991,6 +997,9 @@ class Pi:
         """(usd_limit, max_output_tokens) for the environment; rates are fixed at launch."""
         pc = _pi_container()
         max_usd, max_output = container.get("max_usd"), container.get("max_output_tokens")
+        if opts.get("container_subscription") and any(container.get(k) is not None and container.get(k) is not False
+                                                      for k in ("max_usd", "max_output_tokens", "usd_strict_tier")):
+            raise pc.ContainerError("usage", "Codex subscription transport supports neither API dollar reservations nor a hard output-token cap")
         if max_output is not None and max_output < 1:
             raise pc.ContainerError("usage", f"--max-output-tokens {max_output} must be at least 1")
         if max_usd is None:
@@ -1063,7 +1072,9 @@ class Pi:
             # one that now crosses a boundary, plans differently and is refused.
             replanned = pc.mount_plan(cwd, [p for p, m in env["mounts"] if m == "ro"],
                                       [p for p, m in env["mounts"] if m == "rw"], home=env["home"],
-                                      reserved=[str(ledger.path.parent), str(self.socket_root())])
+                                      reserved=[str(ledger.path.parent), str(self.socket_root()),
+                                                str(Path.home() / ".codex" / "auth.json"),
+                                                str(Path(env["home"]) / ".codex" / "auth.json")])
         except pc.ContainerError as e:
             raise HostError(NOT_ESTABLISHED, "environment_changed", e.detail)
         if replanned != env["mounts"]:
@@ -1077,8 +1088,24 @@ class Pi:
                             "launch a new session to run in it")
         return {**env, "runtime": runtime}
 
+    @staticmethod
+    def subscription_token() -> str:
+        """Read existing Codex ChatGPT auth on the host; never refresh or persist it."""
+        try:
+            record = json.loads((Path.home() / ".codex" / "auth.json").read_text())
+            token = record["tokens"]["access_token"]
+            _pi_container().codex_account(token)
+            if record.get("auth_mode") != "chatgpt":
+                raise ValueError()
+            return token
+        except (OSError, ValueError, KeyError, TypeError):
+            raise HostError(NOT_ESTABLISHED, "credential_not_ready",
+                            "existing host Codex ChatGPT credential is missing, expired or invalid; no refresh attempted") from None
+
     def provider_key(self, opts, *, cwd) -> str:
-        """The host Pi's API key for the egress proxy. Held in memory only."""
+        """Host credential for the selected egress lane. Held in memory only."""
+        if opts.get("container_subscription"):
+            return self.subscription_token()
         r = _run([self.exe, "auth", "print-api-key", "--provider", opts["provider"]], cwd=cwd, timeout=60)
         key = r.stdout.strip() if r.returncode == 0 else ""
         if opts["provider"] == "anthropic":
@@ -1178,6 +1205,7 @@ class Pi:
             ("proxy_log", "proxy.jsonl"), ("runner_record", "runner.jsonl"),
             ("runner_log", "runner.log"), ("spec", "spec.json"))})
         prior = self._prior_usd(sid, ledger, env) if env.get("usd_limit") else None
+        opts = {**opts, **({"container_subscription": True} if env["selection"].get("lane") == "subscription" else {})}
         key = self.provider_key(opts, cwd=cwd)
         self._write_prompt(files["prompt"], prompt)
         self.socket_root().mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -1416,9 +1444,16 @@ class Pi:
     def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, lane=None, tier=None, container=None) -> dict:
         opts = self.options(host_args, lane, tier)
         if container is not None:
-            if lane != "api":
-                raise HostError(USAGE, "usage", "container mode supports the api lane only for now; "
-                                "subscription sessions run on the host")
+            if lane == "subscription":
+                if opts["provider"] != "openai-codex":
+                    raise HostError(USAGE, "usage", "container subscription uses the openai-codex provider and existing host Codex ChatGPT auth")
+                try:
+                    __import__("zstandard")
+                except ImportError:
+                    raise HostError(NOT_ESTABLISHED, "transport_not_ready", "Codex subscription requires the host zstandard decoder") from None
+                opts["container_subscription"] = True
+            elif opts["provider"] == "openai-codex":
+                raise HostError(USAGE, "usage", "openai-codex is a subscription transport, not an API lane")
             routes = _pi_container().PROVIDERS
             if opts["provider"] not in routes:
                 raise HostError(USAGE, "usage", f"container mode routes providers {', '.join(sorted(routes))} "
@@ -1454,6 +1489,8 @@ class Pi:
         env = launch.get("container_environment")
         if env is not None:
             env = self._check_environment(env, cwd=launch["cwd"], ledger=ledger)
+        if env is not None and env["selection"].get("lane") == "subscription":
+            opts["container_subscription"] = True
         auth = self.check_lane(opts, cwd=cwd, env=child_env())
         row = self._spawn(sid, opts, cwd=cwd, prompt=message, ledger=ledger, event="deliver", env=env)
         return {"session_id": sid, "delivered": True, "turn": row["turn"], "credential": auth}

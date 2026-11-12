@@ -29,6 +29,7 @@ Host facts: metrics/probes/pi-docker-host-20261109.json.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import http.client
 import json
@@ -74,7 +75,7 @@ TOOL_CHOICE_TYPES = frozenset({"function", "custom", "allowed_tools"})
 MAX_CONNECTIONS = 8
 MAX_BODY_BYTES = 64 * 1024 * 1024
 SOCKET_TIMEOUT = 60
-TERMINAL_EVENTS = frozenset({"response.completed", "response.incomplete", "response.failed"})
+TERMINAL_EVENTS = frozenset({"response.completed", "response.done", "response.incomplete", "response.failed"})
 MEMORY = re.compile(r"^[1-9][0-9]*[kmg]?$")
 RATES_PATH = HERE / "openai_api_rates.json"
 # Output cap applied with a dollar limit when none is given. Observed Astra
@@ -106,7 +107,13 @@ ANTHROPIC_USAGE_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creati
 ANTHROPIC_RATES_PATH = HERE / "anthropic_api_rates.json"
 # What differs per provider. The openai entry holds the values used before
 # Anthropic support, so OpenAI requests, logs and fingerprints are unchanged.
+# Public synthetic JWT lets native Pi select its Codex transport without any host identity.
+CODEX_PLACEHOLDER = "e30." + base64.b64encode(json.dumps({"https://api.openai.com/auth": {"chatgpt_account_id": "container-placeholder"}}).encode()).decode() + ".placeholder"
 PROVIDERS = {
+    "openai-codex": {"api": "openai-codex-responses", "route": "/codex/responses",
+                     "upstream": "https://chatgpt.com/backend-api/codex", "upstream_env": "ROLE_HOST_PI_UPSTREAM_CODEX",
+                     "relay_base": f"http://127.0.0.1:{RELAY_PORT}", "key_env": "OPENAI_CODEX_API_KEY",
+                     "placeholder": CODEX_PLACEHOLDER},
     "openai": {"api": "openai-responses", "route": "/v1/responses", "upstream": "https://api.openai.com/v1",
                "upstream_env": "ROLE_HOST_PI_UPSTREAM", "relay_base": f"http://127.0.0.1:{RELAY_PORT}/v1",
                "key_env": "OPENAI_API_KEY", "placeholder": PLACEHOLDER_KEY, "rates": RATES_PATH,
@@ -117,6 +124,23 @@ PROVIDERS = {
                   "key_env": "ANTHROPIC_API_KEY", "placeholder": ANTHROPIC_PLACEHOLDER_KEY,
                   "rates": ANTHROPIC_RATES_PATH, "rule_keys": ("tier_multiplier",)},
 }
+
+
+def codex_account(token: str) -> str:
+    """Validate credential shape/lifetime before routing; upstream authenticates signature."""
+    try:
+        parts = token.split(".")
+        if len(parts) != 3 or token.startswith("sk-"):
+            raise ValueError()
+        claims = json.loads(base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4)))
+        account = claims["https://api.openai.com/auth"]["chatgpt_account_id"]
+        if claims.get("iss") != "https://auth.openai.com" or not isinstance(claims.get("exp"), (int, float)) or not claims["exp"] > time.time() + 60:
+            raise ValueError()
+        if not isinstance(account, str) or not account or any(c in account for c in "\r\n"):
+            raise ValueError()
+        return account
+    except (ValueError, KeyError, TypeError, AttributeError):
+        raise ValueError("invalid or expired host Codex subscription credential") from None
 
 
 def provider_of(model: str) -> str:
@@ -872,12 +896,16 @@ class EgressProxy:
                  on_usd_exhausted=None,
                  max_connections: int = MAX_CONNECTIONS, max_body: int = MAX_BODY_BYTES,
                  socket_timeout: float = SOCKET_TIMEOUT, provider: str = "openai"):
+        if provider == "openai-codex" and (tier or budget is not None or max_output_tokens is not None):
+            raise ValueError("Codex subscription takes no service tier, API budget or output cap")
         if budget is not None and max_output_tokens != budget.max_output_tokens:
             raise ValueError("a dollar limit needs the proxy's output cap to be the budget's")
         if provider not in PROVIDERS:
             raise ValueError(f"no egress route for provider {provider!r}")
         if budget is not None and type(budget) is not BUDGETS[provider]:
             raise ValueError(f"a {provider} dollar limit needs {BUDGETS[provider].__name__}")
+        if provider == "openai-codex":
+            self.account = codex_account(key)
         if provider == "anthropic" and tier:
             raise ValueError("the anthropic route sets no service tier")
         self.provider, self.route = provider, PROVIDERS[provider]["route"]
@@ -1135,8 +1163,23 @@ class EgressProxy:
                     release()
                     return self.refuse(400, "body shorter than content-length")
                 try:
+                    encoding = self.headers.get("content-encoding", "identity")
+                    if proxy.provider == "openai-codex" and encoding == "zstd":
+                        import zstandard
+                        frame = zstandard.get_frame_parameters(raw)
+                        if (frame.window_size > proxy.max_body or
+                                frame.content_size not in (zstandard.CONTENTSIZE_UNKNOWN, zstandard.CONTENTSIZE_ERROR)
+                                and frame.content_size > proxy.max_body):
+                            raise ValueError()
+                        # One native frame only. Reject concatenated/skippable trailing frames;
+                        # never let an unrestricted decoder process a later unvalidated window.
+                        raw = zstandard.ZstdDecompressor().decompress(
+                            raw, max_output_size=proxy.max_body, allow_extra_data=False)
+                    elif encoding != "identity":
+                        raise ValueError()
                     body = json.loads(raw)
-                except ValueError:
+                except Exception:
+                    # Do not retain compressed body/decoder errors: they may contain private data.
                     release()
                     return self.refuse(400, "body is not JSON")
                 if proxy.provider == "anthropic":
@@ -1145,6 +1188,10 @@ class EgressProxy:
                 if reason:
                     release()
                     return self.refuse(403, reason)
+                if proxy.provider == "openai-codex" and (body.get("stream") is not True or body.get("store") is not False
+                                                          or "service_tier" in body or "max_output_tokens" in body):
+                    release()
+                    return self.refuse(403, "subscription_request_fields_refused")
                 if proxy.tier:
                     body["service_tier"] = proxy.tier
                 else:
@@ -1187,6 +1234,11 @@ class EgressProxy:
                            if k.lower() not in ("host", "authorization", "content-length", "connection",
                                                 "transfer-encoding", "keep-alive")}
                 headers.update({"authorization": f"Bearer {proxy.key}", "content-length": str(len(data))})
+                if proxy.provider == "openai-codex":
+                    headers = {"authorization": f"Bearer {proxy.key}", "chatgpt-account-id": proxy.account,
+                               "originator": "pi", "OpenAI-Beta": "responses=experimental",
+                               "accept": "text/event-stream", "content-type": "application/json",
+                               "content-length": str(len(data))}
                 up = proxy.upstream
                 conn_cls = http.client.HTTPSConnection if up.scheme == "https" else http.client.HTTPConnection
                 started = time.time()
@@ -1196,7 +1248,9 @@ class EgressProxy:
                     resp = conn.getresponse()
                 except OSError as e:
                     # The request may have reached the provider, so a reservation stays charged.
-                    proxy.log({"event": "upstream_error", "n": n, "detail": str(e)[:300], **settle(None, {})})
+                    proxy.log({"event": "upstream_error", "n": n, "detail": str(e)[:300],
+                               **({"provider": "openai-codex", "auth_lane": "subscription", "model": proxy.model_id}
+                                  if proxy.provider == "openai-codex" else {}), **settle(None, {})})
                     return self.refuse(502, "upstream unreachable")
                 self.send_response(resp.status)
                 for k, v in resp.getheaders():
@@ -1232,6 +1286,8 @@ class EgressProxy:
                 usage = response.get("usage") or {}
                 proxy.log({
                     "event": "request", "n": n, "http_status": resp.status, "model": body.get("model"),
+                    **({"provider": "openai-codex", "auth_lane": "subscription", "billing": "unknown", "quota": "unknown"}
+                       if proxy.provider == "openai-codex" else {}),
                     "requested_tier": body.get("service_tier"), "observed_tier": response.get("service_tier"),
                     "terminal": (terminal or {}).get("type"), "response_id": response.get("id"),
                     "response_model": response.get("model"),
@@ -1240,7 +1296,7 @@ class EgressProxy:
                               "cache_write_tokens": (usage.get("input_tokens_details") or {}).get("cache_write_tokens"),
                               "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens")},
                     "seconds": round(time.time() - started, 3),
-                    **({"error_head": head.decode("utf-8", "replace")} if resp.status != 200 else {}),
+                    **({"error_head": head.decode("utf-8", "replace")} if resp.status != 200 and proxy.provider != "openai-codex" else {}),
                     **settle(resp.status if terminal is not None or resp.status != 200 else None, response),
                 })
                 self.close_connection = True
