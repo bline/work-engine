@@ -333,24 +333,87 @@ class SubscriptionBudgetTests(SubscriptionTests):
         self.assertTrue(totals['accounting_unknown'])
         self.assertEqual(pc.subscription_proxy_totals(self.log())['unresolved_admissions'], [1])
 
-    def test_concurrent_admission_refused_before_forward(self):
+    def hold_first(self):
         admitted = threading.Event(); unblock = threading.Event()
         original = Upstream.do_POST
         def held(handler):
-            admitted.set(); unblock.wait(5); original(handler)
+            if not admitted.is_set():
+                admitted.set(); unblock.wait(5)
+            original(handler)
+        return admitted, unblock, patch.object(Upstream, 'do_POST', held)
+
+    def test_concurrent_admission_waits_for_settlement_before_forward(self):
+        admitted, unblock, held = self.hold_first()
         self.proxy(budget=self.budget())
+        first, second = [], []
+        with held:
+            t1 = threading.Thread(target=lambda: first.append(self.post(self.body())[0])); t1.start()
+            self.assertTrue(admitted.wait(3))
+            t2 = threading.Thread(target=lambda: second.append(self.post(self.body())[0])); t2.start()
+            time.sleep(0.3)
+            # Queued: not admitted and not forwarded while request 1 is unsettled.
+            self.assertEqual(len([r for r in self.log() if r['event'] == 'subscription_proxy_admitted']), 1)
+            self.assertEqual(len(Upstream.seen), 0)
+            unblock.set(); t1.join(5); t2.join(5)
+        self.assertEqual((first, second), ([200], [200]))
+        self.assertEqual(len(Upstream.seen), 2)
+        events = [(r['event'], r.get('rid') or (r.get('subscription_proxy') or {}).get('rid')) for r in self.log()
+                  if r['event'] in ('subscription_proxy_admitted', 'request')]
+        self.assertEqual(events, [('subscription_proxy_admitted', 1), ('request', 1),
+                                  ('subscription_proxy_admitted', 2), ('request', 2)])
+
+    def test_admission_wait_is_bounded(self):
+        admitted, unblock, held = self.hold_first()
+        self.proxy(budget=self.budget(), admission_wait=0.2)
         result = []
-        with patch.object(Upstream, 'do_POST', held):
-            thread = threading.Thread(target=lambda: result.append(self.post(self.body())[0]))
-            thread.start()
+        with held:
+            thread = threading.Thread(target=lambda: result.append(self.post(self.body())[0])); thread.start()
             try:
                 self.assertTrue(admitted.wait(3))
-                self.assertEqual(self.post(self.body())[0], 429)
-                self.assertEqual(len([r for r in self.log() if r['event'] == 'subscription_proxy_admitted']), 1)
+                status, data = self.post(self.body())
+                self.assertEqual(status, 429)
+                self.assertIn(b'subscription_proxy_request_in_flight', data)
             finally:
                 unblock.set(); thread.join(5)
         self.assertEqual(result, [200])
         self.assertEqual(len(Upstream.seen), 1)
+
+    def test_waiter_refused_when_settlement_reaches_threshold(self):
+        stops = []
+        admitted, unblock, held = self.hold_first()
+        self.proxy(budget=self.budget(max_usd=1e-9), on_usd_exhausted=stops.append)
+        first, second = [], []
+        with held:
+            t1 = threading.Thread(target=lambda: first.append(self.post(self.body())[0])); t1.start()
+            self.assertTrue(admitted.wait(3))
+            t2 = threading.Thread(target=lambda: second.append(self.post(self.body())[0])); t2.start()
+            time.sleep(0.2)
+            unblock.set(); t1.join(5); t2.join(5)
+        self.assertEqual((first, second), ([200], [429]))
+        self.assertEqual(len(Upstream.seen), 1)
+        self.assertTrue(stops)
+
+    def test_next_request_sent_on_terminal_event_is_admitted(self):
+        # A backend may hold the stream open after its terminal event; Pi sends its next
+        # request on that event, before the proxy has seen EOF and settled request 1.
+        class Lingering(Upstream):
+            def do_POST(handler):
+                super().do_POST(); handler.wfile.flush(); time.sleep(0.5)
+        self.upstream.RequestHandlerClass = Lingering
+        self.proxy(budget=self.budget())
+        conn = UnixHTTP(str(self.tmp / 'egress.sock'))
+        conn.request('POST', '/codex/responses', json.dumps(self.body()), {'content-type': 'application/json'})
+        resp = conn.getresponse()
+        while True:
+            line = resp.fp.readline()
+            if not line or b'response.completed' in line:
+                break
+        status2, _ = self.post(self.body())
+        resp.read(); conn.close()
+        self.assertEqual(status2, 200)
+        self.assertEqual(len(Upstream.seen), 2)
+        self.assertFalse([r for r in self.log() if r['event'] == 'refused'])
+        self.assertFalse(pc.prior_subscription_proxy_state([self.tmp / 'proxy.jsonl'])['accounting_unknown'])
 
     def test_cache_unknown_is_conservative_and_tiny_totals_survive_turns(self):
         self.proxy(budget=self.budget())

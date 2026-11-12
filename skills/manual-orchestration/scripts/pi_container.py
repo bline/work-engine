@@ -76,6 +76,11 @@ TOOL_CHOICE_TYPES = frozenset({"function", "custom", "allowed_tools"})
 MAX_CONNECTIONS = 8
 MAX_BODY_BYTES = 64 * 1024 * 1024
 SOCKET_TIMEOUT = 60
+# With a subscription budget, how long a request waits for the in-flight exchange to
+# settle before it is refused. Pi sends its next request as soon as it reads the
+# terminal event, while the proxy is still awaiting upstream EOF and writing the
+# durable row; that next request queues rather than failing with a 429.
+ADMISSION_WAIT_SECONDS = 60
 TERMINAL_EVENTS = frozenset({"response.completed", "response.done", "response.incomplete", "response.failed"})
 MEMORY = re.compile(r"^[1-9][0-9]*[kmg]?$")
 RATES_PATH = HERE / "openai_api_rates.json"
@@ -1077,7 +1082,8 @@ class EgressProxy:
                  max_output_tokens: int | None = None, budget: UsdBudget | None = None,
                  on_usd_exhausted=None,
                  max_connections: int = MAX_CONNECTIONS, max_body: int = MAX_BODY_BYTES,
-                 socket_timeout: float = SOCKET_TIMEOUT, provider: str = "openai"):
+                 socket_timeout: float = SOCKET_TIMEOUT, provider: str = "openai",
+                 admission_wait: float = ADMISSION_WAIT_SECONDS):
         if provider == "openai-codex" and (tier or max_output_tokens is not None):
             raise ValueError("Codex subscription takes no service tier, API budget or output cap")
         if budget is not None and max_output_tokens != budget.max_output_tokens:
@@ -1099,6 +1105,9 @@ class EgressProxy:
         self.accepted = 0
         self.dropped_connections = 0
         self.lock = threading.Lock()
+        # Signalled under self.lock whenever a subscription admission is released.
+        self.settled = threading.Condition(self.lock)
+        self.admission_wait = admission_wait
         self.server = None
 
     def log(self, row: dict):
@@ -1401,6 +1410,9 @@ class EgressProxy:
                 subscription_budget = isinstance(proxy.budget, SubscriptionProxyBudget)
                 if subscription_budget:
                     with proxy.lock:
+                        # Serialize, do not refuse: wait for the previous exchange to settle.
+                        proxy.settled.wait_for(lambda: proxy.budget.inflight is None or proxy.budget.exhausted,
+                                               timeout=proxy.admission_wait)
                         ticket, refusal = proxy.budget.admit()
                         if ticket is not None:
                             try:
@@ -1449,17 +1461,21 @@ class EgressProxy:
                         proxy.log(row)
                         return
                     with proxy.lock:
-                        measurement = proxy.budget.settle(ticket, http_status=http_status, response=response or {},
-                                                          terminal=terminal, stream_error=stream_error)
                         try:
-                            proxy._log_locked({**row, "subscription_proxy": measurement}, durable=True)
-                        except OSError:
-                            proxy.budget.unknown = proxy.budget.exhausted = True
-                            raise
+                            measurement = proxy.budget.settle(ticket, http_status=http_status, response=response or {},
+                                                              terminal=terminal, stream_error=stream_error)
+                            try:
+                                proxy._log_locked({**row, "subscription_proxy": measurement}, durable=True)
+                            except OSError:
+                                proxy.budget.unknown = proxy.budget.exhausted = True
+                                raise
+                            finally:
+                                if proxy.budget.exhausted and proxy.on_usd_exhausted:
+                                    proxy.on_usd_exhausted("subscription proxy threshold reached or accounting unknown")
+                            proxy.budget.inflight = None
                         finally:
-                            if proxy.budget.exhausted and proxy.on_usd_exhausted:
-                                proxy.on_usd_exhausted("subscription proxy threshold reached or accounting unknown")
-                        proxy.budget.inflight = None
+                            # Wake waiters even on failure: they re-check exhaustion and refuse.
+                            proxy.settled.notify_all()
 
                 data = json.dumps(body).encode()
                 headers = {k: v for k, v in self.headers.items()
