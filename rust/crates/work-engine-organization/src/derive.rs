@@ -254,6 +254,17 @@ impl OrganizationCandidate {
     pub fn component_binding_requirements(&self) -> &[ComponentBindingRequirement] {
         &self.component_binding_requirements
     }
+    /// Test-only mutation of the candidate's relationships, so a malformed candidate that
+    /// `derive` cannot produce can be built from a derived one. There is no production path.
+    #[cfg(test)]
+    pub(crate) fn relationships_mut(&mut self) -> &mut Vec<Relationship> {
+        &mut self.relationships
+    }
+    /// Test-only, as [`Self::relationships_mut`].
+    #[cfg(test)]
+    pub(crate) fn vantage_requirements_mut(&mut self) -> &mut Vec<VantageRequirement> {
+        &mut self.vantage_requirements
+    }
     pub fn requirement_trace(&self) -> &[TraceRow] {
         &self.requirement_trace
     }
@@ -1736,13 +1747,15 @@ mod injection_tests {
         let result = derive(&requirements(), Profile::FixedSliceReviewV1);
         let mut candidate = result.candidates.into_iter().next().unwrap();
         assert_eq!(
-            view(&candidate).obligations[0].served_by.as_deref(),
+            view(&candidate).unwrap().obligations[0]
+                .served_by
+                .as_deref(),
             Some("vantage:ob-a")
         );
         candidate
             .relationships
             .retain(|r| r.kind != RelationshipKind::Serves);
-        let projected = view(&candidate);
+        let projected = view(&candidate).unwrap();
         assert_eq!(projected.obligations.len(), 1);
         assert_eq!(projected.obligations[0].id.as_str(), "ob-a");
         assert_eq!(projected.obligations[0].served_by, None);
@@ -1764,7 +1777,7 @@ mod injection_tests {
         let candidate = derive(&requirements(), Profile::FixedSliceReviewV1)
             .candidates
             .remove(0);
-        let projected = view(&candidate);
+        let projected = view(&candidate).unwrap();
         let OrganizationView {
             problem_scope,
             obligations,

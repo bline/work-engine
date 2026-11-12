@@ -70,7 +70,7 @@ fn frozen_vertical_diagnostic_report() {
     let mut result = derive(&requirements, Profile::FixedSliceReviewV1);
     assert!(result.unresolved.is_empty(), "{:?}", result.unresolved);
     let candidate = result.candidates.remove(0);
-    let organization = view(&candidate);
+    let organization = view(&candidate).expect("a derived candidate projects");
     let report = enforceability(&candidate, Profile::FixedSliceReviewV1);
     let mut rows: Vec<(String, Verdict, String)> = Vec::new();
     let mut note = |item: &str, verdict: Verdict, detail: String| {

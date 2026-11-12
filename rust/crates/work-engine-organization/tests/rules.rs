@@ -1637,7 +1637,7 @@ fn component_named_principals_bind_nothing() {
 #[test]
 fn the_view_projects_hosting_episode_access_and_terminalization() {
     let c = candidate(&base());
-    let v = view(&c);
+    let v = view(&c).expect("a derived candidate projects");
     assert_eq!(v.obligations.len(), 1);
     assert_eq!(v.obligations[0].id.as_str(), "ob-a");
     assert_eq!(v.obligations[0].served_by.as_deref(), Some("vantage:ob-a"));
@@ -1668,7 +1668,11 @@ fn the_view_projects_hosting_episode_access_and_terminalization() {
     assert_eq!(v.component_binding_requirements.len(), 2);
     assert_eq!(v.authority_requirements.len(), 2);
     assert_eq!(v.conditions.len(), 2);
-    assert_eq!(v, view(&c), "a projection is deterministic");
+    assert_eq!(
+        v,
+        view(&c).expect("a derived candidate projects"),
+        "a projection is deterministic"
+    );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1977,7 +1981,7 @@ fn every_requirements_leaf_reaches_the_candidate_and_its_documented_projections(
     let doc = rich();
     let reference = candidate(&doc);
     let reference_content = candidate_content(&reference);
-    let reference_view = view(&reference);
+    let reference_view = view(&reference).expect("a derived candidate projects");
     let reference_report = enforceability(&reference, Profile::FixedSliceReviewV1);
 
     let mut all = Vec::new();
@@ -2047,7 +2051,7 @@ fn every_requirements_leaf_reaches_the_candidate_and_its_documented_projections(
             "{pointer} ({edit:?}) reached the digests only through requirementsDigest, not the candidate's own content"
         );
 
-        let view_changed = view(&changed) != reference_view;
+        let view_changed = view(&changed).expect("a derived candidate projects") != reference_view;
         let report_changed =
             enforceability(&changed, Profile::FixedSliceReviewV1) != reference_report;
         let single = matches!(edit, Edit::Single);
@@ -2104,7 +2108,7 @@ fn single_value_class_leaves_reach_their_destinations() {
     ] {
         assert!(content.contains(&format!("\"{class}\"")), "{class}");
     }
-    let projected = view(&c);
+    let projected = view(&c).expect("a derived candidate projects");
     let vantage = projected
         .vantages
         .iter()
@@ -2449,7 +2453,7 @@ fn heterogeneous_result_contracts_stay_distinct_in_candidate_view_and_report() {
         ("ob-c", "implementation-review", 2, EnforceStatus::None),
     ];
     assert_eq!(c.obligations().len(), 3);
-    let projected = view(&c);
+    let projected = view(&c).expect("a derived candidate projects");
     assert_eq!(projected.obligations.len(), 3);
     let report = enforceability(&c, Profile::FixedSliceReviewV1);
     for (index, (id, contract, version, status)) in expected.into_iter().enumerate() {

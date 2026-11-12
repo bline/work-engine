@@ -35,7 +35,8 @@ pub use schema::{
     RequiredAuthority, ResultContract, Vocabulary,
 };
 pub use view::{
-    EpisodeAccess, Hosting, OrganizationView, Terminalization, ViewObligation, ViewVantage, view,
+    EpisodeAccess, Hosting, OrganizationView, Terminalization, ViewError, ViewObligation,
+    ViewVantage, view,
 };
 
 #[cfg(test)]
