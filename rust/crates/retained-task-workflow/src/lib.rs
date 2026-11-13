@@ -22,6 +22,7 @@ use thiserror::Error;
 
 mod material;
 mod port;
+pub mod research_admission;
 
 pub const PROFILE: &str = "retained-repository-analysis-v1";
 pub const OWNER_NAMESPACE: &str = "retained-task-workflow";
@@ -248,6 +249,8 @@ pub enum TaskError {
     Unauthorized,
     #[error("task operation is blocked by an unresolved question")]
     PendingQuestion,
+    #[error("task owner capacity requires disposition")]
+    Capacity,
     #[error("task owner is busy")]
     Busy,
     #[error("task owner outcome is uncertain")]
@@ -531,11 +534,15 @@ impl TaskStore {
         let connection = Connection::open(path)?;
         connection.busy_timeout(Duration::from_secs(2))?;
         let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if !matches!(version, 0 | 2) || (fresh && version != 0) {
+        if !matches!(version, 0 | 2 | 3) || (fresh && version != 0) {
             return Err(TaskError::Invalid);
         }
         if !fresh {
-            validate_owner_schema(&connection, version == 0)?;
+            if version == 3 {
+                research_admission::validate_schema(&connection)?;
+            } else {
+                validate_owner_schema(&connection, version == 0)?;
+            }
         }
         if version == 0 {
             connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
@@ -578,7 +585,7 @@ impl TaskStore {
             [],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        if schema_version != 2
+        if schema_version != 2 && schema_version != 3
             || store_id.len() != 32
             || !store_id
                 .bytes()
@@ -586,7 +593,10 @@ impl TaskStore {
         {
             return Err(TaskError::Invalid);
         }
-        if version == 2 {
+        if schema_version == 2 {
+            research_admission::migrate_schema(&connection, false)?;
+        }
+        if version == 2 || version == 3 {
             // Synchronous is per connection; set it only after read-only
             // schema and identity validation above.
             connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
@@ -604,7 +614,7 @@ impl TaskStore {
     pub fn store_id(&self) -> Result<String, TaskError> {
         let connection = self.lock()?;
         let id = connection.query_row(
-            "SELECT store_id FROM store_identity WHERE singleton=1 AND schema_version=2",
+            "SELECT store_id FROM store_identity WHERE singleton=1 AND schema_version=3",
             [],
             |row| row.get(0),
         )?;
@@ -624,7 +634,7 @@ impl TaskStore {
             [],
             |row| row.get(0),
         )?;
-        Ok(count == 0)
+        Ok(count == 0 && research_admission::is_pristine(&connection)?)
     }
 
     /// Controlled timing only. The installed host supplies this trusted path;
@@ -668,7 +678,7 @@ impl TaskStore {
     fn submit_inner(
         &self,
         input: &SubmitTask,
-        mut build: Option<&mut AdmissionBuilder<'_>>,
+        build: Option<&mut AdmissionBuilder<'_>>,
     ) -> Result<(TaskCommit, bool), TaskError> {
         validate_submit(input)?;
         let payload_digest = json_digest(input)?;
@@ -680,108 +690,8 @@ impl TaskStore {
             }
             return Ok((serde_json::from_slice(&receipt)?, false));
         }
-        if let Some(mut record) = read_task(&tx, &input.task_id)? {
-            if record.subject_id != input.subject_id
-                || record.kind != input.kind
-                || record.objective != input.objective
-                || record.snapshot_ref != input.snapshot_ref
-                || !input.facts.is_empty()
-                || record.result.is_some()
-            {
-                return Err(TaskError::Conflict);
-            }
-            record.revision += 1;
-            let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
-            let admission = build
-                .as_mut()
-                .map(|build| build(&task_input.locator_text))
-                .transpose()?;
-            if let Some(command) = &admission {
-                validate_admission_for_submit(input, &task_input, command)?;
-            }
-            record.inputs.push(task_input);
-            write_task(&tx, &record)?;
-            let commit = commit_of(&record)?;
-            tx.execute(
-                "INSERT INTO commands VALUES (?1,'submit',?2,?3,?4)",
-                params![
-                    input.command_id,
-                    payload_digest,
-                    input.task_id,
-                    serde_json::to_vec(&commit)?
-                ],
-            )?;
-            if let Some(command) = admission {
-                insert_admission(&tx, &command)?;
-            }
-            tx.commit()?;
-            return Ok((commit, true));
-        }
-        let mut record = TaskRecord {
-            task_id: input.task_id.clone(),
-            subject_id: input.subject_id.clone(),
-            kind: input.kind,
-            objective: input.objective.clone(),
-            engineering_question: input.engineering_question.clone(),
-            snapshot_ref: input.snapshot_ref.clone(),
-            revision: 1,
-            cursor_revision: 1,
-            sources: Vec::new(),
-            fact_kinds: std::collections::BTreeMap::new(),
-            questions: Vec::new(),
-            inputs: Vec::new(),
-            completed_effects: Vec::new(),
-            result: None,
-        };
-        add_source(
-            &mut record,
-            "objective",
-            SourceKind::CanonicalRecord,
-            &input.objective,
-            true,
-        );
-        add_source(
-            &mut record,
-            "engineering-question",
-            SourceKind::CanonicalRecord,
-            &input.engineering_question,
-            true,
-        );
-        add_source(
-            &mut record,
-            "snapshot-reference",
-            SourceKind::CanonicalRecord,
-            &input.snapshot_ref,
-            true,
-        );
-        for fact in &input.facts {
-            let (kind, text) = fact_source(fact);
-            add_source(&mut record, &fact.id, kind, text, fact.current);
-            record.fact_kinds.insert(fact.id.clone(), fact.kind);
-        }
-        let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
-        let admission = build
-            .as_mut()
-            .map(|build| build(&task_input.locator_text))
-            .transpose()?;
-        if let Some(command) = &admission {
-            validate_admission_for_submit(input, &task_input, command)?;
-        }
-        record.inputs.push(task_input);
-        write_task(&tx, &record)?;
-        let commit = commit_of(&record)?;
-        tx.execute(
-            "INSERT INTO commands VALUES (?1,'submit',?2,?3,?4)",
-            params![
-                input.command_id,
-                payload_digest,
-                input.task_id,
-                serde_json::to_vec(&commit)?
-            ],
-        )?;
-        if let Some(command) = admission {
-            insert_admission(&tx, &command)?;
-        }
+        research_admission::guard_ordinary(&tx, &input.task_id)?;
+        let commit = publish_submit(&tx, input, "submit", &payload_digest, build, None)?;
         tx.commit()?;
         Ok((commit, true))
     }
@@ -860,7 +770,7 @@ impl TaskStore {
         let Some((kind, _, task_id, _)) = command_row(&connection, command_id)? else {
             return Ok(None);
         };
-        if kind != "submit" {
+        if !matches!(kind.as_str(), "submit" | "research_adopt") {
             return Ok(None);
         }
         let record = read_task(&connection, &task_id)?.ok_or(TaskError::Uncertain)?;
@@ -880,7 +790,8 @@ impl TaskStore {
         command_id: &str,
         payload_digest: &str,
     ) -> Result<Option<TaskCommit>, TaskError> {
-        if !matches!(kind, "submit" | "answer") || !valid_digest(payload_digest) {
+        if !matches!(kind, "submit" | "answer" | "research_adopt") || !valid_digest(payload_digest)
+        {
             return Err(TaskError::Invalid);
         }
         let connection = self.lock()?;
@@ -1447,6 +1358,133 @@ fn command_row(connection: &Connection, id: &str) -> Result<Option<CommandRow>, 
         .optional()
         .map_err(TaskError::from)
 }
+fn publish_submit(
+    tx: &rusqlite::Transaction<'_>,
+    input: &SubmitTask,
+    operation_kind: &str,
+    payload_digest: &str,
+    mut build: Option<&mut AdmissionBuilder<'_>>,
+    canonical: Option<(&str, &str)>,
+) -> Result<TaskCommit, TaskError> {
+    if input
+        .facts
+        .iter()
+        .any(|f| f.id.starts_with(research_admission::RESERVED_PREFIX))
+    {
+        return Err(TaskError::Invalid);
+    }
+    if let Some(mut record) = read_task(tx, &input.task_id)? {
+        if record.subject_id != input.subject_id
+            || record.kind != input.kind
+            || record.objective != input.objective
+            || record.snapshot_ref != input.snapshot_ref
+            || !input.facts.is_empty()
+            || record.result.is_some()
+        {
+            return Err(TaskError::Conflict);
+        }
+        record.revision += 1;
+        if let Some((id, text)) = canonical {
+            add_source(&mut record, id, SourceKind::CanonicalRecord, text, true);
+        }
+        let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
+        let admission = build
+            .as_mut()
+            .map(|build| build(&task_input.locator_text))
+            .transpose()?;
+        if let Some(command) = &admission {
+            validate_admission_for_submit(input, &task_input, command)?;
+        }
+        record.inputs.push(task_input);
+        write_task(tx, &record)?;
+        let commit = commit_of(&record)?;
+        tx.execute(
+            "INSERT INTO commands VALUES (?1,?5,?2,?3,?4)",
+            params![
+                input.command_id,
+                payload_digest,
+                input.task_id,
+                serde_json::to_vec(&commit)?,
+                operation_kind
+            ],
+        )?;
+        if let Some(command) = admission {
+            insert_admission(tx, &command)?;
+        }
+        return Ok(commit);
+    }
+    let mut record = TaskRecord {
+        task_id: input.task_id.clone(),
+        subject_id: input.subject_id.clone(),
+        kind: input.kind,
+        objective: input.objective.clone(),
+        engineering_question: input.engineering_question.clone(),
+        snapshot_ref: input.snapshot_ref.clone(),
+        revision: 1,
+        cursor_revision: 1,
+        sources: Vec::new(),
+        fact_kinds: std::collections::BTreeMap::new(),
+        questions: Vec::new(),
+        inputs: Vec::new(),
+        completed_effects: Vec::new(),
+        result: None,
+    };
+    add_source(
+        &mut record,
+        "objective",
+        SourceKind::CanonicalRecord,
+        &input.objective,
+        true,
+    );
+    add_source(
+        &mut record,
+        "engineering-question",
+        SourceKind::CanonicalRecord,
+        &input.engineering_question,
+        true,
+    );
+    add_source(
+        &mut record,
+        "snapshot-reference",
+        SourceKind::CanonicalRecord,
+        &input.snapshot_ref,
+        true,
+    );
+    for fact in &input.facts {
+        let (kind, text) = fact_source(fact);
+        add_source(&mut record, &fact.id, kind, text, fact.current);
+        record.fact_kinds.insert(fact.id.clone(), fact.kind);
+    }
+    if let Some((id, text)) = canonical {
+        add_source(&mut record, id, SourceKind::CanonicalRecord, text, true);
+    }
+    let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
+    let admission = build
+        .as_mut()
+        .map(|build| build(&task_input.locator_text))
+        .transpose()?;
+    if let Some(command) = &admission {
+        validate_admission_for_submit(input, &task_input, command)?;
+    }
+    record.inputs.push(task_input);
+    write_task(tx, &record)?;
+    let commit = commit_of(&record)?;
+    tx.execute(
+        "INSERT INTO commands VALUES (?1,?5,?2,?3,?4)",
+        params![
+            input.command_id,
+            payload_digest,
+            input.task_id,
+            serde_json::to_vec(&commit)?,
+            operation_kind
+        ],
+    )?;
+    if let Some(command) = admission {
+        insert_admission(tx, &command)?;
+    }
+    Ok(commit)
+}
+
 fn commit_of(record: &TaskRecord) -> Result<TaskCommit, TaskError> {
     Ok(TaskCommit {
         task_id: record.task_id.clone(),
@@ -1850,7 +1888,8 @@ mod schema_two_tests {
                 |r| r.get(0),
             )
             .unwrap();
-        let v1_ddl = v2_ddl.replace("schema_version = 2", "schema_version = 1");
+        let v1_ddl = v2_ddl.replace("schema_version = 3", "schema_version = 1");
+        research_admission::remove_test_tables(&db);
         db.execute_batch(
             "BEGIN IMMEDIATE; DROP TABLE store_identity; DROP TABLE completed_effects;
             CREATE TABLE completed_effects (

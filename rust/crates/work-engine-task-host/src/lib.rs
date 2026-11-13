@@ -3,6 +3,7 @@
 #[cfg(test)]
 mod direct_host_tests;
 mod observation;
+pub mod research_admission;
 mod selected_startup;
 
 use bounded_inference::{Bounds, DirectAdapter, DirectProfile, PublicHostEndpoint};
@@ -85,6 +86,8 @@ pub struct HostStartup {
     /// this explicit owner-admitted entry and never as a fallback.
     #[serde(default, skip_serializing_if = "ControlSelection::is_native")]
     pub control: ControlSelection,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub research: Option<research_admission::ResearchNomination>,
     pub lifecycle: ServiceConfig,
 }
 
@@ -172,7 +175,9 @@ fn compose_direct(
     executable_sha256: &str,
 ) -> Result<Arc<DirectAdapter<PublicHostEndpoint>>, HostError> {
     if config.bounds.bounds() != PublicHostEndpoint::bounds() {
-        return Err(startup_invalid("direct control bounds differ from the public route"));
+        return Err(startup_invalid(
+            "direct control bounds differ from the public route",
+        ));
     }
     let endpoint = PublicHostEndpoint::open(
         &config.credential_dir,
@@ -229,14 +234,19 @@ fn validate_control(startup: &HostStartup) -> Result<(), HostError> {
         .as_ref()
         .is_some_and(|native| native.semantic.is_some());
     if startup.lifecycle.profile != PROFILE || !semantic {
-        return Err(startup_invalid("direct control needs the task profile and a semantic capture"));
+        return Err(startup_invalid(
+            "direct control needs the task profile and a semantic capture",
+        ));
     }
     let plain = |path: &Path| {
         path.is_absolute()
             && path.as_os_str().len() <= 4096
-            && !path
-                .components()
-                .any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::CurDir))
+            && !path.components().any(|c| {
+                matches!(
+                    c,
+                    std::path::Component::ParentDir | std::path::Component::CurDir
+                )
+            })
     };
     let disjoint = |a: &Path, b: &Path| a != b && !a.starts_with(b) && !b.starts_with(a);
     if !plain(&config.credential_dir)
@@ -260,7 +270,11 @@ fn validate_control(startup: &HostStartup) -> Result<(), HostError> {
             if meta.is_dir()
                 && meta.uid() == current_uid()?
                 && meta.permissions().mode() & 0o077 == 0 => {}
-        _ => return Err(startup_invalid("direct control release directory ownership/mode")),
+        _ => {
+            return Err(startup_invalid(
+                "direct control release directory ownership/mode",
+            ));
+        }
     }
     // The journal directory is private to this host: an existing one must be
     // ours at 0700, otherwise its parent must be.
@@ -275,10 +289,17 @@ fn validate_control(startup: &HostStartup) -> Result<(), HostError> {
     let journal_ok = if fs::symlink_metadata(&config.journal_dir).is_ok() {
         private(&config.journal_dir)?
     } else {
-        config.journal_dir.parent().map(private).transpose()?.unwrap_or(false)
+        config
+            .journal_dir
+            .parent()
+            .map(private)
+            .transpose()?
+            .unwrap_or(false)
     };
     if !journal_ok {
-        return Err(startup_invalid("direct control journal directory ownership/mode"));
+        return Err(startup_invalid(
+            "direct control journal directory ownership/mode",
+        ));
     }
     Ok(())
 }
@@ -310,6 +331,7 @@ struct Host {
     store: Arc<TaskStore>,
     identity: HostIdentity,
     admission_gate: Mutex<()>,
+    research: OnceLock<research_admission::ResearchHost>,
     recovery_only: OnceLock<bool>,
     selected: bool,
 }
@@ -375,8 +397,8 @@ async fn serve_composed(
     let store = Arc::new(store);
     let material: Arc<dyn CanonicalMaterialPort> = store.clone();
     #[cfg(test)]
-    let material = direct_host_tests::registered_material(&startup.lifecycle.store_root)
-        .unwrap_or(material);
+    let material =
+        direct_host_tests::registered_material(&startup.lifecycle.store_root).unwrap_or(material);
     let ports = ServicePorts {
         control,
         material,
@@ -408,6 +430,7 @@ async fn serve_composed_with(
         startup,
         store,
         identity,
+        research: OnceLock::new(),
         admission_gate: Mutex::new(()),
         recovery_only: OnceLock::new(),
         selected,
@@ -443,8 +466,7 @@ async fn serve_composed_with(
                 lifecycle_service::run_with_task_ports(config, material, operations).await
             }
             (None, ComposedControl::Direct(port)) => {
-                lifecycle_service::run_with_direct_control(config, material, operations, port)
-                    .await
+                lifecycle_service::run_with_direct_control(config, material, operations, port).await
             }
         }
     });
@@ -456,6 +478,13 @@ async fn serve_composed_with(
     host.recovery_only
         .set(recovery_only)
         .map_err(|_| HostError::LifecycleUnavailable)?;
+    host.research
+        .set(if recovery_only {
+            research_admission::ResearchHost::default()
+        } else {
+            research_admission::install(&host.startup, &host.store)?
+        })
+        .map_err(|_| HostError::Configuration)?;
     if selected {
         for command in host.store.admission_commands()? {
             reconcile_admission(&host, &command, !recovery_only)?;
@@ -543,6 +572,13 @@ fn dispatch(host: &Host, request: Value) -> Value {
             .get()
             .ok_or(HostError::LifecycleUnavailable)?;
         let object = request.as_object().ok_or(HostError::Configuration)?;
+        if request
+            .get("op")
+            .and_then(Value::as_str)
+            .is_some_and(|s| s.starts_with("research."))
+        {
+            return research_admission::dispatch(host, &request, recovery_only);
+        }
         match request.get("op").and_then(Value::as_str) {
             Some("task.submit.v1") if object.len() == 2 => {
                 let _gate = host
@@ -579,6 +615,7 @@ fn dispatch(host: &Host, request: Value) -> Value {
                 let (owner, first_publication) = if let Some(owner) = prior {
                     (owner, false)
                 } else {
+                    research_admission::guard_submit(host, &input)?;
                     let basis = admission_basis(host, &input.subject_id)?;
                     host.store.submit_with_admission(&input, &mut |text| {
                         build_admission(host, &input, &basis, text)
@@ -1226,6 +1263,7 @@ fn validate_file(path: &Path) -> Result<(), HostError> {
     Ok(())
 }
 fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
+    research_admission::validate_nomination(s)?;
     if s.profile != PROFILE
         || s.lifecycle.subject_id.is_empty()
         || s.approved_snapshot_ref.is_empty()
@@ -1441,6 +1479,7 @@ fn task_code(e: &retained_task_workflow::TaskError) -> &'static str {
         Unauthorized => "unauthorized",
         PendingQuestion => "pending_question",
         Busy => "busy",
+        Capacity => "capacity",
         Uncertain | Storage(_) | Encoding(_) => "uncertain",
     }
 }
@@ -1465,7 +1504,7 @@ mod tests {
         }
     }
 
-    fn admission_host(root: &Path, socket: &Path, recovery_only: bool) -> Host {
+    pub(super) fn admission_host(root: &Path, socket: &Path, recovery_only: bool) -> Host {
         let lifecycle = ServiceConfig {
             profile: PROFILE.into(),
             store_root: root.join("lifecycle-store"),
@@ -1493,6 +1532,7 @@ mod tests {
             selected_restart: None,
         };
         let startup = HostStartup {
+            research: None,
             profile: PROFILE.into(),
             task_store_path: root.join("tasks.sqlite"),
             socket_path: root.join("host.sock"),
@@ -1534,12 +1574,13 @@ mod tests {
                 provider_identity: "native-sim-proof-v1".into(),
             },
             admission_gate: Mutex::new(()),
+            research: OnceLock::from(research_admission::ResearchHost::default()),
             recovery_only: mode,
             selected: true,
         }
     }
 
-    fn fake_admission_service(
+    pub(super) fn fake_admission_service(
         socket: &Path,
         requests: usize,
         sends: Arc<AtomicUsize>,
@@ -1581,7 +1622,7 @@ mod tests {
         })
     }
 
-    fn admission_submit() -> Value {
+    pub(super) fn admission_submit() -> Value {
         json!({"command_id":"command-0","task_id":"task-0","subject_id":"subject-0","kind":"repository_analysis","objective":"Analyze approved source","engineering_question":"Who owns this?","snapshot_ref":"snapshot-0"})
     }
 
@@ -1884,6 +1925,7 @@ mod tests {
             selected_restart: None,
         };
         let startup = HostStartup {
+            research: None,
             profile: PROFILE.into(),
             task_store_path: root.path().join("tasks.sqlite"),
             socket_path: root.path().join("host.sock"),
@@ -1925,6 +1967,7 @@ mod tests {
                 provider_identity: "native-sim-proof-v1".into(),
             },
             admission_gate: Mutex::new(()),
+            research: OnceLock::from(research_admission::ResearchHost::default()),
             recovery_only: mode,
             selected: false,
         };

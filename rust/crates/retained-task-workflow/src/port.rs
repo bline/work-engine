@@ -224,7 +224,7 @@ fn port_error(value: TaskError) -> PortError {
         TaskError::Stale | TaskError::PendingQuestion => PortError::Stale,
         TaskError::Unauthorized => PortError::Unauthorized,
         TaskError::Busy => PortError::Busy,
-        TaskError::Unavailable | TaskError::Uncertain => PortError::Uncertain,
+        TaskError::Capacity | TaskError::Unavailable | TaskError::Uncertain => PortError::Uncertain,
         TaskError::Storage(rusqlite::Error::SqliteFailure(ref failure, _))
             if matches!(
                 failure.code,

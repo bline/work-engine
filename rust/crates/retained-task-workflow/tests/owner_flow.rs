@@ -62,6 +62,8 @@ fn identity_state(db: &Connection) -> (i64, String, i64, String) {
 }
 
 fn legacy_effect_table(db: &Connection) {
+    // Build the exact historical fixture; a schema-3 table is not historical data.
+    db.execute_batch("DROP TABLE research_tasks; DROP TABLE research_keys; DROP TABLE research_history; DROP TABLE research_notices; DROP TABLE research_capacity; DROP TABLE research_basis; DROP TABLE research_adoptions; DROP TABLE research_reconsideration;").unwrap();
     db.execute_batch(
         "DROP TABLE completed_effects;
         CREATE TABLE completed_effects (
@@ -503,7 +505,7 @@ fn explicit_v1_migration_preserves_opaque_effect_and_refuses_old_layout_on_start
     db.execute("INSERT INTO control_commands VALUES('control-legacy','pause','request-sha','legacy service bytes')", []).unwrap();
     db.execute_batch("BEGIN IMMEDIATE; DROP TABLE store_identity;")
         .unwrap();
-    db.execute_batch(&identity_ddl.replace("schema_version = 2", "schema_version = 1"))
+    db.execute_batch(&identity_ddl.replace("schema_version = 3", "schema_version = 1"))
         .unwrap();
     db.execute("INSERT INTO store_identity VALUES(1,?1,1)", [&store_id])
         .unwrap();
