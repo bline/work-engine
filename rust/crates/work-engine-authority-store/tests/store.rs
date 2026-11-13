@@ -789,3 +789,73 @@ fn feature_ordinary_api_has_no_success_value() {
     let r: Result<std::convert::Infallible, _> = h.store.admit(&h.cand);
     assert!(r.is_err());
 }
+
+// ---- Provider-family realization record (real-Host integration) --------------------------------
+
+#[test]
+fn declared_provider_family_comes_from_the_frozen_requirements() {
+    use work_engine_authority_store::report::declared_provider_families;
+    assert_eq!(
+        declared_provider_families(REQ),
+        vec!["anthropic".to_owned()]
+    );
+    assert!(declared_provider_families(b"not json").is_empty());
+}
+
+#[test]
+fn publication_requires_the_provider_family_record_and_keeps_the_unestablished_list() {
+    use serde_json::json;
+    let mut h = harness();
+    let good = h.request();
+    let body: serde_json::Value = serde_json::from_slice(&good.body).unwrap();
+    let o = &body["realization_observed"];
+    assert_eq!(
+        (
+            o["declared"][0].as_str(),
+            o["realized"].as_str(),
+            o["state"].as_str()
+        ),
+        (
+            Some("anthropic"),
+            Some("fake_fixture"),
+            Some("not qualified")
+        )
+    );
+    let bads: Vec<(&str, serde_json::Value)> = vec![
+        ("absent", json!({"fixture_experiment": true})),
+        ("not json", json!("x")),
+        ("realized differs from receipt", {
+            let mut b = body.clone();
+            b["realization_observed"]["realized"] = json!("anthropic");
+            b
+        }),
+        ("state qualified", {
+            let mut b = body.clone();
+            b["realization_observed"]["state"] = json!("qualified");
+            b
+        }),
+        ("declared empty", {
+            let mut b = body.clone();
+            b["realization_observed"]["declared"] = json!([]);
+            b
+        }),
+    ];
+    for (i, (name, b)) in bads.into_iter().enumerate() {
+        let mut req = good.clone();
+        req.body = serde_json::to_vec(&b).unwrap();
+        req.operation_id = format!("op-bad-realization-{i}");
+        assert_eq!(
+            refused(h.store.fixture_publish(&req)),
+            "RealizationRecord",
+            "{name}"
+        );
+    }
+    assert_eq!(h.count("results"), 0);
+    let (rid, _, _) = published(h.store.fixture_publish(&good));
+    let r = store::read_result(h.store.dir(), &rid).unwrap().unwrap();
+    let stored: serde_json::Value = serde_json::from_slice(&r.body).unwrap();
+    assert_eq!(stored["realization_observed"]["state"], "not qualified");
+    let u: serde_json::Value = serde_json::from_str(&r.unestablished_json).unwrap();
+    assert_eq!(u["none_rows"].as_array().unwrap().len(), 2);
+    assert_eq!(u["state"], "not established");
+}

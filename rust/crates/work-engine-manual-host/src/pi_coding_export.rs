@@ -10,12 +10,14 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 pub const MAX_TOTAL: u64 = 1_048_576;
 pub const MAX_FILES: usize = 16;
 pub const MAX_PATH: usize = 128;
-pub const MAX_COMPONENT: usize = 64;
+pub const MAX_COMPONENT: usize = 80;
 pub const MAX_DEPTH: usize = 6;
 /// Raw bytes per part. Base64 of this plus metadata stays far below the 64 KiB frame bound.
 pub const MAX_PART: usize = 24_576;
 pub const MAX_PARTS: u64 = 128;
 /// The exact tmpfs option string the Host creates and then verifies by inspection.
+/// The `classification` every frame of the signed fixture shim carries (shim `emit`).
+pub const CLASSIFICATION: &str = "fixture provider/signing/identity; actual SDK runtime";
 pub const TMPFS: &str = "/export:rw,noexec,nosuid,nodev,size=1048576,uid=1000,gid=1000,mode=0700";
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -69,7 +71,12 @@ fn exact_keys(frame: &Value, keys: &[&str]) -> bool {
         return false;
     };
     let mut got: Vec<&str> = map.keys().map(String::as_str).collect();
+    // Every shim frame carries the fixed classification; it is part of the exact shape.
     let mut want = keys.to_vec();
+    want.push("classification");
+    if frame["classification"] != CLASSIFICATION {
+        return false;
+    }
     got.sort_unstable();
     want.sort_unstable();
     got == want
@@ -290,6 +297,7 @@ impl Mode0600 for OpenOptions {
 }
 
 #[cfg(test)]
+#[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::super::tests::fixture;
     use super::*;
@@ -297,11 +305,11 @@ mod tests {
     const SESSION: &str = "00000000-0000-4000-8000-000000000001";
 
     fn part(seq: u64, path: &str, offset: u64, total: u64, sha: &str, data: &[u8]) -> Value {
-        json!({"schema":SIGNED_PROFILE,"sessionId":SESSION,"type":"export_part","seq":seq,"path":path,
+        json!({"schema":SIGNED_PROFILE,"sessionId":SESSION,"classification":CLASSIFICATION,"type":"export_part","seq":seq,"path":path,
                "offset":offset,"total":total,"sha256":sha,"data":STANDARD.encode(data)})
     }
     fn fin(files: u64, bytes: u64, manifest: &str) -> Value {
-        json!({"schema":SIGNED_PROFILE,"sessionId":SESSION,"type":"export_final","files":files,
+        json!({"schema":SIGNED_PROFILE,"sessionId":SESSION,"classification":CLASSIFICATION,"type":"export_final","files":files,
                "bytes":bytes,"manifest_sha256":manifest})
     }
     fn frames(values: &[Value]) -> Vec<u8> {
@@ -617,6 +625,14 @@ mod tests {
         bad["data"] = json!("@@@");
         let (_d, mut h) = host();
         assert!(advance(&mut h, &[bad]).is_err());
+        let mut other_class = two_files()[0].clone();
+        other_class["classification"] = json!("something else");
+        let (_d, mut h) = host();
+        assert!(advance(&mut h, &[other_class]).is_err());
+        let mut no_class = two_files()[0].clone();
+        no_class.as_object_mut().unwrap().remove("classification");
+        let (_d, mut h) = host();
+        assert!(advance(&mut h, &[no_class]).is_err());
         let mut upper = two_files()[0].clone();
         upper["sha256"] = json!(sha(b"abc").to_uppercase());
         let (_d, mut h) = host();
@@ -829,5 +845,120 @@ mod tests {
                 .iter()
                 .any(|a| a.contains("docker.sock") || a == "--privileged")
         );
+    }
+    /// The real shim text (its `emit` and `exportBundle`, run under node against a temp directory)
+    /// produces frames the Host accepts, so the two sides cannot drift apart unnoticed.
+    #[test]
+    fn real_shim_export_frames_are_accepted_by_the_host() {
+        let shim = std::str::from_utf8(SHIM).unwrap();
+        let cut = |from: &str, to: &str| {
+            let a = shim.find(from).unwrap_or_else(|| panic!("{from}"));
+            let b = a + shim[a..].find(to).unwrap_or_else(|| panic!("{to}"));
+            shim[a..b].to_string()
+        };
+        let emit = cut("const emit=value=>{", "\n};\n") + "\n};\n";
+        let bundle = cut("const exportBundle=()=>{", "\nlet startResolve;");
+        let (dir, mut h) = host();
+        let src = tempfile::tempdir().unwrap();
+        fs::create_dir(src.path().join("sessions")).unwrap();
+        fs::write(
+            src.path().join("coding-native-history.json"),
+            b"{\"messages\":[1]}\n",
+        )
+        .unwrap();
+        let big: Vec<u8> = (0..60_000u32).map(|i| (i % 251) as u8).collect();
+        fs::write(
+            src.path()
+                .join("sessions/2026-11-13T05-50-00-000Z_abc.jsonl"),
+            &big,
+        )
+        .unwrap();
+        fs::write(src.path().join("empty"), b"").unwrap();
+        let script = format!(
+            "import {{createHash}} from 'node:crypto';import {{readdirSync,lstatSync,readFileSync}} from 'node:fs';\n\
+             const fixtureSigned=true,schema='{SIGNED_PROFILE}';let session;const manager={{getSessionId:()=>'{SESSION}'}};\n{emit}\n{}\nexportBundle();\n",
+            bundle.replace(
+                "walk('/export'",
+                &format!("walk('{}'", src.path().display())
+            )
+        );
+        let script_path = dir.path().join("shim-export.mjs");
+        fs::write(&script_path, script).unwrap();
+        let out = std::process::Command::new("node")
+            .arg(&script_path)
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let lines = out
+            .stdout
+            .split(|b| *b == b'\n')
+            .filter(|l| !l.is_empty())
+            .count();
+        assert!(lines >= 5, "{lines}");
+        h.coding_advance(&out.stdout).unwrap();
+        assert!(h.export_finalized());
+        let e = h.journal.coding.as_ref().unwrap().export.as_ref().unwrap();
+        assert_eq!(e.files.len(), 3);
+        assert_eq!(e.total_bytes, 17 + 60_000);
+        assert_eq!(
+            fs::read(
+                dir.path()
+                    .join("exports/sessions/2026-11-13T05-50-00-000Z_abc.jsonl")
+            )
+            .unwrap(),
+            big
+        );
+    }
+    /// Frames captured from a real Host run (attempt 1 stdout; the container, SDK and shim were real).
+    fn real_frames() -> Vec<Value> {
+        include_str!("../testdata/real-export-frames.jsonl")
+            .lines()
+            .map(|l| {
+                let mut v: Value = serde_json::from_str(l).unwrap();
+                v["sessionId"] = json!(SESSION);
+                v
+            })
+            .collect()
+    }
+    #[test]
+    fn real_session_file_names_fit_the_path_bounds() {
+        let name = "sessions/2026-11-13T05-54-50-646Z_01a1d379-1695-7511-9628-93c4445f0848.jsonl";
+        assert!(valid_path(name));
+        assert!(valid_path("coding-native-history.json"));
+    }
+    #[test]
+    fn frames_captured_from_a_real_run_are_accepted_and_complete_the_run() {
+        let frames = real_frames();
+        assert_eq!(frames.len(), 3);
+        let (dir, mut h) = complete_ready_host();
+        let mut all = frames.clone();
+        all.push(complete_frame());
+        advance(&mut h, &all).unwrap();
+        assert!(h.export_finalized());
+        assert!(h.journal.coding.as_ref().unwrap().completed);
+        let e = h.journal.coding.as_ref().unwrap().export.as_ref().unwrap();
+        assert_eq!((e.files.len(), e.total_bytes), (2, 19_724));
+        for (p, f) in &e.files {
+            assert_eq!(
+                file_digest(&dir.path().join("exports").join(p), None).unwrap(),
+                f.sha256
+            );
+        }
+        // Dropping any one captured frame, or swapping the two parts, is not accepted.
+        for broken in [
+            vec![frames[0].clone(), frames[2].clone()],
+            vec![frames[1].clone(), frames[0].clone(), frames[2].clone()],
+            vec![frames[0].clone(), frames[1].clone()],
+        ] {
+            let (_d, mut h) = complete_ready_host();
+            let mut all = broken;
+            all.push(complete_frame());
+            assert!(advance(&mut h, &all).is_err());
+            assert!(!h.journal.coding.as_ref().unwrap().completed);
+        }
     }
 }

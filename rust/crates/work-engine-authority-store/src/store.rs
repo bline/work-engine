@@ -354,6 +354,7 @@ pub enum Refusal {
     AlreadyPublished,
     BodyTooLarge,
     OrdinaryResultsNotImplemented,
+    RealizationRecord,
 }
 impl Refusal {
     pub fn reason(&self) -> String {
@@ -457,6 +458,8 @@ fn publish_txn(
     refuse_if!(tx, req, seq, check_execution(tx, req)?);
     // M:evidence
     refuse_if!(tx, req, seq, check_evidence(tx, req)?);
+    // M:realization
+    refuse_if!(tx, req, seq, check_realization(req));
     // M:supersession
     refuse_if!(tx, req, seq, check_unpublished(tx, req)?);
     if domain != Domain::Fixture {
@@ -643,6 +646,27 @@ fn check_evidence(tx: &Transaction, req: &PublishRequest) -> rusqlite::Result<Op
     )
     .err()
     .map(Refusal::Evidence))
+}
+
+/// The published body carries the provider-family record: declared classes (non-empty), the
+/// provider the verified receipt shows was realized, and the state `not qualified`.
+fn check_realization(req: &PublishRequest) -> Option<Refusal> {
+    let ok = (|| {
+        let body: serde_json::Value = serde_json::from_slice(&req.body).ok()?;
+        let receipt: serde_json::Value = serde_json::from_slice(&req.receipt_bytes).ok()?;
+        let r = &body["realization_observed"];
+        let declared = r["declared"].as_array()?;
+        (r["dimension"] == "provider_family"
+            && !declared.is_empty()
+            && declared
+                .iter()
+                .all(|d| d.as_str().is_some_and(|s| !s.is_empty()))
+            && r["realized"] == receipt["provider"]
+            && r["realized"].as_str().is_some()
+            && r["state"] == crate::report::REALIZATION_STATE)
+            .then_some(())
+    })();
+    ok.is_none().then_some(Refusal::RealizationRecord)
 }
 
 /// No result exists for this execution or for this (admission, obligation).

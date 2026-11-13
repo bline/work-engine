@@ -45,6 +45,12 @@ pub enum ReceiptRefusal {
     NoArtifacts,
     #[error("receipt job binding differs from the admission binding")]
     BindingMismatch,
+    #[error("receipt is for a profile other than the signed fixture")]
+    ProfileMismatch,
+    #[error("receipt does not show a completed run with finalized in-band exports")]
+    ExportNotFinalized,
+    #[error("receipt export inventory is not the finalized in-band file set")]
+    ExportInventoryMismatch,
 }
 
 pub struct VerifiedReceipt {
@@ -97,8 +103,57 @@ pub fn verify(
     if binding_digest(&job.image, &job.runtime.manifest.sha256) != binding {
         return Err(ReceiptRefusal::BindingMismatch);
     }
+    if !v["coding"].is_null() {
+        verify_real_host_run(&v, &job)?;
+    }
     Ok(VerifiedReceipt {
         receipt_id: receipt_id.to_owned(),
         job_id: expected_job_id.to_owned(),
     })
+}
+
+/// A receipt that carries the Host's `coding` record (every real Host receipt does) must be a
+/// signed-fixture run that completed and whose in-band exports were finalized, and its collected
+/// export files (outside the Host's `workspace/` namespace) must be exactly the finalized set with
+/// the same digests, each also listed among the receipt's artifacts. Provisional evidence only.
+fn verify_real_host_run(v: &Value, job: &Job) -> Result<(), ReceiptRefusal> {
+    use work_engine_manual_host::pi_docker::coding::SIGNED_PROFILE;
+    if v["profile"] != SIGNED_PROFILE
+        || job
+            .coding
+            .as_ref()
+            .is_none_or(|c| c.schema != SIGNED_PROFILE)
+    {
+        return Err(ReceiptRefusal::ProfileMismatch);
+    }
+    let c = &v["coding"];
+    let export = &c["export"];
+    if c["completed"] != true || export["finalized"] != true {
+        return Err(ReceiptRefusal::ExportNotFinalized);
+    }
+    let (Some(finalized), Some(collected), Some(artifacts)) = (
+        export["files"].as_object(),
+        v["exported_files"].as_object(),
+        v["artifacts"].as_array(),
+    ) else {
+        return Err(ReceiptRefusal::ExportInventoryMismatch);
+    };
+    let in_band: Vec<(&String, &Value)> = collected
+        .iter()
+        .filter(|(k, _)| !k.starts_with("workspace/"))
+        .collect();
+    let artifact_sha = |sha: &str| artifacts.iter().any(|a| a["sha256"] == sha);
+    if finalized.is_empty()
+        || in_band.len() != finalized.len()
+        || finalized.iter().any(|(path, f)| {
+            f["done"] != true
+                || collected.get(path).and_then(|e| e["sha256"].as_str()) != f["sha256"].as_str()
+        })
+        || collected
+            .values()
+            .any(|e| e["sha256"].as_str().is_none_or(|s| !artifact_sha(s)))
+    {
+        return Err(ReceiptRefusal::ExportInventoryMismatch);
+    }
+    Ok(())
 }

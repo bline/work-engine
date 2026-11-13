@@ -63,3 +63,49 @@ pub fn unestablished_json(
         })).collect::<Vec<_>>(),
     })
 }
+
+/// The `provider_family` classes the frozen requirements declare, read from the requirements JSON
+/// itself (every `realizationConstraints` entry whose `dimension` is `provider_family`). Sorted,
+/// deduplicated. The pure compiler is not consulted and not changed.
+pub fn declared_provider_families(requirements_json: &[u8]) -> Vec<String> {
+    fn walk(v: &Value, out: &mut std::collections::BTreeSet<String>) {
+        match v {
+            Value::Object(m) => {
+                if let Some(Value::Array(cs)) = m.get("realizationConstraints") {
+                    for c in cs {
+                        if c["dimension"] == "provider_family"
+                            && let Some(allowed) = c["allowed"].as_array()
+                        {
+                            out.extend(
+                                allowed.iter().filter_map(|a| a.as_str().map(str::to_owned)),
+                            );
+                        }
+                    }
+                }
+                m.values().for_each(|x| walk(x, out));
+            }
+            Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+            _ => {}
+        }
+    }
+    let mut out = std::collections::BTreeSet::new();
+    if let Ok(v) = serde_json::from_slice::<Value>(requirements_json) {
+        walk(&v, &mut out);
+    }
+    out.into_iter().collect()
+}
+
+/// What was declared against what the real Host receipt shows was realized. `state` is
+/// `not qualified`, which is distinct from a negative result: the declared class was neither
+/// realized nor shown violated by a provider-reported model check, because none ran.
+pub fn realization_observed(declared: &[String], receipt: &Value) -> Value {
+    json!({
+        "dimension": "provider_family",
+        "declared": declared,
+        "realized": receipt["provider"],
+        "model": receipt["model"],
+        "state": REALIZATION_STATE,
+        "note": "declared provider family not realized by this run; transport validation of a provider-reported model did not run; compiler row Supported/Recording for provider_family not exercised",
+    })
+}
+pub const REALIZATION_STATE: &str = "not qualified";

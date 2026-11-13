@@ -212,7 +212,11 @@ pub mod harness {
                 candidate_digest: self.adm.candidate_digest().to_owned(),
                 receipt_id: self.receipt_id.clone(),
                 receipt_bytes: self.receipt_bytes.clone(),
-                body: b"{\"fixture_experiment\":true}".to_vec(),
+                body: serde_json::to_vec(&json!({"fixture_experiment":true,
+                    "realization_observed": work_engine_authority_store::report::realization_observed(
+                        &work_engine_authority_store::report::declared_provider_families(REQ),
+                        &serde_json::from_slice::<Value>(&self.receipt_bytes).unwrap())}))
+                .unwrap(),
             }
             .with_derived_operation_id()
         }
