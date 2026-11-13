@@ -1240,6 +1240,8 @@ impl Host {
         let pass = self.journal.coding.as_ref().is_none_or(|c| {
             c.tool_removed
                 && c.completed
+                && (!self.is_signed_fixture()
+                    || (self.export_finalized() && self.export_collection_consistent()))
                 && self.coding_final_proof_valid()
                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
                     || c.access_removed)

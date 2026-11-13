@@ -5,6 +5,8 @@ use super::*;
 pub mod auth;
 #[path = "pi_coding_claims.rs"]
 pub mod claims;
+#[path = "pi_coding_export.rs"]
+pub mod export;
 #[path = "pi_coding_provider.rs"]
 pub mod provider;
 #[path = "pi_coding_validation.rs"]
@@ -279,6 +281,9 @@ pub struct State {
     pub claims_after_replacement: u32,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub replaced: bool,
+    /// In-band export collection (signed fixture only); absent for every other profile.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub export: Option<export::ExportState>,
 }
 fn is_zero(v: &u32) -> bool {
     *v == 0
@@ -483,8 +488,11 @@ fn expected_mounts(
     let mut mounts = vec![
         (j.job.runtime.root.clone(), "/pi", false),
         (profile.shim.path.clone(), "/receiver/receiver.mjs", false),
-        (j.job.state_dir.join("exports"), "/export", true),
     ];
+    // The signed fixture's /export is a size-limited tmpfs collected in-band (no host bind).
+    if profile.schema != SIGNED_PROFILE {
+        mounts.push((j.job.state_dir.join("exports"), "/export", true));
+    }
     if let Some(plan) = &profile.provider {
         mounts.extend([
             (
@@ -590,6 +598,13 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         || v["HostConfig"]["Tmpfs"]
             != if tool {
                 json!({"/tmp":"rw,exec,nosuid,nodev,size=64m"})
+            } else if !validation
+                && j.job
+                    .coding
+                    .as_ref()
+                    .is_some_and(|p| p.schema == SIGNED_PROFILE)
+            {
+                json!({"/tmp":"rw,noexec,nosuid,nodev,size=64m","/export":export::TMPFS.split_once(':').unwrap().1})
             } else {
                 json!({"/tmp":"rw,noexec,nosuid,nodev,size=64m"})
             }
@@ -773,6 +788,9 @@ impl Host {
     pub(super) fn coding_inference_args(&self) -> Vec<String> {
         let j = &self.journal;
         let mut args = base(j, &j.container_name);
+        if j.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE {
+            args.extend(strings(&["--tmpfs", export::TMPFS]));
+        }
         if j.job.coding.as_ref().unwrap().provider.is_some() {
             args.extend(strings(&["--env", "PI_CODING_AGENT_DIR=/config"]));
         } else {
@@ -1430,7 +1448,13 @@ impl Host {
                         replies.extend(self.coding_bridge_frame(&frame)?);
                     }
                 }
+                "export_part" | "export_final" => {
+                    self.coding_export_frame(&frame, kind)?;
+                }
                 "complete" => {
+                    if self.is_signed_fixture() && !self.export_finalized() {
+                        return refuse("coding completion before export finalization");
+                    }
                     if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
                         && frame["counts"] != json!({"providerRequests":4,"resets":1})
                     {
