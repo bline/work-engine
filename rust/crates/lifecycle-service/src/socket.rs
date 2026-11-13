@@ -47,7 +47,7 @@ pub async fn run(
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
 ) -> Result<(), ServiceError> {
-    run_inner(config, material_port, task_operation_port, None, None).await
+    run_inner(config, material_port, task_operation_port, None, None, None).await
 }
 
 /// As `run`, with the direct realization of semantic compile and verify calls
@@ -64,6 +64,7 @@ pub(crate) async fn run_with_direct_control(
         task_operation_port,
         None,
         Some(direct_control),
+        None,
     )
     .await
 }
@@ -72,7 +73,7 @@ pub(crate) async fn run_with_preopened_store(
     config: ServiceConfig,
     store: SqliteLifecycleStore,
 ) -> Result<(), ServiceError> {
-    run_inner(config, None, None, Some(store), None).await
+    run_inner(config, None, None, Some(store), None, None).await
 }
 
 pub(crate) async fn run_with_preopened_task_ports(
@@ -81,6 +82,7 @@ pub(crate) async fn run_with_preopened_task_ports(
     material_port: Arc<dyn CanonicalMaterialPort>,
     task_operation_port: Arc<dyn TaskOperationPort>,
     direct_control: Option<Arc<dyn DirectInferencePort>>,
+    startup_hold: Option<crate::native_startup::NativeStartupHold>,
 ) -> Result<(), ServiceError> {
     run_inner(
         config,
@@ -88,22 +90,24 @@ pub(crate) async fn run_with_preopened_task_ports(
         Some(task_operation_port),
         Some(store),
         direct_control,
+        startup_hold,
     )
     .await
 }
 
-async fn run_inner(
-    config: ServiceConfig,
-    material_port: Option<Arc<dyn CanonicalMaterialPort>>,
-    task_operation_port: Option<Arc<dyn TaskOperationPort>>,
-    preopened_store: Option<SqliteLifecycleStore>,
-    direct_control: Option<Arc<dyn DirectInferencePort>>,
+/// Complete pure service configuration checks. Port availability is supplied by
+/// trusted composition; filesystem state and owner CAS remain runtime checks.
+pub fn validate_config(
+    config: &ServiceConfig,
+    material_port: bool,
+    task_operation_port: bool,
+    direct_control: bool,
 ) -> Result<(), ServiceError> {
     // The direct realization drives the semantic checkpoint compile and verify
     // calls, so it needs a configured semantic capture and its material owner.
-    if direct_control.is_some()
+    if direct_control
         && (config.profile != "retained-repository-analysis-v1"
-            || material_port.is_none()
+            || !material_port
             || config
                 .native
                 .as_ref()
@@ -133,7 +137,7 @@ async fn run_inner(
         return Err(ServiceError::Configuration);
     }
     if config.profile == "retained-repository-analysis-v1"
-        && (config.native.is_none() || material_port.is_none() || task_operation_port.is_none())
+        && (config.native.is_none() || !material_port || !task_operation_port)
     {
         return Err(ServiceError::Configuration);
     }
@@ -148,7 +152,7 @@ async fn run_inner(
         .native
         .as_ref()
         .is_some_and(|native| native.semantic.is_some())
-        && material_port.is_none()
+        && !material_port
     {
         return Err(ServiceError::Configuration);
     }
@@ -162,6 +166,38 @@ async fn run_inner(
     if proof_ms == 0 || cleanup_ms < proof_ms || cleanup_ms > 60_000 {
         return Err(ServiceError::Configuration);
     }
+    if !config.socket_path.is_absolute()
+        || config.socket_path.file_name().is_none()
+        || config.socket_path.components().any(|c| {
+            matches!(
+                c,
+                std::path::Component::ParentDir | std::path::Component::CurDir
+            )
+        })
+    {
+        return Err(ServiceError::Configuration);
+    }
+    actor::validate_config(config)?;
+    if let Some(native) = &config.native {
+        crate::operations::validate_native_config(native)?;
+    }
+    Ok(())
+}
+
+async fn run_inner(
+    config: ServiceConfig,
+    material_port: Option<Arc<dyn CanonicalMaterialPort>>,
+    task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+    preopened_store: Option<SqliteLifecycleStore>,
+    direct_control: Option<Arc<dyn DirectInferencePort>>,
+    startup_hold: Option<crate::native_startup::NativeStartupHold>,
+) -> Result<(), ServiceError> {
+    validate_config(
+        &config,
+        material_port.is_some(),
+        task_operation_port.is_some(),
+        direct_control.is_some(),
+    )?;
     let parent = config
         .socket_path
         .parent()
@@ -174,12 +210,14 @@ async fn run_inner(
         return Err(ServiceError::Configuration);
     }
     let grant_material = material_port.clone();
-    let (sender, shutdown_gate, grant_control) = actor::start(
+    let mut startup_cancellation = startup_hold.as_ref().map(|hold| hold.cancellation.clone());
+    let (sender, shutdown_gate, grant_control, completion) = actor::start(
         config.clone(),
         material_port,
         task_operation_port,
         preopened_store,
         direct_control,
+        startup_hold,
     )?;
     let grant_lane = grant_control.map(|control| {
         Arc::new(GrantLane {
@@ -189,6 +227,21 @@ async fn run_inner(
             in_flight: AtomicUsize::new(0),
         })
     });
+    // Every post-spawn setup/accept failure converges on actor collection.
+    let serving = async {
+    #[cfg(feature = "controlled-proof")]
+    if let Some(root) = config.proof_barrier_dir.as_ref()
+        && root.join("socket_setup_after_owned_child.arm").exists()
+    {
+        let marker = root.join("native_after_spawn_before_registration.pid");
+        tokio::time::timeout(Duration::from_secs(20), async {
+            while !marker.exists() { tokio::time::sleep(Duration::from_millis(5)).await; }
+        }).await.map_err(|_| ServiceError::Configuration)?;
+        if !root.join("socket_setup_cleanup_budget.arm").exists() {
+            fs::write(root.join("native_after_spawn_before_registration.release"), b"release\n")?;
+        }
+        return Err(ServiceError::Configuration);
+    }
     if let Ok(metadata) = fs::symlink_metadata(&config.socket_path) {
         if !metadata.file_type().is_socket() || metadata.uid() != config.principal.uid {
             return Err(ServiceError::Configuration);
@@ -197,13 +250,15 @@ async fn run_inner(
     }
     let listener = UnixListener::bind(&config.socket_path)?;
     fs::set_permissions(&config.socket_path, fs::Permissions::from_mode(0o600))?;
-    let config = Arc::new(config);
+    let config = Arc::new(config.clone());
     let slots = Arc::new(Semaphore::new(64));
     let mut terminate = signal(SignalKind::terminate())?;
     loop {
         let (stream, _) = tokio::select! {
             accepted=listener.accept()=>accepted?,
             _=terminate.recv()=>break,
+            _=sender.closed()=>return Err(ServiceError::Configuration),
+            _=async { match startup_cancellation.as_mut() {Some(cancel)=>{let _=cancel.changed().await;},None=>std::future::pending::<()>().await} }=>break,
         };
         let Ok(slot) = slots.clone().try_acquire_owned() else {
             continue;
@@ -216,6 +271,8 @@ async fn run_inner(
             let _ = handle(stream, sender, config, grant_lane).await;
         });
     }
+    Ok::<(), ServiceError>(())
+    }.await;
     // Fence both launch owners on the signal path, before the actor can
     // finish a blocked transition or receive its queued Shutdown request.
     shutdown_gate.close_gate();
@@ -227,45 +284,27 @@ async fn run_inner(
     {
         let _ = fs::write(root.join("shutdown_gate_closed.reached"), b"reached\n");
     }
-    drop(listener);
     // Drain every already-admitted grant fence before the actor records the
     // service close. A fence that entered before gate closure may still own
     // the task-then-lifecycle commit path; closing first would make that
     // durable close report stale immediately after it was written.
     if let Some(lane) = &grant_lane {
-        tokio::time::timeout(Duration::from_secs(60), async {
-            while lane.in_flight.load(Ordering::SeqCst) != 0 {
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
-        })
-        .await
-        .map_err(|_| ServiceError::Configuration)?;
+        while lane.in_flight.load(Ordering::SeqCst) != 0 {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
     }
     let (reply, done) = oneshot::channel();
-    sender
-        .send(Request::Shutdown { reply })
+    let sent = sender.send(Request::Shutdown { reply }).await;
+    drop(sender);
+    // A dropped reply or actor failure never detaches the native cleanup owner.
+    let acknowledged = if sent.is_ok() { Some(done.await) } else { None };
+    completion
         .await
-        .map_err(|_| ServiceError::Configuration)?;
-    // The actor owns the active verifier's exact child handle and must finish
-    // its configured cleanup before the process exits. Controlled proof cuts
-    // can hold three sequential barriers while the actor is busy; the signal
-    // path has already fenced new launches, but must still wait for custody.
-    let verifier_cleanup = if config.profile == "controlled" {
-        Duration::from_millis(config.verifier_cleanup_ms.unwrap_or(6_000))
-    } else {
-        Duration::ZERO
-    };
-    let proof_barriers = if cfg!(feature = "controlled-proof") && config.proof_barrier_dir.is_some()
-    {
-        Duration::from_secs(45)
-    } else {
-        Duration::ZERO
-    };
-    let shutdown_budget = verifier_cleanup + proof_barriers + Duration::from_secs(15);
-    tokio::time::timeout(shutdown_budget, done)
-        .await
-        .map_err(|_| ServiceError::Configuration)?
         .map_err(|_| ServiceError::Configuration)??;
+    if let Some(acknowledged) = acknowledged {
+        acknowledged.map_err(|_| ServiceError::Configuration)??;
+    }
+    serving?;
     fs::remove_file(&config.socket_path)?;
     Ok(())
 }

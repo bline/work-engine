@@ -873,3 +873,43 @@ fn unsupported_codec_public_cli_retains_valid_request_identity() {
     assert!(env.card.is_none());
     assert!(!String::from_utf8_lossy(&out.stderr).contains("panicked"));
 }
+
+#[test]
+fn admitted_startup_constructor_rejects_role_or_pinned_byte_changes() {
+    // Controlled Git/source fixture: this does not authenticate actual owners.
+    let (_fixture, _request, _profile, _, (_, delegation, purpose, scope, receipts)) = setup();
+    let typed = receipts
+        .iter()
+        .map(|(pin, bytes)| {
+            let event: ApprovalEvent = serde_json::from_slice(bytes).unwrap();
+            (event.role, event.issuer, pin.clone(), bytes.clone())
+        })
+        .collect::<Vec<_>>();
+    let installation = research_register::card_admission::validate_installation_records(
+        delegation.clone(),
+        purpose.clone(),
+        scope.clone(),
+        typed.clone(),
+    )
+    .unwrap();
+    let _installation = Installation::install_from_admitted_startup(installation); // consumer qualification remains subject to its existing cgroup controls.
+    let mut swapped = typed.clone();
+    swapped[0].0 = swapped[1].0.clone();
+    assert!(
+        research_register::card_admission::validate_installation_records(
+            delegation.clone(),
+            purpose.clone(),
+            scope.clone(),
+            swapped
+        )
+        .is_err()
+    );
+    let mut changed = typed;
+    changed[0].3.push(b' ');
+    assert!(
+        research_register::card_admission::validate_installation_records(
+            delegation, purpose, scope, changed
+        )
+        .is_err()
+    );
+}

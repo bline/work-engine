@@ -56,12 +56,16 @@ pub fn parse_arguments(value: Value) -> Result<ReadArguments, StoreError> {
     Ok(args)
 }
 
-pub fn publish(
-    store: &mut SqliteLifecycleStore,
-    subject: &SubjectId,
-    snapshot: &TrustedSnapshot,
-    clock: ClockSample,
-) -> Result<PublishedSnapshot, StoreError> {
+struct PreparedSnapshot {
+    published: PublishedSnapshot,
+    manifest: Vec<u8>,
+}
+
+pub(super) fn validate(snapshot: &TrustedSnapshot) -> Result<(), StoreError> {
+    prepare(snapshot).map(|_| ())
+}
+
+fn prepare(snapshot: &TrustedSnapshot) -> Result<PreparedSnapshot, StoreError> {
     let id = SnapshotId::parse(snapshot.id.clone()).map_err(|_| StoreError::Rejected)?;
     if snapshot.source_revision.is_empty()
         || snapshot.source_revision.len() > 256
@@ -96,11 +100,6 @@ pub fn publish(
         if digest != member.sha256 {
             return Err(StoreError::Rejected);
         }
-        let staged = store.stage_artifact(subject.clone(), &member.bytes)?;
-        let published = store.publish_artifact(staged, clock)?;
-        if published.digest_hex != digest || published.byte_length != member.bytes.len() {
-            return Err(StoreError::Unavailable);
-        }
         members.insert(member.id.clone(), (digest.clone(), member.bytes.len()));
         manifest_members
             .push(serde_json::json!({"id":member.id,"sha256":digest,"length":member.bytes.len()}));
@@ -112,16 +111,41 @@ pub fn publish(
         .digest_binary(&bytes)
         .map_err(|_| StoreError::Unavailable)?
         .hex();
-    let staged = store.stage_artifact(subject.clone(), &bytes)?;
+    Ok(PreparedSnapshot {
+        manifest: bytes,
+        published: PublishedSnapshot {
+            id,
+            manifest_sha256,
+            members,
+        },
+    })
+}
+
+pub fn publish(
+    store: &mut SqliteLifecycleStore,
+    subject: &SubjectId,
+    snapshot: &TrustedSnapshot,
+    clock: ClockSample,
+) -> Result<PublishedSnapshot, StoreError> {
+    // Validate the complete input, including later members, before staging
+    // even the first artifact. The same owner serves startup preflight.
+    let prepared = prepare(snapshot)?;
+    for member in &snapshot.members {
+        let expected = &prepared.published.members[&member.id].0;
+        let staged = store.stage_artifact(subject.clone(), &member.bytes)?;
+        let published = store.publish_artifact(staged, clock)?;
+        if &published.digest_hex != expected || published.byte_length != member.bytes.len() {
+            return Err(StoreError::Unavailable);
+        }
+    }
+    let staged = store.stage_artifact(subject.clone(), &prepared.manifest)?;
     let published = store.publish_artifact(staged, clock)?;
-    if published.digest_hex != manifest_sha256 || published.byte_length != bytes.len() {
+    if published.digest_hex != prepared.published.manifest_sha256
+        || published.byte_length != prepared.manifest.len()
+    {
         return Err(StoreError::Unavailable);
     }
-    Ok(PublishedSnapshot {
-        id,
-        manifest_sha256,
-        members,
-    })
+    Ok(prepared.published)
 }
 
 /// Exact result bytes come only from store-owned immutable artifact custody.

@@ -111,3 +111,22 @@ data, never authenticated new-use permission. Pending/declined/other-revision ro
 remain separately grouped. Original three vectors qualify generic encoding and
 history only; corrected-shape examples and actual semantic goldens qualify the
 current shape. No legacy byte-conformance claim is made.
+
+
+The named `Installation::install_from_admitted_startup` Rust entry is reserved
+for trusted host composition holding the externally authenticated exact owner
+startup/source/protection consequence. It is not exposed as a native/RPC or JSON
+authority converter; UID/path/hash/issuer labels alone never satisfy its caller
+contract. Installation remains non-deserializable. The constructor retains the
+two exact Git approval pins/bytes and role-specific issuer mapping; existing
+`verify` still checks actual objects and exact use/bundle/scope/qualification
+before a card can be admitted. Synthetic construction retains its original
+codec/profile identity. No actual production installation is established by
+engineering qualification of this boundary.
+
+The trusted installation constructor now consumes `ValidatedInstallationRecords`,
+whose private fields are produced by the shared pure record validator. This
+separates all deterministic constructor checks from later admitted startup
+effects. The checked value is data evidence, not authentication or authority;
+actual external owner admission remains the constructor caller's contract, and
+the card consumer still verifies exact Git objects and use correspondence.

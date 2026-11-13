@@ -1,0 +1,9 @@
+# M4c-b — bounded loader implementation authorization
+
+The user approved the next proposed M4c-b slice at `2026-11-13T04:56:07.693Z`, following accepted M4c-a planning. The [accepted plan](../planning/research-lifecycle-m4c-production-admission-and-a5-delivery-20261112.md), revision 2 at SHA-256 `b255d672871b7c785f0c4b31745c273e411dd3049329cf82400a240fe341bd14`, defines the bounded installed-authority loader and exact operator-intent admission result. M4CA-R2's notice-only prerequisite clarification carries into engineering; existing M4b notice semantics remain binding.
+
+Allowance: **$12 subscription cost proxy cap, $8 warning, $10 cutoff for new engineering/review dispatch and $2 collection/closure reserve**. Expected $8–10 is an estimate. The objective includes code, local provider-disabled qualification, separate fresh Astra review, ordinary corrections/recheck and closure. It grants no actual production installation, scientific qualification/applicability decision, live A5/H2/inference, execution grant, push or distribution authority.
+
+O1's concrete owner/installer channel is being clarified with the user. Independent bounded parsing/custody/intent mechanics may proceed, but no fictional receipt or request boolean may create production authority. C1 actual complete post-compilation A5 delivery remains unavailable and prevents fresh production preparation/adoption. Choosing an owner channel will not approve a final manifest or a research decision.
+
+Root owns scope/budget, native builder collection, separate review and acceptance. The builder owns one coherent bounded implementation under an exact packet; shared HEAD/index and unrelated work remain preserved. Exact user event, packet, source evidence, observation/collection bindings and continuation live under `/home/bline/cbm-work/research-lifecycle-m4cb-implementation-20261112/`. No commit or production release is authorized by this record.

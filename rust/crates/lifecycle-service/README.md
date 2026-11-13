@@ -32,3 +32,23 @@ The read envelope is `{"op":"snapshot","subject_id":"...","delivery_id":null,"tr
 `profile: "read_only"` is available in the default production build, rejects commands and does not dispatch prepared work on restart. `profile: "controlled"` requires the opt-in `controlled-proof` feature and a distinct external peer socket, verifier executable and ledger path. The peer returns source/effect/attempt/incarnation-qualified text results. S2 owns execution and result capacity; S1 commits the local terminal fact and exact result before acknowledgment. A replacement is bound to one committed result source. Its exact response is a controlled continuation receipt; a separately registered S2-supervised verifier child checks the peer ledger and response hash before the checkpoint fact is committed. The store retains the verifier's primary error, activation, close disposition, exact exit and unsafe/late-close evidence separately. Other supplied continuation facts drive only reducer-allowed stages. Failed or missing external facts leave a blocked or recovery-required history. Controlled test barriers can be configured through `proof_barrier_dir`; they pause at named points but cannot mutate lifecycle tables. Optional `verifier_proof_ms` and `verifier_cleanup_ms` set bounded child deadlines (default 5000/6000 ms, cleanup at least proof, maximum cleanup 60000 ms) for controlled failure qualification.
 
 Native provider discovery, operations, live inference, stronger same-user hostile-code isolation, production grant provisioning/rotation, S6 semantic quality, UI ownership, legacy disposition and deployment cutover are outside S4. The controlled profile is an offline proof surface, not a production provider route.
+
+## Installed research startup handoff
+
+`run_with_selected_task_ports_and_native_startup` accepts a trusted in-process
+`NativeStartupHold`, outside ServiceConfig serde and the socket registry. The
+runner owns creation, initialization, config/thread evidence, every turn and
+cleanup of its actual child. A one-use pending ticket is published before initial
+rehydration or task turns. Host scope installation precedes activation; the host
+waits for the runner's fresh currentness check and acknowledgment before serving
+productive requests. Endpoint drop/cancellation closes the normal service gate
+and collects runner cleanup through Done acknowledgment. Early tool requests
+refuse rather than replay after release. Installed StartSuccessor refuses before
+thread creation until a current thread-bound reauthorization contract exists.
+
+The native thread request/ack is retained protocol evidence. Production release
+currently hard-refuses the missing qualified native-protocol contract proving
+tool installation; no caller boolean or supplied request substitutes for it.
+Controlled-only qualification can exercise the same owned-child gate. This
+qualifies neither production protection/authentication nor final model-input
+observation (C1). Read-only observation guards never own termination or reaping.

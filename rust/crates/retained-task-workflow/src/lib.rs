@@ -887,7 +887,7 @@ impl TaskStore {
         let mut commands = Vec::new();
         for row in rows {
             let (command, kind) = row?;
-            if kind.as_deref() != Some("submit") {
+            if !matches!(kind.as_deref(), Some("submit" | "research_adopt")) {
                 return Err(TaskError::Invalid);
             }
             commands.push(command);

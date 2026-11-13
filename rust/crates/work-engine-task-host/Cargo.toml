@@ -10,6 +10,7 @@ default = []
 controlled-proof = ["lifecycle-service/native-sim-proof", "lifecycle-service/controlled-proof", "retained-task-workflow/controlled-proof"]
 
 [dependencies]
+research-register = { path = "../research-register" }
 bounded-inference = { path = "../bounded-inference" }
 lifecycle-semantic = { path = "../lifecycle-semantic" }
 retained-task-workflow = { path = "../retained-task-workflow" }
@@ -24,6 +25,7 @@ tokio.workspace = true
 getrandom = "=0.3.4"
 
 [dev-dependencies]
+lifecycle-codex = { path = "../lifecycle-codex" }
 lifecycle-core = { path = "../lifecycle-core" }
 rusqlite = { version = "=0.37.0", features = ["bundled"] }
 tempfile = "=3.27.0"

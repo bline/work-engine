@@ -669,6 +669,123 @@ fn inspect_tree(path: &Path, count: &mut usize) -> Result<(), NativeHarnessError
     Ok(())
 }
 
+impl AccessIsolationConfig {
+    /// Checks only selected input values; launch retains current-byte and filesystem checks.
+    pub fn validate_input(&self, root: &Path, synthetic: bool) -> Result<(), NativeHarnessError> {
+        let admission = if synthetic {
+            #[cfg(feature = "synthetic-access-test")]
+            {
+                ProxyAdmission::SyntheticTest
+            }
+            #[cfg(not(feature = "synthetic-access-test"))]
+            {
+                return Err(unavailable(IsolationReason::SyntheticProfile));
+            }
+        } else {
+            ProxyAdmission::Real
+        };
+        validate_input(root, self, admission)
+    }
+}
+
+fn helper_pin(admission: ProxyAdmission) -> &'static str {
+    match admission {
+        ProxyAdmission::Real => HELPER_SHA256,
+        #[cfg(feature = "synthetic-access-test")]
+        ProxyAdmission::SyntheticTest => SYNTHETIC_HELPER_SHA256,
+        #[cfg(all(test, not(feature = "synthetic-access-test")))]
+        ProxyAdmission::SyntheticTest => HELPER_SHA256,
+    }
+}
+
+fn validate_input(
+    root: &Path,
+    selected: &AccessIsolationConfig,
+    admission: ProxyAdmission,
+) -> Result<(), NativeHarnessError> {
+    if ![
+        root,
+        &selected.source_home,
+        &selected.helper_executable,
+        &selected.proxy_socket,
+        &selected.proxy_policy_executable,
+    ]
+    .iter()
+    .all(|p| {
+        p.is_absolute()
+            && p.components().all(|c| {
+                !matches!(
+                    c,
+                    std::path::Component::ParentDir | std::path::Component::CurDir
+                )
+            })
+    }) {
+        return Err(unavailable(IsolationReason::PathTopology));
+    }
+    if selected.helper_sha256 != helper_pin(admission) {
+        return Err(unavailable(IsolationReason::HelperPin));
+    }
+    if selected.proxy_policy_sha256 != proxy_policy_pin(admission) {
+        return Err(unavailable(IsolationReason::PolicyPin));
+    }
+    let proxy_parent = selected
+        .proxy_socket
+        .parent()
+        .ok_or_else(|| unavailable(IsolationReason::PathDisjoint))?;
+    if !disjoint(root, &selected.source_home)
+        || !disjoint(root, proxy_parent)
+        || !disjoint(&selected.source_home, proxy_parent)
+        || !disjoint(root, &selected.helper_executable)
+    {
+        return Err(unavailable(IsolationReason::PathDisjoint));
+    }
+    #[cfg(feature = "synthetic-access-test")]
+    match admission {
+        ProxyAdmission::Real
+            if selected.synthetic_http_socket.is_some()
+                || selected.synthetic_http_port.is_some()
+                || selected.synthetic_http_fixture_executable.is_some()
+                || selected.synthetic_http_fixture_sha256.is_some() =>
+        {
+            return Err(unavailable(IsolationReason::SyntheticProfile));
+        }
+        ProxyAdmission::SyntheticTest => {
+            let http = selected
+                .synthetic_http_socket
+                .as_ref()
+                .ok_or_else(|| unavailable(IsolationReason::SyntheticProfile))?;
+            let fixture = selected
+                .synthetic_http_fixture_executable
+                .as_ref()
+                .ok_or_else(|| unavailable(IsolationReason::SyntheticProfile))?;
+            let parent = http
+                .parent()
+                .ok_or_else(|| unavailable(IsolationReason::SyntheticProfile))?;
+            if selected.synthetic_http_port.is_none_or(|p| p == 0)
+                || selected.synthetic_http_fixture_sha256.as_deref() != Some(HTTP_FIXTURE_SHA256)
+                || ![http, fixture].iter().all(|p| {
+                    p.is_absolute()
+                        && p.components().all(|c| {
+                            !matches!(
+                                c,
+                                std::path::Component::ParentDir | std::path::Component::CurDir
+                            )
+                        })
+                })
+                || !disjoint(root, parent)
+                || !disjoint(&selected.source_home, parent)
+                || !disjoint(proxy_parent, parent)
+                || !disjoint(root, fixture)
+                || !disjoint(&selected.source_home, fixture)
+            {
+                return Err(unavailable(IsolationReason::SyntheticProfile));
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 fn validate_paths(
     root: &Path,
     home: &Path,
@@ -677,6 +794,7 @@ fn validate_paths(
     selected: &AccessIsolationConfig,
     admission: ProxyAdmission,
 ) -> Result<(), NativeHarnessError> {
+    validate_input(root, selected, admission)?;
     let [root, source, helper, socket] = [
         root,
         &selected.source_home,
@@ -793,14 +911,8 @@ fn validate_paths(
     }) {
         return Err(unavailable(IsolationReason::RootMount));
     }
-    let helper_pin = match admission {
-        ProxyAdmission::Real => HELPER_SHA256,
-        #[cfg(feature = "synthetic-access-test")]
-        ProxyAdmission::SyntheticTest => SYNTHETIC_HELPER_SHA256,
-        #[cfg(all(test, not(feature = "synthetic-access-test")))]
-        ProxyAdmission::SyntheticTest => HELPER_SHA256,
-    };
-    if selected.helper_sha256 != helper_pin || !hash_is(helper, &selected.helper_sha256) {
+    if selected.helper_sha256 != helper_pin(admission) || !hash_is(helper, &selected.helper_sha256)
+    {
         return Err(unavailable(IsolationReason::HelperPin));
     }
     if selected.proxy_policy_sha256.len() != 64
@@ -1655,5 +1767,1061 @@ mod tests {
         assert_eq!(exit.pid, Some(isolated.native_pid));
         assert!(source.join("auth.json").exists());
         drop(sibling);
+    }
+}
+
+/// Exact protected host objects. Mutable owner roots are identity-bound; their
+/// legitimate contents may change. Immutable artifacts additionally bind bytes.
+#[derive(Clone, Debug)]
+pub struct ProtectedSurfaceSpec {
+    /// Identity-only anchors may contain both protected and native-owned paths.
+    pub identity_anchors: Vec<std::path::PathBuf>,
+    pub roots: Vec<std::path::PathBuf>,
+    /// Exact mutable namespace members, including absent/future files/socket.
+    /// Their existing parent is identity-bound; present identities are observed
+    /// afresh so lawful owner create/unlink does not invalidate the namespace.
+    pub future_members: Vec<std::path::PathBuf>,
+    pub immutable_files: Vec<(std::path::PathBuf, String)>,
+}
+
+struct ProtectedObject {
+    path: std::path::PathBuf,
+    device: u64,
+    inode: u64,
+    digest: Option<String>,
+    directory: bool,
+    protected: bool,
+    filesystem_path: std::path::PathBuf,
+    ancestors: Vec<(u64, u64)>,
+}
+
+/// Read-only observation capability. It owns duplicate pidfds, never a child
+/// handle or cleanup authority. A successful check is a current observation,
+/// not a guarantee against a process exiting immediately afterwards.
+#[derive(Clone)]
+pub struct NativeCurrentnessGuard(std::sync::Arc<ObservedSurface>);
+struct ObservedSurface {
+    pid: u32,
+    starttime: u64,
+    pidfds: Vec<OwnedFd>,
+    identities: Vec<(u32, u64, u64, u64, std::path::PathBuf)>,
+    socket: Option<(std::path::PathBuf, u64, u64)>,
+    objects: Vec<ProtectedObject>,
+    future_members: Vec<(std::path::PathBuf, u64, u64)>,
+    namespace: std::path::PathBuf,
+    executable: (u64, u64),
+    controlled: bool,
+}
+
+/// Constructed only from an owned harness's child. No deserialization or PID
+/// ingress exists. Controlled evidence is explicitly distinguished.
+pub struct OwnedNativeObservation {
+    pub(crate) guard: NativeCurrentnessGuard,
+    pub(crate) evidence: serde_json::Value,
+}
+impl OwnedNativeObservation {
+    pub fn guard(&self) -> NativeCurrentnessGuard {
+        self.guard.clone()
+    }
+    pub fn evidence(&self) -> &serde_json::Value {
+        &self.evidence
+    }
+    pub fn native_pid(&self) -> u32 {
+        self.guard.0.pid
+    }
+    pub fn native_starttime(&self) -> u64 {
+        self.guard.0.starttime
+    }
+    pub fn controlled_only(&self) -> bool {
+        self.guard.0.controlled
+    }
+    /// Exact protected-set join for trusted composition. Mutable directory
+    /// contents are excluded; identity and immutable file bytes remain checked.
+    pub fn matches_protected_surface(&self, spec: &ProtectedSurfaceSpec) -> bool {
+        let expected = spec
+            .identity_anchors
+            .iter()
+            .map(|p| (p, None, false))
+            .chain(spec.roots.iter().map(|p| (p, None, true)))
+            .chain(spec.immutable_files.iter().map(|(p, d)| (p, Some(d), true)));
+        let objects = &self.guard.0.objects;
+        self.guard
+            .0
+            .future_members
+            .iter()
+            .map(|(p, _, _)| p)
+            .eq(spec.future_members.iter())
+            && objects.len()
+                == spec.identity_anchors.len() + spec.roots.len() + spec.immutable_files.len()
+            && objects
+                .iter()
+                .zip(expected)
+                .all(|(object, (path, digest, protected))| {
+                    object.path == *path
+                        && object.digest.as_ref() == digest
+                        && object.protected == protected
+                })
+    }
+}
+impl NativeCurrentnessGuard {
+    pub fn check_current(&self) -> Result<(), NativeHarnessError> {
+        self.observe_current().map(|_| ())
+    }
+    /// Retainable data from this actual pre-mutation observation. This does
+    /// not promise continuous process liveness after the observation returns.
+    pub fn observe_current(&self) -> Result<serde_json::Value, NativeHarnessError> {
+        self.0.observe()
+    }
+}
+impl ObservedSurface {
+    fn observe(&self) -> Result<serde_json::Value, NativeHarnessError> {
+        if self.pidfds.iter().any(pidfd_exited)
+            || starttime(self.pid)? != self.starttime
+            || self.identities.iter().any(|(pid, time, dev, ino, ns)| {
+                starttime(*pid).ok() != Some(*time)
+                    || !fs::metadata(format!("/proc/{pid}/exe"))
+                        .is_ok_and(|m| m.dev() == *dev && m.ino() == *ino)
+                    || fs::read_link(format!("/proc/{pid}/ns/mnt")).ok().as_ref() != Some(ns)
+            })
+            || fs::read_link(format!("/proc/{}/ns/mnt", self.pid))
+                .ok()
+                .as_ref()
+                != Some(&self.namespace)
+            || self.socket.as_ref().is_some_and(|(path, dev, ino)| {
+                !fs::symlink_metadata(path).is_ok_and(|m| m.dev() == *dev && m.ino() == *ino)
+            })
+        {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        let exe = fs::metadata(format!("/proc/{}/exe", self.pid))
+            .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+        if (exe.dev(), exe.ino()) != self.executable {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        let mut observed_members = Vec::new();
+        for (path, device, inode) in &self.future_members {
+            let parent = path
+                .parent()
+                .ok_or_else(|| unavailable(IsolationReason::ProcessIdentity))?;
+            let m = fs::symlink_metadata(parent)
+                .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+            if !m.is_dir()
+                || m.dev() != *device
+                || m.ino() != *inode
+                || fs::canonicalize(parent).ok().as_deref() != Some(parent)
+            {
+                return Err(unavailable(IsolationReason::ProcessIdentity));
+            }
+            observed_members.push(protected_object(path, None, true, true)?);
+        }
+        let objects = self
+            .objects
+            .iter()
+            .chain(observed_members.iter())
+            .collect::<Vec<_>>();
+        let mut object_metadata = Vec::new();
+        for object in &objects {
+            let m = match fs::symlink_metadata(&object.path) {
+                Ok(m) => m,
+                Err(error) if object.inode == 0 && error.kind() == std::io::ErrorKind::NotFound => {
+                    object_metadata.push(serde_json::json!({"path":object.path,"absent":true}));
+                    continue;
+                }
+                Err(_) => return Err(unavailable(IsolationReason::ProcessIdentity)),
+            };
+            if m.dev() != object.device
+                || m.ino() != object.inode
+                || m.file_type().is_symlink()
+                || (object.protected
+                    && !object.directory
+                    && (!(m.is_file() || m.file_type().is_socket()) || m.nlink() != 1))
+            {
+                return Err(unavailable(IsolationReason::ProcessIdentity));
+            }
+            object_metadata.push(serde_json::json!({"path":object.path,"size":m.len(),"modified_seconds":m.mtime(),"modified_nanoseconds":m.mtime_nsec(),"changed_seconds":m.ctime(),"changed_nanoseconds":m.ctime_nsec()}));
+            if let Some(expected) = &object.digest {
+                let actual = format!(
+                    "{:x}",
+                    sha2::Sha256::digest(
+                        fs::read(&object.path)
+                            .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?
+                    )
+                );
+                if &actual != expected {
+                    return Err(unavailable(IsolationReason::ProcessIdentity));
+                }
+            }
+        }
+        // Bound the current subtree; a partial /proc read is refusal. Existing
+        // inherited confinement constrains later descendants, and every fresh
+        // producer use repeats this observation.
+        let mut pids = vec![self.pid];
+        let mut rows = Vec::new();
+        let mut cursor = 0;
+        while cursor < pids.len() {
+            if pids.len() > 256 {
+                return Err(unavailable(IsolationReason::ProcessIdentity));
+            }
+            let pid = pids[cursor];
+            cursor += 1;
+            let time = starttime(pid)?;
+            if pid != self.pid {
+                // An exited helper has no running namespace/FD surface. Retain
+                // its kernel-proven terminal identity; never mistake missing
+                // namespace data from a live process for this state.
+                let descriptor = pidfd(pid)?;
+                if pidfd_exited(&descriptor) {
+                    if starttime(pid)? != time {
+                        return Err(unavailable(IsolationReason::ProcessIdentity));
+                    }
+                    let pidfd_info =
+                        fs::read_to_string(format!("/proc/self/fdinfo/{}", descriptor.as_raw_fd()))
+                            .map_err(|_| unavailable(IsolationReason::Pidfd))?;
+                    rows.push(serde_json::json!({"pid":pid,"starttime":time,"pidfd_info":pidfd_info,"kernel_terminated":true,"exited":true}));
+                    continue;
+                }
+            }
+            if fs::read_link(format!("/proc/{pid}/ns/mnt")).ok().as_ref() != Some(&self.namespace) {
+                return Err(unavailable(IsolationReason::NamespaceIdentity));
+            }
+            let root = std::path::PathBuf::from(format!("/proc/{pid}/root"));
+            let mounts = fs::read_to_string(format!("/proc/{pid}/mountinfo"))
+                .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+            let mut fds = Vec::new();
+            for entry in fs::read_dir(format!("/proc/{pid}/fd"))
+                .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?
+            {
+                let entry = entry.map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+                let meta = fs::metadata(entry.path())
+                    .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+                if !self.controlled
+                    && objects.iter().any(|o| {
+                        o.protected && {
+                            (o.device == meta.dev() && o.inode == meta.ino())
+                            || o.ancestors.contains(&(meta.dev(), meta.ino()))
+                            // A same-filesystem descriptor may reach a directory
+                            // member through an alias, even without a mount left
+                            // in the current namespace. Unknown provenance refuses.
+                            || (o.directory && o.device == meta.dev())
+                        }
+                    })
+                {
+                    return Err(unavailable(IsolationReason::ProcessIdentity));
+                }
+                let target = fs::read_link(entry.path())
+                    .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+                // No socket capability provenance contract exists for arbitrary
+                // inherited native descriptors; ambiguous endpoints refuse.
+                if !self.controlled && target.to_string_lossy().starts_with("socket:[") {
+                    return Err(unavailable(IsolationReason::ProcessIdentity));
+                }
+                fds.push(target);
+            }
+            if !self.controlled {
+                for object in objects.iter().filter(|o| o.protected) {
+                    let relative = object
+                        .path
+                        .strip_prefix("/")
+                        .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+                    match fs::symlink_metadata(root.join(relative)) {
+                        Ok(_) => return Err(unavailable(IsolationReason::ProcessIdentity)),
+                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                        Err(_) => return Err(unavailable(IsolationReason::ProcessIdentity)),
+                    }
+                    // mounted ancestors/aliases can reveal a protected subtree.
+                    for row in mounts.lines() {
+                        let cols = row.split_whitespace().collect::<Vec<_>>();
+                        if cols.len() < 6 {
+                            return Err(unavailable(IsolationReason::ProcessIdentity));
+                        }
+                        let mounted_root = std::path::Path::new(cols[3]);
+                        let device = format!(
+                            "{}:{}",
+                            libc::major(object.device),
+                            libc::minor(object.device)
+                        );
+                        if cols[2] == device {
+                            // An alias can expose an ancestor of an exact object,
+                            // or any descendant of a protected directory. Escaped
+                            // mount roots cannot be compared without decoding.
+                            if cols[3].contains('\\')
+                                || cols[4].contains('\\')
+                                || object.filesystem_path.starts_with(mounted_root)
+                                || (object.directory
+                                    && mounted_root.starts_with(&object.filesystem_path))
+                            {
+                                return Err(unavailable(IsolationReason::ProcessIdentity));
+                            }
+                        }
+                    }
+                }
+            }
+            rows.push(serde_json::json!({"pid":pid,"starttime":time,"root":fs::read_link(&root).map_err(|_| unavailable(IsolationReason::ProcessIdentity))?,"mounts":mounts,"fds":fds}));
+            // Linux children are per-thread. Reading only the group leader
+            // silently misses children created by another native/helper thread.
+            for task in fs::read_dir(format!("/proc/{pid}/task"))
+                .map_err(|_| unavailable(IsolationReason::ChildTopology))?
+            {
+                let task = task.map_err(|_| unavailable(IsolationReason::ChildTopology))?;
+                let children = fs::read_to_string(task.path().join("children"))
+                    .map_err(|_| unavailable(IsolationReason::ChildTopology))?;
+                for child in children.split_whitespace() {
+                    let child = child
+                        .parse::<u32>()
+                        .map_err(|_| unavailable(IsolationReason::ChildTopology))?;
+                    if !pids.contains(&child) {
+                        pids.push(child);
+                    }
+                }
+            }
+            if starttime(pid)? != time {
+                return Err(unavailable(IsolationReason::ProcessIdentity));
+            }
+        }
+        #[cfg(test)]
+        final_object_race_tests::inject_before_final_objects(&objects);
+        for object in &objects {
+            match fs::symlink_metadata(&object.path) {
+                Ok(m)
+                    if m.dev() == object.device
+                        && m.ino() == object.inode
+                        && !m.file_type().is_symlink()
+                        && (object.directory
+                            || !object.protected
+                            || ((m.is_file() || m.file_type().is_socket()) && m.nlink() == 1)) => {}
+                Err(error) if object.inode == 0 && error.kind() == std::io::ErrorKind::NotFound => {
+                }
+                _ => return Err(unavailable(IsolationReason::ProcessIdentity)),
+            }
+        }
+        for (path, device, inode) in &self.future_members {
+            let m = fs::symlink_metadata(
+                path.parent()
+                    .ok_or_else(|| unavailable(IsolationReason::ProcessIdentity))?,
+            )
+            .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+            if m.dev() != *device || m.ino() != *inode {
+                return Err(unavailable(IsolationReason::ProcessIdentity));
+            }
+        }
+        if self.pidfds.iter().any(pidfd_exited) {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        Ok(
+            serde_json::json!({"native_pid":self.pid,"native_starttime":self.starttime,"namespace":self.namespace,"executable":self.executable,"helpers":self.identities,"proxy_socket":self.socket,"protected_objects":objects.iter().map(|o|serde_json::json!({"path":o.path,"device":o.device,"inode":o.inode,"directory":o.directory,"protected":o.protected,"immutable_digest":o.digest,"filesystem_path":o.filesystem_path,"ancestors":o.ancestors})).collect::<Vec<_>>(),"processes":rows,"object_metadata":object_metadata,"controlled_only":self.controlled}),
+        )
+    }
+}
+
+#[cfg(test)]
+mod final_object_race_tests {
+    use super::*;
+    // Each private fixture arms one mutation only after a valid initial
+    // observation. No runtime/public injection API is present.
+    static MUTATIONS: std::sync::Mutex<
+        std::collections::BTreeMap<std::path::PathBuf, (bool, std::path::PathBuf)>,
+    > = std::sync::Mutex::new(std::collections::BTreeMap::new());
+    pub(super) fn inject_before_final_objects(objects: &[&ProtectedObject]) {
+        for object in objects {
+            let mutation = MUTATIONS.lock().unwrap().remove(&object.path);
+            if let Some((replace_type, alias)) = mutation {
+                if replace_type {
+                    fs::remove_file(&object.path).unwrap();
+                    fs::create_dir(&object.path).unwrap();
+                } else {
+                    fs::hard_link(&object.path, alias).unwrap();
+                }
+            }
+        }
+    }
+    struct OwnedRaceChild {
+        child: std::process::Child,
+        mutation: std::path::PathBuf,
+        terminate: fn(&mut std::process::Child) -> std::io::Result<()>,
+        collected: std::sync::Arc<std::sync::Mutex<Option<(bool, bool)>>>,
+    }
+    impl OwnedRaceChild {
+        fn spawn(mutation: std::path::PathBuf) -> Self {
+            let owned = Self {
+                child: std::process::Command::new("/bin/sleep")
+                    .arg("30")
+                    .spawn()
+                    .unwrap(),
+                mutation,
+                terminate: std::process::Child::kill,
+                collected: std::sync::Arc::new(std::sync::Mutex::new(None)),
+            };
+            let expected = fs::canonicalize("/bin/sleep").unwrap();
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+            while fs::read_link(format!("/proc/{}/exe", owned.child.id()))
+                .ok()
+                .as_ref()
+                != Some(&expected)
+            {
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "child must finish exec before observation"
+                );
+                std::thread::yield_now();
+            }
+            // exec identity precedes loader descriptor closure. Observe only
+            // after this exact sleep child has entered its stable wait syscall.
+            while fs::read_to_string(format!("/proc/{}/wchan", owned.child.id()))
+                .ok()
+                .as_deref()
+                .map(str::trim)
+                != Some("hrtimer_nanosleep")
+            {
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "sleep child must reach its wait syscall"
+                );
+                std::thread::yield_now();
+            }
+            owned
+        }
+    }
+    impl Drop for OwnedRaceChild {
+        fn drop(&mut self) {
+            MUTATIONS
+                .lock()
+                .unwrap_or_else(|poison| poison.into_inner())
+                .remove(&self.mutation);
+            let terminated = (self.terminate)(&mut self.child).is_ok();
+            // A failed termination must never skip collection, including unwind.
+            let waited = self.child.wait().is_ok();
+            *self
+                .collected
+                .lock()
+                .unwrap_or_else(|poison| poison.into_inner()) = Some((terminated, waited));
+        }
+    }
+    #[test]
+    fn race_fixture_collects_on_unwind_and_after_termination_error() {
+        for termination_error in [false, true] {
+            let root = tempfile::tempdir().unwrap();
+            let object = root.path().join("unconsumed-mutation");
+            let unrelated = root.path().join("another-fixture-mutation");
+            let unrelated_child = OwnedRaceChild::spawn(unrelated.clone());
+            let unrelated_alias = root.path().join("another-fixture-alias");
+            MUTATIONS
+                .lock()
+                .unwrap()
+                .insert(unrelated.clone(), (true, unrelated_alias.clone()));
+            let own_object = object.clone();
+            let mut child = OwnedRaceChild::spawn(object.clone());
+            let pid = child.child.id();
+            let collected = child.collected.clone();
+            if termination_error {
+                child.terminate = |child| {
+                    child.kill()?;
+                    Err(std::io::Error::other(
+                        "controlled termination result failure after actual signal",
+                    ))
+                };
+            }
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+                let _owned = child;
+                MUTATIONS
+                    .lock()
+                    .unwrap()
+                    .insert(object.clone(), (false, root.path().join("alias")));
+                panic!("controlled failure before observation/mutation consumption");
+            }));
+            assert!(result.is_err());
+            assert_eq!(*collected.lock().unwrap(), Some((!termination_error, true)));
+            assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
+            {
+                let mutations = MUTATIONS.lock().unwrap();
+                assert!(!mutations.contains_key(&own_object));
+                assert_eq!(mutations.get(&unrelated), Some(&(true, unrelated_alias)));
+            }
+            drop(unrelated_child);
+            assert!(!MUTATIONS.lock().unwrap().contains_key(&unrelated));
+        }
+    }
+    #[test]
+    fn final_check_rejects_interleaved_fixed_and_future_alias_or_type_change() {
+        for (future, replace_type) in [(false, false), (true, false), (true, true)] {
+            let root = tempfile::tempdir().unwrap();
+            let object = root.path().join(if future {
+                "tasks.sqlite-wal"
+            } else {
+                "tasks.sqlite"
+            });
+            fs::write(&object, b"lawful owner bytes").unwrap();
+            let alias = root.path().join("alias");
+            let spec = ProtectedSurfaceSpec {
+                identity_anchors: vec![],
+                roots: if future {
+                    vec![root.path().to_path_buf()]
+                } else {
+                    vec![object.clone()]
+                },
+                future_members: if future { vec![object.clone()] } else { vec![] },
+                immutable_files: vec![],
+            };
+            let child = OwnedRaceChild::spawn(object.clone());
+            let collected = child.collected.clone();
+            // Controlled exclusion is explicit. The metadata/type/link-count
+            // predicate and final recheck exercised here are unconditional.
+            let observation = observe_owned_surface(child.child.id(), None, &spec, true).unwrap();
+            assert!(observation.guard.observe_current().is_ok());
+            MUTATIONS
+                .lock()
+                .unwrap()
+                .insert(object.clone(), (replace_type, alias.clone()));
+            let result = observation.guard.observe_current();
+            assert!(
+                !MUTATIONS.lock().unwrap().contains_key(&object),
+                "final-cut injection must be reached"
+            );
+            assert!(if replace_type {
+                object.is_dir()
+            } else {
+                alias.exists()
+            });
+            drop(child);
+            assert_eq!(*collected.lock().unwrap(), Some((true, true)));
+            assert!(
+                result.is_err(),
+                "interleaved future={future} type={replace_type} must refuse"
+            );
+        }
+    }
+}
+
+fn protected_object(
+    path: &std::path::Path,
+    digest: Option<String>,
+    protected: bool,
+    future: bool,
+) -> Result<ProtectedObject, NativeHarnessError> {
+    if !path.is_absolute() {
+        return Err(unavailable(IsolationReason::ProcessIdentity));
+    }
+    let (meta, present) = match fs::symlink_metadata(path) {
+        Ok(meta) => {
+            if fs::canonicalize(path).ok().as_deref() != Some(path) || meta.file_type().is_symlink()
+            {
+                return Err(unavailable(IsolationReason::ProcessIdentity));
+            }
+            (meta, true)
+        }
+        Err(error) if future && error.kind() == std::io::ErrorKind::NotFound => (
+            fs::symlink_metadata(
+                path.parent()
+                    .ok_or_else(|| unavailable(IsolationReason::ProcessIdentity))?,
+            )
+            .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?,
+            false,
+        ),
+        Err(_) => return Err(unavailable(IsolationReason::ProcessIdentity)),
+    };
+    if present
+        && ((future && !(meta.is_file() || meta.file_type().is_socket()))
+            || (protected
+                && !meta.is_dir()
+                && (!(meta.is_file() || meta.file_type().is_socket()) || meta.nlink() != 1)))
+    {
+        return Err(unavailable(IsolationReason::ProcessIdentity));
+    }
+    let mut filesystem_path = None;
+    let host_mounts = fs::read_to_string("/proc/self/mountinfo")
+        .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+    let device = format!("{}:{}", libc::major(meta.dev()), libc::minor(meta.dev()));
+    let mut best = 0;
+    for row in host_mounts.lines() {
+        let cols = row.split_whitespace().collect::<Vec<_>>();
+        if cols.len() < 6 {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        // Escaped/ambiguous mount paths require a richer observer contract.
+        if cols[2] == device && !cols[3].contains('\\') && !cols[4].contains('\\') {
+            let mount = std::path::Path::new(cols[4]);
+            if let Ok(relative) = path.strip_prefix(mount)
+                && mount.as_os_str().len() >= best
+            {
+                best = mount.as_os_str().len();
+                filesystem_path = Some(std::path::Path::new(cols[3]).join(relative));
+            }
+        }
+    }
+    let mut ancestors = Vec::new();
+    for ancestor in path.ancestors().skip(1) {
+        let m =
+            fs::metadata(ancestor).map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+        ancestors.push((m.dev(), m.ino()));
+    }
+    Ok(ProtectedObject {
+        path: path.to_path_buf(),
+        device: meta.dev(),
+        inode: if present { meta.ino() } else { 0 },
+        digest,
+        directory: present && meta.is_dir(),
+        protected,
+        filesystem_path: filesystem_path
+            .ok_or_else(|| unavailable(IsolationReason::ProcessIdentity))?,
+        ancestors,
+    })
+}
+
+pub(crate) fn observe_owned_surface(
+    pid: u32,
+    isolated: Option<&IsolatedNative>,
+    spec: &ProtectedSurfaceSpec,
+    controlled: bool,
+) -> Result<OwnedNativeObservation, NativeHarnessError> {
+    if spec.roots.is_empty()
+        || spec.identity_anchors.len()
+            + spec.roots.len()
+            + spec.future_members.len()
+            + spec.immutable_files.len()
+            > 256
+        || (!controlled && isolated.is_none())
+    {
+        return Err(unavailable(IsolationReason::ProcessIdentity));
+    }
+    let mut objects = Vec::new();
+    for (path, digest, protected) in spec
+        .identity_anchors
+        .iter()
+        .map(|p| (p, None, false))
+        .chain(spec.roots.iter().map(|p| (p, None, true)))
+        .chain(
+            spec.immutable_files
+                .iter()
+                .map(|(p, d)| (p, Some(d.clone()), true)),
+        )
+    {
+        objects.push(protected_object(path, digest, protected, false)?);
+    }
+    let mut future_members = Vec::new();
+    for path in &spec.future_members {
+        let parent = path
+            .parent()
+            .ok_or_else(|| unavailable(IsolationReason::ProcessIdentity))?;
+        if !path.is_absolute()
+            || !matches!(
+                path.components().next_back(),
+                Some(std::path::Component::Normal(_))
+            )
+            || fs::canonicalize(parent).ok().as_deref() != Some(parent)
+        {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        let m = fs::symlink_metadata(parent)
+            .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+        if !m.is_dir() {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        future_members.push((path.clone(), m.dev(), m.ino()));
+    }
+    let executable = fs::metadata(format!("/proc/{pid}/exe"))
+        .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+    let mut state = ObservedSurface {
+        executable: (executable.dev(), executable.ino()),
+        pid,
+        starttime: starttime(pid)?,
+        pidfds: vec![pidfd(pid)?],
+        identities: Vec::new(),
+        socket: None,
+        objects,
+        future_members,
+        namespace: fs::read_link(format!("/proc/{pid}/ns/mnt"))
+            .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?,
+        controlled,
+    };
+    if let Some(owned) = isolated {
+        if owned.native_pid != pid
+            || !owned.route_current()
+            || owned.native_starttime != state.starttime
+        {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+        state.pidfds.extend(
+            [
+                owned.native_pidfd.try_clone(),
+                owned.relay_pidfd.try_clone(),
+                owned.proxy_pidfd.try_clone(),
+            ]
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| unavailable(IsolationReason::Pidfd))?,
+        );
+        // A live pidfd alone does not detect helper exec/namespace replacement.
+        // Recover the relay's exact kernel-bound PID from its retained pidfd.
+        let relay_info = fs::read_to_string(format!(
+            "/proc/self/fdinfo/{}",
+            owned.relay_pidfd.as_raw_fd()
+        ))
+        .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+        let relay_pid = relay_info
+            .lines()
+            .find_map(|line| {
+                line.strip_prefix("Pid:")
+                    .and_then(|value| value.trim().parse::<u32>().ok())
+            })
+            .filter(|pid| *pid > 0)
+            .ok_or_else(|| unavailable(IsolationReason::ProcessIdentity))?;
+        for helper in [owned.proxy_pid, relay_pid] {
+            let exe = fs::metadata(format!("/proc/{helper}/exe"))
+                .map_err(|_| unavailable(IsolationReason::ProcessIdentity))?;
+            state.identities.push((
+                helper,
+                starttime(helper)?,
+                exe.dev(),
+                exe.ino(),
+                fs::read_link(format!("/proc/{helper}/ns/mnt"))
+                    .map_err(|_| unavailable(IsolationReason::NamespaceIdentity))?,
+            ));
+        }
+        state.socket = Some((
+            owned.proxy_socket.clone(),
+            owned.proxy_socket_dev,
+            owned.proxy_socket_ino,
+        ));
+        #[cfg(feature = "synthetic-access-test")]
+        if owned.http_relay_pidfd.is_some() || owned.http_fixture.is_some() {
+            return Err(unavailable(IsolationReason::ProcessIdentity));
+        }
+    }
+    let evidence = state.observe()?;
+    Ok(OwnedNativeObservation {
+        guard: NativeCurrentnessGuard(std::sync::Arc::new(state)),
+        evidence,
+    })
+}
+
+#[cfg(test)]
+mod protected_surface_controls {
+    use super::*;
+    #[test]
+    fn future_members_observe_creation_unlink_and_enabled_exclusion() {
+        let root = tempfile::tempdir().unwrap();
+        let owner = root.path().join("owner");
+        fs::create_dir(&owner).unwrap();
+        let member = owner.join("db-wal");
+        let spec = ProtectedSurfaceSpec {
+            identity_anchors: vec![],
+            roots: vec![owner.clone()],
+            future_members: vec![member.clone()],
+            immutable_files: vec![],
+        };
+        let mut child = std::process::Command::new("/bin/sleep")
+            .arg("30")
+            .spawn()
+            .unwrap();
+        let mut observation = observe_owned_surface(child.id(), None, &spec, true).unwrap();
+        assert!(observation.matches_protected_surface(&spec));
+        fs::write(&member, b"owner mutable sidecar").unwrap();
+        let present = observation.guard.observe_current().unwrap();
+        assert!(
+            present["object_metadata"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|row| row["path"] == member.to_str().unwrap() && row["absent"] != true)
+        );
+        let alias = root.path().join("alias");
+        fs::hard_link(&member, &alias).unwrap();
+        assert!(observation.guard.observe_current().is_err());
+        fs::remove_file(&alias).unwrap();
+        fs::remove_file(&member).unwrap();
+        assert!(
+            observation.guard.observe_current().unwrap()["object_metadata"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|row| row["path"] == member.to_str().unwrap() && row["absent"] == true)
+        );
+        // Isolate the future-member exclusion predicate on this actual process.
+        // Controlled observation above bypasses exclusion; enabled observation
+        // below must reject its reachable parent/namespace even while absent.
+        let state = std::sync::Arc::get_mut(&mut observation.guard.0).unwrap();
+        state.objects.clear();
+        state.controlled = false;
+        assert!(observation.guard.observe_current().is_err());
+        std::sync::Arc::get_mut(&mut observation.guard.0)
+            .unwrap()
+            .controlled = true;
+        fs::rename(&owner, root.path().join("old-owner")).unwrap();
+        fs::create_dir(&owner).unwrap();
+        assert!(observation.guard.observe_current().is_err());
+        child.kill().unwrap();
+        child.wait().unwrap();
+    }
+
+    #[test]
+    fn existing_database_alias_integrity_at_construction_and_refresh() {
+        let root = tempfile::tempdir().unwrap();
+        let db = root.path().join("tasks.sqlite");
+        let alias = root.path().join("disjoint-alias.sqlite");
+        fs::write(&db, b"database").unwrap();
+        let object = protected_object(&db, None, true, false).unwrap();
+        assert!(!object.directory);
+        fs::hard_link(&db, &alias).unwrap();
+        // This predicate is unconditional in enabled construction, before any
+        // process reachability check; no controlled bypass permits the alias.
+        assert!(protected_object(&db, None, true, false).is_err());
+        fs::remove_file(&alias).unwrap();
+        let spec = ProtectedSurfaceSpec {
+            roots: vec![db.clone()],
+            identity_anchors: vec![],
+            future_members: vec![],
+            immutable_files: vec![],
+        };
+        let mut child = std::process::Command::new("/bin/sleep")
+            .arg("30")
+            .spawn()
+            .unwrap();
+        let mut observation = observe_owned_surface(child.id(), None, &spec, true).unwrap();
+        fs::write(&db, b"lawful mutable database growth").unwrap();
+        assert!(observation.guard.observe_current().is_ok());
+        fs::hard_link(&db, &alias).unwrap();
+        // Enabled refresh encounters alias integrity before mount/FD checks.
+        std::sync::Arc::get_mut(&mut observation.guard.0)
+            .unwrap()
+            .controlled = false;
+        assert!(observation.guard.observe_current().is_err());
+        child.kill().unwrap();
+        child.wait().unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires explicit local bwrap mount/network confinement"]
+    fn enabled_existing_database_disjoint_mounted_alias_and_mutation() {
+        use std::io::BufRead;
+        struct Child(std::process::Child);
+        impl Drop for Child {
+            fn drop(&mut self) {
+                let _ = self.0.kill();
+                let _ = self.0.wait();
+            }
+        }
+        let root = tempfile::tempdir().unwrap();
+        let db = root.path().join("tasks.sqlite");
+        let alias = root.path().join("unopened-disjoint-alias.sqlite");
+        fs::write(&db, b"database").unwrap();
+        let launch = |mount_alias: bool| {
+            let mut cmd = std::process::Command::new(BWRAP);
+            cmd.env_clear().args([
+                "--unshare-net",
+                "--unshare-pid",
+                "--unshare-ipc",
+                "--unshare-uts",
+                "--new-session",
+                "--die-with-parent",
+                "--cap-drop",
+                "ALL",
+                "--ro-bind",
+                "/usr",
+                "/usr",
+                "--ro-bind",
+                "/lib",
+                "/lib",
+                "--ro-bind",
+                "/lib64",
+                "/lib64",
+                "--symlink",
+                "usr/bin",
+                "/bin",
+                "--proc",
+                "/proc",
+                "--dev",
+                "/dev",
+                "--tmpfs",
+                "/tmp",
+            ]);
+            if mount_alias {
+                cmd.arg("--ro-bind")
+                    .arg(&alias)
+                    .arg("/otherwise-disjoint.sqlite");
+            }
+            let mut child = Child(
+                cmd.args(["--", "/bin/sh", "-c", "echo ready; exec /usr/bin/sleep 30"])
+                    .stdin(std::process::Stdio::null())
+                    .stdout(std::process::Stdio::piped())
+                    .spawn()
+                    .unwrap(),
+            );
+            let mut ready = String::new();
+            std::io::BufReader::new(child.0.stdout.take().unwrap())
+                .read_line(&mut ready)
+                .unwrap();
+            assert_eq!(ready, "ready\n");
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+            let mut pids = vec![child.0.id()];
+            let native = loop {
+                let found = pids.iter().copied().find(|pid| {
+                    fs::read_link(format!("/proc/{pid}/exe"))
+                        .is_ok_and(|p| p == fs::canonicalize("/usr/bin/sleep").unwrap())
+                });
+                if let Some(pid) = found {
+                    break pid;
+                }
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "confined sleep did not become observable"
+                );
+                for pid in pids.clone() {
+                    if let Ok(children) =
+                        fs::read_to_string(format!("/proc/{pid}/task/{pid}/children"))
+                    {
+                        for pid in children
+                            .split_whitespace()
+                            .map(|p| p.parse::<u32>().unwrap())
+                        {
+                            if !pids.contains(&pid) {
+                                pids.push(pid);
+                            }
+                        }
+                    }
+                }
+                std::thread::sleep(std::time::Duration::from_millis(2));
+            };
+            (child, native)
+        };
+        let enabled = |pid, object| ObservedSurface {
+            executable: {
+                let m = fs::metadata(format!("/proc/{pid}/exe")).unwrap();
+                (m.dev(), m.ino())
+            },
+            pid,
+            starttime: starttime(pid).unwrap(),
+            pidfds: vec![pidfd(pid).unwrap()],
+            identities: vec![],
+            socket: None,
+            objects: vec![object],
+            future_members: vec![],
+            namespace: fs::read_link(format!("/proc/{pid}/ns/mnt")).unwrap(),
+            controlled: false,
+        };
+        let (child, native) = launch(false);
+        let state = enabled(native, protected_object(&db, None, true, false).unwrap());
+        // Enabled process root/mount/FD exclusion passes with the DB unreachable.
+        assert!(state.observe().is_ok());
+        fs::write(&db, b"lawful owner growth").unwrap();
+        assert!(state.observe().is_ok());
+        fs::hard_link(&db, &alias).unwrap();
+        assert!(
+            state.observe().is_err(),
+            "postadmission alias creation must fence"
+        );
+        assert!(
+            protected_object(&db, None, true, false).is_err(),
+            "construction must reject existing alias"
+        );
+        drop(child);
+        // Retain the admitted identity while an unopened same-inode hardlink
+        // is bind mounted at a name disjoint from the protected pathname.
+        let (_child, native) = launch(true);
+        let state = enabled(native, state.objects.into_iter().next().unwrap());
+        assert!(state.observe().is_err());
+        println!(
+            "enabled DB baseline/growth accepted; construction, postadmission and unopened disjoint mounted hardlink refused"
+        );
+    }
+
+    #[test]
+    fn kernel_terminated_zombie_is_distinct_from_live_unreadable_descendant() {
+        use std::io::{BufRead, Write};
+        for mode in ["zombie", "live-unreadable"] {
+            let dir = tempfile::tempdir().unwrap();
+            let script = r#"import os,sys,time,ctypes,signal
+mode=sys.argv[1]
+r,w=os.pipe()
+pid=os.fork()
+if pid==0:
+ os.close(r)
+ if mode=='live-unreadable':
+  assert ctypes.CDLL(None).prctl(4,0,0,0,0)==0
+  os.write(w,b'1');os.close(w);time.sleep(60)
+ else: os.write(w,b'1');os.close(w);os._exit(0)
+else:
+ os.close(w);os.read(r,1);os.close(r)
+ if mode=='zombie':
+  while open('/proc/%d/stat'%pid).read().split(') ')[1][0]!='Z':time.sleep(.001)
+ print(pid,flush=True)
+ sys.stdin.readline()
+ if mode=='live-unreadable':os.kill(pid,signal.SIGTERM)
+ os.waitpid(pid,0)
+"#;
+            let mut parent = std::process::Command::new("python3")
+                .args(["-c", script, mode])
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .spawn()
+                .unwrap();
+            let mut line = String::new();
+            std::io::BufReader::new(parent.stdout.take().unwrap())
+                .read_line(&mut line)
+                .unwrap();
+            let descendant = line.trim().parse::<u32>().unwrap();
+            let spec = ProtectedSurfaceSpec {
+                identity_anchors: vec![],
+                roots: vec![dir.path().to_path_buf()],
+                future_members: vec![],
+                immutable_files: vec![],
+            };
+            let result = observe_owned_surface(parent.id(), None, &spec, true);
+            parent.stdin.take().unwrap().write_all(b"done\n").unwrap();
+            parent.wait().unwrap();
+            if mode == "zombie" {
+                let observation = result.unwrap();
+                assert!(
+                    observation.evidence()["processes"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|row| row["pid"] == descendant
+                            && row["kernel_terminated"] == true
+                            && row["pidfd_info"].is_string())
+                );
+            } else {
+                assert!(
+                    result.is_err(),
+                    "live unreadable process must never become exited evidence"
+                );
+            }
+        }
+    }
+    #[test]
+    fn mutable_owner_contents_remain_writable_but_immutable_files_and_identity_fence() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("owner");
+        fs::create_dir(&root).unwrap();
+        let immutable = dir.path().join("selected.json");
+        fs::write(&immutable, b"selected bytes").unwrap();
+        let spec = ProtectedSurfaceSpec {
+            identity_anchors: vec![dir.path().to_path_buf()],
+            roots: vec![root.clone()],
+            future_members: vec![],
+            immutable_files: vec![(
+                immutable.clone(),
+                format!("{:x}", sha2::Sha256::digest(b"selected bytes")),
+            )],
+        };
+        let mut child = std::process::Command::new("/usr/bin/sleep")
+            .arg("60")
+            .spawn()
+            .unwrap();
+        let observation = observe_owned_surface(child.id(), None, &spec, true).unwrap();
+        assert!(observation.matches_protected_surface(&spec));
+        let mut wrong = spec.clone();
+        wrong.roots[0] = dir.path().to_path_buf();
+        assert!(!observation.matches_protected_surface(&wrong));
+        fs::write(root.join("owner.sqlite"), b"legitimate new owner state").unwrap();
+        observation.guard().check_current().unwrap();
+        fs::write(&immutable, b"changed selected bytes").unwrap();
+        assert!(observation.guard().check_current().is_err());
+        fs::write(&immutable, b"selected bytes").unwrap();
+        observation.guard().check_current().unwrap();
+        fs::rename(&root, dir.path().join("old-owner")).unwrap();
+        fs::create_dir(&root).unwrap();
+        assert!(observation.guard().check_current().is_err());
+        child.kill().unwrap();
+        child.wait().unwrap();
+        assert!(observation.guard().check_current().is_err());
     }
 }

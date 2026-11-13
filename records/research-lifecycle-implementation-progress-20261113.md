@@ -1,0 +1,22 @@
+# Research lifecycle implementation progress — November 13, 2026
+
+Recorded 2026-11-13T15:13:37.187727+00:00. This dated status answers the owner's implementation-plan progress question. The [original implementation plan](../planning/research-lifecycle-rust-implementation-plan-20261111.md) remains historical; subsequent approvals and exact result records own the scoped standing below. Placement and this summary grant no new authority.
+
+| Milestone | Current standing | Owning result |
+| --- | --- | --- |
+| M0: minimum contract and first use | Accepted. H2 context-threshold revalidation is the selected first real use. | [Owner approval](research-lifecycle-m0-approval-20261111.md) |
+| M1: research and basis records | Implemented and accepted, including revision-bound records, uncertainty distinctions and reconstruction. | [M1 result](research-lifecycle-m1-result-20261111.md) |
+| M2: R-2 anchors and diff | Accepted candidate integrated locally. Distribution remains held under its owning disposition. | [M2 integration](research-lifecycle-m2-integration-result-20261112.md) |
+| M3: minimum Rust A4 | Bounded reader/Linux host and current-use projection accepted for their engineering scopes. Invalid registers produce no card; original bytes support reconstruction. | [M3a](research-lifecycle-m3a-result-20261112.md), [M3b](research-lifecycle-m3b-result-20261112.md) |
+| M4: recommendation, admission and execution connection | Preparation/adoption persistence accepted. Production-admission planning accepted. Startup/admission implementation and qualification remain active; the whole M4c-b repair has not been accepted. | [M4b](research-lifecycle-m4b-result-20261112.md), [M4c-a](research-lifecycle-m4ca-result-20261112.md), [repair plan](../planning/research-lifecycle-m4cb-startup-admission-repair-20261113.md) |
+| M5: qualified feedback and baseline comparison | The real H2 execution, candidate feedback and exploratory comparison have not run. | M5 exit conditions in the original plan |
+
+The overnight work concentrated on M4c-b. It implemented lifecycle-owned child observation and activation fencing, static refusal before effects, currentness and restart checks, historical preservation and truthful cleanup classification. Multiple bounded source/evidence subjects have been separately reviewed and accepted; those results do not accept the entire original outcome.
+
+At this checkpoint, the latest Q11 repair is frozen under exact separate R8 review. The controlled complete entry passed root/session reuse refusal, a real stopped successor at epoch1, refusal of older epoch0 through the selected service owner, and a valid continuation observed at epoch2 with exact history. Review exposed a test-host cleanup gap; the correction owns and waits for the host across assertion failure. A separate post-spawn unwind control preserves the original failure and non-normal outcome. Generated fixture bytes are now retained at seven main and two unwind stages. Root independently verified86 raw files and18 execution records/36 logs, with no leftovers. Final source acceptance remains pending review.
+
+The next major outcome is a real governed H2 decision. It requires qualified actual protection/tool evidence, complete post-compilation A5 model-input evidence (C1), explicit approval of an exact installation, and separately established research/applicability/execution authority. Remaining original qualification experiments retain their exact unmet standing. Four external-lease cases remain held. Production publication and fresh preparation/adoption refuse while their required evidence is absent.
+
+There is no single meaningful completion percentage: earlier milestones supply reusable engineering, while M4's runtime evidence and authority prerequisites still determine whether the end-to-end use is possible. After an actually authorized bounded execution, M5 must preserve candidate feedback, exercise reconsideration and report the prebound baseline without promoting one result into a broad claim.
+
+Canonical overnight assignment, frozen subjects, reviews, custody and budget records: `/home/bline/cbm-work/research-lifecycle-overnight-20261113/`. Shared HEAD remains `697d66213b3dd89e57a4f28a20d13dff8dbe41a0`; no overnight commit, push or release occurred. The user's aggregate150 subscription cost-proxy grant remains the active budget authority; measured spending and pending obligations remain with that assignment.

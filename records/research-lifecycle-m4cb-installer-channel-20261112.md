@@ -1,0 +1,7 @@
+# M4c-b — O1 owner-channel disposition
+
+At `2026-11-13T05:04:42.187Z`, the user selected **this Codex conversation, with their explicit approval of each exact manifest and Codex acting as operator installer**, in response to the [M4c-b authorization](research-lifecycle-m4cb-authorization-20261112.md) channel question. Exact native user-source evidence is retained in `/home/bline/cbm-work/research-lifecycle-m4cb-implementation-20261112/O1-channel-source.json`.
+
+This settles the proposed owner channel and installer actor. It does not approve any installation manifest, scientific qualification, decision applicability, inference/execution grant or live use. Each actual installation still requires an authentic owner decision bound to its final exact bytes/digest and scope, attributable operator admission and current caller/protection evidence. Local ownership, a copied quotation, source label, receipt JSON or model assertion cannot replace that decision.
+
+The engineering slice may implement the bounded loader/producer contract against that channel under the trusted outer operator/startup boundary. Controlled qualification remains labelled controlled. If the proposed route cannot establish actual source-to-final-byte admission with the selected channel, it remains unavailable rather than accepting a fictional attestation API. C1 complete A5 delivery remains unavailable, and the original installation/live-use holds and approved $12 proxy allowance remain unchanged.

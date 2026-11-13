@@ -344,6 +344,23 @@ impl NativeHarness {
         })
     }
 
+    /// Observe this runner-owned child; callers cannot nominate another PID.
+    pub fn observe_protected_surface(
+        &self,
+        spec: &crate::ProtectedSurfaceSpec,
+        controlled: bool,
+    ) -> Result<crate::OwnedNativeObservation, NativeHarnessError> {
+        if controlled && !cfg!(feature = "synthetic-access-test") {
+            return Err(NativeHarnessError::BinaryMismatch);
+        }
+        isolation::observe_owned_surface(
+            self.pid().ok_or(NativeHarnessError::Eof)?,
+            self.isolated.as_ref(),
+            spec,
+            controlled,
+        )
+    }
+
     pub fn pid(&self) -> Option<u32> {
         self.isolated
             .as_ref()

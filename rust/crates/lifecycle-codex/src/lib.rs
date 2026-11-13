@@ -8,7 +8,9 @@ mod isolation;
 mod protocol;
 mod transport;
 
-pub use isolation::AccessIsolationConfig;
+pub use isolation::{
+    AccessIsolationConfig, NativeCurrentnessGuard, OwnedNativeObservation, ProtectedSurfaceSpec,
+};
 pub use lifecycle_core::{IsolationDiagnostic, IsolationPhase, IsolationReason};
 pub use protocol::{
     NATIVE_BINARY_SHA256, NATIVE_USER_AGENT_VERSION, NativeEvent, NativeEventKind,

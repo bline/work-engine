@@ -137,6 +137,11 @@ fn domain_thread_start(work: &Path, task_profile: bool, provider: &str) -> Value
 }
 
 struct Runner {
+    #[cfg(feature = "native-sim-proof")]
+    proof_root: Option<std::path::PathBuf>,
+    installed_hold: bool,
+    installed_guard: Option<lifecycle_codex::NativeCurrentnessGuard>,
+    installed_cancellation: Option<tokio::sync::watch::Receiver<()>>,
     harness: NativeHarness,
     messages: mpsc::Sender<NativeMessage>,
     early: Vec<NativeEvent>,
@@ -221,6 +226,9 @@ impl Runner {
     }
 
     async fn tool(&mut self, event: NativeEvent, call: NativeToolCall) -> Result<(), StoreError> {
+        self.check_installed_current()?;
+        #[cfg(feature = "native-sim-proof")]
+        native_test_marker(self.proof_root.as_deref(), "native_tool_attempted")?;
         let (tx, rx) = oneshot::channel();
         self.messages
             .send(NativeMessage::Tool {
@@ -254,6 +262,13 @@ impl Runner {
                     .tool_call()
                     .map_err(|_| StoreError::Rejected)?
                     .ok_or(StoreError::Rejected)?;
+                if self.installed_hold && self.installed_guard.is_none() {
+                    self.harness
+                        .deny_request(*id)
+                        .await
+                        .map_err(|_| StoreError::Unavailable)?;
+                    return Err(StoreError::Rejected);
+                }
                 if self.bound_turn {
                     self.tool(event, call).await?;
                 } else {
@@ -286,6 +301,16 @@ impl Runner {
         method: &str,
         params: Value,
     ) -> Result<(Value, (String, u64)), StoreError> {
+        #[cfg(feature = "native-sim-proof")]
+        if method == "turn/start"
+            && let Some(marker) = std::env::var_os("M4CB_MODEL_ENTRY_SENTINEL")
+        {
+            // Containment only: reaching this means the tested fence failed.
+            // Refuse before forwarding any model-entry traffic to the child.
+            std::fs::write(marker, b"forbidden turn/start intercepted\n")
+                .map_err(|_| StoreError::Unavailable)?;
+            return Err(StoreError::Rejected);
+        }
         if self.gate.load(Ordering::SeqCst) {
             self.startup_canceled |= self.startup_stage.is_some();
             return Err(StoreError::Rejected);
@@ -353,6 +378,7 @@ impl Runner {
         config: &NativeConfig,
         launch: &NativeLaunch,
         mut task_work: Option<mpsc::Receiver<NativeTaskWork>>,
+        startup_hold: Option<crate::native_startup::NativeStartupHold>,
     ) -> Result<(), StoreError> {
         self.startup_stage = Some("init_initialize");
         let (init,_)=self.rpc("initialize",json!({"clientInfo":{"name":"work_engine_s5","version":"0.1.0"},"capabilities":{"experimentalApi":true}})).await?;
@@ -369,7 +395,7 @@ impl Runner {
             .await
             .map_err(|_| StoreError::Unavailable)?;
         self.startup_stage = Some("init_config");
-        let (effective, _) = self
+        let (mut effective, _) = self
             .rpc("config/read", json!({"includeLayers":false}))
             .await?;
         let c = &effective["config"];
@@ -383,6 +409,7 @@ impl Runner {
                 .await?;
             validate_effective_provider(&after["config"], launch)?;
             validate_effective_policy(&after["config"], launch.code_mode_host)?;
+            effective = after;
             let (status, _) = self
                 .rpc(
                     "getAuthStatus",
@@ -400,12 +427,8 @@ impl Runner {
         }
         let task_profile = task_work.is_some();
         self.startup_stage = Some("init_thread");
-        let (started, _) = self
-            .rpc(
-                "thread/start",
-                domain_thread_start(&launch.work, task_profile, &launch.provider_name),
-            )
-            .await?;
+        let thread_request = domain_thread_start(&launch.work, task_profile, &launch.provider_name);
+        let (started, coordinate) = self.rpc("thread/start", thread_request.clone()).await?;
         let mut thread = started["thread"]["id"]
             .as_str()
             .ok_or(StoreError::Unavailable)?
@@ -413,6 +436,13 @@ impl Runner {
         if started["thread"]["ephemeral"] != false {
             return Err(StoreError::Rejected);
         }
+        #[cfg(feature = "native-sim-proof")]
+        native_test_optional_barrier(
+            launch.proof_barrier_dir.as_deref(),
+            "native_after_thread_start_before_bind",
+        )
+        .await?;
+        #[cfg(not(feature = "native-sim-proof"))]
         optional_native_barrier(
             launch.proof_barrier_dir.as_deref(),
             "native_after_thread_start_before_bind",
@@ -426,7 +456,75 @@ impl Runner {
             .await
             .map_err(|_| StoreError::Unavailable)?;
         let rehydration = answer.await.map_err(|_| StoreError::Unavailable)??;
+        if let Some(hold) = startup_hold {
+            self.startup_stage = Some("init_research_admission");
+            #[cfg(feature = "native-sim-proof")]
+            native_test_optional_barrier(
+                launch.proof_barrier_dir.as_deref(),
+                "native_before_observe",
+            )
+            .await?;
+            let observation = self
+                .harness
+                .observe_protected_surface(&hold.spec, hold.controlled)
+                .map_err(|_| StoreError::Rejected)?;
+            let evidence = json!({"native_configuration_digest":format!("{:x}",Sha256::digest(serde_json::to_vec(config).map_err(|_|StoreError::Rejected)?)),"session_id":config.session_id,"transport":coordinate.0,"thread":thread,"thread_ack_sequence":coordinate.1,"thread_request":thread_request,"thread_ack":started,"effective_config":effective,"protocol":lifecycle_codex::SCHEMA_THREAD_START_SHA256,"binary":lifecycle_codex::NATIVE_BINARY_SHA256});
+            self.installed_cancellation = Some(hold.cancellation.clone());
+            #[cfg(feature = "native-sim-proof")]
+            native_test_marker(
+                launch.proof_barrier_dir.as_deref(),
+                "native_publish_attempted",
+            )?;
+            let publication = crate::native_startup::publish(hold, observation, evidence).await;
+            #[cfg(feature = "native-sim-proof")]
+            if publication.is_err() {
+                native_test_marker(launch.proof_barrier_dir.as_deref(), "native_publish_failed")?;
+            }
+            let (mut activation, guard) = publication?;
+            #[cfg(feature = "native-sim-proof")]
+            native_test_optional_barrier(
+                launch.proof_barrier_dir.as_deref(),
+                "native_after_publish",
+            )
+            .await?;
+            loop {
+                tokio::select! {
+                        release=&mut activation => {
+                            let acknowledgment=release.map_err(|_| StoreError::Rejected)?;
+                            #[cfg(feature = "native-sim-proof")]
+                native_test_optional_barrier(launch.proof_barrier_dir.as_deref(), "native_before_activation_ack").await?;
+                            guard.check_current().map_err(|_| StoreError::Rejected)?;
+                            let sent = acknowledgment.send(Ok(()));
+                            #[cfg(feature = "native-sim-proof")]
+                            native_test_marker(launch.proof_barrier_dir.as_deref(), if sent.is_ok() {"native_activation_ack_sent"} else {"native_activation_ack_failed"})?;
+                            sent.map_err(|_|StoreError::Rejected)?;
+                            break;
+                        },
+                        event=self.harness.receive() => {
+                            let event=event.map_err(|_| StoreError::Unavailable)?;
+                            match event.kind {
+                                NativeEventKind::ServerRequest {id,..}=>{let _=self.harness.deny_request(id).await;return Err(StoreError::Rejected);},
+                                NativeEventKind::Notification {..} if event.terminal().map_err(|_|StoreError::Rejected)?.is_none()=>self.record(event).await?,
+                                _=>return Err(StoreError::Rejected),
+                            }
+                        },
+                        _=tokio::time::sleep(Duration::from_millis(25)) => {
+                            if self.gate.load(Ordering::SeqCst) {self.startup_canceled=true;return Err(StoreError::Rejected);}
+                            guard.check_current().map_err(|_| StoreError::Rejected)?;
+                        }
+                    }
+            }
+            self.installed_guard = Some(guard);
+            #[cfg(feature = "native-sim-proof")]
+            native_test_marker(
+                launch.proof_barrier_dir.as_deref(),
+                "native_installed_guard",
+            )?;
+        }
         self.startup_stage = None;
+        #[cfg(feature = "native-sim-proof")]
+        native_test_turn_entry_barrier(launch.proof_barrier_dir.as_deref()).await?;
+        #[cfg(not(feature = "native-sim-proof"))]
         native_proof_barrier(
             launch.proof_barrier_dir.as_deref(),
             "native_before_turn_entry",
@@ -449,7 +547,40 @@ impl Runner {
             while let Some(work) = receiver.recv().await {
                 // Dropping the sender during shutdown may leave previously
                 // buffered work. The closed gate forbids a fresh native entry.
-                if self.gate.load(Ordering::SeqCst) {
+                let gate_closed = self.gate.load(Ordering::SeqCst);
+                #[cfg(feature = "native-sim-proof")]
+                if let Some(root) = launch.proof_barrier_dir.as_deref()
+                    && (root.join("native_test_queued-successor.arm").exists()
+                        || root.join("native_test_queued-turn.arm").exists())
+                {
+                    let observed = serde_json::json!({
+                        "work": match &work {
+                            NativeTaskWork::StartSuccessor => "StartSuccessor",
+                            NativeTaskWork::RunTurn(_) => "RunTurn",
+                        },
+                        "thread": thread,
+                        "installed_hold": self.installed_hold,
+                        "gate_closed": gate_closed,
+                    });
+                    use std::io::Write as _;
+                    let mut history = std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(root.join("native_test_consumed.jsonl"))
+                        .map_err(|_| StoreError::Unavailable)?;
+                    writeln!(history, "{observed}").map_err(|_| StoreError::Unavailable)?;
+                    let temporary = root.join("native_test_consumed.tmp");
+                    std::fs::write(&temporary, observed.to_string())
+                        .map_err(|_| StoreError::Unavailable)?;
+                    std::fs::rename(temporary, root.join("native_test_consumed.json"))
+                        .map_err(|_| StoreError::Unavailable)?;
+                }
+                if gate_closed {
+                    #[cfg(feature = "native-sim-proof")]
+                    native_test_marker(
+                        launch.proof_barrier_dir.as_deref(),
+                        "native_common_gate_refused",
+                    )?;
                     return Err(StoreError::Rejected);
                 }
                 match work {
@@ -463,6 +594,19 @@ impl Runner {
                         .await?;
                     }
                     NativeTaskWork::StartSuccessor => {
+                        // Admission is thread-bound. No current reauthorization
+                        // protocol exists: refuse before a new thread or rehydration.
+                        if self.installed_hold {
+                            #[cfg(feature = "native-sim-proof")]
+                            if let Some(root) = launch.proof_barrier_dir.as_deref() {
+                                std::fs::write(
+                                    root.join("native_installed_successor_refused.reached"),
+                                    &thread,
+                                )
+                                .map_err(|_| StoreError::Unavailable)?;
+                            }
+                            return Err(StoreError::Rejected);
+                        }
                         let (started, _) = self
                             .rpc(
                                 "thread/start",
@@ -522,6 +666,24 @@ impl Runner {
         Ok(())
     }
 
+    fn check_installed_current(&self) -> Result<(), StoreError> {
+        if self.installed_hold {
+            if self
+                .installed_cancellation
+                .as_ref()
+                .is_none_or(|receiver| receiver.has_changed().is_err())
+            {
+                return Err(StoreError::Rejected);
+            }
+            self.installed_guard
+                .as_ref()
+                .ok_or(StoreError::Rejected)?
+                .check_current()
+                .map_err(|_| StoreError::Rejected)?;
+        }
+        Ok(())
+    }
+
     async fn run_turn(
         &mut self,
         thread: &str,
@@ -529,11 +691,20 @@ impl Runner {
         purpose: lifecycle_core::NativeInvocationPurpose,
         proof_dir: Option<&Path>,
     ) -> Result<(), StoreError> {
+        if let Err(error) = self.check_installed_current() {
+            #[cfg(feature = "native-sim-proof")]
+            if let Some(root) = proof_dir {
+                std::fs::write(root.join("native_run_turn_currentness_refused.json"), json!({"gate_closed":self.gate.load(Ordering::SeqCst),"installed_hold":self.installed_hold}).to_string()).map_err(|_|StoreError::Unavailable)?;
+            }
+            return Err(error);
+        }
         if !self.harness.entry_allowed() {
             return Err(StoreError::Rejected);
         }
         self.bound_turn = false;
         self.tool_calls = 0;
+        #[cfg(feature = "native-sim-proof")]
+        native_test_marker(proof_dir, "native_prepare_turn_attempted")?;
         self.ask(|reply| NativeMessage::PrepareTurn {
             invocation_id: spec.invocation_id.clone(),
             attempt_id: spec.attempt_id.clone(),
@@ -546,6 +717,7 @@ impl Runner {
         if !self.harness.entry_allowed() {
             return Err(StoreError::Rejected);
         }
+        self.check_installed_current()?;
         let (response,_)=self.rpc("turn/start",json!({"threadId":thread,"input":[{"type":"text","text":spec.prompt}],"environments":[]})).await?;
         let turn = response["turn"]["id"]
             .as_str()
@@ -619,11 +791,21 @@ pub async fn run_native(
     messages: mpsc::Sender<NativeMessage>,
     gate: Arc<NativeGate>,
     task_work: Option<mpsc::Receiver<NativeTaskWork>>,
+    startup_hold: Option<crate::native_startup::NativeStartupHold>,
 ) {
     let before_spawn = if gate.load(Ordering::SeqCst) {
         Ok(())
     } else {
-        optional_native_barrier(launch.proof_barrier_dir.as_deref(), "native_before_spawn")
+        #[cfg(feature = "native-sim-proof")]
+        let barrier = native_test_optional_barrier(
+            launch.proof_barrier_dir.as_deref(),
+            "native_before_spawn",
+        )
+        .await;
+        #[cfg(not(feature = "native-sim-proof"))]
+        let barrier =
+            optional_native_barrier(launch.proof_barrier_dir.as_deref(), "native_before_spawn");
+        barrier
             .map_err(|_| "transport_error_guard_barrier")
             .and_then(|()| {
                 if launch.code_mode_host {
@@ -636,7 +818,7 @@ pub async fn run_native(
     };
     if before_spawn.is_err() || gate.load(Ordering::SeqCst) {
         let (reply, acknowledged) = oneshot::channel();
-        if messages
+        let sent = messages
             .send(NativeMessage::Done {
                 isolation_diagnostic: None,
                 exit: None,
@@ -650,10 +832,18 @@ pub async fn run_native(
                 reply,
             })
             .await
-            .is_ok()
-        {
-            let _ = acknowledged.await;
+            .is_ok();
+        let acknowledgment = if sent { Some(acknowledged.await) } else { None };
+        #[cfg(feature = "native-sim-proof")]
+        if let Some(root) = launch.proof_barrier_dir.as_deref() {
+            std::fs::write(
+                root.join("native_test_nochild_ack"),
+                format!("{acknowledgment:?}"),
+            )
+            .expect("no-child acknowledgment after owner collection");
         }
+        #[cfg(not(feature = "native-sim-proof"))]
+        let _ = acknowledgment;
         return;
     }
     let isolation = launch
@@ -674,27 +864,12 @@ pub async fn run_native(
         isolation.as_ref(),
     ) {
         Ok(harness) => {
-            let before_registration = (|| {
-                if cfg!(feature = "native-sim-proof")
-                    && let Some(root) = launch.proof_barrier_dir.as_deref()
-                    && root
-                        .join("native_after_spawn_before_registration.arm")
-                        .exists()
-                {
-                    let pid = harness.pid().ok_or(StoreError::Unavailable)?;
-                    let mut marker =
-                        fs::File::create(root.join("native_after_spawn_before_registration.pid"))
-                            .map_err(|_| StoreError::Unavailable)?;
-                    use std::io::Write as _;
-                    writeln!(marker, "{pid}").map_err(|_| StoreError::Unavailable)?;
-                    marker.sync_all().map_err(|_| StoreError::Unavailable)?;
-                }
-                optional_native_barrier(
-                    launch.proof_barrier_dir.as_deref(),
-                    "native_after_spawn_before_registration",
-                )
-            })();
             let mut runner = Runner {
+                #[cfg(feature = "native-sim-proof")]
+                proof_root: launch.proof_barrier_dir.clone(),
+                installed_hold: startup_hold.is_some(),
+                installed_guard: None,
+                installed_cancellation: None,
                 harness,
                 messages: messages.clone(),
                 early: Vec::new(),
@@ -705,13 +880,66 @@ pub async fn run_native(
                 startup_stage: Some("init_registration"),
                 startup_canceled: false,
             };
+            #[cfg(feature = "native-sim-proof")]
+            let mut diagnostic_errors = Vec::new();
+            #[cfg(feature = "native-sim-proof")]
+            if let Some(root) = launch.proof_barrier_dir.as_deref() {
+                let written = runner
+                    .harness
+                    .pid()
+                    .ok_or_else(|| "missing owned pid".to_owned())
+                    .and_then(|pid| {
+                        std::fs::write(root.join("native_test_owned_pid"), pid.to_string())
+                            .map_err(|error| error.to_string())
+                    });
+                if let Err(error) = written {
+                    diagnostic_errors.push(format!("native_test_owned_pid: {error}"));
+                }
+            }
+            let before_registration = async {
+                if cfg!(feature = "native-sim-proof")
+                    && let Some(root) = launch.proof_barrier_dir.as_deref()
+                    && root
+                        .join("native_after_spawn_before_registration.arm")
+                        .exists()
+                {
+                    let pid = runner.harness.pid().ok_or(StoreError::Unavailable)?;
+                    let mut marker =
+                        fs::File::create(root.join("native_after_spawn_before_registration.pid"))
+                            .map_err(|_| StoreError::Unavailable)?;
+                    use std::io::Write as _;
+                    writeln!(marker, "{pid}").map_err(|_| StoreError::Unavailable)?;
+                    marker.sync_all().map_err(|_| StoreError::Unavailable)?;
+                }
+                #[cfg(feature = "native-sim-proof")]
+                let barrier = native_test_optional_barrier(
+                    launch.proof_barrier_dir.as_deref(),
+                    "native_after_spawn_before_registration",
+                )
+                .await;
+                #[cfg(not(feature = "native-sim-proof"))]
+                let barrier = optional_native_barrier(
+                    launch.proof_barrier_dir.as_deref(),
+                    "native_after_spawn_before_registration",
+                );
+                barrier
+            }
+            .await;
             let registration_failed = before_registration.is_err();
+            #[cfg(feature = "native-sim-proof")]
+            let registration_failed = registration_failed || !diagnostic_errors.is_empty();
             let canceled_before_run = gate.load(Ordering::SeqCst);
             let outcome = if registration_failed || canceled_before_run {
                 Err(StoreError::Rejected)
             } else {
-                runner.run(&config, &launch, task_work).await
+                runner.run(&config, &launch, task_work, startup_hold).await
             };
+            #[cfg(feature = "native-sim-proof")]
+            if let Some(root) = launch.proof_barrier_dir.as_deref() {
+                if let Err(error) = std::fs::write(root.join("native_test_runner_outcome.json"), json!({"result":format!("{outcome:?}"),"startup_stage":runner.startup_stage,"gate_closed":gate.load(Ordering::SeqCst)}).to_string()) {
+                    diagnostic_errors.push(format!("native_test_runner_outcome.json: {error}"));
+                }
+            }
             // Capture the failure before cleanup: shutdown may arrive while
             // terminate_and_reap awaits the child, but cannot erase it.
             let failure = if registration_failed {
@@ -721,7 +949,16 @@ pub async fn run_native(
             } else {
                 None
             };
-            let cleanup = runner.harness.terminate_and_reap().await;
+            let mut cleanup = runner.harness.terminate_and_reap().await;
+            // Qualification injects unknown classification only after actual OS cleanup.
+            if cfg!(feature = "controlled-proof")
+                && launch
+                    .proof_barrier_dir
+                    .as_ref()
+                    .is_some_and(|p| p.join("native_cleanup_classification.fail").exists())
+            {
+                cleanup = Err(lifecycle_codex::NativeHarnessError::IsolationUnavailable);
+            }
             let outcome_kind = terminal_outcome(
                 failure,
                 outcome.is_ok(),
@@ -733,10 +970,13 @@ pub async fn run_native(
                 Ok(exit) => (Some(exit), outcome_kind),
                 Err(_) => (None, outcome_kind),
             };
+            // Retain actual cleanup evidence before moving it into the owner message.
+            #[cfg(feature = "native-sim-proof")]
+            let collected = json!({"exit": exit.as_ref().map(|e| json!({"pid":e.pid,"code":e.code,"forced":e.forced,"success":e.success})), "outcome_kind":outcome_kind});
             // The runner still owns the child until the store acknowledges
             // its observed exit or durable unsafe cleanup classification.
             let (reply, acknowledged) = oneshot::channel();
-            if messages
+            let sent = messages
                 .send(NativeMessage::Done {
                     isolation_diagnostic: None,
                     exit,
@@ -744,9 +984,26 @@ pub async fn run_native(
                     reply,
                 })
                 .await
-                .is_ok()
+                .is_ok();
+            let acknowledgment = if sent { Some(acknowledged.await) } else { None };
+            #[cfg(not(feature = "native-sim-proof"))]
+            let _ = acknowledgment;
+            #[cfg(feature = "native-sim-proof")]
             {
-                let _ = acknowledged.await;
+                if let Some(root) = launch.proof_barrier_dir.as_deref() {
+                    let report = json!({"collected":collected,"done_sent":sent,"acknowledgment":format!("{acknowledgment:?}"),"diagnostic_errors":diagnostic_errors});
+                    if let Err(error) =
+                        std::fs::write(root.join("native_test_cleanup.json"), report.to_string())
+                    {
+                        diagnostic_errors.push(format!("native_test_cleanup.json: {error}"));
+                    }
+                }
+                // A qualification diagnostic failure remains failure, but cannot
+                // unwind past the runner's explicit reap or Done acknowledgment.
+                assert!(
+                    diagnostic_errors.is_empty(),
+                    "qualification diagnostics failed after owned cleanup and Done: {diagnostic_errors:?}"
+                );
             }
         }
         Err(error) => {
@@ -1023,6 +1280,49 @@ pub fn native_proof_barrier(root: Option<&Path>, point: &str) -> Result<(), Stor
 
 /// Test-controlled startup cuts are armed explicitly so existing proof runs
 /// with a barrier directory do not acquire new waits.
+// The host acknowledgment task must be able to finish while this existing
+// proof cut is held. Blocking its Tokio worker can strand a woken LIFO task.
+#[cfg(feature = "native-sim-proof")]
+async fn native_test_turn_entry_barrier(root: Option<&Path>) -> Result<(), StoreError> {
+    native_test_barrier(root, "native_before_turn_entry").await
+}
+#[cfg(feature = "native-sim-proof")]
+async fn native_test_optional_barrier(root: Option<&Path>, point: &str) -> Result<(), StoreError> {
+    if root.is_some_and(|root| root.join(format!("{point}.arm")).exists()) {
+        native_test_barrier(root, point).await?;
+    }
+    Ok(())
+}
+#[cfg(feature = "native-sim-proof")]
+async fn native_test_barrier(root: Option<&Path>, point: &str) -> Result<(), StoreError> {
+    let Some(root) = root else { return Ok(()) };
+    native_test_marker(Some(root), point)?;
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    while !root.join(format!("{point}.release")).exists() {
+        if tokio::time::Instant::now() >= deadline {
+            std::fs::write(root.join(format!("{point}.timed_out")), b"timeout\n")
+                .map_err(|_| StoreError::Unavailable)?;
+            return Err(StoreError::Unavailable);
+        }
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    std::fs::write(
+        root.join(format!("{point}.released")),
+        b"release consumed\n",
+    )
+    .map_err(|_| StoreError::Unavailable)?;
+    Ok(())
+}
+
+#[cfg(feature = "native-sim-proof")]
+pub(crate) fn native_test_marker(root: Option<&Path>, point: &str) -> Result<(), StoreError> {
+    if let Some(root) = root {
+        std::fs::write(root.join(format!("{point}.reached")), b"reached\n")
+            .map_err(|_| StoreError::Unavailable)?;
+    }
+    Ok(())
+}
+
 pub fn optional_native_barrier(root: Option<&Path>, point: &str) -> Result<(), StoreError> {
     if root.is_some_and(|path| path.join(format!("{point}.arm")).exists()) {
         native_proof_barrier(root, point)?;
@@ -1058,12 +1358,88 @@ pub fn preview_native_task_launch(
     prepare_native_launch_with_code_mode(config, uid, true, false)
 }
 
+/// Input-only predicates shared by preflight and native launch. Runtime
+/// canonicalization, credentials and filesystem observations stay at launch.
+pub(crate) fn validate_native_config(config: &NativeConfig) -> Result<(), StoreError> {
+    workspace_snapshot_read::validate(&config.snapshot)?;
+    use lifecycle_core::{AttemptId, NativeSessionId};
+    config
+        .provider_route
+        .configured_base_url(&config.simulator_base_url)
+        .ok_or(StoreError::Rejected)?;
+    NativeSessionId::parse(config.session_id.clone()).map_err(|_| StoreError::Rejected)?;
+    if config.invocation_id.is_empty() {
+        return Err(StoreError::Rejected);
+    }
+    AttemptId::parse(config.attempt_id.clone()).map_err(|_| StoreError::Rejected)?;
+    if !config.root.is_absolute()
+        || !config.executable.is_absolute()
+        || config.followup_turns.len() > 3
+        || config.provider_route.is_chatgpt_access() != config.chatgpt_access_source.is_some()
+    {
+        return Err(StoreError::Rejected);
+    }
+    if let Some(source) = &config.chatgpt_access_source {
+        if source.account_id.is_empty()
+            || source.account_id.len() > 256
+            || source.account_id.trim() != source.account_id
+            || !source.codex_home.is_absolute()
+            || source
+                .https_proxy
+                .as_deref()
+                .is_some_and(|proxy| !trusted_loopback_https_proxy(proxy))
+            || (source.isolation.is_none() && !cfg!(test))
+        {
+            return Err(StoreError::Rejected);
+        }
+        if let Some(_selected) = &source.isolation {
+            access_isolation(source)
+                .ok_or(StoreError::Rejected)?
+                .validate_input(
+                    &config.root,
+                    config.provider_route.is_synthetic_access_test(),
+                )
+                .map_err(|_| StoreError::Rejected)?;
+            #[cfg(feature = "native-sim-proof")]
+            {
+                let fields = [
+                    _selected.synthetic_http_socket.is_some(),
+                    _selected.synthetic_http_port.is_some(),
+                    _selected.synthetic_http_fixture_executable.is_some(),
+                    _selected.synthetic_http_fixture_sha256.is_some(),
+                ];
+                if fields
+                    .into_iter()
+                    .any(|set| set != config.provider_route.is_synthetic_access_test())
+                {
+                    return Err(StoreError::Rejected);
+                }
+                if config.provider_route.is_synthetic_access_test() {
+                    let url = config
+                        .provider_route
+                        .configured_base_url(&config.simulator_base_url)
+                        .ok_or(StoreError::Rejected)?;
+                    let port = url
+                        .strip_prefix("http://127.0.0.1:")
+                        .and_then(|s| s.strip_suffix("/v1"))
+                        .and_then(|s| s.parse::<u16>().ok());
+                    if port != _selected.synthetic_http_port || port == Some(0) {
+                        return Err(StoreError::Rejected);
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn prepare_native_launch_with_code_mode(
     config: &NativeConfig,
     uid: u32,
     code_mode_host: bool,
     materialize: bool,
 ) -> Result<NativeLaunch, StoreError> {
+    validate_native_config(config)?;
     let url = config
         .provider_route
         .configured_base_url(&config.simulator_base_url)
@@ -1359,10 +1735,10 @@ mod provider_launch_tests {
             "https_proxy": "http://127.0.0.1:38471",
             "isolation": {
                 "helper_executable": "/offline/absent-helper",
-                "helper_sha256": "offline-fixture",
-                "proxy_socket": temp.path().join("absent-proxy.sock"),
+                "helper_sha256": "386bdea885e2af49f534db71fe2ea8c9c235f36ece15f0963fc23bccf0f2033a",
+                "proxy_socket": temp.path().join("proxy/absent-proxy.sock"),
                 "proxy_policy_executable": "/offline/absent-proxy-policy",
-                "proxy_policy_sha256": "offline-fixture"
+                "proxy_policy_sha256": "4fef1370d37ef52b128fe2ab89c778e6b7854c74440d3a84f4ccc6822b1a4dfb"
             }
         });
         let selected: NativeConfig = serde_json::from_value(selected_json.clone()).unwrap();
@@ -1436,6 +1812,7 @@ mod provider_launch_tests {
                 "synthetic".into(),
                 messages,
                 Arc::new(NativeGate::new(false)),
+                None,
                 None,
             ));
             match received.recv().await.unwrap() {
@@ -1642,7 +2019,11 @@ mod provider_launch_tests {
             "turn_grant_revision":1,
             "snapshot_grant_ref":"grant:snapshot",
             "snapshot_grant_revision":1,
-            "snapshot":{"id":"snapshot:test","source_revision":"source:test","members":[]}
+            "snapshot":{"id":"snapshot:test","source_revision":"source:test","members":[{
+                "id":"visible",
+                "sha256":format!("{:x}", Sha256::digest(b"retained snapshot bytes")),
+                "bytes":b"retained snapshot bytes"
+            }]}
         }))
         .unwrap()
     }
@@ -1820,14 +2201,18 @@ mod provider_launch_tests {
                 https_proxy: Some("http://127.0.0.1:3128".into()),
                 isolation: Some(crate::ChatgptAccessIsolation {
                     helper_executable: "/synthetic/helper".into(),
-                    helper_sha256: "a".repeat(64),
-                    proxy_socket: "/synthetic/proxy.sock".into(),
+                    helper_sha256:
+                        "62b5dc7e5c6d1d504a7558a336c6209a93d4c275f041abaebd03fb5dfca93ea4".into(),
+                    proxy_socket: "/synthetic/proxy/proxy.sock".into(),
                     proxy_policy_executable: "/synthetic/proxy.py".into(),
-                    proxy_policy_sha256: "b".repeat(64),
-                    synthetic_http_socket: Some("/synthetic/http.sock".into()),
+                    proxy_policy_sha256:
+                        "ac4ae29897a24d22e41867e46e26728cc95500a7765cb6d87b3c59952c0f7d23".into(),
+                    synthetic_http_socket: Some("/synthetic/http/http.sock".into()),
                     synthetic_http_port: Some(1235),
                     synthetic_http_fixture_executable: Some("/synthetic/account.py".into()),
-                    synthetic_http_fixture_sha256: Some("c".repeat(64)),
+                    synthetic_http_fixture_sha256: Some(
+                        "601d5ecaa942eba075c65e610dfe362c5235ccde7b1c93e8d931dd588ec918da".into(),
+                    ),
                 }),
             });
             (config, root)
@@ -2076,6 +2461,11 @@ mod provider_launch_tests {
         let (work, pending) = mpsc::channel(1);
         let mut work = Some(work);
         let runner = Runner {
+            #[cfg(feature = "native-sim-proof")]
+            proof_root: None,
+            installed_hold: false,
+            installed_guard: None,
+            installed_cancellation: None,
             harness,
             messages,
             early: Vec::new(),
@@ -2088,7 +2478,7 @@ mod provider_launch_tests {
         };
         let run = tokio::spawn(async move {
             let mut runner = runner;
-            let result = runner.run(&selected, &launch, Some(pending)).await;
+            let result = runner.run(&selected, &launch, Some(pending), None).await;
             let exit = runner.harness.terminate_and_reap().await;
             (result, exit)
         });

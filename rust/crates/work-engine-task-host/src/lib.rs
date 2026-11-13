@@ -4,6 +4,7 @@
 mod direct_host_tests;
 mod observation;
 pub mod research_admission;
+mod research_installation;
 mod selected_startup;
 
 use bounded_inference::{Bounds, DirectAdapter, DirectProfile, PublicHostEndpoint};
@@ -334,6 +335,7 @@ struct Host {
     research: OnceLock<research_admission::ResearchHost>,
     recovery_only: OnceLock<bool>,
     selected: bool,
+    selected_identity: Option<selected_startup::SelectedIdentity>,
 }
 
 pub fn run() -> Result<(), HostError> {
@@ -342,17 +344,24 @@ pub fn run() -> Result<(), HostError> {
         return Err(HostError::Configuration);
     }
     let route = args.next().ok_or(HostError::Configuration)?;
-    if route != "--startup" && route != "--selected" {
+    if route != "--startup" && route != "--selected" && route != "--operator-research-installed" {
         return Err(HostError::Configuration);
     }
     let path = PathBuf::from(args.next().ok_or(HostError::Configuration)?);
+    let operator_input = if route == "--operator-research-installed" {
+        Some(PathBuf::from(args.next().ok_or(HostError::Configuration)?))
+    } else {
+        None
+    };
     if args.next().is_some() {
         return Err(HostError::Configuration);
     }
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
-    if route == "--selected" {
+    if let Some(input) = operator_input {
+        runtime.block_on(serve_operator_research_installed(&path, &input))
+    } else if route == "--selected" {
         runtime.block_on(serve_selected(&path))
     } else {
         runtime.block_on(serve(&path))
@@ -362,6 +371,7 @@ pub fn run() -> Result<(), HostError> {
 pub async fn serve(path: &Path) -> Result<(), HostError> {
     validate_file(path)?;
     let startup: HostStartup = serde_json::from_slice(&fs::read(path)?)?;
+    research_installation::refuse_unadmitted(&startup)?;
     validate_startup(&startup)?;
     let store = TaskStore::open(
         &startup.task_store_path,
@@ -369,19 +379,47 @@ pub async fn serve(path: &Path) -> Result<(), HostError> {
     )?;
     #[cfg(feature = "controlled-proof")]
     let store = store.with_controlled_proof_barrier(startup.lifecycle.proof_barrier_dir.clone())?;
-    serve_composed(startup, store, None).await
+    serve_composed(startup, store, None, None, None).await
 }
 
 /// One sealed host selection binds the executable and both stores before
 /// either admission socket opens. The lock survives until the service closes.
 pub async fn serve_selected(path: &Path) -> Result<(), HostError> {
+    serve_selected_inner(path, None).await
+}
+/// Trusted external Codex operator ingress. The invoker must already have
+/// authenticated the exact owner's approvals and independent protection evidence.
+/// Matching JSON/UID/hash fields do not establish those external facts. This is
+/// outside all task/native/socket operation surfaces and performs no live proof acquisition.
+pub async fn serve_operator_research_installed(
+    path: &Path,
+    admission_input: &Path,
+) -> Result<(), HostError> {
+    serve_selected_inner(path, Some(admission_input)).await
+}
+async fn serve_selected_inner(path: &Path, operator_input: Option<&Path>) -> Result<(), HostError> {
     let selected_startup::Prepared {
         startup,
         task_store,
         lifecycle_store,
         selection_lock,
-    } = selected_startup::prepare(path)?;
-    let result = serve_composed(startup, task_store, Some(lifecycle_store)).await;
+        identity,
+        research_admission,
+    } = if operator_input.is_some() {
+        selected_startup::prepare_with_operator(path, operator_input)?
+    } else {
+        selected_startup::prepare(path)?
+    };
+    #[cfg(test)]
+    eprintln!("selected preparation complete");
+    let result = serve_composed(
+        startup,
+        task_store,
+        Some(lifecycle_store),
+        Some(identity),
+        research_admission,
+    )
+    .await;
     drop(selection_lock);
     result
 }
@@ -390,6 +428,8 @@ async fn serve_composed(
     startup: HostStartup,
     store: TaskStore,
     selected_store: Option<lifecycle_service::SelectedLifecycleStore>,
+    selected_identity: Option<selected_startup::SelectedIdentity>,
+    research_startup_admission: Option<research_installation::AuthorizedResearchStartup>,
 ) -> Result<(), HostError> {
     // Composition happens before any socket or service exists, and a Direct
     // failure ends startup: there is no path from it to the native control.
@@ -404,7 +444,15 @@ async fn serve_composed(
         material,
         operations: store.clone(),
     };
-    serve_composed_with(startup, store, selected_store, ports).await
+    serve_composed_with(
+        startup,
+        store,
+        selected_store,
+        ports,
+        selected_identity,
+        research_startup_admission,
+    )
+    .await
 }
 
 /// What the lifecycle service is composed from. Production fills it in
@@ -423,9 +471,39 @@ async fn serve_composed_with(
     store: Arc<TaskStore>,
     selected_store: Option<lifecycle_service::SelectedLifecycleStore>,
     ports: ServicePorts,
+    selected_identity: Option<selected_startup::SelectedIdentity>,
+    research_startup_admission: Option<research_installation::AuthorizedResearchStartup>,
 ) -> Result<(), HostError> {
     let selected = selected_store.is_some();
     let identity = host_identity(&startup)?;
+    let authorized = research_startup_admission;
+    let (startup_hold, startup_receiver) = if let Some(authorization) = &authorized {
+        #[cfg(test)]
+        eprintln!("preparing protection spec");
+        let spec = authorization.protection_spec(&startup)?;
+        #[cfg(all(test, feature = "controlled-proof"))]
+        if let Some(identity) = selected_identity.as_ref()
+            && let Some(sender) = STARTUP_TEST_SPECS
+                .lock()
+                .unwrap()
+                .remove(&identity.selection_path)
+        {
+            sender.send(spec.clone()).expect("test spec receiver");
+        }
+        #[cfg(test)]
+        eprintln!("protection spec ready");
+        #[cfg(feature = "controlled-proof")]
+        let pair = if authorization.controlled() {
+            lifecycle_service::native_startup::controlled_hold(spec)
+        } else {
+            lifecycle_service::native_startup::hold(spec)
+        };
+        #[cfg(not(feature = "controlled-proof"))]
+        let pair = lifecycle_service::native_startup::hold(spec);
+        (Some(pair.0), Some(pair.1))
+    } else {
+        (None, None)
+    };
     let host = Arc::new(Host {
         startup,
         store,
@@ -434,6 +512,7 @@ async fn serve_composed_with(
         admission_gate: Mutex::new(()),
         recovery_only: OnceLock::new(),
         selected,
+        selected_identity,
     });
     let config = host.startup.lifecycle.clone();
     let ServicePorts {
@@ -444,13 +523,24 @@ async fn serve_composed_with(
     let mut service = tokio::spawn(async move {
         match (selected_store, control) {
             (Some(selected_store), ComposedControl::Native) => {
-                lifecycle_service::run_with_selected_task_ports(
-                    config,
-                    selected_store,
-                    material,
-                    operations,
-                )
-                .await
+                if let Some(hold) = startup_hold {
+                    lifecycle_service::run_with_selected_task_ports_and_native_startup(
+                        config,
+                        selected_store,
+                        material,
+                        operations,
+                        hold,
+                    )
+                    .await
+                } else {
+                    lifecycle_service::run_with_selected_task_ports(
+                        config,
+                        selected_store,
+                        material,
+                        operations,
+                    )
+                    .await
+                }
             }
             (Some(selected_store), ComposedControl::Direct(port)) => {
                 lifecycle_service::run_with_selected_task_ports_and_direct_control(
@@ -470,6 +560,9 @@ async fn serve_composed_with(
             }
         }
     });
+    let has_installed_hold = authorized.is_some();
+    let mut service_collected = false;
+    let outcome=async {
     wait_for_socket(&host.startup.lifecycle.socket_path, &mut service).await?;
     let recovery_only = read_recovery_only(
         &host.startup.lifecycle.socket_path,
@@ -478,13 +571,46 @@ async fn serve_composed_with(
     host.recovery_only
         .set(recovery_only)
         .map_err(|_| HostError::LifecycleUnavailable)?;
-    host.research
-        .set(if recovery_only {
-            research_admission::ResearchHost::default()
-        } else {
-            research_admission::install(&host.startup, &host.store)?
-        })
-        .map_err(|_| HostError::Configuration)?;
+    // Dropping any pending/active lifetime closes the service via its normal
+    // shutdown path, preserving runner cleanup and Done acknowledgment.
+    let installation = async {
+        let pending = if let Some(receiver)=startup_receiver {
+            {
+                #[cfg(all(test, feature = "controlled-proof"))]
+                let receiver = startup_test_readiness(&host, receiver).await?;
+                Some(receiver.pending().await.map_err(|_|HostError::LifecycleUnavailable)?)
+            }
+        } else {None};
+        #[cfg(all(test, feature = "controlled-proof"))]
+        let mut pending = pending;
+        #[cfg(all(test, feature = "controlled-proof"))]
+        if let Some(p) = pending.as_mut() {startup_test_boundary(&host,p,false)?;}
+        #[cfg(all(test, feature = "controlled-proof"))]
+        startup_test_cut(&host, "host_before_admit").await?;
+        let admitted = authorized.as_ref().zip(pending.as_ref()).map(|(a,p)|a.admit(p,&host.identity)).transpose()?;
+        let research = if recovery_only {research_admission::ResearchHost::default()} else {
+            research_admission::install(&host.startup,&host.store,admitted.as_ref().zip(host.selected_identity.as_ref()).map(|(a,i)|(a,i,&host.identity)))?
+        };
+        host.research.set(research).map_err(|_|HostError::Configuration)?;
+        #[cfg(all(test, feature = "controlled-proof"))]
+        if std::env::var("M4CB_TEST_SEED_HISTORY").ok().as_deref() == Some("1") { seed_controlled_history(&host)?; }
+        #[cfg(all(test, feature = "controlled-proof"))]
+        if let Some(p) = pending.as_mut() {startup_test_boundary(&host,p,true)?;}
+        #[cfg(all(test, feature = "controlled-proof"))]
+        startup_test_cut(&host, "host_after_install").await?;
+        if let Some(admitted) = admitted.as_ref() {admitted.check_current()?;}
+        #[cfg(all(test, feature = "controlled-proof"))]
+        startup_test_cut(&host, "host_before_activate").await?;
+        #[cfg(all(test, feature = "controlled-proof"))]
+        if let Some(p) = pending.take() {
+            return startup_test_activate(&host, p).await.map(Some);
+        }
+        match pending {Some(p)=>p.activate().await.map(Some).map_err(|_|HostError::LifecycleUnavailable),None=>Ok(None)}
+    }.await;
+    let active_startup = match installation {
+        Ok(active)=>active,
+        Err(error)=>return Err(error),
+    };
     if selected {
         for command in host.store.admission_commands()? {
             reconcile_admission(&host, &command, !recovery_only)?;
@@ -503,12 +629,369 @@ async fn serve_composed_with(
         tokio::select! {
             accepted=listener.accept()=>{let(stream,_)=accepted?;let host=host.clone();tokio::spawn(async move{let _=handle(stream,host).await;});},
             _=terminate.recv()=>break,
-            result=&mut service=>{let _=fs::remove_file(&host.startup.socket_path);return result.map_err(|_|HostError::LifecycleUnavailable)?.map_err(HostError::from);}
+            result=&mut service=>{service_collected=true;let _=fs::remove_file(&host.startup.socket_path);return result.map_err(|_|HostError::LifecycleUnavailable)?.map_err(HostError::from);}
         }
     }
     drop(listener);
+    drop(active_startup);
     let _ = fs::remove_file(&host.startup.socket_path);
-    let _ = tokio::time::timeout(Duration::from_secs(15), &mut service).await;
+    Ok(())
+    }.await;
+    // Installed lifetime endpoints are now dropped. Collect the normal service
+    // shutdown, including its child cleanup acknowledgment, on every exit.
+    if has_installed_hold && !service_collected {
+        // The lifecycle owner bounds its own shutdown and retains child cleanup
+        // authority. Do not detach that owner at a shorter host timeout.
+        service
+            .await
+            .map_err(|_| HostError::LifecycleUnavailable)??;
+    } else if !service_collected && outcome.is_ok() {
+        tokio::time::timeout(Duration::from_secs(15), &mut service)
+            .await
+            .map_err(|_| HostError::LifecycleUnavailable)?
+            .map_err(|_| HostError::LifecycleUnavailable)??;
+    }
+    outcome
+}
+
+#[cfg(all(test, feature = "controlled-proof"))]
+static STARTUP_TEST_ACTIONS: Mutex<std::collections::BTreeMap<PathBuf, String>> =
+    Mutex::new(std::collections::BTreeMap::new());
+#[cfg(all(test, feature = "controlled-proof"))]
+static STARTUP_TEST_SPECS: Mutex<
+    std::collections::BTreeMap<
+        PathBuf,
+        std::sync::mpsc::Sender<lifecycle_service::ProtectedSurfaceSpec>,
+    >,
+> = Mutex::new(std::collections::BTreeMap::new());
+
+#[cfg(all(test, feature = "controlled-proof"))]
+async fn startup_test_cut(host: &Host, point: &str) -> Result<(), HostError> {
+    let Some(root) = host.startup.lifecycle.proof_barrier_dir.as_deref() else {
+        return Ok(());
+    };
+    if !root.join(format!("{point}.arm")).exists() {
+        return Ok(());
+    }
+    assert!(
+        !host.startup.socket_path.exists(),
+        "public host listener must be unavailable"
+    );
+    fs::write(root.join(format!("{point}.reached")), b"reached\n")?;
+    let deadline = std::time::Instant::now() + Duration::from_secs(15);
+    while !root.join(format!("{point}.release")).exists() {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "host cut release timeout"
+        );
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    fs::write(
+        root.join(format!("{point}.released")),
+        b"release consumed\n",
+    )?;
+    if startup_test_action(host).is_some_and(|a| a.starts_with("cut-")) {
+        return Err(HostError::LifecycleUnavailable);
+    }
+    Ok(())
+}
+#[cfg(all(test, feature = "controlled-proof"))]
+async fn startup_test_readiness(
+    host: &Host,
+    mut receiver: lifecycle_service::native_startup::NativeStartupReceiver,
+) -> Result<lifecycle_service::native_startup::NativeStartupReceiver, HostError> {
+    if startup_test_action(host).as_deref() == Some("readiness-receiver-loss") {
+        receiver.controlled_close_readiness();
+        let root = host.startup.lifecycle.proof_barrier_dir.as_ref().unwrap();
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(40);
+        while !root.join("native_publish_failed.reached").exists() {
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "publish attempt required"
+            );
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    }
+    Ok(receiver)
+}
+#[cfg(all(test, feature = "controlled-proof"))]
+fn startup_test_action(host: &Host) -> Option<String> {
+    STARTUP_TEST_ACTIONS
+        .lock()
+        .unwrap()
+        .get(&host.selected_identity.as_ref()?.selection_path)
+        .cloned()
+}
+#[cfg(all(test, feature = "controlled-proof"))]
+async fn startup_test_activate(
+    host: &Host,
+    pending: lifecycle_service::native_startup::PendingNativeStartup,
+) -> Result<lifecycle_service::native_startup::ActiveNativeStartup, HostError> {
+    if startup_test_action(host).as_deref() == Some("activation-child-exit") {
+        let pid = pending.observation().native_pid();
+        assert!(
+            std::process::Command::new("/usr/bin/kill")
+                .args(["-KILL", &pid.to_string()])
+                .status()?
+                .success()
+        );
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while pending.guard().check_current().is_ok() {
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::yield_now();
+        }
+        fs::write(
+            host.selected_identity
+                .as_ref()
+                .unwrap()
+                .selection_path
+                .with_extension("activation-invoked"),
+            b"after admitted-currentness\n",
+        )?;
+    }
+    let mut activation = Box::pin(pending.activate());
+    if startup_test_action(host).as_deref() == Some("ack-receiver-loss") {
+        let root = host.startup.lifecycle.proof_barrier_dir.as_ref().unwrap();
+        tokio::select! {
+            result = &mut activation => { panic!("activation completed before armed ack cut: {}", result.is_ok()); }
+            _ = async {
+                let deadline = tokio::time::Instant::now() + Duration::from_secs(40);
+                while !root.join("native_before_activation_ack.reached").exists() {
+                    assert!(tokio::time::Instant::now() < deadline);
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+            } => {}
+        }
+        drop(activation);
+        fs::write(
+            root.join("native_before_activation_ack.release"),
+            b"release after scoped future drop\n",
+        )?;
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+        while !root.join("native_activation_ack_failed.reached").exists() {
+            assert!(tokio::time::Instant::now() < deadline);
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        assert!(!root.join("native_installed_guard.reached").exists());
+        assert!(!host.startup.socket_path.exists());
+        return Err(HostError::LifecycleUnavailable);
+    }
+    activation
+        .await
+        .map_err(|_| HostError::LifecycleUnavailable)
+}
+
+#[cfg(all(test, feature = "controlled-proof"))]
+fn seed_controlled_history(host: &Host) -> Result<(), HostError> {
+    use retained_task_workflow::research_admission::*;
+    let directory = host
+        .selected_identity
+        .as_ref()
+        .ok_or(HostError::Configuration)?
+        .startup_path
+        .parent()
+        .ok_or(HostError::Configuration)?;
+    let basis: BasisBundle = serde_json::from_slice(&fs::read(
+        directory.join("protected/controlled-history-basis"),
+    )?)?;
+    let producer = host
+        .store
+        .controlled_research_producer(&basis.key, ProducerRole::Preparer)?;
+    eprintln!("controlled history cut=before-verify");
+    let verified = host
+        .store
+        .controlled_verify_research_basis(basis.clone(), &producer)?;
+    eprintln!("controlled history cut=before-prepare");
+    let preparation = host
+        .store
+        .prepare_research(&basis.key, None, verified, &producer)?;
+    let request = ResearchAdopt {
+        submit: basis.submit.clone(),
+        key: basis.key.clone(),
+        expected_preparation_revision: preparation.revision,
+        prepared_basis_digest: research_digest("basis", &basis)?,
+    };
+    let adopter = host
+        .store
+        .controlled_research_producer(&basis.key, ProducerRole::Adopter)?;
+    let mut stale = admission_basis(host, &request.submit.subject_id)?;
+    stale.revision = stale
+        .revision
+        .parse::<u64>()
+        .map_err(|_| HostError::Configuration)?
+        .checked_add(1000)
+        .ok_or(HostError::Configuration)?
+        .to_string();
+    eprintln!("controlled history cut=before-adopt");
+    let (adoption, fresh) =
+        host.store
+            .adopt_research_with_admission(&request, &adopter, &mut |text| {
+                let command = build_admission(host, &request.submit, &stale, text);
+                eprintln!(
+                    "controlled history command-built={} text-length={}",
+                    command.is_ok(),
+                    text.len()
+                );
+                if let Ok(command) = &command {
+                    eprintln!(
+                        "controlled history command-length={}",
+                        command.command_json.len()
+                    );
+                }
+                command
+            })?;
+    assert!(fresh);
+    eprintln!("controlled history cut=adoption-committed");
+    // Exercise the lifecycle command owner's own stale-revision refusal.
+    // This controlled fixture enters the existing owner socket directly.
+    let command = parse_command_v2(adoption.command.command_json.as_bytes())
+        .map_err(|_| HostError::Configuration)?;
+    eprintln!("controlled history cut=before-owner-exchange");
+    let owner_reply = exchange(
+        &host.startup.lifecycle.socket_path,
+        &json!({"op":"command","command":command}),
+    );
+    eprintln!("controlled history cut=owner-exchange result={owner_reply:?}");
+    let terminal = owner_reply?;
+    eprintln!("controlled history cut=owner-reply reply={terminal}");
+    assert_eq!(
+        terminal["accepted"], false,
+        "historical command must really refuse"
+    );
+    assert_eq!(terminal["rejection_code"], "stale_revision");
+    eprintln!("controlled history cut=before-terminal-reconcile");
+    let reconciled = reconcile_admission(host, &adoption.command, true);
+    eprintln!("controlled history cut=terminal-reconcile result={reconciled:?}");
+    assert_eq!(reconciled?.as_ref(), Some(&terminal));
+    fs::write(
+        directory.join("controlled-history-observed.json"),
+        serde_json::to_vec(
+            &json!({"qualification":"controlled_only","basis":basis,"preparation":preparation,"request":request,"adoption":adoption,"lifecycle_rejection":terminal}),
+        )?,
+    )?;
+    Ok(())
+}
+#[cfg(all(test, feature = "controlled-proof"))]
+fn startup_test_boundary(
+    host: &Host,
+    pending: &mut lifecycle_service::native_startup::PendingNativeStartup,
+    after_install: bool,
+) -> Result<(), HostError> {
+    let identity = host
+        .selected_identity
+        .as_ref()
+        .ok_or(HostError::Configuration)?;
+    let action = STARTUP_TEST_ACTIONS
+        .lock()
+        .unwrap()
+        .get(&identity.selection_path)
+        .cloned();
+    let Some(action) = action else {
+        return Ok(());
+    };
+    assert!(
+        !host.startup.socket_path.exists(),
+        "productive host must remain unavailable during hold"
+    );
+    if after_install != action.starts_with("late-") {
+        return Ok(());
+    }
+    let pid = pending.observation().native_pid();
+    research_installation::OBSERVED_NATIVE_PIDS
+        .lock()
+        .unwrap()
+        .push(pid);
+    match action.trim_start_matches("late-") {
+        "wrong-thread" | "wrong-transport" | "wrong-configuration" | "wrong-protocol" => {
+            let evidence = pending.controlled_test_evidence_mut();
+            match action.as_str() {
+                "wrong-thread" => evidence["thread"] = json!("different-owned-thread"),
+                "wrong-transport" => evidence["transport"] = json!("transport:other:incarnation"),
+                "wrong-configuration" => {
+                    evidence["native_configuration_digest"] = json!("0".repeat(64))
+                }
+                "wrong-protocol" => evidence["protocol"] = json!("0".repeat(64)),
+                _ => unreachable!(),
+            }
+            fs::write(
+                identity.selection_path.with_extension("injection-reached"),
+                action,
+            )?;
+        }
+        "queued-turn" | "queued-successor" => {
+            // The actor has queued actual work before spawning this runner.
+            // This boundary cancels while its real startup hold remains closed.
+            assert!(
+                host.startup
+                    .lifecycle
+                    .proof_barrier_dir
+                    .as_ref()
+                    .unwrap()
+                    .join("native_test_queue.reached")
+                    .exists()
+            );
+            let payload: Value = serde_json::from_slice(&fs::read(
+                host.startup
+                    .research
+                    .as_ref()
+                    .unwrap()
+                    .installation
+                    .as_ref()
+                    .map(|_| {
+                        identity
+                            .startup_path
+                            .parent()
+                            .unwrap()
+                            .join("protected/notice-payload")
+                    })
+                    .unwrap(),
+            )?)?;
+            let response = dispatch(
+                host,
+                json!({"op":"research.invalidate.v1","payload":payload}),
+            );
+            assert!(
+                response.get("code").is_some(),
+                "notice must refuse while admission is pending"
+            );
+            return Err(HostError::LifecycleUnavailable);
+        }
+        "active-successor"
+        | "active-turn"
+        | "shutdown-buffered"
+        | "owned-observations"
+        | "activation-child-exit"
+        | "ack-receiver-loss"
+        | "readiness-receiver-loss" => {}
+        "cut-turn" | "cut-successor" => {
+            if std::env::var("M4CB_CUT").unwrap().starts_with("native_") {
+                return Err(HostError::LifecycleUnavailable);
+            }
+        }
+        "child-exit" => {
+            let status = std::process::Command::new("/usr/bin/kill")
+                .args(["-KILL", &pid.to_string()])
+                .status()?;
+            assert!(status.success());
+            let until = std::time::Instant::now() + Duration::from_secs(2);
+            while pending.guard().check_current().is_ok() {
+                assert!(std::time::Instant::now() < until);
+                std::thread::yield_now();
+            }
+        }
+        "selection" => fs::write(
+            &identity.selection_path,
+            b"changed selection after readiness",
+        )?,
+        "startup" => fs::write(&identity.startup_path, b"changed startup after readiness")?,
+        "owner-root" => {
+            let root = &host.startup.lifecycle.store_root;
+            fs::rename(root, root.with_extension("replaced"))?;
+            fs::create_dir(root)?;
+        }
+        "cancel" | "drop" => return Err(HostError::LifecycleUnavailable),
+        _ => return Err(HostError::Configuration),
+    }
     Ok(())
 }
 
@@ -1263,7 +1746,10 @@ fn validate_file(path: &Path) -> Result<(), HostError> {
     Ok(())
 }
 fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
+    lifecycle_service::validate_config(&s.lifecycle, true, true, false)
+        .map_err(|_| startup_invalid("lifecycle configuration"))?;
     research_admission::validate_nomination(s)?;
+    research_installation::validate_records(s)?;
     if s.profile != PROFILE
         || s.lifecycle.subject_id.is_empty()
         || s.approved_snapshot_ref.is_empty()
@@ -1458,10 +1944,9 @@ async fn wait_for_socket(
             return Ok(());
         }
         if service.is_finished() {
-            return match service.await {
-                Ok(Err(error)) => Err(HostError::Lifecycle(error)),
-                Ok(Ok(())) | Err(_) => Err(HostError::LifecycleUnavailable),
-            };
+            // The caller owns the one collection on every exit, including a
+            // completed result containing unsafe/unknown cleanup.
+            return Err(HostError::LifecycleUnavailable);
         }
         if tokio::time::Instant::now() >= until {
             return Err(HostError::LifecycleUnavailable);
@@ -1577,6 +2062,7 @@ mod tests {
             research: OnceLock::from(research_admission::ResearchHost::default()),
             recovery_only: mode,
             selected: true,
+            selected_identity: None,
         }
     }
 
@@ -1970,6 +2456,7 @@ mod tests {
             research: OnceLock::from(research_admission::ResearchHost::default()),
             recovery_only: mode,
             selected: false,
+            selected_identity: None,
         };
         let submit = json!({"command_id":"command-0","task_id":"task-0","subject_id":"subject-0","kind":"repository_analysis","objective":"Analyze approved source","engineering_question":"Who owns this?","snapshot_ref":"snapshot-0"});
         let new_work = dispatch(&host, json!({"op":"task.submit.v1","payload":submit}));

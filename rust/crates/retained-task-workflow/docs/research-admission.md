@@ -17,12 +17,14 @@ submit, key, expected preparation revision and basis digest under a separate
 operation domain. Historical duplicates return their original receipt before
 consulting the current head.
 
-Capabilities are opaque, store/key/role bound and never deserialized. There is
-no production constructor. Only `controlled-proof` exposes explicitly synthetic
-producer and basis qualification constructors. These fixtures do not establish
+Capabilities are opaque, store/key/role bound and never deserialized. The narrow trusted-startup notice constructor requires an externally admitted
+host/source/protection consequence; Rust visibility and association data do not
+authenticate a caller. Only `controlled-proof` exposes synthetic producer and
+basis qualification constructors. These fixtures do not establish
 research judgment, actual consumer delivery, installation protection or A5
 execution. The owner validates retained bytes and exact internal bindings;
-production verification/installation remains an outstanding separate boundary.
+production basis verification remains unavailable while C1 actual delivery is
+unestablished.
 Research notice selectors start with `research.`; decision/operator selectors
 start with `decision.`. The trusted preparer registers the complete selector set
 before either a notice or readiness can be published.
@@ -55,3 +57,16 @@ Retained recommendation JSON rejects duplicate object keys, including identical
 or conflicting selectors inside `dependencies`. Preparation and adoption use
 the same typed decoder; strict outer fixture parsing does not substitute for
 checking embedded artifact bytes. Refusal publishes no input, command or adoption.
+
+The controlled installed-notice path adds an optional `admission` association to
+new notice receipts. It records the controlled current startup, upstream
+installation/configuration/admission, operation manifest/admission, caller
+evidence, exact operation/role and payload digest in the same notice transaction.
+The association is data, not an authority permit. Trusted host composition supplies the production association; the controlled
+constructor is feature gated and labelled synthetic. Both check store/key/role
+and exact notice digest, and grant neither preparation nor adoption. Historical retries
+return the original stored receipt even if later evidence differs. Absent
+associations stay absent when serializing old receipts; schema 3 and existing
+saved basis/input/command identities remain unchanged. Controlled installed-key
+setup uses one owner transaction for nomination and selector registration, so a
+registration refusal cannot publish a partial nomination guard.

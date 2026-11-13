@@ -27,15 +27,15 @@ use std::{
         Arc, Mutex, MutexGuard,
         atomic::{AtomicUsize, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use lifecycle_core::{SubjectId, TransitionId};
 use lifecycle_semantic::{
     AttributedFinding, AttributedStatement, ContinuationPlan, DependencyObservation,
     DependencyRevision, DirectCapture, DirectEvidenceClass, DirectInferencePort,
-    DirectPreparedCall, DirectProductionProfile, DirectReleaseState, DirectRole, DirectSubmitError, DirectTerminal,
-    DirectWire, FindingStatus, InteractionStatus, MaterialInput, ObligationKind,
+    DirectPreparedCall, DirectProductionProfile, DirectReleaseState, DirectRole, DirectSubmitError,
+    DirectTerminal, DirectWire, FindingStatus, InteractionStatus, MaterialInput, ObligationKind,
     RequiredObligation, RetainedDecision, RetainedInteraction, SemanticPolicy, SourceAvailability,
     SourceKind, SourceMaterial, SourceReference, SourceTrust, VerifierReport, project_material,
     sha256_hex,
@@ -100,7 +100,9 @@ impl Drop for Registered {
 static SERIAL: Mutex<()> = Mutex::new(());
 
 fn serial() -> MutexGuard<'static, ()> {
-    SERIAL.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    SERIAL
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 // ---- C1 corpus material, scripted port and material double ----
@@ -292,7 +294,10 @@ fn complete(value: &impl serde::Serialize) -> Reply {
 
 fn replies(status: FindingStatus) -> Vec<Reply> {
     let input = c1_input();
-    vec![complete(&c1_candidate(&input)), complete(&c1_report(&input, status))]
+    vec![
+        complete(&c1_candidate(&input)),
+        complete(&c1_report(&input, status)),
+    ]
 }
 
 struct ScriptedPort {
@@ -353,7 +358,11 @@ impl ScriptedPort {
     }
 
     fn release(&self, role: DirectRole) {
-        self.released.lock().unwrap().get_or_insert_with(Vec::new).push(role);
+        self.released
+            .lock()
+            .unwrap()
+            .get_or_insert_with(Vec::new)
+            .push(role);
     }
 
     fn calls(&self) -> usize {
@@ -406,7 +415,10 @@ impl DirectInferencePort for ScriptedPort {
             let mut withhold = self.withhold.lock().unwrap();
             if let Some(at) = withhold.iter().position(|role| *role == call.binding.role) {
                 withhold.remove(at);
-                self.withheld.lock().unwrap().push(call.binding_sha256.clone());
+                self.withheld
+                    .lock()
+                    .unwrap()
+                    .push(call.binding_sha256.clone());
                 return Err(DirectSubmitError::Withheld);
             }
         }
@@ -582,11 +594,11 @@ impl OwnerMaterial {
             payload_sha256: json_digest(&payload).unwrap(),
         };
         tasks
-            .open_question(
-                &entry,
-                &payload,
-                &mut |commit: &mut dyn FnMut() -> Result<(), TaskError>| commit(),
-            )
+            .open_question(&entry, &payload, &mut |commit: &mut dyn FnMut()
+                -> Result<
+                (),
+                TaskError,
+            >| commit())
             .unwrap();
         Arc::new(Self {
             _dir: dir,
@@ -660,7 +672,10 @@ impl OwnerMaterial {
                 CAPTURE,
             )
             .unwrap();
-        vec![complete(&owner_candidate(&input)), complete(&c1_report(&input, status))]
+        vec![
+            complete(&owner_candidate(&input)),
+            complete(&c1_report(&input, status)),
+        ]
     }
 }
 
@@ -824,7 +839,11 @@ impl Host {
             grant("grant:enqueue-next", NEXT_CONTEXT, "enqueue_input"),
         ];
         if owner_admission {
-            grants.push(grant(ADMISSION_GRANT, CONTEXT, "semantic_direct_checkpoint_v1"));
+            grants.push(grant(
+                ADMISSION_GRANT,
+                CONTEXT,
+                "semantic_direct_checkpoint_v1",
+            ));
         }
         let member = b"direct host source\n";
         let semantic = json!({
@@ -927,8 +946,17 @@ impl Host {
     fn start(&mut self) {
         let config = self.config.clone();
         let serving = self.runtime.spawn(async move { serve(&config).await });
-        for _ in 0..500 {
+        let startup_started = Instant::now();
+        let startup_deadline = startup_started + Duration::from_secs(60);
+        while Instant::now() < startup_deadline {
             if UnixStream::connect(&self.host_socket).is_ok() {
+                eprintln!(
+                    "controlled startup elapsed_ms={} executable_bytes={}",
+                    startup_started.elapsed().as_millis(),
+                    fs::metadata(std::env::current_exe().unwrap())
+                        .unwrap()
+                        .len()
+                );
                 self.serving = Some(serving);
                 return;
             }
@@ -943,7 +971,9 @@ impl Host {
 
     fn request(&self, request: Value) -> Value {
         let mut stream = UnixStream::connect(&self.host_socket).unwrap();
-        stream.set_read_timeout(Some(Duration::from_secs(30))).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(30)))
+            .unwrap();
         stream
             .write_all(&[serde_json::to_vec(&request).unwrap(), b"\n".to_vec()].concat())
             .unwrap();
@@ -1105,9 +1135,9 @@ impl Host {
             .status()
             .unwrap();
         assert!(status.success());
-        let result = self.runtime.block_on(async {
-            tokio::time::timeout(Duration::from_secs(60), serving).await
-        });
+        let result = self
+            .runtime
+            .block_on(async { tokio::time::timeout(Duration::from_secs(60), serving).await });
         result.expect("host stopped").expect("host task joined")
     }
 }
@@ -1160,26 +1190,77 @@ fn run(host: &mut Host) -> Observed {
 }
 
 fn assert_stopped(host: &mut Host) {
-    host.stop().expect("graceful host stop");
+    // This fixture deliberately has no native executable/companion and seeds
+    // its native turn by SQL. The pre-spawn guard cannot establish a safe
+    // native exit: preserve the exact unsafe failure rather than call it a
+    // successful native shutdown.
+    let result = host.stop();
+    assert_eq!(format!("{result:?}"), "Err(Lifecycle(Store(Unavailable)))");
+    let db = host.db();
+    let (unsafe_close, raw): (bool, String) = db.query_row(
+        "SELECT unsafe_at_close,native_close_json FROM service_closes ORDER BY rowid DESC LIMIT 1",
+        [], |r| Ok((r.get(0)?, r.get(1)?)),
+    ).unwrap();
+    assert!(unsafe_close);
+    let close: Value = serde_json::from_str(&raw).unwrap();
+    let domain = close
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|row| row["session_id"] == SESSION)
+        .collect::<Vec<_>>();
+    assert_eq!(domain.len(), 1);
+    let row = domain[0];
+    assert_eq!(row["session_id"], SESSION);
+    assert_eq!(row["process_outcome"], "transport_error_guard_host");
+    assert_eq!(row["allocation_state"], "intent");
+    assert!(row["thread_id"].is_null());
+    assert_eq!(row["turn_state"], "completed_settled");
+    assert_eq!(row["unsettled_children"], 0);
+    let (pid, exit): (Option<i64>, Option<i64>) = db
+        .query_row(
+            "SELECT pid,exit_code FROM native_process_exits WHERE session_id=?1",
+            [SESSION],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!((pid, exit), (None, None));
     assert!(!host.host_socket.exists(), "host socket removed");
-    assert!(!host.service_socket.exists(), "service socket removed");
+    assert!(UnixStream::connect(&host.host_socket).is_err());
+    // A failed attempt may retain its inert lifecycle rendezvous pathname;
+    // both serving owners are collected and neither endpoint may admit work.
+    assert!(UnixStream::connect(&host.service_socket).is_err());
 }
 
 #[test]
 fn installed_host_direct_selection_reaches_admitted_checkpoint_and_stops_gracefully() {
     let _serial = serial();
     let port = ScriptedPort::public_class(replies(FindingStatus::Satisfied));
-    let mut host = Host::new(Control::Direct, true, Some(port.clone()), Material::new(usize::MAX));
+    let mut host = Host::new(
+        Control::Direct,
+        true,
+        Some(port.clone()),
+        Material::new(usize::MAX),
+    );
     let observed = run(&mut host);
 
-    assert_eq!(observed.reply["status"], "replacement_requested", "{}", observed.reply);
+    assert_eq!(
+        observed.reply["status"], "replacement_requested",
+        "{}",
+        observed.reply
+    );
     // Startup asked for the configured Direct port twice: validation's
     // composability check and the composition the service received.
     assert_eq!(observed.port_lookups, 2);
     assert!(observed.transition_id.starts_with("transition:"));
     // The engine checkpointed and stopped there: no switch, no successor.
     assert_eq!(observed.stage, "checkpointed");
-    assert!(observed.checkpoint_id.as_deref().is_some_and(|id| id.starts_with("checkpoint:")));
+    assert!(
+        observed
+            .checkpoint_id
+            .as_deref()
+            .is_some_and(|id| id.starts_with("checkpoint:"))
+    );
     assert_eq!(observed.successor, 0, "no native successor was authorized");
     // One compile and one separate verify exchange, through the selected port.
     let seen = port.seen.lock().unwrap().clone();
@@ -1187,8 +1268,14 @@ fn installed_host_direct_selection_reaches_admitted_checkpoint_and_stops_gracefu
     assert!(seen[0].candidate_sha256.is_none() && seen[1].candidate_sha256.is_some());
     // Owner fences: publication of the direct result and its consumption.
     assert_eq!(observed.fenced, 2);
-    assert!(observed.admitted > 0, "the owner grant admitted the direct result");
-    assert_eq!(observed.native_sessions, 1, "only the domain session; no native control session");
+    assert!(
+        observed.admitted > 0,
+        "the owner grant admitted the direct result"
+    );
+    assert_eq!(
+        observed.native_sessions, 1,
+        "only the domain session; no native control session"
+    );
     assert_eq!(observed.eligibility, "current");
 
     // The host and lifecycle service still serve after the checkpoint: the
@@ -1200,7 +1287,10 @@ fn installed_host_direct_selection_reaches_admitted_checkpoint_and_stops_gracefu
     assert_eq!(port.calls(), 2, "serving on sent no further exchange");
     assert_stopped(&mut host);
     assert_eq!(port.calls(), 2);
-    assert_eq!(host.count("SELECT COUNT(*) FROM transitions WHERE stage='checkpointed'"), 1);
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM transitions WHERE stage='checkpointed'"),
+        1
+    );
 }
 
 #[test]
@@ -1241,7 +1331,12 @@ fn installed_host_direct_without_admission_does_not_checkpoint() {
         ),
     ];
     for (name, admission, port, max_fences, exchanges) in cases {
-        let mut host = Host::new(Control::Direct, admission, Some(port.clone()), Material::new(usize::MAX));
+        let mut host = Host::new(
+            Control::Direct,
+            admission,
+            Some(port.clone()),
+            Material::new(usize::MAX),
+        );
         let observed = run(&mut host);
         assert_eq!(observed.port_lookups, 2, "{name}");
         assert_eq!(observed.stage, "verifying", "{name}: {}", observed.reply);
@@ -1249,7 +1344,11 @@ fn installed_host_direct_without_admission_does_not_checkpoint() {
         assert_eq!(observed.admitted, 0, "{name}");
         assert_eq!(observed.successor, 0, "{name}");
         assert_eq!(port.calls(), exchanges, "{name}");
-        assert!(observed.fenced <= max_fences.min(1), "{name}: {}", observed.fenced);
+        assert!(
+            observed.fenced <= max_fences.min(1),
+            "{name}: {}",
+            observed.fenced
+        );
         assert_eq!(observed.native_sessions, 1, "{name}");
         assert_stopped(&mut host);
         assert_eq!(port.calls(), exchanges, "{name}: no retransmission");
@@ -1281,8 +1380,14 @@ fn installed_host_direct_fences_owner_change_before_publication_and_before_consu
     let after = run(&mut host);
     assert_eq!(after.stage, "verifying");
     assert!(after.checkpoint_id.is_none());
-    assert!(after.admitted > 0, "published and admitted before the change");
-    assert_eq!(after.fenced, 1, "only publication committed inside the fence");
+    assert!(
+        after.admitted > 0,
+        "published and admitted before the change"
+    );
+    assert_eq!(
+        after.fenced, 1,
+        "only publication committed inside the fence"
+    );
     assert_eq!(after.eligibility, "stale");
     assert_eq!(port.calls(), 2);
     assert_stopped(&mut host);
@@ -1294,7 +1399,12 @@ fn installed_host_native_selection_never_composes_or_reaches_direct() {
     // A registered port exists for this directory; Native selection must not
     // ask for it, and nothing Direct may be produced.
     let port = ScriptedPort::public_class(replies(FindingStatus::Satisfied));
-    let mut host = Host::new(Control::Native, true, Some(port.clone()), Material::new(usize::MAX));
+    let mut host = Host::new(
+        Control::Native,
+        true,
+        Some(port.clone()),
+        Material::new(usize::MAX),
+    );
     let observed = run(&mut host);
     assert_eq!(observed.port_lookups, 0);
     assert_eq!(port.calls(), 0);
@@ -1311,7 +1421,10 @@ fn installed_host_native_selection_never_composes_or_reaches_direct() {
 fn wait_for_stage(host: &Host, stage: &str) -> bool {
     let deadline = std::time::Instant::now() + Duration::from_secs(30);
     while std::time::Instant::now() < deadline {
-        if host.transition().is_some_and(|(_, current, _)| current == stage) {
+        if host
+            .transition()
+            .is_some_and(|(_, current, _)| current == stage)
+        {
             return true;
         }
         std::thread::sleep(Duration::from_millis(100));
@@ -1340,17 +1453,32 @@ fn installed_host_direct_pending_release_is_redriven_without_resend() {
     let _serial = serial();
     let port = ScriptedPort::public_class(replies(FindingStatus::Satisfied));
     port.hold_releases();
-    let mut host = Host::new(Control::Direct, true, Some(port.clone()), Material::new(usize::MAX));
+    let mut host = Host::new(
+        Control::Direct,
+        true,
+        Some(port.clone()),
+        Material::new(usize::MAX),
+    );
     let observed = run(&mut host);
-    assert_eq!(observed.reply["status"], "replacement_requested", "{}", observed.reply);
+    assert_eq!(
+        observed.reply["status"], "replacement_requested",
+        "{}",
+        observed.reply
+    );
     // Missing release: no store attempt, no exchange, no checkpoint.
     assert_eq!(observed.stage, "verifying");
     assert_eq!(port.calls(), 0);
-    assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        0
+    );
     // The guarded re-drive keeps offering the same compile call and nothing else.
     std::thread::sleep(Duration::from_millis(4500));
     assert_eq!(port.calls(), 0);
-    assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        0
+    );
     let offered = port.offered.lock().unwrap().clone();
     assert!(offered.len() >= 2, "re-driven while pending: {offered:?}");
     assert!(offered.iter().all(|role| *role == DirectRole::Compile));
@@ -1362,16 +1490,25 @@ fn installed_host_direct_pending_release_is_redriven_without_resend() {
     std::thread::sleep(Duration::from_millis(4500));
     assert_eq!(port.calls(), 1, "verify is not sent without its release");
     assert_eq!(host.transition().unwrap().1, "verifying");
-    assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE role='verify'"), 0);
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE role='verify'"),
+        0
+    );
     assert!(port.offered.lock().unwrap().contains(&DirectRole::Verify));
 
     port.release(DirectRole::Verify);
-    assert!(wait_for_stage(&host, "checkpointed"), "re-drive reached the checkpoint");
+    assert!(
+        wait_for_stage(&host, "checkpointed"),
+        "re-drive reached the checkpoint"
+    );
     let seen = port.seen.lock().unwrap().clone();
     assert_eq!(seen.len(), 2);
     assert_eq!(seen[0].binding.role, DirectRole::Compile);
     assert_eq!(seen[1].binding.role, DirectRole::Verify);
-    assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
     // Serving on after the checkpoint sends nothing further.
     std::thread::sleep(Duration::from_millis(2500));
     assert_eq!(port.calls(), 2);
@@ -1385,10 +1522,22 @@ fn installed_host_direct_withheld_send_is_withdrawn_and_redriven_once() {
     let port = ScriptedPort::public_class(replies(FindingStatus::Satisfied));
     // The compile release is refused before any claim at its first send.
     port.withhold_once(DirectRole::Compile);
-    let mut host = Host::new(Control::Direct, true, Some(port.clone()), Material::new(usize::MAX));
+    let mut host = Host::new(
+        Control::Direct,
+        true,
+        Some(port.clone()),
+        Material::new(usize::MAX),
+    );
     let observed = run(&mut host);
-    assert_eq!(observed.reply["status"], "replacement_requested", "{}", observed.reply);
-    assert!(wait_for_stage(&host, "checkpointed"), "the served host re-drove after withdrawal");
+    assert_eq!(
+        observed.reply["status"], "replacement_requested",
+        "{}",
+        observed.reply
+    );
+    assert!(
+        wait_for_stage(&host, "checkpointed"),
+        "the served host re-drove after withdrawal"
+    );
     let withheld = port.withheld.lock().unwrap().clone();
     assert_eq!(withheld.len(), 1);
     // The withdrawn intent left no terminal NotSent: the same prepared compile
@@ -1399,9 +1548,22 @@ fn installed_host_direct_withheld_send_is_withdrawn_and_redriven_once() {
     assert_eq!(seen[0].binding_sha256, withheld[0]);
     assert_eq!(seen[1].binding.role, DirectRole::Verify);
     let offered = port.offered.lock().unwrap().clone();
-    assert!(offered.iter().filter(|role| **role == DirectRole::Compile).count() >= 2, "{offered:?}");
-    assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
-    assert_eq!(host.count("SELECT COUNT(*) FROM transitions WHERE stage='checkpointed'"), 1);
+    assert!(
+        offered
+            .iter()
+            .filter(|role| **role == DirectRole::Compile)
+            .count()
+            >= 2,
+        "{offered:?}"
+    );
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
+    assert_eq!(
+        host.count("SELECT COUNT(*) FROM transitions WHERE stage='checkpointed'"),
+        1
+    );
     std::thread::sleep(Duration::from_millis(2500));
     assert_eq!(port.calls(), 2);
     assert_stopped(&mut host);
@@ -1453,7 +1615,11 @@ fn installed_host_direct_owner_update_before_redrive_admits_no_fresh_attempt() {
         }
         let mut host = Host::new(Control::Direct, true, Some(port.clone()), owner.clone());
         let observed = run(&mut host);
-        assert_eq!(observed.reply["status"], "replacement_requested", "{answered}: {}", observed.reply);
+        assert_eq!(
+            observed.reply["status"], "replacement_requested",
+            "{answered}: {}",
+            observed.reply
+        );
         assert!(
             wait_until(|| {
                 let at = at_withhold.load(Ordering::SeqCst);
@@ -1467,14 +1633,24 @@ fn installed_host_direct_owner_update_before_redrive_admits_no_fresh_attempt() {
         assert_eq!(withheld.len(), 1, "{answered}");
 
         if !answered {
-            assert!(wait_for_stage(&host, "checkpointed"), "the unchanged owner re-drove to the checkpoint");
+            assert!(
+                wait_for_stage(&host, "checkpointed"),
+                "the unchanged owner re-drove to the checkpoint"
+            );
             let seen = port.seen.lock().unwrap().clone();
             assert_eq!(seen.len(), 2);
             assert_eq!(seen[0].binding.role, DirectRole::Compile);
             assert_eq!(seen[0].binding_sha256, withheld[0]);
             assert_eq!(seen[1].binding.role, DirectRole::Verify);
-            assert_eq!(host.material.fenced(), 2, "publication and consumption inside the owner fence");
-            assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+            assert_eq!(
+                host.material.fenced(),
+                2,
+                "publication and consumption inside the owner fence"
+            );
+            assert_eq!(
+                host.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+                2
+            );
             assert_eq!(host.capture_eligibility(), "current");
             assert_stopped(&mut host);
             assert_eq!(port.calls(), 2);
@@ -1485,13 +1661,27 @@ fn installed_host_direct_owner_update_before_redrive_admits_no_fresh_attempt() {
         // basis projected before the answer.
         let transition = host.transition().unwrap().0;
         let captured = host.capture_basis();
-        assert_ne!(captured, owner.basis_sha256(&transition), "the owner's material changed");
-        assert_eq!(host.capture_eligibility(), "current", "the capture is not rebased or reset");
+        assert_ne!(
+            captured,
+            owner.basis_sha256(&transition),
+            "the owner's material changed"
+        );
+        assert_eq!(
+            host.capture_eligibility(),
+            "current",
+            "the capture is not rebased or reset"
+        );
         // No offer, intent, attempt, NotSent, send, verdict or checkpoint.
         assert_eq!(*port.offered.lock().unwrap(), vec![DirectRole::Compile]);
         assert_eq!(port.calls(), 0);
-        assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
-        assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_results"), 0);
+        assert_eq!(
+            host.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+            0
+        );
+        assert_eq!(
+            host.count("SELECT COUNT(*) FROM direct_semantic_results"),
+            0
+        );
         let (_, stage, checkpoint) = host.transition().unwrap();
         assert_eq!(stage, "verifying");
         assert!(checkpoint.is_none());
@@ -1514,8 +1704,11 @@ fn installed_host_direct_owner_update_before_redrive_admits_no_fresh_attempt() {
 fn installed_host_direct_owner_update_after_projection_never_checkpoints() {
     let _serial = serial();
     // (point, recorded verdicts, admitted, commits inside the owner fence)
-    let cases = [(None, 0, false, 0), (Some(AnswerAt::Observation), 1, false, 0),
-        (Some(AnswerAt::FencedCommit), 1, true, 1)];
+    let cases = [
+        (None, 0, false, 0),
+        (Some(AnswerAt::Observation), 1, false, 0),
+        (Some(AnswerAt::FencedCommit), 1, true, 1),
+    ];
     for (point, results, admitted, fenced) in cases {
         let owner = OwnerMaterial::new();
         let port = ScriptedPort::public_class(owner.replies(FindingStatus::Satisfied));
@@ -1528,8 +1721,15 @@ fn installed_host_direct_owner_update_after_projection_never_checkpoints() {
         }
         let mut host = Host::new(Control::Direct, true, Some(port.clone()), owner.clone());
         let observed = run(&mut host);
-        assert_eq!(observed.reply["status"], "replacement_requested", "{point:?}: {}", observed.reply);
-        assert!(wait_for_calls(&port, 2), "{point:?}: compile and verify sent on the projected basis");
+        assert_eq!(
+            observed.reply["status"], "replacement_requested",
+            "{point:?}: {}",
+            observed.reply
+        );
+        assert!(
+            wait_for_calls(&port, 2),
+            "{point:?}: compile and verify sent on the projected basis"
+        );
         assert!(
             wait_until(|| host.capture_eligibility() == "stale"),
             "{point:?}: the owner retired the capture"
@@ -1537,7 +1737,11 @@ fn installed_host_direct_owner_update_after_projection_never_checkpoints() {
         // Answered by the actor only after the drive in progress returned.
         host.task_revision();
         assert_eq!(port.calls(), 2, "{point:?}");
-        assert_eq!(host.count("SELECT COUNT(*) FROM direct_semantic_results"), results, "{point:?}");
+        assert_eq!(
+            host.count("SELECT COUNT(*) FROM direct_semantic_results"),
+            results,
+            "{point:?}"
+        );
         let admissions = host.count(&format!(
             "SELECT COUNT(*) FROM direct_semantic_results WHERE admission_grant_id='{ADMISSION_GRANT}'"
         ));
@@ -1546,8 +1750,26 @@ fn installed_host_direct_owner_update_after_projection_never_checkpoints() {
         let (transition, stage, checkpoint) = host.transition().unwrap();
         assert_eq!(stage, "verifying", "{point:?}");
         assert!(checkpoint.is_none(), "{point:?}");
-        assert_ne!(host.capture_basis(), owner.basis_sha256(&transition), "{point:?}");
+        assert_ne!(
+            host.capture_basis(),
+            owner.basis_sha256(&transition),
+            "{point:?}"
+        );
         assert_stopped(&mut host);
         assert_eq!(port.calls(), 2, "{point:?}");
     }
+}
+
+/// Measurement only, run explicitly when the debug image/startup cost changes.
+#[test]
+#[ignore = "explicit controlled executable-hash measurement"]
+fn controlled_current_executable_hash_measurement() {
+    let path = std::env::current_exe().unwrap();
+    let size = fs::metadata(&path).unwrap().len();
+    let started = Instant::now();
+    let digest = crate::sha_file(&path).unwrap();
+    eprintln!(
+        "controlled executable_sha256={digest} executable_bytes={size} sha256_elapsed_ms={}",
+        started.elapsed().as_millis()
+    );
 }

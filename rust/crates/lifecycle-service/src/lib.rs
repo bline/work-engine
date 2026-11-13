@@ -1,6 +1,8 @@
 //! Rust lifecycle service with explicit, route-bound native provider execution.
 
 mod actor;
+pub mod native_startup;
+pub use lifecycle_codex::ProtectedSurfaceSpec;
 mod admission;
 mod controlled;
 pub mod development_startup;
@@ -9,16 +11,16 @@ mod material_port;
 mod operations;
 mod projection;
 mod semantic;
+mod semantic_control;
 mod semantic_direct;
-#[cfg(test)]
-mod semantic_direct_tests;
 #[cfg(test)]
 mod semantic_direct_authority_tests;
 #[cfg(test)]
 mod semantic_direct_joined_tests;
 #[cfg(test)]
 mod semantic_direct_recovery_tests;
-mod semantic_control;
+#[cfg(test)]
+mod semantic_direct_tests;
 mod socket;
 mod task_port;
 
@@ -629,7 +631,15 @@ pub async fn run_with_selected_task_ports(
     material_port: Arc<dyn CanonicalMaterialPort>,
     task_operation_port: Arc<dyn TaskOperationPort>,
 ) -> Result<(), ServiceError> {
-    run_selected_task_ports(config, selected, material_port, task_operation_port, None).await
+    run_selected_task_ports(
+        config,
+        selected,
+        material_port,
+        task_operation_port,
+        None,
+        None,
+    )
+    .await
 }
 
 /// As `run_with_selected_task_ports`, with trusted-composition direct control
@@ -647,8 +657,19 @@ pub async fn run_with_selected_task_ports_and_direct_control(
         material_port,
         task_operation_port,
         Some(direct_control),
+        None,
     )
     .await
+}
+
+pub async fn run_with_selected_task_ports_and_native_startup(
+    config: ServiceConfig,
+    selected: SelectedLifecycleStore,
+    material: Arc<dyn CanonicalMaterialPort>,
+    operations: Arc<dyn TaskOperationPort>,
+    hold: native_startup::NativeStartupHold,
+) -> Result<(), ServiceError> {
+    run_selected_task_ports(config, selected, material, operations, None, Some(hold)).await
 }
 
 async fn run_selected_task_ports(
@@ -657,6 +678,7 @@ async fn run_selected_task_ports(
     material_port: Arc<dyn CanonicalMaterialPort>,
     task_operation_port: Arc<dyn TaskOperationPort>,
     direct_control: Option<Arc<dyn DirectInferencePort>>,
+    startup_hold: Option<native_startup::NativeStartupHold>,
 ) -> Result<(), ServiceError> {
     if config.profile != "retained-repository-analysis-v1"
         || selected.store.root() != config.store_root
@@ -672,6 +694,10 @@ async fn run_selected_task_ports(
         material_port,
         task_operation_port,
         direct_control,
+        startup_hold,
     )
     .await
 }
+
+/// Pure service-owned configuration validation for trusted startup composition.
+pub use socket::validate_config;

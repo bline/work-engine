@@ -3,6 +3,9 @@ use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const MAX_METADATA: usize = 128 * 1024;
+/// Complete notice receipts leave room for the protected operator response
+/// wrapper within its existing 128KiB frame; the trailing newline is framing.
+pub const MAX_NOTICE_RECEIPT_BYTES: usize = 128 * 1024 - 256;
 pub const MAX_ARTIFACT_BYTES: usize = 8 * 1024 * 1024;
 pub const RESERVED_PREFIX: &str = "research-";
 const TABLES: &str = "
@@ -119,11 +122,13 @@ pub enum ProducerRole {
     DecisionNotice,
     Adopter,
 }
-/// Not serializable, not constructible by an operation DTO. No production constructor exists.
+/// Not serializable or constructible by an operation DTO. Trusted startup
+/// installation binds store/key/role/exact scope under its external caller contract.
 pub struct ResearchProducer {
     store_id: String,
     key: ResearchKey,
     role: ProducerRole,
+    admission: Option<ResearchAdmissionAssociation>,
 }
 impl ResearchProducer {
     fn check(
@@ -411,8 +416,90 @@ pub struct ChangeNotice {
     pub source_revision: String,
     pub reason: String,
 }
+/// Downstream current-startup/operation association. Data, never an authority permit.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResearchAdmissionAssociation {
+    pub qualification: String,
+    pub producer_role: String,
+    pub operation: String,
+    pub startup_digest: String,
+    pub installation_digest: String,
+    pub configuration_digest: String,
+    pub operation_manifest_digest: String,
+    pub authority_admission_digest: String,
+    pub operation_admission_digest: String,
+    pub caller_evidence_digest: String,
+    pub payload_digest: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub selection_digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operator_source_digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protection_evidence_digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_realization_digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_host_identity_digest: Option<String>,
+    /// Complete actual pre-mutation observation, retained with this outcome.
+    /// Data only; never projected into native material or tool instructions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currentness_evidence: Option<RetainedArtifact>,
+}
+impl ResearchAdmissionAssociation {
+    fn validate(&self) -> Result<(), TaskError> {
+        if !matches!(
+            self.qualification.as_str(),
+            "controlled_only" | "owner_admitted_startup"
+        ) || self.operation != "research.invalidate.v1"
+            || !matches!(
+                self.producer_role.as_str(),
+                "research_notice" | "decision_notice"
+            )
+            || [
+                &self.startup_digest,
+                &self.installation_digest,
+                &self.configuration_digest,
+                &self.operation_manifest_digest,
+                &self.authority_admission_digest,
+                &self.operation_admission_digest,
+                &self.caller_evidence_digest,
+                &self.payload_digest,
+            ]
+            .into_iter()
+            .any(|s| !valid_digest(s))
+        {
+            return Err(TaskError::Invalid);
+        }
+        if let Some(evidence) = &self.currentness_evidence {
+            if evidence.bytes.is_empty()
+                || evidence.bytes.len() > MAX_METADATA
+                || evidence.id != "native-currentness-v1"
+                || sha256(&evidence.bytes) != evidence.digest
+            {
+                return Err(TaskError::Invalid);
+            }
+        }
+        if self.qualification == "owner_admitted_startup"
+            && [
+                &self.selection_digest,
+                &self.operator_source_digest,
+                &self.protection_evidence_digest,
+                &self.native_realization_digest,
+                &self.current_host_identity_digest,
+            ]
+            .into_iter()
+            .any(|s| s.as_ref().is_none_or(|s| !valid_digest(s)))
+        {
+            return Err(TaskError::Unauthorized);
+        }
+        Ok(())
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NoticeReceipt {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub admission: Option<ResearchAdmissionAssociation>,
     pub key: ResearchKey,
     pub notice_id: String,
     pub revision: u64,
@@ -496,6 +583,87 @@ fn bounded_rows<T: serde::de::DeserializeOwned>(
         .map(|b| serde_json::from_slice(&b).map_err(TaskError::from))
         .collect()
 }
+fn nominate_in(db: &Connection, task: &str, subject: &str) -> Result<(), TaskError> {
+    if !valid_id(task) || !valid_id(subject) {
+        return Err(TaskError::Invalid);
+    }
+    let prior: Option<String> = db
+        .query_row(
+            "SELECT subject_id FROM research_tasks WHERE task_id=?1",
+            [task],
+            |r| r.get(0),
+        )
+        .optional()?;
+    if prior.as_deref().is_some_and(|s| s != subject) {
+        return Err(TaskError::Conflict);
+    }
+    if let Some(record) = read_task(db, task)?
+        && record.subject_id != subject
+    {
+        return Err(TaskError::Conflict);
+    }
+    db.execute(
+        "INSERT OR IGNORE INTO research_tasks VALUES(?1,?2)",
+        params![task, subject],
+    )?;
+    Ok(())
+}
+fn register_in(
+    db: &Connection,
+    key: &ResearchKey,
+    selectors: &BTreeSet<String>,
+    producer: &ResearchProducer,
+) -> Result<(), TaskError> {
+    key.validate()?;
+    if selectors.is_empty()
+        || selectors.len() > 256
+        || selectors
+            .iter()
+            .any(|s| !valid_id(s) || !(s.starts_with("research.") || s.starts_with("decision.")))
+    {
+        return Err(TaskError::Invalid);
+    }
+    producer.check(db, key, ProducerRole::Preparer)?;
+    let subject: String = db
+        .query_row(
+            "SELECT subject_id FROM research_tasks WHERE task_id=?1",
+            [&key.task_id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .ok_or(TaskError::Unauthorized)?;
+    if subject != key.subject_id {
+        return Err(TaskError::Unauthorized);
+    }
+    let old: Option<Vec<u8>> = db
+        .query_row(
+            "SELECT selectors_json FROM research_keys WHERE key_id=?1",
+            [key.id()?],
+            |r| r.get(0),
+        )
+        .optional()?;
+    let bytes = serde_json::to_vec(selectors)?;
+    if let Some(old) = old {
+        return if old == bytes {
+            Ok(())
+        } else {
+            Err(TaskError::Conflict)
+        };
+    }
+    let count: i64 = db.query_row(
+        "SELECT count(*) FROM research_keys WHERE task_id=?1",
+        [&key.task_id],
+        |r| r.get(0),
+    )?;
+    if count >= 16 {
+        return Err(TaskError::Capacity);
+    }
+    db.execute(
+        "INSERT INTO research_keys(key_id,task_id,key_json,selectors_json) VALUES(?1,?2,?3,?4)",
+        params![key.id()?, key.task_id, serde_json::to_vec(key)?, bytes],
+    )?;
+    Ok(())
+}
 impl TaskStore {
     /// Trusted host nomination adds a guard only; it grants no producer authority.
     pub fn nominate_research_task(&self, task: &str, subject: &str) -> Result<(), TaskError> {
@@ -504,25 +672,7 @@ impl TaskStore {
         }
         let mut db = self.lock()?;
         let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let prior: Option<String> = tx
-            .query_row(
-                "SELECT subject_id FROM research_tasks WHERE task_id=?1",
-                [task],
-                |r| r.get(0),
-            )
-            .optional()?;
-        if prior.as_deref().is_some_and(|s| s != subject) {
-            return Err(TaskError::Conflict);
-        }
-        if let Some(record) = read_task(&tx, task)?
-            && record.subject_id != subject
-        {
-            return Err(TaskError::Conflict);
-        }
-        tx.execute(
-            "INSERT OR IGNORE INTO research_tasks VALUES(?1,?2)",
-            params![task, subject],
-        )?;
+        nominate_in(&tx, task, subject)?;
         tx.commit()?;
         Ok(())
     }
@@ -537,7 +687,85 @@ impl TaskStore {
             store_id: self.store_id()?,
             key: key.clone(),
             role,
+            admission: None,
         })
+    }
+    /// Trusted host-composition entry. The caller MUST hold the externally
+    /// established, current owner-admitted startup/source/protection consequence.
+    /// Record deserialization is not that consequence. This internal Rust API is
+    /// not an authentication service and is never exposed over task/native RPC.
+    /// Only exact notices are supported; no production basis is constructed.
+    pub fn install_notice_from_admitted_startup(
+        &self,
+        key: &ResearchKey,
+        role: ProducerRole,
+        admission: ResearchAdmissionAssociation,
+    ) -> Result<ResearchProducer, TaskError> {
+        admission.validate()?;
+        let expected = match role {
+            ProducerRole::ResearchNotice => "research_notice",
+            ProducerRole::DecisionNotice => "decision_notice",
+            _ => return Err(TaskError::Unavailable),
+        };
+        if admission.producer_role != expected {
+            return Err(TaskError::Unauthorized);
+        }
+        key.validate()?;
+        Ok(ResearchProducer {
+            store_id: self.store_id()?,
+            key: key.clone(),
+            role,
+            admission: Some(admission),
+        })
+    }
+    /// Trusted startup setup, after complete external admission validation. The
+    /// host owns source/caller/protection admission; this owner keeps setup atomic.
+    pub fn register_key_from_admitted_startup(
+        &self,
+        key: &ResearchKey,
+        selectors: &BTreeSet<String>,
+    ) -> Result<(), TaskError> {
+        key.validate()?;
+        let registrar = ResearchProducer {
+            store_id: self.store_id()?,
+            key: key.clone(),
+            role: ProducerRole::Preparer,
+            admission: None,
+        };
+        let mut db = self.lock()?;
+        let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        nominate_in(&tx, &key.task_id, &key.subject_id)?;
+        register_in(&tx, key, selectors, &registrar)?;
+        tx.commit()?;
+        Ok(())
+    }
+    /// Synthetic qualification of an installed exact intent. This is deliberately
+    /// unavailable in the default product and does not authenticate owner sources.
+    #[cfg(feature = "controlled-proof")]
+    pub fn controlled_scoped_research_producer(
+        &self,
+        key: &ResearchKey,
+        role: ProducerRole,
+        admission: ResearchAdmissionAssociation,
+    ) -> Result<ResearchProducer, TaskError> {
+        admission.validate()?;
+        if !matches!(
+            role,
+            ProducerRole::ResearchNotice | ProducerRole::DecisionNotice
+        ) {
+            return Err(TaskError::Unavailable);
+        }
+        let expected = match role {
+            ProducerRole::ResearchNotice => "research_notice",
+            ProducerRole::DecisionNotice => "decision_notice",
+            _ => return Err(TaskError::Unavailable),
+        };
+        if admission.producer_role != expected {
+            return Err(TaskError::Unauthorized);
+        }
+        let mut producer = self.controlled_research_producer(key, role)?;
+        producer.admission = Some(admission);
+        Ok(producer)
     }
     #[cfg(feature = "controlled-proof")]
     pub fn controlled_verify_research_basis(
@@ -556,58 +784,21 @@ impl TaskStore {
         selectors: &BTreeSet<String>,
         producer: &ResearchProducer,
     ) -> Result<(), TaskError> {
-        key.validate()?;
-        if selectors.is_empty()
-            || selectors.len() > 256
-            || selectors.iter().any(|s| {
-                !valid_id(s) || !(s.starts_with("research.") || s.starts_with("decision."))
-            })
-        {
-            return Err(TaskError::Invalid);
-        }
         let mut db = self.lock()?;
         let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        producer.check(&tx, key, ProducerRole::Preparer)?;
-        let subject: String = tx
-            .query_row(
-                "SELECT subject_id FROM research_tasks WHERE task_id=?1",
-                [&key.task_id],
-                |r| r.get(0),
-            )
-            .optional()?
-            .ok_or(TaskError::Unauthorized)?;
-        if subject != key.subject_id {
-            return Err(TaskError::Unauthorized);
-        }
-        let old: Option<Vec<u8>> = tx
-            .query_row(
-                "SELECT selectors_json FROM research_keys WHERE key_id=?1",
-                [key.id()?],
-                |r| r.get(0),
-            )
-            .optional()?;
-        let bytes = serde_json::to_vec(selectors)?;
-        if let Some(old) = old {
-            return if old == bytes {
-                Ok(())
-            } else {
-                Err(TaskError::Conflict)
-            };
-        }
-        let count: i64 = tx.query_row(
-            "SELECT count(*) FROM research_keys WHERE task_id=?1",
-            [&key.task_id],
-            |r| r.get(0),
-        )?;
-        if count >= 16 {
-            return Err(TaskError::Capacity);
-        }
-        tx.execute(
-            "INSERT INTO research_keys(key_id,task_id,key_json,selectors_json) VALUES(?1,?2,?3,?4)",
-            params![key.id()?, key.task_id, serde_json::to_vec(key)?, bytes],
-        )?;
+        register_in(&tx, key, selectors, producer)?;
         tx.commit()?;
         Ok(())
+    }
+    /// One controlled owner transaction prevents a failed installed-key setup
+    /// from publishing a partial nomination guard.
+    #[cfg(feature = "controlled-proof")]
+    pub fn controlled_install_research_key(
+        &self,
+        key: &ResearchKey,
+        selectors: &BTreeSet<String>,
+    ) -> Result<(), TaskError> {
+        self.register_key_from_admitted_startup(key, selectors)
     }
     pub fn prepare_research(
         &self,
@@ -710,6 +901,30 @@ impl TaskStore {
         tx.commit()?;
         Ok(p)
     }
+    /// Exact historical notice readback does not construct or require a fresh
+    /// producer. Changed payload under the same notice identity conflicts.
+    pub fn read_research_notice(
+        &self,
+        key: &ResearchKey,
+        notice_id: &str,
+        payload_digest: &str,
+    ) -> Result<Option<NoticeReceipt>, TaskError> {
+        key.validate()?;
+        if !valid_id(notice_id) || !valid_digest(payload_digest) {
+            return Err(TaskError::Invalid);
+        }
+        let db = self.lock()?;
+        for table in ["research_notices", "research_capacity"] {
+            let row:Option<(String,Vec<u8>)>=db.query_row(&format!("SELECT payload_digest,receipt_json FROM {table} WHERE key_id=?1 AND notice_id=?2"),params![key.id()?,notice_id],|r|Ok((r.get(0)?,r.get(1)?))).optional()?;
+            if let Some((digest, bytes)) = row {
+                if digest != payload_digest {
+                    return Err(TaskError::Conflict);
+                }
+                return Ok(Some(serde_json::from_slice(&bytes)?));
+            }
+        }
+        Ok(None)
+    }
     pub fn invalidate_research(
         &self,
         key: &ResearchKey,
@@ -726,6 +941,12 @@ impl TaskStore {
             return Err(TaskError::Invalid);
         }
         let digest = research_digest("notice", &(key, notice_id, notice))?;
+        if let Some(admission) = &producer.admission {
+            admission.validate()?;
+            if admission.payload_digest != digest {
+                return Err(TaskError::Unauthorized);
+            }
+        }
         let mut db = self.lock()?;
         let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
         if !matches!(
@@ -789,12 +1010,19 @@ impl TaskStore {
         p.unresolved
             .insert(notice.selector.clone(), notice.source_revision.clone());
         let receipt = NoticeReceipt {
+            admission: producer.admission.clone(),
             key: key.clone(),
             notice_id: notice_id.into(),
             revision,
             payload_digest: digest.clone(),
             capacity_blocked: blocked,
         };
+        // Validate the actual encoded receipt, including byte-array expansion,
+        // before the first outcome mutation. Never commit an unreadable result.
+        let receipt_bytes = serde_json::to_vec(&receipt)?;
+        if receipt_bytes.len() > MAX_NOTICE_RECEIPT_BYTES {
+            return Err(TaskError::Capacity);
+        }
         save_head(&tx, key, &p)?;
         if blocked {
             tx.execute(
@@ -1154,6 +1382,169 @@ mod tests {
         }
     }
     #[test]
+    fn installed_setup_rolls_back_and_scoped_notice_retry_keeps_original_admission() {
+        let root = tempfile::tempdir().unwrap();
+        let store = TaskStore::open(&root.path().join("owner.sqlite"), "human".into()).unwrap();
+        let b = bundle();
+        assert!(
+            store
+                .controlled_install_research_key(&b.key, &BTreeSet::from(["unsupported".into()]))
+                .is_err()
+        );
+        assert_eq!(
+            store
+                .lock()
+                .unwrap()
+                .query_row("SELECT count(*) FROM research_tasks", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        store
+            .controlled_install_research_key(
+                &b.key,
+                &BTreeSet::from(["research.source".into(), "decision.target".into()]),
+            )
+            .unwrap();
+        let mut notice = notice();
+        notice.selector = "research.source".into();
+        let payload = research_digest("notice", &(&b.key, "installed-notice", &notice)).unwrap();
+        let mut association = ResearchAdmissionAssociation {
+            qualification: "controlled_only".into(),
+            producer_role: "research_notice".into(),
+            operation: "research.invalidate.v1".into(),
+            startup_digest: sha256(b"controlled startup"),
+            installation_digest: sha256(b"I"),
+            configuration_digest: sha256(b"C"),
+            operation_manifest_digest: sha256(b"O"),
+            authority_admission_digest: sha256(b"RI"),
+            operation_admission_digest: sha256(b"RO"),
+            caller_evidence_digest: sha256(b"synthetic caller"),
+            payload_digest: payload,
+            selection_digest: None,
+            operator_source_digest: None,
+            protection_evidence_digest: None,
+            native_realization_digest: None,
+            current_host_identity_digest: None,
+            currentness_evidence: None,
+        };
+        assert!(
+            store
+                .controlled_scoped_research_producer(
+                    &b.key,
+                    ProducerRole::DecisionNotice,
+                    association.clone()
+                )
+                .is_err()
+        );
+        // Old association JSON remains decodable without the additive field.
+        let historical_json = serde_json::to_vec(&association).unwrap();
+        assert!(!String::from_utf8_lossy(&historical_json).contains("currentness_evidence"));
+        let old: ResearchAdmissionAssociation = serde_json::from_slice(&historical_json).unwrap();
+        assert!(old.currentness_evidence.is_none());
+        let artifact = |bytes: Vec<u8>| RetainedArtifact {
+            id: "native-currentness-v1".into(),
+            digest: sha256(&bytes),
+            bytes,
+        };
+        for invalid in [
+            RetainedArtifact {
+                digest: "0".repeat(64),
+                ..artifact(vec![1])
+            },
+            artifact(Vec::new()),
+            artifact(vec![1; MAX_METADATA + 1]),
+        ] {
+            let mut bad = association.clone();
+            bad.currentness_evidence = Some(invalid);
+            assert!(
+                store
+                    .controlled_scoped_research_producer(&b.key, ProducerRole::ResearchNotice, bad)
+                    .is_err()
+            );
+        }
+        // Raw bytes fit the metadata cap, but JSON byte-array expansion makes
+        // the complete outcome unreadable. Refusal precedes all owner writes.
+        let mut too_large = association.clone();
+        too_large.currentness_evidence = Some(artifact(vec![255; 40_000]));
+        let producer = store
+            .controlled_scoped_research_producer(&b.key, ProducerRole::ResearchNotice, too_large)
+            .unwrap();
+        assert!(matches!(
+            store.invalidate_research(&b.key, "installed-notice", &notice, &producer),
+            Err(TaskError::Capacity)
+        ));
+        let db = store.lock().unwrap();
+        assert_eq!(
+            db.query_row("SELECT count(*) FROM research_notices", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            db.query_row("SELECT count(*) FROM research_history", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert!(
+            db.query_row("SELECT head_json FROM research_keys", [], |r| r
+                .get::<_, Option<Vec<u8>>>(0))
+                .unwrap()
+                .is_none()
+        );
+        drop(db);
+        association.currentness_evidence = Some(artifact(vec![255; 32_000]));
+        let producer = store
+            .controlled_scoped_research_producer(
+                &b.key,
+                ProducerRole::ResearchNotice,
+                association.clone(),
+            )
+            .unwrap();
+        let receipt = store
+            .invalidate_research(&b.key, "installed-notice", &notice, &producer)
+            .unwrap();
+        assert!(serde_json::to_vec(&receipt).unwrap().len() <= MAX_NOTICE_RECEIPT_BYTES);
+        let response = serde_json::json!({"status":"invalidated","receipt":receipt,"qualification":"owner_admitted_startup"});
+        assert!(serde_json::to_vec(&response).unwrap().len() <= 128 * 1024);
+        // Native canonical material reads task sources/effects, never this
+        // separate admission receipt table; the raw artifact stays owner-only.
+        assert!(store.observe_subject(&b.key.subject_id).unwrap().is_none());
+        assert_eq!(receipt.admission, Some(association.clone()));
+        association.caller_evidence_digest = sha256(b"later synthetic caller");
+        let later = store
+            .controlled_scoped_research_producer(
+                &b.key,
+                ProducerRole::ResearchNotice,
+                association.clone(),
+            )
+            .unwrap();
+        assert_eq!(
+            store
+                .invalidate_research(&b.key, "installed-notice", &notice, &later)
+                .unwrap(),
+            receipt
+        );
+        let mut changed = notice.clone();
+        changed.reason.push('x');
+        assert!(matches!(
+            store.invalidate_research(&b.key, "installed-notice", &changed, &later),
+            Err(TaskError::Unauthorized)
+        ));
+        drop(store);
+        let reopened = TaskStore::open(&root.path().join("owner.sqlite"), "human".into()).unwrap();
+        let later = reopened
+            .controlled_scoped_research_producer(&b.key, ProducerRole::ResearchNotice, association)
+            .unwrap();
+        assert_eq!(
+            reopened
+                .invalidate_research(&b.key, "installed-notice", &notice, &later)
+                .unwrap(),
+            receipt
+        );
+    }
+    #[test]
     fn owner_guard_all_variants_reserved_sources_and_unrelated_control() {
         let (_root, s, b) = setup();
         assert!(matches!(s.submit(&b.submit), Err(TaskError::Unauthorized)));
@@ -1236,6 +1627,11 @@ mod tests {
             .adopt_research_with_admission(&q, &adopter, &mut |t| Ok(command(&q, t)))
             .unwrap();
         assert!(first);
+        assert_eq!(s.admission_commands().unwrap(), vec![a.command.clone()]);
+        assert_eq!(
+            s.lookup_admission_command(&a.command_id).unwrap(),
+            Some(a.command.clone())
+        );
         assert_eq!(a.owner.owner_revision, 1);
         assert_eq!(a.command.command_id, b.submit.command_id);
         let record = s.observe("task-0").unwrap().unwrap();
@@ -1271,6 +1667,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(a2, (a.clone(), false));
+        assert_eq!(s.admission_commands().unwrap(), vec![a.command.clone()]);
         let mut conflict = q.clone();
         conflict.expected_preparation_revision += 1;
         assert!(matches!(
@@ -1286,6 +1683,44 @@ mod tests {
                 .unwrap(),
             Some(a)
         );
+    }
+    #[test]
+    fn admission_enumeration_refuses_non_admission_kinds_and_orphans() {
+        for kind in [Some("answer"), Some("replacement"), Some("unknown"), None] {
+            let (_root, s, b) = setup();
+            let p = prepare(&s, &b, None).unwrap();
+            let q = request(&b, &p);
+            let (adoption, _) = s
+                .adopt_research_with_admission(
+                    &q,
+                    &producer(&s, &b.key, ProducerRole::Adopter),
+                    &mut |text| Ok(command(&q, text)),
+                )
+                .unwrap();
+            assert_eq!(s.admission_commands().unwrap(), vec![adoption.command]);
+            let db = s.lock().unwrap();
+            match kind {
+                Some(kind) => {
+                    db.execute(
+                        "UPDATE commands SET kind=?1 WHERE command_id=?2",
+                        params![kind, q.submit.command_id],
+                    )
+                    .unwrap();
+                }
+                None => {
+                    db.execute(
+                        "DELETE FROM commands WHERE command_id=?1",
+                        [&q.submit.command_id],
+                    )
+                    .unwrap();
+                }
+            }
+            drop(db);
+            assert!(
+                matches!(s.admission_commands(), Err(TaskError::Invalid)),
+                "kind={kind:?}"
+            );
+        }
     }
     #[test]
     fn before_adoption_notice_and_builder_failure_publish_nothing() {

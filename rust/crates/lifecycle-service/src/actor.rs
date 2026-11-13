@@ -289,6 +289,7 @@ fn apply_current_semantic_material_block(
 }
 
 pub struct Actor {
+    startup_hold: Option<crate::native_startup::NativeStartupHold>,
     config: ServiceConfig,
     store: SqliteLifecycleStore,
     executor: OwnedExecutor<ControlledPort>,
@@ -310,7 +311,7 @@ pub struct Actor {
     native_work_pending: bool,
     native_successor_requested: Option<String>,
     native_segment_pending: Option<NativeSegmentIntent>,
-    native_task: Option<tokio::task::JoinHandle<()>>,
+    native_task: Arc<tokio::sync::Mutex<NativeCompletion>>,
     native_gate: Arc<NativeGate>,
     native_exit_recorded: bool,
     native_close_unsafe: bool,
@@ -323,6 +324,13 @@ pub struct Actor {
     /// Set while a prepared direct call waits for its owner release. Only the
     /// actor's guarded re-drive reads it; it is never durable state.
     direct_pending: crate::semantic_direct::DirectPendingSlot,
+}
+
+/// Kept outside the actor future as well: unwinding must not detach the reaper.
+#[derive(Default)]
+struct NativeCompletion {
+    task: Option<tokio::task::JoinHandle<()>>,
+    failed: bool,
 }
 
 /// How often a transition waiting on a direct owner release is re-driven.
@@ -1093,6 +1101,7 @@ impl Actor {
             (None, None, None)
         };
         Ok(Self {
+            startup_hold: None,
             config,
             store,
             executor,
@@ -1112,7 +1121,7 @@ impl Actor {
             native_work_pending: false,
             native_successor_requested: None,
             native_segment_pending: None,
-            native_task: None,
+            native_task: Arc::new(tokio::sync::Mutex::new(NativeCompletion::default())),
             native_gate,
             native_exit_recorded: false,
             native_close_unsafe: recovery_only,
@@ -1135,7 +1144,10 @@ impl Actor {
         self
     }
 
-    pub async fn serve(mut self, mut receiver: mpsc::Receiver<Request>) {
+    pub async fn serve(
+        mut self,
+        mut receiver: mpsc::Receiver<Request>,
+    ) -> Result<(), ServiceError> {
         if matches!(
             self.config.profile.as_str(),
             "native_simulated" | "retained-repository-analysis-v1"
@@ -1151,13 +1163,44 @@ impl Actor {
             let gate = self.native_gate.clone();
             let task_work = if self.config.profile == "retained-repository-analysis-v1" {
                 let (tx, rx) = mpsc::channel(8);
+                #[cfg(feature = "native-sim-proof")]
+                if let Some(root) = &self.config.proof_barrier_dir {
+                    for (name, work) in [
+                        (
+                            "queued-turn",
+                            NativeTaskWork::RunTurn(crate::NativeFollowupTurn {
+                                invocation_id: "invocation:held-test".into(),
+                                attempt_id: "attempt:held-test".into(),
+                                prompt: "must remain held".into(),
+                            }),
+                        ),
+                        ("queued-successor", NativeTaskWork::StartSuccessor),
+                    ] {
+                        if root.join(format!("native_test_{name}.arm")).exists() {
+                            tx.try_send(work).map_err(|_| StoreError::Rejected)?;
+                            std::fs::write(root.join("native_test_queue.reached"), name)
+                                .map_err(|_| StoreError::Unavailable)?;
+                        }
+                    }
+                }
                 self.native_task_work = Some(tx);
                 Some(rx)
             } else {
                 None
             };
-            self.native_task = Some(tokio::spawn(async move {
-                operations::run_native(config, launch, transport, sender, gate, task_work).await;
+            let startup_hold = self.startup_hold.take();
+            let mut completion = self.native_task.lock().await;
+            completion.task = Some(tokio::spawn(async move {
+                operations::run_native(
+                    config,
+                    launch,
+                    transport,
+                    sender,
+                    gate,
+                    task_work,
+                    startup_hold,
+                )
+                .await;
             }));
         }
         if self.config.profile == "controlled" {
@@ -1176,6 +1219,15 @@ impl Actor {
                 _ = direct_redrive.tick(), if self.direct_release_pending() => {
                     self.redrive_direct_release().await;
                 }
+                _ = async {
+                    if cfg!(feature = "controlled-proof") && let Some(root) = &self.config.proof_barrier_dir
+                        && root.join("actor_after_owned_child_panic.arm").exists() {
+                        while !root.join("native_after_spawn_before_registration.pid").exists() {
+                            tokio::time::sleep(Duration::from_millis(5)).await;
+                        }
+                        let _ = fs::write(root.join("native_after_spawn_before_registration.release"), b"release\n");
+                    } else { std::future::pending::<()>().await; }
+                } => { panic!("controlled actor unwind after owned child spawn"); }
                 maybe = receiver.recv() => {
                     match maybe {
                         Some(Request::Command { uid,bytes,reply }) => {
@@ -1204,10 +1256,11 @@ impl Actor {
                         }
                         Some(Request::Shutdown {reply}) => {
                             let result=self.shutdown().await;
-                            let _=reply.send(result);
-                            return;
+                            let returned = result.map_err(ServiceError::from);
+                            let _=reply.send(returned.as_ref().map(|_| ()).map_err(|_| StoreError::Unavailable));
+                            return returned;
                         }
-                        None => {let _=self.shutdown().await;return;},
+                        None => return self.shutdown().await.map_err(ServiceError::from),
                     }
                 }
                 maybe = self.results.recv() => {
@@ -1219,7 +1272,7 @@ impl Actor {
                 }
             }
         }
-        let _ = self.shutdown().await;
+        self.shutdown().await.map_err(ServiceError::from)
     }
 
     async fn handle_native_message(&mut self, message: NativeMessage) {
@@ -1327,6 +1380,12 @@ impl Actor {
                 purpose,
                 reply,
             } => {
+                #[cfg(feature = "native-sim-proof")]
+                operations::native_test_marker(
+                    self.config.proof_barrier_dir.as_deref(),
+                    "native_prepare_turn_handled",
+                )
+                .expect("prepare marker");
                 let result = (|| {
                     if self.native_gate.load(Ordering::SeqCst) {
                         return Err(StoreError::Rejected);
@@ -1424,6 +1483,12 @@ impl Actor {
                 let _ = reply.send(result);
             }
             NativeMessage::Tool { event, call, reply } => {
+                #[cfg(feature = "native-sim-proof")]
+                operations::native_test_marker(
+                    self.config.proof_barrier_dir.as_deref(),
+                    "native_tool_handled",
+                )
+                .expect("tool marker");
                 let result = self.execute_native_tool(&event, &call);
                 let _ = reply.send(result);
             }
@@ -1468,15 +1533,35 @@ impl Actor {
                 isolation_diagnostic,
                 reply,
             } => {
-                let result = record_native_done(
-                    &mut self.store,
-                    self.native_session.as_ref(),
-                    exit.as_ref(),
-                    outcome_kind,
-                    isolation_diagnostic,
-                    &mut self.native_exit_recorded,
-                    &mut self.native_close_unsafe,
-                );
+                let injected = cfg!(feature = "controlled-proof")
+                    && self
+                        .config
+                        .proof_barrier_dir
+                        .as_ref()
+                        .is_some_and(|p| p.join("native_exit_recording.fail").exists());
+                let result = if injected {
+                    self.native_close_unsafe = true;
+                    Err(StoreError::Unavailable)
+                } else {
+                    record_native_done(
+                        &mut self.store,
+                        self.native_session.as_ref(),
+                        exit.as_ref(),
+                        outcome_kind,
+                        isolation_diagnostic,
+                        &mut self.native_exit_recorded,
+                        &mut self.native_close_unsafe,
+                    )
+                };
+                #[cfg(feature = "native-sim-proof")]
+                if let Some(root) = self.config.proof_barrier_dir.as_deref() {
+                    let report = json!({"exit":exit.as_ref().map(|e| json!({"pid":e.pid,"code":e.code,"forced":e.forced})),"outcome_kind":outcome_kind,"record_result":format!("{result:?}"),"exit_recorded":self.native_exit_recorded,"close_unsafe":self.native_close_unsafe});
+                    if let Err(error) =
+                        std::fs::write(root.join("native_test_done.json"), report.to_string())
+                    {
+                        eprintln!("qualification Done diagnostic failed: {error}");
+                    }
+                }
                 let _ = reply.send(result);
             }
         }
@@ -2279,44 +2364,60 @@ impl Actor {
             .await;
         let subject = SubjectId::parse(self.config.subject_id.clone())
             .map_err(|_| StoreError::Unavailable)?;
+        let mut pending_error = None;
         for result in self.executor.pending_results() {
-            self.handle_result(result, true).await?;
+            if let Err(error) = self.handle_result(result, true).await {
+                pending_error = Some(error);
+            }
         }
-        if let Some(mut task) = self.native_task.take() {
-            let deadline = Instant::now() + Duration::from_secs(7);
+        let native_task = self.native_task.clone();
+        let mut completion = native_task.lock().await;
+        if let Some(task) = completion.task.as_mut() {
+            let mut deadline = Some(Instant::now() + Duration::from_secs(7));
             loop {
-                let left = deadline.saturating_duration_since(Instant::now());
-                if left.is_zero() {
+                let left = deadline
+                    .map(|d| d.saturating_duration_since(Instant::now()))
+                    .unwrap_or(Duration::from_secs(60));
+                if deadline.is_some() && left.is_zero() {
                     self.native_close_unsafe = true;
+                    pending_error = Some(StoreError::Unavailable);
                     if !self.native_exit_recorded
                         && let Some(session) = self.native_session.as_ref()
                     {
-                        self.store.record_native_process_exit(
+                        if let Err(error) = self.store.record_native_process_exit(
                             session.id(),
                             None,
                             None,
                             true,
                             "cleanup_unobserved",
                             clock_sample(),
-                        )?;
+                        ) {
+                            pending_error = Some(error);
+                        }
                         self.native_exit_recorded = true;
                     }
-                    task.abort();
-                    let _ = task.await;
-                    break;
+                    // The runner retains the exact native child and remains
+                    // the sole termination/reaping owner, even past the budget.
+                    deadline = None;
                 }
                 tokio::select! {
-                    result=&mut task=>{let _=result;break;}
+                    result=&mut *task=>{if result.is_err() {self.native_close_unsafe=true;pending_error=Some(StoreError::Unavailable);}break;}
                     maybe=self.native_messages.recv()=>{
                         if let Some(message)=maybe {self.handle_native_message(message).await;}
                     }
                     _=tokio::time::sleep(left)=>{}
                 }
             }
+            completion.task = None;
             while let Ok(message) = self.native_messages.try_recv() {
                 self.handle_native_message(message).await;
             }
         }
+        completion.failed |= self.native_close_unsafe;
+        if completion.failed {
+            pending_error = Some(StoreError::Unavailable);
+        }
+        drop(completion);
         if self.store.load_recovery_entries()?.iter().any(|entry| {
             entry.input_id.starts_with("native_")
                 && entry.incarnation_id.as_deref() == Some(self.incarnation.as_str())
@@ -2333,6 +2434,12 @@ impl Actor {
             report.unsafe_at_close || self.native_close_unsafe,
             clock_sample().wall,
         )?;
+        if let Some(error) = pending_error {
+            return Err(error);
+        }
+        if self.native_close_unsafe {
+            return Err(StoreError::Unavailable);
+        }
         Ok(())
     }
 
@@ -2809,6 +2916,7 @@ fn native_observation_reply(
 
 pub type ActorSender = mpsc::Sender<Request>;
 
+#[derive(Clone)]
 pub struct ShutdownGate {
     executor: OwnedExecutor<ControlledPort>,
     verifier: Arc<engine::VerifierGate>,
@@ -2823,15 +2931,68 @@ impl ShutdownGate {
     }
 }
 
+pub(crate) fn validate_config(config: &ServiceConfig) -> Result<(), ServiceError> {
+    if config.profile == "retained-repository-analysis-v1" {
+        let native = config.native.as_ref().ok_or(ServiceError::Configuration)?;
+        let initial = native
+            .semantic
+            .as_ref()
+            .ok_or(ServiceError::Configuration)?;
+        let successor_grant = |semantic: &crate::SemanticNativeConfig| {
+            semantic
+                .successor_control_grant_ref
+                .as_ref()
+                .is_some_and(|s| !s.is_empty())
+                && semantic
+                    .successor_control_grant_revision
+                    .is_some_and(|r| r > 0)
+        };
+        if !successor_grant(initial) {
+            return Err(ServiceError::Configuration);
+        }
+        let mut contexts = std::collections::BTreeSet::new();
+        contexts.insert(config.context_generation.as_str());
+        for cycle in &native.semantic_contexts {
+            if ContextGeneration::parse(cycle.predecessor_context.clone()).is_err()
+                || !contexts.insert(cycle.predecessor_context.as_str())
+                || !successor_grant(&cycle.semantic)
+            {
+                return Err(ServiceError::Configuration);
+            }
+        }
+    }
+    SubjectId::parse(config.subject_id.clone()).map_err(|_| ServiceError::Configuration)?;
+    ContextGeneration::parse(config.context_generation.clone())
+        .map_err(|_| ServiceError::Configuration)?;
+    BuildId::parse(config.build_id.clone()).map_err(|_| ServiceError::Configuration)?;
+    ProofRunId::parse(config.proof_run_id.clone()).map_err(|_| ServiceError::Configuration)?;
+    for grant in &config.grants {
+        GrantId::parse(grant.grant_ref.clone()).map_err(|_| ServiceError::Configuration)?;
+        ContextGeneration::parse(grant.context_generation.clone())
+            .map_err(|_| ServiceError::Configuration)?;
+        GrantScope::parse(&grant.scope).ok_or(ServiceError::Configuration)?;
+    }
+    Ok(())
+}
+
+type StartedActor = (
+    ActorSender,
+    ShutdownGate,
+    Option<GrantControlHandle>,
+    tokio::task::JoinHandle<Result<(), ServiceError>>,
+);
+
 pub fn start(
     config: ServiceConfig,
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
     preopened_store: Option<SqliteLifecycleStore>,
     direct_control: Option<Arc<dyn lifecycle_semantic::DirectInferencePort>>,
-) -> Result<(ActorSender, ShutdownGate, Option<GrantControlHandle>), ServiceError> {
-    let actor = Actor::new(config, material_port, task_operation_port, preopened_store)?
+    startup_hold: Option<crate::native_startup::NativeStartupHold>,
+) -> Result<StartedActor, ServiceError> {
+    let mut actor = Actor::new(config, material_port, task_operation_port, preopened_store)?
         .with_direct_control(direct_control);
+    actor.startup_hold = startup_hold;
     let grant_control =
         if actor.config.profile == "retained-repository-analysis-v1" && !actor.recovery_only {
             Some(actor.store.grant_control_handle()?)
@@ -2844,8 +3005,24 @@ pub fn start(
         native: actor.native_gate.clone(),
     };
     let (sender, receiver) = mpsc::channel(64);
-    tokio::spawn(actor.serve(receiver));
-    Ok((sender, gate, grant_control))
+    let native_completion = actor.native_task.clone();
+    let outer_gate = gate.clone();
+    let inner = tokio::spawn(actor.serve(receiver));
+    let completion = tokio::spawn(async move {
+        let result = inner.await;
+        outer_gate.close_gate();
+        let mut native = native_completion.lock().await;
+        if let Some(task) = native.task.as_mut() {
+            let failed = task.await.is_err();
+            native.failed |= failed;
+            native.task = None;
+        }
+        if native.failed {
+            return Err(ServiceError::Store(StoreError::Unavailable));
+        }
+        result.map_err(|_| ServiceError::Configuration)?
+    });
+    Ok((sender, gate, grant_control, completion))
 }
 
 #[cfg(test)]

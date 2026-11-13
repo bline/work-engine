@@ -11,11 +11,18 @@ pub struct ResearchNomination {
     /// Explicit qualification input, never a production installation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub controlled_fixture: Option<PathBuf>,
+    /// Non-authorizing staged installation; authentic O1 admission is unavailable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub installation: Option<crate::research_installation::InstallationSelection>,
+    /// Feature-gated synthetic installed-record qualification, never production authority.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub controlled_installation: Option<crate::research_installation::InstallationSelection>,
 }
 #[derive(Default)]
 pub(crate) struct ResearchHost {
     #[cfg(feature = "controlled-proof")]
     fixture: Option<ControlledFixture>,
+    installed: Option<crate::research_installation::InstalledResearch>,
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -60,6 +67,16 @@ pub(crate) fn validate_nomination(startup: &HostStartup) -> Result<(), HostError
         if !id(&n.task_id)
             || !id(&n.subject_id)
             || n.subject_id != startup.lifecycle.subject_id
+            || [
+                n.controlled_fixture.is_some(),
+                n.installation.is_some(),
+                n.controlled_installation.is_some(),
+            ]
+            .into_iter()
+            .filter(|v| *v)
+            .count()
+                > 1
+            || (!cfg!(feature = "controlled-proof") && n.controlled_installation.is_some())
             || (!cfg!(feature = "controlled-proof") && n.controlled_fixture.is_some())
         {
             return Err(HostError::Configuration);
@@ -68,10 +85,22 @@ pub(crate) fn validate_nomination(startup: &HostStartup) -> Result<(), HostError
     Ok(())
 }
 
-pub(crate) fn install(startup: &HostStartup, store: &TaskStore) -> Result<ResearchHost, HostError> {
+pub(crate) fn install(
+    startup: &HostStartup,
+    store: &TaskStore,
+    admission: Option<(
+        &crate::research_installation::AdmittedResearchStartup,
+        &crate::selected_startup::SelectedIdentity,
+        &crate::HostIdentity,
+    )>,
+) -> Result<ResearchHost, HostError> {
     let Some(nomination) = &startup.research else {
         return Ok(ResearchHost::default());
     };
+    validate_nomination(startup)?;
+    if admission.is_none() {
+        crate::research_installation::validate_records(startup)?;
+    }
     if nomination.subject_id != startup.lifecycle.subject_id {
         return Err(HostError::Configuration);
     }
@@ -139,7 +168,26 @@ pub(crate) fn install(startup: &HostStartup, store: &TaskStore) -> Result<Resear
     } else {
         None
     };
-    store.nominate_research_task(&nomination.task_id, &nomination.subject_id)?;
+    let installed = if nomination.installation.is_some() {
+        let (admission, identity, caller) = admission.ok_or(TaskError::Unavailable)?;
+        Some(crate::research_installation::load_admitted(
+            startup, admission, identity, caller,
+        )?)
+    } else {
+        #[cfg(feature = "controlled-proof")]
+        {
+            crate::research_installation::load_controlled(startup)?
+        }
+        #[cfg(not(feature = "controlled-proof"))]
+        {
+            None
+        }
+    };
+    if let Some(installed) = &installed {
+        installed.register(store)?;
+    } else {
+        store.nominate_research_task(&nomination.task_id, &nomination.subject_id)?;
+    }
     #[cfg(feature = "controlled-proof")]
     if let Some(f) = &fixture {
         let p = store.controlled_research_producer(&f.key, ProducerRole::Preparer)?;
@@ -148,6 +196,7 @@ pub(crate) fn install(startup: &HostStartup, store: &TaskStore) -> Result<Resear
     Ok(ResearchHost {
         #[cfg(feature = "controlled-proof")]
         fixture,
+        installed,
     })
 }
 pub(crate) fn guard_submit(host: &Host, input: &SubmitTask) -> Result<(), HostError> {
@@ -243,7 +292,9 @@ fn adopt_fresh(_host: &Host, _q: &ResearchAdopt) -> Result<Value, HostError> {
 }
 #[cfg(not(feature = "controlled-proof"))]
 fn mutate(_host: &Host, _request: &Value) -> Result<Value, HostError> {
-    let _ = &_host.research;
+    if let Some(installed) = _host.research.get().and_then(|r| r.installed.as_ref()) {
+        return installed.dispatch(&_host.store, _request);
+    }
     Err(HostError::Task(TaskError::Unavailable))
 }
 #[cfg(feature = "controlled-proof")]
@@ -295,6 +346,9 @@ fn adopt_fresh(host: &Host, q: &ResearchAdopt) -> Result<Value, HostError> {
 }
 #[cfg(feature = "controlled-proof")]
 fn mutate(host: &Host, request: &Value) -> Result<Value, HostError> {
+    if let Some(installed) = host.research.get().and_then(|r| r.installed.as_ref()) {
+        return installed.dispatch(&host.store, request);
+    }
     let f = host
         .research
         .get()
@@ -344,13 +398,13 @@ fn mutate(host: &Host, request: &Value) -> Result<Value, HostError> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use retained_task_workflow::sha256;
     #[cfg(feature = "controlled-proof")]
     use std::sync::atomic::{AtomicUsize, Ordering};
     #[cfg(feature = "controlled-proof")]
-    fn fixture() -> ControlledFixture {
+    pub(crate) fn fixture() -> ControlledFixture {
         let key = ResearchKey {
             task_id: "task-0".into(),
             subject_id: "subject-0".into(),
@@ -445,8 +499,10 @@ mod tests {
             task_id: "task-0".into(),
             subject_id: "subject-0".into(),
             controlled_fixture: None,
+            installation: None,
+            controlled_installation: None,
         });
-        host.research = OnceLock::from(install(&host.startup, &host.store).unwrap());
+        host.research = OnceLock::from(install(&host.startup, &host.store, None).unwrap());
         host
     }
     #[test]
@@ -482,7 +538,7 @@ mod tests {
         fs::write(&path, serde_json::to_vec(&f).unwrap()).unwrap();
         fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
         host.startup.research.as_mut().unwrap().controlled_fixture = Some(path);
-        host.research = OnceLock::from(install(&host.startup, &host.store).unwrap());
+        host.research = OnceLock::from(install(&host.startup, &host.store, None).unwrap());
         (host, f)
     }
     #[cfg(feature = "controlled-proof")]
@@ -503,8 +559,10 @@ mod tests {
             task_id: f.key.task_id.clone(),
             subject_id: f.key.subject_id.clone(),
             controlled_fixture: Some(path),
+            installation: None,
+            controlled_installation: None,
         });
-        assert!(install(&host.startup, &host.store).is_err());
+        assert!(install(&host.startup, &host.store, None).is_err());
         // Refusal precedes the durable nomination guard, not merely later preparation.
         assert!(host.store.submit(&f.bases[0].submit).is_ok());
     }
@@ -532,6 +590,8 @@ mod tests {
             task_id: f.key.task_id.clone(),
             subject_id: f.key.subject_id.clone(),
             controlled_fixture: Some(path),
+            installation: None,
+            controlled_installation: None,
         });
         let durable = || {
             let path = &host.startup.task_store_path;
@@ -541,7 +601,7 @@ mod tests {
             )
         };
         let before = durable();
-        assert!(install(&host.startup, &host.store).is_err());
+        assert!(install(&host.startup, &host.store, None).is_err());
         assert_eq!(durable(), before);
         assert!(
             host.store
