@@ -47,6 +47,7 @@ members = [
   "crates/lifecycle-semantic-replay",
   "crates/research-register",
   "crates/work-engine-organization",
+  "crates/work-engine-authority-store",
 ]
 exclude = ["crates/terminal-ui"]
 
