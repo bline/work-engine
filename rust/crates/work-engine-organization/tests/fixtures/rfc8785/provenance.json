@@ -1,0 +1,116 @@
+{
+  "origin": "input/, output/ and outhex/ (18 files): byte-identical copies (LF line endings) of https://github.com/cyberphone/json-canonicalization at commit dc406ceaf94b5fa554fcabb92c091089c2357e83, directory testdata/, fetched from raw.githubusercontent.com at that commit (digests: upstream-licence/vectors.sha256 of the provenance record). An earlier copy came through serde_json_canonicalizer 0.3.2 (crates.io, MIT) tests/resources/testdata with CRLF line endings in the 12 input/ and outhex/ files; it is replaced. authored_*.json (4 files): written for this crate, not copied. See ATTRIBUTION.md and LICENSE-APACHE-2.0.",
+  "licence_finding": "Upstream licence read from the repository LICENSE at the commit above: Apache-2.0, Copyright 2018 Anders Rundgren (sha256 6821faaddedf2d78c95bb6d98b127e9e616097afd2f6bcc34389f000d13ab12d). The full recursive tree at the commit (149 entries, not truncated) has no NOTICE, COPYING or PATENTS file; testdata/README.md states no licence, copyright or terms. Not established: that the copyright holder intended the root notice to cover the test data beyond the repository convention, and any terms outside the repository. The 18 upstream files are kept with the full licence text and an attribution file (Apache-2.0 section 4(a) and 4(c); no 4(d) obligation because there is no NOTICE). The four files rfc_example.* and rfc_sorting.* of the intermediate crate, whose own licence status was not established, are not used; they are replaced by the authored_* vectors. The work-engine repository is MIT.",
+  "files": [
+    {
+      "fixture": "input/arrays.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/input/arrays.json",
+      "sha256": "e503b6d71d1afa595b1c74b1016445c944cd89f90418066b23de1aeda7d17563"
+    },
+    {
+      "fixture": "input/french.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/input/french.json",
+      "sha256": "03676a951cd8753ac62589f72eb2105cc782c33425418cfe1d517c111f6e5d5a"
+    },
+    {
+      "fixture": "input/structures.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/input/structures.json",
+      "sha256": "d66893805be1784116af50af3110d08766c70a6b4aad93374723f72346e7aaa6"
+    },
+    {
+      "fixture": "input/unicode.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/input/unicode.json",
+      "sha256": "4621864e014d4a805a563f55b9ea20aba4a2d2dc09c7394f625496998c00702c"
+    },
+    {
+      "fixture": "input/values.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/input/values.json",
+      "sha256": "c4a041b503d6bc236036ef44db4dac499272f60fc22c40dc3b7a54870ba6f1c3"
+    },
+    {
+      "fixture": "input/weird.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/input/weird.json",
+      "sha256": "a3a905266bd4a49a969274ea69baa14ee0c4af0ead926d6fa2b7612b4af75387"
+    },
+    {
+      "fixture": "outhex/arrays.txt",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/outhex/arrays.txt",
+      "sha256": "e306733ca0c4da9595ebde73ec072c295f0f9ef0ea4aafc4d267d4a04988ce51"
+    },
+    {
+      "fixture": "outhex/french.txt",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/outhex/french.txt",
+      "sha256": "f9b3bfd02f4edb3d0a490703153d836db5ef0a2090a9d3357f8c3797e12d4043"
+    },
+    {
+      "fixture": "outhex/structures.txt",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/outhex/structures.txt",
+      "sha256": "063ee2bc6fa3f93b2a131841315f5c6bf0ea7488cc128ed50725cabf5592627b"
+    },
+    {
+      "fixture": "outhex/unicode.txt",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/outhex/unicode.txt",
+      "sha256": "0471fea1ee0464e435a52510d2c187b216961a5e7e2665402ea9cb1cd04109ca"
+    },
+    {
+      "fixture": "outhex/values.txt",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/outhex/values.txt",
+      "sha256": "b8b802e82c7bead71a7841e27fce6458854eb72ffd0eaa51474dacdfbdf3ab64"
+    },
+    {
+      "fixture": "outhex/weird.txt",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/outhex/weird.txt",
+      "sha256": "1061953c7129537722f9abd9de321c787120489d09f34ba58065bd77ba9a84b6"
+    },
+    {
+      "fixture": "output/arrays.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/output/arrays.json",
+      "sha256": "099601b171cafed97c333f8878d68e7f8c8f795412adb34b2fdcf0e7c7beac42"
+    },
+    {
+      "fixture": "output/french.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/output/french.json",
+      "sha256": "d99d0ebdcb0033cb858cfa830ae46bc0fb3309413b271f1da828c89901a27ed5"
+    },
+    {
+      "fixture": "output/structures.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/output/structures.json",
+      "sha256": "605f65004ec2db7692522a0852c22f1c989e036d547e88963d1a3143cf3195d5"
+    },
+    {
+      "fixture": "output/unicode.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/output/unicode.json",
+      "sha256": "0d99aad92a125196ff887876643fd3206786a84ddce2cee52ba4ad256d2381d3"
+    },
+    {
+      "fixture": "output/values.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/output/values.json",
+      "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
+    },
+    {
+      "fixture": "output/weird.json",
+      "source": "https://raw.githubusercontent.com/cyberphone/json-canonicalization/dc406ceaf94b5fa554fcabb92c091089c2357e83/testdata/output/weird.json",
+      "sha256": "6af595a9aa80110b964b4de3f82a05fa6ae7423005019bacfa2620dddc4e94d1"
+    },
+    {
+      "fixture": "authored_example.expected.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "c4f325ed65820b3c13b9a19fdbaa1dba0bfd472cda901e02f67b8b09b457acdb"
+    },
+    {
+      "fixture": "authored_example.input.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "8c746fbbdb51e3d78b92108f965e54013a276ad9d2608249081debe3f8359343"
+    },
+    {
+      "fixture": "authored_sorting.expected.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "1c23b912f6eae9b16241091d13d5e3836c8673568ff7a3b5345dbf718a91ad38"
+    },
+    {
+      "fixture": "authored_sorting.input.json",
+      "source": "authored for this crate (G32 repair); expected output derived by reasoning from RFC 8785 sections 3.2.2 and 3.2.3 and recomputed independently (builder/p3-vector-check.py)",
+      "sha256": "8d89f2155079b0ef08909c4c3bb766f2512b72bace1d859a7857bf1e3fb6839e"
+    }
+  ]
+}

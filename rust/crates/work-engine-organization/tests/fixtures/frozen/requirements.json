@@ -1,0 +1,113 @@
+{
+  "problemScope": {
+    "runId": "production-qualification-20261107",
+    "planLineage": "timestamp-projection-v1",
+    "sliceNumber": 1
+  },
+  "obligations": [
+    {
+      "id": "rp3-initial-implementation-review",
+      "kind": "candidate_review",
+      "subject": "campaign_candidate",
+      "resultContract": {
+        "id": "implementation-review",
+        "version": 1
+      },
+      "scope": {
+        "digest": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51"
+      }
+    }
+  ],
+  "acceptanceConditions": [
+    {
+      "id": "cond-builder-projection",
+      "obligation": "rp3-initial-implementation-review",
+      "consumptionBoundary": "builder_projection",
+      "consumerClass": "builder",
+      "proposition": "The initial RP3 implementation review result for the pinned candidate was produced by a fresh guarded Claude reviewer under a read-only capability envelope and verified execution-evidence custody, before the builder consumes it.",
+      "coveredState": "review-result",
+      "normative": {
+        "continuity": "fresh_initial",
+        "mutation": "none",
+        "capabilities": [],
+        "integrity": "verified_artifacts",
+        "evidenceCustody": "execution_evidence_custody",
+        "observerClass": "independent_execution_evidence"
+      },
+      "realizationConstraints": [
+        {
+          "dimension": "provider_family",
+          "allowed": [
+            "anthropic"
+          ]
+        },
+        {
+          "dimension": "execution_confinement",
+          "allowed": [
+            "guarded_sandbox"
+          ]
+        }
+      ],
+      "acceptor": "operator-production-qualification-20261107",
+      "unestablishedRoute": "hold-consumption-for-owner-disposition"
+    },
+    {
+      "id": "cond-campaign-terminalization",
+      "obligation": "rp3-initial-implementation-review",
+      "consumptionBoundary": "campaign_terminalization",
+      "consumerClass": "campaign",
+      "proposition": "The initial RP3 implementation review result for the pinned candidate was produced by a fresh guarded Claude reviewer under a read-only capability envelope and verified execution-evidence custody, before the campaign terminalizes it.",
+      "coveredState": "review-result",
+      "normative": {
+        "continuity": "fresh_initial",
+        "mutation": "none",
+        "capabilities": [],
+        "integrity": "verified_artifacts",
+        "evidenceCustody": "execution_evidence_custody",
+        "observerClass": "independent_execution_evidence"
+      },
+      "realizationConstraints": [
+        {
+          "dimension": "provider_family",
+          "allowed": [
+            "anthropic"
+          ]
+        },
+        {
+          "dimension": "execution_confinement",
+          "allowed": [
+            "guarded_sandbox"
+          ]
+        }
+      ],
+      "acceptor": "operator-production-qualification-20261107",
+      "unestablishedRoute": "hold-consumption-for-owner-disposition"
+    }
+  ],
+  "requiredAuthorities": [
+    {
+      "id": "auth-accept-builder-projection",
+      "principal": "operator-production-qualification-20261107",
+      "permission": "accept_claim",
+      "scope": {
+        "boundaries": [
+          "builder_projection"
+        ]
+      }
+    },
+    {
+      "id": "auth-accept-campaign-terminalization",
+      "principal": "operator-production-qualification-20261107",
+      "permission": "accept_claim",
+      "scope": {
+        "boundaries": [
+          "campaign_terminalization"
+        ]
+      }
+    }
+  ],
+  "organizationPolicy": {
+    "mode": "fixed",
+    "profile": "fixed-slice-review-v1"
+  }
+}

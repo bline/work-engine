@@ -46,6 +46,7 @@ members = [
   "crates/bounded-inference",
   "crates/lifecycle-semantic-replay",
   "crates/research-register",
+  "crates/work-engine-organization",
 ]
 exclude = ["crates/terminal-ui"]
 
