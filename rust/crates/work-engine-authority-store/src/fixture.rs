@@ -8,7 +8,7 @@
 //!
 //! A fixture admission cannot be built by struct literal (private fields):
 //!
-//! ```compile_fail
+//! ```compile_fail,E0451
 //! use work_engine_authority_store::fixture::FixtureAdmission;
 //! let _ = FixtureAdmission {
 //!     admission_id: String::new(),
@@ -20,7 +20,7 @@
 //!
 //! A fixture admission converts into nothing ordinary (there is no `From`/`Into`):
 //!
-//! ```compile_fail
+//! ```compile_fail,E0277
 //! use work_engine_authority_store::{fixture::FixtureAdmission, store::PublishRequest};
 //! fn convert(a: FixtureAdmission) -> PublishRequest { a.into() }
 //! ```
@@ -28,7 +28,7 @@
 //! The ordinary admission API has no success value, so a fixture admission cannot be passed off
 //! as its result:
 //!
-//! ```compile_fail
+//! ```compile_fail,E0308
 //! use work_engine_authority_store::{fixture::FixtureAdmission, store::Store};
 //! fn pass_off(s: &Store, c: &work_engine_organization::OrganizationCandidate, f: FixtureAdmission) {
 //!     let r: Result<FixtureAdmission, _> = s.admit(c);
