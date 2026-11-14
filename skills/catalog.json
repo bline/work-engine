@@ -204,6 +204,9 @@
       "install": [
         "claude",
         "codex"
+      ],
+      "runtime_dependencies": [
+        "manual-orchestration"
       ]
     },
     "strategic-planner": {

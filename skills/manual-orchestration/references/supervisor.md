@@ -6,6 +6,14 @@ The supervisor is the top-level role, and the user is its parent. Own the accept
 
 ## Establish context observation
 
+Use an owned chatboard `wait --follow` as the default combined observation
+route for relevant coordination, this root's context pressure and the
+objective's budget pressure. Load [session control](context-control.md) for
+the bindings, budget subscription and collection rules. A single listener can
+carry all three; separate duplicate watchers add cost without improving delivery.
+If this route is unavailable or cannot deliver in time, record the limitation
+and the explicit observation route that will cover the next decision.
+
 At startup and after recovery, establish how context pressure will reach the
 actor making continuation and handoff decisions. Record the actual session/source
 binding, observation route and collection owner in the assignment record or
@@ -131,6 +139,11 @@ Assign each worker one coherent outcome with explicit file/process ownership and
 Keep a durable, compact assignment record as the deterministic source for owners, packet revisions, context checks, expected deliverables and received results. Update it on actual assignment, message, completion and handoff events; do not call a model or `list_agents` to rediscover unchanged state.
 
 ## Next task, remediation and handoff
+
+Read and apply [architectural escalation](architectural-escalation.md) when
+collecting implementation reviews and before dispatching repairs. Repeated
+rejection, repair-caused regression and recurring invariant failures can require
+design review before another repair; inherited defects remain evidence.
 
 Before giving a retained worker a substantial new task - **including remediation after review** - run the pre-dispatch check in [context boundary](context-boundary.md) and record retain or fresh with its reason. The trigger is a pilot hypothesis (H2), and you may overrule its recommendation with a recorded reason. For a finished builder over the trigger, you write the remediation packet from its result, continuation and the review findings, and give it to a fresh worker. If work is unfinished, receive a durable continuation naming live ownership, decisions, failures, evidence pointers, remaining obligations and next action. Check it is safe to transfer, then follow the transfer steps in that reference.
 

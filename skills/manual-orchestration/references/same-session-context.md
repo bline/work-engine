@@ -113,6 +113,38 @@ first, mid-turn, without the controller's preparation or attributed recovery
 
 ## Foreground automatic continuation on the Codex app server
 
+For an authorized Codex supervisor that needs a smaller context while children
+remain operational, prefer same-session refresh over transferring the root when
+the current host supports the control and recovery routes below. Preserve the
+children's exact identities, assignments, review episodes, pending messages,
+process/job references and collection routes in the continuation. The root
+keeps ownership; context refresh is no reason to retire or redispatch them.
+Establish that the actual host preserves the helper and child collection routes
+across source-turn completion and compaction. An idle-fixture result alone does
+not establish this case with active children.
+
+A bounded helper agent can own the compaction controller and collect its
+foreground job while the root ends its source turn. Give the helper the
+verified root SID/source turn, prepared operation and continuation references,
+control scope, outcome location and failure-delivery route. It drives that one
+refresh, collects its own job and reports the terminal outcome; it is not a
+successor supervisor and cannot dispatch engineering or alter authority. The
+root records the helper and its own recovery/collection obligations, and verifies
+the helper's controller/job binding and failure-delivery route before yielding.
+The saved job reference must name the helper and its collection route as well
+as its actor-scoped exec handle; the root cannot assume it can poll that handle.
+After recovery, reconcile both the helper outcome and every outstanding
+child before dependent dispatch, without replaying work already in flight.
+
+Use the existing `auto_continue.py` CLI adapter for native compaction and
+attributed recovery rather than inventing a second controller. A literal
+`/compact ...` is a native UI control only on a route that implements it;
+queuing that text as a message does not establish compaction. A helper using a
+different CLI route must establish its target, native control, completion and
+recovery delivery on that host. Do not assume this Codex route works on Claude
+Code or Pi. If control or collection is unavailable, preserve the continuation
+and use an available supported route; do not claim autonomous refresh succeeded.
+
 For an authorized standing assignment, `scripts/auto_continue.py` provides a
 bounded same-SID route. It does not install a service. Prepare with the verified
 SID, absolute rollout, exact active source turn, durable continuation, pinned
@@ -128,7 +160,9 @@ job reference with `bind-job` in the operation journal, announce the collector a
 and end the source turn. The controller waits for source completion, collects
 an asynchronous native compaction and starts the attributed recovery turn;
 it exits without waiting for recovery completion. The recovered actor collects
-that same job. A fixture supervisor may instead observe and collect failures;
+its own job, or collects the helper's terminal receipt through the bound route
+when the helper owns that job. A fixture supervisor may instead observe and
+collect failures;
 it does not wake or repair the actor. A named route is necessary for failure
 visibility; a result file alone is not delivery. If no recovery wake occurs,
 the actor cannot collect the failed job in a recovery turn. Exec job handles

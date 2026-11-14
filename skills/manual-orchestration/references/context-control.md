@@ -53,6 +53,31 @@ process was started. If the host only returns results after process exit, use
 the one-shot wait with that host's collection/wakeup mechanism. An uncollected
 continuous stream is not a substitute. The CLI does not wake an ended session.
 
+## Combine budget and coordination observation
+
+For a supervisor, add the objective's `--budget-record`, independently pinned
+`--budget-reader` and `--budget-sha256` to this same wait, alongside the verified
+context binding and relevant board topics. The [budget subscription](../../../docs/codex-chatboard.md#budget-observation-subscription)
+owns its reader contract and event semantics. Observe budget, context and board
+events in every returned batch; `status: messages` can accompany control or
+budget events and must not hide them. A board-only wait does not observe either
+pressure source. Verify initial context and budget observations separately.
+
+Record the listener's job reference, owner, delivery route, selectors and all
+three consumed cursors (`next_since`, `next_control_cursor`,
+`next_budget_cursor`) in the existing continuation. Collect available output at
+natural decision boundaries while doing independent work. When only collection
+remains, use the host's long event wait and keep the supervising turn active;
+let `--follow` rearm inside the host rather than waking the model on empty
+timeouts. A one-shot wait or an expired listener needs rearming after collection.
+On closure, collect its terminal result and settle or transfer its ownership.
+
+Budget or context reader failure leaves that observation unavailable; it does
+not mean zero spend or spare context. Reconcile the source before dependent
+dispatch. Budget events inform the existing grant and stop rules, context events
+inform the next scope's capacity decision, and board messages retain their
+sender's authority. None grants a larger budget or resolves pending approval.
+
 ## What to do with an observation
 
 Use the measured input, source timestamp, epoch, observation quality, chosen

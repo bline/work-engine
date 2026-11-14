@@ -36,6 +36,20 @@ Keep these categories distinct throughout the campaign:
 
 At every phase boundary, ask whether the current route remains the simplest credible path to the objective. Revise it when observed evidence invalidates a premise. Never preserve a stale plan merely because it is the next legal transition, and never use adaptability to weaken an invariant or configured requirement.
 
+Read and apply the shared [architectural escalation policy](../manual-orchestration/references/architectural-escalation.md)
+before repair decisions. Its rejection and regression triggers require a design
+judgment before another ordinary repair, including when defects are inherited.
+Preserve this history with the active attempt and recovery state. Use configured
+specialists and adapters for the review; a design hold neither waives campaign
+gates nor authorizes a new provider, scope or budget.
+
+For outer-session observation, use the combined chatboard wait described in
+[session control](../manual-orchestration/references/context-control.md), with
+owned collection of coordination, budget and context events. When refreshing
+this Codex supervisor's context, use [same-session continuity](../manual-orchestration/references/same-session-context.md)
+and recover the active slice attempt below. These host controls preserve the
+campaign's configured authority and receipt contracts; they do not replace them.
+
 ## Resolve the campaign contract
 
 For a named campaign file, execute preflight before launching a builder. Commands
