@@ -44,7 +44,10 @@ async fn control_grant_with_another_identity_dimension_never_enters_a_call() {
         let port = ScriptedPort::new(harness.good_replies());
         let runtime = harness.runtime(port.clone());
         let result = harness.establish(&mut store, &runtime).await;
-        assert!(matches!(result, Err(StoreError::Rejected)), "{name}: {result:?}");
+        assert!(
+            matches!(result, Err(StoreError::Rejected)),
+            "{name}: {result:?}"
+        );
         assert_eq!(port.calls(), 0, "{name}: no call may be offered");
         assert_eq!(
             harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
@@ -90,10 +93,7 @@ async fn acting_principal_must_be_the_grants_principal() {
 #[tokio::test]
 async fn ownership_or_stage_lost_while_compile_is_in_flight_blocks_the_verify_entry() {
     for (name, statement) in [
-        (
-            "stage",
-            "UPDATE transitions SET stage='capturing'",
-        ),
+        ("stage", "UPDATE transitions SET stage='capturing'"),
         (
             "owner",
             "PRAGMA foreign_keys=OFF; UPDATE subjects SET owner_ref='transition:other'",
@@ -112,7 +112,10 @@ async fn ownership_or_stage_lost_while_compile_is_in_flight_blocks_the_verify_en
             }
         }));
         let result = harness.establish(&mut store, &runtime).await;
-        assert!(matches!(result, Err(StoreError::Rejected)), "{name}: {result:?}");
+        assert!(
+            matches!(result, Err(StoreError::Rejected)),
+            "{name}: {result:?}"
+        );
         assert_eq!(port.calls(), 1, "{name}: the verifier must not be called");
         assert_eq!(
             harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE role='verify'"),
@@ -151,20 +154,61 @@ fn install_admission_for(
 #[tokio::test]
 async fn an_admission_grant_of_another_identity_does_not_admit() {
     for (name, principal, context, build, proof) in [
-        ("principal", "principal:other", "context:direct", "build:direct", "proof:direct"),
-        ("context", "principal:direct", "context:other", "build:direct", "proof:direct"),
-        ("build", "principal:direct", "context:direct", "build:other", "proof:direct"),
-        ("proof_run", "principal:direct", "context:direct", "build:direct", "proof:other"),
+        (
+            "principal",
+            "principal:other",
+            "context:direct",
+            "build:direct",
+            "proof:direct",
+        ),
+        (
+            "context",
+            "principal:direct",
+            "context:other",
+            "build:direct",
+            "proof:direct",
+        ),
+        (
+            "build",
+            "principal:direct",
+            "context:direct",
+            "build:other",
+            "proof:direct",
+        ),
+        (
+            "proof_run",
+            "principal:direct",
+            "context:direct",
+            "build:direct",
+            "proof:other",
+        ),
     ] {
         let (harness, mut store) = Harness::new();
-        install_admission_for(&harness, &mut store, "grant:wrong-admission", principal, context, build, proof);
+        install_admission_for(
+            &harness,
+            &mut store,
+            "grant:wrong-admission",
+            principal,
+            context,
+            build,
+            proof,
+        );
         let port = ScriptedPort::public_class(harness.good_replies());
         let runtime = harness.runtime(port.clone());
         let result = harness.establish_production(&mut store, &runtime).await;
         assert!(matches!(result, Ok(None)), "{name}: {result:?}");
-        assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_none(), "{name}");
         assert!(
-            store.direct_proof_checkpoint(&harness.transition).unwrap().is_some(),
+            store
+                .admitted_direct_checkpoint(&harness.transition)
+                .unwrap()
+                .is_none(),
+            "{name}"
+        );
+        assert!(
+            store
+                .direct_proof_checkpoint(&harness.transition)
+                .unwrap()
+                .is_some(),
             "{name}: the result stays proof-scoped"
         );
     }
@@ -255,21 +299,37 @@ async fn an_owner_update_between_assessment_and_publication_publishes_nothing() 
         let material = harness.material.clone();
         *port.on_submit.lock().unwrap() = Some(Box::new(move |index| {
             if index == 1 {
-                material.changed_after_observation.store(true, Ordering::SeqCst);
+                material
+                    .changed_after_observation
+                    .store(true, Ordering::SeqCst);
             }
         }));
         let result = harness.establish_production(&mut store, &runtime).await;
         assert!(matches!(result, Ok(None)), "{name}: {result:?}");
         assert_eq!(port.calls(), 2, "{name}");
-        assert!(store.direct_proof_checkpoint(&harness.transition).unwrap().is_none(), "{name}");
-        assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_none(), "{name}");
+        assert!(
+            store
+                .direct_proof_checkpoint(&harness.transition)
+                .unwrap()
+                .is_none(),
+            "{name}"
+        );
+        assert!(
+            store
+                .admitted_direct_checkpoint(&harness.transition)
+                .unwrap()
+                .is_none(),
+            "{name}"
+        );
         assert_eq!(
             harness.count("SELECT COUNT(*) FROM direct_semantic_results WHERE candidate_record_artifact_sha256 IS NOT NULL"),
             0,
             "{name}: nothing may be published"
         );
         assert_eq!(
-            harness.count("SELECT COUNT(*) FROM direct_semantic_results WHERE admission_grant_id IS NOT NULL"),
+            harness.count(
+                "SELECT COUNT(*) FROM direct_semantic_results WHERE admission_grant_id IS NOT NULL"
+            ),
             0,
             "{name}: nothing may be admitted"
         );
@@ -278,7 +338,11 @@ async fn an_owner_update_between_assessment_and_publication_publishes_nothing() 
             1,
             "{name}: the capture is retired"
         );
-        assert_eq!(harness.material.fenced_commits.load(Ordering::SeqCst), 0, "{name}");
+        assert_eq!(
+            harness.material.fenced_commits.load(Ordering::SeqCst),
+            0,
+            "{name}"
+        );
     }
 }
 
@@ -296,14 +360,20 @@ async fn a_cached_checkpoint_is_not_consumed_after_an_owner_update() {
     harness.mark_native_basis("verifying");
 
     // Re-offered from the cache: observation still says current.
-    let again = harness.establish_production(&mut store, &runtime).await.unwrap();
+    let again = harness
+        .establish_production(&mut store, &runtime)
+        .await
+        .unwrap();
     assert_eq!(again.as_ref(), Some(&checkpoint));
     assert_eq!(port.calls(), 2);
 
     // The owner changes after that observation, before the lifecycle consumes
     // the checkpoint. The engine's consumption step applies the fact under the
     // fence and must find the conflict.
-    harness.material.changed_after_observation.store(true, Ordering::SeqCst);
+    harness
+        .material
+        .changed_after_observation
+        .store(true, Ordering::SeqCst);
     let admitted = store
         .admitted_direct_checkpoint(&harness.transition)
         .unwrap()
@@ -327,5 +397,10 @@ async fn a_cached_checkpoint_is_not_consumed_after_an_owner_update() {
         harness.count("SELECT COUNT(*) FROM semantic_captures WHERE eligibility='stale'"),
         1
     );
-    assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_none());
+    assert!(
+        store
+            .admitted_direct_checkpoint(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
 }

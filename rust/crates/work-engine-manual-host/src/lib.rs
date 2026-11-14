@@ -17,6 +17,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 mod inspection;
 pub mod pi_docker;
+pub mod pi_native;
 pub use inspection::{compact_output, inspect};
 
 pub const SCHEMA: &str = "work-engine.manual-host.v1";

@@ -108,14 +108,20 @@ impl Fixture {
             &dir.join("record"),
             b"explicit synthetic fixture budget source",
         );
-        let dbp = dir.join("registry.sqlite");
-        let mut db = Connection::open(&dbp).unwrap();
-        std::fs::set_permissions(&dbp, std::fs::Permissions::from_mode(0o600)).unwrap();
-        store::initialize(&db).unwrap();
-        let row: Row = serde_json::from_str(&raw).unwrap();
-        store::register_proposal(&mut db, &row.data.intent.proposal, "live", None).unwrap();
-        store::register_task(&mut db, &raw, "live", None).unwrap();
-        drop(db);
+        let checked = std::env::var_os("PI_NATIVE_CHECKED_REGISTRY");
+        let dbp = checked
+            .as_ref()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| dir.join("registry.sqlite"));
+        if checked.is_none() {
+            let mut db = Connection::open(&dbp).unwrap();
+            std::fs::set_permissions(&dbp, std::fs::Permissions::from_mode(0o600)).unwrap();
+            store::initialize(&db).unwrap();
+            let row: Row = serde_json::from_str(&raw).unwrap();
+            store::register_proposal(&mut db, &row.data.intent.proposal, "live", None).unwrap();
+            store::register_task(&mut db, &raw, "live", None).unwrap();
+            drop(db);
+        }
         put(&dir.join("admission-config.json"),json!({"schema":"dot.admission-config/v2-owned-source","database":dbp,"sources":{"board":board,"board_repository":dir,"key_policy":dir.join("keys.json"),"owner":"owner","rp_id":"auth.example","origin":"https://auth.example","actor":"fixture-actor","ledger":ledger,"budget_record":pin(dir.join("record"))}}).to_string());
         let transport = Transport {
             helper_sha256: exe.into(),
@@ -542,7 +548,7 @@ fn transactional_denials_retain_new_signed_head_without_action_writes() {
         }
         put(&f.dir.join("count"), "0");
         put(&f.dir.join("switch"), switch_at.to_string());
-        let action_db = f.db();
+        let action_db = o.db().unwrap();
         let denied = match boundary {
             "action" => o.action(&action_db, || {
                 action_db
@@ -934,4 +940,56 @@ fn deadline_projection_retains_inter_observation_revocation() {
             "effect, capacity reservation and outbox are unchanged"
         );
     }
+}
+
+#[test]
+fn checked_native_registry_uses_real_admission_leases_and_keeps_unknown() {
+    use review_execution_evidence::pi::{Binding, LiveStore};
+    let mut f = Fixture::new(None, &"a".repeat(64), &exe());
+    let root = f.dir.join("checked-store");
+    let store = LiveStore::create(
+        &root,
+        b"ORIGINAL_A_SYNTHETIC_HOST_PRIVATE".to_vec(),
+        Binding::native(
+            "11111111-1111-4111-8111-111111111111".into(),
+            "test".into(),
+            1,
+        ),
+        u64::MAX,
+    )
+    .unwrap();
+    let registry_path = root.join("registry");
+    let backend = store.create_registry(&registry_path).unwrap();
+    let mut d = descriptor(&f.pin).unwrap();
+    let mut config: Value =
+        serde_json::from_slice(&std::fs::read(&d.config.path).unwrap()).unwrap();
+    config["database"] = json!(registry_path);
+    put(&d.config.path, config.to_string());
+    d.config = pin(d.config.path);
+    put(&f.pin.path, serde_json::to_vec(&d).unwrap());
+    f.pin = pin(f.pin.path.clone());
+    let owner = PiOwner::open_checked(f.pin.clone(), backend).unwrap();
+    assert!(PiOwner::open(f.pin.clone()).is_err());
+    owner.admit(&"a".repeat(64), &exe()).unwrap();
+    let lease = owner.enter(Effect::Allocation).unwrap();
+    assert!(owner.db().is_err());
+    lease.check_current().unwrap();
+    drop(lease);
+    assert!(owner.enter(Effect::Allocation).is_err());
+    let init = owner.enter(Effect::Initialization).unwrap();
+    f.control("revoked");
+    assert!(init.check_current().is_err());
+    drop(init);
+    assert!(owner.enter(Effect::Initialization).is_err());
+    let db = owner.db().unwrap();
+    assert_eq!(
+        db.query_row(
+            "SELECT state FROM pi_effect WHERE effect_key='allocation'",
+            [],
+            |r| r.get::<_, String>(0)
+        )
+        .unwrap(),
+        "unknown"
+    );
+    assert!(std::fs::read_dir(registry_path).unwrap().count() > 2);
 }

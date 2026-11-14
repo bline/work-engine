@@ -1,6 +1,11 @@
 //! Deterministic implementation-review v1 result validation. The original
 //! validator's no-authority verdict/finding shape is preserved here; host
 //! provenance and claims admission remain outside this pure module.
+//!
+//! One cross-field rule differs from the original validator, by owner decision
+//! of 2026-11-13: `acceptable_as_is` still needs decisive evidence, but it may
+//! carry limitations and pending findings of severity `info`. A pending
+//! finding of any other severity still makes it invalid.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -59,6 +64,7 @@ impl ReviewResult {
         let findings = field(&value, "findings")?.as_array()?.to_vec();
         let mut ids = BTreeSet::new();
         let mut pending = false;
+        let mut pending_above_info = false;
         for finding in &findings {
             validate_finding(finding)?;
             let id = field(finding, "id")?.as_text()?;
@@ -68,9 +74,11 @@ impl ReviewResult {
                 ));
             }
             let status = field(finding, "status")?;
-            pending |= string_is(status, "open")
+            let is_pending = string_is(status, "open")
                 || string_is(status, "remediation_presented")
                 || string_is(status, "unresolved");
+            pending |= is_pending;
+            pending_above_info |= is_pending && !string_is(field(finding, "severity")?, "info");
         }
         let decisive = field(&value, "decisiveEvidence")?.as_array()?;
         for item in decisive {
@@ -86,11 +94,14 @@ impl ReviewResult {
             ));
         }
         match verdict {
-            Verdict::AcceptableAsIs
-                if decisive.is_empty() || !limitations.is_empty() || pending =>
-            {
+            Verdict::AcceptableAsIs if decisive.is_empty() => {
                 return Err(EpisodeError::new(
-                    "acceptable_as_is requires decisive evidence and no limitation or unresolved finding",
+                    "acceptable_as_is requires decisive evidence",
+                ));
+            }
+            Verdict::AcceptableAsIs if pending_above_info => {
+                return Err(EpisodeError::new(
+                    "acceptable_as_is permits an unresolved finding only of severity info",
                 ));
             }
             Verdict::RemediationRequired if !pending => {

@@ -285,7 +285,16 @@ pub fn prepare_direct_compile(
     wire: DirectWire,
 ) -> Result<DirectPreparedCall, SemanticError> {
     let (input, input_sha256) = direct_compile_input(material, &binding, policy)?;
-    seal_call(material, binding, None, None, input, input_sha256, wire, policy)
+    seal_call(
+        material,
+        binding,
+        None,
+        None,
+        input,
+        input_sha256,
+        wire,
+        policy,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -431,7 +440,10 @@ pub fn direct_verify_input(
         || candidate.sha256 != sha256_hex(&candidate.raw)
         || candidate.plan != validate_candidate_content(material, &candidate.raw, policy)?
         || !candidate.origin_is_coherent()
-        || candidate.direct.as_ref().map(|d| d.prepared_binding_sha256.as_str())
+        || candidate
+            .direct
+            .as_ref()
+            .map(|d| d.prepared_binding_sha256.as_str())
             != Some(compile_call.binding_sha256.as_str())
         || candidate.compile_invocation_id != compile_call.binding.operation_id
         || binding.operation_id == candidate.compile_invocation_id
@@ -507,7 +519,8 @@ pub fn assess_direct_control_candidate(
     if verify_call.input != input
         || verify_call.input_sha256 != input_sha256
         || verify_call.candidate_sha256.as_deref() != Some(candidate.sha256.as_str())
-        || verify_call.compile_binding_sha256.as_deref() != Some(compile_call.binding_sha256.as_str())
+        || verify_call.compile_binding_sha256.as_deref()
+            != Some(compile_call.binding_sha256.as_str())
         || verify_call.source_basis_sha256 != material.sha256
         || verify_call.wire_sha256 == compile_call.wire_sha256
     {

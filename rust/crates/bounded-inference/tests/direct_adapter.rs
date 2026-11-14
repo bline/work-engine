@@ -140,17 +140,18 @@ fn stream(text: &str, terminal: &str) -> String {
         json!({"type":"response.created","sequence_number":1,"response":{"id":"resp-local","model":MODEL}}),
         json!({"type":"response.output_item.added","sequence_number":2,"output_index":0,"item":{"id":"msg-1","type":"message"}}),
         json!({"type":"response.output_text.delta","sequence_number":3,"output_index":0,"item_id":"msg-1","content_index":0,"delta":text}),
-        if terminal == "failed" { failed } else { completed },
+        if terminal == "failed" {
+            failed
+        } else {
+            completed
+        },
     ] {
         s.push_str(&event(v));
     }
     s
 }
 
-fn adapter(
-    root: &Path,
-    address: std::net::SocketAddr,
-) -> DirectAdapter<LoopbackEndpoint> {
+fn adapter(root: &Path, address: std::net::SocketAddr) -> DirectAdapter<LoopbackEndpoint> {
     let (store, snapshot) = bearer(&root.join("auth"), "synthetic-access-b3");
     let store = Arc::new(store);
     let registration = snapshot.registration.clone();
@@ -225,7 +226,10 @@ fn completed_capture_comes_from_the_journal_observation_and_is_sent_once() {
     assert_eq!(capture.evidence.label(), "synthetic_local");
     assert_eq!(capture.evidence.reference(), "fixture:adapter-loopback");
     // The journal already holds this operation: a second submit cannot resend.
-    assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+    assert_eq!(
+        adapter.submit(&call).unwrap_err(),
+        DirectSubmitError::OutcomeUnknown
+    );
     std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -249,7 +253,10 @@ fn altered_wire_is_not_sent() {
     let adapter = adapter(&root, peer.local_addr().unwrap());
     let mut call = prepared(&adapter, "direct-op-3");
     call.wire.wire_bytes.push(b' ');
-    assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::NotSent);
+    assert_eq!(
+        adapter.submit(&call).unwrap_err(),
+        DirectSubmitError::NotSent
+    );
     peer.set_nonblocking(true).unwrap();
     assert!(peer.accept().is_err(), "no connection may be made");
     std::fs::remove_dir_all(root).unwrap();
@@ -264,7 +271,13 @@ fn connection_failure_leaves_the_outcome_unknown_and_is_not_replayed() {
     };
     let adapter = adapter(&root, address);
     let call = prepared(&adapter, "direct-op-4");
-    assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
-    assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+    assert_eq!(
+        adapter.submit(&call).unwrap_err(),
+        DirectSubmitError::OutcomeUnknown
+    );
+    assert_eq!(
+        adapter.submit(&call).unwrap_err(),
+        DirectSubmitError::OutcomeUnknown
+    );
     std::fs::remove_dir_all(root).unwrap();
 }

@@ -50,27 +50,41 @@ const MODEL: &str = "gpt-6-astra";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let result = match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
+    let result = match args
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
         ["prepare", public, out] => prepare(Path::new(public), Path::new(out)).map(|_| 0),
         ["provenance", root, paths, exe, rustc, out] => provenance(
-            Path::new(root), Path::new(paths), Path::new(exe), Path::new(rustc), Path::new(out),
+            Path::new(root),
+            Path::new(paths),
+            Path::new(exe),
+            Path::new(rustc),
+            Path::new(out),
         )
         .map(|_| 0),
         ["layout", root, out] => layout(Path::new(root), Path::new(out)).map(|_| 0),
         ["template", report, prov, out] => {
             template(Path::new(report), Path::new(prov), Path::new(out), None).map(|_| 0)
         }
-        ["template", report, prov, out, layout] => {
-            template(Path::new(report), Path::new(prov), Path::new(out), Some(Path::new(layout)))
-                .map(|_| 0)
-        }
+        ["template", report, prov, out, layout] => template(
+            Path::new(report),
+            Path::new(prov),
+            Path::new(out),
+            Some(Path::new(layout)),
+        )
+        .map(|_| 0),
         ["selfcheck", package] => selfcheck(Path::new(package)).map(|_| 0),
         ["preflight", package, out] => preflight(Path::new(package), Path::new(out)),
-        _ => Err("usage: prepare <public-dir> <out-dir> | provenance <source-root> \
+        _ => Err(
+            "usage: prepare <public-dir> <out-dir> | provenance <source-root> \
                   <subject-manifest> <host-executable> <rustc-vV> <out-dir> | layout \
                   <private-root> <out> | template <prepare-report> <provenance> <out> \
                   [<layout>] | selfcheck <package> | preflight <package> <out>"
-            .into()),
+                .into(),
+        ),
     };
     match result {
         Ok(code) => ExitCode::from(code),
@@ -99,7 +113,11 @@ fn private_dir(path: &Path) -> Res<()> {
 
 /// Only these public files are opened. The private rubric and construction
 /// records are never read here, so they cannot reach a request.
-const PUBLIC_INPUTS: [&str; 3] = ["submit-task.json", "semantic-policy.json", "identities.json"];
+const PUBLIC_INPUTS: [&str; 3] = [
+    "submit-task.json",
+    "semantic-policy.json",
+    "identities.json",
+];
 
 fn prepare(public: &Path, out: &Path) -> Res<()> {
     if public.file_name().and_then(|n| n.to_str()) != Some("public") || !out.is_absolute() {
@@ -108,7 +126,10 @@ fn prepare(public: &Path, out: &Path) -> Res<()> {
     let mut inputs = serde_json::Map::new();
     for name in PUBLIC_INPUTS {
         let bytes = read(&public.join(name))?;
-        inputs.insert(name.into(), json!({"path": public.join(name), "sha256": sha256(&bytes)}));
+        inputs.insert(
+            name.into(),
+            json!({"path": public.join(name), "sha256": sha256(&bytes)}),
+        );
     }
     let task: SubmitTask = serde_json::from_slice(&read(&public.join("submit-task.json"))?)
         .map_err(|e| format!("submit-task.json is not an exact SubmitTask: {e}"))?;
@@ -118,22 +139,31 @@ fn prepare(public: &Path, out: &Path) -> Res<()> {
     let ids: Value = serde_json::from_slice(&read(&public.join("identities.json"))?)
         .map_err(|e| format!("identities.json: {e}"))?;
     let label = |k: &str| -> Res<String> {
-        ids[k].as_str().map(str::to_owned).ok_or(format!("identities.json lacks {k}"))
+        ids[k]
+            .as_str()
+            .map(str::to_owned)
+            .ok_or(format!("identities.json lacks {k}"))
     };
 
     private_dir(out)?;
     let store_dir = out.join("taskstore");
     if store_dir.exists() {
-        return Err(format!("{} exists; preparation needs a fresh store", store_dir.display()));
+        return Err(format!(
+            "{} exists; preparation needs a fresh store",
+            store_dir.display()
+        ));
     }
     private_dir(&store_dir)?;
     let store_path = store_dir.join("owner.sqlite");
     // Gates answer() only; this store answers no question.
     let store = TaskStore::open(&store_path, "b3-offline-preparation-no-answers".into())
         .map_err(|e| format!("TaskStore::open: {e:?}"))?;
-    let (commit, first) = store.submit_with_status(&task).map_err(|e| format!("submit: {e:?}"))?;
-    let (again, again_first) =
-        store.submit_with_status(&task).map_err(|e| format!("resubmit: {e:?}"))?;
+    let (commit, first) = store
+        .submit_with_status(&task)
+        .map_err(|e| format!("submit: {e:?}"))?;
+    let (again, again_first) = store
+        .submit_with_status(&task)
+        .map_err(|e| format!("resubmit: {e:?}"))?;
     let mut altered = task.clone();
     altered.objective.push_str(" (altered)");
     let conflict = store.submit(&altered).err().map(|e| format!("{e:?}"));
@@ -151,8 +181,11 @@ fn prepare(public: &Path, out: &Path) -> Res<()> {
     let policy_matches = material.policy == declared
         && declared == SemanticPolicy::retained_repository_analysis()
         && declared.id == PROFILE;
-    let basis = project_material(material.clone()).map_err(|e| format!("project_material: {e:?}"))?;
-    basis.verify_digest().map_err(|e| format!("verify_digest: {e:?}"))?;
+    let basis =
+        project_material(material.clone()).map_err(|e| format!("project_material: {e:?}"))?;
+    basis
+        .verify_digest()
+        .map_err(|e| format!("verify_digest: {e:?}"))?;
     let dependencies = store
         .observe_dependencies(&basis.dependencies)
         .map_err(|e| format!("observe_dependencies: {e:?}"))?;
@@ -231,10 +264,13 @@ fn prepare(public: &Path, out: &Path) -> Res<()> {
                   "capture/transition identities", "grants", "any provider exchange"]
     });
     write_json(&out.join("prepare-report.json"), &report)?;
-    println!("{}", serde_json::to_string(&json!({"basis": basis.sha256,
+    println!(
+        "{}",
+        serde_json::to_string(&json!({"basis": basis.sha256,
         "compile_input": input_sha, "sources": record.sources.len(),
         "obligations": owned_obligations.len(), "reserved_rejected": reserved_rejected.is_some()}))
-        .unwrap_or_default());
+        .unwrap_or_default()
+    );
     Ok(())
 }
 
@@ -282,7 +318,9 @@ fn provenance(root: &Path, paths: &Path, exe: &Path, rustc: &Path, out: &Path) -
     // dirty overlay is bound exactly and drift from the subject is reported.
     let subject_bytes = read(paths)?;
     let subject: Value = serde_json::from_slice(&subject_bytes).map_err(|e| e.to_string())?;
-    let listed = subject["entries"].as_array().ok_or("subject manifest lacks entries")?;
+    let listed = subject["entries"]
+        .as_array()
+        .ok_or("subject manifest lacks entries")?;
     let mut entries = Vec::new();
     let mut changed = Vec::new();
     for item in listed {
@@ -336,9 +374,12 @@ fn provenance(root: &Path, paths: &Path, exe: &Path, rustc: &Path, out: &Path) -
             each action grant must name it."
     });
     write_json(&out.join("provenance.json"), &report)?;
-    println!("{}", json!({"source_manifest": manifest_sha, "entries": verified,
+    println!(
+        "{}",
+        json!({"source_manifest": manifest_sha, "entries": verified,
         "changed_vs_path_set": changed.len(), "executable": exe_sha,
-        "library_source_sha256": report["library_source_sha256"]}));
+        "library_source_sha256": report["library_source_sha256"]})
+    );
     Ok(())
 }
 
@@ -354,7 +395,11 @@ fn template(report: &Path, prov: &Path, out: &Path, layout: Option<&Path>) -> Re
     let subject = parsed["record"]["subject_id"].clone();
     // Public labels only, from the exact file the preparation opened.
     let ids_input = &parsed["inputs"]["identities.json"];
-    let ids_bytes = read(Path::new(ids_input["path"].as_str().ok_or("report lacks identities")?))?;
+    let ids_bytes = read(Path::new(
+        ids_input["path"]
+            .as_str()
+            .ok_or("report lacks identities")?,
+    ))?;
     if ids_input["sha256"].as_str() != Some(sha256(&ids_bytes).as_str()) {
         return Err("identities.json changed since preparation".into());
     }
@@ -500,15 +545,48 @@ enum Slot {
 /// release directory the root later writes per-send releases into. The last
 /// field is the default place under the layout root.
 const LAYOUT: [(&str, &str, Slot, &str); 7] = [
-    ("task_store_path", "/host_startup/task_store_path", Slot::File, "host/task-store.sqlite3"),
-    ("socket_path", "/host_startup/socket_path", Slot::Socket, "host/host.sock"),
-    ("journal_dir", "/host_startup/control/journal_dir", Slot::Dir, "direct/journal"),
-    ("release_dir", "/host_startup/control/release_dir", Slot::Release, "release"),
-    ("store_root", "/host_startup/lifecycle/store_root", Slot::Dir, "lifecycle/store"),
-    ("lifecycle_socket_path", "/host_startup/lifecycle/socket_path", Slot::Socket,
-        "lifecycle/lifecycle.sock"),
-    ("peer_socket_path", "/host_startup/lifecycle/peer_socket_path", Slot::Socket,
-        "lifecycle/peer.sock"),
+    (
+        "task_store_path",
+        "/host_startup/task_store_path",
+        Slot::File,
+        "host/task-store.sqlite3",
+    ),
+    (
+        "socket_path",
+        "/host_startup/socket_path",
+        Slot::Socket,
+        "host/host.sock",
+    ),
+    (
+        "journal_dir",
+        "/host_startup/control/journal_dir",
+        Slot::Dir,
+        "direct/journal",
+    ),
+    (
+        "release_dir",
+        "/host_startup/control/release_dir",
+        Slot::Release,
+        "release",
+    ),
+    (
+        "store_root",
+        "/host_startup/lifecycle/store_root",
+        Slot::Dir,
+        "lifecycle/store",
+    ),
+    (
+        "lifecycle_socket_path",
+        "/host_startup/lifecycle/socket_path",
+        Slot::Socket,
+        "lifecycle/lifecycle.sock",
+    ),
+    (
+        "peer_socket_path",
+        "/host_startup/lifecycle/peer_socket_path",
+        Slot::Socket,
+        "lifecycle/peer.sock",
+    ),
 ];
 
 /// The only directories `layout` creates, each empty and 0700.
@@ -523,15 +601,23 @@ type Bound = Vec<(&'static str, PathBuf)>;
 
 fn layout(root: &Path, out: &Path) -> Res<()> {
     if !plain(root) {
-        return Err(format!("layout root {} is not a plain absolute path", root.display()));
+        return Err(format!(
+            "layout root {} is not a plain absolute path",
+            root.display()
+        ));
     }
-    let paths: Bound = LAYOUT.iter().map(|(key, _, _, rel)| (*key, root.join(rel))).collect();
+    let paths: Bound = LAYOUT
+        .iter()
+        .map(|(key, _, _, rel)| (*key, root.join(rel)))
+        .collect();
     // A root too long for its sockets is refused before anything is created.
     if let Some((key, _)) = paths.iter().find(|(key, p)| {
         LAYOUT.iter().any(|l| l.0 == *key && l.2 == Slot::Socket)
             && p.as_os_str().len() > SOCKET_PATH_MAX
     }) {
-        return Err(format!("layout root is too long: {key} would exceed {SOCKET_PATH_MAX} bytes"));
+        return Err(format!(
+            "layout root is too long: {key} would exceed {SOCKET_PATH_MAX} bytes"
+        ));
     }
     let uid = current_uid()?;
     let mut created = Vec::new();
@@ -547,8 +633,10 @@ fn layout(root: &Path, out: &Path) -> Res<()> {
     };
     make(root.to_path_buf())?;
     if !private_dir_at(root, uid, true) || !canonical(root) {
-        return Err(format!("layout root {} is not a canonical 0700 directory of uid {uid}",
-            root.display()));
+        return Err(format!(
+            "layout root {} is not a canonical 0700 directory of uid {uid}",
+            root.display()
+        ));
     }
     for dir in LAYOUT_DIRS {
         make(root.join(dir))?;
@@ -572,19 +660,26 @@ fn layout(root: &Path, out: &Path) -> Res<()> {
                   locations pairwise disjoint and under the root")
     });
     write_json(out, &record)?;
-    println!("{}", json!({"layout": out, "root": root, "created": record["created"]}));
+    println!(
+        "{}",
+        json!({"layout": out, "root": root, "created": record["created"]})
+    );
     Ok(())
 }
 
 fn current_uid() -> Res<u32> {
-    fs::metadata("/proc/self").map(|m| m.uid()).map_err(|e| e.to_string())
+    fs::metadata("/proc/self")
+        .map(|m| m.uid())
+        .map_err(|e| e.to_string())
 }
 
 /// Absolute, already normalized (no `.`, `..`, repeated or trailing `/`).
 fn plain(path: &Path) -> bool {
     path.is_absolute()
         && path.as_os_str().len() <= 4096
-        && !path.components().any(|c| matches!(c, Component::ParentDir | Component::CurDir))
+        && !path
+            .components()
+            .any(|c| matches!(c, Component::ParentDir | Component::CurDir))
         && path.components().collect::<PathBuf>().as_os_str() == path.as_os_str()
 }
 
@@ -599,7 +694,11 @@ fn private_dir_at(path: &Path, uid: u32, exact: bool) -> bool {
     fs::symlink_metadata(path).is_ok_and(|m| {
         m.is_dir()
             && m.uid() == uid
-            && if exact { m.mode() & 0o777 == 0o700 } else { m.mode() & 0o077 == 0 }
+            && if exact {
+                m.mode() & 0o777 == 0o700
+            } else {
+                m.mode() & 0o077 == 0
+            }
     })
 }
 
@@ -607,12 +706,18 @@ fn private_dir_at(path: &Path, uid: u32, exact: bool) -> bool {
 /// only and creates nothing. No location may equal, contain or lie inside
 /// another, or any `avoid` location (source root, preparation store,
 /// credential store when bound).
-fn check_layout(root: &Path, paths: &[(&str, PathBuf)], avoid: &[(&str, PathBuf)]) -> Res<Vec<String>> {
+fn check_layout(
+    root: &Path,
+    paths: &[(&str, PathBuf)],
+    avoid: &[(&str, PathBuf)],
+) -> Res<Vec<String>> {
     let uid = current_uid()?;
     let mut refusals = Vec::new();
     if !plain(root) || !private_dir_at(root, uid, true) || !canonical(root) {
-        refusals.push(format!("root {} is not a canonical 0700 directory of uid {uid}",
-            root.display()));
+        refusals.push(format!(
+            "root {} is not a canonical 0700 directory of uid {uid}",
+            root.display()
+        ));
     }
     for (key, path) in paths {
         let slot = LAYOUT.iter().find(|l| l.0 == *key).map(|l| l.2);
@@ -621,7 +726,10 @@ fn check_layout(root: &Path, paths: &[(&str, PathBuf)], avoid: &[(&str, PathBuf)
             continue;
         };
         if !plain(path) {
-            refusals.push(format!("{key} {} is not a plain absolute path", path.display()));
+            refusals.push(format!(
+                "{key} {} is not a plain absolute path",
+                path.display()
+            ));
             continue;
         }
         if !path.starts_with(root) || path == root {
@@ -629,12 +737,16 @@ fn check_layout(root: &Path, paths: &[(&str, PathBuf)], avoid: &[(&str, PathBuf)
         }
         let parent = path.parent().unwrap_or(path);
         if !private_dir_at(parent, uid, true) || !canonical(parent) {
-            refusals.push(format!("{key} parent {} is not a canonical 0700 directory of uid {uid}",
-                parent.display()));
+            refusals.push(format!(
+                "{key} parent {} is not a canonical 0700 directory of uid {uid}",
+                parent.display()
+            ));
         }
         if slot == Slot::Socket && path.as_os_str().len() > SOCKET_PATH_MAX {
-            refusals.push(format!("{key} is {} bytes; a socket path is at most {SOCKET_PATH_MAX}",
-                path.as_os_str().len()));
+            refusals.push(format!(
+                "{key} is {} bytes; a socket path is at most {SOCKET_PATH_MAX}",
+                path.as_os_str().len()
+            ));
         }
         let existing = match fs::symlink_metadata(path) {
             Ok(meta) => Some(meta),
@@ -653,8 +765,11 @@ fn check_layout(root: &Path, paths: &[(&str, PathBuf)], avoid: &[(&str, PathBuf)
             (Slot::Release, Some(_)) => private_dir_at(path, uid, false),
         };
         if !ok {
-            refusals.push(format!("{key} {} exists with the wrong type, owner or mode, or a \
-                required release directory is absent", path.display()));
+            refusals.push(format!(
+                "{key} {} exists with the wrong type, owner or mode, or a \
+                required release directory is absent",
+                path.display()
+            ));
         }
     }
     let overlap = |a: &Path, b: &Path| a == b || a.starts_with(b) || b.starts_with(a);
@@ -684,7 +799,10 @@ fn parse_layout(bytes: &[u8]) -> Res<(PathBuf, Bound)> {
     let bound = LAYOUT
         .iter()
         .map(|(key, ..)| {
-            paths.get(*key).and_then(Value::as_str).map(|p| (*key, PathBuf::from(p)))
+            paths
+                .get(*key)
+                .and_then(Value::as_str)
+                .map(|p| (*key, PathBuf::from(p)))
                 .ok_or(format!("layout lacks {key}"))
         })
         .collect::<Res<Bound>>()?;
@@ -694,12 +812,21 @@ fn parse_layout(bytes: &[u8]) -> Res<(PathBuf, Bound)> {
 /// Locations the runtime must stay clear of, as far as the package binds them.
 fn layout_avoid(package: &Value) -> Bound {
     let startup = &package["host_startup"];
-    let prep = package["run_bindings"]["canonical_preparation"]["path"].as_str()
+    let prep = package["run_bindings"]["canonical_preparation"]["path"]
+        .as_str()
         .and_then(|p| Path::new(p).parent().map(Path::to_path_buf));
     [
-        ("source_root", startup["source_root"].as_str().map(PathBuf::from)),
+        (
+            "source_root",
+            startup["source_root"].as_str().map(PathBuf::from),
+        ),
         ("preparation_dir", prep),
-        ("credential_dir", startup["control"]["credential_dir"].as_str().map(PathBuf::from)),
+        (
+            "credential_dir",
+            startup["control"]["credential_dir"]
+                .as_str()
+                .map(PathBuf::from),
+        ),
     ]
     .into_iter()
     .filter_map(|(k, p)| p.map(|p| (k, p)))
@@ -716,7 +843,9 @@ fn bind_layout(package: &mut Value, path: &Path) -> Res<()> {
         return Err(format!("runtime layout refused: {}", refusals.join("; ")));
     }
     for ((_, pointer, ..), (_, value)) in LAYOUT.iter().zip(&paths) {
-        *package.pointer_mut(pointer).ok_or(format!("template lacks {pointer}"))? = json!(value);
+        *package
+            .pointer_mut(pointer)
+            .ok_or(format!("template lacks {pointer}"))? = json!(value);
     }
     package["run_bindings"]["runtime_layout"] = json!({
         "path": path, "sha256": sha256(&bytes), "root": root,
@@ -733,7 +862,10 @@ fn layout_checks(package: &Value) -> Res<(Value, Value, Vec<String>)> {
     let bound: Option<Bound> = LAYOUT
         .iter()
         .map(|(key, pointer, ..)| {
-            package.pointer(pointer).and_then(Value::as_str).map(|p| (*key, PathBuf::from(p)))
+            package
+                .pointer(pointer)
+                .and_then(Value::as_str)
+                .map(|p| (*key, PathBuf::from(p)))
         })
         .collect();
     let Some(paths) = bound else {
@@ -745,10 +877,13 @@ fn layout_checks(package: &Value) -> Res<(Value, Value, Vec<String>)> {
         return Ok((json!(false), json!(false), vec![missing]));
     };
     let refusals = check_layout(&root, &paths, &layout_avoid(package))?;
-    let same = record["path"].as_str().and_then(|p| fs::read(p).ok()).is_some_and(|bytes| {
-        Some(sha256(&bytes).as_str()) == record["sha256"].as_str()
-            && parse_layout(&bytes).is_ok_and(|(r, p)| r == root && p == paths)
-    });
+    let same = record["path"]
+        .as_str()
+        .and_then(|p| fs::read(p).ok())
+        .is_some_and(|bytes| {
+            Some(sha256(&bytes).as_str()) == record["sha256"].as_str()
+                && parse_layout(&bytes).is_ok_and(|(r, p)| r == root && p == paths)
+        });
     Ok((json!(refusals.is_empty()), json!(same), refusals))
 }
 
@@ -813,7 +948,11 @@ fn unresolved(value: &Value, pointer: String, found: &mut Vec<Value>) {
 /// In-memory typed stand-ins, used only to compare the template's key set and
 /// value types with `HostStartup`. They are never written or used to start.
 fn stand_in(value: &mut Value) -> Res<()> {
-    if let Some(ty) = value.get("unresolved").and_then(|u| u["type"].as_str()).map(str::to_owned) {
+    if let Some(ty) = value
+        .get("unresolved")
+        .and_then(|u| u["type"].as_str())
+        .map(str::to_owned)
+    {
         *value = match ty.as_str() {
             "string" => json!("x"),
             "path" => json!("/selfcheck/x"),
@@ -850,10 +989,13 @@ fn selfcheck(package: &Path) -> Res<()> {
         back["lifecycle"]["native"]["semantic_contexts"] = Value::Null;
         key_paths(&back) == key_paths(&filled)
     });
-    println!("{}", json!({"marked_template_parses_as_HostStartup": raw.is_ok(),
+    println!(
+        "{}",
+        json!({"marked_template_parses_as_HostStartup": raw.is_ok(),
         "marked_template_error": raw.err().map(|e| e.to_string()),
         "stand_in_shape": shaped.as_ref().map(|_| "HostStartup").map_err(Clone::clone),
-        "stand_in_key_paths_round_trip_equal": round_trip}));
+        "stand_in_key_paths_round_trip_equal": round_trip})
+    );
     if shaped.is_err() || round_trip != Some(true) {
         return Err("template key set does not match HostStartup".into());
     }
@@ -887,15 +1029,25 @@ fn preflight(package: &Path, out: &Path) -> Res<u8> {
     unresolved(&parsed, String::new(), &mut found);
     let mut checks = serde_json::Map::new();
     let prep = &parsed["run_bindings"]["canonical_preparation"];
-    let prep_ok = prep["path"].as_str().map(PathBuf::from).and_then(|p| fs::read(p).ok())
+    let prep_ok = prep["path"]
+        .as_str()
+        .map(PathBuf::from)
+        .and_then(|p| fs::read(p).ok())
         .map(|b| Some(sha256(&b).as_str()) == prep["sha256"].as_str());
     checks.insert("canonical_preparation_digest".into(), json!(prep_ok));
     let startup = &parsed["host_startup"];
-    checks.insert("control_kind_direct".into(), json!(startup["control"]["kind"] == "direct"));
-    checks.insert("semantic_capture_section_present".into(),
-        json!(startup["lifecycle"]["native"]["semantic"].is_object()));
-    checks.insert("profile".into(), json!(startup["profile"] == PROFILE
-        && startup["lifecycle"]["profile"] == PROFILE));
+    checks.insert(
+        "control_kind_direct".into(),
+        json!(startup["control"]["kind"] == "direct"),
+    );
+    checks.insert(
+        "semantic_capture_section_present".into(),
+        json!(startup["lifecycle"]["native"]["semantic"].is_object()),
+    );
+    checks.insert(
+        "profile".into(),
+        json!(startup["profile"] == PROFILE && startup["lifecycle"]["profile"] == PROFILE),
+    );
     // Every bound digest is recomputed here; startup recomputes them again.
     // A field that is still an owner marker is reported as null.
     let digest = |path: &Value, sha: &Value| match (path.as_str(), sha.as_str()) {
@@ -903,38 +1055,71 @@ fn preflight(package: &Path, out: &Path) -> Res<u8> {
         _ => Value::Null,
     };
     let runs = &parsed["run_bindings"];
-    checks.insert("executable_digest".into(),
-        digest(&runs["executable_path"], &startup["executable_sha256"]));
-    checks.insert("lock_digest".into(), digest(&startup["lock_path"], &startup["lock_sha256"]));
-    checks.insert("toolchain_digest".into(),
-        digest(&startup["toolchain_path"], &startup["toolchain_sha256"]));
-    checks.insert("source_manifest_digest".into(),
-        digest(&startup["source_manifest_path"], &startup["source_sha256"]));
-    checks.insert("build_provenance_digest".into(),
-        digest(&runs["build_provenance"]["path"], &runs["build_provenance"]["sha256"]));
-    let manifest = match (startup["source_root"].as_str(), startup["source_manifest_path"].as_str()) {
+    checks.insert(
+        "executable_digest".into(),
+        digest(&runs["executable_path"], &startup["executable_sha256"]),
+    );
+    checks.insert(
+        "lock_digest".into(),
+        digest(&startup["lock_path"], &startup["lock_sha256"]),
+    );
+    checks.insert(
+        "toolchain_digest".into(),
+        digest(&startup["toolchain_path"], &startup["toolchain_sha256"]),
+    );
+    checks.insert(
+        "source_manifest_digest".into(),
+        digest(&startup["source_manifest_path"], &startup["source_sha256"]),
+    );
+    checks.insert(
+        "build_provenance_digest".into(),
+        digest(
+            &runs["build_provenance"]["path"],
+            &runs["build_provenance"]["sha256"],
+        ),
+    );
+    let manifest = match (
+        startup["source_root"].as_str(),
+        startup["source_manifest_path"].as_str(),
+    ) {
         (Some(root), Some(m)) => json!(verify_manifest(Path::new(root), Path::new(m)).is_ok()),
         _ => Value::Null,
     };
     checks.insert("source_manifest_entries".into(), manifest);
-    checks.insert("features_default_build".into(), json!(startup["features"] == json!([])));
-    checks.insert("control_model".into(), json!(startup["control"]["model"] == MODEL));
-    checks.insert("control_bounds_public_route".into(),
-        json!(startup["control"]["bounds"] == json!(PublicHostEndpoint::bounds())));
+    checks.insert(
+        "features_default_build".into(),
+        json!(startup["features"] == json!([])),
+    );
+    checks.insert(
+        "control_model".into(),
+        json!(startup["control"]["model"] == MODEL),
+    );
+    checks.insert(
+        "control_bounds_public_route".into(),
+        json!(startup["control"]["bounds"] == json!(PublicHostEndpoint::bounds())),
+    );
     let bound = &runs["direct_release_protocol"]["bound_values"];
-    checks.insert("release_protocol_constants".into(), json!(
-        bound["provider"] == PublicHostEndpoint::PROVIDER
-            && bound["profile_revision"] == PublicHostEndpoint::PROFILE_REVISION
-            && bound["model"] == MODEL
-            && bound["bounds"] == json!(PublicHostEndpoint::bounds())
-            && bound["action.source_sha256"] == ActionGrant::source_sha256()
-            && runs["library_source_sha256"] == ActionGrant::source_sha256()
-            && bound["action.executable_sha256"] == startup["executable_sha256"]
-            && bound["grant.host_source_sha256"] == startup["source_sha256"]));
+    checks.insert(
+        "release_protocol_constants".into(),
+        json!(
+            bound["provider"] == PublicHostEndpoint::PROVIDER
+                && bound["profile_revision"] == PublicHostEndpoint::PROFILE_REVISION
+                && bound["model"] == MODEL
+                && bound["bounds"] == json!(PublicHostEndpoint::bounds())
+                && bound["action.source_sha256"] == ActionGrant::source_sha256()
+                && runs["library_source_sha256"] == ActionGrant::source_sha256()
+                && bound["action.executable_sha256"] == startup["executable_sha256"]
+                && bound["grant.host_source_sha256"] == startup["source_sha256"]
+        ),
+    );
     let (layout_ok, layout_record, layout_refusals) = layout_checks(&parsed)?;
     checks.insert("runtime_layout".into(), layout_ok);
     checks.insert("runtime_layout_record".into(), layout_record);
-    let shape = if found.iter().any(|f| f["pointer"].as_str().is_some_and(|p| p.starts_with("/host_startup"))) {
+    let shape = if found.iter().any(|f| {
+        f["pointer"]
+            .as_str()
+            .is_some_and(|p| p.starts_with("/host_startup"))
+    }) {
         "not_attempted: unresolved startup fields".to_owned()
     } else {
         match serde_json::from_value::<HostStartup>(startup.clone()) {
@@ -958,7 +1143,9 @@ fn preflight(package: &Path, out: &Path) -> Res<u8> {
     };
     let mut by_gap = std::collections::BTreeMap::<String, usize>::new();
     for f in &found {
-        *by_gap.entry(f["gap"].as_str().unwrap_or("?").to_owned()).or_default() += 1;
+        *by_gap
+            .entry(f["gap"].as_str().unwrap_or("?").to_owned())
+            .or_default() += 1;
     }
     let report = json!({
         "schema": "b3_offline_preflight_v1",
@@ -972,8 +1159,11 @@ fn preflight(package: &Path, out: &Path) -> Res<u8> {
             rechecks release/journal/credential disjointness and directory modes at serve"
     });
     write_json(out, &report)?;
-    println!("{}", json!({"status": status, "unresolved": report["unresolved_count"],
-        "by_gap": report["unresolved_by_gap"], "checks": report["checks"]}));
+    println!(
+        "{}",
+        json!({"status": status, "unresolved": report["unresolved_count"],
+        "by_gap": report["unresolved_by_gap"], "checks": report["checks"]})
+    );
     Ok(code)
 }
 
@@ -989,7 +1179,10 @@ mod tests {
     }
 
     fn proposed(root: &Path) -> Bound {
-        LAYOUT.iter().map(|(key, _, _, rel)| (*key, root.join(rel))).collect()
+        LAYOUT
+            .iter()
+            .map(|(key, _, _, rel)| (*key, root.join(rel)))
+            .collect()
     }
 
     fn refusals(root: &Path, paths: &Bound) -> Vec<String> {
@@ -1010,13 +1203,18 @@ mod tests {
     fn fresh_layout_creates_only_private_empty_directories() {
         let (_t, root) = fresh();
         let record = layout_at(&root);
-        assert_eq!(record["created"].as_array().unwrap().len(), 1 + LAYOUT_DIRS.len());
+        assert_eq!(
+            record["created"].as_array().unwrap().len(),
+            1 + LAYOUT_DIRS.len()
+        );
         for dir in std::iter::once(root.clone()).chain(LAYOUT_DIRS.iter().map(|d| root.join(d))) {
             let meta = fs::symlink_metadata(&dir).unwrap();
             assert_eq!(meta.mode() & 0o777, 0o700, "{}", dir.display());
         }
         // Only the four directories exist: no store, socket, journal or lifecycle store.
-        let mut entries: Vec<_> = LAYOUT_DIRS.iter().flat_map(|d| fs::read_dir(root.join(d)).unwrap())
+        let mut entries: Vec<_> = LAYOUT_DIRS
+            .iter()
+            .flat_map(|d| fs::read_dir(root.join(d)).unwrap())
             .collect();
         assert!(entries.is_empty(), "{entries:?}");
         entries.extend(fs::read_dir(&root).unwrap());
@@ -1024,7 +1222,11 @@ mod tests {
         let (r, paths) = parse_layout(&fs::read(root.with_extension("json")).unwrap()).unwrap();
         assert_eq!((r.clone(), paths.clone()), (root.clone(), proposed(&root)));
         assert!(refusals(&root, &paths).is_empty());
-        assert!(paths.iter().all(|(_, p)| p.as_os_str().len() <= SOCKET_PATH_MAX));
+        assert!(
+            paths
+                .iter()
+                .all(|(_, p)| p.as_os_str().len() <= SOCKET_PATH_MAX)
+        );
     }
 
     #[test]
@@ -1037,8 +1239,14 @@ mod tests {
         let store = root.join("host/task-store.sqlite3");
         fs::write(&store, b"").unwrap();
         chmod(&store, 0o600);
-        fs::DirBuilder::new().mode(0o700).create(root.join("direct/journal")).unwrap();
-        fs::DirBuilder::new().mode(0o700).create(root.join("lifecycle/store")).unwrap();
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join("direct/journal"))
+            .unwrap();
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join("lifecycle/store"))
+            .unwrap();
         let _listener = UnixListener::bind(root.join("host/host.sock")).unwrap();
         assert_eq!(refusals(&root, &proposed(&root)), Vec::<String>::new());
     }
@@ -1068,7 +1276,10 @@ mod tests {
         layout_at(&root);
         fs::write(root.join("lifecycle/peer.sock"), b"").unwrap();
         let found = refusals(&root, &proposed(&root));
-        assert!(found.len() == 1 && found[0].starts_with("peer_socket_path"), "{found:?}");
+        assert!(
+            found.len() == 1 && found[0].starts_with("peer_socket_path"),
+            "{found:?}"
+        );
     }
 
     #[test]
@@ -1078,7 +1289,12 @@ mod tests {
         chmod(&root.join("host"), 0o750);
         let found = refusals(&root, &proposed(&root));
         assert_eq!(found.len(), 2, "{found:?}");
-        assert!(found.iter().all(|r| r.contains("parent") && r.contains("/host ")), "{found:?}");
+        assert!(
+            found
+                .iter()
+                .all(|r| r.contains("parent") && r.contains("/host ")),
+            "{found:?}"
+        );
         chmod(&root.join("host"), 0o700);
         chmod(&root, 0o755);
         assert!(refusals(&root, &proposed(&root))[0].starts_with("root "));
@@ -1095,10 +1311,16 @@ mod tests {
         layout_at(&root);
         chmod(&root.join("release"), 0o750);
         let found = refusals(&root, &proposed(&root));
-        assert!(found.len() == 1 && found[0].starts_with("release_dir"), "{found:?}");
+        assert!(
+            found.len() == 1 && found[0].starts_with("release_dir"),
+            "{found:?}"
+        );
         fs::remove_dir(root.join("release")).unwrap();
         let found = refusals(&root, &proposed(&root));
-        assert!(found.len() == 1 && found[0].starts_with("release_dir"), "{found:?}");
+        assert!(
+            found.len() == 1 && found[0].starts_with("release_dir"),
+            "{found:?}"
+        );
     }
 
     #[test]
@@ -1109,29 +1331,57 @@ mod tests {
         paths[2].1 = root.join("release/journal"); // journal_dir inside release_dir
         paths[6].1 = paths[5].1.clone(); // peer socket == lifecycle socket
         let found = refusals(&root, &paths);
-        assert!(found.contains(&"journal_dir overlaps release_dir".to_owned()), "{found:?}");
+        assert!(
+            found.contains(&"journal_dir overlaps release_dir".to_owned()),
+            "{found:?}"
+        );
         assert!(found.contains(&"lifecycle_socket_path overlaps peer_socket_path".to_owned()));
         // Locations the package binds elsewhere are avoided as well.
-        let avoid = vec![("credential_dir", root.join("direct")), ("source_root", root.clone())];
+        let avoid = vec![
+            ("credential_dir", root.join("direct")),
+            ("source_root", root.clone()),
+        ];
         let found = check_layout(&root, &proposed(&root), &avoid).unwrap();
-        assert!(found.contains(&"journal_dir overlaps credential_dir".to_owned()), "{found:?}");
-        assert_eq!(found.iter().filter(|r| r.ends_with("overlaps source_root")).count(), 7);
+        assert!(
+            found.contains(&"journal_dir overlaps credential_dir".to_owned()),
+            "{found:?}"
+        );
+        assert_eq!(
+            found
+                .iter()
+                .filter(|r| r.ends_with("overlaps source_root"))
+                .count(),
+            7
+        );
         // Outside the root, even under another private directory.
         let mut paths = proposed(&root);
         paths[0].1 = root.parent().unwrap().join("task-store.sqlite3");
         let found = refusals(&root, &paths);
-        assert!(found.iter().any(|r| r == "task_store_path is not inside the layout root"));
+        assert!(
+            found
+                .iter()
+                .any(|r| r == "task_store_path is not inside the layout root")
+        );
     }
 
     #[test]
     fn unplain_symlinked_or_long_socket_paths_are_refused() {
         let (_t, root) = fresh();
         layout_at(&root);
-        for bad in ["host/../host/host.sock", "host//host.sock", "host/./host.sock"] {
+        for bad in [
+            "host/../host/host.sock",
+            "host//host.sock",
+            "host/./host.sock",
+        ] {
             let mut paths = proposed(&root);
             paths[1].1 = PathBuf::from(format!("{}/{bad}", root.display()));
             let found = refusals(&root, &paths);
-            assert!(found.iter().any(|r| r.contains("not a plain absolute path")), "{bad}: {found:?}");
+            assert!(
+                found
+                    .iter()
+                    .any(|r| r.contains("not a plain absolute path")),
+                "{bad}: {found:?}"
+            );
         }
         let mut paths = proposed(&root);
         paths[1].1 = PathBuf::from("host/host.sock");
@@ -1141,7 +1391,12 @@ mod tests {
         let mut paths = proposed(&root);
         paths[5].1 = root.join("link/lifecycle.sock");
         let found = refusals(&root, &paths);
-        assert!(found.iter().any(|r| r.starts_with("lifecycle_socket_path parent")), "{found:?}");
+        assert!(
+            found
+                .iter()
+                .any(|r| r.starts_with("lifecycle_socket_path parent")),
+            "{found:?}"
+        );
         // Socket paths beyond sun_path are refused; other locations may be longer.
         let deep = root.join("host").join("d".repeat(SOCKET_PATH_MAX));
         fs::DirBuilder::new().mode(0o700).create(&deep).unwrap();
@@ -1173,15 +1428,25 @@ mod tests {
                     "peer_socket_path": marker}},
             "run_bindings": {"runtime_layout": null}
         });
-        assert_eq!(layout_checks(&package).unwrap(), (Value::Null, Value::Null, vec![]));
+        assert_eq!(
+            layout_checks(&package).unwrap(),
+            (Value::Null, Value::Null, vec![])
+        );
         bind_layout(&mut package, &layout_file).unwrap();
         let mut found = Vec::new();
         unresolved(&package, String::new(), &mut found);
-        assert_eq!(found.len(), 1, "only credential_dir stays an owner marker: {found:?}");
+        assert_eq!(
+            found.len(),
+            1,
+            "only credential_dir stays an owner marker: {found:?}"
+        );
         for (key, pointer, ..) in LAYOUT {
             assert_eq!(package.pointer(pointer).unwrap(), &record["paths"][key]);
         }
-        assert_eq!(layout_checks(&package).unwrap(), (json!(true), json!(true), vec![]));
+        assert_eq!(
+            layout_checks(&package).unwrap(),
+            (json!(true), json!(true), vec![])
+        );
         // A later change to the layout file or to the filesystem is caught.
         let mut tampered = package.clone();
         tampered["host_startup"]["socket_path"] = json!(root.join("host/other.sock"));
@@ -1198,7 +1463,11 @@ mod tests {
         // A bound credential store inside the layout is refused at binding.
         let mut clash = package.clone();
         clash["host_startup"]["control"]["credential_dir"] = json!(root.join("direct"));
-        assert!(bind_layout(&mut clash, &layout_file).unwrap_err().contains("overlaps credential_dir"));
+        assert!(
+            bind_layout(&mut clash, &layout_file)
+                .unwrap_err()
+                .contains("overlaps credential_dir")
+        );
     }
 
     #[test]

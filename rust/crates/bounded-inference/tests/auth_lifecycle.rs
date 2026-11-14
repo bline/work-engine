@@ -43,10 +43,17 @@ fn opaque_host_uri_round_trips_and_keeps_client_ids_separate() {
     let p = root();
     let s = AuthStore::open(&p, HOST, issuer()).unwrap();
     let start = s
-        .begin_registration("Synthetic Tool", "http://127.0.0.1:45123/auth/callback", NOW)
+        .begin_registration(
+            "Synthetic Tool",
+            "http://127.0.0.1:45123/auth/callback",
+            NOW,
+        )
         .unwrap();
     assert_eq!(param(start.authorize_url(), "ext_agent_host_id"), HOST);
-    assert_eq!(param(start.authorize_url(), "client_id"), "dynamic_agent_client");
+    assert_eq!(
+        param(start.authorize_url(), "client_id"),
+        "dynamic_agent_client"
+    );
     assert!(matches!(
         AuthStore::open(&p, "urn:uuid:another-host", issuer()),
         Err(AuthError::UnsafeStore)
@@ -80,10 +87,13 @@ fn host_uri_validation_rejects_hostile_input_and_malformed_persisted_state() {
         "urn:uuid:evil%0aheader",
         "https://unexpected.invalid/host",
     ] {
-        assert!(matches!(
-            AuthStore::open(&p, host, issuer()),
-            Err(AuthError::InvalidInput)
-        ), "unexpectedly accepted host {host:?}");
+        assert!(
+            matches!(
+                AuthStore::open(&p, host, issuer()),
+                Err(AuthError::InvalidInput)
+            ),
+            "unexpectedly accepted host {host:?}"
+        );
     }
     assert!(matches!(
         AuthStore::open(&p, &format!("urn:uuid:{}", "x".repeat(257)), issuer()),
@@ -91,7 +101,10 @@ fn host_uri_validation_rejects_hostile_input_and_malformed_persisted_state() {
     ));
     assert!(!p.exists());
 
-    for host in ["urn:ietf:params:oauth:jwk-thumbprint:sha-256:synthetic", "did:key:zSyntheticKey"] {
+    for host in [
+        "urn:ietf:params:oauth:jwk-thumbprint:sha-256:synthetic",
+        "did:key:zSyntheticKey",
+    ] {
         let s = AuthStore::open(&p, host, issuer()).unwrap();
         drop(s);
         assert!(AuthStore::open(&p, host, issuer()).is_ok());

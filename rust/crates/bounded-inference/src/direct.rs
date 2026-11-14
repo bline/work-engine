@@ -35,8 +35,8 @@ use sha2::{Digest, Sha256};
 use crate::{
     assemble_request,
     local_http::{bounded, empty_failure, observe_response},
-    AssembledRequest, AttemptJournal, AttemptRecord, AttemptState, AuthError,
-    BearerAccess, Bounds, LocalHttpTransport, ObservedTerminal, PublicHttps, PublicHttpsError, StreamError,
+    AssembledRequest, AttemptJournal, AttemptRecord, AttemptState, AuthError, BearerAccess, Bounds,
+    LocalHttpTransport, ObservedTerminal, PublicHttps, PublicHttpsError, StreamError,
     StreamObservation, ToolFreeProfile, SELECTED_REASONING_PROFILE_REVISION,
 };
 
@@ -112,7 +112,9 @@ pub trait DirectEndpoint: Send + Sync {
 /// Digest of the serialized normalized observation; not an SSE byte archive.
 pub(crate) fn normalized_observation_digest(record: &AttemptRecord) -> Option<String> {
     let observation = record.observation.as_ref()?;
-    serde_json::to_vec(observation).ok().map(|bytes| hex(&bytes))
+    serde_json::to_vec(observation)
+        .ok()
+        .map(|bytes| hex(&bytes))
 }
 
 /// Loopback fixture endpoint. Real credentials never pass through it: the
@@ -373,8 +375,10 @@ impl<E: DirectEndpoint> DirectAdapter<E> {
     }
 
     fn journal_path(&self, call: &DirectPreparedCall) -> PathBuf {
-        self.journal_dir
-            .join(format!("{}.attempt.json", call.binding.operation_id.replace('/', "_")))
+        self.journal_dir.join(format!(
+            "{}.attempt.json",
+            call.binding.operation_id.replace('/', "_")
+        ))
     }
 }
 
@@ -493,11 +497,13 @@ impl<E: DirectEndpoint> DirectInferencePort for DirectAdapter<E> {
                 std::fs::symlink_metadata(self.journal_path(call)),
                 Err(e) if matches!(e.kind(), std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory)
             );
-            return Err(if journal_absent && !self.endpoint.identity_may_be_consumed(call) {
-                DirectSubmitError::Withheld
-            } else {
-                DirectSubmitError::OutcomeUnknown
-            });
+            return Err(
+                if journal_absent && !self.endpoint.identity_may_be_consumed(call) {
+                    DirectSubmitError::Withheld
+                } else {
+                    DirectSubmitError::OutcomeUnknown
+                },
+            );
         }
         let path = self.journal_path(call);
         match self.endpoint.exchange_prepared(&path, call, &request) {
@@ -580,7 +586,13 @@ mod public_tls_tests {
             "https://fake-issuer.invalid/revoke",
         )
         .unwrap();
-        ready_store(root, "synthetic_host_tls", issuer, "https://fake-issuer.invalid", expires_in)
+        ready_store(
+            root,
+            "synthetic_host_tls",
+            issuer,
+            "https://fake-issuer.invalid",
+            expires_in,
+        )
     }
 
     /// A store made ready from synthetic token material only. `iss` is the
@@ -767,7 +779,11 @@ mod public_tls_tests {
     }
 
     fn event(v: Value) -> String {
-        format!("event: {}\r\ndata: {}\r\n\r\n", v["type"].as_str().unwrap(), v)
+        format!(
+            "event: {}\r\ndata: {}\r\n\r\n",
+            v["type"].as_str().unwrap(),
+            v
+        )
     }
 
     fn stream(text: &str, terminal: &str) -> String {
@@ -809,12 +825,18 @@ mod public_tls_tests {
         )
     }
 
-    fn live_bearer(root: &Path, expires_in: u64) -> Arc<dyn Fn() -> Option<BearerAccess> + Send + Sync> {
+    fn live_bearer(
+        root: &Path,
+        expires_in: u64,
+    ) -> Arc<dyn Fn() -> Option<BearerAccess> + Send + Sync> {
         let (store, registration) = bearer_store(&root.join("auth"), expires_in);
         Arc::new(move || store.bearer(&registration, now()).ok())
     }
 
-    fn prepared(adapter: &DirectAdapter<PublicHttpsEndpoint>, operation: &str) -> DirectPreparedCall {
+    fn prepared(
+        adapter: &DirectAdapter<PublicHttpsEndpoint>,
+        operation: &str,
+    ) -> DirectPreparedCall {
         let input = "synthetic compile input";
         let wire = adapter.wire(DirectRole::Compile, input).unwrap();
         let sha = |bytes: &[u8]| hex(bytes);
@@ -841,23 +863,37 @@ mod public_tls_tests {
     fn success_is_observed_once_over_tls_with_the_fixed_request_shape() {
         let root = root();
         let peer = Peer::start(vec![Step::Stream(stream("{\"ok\":true}", "completed"))]);
-        let adapter = adapter(&root, peer.root_der.clone(), peer.address, live_bearer(&root, 3600));
+        let adapter = adapter(
+            &root,
+            peer.root_der.clone(),
+            peer.address,
+            live_bearer(&root, 3600),
+        );
         let call = prepared(&adapter, "tls-op-1");
         assert_eq!(adapter.evidence().label(), "public_api");
         let capture = adapter.submit(&call).unwrap();
         assert_eq!(capture.terminal, DirectTerminal::Complete);
         assert_eq!(capture.output, b"{\"ok\":true}".to_vec());
         assert_eq!(capture.observed_model.as_deref(), Some(MODEL));
-        assert_eq!(capture.observed_provider.as_deref(), Some("openai_responses"));
+        assert_eq!(
+            capture.observed_provider.as_deref(),
+            Some("openai_responses")
+        );
         assert_eq!(capture.evidence.label(), "public_api");
-        assert_eq!(capture.evidence.reference(), DirectProductionProfile::PUBLIC_ENDPOINT);
+        assert_eq!(
+            capture.evidence.reference(),
+            DirectProductionProfile::PUBLIC_ENDPOINT
+        );
         assert!(DirectProductionProfile::covers(&capture.evidence));
         assert_eq!(capture.prepared_wire_sha256, call.wire_sha256);
 
         let seen = peer.seen.lock().unwrap();
         assert_eq!(seen.len(), 1);
         let head = seen[0].0.to_ascii_lowercase();
-        assert!(head.starts_with("post /v1/responses http/1.1\r\n"), "{head}");
+        assert!(
+            head.starts_with("post /v1/responses http/1.1\r\n"),
+            "{head}"
+        );
         assert!(head.contains(&format!("authorization: bearer {TOKEN}")));
         assert!(head.contains("host: api.openai.com"));
         assert!(head.contains("accept: text/event-stream"));
@@ -865,7 +901,10 @@ mod public_tls_tests {
         drop(seen);
 
         // The journal holds this operation: a second submit opens no connection.
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
         assert_eq!(peer.accepted(), 1);
         // The credential is not in the journal.
         let journal = std::fs::read(root.join("journals/tls-op-1.attempt.json")).unwrap();
@@ -877,7 +916,12 @@ mod public_tls_tests {
     fn missing_or_near_expiry_bearer_is_not_sent_and_opens_no_connection() {
         let root = root();
         let peer = Peer::start(Vec::new());
-        let none = adapter(&root, peer.root_der.clone(), peer.address, Arc::new(|| None));
+        let none = adapter(
+            &root,
+            peer.root_der.clone(),
+            peer.address,
+            Arc::new(|| None),
+        );
         let call = prepared(&none, "tls-op-2");
         assert_eq!(none.submit(&call).unwrap_err(), DirectSubmitError::NotSent);
         assert!(!root.join("journals/tls-op-2.attempt.json").exists());
@@ -890,7 +934,10 @@ mod public_tls_tests {
             live_bearer(&root, BEARER_MARGIN_SECS - 10),
         );
         let call = prepared(&expiring, "tls-op-3");
-        assert_eq!(expiring.submit(&call).unwrap_err(), DirectSubmitError::NotSent);
+        assert_eq!(
+            expiring.submit(&call).unwrap_err(),
+            DirectSubmitError::NotSent
+        );
         assert!(!root.join("journals/tls-op-3.attempt.json").exists());
         assert_eq!(peer.accepted(), 0, "no connection may be made");
         std::fs::remove_dir_all(root).unwrap();
@@ -905,9 +952,18 @@ mod public_tls_tests {
         let bearer = live_bearer(&root, 3600);
         let untrusted = adapter(&root, other.root_der.clone(), peer.address, bearer.clone());
         let call = prepared(&untrusted, "tls-op-4");
-        assert_eq!(untrusted.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
-        assert!(peer.seen.lock().unwrap().is_empty(), "no request completed the handshake");
-        assert_eq!(untrusted.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert_eq!(
+            untrusted.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert!(
+            peer.seen.lock().unwrap().is_empty(),
+            "no request completed the handshake"
+        );
+        assert_eq!(
+            untrusted.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
 
         // Nothing listening at all.
         let dead = {
@@ -916,8 +972,14 @@ mod public_tls_tests {
         };
         let unreachable = adapter(&root, peer.root_der.clone(), dead, bearer);
         let call = prepared(&unreachable, "tls-op-5");
-        assert_eq!(unreachable.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
-        assert_eq!(unreachable.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert_eq!(
+            unreachable.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert_eq!(
+            unreachable.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -929,22 +991,34 @@ mod public_tls_tests {
         use std::os::unix::fs::PermissionsExt;
         let root = root();
         let peer = Peer::start(vec![Step::Stream(stream("{\"ok\":true}", "completed"))]);
-        let adapter = adapter(&root, peer.root_der.clone(), peer.address, live_bearer(&root, 3600));
+        let adapter = adapter(
+            &root,
+            peer.root_der.clone(),
+            peer.address,
+            live_bearer(&root, 3600),
+        );
         let call = prepared(&adapter, "tls-op-dir");
 
         // The directory is a regular file: no journal can exist under it, so
         // the refusal is withheld, nothing is sent, and the call is re-offered.
         std::fs::write(root.join("journals"), b"").unwrap();
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
         assert_eq!(peer.accepted(), 0);
         std::fs::remove_file(root.join("journals")).unwrap();
         assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready);
-        assert_eq!(adapter.submit(&call).unwrap().terminal, DirectTerminal::Complete);
+        assert_eq!(
+            adapter.submit(&call).unwrap().terminal,
+            DirectTerminal::Complete
+        );
         assert_eq!(peer.accepted(), 1);
 
         // After that send the directory becomes unreachable. Its journal is
         // the only record of the send, so the refusal is not withheld.
-        let lock = |mode| std::fs::set_permissions(&root, std::fs::Permissions::from_mode(mode)).unwrap();
+        let lock =
+            |mode| std::fs::set_permissions(&root, std::fs::Permissions::from_mode(mode)).unwrap();
         lock(0o000);
         let refused = adapter.submit(&call);
         lock(0o700);
@@ -961,7 +1035,12 @@ mod public_tls_tests {
             Step::Status(401),
             Step::Stream("event: response.created\r\ndata: {not json}\r\n\r\n".into()),
         ]);
-        let adapter = adapter(&root, peer.root_der.clone(), peer.address, live_bearer(&root, 3600));
+        let adapter = adapter(
+            &root,
+            peer.root_der.clone(),
+            peer.address,
+            live_bearer(&root, 3600),
+        );
         let failed = adapter.submit(&prepared(&adapter, "tls-op-6")).unwrap();
         assert_eq!(failed.terminal, DirectTerminal::Failed);
         assert!(failed.output.is_empty());
@@ -969,8 +1048,16 @@ mod public_tls_tests {
         // outcomes: the request was sent, so the operation is never offered again.
         for operation in ["tls-op-7", "tls-op-8"] {
             let call = prepared(&adapter, operation);
-            assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown, "{operation}");
-            assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown, "{operation}");
+            assert_eq!(
+                adapter.submit(&call).unwrap_err(),
+                DirectSubmitError::OutcomeUnknown,
+                "{operation}"
+            );
+            assert_eq!(
+                adapter.submit(&call).unwrap_err(),
+                DirectSubmitError::OutcomeUnknown,
+                "{operation}"
+            );
         }
         assert_eq!(peer.accepted(), 3);
         std::fs::remove_dir_all(root).unwrap();
@@ -982,11 +1069,22 @@ mod public_tls_tests {
         assert!(PublicHttpsEndpoint::from_credential_store(&missing, "synthetic_host_cs").is_err());
         assert!(!missing.exists(), "composition must not initialize a store");
         // A relative path and an invalid host id are refused before any I/O.
-        assert!(PublicHttpsEndpoint::from_credential_store(Path::new("relative"), "synthetic_host_cs").is_err());
+        assert!(PublicHttpsEndpoint::from_credential_store(
+            Path::new("relative"),
+            "synthetic_host_cs"
+        )
+        .is_err());
         // An initialized but signed-out store of the fixed issuer is not ready.
         let signed_out = base.join("signed-out");
-        AuthStore::open(&signed_out, "synthetic_host_cs", crate::public_https::local_issuer().unwrap()).unwrap();
-        assert!(PublicHttpsEndpoint::from_credential_store(&signed_out, "synthetic_host_cs").is_err());
+        AuthStore::open(
+            &signed_out,
+            "synthetic_host_cs",
+            crate::public_https::local_issuer().unwrap(),
+        )
+        .unwrap();
+        assert!(
+            PublicHttpsEndpoint::from_credential_store(&signed_out, "synthetic_host_cs").is_err()
+        );
         // A ready store for a different issuer cannot be opened as the fixed one.
         let other = base.join("other-issuer");
         let (_store, _registration) = bearer_store(&other, 3600);

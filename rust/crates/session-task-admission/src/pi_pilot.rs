@@ -123,9 +123,57 @@ pub struct PiOwner {
     pin: Pin,
     d: Descriptor,
     p: Profile,
+    checked: Option<review_execution_evidence::pi::CheckedRegistry>,
+}
+enum OwnerDatabase {
+    Generic(Connection),
+    Checked(review_execution_evidence::pi::RegistryConnection),
+}
+impl std::ops::Deref for OwnerDatabase {
+    type Target = Connection;
+    fn deref(&self) -> &Connection {
+        match self {
+            Self::Generic(c) => c,
+            Self::Checked(c) => c,
+        }
+    }
+}
+impl std::ops::DerefMut for OwnerDatabase {
+    fn deref_mut(&mut self) -> &mut Connection {
+        match self {
+            Self::Generic(c) => c,
+            Self::Checked(c) => c,
+        }
+    }
+}
+impl OwnerDatabase {
+    fn publish(&self, closure: bool) -> Result<()> {
+        match self {
+            Self::Generic(_) => Ok(()),
+            Self::Checked(c) => c.publish(closure),
+        }
+    }
+    fn check_current(&self) -> Result<()> {
+        match self {
+            Self::Generic(_) => Ok(()),
+            Self::Checked(c) => c.check_current(),
+        }
+    }
 }
 impl PiOwner {
     pub fn open(pin: Pin) -> Result<Self> {
+        Self::open_backend(pin, None)
+    }
+    pub fn open_checked(
+        pin: Pin,
+        registry: review_execution_evidence::pi::CheckedRegistry,
+    ) -> Result<Self> {
+        Self::open_backend(pin, Some(registry))
+    }
+    fn open_backend(
+        pin: Pin,
+        checked: Option<review_execution_evidence::pi::CheckedRegistry>,
+    ) -> Result<Self> {
         let d = descriptor(&pin)?;
         if !source::pinned(&d.profile) {
             return Err("pi_profile_pin");
@@ -152,10 +200,33 @@ impl PiOwner {
         {
             return Err("pi_executor");
         }
-        let owner = Self { pin, d, p };
-        ingest_control(&owner.pin)?;
+        let owner = Self { pin, d, p, checked };
+        if let Some(registry) = &owner.checked {
+            let c = control::config(&owner.d.config)?;
+            registry.bind(std::path::Path::new(&c.database), &owner.d.profile.sha256)?;
+            let mut db = registry.checkout()?;
+            store::initialize(&db).map_err(|_| "pi_registry")?;
+            // Fresh registrations from exact protected canonical source, never a
+            // copied admission/capacity/outbox registry. Signed admission is still
+            // independently verified by current()/store::commit below.
+            let board =
+                source::board(&c.sources.board, &c.sources.board_repository).ok_or("pi_board")?;
+            let raw = board
+                .rows
+                .iter()
+                .find(|raw| crate::validate_review(raw).ok().as_ref() == Some(&owner.p.task))
+                .ok_or("pi_task")?;
+            let row: Row = serde_json::from_str(raw).map_err(|_| "pi_task")?;
+            store::register_proposal(&mut db, &row.data.intent.proposal, "live", None)
+                .map_err(|_| "pi_registry")?;
+            store::register_task(&mut db, raw, "live", None).map_err(|_| "pi_registry")?;
+            db.publish(false)?;
+        }
+        owner.ingest_control()?;
         let db = owner.db()?;
         owner.current(&db)?;
+        db.publish(false)?;
+        drop(db);
         Ok(owner)
     }
     /// Profile identity only, never an authorization permit.
@@ -165,8 +236,43 @@ impl PiOwner {
     pub fn profile_sha256(&self) -> &str {
         &self.d.profile.sha256
     }
-    fn db(&self) -> Result<Connection> {
-        control::database(&control::config(&self.d.config)?)
+    fn db(&self) -> Result<OwnerDatabase> {
+        if let Some(registry) = &self.checked {
+            Ok(OwnerDatabase::Checked(registry.checkout()?))
+        } else {
+            Ok(OwnerDatabase::Generic(control::database(
+                &control::config(&self.d.config)?,
+            )?))
+        }
+    }
+    fn ingest_control(&self) -> Result<()> {
+        if self.checked.is_none() {
+            return ingest_control(&self.pin);
+        }
+        let c = control::config(&self.d.config)?;
+        let db = self.db()?;
+        db.execute_batch("BEGIN IMMEDIATE")
+            .map_err(|_| "pi_registry")?;
+        let h = control::head(&c, &self.d.profile, clock())?;
+        control::synchronize(&db, &self.d.profile, &h)?;
+        db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
+        db.publish(false)
+    }
+    fn result_read(&self) -> Result<Value> {
+        if self.checked.is_none() {
+            return read(&self.pin);
+        }
+        let db = self.db()?;
+        let (operation, native, result): (String, Option<String>, Option<String>) = db
+            .query_row(
+                "SELECT operation_id,native_id,result_json FROM pi_claim WHERE profile_sha=?1",
+                [&self.d.profile.sha256],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .map_err(|_| "pi_claim_missing")?;
+        Ok(
+            json!({"operation_id":operation,"native_session_id":native,"runtime_result":result.map(|s|serde_json::from_str::<Value>(&s)).transpose().map_err(|_|"pi_result")?,"retry_permitted":false}),
+        )
     }
     fn current(&self, db: &Connection) -> Result<(inspect::Evidence, control::Head)> {
         if !source::pinned(&self.pin) || !source::pinned(&self.d.profile) {
@@ -245,16 +351,17 @@ impl PiOwner {
     }
     // Observation and action share the registry lock, but have different rollback
     // semantics: a verified signed head survives denial; action writes do not.
-    fn begin_current(&self, db: &Connection) -> Result<()> {
+    fn begin_current(&self, db: &OwnerDatabase) -> Result<()> {
         db.execute_batch("BEGIN IMMEDIATE")
             .map_err(|_| "pi_registry")?;
         if let Err(e) = self.current(db) {
             db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
+            db.publish(false)?;
             return Err(e);
         }
         Ok(())
     }
-    fn action(&self, db: &Connection, run: impl FnOnce() -> Result<()>) -> Result<()> {
+    fn action(&self, db: &OwnerDatabase, run: impl FnOnce() -> Result<()>) -> Result<()> {
         self.begin_current(db)?;
         db.execute_batch("SAVEPOINT pi_action")
             .map_err(|_| "pi_registry")?;
@@ -265,6 +372,7 @@ impl PiOwner {
         }
         db.execute_batch("RELEASE pi_action; COMMIT")
             .map_err(|_| "pi_registry")?;
+        db.publish(false)?;
         result
     }
     /// Consume signed approval and capacity using the existing admission owner.
@@ -273,7 +381,7 @@ impl PiOwner {
         if job_sha != self.p.job_sha256 || executable_sha != self.p.native_executable_sha256 {
             return Err("pi_job_binding");
         }
-        ingest_control(&self.pin)?;
+        self.ingest_control()?;
         let mut db = self.db()?;
         let (e, h) = self.current(&db)?;
         let row: Row = serde_json::from_str(&e.original).map_err(|_| "pi_task")?;
@@ -323,19 +431,24 @@ impl PiOwner {
             Ok(())
         });
         result?;
-        read(&self.pin)
+        drop(db);
+        self.result_read()
     }
     /// Commit unknown BEFORE I/O, then reacquire and retain registry ordering
     /// through dispatch. Dropping an unobserved lease never permits replay.
     pub fn enter(&self, effect: Effect) -> Result<EffectLease> {
-        ingest_control(&self.pin)?;
+        self.ingest_control()?;
         let db = self.db()?;
         let key = effect.key()?;
         let prepared = self.action(&db, || {
             let (operation,native):(String,Option<String>)=db.query_row("SELECT operation_id,native_id FROM pi_claim WHERE profile_sha=?1 AND descriptor_sha=?2 AND job_sha=?3",params![self.d.profile.sha256,self.pin.sha256,self.p.job_sha256],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|_|"pi_claim_missing")?;
             store::admitted_heads_live(&db, &operation).map_err(|_| "pi_heads")?;
-            if effect != Effect::Allocation && native.is_none() {
+            if !matches!(effect,Effect::Allocation|Effect::Initialization) && native.is_none() {
                 return Err("pi_native_unsealed");
+            }
+            if effect == Effect::Initialization && native.is_none() {
+                let count:i64=db.query_row("SELECT count(*) FROM pi_effect WHERE profile_sha=?1 AND effect_key='allocation' AND state='unknown'",[&self.d.profile.sha256],|r|r.get(0)).map_err(|_|"pi_registry")?;
+                if count!=1{return Err("pi_allocation_unknown");}
             }
             if effect == Effect::Allocation {
                 if native.is_some() {
@@ -376,7 +489,7 @@ impl PiOwner {
         if job_sha != self.p.job_sha256 || uuid::Uuid::parse_str(native).is_err() {
             return Err("pi_allocation_binding");
         }
-        ingest_control(&self.pin)?;
+        self.ingest_control()?;
         let db = self.db()?;
         self.action(&db, || {
             let allocation:i64=db.query_row("SELECT count(*) FROM pi_effect WHERE profile_sha=?1 AND effect_key='allocation' AND state='unknown'",[&self.d.profile.sha256],|r|r.get(0)).map_err(|_|"pi_registry")?;
@@ -399,6 +512,39 @@ impl PiOwner {
         }
         Ok(())
     }
+    /// Authenticated registry identity for the host retention binding. This is a
+    /// projection, never permission; actual effects still consume opaque leases.
+    pub fn retention_identity(&self) -> Result<(String, String, Option<String>)> {
+        let db = self.db()?;
+        self.current(&db)?;
+        db.publish(false)?;
+        let (operation,native)=db.query_row("SELECT operation_id,native_id FROM pi_claim WHERE profile_sha=?1 AND descriptor_sha=?2",params![self.d.profile.sha256,self.pin.sha256],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|_|"pi_claim_missing")?;
+        Ok((operation, self.d.profile.sha256.clone(), native))
+    }
+    /// Native retention owner consumes its own opaque issuance under this
+    /// authenticated operation/native binding. No caller serialization occurs.
+    pub fn record_native_result(
+        &self,
+        publication: review_execution_evidence::pi::ResultPublication<'_>,
+    ) -> Result<()> {
+        let db = self.db()?;
+        // Closure reporting remains possible after expiry/revocation; it grants
+        // no effect and must preserve the authentic prior claim, never reopen it.
+        if !source::pinned(&self.pin) || !source::pinned(&self.d.profile) {
+            return Err("pi_pin_changed");
+        }
+        let (operation,native):(String,Option<String>)=db.query_row("SELECT operation_id,native_id FROM pi_claim WHERE profile_sha=?1 AND descriptor_sha=?2",params![self.d.profile.sha256,self.pin.sha256],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|_|"pi_claim_missing")?;
+        match &db {
+            OwnerDatabase::Checked(checked) => publication.consume(
+                checked,
+                &operation,
+                &self.d.profile.sha256,
+                native.as_deref().ok_or("pi_native_unsealed")?,
+            )?,
+            OwnerDatabase::Generic(_) => return Err("pi_checked_registry_required"),
+        }
+        db.publish(true)
+    }
     /// Attributed runtime evidence, never an approval or a remote settlement.
     pub fn record_result(&self, result: &Value) -> Result<Value> {
         let db = self.db()?;
@@ -419,7 +565,9 @@ impl PiOwner {
         if changed != 1 {
             return Err("pi_result_already_recorded");
         }
-        read(&self.pin)
+        db.publish(true)?;
+        drop(db);
+        self.result_read()
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -443,7 +591,7 @@ impl Effect {
 /// Opaque ordering lease. Only the owner can construct it. No callback claims
 /// qualification; the runtime supplies attributable effect evidence afterwards.
 pub struct EffectLease {
-    db: Connection,
+    db: OwnerDatabase,
     owner_pin: Pin,
     profile_sha: String,
     key: String,
@@ -494,6 +642,7 @@ impl EffectLease {
             return Err("pi_lease_expired");
         }
         // Reopen signed proof/key/current board while retaining registry ordering.
+        self.db.check_current()?;
         let owner = PiOwner::open_unchecked(self.owner_pin.clone())?;
         let current = owner.current(&self.db);
         if let Err(e) = current {
@@ -503,6 +652,7 @@ impl EffectLease {
             // already committed separately before this transaction.
             self.failed.set(true);
             self.db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
+            self.db.publish(false)?;
             self.closed.set(true);
             return Err(e);
         }
@@ -517,6 +667,7 @@ impl EffectLease {
         }
         self.db.execute("UPDATE pi_effect SET state='observed',evidence_sha=?3 WHERE profile_sha=?1 AND effect_key=?2 AND state='unknown'",params![self.profile_sha,self.key,evidence_sha]).map_err(|_|"pi_registry")?;
         self.db.execute_batch("COMMIT").map_err(|_| "pi_registry")?;
+        self.db.publish(false)?;
         self.closed.set(true);
         Ok(())
     }
@@ -536,7 +687,12 @@ impl PiOwner {
         }
         let p = serde_json::from_slice(&service::protected(&d.profile.path).ok_or("pi_profile")?)
             .map_err(|_| "pi_profile")?;
-        Ok(Self { pin, d, p })
+        Ok(Self {
+            pin,
+            d,
+            p,
+            checked: None,
+        })
     }
 }
 /// Pure immutable result read: no source collection, ACK, reconciliation or retry.

@@ -376,10 +376,17 @@ pub fn reconstruct(basis: &Reconstruction, expected_sha256: &str) -> Result<Vec<
 pub fn synthetic_reconstruction(input: WorkerInput) -> Result<Reconstruction, String> {
     input.profile.validate()?;
     let r = &input.request.source;
-    let scope = input.profile.repository_scope.as_ref().ok_or("scope_unavailable")?;
+    let scope = input
+        .profile
+        .repository_scope
+        .as_ref()
+        .ok_or("scope_unavailable")?;
     let repository = std::fs::canonicalize(&r.repository).map_err(read_failure)?;
-    if std::fs::canonicalize(scope).map_err(read_failure)? != repository { return Err("scope_unavailable".into()); }
-    let objects = GitObjects::open_bounded(&repository, input.profile.read.clone()).map_err(read_failure)?;
+    if std::fs::canonicalize(scope).map_err(read_failure)? != repository {
+        return Err("scope_unavailable".into());
+    }
+    let objects =
+        GitObjects::open_bounded(&repository, input.profile.read.clone()).map_err(read_failure)?;
     compose(objects, &input, false)
 }
 /// Test-fixture export of a fully read source closure. It installs no authority and

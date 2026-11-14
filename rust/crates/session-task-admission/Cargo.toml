@@ -17,3 +17,5 @@ uuid = "=1.22.0"
 libc = "=0.2.190"
 
 ring = "=0.17.14"
+
+review-execution-evidence = { path = "../review-execution-evidence" }
