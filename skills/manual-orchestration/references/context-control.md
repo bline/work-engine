@@ -1,18 +1,26 @@
 # Session control observations for manual handoffs
 
-Context telemetry can arrive through a session-specific control subscription
-alongside coordination messages. This moves routine observation into a host
+Every active role receives its own context telemetry through a session-specific
+control subscription on chatboard `wait`, alongside coordination messages.
+This applies to standalone roots, supervisors, workers, reviewers and
+investigation roles. This moves routine observation into a host
 process; the worker, parent and root retain the decisions in
 [context boundary](context-boundary.md). A pressure observation grants no launch,
 handoff, acceptance or root-transfer authority.
 
 ## Enrollment and delivery ownership
 
-The parent can prepare a child's listener after verifying its actual identity;
-a root owns its own listener. Name the process owner, output collector and
+At startup and after recovery, establish this role's observation and delivery
+route before relying on it for continuation. The parent can prepare a child's
+listener after verifying its actual identity; a root owns its own listener.
+The child acknowledges who collects and delivers its alerts. Parent collection
+must reach the child in time for its own preservation decision; the parent's
+context reading cannot substitute for the child's. Name the process owner, output collector and
 delivery route in the assignment/continuation. Keep one owned listener for the
 binding rather than having parent and child unknowingly duplicate it. These
 roles can coincide. Enrollment is explicit: no automatic host hook is installed.
+An unsupported host or unavailable delivery route remains a visible gap, with
+an owned explicit check before the next substantial phase as fallback.
 
 **Board topics and context enrollment are separate.** A running `wait` with only
 `--topic` selectors does not produce context stats. Before relying on the route,
@@ -55,6 +63,10 @@ verified host capability. Do not claim delivery because stdout was written or a
 process was started. If the host only returns results after process exit, use
 the one-shot wait with that host's collection/wakeup mechanism. An uncollected
 continuous stream is not a substitute. The CLI does not wake an ended session.
+
+Every role consumes `control_events` in every returned batch, including one
+whose `status` is `messages`: coordination traffic can arrive with a pressure
+warning. An empty `messages` array does not make a control result empty.
 
 ## Combine budget and coordination observation
 

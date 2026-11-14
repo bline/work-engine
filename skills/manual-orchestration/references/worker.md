@@ -6,6 +6,13 @@ Follow [call cost](call-cost.md): batch, size requests, do not poll, and message
 
 ## Context
 
+Establish your own context-pressure delivery at entry and after recovery, as the
+skill's shared requirement describes. Verify the listener binding and who
+collects and delivers its output; if the parent owns that route, acknowledge
+it in your continuation. The parent's own context listener does not observe
+your session. Use [session control](context-control.md) to establish or repair
+delivery, and the boundary check below while that route is unavailable.
+
 When assigned implementer discovery for an organization candidate, use [organization formation](organization-formation.md) to report bounded findings and whether you can own a coherent implementation outcome.
 
 Read only what your packet's read list names; reading spends the same budget as writing. Prefer signatures (`grep -n 'pub fn'`) and targeted line ranges over whole files, batch independent reads, and commit after each independently passing unit.

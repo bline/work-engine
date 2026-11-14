@@ -34,6 +34,17 @@ Read the reference for the current role and the applicable operation. Links prov
 
 Repository instructions and owning contracts still govern each role. Conditional loading reduces unrelated context; it does not waive an applicable contract.
 
+## Context pressure: every role
+
+At startup and after recovery, establish how this role receives its own context
+pressure through an owned chatboard `wait`. This includes supervisors, workers,
+reviewers and investigation roles. Load [session control](references/context-control.md)
+when establishing or repairing the route: it defines verified enrollment,
+collection, delivery and the explicit-check fallback. A topic-only wait does not
+observe context; uncollected stdout cannot warn the deciding agent before rollover.
+Keep the binding and delivery owner in the existing continuation. This observation
+does not transfer collection ownership or decide when context should be replaced.
+
 ## Launching a child
 
 At launch, give the child its packet and tell it to load this skill for its role: invoke `$manual-orchestration`, or read `skills/manual-orchestration/SKILL.md` in the repository when the skill is not installed. It loads its own references; do not paste this skill or other guidance documents into its brief.

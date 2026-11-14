@@ -38,6 +38,18 @@ python3 skills/durable-state/scripts/codex_chatboard.py --repository . read --li
 Use [repository coordination](docs/agent-coordination.md) before claims, launches,
 transitions, or resource mutation. Claims are advisory coordination, not authority.
 
+## Context pressure: every role
+
+At startup and after recovery, establish delivery of this session's context
+pressure through an owned chatboard `wait` with a verified context binding and
+output collector. This applies to every active role, including standalone roots,
+workers and reviewers: a board-topic subscription alone produces no context
+telemetry, and an uncollected alert cannot inform preservation before rollover.
+Use [session control](skills/manual-orchestration/references/context-control.md)
+when establishing or repairing delivery. If the route is unavailable, record
+the gap and own an explicit check before the next substantial phase; unknown
+headroom is not spare capacity. Existing authority and collection owners remain.
+
 ## Pre-release compatibility policy
 Work Engine is under active development. Internal implementations and
 interfaces have no backward-compatibility guarantee unless an explicit consumer
