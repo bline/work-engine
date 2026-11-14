@@ -16,8 +16,10 @@ models to differ; a same-model label requires them to match.
 The caller launches one reviewer in a fresh process with `fork_turns: "none"`
 and the configured model and reasoning effort at the start of the review
 obligation. Do not pass builder-session history. The reviewer must directly
-read the repository instructions, full `DESIGN.md`, and full `PHILOSOPHY.md`
-before evaluating the change.
+read the repository instructions and follow their scoped loading map before
+evaluating the change: core contracts, the doctrine applicable to the review,
+and relevant rationale. `DESIGN.md` and `PHILOSOPHY.md` are navigation indexes;
+this adapter does not require loading their entire linked corpora.
 
 When the supervisor selects a semantic specialist, the caller also supplies
 that exact selection and repository-local skill. The fresh reviewer reads and
