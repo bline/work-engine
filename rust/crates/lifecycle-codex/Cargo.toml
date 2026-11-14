@@ -8,6 +8,7 @@ publish.workspace = true
 [features]
 default = []
 synthetic-access-test = []
+native-input-proof = []
 
 [dependencies]
 lifecycle-core = { path = "../lifecycle-core" }
@@ -22,5 +23,8 @@ thiserror.workspace = true
 tokio.workspace = true
 toml = "1.1.6"
 
+zstd = "=0.13.3"
+
 [dev-dependencies]
+lifecycle-store = { path = "../lifecycle-store" }
 tempfile = "=3.27.0"

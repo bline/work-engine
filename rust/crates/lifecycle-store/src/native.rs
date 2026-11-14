@@ -277,7 +277,7 @@ pub struct NativeTurnEntry {
 
 /// Exact join from a native domain turn to the lifecycle FIFO owner. A
 /// control or rehydration turn has no delivery binding.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct NativeDeliveryBinding {
     pub input_id: String,
     pub delivery_id: String,
@@ -1212,52 +1212,7 @@ impl SqliteLifecycleStore {
         invocation_id: &str,
     ) -> Result<Option<NativeDeliveryBinding>, StoreError> {
         self.verify_identity()?;
-        let row: Option<NativeDeliveryRow> = self.connection
-            .query_row(
-                "SELECT i.input_id,i.delivery_id,e.effect_id,a.attempt_id,n.attempt_id,d.segment_no, \
-                 d.predecessor_invocation_id,d.transition_id,d.state,i.text,s.context_id \
-                 FROM native_turns n JOIN native_delivery_segments d ON d.invocation_id=n.invocation_id \
-                 JOIN native_sessions s ON s.session_id=n.session_id \
-                 JOIN attempts a ON a.attempt_id=d.queue_attempt_id \
-                 JOIN effects e ON e.effect_id=a.effect_id \
-                 JOIN inputs i ON i.input_id=e.input_id \
-                 WHERE n.invocation_id=?1 AND n.purpose='domain_work' \
-                 AND e.subject_id=s.subject_id",
-                [invocation_id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?)),
-            )
-            .optional()
-            .map_err(|_| StoreError::Unavailable)?;
-        row.map(
-            |(
-                input_id,
-                delivery_id,
-                effect_id,
-                attempt_id,
-                native_attempt_id,
-                segment_no,
-                predecessor_invocation_id,
-                transition_id,
-                segment_state,
-                text,
-                context_id,
-            )| {
-                Ok(NativeDeliveryBinding {
-                    input_id,
-                    delivery_id,
-                    effect_id,
-                    attempt_id,
-                    native_attempt_id,
-                    segment_no: u64::try_from(segment_no).map_err(|_| StoreError::Unavailable)?,
-                    predecessor_invocation_id,
-                    transition_id,
-                    segment_state,
-                    text: String::from_utf8(text).map_err(|_| StoreError::Unavailable)?,
-                    context_id,
-                })
-            },
-        )
-        .transpose()
+        native_delivery_binding_on(&self.connection, invocation_id)
     }
 
     pub fn committed_task_snapshot_reads(
@@ -1913,6 +1868,7 @@ impl SqliteLifecycleStore {
                 None,
                 "user_version",
                 match _physical_version {
+                    12 => 13,
                     10 => 11,
                     8 => 9,
                     _ => 7,
@@ -3871,6 +3827,179 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    fn native_input_publication_cut_replay_conflict_and_identity_refusal() {
+        // Store boundary fixture; the service joined fixture establishes actual
+        // native acquisition. No synthetic row is claimed as provider evidence.
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:input-store").unwrap();
+        let context = ContextGeneration::parse("context:input-store").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:input-store").unwrap(),
+                ProofRunId::parse("proof:input-store").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
+        store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
+            INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');
+            INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms) VALUES('queue-attempt:input-store','effect:input-store','incarnation:input-store','entered',1);
+            INSERT INTO native_delivery_segments(invocation_id,queue_attempt_id,segment_no,state) VALUES('invocation:input-store','queue-attempt:input-store',0,'entered');").unwrap();
+        let session = NativeSessionEntry {
+            id: NativeSessionId::parse("session:input-store").unwrap(),
+            subject,
+            context,
+            profile_digest: "hash".into(),
+            snapshot: SnapshotId::parse("snapshot:input-store").unwrap(),
+            thread: Some(ProviderThreadId::parse("thread:input-store").unwrap()),
+        };
+        let turn = NativeTurnEntry {
+            invocation_id: "invocation:input-store".into(),
+            attempt: AttemptId::parse("attempt:input-store").unwrap(),
+            thread: ProviderThreadId::parse("thread:input-store").unwrap(),
+            turn: Some(ProviderTurnId::parse("turn:input-store").unwrap()),
+            profile_digest: "hash".into(),
+        };
+        let terminal=serde_json::to_vec(&serde_json::json!({"method":"turn/completed","params":{"threadId":"thread:input-store","turn":{"id":"turn:input-store","status":"completed","error":null}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',1,'hash',?1,'qualified','turn/completed','thread:input-store','turn:input-store',1,'session:input-store')",[&terminal]).unwrap();
+        let retain = |store: &mut SqliteLifecycleStore,
+                      session: &NativeSessionEntry,
+                      turn: &NativeTurnEntry,
+                      metadata: &[u8]| {
+            store.retain_native_input(
+                session,
+                turn,
+                "transport:input-store",
+                1,
+                &terminal,
+                metadata,
+                Vec::new(),
+                false,
+                "store_boundary_fixture",
+                clock(),
+            )
+        };
+        crate::native_input::AFTER_PUBLICATION
+            .with(|slot| *slot.borrow_mut() = Some(Box::new(|_| Err(StoreError::Unavailable))));
+        assert!(retain(&mut store, &session, &turn, b"fixture").is_err());
+        assert!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            store
+                .connection
+                .query_row("SELECT COUNT(*) FROM artifacts", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        drop(store);
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            retain(&mut store, &session, &turn, b"fixture").unwrap(),
+            crate::NativeInputApply::Committed
+        );
+        let original = store
+            .native_input_observation(turn.invocation_id())
+            .unwrap();
+        assert_eq!(
+            retain(&mut store, &session, &turn, b"fixture").unwrap(),
+            crate::NativeInputApply::Replay
+        );
+        assert_eq!(
+            retain(&mut store, &session, &turn, b"changed").unwrap(),
+            crate::NativeInputApply::Conflict
+        );
+        assert_eq!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap(),
+            original
+        );
+        assert_eq!(
+            store
+                .connection
+                .query_row("SELECT COUNT(*) FROM native_input_conflicts", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        for changed in ["session", "context", "attempt", "turn", "thread"] {
+            let mut bad_session = NativeSessionEntry {
+                id: session.id.clone(),
+                subject: session.subject.clone(),
+                context: session.context.clone(),
+                profile_digest: session.profile_digest.clone(),
+                snapshot: session.snapshot.clone(),
+                thread: session.thread.clone(),
+            };
+            let mut bad_turn = NativeTurnEntry {
+                invocation_id: turn.invocation_id.clone(),
+                attempt: turn.attempt.clone(),
+                thread: turn.thread.clone(),
+                turn: turn.turn.clone(),
+                profile_digest: turn.profile_digest.clone(),
+            };
+            match changed {
+                "session" => bad_session.id = NativeSessionId::parse("session:other").unwrap(),
+                "context" => {
+                    bad_session.context = ContextGeneration::parse("context:other").unwrap()
+                }
+                "attempt" => bad_turn.attempt = AttemptId::parse("attempt:other").unwrap(),
+                "turn" => bad_turn.turn = Some(ProviderTurnId::parse("turn:other").unwrap()),
+                _ => bad_turn.thread = ProviderThreadId::parse("thread:other").unwrap(),
+            };
+            assert!(
+                retain(
+                    &mut store,
+                    &bad_session,
+                    &bad_turn,
+                    b"copied with recomputed enclosing hash"
+                )
+                .is_err(),
+                "{changed}"
+            );
+        }
+        assert_eq!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap(),
+            original
+        );
+        crate::native_input::AFTER_PUBLICATION.with(|slot|*slot.borrow_mut()=Some(Box::new(|db|{db.execute("UPDATE native_delivery_segments SET segment_no=1 WHERE invocation_id='invocation:input-store'",[]).unwrap();Ok(())})));
+        assert!(retain(&mut store, &session, &turn, b"after FIFO replacement").is_err());
+        assert_eq!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap(),
+            original
+        );
+        store.connection.execute("UPDATE native_delivery_segments SET segment_no=0 WHERE invocation_id='invocation:input-store'",[]).unwrap();
+        // A context change during artifact publication cannot pass the later transaction.
+        crate::native_input::AFTER_PUBLICATION.with(|slot|*slot.borrow_mut()=Some(Box::new(|db|{db.execute("UPDATE native_sessions SET context_id='context:replaced' WHERE session_id='session:input-store'",[]).unwrap();Ok(())})));
+        assert!(retain(&mut store, &session, &turn, b"after context replacement").is_err());
+        assert_eq!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap(),
+            original
+        );
+    }
+
+    #[test]
     fn held_mode_blocks_an_otherwise_valid_new_native_grant() {
         let root = tempdir().unwrap();
         let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
@@ -4275,7 +4404,7 @@ mod tests {
             let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
             // A faithful schema6 image has neither the diagnostic column nor the
             // direct semantic tables (physical schema 10 adds them).
-            conn.execute_batch("DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; ALTER TABLE native_process_exits DROP COLUMN isolation_diagnostic; PRAGMA user_version=6;").unwrap();
+            conn.execute_batch("DROP TABLE native_input_conflicts; DROP TABLE native_input_observations; DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; ALTER TABLE native_process_exits DROP COLUMN isolation_diagnostic; PRAGMA user_version=6;").unwrap();
         }
         let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
         let recovered = store.native_session_recovery(&session).unwrap().unwrap();
@@ -5527,4 +5656,56 @@ pub(super) fn commit_native_settlement(
         ).map_err(|_| StoreError::Unavailable)?;
     observe_native_subject_clock(&tx, &subject, clock.wall.get().max(history_wall))?;
     Ok(())
+}
+
+pub(crate) fn native_delivery_binding_on(
+    connection: &rusqlite::Connection,
+    invocation_id: &str,
+) -> Result<Option<NativeDeliveryBinding>, StoreError> {
+    let row: Option<NativeDeliveryRow> = connection
+            .query_row(
+                "SELECT i.input_id,i.delivery_id,e.effect_id,a.attempt_id,n.attempt_id,d.segment_no, \
+                 d.predecessor_invocation_id,d.transition_id,d.state,i.text,s.context_id \
+                 FROM native_turns n JOIN native_delivery_segments d ON d.invocation_id=n.invocation_id \
+                 JOIN native_sessions s ON s.session_id=n.session_id \
+                 JOIN attempts a ON a.attempt_id=d.queue_attempt_id \
+                 JOIN effects e ON e.effect_id=a.effect_id \
+                 JOIN inputs i ON i.input_id=e.input_id \
+                 WHERE n.invocation_id=?1 AND n.purpose='domain_work' \
+                 AND e.subject_id=s.subject_id",
+                [invocation_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+    row.map(
+        |(
+            input_id,
+            delivery_id,
+            effect_id,
+            attempt_id,
+            native_attempt_id,
+            segment_no,
+            predecessor_invocation_id,
+            transition_id,
+            segment_state,
+            text,
+            context_id,
+        )| {
+            Ok(NativeDeliveryBinding {
+                input_id,
+                delivery_id,
+                effect_id,
+                attempt_id,
+                native_attempt_id,
+                segment_no: u64::try_from(segment_no).map_err(|_| StoreError::Unavailable)?,
+                predecessor_invocation_id,
+                transition_id,
+                segment_state,
+                text: String::from_utf8(text).map_err(|_| StoreError::Unavailable)?,
+                context_id,
+            })
+        },
+    )
+    .transpose()
 }

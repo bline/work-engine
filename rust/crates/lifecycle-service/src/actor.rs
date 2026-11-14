@@ -1076,7 +1076,7 @@ impl Actor {
                         .map_err(|_| ServiceError::Configuration)?,
                     incarnation.clone(),
                     &launch.profile_digest,
-                    NATIVE_BINARY_SHA256,
+                    &operations::selected_native_binary(native),
                     SCHEMA_THREAD_START_SHA256,
                     snapshot.id.clone(),
                     &snapshot.manifest_sha256,
@@ -1490,6 +1490,45 @@ impl Actor {
                 )
                 .expect("tool marker");
                 let result = self.execute_native_tool(&event, &call);
+                let _ = reply.send(result);
+            }
+            NativeMessage::CaptureInput { observation, reply } => {
+                let result = (|| {
+                    let session = self.native_session.as_ref().ok_or(StoreError::Rejected)?;
+                    let turn = self.native_turn.as_ref().ok_or(StoreError::Rejected)?;
+                    let terminal = observation.terminal();
+                    self.store
+                        .retain_native_input(
+                            session,
+                            turn,
+                            observation.transport_session(),
+                            terminal.sequence,
+                            &terminal.raw,
+                            observation.metadata(),
+                            observation
+                                .payloads()
+                                .iter()
+                                .map(|p| lifecycle_store::NativeInputPayload {
+                                    inference_call_id: p.inference_call_id.clone(),
+                                    physical_send: p.physical_send,
+                                    representation: p.representation.clone(),
+                                    original_sha256: p.original_sha256.clone(),
+                                    original_codec: p.original_codec.clone(),
+                                    bytes: p.bytes.clone(),
+                                })
+                                .collect(),
+                            observation.eligible(),
+                            observation.outcome(),
+                            clock_sample(),
+                        )
+                        .and_then(|outcome| {
+                            if outcome == lifecycle_store::NativeInputApply::Conflict {
+                                Err(StoreError::ClaimConflict)
+                            } else {
+                                Ok(())
+                            }
+                        })
+                })();
                 let _ = reply.send(result);
             }
             NativeMessage::Settle {
@@ -3742,7 +3781,7 @@ mod restart_epoch_tests {
         path::Path,
     };
 
-    struct EmptyMaterial;
+    pub(super) struct EmptyMaterial;
     impl CanonicalMaterialPort for EmptyMaterial {
         fn project(
             &self,
@@ -4974,3 +5013,7 @@ mod restart_epoch_tests {
 #[cfg(test)]
 #[path = "actor_direct_tests.rs"]
 mod direct_selection_tests;
+
+#[cfg(all(test, feature = "native-input-proof"))]
+#[path = "../tests/native_input_capture.rs"]
+mod native_input_capture;

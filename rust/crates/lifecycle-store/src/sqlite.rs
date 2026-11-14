@@ -274,7 +274,7 @@ impl SqliteLifecycleStore {
             let version: i64 = inspection
                 .query_row("PRAGMA user_version", [], |r| r.get(0))
                 .map_err(|_| StoreError::Unavailable)?;
-            if !matches!(version, 6..=11) {
+            if !matches!(version, 6..=13) {
                 return Err(StoreError::Rejected);
             }
             let integrity: String = inspection
@@ -316,7 +316,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=11).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=13).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
             if matches!(version, 4 | 5) {
@@ -373,7 +373,7 @@ impl SqliteLifecycleStore {
             5 => {}
             6 => {}
             7 => {}
-            8..=11 => {}
+            8..=13 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -512,6 +512,24 @@ impl SqliteLifecycleStore {
                 .map_err(|_| StoreError::Unavailable)?;
             tx.pragma_update(None, "user_version", if predecessor == 9 { 11 } else { 10 })
                 .map_err(|_| StoreError::Unavailable)?;
+            crate::recovery::check_coherence(&tx)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if version < 12 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            let predecessor: i64 = tx
+                .query_row("PRAGMA user_version", [], |r| r.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0010_native_input.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(
+                None,
+                "user_version",
+                if predecessor == 11 { 13 } else { 12 },
+            )
+            .map_err(|_| StoreError::Unavailable)?;
             crate::recovery::check_coherence(&tx)?;
             tx.commit().map_err(|_| StoreError::Unavailable)?;
         }
@@ -1359,7 +1377,9 @@ impl SqliteLifecycleStore {
             unresolved_attempts + tx.query_row(
                 "SELECT COUNT(*) FROM direct_semantic_attempts d JOIN semantic_captures c ON c.capture_id=d.capture_id WHERE c.subject_id=?1 AND d.state IN ('intent_recorded','terminal_recorded')",
                 [subject.as_str()], |row| row.get::<_, i64>(0)).map_err(|_| StoreError::Unavailable)?
-        } else { unresolved_attempts };
+        } else {
+            unresolved_attempts
+        };
         let transition = transition.map(|(transition_id, stage)| {
             let native_refusal: Option<String> = if stage == "verifying" {
                 tx.query_row(
@@ -2070,13 +2090,14 @@ impl SqliteLifecycleStore {
                             &direct.admission_grant_id,
                             direct.admission_grant_revision,
                             clock.wall.get(),
-                        )? && crate::direct_semantic::transition_controls_verification(
-                            &tx,
-                            subject.subject.as_str(),
-                            transition.as_str(),
-                            None,
-                            clock.wall.get(),
-                        )?;
+                        )?
+                            && crate::direct_semantic::transition_controls_verification(
+                                &tx,
+                                subject.subject.as_str(),
+                                transition.as_str(),
+                                None,
+                                clock.wall.get(),
+                            )?;
                         if !current {
                             return Err(StoreError::Rejected);
                         }
