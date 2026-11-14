@@ -1,0 +1,182 @@
+{
+  "recorded": "2026-11-14",
+  "standing": "observational_root_only_api_equivalent",
+  "scope": "Five continuing operational roots; preparation and recovery included; children/reviewers/implementation costs excluded.",
+  "method": "Arithmetic mean of five per-root means in each period; change_percent = 100 * (after / before - 1).",
+  "periods": {
+    "before_five_roots": {
+      "utc_half_open_window": [
+        "2026-11-14T01:30:00Z",
+        "2026-11-14T03:00:00Z"
+      ],
+      "calls": 160,
+      "roots": {
+        "research": {
+          "calls": 23,
+          "cost": 0.7346796,
+          "cost_per_call": 0.03194259130434783,
+          "input_cost_per_call": 0.02463128695652174,
+          "context_mean": 178838.91304347827,
+          "output_per_call": 731.1304347826087
+        },
+        "interface": {
+          "calls": 40,
+          "cost": 1.0010108,
+          "cost_per_call": 0.025025270000000002,
+          "input_cost_per_call": 0.01795627,
+          "context_mean": 113845.975,
+          "output_per_call": 706.9
+        },
+        "org": {
+          "calls": 40,
+          "cost": 1.2208228,
+          "cost_per_call": 0.03052057,
+          "input_cost_per_call": 0.02039982,
+          "context_mean": 144738.15,
+          "output_per_call": 1012.075
+        },
+        "dev": {
+          "calls": 30,
+          "cost": 0.8563232000000001,
+          "cost_per_call": 0.028544106666666666,
+          "input_cost_per_call": 0.020985106666666666,
+          "context_mean": 172135.43333333332,
+          "output_per_call": 755.9
+        },
+        "pi": {
+          "calls": 27,
+          "cost": 0.8989772,
+          "cost_per_call": 0.03329545185185185,
+          "input_cost_per_call": 0.022920637037037037,
+          "context_mean": 181313,
+          "output_per_call": 1037.4814814814815
+        }
+      }
+    },
+    "after_first_hour": {
+      "utc_half_open_window": [
+        "2026-11-14T06:35:00Z",
+        "2026-11-14T07:35:00Z"
+      ],
+      "calls": 688,
+      "roots": {
+        "research": {
+          "calls": 88,
+          "cost": 1.8730884,
+          "cost_per_call": 0.021285095454545454,
+          "input_cost_per_call": 0.016451004545454548,
+          "context_mean": 118111.82954545454,
+          "output_per_call": 483.40909090909093
+        },
+        "interface": {
+          "calls": 188,
+          "cost": 4.891942,
+          "cost_per_call": 0.026020968085106382,
+          "input_cost_per_call": 0.01946463829787234,
+          "context_mean": 116074.10638297872,
+          "output_per_call": 655.6329787234042
+        },
+        "org": {
+          "calls": 127,
+          "cost": 3.351302,
+          "cost_per_call": 0.02638820472440945,
+          "input_cost_per_call": 0.018620094488188976,
+          "context_mean": 126362.0157480315,
+          "output_per_call": 776.8110236220473
+        },
+        "dev": {
+          "calls": 106,
+          "cost": 2.8195708,
+          "cost_per_call": 0.026599724528301887,
+          "input_cost_per_call": 0.020285196226415093,
+          "context_mean": 128692.27358490566,
+          "output_per_call": 631.4528301886793
+        },
+        "pi": {
+          "calls": 179,
+          "cost": 4.3385252,
+          "cost_per_call": 0.02423757094972067,
+          "input_cost_per_call": 0.019262431284916202,
+          "context_mean": 130096.0558659218,
+          "output_per_call": 497.5139664804469
+        }
+      }
+    },
+    "after_full": {
+      "utc_half_open_window": [
+        "2026-11-14T06:35:00Z",
+        "2026-11-14T14:45:00Z"
+      ],
+      "calls": 1747,
+      "roots": {
+        "research": {
+          "calls": 124,
+          "cost": 2.8661776,
+          "cost_per_call": 0.023114335483870967,
+          "input_cost_per_call": 0.017711916129032258,
+          "context_mean": 116763.20967741935,
+          "output_per_call": 540.241935483871
+        },
+        "interface": {
+          "calls": 218,
+          "cost": 5.6673568,
+          "cost_per_call": 0.025997049541284404,
+          "input_cost_per_call": 0.019382049541284405,
+          "context_mean": 118782.95871559632,
+          "output_per_call": 661.5
+        },
+        "org": {
+          "calls": 409,
+          "cost": 10.6469552,
+          "cost_per_call": 0.02603167530562347,
+          "input_cost_per_call": 0.01900282444987775,
+          "context_mean": 123418.61124694376,
+          "output_per_call": 702.8850855745721
+        },
+        "dev": {
+          "calls": 261,
+          "cost": 6.7179656,
+          "cost_per_call": 0.025739331800766284,
+          "input_cost_per_call": 0.02002649655172414,
+          "context_mean": 125205.72030651341,
+          "output_per_call": 571.2835249042146
+        },
+        "pi": {
+          "calls": 735,
+          "cost": 17.396756800000002,
+          "cost_per_call": 0.0236690568707483,
+          "input_cost_per_call": 0.01848692081632653,
+          "context_mean": 119131.97414965986,
+          "output_per_call": 518.2136054421769
+        }
+      }
+    }
+  },
+  "pricing_scenario": {
+    "actual_bill": false,
+    "id": "usage-ledger-standard-api-v1",
+    "kind": "modelled_api_equivalent",
+    "rates_sha256": "a2391a4097dec603a3aa6a99ffa95b71b30210733bf8599db670b97f371c903e",
+    "rules": {
+      "codex_long_input_multiplier": 2,
+      "codex_long_input_threshold": 272000,
+      "codex_long_output_multiplier": 1.5,
+      "haiku_long_input_threshold": 100000,
+      "haiku_long_multiplier": 5,
+      "unknown_tier_high": 2.5,
+      "unknown_tier_low": 1
+    },
+    "scenario_sha256": "b5aa87b9c879a59a8af86f3e624fd762b8e22a8bfd2fc9f092973bed0712d35a",
+    "speed_multipliers": {
+      "default": 1.0,
+      "priority": 2.5
+    },
+    "subscription_quota": false
+  },
+  "hashes": {
+    "analyzer": "ada0e03eb81e124d460148a92aac5fe5705a19435e58e7818bf43014c8273cef",
+    "usage_ledger": "230441560e750345d7a9d9f10d8ee00b9b4f6d81a2bf0204567b7e9c04ed4235",
+    "calls": "cdd4c02709631f46eaae6aca17c4f24d83562bcb9b7d229a7c67660ca630c5dc",
+    "results": "8c13bc31ddf95638071daa017e77317ea054002747bb1724a26bcfca5e476274"
+  }
+}

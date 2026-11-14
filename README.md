@@ -21,6 +21,49 @@ Rust runtime and state layer, and the designs and experiments extending them.
 It is under active development. Implementation, bounded qualification, and
 production readiness have distinct standing throughout the project.
 
+## Demonstrated value
+
+**About 17% lower cost per model call in the latest context-lifecycle
+comparison.** Across five continuing development roots, observed
+API-equivalent cost per call fell **16.6%** after native context refresh,
+scoped document loading, and context-pressure delivery changes. Input cost per
+call fell 11.5%, and mean input context fell 23.7%. The comparison includes
+preparation and recovery calls. It measures those root sessions under a fixed
+pricing model; task mix changed, so it does not isolate causation or establish
+whole-project savings. The [measurement and aggregates](metrics/probes/context-cost-comparison-20261114.md)
+make the scope and calculation inspectable.
+
+**Useful engineering through the actual system.** In the
+[first local development pilot](records/local-development-pilot-20261106/README.md),
+an MCP request reached the Rust job server and native Pi runtime, which added
+two regression tests covering eight timestamp boundary cases, reset and
+recovered its context, and returned an exported patch. That patch passed all
+37 crate tests, mutation checks, and separate review before local publication.
+This establishes a bounded working path; the broader engineering integration
+still has qualification work ahead.
+
+These results give the project a practical direction: spend less on repeatedly
+reconstructing state and coordinating machinery, while preserving the judgment,
+evidence, and review needed to produce useful work.
+
+## Research guides the next gains
+
+The context result is one measured improvement in a larger program. The
+[research map](metrics/register/README.md) connects questions, studies,
+assessments, corrections, and their applicability to specific decisions. The
+[efficiency ledger](metrics/efficiency-ledger.md) tracks the remaining levers:
+deterministic coordination, reuse of settled evidence, smaller role context,
+and reduced review and repair burden. Their expected gains overlap and remain
+hypotheses until measured.
+
+Research already changes implementation choices. A
+[19-task randomized builder comparison](metrics/probes/dogfood-round2-builder-outcomes-20261104.md)
+informed the default model selection; its small sample and inconclusive
+statistical tests remain part of that decision's evidence. The register also
+retains corrections when measurements disprove an earlier assumption. The aim
+is a continuing cycle of research, bounded implementation, measurement, and
+revision, with each result guiding the next investment.
+
 ## What has changed
 
 The project has grown beyond a supervisor that runs coding slices:
@@ -79,10 +122,9 @@ Execution -> artifacts and observations -> review and checks
 
 In the selected architecture, the deterministic host admits and tracks work,
 binds the selected runtime, observes limits, and collects outcomes. Task and
-review workflows own their
-semantic transitions. Provider and container adapters realize the selected
-capabilities. Evidence and publication components preserve attributable results
-without accepting their own work.
+review workflows own their semantic transitions. Provider and container adapters
+realize the selected capabilities. Evidence and publication components preserve
+attributable results without accepting their own work.
 
 Context replacement follows the same division. A new conversation is useful
 only when continuation can recover the objective, authority, commitments, and
@@ -152,6 +194,31 @@ remote publication are separate authorized consequences. A stopped or failed
 slice retains its reason and evidence alongside successful terminals; missing
 proof does not become a success-shaped receipt. The
 [slice-supervisor contract](skills/slice-supervisor/SKILL.md) owns this workflow.
+
+## Contribute
+
+Work Engine offers concrete systems problems with a working repository to
+measure against. Contributions can improve the engine that helps build the
+engine, and leave evidence that others can check and extend.
+
+- **Rust runtime and recovery:** make task execution, durable state, and context
+  replacement easier to operate and qualify. Start with the
+  [lifecycle service](rust/crates/lifecycle-service/README.md) and
+  [local server](rust/crates/work-engine-server/README.md).
+- **Research and evaluation:** reproduce a finding, test an efficiency
+  hypothesis, or challenge an assumption with a bounded comparison. Start with
+  the [research map](metrics/register/README.md) and
+  [efficiency ledger](metrics/efficiency-ledger.md).
+- **Operator experience:** help people understand what an agent is doing,
+  what it has established, and what needs their decision. The
+  [architecture map](ARCHITECTURE.md) and [roadmap](roadmap.md) show the
+  integration work ahead.
+
+A useful first contribution can be a focused regression test, a reproducible
+measurement, a clearer operator view, or a repair to one recovery boundary.
+Read the [design contracts](DESIGN.md), choose a bounded problem, and make the
+result and its limits easy to inspect. Agent contributors also start with
+[AGENTS.md](AGENTS.md). The local checks below provide an entry point.
 
 ## Explore locally
 
