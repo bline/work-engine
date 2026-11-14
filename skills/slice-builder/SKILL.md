@@ -86,6 +86,12 @@ Never describe the builder as a subtask worker. State that it owns the whole sli
 
 ## Continue one identity through the slice
 
+For a Codex builder using `token_budget`, read the shared
+[recovery guidance](../manual-orchestration/references/same-session-context.md#codex-token-budget-refresh-deadline).
+`new_context` discards history without a summary, so preserve the accepted slice,
+phase, source and outstanding review/collection obligations before replacement.
+Recovery retains this builder identity and does not change campaign gates.
+
 Retain the builder returned by `spawn_agent`. Use `followup_task` on that identity for every normal phase so its durable architectural context survives.
 
 Apply the corresponding lifetime rule to the configured reviewer: launch one

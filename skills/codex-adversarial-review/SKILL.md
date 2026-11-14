@@ -53,6 +53,12 @@ keys, infer the active attempt, or treat a visible claim as applicable without
 checking its exact revision and declared limits. Transport parity is not the
 contract; equivalent bounded state meaning and authority are.
 
+When this reviewer uses Codex `token_budget`, read the shared
+[recovery guidance](../manual-orchestration/references/same-session-context.md#codex-token-budget-refresh-deadline).
+`new_context` discards history without a summary. Preserve the exact subject,
+review episode, prior findings and collection owner before replacement; recovery
+neither starts a fresh review episode nor changes the read-only boundary.
+
 Retain the returned reviewer identity through the bounded remediation loop.
 After a valid finding is fixed, use `followup_task` on that same reviewer with
 the exact new subject or delta, affected gate evidence, prior finding

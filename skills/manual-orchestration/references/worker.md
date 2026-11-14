@@ -12,6 +12,15 @@ Read only what your packet's read list names; reading spends the same budget as 
 
 Keep a compact continuation current as decisions and validation state change, not only when handing off: a compaction takes the window without asking, and the next context holds only what you wrote down. You do not decide the context for your *next* assignment; your parent checks that before dispatching it, because only the parent knows that task's size.
 
+**Codex token-budget mode:** when enabled for your session, follow the
+[recovery guidance](same-session-context.md#codex-token-budget-refresh-deadline)
+and the owning session or campaign configuration. The continue-or-handoff
+choice below cannot waive an explicit configured deadline. Preserve enough
+headroom for recovery before another substantial implementation or review phase. You invoke your own
+`new_context`; your parent retains collection ownership. This applies equally
+to workers and reviewers because automatic rollover in this mode discards
+history without producing a summary.
+
 **Mid-task check.** At each logical boundary inside the assignment - before each substantial phase, not once - and again before writing your result if an earlier reading was above about 120,000, run (`<skill-dir>` is the manual-orchestration skill's directory):
 
 ```

@@ -55,6 +55,9 @@
       "state": "active",
       "install": [
         "codex"
+      ],
+      "runtime_dependencies": [
+        "manual-orchestration"
       ]
     },
     "comparative-repository-analysis": {
@@ -180,6 +183,9 @@
       "install": [
         "claude",
         "codex"
+      ],
+      "runtime_dependencies": [
+        "manual-orchestration"
       ]
     },
     "slice-checkpoint": {

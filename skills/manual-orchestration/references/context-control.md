@@ -28,16 +28,19 @@ and counters do not establish monitoring for the successor.
 Use the pinned context-status binary from `provision_context_status.sh`; it must
 support `control --help`. Bind the actual session ID and absolute transcript
 path. For a Claude child, also bind its agent ID within that session. Do not use
-an inherited environment variable as proof of identity. For Codex, give token
-levels: `--context-trigger-tokens 200000 --context-band-floor-tokens 235000`.
-The configured auto-compaction limit (250,000 since 2026-11-05), not the
-window, decides where a new Sol 6.1 session compacts. Shares of the window
-(`--context-trigger-percent 58 --context-band-floor-percent 66`) put both
-warnings above that limit on a 475,000 window, so they never fired
-([measured basis](context-boundary.md#measured-basis)). Use shares only for a
-session whose compaction point follows its window. Claude transcripts record no
-window and take their own token levels. The levels in `context-boundary.md` and
-`anthropic-host.md` remain hypotheses.
+an inherited environment variable as proof of identity. For Codex, enroll
+explicit token levels matched to the session's actual rollover configuration
+and recovery needs. The historical 200,000/235,000 levels in
+[context boundary](context-boundary.md#measured-basis) were operating hypotheses
+for a 250,000 limit, not defaults for every current session. Window percentages
+can put warnings above a configured limit and prevent them from firing. Claude
+transcripts record no window and take their own token levels.
+
+`--context-step-percent` controls repeated token-growth alerts. Choose it to
+fit the available headroom; neither the reader's default 5% nor a smaller step
+establishes timely delivery. A 5% step is 23,750 tokens on a 475,000-token
+window. A changed control policy needs a new baseline rather than the old
+policy's cursor. This skill does not prescribe a numeric step.
 
 Start the [board wait](../../../docs/codex-chatboard.md#session-control-subscription)
 with `--session-id`, the `--context-*` binding options, relevant board topics and
@@ -82,7 +85,16 @@ sender's authority. None grants a larger budget or resolves pending approval.
 
 Use the measured input, source timestamp, epoch, observation quality, chosen
 levels and optional growth estimate to judge remaining work. `planning`,
-`approaching_band` and `in_band` describe pressure; they do not command a reset.
+`approaching_band` and `in_band` describe pressure. For Codex token-budget mode,
+use the
+[recovery guidance](same-session-context.md#codex-token-budget-refresh-deadline)
+and the owning session's configured deadlines. The collector must deliver the
+update in time for the responsible agent to preserve meaning before rollover;
+no successor handoff is required for same-session refresh.
+The [context-control audit](../../../metrics/probes/context-control-usage-20261024.md#cu-02-warnings-need-to-survive-into-the-next-scope-decision)
+observed delivered warnings followed by a later task admitted without a renewed
+capacity decision. It supports closing that action gap; it did not test the
+choice of alert cadence or show that additional generic warnings solve the problem.
 The forecast extrapolates recent requests to an empirical band, not provider
 reset timing. Unexpected large outputs can exhaust headroom earlier.
 
@@ -113,7 +125,14 @@ about 230 tool calls in the tree took explicit context readings over 17.6 hours
 while the root ran a listener (n=1).
 In band, a new event arrives at each further step of the window
 (`--context-step-percent`, default 5). Between steps the listener is quiet, and
-that silence does not renew a prior decision to continue for a different task. Use the scoped capacity decision in
+that silence does not renew a prior decision to continue for a different task.
+The step controls repeated token-growth alerts, not a time interval; context
+observation follows transcript changes, while `--budget-interval` controls only
+budget reads. In token-budget mode, assess recovery headroom on the first preparation
+warning instead of waiting for an in-band repeat.
+Delivery and preservation must fit before the next potentially large call;
+more frequent alerts cannot prevent one call from crossing a boundary.
+Use the scoped capacity decision in
 [context boundary](context-boundary.md#capacity-belongs-to-the-next-scope).
 
 ## Lifetime and recovery

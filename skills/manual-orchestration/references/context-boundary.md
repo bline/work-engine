@@ -45,6 +45,14 @@ unresolved; an unchanged root ID does not establish their availability.
 
 ## Capacity belongs to the next scope
 
+For Codex sessions with `token_budget` enabled, apply the
+[recovery guidance](same-session-context.md#codex-token-budget-refresh-deadline)
+and any deadline set by the owning session or campaign configuration. The H2
+fresh-child recommendation below does not require replacing an owner that can
+refresh and recover in place. The dispatcher still owns the next assignment
+and its capacity assessment; an ordinary retain decision cannot waive an
+explicit configured deadline.
+
 A decision to finish bounded work covers that work, not a later substantial
 assignment. Before admitting substantial new work into a retained context,
 the decider assesses usable current telemetry against the expected work,
