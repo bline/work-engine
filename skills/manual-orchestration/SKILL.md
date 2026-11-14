@@ -11,21 +11,28 @@ Use model judgment to divide an authorized objective into coherent outcomes whos
 
 ## Load by role
 
-There are two levels. The supervisor is the top-level role (the root), and the user is its parent. It dispatches builders directly and launches reviewers separately; no coordinator sits above it and no supervisor sits between it and its workers.
+The supervisor is the top-level role (the root), and the user is its parent. It dispatches builders directly and launches reviewers separately; no coordinator sits above it and no supervisor sits between it and its workers.
 
-- When forming or revising an organization, including during ongoing implementation with no new dispatch, launch or discovery assignment: [organization formation](references/organization-formation.md) - reviewable candidates, branch discovery and revision authority.
+Read the reference for the current role and the applicable operation. Links provide navigation; do not recursively load linked documents or every host and lifecycle variant. Read applicable constraints before the decision they govern, together with their reasons. Reuse current material already loaded; retrieve an omitted or truncated relevant passage before relying on it.
 
-- **Supervisor** (top level): [supervisor](references/supervisor.md) - scope and budget, decomposition, packets, dispatch, validation, review collection, integration.
-- **Worker or reviewer**: [worker](references/worker.md) - one coherent bounded assignment.
-- **Every role**: [call cost](references/call-cost.md) - waiting, batching, request sizing.
-- **Supervisor**: [context boundary](references/context-boundary.md) - retained or fresh before dispatch, transfer, roots. Workers carry their own mid-task check.
-- When considering same-session context replacement: [same-session continuity](references/same-session-context.md) - authority, durable meaning, supported controls, visible resumption and recovery.
-- **On Codex**, with any role: [Codex host](references/codex-host.md) - builder children, separate top-level reviewers, service tier and identity binding.
-- **On Claude Code** (Anthropic models), with any role: [anthropic host](references/anthropic-host.md) - tool mapping, transcript-based context check.
-- When launching, continuing or collecting a **Pi** role: [Pi host](references/pi-host.md) - API or subscription lane, per-launch service tier, turn observation, no-network container mode.
-- After a run: [measurement](references/measurement.md). For a concrete artifact example: [demonstrated forms](references/demonstrated-forms.md).
+| Role or decision | Load |
+| --- | --- |
+| Supervisor startup or recovery | [Supervisor entry](references/supervisor.md); its decision references apply when that work arises |
+| Worker or reviewer | [One coherent assignment](references/worker.md) |
+| Every role | [Call cost](references/call-cost.md) |
+| Form or revise an organization | [Organization formation](references/organization-formation.md), including revisions during implementation without a new launch |
+| Admit substantial work to retained context or transfer unfinished child work | [Retained dispatch](references/retained-dispatch.md) |
+| Consider context replacement or root transfer | [Context boundary](references/context-boundary.md); load the chosen operation's reference |
+| Native Codex token_budget is active | [Native recovery](references/native-context.md), for supervisors, workers and reviewers |
+| Prepare intentional replacement | [Preparation](references/context-preparation.md) and the applicable host settings reference |
+| Recover after replacement | [Recovery](references/context-recovery.md) and the applicable host settings reference |
+| Operate on Codex | [Codex operation index](references/codex-host.md) |
+| Operate on Claude Code | [Anthropic host](references/anthropic-host.md) |
+| Launch, continue or collect a Pi role | [Pi host](references/pi-host.md) |
+| Measure a run | [Measurement](references/measurement.md); [demonstrated forms](references/demonstrated-forms.md) only when a concrete example helps |
+| Select or invoke a helper script | [Command inventory](references/commands.md) and that operation's reference |
 
-Repository instructions and owning contracts still govern each role.
+Repository instructions and owning contracts still govern each role. Conditional loading reduces unrelated context; it does not waive an applicable contract.
 
 ## Launching a child
 
@@ -45,12 +52,4 @@ The optional [manual host](references/manual-host.md) composes native Codex disp
 
 ## Scripts
 
-- `scripts/provision_manual_host.sh [repo]` - build and pin the optional Rust manual host with its compatible adapter bundle; no global activation.
-- `scripts/provision_context_status.sh [repo]` - build and pin the context-status binary outside the shared target; prints path and SHA-256.
-- `scripts/child_context.py` - `check` one Codex session, `tree` a parent's children, or `claude` a Claude Code subagent transcript against the trigger and observed compaction band; writes a record to retain.
-- `scripts/role_host.py` - host a role or child as a Claude `--bg`, Codex app-server or Pi session: `launch` (with `--parent` to record it in the ledger), `status`, `deliver`, `retire`, `children`, `whoami`. Pi launches name a lane with `--auth api|subscription` and may set `--service-tier` on the api lane; `--container` runs each turn without network behind a host egress proxy (`scripts/pi_container.py`); see [Pi host](references/pi-host.md). Codex also supports `rename`, `archive`, and `unarchive` without a model turn, plus `settings --rollout` to observe applied model/effort/tier for continuation. Detects and stops a Claude copy-on-resume fork.
-- `scripts/auto_continue.py` - bounded foreground same-SID compaction and attributed recovery; use under [same-session continuity](references/same-session-context.md#foreground-automatic-continuation-on-the-codex-app-server).
-- `scripts/root_rotation.py` - root transfer gate: `prepare` publishes continuation lineage and stops at `awaiting_authority`; `commit` or `watch` checks that the handoff is still available, launches the successor, waits for its typed `adopt` and retires or keeps the predecessor. `--title` provides a readable task name. See [context boundary](references/context-boundary.md#roots).
-- `scripts/custody.py` - `run` a build or test, or a plan of them, recording PIDs, wait status, output and input digests and leftover processes; `freeze` a tree outside the repository into a manifest, archive and baseline diff. See [worker](references/worker.md#builds-tests-and-frozen-subjects).
-- `scripts/scope_budget.py` - original scope, additions, the objective's sessions and its cost limits in the assignment record; `check` reports spend and time and says whether to reconsider or stop. See [supervisor](references/supervisor.md#scope-and-budget).
-- `scripts/handoff_validator.py` - checks a root handoff's referents (paths, path-bound digests, labelled git refs, placeholders): 0 pass, 21 defect, 32 not established.
+Find helper capabilities in the [command inventory](references/commands.md) when selecting or invoking one.
