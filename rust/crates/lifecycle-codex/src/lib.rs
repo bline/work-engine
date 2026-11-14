@@ -4,6 +4,13 @@
 #[cfg(all(feature = "synthetic-access-test", not(debug_assertions)))]
 compile_error!("synthetic-access-test is confined to non-release qualification builds");
 
+#[cfg(all(feature = "native-input-proof", not(debug_assertions)))]
+compile_error!("native-input-proof is unavailable in release builds");
+mod causal;
+pub use causal::{AcquiredNativeCausal, CausalCall, CausalMember};
+mod compiled_input;
+pub use compiled_input::{AcquiredNativeInput, CheckedNativePayload, NativeInputError};
+
 mod isolation;
 mod protocol;
 mod transport;
@@ -20,5 +27,5 @@ pub use protocol::{
 };
 pub use transport::{
     ExternalChatgptLease, NativeAuthMode, NativeHarness, NativeHarnessError,
-    load_external_chatgpt_lease, trusted_loopback_https_proxy,
+    controlled_input_binary, load_external_chatgpt_lease, trusted_loopback_https_proxy,
 };

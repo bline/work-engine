@@ -156,6 +156,8 @@ pub struct NativeHarness {
     auth_mode: NativeAuthMode,
     codex_home: PathBuf,
     isolated: Option<IsolatedNative>,
+    capture: Option<crate::compiled_input::CaptureOwner>,
+    input_terminal: Option<NativeEvent>,
 }
 
 impl NativeHarness {
@@ -256,9 +258,9 @@ impl NativeHarness {
             return Err(NativeHarnessError::InvalidTrustedProxy);
         }
         let bytes = std::fs::read(executable).map_err(|_| NativeHarnessError::BinaryMismatch)?;
-        if format!("{:x}", Sha256::digest(bytes)) != NATIVE_BINARY_SHA256
-            || transport_session.is_empty()
-        {
+        let binary_sha = format!("{:x}", Sha256::digest(bytes));
+        let controlled = controlled_input_binary(executable, &binary_sha);
+        if (binary_sha != NATIVE_BINARY_SHA256 && !controlled) || transport_session.is_empty() {
             return Err(NativeHarnessError::BinaryMismatch);
         }
         if isolation.is_some() && !auth_mode.is_access_lease() {
@@ -274,6 +276,14 @@ impl NativeHarness {
                 crate::IsolationReason::TransportProfile,
             ));
         }
+        let capture = if controlled {
+            Some(
+                crate::compiled_input::CaptureOwner::create(codex_home.join("owned-input-capture"))
+                    .map_err(|_| NativeHarnessError::BinaryMismatch)?,
+            )
+        } else {
+            None
+        };
         let mut command = Command::new(executable);
         let runtime_key = if auth_mode == NativeAuthMode::RuntimeApiKey {
             let key = std::env::var("OPENAI_API_KEY")
@@ -300,8 +310,10 @@ impl NativeHarness {
                 std::env::var_os("CARGO_TARGET_DIR").ok_or(NativeHarnessError::BinaryMismatch)?,
             )
         };
+        if !controlled {
+            command.args(["app-server", "--strict-config", "--listen", "stdio://"]);
+        }
         command
-            .args(["app-server", "--strict-config", "--listen", "stdio://"])
             .env_clear()
             .env("HOME", home)
             .env("CODEX_HOME", codex_home)
@@ -310,6 +322,20 @@ impl NativeHarness {
             .env("TMPDIR", tmpdir)
             .env("CARGO_TARGET_DIR", target)
             .current_dir(work);
+        if let Some(owner) = &capture {
+            command
+                .env("CODEX_ROLLOUT_TRACE_ROOT", owner.path())
+                .env("CODEX_STRICT_TRANSPORT_INPUT", "1");
+            #[cfg(feature = "native-input-proof")]
+            if std::env::var("WORK_ENGINE_INPUT_SYNC_FAULT").as_deref()
+                == Ok("second_provider_completed")
+            {
+                command.env(
+                    "CODEX_STRICT_TRANSPORT_INPUT_SIMULATE_SYNC_FAILURE",
+                    "second_provider_completed",
+                );
+            }
+        }
         if let Some(key) = runtime_key {
             command.env("OPENAI_API_KEY", key);
         }
@@ -341,7 +367,31 @@ impl NativeHarness {
             auth_mode,
             codex_home: codex_home.to_path_buf(),
             isolated,
+            capture,
+            input_terminal: None,
         })
+    }
+
+    pub fn acquire_native_input(
+        &self,
+        thread: &str,
+        turn: &str,
+    ) -> Result<crate::AcquiredNativeInput, crate::NativeInputError> {
+        self.capture
+            .as_ref()
+            .ok_or(crate::NativeInputError)?
+            .acquire(
+                &self.transport_session,
+                thread,
+                turn,
+                self.input_terminal
+                    .as_ref()
+                    .ok_or(crate::NativeInputError)?,
+            )
+    }
+
+    pub fn captures_native_input(&self) -> bool {
+        self.capture.is_some()
     }
 
     /// Observe this runner-owned child; callers cannot nominate another PID.
@@ -492,6 +542,14 @@ impl NativeHarness {
             };
             if self.lease_admitted && !self.lease_valid_for(0) {
                 return Err(NativeHarnessError::ChatgptLeaseUnavailable);
+            }
+            if matches!(
+                event.value["method"].as_str(),
+                Some("turn/completed" | "turn/failed" | "turn/interrupted")
+            ) || (event.value["method"] == "error"
+                && event.value["params"]["willRetry"] == false)
+            {
+                self.input_terminal = Some(event.clone());
             }
             match &event.kind {
                 NativeEventKind::ServerRequest { id, method }
@@ -719,6 +777,32 @@ pub fn load_external_chatgpt_lease(
 mod tests {
     use super::*;
 
+    #[cfg(not(feature = "native-input-proof"))]
+    #[test]
+    #[ignore = "requires the exact accepted private native composition"]
+    fn ordinary_startup_refuses_exact_private_composition() {
+        let path =
+            std::path::PathBuf::from(std::env::var("WE_NATIVE_INPUT_PRIVATE_BINARY").unwrap());
+        let bytes = std::fs::read(&path).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+        );
+        assert!(!controlled_input_binary(
+            Path::new("/native-app-server"),
+            "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+        ));
+        assert!(matches!(
+            NativeHarness::spawn(
+                &path,
+                Path::new("/"),
+                Path::new("/"),
+                Path::new("/"),
+                "ordinary-refusal".into()
+            ),
+            Err(NativeHarnessError::BinaryMismatch)
+        ));
+    }
     #[test]
     fn trusted_proxy_is_exact_loopback_and_only_for_external_access() {
         assert!(trusted_loopback_https_proxy("http://127.0.0.1:38471"));
@@ -891,5 +975,30 @@ mod tests {
         std::fs::remove_dir(codex_home).unwrap();
         std::fs::remove_file(&path).unwrap();
         assert!(matches!(result, Err(NativeHarnessError::BinaryMismatch)));
+    }
+}
+
+/// Private qualification composition. The ordinary pin has no override.
+/// Confinement is independently established by the exact Docker realization;
+/// these checks also refuse accidental host execution of the proof feature.
+pub fn controlled_input_binary(path: &Path, digest: &str) -> bool {
+    #[cfg(feature = "native-input-proof")]
+    {
+        cfg!(debug_assertions)
+            && path == Path::new("/native-app-server")
+            && digest == "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+            && unsafe { libc::geteuid() } == 1000
+            && Path::new("/.dockerenv").exists()
+            && std::fs::read_to_string("/proc/self/status").is_ok_and(|s| {
+                s.lines().any(|l| l == "NoNewPrivs:\t1")
+                    && s.lines().any(|l| l == "CapEff:\t0000000000000000")
+            })
+            && std::fs::read_dir("/sys/class/net")
+                .is_ok_and(|entries| entries.flatten().all(|e| e.file_name() == "lo"))
+    }
+    #[cfg(not(feature = "native-input-proof"))]
+    {
+        let _ = (path, digest);
+        false
     }
 }

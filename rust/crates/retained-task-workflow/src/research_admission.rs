@@ -239,6 +239,7 @@ pub struct BasisBundle {
 pub struct VerifiedBasis {
     basis: BasisBundle,
     digest: String,
+    readset: Option<ResearchPreparationReadSet>,
 }
 impl BasisBundle {
     fn validate(&self) -> Result<(), TaskError> {
@@ -767,6 +768,30 @@ impl TaskStore {
         producer.admission = Some(admission);
         Ok(producer)
     }
+    /// Trusted controlled composition fixes the sole nominated advisory read.
+    /// This is process-local scope, never a deserialized/native request grant.
+    #[cfg(feature = "controlled-proof")]
+    pub fn with_controlled_research_causal_scope(
+        mut self,
+        task: String,
+        subject: String,
+    ) -> Result<Self, TaskError> {
+        if !valid_id(&task) || !valid_id(&subject) || self.research_causal_scope.is_some() {
+            return Err(TaskError::Invalid);
+        }
+        self.research_causal_scope = Some((task, subject));
+        Ok(self)
+    }
+    /// Structural candidate validation creates no checked value or read-set.
+    #[cfg(feature = "controlled-proof")]
+    pub fn controlled_validate_research_candidate(
+        &self,
+        basis: &BasisBundle,
+        producer: &ResearchProducer,
+    ) -> Result<(), TaskError> {
+        basis.validate()?;
+        producer.check(&*self.lock()?, &basis.key, ProducerRole::Preparer)
+    }
     #[cfg(feature = "controlled-proof")]
     pub fn controlled_verify_research_basis(
         &self,
@@ -776,7 +801,16 @@ impl TaskStore {
         basis.validate()?;
         producer.check(&*self.lock()?, &basis.key, ProducerRole::Preparer)?;
         let digest = research_digest("basis", &basis)?;
-        Ok(VerifiedBasis { basis, digest })
+        // Legacy synthetic fixtures cannot prepare a real advisory task through
+        // the unfenced route, even after dropping joined evidence markers.
+        if read_task(&*self.lock()?, &basis.delivery.advisory_task)?.is_some() {
+            return Err(TaskError::Unavailable);
+        }
+        Ok(VerifiedBasis {
+            basis,
+            digest,
+            readset: None,
+        })
     }
     pub fn register_research_key(
         &self,
@@ -814,6 +848,11 @@ impl TaskStore {
         producer.check(&tx, key, ProducerRole::Preparer)?;
         if basis.basis.key != *key {
             return Err(TaskError::Conflict);
+        }
+        if let Some(readset) = &basis.readset {
+            readset.check(&tx, key, &basis.digest)?;
+        } else if read_task(&tx, &basis.basis.delivery.advisory_task)?.is_some() {
+            return Err(TaskError::Unavailable);
         }
         let (selectors, count): (Vec<u8>, i64) = tx
             .query_row(
@@ -1322,6 +1361,358 @@ mod tests {
         b.target_digest = target.digest.clone();
         b.recommendation.target_digest = target.digest.clone();
     }
+    fn joined_owner() -> (
+        tempfile::TempDir,
+        TaskStore,
+        BasisBundle,
+        BTreeMap<String, (String, SourceReference)>,
+    ) {
+        let (root, s, mut b) = setup();
+        let mut advisory = submit();
+        advisory.command_id = "advice-command".into();
+        advisory.task_id = b.delivery.advisory_task.clone();
+        advisory.subject_id = b.delivery.advisory_subject.clone();
+        advisory.facts = vec![FactInput {
+            id: "target".into(),
+            kind: FactKind::Decision,
+            text: "target".into(),
+            current: true,
+        }];
+        s.submit(&advisory).unwrap();
+        let record = s.observe(&advisory.task_id).unwrap().unwrap();
+        let source = record
+            .sources
+            .iter()
+            .find(|s| s.id == "target")
+            .unwrap()
+            .reference();
+        let payload = ResultPublishPayload {
+            result_id: "recommendation".into(),
+            body: String::from_utf8(
+                b.artifacts
+                    .iter()
+                    .find(|a| a.id == "result")
+                    .unwrap()
+                    .bytes
+                    .clone(),
+            )
+            .unwrap(),
+            source_refs: vec![source.clone()],
+            attribution: "native-advice".into(),
+        };
+        let entry = OperationEntry {
+            operation_id: "advice-operation".into(),
+            task_id: advisory.task_id.clone(),
+            subject_id: advisory.subject_id.clone(),
+            delivery_id: "delivery-advice".into(),
+            attempt_id: "attempt-advice".into(),
+            expected_task_revision: record.revision,
+            expected_cursor_revision: record.cursor_revision,
+            grant_ref: "result-grant".into(),
+            grant_revision: 1,
+            payload_sha256: json_digest(&payload).unwrap(),
+        };
+        s.publish_result(&entry, &payload, &mut |commit| commit())
+            .unwrap();
+        let original = s
+            .observe(&advisory.task_id)
+            .unwrap()
+            .unwrap()
+            .result
+            .unwrap();
+        for (id, bytes) in [
+            (
+                "research-original-result",
+                serde_json::to_vec(&original).unwrap(),
+            ),
+            (
+                "research-original-operation",
+                s.lock()
+                    .unwrap()
+                    .query_row(
+                        "SELECT commit_json FROM operations WHERE operation_id=?1",
+                        [&entry.operation_id],
+                        |r| r.get(0),
+                    )
+                    .unwrap(),
+            ),
+        ] {
+            b.artifacts.push(RetainedArtifact {
+                id: id.into(),
+                digest: sha256(&bytes),
+                bytes,
+            });
+        }
+        let mapping = BTreeMap::from([("decision.target".into(), (advisory.task_id, source))]);
+        (root, s, b, mapping)
+    }
+    fn real_owner_change(s: &TaskStore, task: &str) {
+        let r = s.observe(task).unwrap().unwrap();
+        let bytes = b"new evidence";
+        s.record_completed_effect(
+            task,
+            CompletedEffect {
+                effect_id: "effect-new".into(),
+                delivery_id: "delivery-new".into(),
+                receipt_digest: sha256(bytes),
+                attribution: Some(CompletedSnapshotReadAttribution {
+                    schema: "completed-snapshot-read-attribution-v2".into(),
+                    parent_invocation_id: "native-parent".into(),
+                    call_id: "native-call".into(),
+                    contract_id: "workspace.snapshot.read.v1".into(),
+                    snapshot_id: "snapshot-0".into(),
+                    member_id: "member".into(),
+                    offset: 0,
+                    requested_length: bytes.len() as u64,
+                    returned_length: bytes.len() as u64,
+                    result_sha256: sha256(bytes),
+                    result: CompletedSnapshotResult::InlineUtf8 {
+                        text: String::from_utf8(bytes.to_vec()).unwrap(),
+                    },
+                }),
+            },
+            r.cursor_revision,
+        )
+        .unwrap();
+    }
+    fn preparation_state(s: &TaskStore) -> (Vec<(String, Option<Vec<u8>>, i64)>, i64, i64) {
+        let db = s.lock().unwrap();
+        let rows = db
+            .prepare("SELECT key_id,head_json,preparation_count FROM research_keys ORDER BY key_id")
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        (
+            rows,
+            db.query_row("SELECT count(*) FROM research_history", [], |r| r.get(0))
+                .unwrap(),
+            db.query_row("SELECT count(*) FROM research_basis", [], |r| r.get(0))
+                .unwrap(),
+        )
+    }
+    #[test]
+    fn joined_original_owner_change_before_mint_and_after_mint_is_stale_without_notice() {
+        for before in [true, false] {
+            let (_root, s, b, mapping) = joined_owner();
+            let p = producer(&s, &b.key, ProducerRole::Preparer);
+            let baseline_original = s
+                .research_original_evidence(&b.delivery.advisory_task, &mapping)
+                .unwrap();
+            let baseline = s
+                .controlled_verify_joined_research_basis(b.clone(), baseline_original, &p)
+                .unwrap();
+            s.prepare_research(&b.key, None, baseline, &p).unwrap();
+            let original = s
+                .research_original_evidence(&b.delivery.advisory_task, &mapping)
+                .unwrap();
+            let result = original.advisory.result.clone();
+            let state = preparation_state(&s);
+            if before {
+                real_owner_change(&s, &b.delivery.advisory_task);
+                assert!(matches!(
+                    s.controlled_verify_joined_research_basis(b.clone(), original, &p),
+                    Err(TaskError::Stale)
+                ));
+            } else {
+                let verified = s
+                    .controlled_verify_joined_research_basis(b.clone(), original, &p)
+                    .unwrap();
+                real_owner_change(&s, &b.delivery.advisory_task);
+                assert!(matches!(
+                    s.prepare_research(&b.key, Some(1), verified, &p),
+                    Err(TaskError::Stale)
+                ));
+            }
+            assert_eq!(
+                s.observe(&b.delivery.advisory_task)
+                    .unwrap()
+                    .unwrap()
+                    .result,
+                result
+            );
+            assert_eq!(preparation_state(&s), state);
+            assert!(s.controlled_verify_research_basis(b, &p).is_err());
+        }
+    }
+    #[test]
+    fn joined_atomic_fence_checks_every_owner_predicate_and_restart_preserves_saved_basis() {
+        for predicate in [
+            "result",
+            "operation-kind",
+            "operation-payload",
+            "operation-entry",
+            "operation-commit",
+            "source-bytes",
+            "source-current",
+            "source-trust",
+            "source-availability",
+            "source-required",
+            "source-key",
+            "source-revision",
+            "advisory-revision",
+            "cursor-revision",
+            "destination",
+            "selectors",
+            "head",
+            "count",
+            "nomination",
+            "store",
+        ] {
+            let (_root, s, b, mapping) = joined_owner();
+            let p = producer(&s, &b.key, ProducerRole::Preparer);
+            let original = s
+                .research_original_evidence(&b.delivery.advisory_task, &mapping)
+                .unwrap();
+            let verified = s
+                .controlled_verify_joined_research_basis(b.clone(), original, &p)
+                .unwrap();
+            {
+                let db = s.lock().unwrap();
+                match predicate {
+                    "operation-kind" | "operation-payload" | "operation-entry"
+                    | "operation-commit" => {
+                        let column = match predicate {
+                            "operation-kind" => "kind",
+                            "operation-payload" => "payload_digest",
+                            "operation-entry" => "entry_digest",
+                            _ => "commit_json",
+                        };
+                        if predicate == "operation-commit" {
+                            db.execute(&format!("UPDATE operations SET {column}=?1 WHERE operation_id='advice-operation'"),[b"changed".as_slice()]).unwrap();
+                        } else {
+                            db.execute(&format!("UPDATE operations SET {column}=?1 WHERE operation_id='advice-operation'"),["changed"]).unwrap();
+                        }
+                    }
+                    "destination" => {
+                        let mut r = read_task(&db, &b.delivery.advisory_task).unwrap().unwrap();
+                        r.task_id = b.key.task_id.clone();
+                        r.subject_id = b.key.subject_id.clone();
+                        write_task(&db, &r).unwrap();
+                    }
+                    "selectors" => {
+                        db.execute(
+                            "UPDATE research_keys SET selectors_json=?1",
+                            [b"[]".as_slice()],
+                        )
+                        .unwrap();
+                    }
+                    "head" => {
+                        db.execute("UPDATE research_keys SET head_json=?1", [b"{}".as_slice()])
+                            .unwrap();
+                    }
+                    "count" => {
+                        db.execute(
+                            "UPDATE research_keys SET preparation_count=preparation_count+1",
+                            [],
+                        )
+                        .unwrap();
+                    }
+                    "nomination" => {
+                        db.execute("UPDATE research_tasks SET subject_id='changed'", [])
+                            .unwrap();
+                    }
+                    "store" => {
+                        db.execute("UPDATE store_identity SET store_id=?1", ["a".repeat(32)])
+                            .unwrap();
+                    }
+                    _ => {
+                        let mut r = read_task(&db, &b.delivery.advisory_task).unwrap().unwrap();
+                        let source = r.sources.iter_mut().find(|s| s.id == "target").unwrap();
+                        match predicate {
+                            "result" => r.result.as_mut().unwrap().body.push('!'),
+                            "source-bytes" => source.bytes.push(b'!'),
+                            "source-current" => source.current = false,
+                            "source-trust" => source.trust = SourceTrust::UntrustedData,
+                            "source-availability" => {
+                                source.availability = SourceAvailability::Unavailable
+                            }
+                            "source-required" => source.dependency_required = false,
+                            "source-key" => source.dependency_key.push('!'),
+                            "source-revision" => source.revision += 1,
+                            "advisory-revision" => r.revision += 1,
+                            "cursor-revision" => r.cursor_revision += 1,
+                            _ => unreachable!(),
+                        };
+                        write_task(&db, &r).unwrap();
+                    }
+                }
+            }
+            let state = preparation_state(&s);
+            assert!(
+                matches!(
+                    s.prepare_research(&b.key, None, verified, &p),
+                    Err(TaskError::Stale | TaskError::Conflict | TaskError::Unauthorized)
+                ),
+                "{predicate}"
+            );
+            assert_eq!(preparation_state(&s), state, "{predicate}");
+        }
+        let (root, s, b, mapping) = joined_owner();
+        let p = producer(&s, &b.key, ProducerRole::Preparer);
+        let original = s
+            .research_original_evidence(&b.delivery.advisory_task, &mapping)
+            .unwrap();
+        let verified = s
+            .controlled_verify_joined_research_basis(b.clone(), original, &p)
+            .unwrap();
+        let prepared = s.prepare_research(&b.key, None, verified, &p).unwrap();
+        let basis = s
+            .read_research_basis(
+                &b.key,
+                prepared.revision,
+                prepared.basis_digest.as_ref().unwrap(),
+                &p,
+            )
+            .unwrap();
+        drop(s);
+        let reopened = TaskStore::open(&root.path().join("owner.sqlite"), "human".into()).unwrap();
+        assert_eq!(
+            reopened.read_research_preparation(&b.key).unwrap(),
+            Some(prepared.clone())
+        );
+        assert_eq!(
+            reopened
+                .read_research_basis(
+                    &b.key,
+                    prepared.revision,
+                    prepared.basis_digest.as_ref().unwrap(),
+                    &producer(&reopened, &b.key, ProducerRole::Preparer)
+                )
+                .unwrap(),
+            basis
+        );
+        assert_eq!(preparation_state(&reopened).1, 1);
+    }
+    #[test]
+    fn joined_preparation_final_write_failure_rolls_back_all_success_state() {
+        let (_root, s, b, mapping) = joined_owner();
+        let p = producer(&s, &b.key, ProducerRole::Preparer);
+        let original = s
+            .research_original_evidence(&b.delivery.advisory_task, &mapping)
+            .unwrap();
+        let verified = s
+            .controlled_verify_joined_research_basis(b.clone(), original, &p)
+            .unwrap();
+        let before = preparation_state(&s);
+        s.lock().unwrap().execute_batch("CREATE TEMP TRIGGER fail_joined_history BEFORE INSERT ON research_history BEGIN SELECT RAISE(ABORT,'controlled final prepare write failure'); END;").unwrap();
+        assert!(s.prepare_research(&b.key, None, verified, &p).is_err());
+        assert_eq!(preparation_state(&s), before);
+        s.lock()
+            .unwrap()
+            .execute_batch("DROP TRIGGER fail_joined_history;")
+            .unwrap();
+        let original = s
+            .research_original_evidence(&b.delivery.advisory_task, &mapping)
+            .unwrap();
+        let verified = s
+            .controlled_verify_joined_research_basis(b.clone(), original, &p)
+            .unwrap();
+        let saved = s.prepare_research(&b.key, None, verified, &p).unwrap();
+        assert_eq!(saved.revision, 1);
+        assert_eq!(preparation_state(&s).1, 1);
+    }
     fn setup() -> (tempfile::TempDir, TaskStore, BasisBundle) {
         let root = tempfile::tempdir().unwrap();
         let store = TaskStore::open(&root.path().join("owner.sqlite"), "human".into()).unwrap();
@@ -1819,6 +2210,7 @@ mod tests {
             let forged = VerifiedBasis {
                 basis: b.clone(),
                 digest,
+                readset: None,
             };
             assert!(
                 s.prepare_research(
@@ -2362,5 +2754,285 @@ mod tests {
             Err(TaskError::Capacity)
         ));
         assert!(s.read_research_preparation(&b.key).unwrap().is_none());
+    }
+}
+
+/// Owner-captured original evidence, before host validation. No Deserialize and
+/// no caller-supplied currentness flag; trusted composition fixes selector mapping.
+pub struct ResearchOriginalEvidence {
+    store_id: String,
+    advisory: TaskRecord,
+    task_rows: BTreeMap<String, Option<Vec<u8>>>,
+    operation: (String, String, String, Vec<u8>),
+    sources: BTreeMap<String, SourceMaterial>,
+}
+impl ResearchOriginalEvidence {
+    pub fn advisory(&self) -> &TaskRecord {
+        &self.advisory
+    }
+    pub fn sources(&self) -> &BTreeMap<String, SourceMaterial> {
+        &self.sources
+    }
+    pub fn operation_commit(&self) -> &[u8] {
+        &self.operation.3
+    }
+}
+/// Bound to one checked basis and one physical owner. This is evidence, not a
+/// producer capability. Its complete expected rows are rechecked under the
+/// preparation transaction before any successful write.
+pub struct ResearchPreparationReadSet {
+    store_id: String,
+    basis_digest: String,
+    key: ResearchKey,
+    task_rows: BTreeMap<String, Option<Vec<u8>>>,
+    operation_id: String,
+    operation: (String, String, String, Vec<u8>),
+    nomination: String,
+    selectors: Vec<u8>,
+    head: Option<Vec<u8>>,
+    count: i64,
+}
+impl ResearchPreparationReadSet {
+    fn check(&self, db: &Connection, key: &ResearchKey, digest: &str) -> Result<(), TaskError> {
+        let store: String = db.query_row(
+            "SELECT store_id FROM store_identity WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )?;
+        if store != self.store_id || *key != self.key || digest != self.basis_digest {
+            return Err(TaskError::Conflict);
+        }
+        for (task, expected) in &self.task_rows {
+            let actual: Option<Vec<u8>> = db
+                .query_row(
+                    "SELECT record_json FROM tasks WHERE task_id=?1",
+                    [task],
+                    |r| r.get(0),
+                )
+                .optional()?;
+            if &actual != expected {
+                return Err(TaskError::Stale);
+            }
+        }
+        if operation_row(db, &self.operation_id)?.as_ref() != Some(&self.operation) {
+            return Err(TaskError::Stale);
+        }
+        let nomination: Option<String> = db
+            .query_row(
+                "SELECT subject_id FROM research_tasks WHERE task_id=?1",
+                [&key.task_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        let row:Option<(Vec<u8>,Option<Vec<u8>>,i64)>=db.query_row("SELECT selectors_json,head_json,preparation_count FROM research_keys WHERE key_id=?1",[key.id()?],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).optional()?;
+        if nomination.as_ref() != Some(&self.nomination)
+            || row.as_ref() != Some(&(self.selectors.clone(), self.head.clone(), self.count))
+        {
+            return Err(TaskError::Stale);
+        }
+        Ok(())
+    }
+}
+fn operation_row(
+    db: &Connection,
+    id: &str,
+) -> Result<Option<(String, String, String, Vec<u8>)>, TaskError> {
+    Ok(db.query_row("SELECT kind,payload_digest,entry_digest,commit_json FROM operations WHERE operation_id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).optional()?)
+}
+impl TaskStore {
+    /// Internal trusted composition only; not exposed over task/native RPC.
+    /// Every selector is resolved from this owner's rows. Captured bytes are
+    /// the original material the host must validate, never newer replacement facts.
+    pub fn research_original_evidence(
+        &self,
+        advisory_task: &str,
+        mapping: &BTreeMap<String, (String, SourceReference)>,
+    ) -> Result<ResearchOriginalEvidence, TaskError> {
+        if mapping.is_empty() || mapping.len() > 256 {
+            return Err(TaskError::Invalid);
+        }
+        let db = self.lock()?;
+        let store_id: String = db.query_row(
+            "SELECT store_id FROM store_identity WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )?;
+        let advisory = read_task(&db, advisory_task)?.ok_or(TaskError::Unavailable)?;
+        let result = advisory.result.as_ref().ok_or(TaskError::Unavailable)?;
+        let operation = operation_row(&db, &result.operation_id)?.ok_or(TaskError::Unavailable)?;
+        let commit: OperationCommit = serde_json::from_slice(&operation.3)?;
+        if operation.0 != "task.result.publish.v1"
+            || commit.kind != operation.0
+            || commit.operation_id != result.operation_id
+            || commit.task_id != advisory.task_id
+            || commit.owner_revision > advisory.revision
+            || commit.cursor_revision > advisory.cursor_revision
+        {
+            return Err(TaskError::Conflict);
+        }
+        let mut task_rows = BTreeMap::new();
+        let mut capture = |task: &str| -> Result<TaskRecord, TaskError> {
+            let bytes: Vec<u8> = db
+                .query_row(
+                    "SELECT record_json FROM tasks WHERE task_id=?1",
+                    [task],
+                    |r| r.get(0),
+                )
+                .optional()?
+                .ok_or(TaskError::Unavailable)?;
+            let record: TaskRecord = serde_json::from_slice(&bytes)?;
+            if record.task_id != task {
+                return Err(TaskError::Conflict);
+            }
+            task_rows.insert(task.into(), Some(bytes));
+            Ok(record)
+        };
+        capture(advisory_task)?;
+        let mut sources = BTreeMap::new();
+        for (selector, (task, reference)) in mapping {
+            if !valid_id(selector) {
+                return Err(TaskError::Invalid);
+            }
+            let record = capture(task)?;
+            let matches = record
+                .sources
+                .iter()
+                .filter(|s| s.reference() == *reference)
+                .collect::<Vec<_>>();
+            if matches.len() != 1 {
+                return Err(TaskError::Stale);
+            }
+            let source = matches[0];
+            if !source.current
+                || !source.dependency_required
+                || source.availability != SourceAvailability::Complete
+                || source.trust == SourceTrust::UntrustedData
+                || sha256(&source.bytes) != source.sha256
+            {
+                return Err(TaskError::Stale);
+            }
+            sources.insert(selector.clone(), source.clone());
+        }
+        Ok(ResearchOriginalEvidence {
+            store_id,
+            advisory,
+            task_rows,
+            operation,
+            sources,
+        })
+    }
+    /// Controlled host join has already established delivery/A4/native cause.
+    /// Mint only against the original snapshots it actually validated.
+    #[cfg(feature = "controlled-proof")]
+    pub fn controlled_verify_joined_research_basis(
+        &self,
+        mut basis: BasisBundle,
+        original: ResearchOriginalEvidence,
+        producer: &ResearchProducer,
+    ) -> Result<VerifiedBasis, TaskError> {
+        basis.validate()?;
+        let db = self.lock()?;
+        producer.check(&db, &basis.key, ProducerRole::Preparer)?;
+        if original.store_id != producer.store_id
+            || basis.delivery.advisory_task != original.advisory.task_id
+            || basis.delivery.advisory_subject != original.advisory.subject_id
+            || basis.dependencies.keys().collect::<Vec<_>>()
+                != original.sources.keys().collect::<Vec<_>>()
+        {
+            return Err(TaskError::Conflict);
+        }
+        let result = original
+            .advisory
+            .result
+            .as_ref()
+            .ok_or(TaskError::Unavailable)?;
+        let exact = serde_json::to_vec(result)?;
+        if !basis
+            .artifacts
+            .iter()
+            .any(|a| a.id == "research-original-result" && a.bytes == exact)
+            || !basis
+                .artifacts
+                .iter()
+                .any(|a| a.id == "research-original-operation" && a.bytes == original.operation.3)
+        {
+            return Err(TaskError::Unavailable);
+        }
+        for (selector, source) in &original.sources {
+            let artifact = &basis.dependency_artifacts[selector];
+            if basis.dependencies[selector] != source.sha256
+                || !basis.artifacts.iter().any(|a| {
+                    &a.id == artifact && a.bytes == source.bytes && a.digest == source.sha256
+                })
+            {
+                return Err(TaskError::Stale);
+            }
+        }
+        let mut task_rows = original.task_rows;
+        let destination: Option<Vec<u8>> = db
+            .query_row(
+                "SELECT record_json FROM tasks WHERE task_id=?1",
+                [&basis.key.task_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if let Some(bytes) = &destination {
+            let r: TaskRecord = serde_json::from_slice(bytes)?;
+            if r.task_id != basis.key.task_id || r.subject_id != basis.key.subject_id {
+                return Err(TaskError::Conflict);
+            }
+        }
+        task_rows.insert(basis.key.task_id.clone(), destination);
+        let nomination: String = db
+            .query_row(
+                "SELECT subject_id FROM research_tasks WHERE task_id=?1",
+                [&basis.key.task_id],
+                |r| r.get(0),
+            )
+            .optional()?
+            .ok_or(TaskError::Unavailable)?;
+        if nomination != basis.key.subject_id {
+            return Err(TaskError::Conflict);
+        }
+        let (selectors, head, count): (Vec<u8>, Option<Vec<u8>>, i64) = db.query_row(
+            "SELECT selectors_json,head_json,preparation_count FROM research_keys WHERE key_id=?1",
+            [basis.key.id()?],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?;
+        let evidence = serde_json::to_vec(
+            &serde_json::json!({"version":1,"store_id":original.store_id,"tasks":task_rows,"operation_id":result.operation_id,"operation":original.operation,"nomination":nomination,"selectors":selectors,"head":head,"preparation_count":count}),
+        )?;
+        if basis
+            .artifacts
+            .iter()
+            .any(|a| a.id == "research-preparation-readset")
+        {
+            return Err(TaskError::Conflict);
+        }
+        basis.artifacts.push(RetainedArtifact {
+            id: "research-preparation-readset".into(),
+            digest: sha256(&evidence),
+            bytes: evidence,
+        });
+        basis.validate()?;
+        let digest = research_digest("basis", &basis)?;
+        let readset = ResearchPreparationReadSet {
+            store_id: original.store_id,
+            basis_digest: digest.clone(),
+            key: basis.key.clone(),
+            task_rows,
+            operation_id: result.operation_id.clone(),
+            operation: original.operation,
+            nomination,
+            selectors,
+            head,
+            count,
+        };
+        readset.check(&db, &basis.key, &digest)?;
+        Ok(VerifiedBasis {
+            basis,
+            digest,
+            readset: Some(readset),
+        })
     }
 }

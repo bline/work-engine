@@ -3,8 +3,8 @@
 //! This mapping is for behavior dispatch only; physical identity remains visible.
 pub(crate) fn behavior_version(version: i64) -> i64 {
     match version {
-        8 | 10 => 6,
-        9 | 11 => 7,
+        8 | 10 | 12 | 14 => 6,
+        9 | 11 | 13 | 15 => 7,
         other => other,
     }
 }

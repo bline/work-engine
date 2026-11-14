@@ -292,7 +292,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         .map_err(|_| StoreError::Unavailable)?;
     let _physical_version = version;
     let version = crate::schema::behavior_version(version);
-    if matches!(_physical_version, 8..=11) {
+    if matches!(_physical_version, 8..=15) {
         let diagnostic_columns: i64 = connection.query_row(
             "SELECT COUNT(*) FROM pragma_table_info('native_process_exits') WHERE name='isolation_diagnostic' AND type='TEXT' AND [notnull]=0",
             [], |r| r.get(0)).map_err(|_| StoreError::Unavailable)?;
@@ -345,7 +345,9 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
             "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",
         )?;
         // Physical schema 10/11 add two direct semantic tables, three triggers each.
-        let direct_triggers = if _physical_version >= 10 { 6 } else { 0 };
+        let direct_triggers = (if _physical_version >= 10 { 6 } else { 0 })
+            + (if _physical_version >= 12 { 6 } else { 0 })
+            + (if _physical_version >= 14 { 6 } else { 0 });
         let expected = direct_triggers
             + match version {
                 7 => 126,

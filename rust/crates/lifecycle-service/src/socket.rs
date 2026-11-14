@@ -431,6 +431,48 @@ async fn dispatch(
                 .await
                 .unwrap_or_else(|_| error(WireErrorCode::ObservationUnavailable))
         }
+        Some("native_causal_read") => {
+            if config.profile != "retained-repository-analysis-v1"
+                || object.len() != 5
+                || object.keys().any(|k| {
+                    !["op", "task_id", "subject_id", "offset", "expected_sha256"]
+                        .contains(&k.as_str())
+                })
+            {
+                return error(WireErrorCode::SemanticInvalidity);
+            }
+            let (Some(task), Some(subject), Some(offset)) = (
+                value["task_id"].as_str(),
+                value["subject_id"].as_str(),
+                value["offset"]
+                    .as_u64()
+                    .and_then(|v| usize::try_from(v).ok()),
+            ) else {
+                return error(WireErrorCode::SemanticInvalidity);
+            };
+            let expected = match &value["expected_sha256"] {
+                Value::Null => None,
+                Value::String(s) if s.len() == 64 => Some(s.clone()),
+                _ => return error(WireErrorCode::SemanticInvalidity),
+            };
+            let (reply, receive) = oneshot::channel();
+            if sender
+                .send(Request::NativeCausalRead {
+                    task: task.into(),
+                    subject: subject.into(),
+                    offset,
+                    expected,
+                    reply,
+                })
+                .await
+                .is_err()
+            {
+                return error(WireErrorCode::ObservationUnavailable);
+            }
+            receive
+                .await
+                .unwrap_or_else(|_| error(WireErrorCode::ObservationUnavailable))
+        }
         Some("native_delivery_status") => {
             if config.profile != "retained-repository-analysis-v1"
                 || object.len() != 2

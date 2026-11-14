@@ -7,9 +7,12 @@ publish.workspace = true
 
 [features]
 default = []
-controlled-proof = ["lifecycle-service/native-sim-proof", "lifecycle-service/controlled-proof", "retained-task-workflow/controlled-proof"]
+native-input-proof = ["lifecycle-service/native-input-proof"]
+controlled-proof = ["lifecycle-service/native-sim-proof", "lifecycle-service/controlled-proof", "retained-task-workflow/controlled-proof", "research-register/synthetic-card-host"]
 
 [dependencies]
+base64.workspace = true
+zstd = "=0.13.3"
 research-register = { path = "../research-register" }
 bounded-inference = { path = "../bounded-inference" }
 lifecycle-semantic = { path = "../lifecycle-semantic" }

@@ -46,6 +46,13 @@ use crate::{
 };
 
 pub enum Request {
+    NativeCausalRead {
+        task: String,
+        subject: String,
+        offset: usize,
+        expected: Option<String>,
+        reply: oneshot::Sender<Value>,
+    },
     Command {
         uid: u32,
         bytes: Vec<u8>,
@@ -1076,7 +1083,7 @@ impl Actor {
                         .map_err(|_| ServiceError::Configuration)?,
                     incarnation.clone(),
                     &launch.profile_digest,
-                    NATIVE_BINARY_SHA256,
+                    &operations::selected_native_binary(native),
                     SCHEMA_THREAD_START_SHA256,
                     snapshot.id.clone(),
                     &snapshot.manifest_sha256,
@@ -1244,6 +1251,10 @@ impl Actor {
                         }
                         Some(Request::SubjectRevision { subject,reply }) => {
                             let result=self.subject_revision(&subject);
+                            let _=reply.send(result);
+                        }
+                        Some(Request::NativeCausalRead {task,subject,offset,expected,reply}) => {
+                            let result=self.native_causal_read(&task,&subject,offset,expected.as_deref());
                             let _=reply.send(result);
                         }
                         Some(Request::NativeDeliveryStatus { subject,reply }) => {
@@ -1490,6 +1501,59 @@ impl Actor {
                 )
                 .expect("tool marker");
                 let result = self.execute_native_tool(&event, &call);
+                let _ = reply.send(result);
+            }
+            NativeMessage::CaptureInput { observation, reply } => {
+                let result = (|| {
+                    let session = self.native_session.as_ref().ok_or(StoreError::Rejected)?;
+                    let turn = self.native_turn.as_ref().ok_or(StoreError::Rejected)?;
+                    let terminal = observation.terminal();
+                    self.store
+                        .retain_native_input(
+                            session,
+                            turn,
+                            observation.transport_session(),
+                            terminal.sequence,
+                            &terminal.raw,
+                            observation.metadata(),
+                            observation
+                                .payloads()
+                                .iter()
+                                .map(|p| lifecycle_store::NativeInputPayload {
+                                    inference_call_id: p.inference_call_id.clone(),
+                                    physical_send: p.physical_send,
+                                    representation: p.representation.clone(),
+                                    original_sha256: p.original_sha256.clone(),
+                                    original_codec: p.original_codec.clone(),
+                                    bytes: p.bytes.clone(),
+                                })
+                                .collect(),
+                            observation.eligible(),
+                            observation.outcome(),
+                            clock_sample(),
+                        )
+                        .and_then(|outcome| {
+                            if outcome == lifecycle_store::NativeInputApply::Conflict {
+                                Err(StoreError::ClaimConflict)
+                            } else {
+                                Ok(())
+                            }
+                        })?;
+                    if let Some(causal) = observation.causal() {
+                        let bytes =
+                            serde_json::to_vec(causal).map_err(|_| StoreError::Unavailable)?;
+                        let results = self.store.retain_native_causal(
+                            session,
+                            turn,
+                            &bytes,
+                            clock_sample(),
+                        )?;
+                        if results.contains(&lifecycle_store::NativeInputApply::Conflict) {
+                            return Err(StoreError::ClaimConflict);
+                        }
+                    }
+                    Ok(())
+                })();
                 let _ = reply.send(result);
             }
             NativeMessage::Settle {
@@ -2629,6 +2693,69 @@ impl Actor {
         }
     }
 
+    fn native_causal_read(
+        &self,
+        task: &str,
+        subject: &str,
+        offset: usize,
+        expected: Option<&str>,
+    ) -> Value {
+        use base64::Engine;
+        let result = (|| -> Result<Value, StoreError> {
+            if subject.is_empty() || subject.len() > 192 || task.is_empty() || task.len() > 192 {
+                return Err(StoreError::Rejected);
+            }
+            let port = self
+                .task_operation_port
+                .as_ref()
+                .ok_or(StoreError::Unavailable)?;
+            let operation = port
+                .original_result_operation(task, subject)
+                .map_err(|_| StoreError::Unavailable)?
+                .ok_or(StoreError::Unavailable)?;
+            let (causal, input) = self
+                .store
+                .qualified_native_causal_evidence(&operation)?
+                .ok_or(StoreError::Unavailable)?;
+            let entry: Value =
+                serde_json::from_slice(&causal.entry).map_err(|_| StoreError::Unavailable)?;
+            if entry["task_id"] != task || entry["subject_id"] != subject || !input.eligible {
+                return Err(StoreError::Rejected);
+            }
+            let bytes = serde_json::to_vec(&json!({"version":1,"causal":causal,"input":input}))
+                .map_err(|_| StoreError::Unavailable)?;
+            if bytes.len() > 32 * 1024 * 1024 || offset >= bytes.len() || offset % (48 * 1024) != 0
+            {
+                return Err(StoreError::Rejected);
+            }
+            let digest = CodecContract::BinaryArtifactV1
+                .digest_binary(&bytes)
+                .map_err(|_| StoreError::Unavailable)?
+                .hex();
+            if (offset > 0 && expected.is_none()) || expected.is_some_and(|s| s != digest) {
+                return Err(StoreError::ClaimConflict);
+            }
+            let end = offset.saturating_add(48 * 1024).min(bytes.len());
+            serde_json::to_value(lifecycle_wire::NativeCausalChunkV1 {
+                version: 1,
+                store_id: self.store.admin_store_identity()?,
+                encoding: "json-utf8-v1".into(),
+                operation_id: operation,
+                content_sha256: digest,
+                length: bytes.len(),
+                offset,
+                bytes_base64: base64::engine::general_purpose::STANDARD.encode(&bytes[offset..end]),
+            })
+            .map_err(|_| StoreError::Unavailable)
+        })();
+        match result {
+            Ok(v) => v,
+            Err(StoreError::ClaimConflict) => error_reply(WireErrorCode::Conflict),
+            Err(StoreError::Rejected) => error_reply(WireErrorCode::SemanticInvalidity),
+            Err(_) => error_reply(WireErrorCode::ObservationUnavailable),
+        }
+    }
+
     fn native_delivery_status(&self, subject: &str) -> Value {
         if subject != self.config.subject_id {
             return error_reply(WireErrorCode::SemanticInvalidity);
@@ -3742,7 +3869,7 @@ mod restart_epoch_tests {
         path::Path,
     };
 
-    struct EmptyMaterial;
+    pub(super) struct EmptyMaterial;
     impl CanonicalMaterialPort for EmptyMaterial {
         fn project(
             &self,
@@ -4974,3 +5101,7 @@ mod restart_epoch_tests {
 #[cfg(test)]
 #[path = "actor_direct_tests.rs"]
 mod direct_selection_tests;
+
+#[cfg(all(test, feature = "native-input-proof"))]
+#[path = "../tests/native_input_capture.rs"]
+mod native_input_capture;

@@ -17,7 +17,7 @@ use crate::{SqliteLifecycleStore, StoreError};
 // Offline custody capsules retain their actual schema across read-only inspection.
 // Writable migration remains owned by SqliteLifecycleStore::open_inner.
 fn supported_admin_schema(version: i64) -> bool {
-    matches!(version, 4..=11)
+    matches!(version, 4..=15)
 }
 
 type EffectRecoveryRow = (
@@ -2393,7 +2393,15 @@ pub(crate) fn check_held_coherence(connection: &rusqlite::Connection) -> Result<
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(|_| StoreError::Unavailable)?;
     // Physical schema 10/11 guard the two direct semantic tables (six triggers).
-    let expected_guards = if physical >= 10 { 99 } else { 93 };
+    let expected_guards = if physical >= 14 {
+        111
+    } else if physical >= 12 {
+        105
+    } else if physical >= 10 {
+        99
+    } else {
+        93
+    };
     if marker_count != 1 || guard_count != expected_guards {
         return Err(StoreError::Unavailable);
     }
@@ -4165,6 +4173,66 @@ mod held_tests {
             ),
             Err(StoreError::ClaimConflict)
         ));
+    }
+
+    #[test]
+    fn populated_held_predecessors_keep_quarantine_and_refuse_selected_restart() {
+        for predecessor in [10, 11] {
+            let temp = tempfile::tempdir().unwrap();
+            let target = temp.path().join("held");
+            let evidence = synthetic_evidence();
+            let witness = witness(&evidence);
+            let store =
+                SqliteLifecycleStore::bootstrap_held(&witness, &evidence, &target, "issuer".into())
+                    .unwrap();
+            let original = store.held_projection().unwrap();
+            // Recreate the exact additive predecessor while preserving all held
+            // artifacts/rows and classification; DDL does not rewrite that data.
+            store
+                .connection
+                .execute_batch(
+                    "DROP TABLE native_causal_conflicts; DROP TABLE native_causal_evidence; DROP TABLE native_input_conflicts; DROP TABLE native_input_observations;",
+                )
+                .unwrap();
+            if predecessor == 11 {
+                store
+                    .connection
+                    .execute_batch(include_str!("../migrations/0007_native_restart_epoch.sql"))
+                    .unwrap();
+            }
+            store
+                .connection
+                .pragma_update(None, "user_version", predecessor)
+                .unwrap();
+            drop(store);
+            let store = SqliteLifecycleStore::open(&target, "issuer".into()).unwrap();
+            assert_eq!(store.held_projection().unwrap(), original);
+            assert_eq!(
+                store
+                    .connection
+                    .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+                    .unwrap(),
+                predecessor + 4
+            );
+            for sql in [
+                "INSERT INTO native_input_observations VALUES('i','s','a','t',1,'h',1)",
+                "INSERT INTO native_input_conflicts VALUES('i','h',1)",
+            ] {
+                let error = store.connection.execute(sql, []).unwrap_err();
+                assert!(error.to_string().contains("held quarantine"), "{error}");
+            }
+            let identity = store.admin_store_identity().unwrap();
+            drop(store);
+            let db = target.join("lifecycle.sqlite");
+            let before = fs::read(&db).unwrap();
+            assert!(
+                SqliteLifecycleStore::open_selected_restart(&target, "issuer".into(), &identity)
+                    .is_err()
+            );
+            assert_eq!(fs::read(&db).unwrap(), before);
+            let reopened = SqliteLifecycleStore::open(&target, "issuer".into()).unwrap();
+            assert_eq!(reopened.held_projection().unwrap(), original);
+        }
     }
 
     #[test]

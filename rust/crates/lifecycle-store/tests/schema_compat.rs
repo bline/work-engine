@@ -60,7 +60,7 @@ fn assert_legacy_current_capsule_roundtrip(root: &std::path::Path, store: &Sqlit
     let peer = tempdir_in(root.parent().unwrap()).unwrap();
     let capsule = peer.path().join("capsule");
     let receipt = store.export_current(&capsule).unwrap();
-    assert_eq!(receipt.source_schema, 10);
+    assert_eq!(receipt.source_schema, 14);
     assert_eq!(
         SqliteLifecycleStore::read_capsule(&capsule).unwrap(),
         receipt
@@ -81,7 +81,7 @@ fn incompatible_future_store_is_refused_before_database_mutation() {
     let root = tempdir().unwrap();
     let database = root.path().join("lifecycle.sqlite");
     let conn = rusqlite::Connection::open(&database).unwrap();
-    conn.pragma_update(None, "user_version", 12).unwrap();
+    conn.pragma_update(None, "user_version", 16).unwrap();
     drop(conn);
     let before = fs::read(&database).unwrap();
     assert!(SqliteLifecycleStore::open(root.path(), "trusted".into()).is_err());
@@ -117,7 +117,7 @@ fn selected_restart_refuses_inactive_and_invalid_six_without_image_mutation() {
             readback
                 .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            10,
+            14,
             "{change}"
         );
     }
@@ -253,7 +253,7 @@ fn selected_restart_opt_in_preserves_predecessor_and_requires_exact_authorizatio
         inspection
             .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        10
+        14
     );
     drop(inspection);
     let retained_before = retained_table_rows(&root.path().join("lifecycle.sqlite"));
@@ -337,7 +337,7 @@ fn selected_restart_opt_in_preserves_predecessor_and_requires_exact_authorizatio
     let capsule_dir = tempdir_in(root.path().parent().unwrap()).unwrap();
     let capsule_root = capsule_dir.path().join("capsule");
     let receipt = store.export_current(&capsule_root).unwrap();
-    assert_eq!(receipt.source_schema, 11);
+    assert_eq!(receipt.source_schema, 15);
     assert_eq!(
         SqliteLifecycleStore::read_capsule(&capsule_root).unwrap(),
         receipt
@@ -455,14 +455,14 @@ fn genuine_schema_four_migrates_to_six_without_changing_store_identity() {
     assert_eq!(
         conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        10
+        14
     );
     assert_eq!(
         conn.query_row(
             "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'custody_revision_%'",
             [], |r| r.get::<_, i64>(0),
         ).unwrap(),
-        129
+        141
     );
 }
 
@@ -529,9 +529,9 @@ fn genuine_schema_five_migrates_to_six_without_changing_store_identity() {
     assert_eq!(
         conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        10
+        14
     );
-    assert_eq!(conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",[],|r|r.get::<_,i64>(0)).unwrap(),129);
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",[],|r|r.get::<_,i64>(0)).unwrap(),141);
     assert_eq!(
         conn.query_row(
             "SELECT mode FROM legacy_held_state WHERE singleton=1",
@@ -697,13 +697,14 @@ fn isolation_diagnostic_migrates_six_and_seven_with_legacy_unknown() {
         assert_eq!(
             conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            predecessor + 4
+            predecessor + 8
         );
         assert_eq!(conn.query_row("SELECT count(*) FROM pragma_table_info('native_process_exits') WHERE name='isolation_diagnostic'", [], |r|r.get::<_,i64>(0)).unwrap(), 1);
         // Direct semantic custody is additive: both tables exist and start empty.
         for table in ["direct_semantic_attempts", "direct_semantic_results"] {
             assert_eq!(
-                conn.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get::<_, i64>(0))
+                conn.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r
+                    .get::<_, i64>(0))
                     .unwrap(),
                 0,
                 "{table}"
@@ -717,8 +718,89 @@ fn isolation_diagnostic_migrates_six_and_seven_with_legacy_unknown() {
         let receipt = store
             .export_current(&parent.path().join("capsule"))
             .unwrap();
-        assert_eq!(i64::from(receipt.source_schema), predecessor + 4);
+        assert_eq!(i64::from(receipt.source_schema), predecessor + 8);
         drop(store);
         assert!(SqliteLifecycleStore::open(root.path(), "trusted".into()).is_ok());
+    }
+}
+
+#[test]
+fn populated_native_input_predecessors_preserve_bytes_and_restart_classification() {
+    for predecessor in [10, 11] {
+        let root = tempdir().unwrap();
+        let database = root.path().join("lifecycle.sqlite");
+        let connection = rusqlite::Connection::open(&database).unwrap();
+        for migration in [
+            include_str!("../migrations/0001_initial.sql"),
+            include_str!("../migrations/0002_service.sql"),
+            include_str!("../migrations/0003_native_operation.sql"),
+            include_str!("../migrations/0004_composite_s67.sql"),
+            include_str!("../migrations/0005_retained_task.sql"),
+            include_str!("../migrations/0006_legacy_v28_held.sql"),
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        for migration in [
+            include_str!("../migrations/0008_isolation_diagnostic.sql"),
+            include_str!("../migrations/0009_direct_semantic.sql"),
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        connection.execute_batch("INSERT INTO store_identity(singleton,store_id) VALUES(1,'store:populated-input');
+            INSERT INTO subjects(subject_id,context_id,build_id,proof_run_id,revision,semantic_revision,queue_revision,owner_kind,last_wall_ms) VALUES('subject:old','context:old','build:old','proof:old',0,0,0,'domain',1);
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:old','subject:old','context:old','incarnation:old','hash','hash','hash','snapshot:old','hash','bound','thread:old',1,'domain');
+            INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:old',1,'hash',X'7B22686973746F7279223A747275657D','unqualified','thread/read','thread:old',NULL,1,'session:old');").unwrap();
+        if predecessor == 11 {
+            connection
+                .execute_batch(include_str!("../migrations/0007_native_restart_epoch.sql"))
+                .unwrap();
+        }
+        connection
+            .pragma_update(None, "user_version", predecessor)
+            .unwrap();
+        drop(connection);
+        let before = retained_table_rows(&database);
+        let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert_eq!(
+            store.admin_store_identity().unwrap(),
+            "store:populated-input"
+        );
+        let after = retained_table_rows(&database);
+        for table in [
+            "subjects",
+            "native_sessions",
+            "native_ingress",
+            "legacy_held_state",
+            "native_execution_epochs",
+        ] {
+            if let Some(rows) = before.get(table) {
+                assert_eq!(after.get(table), Some(rows), "{predecessor}:{table}");
+            }
+        }
+        let db = rusqlite::Connection::open(&database).unwrap();
+        assert_eq!(
+            db.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            predecessor + 4
+        );
+        assert_eq!(
+            db.query_row("SELECT COUNT(*) FROM native_input_observations", [], |r| {
+                r.get::<_, i64>(0)
+            })
+            .unwrap(),
+            0
+        );
+        let rows = after.clone();
+        let identity = store.admin_store_identity().unwrap();
+        drop(store);
+        drop(db);
+        let restarted =
+            SqliteLifecycleStore::open_selected_restart(root.path(), "trusted".into(), &identity)
+                .unwrap();
+        let reopened = retained_table_rows(&database);
+        for table in ["native_sessions", "native_ingress", "legacy_held_state"] {
+            assert_eq!(reopened.get(table), rows.get(table));
+        }
+        assert!(restarted.held_projection().is_err());
     }
 }

@@ -4,6 +4,7 @@
 mod direct_host_tests;
 mod observation;
 pub mod research_admission;
+mod research_delivery;
 mod research_installation;
 mod selected_startup;
 
@@ -58,6 +59,8 @@ pub enum HostError {
     Lifecycle(#[from] lifecycle_service::ServiceError),
     #[error("lifecycle admission or observation unavailable")]
     LifecycleUnavailable,
+    #[error("research consumer delivery failed: {0}")]
+    ResearchDelivery(Value),
     #[error("host is in recovery-only observation mode")]
     RecoveryOnly,
 }
@@ -434,6 +437,8 @@ async fn serve_composed(
     // Composition happens before any socket or service exists, and a Direct
     // failure ends startup: there is no path from it to the native control.
     let control = compose_control(&startup)?;
+    #[cfg(feature = "controlled-proof")]
+    let store = research_admission::scope_causal_read(&startup, store)?;
     let store = Arc::new(store);
     let material: Arc<dyn CanonicalMaterialPort> = store.clone();
     #[cfg(test)]
@@ -1272,6 +1277,9 @@ fn dispatch(host: &Host, request: Value) -> Value {
     })();
     match result {
         Ok(v) => v,
+        Err(HostError::ResearchDelivery(diagnostic)) => {
+            json!({"status":"error","code":"research_consumer_delivery","delivery":diagnostic})
+        }
         Err(HostError::RecoveryOnly) => json!({"status":"error","code":"recovery_only"}),
         Err(HostError::Task(e)) => json!({"status":"error","code":task_code(&e)}),
         Err(_) => json!({"status":"error","code":"invalid_or_unavailable"}),
@@ -2599,3 +2607,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(all(test, feature = "controlled-proof"))]
+mod research_delivery_tests;

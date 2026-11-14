@@ -497,6 +497,7 @@ pub struct OperationCommit {
 }
 
 pub struct TaskStore {
+    research_causal_scope: Option<(String, String)>,
     connection: Mutex<Connection>,
     _writer_lock: File,
     answer_authority_ref: String,
@@ -602,6 +603,7 @@ impl TaskStore {
             connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
         }
         Ok(Self {
+            research_causal_scope: None,
             connection: Mutex::new(connection),
             _writer_lock: writer_lock,
             answer_authority_ref,

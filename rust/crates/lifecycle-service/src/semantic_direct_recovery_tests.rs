@@ -58,17 +58,29 @@ fn disposition(store: &SqliteLifecycleStore, operation: &str) -> RecoveryDisposi
 
 fn status(harness: &Harness, store: &mut SqliteLifecycleStore) -> LifecycleSnapshotV1 {
     into_snapshot(
-        store.subject_projection(&harness.subject, None, None).unwrap(),
+        store
+            .subject_projection(&harness.subject, None, None)
+            .unwrap(),
         false,
     )
 }
 
 /// Every reader that reports unresolved attempts: the recovery snapshot, the
 /// exported image, and the subject status.
-fn unresolved_everywhere(harness: &Harness, store: &mut SqliteLifecycleStore, name: &str) -> [i64; 3] {
+fn unresolved_everywhere(
+    harness: &Harness,
+    store: &mut SqliteLifecycleStore,
+    name: &str,
+) -> [i64; 3] {
     let recovery = store.load_recovery().unwrap().unresolved_attempts;
     let exported = store
-        .snapshot_to(&harness.root.parent().unwrap().join(format!("export-{name}")))
+        .snapshot_to(
+            &harness
+                .root
+                .parent()
+                .unwrap()
+                .join(format!("export-{name}")),
+        )
         .unwrap()
         .unresolved_attempts;
     let projected = i64::try_from(
@@ -82,7 +94,10 @@ fn unresolved_everywhere(harness: &Harness, store: &mut SqliteLifecycleStore, na
 }
 
 fn assert_unresolved(snapshot: &LifecycleSnapshotV1) {
-    assert_eq!(snapshot.runtime_availability, RuntimeAvailabilityV1::Unknown);
+    assert_eq!(
+        snapshot.runtime_availability,
+        RuntimeAvailabilityV1::Unknown
+    );
     assert_eq!(
         snapshot.blocking_reason,
         FieldV1::Known("unresolved_entered_attempt".into())
@@ -119,7 +134,10 @@ async fn unknown_submission_is_a_possibly_sent_entry_in_every_reader_after_resta
             .any(|entry| entry.input_id.starts_with("native_")),
         "no native session or turn is fabricated for a direct operation"
     );
-    assert_eq!(unresolved_everywhere(&harness, &mut store, "unknown"), [1, 1, 1]);
+    assert_eq!(
+        unresolved_everywhere(&harness, &mut store, "unknown"),
+        [1, 1, 1]
+    );
     assert_unresolved(&status(&harness, &mut store));
 
     // The uncertainty is not cleared by a retry: the operation is not resent.
@@ -161,7 +179,10 @@ async fn terminal_observed_but_unsettled_is_distinct_from_possibly_sent() {
         disposition(&store, "direct-verify-1"),
         RecoveryDisposition::TerminalObservedUnsettled
     );
-    assert_eq!(unresolved_everywhere(&harness, &mut store, "terminal"), [1, 1, 1]);
+    assert_eq!(
+        unresolved_everywhere(&harness, &mut store, "terminal"),
+        [1, 1, 1]
+    );
     assert_unresolved(&status(&harness, &mut store));
 }
 
@@ -182,9 +203,15 @@ async fn refused_compile_output_is_kept_decided_and_reported_by_status() {
         RecoveryDisposition::Refused
     );
     // Refusal is a decided observation, not an outstanding send.
-    assert_eq!(unresolved_everywhere(&harness, &mut store, "refused"), [0, 0, 0]);
+    assert_eq!(
+        unresolved_everywhere(&harness, &mut store, "refused"),
+        [0, 0, 0]
+    );
     let snapshot = status(&harness, &mut store);
-    assert_eq!(snapshot.runtime_availability, RuntimeAvailabilityV1::Unknown);
+    assert_eq!(
+        snapshot.runtime_availability,
+        RuntimeAvailabilityV1::Unknown
+    );
     assert_eq!(
         snapshot.blocking_reason,
         FieldV1::Known("semantic_compile_invalid_output".into())
@@ -208,9 +235,15 @@ async fn not_sent_is_decided_and_does_not_block_status() {
         disposition(&store, "direct-compile-1"),
         RecoveryDisposition::NotSent
     );
-    assert_eq!(unresolved_everywhere(&harness, &mut store, "notsent"), [0, 0, 0]);
+    assert_eq!(
+        unresolved_everywhere(&harness, &mut store, "notsent"),
+        [0, 0, 0]
+    );
     let snapshot = status(&harness, &mut store);
-    assert_eq!(snapshot.runtime_availability, RuntimeAvailabilityV1::Available);
+    assert_eq!(
+        snapshot.runtime_availability,
+        RuntimeAvailabilityV1::Available
+    );
     assert_eq!(snapshot.blocking_reason, FieldV1::NotApplicable);
 }
 
@@ -219,7 +252,13 @@ async fn settled_operations_are_complete_and_leave_nothing_unresolved() {
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::new(harness.good_replies());
     let runtime = harness.runtime(port.clone());
-    assert!(harness.establish(&mut store, &runtime).await.unwrap().is_some());
+    assert!(
+        harness
+            .establish(&mut store, &runtime)
+            .await
+            .unwrap()
+            .is_some()
+    );
     drop(store);
 
     let mut store = harness.reopen();
@@ -231,9 +270,15 @@ async fn settled_operations_are_complete_and_leave_nothing_unresolved() {
         disposition(&store, "direct-verify-1"),
         RecoveryDisposition::CompletedSettled
     );
-    assert_eq!(unresolved_everywhere(&harness, &mut store, "settled"), [0, 0, 0]);
+    assert_eq!(
+        unresolved_everywhere(&harness, &mut store, "settled"),
+        [0, 0, 0]
+    );
     let snapshot = status(&harness, &mut store);
-    assert_eq!(snapshot.runtime_availability, RuntimeAvailabilityV1::Available);
+    assert_eq!(
+        snapshot.runtime_availability,
+        RuntimeAvailabilityV1::Available
+    );
 }
 
 #[tokio::test]
@@ -245,13 +290,16 @@ async fn a_store_migrated_from_an_older_physical_schema_has_no_direct_entries() 
         let connection = rusqlite::Connection::open(harness.root.join("lifecycle.sqlite")).unwrap();
         connection
             .execute_batch(
-                "DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; PRAGMA user_version=8;",
+                "DROP TABLE native_causal_conflicts; DROP TABLE native_causal_evidence; DROP TABLE native_input_conflicts; DROP TABLE native_input_observations; DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; PRAGMA user_version=8;",
             )
             .unwrap();
     }
     let mut store = harness.reopen();
     assert!(direct_entries(&store).is_empty());
-    assert_eq!(unresolved_everywhere(&harness, &mut store, "older"), [0, 0, 0]);
+    assert_eq!(
+        unresolved_everywhere(&harness, &mut store, "older"),
+        [0, 0, 0]
+    );
     assert_eq!(
         status(&harness, &mut store).runtime_availability,
         RuntimeAvailabilityV1::Available

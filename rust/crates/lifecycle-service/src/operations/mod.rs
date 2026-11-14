@@ -50,6 +50,10 @@ pub enum NativeMessage {
         call: NativeToolCall,
         reply: oneshot::Sender<Result<Value, StoreError>>,
     },
+    CaptureInput {
+        observation: lifecycle_codex::AcquiredNativeInput,
+        reply: oneshot::Sender<Result<(), StoreError>>,
+    },
     Settle {
         final_text: String,
         history_status: String,
@@ -147,6 +151,7 @@ struct Runner {
     early: Vec<NativeEvent>,
     bound_turn: bool,
     terminal: Option<NativeTurnTerminal>,
+    raw_terminal: Option<NativeEvent>,
     tool_calls: u64,
     gate: Arc<NativeGate>,
     startup_stage: Option<&'static str>,
@@ -252,10 +257,40 @@ impl Runner {
     }
 
     async fn handle(&mut self, event: NativeEvent) -> Result<(), StoreError> {
-        self.record(event.clone()).await?;
+        let recorded = self.record(event.clone()).await;
+        // Failed publication can leave readable success-shaped producer rows.
+        // Retain their owned diagnostic before preserving the existing failure.
+        if self.harness.captures_native_input()
+            && self.bound_turn
+            && (matches!(
+                event.value["method"].as_str(),
+                Some("turn/failed" | "turn/interrupted")
+            ) || (event.value["method"] == "error"
+                && event.value["params"]["willRetry"] == false)
+                || (event.value["method"] == "turn/completed"
+                    && event.value["params"]["turn"]["status"] != "completed"))
+        {
+            let thread = event.value["params"]["threadId"]
+                .as_str()
+                .ok_or(StoreError::Rejected)?;
+            let turn = event.value["params"]["turnId"]
+                .as_str()
+                .or_else(|| event.value["params"]["turn"]["id"].as_str())
+                .ok_or(StoreError::Rejected)?;
+            let observation = self
+                .harness
+                .acquire_native_input(thread, turn)
+                .map_err(|_| StoreError::Rejected)?;
+            self.ask(|reply| NativeMessage::CaptureInput { observation, reply })
+                .await?;
+        }
+        recorded?;
         // Raw ingress belongs to the store before any fallible interpretation.
         // A malformed terminal is still an observed native frame.
         let terminal = event.terminal().map_err(|_| StoreError::Rejected)?;
+        if terminal.is_some() {
+            self.raw_terminal = Some(event.clone());
+        }
         match &event.kind {
             NativeEventKind::ServerRequest { id, method } if method == "item/tool/call" => {
                 let call = event
@@ -702,6 +737,7 @@ impl Runner {
             return Err(StoreError::Rejected);
         }
         self.bound_turn = false;
+        self.raw_terminal = None;
         self.tool_calls = 0;
         #[cfg(feature = "native-sim-proof")]
         native_test_marker(proof_dir, "native_prepare_turn_attempted")?;
@@ -740,6 +776,14 @@ impl Runner {
             let event = self.receive(Duration::from_secs(30)).await?;
             self.handle(event).await?;
         };
+        if self.harness.captures_native_input() {
+            let observation = self
+                .harness
+                .acquire_native_input(thread, &turn)
+                .map_err(|_| StoreError::Rejected)?;
+            self.ask(|reply| NativeMessage::CaptureInput { observation, reply })
+                .await?;
+        }
         if terminal.status != "completed" {
             return Err(StoreError::ClaimConflict);
         }
@@ -875,6 +919,7 @@ pub async fn run_native(
                 early: Vec::new(),
                 bound_turn: false,
                 terminal: None,
+                raw_terminal: None,
                 tool_calls: 0,
                 gate: gate.clone(),
                 startup_stage: Some("init_registration"),
@@ -2471,6 +2516,7 @@ mod provider_launch_tests {
             early: Vec::new(),
             bound_turn: false,
             terminal: None,
+            raw_terminal: None,
             tool_calls: 0,
             gate: Arc::new(NativeGate::new(false)),
             startup_stage: Some("init_registration"),
@@ -2831,4 +2877,16 @@ mod provider_launch_tests {
             assert!(validate_effective_provider(&changed, &launch).is_err());
         }
     }
+}
+
+pub(crate) fn selected_native_binary(config: &NativeConfig) -> String {
+    #[cfg(feature = "native-input-proof")]
+    if let Ok(bytes) = fs::read(&config.executable) {
+        let digest = format!("{:x}", Sha256::digest(bytes));
+        if lifecycle_codex::controlled_input_binary(&config.executable, &digest) {
+            return digest;
+        }
+    }
+    let _ = config;
+    lifecycle_codex::NATIVE_BINARY_SHA256.into()
 }

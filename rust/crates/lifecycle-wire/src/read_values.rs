@@ -5,6 +5,20 @@ use work_engine_types::IdValue;
 
 use crate::{CommandResultV2, WireError, parse_strict_json};
 
+/// Immutable, task-scoped causal evidence page. This read conveys no authority.
+#[derive(Clone, Debug, serde::Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeCausalChunkV1 {
+    pub version: u32,
+    pub store_id: String,
+    pub encoding: String,
+    pub operation_id: String,
+    pub content_sha256: String,
+    pub length: usize,
+    pub offset: usize,
+    pub bytes_base64: String,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum CommandObservationKind {
     Admission,

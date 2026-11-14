@@ -66,7 +66,6 @@ pub(crate) fn validate_nomination(startup: &HostStartup) -> Result<(), HostError
         };
         if !id(&n.task_id)
             || !id(&n.subject_id)
-            || n.subject_id != startup.lifecycle.subject_id
             || [
                 n.controlled_fixture.is_some(),
                 n.installation.is_some(),
@@ -81,8 +80,113 @@ pub(crate) fn validate_nomination(startup: &HostStartup) -> Result<(), HostError
         {
             return Err(HostError::Configuration);
         }
+        if n.subject_id != startup.lifecycle.subject_id {
+            #[cfg(feature = "controlled-proof")]
+            {
+                let path = n
+                    .controlled_fixture
+                    .as_ref()
+                    .ok_or(HostError::Configuration)?;
+                validate_file(path)?;
+                if fs::metadata(path)?.len() > 8 * 1024 * 1024 {
+                    return Err(HostError::Configuration);
+                }
+                let f: ControlledFixture = serde_json::from_value(
+                    lifecycle_wire::parse_strict_json(&fs::read(path)?)
+                        .map_err(|_| HostError::Configuration)?,
+                )?;
+                validate_distinct_join(startup, &f)?;
+            }
+            #[cfg(not(feature = "controlled-proof"))]
+            return Err(HostError::Configuration);
+        }
     }
     Ok(())
+}
+
+#[cfg(feature = "controlled-proof")]
+fn validate_distinct_join(startup: &HostStartup, f: &ControlledFixture) -> Result<(), HostError> {
+    let n = startup.research.as_ref().ok_or(HostError::Configuration)?;
+    if n.installation.is_some()
+        || n.controlled_installation.is_some()
+        || n.controlled_fixture.is_none()
+        || f.version != 1
+        || f.key.task_id != n.task_id
+        || f.key.subject_id != n.subject_id
+        || f.bases.is_empty()
+        || f.bases.len() > 16
+    {
+        return Err(HostError::Configuration);
+    }
+    let mut scopes = BTreeSet::new();
+    for b in &f.bases {
+        if b.key != f.key
+            || !crate::research_delivery::joined_candidate(b)
+            || b.delivery.advisory_subject != startup.lifecycle.subject_id
+            || b.delivery.advisory_subject == n.subject_id
+            || b.delivery.advisory_task == n.task_id
+            || b.dependencies.keys().cloned().collect::<BTreeSet<_>>() != f.selectors
+            || b.snapshot_ref != startup.approved_snapshot_ref
+        {
+            return Err(HostError::Configuration);
+        }
+        crate::research_delivery::validate_fixture_inputs(b)?;
+        scopes.insert((&b.delivery.advisory_task, &b.delivery.advisory_subject));
+    }
+    if scopes.len() != 1 {
+        return Err(HostError::Configuration);
+    }
+    Ok(())
+}
+
+/// Pin the nominated advisory before composing the actual TaskStore operation
+/// port. Arbitrary successful owner lookups cannot widen this read scope.
+#[cfg(feature = "controlled-proof")]
+pub(crate) fn scope_causal_read(
+    startup: &HostStartup,
+    store: TaskStore,
+) -> Result<TaskStore, HostError> {
+    let Some(n) = &startup.research else {
+        return Ok(store);
+    };
+    let Some(path) = &n.controlled_fixture else {
+        return Ok(store);
+    };
+    validate_file(path)?;
+    if fs::metadata(path)?.len() > 32 * 1024 * 1024 {
+        return Err(HostError::Configuration);
+    }
+    let f: ControlledFixture = serde_json::from_value(
+        lifecycle_wire::parse_strict_json(&fs::read(path)?)
+            .map_err(|_| HostError::Configuration)?,
+    )?;
+    if f.version != 1
+        || f.key.task_id != n.task_id
+        || f.key.subject_id != n.subject_id
+        || f.bases.is_empty()
+    {
+        return Err(HostError::Configuration);
+    }
+    let mut scopes = BTreeSet::new();
+    for b in &f.bases {
+        if b.key != f.key {
+            return Err(HostError::Configuration);
+        }
+        if crate::research_delivery::joined_candidate(b) {
+            scopes.insert((
+                b.delivery.advisory_task.clone(),
+                b.delivery.advisory_subject.clone(),
+            ));
+        }
+    }
+    if scopes.is_empty() {
+        return Ok(store);
+    }
+    if scopes.len() != 1 {
+        return Err(HostError::Configuration);
+    }
+    let (task, subject) = scopes.into_iter().next().unwrap();
+    Ok(store.with_controlled_research_causal_scope(task, subject)?)
 }
 
 pub(crate) fn install(
@@ -100,9 +204,6 @@ pub(crate) fn install(
     validate_nomination(startup)?;
     if admission.is_none() {
         crate::research_installation::validate_records(startup)?;
-    }
-    if nomination.subject_id != startup.lifecycle.subject_id {
-        return Err(HostError::Configuration);
     }
     // Validate every fixture before even publishing the nomination guard.
     #[cfg(not(feature = "controlled-proof"))]
@@ -162,12 +263,38 @@ pub(crate) fn install(
             {
                 return Err(HostError::Configuration);
             }
-            store.controlled_verify_research_basis(basis.clone(), &preparer)?;
+            if crate::research_delivery::joined_candidate(basis) {
+                crate::research_delivery::validate_fixture_inputs(basis)?;
+                store.controlled_validate_research_candidate(basis, &preparer)?;
+            } else {
+                store.controlled_verify_research_basis(basis.clone(), &preparer)?;
+            }
         }
         Some(f)
     } else {
         None
     };
+    // Joined preparation targets a distinct nominated task in the same TaskStore.
+    // Its lifecycle reader remains anchored to the registered original advisory.
+    // This private composition grants no destination native execution capability.
+    if nomination.subject_id != startup.lifecycle.subject_id {
+        #[cfg(feature = "controlled-proof")]
+        {
+            let fixture = fixture.as_ref().ok_or(HostError::Configuration)?;
+            validate_distinct_join(startup, fixture)?;
+            for b in &fixture.bases {
+                lifecycle_service::TaskOperationPort::original_result_operation(
+                    store,
+                    &b.delivery.advisory_task,
+                    &b.delivery.advisory_subject,
+                )
+                .map_err(|_| HostError::Configuration)?
+                .ok_or(HostError::Configuration)?;
+            }
+        }
+        #[cfg(not(feature = "controlled-proof"))]
+        return Err(HostError::Configuration);
+    }
     let installed = if nomination.installation.is_some() {
         let (admission, identity, caller) = admission.ok_or(TaskError::Unavailable)?;
         Some(crate::research_installation::load_admitted(
@@ -369,9 +496,19 @@ fn mutate(host: &Host, request: &Value) -> Result<Value, HostError> {
             let p = host
                 .store
                 .controlled_research_producer(&q.key, ProducerRole::Preparer)?;
-            let checked = host
-                .store
-                .controlled_verify_research_basis(basis.clone(), &p)?;
+            let checked = if crate::research_delivery::joined_candidate(basis)
+                || host.store.observe(&basis.delivery.advisory_task)?.is_some()
+            {
+                crate::research_delivery::checked_fixture_basis(
+                    &host.store,
+                    &host.startup.lifecycle.socket_path,
+                    basis.clone(),
+                    &p,
+                )?
+            } else {
+                host.store
+                    .controlled_verify_research_basis(basis.clone(), &p)?
+            };
             let result = host
                 .store
                 .prepare_research(&q.key, q.expected_revision, checked, &p)?;
