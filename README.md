@@ -1,196 +1,218 @@
 # Work Engine
 
-Work Engine runs AI coding agents on real engineering work while keeping a named
-human in charge of what gets accepted. Work is cut into bounded slices. Each
-slice is planned, implemented, reviewed by a second agent that did not write it,
-and checked by deterministic gates before a human decides whether to accept it.
-Every slice leaves a durable record of the configuration it ran under, the
-evidence it produced, who reviewed it, and how it ended.
+Work Engine is an objective-driven system for engineering work with AI agents.
+It gives models bounded decision authority, preserves the evidence and meaning
+of their decisions, and keeps acceptance and publication under explicit operator
+control. Software development is its first domain.
 
-The problem it addresses is that agent output is cheap to produce and expensive
-to judge. An agent will return work that is formally plausible and contextually
-wrong, and the cost of discovering that lands on whoever reviews it. Work Engine
-attacks that asymmetry from three directions: it constrains what a slice is
-allowed to change and claim, it requires independent review before acceptance
-rather than after, and it treats stopping as a first-class outcome — an agent
-that cannot get evidence for a claim records why it stopped instead of producing
-something that looks finished. Acceptance authority is never delegated to the
-agent.
+The central design rule is:
 
-## What it is becoming
+> **Contracts constrain what must remain true. Models choose how to make it true.**
 
-The description above is the system that runs today. The planned architecture
-([`design/work-engine-planned-architecture.md`](design/work-engine-planned-architecture.md))
-generalizes it:
+An objective, its acceptance conditions, available capabilities, authority,
+budget, and current evidence define the work. A model chooses and revises the
+route. Deterministic machinery handles identities, state transitions, integrity,
+limits, and checks whose answers are already mechanically decidable. A failed
+route becomes evidence for choosing another route; unresolved work stays
+unresolved in the record.
 
-**Work Engine** is a governed, deliberately model-driven execution system that
-transforms objectives into contract-bound work. Models drive the work through
-meaning, evidence, and bounded judgment; deterministic mechanisms derive settled
-consequences, while governed admission controls what becomes authoritative. The
-system composes task-specific organizations of perspectives and adapts them as
-execution reveals how the work must be realized. Revisioned evidence, claims,
-decisions, reliance, authority, and executable history support justified
-conclusions, selective reconsideration, and re-execution from recorded states.
-Its context lifecycle preserves meaning across execution boundaries, while its
-research mechanisms examine and improve its own behavior. By managing inference
-as an economic resource, Work Engine aims to deliver higher-quality, more
-reliable results with less inference and repeated reasoning. Software
-development is its first domain, with an architecture designed to extend beyond
-it.
+This repository contains a working campaign and slice workflow, a substantial
+Rust runtime and state layer, and the designs and experiments extending them.
+It is under active development. Implementation, bounded qualification, and
+production readiness have distinct standing throughout the project.
 
-Most of this is design, not implementation; `ARCHITECTURE.md` and each design
-document's status block say which parts exist.
+## What has changed
 
-## The loop
+The project has grown beyond a supervisor that runs coding slices:
+
+- **Durable execution state.** Context lifecycle, queued input, operation
+  identity, grants, uncertainty, recovery, and retirement have explicit owners.
+  Provider sessions are realizations of that state, rather than the sole place
+  where a task's meaning lives.
+- **Native Rust hosts.** The workspace now includes lifecycle services, retained
+  task and review hosts, claim/evidence storage, campaign and publication
+  components, a skill compiler, operator queries, and a terminal interface.
+  New first-party implementation follows the
+  [Rust-first direction](docs/rust-development.md).
+- **Evidence tied to its actual use.** Claims, review findings, retained basis
+  records, and research delivery can refer to exact revisions and executions.
+  A matching artifact or successful test does not by itself establish the
+  authority, provenance, or production conditions needed by another consumer.
+- **Research connected to the runtime.** The locally merged research task-host
+  join retains native input and causal evidence and checks its connection to
+  the original owner's delivery and recommendation. This is a private,
+  controlled implementation milestone; the authentic research execution and
+  production qualification remain open.
+- **A host application with isolated workloads.** The selected integration
+  direction runs Work Engine on the host and workloads in Docker, initially
+  one native Pi session per container. The Rust host owns deterministic control;
+  models retain local planning and judgment inside their assigned boundary.
+  The complete engineering path is still being qualified.
+
+The architecture has also become more explicit about ownership. Objectives,
+proposals, authority, evidence, review, runtime realization, and history have
+separate meanings. A projection, transport, reviewer, or storage primitive gains
+no decision authority merely by carrying their data. See the
+[binding design](DESIGN.md) and
+[planned architecture](design/work-engine-planned-architecture.md) for those
+boundaries and their respective standing.
+
+## How the pieces fit
 
 ```text
-campaign config  →  preflight        resolve the effective configuration, pin its digest
-                 →  slice plan       bounded objective, explicit acceptance conditions
-                 →  human acceptance of the plan
-                 →  builder          one persistent agent implements one slice
-                 →  independent      a separate agent, fresh process, read-only,
-                    review           configured as a different provider from the builder
-                 →  gates            deterministic checks with mechanically decidable results
-                 →  checkpoint       immutable content identity in a private Git ref
-                 →  human acceptance of the result
-                 →  receipt          durable record appended to a metrics ledger
+Operator objective and authority
+              |
+              v
+Bounded work contract + current evidence + capabilities + limits
+              |
+              v
+Model chooses and revises the route
+              |
+              v
+Execution -> artifacts and observations -> review and checks
+              |                                  |
+              +------- durable state/history ----+
+                                                 |
+                                                 v
+                            Authorized acceptance / publication
 ```
 
-Four properties are load-bearing:
+In the selected architecture, the deterministic host admits and tracks work,
+binds the selected runtime, observes limits, and collects outcomes. Task and
+review workflows own their
+semantic transitions. Provider and container adapters realize the selected
+capabilities. Evidence and publication components preserve attributable results
+without accepting their own work.
 
-- **Acceptance authority is human.** Skills, gates, reviewers, and projections
-  produce evidence. None of them accept a slice, publish to a branch, or widen
-  their own authority.
-- **Review independence is recorded, not assumed.** The reviewer's provider,
-  isolation, and evidence class are written into the receipt. When the
-  configured cross-provider reviewer is unavailable and the human authorizes a
-  same-model fallback, the receipt records the downgraded evidence class and the
-  amendment that caused it rather than claiming independence it did not have.
-- **Stopping is truthful.** `stop_on` conditions are declared in the campaign.
-  Stopped slices are recorded with their reason next to accepted ones in the
-  same ledger.
-- **Publication is explicit.** Accepted work lands in private `refs/work-engine/`
-  checkpoints. Moving anything onto a branch is a separate, human-authorized
-  step, and it must not touch the human's checkout, index, or unrelated files.
+Context replacement follows the same division. A new conversation is useful
+only when continuation can recover the objective, authority, commitments, and
+unresolved obligations from durable owners. Lower token usage or a provider's
+compaction event alone does not establish correct continuation. The
+[Wind Walker skill](skills/wind-walker/SKILL.md) states that contract; the
+[Rust lifecycle design](experiments/context-lifecycle-rust/DESIGN.md) develops
+its runtime consequences.
 
-## Try it
+The longer-term direction is reproducible execution: recover a meaningful
+workflow coordinate from revision-bound state, or branch it under another
+model, harness, or capability set for controlled comparison. The repository has
+working pieces of this foundation; arbitrary workflow replay and a fully
+integrated organizational control plane remain design and integration work.
 
-Everything in this section runs offline, with no API key and no agent. It needs
-Node.js 22+, and Python 3 with PyYAML for the graph commands.
+## Current standing
+
+Status as of November 14, 2026. Each result applies to its named scope and
+consumer; component completion does not imply a qualified whole system.
+
+| Area | What exists | Remaining boundary |
+| --- | --- | --- |
+| Campaign and slice execution | Used to develop this repository: configuration preflight, bounded builders, configured review, gates, private checkpoints, recovery, and terminal receipts. | Standalone installation, release, and operational completion remain roadmap work. |
+| Rust lifecycle and hosts | Implemented state, provider/session, task, review, claims, compiler, and publication components, with focused tests and controlled qualification. | Qualification and deployment are profile-specific; these crates do not imply one generally available production runtime. |
+| Research lifecycle | Revision-bound research/basis records, register reading and current-use projections, preparation/adoption persistence, native input retention, and the merged causal task-host join. | Producer build provenance, effective tool/access evidence, authentic research validation, and exact installation/execution approvals remain prerequisites. The first real context-policy revalidation, bounded execution, and feedback/baseline comparison remain open (H2 and M4/M5). |
+| Pi/Docker integration | Provider-disabled host/custody components and a reviewed direction for host-controlled native Pi execution. The current plan keeps real provider credentials on the host. | The complete permitted coding, testing, review, result export, and recovery path still needs its own joined qualification. |
+| Proposal and planning capabilities | Durable packets, formation, decision recording, strategic reconciliation, and bounded claim/review-state capabilities. | The broader evaluation, portfolio, organizational, and learning architecture is only partly implemented. |
+| Operator surfaces | Local query/server interfaces and terminal UI components. | Commands, provisioning, and live execution require their own qualified profiles; a read interface supplies no execution grant. |
+
+The research join was merged locally at `dda3f744`. Its
+[delivery composition](rust/crates/work-engine-task-host/src/research_delivery.rs)
+and [causal retention](rust/crates/lifecycle-store/src/native_causal.rs) are
+implementation references. The earlier
+[research progress record](records/research-lifecycle-implementation-progress-20261113.md)
+provides milestone history, not the standing of every subsequent merge.
+
+The [Pi/Docker convergence amendment](planning/s10-pi-docker-convergence-amendment-20261103.md)
+records the integration objective and original component boundaries. Current
+controlled work does not close the full engineering vertical or the standalone
+release conditions. [ARCHITECTURE.md](ARCHITECTURE.md) maps the broader system;
+[roadmap.md](roadmap.md) records strategic direction and remaining outcomes.
+Dated records preserve what was established at the time they were written.
+
+## The implemented slice workflow
+
+A configured campaign is one concrete way to use Work Engine:
+
+```text
+campaign configuration and preflight
+    -> bounded plan and its authorized acceptance
+    -> coherent builder implementation
+    -> configured review and remediation
+    -> deterministic gates and immutable checkpoint
+    -> authorized result acceptance
+    -> durable terminal receipt
+```
+
+The campaign contract selects approval boundaries, review requirements, limits,
+and stop conditions. When independence is required, the receipt must establish
+its actual provider, isolation, and evidence class. A fallback records its real
+standing and authority rather than inheriting the original independence claim.
+Review need and reviewer context lifetime depend on the governing contract and
+the consequences of the work.
+
+Private checkpoints live under `refs/work-engine/`. User-visible commits and
+remote publication are separate authorized consequences. A stopped or failed
+slice retains its reason and evidence alongside successful terminals; missing
+proof does not become a success-shaped receipt. The
+[slice-supervisor contract](skills/slice-supervisor/SKILL.md) owns this workflow.
+
+## Explore locally
+
+For the JavaScript workflow tools, use Node.js 22 or newer:
 
 ```bash
 npm install
-npm test          # unit and integration tests for the supervisor, MCP adapter, and App Server runtime
+npm run preflight       # resolve campaigns/roadmap.yaml
+npm run test:supervisor # focused preflight tests
 ```
 
-Resolve a real campaign configuration. This binds the campaign file to its
-canonical path and SHA-256, applies documented defaults, and reports which
-fields were explicit versus defaulted — the same object a supervisor consumes:
+The root `npm test` runs the JavaScript supervisor, MCP, Chrome Vision, and
+App Server suites. It does not run the Rust workspace tests. Provider-backed
+integration tests and actual campaigns have separate environment and authority
+requirements.
+
+The Rust workspace declares Rust 1.92 or newer. A focused library test entry is:
 
 ```bash
-npm run preflight            # campaigns/roadmap.yaml
-node skills/slice-supervisor/scripts/campaign-preflight.mjs campaigns/review-remediation.yaml
+cargo test --manifest-path rust/Cargo.toml -p lifecycle-core
 ```
 
-Validate the role/invariant graph and confirm the checked-in generated views are
-not stale:
+Cargo may need to fetch dependencies on the first run. Other crates have their
+own features, native dependencies, fixtures, and qualification requirements;
+consult the relevant component documentation before running a host or enabling
+a controlled profile. Useful entry points include the
+[lifecycle service](rust/crates/lifecycle-service/README.md),
+[local server](rust/crates/work-engine-server/README.md), and
+[review/completion host](rust/crates/work-engine-review-host/README.md).
 
-```bash
-python3 skills/agent-environment-graph/scripts/agent_environment_graph.py validate \
-  --invariants docs/workflow-invariants.md --environments docs/agent-environments.yaml
+Actual inference or campaign execution needs a selected coding-agent runtime,
+provider access, an authorized work contract, and the applicable runtime
+profile. Example configurations and test fixtures are implementation material;
+they do not grant deployment, credentials, acceptance, or publication authority.
 
-python3 skills/agent-environment-graph/scripts/agent_environment_graph.py check \
-  --invariants docs/workflow-invariants.md --environments docs/agent-environments.yaml \
-  --rendered docs/agent-environment-graphs.md --role-output-dir docs/agent-environment-views
-```
+## Repository map
 
-Read the receipts. These are the actual production records, one JSON object per
-slice, and they are the fastest way to see what the system does and does not
-claim:
-
-```bash
-cat metrics/*.jsonl docs/ai-workflow-metrics.jsonl app-server/docs/ai-workflow-metrics.jsonl \
-  | python3 -c 'import json,sys
-for l in sys.stdin:
-    r=json.loads(l)
-    print(r["status"], "|", r["run_id"], "|", r["slice_title"][:70])'
-```
-
-Running an actual campaign is different: it needs a coding-agent CLI, provider
-credentials, and a human present to accept plans and results. The campaign files
-in `campaigns/` are the entry points, and `skills/slice-supervisor/SKILL.md` is
-the contract the supervising agent follows.
-
-## Structure
-
-| Path | What it holds |
+| Path | Purpose |
 | --- | --- |
-| `DESIGN.md` | Index of scoped binding doctrine in `docs/contracts/` |
-| `PHILOSOPHY.md` | Index of non-normative rationale in `docs/rationale/` |
-| `ARCHITECTURE.md` | Current whole-system map, with an explicit maturity class per subsystem |
-| `roadmap.md` | Product direction, remaining work, and completion evidence |
-| [`docs/repository-layout.md`](docs/repository-layout.md) | Where a file belongs and why: categories by lifetime and authority, and rules for moving or citing files |
-| [`design/`](design/README.md) | Current design: what the system is meant to be. The capstone, architecture views, ideas and research notes moved here from `app-server/` in phase 5 |
-| [`records/`](records/README.md) | Dated campaign records, kept as written, including the Rust campaign records moved from `docs/rust-*.md`; two Rust records that tests read stay in `docs/` for now |
-| `skills/` | Role and capability packages: contracts, adapters, schemas, tests |
-| `app-server/` | App Server runtime: role hosting, services, protocol, isolated workspaces |
-| `rust/` | Rust workspace (`rust/crates/`): context lifecycle, claim/evidence, review episodes, task and review hosts, skill compiler, terminal UI |
-| `experiments/` | Design, plan, and saved evidence for experiments, including the Rust context-lifecycle replacement |
-| `campaigns/` | Declarative campaign objectives and configuration |
-| `metrics/`, `docs/ai-workflow-metrics.jsonl` | Slice receipts, one JSON object per slice |
-| `docs/workflow-invariants.md` | Verified invariant catalog for the primary slice workflow |
-| [`docs/model-selection.md`](docs/model-selection.md) | Revisable engineering model/effort defaults, selection provenance, and review limitations |
-| [`docs/rust-development.md`](docs/rust-development.md) | Rust-first implementation direction, proposed shared workspace, and migration boundaries |
-| `planning/`, `proposals/`, `reviews/`, `ideas/` | Plans, formed candidate changes, review evidence tied to exact revisions, and speculative sources |
+| [DESIGN.md](DESIGN.md) | Index of binding contracts in `docs/contracts/`. |
+| [PHILOSOPHY.md](PHILOSOPHY.md) | Non-normative rationale for the design. |
+| [ARCHITECTURE.md](ARCHITECTURE.md), [roadmap.md](roadmap.md) | System map, strategic direction, and remaining work. |
+| [design/](design/README.md) | Architecture views, proposals for the future system, and exploratory synthesis with explicit standing. |
+| [rust/](rust/Cargo.toml) | First-party Rust workspace and component implementations. |
+| [skills/](skills/) | Role and capability contracts, adapters, schemas, and tests. |
+| [app-server/](app-server/) | Existing JavaScript runtime, protocols, services, and migration work. |
+| [planning/](planning/), [proposals/](proposals/), [reviews/](reviews/), [ideas/](ideas/) | Implementation plans, candidate changes, revision-bound review evidence, and raw ideas. |
+| [records/](records/README.md) | Dated decisions, campaign results, and historical qualification records. |
+| [experiments/](experiments/) | Bounded experimental implementations and retained evidence. |
+| [campaigns/](campaigns/), [metrics/](metrics/) | Declarative campaigns and execution/accounting records. |
+| [docs/repository-layout.md](docs/repository-layout.md) | Placement and standing rules for repository artifacts. |
+| [docs/model-selection.md](docs/model-selection.md) | Revisable model and effort guidance with provenance and limitations. |
 
-The repository is mid-migration. Today the canonical role contracts and
-model-facing instructions live in `skills/`, which represents the original
-implementation path, and `app-server/` holds the runtime those roles were being
-re-hosted in
-([`app-server/docs/skills-migration-plan.md`](app-server/docs/skills-migration-plan.md)).
-New first-party implementation is Rust, under `rust/`
-([`docs/rust-development.md`](docs/rust-development.md)). The first substantial
-Rust component is the context-lifecycle replacement
-([design](experiments/context-lifecycle-rust/DESIGN.md),
-[plan](experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md)): slices S0–S8
-are complete and S9 is in progress. Until that replacement is qualified, Rust
-development is driven outside the platform and measured by hand in
-[`metrics/efficiency-ledger.md`](metrics/efficiency-ledger.md). Existing
-components keep their authority until an accepted, qualified successor replaces
-them.
+Existing components retain their authority until an accepted replacement takes
+over. The Rust-first direction permits simpler replacements while preserving
+approved semantics, data integrity, provenance, and qualification evidence.
+Internal interfaces have no general backward-compatibility guarantee.
 
-## Deeper reading
-
-Read in this order if you want the reasoning rather than the map:
-
-1. [`PHILOSOPHY.md`](PHILOSOPHY.md) — why structure is placed only where it is load-bearing.
-2. [`DESIGN.md`](DESIGN.md) — the contracts that structure produces, and the tests for whether something is really an invariant.
-3. [`ARCHITECTURE.md`](ARCHITECTURE.md) — what currently exists, classified as implemented, active construction, formed direction, or exploratory.
-4. [`app-server/docs/skills-migration-plan.md`](app-server/docs/skills-migration-plan.md) — the migration campaign, including the corrections it has had to record.
-5. [`HISTORY.md`](HISTORY.md) — a self-audit of how the project actually developed: what stabilized early, which routes were retired or demoted, and a quantitative snapshot pinned to commit `5308ae5`. It states its own evidence classes, confidence, and limitations, and it does not flatter the result.
-
-`AGENTS.md` is the entry point for an agent working in this repository.
-
-The project also produces experimental evidence about agent behavior under
-different instruction and review configurations; that work lives under
-`skills/review-bench/`, `skills/linguistic-register-pilot/`, and `proposals/`.
-
-## Reproducible execution
-
-Work Engine is moving toward a model in which agent conversations and provider sessions are replaceable realizations of durable role and workflow state rather than the canonical owners of that state.
-
-The intended consequence is that a meaningful point in an engineering workflow can eventually be reconstructed from revision-bound role, authority, evidence, capability, planning, and history state. The same coordinate can then be resumed for recovery or branched under a different model, harness, capability set, or plan projection for controlled comparison without rewriting the original execution history.
-
-This makes reproducibility useful for both engineering and research: real workflow states can become repeatable experimental fixtures for evaluating model and execution strategies against the kinds of decisions Work Engine actually encounters.
-
-## Status
-
-Single maintainer, active development, no stability guarantees. The execution
-backbone — campaign supervision, slice execution, gates, checkpoints, receipts —
-is implemented and used to develop this repository. The planning, durable-state,
-and control-plane layers are in varying states of construction; `ARCHITECTURE.md`
-labels each one rather than presenting the intended system as finished.
+[AGENTS.md](AGENTS.md) is the entry point for agents working in the repository.
+[HISTORY.md](HISTORY.md) provides a dated self-audit of the project's development.
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+MIT. See [LICENSE](LICENSE).
