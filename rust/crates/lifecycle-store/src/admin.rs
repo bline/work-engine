@@ -17,7 +17,7 @@ use crate::{SqliteLifecycleStore, StoreError};
 // Offline custody capsules retain their actual schema across read-only inspection.
 // Writable migration remains owned by SqliteLifecycleStore::open_inner.
 fn supported_admin_schema(version: i64) -> bool {
-    matches!(version, 4..=13)
+    matches!(version, 4..=15)
 }
 
 type EffectRecoveryRow = (
@@ -2393,7 +2393,9 @@ pub(crate) fn check_held_coherence(connection: &rusqlite::Connection) -> Result<
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(|_| StoreError::Unavailable)?;
     // Physical schema 10/11 guard the two direct semantic tables (six triggers).
-    let expected_guards = if physical >= 12 {
+    let expected_guards = if physical >= 14 {
+        111
+    } else if physical >= 12 {
         105
     } else if physical >= 10 {
         99
@@ -4189,7 +4191,7 @@ mod held_tests {
             store
                 .connection
                 .execute_batch(
-                    "DROP TABLE native_input_conflicts; DROP TABLE native_input_observations;",
+                    "DROP TABLE native_causal_conflicts; DROP TABLE native_causal_evidence; DROP TABLE native_input_conflicts; DROP TABLE native_input_observations;",
                 )
                 .unwrap();
             if predecessor == 11 {
@@ -4210,7 +4212,7 @@ mod held_tests {
                     .connection
                     .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                     .unwrap(),
-                predecessor + 2
+                predecessor + 4
             );
             for sql in [
                 "INSERT INTO native_input_observations VALUES('i','s','a','t',1,'h',1)",

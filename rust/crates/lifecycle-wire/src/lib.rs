@@ -22,7 +22,7 @@ pub use observation::{
     TransitionV1, WaitRequestV1, WaitTargetV1,
 };
 pub use read_values::{
-    CommandObservationKind, GrantReadLocator, parse_grant_read_locator,
+    CommandObservationKind, GrantReadLocator, NativeCausalChunkV1, parse_grant_read_locator,
     validate_command_observation, validate_grant_result, validate_native_delivery_status,
 };
 pub use schema::{schema_bundle_v1, schema_bundle_v2};

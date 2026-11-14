@@ -1869,6 +1869,7 @@ impl SqliteLifecycleStore {
                 "user_version",
                 match _physical_version {
                     12 => 13,
+                    14 => 15,
                     10 => 11,
                     8 => 9,
                     _ => 7,
@@ -3827,6 +3828,382 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    fn native_input_conflict_between_causal_publication_and_transaction_refuses() {
+        // Store boundary fixture; the service joined fixture establishes actual
+        // native acquisition. No synthetic row is claimed as provider evidence.
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:input-store").unwrap();
+        let context = ContextGeneration::parse("context:input-store").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:input-store").unwrap(),
+                ProofRunId::parse("proof:input-store").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
+        store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
+            INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');
+            INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms) VALUES('queue-attempt:input-store','effect:input-store','incarnation:input-store','entered',1);
+            INSERT INTO native_delivery_segments(invocation_id,queue_attempt_id,segment_no,state) VALUES('invocation:input-store','queue-attempt:input-store',0,'entered');").unwrap();
+        let session = NativeSessionEntry {
+            id: NativeSessionId::parse("session:input-store").unwrap(),
+            subject,
+            context,
+            profile_digest: "hash".into(),
+            snapshot: SnapshotId::parse("snapshot:input-store").unwrap(),
+            thread: Some(ProviderThreadId::parse("thread:input-store").unwrap()),
+        };
+        let turn = NativeTurnEntry {
+            invocation_id: "invocation:input-store".into(),
+            attempt: AttemptId::parse("attempt:input-store").unwrap(),
+            thread: ProviderThreadId::parse("thread:input-store").unwrap(),
+            turn: Some(ProviderTurnId::parse("turn:input-store").unwrap()),
+            profile_digest: "hash".into(),
+        };
+        let terminal=serde_json::to_vec(&serde_json::json!({"method":"turn/completed","params":{"threadId":"thread:input-store","turn":{"id":"turn:input-store","status":"completed","error":null}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',1,'hash',?1,'qualified','turn/completed','thread:input-store','turn:input-store',1,'session:input-store')",[&terminal]).unwrap();
+        // Synthetic store-boundary fixture only; actual causal acquisition is
+        // qualified separately through the network-none native composition.
+        let payload = crate::NativeInputPayload {
+            inference_call_id: "inference".into(),
+            physical_send: 1,
+            representation: "wire".into(),
+            original_sha256: sha256(b"{}").unwrap(),
+            original_codec: "identity".into(),
+            bytes: b"{}".to_vec(),
+        };
+        store
+            .retain_native_input(
+                &session,
+                &turn,
+                "transport:input-store",
+                1,
+                &terminal,
+                b"fixture",
+                vec![payload],
+                true,
+                "complete",
+                clock(),
+            )
+            .unwrap();
+        let ingress=serde_json::to_vec(&serde_json::json!({"params":{"callId":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',2,'hash',?1,'qualified','item/tool/call','thread:input-store','turn:input-store',1,'session:input-store')",[&ingress]).unwrap();
+        store.connection.execute_batch("INSERT INTO native_task_operations VALUES('operation:causal','invocation:input-store','call:causal','transport:input-store',2,'task.result.publish.v1','rust.result.publish.v1','lifecycle.service.task','grant:input-store',1,'hash','hash',X'7B7D','completed_settled',X'7B7D','hash',1,1);").unwrap();
+        let bundle=serde_json::to_vec(&serde_json::json!({"calls":[{"call_id":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}]})).unwrap();
+        crate::native_causal::BEFORE_TRANSACTION.with(|slot| *slot.borrow_mut() = Some(Box::new(|connection| {
+            connection.execute("INSERT INTO native_input_conflicts SELECT invocation_id,artifact_sha256,1 FROM native_input_observations WHERE invocation_id='invocation:input-store'", []).unwrap();
+        })));
+        assert!(matches!(
+            store.retain_native_causal(&session, &turn, &bundle, clock()),
+            Err(StoreError::ClaimConflict)
+        ));
+        assert!(store.native_input_conflicted(turn.invocation_id()).unwrap());
+        assert!(
+            store
+                .native_causal_evidence("operation:causal")
+                .unwrap()
+                .is_none()
+        );
+        drop(store);
+        let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert!(
+            store
+                .native_causal_evidence("operation:causal")
+                .unwrap()
+                .is_none()
+        );
+    }
+    #[test]
+    fn native_strict_input_conflict_fences_causal_history_and_retention() {
+        // Store boundary fixture; the service joined fixture establishes actual
+        // native acquisition. No synthetic row is claimed as provider evidence.
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:input-store").unwrap();
+        let context = ContextGeneration::parse("context:input-store").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:input-store").unwrap(),
+                ProofRunId::parse("proof:input-store").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
+        store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
+            INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');
+            INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms) VALUES('queue-attempt:input-store','effect:input-store','incarnation:input-store','entered',1);
+            INSERT INTO native_delivery_segments(invocation_id,queue_attempt_id,segment_no,state) VALUES('invocation:input-store','queue-attempt:input-store',0,'entered');").unwrap();
+        let session = NativeSessionEntry {
+            id: NativeSessionId::parse("session:input-store").unwrap(),
+            subject,
+            context,
+            profile_digest: "hash".into(),
+            snapshot: SnapshotId::parse("snapshot:input-store").unwrap(),
+            thread: Some(ProviderThreadId::parse("thread:input-store").unwrap()),
+        };
+        let turn = NativeTurnEntry {
+            invocation_id: "invocation:input-store".into(),
+            attempt: AttemptId::parse("attempt:input-store").unwrap(),
+            thread: ProviderThreadId::parse("thread:input-store").unwrap(),
+            turn: Some(ProviderTurnId::parse("turn:input-store").unwrap()),
+            profile_digest: "hash".into(),
+        };
+        let terminal=serde_json::to_vec(&serde_json::json!({"method":"turn/completed","params":{"threadId":"thread:input-store","turn":{"id":"turn:input-store","status":"completed","error":null}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',1,'hash',?1,'qualified','turn/completed','thread:input-store','turn:input-store',1,'session:input-store')",[&terminal]).unwrap();
+        // Synthetic store-boundary fixture only; actual causal acquisition is
+        // qualified separately through the network-none native composition.
+        let payload = crate::NativeInputPayload {
+            inference_call_id: "inference".into(),
+            physical_send: 1,
+            representation: "wire".into(),
+            original_sha256: sha256(b"{}").unwrap(),
+            original_codec: "identity".into(),
+            bytes: b"{}".to_vec(),
+        };
+        store
+            .retain_native_input(
+                &session,
+                &turn,
+                "transport:input-store",
+                1,
+                &terminal,
+                b"fixture",
+                vec![payload],
+                true,
+                "complete",
+                clock(),
+            )
+            .unwrap();
+        let ingress=serde_json::to_vec(&serde_json::json!({"params":{"callId":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',2,'hash',?1,'qualified','item/tool/call','thread:input-store','turn:input-store',1,'session:input-store')",[&ingress]).unwrap();
+        store.connection.execute_batch("INSERT INTO native_task_operations VALUES('operation:causal','invocation:input-store','call:causal','transport:input-store',2,'task.result.publish.v1','rust.result.publish.v1','lifecycle.service.task','grant:input-store',1,'hash','hash',X'7B7D','completed_settled',X'7B7D','hash',1,1);").unwrap();
+        let bundle=serde_json::to_vec(&serde_json::json!({"calls":[{"call_id":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}]})).unwrap();
+        store
+            .retain_native_causal(&session, &turn, &bundle, clock())
+            .unwrap();
+        let original = store
+            .native_causal_evidence("operation:causal")
+            .unwrap()
+            .unwrap();
+        let input = store
+            .native_input_observation(turn.invocation_id())
+            .unwrap()
+            .unwrap();
+        assert!(
+            store
+                .qualified_native_causal_evidence("operation:causal")
+                .unwrap()
+                .is_some()
+        );
+        assert_eq!(
+            store
+                .retain_native_input(
+                    &session,
+                    &turn,
+                    "transport:input-store",
+                    1,
+                    &terminal,
+                    b"changed",
+                    input.payloads.clone(),
+                    true,
+                    "complete",
+                    clock()
+                )
+                .unwrap(),
+            crate::NativeInputApply::Conflict
+        );
+        assert!(!store.native_causal_conflicted("operation:causal").unwrap());
+        assert!(matches!(
+            store.qualified_native_causal_evidence("operation:causal"),
+            Err(StoreError::ClaimConflict)
+        ));
+        assert!(matches!(
+            store.retain_native_causal(&session, &turn, &bundle, clock()),
+            Err(StoreError::ClaimConflict)
+        ));
+        drop(store);
+        let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert_eq!(
+            store
+                .native_input_observation(turn.invocation_id())
+                .unwrap(),
+            Some(input)
+        );
+        assert_eq!(
+            store.native_causal_evidence("operation:causal").unwrap(),
+            Some(original)
+        );
+        assert!(matches!(
+            store.qualified_native_causal_evidence("operation:causal"),
+            Err(StoreError::ClaimConflict)
+        ));
+    }
+    #[test]
+    fn native_causal_publication_cut_replay_conflict_and_identity_refusal() {
+        // Store boundary fixture; the service joined fixture establishes actual
+        // native acquisition. No synthetic row is claimed as provider evidence.
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:input-store").unwrap();
+        let context = ContextGeneration::parse("context:input-store").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:input-store").unwrap(),
+                ProofRunId::parse("proof:input-store").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
+        store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
+            INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');
+            INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms) VALUES('queue-attempt:input-store','effect:input-store','incarnation:input-store','entered',1);
+            INSERT INTO native_delivery_segments(invocation_id,queue_attempt_id,segment_no,state) VALUES('invocation:input-store','queue-attempt:input-store',0,'entered');").unwrap();
+        let session = NativeSessionEntry {
+            id: NativeSessionId::parse("session:input-store").unwrap(),
+            subject,
+            context,
+            profile_digest: "hash".into(),
+            snapshot: SnapshotId::parse("snapshot:input-store").unwrap(),
+            thread: Some(ProviderThreadId::parse("thread:input-store").unwrap()),
+        };
+        let turn = NativeTurnEntry {
+            invocation_id: "invocation:input-store".into(),
+            attempt: AttemptId::parse("attempt:input-store").unwrap(),
+            thread: ProviderThreadId::parse("thread:input-store").unwrap(),
+            turn: Some(ProviderTurnId::parse("turn:input-store").unwrap()),
+            profile_digest: "hash".into(),
+        };
+        let terminal=serde_json::to_vec(&serde_json::json!({"method":"turn/completed","params":{"threadId":"thread:input-store","turn":{"id":"turn:input-store","status":"completed","error":null}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',1,'hash',?1,'qualified','turn/completed','thread:input-store','turn:input-store',1,'session:input-store')",[&terminal]).unwrap();
+        // Synthetic store-boundary fixture only; actual causal acquisition is
+        // qualified separately through the network-none native composition.
+        let payload = crate::NativeInputPayload {
+            inference_call_id: "inference".into(),
+            physical_send: 1,
+            representation: "wire".into(),
+            original_sha256: sha256(b"{}").unwrap(),
+            original_codec: "identity".into(),
+            bytes: b"{}".to_vec(),
+        };
+        store
+            .retain_native_input(
+                &session,
+                &turn,
+                "transport:input-store",
+                1,
+                &terminal,
+                b"fixture",
+                vec![payload],
+                true,
+                "complete",
+                clock(),
+            )
+            .unwrap();
+        let ingress=serde_json::to_vec(&serde_json::json!({"params":{"callId":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}})).unwrap();
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',2,'hash',?1,'qualified','item/tool/call','thread:input-store','turn:input-store',1,'session:input-store')",[&ingress]).unwrap();
+        store.connection.execute_batch("INSERT INTO native_task_operations VALUES('operation:causal','invocation:input-store','call:causal','transport:input-store',2,'task.result.publish.v1','rust.result.publish.v1','lifecycle.service.task','grant:input-store',1,'hash','hash',X'7B7D','completed_settled',X'7B7D','hash',1,1);").unwrap();
+        let bundle=serde_json::to_vec(&serde_json::json!({"calls":[{"call_id":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}]})).unwrap();
+        let count = |s: &SqliteLifecycleStore| {
+            s.connection
+                .query_row("SELECT count(*) FROM native_causal_evidence", [], |r| {
+                    r.get::<_, i64>(0)
+                })
+                .unwrap()
+        };
+        crate::native_causal::AFTER_PUBLICATION.with(|v| v.replace(true));
+        assert!(
+            store
+                .retain_native_causal(&session, &turn, &bundle, clock())
+                .is_err()
+        );
+        assert_eq!(count(&store), 0);
+        assert!(
+            store
+                .native_causal_evidence("operation:causal")
+                .unwrap()
+                .is_none()
+        );
+        let staged: i64 = store
+            .connection
+            .query_row("SELECT count(*) FROM artifacts", [], |r| r.get(0))
+            .unwrap();
+        assert!(
+            staged >= 2,
+            "published causal artifact survives precommit interruption"
+        );
+        drop(store);
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert_eq!(count(&store), 0);
+        crate::native_causal::AFTER_COMMIT.with(|v| v.replace(true));
+        assert!(
+            store
+                .retain_native_causal(&session, &turn, &bundle, clock())
+                .is_err()
+        );
+        assert_eq!(count(&store), 1);
+        let original = store
+            .native_causal_evidence("operation:causal")
+            .unwrap()
+            .unwrap();
+        drop(store);
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        assert_eq!(
+            store.native_causal_evidence("operation:causal").unwrap(),
+            Some(original.clone())
+        );
+        assert_eq!(
+            store
+                .retain_native_causal(&session, &turn, &bundle, clock())
+                .unwrap(),
+            vec![crate::NativeInputApply::Replay]
+        );
+        let mut changed: serde_json::Value = serde_json::from_slice(&bundle).unwrap();
+        changed["retained_extra"] = serde_json::json!("different immutable bytes");
+        assert_eq!(
+            store
+                .retain_native_causal(
+                    &session,
+                    &turn,
+                    &serde_json::to_vec(&changed).unwrap(),
+                    clock()
+                )
+                .unwrap(),
+            vec![crate::NativeInputApply::Conflict]
+        );
+        assert!(store.native_causal_conflicted("operation:causal").unwrap());
+        assert_eq!(
+            store.native_causal_evidence("operation:causal").unwrap(),
+            Some(original.clone())
+        );
+        assert_eq!(count(&store), 1);
+        store.connection.execute("UPDATE native_task_operations SET owner_commit_json=X'61' WHERE operation_id='operation:causal'",[]).unwrap();
+        assert_eq!(
+            store
+                .retain_native_causal(&session, &turn, &bundle, clock())
+                .unwrap(),
+            vec![crate::NativeInputApply::Conflict]
+        );
+        assert_eq!(
+            store.native_causal_evidence("operation:causal").unwrap(),
+            Some(original)
+        );
+        assert_eq!(count(&store), 1);
+    }
+    #[test]
     fn native_input_publication_cut_replay_conflict_and_identity_refusal() {
         // Store boundary fixture; the service joined fixture establishes actual
         // native acquisition. No synthetic row is claimed as provider evidence.
@@ -4404,7 +4781,7 @@ mod tests {
             let conn = rusqlite::Connection::open(root.path().join("lifecycle.sqlite")).unwrap();
             // A faithful schema6 image has neither the diagnostic column nor the
             // direct semantic tables (physical schema 10 adds them).
-            conn.execute_batch("DROP TABLE native_input_conflicts; DROP TABLE native_input_observations; DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; ALTER TABLE native_process_exits DROP COLUMN isolation_diagnostic; PRAGMA user_version=6;").unwrap();
+            conn.execute_batch("DROP TABLE native_causal_conflicts; DROP TABLE native_causal_evidence; DROP TABLE native_input_conflicts; DROP TABLE native_input_observations; DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; ALTER TABLE native_process_exits DROP COLUMN isolation_diagnostic; PRAGMA user_version=6;").unwrap();
         }
         let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
         let recovered = store.native_session_recovery(&session).unwrap().unwrap();

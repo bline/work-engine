@@ -46,6 +46,13 @@ use crate::{
 };
 
 pub enum Request {
+    NativeCausalRead {
+        task: String,
+        subject: String,
+        offset: usize,
+        expected: Option<String>,
+        reply: oneshot::Sender<Value>,
+    },
     Command {
         uid: u32,
         bytes: Vec<u8>,
@@ -1246,6 +1253,10 @@ impl Actor {
                             let result=self.subject_revision(&subject);
                             let _=reply.send(result);
                         }
+                        Some(Request::NativeCausalRead {task,subject,offset,expected,reply}) => {
+                            let result=self.native_causal_read(&task,&subject,offset,expected.as_deref());
+                            let _=reply.send(result);
+                        }
                         Some(Request::NativeDeliveryStatus { subject,reply }) => {
                             let result=self.native_delivery_status(&subject);
                             let _=reply.send(result);
@@ -1527,7 +1538,21 @@ impl Actor {
                             } else {
                                 Ok(())
                             }
-                        })
+                        })?;
+                    if let Some(causal) = observation.causal() {
+                        let bytes =
+                            serde_json::to_vec(causal).map_err(|_| StoreError::Unavailable)?;
+                        let results = self.store.retain_native_causal(
+                            session,
+                            turn,
+                            &bytes,
+                            clock_sample(),
+                        )?;
+                        if results.contains(&lifecycle_store::NativeInputApply::Conflict) {
+                            return Err(StoreError::ClaimConflict);
+                        }
+                    }
+                    Ok(())
                 })();
                 let _ = reply.send(result);
             }
@@ -2664,6 +2689,69 @@ impl Actor {
             Ok(value) => json!({"protocol_version":1,"subject_id":value.subject_id,
                 "store_id":value.store_id,"context_generation":value.context_id,
                 "revision":value.revision.to_string()}),
+            Err(_) => error_reply(WireErrorCode::ObservationUnavailable),
+        }
+    }
+
+    fn native_causal_read(
+        &self,
+        task: &str,
+        subject: &str,
+        offset: usize,
+        expected: Option<&str>,
+    ) -> Value {
+        use base64::Engine;
+        let result = (|| -> Result<Value, StoreError> {
+            if subject.is_empty() || subject.len() > 192 || task.is_empty() || task.len() > 192 {
+                return Err(StoreError::Rejected);
+            }
+            let port = self
+                .task_operation_port
+                .as_ref()
+                .ok_or(StoreError::Unavailable)?;
+            let operation = port
+                .original_result_operation(task, subject)
+                .map_err(|_| StoreError::Unavailable)?
+                .ok_or(StoreError::Unavailable)?;
+            let (causal, input) = self
+                .store
+                .qualified_native_causal_evidence(&operation)?
+                .ok_or(StoreError::Unavailable)?;
+            let entry: Value =
+                serde_json::from_slice(&causal.entry).map_err(|_| StoreError::Unavailable)?;
+            if entry["task_id"] != task || entry["subject_id"] != subject || !input.eligible {
+                return Err(StoreError::Rejected);
+            }
+            let bytes = serde_json::to_vec(&json!({"version":1,"causal":causal,"input":input}))
+                .map_err(|_| StoreError::Unavailable)?;
+            if bytes.len() > 32 * 1024 * 1024 || offset >= bytes.len() || offset % (48 * 1024) != 0
+            {
+                return Err(StoreError::Rejected);
+            }
+            let digest = CodecContract::BinaryArtifactV1
+                .digest_binary(&bytes)
+                .map_err(|_| StoreError::Unavailable)?
+                .hex();
+            if (offset > 0 && expected.is_none()) || expected.is_some_and(|s| s != digest) {
+                return Err(StoreError::ClaimConflict);
+            }
+            let end = offset.saturating_add(48 * 1024).min(bytes.len());
+            serde_json::to_value(lifecycle_wire::NativeCausalChunkV1 {
+                version: 1,
+                store_id: self.store.admin_store_identity()?,
+                encoding: "json-utf8-v1".into(),
+                operation_id: operation,
+                content_sha256: digest,
+                length: bytes.len(),
+                offset,
+                bytes_base64: base64::engine::general_purpose::STANDARD.encode(&bytes[offset..end]),
+            })
+            .map_err(|_| StoreError::Unavailable)
+        })();
+        match result {
+            Ok(v) => v,
+            Err(StoreError::ClaimConflict) => error_reply(WireErrorCode::Conflict),
+            Err(StoreError::Rejected) => error_reply(WireErrorCode::SemanticInvalidity),
             Err(_) => error_reply(WireErrorCode::ObservationUnavailable),
         }
     }

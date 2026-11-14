@@ -5,6 +5,8 @@ mod artifact;
 mod direct_semantic;
 mod held_selection;
 mod native;
+mod native_causal;
+pub use native_causal::NativeCausalRecord;
 mod native_input;
 pub use native_input::{NativeInputApply, NativeInputPayload, NativeInputRecord};
 mod pi_coding;

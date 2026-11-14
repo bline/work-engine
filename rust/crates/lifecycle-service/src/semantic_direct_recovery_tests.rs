@@ -290,7 +290,7 @@ async fn a_store_migrated_from_an_older_physical_schema_has_no_direct_entries() 
         let connection = rusqlite::Connection::open(harness.root.join("lifecycle.sqlite")).unwrap();
         connection
             .execute_batch(
-                "DROP TABLE native_input_conflicts; DROP TABLE native_input_observations; DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; PRAGMA user_version=8;",
+                "DROP TABLE native_causal_conflicts; DROP TABLE native_causal_evidence; DROP TABLE native_input_conflicts; DROP TABLE native_input_observations; DROP TABLE direct_semantic_results; DROP TABLE direct_semantic_attempts; PRAGMA user_version=8;",
             )
             .unwrap();
     }

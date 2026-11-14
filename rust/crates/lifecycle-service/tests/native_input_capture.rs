@@ -1,6 +1,10 @@
 // This module is compiled inside the actor's unit boundary so the fixture can
 // drive the actual private actor and runner without exposing a product route.
 use super::*;
+use crate::{
+    GrantFence, QuestionOpenPayload, ResultPublishPayload, TaskCursorBinding, TaskInputBinding,
+    TaskOperationCommit, TaskOperationError, ValidatedTaskOperationEntry,
+};
 use crate::{NativeConfig, NativeProviderRoute, PrincipalConfig, SemanticNativeConfig};
 use rusqlite::params;
 use std::{
@@ -56,6 +60,7 @@ fn peer(
     received: PeerBytes,
     stop: Arc<AtomicBool>,
     mode: String,
+    result_args: Option<Value>,
 ) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
         listener.set_nonblocking(true).unwrap();
@@ -72,16 +77,33 @@ fn peer(
                         continue;
                     }
                     let id = format!("input-response-{n}");
-                    let output = if n == 1 {
+                    let result_args = result_args.clone().unwrap_or(Value::Null);
+                    let output = if n == 1
+                        && matches!(
+                            mode.as_str(),
+                            "causal-direct" | "causal-reversed" | "causal-cut"
+                        ) {
+                        json!({"type":"function_call","call_id":"fixture-publish","name":"result_publish","namespace":"task","arguments":result_args.to_string()})
+                    } else if n == 1 && mode == "causal-nested" {
+                        json!({"type":"custom_tool_call","call_id":"fixture-code","name":"exec","input":format!("await tools.task__result_publish({result_args});")})
+                    } else if n == 1 {
                         json!({"type":"custom_tool_call","call_id":"fixture-code","name":"exec","input":"text('VISIBLE_v1');"})
                     } else {
                         json!({"type":"message","id":"fixture-final","role":"assistant","content":[{"type":"output_text","text":"synthetic done"}]})
                     };
-                    let events = [
+                    let mut events = vec![
                         json!({"type":"response.created","response":{"id":id}}),
                         json!({"type":"response.output_item.done","output_index":0,"item":output.clone()}),
                         json!({"type":"response.completed","response":{"id":id,"status":"completed","output":[output],"usage":{"input_tokens":0,"output_tokens":0,"total_tokens":0}}}),
                     ];
+                    if n == 1 && mode == "causal-reversed" {
+                        let later_card = json!({"type":"message","id":"later-card","role":"assistant","content":[{"type":"output_text","text":CARD}]});
+                        events.insert(2,json!({"type":"response.output_item.done","output_index":1,"item":later_card.clone()}));
+                        events.last_mut().unwrap()["response"]["output"]
+                            .as_array_mut()
+                            .unwrap()
+                            .push(later_card);
+                    }
                     let body = events
                         .iter()
                         .map(|v| format!("data: {v}\n\n"))
@@ -198,7 +220,7 @@ async fn owned_native_join() {
     let url = format!("http://{}/v1", listener.local_addr().unwrap());
     let received = Arc::new(Mutex::new(Vec::new()));
     let stop = Arc::new(AtomicBool::new(false));
-    let worker = peer(listener, received.clone(), stop.clone(), mode.clone());
+    let worker = peer(listener, received.clone(), stop.clone(), mode.clone(), None);
     let mut peer_guard = PeerGuard {
         stop: stop.clone(),
         worker: Some(worker),
@@ -737,4 +759,535 @@ INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms) 
         assert_eq!(count, 2);
     }
     fs::write(root.join("result.json"),json!({"mode":mode,"peer_receptions":count,"captures":captures,"native_child_collected":true,"peer_thread_joined":true,"authority":"none"}).to_string()).unwrap();
+}
+
+/// Real provider-disabled publication, through native ingress and the original TaskStore.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires exact provider-disabled Docker composition"]
+async fn owned_native_causal_join() {
+    use retained_task_workflow::{SubjectKind, SubmitTask, TaskStore};
+    let root = PathBuf::from(std::env::var("WE_NATIVE_INPUT_OUT").unwrap());
+    let mode = std::env::var("WE_NATIVE_INPUT_MODE").unwrap();
+    assert!(matches!(
+        mode.as_str(),
+        "causal-direct" | "causal-nested" | "causal-reversed" | "causal-cut"
+    ));
+    dir(&root);
+    dir(&root.join("store"));
+    dir(&root.join("native"));
+    let owner =
+        Arc::new(TaskStore::open(&root.join("tasks.sqlite"), "human:fixture".into()).unwrap());
+    let question = if mode == "causal-reversed" {
+        "No card in original publication request"
+    } else {
+        CARD
+    };
+    owner
+        .submit(&SubmitTask {
+            command_id: "input".into(),
+            task_id: "task:input".into(),
+            subject_id: "subject:input".into(),
+            kind: SubjectKind::RepositoryAnalysis,
+            objective: question.into(),
+            engineering_question: question.into(),
+            snapshot_ref: "snapshot:input".into(),
+            facts: vec![],
+        })
+        .unwrap();
+    let text = owner.input_text("input").unwrap().unwrap();
+    let record = owner.observe("task:input").unwrap().unwrap();
+    let refs = record
+        .sources
+        .iter()
+        .map(|s| s.reference())
+        .collect::<Vec<_>>();
+    let args = json!({"result_id":"result:causal","body":"original causal recommendation","source_refs":refs,"attribution":"native:fixture"});
+    fs::write(
+        root.join("original-arguments.json"),
+        serde_json::to_vec_pretty(&args).unwrap(),
+    )
+    .unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}/v1", listener.local_addr().unwrap());
+    let received = Arc::new(Mutex::new(Vec::new()));
+    let stop = Arc::new(AtomicBool::new(false));
+    let worker = peer(
+        listener,
+        received.clone(),
+        stop.clone(),
+        mode.clone(),
+        Some(args),
+    );
+    let mut guard = PeerGuard {
+        stop,
+        worker: Some(worker),
+    };
+    let mut config = config(&root, url);
+    config.native.as_mut().unwrap().prompt = text.clone();
+    config.grants.push(crate::GrantConfig {
+        grant_ref: "grant:result".into(),
+        context_generation: "context:input".into(),
+        scope: "task_result_publish".into(),
+        expires_wall_ms: clock_sample().wall.get() + 600_000,
+        revision: 1,
+    });
+    let mut actor = Actor::new(
+        config.clone(),
+        Some(Arc::new(super::restart_epoch_tests::EmptyMaterial)),
+        Some(Arc::new(CausalOwner(owner.clone()))),
+        None,
+    )
+    .unwrap();
+    let db = rusqlite::Connection::open(root.join("store/lifecycle.sqlite")).unwrap();
+    db.execute("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input','subject:input',1,'delivery:input','producer:input',?1,?2,'grant:input','queued')",params![text.as_bytes(),CodecContract::LifecycleTextInputV1.digest_binary(text.as_bytes()).unwrap().hex()]).unwrap();
+    let launch = actor.native_launch.take().unwrap();
+    let (work, pending) = mpsc::channel(4);
+    actor.native_task_work = Some(work);
+    let run = tokio::spawn(operations::run_native(
+        config.native.clone().unwrap(),
+        launch,
+        "transport:input".into(),
+        actor.native_sender.clone(),
+        actor.native_gate.clone(),
+        Some(pending),
+        None,
+    ));
+    if mode == "causal-cut" {
+        db.execute_batch("CREATE TRIGGER cut_owner_settlement BEFORE UPDATE ON native_task_operations WHEN NEW.state='completed_settled' BEGIN SELECT RAISE(ABORT,'injected cut after durable owner commit'); END;").unwrap();
+    }
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(100);
+    let mut done = false;
+    let mut causal_present = false;
+    while !done {
+        let message = tokio::time::timeout_at(deadline, actor.native_messages.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        if let NativeMessage::CaptureInput { observation, .. } = &message {
+            causal_present = observation.causal().is_some();
+            fs::write(root.join("capture-summary.json"),json!({"eligible":observation.eligible(),"causal_present":causal_present,"causal":observation.causal()}).to_string()).unwrap();
+        }
+        let capture = matches!(&message, NativeMessage::CaptureInput { .. });
+        let settle = matches!(message, NativeMessage::Settle { .. });
+        done = matches!(message, NativeMessage::Done { .. });
+        actor.handle_native_message(message).await;
+        if capture && mode != "causal-cut" {
+            let result = owner
+                .observe("task:input")
+                .unwrap()
+                .unwrap()
+                .result
+                .unwrap();
+            let causal = actor
+                .store
+                .native_causal_evidence(&result.operation_id)
+                .unwrap()
+                .unwrap();
+            let input = actor
+                .store
+                .native_input_observation(&causal.invocation_id)
+                .unwrap()
+                .unwrap();
+            let first = actor.native_causal_read("task:input", "subject:input", 0, None);
+            assert_eq!(first["operation_id"], result.operation_id);
+            fs::write(root.join("unconflicted-first-page.json"), first.to_string()).unwrap();
+            let session = actor.native_session.as_ref().unwrap();
+            let turn = actor.native_turn.as_ref().unwrap();
+            let mut changed = input.metadata.clone();
+            changed.push(b'\n');
+            assert_eq!(
+                actor
+                    .store
+                    .retain_native_input(
+                        &session,
+                        &turn,
+                        &input.transport_session,
+                        input.terminal_sequence,
+                        &input.terminal_raw,
+                        &changed,
+                        input.payloads.clone(),
+                        true,
+                        &input.outcome,
+                        clock_sample()
+                    )
+                    .unwrap(),
+                lifecycle_store::NativeInputApply::Conflict
+            );
+            assert!(
+                actor
+                    .store
+                    .native_input_conflicted(&input.invocation_id)
+                    .unwrap()
+            );
+            assert!(
+                !actor
+                    .store
+                    .native_causal_conflicted(&result.operation_id)
+                    .unwrap()
+            );
+            assert_eq!(
+                actor
+                    .store
+                    .native_input_observation(&input.invocation_id)
+                    .unwrap(),
+                Some(input.clone())
+            );
+            let refused = actor.native_causal_read("task:input", "subject:input", 0, None);
+            assert!(refused.get("code").is_some(), "{refused}");
+            assert!(matches!(
+                actor
+                    .store
+                    .retain_native_causal(&session, &turn, &causal.bundle, clock_sample()),
+                Err(StoreError::ClaimConflict)
+            ));
+            fs::write(root.join("strict-input-conflict.json"), json!({"historical_eligible":input.eligible,"historical_bytes_unchanged":true,"strict_input_conflict":true,"causal_conflict":false,"scoped_read":refused,"new_retention":"conflict"}).to_string()).unwrap();
+        }
+        if settle {
+            actor.native_task_work.take();
+        }
+    }
+    run.await.unwrap();
+    // Cleanup and evidence survive semantic assertions below.
+    let before = received.lock().unwrap().len();
+    fs::write(
+        root.join("peer.json"),
+        serde_json::to_vec(&*received.lock().unwrap()).unwrap(),
+    )
+    .unwrap();
+    let original = owner.observe("task:input").unwrap().unwrap();
+    fs::write(
+        root.join("owner.json"),
+        serde_json::to_vec_pretty(&original).unwrap(),
+    )
+    .unwrap();
+    let result = original.result.expect("native original publication");
+    if mode == "causal-cut" {
+        let operation = result.operation_id.clone();
+        let state: String = db
+            .query_row(
+                "SELECT state FROM native_task_operations WHERE operation_id=?1",
+                [&operation],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(state, "entered_uncertain");
+        assert!(
+            actor
+                .store
+                .native_causal_evidence(&operation)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            actor
+                .native_causal_read("task:input", "subject:input", 0, None)
+                .get("code")
+                .is_some()
+        );
+        drop(actor);
+        db.execute_batch("DROP TRIGGER cut_owner_settlement;")
+            .unwrap();
+        let reopened = Actor::new(
+            config.clone(),
+            Some(Arc::new(super::restart_epoch_tests::EmptyMaterial)),
+            Some(Arc::new(CausalOwner(owner.clone()))),
+            None,
+        )
+        .unwrap();
+        let state: String = db
+            .query_row(
+                "SELECT state FROM native_task_operations WHERE operation_id=?1",
+                [&operation],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(state, "completed_settled");
+        assert_eq!(
+            owner.observe("task:input").unwrap().unwrap().result,
+            Some(result)
+        );
+        assert!(
+            reopened
+                .store
+                .native_causal_evidence(&operation)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            reopened
+                .native_causal_read("task:input", "subject:input", 0, None)
+                .get("code")
+                .is_some()
+        );
+        drop(reopened);
+        tokio::time::sleep(Duration::from_millis(750)).await;
+        guard.collect().unwrap();
+        assert_eq!(
+            received.lock().unwrap().len(),
+            before,
+            "owner readback dispatched"
+        );
+        fs::write(root.join("owner-interruption.json"), json!({"cut":"sqlite abort before lifecycle owner settlement after durable original owner commit","before":"entered_uncertain","after_restart":"completed_settled","same_original_result":true,"causal_evidence":"unavailable, not fabricated by readback","new_sends":0}).to_string()).unwrap();
+        return;
+    }
+    assert!(
+        causal_present,
+        "strict input has no qualified ordinary causal companion"
+    );
+    let causal = actor
+        .store
+        .native_causal_evidence(&result.operation_id)
+        .unwrap()
+        .expect("retained original causal evidence");
+    fs::write(
+        root.join("causal.json"),
+        serde_json::to_vec_pretty(&causal).unwrap(),
+    )
+    .unwrap();
+    let bundle: Value = serde_json::from_slice(&causal.bundle).unwrap();
+    let call = &bundle["calls"][0];
+    if mode != "causal-nested" {
+        assert_eq!(call["call_id"], "fixture-publish");
+    }
+    assert_eq!(call["response_id"], "input-response-1");
+    assert_eq!(call["runtime_cell_id"].is_string(), mode == "causal-nested");
+    assert_eq!(
+        call["root_call_id"],
+        if mode == "causal-nested" {
+            "fixture-code"
+        } else {
+            "fixture-publish"
+        }
+    );
+    let input = actor
+        .store
+        .native_input_observation(&causal.invocation_id)
+        .unwrap()
+        .unwrap();
+    assert!(input.eligible);
+    if mode == "causal-reversed" {
+        let selected = input
+            .payloads
+            .iter()
+            .filter(|p| {
+                p.representation == "decoded"
+                    && p.inference_call_id == call["inference_call_id"].as_str().unwrap()
+                    && p.physical_send == call["physical_send"].as_u64().unwrap()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(selected.len(), 1);
+        let original: Value = serde_json::from_slice(&selected[0].bytes).unwrap();
+        assert!(
+            !original.to_string().contains("reconstruction-1"),
+            "Q1 unexpectedly contained card"
+        );
+        assert!(
+            input.payloads.iter().any(|p| p.representation == "decoded"
+                && p.inference_call_id != selected[0].inference_call_id
+                && String::from_utf8_lossy(&p.bytes).contains("reconstruction-1")),
+            "no later Q2 card-bearing request"
+        );
+        // Explicit cause selects the original request, so a later card cannot qualify this result.
+        fs::write(root.join("reversed-refusal.json"),json!({"original_operation":result.operation_id,"root_response":call["response_id"],"root_inference":call["inference_call_id"],"root_send":call["physical_send"],"original_request_contains_card":false,"later_request_contains_card":true,"original_result_eligible_from_later_card":false}).to_string()).unwrap();
+    }
+    let page = actor.native_causal_read("task:input", "subject:input", 0, None);
+    fs::write(
+        root.join("first-page.json"),
+        serde_json::to_vec_pretty(&page).unwrap(),
+    )
+    .unwrap();
+    assert!(page.get("code").is_some());
+    drop(actor);
+    drop(db);
+    drop(owner);
+    let reopened = SqliteLifecycleStore::open(&root.join("store"), "issuer:input".into()).unwrap();
+    assert_eq!(
+        reopened
+            .native_causal_evidence(&result.operation_id)
+            .unwrap(),
+        Some(causal)
+    );
+    assert_eq!(
+        reopened
+            .native_input_observation(&input.invocation_id)
+            .unwrap(),
+        Some(input.clone())
+    );
+    assert!(
+        reopened
+            .native_input_conflicted(&input.invocation_id)
+            .unwrap()
+    );
+    assert!(matches!(
+        reopened.qualified_native_causal_evidence(&result.operation_id),
+        Err(StoreError::ClaimConflict)
+    ));
+    drop(reopened); // release the lifecycle writer owner before actual actor restart
+    let recovered_actor = Actor::new(
+        config.clone(),
+        Some(Arc::new(super::restart_epoch_tests::EmptyMaterial)),
+        Some(Arc::new(CausalOwner(Arc::new(
+            TaskStore::open(&root.join("tasks.sqlite"), "human:fixture".into()).unwrap(),
+        )))),
+        None,
+    )
+    .unwrap();
+    assert!(
+        recovered_actor
+            .native_causal_read("task:input", "subject:input", 0, None)
+            .get("code")
+            .is_some()
+    );
+    drop(recovered_actor);
+    let owner = TaskStore::open(&root.join("tasks.sqlite"), "human:fixture".into()).unwrap();
+    assert_eq!(
+        owner.observe("task:input").unwrap().unwrap().result,
+        Some(result)
+    );
+    tokio::time::sleep(Duration::from_millis(750)).await;
+    guard.collect().unwrap();
+    assert_eq!(
+        received.lock().unwrap().len(),
+        before,
+        "restart caused send"
+    );
+}
+
+// The unit-test crate and its library dependency have distinct Rust trait
+// identities. This adapter uses real TaskStore operations and the actor fence.
+struct CausalOwner(Arc<retained_task_workflow::TaskStore>);
+fn causal_commit(c: retained_task_workflow::OperationCommit) -> TaskOperationCommit {
+    TaskOperationCommit {
+        operation_id: c.operation_id,
+        task_id: c.task_id.clone(),
+        owner_revision: c.owner_revision,
+        owner_ref: c.task_id,
+        sha256: c.digest,
+        kind: c.kind,
+    }
+}
+fn causal_error(e: retained_task_workflow::TaskError) -> TaskOperationError {
+    use retained_task_workflow::TaskError as E;
+    match e {
+        E::Stale | E::PendingQuestion => TaskOperationError::Stale,
+        E::Unauthorized => TaskOperationError::Unauthorized,
+        E::Busy => TaskOperationError::Busy,
+        E::Invalid | E::Conflict => TaskOperationError::Invalid,
+        _ => TaskOperationError::Uncertain,
+    }
+}
+impl TaskOperationPort for CausalOwner {
+    fn original_result_operation(
+        &self,
+        t: &str,
+        s: &str,
+    ) -> Result<Option<String>, TaskOperationError> {
+        let r = self
+            .0
+            .observe(t)
+            .map_err(causal_error)?
+            .ok_or(TaskOperationError::Invalid)?;
+        if r.subject_id != s {
+            return Err(TaskOperationError::Invalid);
+        }
+        Ok(r.result.map(|r| r.operation_id))
+    }
+    fn lookup_completed_effect(
+        &self,
+        _: &str,
+        _: &str,
+    ) -> Result<Option<crate::CompletedTaskEffectReadback>, TaskOperationError> {
+        Ok(None)
+    }
+    fn record_completed_effect(
+        &self,
+        _: &crate::CompletedTaskEffect,
+    ) -> Result<(), TaskOperationError> {
+        Err(TaskOperationError::Invalid)
+    }
+    fn validate_input(&self, id: &str, text: &str) -> Result<TaskInputBinding, TaskOperationError> {
+        let r = self.0.validate_input(id, text).map_err(causal_error)?;
+        Ok(TaskInputBinding {
+            input_id: r.input_id,
+            task_id: r.task_id,
+            subject_id: r.subject_id,
+            cursor_ref: r.cursor_ref,
+            cursor_revision: r.cursor_revision,
+            owner_revision: r.owner_revision,
+            text_sha256: retained_task_workflow::sha256(text.as_bytes()),
+        })
+    }
+    fn current_cursor(&self, t: &str) -> Result<TaskCursorBinding, TaskOperationError> {
+        let r = self
+            .0
+            .observe(t)
+            .map_err(causal_error)?
+            .ok_or(TaskOperationError::Invalid)?;
+        Ok(TaskCursorBinding {
+            task_id: r.task_id.clone(),
+            subject_id: r.subject_id,
+            cursor_ref: r.task_id,
+            cursor_revision: r.cursor_revision,
+            owner_revision: r.revision,
+        })
+    }
+    fn open_question(
+        &self,
+        _: &ValidatedTaskOperationEntry,
+        _: QuestionOpenPayload,
+        _: &mut GrantFence<'_>,
+    ) -> Result<TaskOperationCommit, TaskOperationError> {
+        Err(TaskOperationError::Invalid)
+    }
+    fn publish_result(
+        &self,
+        e: &ValidatedTaskOperationEntry,
+        p: ResultPublishPayload,
+        f: &mut GrantFence<'_>,
+    ) -> Result<TaskOperationCommit, TaskOperationError> {
+        use retained_task_workflow::{OperationEntry, ResultPublishPayload as P, TaskError};
+        if e.contract_id != "task.result.publish.v1" || e.cursor_ref != e.task_id {
+            return Err(TaskOperationError::Invalid);
+        }
+        let entry = OperationEntry {
+            operation_id: e.operation_id.clone(),
+            task_id: e.task_id.clone(),
+            subject_id: e.subject_id.clone(),
+            delivery_id: e.logical_delivery_id.clone(),
+            attempt_id: e.attempt_id.clone(),
+            expected_task_revision: e.expected_task_revision,
+            expected_cursor_revision: e.cursor_revision,
+            grant_ref: e.grant_ref.clone(),
+            grant_revision: e.grant_revision,
+            payload_sha256: e.payload_sha256.clone(),
+        };
+        let p = P {
+            result_id: p.result_id,
+            body: p.body,
+            source_refs: p.source_refs,
+            attribution: p.attribution,
+        };
+        let mut fence = |commit: &mut dyn FnMut() -> Result<(), TaskError>| {
+            f(&mut || commit().map_err(causal_error)).map_err(|e| match e {
+                TaskOperationError::Stale => TaskError::Stale,
+                TaskOperationError::Unauthorized => TaskError::Unauthorized,
+                TaskOperationError::Busy => TaskError::Busy,
+                TaskOperationError::Invalid => TaskError::Invalid,
+                TaskOperationError::Uncertain => TaskError::Uncertain,
+            })
+        };
+        self.0
+            .publish_result(&entry, &p, &mut fence)
+            .map(causal_commit)
+            .map_err(causal_error)
+    }
+    fn lookup_operation(
+        &self,
+        id: &str,
+    ) -> Result<Option<TaskOperationCommit>, TaskOperationError> {
+        self.0
+            .lookup_operation(id)
+            .map(|c| c.map(causal_commit))
+            .map_err(causal_error)
+    }
 }

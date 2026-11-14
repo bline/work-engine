@@ -133,6 +133,16 @@ pub type GrantFence<'a> = dyn FnMut(&mut dyn FnMut() -> Result<(), TaskOperation
     + 'a;
 
 pub trait TaskOperationPort: Send + Sync {
+    /// Owner-derived original result operation, scoped to an exact task/subject.
+    /// Old ports have no causal-read capability.
+    fn original_result_operation(
+        &self,
+        _task: &str,
+        _subject: &str,
+    ) -> Result<Option<String>, TaskOperationError> {
+        Err(TaskOperationError::Invalid)
+    }
+
     /// Read the owner record after native commit, including an opaque legacy
     /// row when present. The lookup has no write or replay authority.
     fn lookup_completed_effect(

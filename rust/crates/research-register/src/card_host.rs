@@ -369,6 +369,19 @@ pub fn reconstruct(basis: &Reconstruction, expected_sha256: &str) -> Result<Vec<
     }
     Ok(replay.card_bytes)
 }
+/// Offline synthetic qualification helper. Uses the same complete composition
+/// validator and retained Git closure; it establishes no worker enclosure or
+/// authenticated installation and is absent from production builds.
+#[cfg(feature = "synthetic-card-host")]
+pub fn synthetic_reconstruction(input: WorkerInput) -> Result<Reconstruction, String> {
+    input.profile.validate()?;
+    let r = &input.request.source;
+    let scope = input.profile.repository_scope.as_ref().ok_or("scope_unavailable")?;
+    let repository = std::fs::canonicalize(&r.repository).map_err(read_failure)?;
+    if std::fs::canonicalize(scope).map_err(read_failure)? != repository { return Err("scope_unavailable".into()); }
+    let objects = GitObjects::open_bounded(&repository, input.profile.read.clone()).map_err(read_failure)?;
+    compose(objects, &input, false)
+}
 /// Test-fixture export of a fully read source closure. It installs no authority and
 /// returns no card. Only available with the explicitly synthetic qualification build.
 #[cfg(feature = "synthetic-card-host")]

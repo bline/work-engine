@@ -25,7 +25,7 @@ type Result<T> = std::result::Result<T, NativeInputError>;
 fn bad<T>() -> Result<T> {
     Err(NativeInputError)
 }
-fn sha(bytes: &[u8]) -> String {
+pub(crate) fn sha(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
@@ -49,8 +49,12 @@ pub struct AcquiredNativeInput {
     pub(crate) payloads: Vec<CheckedNativePayload>,
     pub(crate) eligible: bool,
     pub(crate) outcome: &'static str,
+    pub(crate) causal: Option<crate::causal::AcquiredNativeCausal>,
 }
 impl AcquiredNativeInput {
+    pub fn causal(&self) -> Option<&crate::causal::AcquiredNativeCausal> {
+        self.causal.as_ref()
+    }
     pub fn transport_session(&self) -> &str {
         &self.transport_session
     }
@@ -80,7 +84,7 @@ fn identity(file: &File) -> Result<(u64, u64)> {
     let m = file.metadata().map_err(|_| NativeInputError)?;
     Ok((m.dev(), m.ino()))
 }
-fn open_child(parent: &File, name: &str, directory: bool) -> Result<File> {
+pub(crate) fn open_child(parent: &File, name: &str, directory: bool) -> Result<File> {
     if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\0') {
         return bad();
     }
@@ -126,7 +130,7 @@ fn read_bounded(mut file: File, limit: usize) -> Result<Vec<u8>> {
     }
     Ok(bytes)
 }
-fn read_child_bounded(parent: &File, name: &str, limit: usize) -> Result<Vec<u8>> {
+pub(crate) fn read_child_bounded(parent: &File, name: &str, limit: usize) -> Result<Vec<u8>> {
     let file = open_child(parent, name, false)?;
     let original = identity(&file)?;
     let bytes = read_bounded(file, limit)?;
@@ -243,6 +247,7 @@ impl CaptureOwner {
                     payloads: Vec::new(),
                     eligible: false,
                     outcome: "capture_unavailable_or_malformed",
+                    causal: None,
                 })
             }
         }
@@ -353,6 +358,18 @@ impl CaptureOwner {
             "checked_completed"
         };
         let payloads = decoded.map(|(payloads, _)| payloads).unwrap_or_default();
+        let causal = if eligible {
+            crate::causal::acquire(
+                &dir,
+                &metadata,
+                payloads.iter().map(|p| p.bytes.len()).sum(),
+                thread,
+                turn,
+            )
+            .ok()
+        } else {
+            None
+        };
         self.check_root()?;
         for (parent, name, original) in anchors {
             if identity(&open_child(&parent, &name, true)?)? != original {
@@ -366,10 +383,11 @@ impl CaptureOwner {
             payloads,
             eligible,
             outcome,
+            causal,
         })
     }
 }
-fn fields(v: &Value, expected: &[&str]) -> Result<()> {
+pub(crate) fn fields(v: &Value, expected: &[&str]) -> Result<()> {
     let o = v.as_object().ok_or(NativeInputError)?;
     if o.len() != expected.len() || expected.iter().any(|k| !o.contains_key(*k)) {
         return bad();

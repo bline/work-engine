@@ -60,7 +60,7 @@ fn assert_legacy_current_capsule_roundtrip(root: &std::path::Path, store: &Sqlit
     let peer = tempdir_in(root.parent().unwrap()).unwrap();
     let capsule = peer.path().join("capsule");
     let receipt = store.export_current(&capsule).unwrap();
-    assert_eq!(receipt.source_schema, 12);
+    assert_eq!(receipt.source_schema, 14);
     assert_eq!(
         SqliteLifecycleStore::read_capsule(&capsule).unwrap(),
         receipt
@@ -81,7 +81,7 @@ fn incompatible_future_store_is_refused_before_database_mutation() {
     let root = tempdir().unwrap();
     let database = root.path().join("lifecycle.sqlite");
     let conn = rusqlite::Connection::open(&database).unwrap();
-    conn.pragma_update(None, "user_version", 14).unwrap();
+    conn.pragma_update(None, "user_version", 16).unwrap();
     drop(conn);
     let before = fs::read(&database).unwrap();
     assert!(SqliteLifecycleStore::open(root.path(), "trusted".into()).is_err());
@@ -117,7 +117,7 @@ fn selected_restart_refuses_inactive_and_invalid_six_without_image_mutation() {
             readback
                 .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            12,
+            14,
             "{change}"
         );
     }
@@ -253,7 +253,7 @@ fn selected_restart_opt_in_preserves_predecessor_and_requires_exact_authorizatio
         inspection
             .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        12
+        14
     );
     drop(inspection);
     let retained_before = retained_table_rows(&root.path().join("lifecycle.sqlite"));
@@ -337,7 +337,7 @@ fn selected_restart_opt_in_preserves_predecessor_and_requires_exact_authorizatio
     let capsule_dir = tempdir_in(root.path().parent().unwrap()).unwrap();
     let capsule_root = capsule_dir.path().join("capsule");
     let receipt = store.export_current(&capsule_root).unwrap();
-    assert_eq!(receipt.source_schema, 13);
+    assert_eq!(receipt.source_schema, 15);
     assert_eq!(
         SqliteLifecycleStore::read_capsule(&capsule_root).unwrap(),
         receipt
@@ -455,14 +455,14 @@ fn genuine_schema_four_migrates_to_six_without_changing_store_identity() {
     assert_eq!(
         conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        12
+        14
     );
     assert_eq!(
         conn.query_row(
             "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'custody_revision_%'",
             [], |r| r.get::<_, i64>(0),
         ).unwrap(),
-        135
+        141
     );
 }
 
@@ -529,9 +529,9 @@ fn genuine_schema_five_migrates_to_six_without_changing_store_identity() {
     assert_eq!(
         conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        12
+        14
     );
-    assert_eq!(conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",[],|r|r.get::<_,i64>(0)).unwrap(),135);
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",[],|r|r.get::<_,i64>(0)).unwrap(),141);
     assert_eq!(
         conn.query_row(
             "SELECT mode FROM legacy_held_state WHERE singleton=1",
@@ -697,7 +697,7 @@ fn isolation_diagnostic_migrates_six_and_seven_with_legacy_unknown() {
         assert_eq!(
             conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            predecessor + 6
+            predecessor + 8
         );
         assert_eq!(conn.query_row("SELECT count(*) FROM pragma_table_info('native_process_exits') WHERE name='isolation_diagnostic'", [], |r|r.get::<_,i64>(0)).unwrap(), 1);
         // Direct semantic custody is additive: both tables exist and start empty.
@@ -718,7 +718,7 @@ fn isolation_diagnostic_migrates_six_and_seven_with_legacy_unknown() {
         let receipt = store
             .export_current(&parent.path().join("capsule"))
             .unwrap();
-        assert_eq!(i64::from(receipt.source_schema), predecessor + 6);
+        assert_eq!(i64::from(receipt.source_schema), predecessor + 8);
         drop(store);
         assert!(SqliteLifecycleStore::open(root.path(), "trusted".into()).is_ok());
     }
@@ -781,7 +781,7 @@ fn populated_native_input_predecessors_preserve_bytes_and_restart_classification
         assert_eq!(
             db.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            predecessor + 2
+            predecessor + 4
         );
         assert_eq!(
             db.query_row("SELECT COUNT(*) FROM native_input_observations", [], |r| {

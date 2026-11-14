@@ -2088,6 +2088,7 @@ dependencies = [
 name = "lifecycle-service"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "bounded-inference",
  "getrandom 0.3.4",
  "jsonwebtoken 10.3.0",
@@ -2100,6 +2101,7 @@ dependencies = [
  "lifecycle-store",
  "lifecycle-test-support",
  "lifecycle-wire",
+ "retained-task-workflow",
  "rusqlite",
  "serde",
  "serde_json",
@@ -4408,6 +4410,7 @@ dependencies = [
 name = "work-engine-task-host"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "bounded-inference",
  "getrandom 0.3.4",
  "lifecycle-codex",
@@ -4425,6 +4428,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "work-engine-types",
+ "zstd",
 ]
 
 [[package]]

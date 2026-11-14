@@ -232,6 +232,18 @@ impl SqliteLifecycleStore {
         Ok(result)
     }
 
+    /// Qualification state is separate from the immutable historical record.
+    pub fn native_input_conflicted(&self, invocation: &str) -> Result<bool, StoreError> {
+        self.verify_identity()?;
+        self.connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM native_input_conflicts WHERE invocation_id=?1)",
+                [invocation],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)
+    }
+
     /// Historical readback never checks fresh eligibility or authorizes a send.
     pub fn native_input_observation(
         &self,

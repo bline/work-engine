@@ -12,6 +12,24 @@ use crate::{
 };
 
 impl TaskOperationPort for TaskStore {
+    fn original_result_operation(
+        &self,
+        task: &str,
+        subject: &str,
+    ) -> Result<Option<String>, PortError> {
+        if self.research_causal_scope.as_ref().is_none_or(|(t, s)| t != task || s != subject) {
+            return Err(PortError::Unauthorized);
+        }
+        let record = self
+            .observe(task)
+            .map_err(port_error)?
+            .ok_or(PortError::Invalid)?;
+        if record.subject_id != subject {
+            return Err(PortError::Invalid);
+        }
+        Ok(record.result.map(|r| r.operation_id))
+    }
+
     fn lookup_completed_effect(
         &self,
         task_id: &str,
@@ -245,5 +263,23 @@ fn task_error(value: PortError) -> TaskError {
         PortError::Stale => TaskError::Stale,
         PortError::Busy => TaskError::Busy,
         PortError::Uncertain => TaskError::Uncertain,
+    }
+}
+
+#[cfg(all(test, feature = "controlled-proof"))]
+mod causal_scope_tests {
+    use super::*;
+    use crate::{SubmitTask, SubjectKind};
+    #[test]
+    fn original_result_read_requires_exact_trusted_nomination_even_for_existing_tasks() {
+        let root=tempfile::tempdir().unwrap();
+        let store=TaskStore::open(&root.path().join("tasks.sqlite"), "human".into()).unwrap();
+        for (task,subject) in [("advisory","subject-a"),("foreign","subject-f")] {
+            store.submit(&SubmitTask {command_id:task.into(),task_id:task.into(),subject_id:subject.into(),kind:SubjectKind::RepositoryAnalysis,objective:"synthetic read scope".into(),engineering_question:"scope".into(),snapshot_ref:"snapshot".into(),facts:vec![]}).unwrap();
+        }
+        assert_eq!(store.original_result_operation("advisory","subject-a"),Err(PortError::Unauthorized));
+        let store=store.with_controlled_research_causal_scope("advisory".into(),"subject-a".into()).unwrap();
+        assert_eq!(store.original_result_operation("advisory","subject-a"),Ok(None));
+        for (task,subject) in [("advisory","subject-f"),("foreign","subject-a"),("foreign","subject-f")] { assert_eq!(store.original_result_operation(task,subject),Err(PortError::Unauthorized)); }
     }
 }

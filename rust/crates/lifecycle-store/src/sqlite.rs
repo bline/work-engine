@@ -274,7 +274,7 @@ impl SqliteLifecycleStore {
             let version: i64 = inspection
                 .query_row("PRAGMA user_version", [], |r| r.get(0))
                 .map_err(|_| StoreError::Unavailable)?;
-            if !matches!(version, 6..=13) {
+            if !matches!(version, 6..=15) {
                 return Err(StoreError::Rejected);
             }
             let integrity: String = inspection
@@ -316,7 +316,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=13).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=15).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
             if matches!(version, 4 | 5) {
@@ -373,7 +373,7 @@ impl SqliteLifecycleStore {
             5 => {}
             6 => {}
             7 => {}
-            8..=13 => {}
+            8..=15 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -528,6 +528,24 @@ impl SqliteLifecycleStore {
                 None,
                 "user_version",
                 if predecessor == 11 { 13 } else { 12 },
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+            crate::recovery::check_coherence(&tx)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if version < 14 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            let predecessor: i64 = tx
+                .query_row("PRAGMA user_version", [], |r| r.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0011_native_causal.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(
+                None,
+                "user_version",
+                if predecessor == 13 { 15 } else { 14 },
             )
             .map_err(|_| StoreError::Unavailable)?;
             crate::recovery::check_coherence(&tx)?;
