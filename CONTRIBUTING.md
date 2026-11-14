@@ -40,7 +40,8 @@ Before changing behavior, check which document owns the thing you are changing.
 [`ARCHITECTURE.md`](ARCHITECTURE.md) has the repository map and per-subsystem
 ownership. In short:
 
-- [`DESIGN.md`](DESIGN.md) owns invariants and authority boundaries. Changing one
+- [`DESIGN.md`](DESIGN.md) indexes the scoped contracts in `docs/contracts/`,
+  which own invariants and authority boundaries. Changing one
   is a contract change, not an ordinary patch, and needs its own discussion.
 - [`PHILOSOPHY.md`](PHILOSOPHY.md) is non-normative. Do not derive requirements
   from it.

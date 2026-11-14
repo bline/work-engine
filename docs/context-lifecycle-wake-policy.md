@@ -44,6 +44,6 @@ scheduler, observers and campaign owner can remove that cost structurally; this
 policy keeps an otherwise deterministic organization from reintroducing it
 through chatty wakes.
 
-This applies the [determinism principle](../DESIGN.md#9-determinism-and-model-judgment):
+This applies the [determinism principle](contracts/system-design.md#9-determinism-and-model-judgment):
 whether subordinate work has finished is fully determined by available state, so
 it should not spend model reasoning.

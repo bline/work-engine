@@ -19,7 +19,8 @@ this still true?
 
 | Category | What it holds | Lifetime | Home |
 | --- | --- | --- | --- |
-| Doctrine | Binding rules for all work | Changes only with the owner's authority | root: `DESIGN.md`, `PHILOSOPHY.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `README.md` |
+| Doctrine and entrypoints | Binding contracts and scoped navigation | Changes only with the owner's authority | root entrypoints (`DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `README.md`); scoped doctrine in `docs/contracts/` |
+| Rationale | Non-normative explanation of doctrine | Kept current without creating authority | `PHILOSOPHY.md` index and `docs/rationale/` |
 | Current design | What the system is meant to be | Revised in place; marked stale when superseded | [`design/`](../design/README.md) |
 | Durable references | Operating knowledge consulted while working | Kept current | `docs/` |
 | Tooling | Skill packages and campaign configuration | Versioned; skills reach agents only by [release](../skills/skill-release/SKILL.md) | `skills/`, `campaigns/` |
@@ -33,6 +34,8 @@ listed.
 
 | Writing | Goes in |
 | --- | --- |
+| Binding doctrine, scoped by the decision it governs | `docs/contracts/`, indexed by `DESIGN.md`; repository loading stays in `AGENTS.md` |
+| Non-normative reasoning behind doctrine | `docs/rationale/`, indexed by `PHILOSOPHY.md` |
 | System-level design: architecture, an idea being reconciled into design | `design/` |
 | Operating knowledge others need while working, kept current | `docs/` |
 | A campaign or slice phase document: plan, contract, validation, result, coordination | `records/`, named `<area>-<workstream>-<phase>-<kind>.md` (for example `rust-compiler-c2-plan.md`) |

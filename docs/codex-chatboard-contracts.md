@@ -68,7 +68,7 @@ Extracted mechanically, with no sampling:
   Claude (thinking included; n = 116). Failed posts: 1 Codex, 1 Claude.
 
 The product already knows what these readers need. Per
-[PHILOSOPHY.md §3](../PHILOSOPHY.md#3-invariant-structure-as-the-hard-frame), it
+[PHILOSOPHY.md §3](rationale/structural-anchors.md#3-invariant-structure-as-the-hard-frame), it
 should not be re-inferred on every post.
 
 ## Scope
@@ -138,7 +138,7 @@ read.
 
 Each kind names its consumer, because a field is required only when that
 consumer cannot otherwise distinguish valid from invalid states
-([DESIGN.md §1.5](../DESIGN.md#15-outcome-derived-design)). The set is open
+([DESIGN.md §1.5](contracts/system-design.md#15-outcome-derived-design)). The set is open
 through `note`. A **registered** kind is checked; an unregistered kind is
 rejected at post, so a misspelling cannot create an unvalidated protocol.
 
@@ -169,7 +169,7 @@ Field notes:
 - `availability.live_children` lists children and processes the ending session
   still owns. An empty list states none; an absent field leaves quiescence
   `not established`. It is the poster's record, not independent observation
-  (DESIGN.md §3.9): a gate that requires quiescence still observes the process
+  ([Design §3.9](contracts/evidence-and-claims.md#39-independently-required-production-path-claims)): a gate that requires quiescence still observes the process
   tree itself, and uses this field to cross-check what it observes.
 - `correction` carries the four parts of a correction that CLAUDE.md rule 8
   requires and that 2691 already follows in prose.
@@ -182,7 +182,7 @@ Field notes:
 
 The rotation gate consumes approvals today. Whether a board message may carry
 transfer authority is an open doctrine question
-([DESIGN.md §11](../DESIGN.md#11-operator-authority-and-approval)): invariants 1
+([DESIGN.md §11](contracts/core.md#11-operator-authority-and-approval)): invariants 1
 and 2 say it cannot, and the gate's own comments defer the question to the skill
 owner. Defining an `approval` kind before that decision would make prose
 authority look like structured authority. The gate keeps its current form until

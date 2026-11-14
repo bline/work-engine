@@ -125,8 +125,8 @@ the contract the supervising agent follows.
 
 | Path | What it holds |
 | --- | --- |
-| `DESIGN.md` | Normative doctrine: invariants, authority boundaries, design tests |
-| `PHILOSOPHY.md` | Why that doctrine exists; explicitly non-normative |
+| `DESIGN.md` | Index of scoped binding doctrine in `docs/contracts/` |
+| `PHILOSOPHY.md` | Index of non-normative rationale in `docs/rationale/` |
 | `ARCHITECTURE.md` | Current whole-system map, with an explicit maturity class per subsystem |
 | `roadmap.md` | Product direction, remaining work, and completion evidence |
 | [`docs/repository-layout.md`](docs/repository-layout.md) | Where a file belongs and why: categories by lifetime and authority, and rules for moving or citing files |

@@ -6,7 +6,7 @@ generated_by: skills/agent-environment-graph/scripts/agent_environment_graph.py
 source_inputs:
   invariant_catalog:
     path: ../workflow-invariants.md
-    sha256: 124e27108241e42b6fe5f42c499cd5153a14e3c122e9bf41993f96a378f1b4e9
+    sha256: a109c5bc7e4142de0159361dbd60677b8d22dbce011f25f2028f866dcdfb764c
   role_environment:
     path: ../agent-environments.yaml
     sha256: 38002804a2ef3966e58ecef5af50f9376f302a08964ba9d139e8a562aa30e97b
@@ -281,7 +281,7 @@ invariants:
     - INV-030
     - INV-007
     - INV-027
-    sources: '[Design §1.1](../DESIGN.md#11-contracts-and-invariants), [Supervisor: resolve contract](../skills/slice-supervisor/SKILL.md#resolve-the-campaign-contract)'
+    sources: '[Design §1.1](contracts/core.md#11-contracts-and-invariants), [Supervisor: resolve contract](../skills/slice-supervisor/SKILL.md#resolve-the-campaign-contract)'
   INV-002:
     owner: user / owning contract
     applies: entire run
@@ -299,7 +299,8 @@ invariants:
     - INV-009
     - INV-024
     - INV-027
-    sources: '[Design §11](../DESIGN.md#11-user-authority-and-approval), [Supervisor: accept or escalate](../skills/slice-supervisor/SKILL.md#accept-or-escalate-the-plan)'
+    sources: '[Design §11](contracts/core.md#11-operator-authority-and-approval), [Supervisor: accept
+      or escalate](../skills/slice-supervisor/SKILL.md#accept-or-escalate-the-plan)'
   INV-003:
     owner: supervisor
     applies: run initialization and every terminal receipt
@@ -444,7 +445,7 @@ invariants:
     - INV-001
     - INV-009
     - INV-020
-    sources: '[Design §10](../DESIGN.md#10-route-revision), [Decision policy](../skills/slice-builder/references/decision-policy.md#adapt-without-losing-truth)'
+    sources: '[Design §10](contracts/core.md#10-route-revision), [Decision policy](../skills/slice-builder/references/decision-policy.md#adapt-without-losing-truth)'
   INV-011:
     owner: builder / supervisor
     applies: planning through gate
@@ -478,8 +479,8 @@ invariants:
     relations:
     - INV-014
     - INV-020
-    sources: '[Design §8](../DESIGN.md#8-independence-is-a-property-not-ritualized-amnesia), [Builder:
-      launch](../skills/slice-builder/SKILL.md#launch-the-builder)'
+    sources: '[Design §8](contracts/context-and-review.md#8-independence-is-a-property-not-ritualized-amnesia),
+      [Builder: launch](../skills/slice-builder/SKILL.md#launch-the-builder)'
   INV-013:
     owner: builder
     applies: implementation
@@ -591,7 +592,8 @@ invariants:
     - INV-019
     - INV-020
     - INV-029
-    sources: '[Design §12](../DESIGN.md#12-provenance-and-receipts), [Receipt: truth rules](../skills/slice-supervisor/references/receipt-schema.md#truth-and-safety-rules)'
+    sources: '[Design §12](contracts/evidence-and-claims.md#12-provenance-and-receipts), [Receipt: truth
+      rules](../skills/slice-supervisor/references/receipt-schema.md#truth-and-safety-rules)'
   INV-019:
     owner: receipt boundary
     applies: accepted, stopped, or failed terminal
@@ -630,7 +632,8 @@ invariants:
     - INV-012
     - INV-018
     - INV-003
-    sources: '[Design §6](../DESIGN.md#6-evidence-and-capability-selection), [Receipt: evidence provenance](../skills/slice-supervisor/references/receipt-schema.md#required-version-4-evidence-provenance)'
+    sources: '[Design §6](contracts/evidence-and-claims.md#6-evidence-and-capability-selection), [Receipt:
+      evidence provenance](../skills/slice-supervisor/references/receipt-schema.md#required-version-4-evidence-provenance)'
   INV-021:
     owner: telemetry ingress / assembler
     applies: terminal assembly

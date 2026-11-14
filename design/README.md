@@ -20,7 +20,8 @@ and design-bearing research.
 
 Not here:
 
-- binding doctrine (`DESIGN.md`, `PHILOSOPHY.md` at the root);
+- binding doctrine (`DESIGN.md` indexes `docs/contracts/`) and its non-normative
+  rationale (`PHILOSOPHY.md` indexes `docs/rationale/`);
 - operating references (`docs/`);
 - a component's own documentation (with the component);
 - records of design work, such as plans, reviews and reconciliation waves

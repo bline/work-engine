@@ -1,16 +1,42 @@
 # Repository Instructions
 
-Before working in this repository, read and follow [DESIGN.md](DESIGN.md), the
-binding doctrine for system design and architectural constraints. Treat it as
-required context for all planning, implementation, review, and documentation work.
+Read and follow [core contracts](docs/contracts/core.md) before repository work.
+The [design index](DESIGN.md) routes the rest of the binding doctrine by decision;
+[philosophy](PHILOSOPHY.md) is explanatory and non-normative. Scoped documents
+state their authority, scope, and loading condition. Their contracts remain binding
+when applicable; a link is not an instruction to recursively load every document.
 
-[PHILOSOPHY.md](PHILOSOPHY.md) explains why that doctrine exists and is
-explicitly non-normative. Read it in full for design, architecture, planning,
-and doctrine or instruction review, where its rationale shapes the result. For
-bounded implementation, validation, and mechanical work, consult it when a
-decision turns on that rationale. Context loaded at startup is re-sent with every
-later model call, so startup context should be the binding doctrine plus what the
-task needs ([PHILOSOPHY.md §17](PHILOSOPHY.md#17-the-role-of-the-design-document)).
+## Loading map
+
+| Situation | Read |
+| --- | --- |
+| Every new session or context window | This file and [core contracts](docs/contracts/core.md); perform the board read below |
+| Resuming unfinished work after restart, reset, or compaction; preparing replacement | Invoke `$wind-walker` and follow [context recovery](docs/contracts/context-recovery.md) before continuing |
+| Choosing architecture, semantic ownership, boundaries, or product structure | [System design](docs/contracts/system-design.md) |
+| Authoring or reviewing agent instructions, skills, or loading rules | [Instruction design](docs/contracts/instruction-design.md) |
+| Selecting or relying on evidence, writing receipts, defining route-sensitive acceptance | [Evidence and claims](docs/contracts/evidence-and-claims.md) |
+| Coordinating agents, conducting review, retaining or replacing context | [Context and review lifetimes](docs/contracts/context-and-review.md) and the active role's skill |
+| Coordinating agents or shared resources; an active human-supervised role with a configured durable scheduler | [Repository coordination](docs/agent-coordination.md) |
+| A decision needs the reasoning behind a contract | The relevant topic from [PHILOSOPHY.md](PHILOSOPHY.md) |
+
+Load applicable task and role references before the decisions they govern. Multiple
+rows may apply. Bounded implementation and validation do not require the full design
+or rationale corpus. Design and instruction review need the scoped doctrine and
+relevant rationale, rather than every topic. Role and campaign contracts continue
+to own their specific obligations and acceptance conditions.
+
+## Shared-session awareness
+
+Concurrent sessions share files, not conversation context. At startup, after context
+recovery, before claiming a shared resource, and before paid or externally
+consequential operations, read the board:
+
+```bash
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . read --limit 20 --active-claims
+```
+
+Use [repository coordination](docs/agent-coordination.md) before claims, launches,
+transitions, or resource mutation. Claims are advisory coordination, not authority.
 
 ## Pre-release compatibility policy
 Work Engine is under active development. Internal implementations and
@@ -21,7 +47,7 @@ is reusable implementation material, not architectural authority. It may be
 modified, replaced, or removed.  Preserve approved semantics, data integrity,
 provenance, and qualification evidence—not obsolete implementation behavior.
 Any recommendation to preserve compatibility must identify the specific
-consumer, the consequence of breaking it, and the cost of maintaining it.  
+consumer, the consequence of breaking it, and the cost of maintaining it.
 
 ## Model-selection guidance
 [Model selection](docs/model-selection.md) provides current defaults and their
@@ -41,71 +67,3 @@ existing components and their authority remain until accepted replacement.
 Readers judge a file's standing from where it sits. Put a new file where
 [repository layout](docs/repository-layout.md) says, and follow its rules when
 moving or citing one.
-
-## Coordinating sub-agents
-
-Outside a configured Slice Builder campaign, a Codex or Claude Code session
-that coordinates sub-agents, or that a parent launches under
-[the manual-orchestration skill](skills/manual-orchestration/SKILL.md), uses
-that skill and loads only the references it names for the active role. A
-child launched under another skill or review contract follows that contract.
-
-## Durable role schedules
-
-Scheduled obligations can outlive model context, but a schedule does not create
-authority or activate an agent. When a durable scheduler capability is
-configured and this session has an active human-supervised role, read and
-follow [the role-scheduler skill](skills/role-scheduler/SKILL.md) at startup.
-Reconcile overdue, due, and near-term items before ordinary work that could make
-them stale or invisible. Do not emulate durable scheduling by storing future
-obligations only in model context or an unobserved terminal.
-
-## Continuous Wind Walker
-
-In the first turn of every new context window created by a session restart,
-context reset, or compaction, invoke and follow `$wind-walker` before resuming
-unfinished work. Perform this invocation in the new context window so the
-skill governs recovery and continuation there.
-
-Before intentionally replacing context, invoke `$wind-walker` and ensure all
-continuation-critical objectives, authority boundaries, commitments,
-unresolved obligations, and references have durable owners. If that cannot be
-established, do not replace context.
-
-If replacement occurs outside the agent's control, invoke `$wind-walker` in
-the new context window and stop rather than continue when correct recovery
-still depends on meaning lost with the prior context.
-
-## Shared Codex coordination board
-
-Concurrent Codex sessions share files but do not share conversation context.
-At session startup, after compaction recovery, before claiming a shared
-resource, and before any paid or externally consequential operation, read the
-repository chatboard:
-
-```bash
-python3 skills/durable-state/scripts/codex_chatboard.py --repository . read --limit 20 --active-claims
-```
-
-This returns the newest messages and unexpired claims. When a task needs older
-history, page forward with `--since <sequence>`.
-
-Post concise transition messages for resource claims, launches, pauses,
-interruptions, replacements, and terminal results. Include exact artifact or
-campaign references. Use `claim` before operating on a shared campaign,
-ordinal, reviewer episode, or publication resource, and `release` when done.
-Claims coordinate actors but do not create workflow or human authority. The
-board is CAS-published through private Git refs and does not modify a branch,
-index, or working tree.
-
-Command lines (generated from `--help`):
-
-<!-- cli-synopsis script=skills/durable-state/scripts/codex_chatboard.py subs="post claim release read" display="python3 skills/durable-state/scripts/codex_chatboard.py --repository ." -->
-```text
-python3 skills/durable-state/scripts/codex_chatboard.py --repository . post --author AUTHOR --session-id SESSION_ID --topic TOPIC --body BODY [--message-id MESSAGE_ID] [--ref REF] [--wake] [--kind KIND] [--role ROLE] [--to TO] [--reply-to IN_REPLY_TO] [--supersedes SUPERSEDES] [--effects-file EFFECTS_FILE] [--data-file DATA_FILE]
-python3 skills/durable-state/scripts/codex_chatboard.py --repository . claim --resource RESOURCE --author AUTHOR --session-id SESSION_ID --note NOTE [--claim-id CLAIM_ID] [--ttl-seconds TTL_SECONDS]
-python3 skills/durable-state/scripts/codex_chatboard.py --repository . release --resource RESOURCE --session-id SESSION_ID --claim-id CLAIM_ID
-python3 skills/durable-state/scripts/codex_chatboard.py --repository . read [--since SINCE] [--limit LIMIT] [--active-claims] [--kind KINDS] [--role ROLES] [--format {json,compact}]
-# other subcommands (put --help after one for its usage): wait, topics, roles, requests, handoff-publish, handoff-status, owner-boundary-io, kinds, adopt
-```
-<!-- /cli-synopsis -->

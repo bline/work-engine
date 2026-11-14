@@ -16,7 +16,8 @@ future system as already implemented.
 This document does not own product doctrine, implementation authority, or
 roadmap priority:
 
-- [`DESIGN.md`](DESIGN.md) owns normative product doctrine and invariants.
+- [`DESIGN.md`](DESIGN.md) indexes normative product doctrine and invariants in
+  `docs/contracts/`.
 - [`PHILOSOPHY.md`](PHILOSOPHY.md) explains the reasoning behind that doctrine.
 - [`roadmap.md`](roadmap.md) owns current product direction, priorities, and
   completion evidence.
@@ -706,11 +707,11 @@ The current architecture is organized around these derived distinctions:
    remain secondary to the stronger artifacts they reference. Future UI and
    control-plane projections are intended to preserve the same separation, but
    that extension is exploratory rather than verified by the primary-workflow
-   catalog. (`DESIGN.md` §2.3; `INV-022`;
+   catalog. ([Design §2.3](docs/contracts/instruction-design.md#23-runtime-instruction-projection); `INV-022`;
    [`agent-environments.yaml`](docs/agent-environments.yaml))
 10. **Current machinery is not permanent doctrine.** Git refs, SQLite, model
     providers, specific skills, and named routes may be replaced while their
-    protected consequences remain true. (`DESIGN.md` §2.2)
+    protected consequences remain true. ([Design §2.2](docs/contracts/system-design.md#22-variant-structure))
 
 ## Repository map
 
