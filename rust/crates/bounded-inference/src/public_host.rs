@@ -1,16 +1,16 @@
 //! A bounded, operator driven SIWC host. Grants are attributable inputs, not observations.
-use crate::journal::{CONTENT_TYPE_VALUE_LIMIT, ContentTypeCapture, ContentTypeMeta};
+use crate::journal::{ContentTypeCapture, ContentTypeMeta, CONTENT_TYPE_VALUE_LIMIT};
 use crate::{
-    AttemptJournal, AttemptRecord, AttemptState, AuthStore, Bounds, HttpErrorShape, HttpEvidence,
-    ObservedTerminal, PublicHttps, PublicHttpsError, Readiness, RegistrationRef, StreamError,
-    StreamObserver, ToolFreeProfile, assemble_request,
+    assemble_request, AttemptJournal, AttemptRecord, AttemptState, AuthStore, Bounds,
+    HttpErrorShape, HttpEvidence, ObservedTerminal, PublicHttps, PublicHttpsError, Readiness,
+    RegistrationRef, StreamError, StreamObserver, ToolFreeProfile,
 };
 use crate::{AssembledRequest, DirectEndpoint, DirectExchange};
 use lifecycle_semantic::{
     DirectEvidenceClass, DirectPreparedCall, DirectProductionProfile, DirectReleaseState,
     DirectRole, RealDiagnosticPrepared,
 };
-use reqwest::header::{CONTENT_TYPE, HeaderValue};
+use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -688,7 +688,13 @@ impl PublicHost {
         action.consume()?;
         tokio::time::timeout(
             action.remaining()?,
-            self.smoke_inner(&bound_grant, work_dir, Some(action), SendPayload::Smoke, None),
+            self.smoke_inner(
+                &bound_grant,
+                work_dir,
+                Some(action),
+                SendPayload::Smoke,
+                None,
+            ),
         )
         .await
         .map_err(|_| HostError::Entered)?
@@ -807,9 +813,16 @@ impl PublicHost {
         journal_path: &Path,
         host_source_sha256: &str,
     ) -> Result<DiagnosticProjection, HostError> {
-        self.direct_admitted_staged(action, grant_bytes, call, work_dir, journal_path, host_source_sha256)
-            .await
-            .map_err(DirectAdmitError::into_host)
+        self.direct_admitted_staged(
+            action,
+            grant_bytes,
+            call,
+            work_dir,
+            journal_path,
+            host_source_sha256,
+        )
+        .await
+        .map_err(DirectAdmitError::into_host)
     }
 
     /// `direct_admitted` with its failures split at the durable action claim:
@@ -1137,7 +1150,8 @@ impl PublicHost {
         grant: &SmokeGrant,
         work_dir: &Path,
     ) -> Result<SmokeProjection, HostError> {
-        self.smoke_inner(grant, work_dir, None, SendPayload::Smoke, None).await
+        self.smoke_inner(grant, work_dir, None, SendPayload::Smoke, None)
+            .await
     }
     async fn smoke_inner(
         &self,
@@ -1150,9 +1164,14 @@ impl PublicHost {
         let selected = self.selected()?;
         let observed_now = now();
         grant.validate(&selected, &grant.selected_model, observed_now)?;
-        let observation = current_model_observation(&self.credential_dir, grant, &selected, observed_now)?;
+        let observation =
+            current_model_observation(&self.credential_dir, grant, &selected, observed_now)?;
         let bounds = Bounds {
-            request_bytes: if matches!(payload, SendPayload::Smoke) { 4096 } else { 65_536 },
+            request_bytes: if matches!(payload, SendPayload::Smoke) {
+                4096
+            } else {
+                65_536
+            },
             stream_bytes: 1024 * 1024,
             frame_bytes: 128 * 1024,
             output_bytes: 16 * 1024,
@@ -1196,9 +1215,10 @@ impl PublicHost {
         // Direct operation identities are lifecycle ids, which may contain
         // characters unsafe in file names; their claims use a digest key.
         let (operation_key, attempt_key) = match payload {
-            SendPayload::Direct { .. } => {
-                (direct_identity_key(&grant.operation_id), direct_identity_key(&grant.attempt_id))
-            }
+            SendPayload::Direct { .. } => (
+                direct_identity_key(&grant.operation_id),
+                direct_identity_key(&grant.attempt_id),
+            ),
             _ => (
                 safe_id(&grant.operation_id)?.to_owned(),
                 safe_id(&grant.attempt_id)?.to_owned(),
@@ -1274,7 +1294,9 @@ impl PublicHost {
         // intent, so the send boundary's bearer read fails without a time margin.
         #[cfg(test)]
         if grant.release_id == "test-postclaim-signout" {
-            self.store.sign_out_local(&selected).map_err(|_| HostError::Auth)?;
+            self.store
+                .sign_out_local(&selected)
+                .map_err(|_| HostError::Auth)?;
         }
         let send_now = now();
         let current_bearer: Result<_, HostError> = (|| {
@@ -1403,7 +1425,11 @@ impl PublicHost {
                     break;
                 }
                 Ok(Err(error)) => {
-                    failure = Some(if error.is_timeout() { StreamError::Timeout } else { StreamError::TransportFailure });
+                    failure = Some(if error.is_timeout() {
+                        StreamError::Timeout
+                    } else {
+                        StreamError::TransportFailure
+                    });
                     break;
                 }
                 Err(_) => {
@@ -1534,9 +1560,18 @@ impl PublicHost {
             let map = value.as_object_mut().ok_or(HostError::Evidence)?;
             map.remove("output_matches_fixture");
             map.insert("operation_id".into(), serde_json::json!(grant.operation_id));
-            map.insert("prepared_binding_sha256".into(), serde_json::json!(binding_sha256));
-            map.insert("prepared_wire_sha256".into(), serde_json::json!(wire_sha256));
-            map.insert("admission_sha256".into(), serde_json::json!(admission_sha256.ok_or(HostError::Evidence)?));
+            map.insert(
+                "prepared_binding_sha256".into(),
+                serde_json::json!(binding_sha256),
+            );
+            map.insert(
+                "prepared_wire_sha256".into(),
+                serde_json::json!(wire_sha256),
+            );
+            map.insert(
+                "admission_sha256".into(),
+                serde_json::json!(admission_sha256.ok_or(HostError::Evidence)?),
+            );
             serde_json::to_vec(&value).map_err(|_| HostError::Evidence)?
         } else {
             serde_json::to_vec(&projection).map_err(|_| HostError::Evidence)?
@@ -1587,8 +1622,7 @@ fn current_model_observation(
     {
         return Err(HostError::Policy);
     }
-    let parsed: serde_json::Value =
-        serde_json::from_slice(&raw).map_err(|_| HostError::Policy)?;
+    let parsed: serde_json::Value = serde_json::from_slice(&raw).map_err(|_| HostError::Policy)?;
     let parsed_models = parsed
         .get("models")
         .and_then(|v| v.as_array())
@@ -1667,7 +1701,10 @@ fn direct_grant_binds(
 }
 
 fn valid_sha256(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
 
 /// What the release owner needs to issue the action grant and the
@@ -1900,8 +1937,10 @@ impl PublicHostEndpoint {
     }
 
     fn release_file(&self, kind: &str, operation_id: &str) -> PathBuf {
-        self.release_dir
-            .join(format!("direct-{kind}-{}.json", direct_identity_key(operation_id)))
+        self.release_dir.join(format!(
+            "direct-{kind}-{}.json",
+            direct_identity_key(operation_id)
+        ))
     }
 
     /// The request projection and latest release check for one operation.
@@ -1988,13 +2027,14 @@ impl PublicHostEndpoint {
         if action.executable_sha256 != self.executable_sha256 {
             return Err("action grant executable is not the startup-pinned executable");
         }
-        if action
-            .remaining()
-            .map_or(true, |d| d < Duration::from_secs(DIRECT_RELEASE_MIN_REMAINING_SECS))
-        {
+        if action.remaining().map_or(true, |d| {
+            d < Duration::from_secs(DIRECT_RELEASE_MIN_REMAINING_SECS)
+        }) {
             return Err("action grant window too short for a bounded send");
         }
-        action.verify_unspent().map_err(|_| "action release already spent")?;
+        action
+            .verify_unspent()
+            .map_err(|_| "action release already spent")?;
         action
             .action_path()
             .map_err(|_| "action release id is not a safe identifier")?;
@@ -2670,7 +2710,7 @@ fn parse_callback_request(bytes: &[u8], redirect: &str) -> Result<String, HostEr
 mod tests {
     use super::*;
     use base64::Engine;
-    use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
+    use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
     use serde_json::json;
     use std::{
         io::Read,
@@ -2890,13 +2930,18 @@ mod tests {
                 };
                 paths.push(path);
                 if paths.last().is_some_and(|p| p == "/v1/responses")
-                    && metadata.get("test_response_stall_ms").and_then(|v|v.as_u64()).is_some()
+                    && metadata
+                        .get("test_response_stall_ms")
+                        .and_then(|v| v.as_u64())
+                        .is_some()
                 {
                     let header = format!("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", event_body.len()+10);
                     tls.write_all(header.as_bytes()).unwrap();
                     tls.write_all(&event_body).unwrap();
                     tls.flush().unwrap();
-                    thread::sleep(Duration::from_millis(metadata["test_response_stall_ms"].as_u64().unwrap()));
+                    thread::sleep(Duration::from_millis(
+                        metadata["test_response_stall_ms"].as_u64().unwrap(),
+                    ));
                     continue;
                 }
                 if paths.last().is_some_and(|p| p == "/v1/models")
@@ -3179,12 +3224,10 @@ mod tests {
                 PublicHost::inspect_local_renewal_target(&host.credential_dir, &host.host_id)
                     .is_err()
             );
-            assert!(
-                !host
-                    .credential_dir
-                    .join("action-missing-credential.json")
-                    .exists()
-            );
+            assert!(!host
+                .credential_dir
+                .join("action-missing-credential.json")
+                .exists());
             assert_eq!(fs::read(&path).unwrap(), before);
         }
         assert_eq!(server.join().unwrap().len(), 2);
@@ -3213,11 +3256,10 @@ mod tests {
             host.store.readiness(now()).unwrap(),
             Readiness::Ready(_)
         ));
-        assert!(
-            host.credential_dir
-                .join("action-refresh-invalid-client.json")
-                .exists()
-        );
+        assert!(host
+            .credential_dir
+            .join("action-refresh-invalid-client.json")
+            .exists());
         assert!(runtime().block_on(host.refresh_admitted(&action)).is_err());
         assert_eq!(server.join().unwrap().len(), 5);
     }
@@ -3231,12 +3273,10 @@ mod tests {
         let action = action_for(&host, "refresh", "refresh-invalid");
         assert!(runtime().block_on(host.refresh_admitted(&action)).is_err());
         assert_eq!(host.selected().unwrap(), prior);
-        assert!(
-            !host
-                .credential_dir
-                .join("action-refresh-invalid.json")
-                .exists()
-        );
+        assert!(!host
+            .credential_dir
+            .join("action-refresh-invalid.json")
+            .exists());
         assert_eq!(server.join().unwrap().len(), 2);
     }
 
@@ -3253,12 +3293,10 @@ mod tests {
         wrong.credential_revision += 1;
         action.refresh_registration = Some(wrong);
         assert!(runtime().block_on(host.refresh_admitted(&action)).is_err());
-        assert!(
-            !host
-                .credential_dir
-                .join("action-refresh-terminal.json")
-                .exists()
-        );
+        assert!(!host
+            .credential_dir
+            .join("action-refresh-terminal.json")
+            .exists());
         action.refresh_registration = Some(host.selected().unwrap());
         assert!(runtime().block_on(host.refresh_admitted(&action)).is_err());
         assert!(matches!(
@@ -3393,11 +3431,9 @@ mod tests {
         let models = runtime().block_on(host.list_models()).unwrap();
         assert_eq!(models.models[0].slug, "fake-model");
         let grant = grant(&host, model_sha());
-        assert!(
-            grant
-                .validate(&host.selected().unwrap(), "fake-model", now())
-                .is_ok()
-        );
+        assert!(grant
+            .validate(&host.selected().unwrap(), "fake-model", now())
+            .is_ok());
         let observed_sha = models.observation_id;
         assert_eq!(grant.model_observation_sha256, observed_sha);
         let work = root.join("work");
@@ -3548,11 +3584,9 @@ mod tests {
         .unwrap();
         assert_eq!(fence["post_dispatched"], false);
         assert!(!server.join().unwrap().iter().any(|p| p == "/v1/responses"));
-        assert!(
-            runtime()
-                .block_on(host.smoke(&grant, &root.join("other")))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(host.smoke(&grant, &root.join("other")))
+            .is_err());
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -3562,11 +3596,9 @@ mod tests {
             event(json!({"type":"response.created","sequence_number":1,"response":{"id":"resp-safe","model":"fake-model"}})),
             "event: response.failed\ndata: {\"type\":\"response.failed\",\"sequence_number\":2,\"response\":{\"id\":\"resp-safe\",\"model\":\"fake-model\",\"status\":\"failed\",\"error\":{\"code\":\"\\u0073ynthetic-access\"}}}\n\n".to_string(),
         ].concat().into_bytes();
-        assert!(
-            !body
-                .windows(b"synthetic-access".len())
-                .any(|w| w == b"synthetic-access")
-        );
+        assert!(!body
+            .windows(b"synthetic-access".len())
+            .any(|w| w == b"synthetic-access"));
         let root = temp("decoded-secret");
         let (addr, der, server) = tls_peer(metadata(), body.clone(), 4);
         let host = seeded_host(addr, &der, &root.join("auth"));
@@ -3845,15 +3877,13 @@ mod tests {
                 .event_stream_prefix
         );
         let record = AttemptJournal::open(root.join("work/attempt-attempt-one.json")).unwrap();
-        assert!(
-            record
-                .record()
-                .http
-                .as_ref()
-                .unwrap()
-                .content_type
-                .is_none()
-        );
+        assert!(record
+            .record()
+            .http
+            .as_ref()
+            .unwrap()
+            .content_type
+            .is_none());
         server.join().unwrap();
         fs::remove_dir_all(root).unwrap();
     }
@@ -3886,12 +3916,10 @@ mod tests {
             assert_eq!(meta.capture, ContentTypeCapture::Captured);
             assert!(!meta.event_stream_prefix);
             assert_eq!(projection.content_type_meta.as_ref(), Some(meta));
-            assert!(
-                serde_json::to_value(&projection)
-                    .unwrap()
-                    .get("content_type")
-                    .is_none()
-            );
+            assert!(serde_json::to_value(&projection)
+                .unwrap()
+                .get("content_type")
+                .is_none());
             assert_eq!(http.body_bytes as usize, body.len());
             assert_eq!(
                 http.body_sha256.as_deref(),
@@ -3974,15 +4002,13 @@ mod tests {
                 )
                 .unwrap();
         });
-        assert!(
-            runtime()
-                .block_on(receive_callback_async(
-                    listener,
-                    &redirect,
-                    Duration::from_millis(500)
-                ))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(receive_callback_async(
+                listener,
+                &redirect,
+                Duration::from_millis(500)
+            ))
+            .is_err());
         handle.join().unwrap();
     }
 
@@ -4002,15 +4028,13 @@ mod tests {
             }
         });
         let started = Instant::now();
-        assert!(
-            runtime()
-                .block_on(receive_callback_async(
-                    listener,
-                    &redirect,
-                    Duration::from_millis(100)
-                ))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(receive_callback_async(
+                listener,
+                &redirect,
+                Duration::from_millis(100)
+            ))
+            .is_err());
         assert!(started.elapsed() < Duration::from_millis(350));
         writer.join().unwrap();
     }
@@ -4059,17 +4083,15 @@ mod tests {
             issued_at_unix: issued,
             valid_until_unix: issued + 45,
         };
-        assert!(
-            grant
-                .validate(
-                    "smoke",
-                    &credential_dir,
-                    "synthetic_host",
-                    Some(&work_dir),
-                    Some(b"synthetic-grant")
-                )
-                .is_ok()
-        );
+        assert!(grant
+            .validate(
+                "smoke",
+                &credential_dir,
+                "synthetic_host",
+                Some(&work_dir),
+                Some(b"synthetic-grant")
+            )
+            .is_ok());
         let contract = CredentialCustody {
             owner: grant.custody_owner.clone(),
             custodian: grant.custody_custodian.clone(),
@@ -4081,34 +4103,28 @@ mod tests {
             &serde_json::to_vec(&contract).unwrap(),
         )
         .unwrap();
-        assert!(
-            grant
-                .validate("models", &credential_dir, "synthetic_host", None, None)
-                .is_err()
-        );
-        assert!(
-            grant
-                .validate(
-                    "smoke",
-                    &credential_dir,
-                    "synthetic_host",
-                    Some(&work_dir),
-                    Some(b"changed")
-                )
-                .is_err()
-        );
+        assert!(grant
+            .validate("models", &credential_dir, "synthetic_host", None, None)
+            .is_err());
+        assert!(grant
+            .validate(
+                "smoke",
+                &credential_dir,
+                "synthetic_host",
+                Some(&work_dir),
+                Some(b"changed")
+            )
+            .is_err());
         grant.executable_sha256 = "0".repeat(64);
-        assert!(
-            grant
-                .validate(
-                    "smoke",
-                    &credential_dir,
-                    "synthetic_host",
-                    Some(&work_dir),
-                    Some(b"synthetic-grant")
-                )
-                .is_err()
-        );
+        assert!(grant
+            .validate(
+                "smoke",
+                &credential_dir,
+                "synthetic_host",
+                Some(&work_dir),
+                Some(b"synthetic-grant")
+            )
+            .is_err());
         grant.executable_sha256 = ActionGrant::executable_sha256().unwrap();
         grant.consume().unwrap();
         assert!(grant.consume().is_err());
@@ -4158,18 +4174,14 @@ mod tests {
         let host = seeded_host(addr, &der, &root.join("auth"));
         let mut grant = grant(&host, model_sha());
         grant.credit_use_disabled = false;
-        assert!(
-            runtime()
-                .block_on(host.smoke(&grant, &root.join("work")))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(host.smoke(&grant, &root.join("work")))
+            .is_err());
         grant.credit_use_disabled = true;
         grant.credential_revision += 1;
-        assert!(
-            runtime()
-                .block_on(host.smoke(&grant, &root.join("work")))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(host.smoke(&grant, &root.join("work")))
+            .is_err());
         assert_eq!(server.join().unwrap().len(), 2);
         assert!(!root.join("work").exists());
         fs::remove_dir_all(root).unwrap();
@@ -4252,11 +4264,9 @@ mod tests {
         let work = root.join("work");
         prepare_private_dir(&work).unwrap();
         fs::write(work.join("funding-release-one.json"), b"occupied").unwrap();
-        assert!(
-            runtime()
-                .block_on(host.smoke(&grant(&host, model_sha()), &work))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(host.smoke(&grant(&host, model_sha()), &work))
+            .is_err());
         let paths = server.join().unwrap();
         assert!(!paths.iter().any(|p| p == "/v1/responses"));
         fs::remove_dir_all(root).unwrap();
@@ -4273,11 +4283,9 @@ mod tests {
             .join("auth")
             .join(format!("model-response-{}.bin", model_sha()));
         fs::write(&raw_path, b"{}").unwrap();
-        assert!(
-            runtime()
-                .block_on(host.smoke(&grant(&host, model_sha()), &root.join("work")))
-                .is_err()
-        );
+        assert!(runtime()
+            .block_on(host.smoke(&grant(&host, model_sha()), &root.join("work")))
+            .is_err());
         assert_eq!(
             server
                 .join()
@@ -4506,12 +4514,10 @@ mod tests {
         let host = seeded_host(addr, &der, &root.join("auth"));
         assert!(runtime().block_on(host.disconnect()).unwrap());
         assert!(host.selected().is_err());
-        assert!(
-            server
-                .join()
-                .unwrap()
-                .contains(&"/api/accounts/oauth/revoke".to_owned())
-        );
+        assert!(server
+            .join()
+            .unwrap()
+            .contains(&"/api/accounts/oauth/revoke".to_owned()));
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -4522,11 +4528,9 @@ mod tests {
         let host = seeded_host(addr, &der, &root.join("auth"));
         server.join().unwrap();
         let action = action_for(&host, "disconnect", "disconnect-outage");
-        assert!(
-            !runtime()
-                .block_on(host.disconnect_admitted(&action))
-                .unwrap()
-        );
+        assert!(!runtime()
+            .block_on(host.disconnect_admitted(&action))
+            .unwrap());
         assert!(host.selected().is_err());
         fs::remove_dir_all(root).unwrap();
     }
@@ -4636,15 +4640,22 @@ mod tests {
     }
 
     fn diagnostic_prepared() -> RealDiagnosticPrepared {
-        serde_json::from_slice(include_bytes!("../tests/fixtures/synthetic-real-diagnostic-q01-prepared.json")).unwrap()
+        serde_json::from_slice(include_bytes!(
+            "../tests/fixtures/synthetic-real-diagnostic-q01-prepared.json"
+        ))
+        .unwrap()
     }
 
     fn diagnostic_stream() -> Vec<u8> {
-        let material: serde_json::Value = serde_json::from_slice(include_bytes!("../tests/fixtures/synthetic-real-diagnostic-q01-material.json")).unwrap();
+        let material: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../tests/fixtures/synthetic-real-diagnostic-q01-material.json"
+        ))
+        .unwrap();
         let report = json!({"whole_response_assessed":true,"findings":[{
             "obligation_id":material["obligations"][0]["id"],"status":"satisfied",
             "sources":material["obligations"][0]["sources"],"explanation":"whole plan checked"}],
-            "critical_errors":[]}).to_string();
+            "critical_errors":[]})
+        .to_string();
         diagnostic_stream_with_report(report)
     }
     fn diagnostic_stream_with_report(report: String) -> Vec<u8> {
@@ -4659,7 +4670,11 @@ mod tests {
             json!({"type":"response.output_item.done","sequence_number":7,"output_index":0,"item":{"id":"item-diagnostic","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":report}]}}),
             json!({"type":"response.completed","sequence_number":8,"response":{"id":"response-diagnostic","model":"gpt-6-astra","status":"completed","output":[]}}),
         ];
-        events.into_iter().map(|v|format!("data: {v}\n\n")).collect::<String>().into_bytes()
+        events
+            .into_iter()
+            .map(|v| format!("data: {v}\n\n"))
+            .collect::<String>()
+            .into_bytes()
     }
     fn diagnostic_provider_incomplete() -> Vec<u8> {
         [json!({"type":"response.created","sequence_number":0,"response":{"id":"response-diagnostic","model":"gpt-6-astra","status":"in_progress","output":[]}}),
@@ -4675,55 +4690,69 @@ mod tests {
     fn diagnostic_metadata() -> serde_json::Value {
         let mut meta = metadata();
         meta["test_diagnostic"] = json!(true);
-        meta["test_models_body"] = json!(r#"{"models":[{"slug":"gpt-6-astra","visibility":"list"}]}"#);
+        meta["test_models_body"] =
+            json!(r#"{"models":[{"slug":"gpt-6-astra","visibility":"list"}]}"#);
         meta
     }
 
-    fn diagnostic_grant(host: &PublicHost, prepared: &RealDiagnosticPrepared, model_sha: String) -> DiagnosticGrant {
+    fn diagnostic_grant(
+        host: &PublicHost,
+        prepared: &RealDiagnosticPrepared,
+        model_sha: String,
+    ) -> DiagnosticGrant {
         let mut smoke = grant(host, model_sha);
         smoke.release_id = "diagnostic-release".into();
         smoke.operation_id = prepared.request.binding.operation_id.clone();
         smoke.attempt_id = prepared.request.binding.attempt_id.clone();
         smoke.selected_model = prepared.requested_model.clone();
-        DiagnosticGrant { smoke, prepared_binding_sha256:prepared.binding_sha256.clone(),
-            prepared_wire_sha256:prepared.wire_sha256.clone(),
-            semantic_prompt_sha256:prepared.request.semantic_prompt_sha256.clone(),
-            source_basis_sha256:prepared.request.source_basis_sha256.clone(),
-            candidate_sha256:prepared.request.candidate_sha256.clone(),
-            exposure_id:prepared.request.binding.exposure_id.clone(),
-            profile_revision:prepared.profile_revision.clone() }
+        DiagnosticGrant {
+            smoke,
+            prepared_binding_sha256: prepared.binding_sha256.clone(),
+            prepared_wire_sha256: prepared.wire_sha256.clone(),
+            semantic_prompt_sha256: prepared.request.semantic_prompt_sha256.clone(),
+            source_basis_sha256: prepared.request.source_basis_sha256.clone(),
+            candidate_sha256: prepared.request.candidate_sha256.clone(),
+            exposure_id: prepared.request.binding.exposure_id.clone(),
+            profile_revision: prepared.profile_revision.clone(),
+        }
     }
 
     #[test]
     fn diagnostic_actual_host_admission_and_capture() {
-        let root = std::env::var_os("B2_DIAGNOSTIC_FIXTURE_DIR").map(PathBuf::from)
-            .unwrap_or_else(||temp("diagnostic-actual"));
+        let root = std::env::var_os("B2_DIAGNOSTIC_FIXTURE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| temp("diagnostic-actual"));
         let (addr, der, server) = tls_peer(diagnostic_metadata(), diagnostic_stream(), 4);
         let host = seeded_host(addr, &der, &root.join("auth"));
-        let model = runtime().block_on(host.models_admitted(&action_for(&host,"models","diagnostic-models"))).unwrap();
+        let model = runtime()
+            .block_on(host.models_admitted(&action_for(&host, "models", "diagnostic-models")))
+            .unwrap();
         let prepared = diagnostic_prepared();
-        let mut grant = diagnostic_grant(&host,&prepared,model.response_sha256);
+        let mut grant = diagnostic_grant(&host, &prepared, model.response_sha256);
         let work = root.join("work");
         let grant_bytes = serde_json::to_vec(&grant).unwrap();
-        let mut action = action_for(&host,"diagnostic","diagnostic-release");
+        let mut action = action_for(&host, "diagnostic", "diagnostic-release");
         action.work_dir = Some(work.clone());
-        action.smoke_grant_sha256 = Some(format!("{:x}",Sha256::digest(&grant_bytes)));
+        action.smoke_grant_sha256 = Some(format!("{:x}", Sha256::digest(&grant_bytes)));
         action.valid_until_unix = action.issued_at_unix + 45;
         for field in 0..7 {
             let mut bad = grant.clone();
             match field {
-                0=>bad.prepared_binding_sha256="0".repeat(64),
-                1=>bad.prepared_wire_sha256="0".repeat(64),
-                2=>bad.semantic_prompt_sha256="0".repeat(64),
-                3=>bad.source_basis_sha256="0".repeat(64),
-                4=>bad.candidate_sha256="0".repeat(64),
-                5=>bad.exposure_id="wrong-exposure".into(),
-                _=>bad.profile_revision="wrong-profile".into(),
+                0 => bad.prepared_binding_sha256 = "0".repeat(64),
+                1 => bad.prepared_wire_sha256 = "0".repeat(64),
+                2 => bad.semantic_prompt_sha256 = "0".repeat(64),
+                3 => bad.source_basis_sha256 = "0".repeat(64),
+                4 => bad.candidate_sha256 = "0".repeat(64),
+                5 => bad.exposure_id = "wrong-exposure".into(),
+                _ => bad.profile_revision = "wrong-profile".into(),
             }
-            let bytes=serde_json::to_vec(&bad).unwrap();
-            let mut bad_action=action.clone();
-            bad_action.smoke_grant_sha256=Some(format!("{:x}",Sha256::digest(&bytes)));
-            assert!(matches!(runtime().block_on(host.diagnostic_admitted(&bad_action,&bytes,&prepared,&work)),Err(HostError::Policy)));
+            let bytes = serde_json::to_vec(&bad).unwrap();
+            let mut bad_action = action.clone();
+            bad_action.smoke_grant_sha256 = Some(format!("{:x}", Sha256::digest(&bytes)));
+            assert!(matches!(
+                runtime().block_on(host.diagnostic_admitted(&bad_action, &bytes, &prepared, &work)),
+                Err(HostError::Policy)
+            ));
             assert!(!bad_action.action_path().unwrap().exists());
         }
         // Each refused call above re-validated the action, re-hashing the test
@@ -4732,33 +4761,66 @@ mod tests {
         // the valid action is issued as an owner issues it: at use.
         action.issued_at_unix = now();
         action.valid_until_unix = action.issued_at_unix + 45;
-        let projection=runtime().block_on(host.diagnostic_admitted(&action,&grant_bytes,&prepared,&work)).unwrap();
-        assert_eq!(projection.http_status,Some(200));
-        assert_eq!(projection.terminal,Some(ObservedTerminal::Completed));
+        let projection = runtime()
+            .block_on(host.diagnostic_admitted(&action, &grant_bytes, &prepared, &work))
+            .unwrap();
+        assert_eq!(projection.http_status, Some(200));
+        assert_eq!(projection.terminal, Some(ObservedTerminal::Completed));
         assert!(projection.full_capture_complete);
-        assert!(work.join(format!("diagnostic-admission-{}.json",grant.smoke.attempt_id)).exists());
-        assert!(matches!(runtime().block_on(host.diagnostic_admitted(&action,&grant_bytes,&prepared,&work)),Err(HostError::Policy)));
-        grant.smoke.release_id="collision-release".into();
-        let collision_bytes=serde_json::to_vec(&grant).unwrap();
-        let mut collision_action=action.clone();
-        collision_action.release_id="collision-release".into();
-        collision_action.smoke_grant_sha256=Some(format!("{:x}",Sha256::digest(&collision_bytes)));
-        collision_action.work_dir=Some(root.join("collision"));
-        assert!(runtime().block_on(host.diagnostic_admitted(&collision_action,&collision_bytes,&prepared,&root.join("collision"))).is_err());
-        assert_eq!(server.join().unwrap().iter().filter(|p|p.as_str()=="/v1/responses").count(),1);
-        if std::env::var_os("B2_DIAGNOSTIC_FIXTURE_DIR").is_none() { fs::remove_dir_all(root).unwrap(); }
+        assert!(work
+            .join(format!(
+                "diagnostic-admission-{}.json",
+                grant.smoke.attempt_id
+            ))
+            .exists());
+        assert!(matches!(
+            runtime().block_on(host.diagnostic_admitted(&action, &grant_bytes, &prepared, &work)),
+            Err(HostError::Policy)
+        ));
+        grant.smoke.release_id = "collision-release".into();
+        let collision_bytes = serde_json::to_vec(&grant).unwrap();
+        let mut collision_action = action.clone();
+        collision_action.release_id = "collision-release".into();
+        collision_action.smoke_grant_sha256 =
+            Some(format!("{:x}", Sha256::digest(&collision_bytes)));
+        collision_action.work_dir = Some(root.join("collision"));
+        assert!(runtime()
+            .block_on(host.diagnostic_admitted(
+                &collision_action,
+                &collision_bytes,
+                &prepared,
+                &root.join("collision")
+            ))
+            .is_err());
+        assert_eq!(
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
+            1
+        );
+        if std::env::var_os("B2_DIAGNOSTIC_FIXTURE_DIR").is_none() {
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]
     fn diagnostic_actual_host_adverse_captures() {
-        let base = std::env::var_os("B2_DIAGNOSTIC_ADVERSE_DIR").map(PathBuf::from)
-            .unwrap_or_else(||temp("diagnostic-adverse"));
-        let material:serde_json::Value=serde_json::from_slice(include_bytes!("../tests/fixtures/synthetic-real-diagnostic-q01-material.json")).unwrap();
-        let mut bad_source=material["obligations"][0]["sources"][0].clone();
-        bad_source["id"]=json!("fabricated-source");
-        let bad_report=json!({"whole_response_assessed":true,"findings":[{
+        let base = std::env::var_os("B2_DIAGNOSTIC_ADVERSE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| temp("diagnostic-adverse"));
+        let material: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../tests/fixtures/synthetic-real-diagnostic-q01-material.json"
+        ))
+        .unwrap();
+        let mut bad_source = material["obligations"][0]["sources"][0].clone();
+        bad_source["id"] = json!("fabricated-source");
+        let bad_report = json!({"whole_response_assessed":true,"findings":[{
             "obligation_id":material["obligations"][0]["id"],"status":"satisfied",
-            "sources":[bad_source],"explanation":"unsupported"}],"critical_errors":[]}).to_string();
+            "sources":[bad_source],"explanation":"unsupported"}],"critical_errors":[]})
+        .to_string();
         for (kind, body) in [
             ("http", diagnostic_stream()),
             ("incomplete", b"data: {\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"response-diagnostic\",\"model\":\"gpt-6-astra\",\"status\":\"in_progress\",\"output\":[]}}\n\n".to_vec()),
@@ -4798,7 +4860,9 @@ mod tests {
             assert!(projection.response_bytes > 0);
             assert_eq!(server.join().unwrap().iter().filter(|p|p.as_str()=="/v1/responses").count(),1);
         }
-        if std::env::var_os("B2_DIAGNOSTIC_ADVERSE_DIR").is_none() { fs::remove_dir_all(base).unwrap(); }
+        if std::env::var_os("B2_DIAGNOSTIC_ADVERSE_DIR").is_none() {
+            fs::remove_dir_all(base).unwrap();
+        }
     }
 
     #[test]
@@ -4814,16 +4878,14 @@ mod tests {
             .unwrap();
         assert_eq!(first.response_sha256, second.response_sha256);
         assert_ne!(first.observation_id, second.observation_id);
-        assert!(
-            host.observation_path(&first.observation_id)
-                .unwrap()
-                .exists()
-        );
-        assert!(
-            host.observation_path(&second.observation_id)
-                .unwrap()
-                .exists()
-        );
+        assert!(host
+            .observation_path(&first.observation_id)
+            .unwrap()
+            .exists());
+        assert!(host
+            .observation_path(&second.observation_id)
+            .unwrap()
+            .exists());
         assert_eq!(
             server
                 .join()
@@ -4869,11 +4931,9 @@ mod tests {
             .unwrap();
         assert!(projection.quarantined);
         assert!(projection.exact_capture.contains("quarantine-"));
-        assert!(
-            !fs::read_to_string(work.join("attempt-attempt-one.json"))
-                .unwrap()
-                .contains("synthetic-access")
-        );
+        assert!(!fs::read_to_string(work.join("attempt-attempt-one.json"))
+            .unwrap()
+            .contains("synthetic-access"));
         assert_eq!(
             server
                 .join()
@@ -4911,11 +4971,9 @@ mod tests {
             issued_at_unix: now(),
             valid_until_unix: now() + 15,
         };
-        assert!(
-            action
-                .validate("models", &dir, "synthetic-host", None, None)
-                .is_ok()
-        );
+        assert!(action
+            .validate("models", &dir, "synthetic-host", None, None)
+            .is_ok());
         action.custody_contract_ref.clear();
         assert!(matches!(
             action.validate("models", &dir, "synthetic-host", None, None),
@@ -4968,11 +5026,9 @@ mod tests {
             .block_on(host.smoke_admitted(&action, &smoke_grant, &bytes, &work))
             .unwrap();
         assert!(projection.quarantined);
-        assert!(
-            !fs::read_to_string(work.join("attempt-attempt-one.json"))
-                .unwrap()
-                .contains("synthetic-access")
-        );
+        assert!(!fs::read_to_string(work.join("attempt-attempt-one.json"))
+            .unwrap()
+            .contains("synthetic-access"));
         assert_eq!(
             server
                 .join()
@@ -5086,7 +5142,11 @@ mod tests {
     }
 
     fn private_dir(path: &Path) -> PathBuf {
-        fs::DirBuilder::new().recursive(true).mode(0o700).create(path).unwrap();
+        fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(path)
+            .unwrap();
         path.to_path_buf()
     }
 
@@ -5125,7 +5185,10 @@ mod tests {
         action.valid_until_unix = action.issued_at_unix + 45;
         let key = direct_identity_key(&call.binding.operation_id);
         for (name, content) in [
-            (format!("direct-action-{key}.json"), serde_json::to_vec(&action).unwrap()),
+            (
+                format!("direct-action-{key}.json"),
+                serde_json::to_vec(&action).unwrap(),
+            ),
             (format!("direct-grant-{key}.json"), bytes),
         ] {
             let path = release.join(name);
@@ -5157,7 +5220,11 @@ mod tests {
         let journals = root.join("journals");
         let adapter = direct_adapter(&host, &der, addr, &release, &journals);
         // Lifecycle ids carry `:`; the custody key is a digest of them.
-        let call = direct_call(&adapter, "operation:b3-unit1-compile", "attempt:b3-unit1-compile-01");
+        let call = direct_call(
+            &adapter,
+            "operation:b3-unit1-compile",
+            "attempt:b3-unit1-compile-01",
+        );
         assert_eq!(call.wire.profile_revision, "b2-public-siwc-stream-v2");
         assert_eq!(call.wire.requested_provider, "openai_responses");
         let endpoint = PublicHostEndpoint::synthetic(
@@ -5166,11 +5233,17 @@ mod tests {
             &host.host_id,
             &release,
         );
-        assert_eq!(endpoint.admission_status(&call), DirectAdmissionStatus::InputsMissing);
+        assert_eq!(
+            endpoint.admission_status(&call),
+            DirectAdmissionStatus::InputsMissing
+        );
         let claims_before = custody_claims(&host);
 
         // No owner input: withheld before any claim, nothing claimed, no journal.
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
         assert_eq!(custody_claims(&host), claims_before);
 
         // Each mismatched owner binding is refused before any claim or intent.
@@ -5189,53 +5262,135 @@ mod tests {
             Box::new(|g| g.host_source_sha256 = "1".repeat(64)),
         ];
         for edit in &edits {
-            write_direct_release(&host, &release, &call, &model_sha, "direct-release", &journals, |g| edit(g));
-            assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model_sha,
+                "direct-release",
+                &journals,
+                |g| edit(g),
+            );
+            assert_eq!(
+                adapter.submit(&call).unwrap_err(),
+                DirectSubmitError::Withheld
+            );
             assert_eq!(custody_claims(&host), claims_before);
-            assert!(!host.credential_dir.join("action-direct-release.json").exists());
-            assert!(!journals.join(format!("{}.attempt.json", call.binding.operation_id)).exists());
+            assert!(!host
+                .credential_dir
+                .join("action-direct-release.json")
+                .exists());
+            assert!(!journals
+                .join(format!("{}.attempt.json", call.binding.operation_id))
+                .exists());
         }
 
-        write_direct_release(&host, &release, &call, &model_sha, "direct-release", &journals, |_| {});
-        assert_eq!(endpoint.admission_status(&call), DirectAdmissionStatus::InputsPresent);
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "direct-release",
+            &journals,
+            |_| {},
+        );
+        assert_eq!(
+            endpoint.admission_status(&call),
+            DirectAdmissionStatus::InputsPresent
+        );
         let capture = adapter.submit(&call).unwrap();
         assert_eq!(capture.terminal, DirectTerminal::Complete);
         assert_eq!(capture.observed_model.as_deref(), Some(DIRECT_MODEL));
-        assert_eq!(capture.observed_provider.as_deref(), Some("openai_responses"));
+        assert_eq!(
+            capture.observed_provider.as_deref(),
+            Some("openai_responses")
+        );
         assert_eq!(capture.response_id.as_deref(), Some("response-diagnostic"));
         assert_eq!(capture.evidence, DirectProductionProfile::public_api());
         // The capture digest is of the retained raw body, which is kept.
-        assert_eq!(capture.captured_stream_sha256, format!("{:x}", Sha256::digest(&raw)));
+        assert_eq!(
+            capture.captured_stream_sha256,
+            format!("{:x}", Sha256::digest(&raw))
+        );
         let key = direct_identity_key(&call.binding.attempt_id);
-        assert_eq!(fs::read(journals.join(format!("capture-{key}.bin"))).unwrap(), raw);
+        assert_eq!(
+            fs::read(journals.join(format!("capture-{key}.bin"))).unwrap(),
+            raw
+        );
         assert!(journals.join("funding-direct-release.json").exists());
-        assert!(journals.join(format!("direct-admission-{key}.json")).exists());
-        let journal = AttemptJournal::open(journals.join(format!("{}.attempt.json", call.binding.operation_id))).unwrap();
-        assert_eq!(journal.record().profile_revision, "b2-public-siwc-stream-v2");
-        assert_eq!(journal.record().registration.as_ref(), Some(&host.selected().unwrap()));
+        assert!(journals
+            .join(format!("direct-admission-{key}.json"))
+            .exists());
+        let journal = AttemptJournal::open(
+            journals.join(format!("{}.attempt.json", call.binding.operation_id)),
+        )
+        .unwrap();
+        assert_eq!(
+            journal.record().profile_revision,
+            "b2-public-siwc-stream-v2"
+        );
+        assert_eq!(
+            journal.record().registration.as_ref(),
+            Some(&host.selected().unwrap())
+        );
         assert_eq!(custody_claims(&host), claims_before + 3);
-        assert_eq!(endpoint.admission_status(&call), DirectAdmissionStatus::IdentityClaimed);
+        assert_eq!(
+            endpoint.admission_status(&call),
+            DirectAdmissionStatus::IdentityClaimed
+        );
 
         // Same journal: possible earlier send, never resent.
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
         // Another work directory (restart with new config), even with a fresh
         // owner release for the same operation: the custody claim fences it.
         let journals2 = root.join("journals-2");
         let adapter2 = direct_adapter(&host, &der, addr, &release, &journals2);
-        write_direct_release(&host, &release, &call, &model_sha, "direct-release-2", &journals2, |_| {});
-        assert_eq!(adapter2.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
-        assert!(!host.credential_dir.join("action-direct-release-2.json").exists());
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "direct-release-2",
+            &journals2,
+            |_| {},
+        );
+        assert_eq!(
+            adapter2.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert!(!host
+            .credential_dir
+            .join("action-direct-release-2.json")
+            .exists());
         // The legacy exchange without a prepared call never sends.
         assert!(matches!(
-            endpoint.exchange(&journals2.join("x.json"), "op", "at", &crate::assemble_request("i", "x", &ToolFreeProfile {
-                revision: PublicHostEndpoint::PROFILE_REVISION.into(),
-                model: DIRECT_MODEL.into(),
-                bounds: PublicHostEndpoint::bounds(),
-            }).unwrap()),
+            endpoint.exchange(
+                &journals2.join("x.json"),
+                "op",
+                "at",
+                &crate::assemble_request(
+                    "i",
+                    "x",
+                    &ToolFreeProfile {
+                        revision: PublicHostEndpoint::PROFILE_REVISION.into(),
+                        model: DIRECT_MODEL.into(),
+                        bounds: PublicHostEndpoint::bounds(),
+                    }
+                )
+                .unwrap()
+            ),
             DirectExchange::NotSent
         ));
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             1
         );
         fs::remove_dir_all(root).unwrap();
@@ -5263,22 +5418,47 @@ mod tests {
                 &host.host_id,
                 &release,
             ),
-            crate::DirectProfile { model: DIRECT_MODEL.into(), bounds },
+            crate::DirectProfile {
+                model: DIRECT_MODEL.into(),
+                bounds,
+            },
             &journals,
         );
         let call = direct_call(&adapter, "operation:bounds", "attempt:bounds");
-        write_direct_release(&host, &release, &call, &model.response_sha256, "bounds-release", &journals, |_| {});
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::NotSent);
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model.response_sha256,
+            "bounds-release",
+            &journals,
+            |_| {},
+        );
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::NotSent
+        );
         assert_eq!(custody_claims(&host), claims_before);
-        assert!(!host.credential_dir.join("action-bounds-release.json").exists());
+        assert!(!host
+            .credential_dir
+            .join("action-bounds-release.json")
+            .exists());
         // A selected-reasoning-v1 wire offered to the public endpoint is refused.
         let adapter = direct_adapter(&host, &der, addr, &release, &journals);
         let mut call = direct_call(&adapter, "operation:profile", "attempt:profile");
         call.wire.profile_revision = "selected-reasoning-v1".into();
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::NotSent);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::NotSent
+        );
         assert_eq!(custody_claims(&host), claims_before);
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             0
         );
         fs::remove_dir_all(root).unwrap();
@@ -5299,23 +5479,45 @@ mod tests {
         let call = direct_call(&adapter, "operation:fence", "attempt:fence");
         // Every pre-claim check passes; the test hook then signs the selected
         // registration out between the claim and the send boundary.
-        write_direct_release(&host, &release, &call, &model.response_sha256, "test-postclaim-signout", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model.response_sha256,
+            "test-postclaim-signout",
+            &journals,
+            |_| {},
+        );
         let claims_before = custody_claims(&host);
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::NotSent);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::NotSent
+        );
         let key = direct_identity_key(&call.binding.attempt_id);
         // Unlike a pre-claim `Withheld`, the release and both identities were
         // consumed. The obligation was durable before the possible send and
         // stays open, so the operation cannot be resent.
         assert_eq!(custody_claims(&host), claims_before + 3);
-        assert!(journals.join("funding-test-postclaim-signout.json").exists());
-        let fence: serde_json::Value =
-            serde_json::from_slice(&fs::read(journals.join(format!("pre-send-fence-{key}.json"))).unwrap())
-                .unwrap();
+        assert!(journals
+            .join("funding-test-postclaim-signout.json")
+            .exists());
+        let fence: serde_json::Value = serde_json::from_slice(
+            &fs::read(journals.join(format!("pre-send-fence-{key}.json"))).unwrap(),
+        )
+        .unwrap();
         assert_eq!(fence["post_dispatched"], false);
         assert_eq!(fence["release_consumed"], true);
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert_eq!(
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             0
         );
         fs::remove_dir_all(root).unwrap();
@@ -5329,7 +5531,9 @@ mod tests {
             .replace("gpt-6-astra", "gpt-6-other")
             .into_bytes();
         let mut missing_terminal = diagnostic_stream();
-        let cut = String::from_utf8_lossy(&missing_terminal).rfind("data: ").unwrap();
+        let cut = String::from_utf8_lossy(&missing_terminal)
+            .rfind("data: ")
+            .unwrap();
         missing_terminal.truncate(cut);
         let conflicting_id = String::from_utf8(diagnostic_stream())
             .unwrap()
@@ -5338,7 +5542,10 @@ mod tests {
         let cases: Vec<(&str, Vec<u8>)> = vec![
             ("wrong-model", wrong_model),
             ("provider-incomplete", diagnostic_provider_incomplete()),
-            ("completed-without-output", diagnostic_completed_without_output()),
+            (
+                "completed-without-output",
+                diagnostic_completed_without_output(),
+            ),
             ("missing-terminal", missing_terminal),
             ("conflicting-response-id", conflicting_id),
             ("malformed", b"data: {not json\n\n".to_vec()),
@@ -5354,15 +5561,35 @@ mod tests {
             let journals = root.join("journals");
             let adapter = direct_adapter(&host, &der, addr, &release, &journals);
             let call = direct_call(&adapter, "operation:adverse", "attempt:adverse");
-            write_direct_release(&host, &release, &call, &model.response_sha256, "adverse-release", &journals, |_| {});
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model.response_sha256,
+                "adverse-release",
+                &journals,
+                |_| {},
+            );
             match adapter.submit(&call) {
                 Err(error) => assert_eq!(error, DirectSubmitError::OutcomeUnknown, "{label}"),
                 Ok(capture) => assert_ne!(capture.terminal, DirectTerminal::Complete, "{label}"),
             }
-            assert!(journals.join("funding-adverse-release.json").exists(), "{label}");
-            assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown, "{label}");
+            assert!(
+                journals.join("funding-adverse-release.json").exists(),
+                "{label}"
+            );
             assert_eq!(
-                server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+                adapter.submit(&call).unwrap_err(),
+                DirectSubmitError::OutcomeUnknown,
+                "{label}"
+            );
+            assert_eq!(
+                server
+                    .join()
+                    .unwrap()
+                    .iter()
+                    .filter(|p| p.as_str() == "/v1/responses")
+                    .count(),
                 1,
                 "{label}"
             );
@@ -5377,23 +5604,38 @@ mod tests {
         let absent = root.join("absent-credentials");
         let exe = ActionGrant::executable_sha256().unwrap();
         let open = |cred: &Path, release: &Path| {
-            PublicHostEndpoint::open(cred, "synthetic_host_public", release, HOST_SOURCE_SHA256, &exe)
+            PublicHostEndpoint::open(
+                cred,
+                "synthetic_host_public",
+                release,
+                HOST_SOURCE_SHA256,
+                &exe,
+            )
         };
         assert!(matches!(open(&absent, &release), Err(HostError::Auth)));
         assert!(!absent.exists(), "opening must not initialize a store");
-        assert!(matches!(open(Path::new("relative"), &release), Err(HostError::Policy)));
+        assert!(matches!(
+            open(Path::new("relative"), &release),
+            Err(HostError::Policy)
+        ));
         let shared = root.join("shared-release");
         fs::create_dir_all(&shared).unwrap();
         fs::set_permissions(&shared, fs::Permissions::from_mode(0o755)).unwrap();
         assert!(matches!(open(&absent, &shared), Err(HostError::Policy)));
-        assert!(matches!(open(&absent, &root.join("missing-release")), Err(HostError::Policy)));
+        assert!(matches!(
+            open(&absent, &root.join("missing-release")),
+            Err(HostError::Policy)
+        ));
         // The release directory may not be nested with the credential store.
         let nested = private_dir(&absent.join("release"));
         assert!(matches!(open(&absent, &nested), Err(HostError::Policy)));
         fs::remove_dir_all(&absent).unwrap();
         // A malformed host source digest or an executable digest that is not
         // the running executable is refused before readiness is inspected.
-        for (source, exe) in [("not-a-digest", exe.as_str()), (HOST_SOURCE_SHA256, &"0".repeat(64))] {
+        for (source, exe) in [
+            ("not-a-digest", exe.as_str()),
+            (HOST_SOURCE_SHA256, &"0".repeat(64)),
+        ] {
             assert!(matches!(
                 PublicHostEndpoint::open(&absent, "synthetic_host_public", &release, source, exe),
                 Err(HostError::Policy)
@@ -5403,7 +5645,11 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 
-    fn rewrite_action(release: &Path, call: &DirectPreparedCall, edit: impl FnOnce(&mut ActionGrant)) {
+    fn rewrite_action(
+        release: &Path,
+        call: &DirectPreparedCall,
+        edit: impl FnOnce(&mut ActionGrant),
+    ) {
         let key = direct_identity_key(&call.binding.operation_id);
         let path = release.join(format!("direct-action-{key}.json"));
         let mut action: ActionGrant = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
@@ -5411,7 +5657,10 @@ mod tests {
         fs::write(&path, serde_json::to_vec(&action).unwrap()).unwrap();
     }
 
-    fn release_check(endpoint: &PublicHostEndpoint, call: &DirectPreparedCall) -> serde_json::Value {
+    fn release_check(
+        endpoint: &PublicHostEndpoint,
+        call: &DirectPreparedCall,
+    ) -> serde_json::Value {
         let (_, check) = endpoint.release_projection_paths(&call.binding.operation_id);
         serde_json::from_slice(&fs::read(check).unwrap()).unwrap()
     }
@@ -5420,7 +5669,9 @@ mod tests {
     /// peer, author-built stream, synthetic registration).
     #[test]
     fn direct_release_offer_projects_the_exact_call_and_prevalidates_without_consuming() {
-        use lifecycle_semantic::{DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal};
+        use lifecycle_semantic::{
+            DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal,
+        };
         let root = temp("direct-release-offer");
         let (addr, der, server) = tls_peer(diagnostic_metadata(), diagnostic_stream(), 4);
         let host = seeded_host(addr, &der, &root.join("auth"));
@@ -5439,22 +5690,36 @@ mod tests {
         let call = direct_call(&adapter, "operation:release-offer", "attempt:release-offer");
         let claims_before = custody_claims(&host);
         let journal = journals.join(format!("{}.attempt.json", call.binding.operation_id));
-        let pending = |state: DirectReleaseState| matches!(state, DirectReleaseState::Pending { .. });
+        let pending =
+            |state: DirectReleaseState| matches!(state, DirectReleaseState::Pending { .. });
 
         // Missing release: Pending, with the exact call projected for its owner.
         assert!(pending(adapter.offer_release(&call)));
         let (request_path, _) = endpoint.release_projection_paths(&call.binding.operation_id);
         let meta = fs::symlink_metadata(&request_path).unwrap();
         assert_eq!(meta.permissions().mode() & 0o777, 0o600);
-        let request: serde_json::Value = serde_json::from_slice(&fs::read(&request_path).unwrap()).unwrap();
+        let request: serde_json::Value =
+            serde_json::from_slice(&fs::read(&request_path).unwrap()).unwrap();
         let back: DirectPreparedCall = serde_json::from_value(request["call"].clone()).unwrap();
         assert_eq!(back, call);
         assert_eq!(request["grant"]["host_source_sha256"], HOST_SOURCE_SHA256);
-        assert_eq!(request["grant"]["prepared_binding_sha256"], call.binding_sha256.as_str());
+        assert_eq!(
+            request["grant"]["prepared_binding_sha256"],
+            call.binding_sha256.as_str()
+        );
         assert_eq!(request["action"]["work_dir"], journals.to_str().unwrap());
-        assert_eq!(request["action"]["source_sha256"], ActionGrant::source_sha256());
-        assert_eq!(request["action"]["executable_sha256"], ActionGrant::executable_sha256().unwrap());
-        assert_eq!(request["bounds"], serde_json::to_value(PublicHostEndpoint::bounds()).unwrap());
+        assert_eq!(
+            request["action"]["source_sha256"],
+            ActionGrant::source_sha256()
+        );
+        assert_eq!(
+            request["action"]["executable_sha256"],
+            ActionGrant::executable_sha256().unwrap()
+        );
+        assert_eq!(
+            request["bounds"],
+            serde_json::to_value(PublicHostEndpoint::bounds()).unwrap()
+        );
         // No credential material: the projection names the store, never its contents.
         let projection = String::from_utf8(fs::read(&request_path).unwrap()).unwrap();
         for entry in fs::read_dir(&host.credential_dir).unwrap().flatten() {
@@ -5480,54 +5745,115 @@ mod tests {
             Box::new(|g| g.smoke.operation_id = "operation:other".into()),
         ];
         for edit in &edits {
-            write_direct_release(&host, &release, &call, &model_sha, "offer-release", &journals, |g| edit(g));
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model_sha,
+                "offer-release",
+                &journals,
+                |g| edit(g),
+            );
             assert!(pending(adapter.offer_release(&call)));
             assert_eq!(release_check(&endpoint, &call)["status"], "pending");
         }
         type ActionEdit = Box<dyn Fn(&mut ActionGrant)>;
         let action_edits: Vec<(&str, ActionEdit)> = vec![
-            ("short window", Box::new(|a| a.valid_until_unix = now() + 20)),
-            ("other work dir", Box::new(|a| a.work_dir = Some(PathBuf::from("/elsewhere")))),
-            ("other executable", Box::new(|a| a.executable_sha256 = "0".repeat(64))),
+            (
+                "short window",
+                Box::new(|a| a.valid_until_unix = now() + 20),
+            ),
+            (
+                "other work dir",
+                Box::new(|a| a.work_dir = Some(PathBuf::from("/elsewhere"))),
+            ),
+            (
+                "other executable",
+                Box::new(|a| a.executable_sha256 = "0".repeat(64)),
+            ),
             ("wrong action", Box::new(|a| a.action = "smoke".into())),
         ];
         for (label, edit) in &action_edits {
-            write_direct_release(&host, &release, &call, &model_sha, "offer-release", &journals, |_| {});
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model_sha,
+                "offer-release",
+                &journals,
+                |_| {},
+            );
             rewrite_action(&release, &call, |a| edit(a));
             assert!(pending(adapter.offer_release(&call)), "{label}");
         }
         assert_eq!(custody_claims(&host), claims_before);
-        assert!(!host.credential_dir.join("action-offer-release.json").exists());
+        assert!(!host
+            .credential_dir
+            .join("action-offer-release.json")
+            .exists());
         assert!(!journal.exists());
 
         // A consistent release is Ready, and offering it (twice) consumes
         // nothing. Each offer re-hashes the executable, so the release is
         // rewritten before each one to keep its 45 s window fresh under load.
         for _ in 0..2 {
-            write_direct_release(&host, &release, &call, &model_sha, "offer-release", &journals, |_| {});
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model_sha,
+                "offer-release",
+                &journals,
+                |_| {},
+            );
             assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready);
             assert_eq!(release_check(&endpoint, &call)["status"], "ready");
             assert_eq!(custody_claims(&host), claims_before);
-            assert!(!host.credential_dir.join("action-offer-release.json").exists());
-            assert_eq!(endpoint.admission_status(&call), DirectAdmissionStatus::InputsPresent);
+            assert!(!host
+                .credential_dir
+                .join("action-offer-release.json")
+                .exists());
+            assert_eq!(
+                endpoint.admission_status(&call),
+                DirectAdmissionStatus::InputsPresent
+            );
         }
 
         // The send boundary re-checks and sends exactly once.
-        write_direct_release(&host, &release, &call, &model_sha, "offer-release", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "offer-release",
+            &journals,
+            |_| {},
+        );
         let capture = adapter.submit(&call).unwrap();
         assert_eq!(capture.terminal, DirectTerminal::Complete);
         // After a send the journal decides; the owner is not consulted again.
         fs::remove_file(endpoint.release_input_paths(&call.binding.operation_id).0).unwrap();
         assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready);
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
         // A different work directory sees the custody claim: Ready, then
         // OutcomeUnknown, never Pending and never a resend.
         let journals2 = root.join("journals-2");
         let adapter2 = direct_adapter(&host, &der, addr, &release, &journals2);
         assert_eq!(adapter2.offer_release(&call), DirectReleaseState::Ready);
-        assert_eq!(adapter2.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            adapter2.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert_eq!(
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             1
         );
         fs::remove_dir_all(root).unwrap();
@@ -5539,7 +5865,9 @@ mod tests {
     /// registration and grants).
     #[test]
     fn ready_release_covers_send_currentness_and_is_consumed_as_checked() {
-        use lifecycle_semantic::{DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal};
+        use lifecycle_semantic::{
+            DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal,
+        };
         let root = temp("direct-release-checked");
         let (addr, der, server) = tls_peer(diagnostic_metadata(), diagnostic_stream(), 4);
         let host = seeded_host(addr, &der, &root.join("auth"));
@@ -5563,49 +5891,120 @@ mod tests {
         let call = direct_call(&adapter, "operation:checked", "attempt:checked");
         type GrantEdit = Box<dyn Fn(&mut DirectSendGrant)>;
         let edits: Vec<(&str, GrantEdit)> = vec![
-            ("model catalog", Box::new(|g| g.smoke.model_observation_sha256 = "a".repeat(64))),
-            ("funding observation expires", Box::new(|g| g.smoke.funding_observation_valid_until_unix = now() + 30)),
-            ("smoke grant", Box::new(|g| g.smoke.funding_observed_at_unix = now() - 299)),
+            (
+                "model catalog",
+                Box::new(|g| g.smoke.model_observation_sha256 = "a".repeat(64)),
+            ),
+            (
+                "funding observation expires",
+                Box::new(|g| g.smoke.funding_observation_valid_until_unix = now() + 30),
+            ),
+            (
+                "smoke grant",
+                Box::new(|g| g.smoke.funding_observed_at_unix = now() - 299),
+            ),
         ];
         for (reason, edit) in &edits {
-            write_direct_release(&host, &release, &call, &model_sha, "checked-release", &journals, |g| edit(g));
-            assert!(matches!(adapter.offer_release(&call), DirectReleaseState::Pending { .. }), "{reason}");
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model_sha,
+                "checked-release",
+                &journals,
+                |g| edit(g),
+            );
+            assert!(
+                matches!(
+                    adapter.offer_release(&call),
+                    DirectReleaseState::Pending { .. }
+                ),
+                "{reason}"
+            );
             let check = release_check(&endpoint, &call);
             assert_eq!(check["status"], "pending", "{reason}");
-            assert!(check["reason"].as_str().unwrap().starts_with(reason), "{reason}: {check}");
+            assert!(
+                check["reason"].as_str().unwrap().starts_with(reason),
+                "{reason}: {check}"
+            );
         }
         assert_eq!(custody_claims(&host), claims_before);
-        assert!(!host.credential_dir.join("action-checked-release.json").exists());
+        assert!(!host
+            .credential_dir
+            .join("action-checked-release.json")
+            .exists());
 
         // A non-Ready offer discards inputs an earlier offer checked: the send
         // then reads the current (invalid) files and claims nothing.
         let other = direct_call(&adapter, "operation:rechecked", "attempt:rechecked");
-        write_direct_release(&host, &release, &other, &model_sha, "rechecked-release", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &other,
+            &model_sha,
+            "rechecked-release",
+            &journals,
+            |_| {},
+        );
         assert_eq!(adapter.offer_release(&other), DirectReleaseState::Ready);
-        write_direct_release(&host, &release, &other, &model_sha, "rechecked-release", &journals, |g| {
-            g.host_source_sha256 = "1".repeat(64)
-        });
-        assert!(matches!(adapter.offer_release(&other), DirectReleaseState::Pending { .. }));
+        write_direct_release(
+            &host,
+            &release,
+            &other,
+            &model_sha,
+            "rechecked-release",
+            &journals,
+            |g| g.host_source_sha256 = "1".repeat(64),
+        );
+        assert!(matches!(
+            adapter.offer_release(&other),
+            DirectReleaseState::Pending { .. }
+        ));
         // Refused before the action claim: withheld, the call stays offerable.
-        assert_eq!(adapter.submit(&other).unwrap_err(), DirectSubmitError::Withheld);
+        assert_eq!(
+            adapter.submit(&other).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
         assert_eq!(custody_claims(&host), claims_before);
-        assert!(!host.credential_dir.join("action-rechecked-release.json").exists());
+        assert!(!host
+            .credential_dir
+            .join("action-rechecked-release.json")
+            .exists());
 
         // Ready: the next send consumes exactly the checked inputs, even though
         // the files were removed and replaced after the check.
-        write_direct_release(&host, &release, &call, &model_sha, "checked-release", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "checked-release",
+            &journals,
+            |_| {},
+        );
         assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready);
         let (action_path, grant_path) = endpoint.release_input_paths(&call.binding.operation_id);
         fs::remove_file(&action_path).unwrap();
         fs::write(&grant_path, b"{}").unwrap();
         let capture = adapter.submit(&call).unwrap();
         assert_eq!(capture.terminal, DirectTerminal::Complete);
-        assert!(host.credential_dir.join("action-checked-release.json").exists());
+        assert!(host
+            .credential_dir
+            .join("action-checked-release.json")
+            .exists());
         assert_eq!(custody_claims(&host), claims_before + 3);
         // Checked inputs are taken by that send; nothing is sent again.
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert_eq!(
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             1
         );
         fs::remove_dir_all(root).unwrap();
@@ -5620,7 +6019,9 @@ mod tests {
     /// valid release is re-offered, re-checked and sent exactly once.
     #[test]
     fn direct_release_refused_before_claim_is_withheld_and_a_valid_release_sends_once() {
-        use lifecycle_semantic::{DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal};
+        use lifecycle_semantic::{
+            DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal,
+        };
         let root = temp("direct-release-withheld");
         let (addr, der, server) = tls_peer(diagnostic_metadata(), diagnostic_stream(), 4);
         let host = seeded_host(addr, &der, &root.join("auth"));
@@ -5644,32 +6045,72 @@ mod tests {
         let claims_before = custody_claims(&host);
         let unconsumed = |label: &str| {
             assert_eq!(custody_claims(&host), claims_before, "{label}");
-            assert!(!host.credential_dir.join("action-withheld-release.json").exists(), "{label}");
+            assert!(
+                !host
+                    .credential_dir
+                    .join("action-withheld-release.json")
+                    .exists(),
+                "{label}"
+            );
             assert!(!journal.exists(), "{label}");
         };
         let pending = |label: &str| {
             assert!(
-                matches!(adapter.offer_release(&call), DirectReleaseState::Pending { .. }),
+                matches!(
+                    adapter.offer_release(&call),
+                    DirectReleaseState::Pending { .. }
+                ),
                 "{label}"
             );
-            assert_eq!(release_check(&endpoint, &call)["status"], "pending", "{label}");
+            assert_eq!(
+                release_check(&endpoint, &call)["status"],
+                "pending",
+                "{label}"
+            );
         };
 
         // Deterministic bad custody or release id: Pending at offer.
-        write_direct_release(&host, &release, &call, &model_sha, "withheld-release", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "withheld-release",
+            &journals,
+            |_| {},
+        );
         fs::remove_file(&custody).unwrap();
         pending("custody contract missing");
-        let reason = release_check(&endpoint, &call)["reason"].as_str().unwrap().to_owned();
-        assert!(reason.starts_with("credential custody contract"), "{reason}");
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
+        let reason = release_check(&endpoint, &call)["reason"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        assert!(
+            reason.starts_with("credential custody contract"),
+            "{reason}"
+        );
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
         fs::write(&custody, &custody_bytes).unwrap();
         fs::set_permissions(&custody, fs::Permissions::from_mode(0o600)).unwrap();
-        rewrite_action(&release, &call, |a| a.custody_custodian = "different-custodian".into());
+        rewrite_action(&release, &call, |a| {
+            a.custody_custodian = "different-custodian".into()
+        });
         pending("custody contract not the action's");
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
-        rewrite_action(&release, &call, |a| a.release_id = "../withheld-release".into());
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
+        rewrite_action(&release, &call, |a| {
+            a.release_id = "../withheld-release".into()
+        });
         pending("malformed release id");
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
         unconsumed("deterministic");
 
         // Changed after Ready: custody replaced, release spent elsewhere, or
@@ -5680,7 +6121,8 @@ mod tests {
             (
                 "custody replaced",
                 Box::new(|| {
-                    let mut other: serde_json::Value = serde_json::from_slice(&custody_bytes).unwrap();
+                    let mut other: serde_json::Value =
+                        serde_json::from_slice(&custody_bytes).unwrap();
                     other["custodian"] = "different-custodian".into();
                     fs::write(&custody, serde_json::to_vec(&other).unwrap()).unwrap();
                 }),
@@ -5708,26 +6150,61 @@ mod tests {
             ),
         ];
         for (label, lapse, restore) in &lapses {
-            write_direct_release(&host, &release, &call, &model_sha, "withheld-release", &journals, |_| {});
+            write_direct_release(
+                &host,
+                &release,
+                &call,
+                &model_sha,
+                "withheld-release",
+                &journals,
+                |_| {},
+            );
             if *label == "action window lapsed" {
                 rewrite_action(&release, &call, |a| a.valid_until_unix = now() + 40);
             }
-            assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready, "{label}");
+            assert_eq!(
+                adapter.offer_release(&call),
+                DirectReleaseState::Ready,
+                "{label}"
+            );
             lapse();
-            assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld, "{label}");
+            assert_eq!(
+                adapter.submit(&call).unwrap_err(),
+                DirectSubmitError::Withheld,
+                "{label}"
+            );
             restore();
             unconsumed(label);
         }
 
         // A valid release: offered again, re-checked, sent once, never again.
-        write_direct_release(&host, &release, &call, &model_sha, "withheld-release", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "withheld-release",
+            &journals,
+            |_| {},
+        );
         assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready);
         let capture = adapter.submit(&call).unwrap();
         assert_eq!(capture.terminal, DirectTerminal::Complete);
-        assert!(host.credential_dir.join("action-withheld-release.json").exists());
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert!(host
+            .credential_dir
+            .join("action-withheld-release.json")
+            .exists());
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert_eq!(
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             1
         );
         fs::remove_dir_all(root).unwrap();
@@ -5743,7 +6220,9 @@ mod tests {
     /// custody).
     #[test]
     fn journal_directory_failure_after_a_claim_elsewhere_is_unknown_not_withheld() {
-        use lifecycle_semantic::{DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal};
+        use lifecycle_semantic::{
+            DirectInferencePort, DirectReleaseState, DirectSubmitError, DirectTerminal,
+        };
         let root = temp("direct-journal-dir");
         let (addr, der, server) = tls_peer(diagnostic_metadata(), diagnostic_stream(), 4);
         let host = seeded_host(addr, &der, &root.join("auth"));
@@ -5760,15 +6239,37 @@ mod tests {
 
         // Before any claim: a regular file where the work directory belongs.
         fs::write(&journals, b"").unwrap();
-        write_direct_release(&host, &release, &call, &model_sha, "journal-dir-release", &journals, |_| {});
-        assert_eq!(adapter.submit(&call).unwrap_err(), DirectSubmitError::Withheld);
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "journal-dir-release",
+            &journals,
+            |_| {},
+        );
+        assert_eq!(
+            adapter.submit(&call).unwrap_err(),
+            DirectSubmitError::Withheld
+        );
         assert_eq!(custody_claims(&host), claims_before);
         assert!(!spent.exists());
         // Repaired, the same call is offered again, re-checked and sent once.
         fs::remove_file(&journals).unwrap();
-        write_direct_release(&host, &release, &call, &model_sha, "journal-dir-release", &journals, |_| {});
+        write_direct_release(
+            &host,
+            &release,
+            &call,
+            &model_sha,
+            "journal-dir-release",
+            &journals,
+            |_| {},
+        );
         assert_eq!(adapter.offer_release(&call), DirectReleaseState::Ready);
-        assert_eq!(adapter.submit(&call).unwrap().terminal, DirectTerminal::Complete);
+        assert_eq!(
+            adapter.submit(&call).unwrap().terminal,
+            DirectTerminal::Complete
+        );
         assert!(spent.exists());
         let claims_after = custody_claims(&host);
         assert!(claims_after > claims_before);
@@ -5780,8 +6281,14 @@ mod tests {
         let adapter2 = direct_adapter(&host, &der, addr, &release, &elsewhere);
         fs::write(&elsewhere, b"").unwrap();
         assert_eq!(adapter2.offer_release(&call), DirectReleaseState::Ready);
-        assert_eq!(adapter2.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
-        assert_eq!(adapter2.submit(&call).unwrap_err(), DirectSubmitError::OutcomeUnknown);
+        assert_eq!(
+            adapter2.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
+        assert_eq!(
+            adapter2.submit(&call).unwrap_err(),
+            DirectSubmitError::OutcomeUnknown
+        );
         // An inaccessible work directory elsewhere: likewise never withheld.
         let locked = private_dir(&root.join("locked"));
         let adapter3 = direct_adapter(&host, &der, addr, &release, &locked.join("journals"));
@@ -5793,7 +6300,12 @@ mod tests {
         assert_eq!(refused.unwrap_err(), DirectSubmitError::OutcomeUnknown);
         assert_eq!(custody_claims(&host), claims_after);
         assert_eq!(
-            server.join().unwrap().iter().filter(|p| p.as_str() == "/v1/responses").count(),
+            server
+                .join()
+                .unwrap()
+                .iter()
+                .filter(|p| p.as_str() == "/v1/responses")
+                .count(),
             1
         );
         fs::remove_dir_all(root).unwrap();
@@ -5814,7 +6326,12 @@ mod tests {
         assert!(matches!(read_owner_input(&link), Err(HostError::Policy)));
 
         let fifo = release.join("fifo.json");
-        rustix::fs::mkfifoat(rustix::fs::CWD, &fifo, rustix::fs::Mode::from_raw_mode(0o600)).unwrap();
+        rustix::fs::mkfifoat(
+            rustix::fs::CWD,
+            &fifo,
+            rustix::fs::Mode::from_raw_mode(0o600),
+        )
+        .unwrap();
         assert!(matches!(read_owner_input(&fifo), Err(HostError::Policy)));
 
         let shared = release.join("shared.json");
@@ -5859,9 +6376,16 @@ mod tests {
             endpoint.release_inputs(&call.binding.operation_id),
             Err(HostError::Policy)
         ));
-        assert!(matches!(adapter.offer_release(&call), DirectReleaseState::Pending { .. }));
+        assert!(matches!(
+            adapter.offer_release(&call),
+            DirectReleaseState::Pending { .. }
+        ));
         fs::set_permissions(&release, fs::Permissions::from_mode(0o700)).unwrap();
-        assert!(!server.join().unwrap().iter().any(|p| p.as_str() == "/v1/responses"));
+        assert!(!server
+            .join()
+            .unwrap()
+            .iter()
+            .any(|p| p.as_str() == "/v1/responses"));
         fs::remove_dir_all(root).unwrap();
     }
 }

@@ -14,18 +14,22 @@
 //! APIs, and the tests call `engine::drive_transition` with the runtime the
 //! actor selects. Only the table reads at the end of each test are direct.
 
-use std::{fs, os::unix::fs::{MetadataExt, PermissionsExt}, sync::Arc};
+use std::{
+    fs,
+    os::unix::fs::{MetadataExt, PermissionsExt},
+    sync::Arc,
+};
 
 use lifecycle_core::{
     AttemptId, AuthorityExpiresAt, BuildId, ClockSample, ContextGeneration, GrantId, GrantScope,
-    NativeInvocationPurpose, ProofRunId, ProviderThreadId, ProviderTurnId, SubjectId,
-    TransitionId, TrustedGrant, WallTimeMs,
+    NativeInvocationPurpose, ProofRunId, ProviderThreadId, ProviderTurnId, SubjectId, TransitionId,
+    TrustedGrant, WallTimeMs,
 };
 use lifecycle_semantic::{DirectInferencePort, MaterialInput};
 use lifecycle_store::{DirectCheckpointOrigin, NativeTurnRequest};
 
-use super::*;
 use super::restart_epoch_tests::EmptyTask;
+use super::*;
 use crate::{
     GrantConfig, NativeConfig, NativeProviderRoute, PrincipalConfig, SemanticNativeConfig,
     semantic::{ControlRealization, establish_checkpoint},
@@ -337,7 +341,10 @@ impl Rig {
     fn claim_domain_turn(
         &self,
         actor: &mut Actor,
-    ) -> (lifecycle_store::NativeTurnEntry, lifecycle_core::NativeSessionId) {
+    ) -> (
+        lifecycle_store::NativeTurnEntry,
+        lifecycle_core::NativeSessionId,
+    ) {
         let subject = self.subject();
         let context = self.context();
         let grant = GrantId::parse("grant:actor-direct-turn").unwrap();
@@ -360,7 +367,10 @@ impl Rig {
         let session = actor.native_session.as_mut().expect("actor native session");
         actor
             .store
-            .bind_native_thread(session, ProviderThreadId::parse("thread:actor-direct").unwrap())
+            .bind_native_thread(
+                session,
+                ProviderThreadId::parse("thread:actor-direct").unwrap(),
+            )
             .unwrap();
         let session = actor.native_session.as_ref().unwrap();
         let session_id = session.id().clone();
@@ -407,7 +417,10 @@ impl Rig {
         actor.store.mark_native_send_intent(&turn).unwrap();
         actor
             .store
-            .bind_native_turn(&mut turn, ProviderTurnId::parse("turn:actor-direct").unwrap())
+            .bind_native_turn(
+                &mut turn,
+                ProviderTurnId::parse("turn:actor-direct").unwrap(),
+            )
             .unwrap();
         (turn, session_id)
     }
@@ -426,8 +439,7 @@ impl Rig {
                 "threadId":"thread:actor-direct",
                 "turn":{"id":"turn:actor-direct","status":"completed"}}}),
         );
-        let final_item =
-            serde_json::json!({"type":"agentMessage","id":"item:final","text":"done"});
+        let final_item = serde_json::json!({"type":"agentMessage","id":"item:final","text":"done"});
         ingress(
             actor,
             session_id,
@@ -447,7 +459,14 @@ impl Rig {
         );
         actor
             .store
-            .settle_native_turn(turn, "done", "observed_complete", TRANSPORT, 7, seed_clock())
+            .settle_native_turn(
+                turn,
+                "done",
+                "observed_complete",
+                TRANSPORT,
+                7,
+                seed_clock(),
+            )
             .unwrap();
         assert!(
             actor
@@ -520,14 +539,27 @@ async fn actor_with_trusted_direct_control_selects_direct_with_configured_identi
     let port = ScriptedPort::public_class(rig.replies());
     let mut actor = rig.actor(Some(port.clone()));
     let runtime = actor.semantic_runtime().unwrap().expect("semantic runtime");
-    let semantic = rig.config.native.as_ref().unwrap().semantic.clone().unwrap();
+    let semantic = rig
+        .config
+        .native
+        .as_ref()
+        .unwrap()
+        .semantic
+        .clone()
+        .unwrap();
     let ControlRealization::Direct(direct) = &runtime.realization else {
         panic!("a supplied direct port must select the direct realization");
     };
     assert_eq!(direct.compile_operation_id, semantic.compile_invocation_id);
     assert_eq!(direct.compile_attempt_id, semantic.compile_attempt_id);
-    assert_eq!(direct.verify_operation_id, semantic.candidate_verify_invocation_id);
-    assert_eq!(direct.verify_attempt_id, semantic.candidate_verify_attempt_id);
+    assert_eq!(
+        direct.verify_operation_id,
+        semantic.candidate_verify_invocation_id
+    );
+    assert_eq!(
+        direct.verify_attempt_id,
+        semantic.candidate_verify_attempt_id
+    );
     assert_eq!(
         direct.compile_exposure_id,
         format!("exposure:{}", semantic.compile_invocation_id)
@@ -558,19 +590,50 @@ async fn actor_selected_direct_with_owner_grant_and_public_class_admits_through_
     assert!(checkpoint.is_some(), "owner grant + public class admits");
     assert_eq!(port.calls(), 2);
     let seen = port.seen.lock().unwrap().clone();
-    let semantic = rig.config.native.as_ref().unwrap().semantic.clone().unwrap();
+    let semantic = rig
+        .config
+        .native
+        .as_ref()
+        .unwrap()
+        .semantic
+        .clone()
+        .unwrap();
     assert_eq!(seen[0].binding.operation_id, semantic.compile_invocation_id);
-    assert_eq!(seen[1].binding.operation_id, semantic.candidate_verify_invocation_id);
+    assert_eq!(
+        seen[1].binding.operation_id,
+        semantic.candidate_verify_invocation_id
+    );
     assert_ne!(seen[0].wire_sha256, seen[1].wire_sha256);
-    assert!(actor.store.admitted_direct_checkpoint(&rig.transition()).unwrap().is_some());
+    assert!(
+        actor
+            .store
+            .admitted_direct_checkpoint(&rig.transition())
+            .unwrap()
+            .is_some()
+    );
     assert!(matches!(
-        actor.store.semantic_checkpoint_origin(&rig.transition()).unwrap(),
+        actor
+            .store
+            .semantic_checkpoint_origin(&rig.transition())
+            .unwrap(),
         Some(DirectCheckpointOrigin::DirectAdmitted { .. })
     ));
     // Native consumers still see nothing, and no provider session was created
     // for either control call.
-    assert!(actor.store.semantic_checkpoint(&rig.transition()).unwrap().is_none());
-    assert!(actor.store.native_rehydration_receipt(&rig.transition()).unwrap().is_none());
+    assert!(
+        actor
+            .store
+            .semantic_checkpoint(&rig.transition())
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        actor
+            .store
+            .native_rehydration_receipt(&rig.transition())
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(
         rig.count(&format!(
             "SELECT COUNT(*) FROM native_sessions WHERE session_id IN ('{}','{}')",
@@ -605,7 +668,14 @@ async fn actor_selected_direct_without_owner_grant_or_with_synthetic_class_is_pr
         .await;
         assert!(matches!(result, Ok(None)), "{name}: {result:?}");
         assert_eq!(port.calls(), 2, "{name}");
-        assert!(actor.store.direct_proof_checkpoint(&rig.transition()).unwrap().is_some(), "{name}");
+        assert!(
+            actor
+                .store
+                .direct_proof_checkpoint(&rig.transition())
+                .unwrap()
+                .is_some(),
+            "{name}"
+        );
         assert_unadmitted(&actor.store, &rig.transition());
     }
 }
@@ -625,19 +695,29 @@ async fn direct_port_is_rejected_by_configuration_before_any_bind() {
     let result =
         crate::run_with_direct_control(other_profile, material.clone(), task.clone(), port.clone())
             .await;
-    assert!(matches!(result, Err(ServiceError::Configuration)), "{result:?}");
+    assert!(
+        matches!(result, Err(ServiceError::Configuration)),
+        "{result:?}"
+    );
 
     let mut no_semantic = rig.config.clone();
     no_semantic.native.as_mut().unwrap().semantic = None;
     let result =
         crate::run_with_direct_control(no_semantic, material.clone(), task.clone(), port.clone())
             .await;
-    assert!(matches!(result, Err(ServiceError::Configuration)), "{result:?}");
+    assert!(
+        matches!(result, Err(ServiceError::Configuration)),
+        "{result:?}"
+    );
 
     // No store was opened and no socket created by either rejected start.
     assert!(!rig.config.socket_path.exists());
     assert_eq!(
-        fs::metadata(&rig.config.store_root).unwrap().permissions().mode() & 0o777,
+        fs::metadata(&rig.config.store_root)
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
         0o700
     );
     assert!(!rig.config.store_root.join("lifecycle.sqlite").exists());
@@ -663,7 +743,10 @@ async fn selected_store_entry_applies_the_same_direct_validation() {
         port.clone(),
     )
     .await;
-    assert!(matches!(result, Err(ServiceError::Configuration)), "{result:?}");
+    assert!(
+        matches!(result, Err(ServiceError::Configuration)),
+        "{result:?}"
+    );
     assert!(!rig.config.socket_path.exists());
 
     // So is any profile other than the retained task profile.
@@ -679,14 +762,19 @@ async fn selected_store_entry_applies_the_same_direct_validation() {
         port,
     )
     .await;
-    assert!(matches!(result, Err(ServiceError::Configuration)), "{result:?}");
+    assert!(
+        matches!(result, Err(ServiceError::Configuration)),
+        "{result:?}"
+    );
     assert!(!rig.config.socket_path.exists());
 }
 
 // ---- The engine's Verifying stage, driven through the actor's selection ----
 
 fn fenced(rig: &Rig) -> usize {
-    rig.material.fenced_commits.load(std::sync::atomic::Ordering::SeqCst)
+    rig.material
+        .fenced_commits
+        .load(std::sync::atomic::Ordering::SeqCst)
 }
 
 #[tokio::test]
@@ -714,14 +802,30 @@ async fn engine_direct_verification_commits_inside_the_owner_fence() {
         0,
         "no native successor was authorized"
     );
-    assert!(rig.checkpoint_id().is_some_and(|id| id.starts_with("checkpoint:")));
+    assert!(
+        rig.checkpoint_id()
+            .is_some_and(|id| id.starts_with("checkpoint:"))
+    );
     assert_eq!(port.calls(), 2, "one compile and one verify exchange");
-    assert!(actor.store.admitted_direct_checkpoint(&rig.transition()).unwrap().is_some());
+    assert!(
+        actor
+            .store
+            .admitted_direct_checkpoint(&rig.transition())
+            .unwrap()
+            .is_some()
+    );
     // Two owner fences: the publication of the direct result, and the engine's
     // consumption of it as `VerificationEstablished`. A consumption that did
     // not select `with_current_fence` leaves this at one.
     assert_eq!(fenced(&rig), 2);
-    let semantic = rig.config.native.as_ref().unwrap().semantic.clone().unwrap();
+    let semantic = rig
+        .config
+        .native
+        .as_ref()
+        .unwrap()
+        .semantic
+        .clone()
+        .unwrap();
     assert_eq!(
         rig.count(&format!(
             "SELECT COUNT(*) FROM native_sessions WHERE session_id IN ('{}','{}')",
@@ -766,9 +870,17 @@ async fn engine_direct_verification_refuses_cached_checkpoint_after_owner_update
 
     drive(&mut actor).await.unwrap();
 
-    assert_eq!(rig.stage(&mut actor), "verifying", "stale checkpoint was not consumed");
+    assert_eq!(
+        rig.stage(&mut actor),
+        "verifying",
+        "stale checkpoint was not consumed"
+    );
     assert!(rig.checkpoint_id().is_none());
-    assert_eq!(fenced(&rig), published, "the owner refused before any lifecycle commit");
+    assert_eq!(
+        fenced(&rig),
+        published,
+        "the owner refused before any lifecycle commit"
+    );
     assert_eq!(rig.capture_eligibility(), "stale");
     assert_eq!(port.calls(), 2, "consumption sent no further exchange");
     assert_eq!(
@@ -787,8 +899,20 @@ async fn engine_without_direct_control_never_reaches_the_direct_fence() {
     let mut actor = rig.actor_with_custody(None);
     let _ = tokio::time::timeout(std::time::Duration::from_secs(5), drive(&mut actor)).await;
     assert_eq!(rig.stage(&mut actor), "verifying");
-    assert!(actor.store.admitted_direct_checkpoint(&rig.transition()).unwrap().is_none());
-    assert!(actor.store.direct_proof_checkpoint(&rig.transition()).unwrap().is_none());
+    assert!(
+        actor
+            .store
+            .admitted_direct_checkpoint(&rig.transition())
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        actor
+            .store
+            .direct_proof_checkpoint(&rig.transition())
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(fenced(&rig), 0);
     assert_eq!(rig.count("SELECT COUNT(*) FROM direct_semantic_results"), 0);
 }
@@ -815,7 +939,11 @@ async fn engine_direct_refused_unknown_and_unadmitted_replies_do_not_advance() {
         let result = drive(&mut actor).await;
         assert_eq!(rig.stage(&mut actor), "verifying", "{name}: {result:?}");
         assert!(
-            actor.store.admitted_direct_checkpoint(&rig.transition()).unwrap().is_none(),
+            actor
+                .store
+                .admitted_direct_checkpoint(&rig.transition())
+                .unwrap()
+                .is_none(),
             "{name}"
         );
         assert!(rig.checkpoint_id().is_none(), "{name}");

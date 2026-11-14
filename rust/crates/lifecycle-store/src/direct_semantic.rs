@@ -359,7 +359,10 @@ impl SqliteLifecycleStore {
             // Only a replay that lets the caller continue interprets recorded
             // material; it needs the same authority a fresh entry does. A
             // possibly sent, refused or unsent operation is reported as it is.
-            let continues = matches!(row.state.as_str(), "terminal_recorded" | "completed_settled");
+            let continues = matches!(
+                row.state.as_str(),
+                "terminal_recorded" | "completed_settled"
+            );
             if continues
                 && !(transition_controls_verification(
                     &tx,
@@ -401,7 +404,10 @@ impl SqliteLifecycleStore {
                 .compile_binding_sha256
                 .as_deref()
                 .ok_or(StoreError::Rejected)?;
-            let candidate = call.candidate_sha256.as_deref().ok_or(StoreError::Rejected)?;
+            let candidate = call
+                .candidate_sha256
+                .as_deref()
+                .ok_or(StoreError::Rejected)?;
             let linked: bool = tx
                 .query_row(
                     "SELECT EXISTS(SELECT 1 FROM direct_semantic_attempts WHERE prepared_binding_sha256=?1 AND role='compile' AND capture_id=?2 AND state='completed_settled' AND output_sha256=?3 AND result_artifact_sha256 IS NOT NULL AND evidence_class=?4 AND evidence_ref=?5)",
@@ -447,12 +453,13 @@ impl SqliteLifecycleStore {
         match row.state.as_str() {
             "intent_recorded" => Ok(DirectAttemptStart::PossiblySent),
             "terminal_recorded" | "completed_settled" => {
-                let sha = row.terminal_artifact_sha256.ok_or(StoreError::Unavailable)?;
+                let sha = row
+                    .terminal_artifact_sha256
+                    .ok_or(StoreError::Unavailable)?;
                 let bytes = self
                     .read_committed_artifact(&sha)?
                     .ok_or(StoreError::Unavailable)?;
-                let capture: DirectCapture =
-                    serde_json::from_slice(&bytes).map_err(unavailable)?;
+                let capture: DirectCapture = serde_json::from_slice(&bytes).map_err(unavailable)?;
                 Ok(DirectAttemptStart::Terminal(Box::new(capture)))
             }
             "refused" => Ok(DirectAttemptStart::Refused(
@@ -527,7 +534,8 @@ impl SqliteLifecycleStore {
         let Some(row) = attempt_row(&tx, operation_id)? else {
             return Ok(());
         };
-        if row.state != "intent_recorded" || row.prepared_binding_sha256 != prepared_binding_sha256 {
+        if row.state != "intent_recorded" || row.prepared_binding_sha256 != prepared_binding_sha256
+        {
             return Err(StoreError::ClaimConflict);
         }
         tx.execute(
@@ -539,10 +547,7 @@ impl SqliteLifecycleStore {
     }
 
     /// The adapter established that no byte reached the endpoint.
-    pub fn record_direct_not_sent(
-        &mut self,
-        operation_id: &str,
-    ) -> Result<(), StoreError> {
+    pub fn record_direct_not_sent(&mut self, operation_id: &str) -> Result<(), StoreError> {
         self.verify_identity()?;
         let changed = self
             .connection

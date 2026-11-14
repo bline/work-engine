@@ -1,0 +1,96 @@
+{
+  "status": "root acceptance tracking, no passing evidence",
+  "authority": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/USER-COMPLETION-70-AUTHORITY.json",
+  "reviewed_plan": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/PLAN-R2.md",
+    "sha256": "6a0a1bfb2bbb0406e803aa2d6faeb405804f35a86246a4c6b7ba6d718ff452e7"
+  },
+  "original_map": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-takeover-20261113/stagea-finish/QUALIFICATION-MAP.md",
+    "sha256": "f820484661a7cc337cfd20775d5c1746698227cb4596356c4966a31b6228442e"
+  },
+  "subjects": "new native Pi Docker and hosttransport per reviewed approvedsubject replacement; no scope shrink",
+  "classes": [
+    {
+      "id": "useful_native_sessions",
+      "required_consequence": "Three supported clean initial/nested/multirecord representations and two same-live evolutions; qualify actual nativePi grammar, header/entries/leaf, not copied Claude format successes",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "retained_original_A",
+      "required_consequence": "A remains exclusion authority through same-inode rotation toB/removal/expiry; no source reacquisition, separately gate exposure horizon",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "before_first_retention",
+      "required_consequence": "Every name/byte/final envelope/metadata/diagnostic/publication path, all encodings including duplicate-sensitive JSON/JSONL; store-private checked authority, no caller maps or token/None bypass",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "capability_and_seals",
+      "required_consequence": "Forged/foreign receipts/admission, stale predecessor, wrong finalcontext/ordinal and copied/changed store/root reject; credential-free/nonClaude contrasts retain own semantics",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "crash_and_reconcile",
+      "required_consequence": "Original session_ready/capture_complete/terminal/capture_failure and reached snapshot-dir-sync failure/safe orphan; translate cuts to Pi native init/checked snapshot/closure; repeat sealed restart/reconcile without new transport or reacquisition",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "whole_interval",
+      "required_consequence": "Before Docker create through initial/crash/allreconcile/closure; all create/start/attach/exec/transport/cancel/remove owned operations settled or explicit unknown; lost ack and partial frame/journal loss cannot claimcompletezero",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "independent_effects",
+      "required_consequence": "Actual SDK parsed responses via host transport; separate synthetic endpoint request receipts vs deduplicated effects; duplicate/delayed response after removal controls; host counters do not prove remote world history",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "artifact_scan",
+      "required_consequence": "Predeclared full originally requiredscope incl sessionlive/archives/DB/WAL/admission/seals/names/partials/journals/retainedstreams/reports; no deletion or postresult exclusion",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "C4_and_regression",
+      "required_consequence": "All8meaningful nonzero C4resultcontractcontrols and ordinary build/format/unit/custody/read suites on exact frozen newlybuilt subject",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "runtime_profile",
+      "required_consequence": "Actual local image/pinned SDK, no workload auth/network/writable host export/socket, logging none, bounded pipe framing/compression/errors, workload isolation and application-controlled sink protection. Laptop OS/encrypted storage/disabled hibernation trusted; global OS capture/backing proof excluded by exact human10193.",
+      "status": "PENDING",
+      "evidence": [],
+      "authority": "USER-TRUSTED-HOST-CLARIFICATION.json and QUALIFICATION-TRUSTED-HOST-DISPOSITION.json"
+    },
+    {
+      "id": "independent_review",
+      "required_consequence": "Separate Astra/xhigh exact source and qualification proof, retained remediation if useful; source/binary/schema/run/artifact joins complete",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "historical_and_live_limits",
+      "required_consequence": "Original Claude findings retain historical OPEN, Pi subject replacement no retroactiveadoption; liveproduction remoteeffects unestablished, no livecredential/provider/privilege/StageB/deployment grant",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "complete_development_workflow",
+      "required_consequence": "Tools, writable workload workspace, actual build/test and checked export have joined end-to-end evidence; no-tools response establishes initial integration only. All output/descendants preserve first-retention and authority boundaries.",
+      "status": "PENDING",
+      "authority": "COMPLETION70-HUMAN-STEERING.json actual human9411",
+      "evidence": []
+    }
+  ],
+  "latest_applicability_authority": "USER-TRUSTED-HOST-CLARIFICATION.json; unchanged application outcomes remain pending"
+}

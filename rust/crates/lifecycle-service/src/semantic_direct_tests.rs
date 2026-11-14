@@ -24,10 +24,11 @@ use lifecycle_core::{
 use lifecycle_semantic::{
     AttributedFinding, AttributedStatement, ContinuationPlan, CriticalFinding,
     DependencyObservation, DependencyRevision, DirectCapture, DirectEvidenceClass,
-    DirectInferencePort, DirectPreparedCall, DirectProductionProfile, DirectReleaseState, DirectRole, DirectSubmitError, DirectTerminal,
-    DirectWire, ErrorKind, FindingStatus, InteractionStatus, MaterialInput, ObligationKind,
-    RequiredObligation, RetainedDecision, RetainedInteraction, SemanticPolicy, SourceAvailability,
-    SourceKind, SourceMaterial, SourceReference, SourceTrust, VerifierReport, sha256_hex,
+    DirectInferencePort, DirectPreparedCall, DirectProductionProfile, DirectReleaseState,
+    DirectRole, DirectSubmitError, DirectTerminal, DirectWire, ErrorKind, FindingStatus,
+    InteractionStatus, MaterialInput, ObligationKind, RequiredObligation, RetainedDecision,
+    RetainedInteraction, SemanticPolicy, SourceAvailability, SourceKind, SourceMaterial,
+    SourceReference, SourceTrust, VerifierReport, sha256_hex,
 };
 use lifecycle_store::{DirectCheckpointOrigin, SqliteLifecycleStore, StoreError};
 use serde_json::Value;
@@ -42,7 +43,8 @@ use crate::{
     semantic_direct::DirectRealization,
 };
 
-pub(crate) const CORPUS: &str = include_str!("../../../tests/fixtures/s67-preparation/semantic-corpus.v1.json");
+pub(crate) const CORPUS: &str =
+    include_str!("../../../tests/fixtures/s67-preparation/semantic-corpus.v1.json");
 pub(crate) const MODEL: &str = "synthetic-model-1";
 pub(crate) const PROVIDER: &str = "synthetic-provider";
 
@@ -307,7 +309,12 @@ impl ScriptedPort {
     }
 
     pub(crate) fn offered_roles(&self) -> Vec<DirectRole> {
-        self.offered.lock().unwrap().iter().map(|c| c.binding.role).collect()
+        self.offered
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|c| c.binding.role)
+            .collect()
     }
 
     pub(crate) fn calls(&self) -> usize {
@@ -631,13 +638,24 @@ impl Harness {
         store: &mut SqliteLifecycleStore,
         runtime: &SemanticRuntime,
     ) -> Result<Option<lifecycle_core::CheckpointId>, StoreError> {
-        establish_checkpoint(store, runtime, &self.subject, &self.context, &self.transition, 1)
-            .await
+        establish_checkpoint(
+            store,
+            runtime,
+            &self.subject,
+            &self.context,
+            &self.transition,
+            1,
+        )
+        .await
     }
 
     /// Install the owner's admission grant exactly as trusted startup does:
     /// through the store's trusted-issuer path.
-    pub(crate) fn install_admission(&self, store: &mut SqliteLifecycleStore, issuer: &str) -> Result<(), StoreError> {
+    pub(crate) fn install_admission(
+        &self,
+        store: &mut SqliteLifecycleStore,
+        issuer: &str,
+    ) -> Result<(), StoreError> {
         store.install_trusted_grant(TrustedGrant {
             id: GrantId::parse("grant:direct-admission").unwrap(),
             issuer: issuer.into(),
@@ -682,7 +700,12 @@ impl Harness {
 /// No authoritative consumer may see a direct-origin checkpoint.
 pub(crate) fn assert_not_authoritative(store: &SqliteLifecycleStore, transition: &TransitionId) {
     assert!(store.semantic_checkpoint(transition).unwrap().is_none());
-    assert!(store.native_rehydration_receipt(transition).unwrap().is_none());
+    assert!(
+        store
+            .native_rehydration_receipt(transition)
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[tokio::test]
@@ -714,7 +737,10 @@ async fn success_publishes_a_proof_scoped_checkpoint_from_two_distinct_calls() {
         .direct_proof_checkpoint(&harness.transition)
         .unwrap()
         .expect("proof-scoped checkpoint");
-    assert_eq!(id.as_str(), format!("checkpoint:{}", proof.package.candidate.sha256));
+    assert_eq!(
+        id.as_str(),
+        format!("checkpoint:{}", proof.package.candidate.sha256)
+    );
     assert_eq!(proof.evidence_class, "synthetic_local");
     assert_eq!(proof.evidence_ref, "fixture:service-composition");
     assert_eq!(proof.package.candidate.compile_session_id, None);
@@ -722,7 +748,9 @@ async fn success_publishes_a_proof_scoped_checkpoint_from_two_distinct_calls() {
     assert_eq!(provenance.prepared_binding_sha256, seen[0].binding_sha256);
     assert_eq!(provenance.observed_model, MODEL);
     assert!(matches!(
-        store.semantic_checkpoint_origin(&harness.transition).unwrap(),
+        store
+            .semantic_checkpoint_origin(&harness.transition)
+            .unwrap(),
         Some(DirectCheckpointOrigin::Direct { .. })
     ));
     // The decisive boundary: nothing authoritative reads this checkpoint.
@@ -732,7 +760,11 @@ async fn success_publishes_a_proof_scoped_checkpoint_from_two_distinct_calls() {
 
     // Repeating the operation is idempotent and sends nothing.
     assert_eq!(
-        harness.establish(&mut store, &runtime).await.unwrap().as_ref(),
+        harness
+            .establish(&mut store, &runtime)
+            .await
+            .unwrap()
+            .as_ref(),
         Some(&id)
     );
     assert_eq!(port.calls(), 2);
@@ -744,7 +776,12 @@ pub(crate) async fn assert_no_checkpoint(
     result: Result<Option<lifecycle_core::CheckpointId>, StoreError>,
 ) {
     assert!(!matches!(result, Ok(Some(_))), "{result:?}");
-    assert!(store.direct_proof_checkpoint(&harness.transition).unwrap().is_none());
+    assert!(
+        store
+            .direct_proof_checkpoint(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
     assert_not_authoritative(store, &harness.transition);
 }
 
@@ -769,7 +806,10 @@ async fn rejecting_verifier_records_a_verdict_but_never_publishes() {
 async fn malformed_incomplete_and_wrong_model_verifiers_cannot_publish() {
     type Case = (&'static str, Box<dyn Fn(&Harness) -> Reply>);
     let cases: Vec<Case> = vec![
-        ("malformed", Box::new(|_| Reply::complete(b"not json".to_vec()))),
+        (
+            "malformed",
+            Box::new(|_| Reply::complete(b"not json".to_vec())),
+        ),
         (
             "incomplete",
             Box::new(|h| Reply {
@@ -811,7 +851,10 @@ async fn malformed_incomplete_and_wrong_model_verifiers_cannot_publish() {
                 "{name}"
             );
         } else {
-            assert!(matches!(&result, Err(StoreError::Rejected)), "{name}: {result:?}");
+            assert!(
+                matches!(&result, Err(StoreError::Rejected)),
+                "{name}: {result:?}"
+            );
             assert_eq!(
                 harness.count("SELECT COUNT(*) FROM direct_semantic_results"),
                 0,
@@ -833,7 +876,10 @@ async fn invalid_compile_output_is_refused_and_never_resent() {
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::new(vec![Reply::complete(b"{\"not\":\"a plan\"}".to_vec())]);
     let runtime = harness.runtime(port.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Err(StoreError::Rejected)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Err(StoreError::Rejected)
+    ));
     assert_eq!(port.calls(), 1);
     drop(store);
     let mut store = harness.reopen();
@@ -854,7 +900,10 @@ async fn source_stale_before_record_fences_the_output() {
     let result = harness.establish(&mut store, &runtime).await;
     assert!(matches!(&result, Ok(None)), "{result:?}");
     assert_no_checkpoint(&harness, &store, result).await;
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_results"), 0);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_results"),
+        0
+    );
     assert_eq!(
         harness.count("SELECT COUNT(*) FROM semantic_captures WHERE eligibility!='current'"),
         1
@@ -864,8 +913,14 @@ async fn source_stale_before_record_fences_the_output() {
 #[tokio::test]
 async fn revoked_or_revised_grant_fences_the_result() {
     for (name, statement) in [
-        ("revoked", "UPDATE grants SET revoked=1 WHERE grant_id='grant:direct'"),
-        ("revised", "UPDATE grants SET revision=2 WHERE grant_id='grant:direct'"),
+        (
+            "revoked",
+            "UPDATE grants SET revoked=1 WHERE grant_id='grant:direct'",
+        ),
+        (
+            "revised",
+            "UPDATE grants SET revision=2 WHERE grant_id='grant:direct'",
+        ),
     ] {
         let (harness, mut store) = Harness::new();
         let port = ScriptedPort::new(harness.good_replies());
@@ -899,10 +954,14 @@ async fn unknown_outcome_and_restart_never_retransmit() {
         ..Reply::complete(Vec::new())
     }]);
     let runtime = harness.runtime(port.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Err(StoreError::ClaimConflict)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Err(StoreError::ClaimConflict)
+    ));
     assert_eq!(port.calls(), 1);
     assert_eq!(
-        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='intent_recorded'"),
+        harness
+            .count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='intent_recorded'"),
         1
     );
     // Process restart: a fresh store handle and a fresh runtime see the intent.
@@ -910,7 +969,10 @@ async fn unknown_outcome_and_restart_never_retransmit() {
     let mut store = harness.reopen();
     let again = ScriptedPort::new(harness.good_replies());
     let runtime = harness.runtime(again.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Err(StoreError::ClaimConflict)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Err(StoreError::ClaimConflict)
+    ));
     assert_eq!(again.calls(), 0);
     assert_eq!(port.calls(), 1);
 }
@@ -923,9 +985,15 @@ async fn terminal_persisted_before_interpretation_survives_restart_without_resen
     // Both terminals are durable, then the dependency owner becomes unavailable
     // before the verdict can be recorded.
     harness.material.unavailable.store(true, Ordering::SeqCst);
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Err(StoreError::Rejected)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Err(StoreError::Rejected)
+    ));
     assert_eq!(port.calls(), 2);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_results"), 0);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_results"),
+        0
+    );
     drop(store);
 
     let mut store = harness.reopen();
@@ -949,7 +1017,12 @@ async fn terminal_persisted_before_interpretation_survives_restart_without_resen
 /// No admitted-direct reader may see this transition, and no native consumer
 /// ever reads a direct checkpoint.
 pub(crate) fn assert_unadmitted(store: &SqliteLifecycleStore, transition: &TransitionId) {
-    assert!(store.admitted_direct_checkpoint(transition).unwrap().is_none());
+    assert!(
+        store
+            .admitted_direct_checkpoint(transition)
+            .unwrap()
+            .is_none()
+    );
     assert_not_authoritative(store, transition);
 }
 
@@ -977,14 +1050,31 @@ async fn production_entry_does_not_establish_synthetic_or_unadmitted_public_clas
         let result = harness.establish_production(&mut store, &runtime).await;
         assert!(matches!(result, Ok(None)), "{name}: {result:?}");
         assert_eq!(port.calls(), 2, "{name}");
-        assert!(store.direct_proof_checkpoint(&harness.transition).unwrap().is_some(), "{name}");
+        assert!(
+            store
+                .direct_proof_checkpoint(&harness.transition)
+                .unwrap()
+                .is_some(),
+            "{name}"
+        );
         assert_unadmitted(&store, &harness.transition);
-        assert!(matches!(
-            store.semantic_checkpoint_origin(&harness.transition).unwrap(),
-            Some(DirectCheckpointOrigin::Direct { .. })
-        ), "{name}");
+        assert!(
+            matches!(
+                store
+                    .semantic_checkpoint_origin(&harness.transition)
+                    .unwrap(),
+                Some(DirectCheckpointOrigin::Direct { .. })
+            ),
+            "{name}"
+        );
         // Repeating neither resends nor establishes.
-        assert!(matches!(harness.establish_production(&mut store, &runtime).await, Ok(None)), "{name}");
+        assert!(
+            matches!(
+                harness.establish_production(&mut store, &runtime).await,
+                Ok(None)
+            ),
+            "{name}"
+        );
         assert_eq!(port.calls(), 2, "{name}");
     }
 }
@@ -1005,26 +1095,55 @@ async fn owner_grant_with_public_class_establishes_an_admitted_direct_checkpoint
         .admitted_direct_checkpoint(&harness.transition)
         .unwrap()
         .expect("admitted");
-    assert_eq!(id.as_str(), format!("checkpoint:{}", admitted.package.candidate.sha256));
+    assert_eq!(
+        id.as_str(),
+        format!("checkpoint:{}", admitted.package.candidate.sha256)
+    );
     assert_eq!(admitted.evidence_class, "public_api");
     assert_eq!(admitted.admission_grant_id, "grant:direct-admission");
     assert_eq!(admitted.admission_grant_revision, 1);
     assert!(matches!(
-        store.semantic_checkpoint_origin(&harness.transition).unwrap(),
+        store
+            .semantic_checkpoint_origin(&harness.transition)
+            .unwrap(),
         Some(DirectCheckpointOrigin::DirectAdmitted { .. })
     ));
     // The native successor consumers still see nothing.
-    assert!(store.semantic_checkpoint(&harness.transition).unwrap().is_none());
-    assert!(store.native_rehydration_receipt(&harness.transition).unwrap().is_none());
+    assert!(
+        store
+            .semantic_checkpoint(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        store
+            .native_rehydration_receipt(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(harness.count("SELECT COUNT(*) FROM semantic_results"), 0);
     assert_eq!(harness.count("SELECT COUNT(*) FROM native_sessions"), 0);
     // Idempotent, no resend, also after restart.
-    assert_eq!(harness.establish_production(&mut store, &runtime).await.unwrap().as_ref(), Some(&id));
+    assert_eq!(
+        harness
+            .establish_production(&mut store, &runtime)
+            .await
+            .unwrap()
+            .as_ref(),
+        Some(&id)
+    );
     drop(store);
     let mut store = harness.reopen();
     let fresh = ScriptedPort::new(Vec::new());
     let runtime = harness.runtime(fresh.clone());
-    assert_eq!(harness.establish_production(&mut store, &runtime).await.unwrap().as_ref(), Some(&id));
+    assert_eq!(
+        harness
+            .establish_production(&mut store, &runtime)
+            .await
+            .unwrap()
+            .as_ref(),
+        Some(&id)
+    );
     assert_eq!(fresh.calls(), 0);
 }
 
@@ -1037,15 +1156,24 @@ async fn admission_requires_the_trusted_issuer() {
     ));
     let port = ScriptedPort::public_class(harness.good_replies());
     let runtime = harness.runtime(port);
-    assert!(matches!(harness.establish_production(&mut store, &runtime).await, Ok(None)));
+    assert!(matches!(
+        harness.establish_production(&mut store, &runtime).await,
+        Ok(None)
+    ));
     assert_unadmitted(&store, &harness.transition);
 }
 
 #[tokio::test]
 async fn admission_grant_revoked_in_flight_or_at_publication_leaves_proof_only() {
     for (name, statement) in [
-        ("revoked", "UPDATE grants SET revoked=1 WHERE grant_id='grant:direct-admission'"),
-        ("expired", "UPDATE grants SET expires_ms=1 WHERE grant_id='grant:direct-admission'"),
+        (
+            "revoked",
+            "UPDATE grants SET revoked=1 WHERE grant_id='grant:direct-admission'",
+        ),
+        (
+            "expired",
+            "UPDATE grants SET expires_ms=1 WHERE grant_id='grant:direct-admission'",
+        ),
     ] {
         let (harness, mut store) = Harness::new();
         harness.install_admission(&mut store, ISSUER).unwrap();
@@ -1063,7 +1191,13 @@ async fn admission_grant_revoked_in_flight_or_at_publication_leaves_proof_only()
         let result = harness.establish_production(&mut store, &runtime).await;
         assert!(matches!(result, Ok(None)), "{name}: {result:?}");
         assert_unadmitted(&store, &harness.transition);
-        assert!(store.direct_proof_checkpoint(&harness.transition).unwrap().is_some(), "{name}");
+        assert!(
+            store
+                .direct_proof_checkpoint(&harness.transition)
+                .unwrap()
+                .is_some(),
+            "{name}"
+        );
     }
 }
 
@@ -1072,9 +1206,15 @@ async fn admission_installed_after_a_proof_result_does_not_retroactively_admit_i
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::public_class(harness.good_replies());
     let runtime = harness.runtime(port.clone());
-    assert!(matches!(harness.establish_production(&mut store, &runtime).await, Ok(None)));
+    assert!(matches!(
+        harness.establish_production(&mut store, &runtime).await,
+        Ok(None)
+    ));
     harness.install_admission(&mut store, ISSUER).unwrap();
-    assert!(matches!(harness.establish_production(&mut store, &runtime).await, Ok(None)));
+    assert!(matches!(
+        harness.establish_production(&mut store, &runtime).await,
+        Ok(None)
+    ));
     assert_unadmitted(&store, &harness.transition);
     assert_eq!(port.calls(), 2);
 }
@@ -1106,16 +1246,21 @@ impl Harness {
 #[tokio::test]
 async fn admitted_direct_package_is_accepted_at_verification_and_nowhere_after() {
     use lifecycle_core::{EvidenceId, TransitionFact};
-    let verified = |checkpoint: lifecycle_core::CheckpointId| TransitionFact::VerificationEstablished {
-        evidence: EvidenceId::parse("semantic:transition-C1:checkpoint").unwrap(),
-        checkpoint,
-    };
+    let verified =
+        |checkpoint: lifecycle_core::CheckpointId| TransitionFact::VerificationEstablished {
+            evidence: EvidenceId::parse("semantic:transition-C1:checkpoint").unwrap(),
+            checkpoint,
+        };
 
     // Unadmitted (proof-only) direct package: verification is refused.
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::public_class(harness.good_replies());
     let runtime = harness.runtime(port);
-    let proof = harness.establish(&mut store, &runtime).await.unwrap().unwrap();
+    let proof = harness
+        .establish(&mut store, &runtime)
+        .await
+        .unwrap()
+        .unwrap();
     harness.mark_native_basis("verifying");
     let refused = store.apply_transition_fact(
         &harness.transition,
@@ -1131,7 +1276,11 @@ async fn admitted_direct_package_is_accepted_at_verification_and_nowhere_after()
     harness.install_admission(&mut store, ISSUER).unwrap();
     let port = ScriptedPort::public_class(harness.good_replies());
     let runtime = harness.runtime(port);
-    let checkpoint = harness.establish_production(&mut store, &runtime).await.unwrap().unwrap();
+    let checkpoint = harness
+        .establish_production(&mut store, &runtime)
+        .await
+        .unwrap()
+        .unwrap();
     harness.mark_native_basis("verifying");
     let state = store
         .apply_transition_fact(
@@ -1175,7 +1324,12 @@ async fn admitted_direct_package_is_accepted_at_verification_and_nowhere_after()
         clock_sample(),
     );
     assert!(matches!(commit, Err(StoreError::Rejected)), "{commit:?}");
-    assert!(store.native_rehydration_receipt(&harness.transition).unwrap().is_none());
+    assert!(
+        store
+            .native_rehydration_receipt(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
 }
 
 // ---- Currentness between publication and verification ------------------------
@@ -1193,7 +1347,11 @@ async fn source_change_after_admitted_publication_fences_verification() {
     harness.install_admission(&mut store, ISSUER).unwrap();
     let port = ScriptedPort::public_class(harness.good_replies());
     let runtime = harness.runtime(port.clone());
-    let checkpoint = harness.establish_production(&mut store, &runtime).await.unwrap().unwrap();
+    let checkpoint = harness
+        .establish_production(&mut store, &runtime)
+        .await
+        .unwrap()
+        .unwrap();
     harness.mark_native_basis("verifying");
 
     // The engine re-enters establishment after a restart while the source has
@@ -1202,7 +1360,12 @@ async fn source_change_after_admitted_publication_fences_verification() {
     let again = harness.establish_production(&mut store, &runtime).await;
     assert!(matches!(again, Ok(None)), "{again:?}");
     assert_eq!(port.calls(), 2, "nothing is resent");
-    assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_none());
+    assert!(
+        store
+            .admitted_direct_checkpoint(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
     let refused = store.apply_transition_fact(
         &harness.transition,
         Revision::new(harness.subject_revision()),
@@ -1219,9 +1382,18 @@ async fn admission_withdrawn_after_publication_refuses_verification() {
     harness.install_admission(&mut store, ISSUER).unwrap();
     let port = ScriptedPort::public_class(harness.good_replies());
     let runtime = harness.runtime(port);
-    let checkpoint = harness.establish_production(&mut store, &runtime).await.unwrap().unwrap();
+    let checkpoint = harness
+        .establish_production(&mut store, &runtime)
+        .await
+        .unwrap()
+        .unwrap();
     harness.mark_native_basis("verifying");
-    assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_some());
+    assert!(
+        store
+            .admitted_direct_checkpoint(&harness.transition)
+            .unwrap()
+            .is_some()
+    );
 
     // The owner withdraws the profile after publication, before the lifecycle
     // consumes the checkpoint.
@@ -1268,11 +1440,17 @@ async fn missing_release_is_pending_before_intent_and_each_release_sends_its_cal
         let result = harness.establish(&mut store, &runtime).await;
         assert!(matches!(result, Ok(None)), "{result:?}");
         assert_eq!(port.calls(), 0);
-        assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
+        assert_eq!(
+            harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+            0
+        );
         let pending = waiting(&runtime).expect("compile waits for its release");
         assert_eq!(pending.operation_id, "direct-compile-1");
     }
-    assert_eq!(port.offered_roles(), vec![DirectRole::Compile, DirectRole::Compile]);
+    assert_eq!(
+        port.offered_roles(),
+        vec![DirectRole::Compile, DirectRole::Compile]
+    );
 
     // The compile release arrives: exactly one compile send, then the verify
     // call is prepared from the settled candidate and waits for its own release.
@@ -1284,27 +1462,41 @@ async fn missing_release_is_pending_before_intent_and_each_release_sends_its_cal
         harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE role='compile' AND state='completed_settled'"),
         1
     );
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE role='verify'"), 0);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE role='verify'"),
+        0
+    );
     let pending = waiting(&runtime).expect("verify waits for its release");
     assert_eq!(pending.operation_id, "direct-verify-1");
     let offered = port.offered.lock().unwrap().clone();
     let compile = port.seen.lock().unwrap()[0].clone();
     let verify = offered.last().unwrap();
     assert_eq!(verify.binding.role, DirectRole::Verify);
-    assert_eq!(verify.compile_binding_sha256.as_deref(), Some(compile.binding_sha256.as_str()));
+    assert_eq!(
+        verify.compile_binding_sha256.as_deref(),
+        Some(compile.binding_sha256.as_str())
+    );
     assert_eq!(pending.prepared_binding_sha256, verify.binding_sha256);
 
     // Restart while verify is pending: the recorded compile is reused and
     // never offered or sent again; the verify call is offered again.
     drop(store);
     let mut store = harness.reopen();
-    let again = ScriptedPort::new(vec![Reply::complete(harness.report_json(FindingStatus::Satisfied))]);
+    let again = ScriptedPort::new(vec![Reply::complete(
+        harness.report_json(FindingStatus::Satisfied),
+    )]);
     again.hold_releases();
     let runtime = harness.runtime(again.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Ok(None)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Ok(None)
+    ));
     assert_eq!(again.calls(), 0);
     assert_eq!(again.offered_roles(), vec![DirectRole::Verify]);
-    assert_eq!(again.offered.lock().unwrap()[0].binding_sha256, verify.binding_sha256);
+    assert_eq!(
+        again.offered.lock().unwrap()[0].binding_sha256,
+        verify.binding_sha256
+    );
 
     again.release("direct-verify-1");
     let id = harness.establish(&mut store, &runtime).await.unwrap();
@@ -1312,7 +1504,10 @@ async fn missing_release_is_pending_before_intent_and_each_release_sends_its_cal
     assert_eq!(again.calls(), 1);
     assert_eq!(port.calls(), 1, "compile was sent once, before the restart");
     assert_eq!(waiting(&runtime), None);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
 }
 
 #[tokio::test]
@@ -1322,7 +1517,10 @@ async fn release_arrival_repeats_gate_and_grant_checks_before_any_intent() {
         let port = ScriptedPort::new(harness.good_replies());
         port.hold_releases();
         let mut runtime = harness.runtime(port.clone());
-        assert!(matches!(harness.establish(&mut store, &runtime).await, Ok(None)), "{case}");
+        assert!(
+            matches!(harness.establish(&mut store, &runtime).await, Ok(None)),
+            "{case}"
+        );
         match case {
             "gate" => runtime.gate = Arc::new(NativeGate::new(true)),
             _ => {
@@ -1336,7 +1534,11 @@ async fn release_arrival_repeats_gate_and_grant_checks_before_any_intent() {
         let result = harness.establish(&mut store, &runtime).await;
         assert!(result.is_err(), "{case}: {result:?}");
         assert_eq!(port.calls(), 0, "{case}");
-        assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0, "{case}");
+        assert_eq!(
+            harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+            0,
+            "{case}"
+        );
     }
 }
 
@@ -1348,7 +1550,10 @@ async fn recorded_uncertainty_is_reported_not_hidden_behind_a_missing_release() 
         ..Reply::complete(Vec::new())
     }]);
     let runtime = harness.runtime(port.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Err(StoreError::ClaimConflict)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Err(StoreError::ClaimConflict)
+    ));
     assert_eq!(port.calls(), 1);
 
     // Restart with no release present at all: the possibly sent compile is
@@ -1358,12 +1563,16 @@ async fn recorded_uncertainty_is_reported_not_hidden_behind_a_missing_release() 
     let again = ScriptedPort::new(harness.good_replies());
     again.hold_releases();
     let runtime = harness.runtime(again.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Err(StoreError::ClaimConflict)));
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Err(StoreError::ClaimConflict)
+    ));
     assert_eq!(again.calls(), 0);
     assert!(again.offered_roles().is_empty());
     assert_eq!(waiting(&runtime), None);
     assert_eq!(
-        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='intent_recorded'"),
+        harness
+            .count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='intent_recorded'"),
         1
     );
 }
@@ -1390,7 +1599,10 @@ async fn withheld_send_withdraws_intent_and_the_redrive_sends_the_same_call_once
     let result = harness.establish(&mut store, &runtime).await;
     assert!(matches!(result, Ok(None)), "{result:?}");
     assert_eq!(port.calls(), 1);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        0
+    );
     let withheld = port.seen.lock().unwrap()[0].clone();
     let pending = waiting(&runtime).expect("a withheld compile stays pending");
     assert_eq!(pending.operation_id, "direct-compile-1");
@@ -1404,14 +1616,20 @@ async fn withheld_send_withdraws_intent_and_the_redrive_sends_the_same_call_once
     assert!(id.is_some());
     let seen = port.seen.lock().unwrap().clone();
     assert_eq!(seen.len(), 3);
-    assert_eq!(seen[1], withheld, "the re-drive submits the same prepared call");
+    assert_eq!(
+        seen[1], withheld,
+        "the re-drive submits the same prepared call"
+    );
     assert_eq!(seen[2].binding.role, DirectRole::Verify);
     assert_eq!(
         port.offered_roles(),
         vec![DirectRole::Compile, DirectRole::Compile, DirectRole::Verify]
     );
     assert_eq!(waiting(&runtime), None);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
 
     // Restart after the checkpoint: nothing is offered or sent again.
     drop(store);
@@ -1421,7 +1639,10 @@ async fn withheld_send_withdraws_intent_and_the_redrive_sends_the_same_call_once
     let _ = harness.establish(&mut store, &runtime).await;
     assert_eq!(again.calls(), 0);
     assert_eq!(port.calls(), 3);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
 }
 
 #[tokio::test]
@@ -1429,8 +1650,14 @@ async fn withdrawn_intent_is_absent_after_restart_and_the_call_is_sent_once() {
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::new(vec![Reply::refused(DirectSubmitError::Withheld)]);
     let runtime = harness.runtime(port.clone());
-    assert!(matches!(harness.establish(&mut store, &runtime).await, Ok(None)));
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
+    assert!(matches!(
+        harness.establish(&mut store, &runtime).await,
+        Ok(None)
+    ));
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        0
+    );
 
     drop(store);
     let mut store = harness.reopen();
@@ -1439,10 +1666,16 @@ async fn withdrawn_intent_is_absent_after_restart_and_the_call_is_sent_once() {
     let id = harness.establish(&mut store, &runtime).await.unwrap();
     assert!(id.is_some());
     assert_eq!(again.calls(), 2);
-    assert_eq!(again.offered_roles(), vec![DirectRole::Compile, DirectRole::Verify]);
+    assert_eq!(
+        again.offered_roles(),
+        vec![DirectRole::Compile, DirectRole::Verify]
+    );
     assert_eq!(port.calls(), 1);
     assert_eq!(again.seen.lock().unwrap()[0], port.seen.lock().unwrap()[0]);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
 }
 
 #[tokio::test]
@@ -1451,8 +1684,15 @@ async fn redrive_after_withdrawal_repeats_stage_gate_grant_and_material_checks()
         let (harness, mut store) = Harness::new();
         let port = ScriptedPort::new(withheld_then_good(&harness));
         let mut runtime = harness.runtime(port.clone());
-        assert!(matches!(harness.establish(&mut store, &runtime).await, Ok(None)), "{case}");
-        assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0, "{case}");
+        assert!(
+            matches!(harness.establish(&mut store, &runtime).await, Ok(None)),
+            "{case}"
+        );
+        assert_eq!(
+            harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+            0,
+            "{case}"
+        );
         let db = || rusqlite::Connection::open(harness.root.join("lifecycle.sqlite")).unwrap();
         match case {
             "stage" => db()
@@ -1471,12 +1711,20 @@ async fn redrive_after_withdrawal_repeats_stage_gate_grant_and_material_checks()
             // on first entry: the re-drive sends each call once and the stale
             // source fences what they returned.
             let seen = port.seen.lock().unwrap().clone();
-            assert_eq!(seen.len(), 3, "{case}: one send per call after the withdrawal");
+            assert_eq!(
+                seen.len(),
+                3,
+                "{case}: one send per call after the withdrawal"
+            );
             assert_eq!(seen[1], seen[0]);
             assert_eq!(seen[2].binding.role, DirectRole::Verify);
-            assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_results"), 0);
             assert_eq!(
-                harness.count("SELECT COUNT(*) FROM semantic_captures WHERE eligibility!='current'"),
+                harness.count("SELECT COUNT(*) FROM direct_semantic_results"),
+                0
+            );
+            assert_eq!(
+                harness
+                    .count("SELECT COUNT(*) FROM semantic_captures WHERE eligibility!='current'"),
                 1
             );
             assert_not_authoritative(&store, &harness.transition);
@@ -1498,29 +1746,43 @@ async fn consumed_crashed_and_uncertain_attempts_are_never_withdrawn_or_resent()
         let (harness, mut store) = Harness::new();
         let (reply, state) = match case {
             "not_sent" => (Reply::refused(DirectSubmitError::NotSent), "not_sent"),
-            "unknown" => (Reply { unknown: true, ..Reply::complete(Vec::new()) }, "intent_recorded"),
+            "unknown" => (
+                Reply {
+                    unknown: true,
+                    ..Reply::complete(Vec::new())
+                },
+                "intent_recorded",
+            ),
             _ => (Reply::complete(harness.candidate_json()), "intent_recorded"),
         };
         let port = ScriptedPort::new(vec![reply]);
         if case == "crashed" {
-            *port.on_submit.lock().unwrap() =
-                Some(Box::new(|_| panic!("synthetic crash while the call is in flight")));
+            *port.on_submit.lock().unwrap() = Some(Box::new(|_| {
+                panic!("synthetic crash while the call is in flight")
+            }));
         }
         let runtime = harness.runtime(port.clone());
         let result = harness.establish(&mut store, &runtime).await;
         assert!(result.is_err(), "{case}: {result:?}");
         assert_eq!(port.calls(), 1, "{case}");
-        let recorded = format!("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='{state}'");
+        let recorded =
+            format!("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='{state}'");
         assert_eq!(harness.count(&recorded), 1, "{case}");
         assert_eq!(waiting(&runtime), None, "{case}");
 
         // Neither a re-drive nor a restart withdraws, re-offers or resends it.
-        assert!(harness.establish(&mut store, &runtime).await.is_err(), "{case}");
+        assert!(
+            harness.establish(&mut store, &runtime).await.is_err(),
+            "{case}"
+        );
         drop(store);
         let mut store = harness.reopen();
         let again = ScriptedPort::new(harness.good_replies());
         let runtime = harness.runtime(again.clone());
-        assert!(harness.establish(&mut store, &runtime).await.is_err(), "{case}");
+        assert!(
+            harness.establish(&mut store, &runtime).await.is_err(),
+            "{case}"
+        );
         assert_eq!(again.calls(), 0, "{case}");
         assert!(again.offered_roles().is_empty(), "{case}");
         assert_eq!(waiting(&runtime), None, "{case}");
@@ -1536,33 +1798,52 @@ async fn consumed_crashed_and_uncertain_attempts_are_never_withdrawn_or_resent()
 #[tokio::test]
 async fn store_withdraws_only_an_exact_recorded_intent() {
     let (harness, mut store) = Harness::new();
-    let port = ScriptedPort::new(vec![Reply { unknown: true, ..Reply::complete(Vec::new()) }]);
+    let port = ScriptedPort::new(vec![Reply {
+        unknown: true,
+        ..Reply::complete(Vec::new())
+    }]);
     let runtime = harness.runtime(port.clone());
     assert!(harness.establish(&mut store, &runtime).await.is_err());
     let binding = port.seen.lock().unwrap()[0].binding_sha256.clone();
     let intents = "SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='intent_recorded'";
     assert_eq!(harness.count(intents), 1);
-    store.withdraw_direct_intent("direct-absent", &binding).unwrap();
+    store
+        .withdraw_direct_intent("direct-absent", &binding)
+        .unwrap();
     assert!(matches!(
         store.withdraw_direct_intent("direct-compile-1", &"0".repeat(64)),
         Err(StoreError::ClaimConflict)
     ));
     assert_eq!(harness.count(intents), 1);
-    store.withdraw_direct_intent("direct-compile-1", &binding).unwrap();
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 0);
+    store
+        .withdraw_direct_intent("direct-compile-1", &binding)
+        .unwrap();
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        0
+    );
 
     // Settled and not-sent attempts are kept and reported as conflicts.
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::new(harness.good_replies());
     let runtime = harness.runtime(port.clone());
-    assert!(harness.establish(&mut store, &runtime).await.unwrap().is_some());
+    assert!(
+        harness
+            .establish(&mut store, &runtime)
+            .await
+            .unwrap()
+            .is_some()
+    );
     for call in port.seen.lock().unwrap().iter() {
         assert!(matches!(
             store.withdraw_direct_intent(&call.binding.operation_id, &call.binding_sha256),
             Err(StoreError::ClaimConflict)
         ));
     }
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"), 2);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts"),
+        2
+    );
     let (harness, mut store) = Harness::new();
     let port = ScriptedPort::new(vec![Reply::refused(DirectSubmitError::NotSent)]);
     let runtime = harness.runtime(port.clone());
@@ -1572,5 +1853,8 @@ async fn store_withdraws_only_an_exact_recorded_intent() {
         store.withdraw_direct_intent(&call.binding.operation_id, &call.binding_sha256),
         Err(StoreError::ClaimConflict)
     ));
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='not_sent'"), 1);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_attempts WHERE state='not_sent'"),
+        1
+    );
 }

@@ -1,0 +1,182 @@
+{
+  "status": "builder qualification dispositions; preserves root owned requirements; NOT acceptance",
+  "authority": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/USER-COMPLETION-70-AUTHORITY.json",
+  "reviewed_plan": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/PLAN-R2.md",
+    "sha256": "6a0a1bfb2bbb0406e803aa2d6faeb405804f35a86246a4c6b7ba6d718ff452e7"
+  },
+  "original_map": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-takeover-20261113/stagea-finish/QUALIFICATION-MAP.md",
+    "sha256": "f820484661a7cc337cfd20775d5c1746698227cb4596356c4966a31b6228442e"
+  },
+  "subjects": "new native Pi Docker and hosttransport per reviewed approvedsubject replacement; no scope shrink",
+  "classes": [
+    {
+      "id": "useful_native_sessions",
+      "required_consequence": "Three supported clean initial/nested/multirecord representations and two same-live evolutions; qualify actual nativePi grammar, header/entries/leaf, not copied Claude format successes",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "build12 retention live_prefix_and_exact_sealed_read; finalrun pending",
+      "specific_unmet_or_limit": "complete declared grammar semantics pending separate exact review"
+    },
+    {
+      "id": "retained_original_A",
+      "required_consequence": "A remains exclusion authority through same-inode rotation toB/removal/expiry; no source reacquisition, separately gate exposure horizon",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "build12 rotation/removal/backdated-clock controls",
+      "specific_unmet_or_limit": "original exclusion through current horizon finitecontrols; nativefinal pending"
+    },
+    {
+      "id": "before_first_retention",
+      "required_consequence": "Every name/byte/final envelope/metadata/diagnostic/publication path, all encodings including duplicate-sensitive JSON/JSONL; store-private checked authority, no caller maps or token/None bypass",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "OPERATION-INVENTORY.md; build12 24native controls including encodednames,recursive,duplicate,alllines,export,envelopes",
+      "specific_unmet_or_limit": "systemic completeness pending exact source/proof review"
+    },
+    {
+      "id": "capability_and_seals",
+      "required_consequence": "Forged/foreign receipts/admission, stale predecessor, wrong finalcontext/ordinal and copied/changed store/root reject; credential-free/nonClaude contrasts retain own semantics",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "build12 stale/foreign/rootreplacement/authenticexpectation controls",
+      "specific_unmet_or_limit": "final native authentic descriptor/readers pending"
+    },
+    {
+      "id": "crash_and_reconcile",
+      "required_consequence": "Original session_ready/capture_complete/terminal/capture_failure and reached snapshot-dir-sync failure/safe orphan; translate cuts to Pi native init/checked snapshot/closure; repeat sealed restart/reconcile without new transport or reacquisition",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-snapshot-crash3/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-snapshot-eio/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-closure-crash/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-closure-eio/native.json"
+      ],
+      "observed_controls": "initcrash91/initEIO1; exactsource12 snapshotcrash3 native91 at snapshot-0001 directorysync, explicitcontainercleanup; snapshotEIO1 safeorphan; exactsource12 closurecrash91/closureEIO1 after3snapshots/removal; final12 repeated3freshsealedreaders noA/writer/dispatch",
+      "specific_unmet_or_limit": "capture_failure publication/journalloss and repeated authenticated crash reconciliation/recovery cut outcomes remainUNESTABLISHED; old2snapshotcrash misses preserved"
+    },
+    {
+      "id": "whole_interval",
+      "required_consequence": "Before Docker create through initial/crash/allreconcile/closure; all create/start/attach/exec/transport/cancel/remove owned operations settled or explicit unknown; lost ack and partial frame/journal loss cannot claimcompletezero",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/ENDPOINT-FAULT-RESULTS.json"
+      ],
+      "observed_controls": "custody beforecreate/hostDocker controls; faults+label-empty; positive lostack/delay70safterremoval controls recorded ENDPOINT-FAULT-RESULTS",
+      "specific_unmet_or_limit": "observer/journalloss andpartialframing realnative failureinterval controls remainUNESTABLISHED; successful finitecustody isnotuniversal history"
+    },
+    {
+      "id": "independent_effects",
+      "required_consequence": "Actual SDK parsed responses via host transport; separate synthetic endpoint request receipts vs deduplicated effects; duplicate/delayed response after removal controls; host counters do not prove remote world history",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/ENDPOINT-FAULT-RESULTS.json"
+      ],
+      "observed_controls": "rootobserver-final12 independentlyownedoutsideactor, rootFULLCOLLECTED0/72.3s,6receipts5dedupedeffects exactnative32173022, duplicatefirstid/body/effect; runtime-final12 parsed5responses; own ENDPOINT-FAULT-RESULTS lostack anddelay showpositive1receipt1effect thennative1/provider1UNKNOWN; label-empty21:54:34 precedesdelayedheaderattempt21:55:08",
+      "specific_unmet_or_limit": "finiteofflineoutsideactor finalobservation; liveproviderworldhistory unestablished; faultobservers actor-owned; missingcomplete notzero"
+    },
+    {
+      "id": "artifact_scan",
+      "required_consequence": "Predeclared full originally requiredscope incl sessionlive/archives/DB/WAL/admission/seals/names/partials/journals/retainedstreams/reports; no deletion or postresult exclusion",
+      "status": "POSTHOC_FULL_SCOPE_AUDIT_PASS_WITH_LIMITS",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/artifact-scan-final/scan.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/artifact-scan-package/scan.json"
+      ],
+      "observed_controls": "artifact-scan-final exit0/5.3s, all1793regularfiles/names at postruntime cut;2,232,117 interpretations; all5positive forms checked eachlaunch; no original-A-shaped matches; packaging audit0 after RESULT/CURRENT: 1799files/2237651interpretations/0matches",
+      "specific_unmet_or_limit": "posthocsyntheticpatternaudit,not beforefirstretentionproof; depth16/file512MiB/work100m declared; final bookkeeping aftercut bound separately"
+    },
+    {
+      "id": "C4_and_regression",
+      "required_consequence": "All8meaningful nonzero C4resultcontractcontrols and ordinary build/format/unit/custody/read suites on exact frozen newlybuilt subject",
+      "status": "FOCUSED_PASS_BROAD_GATE_UNMET",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "build12 all8C4+2consumer+24retention+4transport PASS; regression12 core/fmtPASS",
+      "specific_unmet_or_limit": "fourClaudeProgramDrift remain; broad owner/host failed onecontrol each, isolatedrerunPASS; no broadgreenclaim"
+    },
+    {
+      "id": "runtime_profile",
+      "required_consequence": "Actual local image/pinned SDK, no workload auth/network/writable host export/socket, logging none, bounded pipe framing/compression/errors, workload isolation and application-controlled sink protection. Laptop OS/encrypted storage/disabled hibernation trusted; global OS capture/backing proof excluded by exact human10193.",
+      "status": "BOUNDED_CONTROLS_PENDING_FINAL",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "authority": "USER-TRUSTED-HOST-CLARIFICATION.json and QUALIFICATION-TRUSTED-HOST-DISPOSITION.json",
+      "observed_controls": "actual localimage/SDKtools; host4transportcontrols; finalnative inspection pending",
+      "specific_unmet_or_limit": "hostOStrustedassumption retained; finiteisolation/deadline controls not universalproof"
+    },
+    {
+      "id": "independent_review",
+      "required_consequence": "Separate Astra/xhigh exact source and qualification proof, retained remediation if useful; source/binary/schema/run/artifact joins complete",
+      "status": "UNMET_PENDING_ROOT_EXACT_REVIEW",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "root commissioned priorrejection anddesign; currentreview NOTYET",
+      "specific_unmet_or_limit": "exact12 separateAstrareview required byroot after wholefinal"
+    },
+    {
+      "id": "historical_and_live_limits",
+      "required_consequence": "Original Claude findings retain historical OPEN, Pi subject replacement no retroactiveadoption; liveproduction remoteeffects unestablished, no livecredential/provider/privilege/StageB/deployment grant",
+      "status": "LIMITS_PRESERVED",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "priorrepair immutable; allfailedsmokes/faults/regressions retained; noliveprovider/credentialusage",
+      "specific_unmet_or_limit": "historicalClaudeOPEN; no retroactiveacceptance or StageB"
+    },
+    {
+      "id": "complete_development_workflow",
+      "required_consequence": "Tools, writable workload workspace, actual build/test and checked export have joined end-to-end evidence; no-tools response establishes initial integration only. All output/descendants preserve first-retention and authority boundaries.",
+      "status": "OBSERVED_BOUNDED_EXACT12",
+      "authority": "COMPLETION70-HUMAN-STEERING.json actual human9411",
+      "evidence": [
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/build12/summary.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/FINAL12-JOIN.json",
+        "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/runtime-final12/native.json"
+      ],
+      "observed_controls": "runtime-final12 native0/55.7s; actual SDKwrite+bash; DSLcompile + node--check + node--test3PASS0FAIL; checked exactexport;3snapshots;3freshreadonlysealedreaders; resultconsumer; nativepostdispose/removedcontainer",
+      "specific_unmet_or_limit": "whole13classacceptance remains root; no liveproviderqualification"
+    }
+  ],
+  "latest_applicability_authority": "USER-TRUSTED-HOST-CLARIFICATION.json; unchanged application outcomes remain pending"
+}

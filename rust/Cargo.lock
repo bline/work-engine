@@ -2964,6 +2964,7 @@ dependencies = [
 name = "review-execution-evidence"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "claim-evidence",
  "libc",
  "review-episode-core",
@@ -2975,6 +2976,7 @@ dependencies = [
  "slice-campaign",
  "tempfile",
  "thiserror",
+ "time",
  "tokio",
 ]
 
@@ -3427,6 +3429,7 @@ dependencies = [
  "base64 0.22.1",
  "libc",
  "p256",
+ "review-execution-evidence",
  "ring",
  "rusqlite",
  "serde",
@@ -4347,6 +4350,8 @@ dependencies = [
  "base64 0.22.1",
  "libc",
  "repository-claims-handoff",
+ "review-episode-core",
+ "review-execution-evidence",
  "schemars",
  "serde",
  "serde_json",
@@ -4354,6 +4359,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror",
+ "zstd",
 ]
 
 [[package]]

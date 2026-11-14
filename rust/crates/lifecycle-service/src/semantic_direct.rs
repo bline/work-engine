@@ -191,7 +191,8 @@ async fn direct_attempt(
         grant_id: &runtime.semantic.control_grant_ref,
         grant_revision: runtime.semantic.control_grant_revision,
     };
-    let start = store.begin_direct_attempt(call, &entry, &direct.port.evidence(), clock_sample())?;
+    let start =
+        store.begin_direct_attempt(call, &entry, &direct.port.evidence(), clock_sample())?;
     match start {
         DirectAttemptStart::Terminal(capture) => Ok(DirectCallOutcome::Captured(*capture)),
         DirectAttemptStart::PossiblySent => Err(StoreError::ClaimConflict),
@@ -251,8 +252,8 @@ pub(crate) async fn establish_direct(
         &direct.compile_attempt_id,
         &direct.compile_exposure_id,
     );
-    let (compile_input, _) = direct_compile_input(basis, &compile_binding, policy)
-        .map_err(semantic_store_error)?;
+    let (compile_input, _) =
+        direct_compile_input(basis, &compile_binding, policy).map_err(semantic_store_error)?;
     let compile_wire = direct
         .port
         .wire(DirectRole::Compile, &compile_input)
@@ -264,22 +265,23 @@ pub(crate) async fn establish_direct(
     else {
         return Ok(None);
     };
-    let candidate = match direct_candidate_from_capture(basis, &compile_call, &compile_capture, policy)
-    {
-        Ok(candidate) => candidate,
-        Err(
-            error @ (SemanticError::InvalidOutput
-            | SemanticError::InvalidReference
-            | SemanticError::OutputTooLarge
-            | SemanticError::WrongBinding),
-        ) => {
-            // The observation stays; this operation can never be sent again.
-            store.record_direct_refusal(&direct.compile_operation_id, &format!("{error:?}"))?;
-            return Err(StoreError::Rejected);
-        }
-        Err(error) => return Err(semantic_store_error(error)),
-    };
-    let candidate_artifact = store.settle_direct_attempt(&direct.compile_operation_id, clock_sample())?;
+    let candidate =
+        match direct_candidate_from_capture(basis, &compile_call, &compile_capture, policy) {
+            Ok(candidate) => candidate,
+            Err(
+                error @ (SemanticError::InvalidOutput
+                | SemanticError::InvalidReference
+                | SemanticError::OutputTooLarge
+                | SemanticError::WrongBinding),
+            ) => {
+                // The observation stays; this operation can never be sent again.
+                store.record_direct_refusal(&direct.compile_operation_id, &format!("{error:?}"))?;
+                return Err(StoreError::Rejected);
+            }
+            Err(error) => return Err(semantic_store_error(error)),
+        };
+    let candidate_artifact =
+        store.settle_direct_attempt(&direct.compile_operation_id, clock_sample())?;
     if candidate_artifact != candidate.sha256 {
         return Err(StoreError::ClaimConflict);
     }
@@ -364,10 +366,9 @@ pub(crate) async fn establish_direct(
     let fenced = runtime
         .material_port
         .with_current_fence(&basis.dependencies, &mut || {
-            published = publish_accepted_checkpoint(
-                store, runtime, basis, &candidate, policy, &result_id,
-            )
-            .map_err(crate::ServiceError::Store)?;
+            published =
+                publish_accepted_checkpoint(store, runtime, basis, &candidate, policy, &result_id)
+                    .map_err(crate::ServiceError::Store)?;
             Ok(())
         });
     match fenced {

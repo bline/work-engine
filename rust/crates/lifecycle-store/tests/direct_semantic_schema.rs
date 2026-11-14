@@ -4,7 +4,7 @@
 //! not the store's own insert paths (those are covered through the service).
 
 use lifecycle_store::SqliteLifecycleStore;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use tempfile::tempdir;
 
 fn open() -> (tempfile::TempDir, Connection) {
@@ -41,7 +41,14 @@ fn only_synthetic_local_and_public_api_classes_can_be_stored() {
         attempt(&connection, &format!("ok-{index}"), class).unwrap();
         result(&connection, &format!("ok-{index}"), class).unwrap();
     }
-    for class in ["", "live_api", "PUBLIC_API", "public_api ", "native", "admitted"] {
+    for class in [
+        "",
+        "live_api",
+        "PUBLIC_API",
+        "public_api ",
+        "native",
+        "admitted",
+    ] {
         let attempt = attempt(&connection, &format!("bad-{}", class.len()), class);
         assert!(attempt.is_err(), "attempt accepted class {class:?}");
         let result = result(&connection, &format!("bad-{}", class.len()), class);

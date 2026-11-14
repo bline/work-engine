@@ -72,10 +72,23 @@ fn owner_rejects_incomplete_contradictory_and_unbound_pi_proofs() {
         } else {
             pi_protocol_digest()
         };
-        assert!(store.reserve_native_session(
-            NativeSessionId::parse("wrong-generation-intent").unwrap(),SubjectId::parse("s").unwrap(),
-            ContextGeneration::parse("wrong-generation").unwrap(),RuntimeIncarnation::parse("i").unwrap(),
-            &profile,PI_SDK_INDEX_SHA256,&protocol,SnapshotId::parse("snap").unwrap(),&"c".repeat(64),false,clock()).is_err());
+        assert!(
+            store
+                .reserve_native_session(
+                    NativeSessionId::parse("wrong-generation-intent").unwrap(),
+                    SubjectId::parse("s").unwrap(),
+                    ContextGeneration::parse("wrong-generation").unwrap(),
+                    RuntimeIncarnation::parse("i").unwrap(),
+                    &profile,
+                    PI_SDK_INDEX_SHA256,
+                    &protocol,
+                    SnapshotId::parse("snap").unwrap(),
+                    &"c".repeat(64),
+                    false,
+                    clock()
+                )
+                .is_err()
+        );
         let mut session = store
             .reserve_native_session(
                 NativeSessionId::parse("native").unwrap(),
@@ -97,10 +110,23 @@ fn owner_rejects_incomplete_contradictory_and_unbound_pi_proofs() {
                 ProviderThreadId::parse("physical:pi").unwrap(),
             )
             .unwrap();
-        assert!(store.claim_native_turn(&session,NativeTurnRequest {
-            invocation_id:"stale-grant-attempt".into(),attempt:AttemptId::parse("stale-attempt").unwrap(),
-            grant:GrantId::parse("g").unwrap(),grant_revision:0,purpose:NativeInvocationPurpose::DomainWork,prompt:b"prompt".to_vec()
-        },"operator",clock()).is_err());
+        assert!(
+            store
+                .claim_native_turn(
+                    &session,
+                    NativeTurnRequest {
+                        invocation_id: "stale-grant-attempt".into(),
+                        attempt: AttemptId::parse("stale-attempt").unwrap(),
+                        grant: GrantId::parse("g").unwrap(),
+                        grant_revision: 0,
+                        purpose: NativeInvocationPurpose::DomainWork,
+                        prompt: b"prompt".to_vec()
+                    },
+                    "operator",
+                    clock()
+                )
+                .is_err()
+        );
         let mut entry = store
             .claim_native_turn(
                 &session,

@@ -46,7 +46,10 @@ const MODEL: &str = "joined-loopback-model";
 const TOKEN: &str = "synthetic-access-joined";
 
 fn now() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
 }
 
 fn bounds() -> Bounds {
@@ -75,7 +78,11 @@ fn bearer_store(root: &Path) -> (Arc<AuthStore>, bounded_inference::Registration
         .unwrap();
     let url = url::Url::parse(start.authorize_url()).unwrap();
     let value = |key: &str| {
-        url.query_pairs().find(|(k, _)| k == key).unwrap().1.to_string()
+        url.query_pairs()
+            .find(|(k, _)| k == key)
+            .unwrap()
+            .1
+            .to_string()
     };
     let (state, nonce) = (value("state"), value("nonce"));
     let client = "fake-client";
@@ -175,7 +182,9 @@ impl Api {
                 match listener.accept() {
                     Ok((mut socket, _)) => {
                         socket.set_nonblocking(false).unwrap();
-                        let Some(request) = read_request(&socket) else { continue };
+                        let Some(request) = read_request(&socket) else {
+                            continue;
+                        };
                         record.lock().unwrap().push(request);
                         match steps.next() {
                             Some(Step::Stream(body)) => {
@@ -202,7 +211,12 @@ impl Api {
                 }
             }
         });
-        Self { address, seen, stop, worker: Some(worker) }
+        Self {
+            address,
+            seen,
+            stop,
+            worker: Some(worker),
+        }
     }
 
     fn requests(&self) -> usize {
@@ -220,7 +234,11 @@ impl Drop for Api {
 }
 
 fn event(value: Value) -> String {
-    format!("event: {}\r\ndata: {}\r\n\r\n", value["type"].as_str().unwrap(), value)
+    format!(
+        "event: {}\r\ndata: {}\r\n\r\n",
+        value["type"].as_str().unwrap(),
+        value
+    )
 }
 
 /// One complete Responses stream whose output text is `text` from `model`.
@@ -259,7 +277,11 @@ impl Rig {
     fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
         let (auth, registration) = bearer_store(&dir.path().join("auth"));
-        Self { dir, auth, registration }
+        Self {
+            dir,
+            auth,
+            registration,
+        }
     }
 
     fn journals(&self) -> PathBuf {
@@ -280,12 +302,19 @@ impl Rig {
     }
 
     fn profile() -> DirectProfile {
-        DirectProfile { model: MODEL.into(), bounds: bounds() }
+        DirectProfile {
+            model: MODEL.into(),
+            bounds: bounds(),
+        }
     }
 
     /// The real adapter over the loopback endpoint (synthetic class).
     fn adapter(&self, address: SocketAddr) -> Arc<dyn DirectInferencePort> {
-        Arc::new(DirectAdapter::new(self.loopback(address), Self::profile(), self.journals()))
+        Arc::new(DirectAdapter::new(
+            self.loopback(address),
+            Self::profile(),
+            self.journals(),
+        ))
     }
 
     /// A scripted double that only claims the public class over the real
@@ -317,14 +346,19 @@ impl DirectEndpoint for PublicClassDouble {
         attempt_id: &str,
         request: &AssembledRequest,
     ) -> DirectExchange {
-        self.0.exchange(journal_path, operation_id, attempt_id, request)
+        self.0
+            .exchange(journal_path, operation_id, attempt_id, request)
     }
 }
 
 fn good_steps(harness: &Harness) -> Vec<Step> {
     vec![
         Step::Stream(stream(&text(harness.candidate_json()), MODEL, "completed")),
-        Step::Stream(stream(&text(harness.report_json(FindingStatus::Satisfied)), MODEL, "completed")),
+        Step::Stream(stream(
+            &text(harness.report_json(FindingStatus::Satisfied)),
+            MODEL,
+            "completed",
+        )),
     ]
 }
 
@@ -335,7 +369,8 @@ fn sha(bytes: &[u8]) -> String {
 // ---- Tests -------------------------------------------------------------------
 
 #[tokio::test]
-async fn real_adapter_carries_two_distinct_requests_and_loopback_stays_proof_only_even_with_owner_grant() {
+async fn real_adapter_carries_two_distinct_requests_and_loopback_stays_proof_only_even_with_owner_grant()
+ {
     let (harness, mut store) = Harness::new();
     harness.install_admission(&mut store, ISSUER).unwrap();
     let rig = Rig::new();
@@ -346,9 +381,16 @@ async fn real_adapter_carries_two_distinct_requests_and_loopback_stays_proof_onl
     assert!(matches!(result, Ok(None)), "{result:?}");
     assert_eq!(api.requests(), 2);
     assert_unadmitted(&store, &harness.transition);
-    assert!(store.direct_proof_checkpoint(&harness.transition).unwrap().is_some());
+    assert!(
+        store
+            .direct_proof_checkpoint(&harness.transition)
+            .unwrap()
+            .is_some()
+    );
     assert!(matches!(
-        store.semantic_checkpoint_origin(&harness.transition).unwrap(),
+        store
+            .semantic_checkpoint_origin(&harness.transition)
+            .unwrap(),
         Some(DirectCheckpointOrigin::Direct { .. })
     ));
 
@@ -357,9 +399,16 @@ async fn real_adapter_carries_two_distinct_requests_and_loopback_stays_proof_onl
     // the store recorded before sending.
     let seen = api.seen.lock().unwrap();
     for (index, operation) in ["direct-compile-1", "direct-verify-1"].iter().enumerate() {
-        assert!(seen[index].head.starts_with("POST /v1/responses HTTP/1.1\r\n"));
         assert!(
-            seen[index].head.to_ascii_lowercase().contains(&format!("authorization: bearer {TOKEN}")),
+            seen[index]
+                .head
+                .starts_with("POST /v1/responses HTTP/1.1\r\n")
+        );
+        assert!(
+            seen[index]
+                .head
+                .to_ascii_lowercase()
+                .contains(&format!("authorization: bearer {TOKEN}")),
         );
         let request: Value = serde_json::from_slice(&seen[index].body).unwrap();
         assert_eq!(request["model"], MODEL);
@@ -383,7 +432,8 @@ async fn real_adapter_carries_two_distinct_requests_and_loopback_stays_proof_onl
 }
 
 #[tokio::test]
-async fn real_adapter_with_a_scripted_public_class_and_owner_grant_admits_without_inventing_evidence() {
+async fn real_adapter_with_a_scripted_public_class_and_owner_grant_admits_without_inventing_evidence()
+ {
     // Grant logic only: the double claims the class; nothing observed one.
     let (harness, mut store) = Harness::new();
     harness.install_admission(&mut store, ISSUER).unwrap();
@@ -393,12 +443,24 @@ async fn real_adapter_with_a_scripted_public_class_and_owner_grant_admits_withou
     let result = harness.establish_production(&mut store, &runtime).await;
     assert!(matches!(result, Ok(Some(_))), "{result:?}");
     assert_eq!(api.requests(), 2);
-    assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_some());
+    assert!(
+        store
+            .admitted_direct_checkpoint(&harness.transition)
+            .unwrap()
+            .is_some()
+    );
     assert!(matches!(
-        store.semantic_checkpoint_origin(&harness.transition).unwrap(),
+        store
+            .semantic_checkpoint_origin(&harness.transition)
+            .unwrap(),
         Some(DirectCheckpointOrigin::DirectAdmitted { .. })
     ));
-    assert!(store.semantic_checkpoint(&harness.transition).unwrap().is_none());
+    assert!(
+        store
+            .semantic_checkpoint(&harness.transition)
+            .unwrap()
+            .is_none()
+    );
 
     // The same double without the owner's grant is proof only.
     let (harness, mut store) = Harness::new();
@@ -414,18 +476,36 @@ async fn real_adapter_with_a_scripted_public_class_and_owner_grant_admits_withou
 async fn rejected_malformed_failed_wrong_model_and_http_error_verifiers_cannot_publish() {
     type Variant = (&'static str, Box<dyn Fn(&Harness) -> Step>);
     let variants: Vec<Variant> = vec![
-        ("rejecting_verdict", Box::new(|h| {
-            Step::Stream(stream(&text(h.rejecting_report_json()), MODEL, "completed"))
-        })),
-        ("malformed_output", Box::new(|_| {
-            Step::Stream(stream("not json", MODEL, "completed"))
-        })),
-        ("failed_terminal", Box::new(|h| {
-            Step::Stream(stream(&text(h.report_json(FindingStatus::Satisfied)), MODEL, "failed"))
-        })),
-        ("wrong_model", Box::new(|h| {
-            Step::Stream(stream(&text(h.report_json(FindingStatus::Satisfied)), "other-model", "completed"))
-        })),
+        (
+            "rejecting_verdict",
+            Box::new(|h| {
+                Step::Stream(stream(&text(h.rejecting_report_json()), MODEL, "completed"))
+            }),
+        ),
+        (
+            "malformed_output",
+            Box::new(|_| Step::Stream(stream("not json", MODEL, "completed"))),
+        ),
+        (
+            "failed_terminal",
+            Box::new(|h| {
+                Step::Stream(stream(
+                    &text(h.report_json(FindingStatus::Satisfied)),
+                    MODEL,
+                    "failed",
+                ))
+            }),
+        ),
+        (
+            "wrong_model",
+            Box::new(|h| {
+                Step::Stream(stream(
+                    &text(h.report_json(FindingStatus::Satisfied)),
+                    "other-model",
+                    "completed",
+                ))
+            }),
+        ),
         ("http_500", Box::new(|_| Step::Status(500))),
     ];
     for (name, verifier) in variants {
@@ -447,7 +527,13 @@ async fn rejected_malformed_failed_wrong_model_and_http_error_verifiers_cannot_p
             0,
             "{name}"
         );
-        assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_none(), "{name}");
+        assert!(
+            store
+                .admitted_direct_checkpoint(&harness.transition)
+                .unwrap()
+                .is_none(),
+            "{name}"
+        );
 
         // A restart cannot resend either call.
         drop(store);
@@ -455,7 +541,13 @@ async fn rejected_malformed_failed_wrong_model_and_http_error_verifiers_cannot_p
         let again = harness.runtime_with(rig.public_class_double(api.address));
         let _ = harness.establish_production(&mut store, &again).await;
         assert_eq!(api.requests(), 2, "{name}: restart resent a call");
-        assert!(store.admitted_direct_checkpoint(&harness.transition).unwrap().is_none(), "{name}");
+        assert!(
+            store
+                .admitted_direct_checkpoint(&harness.transition)
+                .unwrap()
+                .is_none(),
+            "{name}"
+        );
         assert_not_authoritative(&store, &harness.transition);
     }
 }
@@ -470,7 +562,10 @@ async fn lost_compile_outcome_is_fenced_and_never_resent_after_restart() {
     let api = Api::start(steps);
     let runtime = harness.runtime_with(rig.adapter(api.address));
     let result = harness.establish_production(&mut store, &runtime).await;
-    assert!(matches!(result, Err(StoreError::ClaimConflict)), "{result:?}");
+    assert!(
+        matches!(result, Err(StoreError::ClaimConflict)),
+        "{result:?}"
+    );
     assert_eq!(api.requests(), 1);
     drop(store);
 
@@ -478,8 +573,15 @@ async fn lost_compile_outcome_is_fenced_and_never_resent_after_restart() {
     let mut store = harness.reopen();
     let runtime = harness.runtime_with(rig.adapter(api.address));
     let result = harness.establish_production(&mut store, &runtime).await;
-    assert!(matches!(result, Err(StoreError::ClaimConflict)), "{result:?}");
-    assert_eq!(api.requests(), 1, "an unknown outcome is never offered again");
+    assert!(
+        matches!(result, Err(StoreError::ClaimConflict)),
+        "{result:?}"
+    );
+    assert_eq!(
+        api.requests(),
+        1,
+        "an unknown outcome is never offered again"
+    );
     assert_no_checkpoint(&harness, &store, result).await;
 }
 
@@ -490,14 +592,20 @@ async fn completed_result_survives_restart_without_any_new_request() {
     let rig = Rig::new();
     let api = Api::start(good_steps(&harness));
     let runtime = harness.runtime_with(rig.public_class_double(api.address));
-    let first = harness.establish_production(&mut store, &runtime).await.unwrap();
+    let first = harness
+        .establish_production(&mut store, &runtime)
+        .await
+        .unwrap();
     assert!(first.is_some());
     assert_eq!(api.requests(), 2);
     drop(store);
 
     let mut store = harness.reopen();
     let runtime = harness.runtime_with(rig.public_class_double(api.address));
-    let second = harness.establish_production(&mut store, &runtime).await.unwrap();
+    let second = harness
+        .establish_production(&mut store, &runtime)
+        .await
+        .unwrap();
     assert_eq!(second, first, "the same checkpoint, idempotently");
     assert_eq!(api.requests(), 2, "restart must not retransmit");
 }
@@ -513,7 +621,10 @@ async fn source_stale_after_the_real_calls_fences_the_output() {
     let result = harness.establish_production(&mut store, &runtime).await;
     assert!(matches!(&result, Ok(None)), "{result:?}");
     assert_eq!(api.requests(), 2);
-    assert_eq!(harness.count("SELECT COUNT(*) FROM direct_semantic_results"), 0);
+    assert_eq!(
+        harness.count("SELECT COUNT(*) FROM direct_semantic_results"),
+        0
+    );
     assert_eq!(
         harness.count("SELECT COUNT(*) FROM semantic_captures WHERE eligibility!='current'"),
         1

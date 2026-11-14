@@ -1,0 +1,67 @@
+{
+  "status": "historical evidence, not current acceptance",
+  "entries": [
+    {
+      "repository_copy": "fulltools-result.md",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/RESULT.md",
+      "sha256": "121124ed4afd3fe041f20fca22e9b5155f309899f4fdc7cf67a51bfbc0d4fb53"
+    },
+    {
+      "repository_copy": "ft02-result.md",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/ft02/RESULT.md",
+      "sha256": "cb18dfb0baf7d3aef00ef8094d24cc59a1791c656bb8f3b1bd305b1d562b208b"
+    },
+    {
+      "repository_copy": "fulltools-partial-review.md",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/FULLTOOLS-REVIEW-FINAL.md",
+      "sha256": "1d42fee7e8903184ee6961b840ac18ae04943b4824da4982738491d980ed5c49"
+    },
+    {
+      "repository_copy": "design-reassessment.md",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/FT-DESIGN3-FINAL.md",
+      "sha256": "4a37d05b3dd19dcf7c4e49a3a5e4741b0ed2b56641e009819dc15e8ac2a5f91a",
+      "original_sha256": "83503514a1cba5bda0c58806f7bfe62172f93703c0d9393d446b7adebbf8e050",
+      "copy_transform": "one whitespace-only line normalized; original retained unchanged at cited private path"
+    },
+    {
+      "repository_copy": "ft02-review.md",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/FT02-REVIEW-FINAL.md",
+      "sha256": "17f7901994948b0ed0056ae0463f2b3ddd6133437f990ca0ee67ab1df16e8b4a"
+    },
+    {
+      "repository_copy": "ft02-acceptance.json",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/FT02-ACCEPTANCE.json",
+      "sha256": "aa2d6b2fc1a9e9b6b76eae2f45c84a8f4cffe22fe3b7b22c7b59fc54a8d33e4d"
+    },
+    {
+      "repository_copy": "qualification-original.json",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/APPLICABLE-QUALIFICATION.json",
+      "sha256": "ee7134fc3007cd9681a9a30f169fe5e25a91e36f35b65a30c283a9ddec6de9d4"
+    },
+    {
+      "repository_copy": "qualification-trusted-host-disposition.json",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/QUALIFICATION-TRUSTED-HOST-DISPOSITION.json",
+      "sha256": "c1ad40d1339fe221c7da194d76f0698c7afc502d5898c2ae55c90c8786272627"
+    },
+    {
+      "repository_copy": "fulltools-qualification.json",
+      "original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/QUALIFICATION.json",
+      "sha256": "4cdf40fd993931969d0b6e0cfe37e602a0cf4b6b877796e4a4df1e265ff255d2"
+    },
+    {
+      "private_durable_original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/fulltools/EVIDENCE-INDEX.json",
+      "sha256": "fcb1de868ae31ccc2fd619dd43ce2a0a18357d1f43546ef99f52d5b712332559",
+      "repository_copy": null
+    },
+    {
+      "private_durable_original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/builder/ft02/EVIDENCE-INDEX.json",
+      "sha256": "17bfd8b5ee4805005fd7b7e608977ce286015e463c8f8c8178deb520a7712ca0",
+      "repository_copy": null
+    },
+    {
+      "private_durable_original": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/USER-COMMIT-MERGE-PAUSE-AUTHORITY.json",
+      "sha256": "7900c4b1cecf12ab6ba327cff1f0482020c3427a119b638c2349e6e3fece1720",
+      "repository_copy": null
+    }
+  ]
+}

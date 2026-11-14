@@ -411,7 +411,10 @@ pub async fn drive_transition(
         // not only when it was published or last offered.
         if matches!(fact, TransitionFact::VerificationEstablished { .. })
             && let Some(runtime) = semantic_runtime
-            && matches!(runtime.realization, crate::semantic::ControlRealization::Direct(_))
+            && matches!(
+                runtime.realization,
+                crate::semantic::ControlRealization::Direct(_)
+            )
         {
             let admitted = store
                 .admitted_direct_checkpoint(&id)?

@@ -254,7 +254,15 @@ impl LocalHttpTransport {
                 return Err(LocalTransportError::EnteredFailure);
             }
         };
-        observe_response(&runtime, response, raw_token, request, journal, cancelled, deadline_at)
+        observe_response(
+            &runtime,
+            response,
+            raw_token,
+            request,
+            journal,
+            cancelled,
+            deadline_at,
+        )
     }
 
     /// Bounded fake-registration model discovery. The documented SIWC shape is

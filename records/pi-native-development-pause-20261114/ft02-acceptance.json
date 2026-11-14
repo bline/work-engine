@@ -1,0 +1,15 @@
+{
+  "decision": "Accept boundedFT02originalforeigncontainercleanup correction only",
+  "subject": "source1655078105734a9815df70ca9e0ef8ff4934abf3a83b61ac1d75f9468cc9cbaa pi_native82440b7fd6073c03988e83d2f8e055dd706c4c880ca27b32cdb68494e6c72de1",
+  "evidence": [
+    "builder/ft02/RESULT.md cb18dfb0",
+    "builder/ft02/EVIDENCE-INDEX.json17bfd8b5",
+    "FT02-ROOT-VERIFICATION.json",
+    "FT02-REVIEW-FINAL.md"
+  ],
+  "closed": "FT02originalnameconflictcounterexample",
+  "limits": "No realdaemontimeout/fullPiOwnerfailureinjection/fullworkflowrerun. Existingfullsource12workflow remains historicalrevisionbound. FT01/NR01OPEN; full13matrix/broadgate/completeverticalreviewUNMET. No integration/commit or historicaladoption.",
+  "pending_human_question": "Asyncquestion asked22:32: permit uncheckedtemporaryisolatedDocker scratchcandidates with originalcredentials hostheld and all WorkEngineexports/custodychecked (recommended), or retain beforeeveryscratchwrite and restrictmediatedtools? No answer asof22:51; elapsedtime isnotapproval. Root recommendscandidateboundary; change needsownerdecision because currentPLAN-R2beforefirstretentionappliesworkspace.",
+  "authority": "same root human70, no newgrant/transfer",
+  "processes": "allbuilder/reviewer-owned settled; rootlisteners closing beforeawaitinghuman; nextactivation mustreenroll context/schedule and recheckbudget/source beforedispatch"
+}

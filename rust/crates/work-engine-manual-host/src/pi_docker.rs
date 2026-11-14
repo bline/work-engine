@@ -19,6 +19,10 @@ use std::{
 
 #[path = "pi_coding.rs"]
 pub mod coding;
+#[path = "pi_fifo.rs"]
+pub mod fifo;
+#[path = "pi_native_memory.rs"]
+pub mod native_memory;
 #[path = "pi_observation.rs"]
 pub mod receiver;
 

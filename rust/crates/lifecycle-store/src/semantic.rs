@@ -1036,13 +1036,12 @@ impl SqliteLifecycleStore {
             }
         }
         if table == "direct_semantic_results"
-            && let Some((grant, revision)) =
-                crate::direct_semantic::direct_admission_in(
-                    &tx,
-                    &self.trusted_issuer,
-                    result_id,
-                    clock.wall.get(),
-                )?
+            && let Some((grant, revision)) = crate::direct_semantic::direct_admission_in(
+                &tx,
+                &self.trusted_issuer,
+                result_id,
+                clock.wall.get(),
+            )?
         {
             tx.execute(
                 "UPDATE direct_semantic_results SET admission_grant_id=?2,admission_grant_revision=?3 WHERE result_id=?1 AND admission_grant_id IS NULL",
@@ -1105,7 +1104,8 @@ impl SqliteLifecycleStore {
         transition: &TransitionId,
     ) -> Result<Option<DirectProofCheckpoint>, StoreError> {
         self.verify_identity()?;
-        let Some(package) = self.semantic_checkpoint_in(transition, "direct_semantic_results", false)?
+        let Some(package) =
+            self.semantic_checkpoint_in(transition, "direct_semantic_results", false)?
         else {
             return Ok(None);
         };

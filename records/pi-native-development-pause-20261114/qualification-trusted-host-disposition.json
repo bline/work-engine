@@ -1,0 +1,9 @@
+{
+  "authority": "USER-TRUSTED-HOST-CLARIFICATION.json human10193",
+  "supersedes": "Only applicability of global OS-managed backing/capture predicates, not historical observations or application-owned retention checks",
+  "applicable": "OriginalA exclusion on every WorkEngine-controlled session/log/export/store/metadata write, private writer authority, effect/currentness/identity/bounds/lifecycle, actualnative integration and full tools/workspace/build/test/checkedexport, crash/sealedreconcile/no resend, independent review remain required",
+  "environment_assumptions": "Laptop OS/encrypted disk/disabled hibernation trusted; compromisedhost excluded. Do not require independent universal kernel capture/hibernation proof or dedicatedhost for this objective. No claim of observed safe global history made.",
+  "prior_findings": "PR01 OS kernelcapture branch no longer applicable under humanauthority; PR01 appcontrolled diagnostic/copy protections still pending. PR02 native profile still pending; PR03 source/build/run fixed only FIFO newrun; PR04 production custody lifecycle pending. Old Claude history stays OPEN/historical.",
+  "full_vertical": "UNMET",
+  "next": "Coherent native source/runtime feasibility leaf under revised trusted-host contract, no liveprovider/realA/privilege/deploy/resumegrant. Reconsider unnecessary FIFO/no-swap guard machinery; original PLAN-R2 attached control pipes is reviewed selected architecture before bounded mechanism detour."
+}

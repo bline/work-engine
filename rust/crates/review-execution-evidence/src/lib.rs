@@ -17,6 +17,7 @@
 
 pub mod claude;
 mod contract;
+pub mod pi;
 mod process;
 mod producer;
 mod reader;

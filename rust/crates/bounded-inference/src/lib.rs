@@ -33,13 +33,13 @@ pub use local_http::{
     RefreshExchangeEvidence, RefreshExchangeOutcome, SELECTED_REASONING_PROFILE_REVISION,
 };
 pub use public_host::{
-    ActionGrant, DiagnosticAdmission, DiagnosticGrant, DiagnosticProjection, DirectAdmissionStatus,
-    DirectSendGrant, HostError, ModelObservation, PublicHost, PublicHostEndpoint, SmokeGrant,
-    SmokeProjection, direct_identity_key,
+    direct_identity_key, ActionGrant, DiagnosticAdmission, DiagnosticGrant, DiagnosticProjection,
+    DirectAdmissionStatus, DirectSendGrant, HostError, ModelObservation, PublicHost,
+    PublicHostEndpoint, SmokeGrant, SmokeProjection,
 };
 pub(crate) use public_https::PublicHttps;
 pub use public_https::PublicHttpsError;
-pub use request::{AssembledRequest, Bounds, RequestError, ToolFreeProfile, assemble_request};
+pub use request::{assemble_request, AssembledRequest, Bounds, RequestError, ToolFreeProfile};
 pub use stream::{
     ObservedTerminal, StreamError, StreamObservation, StreamObserver, TokenCounts,
     UsageObservation, UsageSemantics,
