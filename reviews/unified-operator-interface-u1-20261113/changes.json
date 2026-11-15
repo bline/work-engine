@@ -1,0 +1,19 @@
+{
+  "baseline": {
+    "root": "/home/bline/cbm-work/unified-interface-u1-20261113/builder/baseline"
+  },
+  "changed": [
+    "rust/crates/operator-observation/README.md",
+    "rust/crates/operator-observation/tests/checkpoint.py",
+    "rust/crates/session-query/README.md",
+    "rust/crates/session-query/src/lib.rs",
+    "rust/crates/session-query/tests/checkpoint.py"
+  ],
+  "added": [
+    "planning/unified-operator-interface-u2-packet-20261113.md",
+    "records/unified-operator-interface-u1-result-20261113.md",
+    "records/unified-operator-interface-u1-source-map-20261113.md"
+  ],
+  "removed": [],
+  "unchanged_count": 17
+}

@@ -62,6 +62,44 @@ impl Terminal {
         }
     }
     #[allow(dead_code)]
+    pub fn launch_selected(record: &Path, endpoint: &str, task: &str, evidence: &Path) -> Self {
+        let pty = openpty(
+            Some(&Winsize {
+                ws_row: 60,
+                ws_col: 180,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            }),
+            None,
+        )
+        .unwrap();
+        let master = File::from(pty.master);
+        let slave = File::from(pty.slave);
+        let original = tcgetattr(&slave).unwrap();
+        let flags = OFlag::from_bits_truncate(fcntl(&master, FcntlArg::F_GETFL).unwrap());
+        fcntl(&master, FcntlArg::F_SETFL(flags | OFlag::O_NONBLOCK)).unwrap();
+        let child = Command::new(env!("CARGO_BIN_EXE_work-engine-terminal-ui"))
+            .arg("--selected-task")
+            .arg(record)
+            .args([endpoint, task])
+            .env("TERM", "xterm-256color")
+            .stdin(Stdio::from(slave.try_clone().unwrap()))
+            .stdout(Stdio::from(slave.try_clone().unwrap()))
+            .stderr(Stdio::from(slave.try_clone().unwrap()))
+            .spawn()
+            .unwrap();
+        Self {
+            child,
+            master,
+            slave,
+            original,
+            parser: vt100::Parser::new(60, 180, 0),
+            raw: vec![],
+            evidence: evidence.into(),
+            read_deadline: Duration::from_secs(20),
+        }
+    }
+    #[allow(dead_code)]
     pub fn launch_history(socket: &Path, evidence: &Path, rows: u16, cols: u16) -> Self {
         let pty = openpty(
             Some(&Winsize {

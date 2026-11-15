@@ -652,6 +652,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
+name = "operator-observation"
+version = "0.1.0"
+dependencies = [
+ "lifecycle-wire",
+ "schemars",
+ "serde",
+ "serde_json",
+ "session-query",
+ "sha2",
+ "socket2",
+]
+
+[[package]]
 name = "palette"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1054,6 +1067,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "session-query"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "sha2"
 version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1412,12 +1435,14 @@ dependencies = [
  "lifecycle-proof",
  "lifecycle-wire",
  "nix",
+ "operator-observation",
  "pulldown-cmark",
  "rataflow",
  "ratatui",
  "ratatui-textarea",
  "serde",
  "serde_json",
+ "sha2",
  "socket2",
  "syntect",
  "tempfile",

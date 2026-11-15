@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-14T04:31:26.877617+00:00",
+  "owner_sid": "01a1d319-1e58-7883-90af-992d225517d3",
+  "scope": "U3 automatic read lifecycle only",
+  "verdict": "accepted_bounded_source",
+  "manifest": "U3-builder/frozen-final/manifest.json",
+  "manifest_sha256": "b5f76a7164f1ab73baaa17bc7d0b37d843dec6c1337d85b1fd42e5ada8b6f6e3",
+  "review": "/home/bline/cbm-work/unified-interface-sprint-20261114/review/JOINT-SOURCE-REVIEW-FINAL.md",
+  "review_sha256": "f63e29f3a830811613515008cfcaeac059a4c6f7ac15a92d7aa14e87b6b55737",
+  "verification": "ROOT-PRE-REVIEW-VERIFICATION.json",
+  "qualifications": [
+    "12 stable-fixture and14 supplemental lifecycle cases",
+    "automatic loopback publication pickup5300.6ms, no owner-to-screen SLA",
+    "S1 joined-envelope defects remain blocking full joined product acceptance",
+    "no installed-host/backend qualification, deployment or commit"
+  ]
+}

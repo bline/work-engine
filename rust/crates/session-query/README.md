@@ -28,6 +28,21 @@ Remove or replace this adapter when the accepted A3 session-owned Rust query imp
 For `read_session`, `text_offset` and `max_chars` count characters in the original entry. When a window boundary falls inside a recognized credential, the owner expands that boundary to the whole credential and returns a redaction marker. Adjacent windows may therefore repeat the marker; advance using original-entry offsets. `entryChars` is the original length, `textTruncated` reports whether original text remains after the expanded end, and `redactions` counts markers in the returned window. Beyond the end, the result is empty and not truncated. Human output escapes terminal control characters; JSON preserves the owner’s string representation.
 
 The executable is built with `cargo build -p work-engine-query` from `rust/`.
+
+U1 (2026-11-13) adds the exact current Events source pin
+`586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b`
+as a review candidate. See the [revision-bound source map](../../../../records/unified-operator-interface-u1-source-map-20261113.md)
+and [qualification result](../../../../records/unified-operator-interface-u1-result-20261113.md)
+for its controlled read evidence and remaining conditions. A source pin does
+not select a profile, authorize a bridge operation, qualify the remote connector,
+or establish production readiness. The selected bytes are still checked on
+every invocation. The private test checkpoint accepts `SESSION_QUERY_OWNER`
+and `SESSION_QUERY_OWNER_SHA256` to bind an explicit retained snapshot; it keeps
+its fixture and query captures under `SESSION_QUERY_FIXTURE_ROOT`, including
+failed runs. These contain only synthetic test credentials and still require
+private custody. Actual bridge authorization and secure-path checks remain
+enforced.
+
 For an explicitly local service, use an owner-only profile file such as
 `{"version":1,"kind":"local-service","endpoint":"127.0.0.1:12345","credential_file":"/absolute/private/token","timeout_seconds":10}`.
 The numeric endpoint must be loopback, the timeout is 1–60 seconds, and the four reads are available. Granted operation and result reads require

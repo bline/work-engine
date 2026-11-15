@@ -1,0 +1,97 @@
+{
+  "schema": "manual-orchestration.custody.freeze.v1",
+  "label": "finalized-r3",
+  "root": "/home/bline/cbm-work/unified-interface-sprint-20261114/private-realization-r3",
+  "excludes": [
+    "__pycache__"
+  ],
+  "frozen_at": "2026-11-14T07:19:20.794734Z",
+  "entry_count": 12,
+  "entries_sha256": "e160fbeccd512dadceee08bdf4191e42fbe12ddf4ac260318f8eb85dace6fdb2",
+  "entries": [
+    {
+      "path": "READY.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1274,
+      "sha256": "9c86fd7fa314735d61d73c3c34dac00f1c577cae318f2bc2752b669acf03d128"
+    },
+    {
+      "path": "cleanup.py",
+      "type": "file",
+      "mode": 436,
+      "length": 5765,
+      "sha256": "38fd4c8ad2c1bf6b9d36c9064755a6673ef4fb1c805ce0666d6216eeaf8f8e52"
+    },
+    {
+      "path": "closure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 348307,
+      "sha256": "2da3d4f07eafb22f84a61ba65f427161db118caa24f017c9ffd5156b108cb17f"
+    },
+    {
+      "path": "controller.py",
+      "type": "file",
+      "mode": 436,
+      "length": 12564,
+      "sha256": "2d001481f2c9cae18eeb9d637397ae5f7b8a63a6d3f2598ff3232e84fc68c9c2"
+    },
+    {
+      "path": "fake_docker.py",
+      "type": "file",
+      "mode": 509,
+      "length": 4077,
+      "sha256": "c5f2ef381646b95352e2281e0d4126cf1245210dfb8659043f8c7c27d1938eab"
+    },
+    {
+      "path": "fake_fact.py",
+      "type": "file",
+      "mode": 509,
+      "length": 935,
+      "sha256": "bae1bb1564f8a384d74cc49cb38e8270fef22ffc6d14071fe1fa6ea2bca9b453"
+    },
+    {
+      "path": "pid1.py",
+      "type": "file",
+      "mode": 436,
+      "length": 1819,
+      "sha256": "5b1cfdbaca4751dea868ac4be76cf1d62c1fbfcf359f00dfd38eade63b7ad193"
+    },
+    {
+      "path": "preflight.py",
+      "type": "file",
+      "mode": 436,
+      "length": 3817,
+      "sha256": "12df951ccbaf1f284022cc2e9c7709f5d57a18ac991972c2c0d7140259614f68"
+    },
+    {
+      "path": "realization.py",
+      "type": "file",
+      "mode": 436,
+      "length": 19007,
+      "sha256": "cb21d645faea37e350d25cf18493a13b986b7c9631ac161dcaabba8591e00399"
+    },
+    {
+      "path": "test_cleanup.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6086,
+      "sha256": "6b7bfa89d4d93c689c84f6d0f8e5f6f0638674b2d966e56f5a7958c241226d5e"
+    },
+    {
+      "path": "test_custody.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6461,
+      "sha256": "a00a5ae8fc0f1bbfffebf43a7b450176daacb18006405c473dfcdc87e8249221"
+    },
+    {
+      "path": "test_entrypoint.py",
+      "type": "file",
+      "mode": 436,
+      "length": 16179,
+      "sha256": "875a29a6616ff4bf71be377d6d8616e1e94b02896ebc28e7e812f5ba08871f7c"
+    }
+  ]
+}

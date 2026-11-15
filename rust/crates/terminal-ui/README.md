@@ -1,5 +1,12 @@
 # Work Engine terminal UI
 
+The new `--observe /absolute/private/observation.json` mode consumes the shared
+[operator observation](../operator-observation/README.md) used by the web Work
+dashboard. It follows selected-session activity, rereads the local file and
+labels source failure and age. This is an additional read-only mode, not an
+upgrade of the older task/lifecycle connection contracts or a complete event
+history. See the linked guide for collector setup and qualification.
+
 For the product direction, implementation status and next work, start with the
 [UI implementation roadmap](docs/implementation-roadmap.md). It maps this client
 to the accepted [control-plane causal observability design](../../../app-server/docs/control-plane-causal-observability-ui.md).
@@ -570,3 +577,19 @@ test. Test-only provider/PTY dependencies do not enter the UI application.
 
 The [S5 source map](docs/s5-source-map.md) binds the historical review-amplification
 case and records remaining source/access gaps for the broader causal UI.
+
+
+The additional `--selected-task FILE ENDPOINT TASK` mode consumes the shared Rust
+[selected-task presentation](../operator-observation/docs/selected-task.md).
+It requires explicit endpoint/task selection, preserves independent component
+states and original stale provenance, and supports component detail/back.
+The existing connection, draft and session inspection modes remain available.
+
+
+Selected-task v2 uses the Rust-owned compact objective/question/answer/result
+summary. No native or session completion establishes task success. Use arrows
+and Enter to inspect questions, result, owner evidence, independent components
+or activity; b/Esc returns, PageUp/PageDown scrolls, r rereads the file, q exits.
+Owner basis/revision changes reset inspection. File failures visibly retain the
+original observation; endpoint/task mismatch clears it. Old presentation versions
+refuse explicitly. See the operator-observation selected-task contract.

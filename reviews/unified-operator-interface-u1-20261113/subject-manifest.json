@@ -1,0 +1,186 @@
+{
+  "schema": "manual-orchestration.custody.freeze.v1",
+  "label": "U1-review-candidate",
+  "root": "/home/bline/cbm-work/unified-interface-u1-20261113/builder/subject",
+  "excludes": [],
+  "frozen_at": "2026-11-13T17:07:52.504744Z",
+  "entry_count": 25,
+  "entries_sha256": "605469e14baa2972834d4a52651a27446c1e0c0919ca4b9e1a59863d37b65338",
+  "entries": [
+    {
+      "path": "app-server/docs/control-plane-causal-observability-ui.md",
+      "type": "file",
+      "mode": 436,
+      "length": 18074,
+      "sha256": "6b20355f8b04f4faa926e09815ee7864464c953972c7827c18df3b727ac53eba"
+    },
+    {
+      "path": "docs/rust-retained-task-host-contract.md",
+      "type": "file",
+      "mode": 436,
+      "length": 19801,
+      "sha256": "f2fd68ce9b97307485883b5e8ecc7a67c9b1e89914d944dceaa8e66ebc358576"
+    },
+    {
+      "path": "planning/unified-operator-interface-next-plan-20261113.md",
+      "type": "file",
+      "mode": 436,
+      "length": 13177,
+      "sha256": "5d01f5b79aa285db7c6851e1640aca9731a01d058faf39243ffaa91005ac1fdd"
+    },
+    {
+      "path": "planning/unified-operator-interface-u1-budget-20261113.md",
+      "type": "file",
+      "mode": 436,
+      "length": 10878,
+      "sha256": "b229149b0081ebef336e27637222c378b99ea654f2252a178cb1fd26e5808ffe"
+    },
+    {
+      "path": "planning/unified-operator-interface-u2-packet-20261113.md",
+      "type": "file",
+      "mode": 436,
+      "length": 10537,
+      "sha256": "86cec10b962287820a9a79c916a80f62d8aebd6e5e457279b8dc52af76a2b6b4"
+    },
+    {
+      "path": "records/unified-operator-interface-first-increment-20261113.md",
+      "type": "file",
+      "mode": 436,
+      "length": 7107,
+      "sha256": "3dc0427da2819d54e11320f6beee2859508f94cf486c41486090ea31e0c12c13"
+    },
+    {
+      "path": "records/unified-operator-interface-u1-result-20261113.md",
+      "type": "file",
+      "mode": 436,
+      "length": 8043,
+      "sha256": "81e20af319a715958acdce22943bc0b48050e5e1a91391155500b844faebdb6b"
+    },
+    {
+      "path": "records/unified-operator-interface-u1-source-map-20261113.md",
+      "type": "file",
+      "mode": 436,
+      "length": 17809,
+      "sha256": "7b7bda68f0a9cd6e109252cecbd54dc34a71de577db7fa5ae7a6bcfabfcca944"
+    },
+    {
+      "path": "rust/Cargo.lock",
+      "type": "file",
+      "mode": 436,
+      "length": 103959,
+      "sha256": "8e810cb0b731dbde01e9ef2a5b9fa071098183dca2d1ccd7efeba3e484a28c68"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "type": "file",
+      "mode": 436,
+      "length": 2364,
+      "sha256": "90218d68fe9817cdc8eba95a67ab0a6c7a6271088dec8037755c3b60a7a300f1"
+    },
+    {
+      "path": "rust/crates/operator-observation/Cargo.toml",
+      "type": "file",
+      "mode": 436,
+      "length": 309,
+      "sha256": "e9e33c69ece4ce1a12ec3ea3400deb26d6226ccc792b6ac48ce3699e6cf2396f"
+    },
+    {
+      "path": "rust/crates/operator-observation/README.md",
+      "type": "file",
+      "mode": 436,
+      "length": 6626,
+      "sha256": "0b9381313ddb680f7a07229c88f280ecefa12bc782e5945e73fc21251280a1d6"
+    },
+    {
+      "path": "rust/crates/operator-observation/examples/fixture.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 1011,
+      "sha256": "6f057bcdb77b8d6f3fc8f35b1d3d381a6065958ce293a4011b5ed281a0866c5c"
+    },
+    {
+      "path": "rust/crates/operator-observation/src/lib.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 10287,
+      "sha256": "9fdf934fee1cead783b8f7dd900da1cf03fc45d0f6fb5f03ac294aabdfe7dfd4"
+    },
+    {
+      "path": "rust/crates/operator-observation/src/main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 5117,
+      "sha256": "2fcf5da2249ef14a323aa55dee6988b7fd947fdafa2e0cb886c845acd1d540d3"
+    },
+    {
+      "path": "rust/crates/operator-observation/tests/checkpoint.py",
+      "type": "file",
+      "mode": 436,
+      "length": 4638,
+      "sha256": "7d35343b72dae52f00dd57b0e84ee1af6014900752a2d2682c191e3451b23814"
+    },
+    {
+      "path": "rust/crates/operator-observation/tests/fixtures/observation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1107,
+      "sha256": "235768ba4f03aeaa809d97955ba70c9b5567424344eb3e8688db00baf4be8a61"
+    },
+    {
+      "path": "rust/crates/operator-observation/tests/observation.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 3656,
+      "sha256": "f832647fc84c16eab7dcfc3286a4d830ef235cfdb5b38d55ca090cecc18a1eed"
+    },
+    {
+      "path": "rust/crates/session-query/Cargo.toml",
+      "type": "file",
+      "mode": 420,
+      "length": 216,
+      "sha256": "a8e5bab6de2263e34e45523baafcd6eec4c5e47547421a317928c35a889bb617"
+    },
+    {
+      "path": "rust/crates/session-query/README.md",
+      "type": "file",
+      "mode": 420,
+      "length": 5618,
+      "sha256": "1360bb9490fbbfd44fd6def7c17d98826d67becabc0ddfdcf7308d4ad3dde0a5"
+    },
+    {
+      "path": "rust/crates/session-query/owner.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2534,
+      "sha256": "e127460938c087899e91da1a601592770cfdad3fdfaa0dab63a49b96305ffa02"
+    },
+    {
+      "path": "rust/crates/session-query/src/lib.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 17195,
+      "sha256": "9975a0bc2455f7accd2dca8e9a5a678b36fcde3462eaaeed4088184bc87a944c"
+    },
+    {
+      "path": "rust/crates/session-query/tests/checkpoint.py",
+      "type": "file",
+      "mode": 436,
+      "length": 14501,
+      "sha256": "3544120632017db4da7b9d90f0befba5e6eaf44b3c1f2d656c8a93b260a41114"
+    },
+    {
+      "path": "skills/session-events/scripts/__pycache__/session_events.cpython-314.pyc",
+      "type": "file",
+      "mode": 384,
+      "length": 387531,
+      "sha256": "7711b3daf28b6ea8b0670e12d25e2f891968433d36d62c0f4391073adacd68b8"
+    },
+    {
+      "path": "skills/session-events/scripts/session_events.py",
+      "type": "file",
+      "mode": 436,
+      "length": 247564,
+      "sha256": "586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b"
+    }
+  ]
+}

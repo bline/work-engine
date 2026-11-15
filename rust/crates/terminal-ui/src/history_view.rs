@@ -112,7 +112,7 @@ impl GraphView {
         })
     }
     fn source(&self, index: usize) -> Option<&SourceRead> {
-        self.base.source_reads.get(index).or_else(|| {
+        self.base.source_reads.get(index).or({
             if index == self.base.source_reads.len() {
                 self.repair_source.as_ref()
             } else {
@@ -895,34 +895,34 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                         edge.source_ref, edge.source_revision
                     )));
                     out.push(Line::raw(format!("Edge limit     {}", edge.limit)));
-                    if edge.kind == "clarifies_reported_continuation_for" {
-                        if let Some(support) = &graph.interpretation_support {
-                            out.push(Line::raw(format!("Interpreter     {}", edge.owner)));
-                            out.push(Line::raw(format!(
-                                "Rule/version    {} @ {}",
-                                edge.source_ref, edge.source_revision
-                            )));
-                            out.push(Line::raw(format!(
-                                "Git support     {}",
-                                support.repair_commit_oid
-                            )));
-                            out.push(Line::raw(format!(
-                                "Script blob     {}",
-                                support.repair_script_blob_oid
-                            )));
-                            out.push(Line::raw(format!(
-                                "SKILL blob      {}",
-                                support.repair_skill_blob_oid
-                            )));
-                            out.push(Line::raw(format!(
-                                "Review support  {}",
-                                support.review_episode_key
-                            )));
-                            out.push(Line::raw(format!(
-                                "Review revision {}",
-                                support.review_revision
-                            )));
-                        }
+                    if edge.kind == "clarifies_reported_continuation_for"
+                        && let Some(support) = &graph.interpretation_support
+                    {
+                        out.push(Line::raw(format!("Interpreter     {}", edge.owner)));
+                        out.push(Line::raw(format!(
+                            "Rule/version    {} @ {}",
+                            edge.source_ref, edge.source_revision
+                        )));
+                        out.push(Line::raw(format!(
+                            "Git support     {}",
+                            support.repair_commit_oid
+                        )));
+                        out.push(Line::raw(format!(
+                            "Script blob     {}",
+                            support.repair_script_blob_oid
+                        )));
+                        out.push(Line::raw(format!(
+                            "SKILL blob      {}",
+                            support.repair_skill_blob_oid
+                        )));
+                        out.push(Line::raw(format!(
+                            "Review support  {}",
+                            support.review_episode_key
+                        )));
+                        out.push(Line::raw(format!(
+                            "Review revision {}",
+                            support.review_revision
+                        )));
                     }
                 }
                 out.push(Line::raw(format!("Owner       {}", node.owner)));
@@ -935,17 +935,17 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                     source.completeness, source.confidentiality
                 )));
                 out.push(Line::raw(format!("Limit       {}", source.limit)));
-                if node.kind == "contract_revision" {
-                    if let Some(repair) = &graph.repair_read {
-                        out.push(Line::raw(format!("Commit      {}", repair.commit_oid)));
-                        out.push(Line::raw(format!("Parent      {}", repair.parent_oid)));
-                        out.push(Line::raw(format!("Script path {}", repair.script_path)));
-                        out.push(Line::raw(format!("Before rule {}", repair.before_rule)));
-                        out.push(Line::raw(format!("After rule  {}", repair.after_rule)));
-                        out.push(Line::raw(
-                            "Source revision is not S5 deployment or effect evidence.",
-                        ));
-                    }
+                if node.kind == "contract_revision"
+                    && let Some(repair) = &graph.repair_read
+                {
+                    out.push(Line::raw(format!("Commit      {}", repair.commit_oid)));
+                    out.push(Line::raw(format!("Parent      {}", repair.parent_oid)));
+                    out.push(Line::raw(format!("Script path {}", repair.script_path)));
+                    out.push(Line::raw(format!("Before rule {}", repair.before_rule)));
+                    out.push(Line::raw(format!("After rule  {}", repair.after_rule)));
+                    out.push(Line::raw(
+                        "Source revision is not S5 deployment or effect evidence.",
+                    ));
                 }
                 if let Some(time) = &node.observed_time {
                     out.push(Line::raw(format!(

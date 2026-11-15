@@ -1,0 +1,292 @@
+[
+  {
+    "path": "/home/bline/code/devwits-auth/api/_lib.js",
+    "subject_path": "web/api/_lib.js",
+    "sha256": "f24dc86d14902cff21b378656d6fa8b7b827e5b114e7a06cf6048614501e5558"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/api/_storage.js",
+    "subject_path": "web/api/_storage.js",
+    "sha256": "69accad7c77391e13b40f2ca7cce836e47b9697c5e52b782994b19832b44b248"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/api/requests.js",
+    "subject_path": "web/api/requests.js",
+    "sha256": "99d31539b6e44b10ce9e1237195d66d43f9f419ee8760c8871990a8318056ede"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/package-lock.json",
+    "subject_path": "web/package-lock.json",
+    "sha256": "8aa5d66854cbbe63dde658accc3c1de3d6a4389ef70a2a1896878462bf783170"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/package.json",
+    "subject_path": "web/package.json",
+    "sha256": "906459c776613edec6c03c422cbe0e92604a8e6d2aa07a2a32eef3ae02d27ff8"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/src/browser-application.js",
+    "subject_path": "web/src/browser-application.js",
+    "sha256": "30623fb008038283f74c02c0e5b645df1d082765f2bc0402f3e820a1dcdb35f1"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/src/selected-task.js",
+    "subject_path": "web/src/selected-task.js",
+    "sha256": "a630ba539d1eb2dc82d387f26b6d5424a69e9f9547b85f7e8d609d41389afb2d"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/src/selected-task.jsx",
+    "subject_path": "web/src/selected-task.jsx",
+    "sha256": "a49623451234a66e69d3aad9f1a2ead8facfe50ea6f33dcc53df2f362852639d"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/src/style.css",
+    "subject_path": "web/src/style.css",
+    "sha256": "ed68a0bbfec5ef5312b65ea392f2a2bb3931ddce6cb8016a9077c62c0728b8a1"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/src/use-browser-application.js",
+    "subject_path": "web/src/use-browser-application.js",
+    "sha256": "4b4db854eb91d5a84edb86a8101d8fe3e370d39f2181267162d627943e22c214"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/src/work-dashboard.jsx",
+    "subject_path": "web/src/work-dashboard.jsx",
+    "sha256": "245ef76e193257477c3b537ccbe9d3a947dc4d6341d3d1c53f6366daea87b4c7"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/backend-projection-v3.json",
+    "subject_path": "web/tests/fixtures/backend-projection-v3.json",
+    "sha256": "4ffbc008a05eb7152d86486bb8a253e8199f067ada4294666be841ff1ae3453b"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/backend-projection-v4.json",
+    "subject_path": "web/tests/fixtures/backend-projection-v4.json",
+    "sha256": "d3a1fc4fbfe20079542504585662774a6c72dffc4d1b4baf24e699cc4508ab56"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/browser-answer-vector.json",
+    "subject_path": "web/tests/fixtures/browser-answer-vector.json",
+    "sha256": "d6acf9d9d79ea4fbde8ef56f7ca8365b8b7ca57abd662b508536721f5117dc2d"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/browser-task-request.json",
+    "subject_path": "web/tests/fixtures/browser-task-request.json",
+    "sha256": "a0cd0c21e56b005a32f8bc7e78fec6154d27ba6960257c52e8fbd55bac77cdb9"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/operator-observation.json",
+    "subject_path": "web/tests/fixtures/operator-observation.json",
+    "sha256": "235768ba4f03aeaa809d97955ba70c9b5567424344eb3e8688db00baf4be8a61"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/rust-held-projection.json",
+    "subject_path": "web/tests/fixtures/rust-held-projection.json",
+    "sha256": "571d1b42706d05da7ee5f70d333a769ec38dd1cceda52d1754e7cdb748acc575"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/rust-observed-projection.json",
+    "subject_path": "web/tests/fixtures/rust-observed-projection.json",
+    "sha256": "97db5bfea376ed44cc0170568ccfcb08ee61f99a8e0e675368d0ab6c3787a314"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/selected-task-consistency-contract.json",
+    "subject_path": "web/tests/fixtures/selected-task-consistency-contract.json",
+    "sha256": "7d20ad313a039394379dbc935f355dfe4e69ef25c48bd9ab716acb452b758420"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/selected-task-consistency-vectors.json",
+    "subject_path": "web/tests/fixtures/selected-task-consistency-vectors.json",
+    "sha256": "f76d4e4c5100f9a7dd1a134741331b10a6eefa3ade98f1288c966e761daacdc5"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/selected-task.json",
+    "subject_path": "web/tests/fixtures/selected-task.json",
+    "sha256": "e8c7ad2c171746dada99c84110a58b7f86aa2831e35addfec8c2c2ebee7389fd"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/fixtures/task.js",
+    "subject_path": "web/tests/fixtures/task.js",
+    "sha256": "5f020cd493242519d0ded884eede3036c2577328e08c6517aeabd8d1b28c1ca2"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/selected-task-preview.mjs",
+    "subject_path": "web/tests/selected-task-preview.mjs",
+    "sha256": "2e3657a94f61d86c7925334e702861c95d06cede7d02a7a4559d4cf79a27216d"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/selected-task.test.js",
+    "subject_path": "web/tests/selected-task.test.js",
+    "sha256": "44ac83684e216e0da0afbb0ddc7b0eed3bacdd19e9d97060008595d2c31ffbdd"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/u3-preview.jsx",
+    "subject_path": "web/tests/u3-preview.jsx",
+    "sha256": "c2c018f71bee9db3a332ae34fa1a7327c2a5bcd8f09c42e95f70e2a49f58cae6"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/u3-read-health.smoke.mjs",
+    "subject_path": "web/tests/u3-read-health.smoke.mjs",
+    "sha256": "b8be123c7996534127eb8e79ca9791b83ae8ca68832c5c3e4f6184e0ce2bbef7"
+  },
+  {
+    "path": "/home/bline/code/devwits-auth/tests/ui-selected-task.smoke.mjs",
+    "subject_path": "web/tests/ui-selected-task.smoke.mjs",
+    "sha256": "bba65ad3b500d8f09789e7f90892aed216b7d0eb3b3aab2d5f8d43fd0798930d"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/Cargo.lock",
+    "subject_path": "main/rust/Cargo.lock",
+    "sha256": "0f80d27bb715be73ee6b0bd4b5921101facc22c3b3d787b87ca91f3ac4e323e0"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/Cargo.toml",
+    "subject_path": "main/rust/Cargo.toml",
+    "sha256": "90218d68fe9817cdc8eba95a67ab0a6c7a6271088dec8037755c3b60a7a300f1"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/lifecycle-wire/src/json.rs",
+    "subject_path": "main/rust/crates/lifecycle-wire/src/json.rs",
+    "sha256": "664e5cfb7cebf5a88b312c90a782b3da097e6c84783a2601232c2407449fa16f"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/Cargo.toml",
+    "subject_path": "main/rust/crates/operator-observation/Cargo.toml",
+    "sha256": "5b8080bbbaa45d44e98d959111dc6f1a5131af9f5b36eefa18659633e80fc53d"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/README.md",
+    "subject_path": "main/rust/crates/operator-observation/README.md",
+    "sha256": "6f45d3e294ae2e7d16b11331f994dc57e7bcf87920c04bf2162ae47965fe06c1"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/docs/selected-task.md",
+    "subject_path": "main/rust/crates/operator-observation/docs/selected-task.md",
+    "sha256": "bb56e9def5b3405b1dfaf4b06ba4145b0d72f409fe9fa8a69e83e3f49e329bb4"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/docs/selected-task.schema.json",
+    "subject_path": "main/rust/crates/operator-observation/docs/selected-task.schema.json",
+    "sha256": "41966402cb4b3997b6ee93ae6c674f743c9008960b79b49998f47c921f5b59ae"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/examples/fixture.rs",
+    "subject_path": "main/rust/crates/operator-observation/examples/fixture.rs",
+    "sha256": "6f057bcdb77b8d6f3fc8f35b1d3d381a6065958ce293a4011b5ed281a0866c5c"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/examples/selected_task_schema.rs",
+    "subject_path": "main/rust/crates/operator-observation/examples/selected_task_schema.rs",
+    "sha256": "69b9942e6ea1a25f5e6473ff6d05f3e392b77561d2e94dd813ae8145b57c61f5"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/src/lib.rs",
+    "subject_path": "main/rust/crates/operator-observation/src/lib.rs",
+    "sha256": "d6293ff6928597bc741df4acf13c2e69a3fb02de0d1ddd08deac9aa90c0ec28e"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/src/main.rs",
+    "subject_path": "main/rust/crates/operator-observation/src/main.rs",
+    "sha256": "d772f0363ca92606b6d943f9f918bdb8e0dba5a2a0211e4bd3457bb40447998f"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/src/selected_task.rs",
+    "subject_path": "main/rust/crates/operator-observation/src/selected_task.rs",
+    "sha256": "ce4874cd68358accbaf203ea53d20c2490d544f34e59d280d6e3eec79c52ac25"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/src/selected_task_summary.rs",
+    "subject_path": "main/rust/crates/operator-observation/src/selected_task_summary.rs",
+    "sha256": "e2860b3f65545c607f7e4777beaf21c1846cccfa887be727fa5431de60ea111a"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/src/task.rs",
+    "subject_path": "main/rust/crates/operator-observation/src/task.rs",
+    "sha256": "3e20d5bbfbfc1d7568349f0fba8202a65537672761b166eca74edd87b25b5ff4"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/src/task_json.rs",
+    "subject_path": "main/rust/crates/operator-observation/src/task_json.rs",
+    "sha256": "0c1dc5044a3353580debc5a45cbb40600a382d50664e4b181664ef2c1ab00828"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/checkpoint.py",
+    "subject_path": "main/rust/crates/operator-observation/tests/checkpoint.py",
+    "sha256": "7d35343b72dae52f00dd57b0e84ee1af6014900752a2d2682c191e3451b23814"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/fixtures/fresh-completed-control.json",
+    "subject_path": "main/rust/crates/operator-observation/tests/fixtures/fresh-completed-control.json",
+    "sha256": "9a6dfb9b9bfafcf6142cb05df9627a4ffd49ea00fbe67037e31e28ba4c9b6fde"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/fixtures/observation.json",
+    "subject_path": "main/rust/crates/operator-observation/tests/fixtures/observation.json",
+    "sha256": "235768ba4f03aeaa809d97955ba70c9b5567424344eb3e8688db00baf4be8a61"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/fixtures/selected-task-consistency-contract.json",
+    "subject_path": "main/rust/crates/operator-observation/tests/fixtures/selected-task-consistency-contract.json",
+    "sha256": "7d20ad313a039394379dbc935f355dfe4e69ef25c48bd9ab716acb452b758420"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/fixtures/selected-task-v2.json",
+    "subject_path": "main/rust/crates/operator-observation/tests/fixtures/selected-task-v2.json",
+    "sha256": "0eaac246a63532babaa7841a08540bf583bc53e9dd3e7e9b6f5e9104c800f6db"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/observation.rs",
+    "subject_path": "main/rust/crates/operator-observation/tests/observation.rs",
+    "sha256": "f832647fc84c16eab7dcfc3286a4d830ef235cfdb5b38d55ca090cecc18a1eed"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/operator-observation/tests/selected_task.rs",
+    "subject_path": "main/rust/crates/operator-observation/tests/selected_task.rs",
+    "sha256": "c7256c94c073867203f80e08d994b6d9eb564cbca40b62bda9ec2e7c10e22257"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/retained-task-workflow/src/lib.rs",
+    "subject_path": "main/rust/crates/retained-task-workflow/src/lib.rs",
+    "sha256": "838a7821cc5f1b9f3f2c9c6c6e23a4dc2b86bb3e78efcf8b37c7b24d919e79e0"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/terminal-ui/Cargo.lock",
+    "subject_path": "main/rust/crates/terminal-ui/Cargo.lock",
+    "sha256": "35e03aeabbaacbc252d58d2282c42f9a3692f1eda5c36f0112caa34dffb68d79"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/terminal-ui/Cargo.toml",
+    "subject_path": "main/rust/crates/terminal-ui/Cargo.toml",
+    "sha256": "aff4c2296b6fe9bafb9c65482d7de36ee1e6b37f35657eaf698b76b4459cf965"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/terminal-ui/README.md",
+    "subject_path": "main/rust/crates/terminal-ui/README.md",
+    "sha256": "916e19878f48869674836eebd4df68d2379cc126d1064f1e2071346325f77c41"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/terminal-ui/src/selected_task_view.rs",
+    "subject_path": "main/rust/crates/terminal-ui/src/selected_task_view.rs",
+    "sha256": "c1515d0c10d0e6d7b2509587c91cae6c01da88986d39b5980a03336a2b35b683"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/terminal-ui/tests/selected_task_record.rs",
+    "subject_path": "main/rust/crates/terminal-ui/tests/selected_task_record.rs",
+    "sha256": "46ac9d585c95a9361ac19258bb7f9237205b066e08266ef237ba41e2647799ff"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/terminal-ui/tests/support/terminal.rs",
+    "subject_path": "main/rust/crates/terminal-ui/tests/support/terminal.rs",
+    "sha256": "5e5fc67a70df892bd612bc9133458bd4f09e5f3990bf7682b1568877691c3490"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/work-engine-task-host/Cargo.toml",
+    "subject_path": "main/rust/crates/work-engine-task-host/Cargo.toml",
+    "sha256": "6c4ff96062350334b1f18830acea5bd66b3b4df9c4e9389f0e7aebffe6b702d2"
+  },
+  {
+    "path": "/home/bline/code/work-engine/rust/crates/work-engine-task-host/src/observation.rs",
+    "subject_path": "main/rust/crates/work-engine-task-host/src/observation.rs",
+    "sha256": "f33d46572ef02e65e411f1866b6bf6d4b1c1fa87a3538422c85491667327e502"
+  }
+]
