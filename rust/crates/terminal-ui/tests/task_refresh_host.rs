@@ -36,6 +36,43 @@ fn wait(root: &Path, c: &HostClient, d: &str, p: impl Fn(&Value) -> bool) -> Val
     }
 }
 
+fn shared_cli(root: &Path, stage: &str, delivery: &str) {
+    let Some(binary) = std::env::var_os("U2_OBSERVE_BINARY") else {
+        return;
+    };
+    let output = std::process::Command::new(binary)
+        .arg("selected-task")
+        .arg(root.join("host.sock"))
+        .arg(TASK)
+        .args(["--delivery", delivery, "--profile"])
+        .arg(root.join("events-profile.json"))
+        .arg("--output")
+        .arg(root.join(format!("shared-{stage}.json")))
+        .arg("--human")
+        .output()
+        .unwrap();
+    fs::write(root.join(format!("cli-{stage}.stdout")), &output.stdout).unwrap();
+    fs::write(root.join(format!("cli-{stage}.stderr")), &output.stderr).unwrap();
+    assert!(
+        output.status.success(),
+        "shared CLI stage failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let shared = operator_observation::selected_task::SelectedTask::parse(
+        &fs::read(root.join(format!("shared-{stage}.json"))).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(shared.request.task_id, TASK);
+    assert_eq!(shared.standing, "new_endpoint_read");
+    assert_eq!(shared.components["owner"].state, "present");
+    if stage == "completed" {
+        assert_eq!(shared.activity.len(), 1);
+        assert!(
+            matches!(&shared.activity[0].observation,operator_observation::Observation::Available{entries,..} if !entries.is_empty())
+        );
+    }
+}
+
 struct HostGuard(Option<HostProcess>);
 impl std::ops::Deref for HostGuard {
     type Target = HostProcess;
@@ -169,6 +206,24 @@ fn installed_host_refreshes_one_running_ui() {
         )
         .unwrap();
     }
+    // U2-ENV-002: the same qualified native package, privately retrieved and pinned.
+    // Never replace the lifecycle owner's companion guard or global installation.
+    if let Some(selected) = std::env::var_os("U2_TEST_NATIVE") {
+        let selected = std::path::PathBuf::from(selected);
+        assert!(selected.is_absolute());
+        assert_eq!(
+            lifecycle_proof::identity::sha256_file(&selected).unwrap(),
+            std::env::var("U2_TEST_NATIVE_SHA256").unwrap()
+        );
+        assert_eq!(
+            lifecycle_proof::identity::sha256_file(
+                &selected.with_file_name("codex-code-mode-host")
+            )
+            .unwrap(),
+            "8724d73ec190536233ab4628d24a071bfbcf27e5124f08fe35129f26fe48b916"
+        );
+        config["lifecycle"]["native"]["executable"] = json!(selected);
+    }
     config["lifecycle"]["native"]["root"] = json!(root.join("native"));
     config["lifecycle"]["native"]["simulator_base_url"] = json!(provider.base_url());
     config["lifecycle"]["proof_run_id"] = json!("terminal-ui-installed-refresh");
@@ -186,6 +241,27 @@ fn installed_host_refreshes_one_running_ui() {
         fs::Permissions::from_mode(0o600),
     )
     .unwrap();
+    if std::env::var_os("U2_OBSERVE_BINARY").is_some() {
+        for name in ["events-state", "events-claude"] {
+            fs::create_dir(root.join(name)).unwrap();
+            fs::set_permissions(root.join(name), fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        let owner = std::env::var("U2_EVENTS_OWNER").expect("U2_EVENTS_OWNER");
+        assert_eq!(
+            lifecycle_proof::identity::sha256_file(Path::new(&owner)).unwrap(),
+            "586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b"
+        );
+        save(
+            root,
+            "events-profile.json",
+            &json!({"version":1,"owner":owner,"owner_sha256":"586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b","codex_home":root.join("native/codex"),"claude_home":root.join("events-claude"),"state_dir":root.join("events-state"),"bridge":null,"context":null}),
+        );
+        fs::set_permissions(
+            root.join("events-profile.json"),
+            fs::Permissions::from_mode(0o600),
+        )
+        .unwrap();
+    }
     let mut host = HostGuard(Some(
         HostProcess::launch(&executable, &root.join("host-startup.json")).unwrap(),
     ));
@@ -213,6 +289,7 @@ fn installed_host_refreshes_one_running_ui() {
         v["components"]["owner"]["value"]["questions"][0]["state"] == "pending"
     });
     save(root, "pending.json", &pending);
+    shared_cli(root, "pending", d);
     let mut ui = terminal::Terminal::launch(&root.join("host.sock"), TASK, d, root);
     let ui_pid = ui.pid();
     ui.wait_for("TASK OBSERVATION", "initial");
@@ -237,6 +314,7 @@ fn installed_host_refreshes_one_running_ui() {
     assert_eq!(answered["status"], "answered");
     let after = client.observe(TASK, Some(d)).unwrap();
     save(root, "answered.json", &after);
+    shared_cli(root, "answered", d);
     let answer_wait = ui.wait_for(
         "Yes, publish the controlled UI validation result",
         "answered",
@@ -269,6 +347,7 @@ fn installed_host_refreshes_one_running_ui() {
             && v["components"]["lifecycle"]["value"]["delivery"]["value"]["outcome"] == "completed"
     });
     save(root, "completed.json", &complete);
+    shared_cli(root, "completed", d);
     assert_eq!(
         complete["components"]["owner"]["value"]["result"]["result_id"],
         "result:ui:sim"

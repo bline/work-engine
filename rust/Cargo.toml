@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/operator-observation",
   "crates/work-engine-query",
   "crates/work-engine-command",
   "crates/session-task-admission",

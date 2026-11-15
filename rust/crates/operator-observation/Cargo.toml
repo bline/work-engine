@@ -1,0 +1,18 @@
+[package]
+name = "operator-observation"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+schemars.workspace = true
+lifecycle-wire = { path = "../lifecycle-wire" }
+socket2 = "=0.6.5"
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+session-query = { path = "../session-query" }
+
+[[bin]]
+name = "work-engine-observe"
+path = "src/main.rs"

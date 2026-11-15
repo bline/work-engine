@@ -1,0 +1,157 @@
+{
+  "contract": "OwnerBasisCoherence; exact local design revision adopted by S1-ARCHITECTURE-DISPOSITION.json",
+  "cases": [
+    {
+      "name": "fresh",
+      "accept": true
+    },
+    {
+      "name": "transport_failed",
+      "accept": true
+    },
+    {
+      "name": "repeated_failed",
+      "accept": true
+    },
+    {
+      "name": "refused_anchor",
+      "accept": true
+    },
+    {
+      "name": "unavailable_anchor",
+      "accept": true
+    },
+    {
+      "name": "unresolved_anchor",
+      "accept": true
+    },
+    {
+      "name": "initial_failure",
+      "accept": true
+    },
+    {
+      "name": "absent",
+      "accept": true
+    },
+    {
+      "name": "absent_failed",
+      "accept": true
+    },
+    {
+      "name": "identity_reset",
+      "accept": true
+    },
+    {
+      "name": "zero_time",
+      "accept": true
+    },
+    {
+      "name": "summary_missing",
+      "accept": true
+    },
+    {
+      "name": "summary_malformed",
+      "accept": true
+    },
+    {
+      "name": "summary_unsupported",
+      "accept": true
+    },
+    {
+      "name": "summary_capacity",
+      "accept": true
+    },
+    {
+      "name": "explicit_subject_clears",
+      "accept": true
+    },
+    {
+      "name": "anchor_subject",
+      "accept": false
+    },
+    {
+      "name": "anchor_task",
+      "accept": false
+    },
+    {
+      "name": "anchor_revision",
+      "accept": false
+    },
+    {
+      "name": "anchor_completeness",
+      "accept": false
+    },
+    {
+      "name": "anchor_time",
+      "accept": false
+    },
+    {
+      "name": "partial_scope",
+      "accept": false
+    },
+    {
+      "name": "partial_revision",
+      "accept": false
+    },
+    {
+      "name": "partial_time",
+      "accept": false
+    },
+    {
+      "name": "transport_latest",
+      "accept": false
+    },
+    {
+      "name": "stale_present_completed",
+      "accept": false
+    },
+    {
+      "name": "fresh_copy_revision",
+      "accept": false
+    },
+    {
+      "name": "failure_explicit_subject",
+      "accept": false
+    },
+    {
+      "name": "absence_retains",
+      "accept": false
+    },
+    {
+      "name": "no_anchor_rows",
+      "accept": false
+    },
+    {
+      "name": "no_anchor_scope",
+      "accept": false
+    },
+    {
+      "name": "summary_missing_bad_basis",
+      "accept": false
+    },
+    {
+      "name": "summary_malformed_bad_basis",
+      "accept": false
+    },
+    {
+      "name": "summary_unsupported_bad_basis",
+      "accept": false
+    },
+    {
+      "name": "summary_capacity_bad_basis",
+      "accept": false
+    },
+    {
+      "name": "refused_anchor_failed",
+      "accept": true
+    },
+    {
+      "name": "unavailable_anchor_failed",
+      "accept": true
+    },
+    {
+      "name": "unresolved_anchor_failed",
+      "accept": true
+    }
+  ]
+}

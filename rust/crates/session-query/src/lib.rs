@@ -16,11 +16,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-// Approved query owner and its accepted disabled coding-job consumer extension (d44b1bbf).
-// Keep existing operator profiles valid; each invocation still verifies its selected exact pin.
+// Exact owner revisions qualified at this read boundary. Current-source qualification
+// and its controlled/production limits are recorded in the U1 result (2026-11-13).
+// Each invocation verifies the selected snapshot; no pathname or revision label is trusted.
 const OWNER_SHAS: &[&str] = &[
     "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d",
     "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd",
+    "586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b",
 ];
 const HELPER: &str = include_str!("../owner.py");
 const OWNER_LIMIT: usize = 512 * 1024;
@@ -387,7 +389,7 @@ fn transport(payload: &[u8], timeout: Duration, program: &str) -> Result<Value, 
 mod tests {
     use super::*;
     #[test]
-    fn both_approved_owner_pins_preserve_profile_compatibility() {
+    fn qualified_owner_pins_remain_exact() {
         let mut profile = Profile {
             version: 1,
             owner: "/private/owner.py".into(),

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "status": "finalized",
+  "bindings": {
+    "controller.py": "2d001481f2c9cae18eeb9d637397ae5f7b8a63a6d3f2598ff3232e84fc68c9c2",
+    "cleanup.py": "38fd4c8ad2c1bf6b9d36c9064755a6673ef4fb1c805ce0666d6216eeaf8f8e52",
+    "realization.py": "cb21d645faea37e350d25cf18493a13b986b7c9631ac161dcaabba8591e00399",
+    "pid1.py": "5b1cfdbaca4751dea868ac4be76cf1d62c1fbfcf359f00dfd38eade63b7ad193",
+    "preflight.py": "12df951ccbaf1f284022cc2e9c7709f5d57a18ac991972c2c0d7140259614f68",
+    "test_cleanup.py": "6b7bfa89d4d93c689c84f6d0f8e5f6f0638674b2d966e56f5a7958c241226d5e",
+    "test_entrypoint.py": "875a29a6616ff4bf71be377d6d8616e1e94b02896ebc28e7e812f5ba08871f7c",
+    "fake_docker.py": "c5f2ef381646b95352e2281e0d4126cf1245210dfb8659043f8c7c27d1938eab",
+    "fake_fact.py": "bae1bb1564f8a384d74cc49cb38e8270fef22ffc6d14071fe1fa6ea2bca9b453",
+    "test_custody.py": "a00a5ae8fc0f1bbfffebf43a7b450176daacb18006405c473dfcdc87e8249221",
+    "closure.json": "2da3d4f07eafb22f84a61ba65f427161db118caa24f017c9ffd5156b108cb17f"
+  },
+  "pins": {
+    "/usr/bin/python3.14": "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41",
+    "/usr/bin/docker": "a429e235ef670ea83357a5c8c7451f0a69d485a6fee49f9032fd938a0ab4969d"
+  },
+  "preparation_evidence": []
+}

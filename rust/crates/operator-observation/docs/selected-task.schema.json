@@ -1,0 +1,727 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SelectedTask",
+  "type": "object",
+  "properties": {
+    "activity": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Session"
+      }
+    },
+    "activity_coverage": {
+      "$ref": "#/$defs/ActivityCoverage"
+    },
+    "activity_source_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "assembled_at_ms": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0
+    },
+    "components": {
+      "type": "object",
+      "properties": {
+        "command_result": {
+          "$ref": "#/$defs/Presentation"
+        },
+        "control_result": {
+          "$ref": "#/$defs/Presentation"
+        },
+        "lifecycle": {
+          "$ref": "#/$defs/Presentation"
+        },
+        "native_delivery_status": {
+          "$ref": "#/$defs/Presentation"
+        },
+        "owner": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/Presentation"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "completeness": {
+                  "type": "null"
+                },
+                "last_known_completeness": {
+                  "type": "null"
+                },
+                "last_known_revision": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "cursor_revision": {
+                          "description": "Canonical ASCII u64 decimal, at most 18446744073709551615; runtime checks upper bound.",
+                          "type": "string",
+                          "maxLength": 20,
+                          "pattern": "^(0|[1-9][0-9]*)$"
+                        },
+                        "kind": {
+                          "const": "task"
+                        },
+                        "owner_revision": {
+                          "description": "Canonical ASCII u64 decimal, at most 18446744073709551615; runtime checks upper bound.",
+                          "type": "string",
+                          "maxLength": 20,
+                          "pattern": "^(0|[1-9][0-9]*)$"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "owner_revision",
+                        "cursor_revision"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "last_known_scope": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "subject_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "task_id": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "task_id"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "revision": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "cursor_revision": {
+                          "description": "Canonical ASCII u64 decimal, at most 18446744073709551615; runtime checks upper bound.",
+                          "type": "string",
+                          "maxLength": 20,
+                          "pattern": "^(0|[1-9][0-9]*)$"
+                        },
+                        "kind": {
+                          "const": "task"
+                        },
+                        "owner_revision": {
+                          "description": "Canonical ASCII u64 decimal, at most 18446744073709551615; runtime checks upper bound.",
+                          "type": "string",
+                          "maxLength": 20,
+                          "pattern": "^(0|[1-9][0-9]*)$"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "owner_revision",
+                        "cursor_revision"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "scope": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "subject_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "task_id": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "task_id"
+                      ]
+                    },
+                    {
+                      "description": "Only exact unobserved zero-time unavailable sentinel; runtime checks all relations.",
+                      "type": "object",
+                      "maxProperties": 0
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "lifecycle",
+        "native_delivery_status",
+        "command_result",
+        "control_result"
+      ]
+    },
+    "confidentiality": {
+      "type": "string"
+    },
+    "endpoint": {
+      "type": "string"
+    },
+    "host_identity": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HostIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "linkage": {
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/Request"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "scope_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "standing": {
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    },
+    "transport": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "endpoint",
+    "request",
+    "source_id",
+    "scope_id",
+    "standing",
+    "confidentiality",
+    "assembled_at_ms",
+    "transport",
+    "components",
+    "activity",
+    "activity_coverage",
+    "linkage",
+    "summary"
+  ],
+  "$defs": {
+    "ActivityCoverage": {
+      "description": "Coverage of the independently bounded Events read, never native completeness.",
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "linked_session_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "linked_session_ids",
+        "limit"
+      ]
+    },
+    "Entry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "redactions": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "role": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tool": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "role",
+        "text",
+        "truncated",
+        "redactions"
+      ]
+    },
+    "Excerpt": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "truncated"
+      ]
+    },
+    "HostIdentity": {
+      "type": "object",
+      "properties": {
+        "build_id": {
+          "type": "string"
+        },
+        "executable_sha256": {
+          "type": "string"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "incarnation": {
+          "type": "string"
+        },
+        "linux_starttime_ticks": {
+          "type": "string"
+        },
+        "lock_sha256": {
+          "type": "string"
+        },
+        "pid": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "profile": {
+          "type": "string"
+        },
+        "provider_identity": {
+          "type": "string"
+        },
+        "source_sha256": {
+          "type": "string"
+        },
+        "toolchain_sha256": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "pid",
+        "linux_starttime_ticks",
+        "incarnation",
+        "build_id",
+        "profile",
+        "executable_sha256",
+        "source_sha256",
+        "lock_sha256",
+        "toolchain_sha256",
+        "features",
+        "provider_identity"
+      ]
+    },
+    "Observation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Entry"
+              }
+            },
+            "host": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "const": "available"
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "host",
+            "entries"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "const": "unavailable"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "code"
+          ]
+        }
+      ]
+    },
+    "OwnerSummary": {
+      "type": "object",
+      "properties": {
+        "answered_count": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "engineering_question": {
+          "$ref": "#/$defs/Excerpt"
+        },
+        "objective": {
+          "$ref": "#/$defs/Excerpt"
+        },
+        "pending_count": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuestionSummary"
+          }
+        },
+        "result": {
+          "$ref": "#/$defs/ResultSummary"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "objective",
+        "engineering_question",
+        "questions",
+        "pending_count",
+        "answered_count",
+        "result"
+      ]
+    },
+    "Presentation": {
+      "type": "object",
+      "properties": {
+        "completeness": true,
+        "last_known_at_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "last_known_completeness": true,
+        "last_known_revision": true,
+        "last_known_scope": true,
+        "read_at_ms": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "reason": {
+          "type": "string"
+        },
+        "revision": true,
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scope": true,
+        "stale": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "scope",
+        "revision",
+        "completeness",
+        "read_at_ms",
+        "stale",
+        "reason",
+        "rows",
+        "last_known_scope",
+        "last_known_revision",
+        "last_known_completeness"
+      ]
+    },
+    "QuestionState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "const": "pending"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "$ref": "#/$defs/Excerpt"
+            },
+            "authority_ref": {
+              "$ref": "#/$defs/Excerpt"
+            },
+            "state": {
+              "type": "string",
+              "const": "answered"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "answer",
+            "authority_ref"
+          ]
+        }
+      ]
+    },
+    "QuestionSummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Excerpt"
+        },
+        "recipient_ref": {
+          "$ref": "#/$defs/Excerpt"
+        },
+        "scope_ref": {
+          "$ref": "#/$defs/Excerpt"
+        },
+        "state": {
+          "$ref": "#/$defs/QuestionState"
+        },
+        "text": {
+          "$ref": "#/$defs/Excerpt"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "recipient_ref",
+        "scope_ref",
+        "text",
+        "state"
+      ]
+    },
+    "Request": {
+      "type": "object",
+      "properties": {
+        "command_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "delivery_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "task_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "task_id"
+      ]
+    },
+    "ResultSummary": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "const": "not_published"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attribution": {
+              "$ref": "#/$defs/Excerpt"
+            },
+            "body": {
+              "$ref": "#/$defs/Excerpt"
+            },
+            "operation_id": {
+              "$ref": "#/$defs/Excerpt"
+            },
+            "result_id": {
+              "$ref": "#/$defs/Excerpt"
+            },
+            "source_ref_count": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "state": {
+              "type": "string",
+              "const": "published"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "result_id",
+            "operation_id",
+            "body",
+            "attribution",
+            "source_ref_count"
+          ]
+        }
+      ]
+    },
+    "Session": {
+      "type": "object",
+      "properties": {
+        "observation": {
+          "$ref": "#/$defs/Observation"
+        },
+        "observed_at_ms": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "session_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "session_id",
+        "observed_at_ms",
+        "observation"
+      ]
+    },
+    "Summary": {
+      "type": "object",
+      "properties": {
+        "basis": {
+          "type": "string"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "basis"
+      ]
+    }
+  }
+}

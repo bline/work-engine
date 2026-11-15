@@ -2,9 +2,13 @@
 
 The SQLite rows are test-only preexisting operations; no submit or native server is run.
 """
-import hashlib, importlib.util, json, os, pathlib, shutil, sqlite3, subprocess, sys, tempfile
+import contextlib, hashlib, importlib.util, json, os, pathlib, shutil, sqlite3, subprocess, sys, tempfile
 root = pathlib.Path(__file__).resolve().parents[4]
-owner = root / 'skills/session-events/scripts/session_events.py'
+os.umask(0o077)
+owner = pathlib.Path(os.environ.get('SESSION_QUERY_OWNER', root / 'skills/session-events/scripts/session_events.py')).resolve()
+expected_pin = os.environ.get('SESSION_QUERY_OWNER_SHA256')
+if expected_pin is not None:
+    assert hashlib.sha256(owner.read_bytes()).hexdigest() == expected_pin, 'selected owner changed'
 exe = pathlib.Path(os.environ['SESSION_QUERY_BINARY'])
 bridge_exe = pathlib.Path(os.environ['SESSION_BRIDGE_BINARY'])
 fixture_root = pathlib.Path(os.environ['SESSION_QUERY_FIXTURE_ROOT'])
@@ -19,7 +23,8 @@ opid='44444444-4444-4444-8444-444444444444'
 turn='55555555-5555-4555-8555-555555555555'
 token='webridge_'+'A'*43
 controls='benign Ω '+chr(27)+'[2J'+chr(27)+']52;c;Zm9v'+chr(7)+'\r\b'+chr(0x9b)+' done'
-with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
+# Retain exact private inputs and outputs on success and failure.
+with contextlib.nullcontext(tempfile.mkdtemp(prefix='query-',dir=fixture_root)) as tmp:
     t = pathlib.Path(tmp); t.chmod(0o700)
     c, cl, state = (t / n for n in ('codex', 'claude', 'state'))
     workspace=t/'workspace'; workspace.mkdir(mode=0o700)
@@ -40,12 +45,30 @@ with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
     with sqlite3.connect(db) as sql:
         sql.execute('INSERT INTO grants VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',(gid,token_hash,req,sid,str(workspace),payload_hash,wire_hash,operation_hash,4102444800,os.geteuid(),1767225600,0))
         sql.execute('INSERT INTO operations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',(req,opid,gid,sid,str(workspace),payload_hash,wire_hash,operation_hash,opid,1767225600,'terminal','[]',turn,turn,'completed',1767225600))
-    profile={'version':1,'owner':str(owner),'owner_sha256':sha(owner.read_bytes()),'codex_home':str(c),'claude_home':str(cl),'state_dir':str(state), 'bridge':{'binary':str(binary),'binary_sha256':sha(binary.read_bytes()),'config':str(config),'config_sha256':sha(config.read_bytes())}}
+    selected_source=owner.read_bytes()
+    snapshot=t/'session_events.py'; snapshot.write_bytes(selected_source)
+    profile={'version':1,'owner':str(snapshot),'owner_sha256':sha(selected_source),'codex_home':str(c),'claude_home':str(cl),'state_dir':str(state), 'bridge':{'binary':str(binary),'binary_sha256':sha(binary.read_bytes()),'config':str(config),'config_sha256':sha(config.read_bytes())}}
     prof=t/'profile.json'; prof.write_text(json.dumps(profile)); prof.chmod(0o600)
+    (t/'selected-profile.json').write_bytes(prof.read_bytes())
     owner_bridge=m.Bridge(str(binary),sha(binary.read_bytes()),str(config),sha(config.read_bytes()))
     server=m.Server(m.Homes(c,cl,state),'local-query',m.CallbackPolicy(),bridge=owner_bridge)
     def cli(name,args, expected=0, fmt='--json'):
+        capture=t/'reads'; capture.mkdir(exist_ok=True)
+        index=len(list(capture.glob('*.request.json')))
+        (capture/f'{index:03d}.request.json').write_text(json.dumps({'name':name,'arguments':args,'format':fmt})+'\n')
+        # Keep the actual profile/mode and mutable owner fixture cut for this read.
+        # All credentials are synthetic; private bytes still stay out of argv/logs.
+        objects=t/'input-bytes'; objects.mkdir(exist_ok=True)
+        inputs=[]
+        for item in (prof,snapshot,config,db,path,c/'session_index.jsonl',t/'role-ledger.jsonl'):
+            if item.exists():
+                payload=item.read_bytes(); digest=sha(payload)
+                (objects/digest).write_bytes(payload)
+                inputs.append({'path':str(item),'mode':item.stat().st_mode & 0o777,'sha256':digest})
+        (capture/f'{index:03d}.inputs.json').write_text(json.dumps(inputs,indent=2)+'\n')
         p=subprocess.run([str(exe),str(prof),name,fmt,'-'],input=json.dumps(args),capture_output=True,text=True,timeout=40)
+        (capture/f'{index:03d}.stdout').write_text(p.stdout)
+        (capture/f'{index:03d}.stderr').write_text(p.stderr)
         assert p.returncode==expected,(name,p.stdout,p.stderr)
         assert token not in p.stdout+p.stderr
         return json.loads(p.stdout) if fmt=='--json' else p.stdout
@@ -127,4 +150,13 @@ with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
     assert p.returncode and json.loads(p.stdout)['error']['code']=='file_unavailable'
     profile['version']=2; prof.write_text(json.dumps(profile)); assert cli('list_sessions',{},1)['error']['code']=='invalid_profile'
     profile['version']=1; profile['owner_sha256']='0'*64; prof.write_text(json.dumps(profile)); assert cli('list_sessions',{},1)['error']['code']=='invalid_profile'
+    profile['owner_sha256']=sha(selected_source); prof.write_text(json.dumps(profile))
+    snapshot.write_bytes(selected_source+b'\n# controlled mismatch\n')
+    assert cli('list_sessions',{},1)['error']['code']=='owner_pin_mismatch'
+    snapshot.write_bytes(selected_source)
+    prof.chmod(0o644)
+    assert cli('list_sessions',{},1)['error']['code']=='invalid_file'
+    prof.chmod(0o600)
     print('negative, redaction, authorization and repeated ambiguous read assertions passed; no native service or entry')
+    (t/'qualification.json').write_text(json.dumps({'owner_sha256':sha(owner.read_bytes()),'query_sha256':sha(exe.read_bytes()),'bridge_sha256':sha(bridge_exe.read_bytes()),'status':'passed','scope':'private preexisting fixture bridge records; no submit, native server or provider'},indent=2)+'\n')
+    print('retained private fixture:',t)

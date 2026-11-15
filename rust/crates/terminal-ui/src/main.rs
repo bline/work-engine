@@ -11,8 +11,10 @@ mod history_view;
 mod lifecycle;
 mod model;
 mod mouse;
+mod observation_view;
 mod presentation;
 mod replay;
+mod selected_task_view;
 mod task;
 mod task_live;
 #[cfg(test)]
@@ -90,7 +92,33 @@ impl Drop for TerminalGuard {
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.first().is_some_and(|a| a == "--selected-task") {
+        if args.len() != 4 {
+            return Err(
+                "use --selected-task /absolute/projection.json /absolute/endpoint TASK_ID".into(),
+            );
+        }
+        return selected_task_view::run(&args[1], &args[2], &args[3]);
+    }
+    if args.first().is_some_and(|a| a == "--observe") {
+        if args.len() == 2 {
+            return observation_view::run(PathBuf::from(&args[1]));
+        }
+        if args.len() == 5 && args[2] == "--observe-snapshot" {
+            print!(
+                "{}",
+                observation_view::snapshot(&args[1], args[3].parse()?, args[4].parse()?)?
+            );
+            return Ok(());
+        }
+        return Err(
+            "use --observe /absolute/snapshot.json [--observe-snapshot WIDTH HEIGHT]".into(),
+        );
+    }
     if args.first().is_some_and(|a| a == "--help" || a == "-h") {
+        println!(
+            "--observe /absolute/snapshot.json opens the shared selected-session activity monitor; optional --observe-snapshot WIDTH HEIGHT renders one frame."
+        );
         println!(
             "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--history-connect SOCKET opens the admitted, read-only S5 historical investigation. 1–5 select candidate; candidate 4 follows provider attempts → acknowledged scheduler result → exact review revision. a opens attempts, s opens schedule, [ ] select results, g shows gaps, q exits.\n--history-connect SOCKET --history-snapshot WIDTH HEIGHT [candidate|provider|scheduler|replacement|original|findings|gaps] prints the same owner-backed renderer for qualification.\n--connect /path/to/socket --task TASK [--delivery ID] [--command ID] opens read-only task observation v2, refreshed every four seconds.\n--task-fixture pending|result|stale|refused opens provisional task inspection.\n--snapshot [WIDTH HEIGHT] [task-pending|task-result|task-stale|task-refused|task-graph|task-conversation|graph|dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
         );

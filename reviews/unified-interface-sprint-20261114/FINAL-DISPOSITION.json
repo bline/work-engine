@@ -1,0 +1,196 @@
+{
+  "at": "2026-11-14T07:41:14.553428+00:00",
+  "owner": "01a1d319-1e58-7883-90af-992d225517d3",
+  "status": "stopped_unaccepted_remaining_work",
+  "reason": "Full appraisals are collected. Both affected subsystems require fresh design review before further repair; a reviewed repair and renewed qualification cannot credibly fit the remaining authorized window. Closeout reserved from07:39; no new scope dispatched.",
+  "original_items": 3,
+  "additions": 0,
+  "authority": "Human renewed two-hour window to07:49:51.607Z, keeping original100 total speed-adjusted API-equivalent proxy cap. No commit, deployment, installed-host, provider/account or production grant.",
+  "decisions": {
+    "U3": "Existing bounded automatic read-lifecycle source acceptance retained. No installed-host or owner-to-screen SLA expansion.",
+    "S1_source": "changes_required; no full source acceptance or integration",
+    "Q_source": "changes_required; private readiness not accepted",
+    "real_control_admission": "held",
+    "concrete_fixture_release": "held",
+    "diagnostic_acceptance": "held"
+  },
+  "S1": {
+    "source_manifest": "fa3c56dffd71bc89697998895491a0dbf92ffba0fda12451da9bea3cf3b8a7cd",
+    "review": "Complete authority-wide and residual appraisal, initial checkpoint plus same isolated episode resumed after root-persisted native refresh. No new freshness claim.",
+    "open": [
+      "S1-R1 P2: empty unobserved sentinel can carry established host identity in Rust/JS envelope validation.",
+      "S1-E1 P2: exact failed TUI executable overwritten; other intermediate variants may also be unavailable. Logs/final binaries do not recover them.",
+      "S1-E2 P2: final executable, consumed-vector/typed-owner and browser-dependency correspondence is incomplete."
+    ],
+    "prior_dispositions": {
+      "S1-R2": "Bounded finite lexical syntax closure retained.",
+      "S1-R3": "Integer loss mechanism repaired in inspected source; full closure withheld for E2.",
+      "U2": "Prior bounded closures retained."
+    },
+    "origin": "Sentinel is inherited consumer-coherence gap, not established producer regression; E1/E2 are evidence limitations, not demonstrated substitution or extra product regression.",
+    "qualification": "Recorded 18 selected-task tests, parser/observation/lifecycle/typed-host checks, CLI, TUI vectors+3PTY,88web regressions/build, Browser4 and U3. Scope qualified by E1/E2.",
+    "next_gate": "Fresh separate Astra xhigh architectural/design assessment of full envelope and qualification evidence boundary before any ordinary repair."
+  },
+  "Q": {
+    "ready": "9c86fd7fa314735d61d73c3c34dac00f1c577cae318f2bc2752b669acf03d128",
+    "closure": "2da3d4f07eafb22f84a61ba65f427161db118caa24f017c9ffd5156b108cb17f",
+    "review": "Complete bounded source/evidence appraisal of all candidate code and material controls.",
+    "open": [
+      "Q-R3-01 P2: failed-hook interval and RPC exception collection lose local debit; charge advances last before failed debit.",
+      "Q-R3-02 P2: final delivery can discover accounting failure while overall controller/watchdog success remains selected.",
+      "Q-R3-03 P2 evidence: actual collector does not establish stream-fallback delivery of unresolved watchdog-owned clients.",
+      "Q-R3-04 P3: stale four-second exhaustion expectation under scale0.15/L6."
+    ],
+    "origin": "01 includes introduced RPC-reap accounting regression and inherited debit weakness;02 and04 introduced by R3;03 missing controlled integration evidence.",
+    "prior_dispositions": "Three old QsourceP2 and R8 remain formallyOPEN although some mechanisms repaired. R6 bounded false-absence closure preserved.",
+    "qualification": "16 custody methods pass; entry suite8/9pass with one failure; stronger exhaustion fails; narrow delayed watchdog exactly collected0 while controller2/closedfalse. All11wrappers collected, no recorded leftovers.",
+    "next_gate": "Fresh separate Astra xhigh architectural/design assessment required by recurring aggregateL violation, second distinct source rejection and confirmed introduced regression. No ordinary repair admitted."
+  },
+  "history_counting": "One source verdict per distinct submitted revision, not per finding. Initial S1 partial and resumed final are one episode/verdict. Context interruption adds no rejection. Worker self-discovery is not independent rejection.",
+  "runtime_unestablished": [
+    "actual outer supervision/capture/adoption",
+    "universal finite exact-identity delivery when all channels fail",
+    "actual endpoint/daemon/environment,PID1/preflight",
+    "full963-input aggregateL and production watchdog timing",
+    "complete420s fixture and240s observer after arbitrary preflight",
+    "realDockercontrols"
+  ],
+  "historical_unknown_parent_exits": [
+    3422080,
+    3424121
+  ],
+  "preservation": "Immutable READY and old archives remain unchanged; failures retained; overwritten failed binary remains unavailable without waiver. No narrowing or waiver of required claims.",
+  "review_configuration": {
+    "requested": "Astra/xhigh/default/read-only/never",
+    "observed": "Independently verified actual turn grants and appliedsettings; S1 postnative refreshverified; backendfulfillment/billingunknown",
+    "collection": "Both exact final turns collected and full native reports persisted, API-truncated previews not used as fullreport.",
+    "context_delivery": "Both reviewers disclosed missing initialwaittelemetry and used pinned phasechecks. Root listener actually delivered initial73037epoch18; allbatches consumed.",
+    "S1_refresh": "Root persisted checkpoint before child ownnew_context; postboundarysettings verified.",
+    "root_capacity": "Latest170178epoch18, bounded remaining closeout forecast12000 =>182178 below185k; no new substantial work admitted."
+  },
+  "processes": {
+    "root_observer": "71522, exactPID3632088 SIGTERM, terminalcollected241",
+    "root_scheduler": "57049, exactPID3632414 SIGTERM, terminalcollected143; daemon unchanged",
+    "native_results": "All required exact child turns collected; children-final running0; loaded idle session has no pending result.",
+    "owned_live_jobs": [],
+    "historical_unknowns": "Unknown parent exits remain unknown; no OS adoption or wait rights inferred."
+  },
+  "budget": {
+    "snapshot_at": "2026-11-14T07:37:44.705895+00:00",
+    "status": "complete",
+    "recorded_proxy_usd": 81.26582379999994,
+    "human_cap_proxy_usd": 100,
+    "actual_subscription_cost": "unknown",
+    "tail": "Latest snapshot, not settled final total; final closeout inference remains attributable.",
+    "suballocation_overrun": {
+      "reviewer": "S1 retained source reviewer",
+      "cap": 8,
+      "recorded": 9.294588000000001,
+      "overrun": 1.294588000000001,
+      "disposition": "Recorded explicitly, no retroactive limit increase. Budget alert collected after turn completion; no further dispatch. Human total cap remains unexceeded."
+    },
+    "closed_at": "2026-11-14T07:41:14Z",
+    "final_check": {
+      "exit_code": 5,
+      "closed": true,
+      "stop": null,
+      "snapshot_at": null,
+      "status": null,
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/budget-final.json"
+    },
+    "latest_ledger": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/ledger-final.json",
+      "sha256": "fdb89ae87bd97c01d7f6226d43173e5a17915f3b1c0c588a1fac44cdc8e778f8",
+      "snapshot_at": "2026-11-14T07:42:18.844636+00:00",
+      "status": "complete",
+      "closed_window_proxy_usd": 81.36043499999994,
+      "attributed_closeout_tail_proxy_usd": 0.14805800000000002,
+      "total_recorded_including_attributed_tail_proxy_usd": 81.50849299999994,
+      "attribution": "All5 post-close candidates belong to the same root and explicitly perform this sprint closeout; no reused session or new objective. They are included, not excluded by closure.",
+      "settlement": "not_established; subsequent finalization calls remain additional attributable candidates"
+    }
+  },
+  "refs": {
+    "S1-R3-source-review/FINAL.md": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/S1-R3-source-review/FINAL.md",
+      "sha256": "375840880995c9c4013b2c329e644c37799886aa425ca89c2b144f4f6f60553b"
+    },
+    "S1-R3-source-review/FINAL-RESUMED.md": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/S1-R3-source-review/FINAL-RESUMED.md",
+      "sha256": "95a4385d08fb6dea17a2c16d3f68aa108f0adbf20c32d8aba77cea0b1658cd6d"
+    },
+    "S1-R3-source-review/COLLECTION-RESUMED.json": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/S1-R3-source-review/COLLECTION-RESUMED.json",
+      "sha256": "23a8e7ec7c23831625fa254d223a79dbd59d6b5fee333ae304f44c69ac6fabd4"
+    },
+    "Q-R3-source-review/FINAL.md": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/Q-R3-source-review/FINAL.md",
+      "sha256": "9009d4c151fe913af7718964d3329c5b6ff6910b63d44623effc4a4be119340c"
+    },
+    "Q-R3-source-review/COLLECTION.json": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/Q-R3-source-review/COLLECTION.json",
+      "sha256": "40bd28f6d1215c2644efd3d02ed9275627e54da4459339694a04b9293b63d957"
+    },
+    "U3-SOURCE-ACCEPTANCE.json": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/U3-SOURCE-ACCEPTANCE.json",
+      "sha256": "b1c3a756f9d4825692602a497756a0d58cc260f580e512f2fefb47f076ca819a"
+    },
+    "FINAL-APPLICABILITY.json": {
+      "path": "/home/bline/cbm-work/unified-interface-sprint-20261114/FINAL-APPLICABILITY.json",
+      "sha256": "6fde7ae8273326071956613de9fb150cc40160127133a15e297e96fa05d384a6"
+    }
+  },
+  "attribution_after_budget_close": "All observed post-close root calls through07:42:18 were specifically attributed to this closeout and included. Later unreported finalization remains unknown, not zero.",
+  "coordination_claims_released": [
+    {
+      "resource": "campaign/unified-interface-sprint",
+      "claim_id": "06f4b98f-8d61-4f45-8410-b5f10508ea2b",
+      "returncode": 0
+    },
+    {
+      "resource": "review/unified-interface-Q-R3-source",
+      "claim_id": "d3182e15-1e6c-4789-bd6c-3155ddebf793",
+      "returncode": 0
+    },
+    {
+      "resource": "review/unified-interface-Q-design-r3",
+      "claim_id": "db9220ff-0b06-4a20-9971-7f196ea4d39e",
+      "returncode": 0
+    },
+    {
+      "resource": "review/unified-interface-Q-source-r1",
+      "claim_id": "5d433dae-1c04-4735-8787-9734009387f7",
+      "returncode": 0
+    },
+    {
+      "resource": "review/unified-interface-S1-R3-source",
+      "claim_id": "1416ff20-fc2b-4d7e-9977-1f674fb18dd8",
+      "returncode": 0
+    },
+    {
+      "resource": "review/unified-interface-S1-design-r3",
+      "claim_id": "05b7bf32-b896-4244-8a5d-14b9032bb944",
+      "returncode": 0
+    },
+    {
+      "resource": "review/unified-interface-S1-source",
+      "claim_id": "688a8267-2bb7-4b7b-b747-ba9807fd3b7b",
+      "returncode": 0
+    },
+    {
+      "resource": "source/unified-interface-Q-realization",
+      "claim_id": "02940750-c5c4-4c30-998c-81b61fc63b8b",
+      "returncode": 0
+    },
+    {
+      "resource": "source/unified-interface-Q-realization-r3",
+      "claim_id": "15837590-fa0c-4539-b511-eb92cbeb509a",
+      "returncode": 0
+    },
+    {
+      "resource": "source/unified-interface-s1",
+      "claim_id": "d7150193-a078-423a-83c0-88970d4d3cd5",
+      "returncode": 0
+    }
+  ]
+}

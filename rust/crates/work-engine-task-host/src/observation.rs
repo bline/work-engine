@@ -297,6 +297,13 @@ fn command_reply_component(
     present(scope, json!({"kind":"not_provided"}), value)
 }
 
+// Same pure construction used by live observation and offline read-domain qualification.
+fn task_owner_component(task: retained_task_workflow::TaskRecord) -> Result<Component, HostError> {
+    let scope = json!({"task_id":task.task_id,"subject_id":task.subject_id});
+    let revision = json!({"kind":"task","owner_revision":task.revision,"cursor_revision":task.cursor_revision});
+    Ok(present(scope, revision, serde_json::to_value(task)?))
+}
+
 pub(super) fn observe(host: &Host, request: &Value) -> Result<Value, HostError> {
     let object = request.as_object().ok_or(HostError::Configuration)?;
     if !object
@@ -319,10 +326,8 @@ pub(super) fn observe(host: &Host, request: &Value) -> Result<Value, HostError> 
     let (owner, subject, missing) = match host.store.observe(task_id) {
         Ok(Some(task)) if task.task_id == task_id => {
             let subject = task.subject_id.clone();
-            let scope = json!({"task_id":task_id,"subject_id":subject});
-            let revision = json!({"kind":"task","owner_revision":task.revision,"cursor_revision":task.cursor_revision});
             (
-                present(scope, revision, serde_json::to_value(task)?),
+                task_owner_component(task)?,
                 Some(subject),
                 false,
             )
@@ -555,5 +560,28 @@ mod tests {
         command.request_digest = "b".repeat(64);
         saved.service_command_json = serde_json::to_string(&command).unwrap();
         assert!(control_read_request(&saved, "c", "s", "p", &mut json!({})).is_err());
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn s1_r3_actual_task_record_owner_construction() {
+    use retained_task_workflow::{TaskRecord, SubjectKind};
+    for field in ["owner_revision", "cursor_revision"] {
+        for n in [0u64,9007199254740991,9007199254740992,9007199254740993,9007199254740994,u64::MAX] {
+            let task=TaskRecord { task_id:"task:u2".into(),subject_id:"subject:u2".into(),kind:SubjectKind::RepositoryAnalysis,
+                objective:"Offline typed task read".into(),engineering_question:"Preserve revision digits?".into(),snapshot_ref:"synthetic:offline".into(),
+                revision:if field=="owner_revision" {n}else{1},cursor_revision:if field=="cursor_revision" {n}else{1},
+                sources:vec![],fact_kinds:Default::default(),questions:vec![],
+                inputs:vec![retained_task_workflow::TaskInput {command_id:"command:offline".into(),input_id:"input:u2".into(),engineering_question:"Nested integer".into(),owner_revision:n,cursor_revision:n,locator_text:"offline".into()}],completed_effects:vec![],
+                result:Some(retained_task_workflow::AttributedResult {result_id:"result:offline".into(),operation_id:"operation:offline".into(),body:"Independent synthetic result".into(),source_refs:vec![],attribution:"synthetic:offline".into()}) };
+            let component=serde_json::to_value(task_owner_component(task).unwrap()).unwrap();
+            assert_eq!(component["revision"][field].as_u64(),Some(n));
+            assert_eq!(component["value"][if field=="owner_revision" {"revision"}else{field}].as_u64(),Some(n));
+            if let Some(dir)=std::env::var_os("U2_FIXTURE_OUTPUT") {
+                let path=std::path::Path::new(&dir).join("typed-owner");std::fs::create_dir_all(&path).unwrap();
+                std::fs::write(path.join(format!("{field}_{n}.json")),serde_json::to_vec(&component).unwrap()).unwrap();
+            }
+        }
     }
 }

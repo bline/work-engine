@@ -1,0 +1,27 @@
+**Verdict: `accept` for the bounded U1 candidate. Findings: none.** No supported P1/P2 defect, regression, or recurring invariant violation was established. The immediate design gate does not apply; root retains acceptance and integration authority.
+
+Reviewed [frozen source manifest](/home/bline/cbm-work/unified-interface-u1-20261113/builder/frozen-subject/manifest.json), SHA-256 `eefeb0ac84f2641ec6e848e6951e9ae92b72bf9a226dbc000f8de6fa6ac3f95f`, entries digest `605469e14baa2972834d4a52651a27446c1e0c0919ca4b9e1a59863d37b65338`. The five changed and three added files are relative to the retained dirty baseline, not admission HEAD. I independently checked all 25 source and 1,584 evidence file digests against their manifests.
+
+The decisive conclusions are:
+
+- **Exact-source admission is supported for the stated controlled read scope.** [Rust query](/home/bline/cbm-work/unified-interface-u1-20261113/builder/subject/rust/crates/session-query/src/lib.rs:254) hashes the source snapshot on each invocation; [the adapter](/home/bline/cbm-work/unified-interface-u1-20261113/builder/subject/rust/crates/session-query/owner.py:11) compiles those supplied bytes. The final [custody record](/home/bline/cbm-work/unified-interface-u1-20261113/builder/evidence/custody-secure-query-inputs/query-owner.json) binds the executed query/bridge binaries and checkpoint source. Its [34 captured reads](/home/bline/cbm-work/unified-interface-u1-20261113/builder/evidence/secure-fixtures/query-el0_dccq/reads) preserve actual profile/source/fixture inputs and outputs, including authorization failures, redaction and original-offset windows, partial context, repeated ambiguous/unavailable native states, profile permissions and pin mismatch. The retained `933eda1c…` collector profile was exercised separately. This supports local qualification, not production or remote-connector qualification.
+
+- **The historical join is appropriately bounded.** The [captured owner response](/home/bline/cbm-work/unified-interface-u1-20261113/builder/evidence/task-evidence/completed.json) publishes the task’s input ID and matching native segment, delivery, thread and turn. The [join check](/home/bline/cbm-work/unified-interface-u1-20261113/builder/evidence/verify_selected_task.py) uses those fields and rejects task/subject/input conflicts. The current parser read establishes session-wide activity over retained bytes. It establishes neither a current task observation nor entry-to-turn attribution, task-command association, or an atomic workflow cut.
+
+- **Refresh obligations remain unmet where evidence is missing.** The [source map](/home/bline/cbm-work/unified-interface-u1-20261113/builder/subject/records/unified-operator-interface-u1-source-map-20261113.md:102) distinguishes independent owner changes, reconciliation, clock reevaluation and read limits. It explicitly preserves absent notification qualification and the retired Events deadline alert. Proposed routes do not become runtime evidence. This preserves the resolved UI-R1 boundary.
+
+- **The shared Rust direction and bounded U2 assignment are defensible.** The [U2 packet](/home/bline/cbm-work/unified-interface-u1-20261113/builder/subject/planning/unified-operator-interface-u2-packet-20261113.md:70) retains task/lifecycle authority and existing validators while sharing read, identity and projection behavior across clients. No plan revision is required by this review. Before U2 dispatch, root must still bind the controlled-host realization, selected access/identity contracts, implementation boundary and authority. Historical replay cannot replace the required fresh-host proof; missing campaign/cost dimensions need not prevent a truthful task-only increment.
+
+The recorded live `.pyc` mismatch does **not** invalidate the production source-snapshot route: that route compiles supplied source rather than loading that cache. It still prevents an “all current dependent bytes match” claim. The preserved secure-ancestry failure and [fixture-route amendment](/home/bline/cbm-work/unified-interface-u1-20261113/fixture-route-amendment.json) remain an environment interruption, not a technical rejection.
+
+This was a read-only, targeted review, with no tests/builds or launches. Tier2 graph generation `2026-11-13T17:09:02Z` had unresolved Rust calls and ambiguous generic traces; material conclusions use frozen source and retained evidence directly. Fresh task-host execution, production grants/accounts, remote authentication, client rendering, U3 recovery/notifications and source-to-screen latency remain unqualified. This is not an exhaustive owner audit or clean-history claim.
+
+Binding ACK from [reviewer-binding.json](/home/bline/cbm-work/unified-interface-u1-20261113/reviewer-binding.json):
+
+- SID: `01a1d5e9-6ea7-7580-9691-814dad997eaa`
+- Rollout: `/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T10-16-48-01a1d5e9-6ea7-7580-9691-814dad997eaa.jsonl`
+- Root collector: `01a1d319-1e58-7883-90af-992d225517d3`, exact native collection.
+- Designated continuation: `/home/bline/cbm-work/unified-interface-u1-20261113/reviewer-CONTINUATION.md`; root serializes it.
+- Context binary: `/home/bline/.local/state/work-engine/tools/context-status/d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204/work-engine-context-status`; SHA-256 `d16c5f3799e04da374adc5595d9643354d64457ebca3cf3468cf4566824f1204`.
+
+Recorded settings are Astra/xhigh/default/read-only. Neither those settings nor context freshness establishes provider independence.

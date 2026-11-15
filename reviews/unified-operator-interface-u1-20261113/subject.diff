@@ -1,0 +1,691 @@
+--- baseline/rust/crates/operator-observation/README.md
++++ subject/rust/crates/operator-observation/README.md
+@@ -14,10 +14,11 @@
+ 
+ Use an owner-only absolute [session-query profile](../session-query/README.md),
+ with `bridge: null`. The existing query owner pins remain enforced. In
+-particular, the current working-tree Events source is not automatically accepted
+-by that client: use a separately retained source matching an accepted pin.
+-Changing a pin requires the query owner's qualification; this collector neither
+-adds pins nor silently loads another source.
++particular, source selection requires an exact query-owner pin. U1 adds one
++explicit current revision as a review candidate after controlled monitor checks;
++its [source map and limits](../../../../records/unified-operator-interface-u1-source-map-20261113.md)
++remain separate from production and remote-connector qualification. This
++collector neither adds pins nor silently loads another source.
+ 
+ ```sh
+ work-engine-observe /absolute/profile.json --label 'Current investigation' \
+@@ -107,6 +108,14 @@
+ qualification does not establish current live deployment or workflow UI-0/UI-1
+ acceptance.
+ 
++For an explicitly selected current owner, append its absolute source path and
++full expected SHA-256 to the checkpoint command. The checkpoint refuses a
++digest mismatch before invocation; the production query boundary independently
++enforces its own allowlist and byte digest. Both forms retain private fixture
++inputs, the selected profile, first/second observations and the deliberate
++pin-mismatch observation under the evidence directory. Use an owner-only
++directory, and retain failures alongside passing results.
++
+ The terminal checkpoint uses one PTY process and resize redraws for text
+ assertions; it does not emulate a terminal. It checks automatic source refresh,
+ an outage, exit restoration and two rendered frame sizes. The sibling web smoke
+--- baseline/rust/crates/operator-observation/tests/checkpoint.py
++++ subject/rust/crates/operator-observation/tests/checkpoint.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python3
+ """Controlled actual-Events-compositor -> Rust collector checkpoint. No provider."""
++import contextlib
+ import hashlib
+ import json
+ import os
+@@ -8,11 +9,19 @@
+ import sys
+ import tempfile
+ 
+-binary, repository, output = map(Path, sys.argv[1:])
++os.umask(0o077)
++binary, repository, output = map(Path, sys.argv[1:4])
+ output.mkdir(parents=True, exist_ok=True)
+-source = subprocess.run(["git", "show", "d44b1bbf:skills/session-events/scripts/session_events.py"], cwd=repository, capture_output=True, check=True).stdout
+-assert hashlib.sha256(source).hexdigest() == "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd"
+-with tempfile.TemporaryDirectory(prefix="operator-observation-") as directory:
++if len(sys.argv) == 6:
++    source = Path(sys.argv[4]).read_bytes()
++    expected_pin = sys.argv[5]
++elif len(sys.argv) == 4:
++    source = subprocess.run(["git", "show", "d44b1bbf:skills/session-events/scripts/session_events.py"], cwd=repository, capture_output=True, check=True).stdout
++    expected_pin = "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd"
++else:
++    raise SystemExit("expected binary repository output [selected-owner exact-sha256]")
++assert hashlib.sha256(source).hexdigest() == expected_pin
++with contextlib.nullcontext(tempfile.mkdtemp(prefix="operator-observation-", dir=output)) as directory:
+     root = Path(directory)
+     owner = root / "session_events.py"; owner.write_bytes(source)
+     sessions = root / "codex" / "sessions" / "2026" / "11" / "13"; sessions.mkdir(parents=True)
+@@ -28,10 +37,12 @@
+     profile = root / "profile.json"
+     profile.write_text(json.dumps({"version": 1, "owner": str(owner), "owner_sha256": hashlib.sha256(source).hexdigest(), "codex_home": str(root / "codex"), "claude_home": str(root / "claude"), "state_dir": str(root / "events"), "bridge": None, "context": None}))
+     profile.chmod(0o600)
++    (root / "selected-profile.json").write_bytes(profile.read_bytes())
+     target = root / "snapshot.json"
+     command = [str(binary), str(profile), "--label", "Controlled interface run", "--session", session_id, "--session", missing_id, "--output", str(target)]
+     subprocess.run(command, check=True)
+     first = json.loads(target.read_bytes())
++    (root / "first.json").write_bytes(target.read_bytes())
+     assert first["sessions"][0]["observation"]["status"] == "available", first
+     assert first["sessions"][1]["observation"]["status"] == "unavailable", first
+     entries = first["sessions"][0]["observation"]["entries"]
+@@ -41,12 +52,16 @@
+     write_transcript("Controlled source activity: observation two.")
+     subprocess.run(command, check=True)
+     second = json.loads(target.read_bytes())
++    (root / "second.json").write_bytes(target.read_bytes())
+     assert first["scope_id"] == second["scope_id"]
+     assert any("observation two" in entry["text"] for entry in second["sessions"][0]["observation"]["entries"])
+     owner.write_bytes(source + b"\n# changed source\n")
+     subprocess.run(command, check=True)
+     unavailable = json.loads(target.read_bytes())
++    (root / "pin-mismatch.json").write_bytes(target.read_bytes())
+     assert all(row["observation"]["status"] == "unavailable" for row in unavailable["sessions"])
++    # Preserve the actual selected bytes as well as the deliberate mismatch.
++    owner.write_bytes(source)
+     artifact = output / "controlled-observation.json"
+     artifact.write_text(json.dumps(second, indent=2) + "\n"); artifact.chmod(0o600)
+     initial = output / "controlled-observation-first.json"
+--- baseline/rust/crates/session-query/README.md
++++ subject/rust/crates/session-query/README.md
+@@ -28,6 +28,21 @@
+ For `read_session`, `text_offset` and `max_chars` count characters in the original entry. When a window boundary falls inside a recognized credential, the owner expands that boundary to the whole credential and returns a redaction marker. Adjacent windows may therefore repeat the marker; advance using original-entry offsets. `entryChars` is the original length, `textTruncated` reports whether original text remains after the expanded end, and `redactions` counts markers in the returned window. Beyond the end, the result is empty and not truncated. Human output escapes terminal control characters; JSON preserves the owner’s string representation.
+ 
+ The executable is built with `cargo build -p work-engine-query` from `rust/`.
++
++U1 (2026-11-13) adds the exact current Events source pin
++`586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b`
++as a review candidate. See the [revision-bound source map](../../../../records/unified-operator-interface-u1-source-map-20261113.md)
++and [qualification result](../../../../records/unified-operator-interface-u1-result-20261113.md)
++for its controlled read evidence and remaining conditions. A source pin does
++not select a profile, authorize a bridge operation, qualify the remote connector,
++or establish production readiness. The selected bytes are still checked on
++every invocation. The private test checkpoint accepts `SESSION_QUERY_OWNER`
++and `SESSION_QUERY_OWNER_SHA256` to bind an explicit retained snapshot; it keeps
++its fixture and query captures under `SESSION_QUERY_FIXTURE_ROOT`, including
++failed runs. These contain only synthetic test credentials and still require
++private custody. Actual bridge authorization and secure-path checks remain
++enforced.
++
+ For an explicitly local service, use an owner-only profile file such as
+ `{"version":1,"kind":"local-service","endpoint":"127.0.0.1:12345","credential_file":"/absolute/private/token","timeout_seconds":10}`.
+ The numeric endpoint must be loopback, the timeout is 1–60 seconds, and the four reads are available. Granted operation and result reads require
+--- baseline/rust/crates/session-query/src/lib.rs
++++ subject/rust/crates/session-query/src/lib.rs
+@@ -16,11 +16,13 @@
+     time::{Duration, Instant},
+ };
+ 
+-// Approved query owner and its accepted disabled coding-job consumer extension (d44b1bbf).
+-// Keep existing operator profiles valid; each invocation still verifies its selected exact pin.
++// Exact owner revisions qualified at this read boundary. Current-source qualification
++// and its controlled/production limits are recorded in the U1 result (2026-11-13).
++// Each invocation verifies the selected snapshot; no pathname or revision label is trusted.
+ const OWNER_SHAS: &[&str] = &[
+     "470a625b76d17a62a68659709d99d2767c944441be4cd2ddbff96bc6be12a12d",
+     "933eda1c2af1f3f76819fbe2099269c6a04c33fcdb8adf52969cdf80f5beeefd",
++    "586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b",
+ ];
+ const HELPER: &str = include_str!("../owner.py");
+ const OWNER_LIMIT: usize = 512 * 1024;
+@@ -387,7 +389,7 @@
+ mod tests {
+     use super::*;
+     #[test]
+-    fn both_approved_owner_pins_preserve_profile_compatibility() {
++    fn qualified_owner_pins_remain_exact() {
+         let mut profile = Profile {
+             version: 1,
+             owner: "/private/owner.py".into(),
+--- baseline/rust/crates/session-query/tests/checkpoint.py
++++ subject/rust/crates/session-query/tests/checkpoint.py
+@@ -2,9 +2,13 @@
+ 
+ The SQLite rows are test-only preexisting operations; no submit or native server is run.
+ """
+-import hashlib, importlib.util, json, os, pathlib, shutil, sqlite3, subprocess, sys, tempfile
++import contextlib, hashlib, importlib.util, json, os, pathlib, shutil, sqlite3, subprocess, sys, tempfile
+ root = pathlib.Path(__file__).resolve().parents[4]
+-owner = root / 'skills/session-events/scripts/session_events.py'
++os.umask(0o077)
++owner = pathlib.Path(os.environ.get('SESSION_QUERY_OWNER', root / 'skills/session-events/scripts/session_events.py')).resolve()
++expected_pin = os.environ.get('SESSION_QUERY_OWNER_SHA256')
++if expected_pin is not None:
++    assert hashlib.sha256(owner.read_bytes()).hexdigest() == expected_pin, 'selected owner changed'
+ exe = pathlib.Path(os.environ['SESSION_QUERY_BINARY'])
+ bridge_exe = pathlib.Path(os.environ['SESSION_BRIDGE_BINARY'])
+ fixture_root = pathlib.Path(os.environ['SESSION_QUERY_FIXTURE_ROOT'])
+@@ -19,7 +23,8 @@
+ turn='55555555-5555-4555-8555-555555555555'
+ token='webridge_'+'A'*43
+ controls='benign Ω '+chr(27)+'[2J'+chr(27)+']52;c;Zm9v'+chr(7)+'\r\b'+chr(0x9b)+' done'
+-with tempfile.TemporaryDirectory(prefix='query-',dir=fixture_root) as tmp:
++# Retain exact private inputs and outputs on success and failure.
++with contextlib.nullcontext(tempfile.mkdtemp(prefix='query-',dir=fixture_root)) as tmp:
+     t = pathlib.Path(tmp); t.chmod(0o700)
+     c, cl, state = (t / n for n in ('codex', 'claude', 'state'))
+     workspace=t/'workspace'; workspace.mkdir(mode=0o700)
+@@ -40,12 +45,30 @@
+     with sqlite3.connect(db) as sql:
+         sql.execute('INSERT INTO grants VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',(gid,token_hash,req,sid,str(workspace),payload_hash,wire_hash,operation_hash,4102444800,os.geteuid(),1767225600,0))
+         sql.execute('INSERT INTO operations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',(req,opid,gid,sid,str(workspace),payload_hash,wire_hash,operation_hash,opid,1767225600,'terminal','[]',turn,turn,'completed',1767225600))
+-    profile={'version':1,'owner':str(owner),'owner_sha256':sha(owner.read_bytes()),'codex_home':str(c),'claude_home':str(cl),'state_dir':str(state), 'bridge':{'binary':str(binary),'binary_sha256':sha(binary.read_bytes()),'config':str(config),'config_sha256':sha(config.read_bytes())}}
++    selected_source=owner.read_bytes()
++    snapshot=t/'session_events.py'; snapshot.write_bytes(selected_source)
++    profile={'version':1,'owner':str(snapshot),'owner_sha256':sha(selected_source),'codex_home':str(c),'claude_home':str(cl),'state_dir':str(state), 'bridge':{'binary':str(binary),'binary_sha256':sha(binary.read_bytes()),'config':str(config),'config_sha256':sha(config.read_bytes())}}
+     prof=t/'profile.json'; prof.write_text(json.dumps(profile)); prof.chmod(0o600)
++    (t/'selected-profile.json').write_bytes(prof.read_bytes())
+     owner_bridge=m.Bridge(str(binary),sha(binary.read_bytes()),str(config),sha(config.read_bytes()))
+     server=m.Server(m.Homes(c,cl,state),'local-query',m.CallbackPolicy(),bridge=owner_bridge)
+     def cli(name,args, expected=0, fmt='--json'):
++        capture=t/'reads'; capture.mkdir(exist_ok=True)
++        index=len(list(capture.glob('*.request.json')))
++        (capture/f'{index:03d}.request.json').write_text(json.dumps({'name':name,'arguments':args,'format':fmt})+'\n')
++        # Keep the actual profile/mode and mutable owner fixture cut for this read.
++        # All credentials are synthetic; private bytes still stay out of argv/logs.
++        objects=t/'input-bytes'; objects.mkdir(exist_ok=True)
++        inputs=[]
++        for item in (prof,snapshot,config,db,path,c/'session_index.jsonl',t/'role-ledger.jsonl'):
++            if item.exists():
++                payload=item.read_bytes(); digest=sha(payload)
++                (objects/digest).write_bytes(payload)
++                inputs.append({'path':str(item),'mode':item.stat().st_mode & 0o777,'sha256':digest})
++        (capture/f'{index:03d}.inputs.json').write_text(json.dumps(inputs,indent=2)+'\n')
+         p=subprocess.run([str(exe),str(prof),name,fmt,'-'],input=json.dumps(args),capture_output=True,text=True,timeout=40)
++        (capture/f'{index:03d}.stdout').write_text(p.stdout)
++        (capture/f'{index:03d}.stderr').write_text(p.stderr)
+         assert p.returncode==expected,(name,p.stdout,p.stderr)
+         assert token not in p.stdout+p.stderr
+         return json.loads(p.stdout) if fmt=='--json' else p.stdout
+@@ -127,4 +150,13 @@
+     assert p.returncode and json.loads(p.stdout)['error']['code']=='file_unavailable'
+     profile['version']=2; prof.write_text(json.dumps(profile)); assert cli('list_sessions',{},1)['error']['code']=='invalid_profile'
+     profile['version']=1; profile['owner_sha256']='0'*64; prof.write_text(json.dumps(profile)); assert cli('list_sessions',{},1)['error']['code']=='invalid_profile'
++    profile['owner_sha256']=sha(selected_source); prof.write_text(json.dumps(profile))
++    snapshot.write_bytes(selected_source+b'\n# controlled mismatch\n')
++    assert cli('list_sessions',{},1)['error']['code']=='owner_pin_mismatch'
++    snapshot.write_bytes(selected_source)
++    prof.chmod(0o644)
++    assert cli('list_sessions',{},1)['error']['code']=='invalid_file'
++    prof.chmod(0o600)
+     print('negative, redaction, authorization and repeated ambiguous read assertions passed; no native service or entry')
++    (t/'qualification.json').write_text(json.dumps({'owner_sha256':sha(owner.read_bytes()),'query_sha256':sha(exe.read_bytes()),'bridge_sha256':sha(bridge_exe.read_bytes()),'status':'passed','scope':'private preexisting fixture bridge records; no submit, native server or provider'},indent=2)+'\n')
++    print('retained private fixture:',t)
+--- baseline/planning/unified-operator-interface-u2-packet-20261113.md
++++ subject/planning/unified-operator-interface-u2-packet-20261113.md
+@@ -0,0 +1,163 @@
++# U2 proposed delivery packet: one selected task across clients
++
++Prepared 2026-11-13 by U1 for root review. **Undispatched and unapproved.**
++U1 worker completion is not architectural acceptance, U2 implementation authority
++or an extension of U1's $40 envelope. Root selects its cost envelope, builder,
++reviewer, current inputs and file claims before launch.
++
++Deliver one coherent operator journey: CLI, TUI and authenticated browser select
++the same explicit endpoint/task, show owner objective, question/result and
++independent execution observations, and inspect owner-linked session activity
++without retargeting selection. Start with the controlled subject in the
++[U1 source map](../records/unified-operator-interface-u1-source-map-20261113.md).
++Its retained task evidence and newly parsed session are different observations;
++U2 must visibly identify fixture/replay versus a fresh installed-host read.
++
++## Preconditions and exact contracts
++
++Root first accepts an exact U1 source/map/qualification subject after separate
++Astra xhigh architecture review. Preserve the
++[U1 budget's architectural-risk contract](unified-operator-interface-u1-budget-20261113.md):
++first serious independent rejection warns and permits bounded repair; second
++rejection after repair in the affected subsystem blocks ordinary repair for
++separate design review; serious repair regression or recurring invariant
++violation escalates immediately. Inherited boundary evidence counts. Infra
++interruptions neither count nor reset history. Root owns the ledger and gate.
++
++The accepted causal-observability design owns observed/derived/interpreted
++classes, confidentiality and absence of UI workflow authority. TO2 owns
++`task.observe.v2`, its five independent components, six states, exact scopes,
++identity fencing, native completeness/capacity and missing task-command edge.
++`lifecycle-wire` remains the shared domain-value validator; the existing TUI
++read/decoder/anchor behavior is implementation material, not a competing owner.
++Session-query owns argument, protected-file, source digest and native read
++semantics. `work-engine.operator-observation.v1` remains an explicitly bounded
++session projection consumed by existing clients. Its successful read time is
++not task freshness or event time.
++
++The final prerequisite digest table below binds the U1-prepared revisions.
++Before U2 dispatch, root refreshes changed assumptions and supplies accepted
++subject references; changing a hash alone cannot refresh a semantic claim.
++No new contract is assumed settled by owner acknowledgements, board request
++5172 or an unaccepted research artifact.
++
++## Controlled and production standing
++
++The starting identity is `task:ui:sim` / `subject:s8:task`, with retained owner
++revision 4 and lifecycle cursor 32 at the exact historical store/stream in U1.
++Its native segment joins via `input:command:ui:sim`, then selected delivery,
++thread `01a142ba-b70b-7eb0-9900-b53bece80f30` and turn
++`01a142ba-b722-7272-affc-928d3a20aeed`. Titles, paths, timestamp proximity and
++transcript phrases cannot establish these edges. Subject equality alone is
++insufficient for a task sharing a subject. Missing or conflicting owner-backed
++input/native linkage remains unlinked.
++
++The selected current Events owner is SHA-256
++`586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b`.
++Use only the actual U1-qualified scope/disposition recorded in its result.
++There is no selected production profile, authenticated remote connector proof,
++provider activation or live deployment. Granted-operation fixture standing and
++its resolved secure-path environment interruption must remain distinct from
++bridge-null monitor qualification. Root approved a private fixture route only;
++that is not permission to weaken secure-path checks or activate a domain. No real credentials or production endpoints are reused.
++
++For a fresh installed controlled-host proof, root must bind an existing trusted
++host build/startup template, immutable source/lock/toolchain pins and a finite
++provider-disabled simulator, plus authorize its private fixture process scope.
++The old captured response is not a substitute for that fresh proof. No
++production grant, mutation or paid provider is authorized by this packet.
++
++## Bounded implementation outcome and ownership
++
++One builder should own the shared read and all three consumer changes, so DTO,
++identity and stale-state meaning cannot drift between independent assignments.
++The Rust boundary composes existing read contracts and presentation references;
++it does not become a task, lifecycle, review, limit or scheduler owner.
++
++Proposed file scope, subject to root's precise packet/claims:
++
++- `rust/crates/operator-observation/`: smallest shared Rust task-read/projection
++  surface needed for this selected journey and CLI. Reuse/extract the public
++  TO2 read/decoder/anchor behavior with existing lifecycle-wire validators.
++  Settle exact public type/wire boundaries in the implementation plan after
++  architecture acceptance; no generic workflow schema, event database or
++  persistent service is required by U2.
++- `rust/crates/terminal-ui/`: consume the shared read/identity/anchor semantics,
++  preserve drafts/inspection/selection, and keep its read-only behavior. Moving
++  reusable code must preserve its existing identity/deadline/late-reply tests.
++- Sibling `/home/bline/code/devwits-auth`: existing authenticated mailbox adapter,
++  activity/selected-task view and tests only, after explicit root ownership.
++  Browser JavaScript consumes Rust-produced bounded projections; it does not
++  independently reinterpret TO2 owner payloads or recreate joins.
++- Component docs, exact shared fixtures and bounded U2 qualification records.
++  Any Cargo dependency/lock delta is proposed and root-owned before mutation;
++  preserve concurrent entries. No task-host/lifecycle/research source repair,
++  grants, provider activation, installation, deployment or commit authority.
++
++Process scope: private build targets, finite unit/fixture tests, one owned
++controlled installed host/simulator where authorized, and actual CLI/TUI/browser
++qualification processes. Use worker custody with explicit input digests and
++frozen dirty baselines; retain failures/fixtures and reap every owned process.
++No persistent collector, sync daemon or listener is installed. Root owns result
++collection and separate review dispatch; no worker spawns paid work.
++
++## Required behavior and validation
++
++Use explicit endpoint plus task ID and retain that selection through refresh
++and drill-down. Keep owner objective separate from operator navigation label.
++Show task question/result, lifecycle/native state and linked session activity
++with each source's class, scope, revision/cutoff and age. Show read failure,
++refusal, known absence, known empty and not-requested states distinctly. Retain
++last-known values only with their original verified scopes/ages; invalidate on
++endpoint/host/account/source/established identity changes. Fence old selection
++generation replies. Do not merge independent reads into an atomic workflow cut.
++
++Validate the same Rust-produced owner records through all clients with:
++
++- Positive exact task→input→native→session linkage, plus conflicting task,
++  subject, input, native thread and source-profile controls. Unlinked activity
++  stays unlinked. Events entries have no structured per-turn join.
++- Owner absence, failure/refusal, unchanged and changed host identities, partial
++  independent components, source failure, reconnect and late/out-of-order
++  replies. Known-empty native collections remain distinct from the 65-row
++  capacity refusal. No command/task edge appears from a selected command ID.
++- A task answer/result changing without transcript activity, independent
++  lifecycle/native changes, and consumer-clock age transition without a record
++  change. Each uses its own read/reconciliation route; a healthy Events stream
++  cannot renew other owners' freshness.
++- Actual CLI output and one TUI/browser selected-work journey through detail and
++  back. Include desktop/phone frames, sign-out/account-change clearing,
++  authentication failure and confidentiality/redaction controls. Mocked remote
++  transport and a fresh installed controlled host are labeled separately.
++
++U2 can use explicit reconciliation polling in its controlled environment, with
++its cadence and read duration visible. Notification/replay delivery, all-owner
++recovery and the proposed five-second source-to-render target belong to U3/U4
++qualification. Do not claim that target from API acknowledgement, mailbox fetch
++or historical UI screen waits. Readiness may be bounded when campaign/review/
++limits/scheduler associations are unavailable; those dimensions remain visibly
++unestablished, not zero or empty.
++
++## Return and acceptance boundary
++
++Return exact source/dirty-baseline delta, owner/build/schema/profile/fixture
++pins, validation and rendered evidence, supported/missing joins, per-owner
++refresh routes and explicit process disposition. Root obtains independent
++review, applies inherited risk history, and decides bounded acceptance and
++integration. Full UI-0–UI-4, S5 causal reconstruction, economics/recommendations,
++an atomic cut, production qualification and deployment remain outside U2.
++
++## Bound prerequisite revisions
++
++| Path | SHA-256 |
++| --- | --- |
++| `app-server/docs/control-plane-causal-observability-ui.md` | `6b20355f8b04f4faa926e09815ee7864464c953972c7827c18df3b727ac53eba` |
++| `docs/rust-retained-task-host-contract.md` | `f2fd68ce9b97307485883b5e8ecc7a67c9b1e89914d944dceaa8e66ebc358576` |
++| `planning/unified-operator-interface-next-plan-20261113.md` | `5d01f5b79aa285db7c6851e1640aca9731a01d058faf39243ffaa91005ac1fdd` |
++| `planning/unified-operator-interface-u1-budget-20261113.md` | `b229149b0081ebef336e27637222c378b99ea654f2252a178cb1fd26e5808ffe` |
++| `rust/crates/session-query/src/lib.rs` | `9975a0bc2455f7accd2dca8e9a5a678b36fcde3462eaaeed4088184bc87a944c` |
++| `rust/crates/session-query/owner.py` | `e127460938c087899e91da1a601592770cfdad3fdfaa0dab63a49b96305ffa02` |
++| `rust/crates/operator-observation/src/lib.rs` | `9fdf934fee1cead783b8f7dd900da1cf03fc45d0f6fb5f03ac294aabdfe7dfd4` |
++| `rust/crates/operator-observation/src/main.rs` | `2fcf5da2249ef14a323aa55dee6988b7fd947fdafa2e0cb886c845acd1d540d3` |
++| `rust/crates/terminal-ui/src/task_observation.rs` | `ced562697b68cfd88f008ac322e01fb717411f71e32cbab535e15edd02a8d09c` |
++| `rust/crates/work-engine-task-host/src/observation.rs` | `e2cd382fd077484be761faf238f82f0760825cacb31afc498439235eb945876f` |
+--- baseline/records/unified-operator-interface-u1-result-20261113.md
++++ subject/records/unified-operator-interface-u1-result-20261113.md
+@@ -0,0 +1,125 @@
++# U1 read-boundary qualification result
++
++Prepared 2026-11-13 for collection and separate architectural review by root.
++**Builder completion, not acceptance or integration.** U1 establishes bounded
++controlled read evidence and prepares the [source/refresh map](unified-operator-interface-u1-source-map-20261113.md)
++and [proposed U2 packet](../planning/unified-operator-interface-u2-packet-20261113.md).
++Root retains review dispatch, aggregate budget monitoring, risk disposition,
++acceptance and all result collection.
++
++The admission HEAD was `df991c81d6871f8c59620f016b564196ce6c8903`.
++Owned crate bytes and named inputs were copied and bound before product writes by
++`builder/baseline-battery.json`, battery SHA-256
++`28d1a7e018e15f975ab5cb232972ae877a1fed7d5aef7804011a877c5f972c5b`.
++This baseline includes the already dirty operator implementation and Cargo
++files; it was not reconstructed from HEAD. Unrelated dirty TUI/web bytes were
++not separately snapshotted by this worker; no worker command edited them.
++
++## Changed boundary and qualification
++
++The only production Rust behavior change is one additional exact Events owner
++source digest in `session-query`:
++`586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b`.
++It is current blob `d9617856c74f5792b0daaa13f2a3e816e02557bc`, selected
++explicitly from the admission bytes. Both earlier exact pins remain intact.
++Every call still validates its selected profile, reads/hashes the bounded source
++snapshot, and executes those exact bytes through the embedded adapter and actual
++Events dispatcher. No source digest enforcement was relaxed or label substituted.
++The new pin remains a review candidate until root accepts this exact subject;
++no live profile was selected or changed.
++
++The Python checkpoint changes preserve private fixtures on both success and
++failure, support an explicit source/pin, and capture exact changing profile,
++mode, source and fixture bytes before each query. These are qualification tools,
++not new shared product semantics. The collector runtime and session wire schema
++are unchanged. Component documentation records the candidate's standing.
++
++Passing controls include:
++
++- Nine Rust tests across session-query/operator-observation, package formatting
++  and scoped Clippy with warnings denied; offline locked builds used a private
++  target. Current-source and retained-source collector checkpoints both passed.
++- All four production query reads against the actual selected Events owner and
++  actual Rust bridge using private synthetic preexisting operation/grant rows.
++  Direct MCP-result parity, recognized credential windows, original offsets,
++  terminal-control escaping, denied credentials/wrong target, unsupported
++  mutation/arguments, protected input/profile files, exact source mismatch,
++  repeated ambiguous native state and unavailable native history were exercised.
++  No native server, submit operation or provider was run. Partial configured
++  worker context remained partial; absent usage/process closure stayed unknown.
++- Actual current owner → Rust collector: available/missing sessions, source
++  update, credential redaction, private atomic output and pin mismatch. The
++  retained accepted owner was independently rerun; its evidence is separate.
++- The selected retained controlled task `task:ui:sim` is joined only through its
++  published subject/input/native segment. Its exact native session was read
++  through the current production query/collector over copied controlled native
++  transcript bytes. Eight bounded entries were preserved. A custody-backed
++  evidence check rejects wrong task, wrong subject and unlinked input. This
++  does not qualify client rendering or turn attribution for Events entries.
++
++The selected task evidence is historical, not a new November 13 task-host read.
++U1 rechecked all 143 source-manifest entries of the retained host and its
++lock/toolchain pins. Task/owner revision 4, lifecycle cursor 32, native revision
++not_provided and current parser read times remain independent. There is no
++atomic cut, campaign association, task-command result edge or structured
++Events-entry-to-turn join. The map spells out the exact native identities,
++access, confidentiality, source revisions, cutoffs, unavailable meanings and
++per-owner refresh gaps.
++
++## Failure, route amendment and inherited evidence
++
++The original full-query checkpoint failed before synthetic grant seeding with
++`bridge_unavailable`: the bridge rejects group-writable ancestors, including the
++required archive's `/home/bline/cbm-work` ancestry. Failed custody, logs and
++fixture are retained. Root classified **U1-ENV-001** as an environment
++interruption, not an implementation rejection or counter reset, and authorized
++only the original-scope fixture in a secure private root via
++`fixture-route-amendment.json` / board 5179. Worker ACK: actual fixture path
++`/home/bline/.local/state/work-engine/u1-query-fixture-20261113`; no shared
++ancestor permission or owner check was changed. Both secure-route runs passed;
++the last additionally retains each read's mutable inputs. Exact permitted
++fixtures are copied privately into the builder archive, retaining original
++runtime paths rather than rewriting their identity.
++
++The first successful build had a narrower declared input set. It is preserved
++as preliminary evidence; the qualification build was rerun with explicit source
++inputs for the local workspace/embedded helpers and actual binaries on runtime
++steps. No empty custody input set is relied upon. One intermediate Python-checkpoint
++version was recovered by applying its exact first patch to the retained dirty
++admission copy and matching the preliminary custody SHA-256; that provenance
++is recorded in input-retention.json. An initial ad hoc selected-task
++artifact check was replaced as qualification evidence by the retained script and
++custody-backed positive/negative check. Two malformed board CLI invocations were
++corrected; they created no successful request or permission change.
++
++No independently supported serious inherited implementation defect, repair
++regression or recurring boundary violation was established by this bounded
++inspection. This is not an exhaustive audit or a clean-review claim. The prior
++resolved UI-R1/P2 plan finding remains applicable design history: each owner
++needs its own refresh and clock reevaluation. The current Events owner retires
++its deadline alert; its stream cannot establish task/review/limit/scheduler
++freshness. This source change was reported to root (board 5177), with unsupported
++coverage left open. Unrelated ORG/research rejection episodes were not imported
++into this subsystem's history. Any later P1/P2 finding still receives root's
++contracted warning/design-gate treatment before repair.
++
++## Evidence, process and remaining standing
++
++Durable collection is under
++[`/home/bline/cbm-work/unified-interface-u1-20261113/builder/`](/home/bline/cbm-work/unified-interface-u1-20261113/builder/RESULT.md):
++`RESULT.md` binds exact final source/evidence freeze manifests, archive hashes,
++baseline delta and all custody records; `CONTINUATION.md` binds role identity,
++settings, context and outstanding root collection/review. Failed evidence is
++kept alongside passing evidence. The private secure fixture is inert and
++retained for root collection, not an activated workflow. All worker-owned
++build/test/query processes are terminal and have no live custody leftovers;
++there is no process continuation transfer.
++
++Source/refresh map and U2 packet are prepared for root review. Per-owner
++notifications, independent reconciliation changes across all clients,
++time-driven attention, a fresh current installed-host journey, remote
++access/account handling, UI rendering and five-second source-to-screen delay
++remain unqualified. Missing campaign/review/limits/scheduler dimensions remain
++unestablished. No UI-0–UI-4 acceptance, live deployment, provider activation,
++grant change, root Cargo/lock edit, task-host/lifecycle/research repair, TUI/web
++implementation, commit, push or installation was performed.
+--- baseline/records/unified-operator-interface-u1-source-map-20261113.md
++++ subject/records/unified-operator-interface-u1-source-map-20261113.md
+@@ -0,0 +1,173 @@
++# U1 selected-task source and refresh map
++
++Prepared 2026-11-13 for root review. This is a bounded map, not a new wire
++schema, workflow store, owner handoff acceptance or production qualification.
++The accepted [UI design](../app-server/docs/control-plane-causal-observability-ui.md)
++and [TO2 contract](../docs/rust-retained-task-host-contract.md#to2-independent-task-observation)
++continue to own meaning. Root owns separate architectural review and acceptance.
++
++## Selected subject and evidence standing
++
++The explicitly selected task is **`task:ui:sim`**, from the retained installed
++controlled-host fixture `/home/bline/.ui-rust-proof/ui-refresh-5K2dI5`.
++`components.owner` in its `completed.json` publishes task ID, subject
++`subject:s8:task`, owner revision **4**, cursor revision **4**, objective,
++input intents, answered question and attributed result. No campaign or run ID is
++published; this map does not invent one.
++
++U1 copied the original pending, answered, completed and result records into
++[`builder/task-evidence/`](/home/bline/cbm-work/unified-interface-u1-20261113/builder/task-evidence/manifest.json).
++The completed response SHA-256 is
++`9995e541823f6e8c537d68e8507162dd72ad59c594b72a456c9b210bd246a54f`.
++These are **observed historical controlled owner outputs**, not a fresh task
++read on November 13. Original file modification times are recorded as archival
++metadata; the envelope provides no whole-read wall-clock cutoff. Retrieving or
++copying it today does not refresh its source age. The host receipt reports
++`native-sim-proof-v1`; no paid provider was used by U1.
++
++The historical host identity is incarnation
++`host:91763b832be3df13a1d9dfc0305d47e5`, build `build:s8:external-proof`,
++executable SHA-256
++`2703037bbcbafb7ec285f9dc9b9688a47efcb59b8dbbac3e23a68a94002c899f`,
++source-manifest SHA-256
++`4f446a2a8077f4149c3d6c97e6d7a15ce3a000242bdb75f747d5b620f5bf86e5`,
++lock `dd0f0d45baf76113e365543ac29da404bf1498c5d1471fca12bcde655527aabc`,
++and toolchain `1d76a06616a42a984bad672eeb24ca39a0496e95a8b624e21df0d420d1557734`.
++U1 rechecked all **143** retained manifest source entries, lock and toolchain;
++no mismatch was found. That verifies retained bytes, not a fresh host execution.
++The old socket is not activated by this slice.
++
++## Supported native joins
++
++Each edge below is mechanically derived from exact observed fields, with the
++retained response as its evidence. Neither titles nor chronological or pathname
++similarity participates.
++
++| Edge | Exact producing owner and binding | Limit |
++| --- | --- | --- |
++| Selected task → subject | TaskRecord `task_id=task:ui:sim`, `subject_id=subject:s8:task`; matching owner scope | Scoped to this captured owner revision. |
++| Task → input | TaskRecord `inputs[].input_id=input:command:ui:sim` | An input intent alone establishes neither admission nor completion. |
++| Input → native segment | Subject-wide native collection has the same exact `input_id`; select the row matching the explicitly requested delivery | Subject equality alone would be insufficient for another task sharing that subject. Missing/mismatched input means unlinked. |
++| Segment → delivery/attempt/context | `delivery:e11e8c9b06fa717f03a17cf4018152155b07340670758cd4233efde232408e13`, queue attempt `attempt:1`, native attempt `native-attempt:delivery:attempt:1:0`, segment 0, `context:s8:g0` | Native revision is explicitly `not_provided`; do not manufacture it from the lifecycle cursor. |
++| Segment → native session/turn | `thread_id=01a142ba-b70b-7eb0-9900-b53bece80f30`, `turn_id=01a142ba-b722-7272-affc-928d3a20aeed` | Native completion is distinct from task result publication and acceptance. |
++| Native session → Events read | Exact returned `sessionId` equals the owner-published `thread_id` | This is session-wide activity. It does not attribute every returned entry to this task or turn. |
++| Events entry → native turn | **Missing**: `read_session` does not expose a structured turn ID per entry | Never infer it from transcript phrases or time proximity. |
++| Task → command result | **Not established** by TO2; selected command target omitted | `command_id` text inside input intent does not override `task_binding:not_established` in command scope. |
++| Task → campaign, candidate, review, budget or schedule | **Missing in this selected boundary** | No cross-owner association is invented. |
++
++The [bounded evidence check](/home/bline/cbm-work/unified-interface-u1-20261113/builder/task-join-check.json)
++verifies the positive chain and rejects changed task, changed subject and
++unlinked input controls. It checks this evidence chain; it is not a new generic
++join implementation or client acceptance test.
++
++## Read/access and interpretation boundary
++
++All rows use the UI design's **Observed** class unless marked derived.
++Raw task/source/transcript material is private operator data, including when
++sanitized. Redaction is not a public-release classification. No real user grant
++credential or production provider was used. A future remote transport needs its
++own authenticated, confidentiality-preserving qualification.
++
++| Fact owner / route | Subject, source revision and cutoff | Unavailable meaning, access and limits |
++| --- | --- | --- |
++| Retained task owner via `task.observe.v2`, component `owner` | Task/subject above; owner and cursor revision 4; captured historical response, no published whole-read timestamp | Objective, input intents, question/answer and result are owner facts. Mode-0600 host Unix socket, configured UID, private parents and pinned startup; not isolation from hostile same-UID code. Absent task differs from unavailable/refused owner. Native liveness cannot replace these facts. |
++| Lifecycle owner via the same envelope, component `lifecycle` | Subject and selected delivery above; store `store:ef29602dd8350d30440147e493dc4d80`, stream `stream:subject:s8:task`, commit sequence `32` | Snapshot protocol v1; targeted delivery and subject scope. Published event wall time is event provenance, not an atomic envelope cut. Failure remains `unavailable`/`refused`; task absence makes it `not_applicable`. |
++| Native delivery owner via component `native_delivery_status` | Subject-wide `native_delivery_segments`, `filter:subject`; revision `not_provided`; captured complete-for-scope limit 64 | Complete 0–64 rows; 65 refuses with capacity_exceeded, never truncates into success. Selected delivery does not narrow native collection scope. Rows preserve opaque native states, nullable identities and history limits. |
++| Admission/control readbacks via `command_result` / `control_result` | Configured subject and explicit saved command locator when requested; revision not provided; task binding not established | Both are `not_requested` here. A missing locator is not absent execution. Exact saved command/digest/principal/subject and grant-locator bindings are required for reads. No resend or mutation is implied by unknown readback. |
++| Events compositor through `session_query::query` → embedded `owner.py` → actual `Server.call_tool(read_session)` | Current source SHA-256 `586128d82ebd1fa0c8813e5583924cd9ce812e6ffe76de0c2e63d396414e2a8b`, blob `d9617856c74f5792b0daaa13f2a3e816e02557bc` at shared HEAD `df991c81d6871f8c59620f016b564196ce6c8903` | Explicit absolute owner-only profile; local operator's selected homes, bridge/context null for monitor. Selected source bytes are read once, hashed, then executed as that byte snapshot. No source-pin bypass, provider/helper activation or transport fallback. This pin is a review candidate. |
++| Current Events read of selected historical native session | Private copy of exact controlled native transcript, SHA-256 `59dd88875fab5ab5d2a6a1924925e1c2ddd3d1ac4c992933beb81cfef7f2f17f`; new U1 query/collector receipt times | Actual current source returned eight entries. Their timestamps remain historical; a fresh parser read does not make the task current. Exact entry IDs are byte-offset/index locators, not causal IDs. No per-turn entry join is exposed. |
++| Rust bounded session projection `work-engine.operator-observation.v1` | `source_id=SHA256(exact profile bytes)` and scope hash of source/label/sorted selected sessions; exact output and per-session read completion times in custody | Derived presentation scope, not grant, account identity or owner revision. Ten entries/session, requested 2,000 characters, up to 20 sessions, one MiB snapshot. Per-session errors stay unavailable. New profile/source selection changes scope. Label is navigation text, never task objective. |
++
++TO2 is five independent component reads. Native completeness applies only to its
++own query. Task revision, lifecycle cursor, host incarnation and collector time
++do not form a cross-store transaction or atomic workflow cut. A current caller
++uses one bounded request/deadline and preserves the exact selected endpoint,
++request generation and host identity. TO2's current read client uses one
++positive deadline of at most 30 seconds and strict bounded decoding, with no
++mutation API or version fallback. It currently lives in the TUI; U2 must settle
++its shared Rust placement without duplicating its semantics in JavaScript.
++
++For local session reads, `session-query` bounds input at 256 KiB, source at
++512 KiB, output at one MiB and helper duration at 35 seconds. It checks profile
++permissions, final symlinks, argument types/closed fields and the exact allowed
++source digest. The helper redacts/sanitizes errors and preserves owner result
++semantics. The collector rejects a non-null bridge. Session lookup can fail for
++missing or ambiguous transcripts; malformed/incomplete transcript lines can be
++omitted by the owner parser. The read is a bounded tail scan (8 MiB), not complete
++history. Entry windows use original characters and can expand over a recognized
++credential to redact its whole span; neighboring windows can repeat a marker.
++System/reasoning roles are excluded from the collector request. Available empty
++means the owner established no matching entries in that bounded scope.
++
++## Per-owner refresh and time reevaluation
++
++“Covered” here distinguishes implemented capabilities from qualified delivery.
++**No notification delivery route was activated or runtime-qualified by U1.**
++Every uncovered route below remains a condition for U3, even if session activity
++is healthy. Reconciliation is read-only and never retries a domain effect.
++
++| Admitted owner | Notification coverage and changes without session activity | Reconciliation and time reevaluation |
++| --- | --- | --- |
++| Task owner | No task-owner notification contract qualified here. Human answers, input intents, source-currentness changes and published result can change independently of the session stream. | Fresh `task.observe.v2` reads at the explicit endpoint; U2 must preserve original component scopes/cutoffs on failure and fence late replies/host changes. Current terminal implementation documents refresh four seconds after completion; that does not qualify all clients/current host. No task due/expiry policy is published in this response. Age cues must use a named presentation policy, not infer execution. |
++| Lifecycle owner | No lifecycle notification-to-read route qualified. Queue admission, settlement, recovery and context changes need not produce a transcript event. | Reread its component independently through TO2. Preserve its own cursor and targeted scope. Owner-published timing may be projected when available; this selection does not publish a scheduler or retry-due policy. Unknown timing remains unknown. |
++| Native delivery owner | Session turn events may wake inspection, but do not certify segment persistence, settlement or collection completeness. Native closure/history reconciliation can occur without a new message. | Reread the subject-wide collection. Respect the 64-row refusal and missing revision. Do not renew its freshness from another component or infer settlement from silence/age. No native timeout authority is derived. |
++| Admission/control owners | No notification coverage qualified. Saved readback/grant revision may change independently of a transcript. | When explicitly selected, reread original saved locator only. Here omitted targets remain not_requested. Published grant expiry would require clock reevaluation under that owner's policy; none is exposed for this selection. Do not schedule execution or resubmit. |
++| Events session owner | Source exposes `session.entry.matched`, `session.turn.ended`, renewable subscriptions and bounded replay. Pattern/role matching covers only selected transcript entries, not all task/source/title/account changes. These capabilities are source evidence, not U1 delivery qualification or remote-connector qualification. | Repeat the qualified bounded read; after a notification, renew/replay/reconcile only within the coverage actually established. File/title changes or gaps outside replay require independent reconciliation. Current `session.alert` deadline kind is retired and never raised. It cannot cover scheduler deadlines or task freshness. |
++| Rust projection/file delivery | Collector polling is sequential; source-profile bytes are read at collector startup. File replacement/mailbox delivery is not an owner event. No session event proves that a profile/account/source changed. | Restart/invalidate selection on profile/source/endpoint/account changes. Atomic private-file replacement prevents a partial local snapshot, not an atomic owner cut. Existing consumer 120-second/future-time warning is a presentation cue reevaluated by the consumer clock. Mailbox fetch success must not reset source read time. Browser's existing 60-second polling and additional sync delay do not establish a five-second target. |
++
++Unadmitted operational dimensions remain explicit: campaign and active slice,
++candidate/gate/acceptance, independent review findings and obligations,
++configured limits/units/cost/context coverage, durable scheduler items and
++acknowledgements, repository-wide discovery, production account switching and
++remote transport/authentication. Their semantic owners are identified in the
++accepted UI design, but this selected read supplies no qualified association or
++refresh route. A source that publishes a due/expiry/freshness threshold needs
++clock-driven reevaluation even with no record or transcript change. The clock
++projects that owner's time/policy; it grants no execution authority. The existing
++session stream and retired deadline alert cannot fill any of these gaps.
++
++## Qualification and source limits
++
++The current source passed actual query-to-collector monitor tests, retained-pin
++regression, redaction, private output, source update and pin-mismatch controls.
++The task-session parse is a new current-parser read of retained controlled
++native bytes, kept separate from the historical host observations.
++
++The full four-read granted-operation checkpoint initially stopped before grant
++seeding: the bridge secure-path owner refuses group-writable ancestors under
++`/home/bline/cbm-work`. Failure and request 5178 remain retained. Root's
++`fixture-route-amendment.json` / board 5179 authorized only this original-scope
++fixture under `/home/bline/.local/state/work-engine/u1-query-fixture-20261113`.
++The worker ACKs that amendment. No security check or shared ancestor was changed.
++The actual current owner then passed all four reads through the production Rust
++query path and actual bridge using synthetic preexisting records, including
++authorization failures and ambiguous native states. A second passing checkpoint
++retains exact per-read profile/mode and mutable fixture input bytes as well as
++outputs. This is controlled local read qualification; it establishes neither
++native execution nor production/remote-connector readiness. The separate
++[U1 result](unified-operator-interface-u1-result-20261113.md) binds the custody.
++
++Graph evidence was Tier 2, project `home-bline-code-work-engine`, generation
++`2026-11-13T16:42:12Z`, watch active. Exact coverage is archived in
++`builder/graph-coverage.json`. Relevant Rust calls have unresolved receiver/type
++resolution; current bodies and the actual production call route were read
++directly. Generic-name trace edges are not complete caller evidence. Unconsumed
++broad search pages are not negative or exhaustive evidence. Historical fixture
++files and manifest are outside this graph and were read/hash-checked directly.
++Only cited boundary functions were verified; no complete component audit or
++absence of all other read routes is claimed.
++
++## Bound prerequisite revisions
++
++| Path | SHA-256 |
++| --- | --- |
++| `app-server/docs/control-plane-causal-observability-ui.md` | `6b20355f8b04f4faa926e09815ee7864464c953972c7827c18df3b727ac53eba` |
++| `docs/rust-retained-task-host-contract.md` | `f2fd68ce9b97307485883b5e8ecc7a67c9b1e89914d944dceaa8e66ebc358576` |
++| `planning/unified-operator-interface-next-plan-20261113.md` | `5d01f5b79aa285db7c6851e1640aca9731a01d058faf39243ffaa91005ac1fdd` |
++| `planning/unified-operator-interface-u1-budget-20261113.md` | `b229149b0081ebef336e27637222c378b99ea654f2252a178cb1fd26e5808ffe` |
++| `rust/crates/session-query/src/lib.rs` | `9975a0bc2455f7accd2dca8e9a5a678b36fcde3462eaaeed4088184bc87a944c` |
++| `rust/crates/session-query/owner.py` | `e127460938c087899e91da1a601592770cfdad3fdfaa0dab63a49b96305ffa02` |
++| `rust/crates/operator-observation/src/lib.rs` | `9fdf934fee1cead783b8f7dd900da1cf03fc45d0f6fb5f03ac294aabdfe7dfd4` |
++| `rust/crates/operator-observation/src/main.rs` | `2fcf5da2249ef14a323aa55dee6988b7fd947fdafa2e0cb886c845acd1d540d3` |
++| `rust/crates/terminal-ui/src/task_observation.rs` | `ced562697b68cfd88f008ac322e01fb717411f71e32cbab535e15edd02a8d09c` |
++| `rust/crates/work-engine-task-host/src/observation.rs` | `e2cd382fd077484be761faf238f82f0760825cacb31afc498439235eb945876f` |
