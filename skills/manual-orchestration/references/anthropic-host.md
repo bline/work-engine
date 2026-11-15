@@ -23,6 +23,16 @@ the observed exact identifier from `message.model`.
 
 ## Context check
 
+For native context replacement in the main conversation, use the optional
+[Claude context plugin](../claude-context-plugin/README.md) and load
+[shared native recovery](native-context.md#claude-code). It exposes
+`mcp__work-engine-context__new_context` with `{}` and defers `/clear` until the
+requesting turn finishes. Native `Agent` subagents cannot use this control;
+their parent conversation would be cleared. Separately launched role processes
+can use it for their own main conversation. Reset confirmation, continuation
+submission and semantic recovery remain distinct; rebind observation after
+Claude's session ID changes.
+
 `<skill-dir>` is the manual-orchestration skill's directory.
 
 ```

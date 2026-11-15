@@ -24,6 +24,27 @@ If replacement occurs outside the agent's control, invoke `$wind-walker` in
 the new context window and stop rather than continue when correct recovery
 still depends on meaning lost with the prior context.
 
+## Native context refresh
+
+Preservation and recovery are shared across hosts. The adapter controls context
+replacement; the agent's durable owners retain assignment meaning. A tool
+acknowledgement is not evidence of a committed checkpoint or recovered meaning.
+
+Codex's native token-budget refresh is the direct model tool
+`functions.new_context`, called with `{}`. Its invocation and availability
+checks are described in [native recovery](../../skills/manual-orchestration/references/native-context.md#native-tool-invocation).
+The nested `tools` object inside `functions.exec` is a separate surface;
+checking only that object can falsely report the native tool unavailable.
+
+Claude Code can expose `mcp__work-engine-context__new_context` through the
+[manual-orchestration plugin](../../skills/manual-orchestration/claude-context-plugin/README.md).
+It requests native `/clear` after the main turn ends, then submits recovery
+bound to the predecessor's `context-recovery:<session-id>` board note. `/clear`
+changes Claude's session ID; this does not transfer the role or its obligations.
+The adapter confirms native replacement separately from continuation submission;
+semantic recovery still follows Wind Walker. Native Claude subagent reset is
+unsupported because `/clear` acts on the main conversation.
+
 ## Scoped recovery reads
 
 Recover the exact active objective, authority, durable continuation, and unresolved

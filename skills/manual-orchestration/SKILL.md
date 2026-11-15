@@ -23,7 +23,7 @@ Read the reference for the current role and the applicable operation. Links prov
 | Form or revise an organization | [Organization formation](references/organization-formation.md), including revisions during implementation without a new launch |
 | Admit substantial work to retained context or transfer unfinished child work | [Retained dispatch](references/retained-dispatch.md) |
 | Consider context replacement or root transfer | [Context boundary](references/context-boundary.md); load the chosen operation's reference |
-| Native Codex token_budget is active | [Native recovery](references/native-context.md), for supervisors, workers and reviewers |
+| Codex token_budget is active, or Claude's native context plugin is available | [Native recovery](references/native-context.md): shared preservation/recovery and host-specific invocation; Claude native subagents cannot use the main-conversation clear adapter |
 | Prepare intentional replacement | [Preparation](references/context-preparation.md) and the applicable host settings reference |
 | Recover after replacement | [Recovery](references/context-recovery.md) and the applicable host settings reference |
 | Operate on Codex | [Codex operation index](references/codex-host.md) |

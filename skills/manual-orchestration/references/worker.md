@@ -23,10 +23,16 @@ Keep a compact continuation current as decisions and validation state change, no
 [recovery guidance](same-session-context.md#codex-token-budget-refresh-deadline)
 and the owning session or campaign configuration. The continue-or-handoff
 choice below cannot waive an explicit configured deadline. Preserve enough
-headroom for recovery before another substantial implementation or review phase. You invoke your own
-`new_context`; your parent retains collection ownership. This applies equally
-to workers and reviewers because automatic rollover in this mode discards
-history without producing a summary.
+headroom for recovery before another substantial implementation or review phase.
+You invoke your own `functions.new_context`; your parent retains collection
+ownership. This applies equally to workers and reviewers because automatic
+rollover in this mode discards history without producing a summary.
+
+**Claude native replacement:** a separately launched Claude role process with
+the context plugin uses [shared native recovery](native-context.md#claude-code).
+Native `Agent` subagents cannot use its main-conversation `/clear` control.
+The parent retains collection ownership through either supported continuation
+or a handoff; a new Claude session ID does not settle that obligation.
 
 **Mid-task check.** At each logical boundary inside the assignment - before each substantial phase, not once - and again before writing your result if an earlier reading was above about 120,000, run (`<skill-dir>` is the manual-orchestration skill's directory):
 

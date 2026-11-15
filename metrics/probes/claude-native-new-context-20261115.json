@@ -1,0 +1,248 @@
+{
+  "date": "2026-11-15",
+  "host": "Claude Code 2.1.325",
+  "adapter_sha256": "766dbbf30647cfeab04d08b2ddc1f0d9431ba8918f5491cb88de96e85d2d645f",
+  "review_subject_sha256": "bb21af8fe113a3cdee501d344d522313615e7b339f9e0e298778476b2b779527",
+  "native_runs": {
+    "headless_open_two_cycles": [
+      {
+        "event": "start",
+        "sourceSessionId": "9e103ca0-abdb-4aa0-832c-09008f0e2677",
+        "interactive": false
+      },
+      {
+        "event": "requesting_turn_answer",
+        "sessionId": "9e103ca0-abdb-4aa0-832c-09008f0e2677"
+      },
+      {
+        "event": "end",
+        "sessionId": "9e103ca0-abdb-4aa0-832c-09008f0e2677",
+        "reason": "clear"
+      },
+      {
+        "event": "recovery_turn",
+        "sessionId": "cdd82792-48ab-4dbb-bee5-5b6a0189916c",
+        "sourceSessionId": "9e103ca0-abdb-4aa0-832c-09008f0e2677",
+        "changedSession": true,
+        "oldMarkerPresent": false,
+        "predecessorPointerPresent": true,
+        "windWalkerPresent": true
+      },
+      {
+        "event": "adapter_status",
+        "status": {
+          "schema": "work-engine-claude-context-v1",
+          "requestId": "native-reset-probe",
+          "sourceSessionId": "9e103ca0-abdb-4aa0-832c-09008f0e2677",
+          "cwd": "/home/bline/.local/state/work-engine/claude-new-context-20261115/native-open-final",
+          "turnId": "9c19d454-af1e-4592-bc33-95f75e08b3b5",
+          "checkpoint": "agent_owned_unverified",
+          "reset": "confirmed",
+          "targetSessionId": "cdd82792-48ab-4dbb-bee5-5b6a0189916c",
+          "continuation": "submitted",
+          "detail": null,
+          "persistence": "recorded"
+        }
+      },
+      {
+        "event": "requesting_turn_answer",
+        "sessionId": "cdd82792-48ab-4dbb-bee5-5b6a0189916c"
+      },
+      {
+        "event": "end",
+        "sessionId": "cdd82792-48ab-4dbb-bee5-5b6a0189916c",
+        "reason": "clear"
+      },
+      {
+        "event": "recovery_turn",
+        "sessionId": "043fe285-390f-472f-8c24-d4f056e24453",
+        "sourceSessionId": "cdd82792-48ab-4dbb-bee5-5b6a0189916c",
+        "changedSession": true,
+        "oldMarkerPresent": false,
+        "predecessorPointerPresent": true,
+        "windWalkerPresent": true
+      },
+      {
+        "event": "adapter_status",
+        "status": {
+          "schema": "work-engine-claude-context-v1",
+          "requestId": "native-reset-probe",
+          "sourceSessionId": "cdd82792-48ab-4dbb-bee5-5b6a0189916c",
+          "cwd": "/home/bline/.local/state/work-engine/claude-new-context-20261115/native-open-final",
+          "turnId": "1ca4868d-0dfa-4bc1-b8d8-0044935face6",
+          "checkpoint": "agent_owned_unverified",
+          "reset": "confirmed",
+          "targetSessionId": "043fe285-390f-472f-8c24-d4f056e24453",
+          "continuation": "submitted",
+          "detail": null,
+          "persistence": "recorded"
+        }
+      },
+      {
+        "event": "end",
+        "sessionId": "043fe285-390f-472f-8c24-d4f056e24453",
+        "reason": "other"
+      }
+    ],
+    "interactive_one_cycle": [
+      {
+        "event": "start",
+        "sourceSessionId": "75b97444-9380-4d2e-9237-511f8f3ac31f",
+        "interactive": true
+      },
+      {
+        "event": "requesting_turn_answer",
+        "sessionId": "75b97444-9380-4d2e-9237-511f8f3ac31f"
+      },
+      {
+        "event": "end",
+        "sessionId": "75b97444-9380-4d2e-9237-511f8f3ac31f",
+        "reason": "clear"
+      },
+      {
+        "event": "recovery_turn",
+        "sessionId": "60c2cc1d-cf82-4391-bed5-928b9f812ffa",
+        "sourceSessionId": "75b97444-9380-4d2e-9237-511f8f3ac31f",
+        "changedSession": true,
+        "oldMarkerPresent": false,
+        "predecessorPointerPresent": true,
+        "windWalkerPresent": true
+      },
+      {
+        "event": "adapter_status",
+        "status": {
+          "schema": "work-engine-claude-context-v1",
+          "requestId": "native-reset-probe",
+          "sourceSessionId": "75b97444-9380-4d2e-9237-511f8f3ac31f",
+          "cwd": "/home/bline/.local/state/work-engine/claude-new-context-20261115/native-interactive",
+          "turnId": "f748338a-b28d-4444-af95-6b2093156f88",
+          "checkpoint": "agent_owned_unverified",
+          "reset": "confirmed",
+          "targetSessionId": "60c2cc1d-cf82-4391-bed5-928b9f812ffa",
+          "continuation": "submitted",
+          "detail": null,
+          "persistence": "recorded"
+        }
+      },
+      {
+        "event": "end",
+        "sessionId": "60c2cc1d-cf82-4391-bed5-928b9f812ffa",
+        "reason": "prompt_input_exit"
+      }
+    ],
+    "closed_text": [
+      {
+        "event": "start",
+        "sourceSessionId": "0f70254f-d2ea-4a5b-a348-928aa6f2a712",
+        "interactive": false
+      },
+      {
+        "event": "requesting_turn_answer",
+        "sessionId": "0f70254f-d2ea-4a5b-a348-928aa6f2a712"
+      },
+      {
+        "event": "end",
+        "sessionId": "0f70254f-d2ea-4a5b-a348-928aa6f2a712",
+        "reason": "other"
+      }
+    ],
+    "closed_stream_json": [
+      {
+        "event": "start",
+        "sourceSessionId": "3ad4823d-fc5e-42bb-95b0-1f832772690c",
+        "interactive": false
+      },
+      {
+        "event": "requesting_turn_answer",
+        "sessionId": "3ad4823d-fc5e-42bb-95b0-1f832772690c"
+      },
+      {
+        "event": "end",
+        "sessionId": "3ad4823d-fc5e-42bb-95b0-1f832772690c",
+        "reason": "other"
+      }
+    ]
+  },
+  "live_attempts": [
+    {
+      "sourceSessionId": "af8c8573-6291-4834-9b42-af4227a06d8e",
+      "credential": "previous environment alias",
+      "httpStatus": 401,
+      "outcome": "invalid x-api-key",
+      "reportedCostUsd": 0,
+      "semanticRecovery": "unverified"
+    },
+    {
+      "sourceSessionId": "528e6f5f-1a4e-4dec-9507-388a8bc0989e",
+      "credential": "operator-updated ANTHROPIC_API_KEY sourced from .bashrc; value not recorded",
+      "httpStatus": 400,
+      "outcome": "specified API usage limits reached until 2026-12-01 00:00 UTC",
+      "reportedCostUsd": 0,
+      "modelTokens": 0,
+      "semanticRecovery": "unverified",
+      "processDisposition": "controller terminated idle open-input CLI after API error; native143 and wrapper0 collected"
+    },
+    {
+      "credential": "ANTHROPIC_API_KEY re-sourced from .bashrc at operator request; value not recorded",
+      "outcome": "semantic fixture recovery passed",
+      "validation": {
+        "sourceSessionId": "86dcecbd-8432-4089-99c0-e3a1cbc7dbde",
+        "targetSessionId": "8c2a091d-efd6-4fc0-b1c2-7230decdb5a5",
+        "observedModels": [
+          "claude-sonnet-5-5"
+        ],
+        "resultMatches": true,
+        "oldInitialPromptAbsentFromNewTranscript": true,
+        "oldTranscriptAccessAbsentFromNewTranscript": true,
+        "recoveryPromptContainsPredecessorPointer": true,
+        "recoveryPromptContainsNonce": false,
+        "freshContextReadsDurableContinuation": true,
+        "control": {
+          "schema": "work-engine-claude-context-v1",
+          "requestId": "toolu_0187pBZPR16JmsRBhXmwazxn",
+          "sourceSessionId": "86dcecbd-8432-4089-99c0-e3a1cbc7dbde",
+          "cwd": "/home/bline/.local/state/work-engine/claude-new-context-20261115/live-api-key3/repository",
+          "turnId": "0d13336a-7ba4-4f28-836f-77f1b810eab2",
+          "checkpoint": "agent_owned_unverified",
+          "reset": "confirmed",
+          "targetSessionId": "8c2a091d-efd6-4fc0-b1c2-7230decdb5a5",
+          "continuation": "submitted",
+          "detail": null
+        },
+        "process": {
+          "exitCode": 0,
+          "reason": "recovery_result",
+          "elapsedSeconds": 49.39,
+          "resultExists": true
+        },
+        "reportedCostByNativeSessionUsd": {
+          "86dcecbd-8432-4089-99c0-e3a1cbc7dbde": 0.0825868,
+          "8c2a091d-efd6-4fc0-b1c2-7230decdb5a5": 0.0517542
+        },
+        "reportedTotalCostUsd": 0.134341,
+        "result": {
+          "nonce": "amber-otter-486c018d9d224f9b89075ba715f44145",
+          "objective": "recover the amber otter",
+          "completed": true,
+          "recovery_source": "chatboard-and-continuation"
+        },
+        "freshTranscriptSha256": "19487a08b5d4805df87dabe9d06d9c7878f19552587ee4ac2af0c63e0f2b0e94",
+        "limitations": [
+          "One live bounded nonce-recovery fixture, not a production pressure, retained-review or process-custody qualification",
+          "Model read CONTINUATION before board note, then read board pointer; no claim of exact recovery ordering or full doctrine compliance"
+        ]
+      }
+    }
+  ],
+  "checks": {
+    "strictPluginValidation": "passed; optional catalog icon warning only",
+    "offlineTests": {
+      "passed": 19,
+      "failed": 0,
+      "files": 2
+    },
+    "semanticRecovery": "passed in one live bounded fixture",
+    "pressureEnrollment": "outside fixture qualification",
+    "independentReview": "not claimed"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "work-engine-context",
+  "version": "0.1.0",
+  "description": "Agent-requested native context replacement with Work Engine recovery.",
+  "author": { "name": "Work Engine" }
+}

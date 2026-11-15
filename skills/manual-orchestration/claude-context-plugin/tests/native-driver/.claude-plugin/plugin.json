@@ -1,0 +1,6 @@
+{
+  "name": "context-probe-driver",
+  "version": "0.0.0",
+  "description": "TEST ONLY: replaces model responses with a deterministic context-reset probe.",
+  "author": { "name": "Work Engine" }
+}
