@@ -205,6 +205,26 @@
       "path": "qualifier-source/tests/gate.rs",
       "sha256": "6f19c14c2ed05f48c7d819d3b44c49def26a8f385bbbb3c60b49492fe8622a6e",
       "bytes": 137085
+    },
+    {
+      "path": "campaign-records/reviews-r9/A/ASTRA-REVIEW-02.md",
+      "sha256": "4b630f4a98939a23bb8031bf29840eede3bd5d56db2b92595d38ea64294e293c",
+      "bytes": 9341
+    },
+    {
+      "path": "campaign-records/reviews-r9/A/CONTINUATION.md",
+      "sha256": "f0a234151bc9a4d468eccff4c56ae1a553edf585a5ce9348de3c6def9782666c",
+      "bytes": 11902
+    },
+    {
+      "path": "campaign-records/reviews-r9/C/CONTINUATION.md",
+      "sha256": "a7bf7751526d60330b85da0dbfba657645610b779ba15e623277b24b8e58931c",
+      "bytes": 17532
+    },
+    {
+      "path": "campaign-records/reviews-r9/D/CONTINUATION.md",
+      "sha256": "905c2b4da27eeed60d3126ddbb5dabf7d0a1a2ad3e62d2e91d685cfb029bf5e6",
+      "bytes": 13010
     }
   ]
 }
